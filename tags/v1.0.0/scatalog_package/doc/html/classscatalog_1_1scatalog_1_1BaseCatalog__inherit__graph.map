@@ -1,0 +1,6 @@
+<map id="G" name="G">
+<area shape="rect" href="$classscatalog_1_1scatalog_1_1FITSCatalog.html" title="Catalogs management in .FITS format." alt="" coords="5,155,203,181"/>
+<area shape="rect" href="$classscatalog_1_1scatalog_1_1TextCatalog.html" title="Catalog management in tabulated text (.ascii) format." alt="" coords="227,155,421,181"/>
+<area shape="rect" href="$classobject.html" title="object" alt="" coords="185,5,241,32"/>
+<area shape="rect" href="$classscatalog_1_1scatalog_1_1SExCatalog.html" title="Catalogs management in SExtractor format." alt="" coords="227,229,421,256"/>
+</map>

@@ -1,0 +1,6 @@
+<map id="G" name="G">
+<area shape="rect" href="$classmethods_1_1kmpfit_1_1FittingMethod_1_1FittingInfo.html" title="Fitting information available from kmpfit, once fitting is complete." alt="" coords="361,5,615,32"/>
+<area shape="rect" href="$classmethods_1_1scdmin_1_1FittingMethod_1_1FittingInfo.html" title="Fitting information available from SCDM, once fitting is complete." alt="" coords="359,56,617,83"/>
+<area shape="rect" href="$classmethods_1_1scileastsq_1_1FittingMethod_1_1FittingInfo.html" title="Fitting information available from scipy.optimize.leastsq(), once fitting is complete." alt="" coords="349,107,627,133"/>
+<area shape="rect" href="$classobject.html" title="object" alt="" coords="5,56,61,83"/>
+</map>

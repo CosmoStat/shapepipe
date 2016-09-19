@@ -1,0 +1,13 @@
+#! /bin/csh
+
+set module2compile = (trunk/slogger_package trunk/sconfig_package trunk/mpfx_package trunk/mpfg_package trunk/mpfg3_package \
+                      trunk/multifit_package trunk/scdm_package trunk/scatalog_package trunk/pse_package \
+		       branches/gfit_common_package trunk/mkpsf_package) 
+set cdir = `pwd`
+foreach k ($module2compile)
+ echo "process" $k
+ cd $k
+ python setup.py install --prefix=/dsm/cosmo02/sparseastro/Euclid/code/cea-epfl/test
+#install-atlas3101-dev-common
+ cd cdir
+end

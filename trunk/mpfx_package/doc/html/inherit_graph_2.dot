@@ -1,0 +1,11 @@
+digraph G
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir=LR;
+  Node1 [label="Job",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classJob.html"];
+  Node1 -> Node2 [dir=back,color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="mpfx.mpfx_job.MpfxJob",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmpfx_1_1mpfx__job_1_1MpfxJob.html",tooltip="Represents a Mpfx job."];
+  Node2 -> Node3 [dir=back,color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="mpfx.mpfx_job.MpfxMultiEpochJob",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmpfx_1_1mpfx__job_1_1MpfxMultiEpochJob.html",tooltip="Represents a MpfxMultiEpochJob job, an extension of a MpfxJob for holding a group of images with mult..."];
+}

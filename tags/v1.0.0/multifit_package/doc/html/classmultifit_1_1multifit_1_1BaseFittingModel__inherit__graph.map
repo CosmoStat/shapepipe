@@ -1,0 +1,17 @@
+<map id="G" name="G">
+<area shape="rect" href="$classmodels_1_1gbdsersic_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="615,5,812,32"/>
+<area shape="rect" href="$classmodels_1_1gbdsersicw_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="609,56,817,83"/>
+<area shape="rect" href="$classmodels_1_1gbdshsersic_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="608,107,819,133"/>
+<area shape="rect" href="$classmodels_1_1gcbdsersic_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="611,157,816,184"/>
+<area shape="rect" href="$classmodels_1_1gmoffat_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="621,208,805,235"/>
+<area shape="rect" href="$classmodels_1_1gmoffatsh_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="615,259,812,285"/>
+<area shape="rect" href="$classmodels_1_1gscshasersic_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="604,309,823,336"/>
+<area shape="rect" href="$classmodels_1_1gscshsersic_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="608,360,819,387"/>
+<area shape="rect" href="$classmodels_1_1moffat_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="625,411,801,437"/>
+<area shape="rect" href="$classmodels_1_1profile2d_1_1FittingModel.html" title="Generic two&#45;dimensioanal profile." alt="" coords="619,461,808,488"/>
+<area shape="rect" href="$classmodels_1_1scasersic_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="615,512,812,539"/>
+<area shape="rect" href="$classmodels_1_1scsersic_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="617,563,809,589"/>
+<area shape="rect" href="$classmodels_1_1sctsersic_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="616,613,811,640"/>
+<area shape="rect" href="$classmultifit_1_1multifit_1_1FittingElement.html" title="A fitting model or algorithm/method." alt="" coords="109,309,299,336"/>
+<area shape="rect" href="$classobject.html" title="object" alt="" coords="5,309,61,336"/>
+</map>

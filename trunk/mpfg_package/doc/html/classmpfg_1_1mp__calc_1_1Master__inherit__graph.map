@@ -1,0 +1,5 @@
+<map id="mpfg.mp_calc.Master" name="mpfg.mp_calc.Master">
+<area shape="rect" id="node3" href="$classmpfg_1_1mp__calc__MPI_1_1MasterMPI.html" title="Master calculator for MPI: distribute jobs to workers and collect/process their results. " alt="" coords="5,155,208,181"/>
+<area shape="rect" id="node4" href="$classmpfg_1_1mp__calc__SMP_1_1MasterSMP.html" title="Master calculator for SMP: distribute jobs to workers and collect/process their results. " alt="" coords="232,155,445,181"/>
+<area shape="rect" id="node2" href="$classobject.html" title="object" alt="" coords="194,5,251,32"/>
+</map>

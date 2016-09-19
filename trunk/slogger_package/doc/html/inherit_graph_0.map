@@ -1,0 +1,6 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classobject.html" title="object" alt="" coords="6,45,63,72"/>
+<area shape="rect" id="node2" href="$classslogger_1_1file__logger_1_1BaseFileLogger.html" title="Simple file logging management &#45; Base class. " alt="" coords="113,38,274,79"/>
+<area shape="rect" id="node3" href="$classslogger_1_1file__logger_1_1FileLogger.html" title="Simple file logging management: File Logger. " alt="" coords="324,5,476,46"/>
+<area shape="rect" id="node4" href="$classslogger_1_1file__logger_1_1NullFileLogger.html" title="Simple file logging management &#45; &quot;do&#45;nothing&quot; file logger. " alt="" coords="323,70,477,111"/>
+</map>

@@ -1,0 +1,14 @@
+include *.txt
+recursive-include gfit *.py
+recursive-include gfit *.cfg
+recursive-include gfit *.txt
+recursive-include doc *.html
+recursive-include doc *.tex
+recursive-include doc *.sty
+recursive-include doc *.css
+recursive-include doc *.png
+recursive-include doc *.md5
+recursive-include doc *.map
+prune gfit/input*
+prune gfit/output*
+prune gfit/completed_runs*

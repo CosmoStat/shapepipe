@@ -1,0 +1,15 @@
+<map id="object" name="object">
+<area shape="rect" id="node2" href="$classmpfg_1_1mp__args_1_1Args.html" title="Management of command&#45;line options. " alt="" coords="135,5,271,32"/>
+<area shape="rect" id="node3" href="$classmpfg_1_1mp__calc_1_1Master.html" title="Master calculator: distribute jobs to workers and collect/process their results. " alt="" coords="129,56,277,83"/>
+<area shape="rect" id="node6" href="$classmpfg_1_1mp__calc_1_1Worker.html" title="Worker calculator: process jobs supplied by master and send back the results. " alt="" coords="127,107,278,133"/>
+<area shape="rect" id="node9" href="$classmpfg_1_1mp__data_1_1Dataset.html" title="Represent a dataset with images, catalogs and any other kinds of files. " alt="" coords="125,157,280,184"/>
+<area shape="rect" id="node10" href="$classmpfg_1_1mp__helper_1_1Helper.html" title="Convenient utility functions that can be shared across sub&#45;classes. " alt="" coords="124,208,281,235"/>
+<area shape="rect" id="node11" href="$classmpfg_1_1mp__job_1_1Job.html" title="Represents a job to process by a calculator. " alt="" coords="141,259,264,285"/>
+<area shape="rect" id="node13" href="$classmpfg_1_1mp__job_1_1JobProcessor.html" title="Submit jobs and process associated job results. " alt="" coords="112,309,293,336"/>
+<area shape="rect" id="node14" href="$classmpfg_1_1mp__job_1_1JobResult.html" title="Represents the result of a Job object processed by a calculator. " alt="" coords="123,360,283,387"/>
+<area shape="rect" id="node4" href="$classmpfg_1_1mp__calc__MPI_1_1MasterMPI.html" title="Master calculator for MPI: distribute jobs to workers and collect/process their results. " alt="" coords="348,5,551,32"/>
+<area shape="rect" id="node5" href="$classmpfg_1_1mp__calc__SMP_1_1MasterSMP.html" title="Master calculator for SMP: distribute jobs to workers and collect/process their results. " alt="" coords="343,56,556,83"/>
+<area shape="rect" id="node7" href="$classmpfg_1_1mp__calc__MPI_1_1WorkerMPI.html" title="Worker calculator: process jobs supplied by master and send back the results. " alt="" coords="347,107,552,133"/>
+<area shape="rect" id="node8" href="$classmpfg_1_1mp__calc__SMP_1_1WorkerSMP.html" title="Worker calculator: process jobs supplied by master and send back the results. " alt="" coords="342,157,557,184"/>
+<area shape="rect" id="node12" href="$classmpfg_1_1mp__job_1_1FileJob.html" title="Represents a job to process in the form of a file path. " alt="" coords="378,259,521,285"/>
+</map>

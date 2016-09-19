@@ -1,0 +1,1 @@
+/usr/bin/c++   -DNO_DISP_IO  -ggdb3 -fPIC -O2 -ffast-math -fomit-frame-pointer -fopenmp -Wno-write-strings -DNDEBUG   CMakeFiles/mr_transform.dir/src/mr_transform.cc.o  -o mr_transform -rdynamic libsparse2d.a libsparse1d.a libtools.a -lgsl -lgslcblas -lm -lcfitsio 

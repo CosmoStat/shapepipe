@@ -1,0 +1,5 @@
+<map id="G" name="G">
+<area shape="rect" href="$classscdm_1_1scdm_1_1Minimizer_1_1FittingException.html" title="Base fitting exception." alt="" coords="133,31,381,57"/>
+<area shape="rect" href="$classscdm_1_1scdm_1_1Minimizer_1_1ParamNumericalException.html" title="Exception thrown in case numerical error." alt="" coords="436,5,743,32"/>
+<area shape="rect" href="$classscdm_1_1scdm_1_1Minimizer_1_1ParamOutOfBoundException.html" title="Exception thrown in case of out of parameter bounds access." alt="" coords="429,56,749,83"/>
+</map>

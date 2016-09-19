@@ -1,0 +1,16 @@
+<map id="G" name="G">
+<area shape="rect" href="$classscdm_1_1scdm_1_1__FittingResult.html" title="Hold fitting results (i.e fitted parameters and fitting data) This is a inner class of class _Fitting..." alt="" coords="140,5,313,32"/>
+<area shape="rect" href="$classscdm_1_1scdm_1_1__FittingStatus.html" title="Hold the status of the fitting operation." alt="" coords="140,56,313,83"/>
+<area shape="rect" href="$classscdm_1_1scdm_1_1__ParamFittingData.html" title="Hold a record of fitting data for a given parameter of class Param." alt="" coords="127,107,327,133"/>
+<area shape="rect" href="$classscdm_1_1scdm_1_1DiagFlag.html" title="Define which diagnostic information should be collectedlogs: produce diagnostic log filesplots: produ..." alt="" coords="155,157,299,184"/>
+<area shape="rect" href="$classscdm_1_1scdm_1_1DiagOptions.html" title="Diagnostic helper class to output logs, plots and statistics to tune fitting or diagnose fitting fail..." alt="" coords="145,208,308,235"/>
+<area shape="rect" href="$classscdm_1_1scdm_1_1FittingOptions.html" title="Class for specifying options applicable to the fitting process." alt="" coords="140,259,313,285"/>
+<area shape="rect" href="$classscdm_1_1scdm_1_1MinimizationType.html" title="Define which quantity should be mimimized during fitting and hence the stopping criterionminimize_fun..." alt="" coords="129,309,324,336"/>
+<area shape="rect" href="$classscdm_1_1scdm_1_1Minimizer.html" title="Minimization of an objective function using a variant of the Coordinate Descent algorithm." alt="" coords="152,360,301,387"/>
+<area shape="rect" href="$classscdm_1_1scdm_1_1Minimizer_1_1__FittingCache.html" title="Private class for managing a cache with tuples of parameters [p0,...,pn] as keys." alt="" coords="111,411,343,437"/>
+<area shape="rect" href="$classscdm_1_1scdm_1_1Minimizer_1_1__FittingData.html" title="Hold global fitting data for all parameters." alt="" coords="115,461,339,488"/>
+<area shape="rect" href="$classscdm_1_1scdm_1_1Minimizer_1_1PlotHelper.html" title="Helper class for plotting fitting results." alt="" coords="120,512,333,539"/>
+<area shape="rect" href="$classscdm_1_1scdm_1_1Minimizer_1_1StatsHelper.html" title="Output statistics related to Parameter fitting." alt="" coords="116,563,337,589"/>
+<area shape="rect" href="$classscdm_1_1scdm_1_1Param.html" title="Represents a parameter of some model which has to be estimated." alt="" coords="161,613,292,640"/>
+<area shape="rect" href="$classscdm_1_1scdm_1_1Params.html" title="Represents the list of parameters of clas Param to estimate." alt="" coords="157,664,296,691"/>
+</map>

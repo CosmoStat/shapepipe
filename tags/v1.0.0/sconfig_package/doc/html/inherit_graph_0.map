@@ -1,0 +1,10 @@
+<map id="G" name="G">
+<area shape="rect" href="$classException.html" title="Exception" alt="" coords="5,157,85,184"/>
+<area shape="rect" href="$classsconfig_1_1sconfig_1_1SConfig_1_1ConfigFileNotFound.html" title="Exception thrown when a configuration file is not found on disk." alt="" coords="137,5,409,32"/>
+<area shape="rect" href="$classsconfig_1_1sconfig_1_1SConfig_1_1InputOutputError.html" title="Exception thrown in case of input/output error." alt="" coords="145,56,401,83"/>
+<area shape="rect" href="$classsconfig_1_1sconfig_1_1SConfig_1_1InvalidSection.html" title="Exception thrown in case a section is invalid." alt="" coords="153,107,393,133"/>
+<area shape="rect" href="$classsconfig_1_1sconfig_1_1SConfig_1_1KeyNotFound.html" title="Exception thrown when a key could not be found in a given section." alt="" coords="153,157,393,184"/>
+<area shape="rect" href="$classsconfig_1_1sconfig_1_1SConfig_1_1SectionInvalidFormat.html" title="Exception thrown when a section has an invalid format." alt="" coords="133,208,413,235"/>
+<area shape="rect" href="$classsconfig_1_1sconfig_1_1SConfig_1_1SectionNotFound.html" title="Exception thrown when a section could not be found in the list of registered sections." alt="" coords="144,259,403,285"/>
+<area shape="rect" href="$classsconfig_1_1sconfig_1_1SConfig_1_1ValueNotFound.html" title="Exception thrown when a value associated with a key could not be found in a given section..." alt="" coords="149,309,397,336"/>
+</map>

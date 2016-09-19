@@ -1,0 +1,36 @@
+<map id="G" name="G">
+<area shape="rect" href="$classmultifit_1_1multifit_1_1BaseDiagOptions.html" title="Represents options that can be used to collect diagonotic information about the fitting process..." alt="" coords="153,81,359,108"/>
+<area shape="rect" href="$classmultifit_1_1multifit_1_1BaseFittingInfo.html" title="Fitting information available from a method once fitting is complete." alt="" coords="160,233,352,260"/>
+<area shape="rect" href="$classmultifit_1_1multifit_1_1BaseFittingMethod_1_1FittingStatus.html" title="Hold the status of a fitting operation." alt="" coords="111,309,401,336"/>
+<area shape="rect" href="$classmultifit_1_1multifit_1_1BaseFittingOptions.html" title="Represents options that may influence the fitting process." alt="" coords="148,360,364,387"/>
+<area shape="rect" href="$classmultifit_1_1multifit_1_1FittingElement.html" title="A fitting model or algorithm/method." alt="" coords="161,411,351,437"/>
+<area shape="rect" href="$classmultifit_1_1multifit_1_1ModelFitter.html" title="Fit a parametric model using a fitting method." alt="" coords="171,461,341,488"/>
+<area shape="rect" href="$classmultifit_1_1multifit_1_1ModelParam.html" title="Represents a parameter in the model." alt="" coords="167,512,345,539"/>
+<area shape="rect" href="$classmethods_1_1kmpfit_1_1FittingMethod_1_1DiagOptions.html" title="Diagnostic options for kmpfit." alt="" coords="469,5,736,32"/>
+<area shape="rect" href="$classmethods_1_1scdmin_1_1FittingMethod_1_1DiagOptions.html" title="Diagnostic options for SCDM." alt="" coords="465,56,740,83"/>
+<area shape="rect" href="$classmethods_1_1scileastsq_1_1FittingMethod_1_1DiagOptions.html" title="Diagnostic options applicable to scipy.optimize.leastsq()" alt="" coords="457,107,748,133"/>
+<area shape="rect" href="$classmethods_1_1kmpfit_1_1FittingMethod_1_1FittingInfo.html" title="Fitting information available from kmpfit, once fitting is complete." alt="" coords="476,157,729,184"/>
+<area shape="rect" href="$classmethods_1_1scdmin_1_1FittingMethod_1_1FittingInfo.html" title="Fitting information available from SCDM, once fitting is complete." alt="" coords="473,208,732,235"/>
+<area shape="rect" href="$classmethods_1_1scileastsq_1_1FittingMethod_1_1FittingInfo.html" title="Fitting information available from scipy.optimize.leastsq(), once fitting is complete." alt="" coords="464,259,741,285"/>
+<area shape="rect" href="$classmethods_1_1kmpfit_1_1FittingMethod_1_1FittingOptions.html" title="Fitting options applicable to the kmpfit least&#45;squares minimizer." alt="" coords="464,309,741,336"/>
+<area shape="rect" href="$classmethods_1_1scdmin_1_1FittingMethod_1_1FittingOptions.html" title="Fitting options applicable to SCDM." alt="" coords="460,360,745,387"/>
+<area shape="rect" href="$classmethods_1_1scileastsq_1_1FittingMethod_1_1FittingOptions.html" title="Fitting options applicable to scipy.optimize.leastsq() " alt="" coords="452,411,753,437"/>
+<area shape="rect" href="$classmultifit_1_1multifit_1_1BaseFittingMethod.html" title="Represent a fitting method/algorithm (like Levenberg&#45;Marquardt)" alt="" coords="496,461,709,488"/>
+<area shape="rect" href="$classmultifit_1_1multifit_1_1BaseFittingModel.html" title="Represents a parametric model to which the data must be fitted." alt="" coords="500,816,705,843"/>
+<area shape="rect" href="$classmethods_1_1kmpfit_1_1FittingMethod.html" title="Fitting using the kmpfit least&#45;squares minimizer." alt="" coords="817,385,1009,412"/>
+<area shape="rect" href="$classmethods_1_1scdmin_1_1FittingMethod.html" title="Fitting using the scdm coordinate fitting." alt="" coords="813,436,1013,463"/>
+<area shape="rect" href="$classmethods_1_1scileastsq_1_1FittingMethod.html" title="Fitting using the scipy.optimize.leastsq implementation of Levenberg&#45;Marquardt." alt="" coords="805,487,1021,513"/>
+<area shape="rect" href="$classmodels_1_1gbdsersic_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="815,537,1012,564"/>
+<area shape="rect" href="$classmodels_1_1gbdsersicw_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="809,588,1017,615"/>
+<area shape="rect" href="$classmodels_1_1gbdshsersic_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="808,639,1019,665"/>
+<area shape="rect" href="$classmodels_1_1gcbdsersic_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="811,689,1016,716"/>
+<area shape="rect" href="$classmodels_1_1gmoffat_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="821,740,1005,767"/>
+<area shape="rect" href="$classmodels_1_1gmoffatsh_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="815,791,1012,817"/>
+<area shape="rect" href="$classmodels_1_1gscshasersic_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="804,841,1023,868"/>
+<area shape="rect" href="$classmodels_1_1gscshsersic_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="808,892,1019,919"/>
+<area shape="rect" href="$classmodels_1_1moffat_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="825,943,1001,969"/>
+<area shape="rect" href="$classmodels_1_1profile2d_1_1FittingModel.html" title="Generic two&#45;dimensioanal profile." alt="" coords="819,993,1008,1020"/>
+<area shape="rect" href="$classmodels_1_1scasersic_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="815,1044,1012,1071"/>
+<area shape="rect" href="$classmodels_1_1scsersic_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="817,1095,1009,1121"/>
+<area shape="rect" href="$classmodels_1_1sctsersic_1_1FittingModel.html" title="Single&#45;Component Sersic galaxy profile." alt="" coords="816,1145,1011,1172"/>
+</map>

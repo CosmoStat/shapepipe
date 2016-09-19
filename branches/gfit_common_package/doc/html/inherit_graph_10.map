@@ -1,0 +1,11 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classobject.html" title="object" alt="" coords="6,173,63,200"/>
+<area shape="rect" id="node2" href="$classgfit_1_1gfit__filter_1_1ObjectFilter.html" title="Galaxy and PSF filtering. " alt="" coords="141,31,307,57"/>
+<area shape="rect" id="node5" href="$classgfit_1_1gfit__plot_1_1GfitPlotter.html" title="Class with a number of convenient plotting methods. " alt="" coords="147,81,301,108"/>
+<area shape="rect" id="node6" href="$classgfit_1_1gfit__shape_1_1GfitShapeEstimator.html" title="gfit galaxy shape estimator " alt="" coords="141,133,307,174"/>
+<area shape="rect" id="node7" href="$classgfit_1_1gfit__shape_1_1ShapeMeasurementRequest.html" title="Represent a request for shape measurement of the galaxies contained in an image made of galaxy postag..." alt="" coords="112,198,336,239"/>
+<area shape="rect" id="node8" href="$classgfit_1_1gfit__shape__new_1_1GfitShapeEstimator.html" title="gfit galaxy shape estimator " alt="" coords="144,263,304,305"/>
+<area shape="rect" id="node9" href="$classgfit_1_1gfit__shape__new_1_1ShapeMeasurementRequest.html" title="Represent a request for shape measurement of the galaxies contained in an image made of galaxy postag..." alt="" coords="136,329,312,370"/>
+<area shape="rect" id="node3" href="$classgfit_1_1gfit__filter_1_1GalaxyFilter.html" title="Galaxy filtering. " alt="" coords="384,5,552,32"/>
+<area shape="rect" id="node4" href="$classgfit_1_1gfit__filter_1_1PSFFilter.html" title="PSF (star) filtering. " alt="" coords="391,56,545,83"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="models.moffat.FittingModel" name="models.moffat.FittingModel">
+<area shape="rect" id="node2" href="$classmultifit_1_1multifit_1_1BaseFittingModel.html" title="Represents a parametric model to which the data must be fitted. " alt="" coords="7,171,181,213"/>
+<area shape="rect" id="node3" href="$classmultifit_1_1multifit_1_1FittingElement.html" title="A fitting model or algorithm/method. " alt="" coords="23,81,167,122"/>
+<area shape="rect" id="node4" href="$classobject.html" title="object" alt="" coords="66,5,123,32"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="G" name="G">
+<area shape="rect" href="$classscdm__package_1_1scdm_1_1scdm_1_1Minimizer_1_1ParamNumericalException.html" title="Exception thrown in case numerical error." alt="" coords="529,5,929,32"/>
+<area shape="rect" href="$classscdm__package_1_1scdm_1_1scdm_1_1Minimizer_1_1ParamOutOfBoundException.html" title="Exception thrown in case of out of parameter bounds access." alt="" coords="524,56,935,83"/>
+<area shape="rect" href="$classException.html" title="Exception" alt="" coords="5,31,85,57"/>
+</map>

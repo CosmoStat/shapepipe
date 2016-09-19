@@ -1,0 +1,58 @@
+              ISAP/cxx/sparse1d INSTALL PROCEDURE UNDER UNIX/LINUX/MACOS X/CYGWIN/MINGW
+			 this toolbox has never been tested under Windows.
+
+1. PREREQUISITE
+
+  a. Mandatory:
+
+   - C++ compiler.
+   - Recent version of CFITSIO need to be first installed (http://heasarc.gsfc.nasa.gov/fitsio)
+     For MAC users, if the port software is installed, the command "sudo port install cfitsio" will install the cfitsio package.
+   - Variable ISAP must be defined (ex setenv ISAP /Users/starck/Main/ISAP/ISAP_V2.0)
+
+  b. Optional:
+   - Add in your path: $ISAP/bin
+
+2. UNPACK THE ARCHIVE 
+
+  a. Create a directory ISAP_V2.0/cxx or install the ISAP IDL package available at http://jstarck.free.fr/isap.html 
+  a. Copy sparse1d.tgz in this directory
+
+  b. Uncompress
+     tar xfz sparse1d.tgz
+
+3. BUILDING
+
+  To configure the sparse1d toolbox for your machine type:
+        cd sparse1d/build
+        cmake ..
+
+    Once CMake is done, to create the toolbox and compile all the C++ files, type:
+
+        make
+        make install
+        
+    The library, headers and executables will respectively be installed in the lib, include and bin folders. 
+
+    You may want to clean the toolbox after the compilation step, type:
+
+    	make clean
+
+4. CLEAN AND REBUILD
+
+  To rebuild the toolbox, just type the following:
+
+        make clean
+	make
+	make install  
+ 
+5.  ENVIRONMENT VARIABLES
+
+    In order to use sparse1d in the iSAP environment, some environment variables need to be
+    defined or extended:
+        ISAP              -- standard ISAP variable
+        PATH               - extend to include $ISAP/bin
+ 	
+6. BINARY 
+    the binaries are in $ISAP/bin
+    example: $ISAP/bin/mr1_filter input.fits output.fits

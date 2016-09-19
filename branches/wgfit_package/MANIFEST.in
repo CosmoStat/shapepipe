@@ -1,0 +1,11 @@
+include *.txt
+recursive-include wgfit *.py
+recursive-include wgfit *.cfg
+recursive-include wgfit *.txt
+recursive-include doc *.html
+recursive-include doc *.tex
+recursive-include doc *.sty
+recursive-include doc *.css
+recursive-include doc *.png
+recursive-include doc *.md5
+recursive-include doc *.map

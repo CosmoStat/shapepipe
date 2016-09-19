@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classJob.html" title="Job" alt="" coords="5,5,48,32"/>
+<area shape="rect" id="node2" href="$classmpfx_1_1mpfx__job_1_1MpfxJob.html" title="Represents a Mpfx job. " alt="" coords="96,5,259,32"/>
+<area shape="rect" id="node3" href="$classmpfx_1_1mpfx__job_1_1MpfxMultiEpochJob.html" title="Represents a MpfxMultiEpochJob job, an extension of a MpfxJob for holding a group of images with mult..." alt="" coords="307,5,533,32"/>
+</map>

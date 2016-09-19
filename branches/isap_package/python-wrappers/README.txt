@@ -1,0 +1,43 @@
+isap-great3-wrapper v0.1
+=============
+
+Python Wrappers for ISAP-GREAT3
+
+Author: Florent Sureau (florent.sureau@cea.fr)
+
+Description
+-----------
+
+These Boost Python.wrappers interface multiresolution objects from the ISAP package.
+
+
+The following modules are currently supported:
+  - mr_transform: multiresolution transforms.  
+  - mr_filter: denoising with mr_filter.
+  - im3d_coadd: super-resolution with shift and add.
+
+Source code
+-----------
+
+The source code is organized as follows:
+
+- Python code:
+  - mr_transform.py: handle multiresolution objects and transforms 
+  - mr_filter.py: handle denoising using multiresolution techniques
+  - im3d_coadd.py: handle super-resolution with shift and add
+
+
+Prerequisites 
+-------------
+
+- Mandatory:
+   - @c Python 2.6 or 2.7 on Unix or Mac OS
+   - @c Numpy v1.7.x, @c Scipy v0.9.x or greater
+   - @c isap libraries isap_great3_tools, isap_great3_sparse2d
+
+
+Configuration
+-------------
+
+Refer to the HTML documentation in directory python-wrappers/doc. The main entry point is index.html.
+

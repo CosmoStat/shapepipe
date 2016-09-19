@@ -1,0 +1,7 @@
+<map id="multifit.multifit.BaseFittingMethod" name="multifit.multifit.BaseFittingMethod">
+<area shape="rect" id="node4" href="$classmethods_1_1kmpfit_1_1FittingMethod.html" title="Fitting using the kmpfit least&#45;squares minimizer. " alt="" coords="532,5,727,32"/>
+<area shape="rect" id="node5" href="$classmethods_1_1scdmin_1_1FittingMethod.html" title="Fitting using the scdm coordinate fitting. " alt="" coords="529,56,730,83"/>
+<area shape="rect" id="node6" href="$classmethods_1_1scileastsq_1_1FittingMethod.html" title="Fitting using the scipy.optimize.leastsq implementation of Levenberg&#45;Marquardt. " alt="" coords="542,107,717,149"/>
+<area shape="rect" id="node2" href="$classmultifit_1_1multifit_1_1FittingElement.html" title="A fitting model or algorithm/method. " alt="" coords="112,49,256,90"/>
+<area shape="rect" id="node3" href="$classobject.html" title="object" alt="" coords="6,56,63,83"/>
+</map>

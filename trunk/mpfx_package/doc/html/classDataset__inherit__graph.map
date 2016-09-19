@@ -1,0 +1,4 @@
+<map id="Dataset" name="Dataset">
+<area shape="rect" id="node2" href="$classmpfx_1_1mpfx__data_1_1MpfxDataset.html" title="Represent a source dataset. " alt="" coords="5,80,200,107"/>
+<area shape="rect" id="node3" href="$classmpfx_1_1mpfx__data_1_1MpfxMultiEpochDataset.html" title="Represent a source dataset that takes care of files with multiple exposures (epochs). " alt="" coords="14,155,191,197"/>
+</map>
