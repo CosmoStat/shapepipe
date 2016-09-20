@@ -7,7 +7,7 @@ set cdir = `pwd`
 foreach k ($module2compile)
  echo "process" $k
  cd $k
- python setup.py install --prefix=/dsm/cosmo02/sparseastro/Euclid/code/cea-epfl/ShapePipe-install
+ python setup.py install --prefix=$HOME/astro/ShapePipe-install
 #install-atlas3101-dev-common
  cd cdir
 end
