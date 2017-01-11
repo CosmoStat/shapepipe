@@ -1,6 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classobject.html" title="object" alt="" coords="5,31,61,57"/>
-<area shape="rect" href="$classslogger_1_1file__logger_1_1BaseFileLogger.html" title="Simple file logging management &#45; Base class." alt="" coords="111,31,329,57"/>
-<area shape="rect" href="$classslogger_1_1file__logger_1_1FileLogger.html" title="Simple file logging management: File Logger." alt="" coords="391,5,580,32"/>
-<area shape="rect" href="$classslogger_1_1file__logger_1_1NullFileLogger.html" title="Simple file logging management &#45; &quot;do&#45;nothing&quot; file logger." alt="" coords="380,56,591,83"/>
-</map>

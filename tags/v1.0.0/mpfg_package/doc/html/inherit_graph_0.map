@@ -1,5 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classException.html" title="Exception" alt="" coords="5,31,85,57"/>
-<area shape="rect" href="$classmpfg_1_1mp__args_1_1Args_1_1ParsingError.html" title="Exception thrown in case of error detected while parsing the command&#45;line." alt="" coords="140,5,351,32"/>
-<area shape="rect" href="$classmpfg_1_1mp__args_1_1Args_1_1ValidationError.html" title="Exception thrown in case the validating of the arguments and options failed." alt="" coords="135,56,356,83"/>
-</map>

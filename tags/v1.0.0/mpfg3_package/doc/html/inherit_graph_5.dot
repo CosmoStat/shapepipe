@@ -1,9 +1,0 @@
-digraph G
-{
-  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
-  node [fontname="Helvetica",fontsize="10",shape=record];
-  rankdir=LR;
-  Node1 [label="MpfxMasterMPI",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classMpfxMasterMPI.html"];
-  Node1 -> Node2 [dir=back,color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
-  Node2 [label="mpfg3.mpfg3_MPI.Mpfg3MasterMPI",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmpfg3_1_1mpfg3__MPI_1_1Mpfg3MasterMPI.html",tooltip="Master calculator for MPI: distribute jobs to workers and collect/process their results."];
-}

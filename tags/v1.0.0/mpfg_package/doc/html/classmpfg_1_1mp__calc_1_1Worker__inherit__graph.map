@@ -1,5 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classmpfg_1_1mp__calc__MPI_1_1WorkerMPI.html" title="Worker calculator: process jobs supplied by master and send back the results." alt="" coords="5,155,205,181"/>
-<area shape="rect" href="$classmpfg_1_1mp__calc__SMP_1_1WorkerSMP.html" title="Worker calculator: process jobs supplied by master and send back the results." alt="" coords="229,155,440,181"/>
-<area shape="rect" href="$classobject.html" title="object" alt="" coords="192,5,248,32"/>
-</map>
