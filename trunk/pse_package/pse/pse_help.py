@@ -206,7 +206,8 @@ class PseHelper(Helper):
       forbidden_col_names = ["xc", "yc", "x", "y"]
       forbidden_col_names.extend([
            worker.config.get_as_string("NUMBER_PARAM", "PARAMETER_MAPPING"),\
-           worker.config.get_as_string("CLASS_STAR_PARAM", "PARAMETER_MAPPING"),\
+           # MKDEBUG: Removed CLASS_STAR_PARAM from forbidden
+           #worker.config.get_as_string("CLASS_STAR_PARAM", "PARAMETER_MAPPING"),\
            worker.config.get_as_string("X_IMAGE_PARAM", "PARAMETER_MAPPING"),\
            worker.config.get_as_string("Y_IMAGE_PARAM", "PARAMETER_MAPPING"),\
            worker.config.get_as_string("A_IMAGE_PARAM", "PARAMETER_MAPPING"),\
@@ -237,6 +238,7 @@ class PseHelper(Helper):
             # --- Allowed SExtractor column data
             for col_name in se_catalog.get_col_names():
                if not col_name in forbidden_col_names:
+                  print('MKDEBUG: Adding SEx column {}'.format(col_name))
                   data_dico[file_type][col_name] = se_catalog.get_named_col_data(col_name)
 
          se_catalog.close()
