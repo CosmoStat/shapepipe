@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/build/lib/spredict/modules/methods
+END
+BSPLINE.py
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/build/lib/spredict/modules/methods/BSPLINE.py
+END
+__init__.py
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/build/lib/spredict/modules/methods/__init__.py
+END
+IDW.py
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/build/lib/spredict/modules/methods/IDW.py
+END
+function.py
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/build/lib/spredict/modules/methods/function.py
+END
+polyfit.py
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/build/lib/spredict/modules/methods/polyfit.py
+END
+RBF.py
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/build/lib/spredict/modules/methods/RBF.py
+END

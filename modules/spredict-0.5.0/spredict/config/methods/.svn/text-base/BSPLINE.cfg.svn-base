@@ -1,0 +1,53 @@
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Spredict - BSPLINE.cfg - Interpolation using Bivariate Splines (from scipy)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[BSPLINE]
+
+# ------------------------------------- Properties of the method -----------------------------------
+[BSPLINE.METHOD]
+
+IS_LOCAL = False  # a global interpolator
+
+COLLECT_EXTRA_DATA = True  # if True, collect extra method-specific data  
+
+# --------------------------------- Default Interpolation Options ----------------------------------
+[BSPLINE.OPTIONS]
+
+# --- Degree of the spline ---
+
+# Cubic splines are recommended. Even values of k should be avoided especially with a small 
+# s-value. 1 <= k <= 5, default is 3. The degree k corresponds here to the parameter DEGREE.
+
+DEGREE = 3
+
+# --- Approximation interval ---
+
+# End points of approximation interval in x and y. By default xb = x.min(), xe=x.max(), 
+# yb=y.min(), ye = y.max(). 
+
+XB = None
+XE = None
+YB = None
+YE = None
+
+# --- Smoothing condition ---
+
+# The amount of smoothness is determined by satisfying the conditions:
+  sum((w * (y - g))**2,axis=0) <= s, where g(x) is the smoothed interpolation of (x,y). 
+# The user can use s to control the trade-off between closeness and smoothness of fit. 
+# Larger s means more smoothing while smaller values of s indicate less smoothing. 
+# Recommended values of s depend on the weights, w.
+# If the weights represent the inverse of the standard-deviation of y, then a good s value should 
+# be found in the range (m-sqrt(2*m),m+sqrt(2*m)), where m is the number of data points in x, y. 
+# The s condition is controlled here by the SMOOTH parameter. 
+
+SMOOTH = None
+
+# --- Full output: non-zero to return optional outputs ---
+FULL_OUTPUT = 1
+
+
+
+# --- EOF BSPLINE.cfg
+

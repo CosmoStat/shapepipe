@@ -1,0 +1,34 @@
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Spredict - polyfit.cfg - Interpolation using Least-squares polynomial fitting
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[POLYFIT]
+
+# ------------------------------------- Properties of the method -----------------------------------
+[POLYFIT.METHOD]
+
+IS_LOCAL = False  # a global interpolator
+
+COLLECT_EXTRA_DATA = True  # if True, collect extra method-specific data  
+
+# --------------------------------- Default Interpolation Options ----------------------------------
+[POLYFIT.OPTIONS]
+
+# --- Degree of the polynomial (up to 5) ---
+DEGREE = 3
+
+# --- Polynomial definitions {func name : guess values}
+POLY_DEF = {'polyfit_1':[0,0,0], 'polyfit_2':[0,0,0,0,0,0],\
+            'polyfit_3':[0,0,0,0,0,0,0,0,0,0],\
+            'polyfit_4':[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],\
+            'polyfit_5':[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}
+
+# --- Least squares fitting parameters
+LEASTSQ_MAX_FEV = 10000
+LEASTSQ_COL_DERIV = 0
+LEASTSQ_FTOL = 1.49012e-8
+LEASTSQ_XTOL = 1.49012e-8
+LEASTSQ_GTOL = 0.0
+
+
+# --- EOF POLYFIT.cfg

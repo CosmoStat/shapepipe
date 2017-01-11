@@ -1,0 +1,83 @@
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/spredict
+END
+sp_interp.py
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/spredict/sp_interp.py
+END
+sp_outlier.py
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/spredict/sp_outlier.py
+END
+sp_MPI.py
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/spredict/sp_MPI.py
+END
+cp
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/spredict/cp
+END
+sp_validate.py
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/spredict/sp_validate.py
+END
+sp_job.py
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/spredict/sp_job.py
+END
+sp_args.py
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/spredict/sp_args.py
+END
+__init__.py
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/spredict/__init__.py
+END
+sp_map.py
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/spredict/sp_map.py
+END
+sp_spatial.py
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/spredict/sp_spatial.py
+END
+sp_plot.py
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/spredict/sp_plot.py
+END
+sp_SMP.py
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/spredict/sp_SMP.py
+END
+sp_helper.py
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/great3/!svn/ver/123/trunk/spredict-0.5.0/spredict/sp_helper.py
+END
