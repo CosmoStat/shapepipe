@@ -223,10 +223,10 @@ class GfitHelper(Helper):
          @return position of galaxy centroid in reduced stamp
       """
       if not request.truncate_before_convolution:
-         psf_shift = start_ind+numpy.array(abs_rel_centroid)
+         psf_shift = (start_ind+numpy.array(abs_rel_centroid))*1.0
       else :
          psf_pos=self._get_centroid_position(rel_centroid,abs_rel_centroid,stamp_size)
-         psf_shift = start_ind+ psf_pos
+         psf_shift = (start_ind+ psf_pos)*1.0
 #         print("PSF_SHIFT",psf_shift,start_ind,numpy.array(abs_rel_centroid))
       return psf_shift[::-1] #BEWARE OF CONVENTIONS, need to swap axes
       
