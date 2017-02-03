@@ -113,6 +113,8 @@ class Args(object):
       if not success:
 
          # Some error occurred
+         # MK new: print usage string
+         self.print_usage(self.helper.get_main_basename())
          raise Args.ValidationError(err_msg)
 
    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
