@@ -170,10 +170,12 @@ class PseJobProcessor(MpfxJobProcessor):
       #     from this job, like deep_images or other dither files. 
 
       object_per_type_dico = {}  # will contain the job results per image type (images)
+      ref_per_type_dico    = {}
 
       # --- Iterate over the path dictionary content to generate and process SEXtractor catalogs
       try:
 
+         # MK: file_type i the image name
          for file_type in job.get_file_types():    # check the type of file (looking for images) 
             filepath = job.get_file_path(file_type)
 
@@ -186,6 +188,34 @@ class PseJobProcessor(MpfxJobProcessor):
                   worker.logger.log_info_p("{0} - Processing image {1}...".format(
                                                                        worker.name, filepath))
                   worker.logger.flush()
+
+               # Move this later down to make_plots
+               if worker.config.get_as_boolean('COMPARE_TO_REF_CAT', 'DEBUGGING'):
+                  path         = worker.config.get_as_string('REF_CAT_DIR', 'DEBUGGING')
+
+                  # This should be moved to mpfcfhtlens
+                  plot_dir     = worker.config.get_as_string('REF_OUTPUT_PLOT_DIR', 'DEBUGGING')
+                  base_dir     = os.path.join(worker.run_output_dir, plot_dir)
+                  # The following somehow throws an exception, even though mpfg_package/mpfg/mp_helper.py:make_dir is called
+                  #self._create_dir_tree(plot_dir, self._job_branches)
+                  print('MK create dir 2 {}'.format(base_dir))
+                  os.mkdir(base_dir)
+
+                  ref_pattern  = worker.config.get_as_string('REF_CAT_FILE_PATTERNS', 'DEBUGGING')
+                  tmp_pattern  = '{}/{}-{:03d}-{}.fits'.format(path, ref_pattern, job.img_no, job.epoch)
+                  ref_cat_filepath   = glob.glob(tmp_pattern)[0]
+                  ref_check_filepath = ''
+
+                  # Create dico object
+                  ref_per_type_dico[file_type] = {}
+                  ref_per_type_dico[file_type]["se_run_dico"] = {}
+                  ref_per_type_dico[file_type]['se_run_dico']['se_output_cat_filepath'] = ref_cat_filepath
+
+
+                  # Read catalog and get data
+                  ref_result = PseJobResult(ref_per_type_dico, job, worker, cfg_section="DEBUGGING")
+                  plot_output_dir = os.path.join(base_dir, job.get_branch_tree())
+                  self.plotter.make_plots(ref_result, plot_output_dir, worker)
 
                # --- Run SExtractor to analyse the image and produce its catalog
                se_run_dico = self.se_runner.run_SExtractor(file_type, job, worker)
@@ -237,7 +267,8 @@ class PseJobProcessor(MpfxJobProcessor):
 
       # --- Create a PseJobResult object with the results from all image types
       print "PSF JOB PROCESSED"
-      return PseJobResult(object_per_type_dico, job, worker)
+      res = PseJobResult(object_per_type_dico, job, worker)
+      return res
 
 
    # -----------------------------------------------------------------------------------------------
@@ -452,14 +483,14 @@ class PseJobResult(MpfxJobResult):
        Represents the result of a GREAT3 job. See mpfcs82.MpfxJobResult and mpf.JobResult.
    """
 
-   def __init__(self, result, job, worker):   
+   def __init__(self, result, job, worker, cfg_section="PARAMETER_MAPPING"):
 
       """! Construct a PseJobResult job result object """
       MpfxJobResult.__init__(self, worker, job, result)
 
       # --- Cached Job result data and associated stats
       self._helper = PseHelper()  # helper utility functions
-      self._data_dico  = self.helper.collect_catalog_data(result, job, worker)
+      self._data_dico  = self.helper.collect_catalog_data(result, job, worker, cfg_section=cfg_section)
       self._stats_dico = self.helper.compute_stats(result, self._data_dico, job, worker)
 
    # ~~~~~~~~~~

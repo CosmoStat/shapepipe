@@ -121,7 +121,7 @@ class PseHelper(Helper):
       if not catalog is None:
          catalog.open()      
       
-#     print "OPEN:", "catalog:", catalog, "nb_rows:", catalog.get_nb_rows(), "format:", catalog.format
+     #print "OPEN:", "catalog:", catalog, "nb_rows:", catalog.get_nb_rows(), "format:", catalog.format
 
       return catalog      
          
@@ -199,14 +199,14 @@ class PseHelper(Helper):
       self.write_as_fits(check_image, fits_path)
 
    # -----------------------------------------------------------------------------------------------
-   def collect_catalog_data(self, object_per_type_dico, job, worker):
+   def collect_catalog_data(self, object_per_type_dico, job, worker, cfg_section="PARAMETER_MAPPING"):
       data_dico = {}
 
       # --- Forbidden quantities
       forbidden_col_names = ["xc", "yc", "x", "y"]
       forbidden_col_names.extend([
            worker.config.get_as_string("NUMBER_PARAM", "PARAMETER_MAPPING"),\
-           # MKDEBUG: Removed CLASS_STAR_PARAM from forbidden
+           # MK new: Removed CLASS_STAR_PARAM from forbidden
            #worker.config.get_as_string("CLASS_STAR_PARAM", "PARAMETER_MAPPING"),\
            worker.config.get_as_string("X_IMAGE_PARAM", "PARAMETER_MAPPING"),\
            worker.config.get_as_string("Y_IMAGE_PARAM", "PARAMETER_MAPPING"),\
@@ -228,8 +228,8 @@ class PseHelper(Helper):
 
             # --- Extra, derived column names
             data_dico[file_type] = {}
-            flux_colname    = worker.config.get_as_string("FLUX_PARAM", "PARAMETER_MAPPING") 
-            fluxerr_colname = worker.config.get_as_string("FLUX_ERR_PARAM", "PARAMETER_MAPPING") 
+            flux_colname    = worker.config.get_as_string("FLUX_PARAM", cfg_section) 
+            fluxerr_colname = worker.config.get_as_string("FLUX_ERR_PARAM", cfg_section) 
 
             flux_data = se_catalog.get_named_col_data(flux_colname)            
             fluxerr_data = se_catalog.get_named_col_data(fluxerr_colname)             
@@ -238,7 +238,6 @@ class PseHelper(Helper):
             # --- Allowed SExtractor column data
             for col_name in se_catalog.get_col_names():
                if not col_name in forbidden_col_names:
-                  print('MKDEBUG: Adding SEx column {}'.format(col_name))
                   data_dico[file_type][col_name] = se_catalog.get_named_col_data(col_name)
 
          se_catalog.close()
@@ -270,11 +269,13 @@ class PseHelper(Helper):
             stats_dico[file_type] = {}
             for var_name in var_names:
                stats_data = numpy.asarray(data_dico[file_type][var_name]) 
-               oper_result_dico = {}
-               for oper in stats_oper_keys:
-                  o_ptr = eval(stats_oper_dict[oper])
-                  oper_result_dico[oper] = o_ptr(stats_data)
-               stats_dico[file_type][var_name] = oper_result_dico
+               # MK new: skip if column is of kind string
+               if stats_data.dtype.kind is not 'S':
+                  oper_result_dico = {}
+                  for oper in stats_oper_keys:
+                     o_ptr = eval(stats_oper_dict[oper])
+                     oper_result_dico[oper] = o_ptr(stats_data)
+                  stats_dico[file_type][var_name] = oper_result_dico
 
       return stats_dico
 

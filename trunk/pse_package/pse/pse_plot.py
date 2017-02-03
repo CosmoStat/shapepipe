@@ -8,8 +8,8 @@ import math
 import numpy
 import string
 import matplotlib
-import matplotlib.pyplot as plt
 matplotlib.use("AGG")
+import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 
 
@@ -72,7 +72,7 @@ class PsePlotter(object):
    def plot_histogram(self, data_dico, value_names,
                             plot_filename, output_directory, plot_title, pfilter=None,
                             pnb_bins=10, pmin_xlim=None, pmax_xlim=None, 
-                            pcolor='b', pfacecolor="#F5F5F5", is_normed=False, 
+                            pcolor='b', pfacecolor="#F5F5F5", is_normed=False, log=False,
                             px_sci=False, py_sci=False, pminor=True,
                             has_equalaxes=False, has_grid=True, pfigure=None, logger=None):
 
@@ -128,9 +128,13 @@ class PsePlotter(object):
                         values = filtered_values
                   color = pcolor
                   x_label = value_names[iplot-1]
-                  y_label = ''
+                  if log is False:
+                     y_label = 'frequency'
+                  else:
+                     y_label = 'log(frequency)'
 
                   plt.xlabel(x_label, fontproperties=FontProperties(size=10, weight='regular'))
+                  plt.ylabel(y_label, fontproperties=FontProperties(size=10, weight='regular'))
 
                   if pmin_xlim is None:
                      pmin_xlim = min(values)
@@ -144,7 +148,7 @@ class PsePlotter(object):
                      plt.xlim(pmin_xlim, pmax_xlim)
 
                   plt.hist(values, pnb_bins, normed=is_normed, alpha=1.0,
-                           edgecolor="k", facecolor=pcolor, histtype='bar')
+                           edgecolor="k", facecolor=pcolor, histtype='bar', log=log)
 
                iplot += 1
             
@@ -584,7 +588,14 @@ class PsePlotter(object):
                                       plot_filename, plot_output_dir, plot_title, 
                                       pnb_bins=25.0, pmax_xlim=None, pcolor='b', is_normed=False)
 
+                  # MK new: log y-axis
+                  plot_log_filename = 'log_{}'.format(plot_filename)
+                  self.plot_histogram(job_result.data_dico[file_type], [col_name],
+                                      plot_log_filename, plot_output_dir, plot_title, 
+                                      pnb_bins=25.0, pmax_xlim=None, pcolor='b', is_normed=False, log=True)
+
                   if math.fabs(numpy.max(job_result.data_dico[file_type][col_name])) >= max_lim:
+                     # Histogram up to x-axis=max_lim
                      plot_filename = plot_prefix + \
                                      "hist_{0}_{1}_img_{2:03d}-{3:1d}_{4}_2.png".format(
                           col_name, "_".join(job.branch_dirs), 
