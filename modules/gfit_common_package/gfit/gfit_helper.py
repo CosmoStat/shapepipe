@@ -832,12 +832,13 @@ class GfitHelper(Helper):
           if galaxy_actual_stamp_size >0:
              shift-=self._get_galaxy_centroid_shift(galaxy_rel_centroid,galaxy_abs_rel_centroid,
                                                  galaxy_actual_stamp_size,request)
-
+#          print("EXTRA SHIFT:", shift-numpy.asarray(psf_stamp.shape)//2-startind)
           fpsf=self.perform_shift_in_frequency(fpsf,psf_stamp_ext.shape,
                                                  shift,request)
        elif any(pixel_shift):
+          shift=numpy.asarray(psf_stamp.shape)//2+pixel_shift+startind
           fpsf=self.perform_shift_in_frequency(fpsf,psf_stamp_ext.shape,
-                                                  pixel_shift+startind,request)
+                                                 shift,request)
        if(corr_pixwin):
             fpsf=self.correct_pixel_window_function(fpsf,psf_stamp_ext.shape,
                                                                       request)
@@ -908,10 +909,12 @@ class GfitHelper(Helper):
           if galaxy_actual_stamp_size >0:
              shift-=self._get_galaxy_centroid_shift(galaxy_rel_centroid,galaxy_abs_rel_centroid,
                                                     galaxy_actual_stamp_size,request)
+#          print("EXTRA SHIFT:", shift-numpy.asarray(psf_stamp.shape)//2-startind)
           fpsf=self.perform_shift_in_frequency(fpsf,fsize,shift,request)
        elif(any(pixel_shift != 0.)):
+          shift= startind+numpy.asarray(psf_stamp.shape)//2+ pixel_shift
           fpsf=self.perform_shift_in_frequency(fpsf,fsize,
-                                                  pixel_shift,request) 
+                                                  shift,request) 
        if(corr_pixwin):
           fpsf=self.correct_pixel_window_function(fpsf,fsize,request)
 
@@ -949,6 +952,7 @@ class GfitHelper(Helper):
              shift-=self._get_galaxy_centroid_shift(galaxy_rel_centroid,galaxy_abs_rel_centroid,
                                                  galaxy_actual_stamp_size,request)
           fpsf=self.perform_shift_in_frequency(fpsf,fsize,shift,request)
+#          print("EXTRA SHIFT:", shift-1-numpy.array(rsize))
           if(corr_pixwin):
              fpsf=self.correct_pixel_window_function(fpsf,fsize,request)
           ifpsf =numpy.roll(numpy.roll(irfftn(fpsf, fsize),rsize[0],0),rsize[1],1).copy()
@@ -959,14 +963,16 @@ class GfitHelper(Helper):
                                                   pixel_shift,request)
           if(corr_pixwin):   
              fpsf=self.correct_pixel_window_function(fpsf,fsize,request)
-          ifpsf =numpy.roll(numpy.roll(irfftn(fpsf, fsize),rsize[0],0),rsize[1],1).copy()
+          #ifpsf =numpy.roll(numpy.roll(irfftn(fpsf, fsize),rsize[0],0),rsize[1],1).copy()
+          ifpsf =(irfftn(fpsf, fsize)).copy()
           psf_obj=copy.deepcopy(ifpsf)
        else:
           if(corr_pixwin):   
              fpsf =rfftn(psf_stamp)
              fpsf=self.correct_pixel_window_function(fpsf,fsize,request)
-             ifpsf =numpy.roll(numpy.roll(irfftn(fpsf, fsize),rsize[0],0),rsize[1],1).copy()
-             psf_obj=copy.deepcopy(ifpsf.astype(request._prec_nump))	  
+             #ifpsf =numpy.roll(numpy.roll(irfftn(fpsf, fsize),rsize[0],0),rsize[1],1).copy()
+             ifpsf =(irfftn(fpsf, fsize)).copy()
+             psf_obj=copy.deepcopy(ifpsf.astype(request._prec_nump))  
           else:
              psf_obj=copy.deepcopy(psf_stamp.astype(request._prec_nump))
        return psf_obj
@@ -1134,7 +1140,6 @@ class GfitHelper(Helper):
 
       if os.path.exists(output_filepath):
          os.remove(output_filepath)
-
       if data is not None and type(data) == numpy.ndarray:
          pyfits.writeto(output_filepath, data, header=header) 
 
