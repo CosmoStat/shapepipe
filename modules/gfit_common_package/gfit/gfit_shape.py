@@ -2129,17 +2129,22 @@ class GfitShapeEstimator(object):
                #else:   
                #   half_size = full_galaxy_stamp.shape[0] / 2.0
                half_size =convolved_model_stamp.shape[0] / 2.0
+               if __debug__:
+                  output_dir =  os.path.join(worker.result_output_dir, job.get_branch_tree())
+                  stamp_filename = "convolved_galaxy_NOTRUNC_{0:03d}-{1:1d}_{2}.fits".format(
+                                                                  job.img_no, job.epoch, write_time)
+                  self.helper.write_as_fits(convolved_model_stamp, os.path.join(output_dir, stamp_filename))
                convolved_model_stamp = self.helper.cut_stamp_around_centroid(
                                                                           convolved_model_stamp, 
                                                                           galaxy_stamp.shape[0], 
                                                                           (half_size, half_size))
-               #print("HS=",half_size,galaxy_stamp.shape[0],convolved_model_stamp.shape,request._convolution_operator)
-               #print "After truncation convolved: shape:", convolved_model_stamp.shape, "sum:", convolved_model_stamp.sum(), "peak:", convolved_model_stamp.max()
-#               if __debug__:
-#                  output_dir =  os.path.join(worker.result_output_dir, job.get_branch_tree())
-#                  stamp_filename = "convolved_galaxy_{0:03d}-{1:1d}_{2}.fits".format(
-#                                                                  job.img_no, job.epoch, write_time)
-#                  self.helper.write_as_fits(convolved_model_stamp, os.path.join(output_dir, stamp_filename))
+               print("HS=",half_size,galaxy_stamp.shape[0],convolved_model_stamp.shape,request._convolution_operator)
+               print "After truncation convolved: shape:", convolved_model_stamp.shape, "sum:", convolved_model_stamp.sum(), "peak:", convolved_model_stamp.max()
+               if __debug__:
+                  output_dir =  os.path.join(worker.result_output_dir, job.get_branch_tree())
+                  stamp_filename = "convolved_galaxy_{0:03d}-{1:1d}_{2}.fits".format(
+                                                                  job.img_no, job.epoch, write_time)
+                  self.helper.write_as_fits(convolved_model_stamp, os.path.join(output_dir, stamp_filename))
 
                   #raise ZeroDivisionError("Numerical error during fitting")
          else:
@@ -2354,6 +2359,12 @@ class ShapeMeasurementRequest(object):
                                                                "SHAPE_MEASUREMENT")
       else:
          self._truncate_before_convolution = False  
+      if worker.config.has_key("TRUNCATE_AFTER_CONVOLUTION", "SHAPE_MEASUREMENT"):
+         self._truncate_after_convolution = worker.config.get_as_boolean(
+                                                               "TRUNCATE_AFTER_CONVOLUTION", 
+                                                               "SHAPE_MEASUREMENT")
+      else:
+         self._truncate_after_convolution = False  
       
       self._substract_galaxy_sky = worker.config.get_as_boolean("SUBSTRACT_GALAXY_SKY", 
                                                                "SHAPE_MEASUREMENT")
@@ -2789,6 +2800,14 @@ class ShapeMeasurementRequest(object):
          two truncated images is in general not equivalent to a truncated PSF-convolved image.
       """
       return self._truncate_before_convolution
+
+   @property
+   def truncate_after_convolution(self):
+      """! 
+         Tell whether the convolved model and input data are truncated first.
+         @Note if True, one restrict the chi2 to a truncated region.
+      """
+      return self._truncate_after_convolution
 
    @property
    def substract_galaxy_sky(self):
