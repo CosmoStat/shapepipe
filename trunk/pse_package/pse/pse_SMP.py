@@ -8,12 +8,12 @@ from operator import itemgetter, attrgetter
 # -- External Modules
 from mpfx.mpfx_SMP import *        # multiprocessing framework SMP mgt
 
-# -- Module-specific imports     
+# -- Module-specific imports
 import pse_args as arg             # command-line arguments and options
 import pse_job as jobp             # job processing
 from pse_help import *             # helper utility functions
 
-"""! 
+"""!
    pse_SMP.py - Multiprocessing with SMP - Parallel SExtractor
 """
 
@@ -31,16 +31,16 @@ class PseMasterSMP(MpfxMasterSMP):
 
    def __init__(self):
       """!
-         Master default class constructor 
+         Master default class constructor
       """
 
       try:
-      
+
          # --- Command-line arguments and options
          args = arg.PseArgs()
 
          # --- Master process
-         MasterSMP.__init__(self, args) 
+         MasterSMP.__init__(self, args)
 
          # --- Check if Help requested
          if args.options["-h"] or args.options["--help"]:
@@ -51,7 +51,7 @@ class PseMasterSMP(MpfxMasterSMP):
          self.job_processor = jobp.PseJobProcessor(self)
 
          # --- Helper methods
-         self._helper = PseHelper() 
+         self._helper = PseHelper()
 
          # --- Show config_summary
          self.helper.show_config_summary(self)
@@ -65,14 +65,14 @@ class PseMasterSMP(MpfxMasterSMP):
 
 
    # ~~~~~~~~~~~~~~~
-   # Public methods 
+   # Public methods
    # ~~~~~~~~~~~~~~~
 
    # -----------------------------------------------------------------------------------------------
    def create_run_output_dir(self):
-      """! 
+      """!
          Create run directory where output data will be stored
-         @return time-stamped output directory tracing the run of the process 
+         @return time-stamped output directory tracing the run of the process
       """
 
       return  MpfxMasterSMP.create_run_output_dir(self)
@@ -90,7 +90,7 @@ class PseMasterSMP(MpfxMasterSMP):
    # -----------------------------------------------------------------------------------------------
    def create_job_processor(self):
       """
-         Factory method for creating a Job Processor for managing the life-cycle of jobs. 
+         Factory method for creating a Job Processor for managing the life-cycle of jobs.
          @return instance of job processor object
       """
 
@@ -107,7 +107,7 @@ class PseMasterSMP(MpfxMasterSMP):
 
 # -------------------------------------------------------------------------------------------------
 class PseWorkerSMP(MpfxWorkerSMP):
-   
+
    def __init__(self, arg_options):
       """ Worker initialization """
 
@@ -121,7 +121,7 @@ class PseWorkerSMP(MpfxWorkerSMP):
 
 if __name__ == '__main__':
    """ Main entry point of the PSE master process """
- 
+
    # --- Invoke the master calculator in module: mp_calc_SMP.py
    master = PseMasterSMP()
    if master is None:

@@ -1,9 +1,9 @@
-"""! 
+"""!
    @package pse.pse_helper helper class
    @author Marc Gentile
    @file pse_help.py
    Helper class
-""" 
+"""
 
 # -- Python imports
 import os, sys
@@ -18,7 +18,7 @@ from mpfg.mp_helper import *             # base Helper
 from pse_version import __version__  # version information
 
 
-# -- Module-specific imports  
+# -- Module-specific imports
 
 
 
@@ -33,16 +33,16 @@ class PseHelper(Helper):
 
    # -----------------------------------------------------------------------------------------------
    def get_version(self):
-      """! 
-          Get the version number of this pse code as text 
+      """!
+          Get the version number of this pse code as text
           @return version number of this pse code as text
       """
-      return __version__ 
+      return __version__
 
 
    # -----------------------------------------------------------------------------------------------
    def show_config_summary(self, master):
-      
+
       if master.logging_enabled():
 
          # --- gfit version
@@ -50,38 +50,38 @@ class PseHelper(Helper):
 
          # --- Python modules
          master.logger.log_info_p("Standard Python modules:")
-         master.logger.log_info_p("- numpy {0}\t\t{1}".format(numpy.__version__, numpy.__file__))           
-         master.logger.log_info_p("- pyfits {0}\t\t{1}".format(pyfits.__version__, pyfits.__file__))     
+         master.logger.log_info_p("- numpy {0}\t\t{1}".format(numpy.__version__, numpy.__file__))
+         master.logger.log_info_p("- pyfits {0}\t\t{1}".format(pyfits.__version__, pyfits.__file__))
          try:
             mpl = __import__('matplotlib', globals(), locals(), [], -1)
-            master.logger.log_info_p("- matplotlib {0}\t{1}".format(mpl.__version__, mpl.__file__))  
+            master.logger.log_info_p("- matplotlib {0}\t{1}".format(mpl.__version__, mpl.__file__))
             asc = __import__('asciidata', globals(), locals(), [], -1)
-            master.logger.log_info_p("- asciidata {0}\t{1}".format(asc.__version__, asc.__file__))  
+            master.logger.log_info_p("- asciidata {0}\t{1}".format(asc.__version__, asc.__file__))
          except Exception as detail:
-            master.logger.log_error_p("- some modules could not be imported: {0}\n".format(detail)) 
+            master.logger.log_error_p("- some modules could not be imported: {0}\n".format(detail))
 
          master.logger.log_info_p("\nMPF Python modules:")
          try:
             mpfg = __import__('mpfg', globals(), locals(), [], -1)
-            master.logger.log_info_p("- mpfg {0}\t\t{1}".format(mpfg.__version__, mpfg.__file__))  
+            master.logger.log_info_p("- mpfg {0}\t\t{1}".format(mpfg.__version__, mpfg.__file__))
             mpfx = __import__('mpfx', globals(), locals(), [], -1)
-            master.logger.log_info_p("- mpfx {0}\t\t{1}".format(mpfx.__version__, mpfx.__file__))  
+            master.logger.log_info_p("- mpfx {0}\t\t{1}".format(mpfx.__version__, mpfx.__file__))
             slog = __import__('slogger', globals(), locals(), [], -1)
-            master.logger.log_info_p("- slogger {0}\t\t{1}".format(slog.__version__, slog.__file__))  
+            master.logger.log_info_p("- slogger {0}\t\t{1}".format(slog.__version__, slog.__file__))
             sconf = __import__('sconfig', globals(), locals(), [], -1)
-            master.logger.log_info_p("- sconfig {0}\t\t{1}".format(sconf.__version__, sconf.__file__))  
+            master.logger.log_info_p("- sconfig {0}\t\t{1}".format(sconf.__version__, sconf.__file__))
             scat = __import__('scatalog', globals(), locals(), [], -1)
-            master.logger.log_info_p("- scatalog {0}\t{1}".format(scat.__version__, scat.__file__)) 
+            master.logger.log_info_p("- scatalog {0}\t{1}".format(scat.__version__, scat.__file__))
          except Exception as detail:
-            master.logger.log_error_p("- some modules could not be imported: {0}\n".format(detail)) 
+            master.logger.log_error_p("- some modules could not be imported: {0}\n".format(detail))
 
-         master.logger.log_info_p("\n") 
+         master.logger.log_info_p("\n")
 
    # -----------------------------------------------------------------------------------------------
    def extract_stamp_around_centroid(self, xc, yc, half, image):
-      """! 
+      """!
          Cut out a square stamp around the specified centroid (@c xc, @c yc).
-         @param xc x coordinate of object centroid in postage stamp 
+         @param xc x coordinate of object centroid in postage stamp
          @param yc y coordinate of object centroid in postage stamp
          @param half half of the postage stamp size (of a side)
          @param image the field image from where the postage stamp has to be cut out
@@ -93,7 +93,7 @@ class PseHelper(Helper):
 
    # -----------------------------------------------------------------------------------------------
    def write_as_fits(self, data, output_filepath, header=None):
-      """! 
+      """!
          Write a two-dimensional data numpy array as a .fits file to some given path
          @param data data to write
          @param header header to add to the .FITS file
@@ -107,24 +107,26 @@ class PseHelper(Helper):
 
    # -----------------------------------------------------------------------------------------------
    def _open_catalog(self, catalog_filepath, job, worker, hdu_no=1):
-      
+
       catalog = None
       se_output_cat_type = worker.config.get_as_string("SE_OUTPUT_CATALOG_TYPE", "SEXTRACTOR")
       if se_output_cat_type == "FITS_1.0":
-         # --- Assume .FITS format      
-         catalog = FITSCatalog(catalog_filepath, hdu_no=hdu_no, 
+         # --- Assume .FITS format
+         catalog = FITSCatalog(catalog_filepath, hdu_no=hdu_no,
                                                  open_mode=FITSCatalog.OpenMode.ReadWrite)
       else:
          # --- Assume ASCII SE format
+         import inspect
+         print 'SF: sexy type', inspect.getfile(SExCatalog)
          catalog = SExCatalog(catalog_filepath)
-      
+
       if not catalog is None:
-         catalog.open()      
-      
+         catalog.open()
+
 #     print "OPEN:", "catalog:", catalog, "nb_rows:", catalog.get_nb_rows(), "format:", catalog.format
 
-      return catalog      
-         
+      return catalog
+
    # -----------------------------------------------------------------------------------------------
    def _get_catalog_nb_entries(self, catalog_filepath, file_type, job, worker):
       """! Find the actual number of entries in the catalog """
@@ -132,17 +134,17 @@ class PseHelper(Helper):
       catalog = self._open_catalog(catalog_filepath, job, worker)
       if not catalog is None:
          entry_count = catalog.get_nb_rows()
-         catalog.close()           
-         return entry_count 
+         catalog.close()
+         return entry_count
       else:
          if worker.logging_enabled():
                worker.logger.log_error_p(
                    "{0} - /{1}/img-{2:03}-{3:1d} - {4} - "\
                   "Error opening catalog {5}".format(
-                   worker.name, job.get_branch_tree(), job.img_no, job.epoch, 
+                   worker.name, job.get_branch_tree(), job.img_no, job.epoch,
                    file_type, catalog_filepath) )
          return 0
-         
+
 
    # -----------------------------------------------------------------------------------------------
    def _get_nb_objects(self, image_filepath, stamp_size):
@@ -153,7 +155,7 @@ class PseHelper(Helper):
       return int(nb_pixels / stamp_size**2)
 
    # -----------------------------------------------------------------------------------------------
-   def mark_fits_stamps_file(self, fits_path, coordinates, stamp_size, 
+   def mark_fits_stamps_file(self, fits_path, coordinates, stamp_size,
                                    marking_value, marking_shape="cross"):
       """! Mark fragmented or flagged objects in the check .fits files """
 
@@ -167,34 +169,34 @@ class PseHelper(Helper):
             nb_dots = half_size-1    # size of cross
 
             check_image[row+half_size, col+half_size] = marking_value
-            for i in xrange(1, nb_dots+1): 
+            for i in xrange(1, nb_dots+1):
                check_image[row+half_size-i, col+half_size-i] = marking_value
                check_image[row+half_size+i, col+half_size+i] = marking_value
                check_image[row+half_size-i, col+half_size+i] = marking_value
                check_image[row+half_size+i, col+half_size-i] = marking_value
 
          elif marking_shape == "square":
-            # --- Draw a square    
+            # --- Draw a square
             sq_size = half_size-1     # size of square
 
-            check_image[row+half_size-sq_size:row+half_size+sq_size, 
+            check_image[row+half_size-sq_size:row+half_size+sq_size,
                         col+half_size-sq_size:col+half_size-(sq_size-1)] = marking_value
-            check_image[row+half_size-sq_size:row+half_size+sq_size, 
+            check_image[row+half_size-sq_size:row+half_size+sq_size,
                         col+half_size+sq_size:col+half_size+sq_size+1] = marking_value
-            check_image[row+half_size-sq_size:row+half_size-(sq_size-1), 
+            check_image[row+half_size-sq_size:row+half_size-(sq_size-1),
                         col+half_size-sq_size:col+half_size+sq_size+1] = marking_value
-            check_image[row+half_size+sq_size:row+half_size+sq_size+1, 
+            check_image[row+half_size+sq_size:row+half_size+sq_size+1,
                         col+half_size-sq_size:col+half_size+sq_size+1] = marking_value
 
       self.write_as_fits(check_image, fits_path)
 
-   # -----------------------------------------------------------------------------------------------   
+   # -----------------------------------------------------------------------------------------------
    def mark_centroids(self, fits_path, centroids, marking_value):
       """! Mark centroid locations in the check .fits files """
 
       check_image = pyfits.getdata(fits_path)   # SE-generated chech .fits image as numpy array
       for (row, col) in centroids:
-         check_image[math.floor(row + 0.5), math.floor(col + 0.5)] = marking_value        
+         check_image[math.floor(row + 0.5), math.floor(col + 0.5)] = marking_value
 
       self.write_as_fits(check_image, fits_path)
 
@@ -223,15 +225,15 @@ class PseHelper(Helper):
 
          se_catalog = self._open_catalog(se_output_cat_filepath, job, worker)
 
-         if se_catalog.get_nb_rows() > 0: 
+         if se_catalog.get_nb_rows() > 0:
 
             # --- Extra, derived column names
             data_dico[file_type] = {}
-            flux_colname    = worker.config.get_as_string("FLUX_PARAM", "PARAMETER_MAPPING") 
-            fluxerr_colname = worker.config.get_as_string("FLUX_ERR_PARAM", "PARAMETER_MAPPING") 
+            flux_colname    = worker.config.get_as_string("FLUX_PARAM", "PARAMETER_MAPPING")
+            fluxerr_colname = worker.config.get_as_string("FLUX_ERR_PARAM", "PARAMETER_MAPPING")
 
-            flux_data = se_catalog.get_named_col_data(flux_colname)            
-            fluxerr_data = se_catalog.get_named_col_data(fluxerr_colname)             
+            flux_data = se_catalog.get_named_col_data(flux_colname)
+            fluxerr_data = se_catalog.get_named_col_data(fluxerr_colname)
             data_dico[file_type]["SNR"] = numpy.nan_to_num(flux_data / fluxerr_data)
 
             # --- Allowed SExtractor column data
@@ -267,7 +269,7 @@ class PseHelper(Helper):
 
             stats_dico[file_type] = {}
             for var_name in var_names:
-               stats_data = numpy.asarray(data_dico[file_type][var_name]) 
+               stats_data = numpy.asarray(data_dico[file_type][var_name])
                oper_result_dico = {}
                for oper in stats_oper_keys:
                   o_ptr = eval(stats_oper_dict[oper])
@@ -280,8 +282,8 @@ class PseHelper(Helper):
    def make_stats(self, job_result, stat_output_dir, master, stat_prefix=""):
 
       if len(job_result.stats_dico) > 0:
-   
-         job = job_result.job                # associated job        
+
+         job = job_result.job                # associated job
          object_per_type_dico = job_result.result
 
          file_types = object_per_type_dico.keys()   # all results for each image types
@@ -324,13 +326,13 @@ class PseHelper(Helper):
                for oper in oper_keys:
                   fd.write('{0}={1:.6f}\t'.format(oper, col_stats_dico[oper]))
                fd.write('\n\n')
-      
+
             fd.close()
 
    # -----------------------------------------------------------------------------------------------
    def get_stamp_center(self, stamp_size):
-      """ ! @return the postage stamp geometrical center pixel no, indexed from zero """      
-      
+      """ ! @return the postage stamp geometrical center pixel no, indexed from zero """
+
       if stamp_size % 2 == 0:
          # Even size
          center_pixel = int(stamp_size / 2.0 - 1.0)   # e.g. 48x48 -> 23x23
@@ -342,7 +344,7 @@ class PseHelper(Helper):
 
    # -----------------------------------------------------------------------------------------------
    def locate_files(self, master, pattern_list, directory, sort=True, recurse=True, err_check=True):
-      """! 
+      """!
          Locate files matching a search pattern list
 
          @param master master object instance
@@ -351,19 +353,19 @@ class PseHelper(Helper):
          @param sort [optional]  tell whether to sort the output file paths (default True)
          @param recurse [optional] tell whether to walk down directories (default True)
          @param err_check [optional] tell whether to the validity of check directories
-         
-         @return list of absolute paths of the files matching the search criteria 
+
+         @return list of absolute paths of the files matching the search criteria
          @note the search is through the entire directory tree, not only the top nodes.
       """
 
       if err_check and not os.path.isdir(directory):
          self.helper.print_warning("{0} could not be found or is not a directory".format(directory))
-         return [] 
+         return []
 
       filepaths = []
 
       if recurse:
-         
+
          for pattern in pattern_list:
             # --- Recursively search the whole directory tree, from top nodes to leaves
             for filepath in self._walk_directory(master, pattern, directory):
@@ -374,22 +376,22 @@ class PseHelper(Helper):
          for pattern in pattern_list:
             filepaths.extend([os.path.join(directory, f) for f in os.listdir(directory) \
                                 if not os.path.isdir(os.path.join(directory, f)) and \
-                                   self.match_file(master, directory, f, pattern)]) 
+                                   self.match_file(master, directory, f, pattern)])
 
       if sort:
-         filepaths = sorted(filepaths) 
+         filepaths = sorted(filepaths)
 
       return list(set(filepaths))
 
    # -----------------------------------------------------------------------------------------------
    def match_file(self, master, directory, filename, pattern):
-      """! 
-          File matching predicate method. Must return True in case of matching, False otherwise.   
-          May be overriden by subclasses to set additional criteria. 
+      """!
+          File matching predicate method. Must return True in case of matching, False otherwise.
+          May be overriden by subclasses to set additional criteria.
           @param master master object instance
           @param directory directory of filename
           @param filename file name
-          @param pattern Unix-like file pattern 
+          @param pattern Unix-like file pattern
           @return True of a match is found, False otherwise
       """
 
@@ -397,23 +399,23 @@ class PseHelper(Helper):
 
 
    # ~~~~~~~~~~~~~~~
-   # Private methods 
+   # Private methods
    # ~~~~~~~~~~~~~~~
 
    # -----------------------------------------------------------------------------------------------
    def _walk_directory(self, master, pattern, directory):
-      """! 
+      """!
          Recursively locate files matching pattern in a given directory
          @param master master object instance
          @param pattern Unix-style file search pattern (e.g. *.fits)
          @param directory: base directory from where to search for matching files
-         
-         @return list of files matching the search criteria 
+
+         @return list of files matching the search criteria
       """
 
       for path, dirs, files in os.walk(directory):
          for filename in [os.path.abspath(os.path.join(path, filename)) \
             for filename in files if self.match_file(master, path, filename, pattern)]:
-               yield filename  
+               yield filename
 
 # -- EOF pse_helper.py
