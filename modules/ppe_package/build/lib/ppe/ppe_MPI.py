@@ -4,7 +4,6 @@
 import sys
 import shutil
 from mpi4py import MPI  # MPI interface
-from operator import itemgetter, attrgetter
 
 # -- External Modules
 from mpfx.mpfx_MPI import *        # mpf: multiprocessing framework MPI mgt
@@ -19,81 +18,87 @@ from ppe_help import *             # helper utility functions
 """
 
 
-# -------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 class PpeMasterMPI(MpfxMasterMPI):
 
-   """! Master calculator for MPI: distribute jobs to workers and collect/process their results """
+    """!
+    Master calculator for MPI: distribute jobs to workers and collect/process
+    their results
 
-   def __init__(self, args, comm):
-      """!
-         Master class constructor
-         @param args list of command-line options
-         @param comm communication channel
-      """
+    """
 
-      try:
+    def __init__(self, args, comm):
+        """!
+        Master class constructor
+        @param args list of command-line options
+        @param comm communication channel
 
-         # --- Master process
-         MasterMPI.__init__(self, args, comm)
+        """
 
-         # --- Job Processor
-         self.job_processor = jobp.PpeJobProcessor(self)
+        try:
 
-         # --- Helper methods
-         self._helper = PpeHelper()
+            # --- Master process
+            MasterMPI.__init__(self, args, comm)
 
-         # --- Show config_summary
-         self.helper.show_config_summary(self)
+            # --- Job Processor
+            self.job_processor = jobp.PpeJobProcessor(self)
 
-         # --- Save a copy of the gfit configuration file to the log directory
-         shutil.copy(os.path.join(args.options["-d"], args.options["-c"]), self.log_output_dir)
+            # --- Helper methods
+            self._helper = PpeHelper()
 
-      except Exception as detail:
+            # --- Show config_summary
+            self.helper.show_config_summary(self)
 
-         print(detail)
+            # --- Save a copy of the gfit configuration file to the log dir
+            shutil.copy(os.path.join(args.options['-d'], args.options['-c']),
+                        self.log_output_dir)
 
-   # ~~~~~~~~~~~
-   # Properties
-   # ~~~~~~~~~~~
+        except Exception as detail:
+
+            print(detail)
+
+    # ~~~~~~~~~~~
+    # Properties
+    # ~~~~~~~~~~~
+
+    # ~~~~~~~~~~~~~~~
+    # Public methods
+    # ~~~~~~~~~~~~~~~
+
+    # ------------------------------------------------------------------------
+    def create_run_output_dir(self):
+        """!
+        Create run directory where output data will be stored
+        @return time-stamped output directory tracing the run of the process
+
+        """
+
+        return MpfxMasterMPI.create_run_output_dir(self)
+
+    # ------------------------------------------------------------------------
+    def create_job_processor(self):
+        """
+        Factory method for creating a Job Processor for managing the
+        life-cycle of jobs.
+        @return instance of job processor object
+
+        """
+
+        return jobp.PpeJobProcessor(self)
 
 
-   # ~~~~~~~~~~~~~~~
-   # Public methods
-   # ~~~~~~~~~~~~~~~
-
-   # -----------------------------------------------------------------------------------------------
-   def create_run_output_dir(self):
-      """!
-         Create run directory where output data will be stored
-         @return time-stamped output directory tracing the run of the process
-      """
-
-      return  MpfxMasterMPI.create_run_output_dir(self)
-
-   # -----------------------------------------------------------------------------------------------
-   def create_job_processor(self):
-      """
-         Factory method for creating a Job Processor for managing the life-cycle of jobs.
-         @return instance of job processor object
-      """
-
-      return jobp.PpeJobProcessor(self)
-
-
-# -------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 class PpeWorkerMPI(WorkerMPI):
 
-   def __init__(self, args, comm, rank):
-      """! Worker class constructor
-         @param args list of command-line options
-         @param comm comunication channel
-         @param rank rank of MPI process (> 0)
-     """
-      WorkerMPI.__init__(self, args, comm, rank)
+    def __init__(self, args, comm, rank):
+        """! Worker class constructor
+        @param args list of command-line options
+        @param comm comunication channel
+        @param rank rank of MPI process (> 0)
 
-   # ~~~~~~~~~~~~~~~
-   # Public methods
-   # ~~~~~~~~~~~~~~~
+        """
+
+        WorkerMPI.__init__(self, args, comm, rank)
 
 
 # ~~~~~~~~~~~~~~~~~
@@ -101,67 +106,67 @@ class PpeWorkerMPI(WorkerMPI):
 # ~~~~~~~~~~~~~~~~~
 
 if __name__ == '__main__':
-   """! Main entry point, either for the master or for a particular worker """
 
-   comm = MPI.COMM_WORLD
-   rank = comm.Get_rank()                 # rank: 0 for the main process, > 0 for workers
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
 
-   if rank == 0:
+    if rank == 0:
 
-      # --- Main process
-      try:
+        # --- Main process
+        try:
 
-         # --- Command-line arguments and options
-         args = arg.PpeArgs()
+            # --- Command-line arguments and options
+            args = arg.PpeArgs()
 
-         # --- Check if Help requested
-         if args.options["-h"] or args.options["--help"]:
-            args.print_usage(args.helper.get_main_basename())
-            sys.exit(0)
+            # --- Check if Help requested
+            if args.options["-h"] or args.options["--help"]:
+                args.print_usage(args.helper.get_main_basename())
+                sys.exit(0)
 
-         # --- Master process
-         master = PpeMasterMPI(args, comm)
-         if master is None:
-            sys.exit(2)
-         else:
-            try:
-               master.run()
-            except Exception as detail:
-               PpeHelper.print_error("The master process ended unexpectedly ({0})".format(detail))
-            finally:
-               master.shutdown()
-               sys.exit(0)
+            # --- Master process
+            master = PpeMasterMPI(args, comm)
+            if master is None:
+                sys.exit(2)
+            else:
+                try:
+                    master.run()
+                except Exception as detail:
+                    PpeHelper.print_error('The master process ended '
+                                          'unexpectedly ({0})'.format(detail))
+                finally:
+                    master.shutdown()
+                    sys.exit(0)
 
-      except Exception as detail:
-         print(detail)
+        except Exception as detail:
+            print(detail)
 
-   else:
+    else:
 
-      # --- Worker process
-      try:
+        # --- Worker process
+        try:
 
-         # --- Command-line arguments and options
-         args = arg.PpeArgs()
+            # --- Command-line arguments and options
+            args = arg.PpeArgs()
 
-         # --- Check if Help requested
-         if args.options["-h"] or args.options["--help"]:
-            sys.exit(0)
+            # --- Check if Help requested
+            if args.options["-h"] or args.options["--help"]:
+                sys.exit(0)
 
-         # --- Worker process
-         worker = PpeWorkerMPI(args, comm, rank)
-         if worker is None:
-            sys.exit(2)
-         else:
-            try:
-               worker.run()
-            except Exception as detail:
-               PpeHelper.print_error("The worker process {0} ended unexpectedly ({1})".format(
-                                                                                    worker.name,
-                                                                                    detail))
-            finally:
-               sys.exit(0)
+            # --- Worker process
+            worker = PpeWorkerMPI(args, comm, rank)
+            if worker is None:
+                sys.exit(2)
+            else:
+                try:
+                    worker.run()
+                except Exception as detail:
+                    PpeHelper.print_error('The worker process {0} ended '
+                                          'unexpectedly ({1})'.format(
+                                           worker.name, detail))
+                finally:
+                    sys.exit(0)
 
-      except Exception as detail:
-         pass
+        except Exception as detail:
+            pass
 
 # -- EOF ppe_MPI.py

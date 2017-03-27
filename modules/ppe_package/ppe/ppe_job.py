@@ -10,12 +10,11 @@ import os
 import sys
 
 # -- External imports
-from mpfx.mpfx_job import *    # base job processing
+from mpfx.mpfx_job import *
 
 # --- Module-specific imports
-from ppe_psfex import *            # PSFEx catalog management
-from ppe_plot import *           # plotter
-from ppe_help import *           # helper utility functions
+from ppe_psfex import *
+from ppe_help import *
 
 
 # ----------------------------------------------------------------------------
@@ -34,7 +33,6 @@ class PpeJobProcessor(MpfxJobProcessor):
         MpfxJobProcessor.__init__(self, master)
 
         self._helper = PpeHelper()
-        self._plotter = PpePlotter()
 
         self._pe_runner = PSFExRunner(self)
         #   self._pe_processor = PSFExProcessor(self)
@@ -66,15 +64,6 @@ class PpeJobProcessor(MpfxJobProcessor):
         """
 
         return self._helper
-
-    @property
-    def plotter(self):
-        """!
-        @return the Plotter instance.
-
-        """
-
-        return self._plotter
 
     # ~~~~~~~~~~~~~~~
     # Public methods
@@ -204,21 +193,7 @@ class PpeJobProcessor(MpfxJobProcessor):
                 initial_results = PpeJobResult(object_per_type_dico, job,
                                                worker)
 
-                if worker.config.get_as_boolean('CREATE_INITIAL_PE_PLOTS',
-                                                'DEBUGGING'):
-                    plot_output_dir = os.path.join(worker.plot_output_dir,
-                                                   job.get_branch_tree())
-                    self.plotter.make_plots(initial_results, plot_output_dir,
-                                            worker, plot_prefix='initial_')
-
-                if worker.config.get_as_boolean('CREATE_INITIAL_PE_STATS',
-                                                'DEBUGGING'):
-                    stat_output_dir = os.path.join(worker.stat_output_dir,
-                                                   job.get_branch_tree())
-                    self.helper.make_stats(initial_results, stat_output_dir,
-                                           worker, stat_prefix='initial_')
-
-                # SF NOTE: NEED TO FIX THIS
+                # SF NOTE: NEED TO FIX THIS FOR OUTPUT FILE TESTING
                 fake_dict = {'initial_object_count': 1,
                              'final_object_count': 1, 'elapsed_time': 1}
                 object_per_type_dico[file_type]['pe_xform_dico'] = fake_dict
@@ -363,10 +338,6 @@ class PpeJob(MpfxJob):
 
         # --- Construct a new Job
         MpfxJob.__init__(self, master, dataset, img_path_dico, *args)
-
-        # --- Postage stamp size of the source image
-        self._stamp_size = (master.config.get_as_int('STAMP_SIZE',
-                            'PRIMARY_DATASET.IMAGE_PROPERTIES'))
         self._helper = helper
 
     # ~~~~~~~~~~
@@ -380,36 +351,6 @@ class PpeJob(MpfxJob):
         """
 
         return self._helper
-
-    @property
-    def stamp_size(self):
-        """! @return the postage stamp size
-
-        """
-
-        return self._stamp_size
-
-    # ------------------------------------------------------------------------
-    def get_stamp_size(self):
-        """!
-        @return the postage stamp size
-
-        """
-
-        if self.stamp_size != -1:
-            return self.stamp_size
-        else:
-            return MpfxJob.get_stamp_size(self)
-
-    # ------------------------------------------------------------------------
-    def get_stamp_center(self):
-        """ !
-        @return the postage stamp geometrical center pixel no, indexed from
-        zero
-
-        """
-
-        return self.helper.get_stamp_center(self.get_stamp_size())
 
 
 # ----------------------------------------------------------------------------
@@ -429,32 +370,5 @@ class PpeJobResult(MpfxJobResult):
         """
 
         MpfxJobResult.__init__(self, worker, job, result)
-
-        # --- Cached Job result data and associated stats
-        #   self._helper = PpeHelper()  # helper utility functions
-        #   self._data_dico  = self.helper.collect_catalog_data(result, job,
-        #  worker)
-        #   self._stats_dico = self.helper.compute_stats(result,
-        # self._data_dico, job, worker)
-
-        # ~~~~~~~~~~
-        # Properties
-        # ~~~~~~~~~~
-
-        # @property
-        # def helper(self):
-        #    """! @return the PpeHelper instance. """
-        #    return self._helper
-        #
-        # @property
-        # def data_dico(self):
-        #    """! @return the data dictionary """
-        #    return self._data_dico
-        #
-        # @property
-        # def stats_dico(self):
-        #    """! @return the statistics dictionary """
-        #    return self._stats_dico
-
 
 # -- EOF ppe_job.py

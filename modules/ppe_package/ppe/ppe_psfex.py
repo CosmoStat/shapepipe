@@ -48,6 +48,9 @@ class PSFExRunner(object):
     # -----------------------------------------------------------------------
     def run_PSFEx(self, file_type, job, worker):
 
+        # SF NOTE: This is the method that actually calls PSFEx from the
+        # system. It is called by PpeJobProcessor.process_job().
+
         pe_object_dico = {}     # Result dictionary to return populated
 
         try:
