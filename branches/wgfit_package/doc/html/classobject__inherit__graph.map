@@ -1,8 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classgfit_1_1gfit__filter_1_1ObjectFilter.html" title="Galaxy and PSF filtering." alt="" coords="164,31,324,57"/>
-<area shape="rect" href="$classgfit_1_1gfit__plot_1_1GfitPlotter.html" title="Class with a number of convenient plotting methods." alt="" coords="169,81,319,108"/>
-<area shape="rect" href="$classgfit_1_1gfit__shape_1_1GfitShapeEstimator.html" title="gfit galaxy shape estimator" alt="" coords="135,132,353,159"/>
-<area shape="rect" href="$classgfit_1_1gfit__shape_1_1ShapeMeasurementRequest.html" title="Represent a request for shape measurement of the galaxies contained in an image made of galaxy postag..." alt="" coords="109,183,379,209"/>
-<area shape="rect" href="$classgfit_1_1gfit__filter_1_1GalaxyFilter.html" title="Galaxy filtering." alt="" coords="428,5,591,32"/>
-<area shape="rect" href="$classgfit_1_1gfit__filter_1_1PSFFilter.html" title="PSF (star) filtering." alt="" coords="435,56,584,83"/>
-</map>

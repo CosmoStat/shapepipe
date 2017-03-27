@@ -1,7 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classmethods_1_1kmpfit_1_1FittingMethod.html" title="Fitting using the kmpfit least&#45;squares minimizer." alt="" coords="624,5,816,32"/>
-<area shape="rect" href="$classmethods_1_1scdmin_1_1FittingMethod.html" title="Fitting using the scdm coordinate fitting." alt="" coords="620,56,820,83"/>
-<area shape="rect" href="$classmethods_1_1scileastsq_1_1FittingMethod.html" title="Fitting using the scipy.optimize.leastsq implementation of Levenberg&#45;Marquardt." alt="" coords="612,107,828,133"/>
-<area shape="rect" href="$classmultifit_1_1multifit_1_1FittingElement.html" title="A fitting model or algorithm/method." alt="" coords="109,56,299,83"/>
-<area shape="rect" href="$classobject.html" title="object" alt="" coords="5,56,61,83"/>
-</map>

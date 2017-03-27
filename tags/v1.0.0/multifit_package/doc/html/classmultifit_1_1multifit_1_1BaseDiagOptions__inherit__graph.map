@@ -1,6 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classmethods_1_1kmpfit_1_1FittingMethod_1_1DiagOptions.html" title="Diagnostic options for kmpfit." alt="" coords="379,5,645,32"/>
-<area shape="rect" href="$classmethods_1_1scdmin_1_1FittingMethod_1_1DiagOptions.html" title="Diagnostic options for SCDM." alt="" coords="375,56,649,83"/>
-<area shape="rect" href="$classmethods_1_1scileastsq_1_1FittingMethod_1_1DiagOptions.html" title="Diagnostic options applicable to scipy.optimize.leastsq()" alt="" coords="367,107,657,133"/>
-<area shape="rect" href="$classobject.html" title="object" alt="" coords="5,56,61,83"/>
-</map>

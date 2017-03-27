@@ -8,12 +8,12 @@ from operator import itemgetter, attrgetter
 from mpfg3.mpfg3_SMP import *       # mpf: multiprocessing framework, SMP mgt
 
 
-# -- Module-specific imports
+# -- Module-specific imports     
 import sp_args as arg             # command-line arguments and options
 import sp_job as jobp             # job processing
 from sp_helper import *           # helper utility functions
 
-"""!
+"""! 
    sp_SMP.py - spredict for GREAT3 - Multiprocessing with SMP
 """
 
@@ -24,14 +24,14 @@ class SpredictMasterSMP(Mpfg3MasterSMP):
 
    def __init__(self):
       """!
-         Master default class constructor
+         Master default class constructor 
       """
 
       # --- Command-line arguments and options
       args = arg.SpredictArgs()
 
       # --- Master process
-      MasterSMP.__init__(self, args)
+      MasterSMP.__init__(self, args) 
 
       # --- Check if Help requested
       if args.options["-h"] or args.options["--help"]:
@@ -42,13 +42,13 @@ class SpredictMasterSMP(Mpfg3MasterSMP):
       self.job_processor = jobp.SpredictJobProcessor(self)
 
       # --- Helper methods
-      self._helper = SpredictHelper()
+      self._helper = SpredictHelper() 
 
       # --- Show config_summary
       self.helper.show_config_summary(self)
 
    # ~~~~~~~~~~~
-   # Properties
+   # Properties 
    # ~~~~~~~~~~~
 
    @property
@@ -57,7 +57,7 @@ class SpredictMasterSMP(Mpfg3MasterSMP):
       return self._spredict_version
 
    # ~~~~~~~~~~~~~~~
-   # Public methods
+   # Public methods 
    # ~~~~~~~~~~~~~~~
 
    def create_worker(self, arg_options):
@@ -72,7 +72,7 @@ class SpredictMasterSMP(Mpfg3MasterSMP):
 
 # -------------------------------------------------------------------------------------------------
 class SpredictWorkerSMP(Mpfg3WorkerSMP):
-
+   
    def __init__(self, arg_options):
       """ Worker initialization """
 
@@ -81,7 +81,7 @@ class SpredictWorkerSMP(Mpfg3WorkerSMP):
 
 
    # ~~~~~~~~~~~~~~~
-   # Public methods
+   # Public methods 
    # ~~~~~~~~~~~~~~~
 
 
@@ -91,7 +91,7 @@ class SpredictWorkerSMP(Mpfg3WorkerSMP):
 
 if __name__ == '__main__':
    """ Main entry point of the spredict master process """
-
+ 
    # --- Invoke the master calculator in module: mp_calc_SMP.py
    master = SpredictMasterSMP()
    if master is None:
