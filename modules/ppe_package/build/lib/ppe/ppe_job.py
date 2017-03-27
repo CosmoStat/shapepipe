@@ -66,7 +66,6 @@ class PpeJobProcessor(MpfxJobProcessor):
    # Public methods
    # ~~~~~~~~~~~~~~~
 
-
    # -----------------------------------------------------------------------------------------------
    def create_dataset(self, master, dataset_name, dataset_type,
                                     dataset_base_dir, dataset_dir_list, dataset_recurse):
@@ -81,6 +80,9 @@ class PpeJobProcessor(MpfxJobProcessor):
          @param dataset_recurse [optional] tell whether to walk down directories (default @c True)
          @return the Dataset instance
       """
+
+      # SF NOTE: this method is called by mpfx_job.py MpfxJobProcessor.create_jobs()
+      # No apparent connection to specific package, could be part of template.
 
       dataset_class = self.get_dataset_module(master, dataset_name, dataset_type, dataset_base_dir)
       if dataset_class is not None:
@@ -97,6 +99,10 @@ class PpeJobProcessor(MpfxJobProcessor):
          @return the list of created jobs
       """
 
+      # SF NOTE: This method is called by mp_calc.py Master.run() and the
+      # JobProcessor is defined in the ..._SMP.py module.
+      # No apparent connection to specific package, could be part of template.
+
       job_list = MpfxJobProcessor.create_jobs(self, master)
 
       # --- Create output directories for job outputs:
@@ -106,7 +112,6 @@ class PpeJobProcessor(MpfxJobProcessor):
             if dir_key.find("LOG") == -1:  # no tree for log dirs
                base_dir = os.path.join(master.run_output_dir, dir_value)
                self._create_dir_tree(base_dir, self._job_branches)
-
 
       return job_list
 
@@ -123,25 +128,11 @@ class PpeJobProcessor(MpfxJobProcessor):
          @see Job, PpeJob
       """
 
+      # SF NOTE: This method is called by mpfx_job.py
+      # MpfxJobProcessor.create_jobs() and Simply returns an instance of
+      # PpeJob().Maybe package specific
+
       return PpeJob(master, dataset, self.helper, *args)
-
-   # -----------------------------------------------------------------------------------------------
-   def preprocess_job(self, job, worker):
-      """!
-         Invoked by the Worker to perform some optional pre-processing on the job.
-         It may be for instance some format conversion. or other preparation step before the actual
-         processing takes place in process_job().
-
-         @param job an object of class PpeJob to process
-         @param worker instance of the worker process
-
-         @return an object of class PpeJobResult containing the data of the processed job
-
-         @note overrides MpfxJobProcessor.preprocess_job()
-               to perform any processing required <b>before</b> process_job() is called
-         @see preprocess_job, postprocess_job, Job, JobResult, MpfxJobResult
-      """
-      pass  # we no nothing here in ppe
 
    # -----------------------------------------------------------------------------------------------
    def process_job(self, job, worker):
@@ -158,6 +149,10 @@ class PpeJobProcessor(MpfxJobProcessor):
          @see Job, MpfxJob, JobResult, MpfxJobResult
       """
 
+      # SF NOTE: This method is called by mp_calc_SMP.py
+      # MasterSMP.process_jobs() and is package specific.
+
+
       # --- This is where we add the code to process the job
 
       # --- Depending on the object selection criteria, we may have to process either catalogs
@@ -171,87 +166,57 @@ class PpeJobProcessor(MpfxJobProcessor):
 
       object_per_type_dico = {}  # will contain the job results per image type (images)
 
-      # --- Iterate over the path dictionary content to generate and process PSFEx catalogs
       try:
 
-         for file_type in job.get_file_types():    # check the type of file (looking for images)
-            filepath = job.get_file_path(file_type)
+          for file_type in job.get_file_types():    # check the type of file (looking for images)
+              filepath = job.get_file_path(file_type)
 
-            if job.dataset.is_image(worker, filepath):
+              if not file_type in object_per_type_dico:
+                 object_per_type_dico[file_type] = {}
 
-               if not file_type in object_per_type_dico:
-                  object_per_type_dico[file_type] = {}
+              if worker.logging_enabled():
+                 worker.logger.log_info_p("{0} - Processing SExtractor Output File {1}...".format(worker.name, filepath))
+                 worker.logger.flush()
 
-               if worker.logging_enabled():
-                  worker.logger.log_info_p("{0} - Processing image {1}...".format(
-                                                                       worker.name, filepath))
-                  worker.logger.flush()
+              pe_run_dico = self.pe_runner.run_PSFEx(file_type, job, worker) # THIS LINE CALLS PSFEX
+              pe_output_cat_filepath   = pe_run_dico["pe_output_cat_filepath"]
+              pe_output_check_filepath = pe_run_dico["pe_output_check_filepath"]
+              object_per_type_dico[file_type]["pe_run_dico"] = pe_run_dico
 
-               # --- Run PSFEx to analyse the image and produce its catalog
-               pe_run_dico = self.pe_runner.run_PSFEx(file_type, job, worker)
-               pe_output_cat_filepath   = pe_run_dico["pe_output_cat_filepath"]
-               pe_output_check_filepath = pe_run_dico["pe_output_check_filepath"]
-               object_per_type_dico[file_type]["pe_run_dico"] = pe_run_dico
+              initial_results = PpeJobResult(object_per_type_dico, job, worker)
 
-               # --- Produce initial plots and statistics before the initial SE catalog is processed
-               initial_results = PpeJobResult(object_per_type_dico, job, worker)
-               if worker.config.get_as_boolean("CREATE_INITIAL_PE_PLOTS", "DEBUGGING"):
-                  plot_output_dir = os.path.join(worker.plot_output_dir, job.get_branch_tree())
-                  self.plotter.make_plots(initial_results, plot_output_dir, worker,
-                                                                            plot_prefix="initial_")
+              if worker.config.get_as_boolean("CREATE_INITIAL_PE_PLOTS", "DEBUGGING"):
+                 plot_output_dir = os.path.join(worker.plot_output_dir, job.get_branch_tree())
+                 self.plotter.make_plots(initial_results, plot_output_dir, worker,
+                                                                           plot_prefix="initial_")
 
-               if worker.config.get_as_boolean("CREATE_INITIAL_PE_STATS", "DEBUGGING"):
-                  stat_output_dir = os.path.join(worker.stat_output_dir, job.get_branch_tree())
-                  self.helper.make_stats(initial_results, stat_output_dir, worker,
-                                                                           stat_prefix="initial_")
+              if worker.config.get_as_boolean("CREATE_INITIAL_PE_STATS", "DEBUGGING"):
+                 stat_output_dir = os.path.join(worker.stat_output_dir, job.get_branch_tree())
+                 self.helper.make_stats(initial_results, stat_output_dir, worker,
+                                                                          stat_prefix="initial_")
 
-               # --- Process the generated PSFEx catalog
-               object_per_type_dico[file_type]["pe_xform_dico"] =\
-                                            self.pe_processor.process_catalog(
-                                                            pe_output_cat_filepath,
-                                                            pe_output_check_filepath,
-                                                            file_type, job, worker)
-               # --- Job result to return
-               job_result = PpeJobResult(object_per_type_dico, job, worker)
 
-            # --- Produce plots based on the job results
-            if worker.config.get_as_boolean("CREATE_PE_PLOTS", "DEBUGGING"):
-               output_plot_dir = os.path.join(worker.plot_output_dir,
-                                              job.get_branch_tree())
-               self.plotter.make_plots(job_result, output_plot_dir, worker)
+              # SF NOTE: NEED TO FIX THIS
+              object_per_type_dico[file_type]["pe_xform_dico"] = {'initial_object_count': 1, 'final_object_count': 1, 'elapsed_time': 1}
 
-            # --- Produce statistics based on the job results
-            if worker.config.get_as_boolean("CREATE_PE_STATS", "DEBUGGING"):
-               output_stat_dir = os.path.join(worker.stat_output_dir,
-                                              job.get_branch_tree())
-               self.helper.make_stats(job_result, output_stat_dir, worker)
+            #                                                               # --- Process the generated PSFEx catalog
+            #   object_per_type_dico[file_type]["pe_xform_dico"] =\
+            #                                self.pe_processor.process_catalog(
+            #                                                pe_output_cat_filepath,
+            #                                                pe_output_check_filepath,
+            #                                                file_type, job, worker)
+
+              # --- Job result to return
+              job_result = PpeJobResult(object_per_type_dico, job, worker)
 
       except:
 
-         if worker.logging_enabled():
-            worker.logger.log_error_p(
-                        "{0} - Some error occurred while processing job: {1} ({2})".format(
-                                                                                worker.name,
-                                                                                job,
-                                                                                sys.exc_info()[1]))
+          if worker.logging_enabled():
+              worker.logger.log_error_p("{0} - Some error occurred while processing job: {1} ({2})".format(worker.name, job, sys.exc_info()[1]))
 
       # --- Create a PpeJobResult object with the results from all image types
       print "PSF JOB PROCESSED"
       return PpeJobResult(object_per_type_dico, job, worker)
-
-
-   # -----------------------------------------------------------------------------------------------
-   def postprocess_job(self, job_result, worker):
-      """!
-         Invoked by the Worker to perform some optional post-processing on the job.
-         @param job_result object of class PpeJobResult with processed data
-         @param worker instance of the worker process
-
-         @note overrides MpfxJobProcessor.preprocess_job()
-               to perform any processing required <b>after</b> process_job() is called
-         @see process_job, postprocess_job, JobResult, MpfxJobResult
-      """
-      pass  # we no nothing here in ppe
 
    # -----------------------------------------------------------------------------------------------
    def process_job_result(self, job_result, master):
@@ -264,9 +229,13 @@ class PpeJobProcessor(MpfxJobProcessor):
          @see Job, JobResult, MpfxJobResult
       """
 
+      # SF NOTE: This method is called by mp_calc_SMP.py
+      # MasterSMP.process_jobs() and is package specific
+
       # --- Iterate through the results of all file types in the job...
       object_per_type_dico = job_result.result
       for file_type in object_per_type_dico.keys():
+
          pe_xform_dico = object_per_type_dico[file_type]["pe_xform_dico"]
 
          if len(pe_xform_dico) > 0:
@@ -282,19 +251,6 @@ class PpeJobProcessor(MpfxJobProcessor):
                   pe_xform_dico["elapsed_time"]))
                master.logger.flush()
 
-#             # --- Produce plots based on the job results
-#             if master.config.get_as_boolean("CREATE_PE_PLOTS", "DEBUGGING"):
-#                output_plot_dir = os.path.join(master.plot_output_dir,
-#                                               job_result.job.get_branch_tree())
-#                self.plotter.make_plots(job_result, output_plot_dir, master)
-#
-#             # --- Produce statistics based on the job results
-#             if master.config.get_as_boolean("CREATE_PE_STATS", "DEBUGGING"):
-#                output_stat_dir = os.path.join(master.stat_output_dir,
-#                                               job_result.job.get_branch_tree())
-#                self.helper.make_stats(job_result, output_stat_dir, master)
-
-
    # -----------------------------------------------------------------------------------------------
    def all_jobs_processed(self, master):
       """!
@@ -309,48 +265,11 @@ class PpeJobProcessor(MpfxJobProcessor):
                ppe.ppe_job.PpeJobProcessor.job_result_dico dictionary
       """
 
+      # SF NOTE: This method simply overrides the mpfx_job.py
+      # MpfxJobProcessor.all_jobs_processed() method. Could certainly be
+      # part of a template
+
       pass
-
-#      # --- Check that the actual number of objects in the generated PSFEx catalog is correct
-#      all_checked_objects = []
-#      wrong_job_results = []
-#      all_jobs_results = self.get_job_results()
-#      if len(all_jobs_results) > 0:
-#         for job_result in all_jobs_results:
-#            object_per_type_dico = job_result.result
-
-#            if len(object_per_type_dico[t]["pe_xform_dico"]) > 0:
-
-#               actual_object_counts = [object_per_type_dico[t]["pe_xform_dico"]["actual_object_count"] \
-#                                       for t in object_per_type_dico.keys()]
-#               final_object_counts  = [object_per_type_dico[t]["pe_xform_dico"]["final_object_count"] \
-#                                       for t in object_per_type_dico.keys()]
-
-#               checked_objects = numpy.equal(actual_object_counts, final_object_counts)
-#               if not numpy.all(checked_objects):
-#                  wrong_job_results.append(job_result)
-
-#               all_checked_objects.extend(checked_objects)
-
-#         all_checked_objects = numpy.asarray(all_checked_objects)
-#         if not numpy.all(all_checked_objects):
-
-#            # --- Found a discrepancy between the initial (expected) and final object counts
-#            wrong_counts = numpy.where(all_checked_objects == False)[0]
-#            wrong_objects =\
-#             ["/{0}:{1:03d}-{2:1d}".format(
-#               r.job.get_branch_tree(), r.job.img_no, r.job.epoch) for r in wrong_job_results]
-
-#            if master.logging_enabled():
-#               master.logger.log_warning_p(
-#                "{0} - Found {1} catalogs with wrong object counts: {2}".format(
-#                                                                  master.name,
-#                                                                  len(wrong_counts), wrong_objects))
-#         else:
-#            if master.logging_enabled():
-#               master.logger.log_info_p(
-#                  "{0} - *** ALL catalogs have the correct object count ***".format(master.name) )
-#               master.logger.flush()
 
    # ~~~~~~~~~~~~~~~
    # Private methods
@@ -365,6 +284,10 @@ class PpeJobProcessor(MpfxJobProcessor):
          @note example of directory layout: control/ground/constant
          @see configuration file
       """
+
+      # SF NOTE: this method does not appear to package specific, could be
+      # part of a template
+
 
       for branch in branches:
          dir_names = branch.split("/")
@@ -397,6 +320,10 @@ class PpeJob(MpfxJob):
 
          @return an initialized PpeJob object
       """
+
+      # SF NOTE: Adds methods to the MpfxJob() class.
+      # Package specific
+
 
       # --- Construct a new Job
 
@@ -435,16 +362,6 @@ class PpeJob(MpfxJob):
 
       return self.helper.get_stamp_center(self.get_stamp_size())
 
-#      stamp_size = self.get_stamp_size()
-#      if stamp_size % 2 == 0:
-#         # Even size
-#         center_pixel = int(stamp_size / 2.0 - 1.0)   # e.g. 48x48 -> 23x23
-#      else:
-#         # Odd size
-#         center_pixel = int(stamp_size/ 2.0)          # e.g. 47x47 -> 23x23
-
-#      return center_pixel
-
 # -------------------------------------------------------------------------------------------------
 class PpeJobResult(MpfxJobResult):
 
@@ -452,34 +369,36 @@ class PpeJobResult(MpfxJobResult):
        Represents the result of a GREAT3 job. See mpfcs82.MpfxJobResult and mpf.JobResult.
    """
 
+   # SF NOTE: Not sure if this class is package specific
+
    def __init__(self, result, job, worker):
 
       """! Construct a PpeJobResult job result object """
       MpfxJobResult.__init__(self, worker, job, result)
 
       # --- Cached Job result data and associated stats
-      self._helper = PpeHelper()  # helper utility functions
-      self._data_dico  = self.helper.collect_catalog_data(result, job, worker)
-      self._stats_dico = self.helper.compute_stats(result, self._data_dico, job, worker)
+    #   self._helper = PpeHelper()  # helper utility functions
+    #   self._data_dico  = self.helper.collect_catalog_data(result, job, worker)
+    #   self._stats_dico = self.helper.compute_stats(result, self._data_dico, job, worker)
 
    # ~~~~~~~~~~
    # Properties
    # ~~~~~~~~~~
 
-   @property
-   def helper(self):
-      """! @return the PpeHelper instance. """
-      return self._helper
-
-   @property
-   def data_dico(self):
-      """! @return the data dictionary """
-      return self._data_dico
-
-   @property
-   def stats_dico(self):
-      """! @return the statistics dictionary """
-      return self._stats_dico
+   # @property
+   # def helper(self):
+   #    """! @return the PpeHelper instance. """
+   #    return self._helper
+   #
+   # @property
+   # def data_dico(self):
+   #    """! @return the data dictionary """
+   #    return self._data_dico
+   #
+   # @property
+   # def stats_dico(self):
+   #    """! @return the statistics dictionary """
+   #    return self._stats_dico
 
 
 # -- EOF ppe_job.py

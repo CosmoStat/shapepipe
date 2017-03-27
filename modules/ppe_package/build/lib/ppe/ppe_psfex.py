@@ -141,23 +141,13 @@ class PSFExRunner(object):
                  pe_output_check_filepath))
 
          # --- Verbose type
-         pe_verboPE_type = config.get_as_string("PE_VERBOSE_TYPE", "PSFEX")
+         pe_verbose_type = config.get_as_string("PE_VERBOSE_TYPE", "PSFEX")
 
          # --- PSFEx Execution line
          pe_exec_path = config.get_as_string("PE_EXEC_PATH", "PSFEX")
-         if pe_must_redir_output:
-            pe_exec_line =\
-             "{0} {1} -c {2} -CATALOG_NAME {3} -CHECKIMAGE_NAME {4} -CHECKIMAGE_TYPE {5} "\
-             "-VERBOSE_TYPE {6} -CATALOG_TYPE {7} > {8}".format(
-               pe_exec_path, image_filepath, pe_config_filepath, pe_output_cat_filepath,
-               pe_output_check_filepath, pe_check_image_type, pe_verbose_type,
-               pe_output_cat_type, pe_output_redir_filepath)
-         else:
-            pe_exec_line =\
-            "{0} {1} -c {2} -CATALOG_NAME {3} -CHECKIMAGE_NAME {4} -CHECKIMAGE_TYPE {5} "\
-            "-VERBOSE_TYPE {6} -CATALOG_TYPE {7} ".format(
-            pe_exec_path, image_filepath, pe_config_filepath, pe_output_cat_filepath,
-            pe_output_check_filepath, pe_check_image_type, pe_verbose_type, pe_output_cat_type)
+
+         # SF NOTE: This is the critical line that defines the command line
+         pe_exec_line = pe_exec_path + ' ' + image_filepath + ' -PSF_DIR ' + pe_output_path + ' -VERBOSE_TYPE ' + pe_verbose_type
 
          # --- Execute PSFEx
          cur_dir = os.getcwd()
@@ -892,7 +882,9 @@ class PSFExProcessor(object):
             catalog.create()
       else:
          # --- PSFEx format
-         catalog = PSFExCatalog(pe_catalog_filepath)
+         # SF: NOTE need to change this for PSFEx
+         catalog = SExCatalog(pe_catalog_filepath)
+         #  catalog = PSFExCatalog(pe_catalog_filepath)
          if len(remaining_indice) > 0:
             # Save catalog with remaining (undeleted) entries
 
@@ -1127,7 +1119,9 @@ class PSFExProcessor(object):
                                       header=header, ext_name=extname, ext_ver=extver)
          else:
             # --- PSFEx format
-            catalog = PSFExCatalog(pe_catalog_filepath)
+            # SF: NOTE need to change this for PSFEx
+            catalog = SExCatalog(pe_catalog_filepath)
+            # catalog = PSFExCatalog(pe_catalog_filepath)
             catalog.create_from_numpy(cat_data_matrix,
                                       cat_col_names, cat_col_comments, cat_col_formats)
 
@@ -1184,7 +1178,9 @@ class PSFExProcessor(object):
          else:
             # --- PSFEx catalog
             # Save changes by overwriting the catalog
-            catalog = PSFExCatalog(pe_catalog_filepath)
+            # SF: NOTE need to change this for PSFEx
+            # catalog = PSFExCatalog(pe_catalog_filepath)
+            catalog = SExCatalog(pe_catalog_filepath)
             catalog.create_from_numpy(sorted_cat_matrix,
                                       cat_col_names, cat_col_comments, cat_col_formats)
 

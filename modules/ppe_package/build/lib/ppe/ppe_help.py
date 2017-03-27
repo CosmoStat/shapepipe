@@ -116,7 +116,10 @@ class PpeHelper(Helper):
                                                  open_mode=FITSCatalog.OpenMode.ReadWrite)
       else:
          # --- Assume ASCII SE format
-         catalog = PSFExCatalog(catalog_filepath)
+         # SF: NOTE need to change this for PSFEx
+         catalog = SExCatalog(catalog_filepath)
+#          catalog = PSFExCatalog(catalog_filepath)
+
 
       if not catalog is None:
          catalog.open()
@@ -220,7 +223,6 @@ class PpeHelper(Helper):
 
          # --- Open SE Catalog and collect column data
          pe_output_cat_filepath = pe_run_dico["pe_output_cat_filepath"]
-
          pe_catalog = self._open_catalog(pe_output_cat_filepath, job, worker)
 
          if pe_catalog.get_nb_rows() > 0:

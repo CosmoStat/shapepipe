@@ -121,13 +121,13 @@ class PpeWorkerSMP(MpfxWorkerSMP):
 
 if __name__ == '__main__':
    """ Main entry point of the PPE master process """
-
    # --- Invoke the master calculator in module: mp_calc_SMP.py
    master = PpeMasterSMP()
    if master is None:
       sys.exit(2)
    else:
       try:
+         print 'before' + '-' * 100
          master.run()
       except:
          PpeHelper.print_error("The PPE master process ended unexpectedly")

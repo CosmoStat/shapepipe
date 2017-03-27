@@ -35,7 +35,7 @@ class PseMasterSMP(MpfxMasterSMP):
       """
 
       try:
-      
+
          # --- Command-line arguments and options
          args = arg.PseArgs()
 
