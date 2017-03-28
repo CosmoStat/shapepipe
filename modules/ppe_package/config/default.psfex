@@ -43,9 +43,9 @@ CHECKPLOT_NAME      fwhm, ellipticity, counts, countfrac, chi2, resi
 #------------------------------ Check-Images ---------------------------------
 
 CHECKIMAGE_CUBE        Y
-CHECKIMAGE_TYPE PROTOTYPES #,SAMPLES,RESIDUALS,SNAPSHOTS,BASIS
+CHECKIMAGE_TYPE #PROTOTYPES #,SAMPLES,RESIDUALS,SNAPSHOTS,BASIS
                                 # or MOFFAT,-MOFFAT,-SYMMETRICAL
-CHECKIMAGE_NAME proto.fits #,samp.fits,resi.fits,snap.fits,basis.fits
+CHECKIMAGE_NAME #proto.fits #,samp.fits,resi.fits,snap.fits,basis.fits
                                 # Check-image filenames
  
 #----------------------------- Miscellaneous ---------------------------------
