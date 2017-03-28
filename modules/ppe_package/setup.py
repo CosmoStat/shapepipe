@@ -8,7 +8,7 @@ setup(
       packages=['ppe'],
       version=__version__,
       license = "GNU GPLv3",
-      description='Parallel execution of multiple SEXtractor processes',
+      description='Parallel execution of multiple PSFEx processes',
       author='Marc Gentile + Samuel Farrens',
       author_email='marc.gentile@epfl.ch',
       #url='http://www.python.org/sigs/quadg3-sig/',

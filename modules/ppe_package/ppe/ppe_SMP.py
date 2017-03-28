@@ -132,7 +132,6 @@ if __name__ == '__main__':
         sys.exit(2)
     else:
         try:
-            print 'before' + '-' * 100
             master.run()
         except Exception:
             PpeHelper.print_error("The PPE master process ended unexpectedly")

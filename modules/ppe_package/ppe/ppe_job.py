@@ -103,6 +103,19 @@ class PpeJobProcessor(MpfxJobProcessor):
             return None
 
     # ------------------------------------------------------------------------
+    def get_dataset_module(self, master, dataset_name, dataset_type,
+                           dataset_base_dir):
+
+        """
+        Return an instance of PpeDataSet
+
+        """
+
+        # SF NOTE: this method was added to overwrite the defualt mpfx method.
+
+        return PpeDataSet
+
+    # ------------------------------------------------------------------------
     def create_jobs(self, master):
         """!
         Locate all objects to process and create the corresponding jobs.
@@ -217,9 +230,8 @@ class PpeJobProcessor(MpfxJobProcessor):
                                           sys.exc_info()[1]))
                 worker.logger.flush()
 
-        # --- Create a PpeJobResult object with the results from all image
-        # types
-        print "PSF JOB PROCESSED"
+        # --- Create a PpeJobResult object with the results from all catalogues
+        print "PSFEx JOB PROCESSED"
         return PpeJobResult(object_per_type_dico, job, worker)
 
     # ------------------------------------------------------------------------
@@ -370,5 +382,30 @@ class PpeJobResult(MpfxJobResult):
         """
 
         MpfxJobResult.__init__(self, worker, job, result)
+
+
+# ----------------------------------------------------------------------------
+class PpeDataSet(MpfxDataset):
+
+    # SF NOTE: This class was added to overwrite the is_catalog() method in
+    # the mpfx_data.py MpfxDataset class.
+
+    def __init__(self, master, dataset_name, dataset_base_dir,
+                 dataset_dir_list, dataset_recurse_dirs):
+        """!
+        Construct a PpeDataSet object
+
+        """
+
+        MpfxDataset.__init__(self, master, dataset_name, dataset_base_dir,
+                             dataset_dir_list, dataset_recurse_dirs)
+
+    def is_catalog(*args):
+        """
+        Return true for is_catalog() calls.
+
+        """
+
+        return True
 
 # -- EOF ppe_job.py
