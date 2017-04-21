@@ -77,7 +77,6 @@ class PsePlotter(object):
                             has_equalaxes=False, has_grid=True, pfigure=None, logger=None):
 
       """! Plot histograms of possibly multiple arrays of floats found in a dictionary """
-
       try:
 
          if pfigure == None:
@@ -147,8 +146,7 @@ class PsePlotter(object):
                   if pmax_xlim > pmin_xlim:
                      plt.xlim(pmin_xlim, pmax_xlim)
 
-                  plt.hist(values, pnb_bins, normed=is_normed, alpha=1.0,
-                           edgecolor="k", facecolor=pcolor, histtype='bar', log=log)
+                  plt.hist(values, pnb_bins, normed=is_normed, alpha=1.0,edgecolor="k", facecolor=pcolor, histtype='bar', log=log)
 
                iplot += 1
             
@@ -586,13 +584,13 @@ class PsePlotter(object):
       
                   self.plot_histogram(job_result.data_dico[file_type], [col_name],
                                       plot_filename, plot_output_dir, plot_title, 
-                                      pnb_bins=25.0, pmax_xlim=None, pcolor='b', is_normed=False)
+                                      pnb_bins=25, pmax_xlim=None, pcolor='b', is_normed=False)
 
                   # MK new: log y-axis
                   plot_log_filename = 'log_{}'.format(plot_filename)
                   self.plot_histogram(job_result.data_dico[file_type], [col_name],
                                       plot_log_filename, plot_output_dir, plot_title, 
-                                      pnb_bins=25.0, pmax_xlim=None, pcolor='b', is_normed=False, log=True)
+                                      pnb_bins=25, pmax_xlim=None, pcolor='b', is_normed=False, log=True)
 
                   if math.fabs(numpy.max(job_result.data_dico[file_type][col_name])) >= max_lim:
                      # Histogram up to x-axis=max_lim
@@ -602,7 +600,7 @@ class PsePlotter(object):
                           job.img_no, job.epoch, file_type)
                      self.plot_histogram(job_result.data_dico[file_type], [col_name],
                                          plot_filename, plot_output_dir, plot_title, 
-                                         pnb_bins=25.0, pmin_xlim=0, pmax_xlim=max_lim, 
+                                         pnb_bins=25, pmin_xlim=0, pmax_xlim=max_lim, 
                                          pcolor='g', is_normed=False)
 
 
@@ -631,7 +629,7 @@ class PsePlotter(object):
                              plot_filename, plot_pathname, plot_title, 
                              x_labels=["magnitude"], 
                              y_labels=["nb. fragments"],
-                             pnb_bins=25.0, pmax_xlim=30, pcolor='#87cefa', is_normed=False)
+                             pnb_bins=25, pmax_xlim=30, pcolor='#87cefa', is_normed=False)
 
          # --- Fragment distance histogram plot
          plot_title = "Fragment Distance/centroid - {0:03d}-{1:1d} - /{2} - {3}".format( 
@@ -643,7 +641,7 @@ class PsePlotter(object):
                              plot_filename, plot_pathname, plot_title, 
                              x_labels=["distance from centroid (pixels)"], 
                              y_labels=["nb. fragments"],
-                             pnb_bins=25.0, pmax_xlim=None, pcolor='#87cefa', is_normed=False)
+                             pnb_bins=25, pmax_xlim=None, pcolor='#87cefa', is_normed=False)
 
          # --- Fragment count histogram plot
          plot_title = "Fragment Counts -{0:03d}-{1:1d} - /{2} - {3}".format( 
@@ -655,7 +653,7 @@ class PsePlotter(object):
                              plot_filename, plot_pathname, plot_title, 
                              x_labels=["fragment count"], 
                              y_labels=None,
-                             pnb_bins=25.0, pmax_xlim=None, pcolor='#87cefa', is_normed=False)
+                             pnb_bins=25, pmax_xlim=None, pcolor='#87cefa', is_normed=False)
       
          # --- Fragment distance/magnitude scatter plot
          plot_title = "Fragment Distance/Magnitude - {0:03d}-{1:1d} - /{2} - {3}".format( 
