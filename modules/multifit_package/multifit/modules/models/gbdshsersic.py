@@ -262,7 +262,7 @@ class FittingModel(BaseFittingModel):
          gal.setFlux(flux)
 
          # Shift the object based on the estimated centroid
-         half = stamp_size / 2.0
+         half = (stamp_size-1) / 2.0
          gal.applyShift(dx=xc-half, dy=yc-half)
 
          # Render the image

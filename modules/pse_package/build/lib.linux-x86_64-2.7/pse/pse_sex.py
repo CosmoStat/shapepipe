@@ -435,7 +435,7 @@ class SExtractorProcessor(object):
 
          if worker.logging_enabled():
             worker.logger.log_error_p(
-                "{0} - An error occurred while processing SExtractor catalog: {1} ({2})".format(
+                "{0}: An error occurred while processing SExtractor catalog: {1} ({2})".format(
                                                                                 worker.name, 
                                                                                 job,
                                                                                 detail))

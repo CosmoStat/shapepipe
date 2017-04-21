@@ -327,8 +327,6 @@ class GfitJobProcessor(MpfxJobProcessor):
       
 
       except Exception as detail:
-         print("ERROR DETECTED")
-
          if worker.logging_enabled():
             worker.logger.log_error_p(
                         "{0} - Some error occurred while processing job: {1} ({2})".format(
