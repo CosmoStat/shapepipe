@@ -3128,8 +3128,8 @@ class ShapeMeasurementRequest(object):
       # --- Relative galaxy centroids (within stamp)
       rel_xc_array = numpy.floor(xc_array - x_array + 0.5)
       rel_yc_array = numpy.floor(yc_array - y_array + 0.5)
-      rel_abs_xc_array = (xc_array - x_array + 0.5) #FCS ADDED
-      rel_abs_yc_array = (yc_array - y_array + 0.5) #FCS ADDED
+      rel_abs_xc_array = (xc_array - x_array ) #FCS ADDED
+      rel_abs_yc_array = (yc_array - y_array ) #FCS ADDED
 
       galaxy_half_size = self.helper.get_stamp_center_as_int(self.galaxy_stamp_size) + 1
 

@@ -210,7 +210,7 @@ class GfitHelper(Helper):
 #      else :
       galaxy_shift=self._get_centroid_position(galaxy_rel_centroid,galaxy_abs_rel_centroid,
                                                                          galaxy_stamp_size)
-      galaxy_shift-=numpy.array([galaxy_stamp_size-1,galaxy_stamp_size-1])/2.0#Offset from center model.
+      galaxy_shift-=numpy.array([request.galaxy_stamp_size-1,request.galaxy_stamp_size-1])/2.0#Offset from center model.
       return galaxy_shift[::-1] #BEWARE OF CONVENTIONS, need to swap axes
        
    # -----------------------------------------------------------------------------------------------
@@ -943,6 +943,7 @@ class GfitHelper(Helper):
        """
        fsize=psf_stamp.shape
        rsize=tuple((numpy.array(fsize)-1)//2) #for scipy convolution, the center is located here [try with diracs]
+       soff=tuple((numpy.array(fsize)-1)//2-(numpy.array(fsize))//2)
        #self.write_as_fits(psf_stamp,"output/psf_obj.fits")
        if (psf_shift):
           fpsf =rfftn(psf_stamp.astype(request._prec_nump))
@@ -964,7 +965,8 @@ class GfitHelper(Helper):
           if(corr_pixwin):   
              fpsf=self.correct_pixel_window_function(fpsf,fsize,request)
           #ifpsf =numpy.roll(numpy.roll(irfftn(fpsf, fsize),rsize[0],0),rsize[1],1).copy()
-          ifpsf =(irfftn(fpsf, fsize)).copy()
+          ifpsf =numpy.roll(numpy.roll(irfftn(fpsf, fsize),soff[0],0),soff[1],1).copy()
+          #ifpsf =(irfftn(fpsf, fsize)).copy()
           psf_obj=copy.deepcopy(ifpsf)
        else:
           if(corr_pixwin):   

@@ -1384,6 +1384,11 @@ class FITSCatalog(BaseCatalog):
          matrix = np.asarray(matrix)
 
       # --- Create columns and add data
+      #FCS ADDED OTHERWISE IT CRASHES: 
+      #REASON : EXTVER = 0 IS IGNORED WHEN READING, BUT CHECKED WHEN
+      #HDU IS CREATED (IN WHICH CASE IT SHOULD BE STRICTLY >0) OR IT CRASHES. 
+      if(ext_ver==0): 
+        ext_ver=None
       self._cat_data.write(list(matrix.transpose()), names=col_names,
                                                    extver=ext_ver, extname=ext_name, 
                                                    clobber=True, header=header)
