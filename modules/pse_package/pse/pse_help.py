@@ -203,7 +203,7 @@ class PseHelper(Helper):
       data_dico = {}
 
       # --- Forbidden quantities
-      forbidden_col_names = ["xc", "yc", "x", "y"]
+      forbidden_col_names = ["xc", "yc", "x", "y", "field"]
       forbidden_col_names.extend([
            worker.config.get_as_string("NUMBER_PARAM", "PARAMETER_MAPPING"),\
            # MK new: Removed CLASS_STAR_PARAM from forbidden
