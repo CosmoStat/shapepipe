@@ -3,6 +3,7 @@
    @author Marc Gentile
    @file scatalog.py
    Simple catalog management for astronomical data
+   a
 """
 
 # -- Python imports
