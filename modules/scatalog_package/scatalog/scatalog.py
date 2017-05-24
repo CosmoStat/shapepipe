@@ -3,7 +3,6 @@
    @author Marc Gentile
    @file scatalog.py
    Simple catalog management for astronomical data
-   a
 """
 
 # -- Python imports
@@ -425,6 +424,7 @@ class TextCatalog(BaseCatalog):
       if self.helper.file_exists(self.fullpath):
          # --- Open catalog file
          self._cat_data = asc.open(self.fullpath,
+                                   delimiter=self.sep_char,
                                    comment_char=self.comment_char,
                                    null=self.null_char)
 
@@ -1354,18 +1354,88 @@ class FITSCatalog(BaseCatalog):
          raise BaseCatalog.CatalogFileNotFound(self.fullpath)
   
    #------------------------------------------------------------------------------------------------
-   def create(self, ext_name=None, ext_ver=None, header=None):
-      """! 
+#   def create(self, ext_name=None, ext_ver=None, header=None):
+#      """! 
+#         Create a new catalog with a FITS format
+#         @param ext_name extension name or number
+#         @param ext_ver extension version
+#         @param header dictionary or list of dictionaries   
+#      """
+#      # --- Create catalog
+#      self._cat_data = fitsio.FITS(self.fullpath, fitsio.READWRITE, clobber=True)
+#      self._cat_data.write([], names=[], ext_ver=ext_ver, 
+#                           extname=ext_name, header=header, clobber=True)
+
+    #-----------------------------------------------------------------------------------------------
+    #   ADDED
+   def create(self, ext_name=None, ext_ver=None, header=None, empty=False):
+      """!
          Create a new catalog with a FITS format
          @param ext_name extension name or number
          @param ext_ver extension version
-         @param header dictionary or list of dictionaries   
+         @param header dictionary or list of dictionaries  
+         @param empty create an "almost" empty file (see NOTE)
+         
+         NOTE : when fitsio create a new fits file it create an empty hdu with extension 0.
+                 I didn't find a way to avoid that. (PS : it doesn't matter since SExtractor
+                 and PSFEX use cfitsio with the same convention)
       """
       # --- Create catalog
       self._cat_data = fitsio.FITS(self.fullpath, fitsio.READWRITE, clobber=True)
-      self._cat_data.write([], names=[], ext_ver=ext_ver, 
-                           extname=ext_name, header=header, clobber=True)
- 
+      if not empty :
+          self._cat_data.write([], names=[], ext_ver=ext_ver, 
+                               extname=ext_name, header=header, clobber=True) 
+   #------------------------------------------------------------------------------------------------
+   #    ADDED
+   def copy_hdu(self, fits_file=None, hdu_no=None):
+       """!
+           Copy an HDU from fits
+           @param fits_file scatalog where the hdu is
+           @param hdu_no hdu to copy default=value use when fits_file was open
+           
+           NOTE : the scatalog to copy need to be open
+       """
+       if self._cat_data is None:
+          raise BaseCatalog.CatalogNotOpen(self.fullpath) 
+       if fits_file._cat_data is None:
+         raise BaseCatalog.CatalogNotOpen(fits_file.fullpath)
+         
+       if(hdu_no==None):
+           hdu_no=fits_file.hdu_no
+           
+       self._cat_data.write(fits_file._cat_data[hdu_no][:],extname=fits_file._cat_data[hdu_no].get_extname())
+               
+   #------------------------------------------------------------------------------------------------
+   #    ADDED
+   def apply_mask(self, fits_file=None, hdu_no=None, mask=None , hdu_name=None):
+       """!
+           Apply a mask on data on data of a specified HDU
+           @param fits file where the data to mask are
+           @param hdu_no on which hdu are data to mask
+           @param mask array of boolean or array of index
+           @param hdu_name name to give to the new extension with data mask 
+                   (hdu_name='same' -> same as the hdu_no.name)
+           
+           NOTE : this will create a new hdu with data[mask] in it
+       """
+       if self._cat_data is None:
+          raise BaseCatalog.CatalogNotOpen(self.fullpath)
+       if fits_file._cat_data is None:
+          raise BaseCatalog.CatalogNotOpen(fits_file.fullpath)
+       if(hdu_no==None):
+           hdu_no=self.hdu_no
+           
+       if hdu_name is 'same':
+           hdu_name=fits_file._cat_data[hdu_no].get_extname()
+       
+       if(mask.dtype==bool):
+           mask=np.where(mask==True)
+           self._cat_data.write(fits_file._cat_data[hdu_no][:][mask],extname=hdu_name,clobber=True)
+       elif(mask.dtype==int):
+           self._cat_data.write(fits_file._cat_data[hdu_no][:][mask],extname=hdu_name,clobber=True)
+       else:
+           return "Mask must be an array of type int or bool"
+   
    #------------------------------------------------------------------------------------------------
    def create_from_numpy(self, matrix, col_names, ext_name=None, ext_ver=None, header=None):
       """!
@@ -1385,11 +1455,6 @@ class FITSCatalog(BaseCatalog):
          matrix = np.asarray(matrix)
 
       # --- Create columns and add data
-      #FCS ADDED OTHERWISE IT CRASHES: 
-      #REASON : EXTVER = 0 IS IGNORED WHEN READING, BUT CHECKED WHEN
-      #HDU IS CREATED (IN WHICH CASE IT SHOULD BE STRICTLY >0) OR IT CRASHES. 
-      if(ext_ver==0): 
-        ext_ver=None
       self._cat_data.write(list(matrix.transpose()), names=col_names,
                                                    extver=ext_ver, extname=ext_name, 
                                                    clobber=True, header=header)
@@ -1492,15 +1557,32 @@ class FITSCatalog(BaseCatalog):
       else:
          raise BaseCatalog.CatalogNotOpen(self.fullpath)             
  
+#   # -----------------------------------------------------------------------------------------------
+#   #   MODIFIED
+#    def get_header(self):
+#      """! 
+#         Return the catalog header as a list of dictionaries 
+#         @return header 
+#         @see fitsio documentation
+#      """
+#      if not self._cat_data is None:
+#         return self._cat_data[self.hdu_no].read_header().records()
+#      else:
+#         raise BaseCatalog.CatalogNotOpen(self.fullpath) 
+
    # -----------------------------------------------------------------------------------------------
-   def get_header(self):
+   #    ADDED
+   def get_header(self, list=True):
       """! 
          Return the catalog header as a list of dictionaries 
          @return header 
          @see fitsio documentation
       """
       if not self._cat_data is None:
-         return self._cat_data[self.hdu_no].read_header().records()
+          if list:
+              return self._cat_data[self.hdu_no].read_header().records()
+          else:
+              return self._cat_data[self.hdu_no].read_header()
       else:
          raise BaseCatalog.CatalogNotOpen(self.fullpath) 
 
