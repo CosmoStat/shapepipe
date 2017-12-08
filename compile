@@ -2,7 +2,7 @@
 
 set module2compile = (modules/slogger_package modules/sconfig_package modules/mpfx_package modules/mpfg_package modules/mpfg3_package \
                       modules/multifit_package modules/scdm_package modules/scatalog_package modules/pse_package \
-		                  modules/gfit_common_package modules/mkpsf_package modules/ppe_package) 
+		                  modules/gfit_common_package modules/mkpsf_package modules/ppe_package modules/sf_deconvolve_package modules/template_package)
 set install_dir = /Users/sfarrens/Documents/Codes/gitlab
 set cdir = `pwd`
 foreach k ($module2compile)
