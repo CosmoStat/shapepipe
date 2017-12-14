@@ -1458,7 +1458,7 @@ class FITSCatalog(BaseCatalog):
            @param hdu_no on which hdu are data to mask
            @param mask array of boolean or array of index
            @param hdu_name name to give to the new extension with data mask
-                   (hdu_name='same' -> same as the hdu_no.name)
+                   (hdu_name=None -> same as the hdu_no.name)
 
            NOTE : this will create a new hdu with data[mask] in it
        """
@@ -1468,16 +1468,20 @@ class FITSCatalog(BaseCatalog):
           raise BaseCatalog.CatalogNotOpen(self.fullpath)
        if fits_file._cat_data is None:
           raise BaseCatalog.CatalogNotOpen(fits_file.fullpath)
-       if(hdu_no==None):
+       if maks is None:
+           raise ValueError('Mask not provided')
+       if type(mask) is not np.ndarray:
+           raise TypeError('Mask need to be a numpy.ndarray')
+       if hdu_no is None:
            hdu_no=fits_file.hdu_no
 
        if hdu_name is None:
            hdu_name=fits_file._cat_data[hdu_no].name
 
-       if(mask.dtype==bool):
+       if mask.dtype==bool:
            mask=np.where(mask==True)
            self._cat_data.append(fits.BinTableHDU(fits_file.get_data(hdu_no)[:][mask],name=hdu_name))
-       elif(mask.dtype==int):
+       elif mask.dtype==int:
            self._cat_data.append(fits.BinTableHDU(fits_file.get_data(hdu_no)[:][mask],name=hdu_name))
        else:
            raise TypeError('Mask type has to be int or bool')
@@ -1502,43 +1506,46 @@ class FITSCatalog(BaseCatalog):
        """
 
 
-       if data is not None:
-           if not image:
-               if type(data) is dict:
-                   r=np.rec.fromarrays([data[i] for i in data.keys()], names=data.keys())
-                   self._save_from_recarray(r,names,ext_name, sex_cat_path)
+       if data is None:
+           raise ValueError('Data not provided')
 
-               elif type(data) is np.recarray:
-                   self._save_from_recarray(data,names,ext_name, sex_cat_path)
+       if not image:
+           if type(data) is dict:
+               r=np.rec.fromarrays([data[i] for i in data.keys()], names=data.keys())
+               self._save_from_recarray(r,ext_name, sex_cat_path)
 
-               elif type(data) is fits.fitsrec.FITS_rec:
-                   self._save_from_recarray(data,names,ext_name, sex_cat_path)
+           elif type(data) is np.recarray:
+               self._save_from_recarray(data,ext_name, sex_cat_path)
 
-               elif type(data) is np.ndarray:
-                   if names is not None:
-                       if (data.ndim<=2):
-                           if data.ndim==1:
-                               data=np.array([data])
-                       r=np.rec.fromarrays([data[i] for i in range(data.shape[0])], names=names)
-                       self._save_from_recarray(r,names,ext_name, sex_cat_path)
-                   else:
-                       raise ValueError('Names not provided')
+           elif type(data) is fits.fitsrec.FITS_rec:
+               self._save_from_recarray(data,ext_name, sex_cat_path)
 
-               elif type(data) is list:
-                   data=np.asarray(data)
+           elif type(data) is np.ndarray:
+               if names is not None:
                    if (data.ndim<=2):
                        if data.ndim==1:
                            data=np.array([data])
+                   else:
+                       raise ValueError('Data dimension > 2')
                    r=np.rec.fromarrays([data[i] for i in range(data.shape[0])], names=names)
-                   self._save_from_recarray(r,names,ext_name, sex_cat_path)
-           else:
-               if type(data) is np.ndarray:
-                   self._save_image(data=data, overwrite=overwrite)
+                   self._save_from_recarray(r,ext_name, sex_cat_path)
                else:
-                   raise TypeError('Data need to be a numpy.ndarray')
+                   raise ValueError('Names not provided')
 
+           elif type(data) is list:
+               data=np.asarray(data)
+               if (data.ndim<=2):
+                   if data.ndim==1:
+                       data=np.array([data])
+               else:
+                   raise ValueError('Data dimension > 2')
+               r=np.rec.fromarrays([data[i] for i in range(data.shape[0])], names=names)
+               self._save_from_recarray(r,ext_name, sex_cat_path)
        else:
-           raise ValueError('data not provided')
+           if type(data) is np.ndarray:
+               self._save_image(data=data, overwrite=overwrite)
+           else:
+               raise TypeError('Data need to be a numpy.ndarray')
 
 
 
@@ -1932,7 +1939,7 @@ class FITSCatalog(BaseCatalog):
 
    #------------------------------------------------------------------------------------------------
    # ADDED
-   def _save_from_recarray(self, data=None, names=None, ext_name=None, sex_cat_path=None):
+   def _save_from_recarray(self, data=None, ext_name=None, sex_cat_path=None):
        """!
             Save a numpy.recarray or astropy.io.fits.fitsrec.FITS_rec into a fits.
             @param data data to store
@@ -1941,31 +1948,31 @@ class FITSCatalog(BaseCatalog):
             @param sex_cat_path path of the already existing SExtractor catalog to mimic
        """
 
-       if data is not None:
-           if self.helper.file_exists(self.fullpath):
-               if self._cat_data is None:
-                   self.open()
-               if ext_name is None:
-                   ext_name='new'
-               self._cat_data.append(fits.BinTableHDU(data,name=ext_name))
-               self.close()
-           else:
-               if self._SEx_catalog:
-                  self.create(s_hdu=False, sex_cat_path=sex_cat_path)
-                  self.open()
-                  if ext_name is None:
-                      ext_name='LDAC_OBJECTS'
-                  self._cat_data.append(fits.BinTableHDU(data,name=ext_name))
-                  self.close()
-               else:
-                  self.create(s_hdu=False)
-                  self.open()
-                  if ext_name is None:
-                      ext_name='new'
-                  self._cat_data.append(fits.BinTableHDU(data,name=ext_name))
-                  self.close()
-       else:
+       if data is None:
            raise ValueError('Data not provided')
+
+       if self.helper.file_exists(self.fullpath):
+           if self._cat_data is None:
+               self.open()
+           if ext_name is None:
+               ext_name='new'
+           self._cat_data.append(fits.BinTableHDU(data,name=ext_name))
+           self.close()
+       else:
+           if self._SEx_catalog:
+              self.create(s_hdu=False, sex_cat_path=sex_cat_path)
+              self.open()
+              if ext_name is None:
+                  ext_name='LDAC_OBJECTS'
+              self._cat_data.append(fits.BinTableHDU(data,name=ext_name))
+              self.close()
+           else:
+              self.create(s_hdu=False)
+              self.open()
+              if ext_name is None:
+                  ext_name='new'
+              self._cat_data.append(fits.BinTableHDU(data,name=ext_name))
+              self.close()
 
    #------------------------------------------------------------------------------------------------
    # ADDED
@@ -1978,8 +1985,6 @@ class FITSCatalog(BaseCatalog):
        """
 
        if (data is not None):
-           if ext_name is None:
-               ext_name='IMAGE'
            fits.PrimaryHDU(data).writeto(self.fullpath,overwrite=overwrite)
        else:
            raise ValueError('Data or names not provided')
