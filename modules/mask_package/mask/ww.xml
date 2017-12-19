@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="file:///usr/local/share/weightwatcher/ww.xsl"?>
+<VOTABLE xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.ivoa.net/xml/VOTable/v1.1">
+<DESCRIPTION>produced by WeightWatcher</DESCRIPTION>
+<!-- VOTable description at http://www.ivoa.net/Documents/latest/VOT.html -->
+<RESOURCE ID="WeightWatcher" name="WeightWatcher">
+ <DESCRIPTION>Data related to WeightWatcher</DESCRIPTION>
+ <INFO name="QUERY_STATUS" value="OK" />
+ <RESOURCE ID="MetaData" name="MetaData">
+  <DESCRIPTION>WeightWatcher meta-data</DESCRIPTION>
+  <INFO name="QUERY_STATUS" value="OK" />
+  <PARAM name="Software" datatype="char" arraysize="*" ucd="meta.title;meta.software" value="WeightWatcher"/>
+  <PARAM name="Version" datatype="char" arraysize="*" ucd="meta.version;meta.software" value="1.12"/>
+  <PARAM name="Soft_URL" datatype="char" arraysize="*" ucd="meta.ref.url;meta.software" value="http://astromatic.net/software/weightwatcher"/>
+  <PARAM name="Soft_Auth" datatype="char" arraysize="*" ucd="meta.bib.author;meta.software" value="Emmanuel Bertin"/>
+  <PARAM name="Soft_Ref" datatype="char" arraysize="*" ucd="meta.bib.bibcode;meta.software" value="2006ASPC..351..112B"/>
+  <PARAM name="NThreads" datatype="int" ucd="meta.number;meta.software" value="1"/>
+  <PARAM name="Date" datatype="char" arraysize="*" ucd="time.event.end;meta.software" value="2017-12-19"/>
+  <PARAM name="Time" datatype="char" arraysize="*" ucd="time.event.end;meta.software" value="16:07:15"/>
+  <PARAM name="Duration" datatype="float" ucd="time.event;meta.software" value="1" unit="s"/>
+  <PARAM name="User" datatype="char" arraysize="*" ucd="meta.curation" value="aguinot"/>
+  <PARAM name="Host" datatype="char" arraysize="*" ucd="meta.curation" value="(null)"/>
+  <PARAM name="Path" datatype="char" arraysize="*" ucd="meta.dataset" value="/local/home/aguinot/stage_cea/gitlab/pipeline_dev/mask_package/mask"/>
+  <TABLE ID="OutFields" name="OutFields">
+   <DESCRIPTION>Metadata about the output images gathered by WeightWatcher</DESCRIPTION>
+   <!-- Nextensions may be 0 if an error occurred early in the processing -->
+   <PARAM name="NExtensions" datatype="int" ucd="meta.number;meta.dataset" value="1"/>
+   <FIELD name="Output_Image_Name" datatype="char" ucd="meta.id;meta.file;meta.fits"/>
+   <FIELD name="Output_Image_Type" datatype="char" ucd="meta;meta.code.class"/>
+   <FIELD name="Extension" datatype="int" ucd="meta.number;meta.dataset"/>
+   <FIELD name="Effective_Area" datatype="float" ucd="phys.size;arith.ratio"/>
+   <DATA><TABLEDATA>
+    <TR>
+     <TD>/local/home/aguinot/stage_cea/gitlab/pipeline_dev/mask_package/.temp/halo_spike_flag-000-0.fits</TD><TD>F</TD><TD>1</TD><TD>9999</TD>
+    </TR>
+   </TABLEDATA></DATA>
+  </TABLE>
+  <TABLE ID="Warnings" name="Warnings">
+   <DESCRIPTION>WeightWatcher warnings (limited to the last 1000)</DESCRIPTION>
+   <FIELD name="Date" datatype="char" arraysize="*" ucd="meta;time.event.end"/>
+   <FIELD name="Time" datatype="char" arraysize="*" ucd="meta;time.event.end"/>
+   <FIELD name="Msg" datatype="char" arraysize="*" ucd="meta"/>
+   <DATA><TABLEDATA>
+    <TR><TD>2017-12-19</TD><TD>16:07:14</TD><TD>default.ww not found, using internal defaults</TD></TR>
+   </TABLEDATA></DATA>
+  </TABLE>
+  <RESOURCE ID="Config" name="Config">
+   <DESCRIPTION>WeightWatcher configuration</DESCRIPTION>
+   <PARAM name="Command_Line" datatype="char" arraysize="*" ucd="obs.param" value="ww -c default.ww -WEIGHT_NAMES ../../CFIS.233.293.r.weight.fits -POLY_NAMES /local/home/aguinot/stage_cea/gitlab/pipeline_dev/mask_package/.temp/halo-000-0.reg,/local/home/aguinot/stage_cea/gitlab/pipeline_dev/mask_package/.temp/spike-000-0.reg -POLY_OUTFLAGS 1,2 -FLAG_NAMES  -OUTFLAG_NAME /local/home/aguinot/stage_cea/gitlab/pipeline_dev/mask_package/.temp/halo_spike_flag-000-0.fits -OUTWEIGHT_NAME "/>
+   <PARAM name="Prefs_Name" datatype="char" arraysize="*" ucd="obs.param;meta.file" value="default.ww"/>
+   <PARAM name="Weight_Names" datatype="char" arraysize="*" ucd="meta.id;meta.fits;obs.image" value="../../CFIS.233.293.r.weight.fits"/>
+   <PARAM name="Weight_Min" unit="counts" datatype="double" arraysize="1" ucd="meta;obs.param" value="3.0e-01"/>
+   <PARAM name="Weight_Max" unit="counts" datatype="double" arraysize="1" ucd="meta;obs.param" value="1.3e+00"/>
+   <PARAM name="Weight_OutFlags" datatype="int" arraysize="1" ucd="meta.code.class" value="1"/>
+   <PARAM name="Flag_Names" datatype="char" arraysize="*" ucd="meta.id;meta.fits;obs.image" value=""/>
+   <PARAM name="Flag_Wmasks" datatype="int" arraysize="1" ucd="meta;obs.param" value="255"/>
+   <PARAM name="Flag_Masks" datatype="int" arraysize="1" ucd="meta;obs.param" value="1"/>
+   <PARAM name="Flag_Outflags" datatype="int" arraysize="1" ucd="meta.code.class" value="2"/>
+   <PARAM name="Poly_Names" datatype="char" arraysize="*" ucd="meta.id;meta.file" value="/local/home/aguinot/stage_cea/gitlab/pipeline_dev/mask_package/.temp/halo-000-0.reg,/local/home/aguinot/stage_cea/gitlab/pipeline_dev/mask_package/.temp/spike-000-0.reg"/>
+   <PARAM name="Poly_Outflags" datatype="int" arraysize="2" ucd="meta.code.class" value="1 2"/>
+   <PARAM name="Poly_Outweights" datatype="double" arraysize="2" ucd="meta.code.class" value="4380240 0"/>
+   <PARAM name="Poly_Intersect" datatype="boolean" ucd="meta;meta.code" value="T"/>
+   <PARAM name="Outweight_Name" datatype="char" arraysize="*" ucd="meta.id;meta.fits" value=""/>
+   <PARAM name="Outflag_Name" datatype="char" arraysize="*" ucd="meta.id;meta.fits" value=""/>
+   <PARAM name="Getarea" datatype="boolean" ucd="meta.code" value="F"/>
+   <PARAM name="Getarea_Weight" datatype="double" ucd="meta;obs.param" value="0.0"/>
+   <PARAM name="Getarea_Flags" datatype="int" arraysize="1" ucd="meta;obs.param" value="1"/>
+   <PARAM name="Memory_Bufsize" datatype="int" ucd="meta.cryptic" value="256"/>
+   <PARAM name="Verbose_Type" datatype="char" arraysize="*" ucd="meta.code" value="NORMAL"/>
+   <PARAM name="Write_XML" datatype="boolean" ucd="meta.code" value="T"/>
+   <PARAM name="NThreads" datatype="int" ucd="meta.number;meta.software" value="1"/>
+  </RESOURCE>
+ </RESOURCE>
+</RESOURCE>
+</VOTABLE>
