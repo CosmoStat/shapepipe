@@ -300,7 +300,7 @@ class mask(object):
                 if not sc.BaseCatalog(reg)._helper.file_exists(reg):
                     raise sc.BaseCatalog.CatalogNotFound(reg)
                 os.system('{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3} -POLY_OUTFLAGS {4} -FLAG_NAMES "" -OUTFLAG_NAME {5} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'],self._config['PATH']['WW_configfile'],self._weight_fullpath,reg,self._config[type]['flag'],defaul_out))
-                
+
         elif type == 'ALL':
             default_reg = [self._config['PATH']['temp_dir'] + 'halo' + self._img_number + '.reg', self._config['PATH']['temp_dir'] + 'spike' + self._img_number + '.reg']
             defaul_out = self._config['PATH']['temp_dir'] + 'halo_spike_flag' + self._img_number + '.fits'
@@ -382,6 +382,9 @@ class mask(object):
 
     def _mask_to_file(self, input_mask=None, output_fullpath=None):
         """!
+            Save the mask to a fits file
+            @param input_mask mask to save
+            @param output_fullpath path of the output file
         """
 
         if input_mask is None:
@@ -431,4 +434,4 @@ class mask(object):
             if mask_name[1] is not None:
                 os.system('rm {1}'.format(mask_name[1]))
 
-        self._mask_to_file(input_mask=final_mask, output_fullpath=self._output_dir+'/'+self._img_name+self._img_number+'.flag.fits')
+        self._mask_to_file(input_mask=final_mask, output_fullpath=self._output_dir+'/'+self._img_name+'_flag'+self._img_number+'.fits')
