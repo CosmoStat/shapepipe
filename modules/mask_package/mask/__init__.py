@@ -30,10 +30,13 @@ Prerequisites
 - mpfx v1.x: extension layer of multiprocessing framework module
 - sconfig v1.x: configuration file parser module
 - slogger v1.x: logging module
-- scatalog v1.x: catalog management
+- scatalog v2.0.1: catalog management
+- astropy v1.3.2 : coordinate handling functions (tested with this version)
+- numpy v1.12.1 : to read ascii file (tested with this version)
 
-- An installation of the PSFEx tool
-(http://www.astromatic.net/software/psfex) is also required.
+- CDSclient : provide star catalog (http://cdsarc.u-strasbg.fr/doc/cdsclient.html)
+- WeightWatcher : mix DS9 region file and make a flagged map (https://www.astromatic.net/software/weightwatcher)
+
 
 Installation
 

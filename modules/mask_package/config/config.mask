@@ -1,3 +1,4 @@
+# ----------------------------- Path ----------------------------------
 [PROGRAM_PATH]
 
 WW_PATH = ww
@@ -5,6 +6,7 @@ WW_CONFIG_FILE = /local/home/aguinot/stage_cea/gitlab/new/ShapePipe/modules/mask
 CDSCLIENT_PATH = findgsc2.2
 
 
+# ----------------------------- Border parameters ----------------------------------
 [BORDER_PARAMETERS]
 
 BORDER_MAKE = True
@@ -13,6 +15,7 @@ BORDER_WIDTH = 300
 BORDER_FLAG_VALUE = 4
 
 
+# ----------------------------- Halo parameters ----------------------------------
 [HALO_PARAMETERS]
 
 HALO_MAKE = True
@@ -24,6 +27,7 @@ HALO_FLAG_VALUE = 1
 HALO_REG_FILE = halo.reg
 
 
+# ----------------------------- Spike parameters ----------------------------------
 [SPIKE_PARAMETERS]
 
 SPIKE_MAKE = True
@@ -35,6 +39,7 @@ SPIKE_FLAG_VALUE = 2
 SPIKE_REG_FILE = spike.reg
 
 
+# ----------------------------- Other parameters ----------------------------------
 [OTHER]
 
 KEEP_REG_FILE = False

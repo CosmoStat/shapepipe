@@ -1,27 +1,25 @@
+# -*- coding: utf-8 -*-
 
+"""MASK SCRIPT
 
+This module contain a class to create star mask for an image.
 
+:Authors: Axel Guinot
 
+:Date: 20/12/2017
 
-
-
-
-
-
-
-
+"""
 
 import scatalog as sc
 import sconfig
 
 import numpy as np
-import argparse
-import sys
 import subprocess
 import astropy.coordinates as coord
 from astropy import wcs
 import re
 import os
+
 
 class mask(object):
     """!
@@ -99,22 +97,89 @@ class mask(object):
         self._img_radius=self._get_image_radius()
 
 
-    def _get_image_radius(self, center=None):
+    def make_mask(self):
         """!
-            Compute the diagonal distance of the image in arcmin.
-            @param center coordinates of the center of the image in pixel
-            @return the diagonal distance in arcmin
+            Main function to create the mask
         """
 
-        if center is None:
-            return self.SphereDist(self._fieldcenter['pix'], np.zeros(2))/60.
+        stars=self.find_stars(np.array([self._fieldcenter['wcs'].ra.value,self._fieldcenter['wcs'].dec.value]), radius=self._img_radius)
+
+        for i in ['HALO', 'SPIKE']:
+            if self._config[i]['make']:
+                self._create_mask(stars=stars, type=i, mag_limit=self._config[i]['mag_lim'], scale_factor=self._config[i]['scale_factor'])
+
+        if self._config['BORDER']['make']:
+            border_mask=self.mask_border(width=self._config['BORDER']['width'])
         else:
-            if type(center) is np.ndarray:
-                return self.SphereDist(center, np.zeros(2))/60.
-            else:
-                raise TypeError('center has to be a numpy.ndarray')
+            border_mask=None
+
+        mask_name=[]
+        if self._config['HALO']['make'] & self._config['SPIKE']['make']:
+            self._exec_WW(type='ALL')
+            mask_name.append(self._config['PATH']['temp_dir'] + 'halo_spike_flag' + self._img_number + '.fits')
+            mask_name.append(None)
+            # mask_name.append(self._config['PATH']['temp_dir'] + 'spike_flag' + self._img_number + '.fits')
+        else:
+            for i in ['HALO','SPIKE']:
+                if self._config[i]['make']:
+                    self._exec_WW(type=i)
+                    mask_name.append(self._config['PATH']['temp_dir'] + i.lower()+'_flag' + self._img_number + '.fits')
+                else:
+                    mask_name.append(None)
+
+        final_mask=self._build_final_mask(path_mask1=mask_name[0],path_mask2=mask_name[1], border=border_mask)
+
+        if not self._config['HALO']['individual']:
+            if mask_name[0] is not None:
+                os.system('rm {0}'.format(mask_name[0]))
+            if mask_name[1] is not None:
+                os.system('rm {1}'.format(mask_name[1]))
+
+        self._mask_to_file(input_mask=final_mask, output_fullpath=self._output_dir+'/'+self._img_name+'_flag'+self._img_number+'.fits')
 
 
+    def find_stars(self, position, radius=None):
+        """!
+            Return GSC (Guide Star Catalog) objects for a field with center (ra,dec) and radius r
+            @param ra right ascention astropy.wcs oject
+            @param dec declinaison astropy.wcs oject
+            @param r radius in arcmin
+            @return stars dicotionnary for GSC objects in the field
+        """
+
+        ra=position[0]
+        dec=position[1]
+
+        #check ra dec types
+
+        if dec>0. :
+            sign='+'
+        else:
+            sign=''
+
+        output=subprocess.check_output('{0} {1} {2}{3} -r {4} -n 1000000'.format(self._config['PATH']['CDSclient'], ra, sign, dec, radius), shell=True)
+
+        return self._make_star_cat(output)
+
+
+    def mask_border(self, width=100, flag_value=4):
+        """!
+            Mask 'width' pixels around the image
+            @param width width of the mask mask border
+            @return array containing the mask
+        """
+
+        if width is None:
+            raise ValueError('Width not provided')
+
+        flag = np.zeros((int(self._fieldcenter['pix'][0]*2),int(self._fieldcenter['pix'][1]*2)),dtype='uint8')
+
+        flag[0:width,:]=flag_value
+        flag[-width:-1,:]=flag_value
+        flag[:,0:width]=flag_value
+        flag[:,-width:-1]=flag_value
+
+        return flag
 
 
     def SphereDist(self, position1, position2):
@@ -141,28 +206,20 @@ class mask(object):
         return dist*(180./np.pi)*3600.
 
 
-    def find_stars(self, position, radius=None):
+    def _get_image_radius(self, center=None):
         """!
-            Return GSC (Guide Star Catalog) objects for a field with center (ra,dec) and radius r
-            @param ra right ascention astropy.wcs oject
-            @param dec declinaison astropy.wcs oject
-            @param r radius in arcmin
-            @return stars dicotionnary for GSC objects in the field
+            Compute the diagonal distance of the image in arcmin.
+            @param center coordinates of the center of the image in pixel
+            @return the diagonal distance in arcmin
         """
 
-        ra=position[0]
-        dec=position[1]
-
-        #check ra dec types
-
-        if dec>0. :
-            sign='+'
+        if center is None:
+            return self.SphereDist(self._fieldcenter['pix'], np.zeros(2))/60.
         else:
-            sign=''
-
-        output=subprocess.check_output('{0} {1} {2}{3} -r {4} -n 1000000'.format(self._config['PATH']['CDSclient'], ra, sign, dec, radius), shell=True)
-
-        return self._make_star_cat(output)
+            if type(center) is np.ndarray:
+                return self.SphereDist(center, np.zeros(2))/60.
+            else:
+                raise TypeError('center has to be a numpy.ndarray')
 
 
     def _make_star_cat(self, CDSclient_output):
@@ -321,26 +378,6 @@ class mask(object):
                 ValueError("type must be in ['HALO','SPIKE','ALL']")
 
 
-    def mask_border(self, width=100, flag_value=4):
-        """!
-            Mask 'width' pixels around the image
-            @param width width of the mask mask border
-            @return array containing the mask
-        """
-
-        if width is None:
-            raise ValueError('Width not provided')
-
-        flag = np.zeros((int(self._fieldcenter['pix'][0]*2),int(self._fieldcenter['pix'][1]*2)),dtype='uint8')
-
-        flag[0:width,:]=flag_value
-        flag[-width:-1,:]=flag_value
-        flag[:,0:width]=flag_value
-        flag[:,-width:-1]=flag_value
-
-        return flag
-
-
     def _build_final_mask(self, path_mask1=None, path_mask2=None, border=None):
         """!
             Create the final mask by combination of individual mask
@@ -394,44 +431,3 @@ class mask(object):
 
         out=sc.FITSCatalog(output_fullpath, open_mode= sc.BaseCatalog.OpenMode.ReadWrite)
         out.save_as_fits(data=input_mask,image=True)
-
-
-    def make_mask(self):
-        """!
-            Main function to create the mask
-        """
-
-        stars=self.find_stars(np.array([self._fieldcenter['wcs'].ra.value,self._fieldcenter['wcs'].dec.value]), radius=self._img_radius)
-
-        for i in ['HALO', 'SPIKE']:
-            if self._config[i]['make']:
-                self._create_mask(stars=stars, type=i, mag_limit=self._config[i]['mag_lim'], scale_factor=self._config[i]['scale_factor'])
-
-        if self._config['BORDER']['make']:
-            border_mask=self.mask_border(width=self._config['BORDER']['width'])
-        else:
-            border_mask=None
-
-        mask_name=[]
-        if self._config['HALO']['make'] & self._config['SPIKE']['make']:
-            self._exec_WW(type='ALL')
-            mask_name.append(self._config['PATH']['temp_dir'] + 'halo_spike_flag' + self._img_number + '.fits')
-            mask_name.append(None)
-            # mask_name.append(self._config['PATH']['temp_dir'] + 'spike_flag' + self._img_number + '.fits')
-        else:
-            for i in ['HALO','SPIKE']:
-                if self._config[i]['make']:
-                    self._exec_WW(type=i)
-                    mask_name.append(self._config['PATH']['temp_dir'] + i.lower()+'_flag' + self._img_number + '.fits')
-                else:
-                    mask_name.append(None)
-
-        final_mask=self._build_final_mask(path_mask1=mask_name[0],path_mask2=mask_name[1], border=border_mask)
-
-        if not self._config['HALO']['individual']:
-            if mask_name[0] is not None:
-                os.system('rm {0}'.format(mask_name[0]))
-            if mask_name[1] is not None:
-                os.system('rm {1}'.format(mask_name[1]))
-
-        self._mask_to_file(input_mask=final_mask, output_fullpath=self._output_dir+'/'+self._img_name+'_flag'+self._img_number+'.fits')
