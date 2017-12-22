@@ -1,0 +1,48 @@
+# ----------------------------- Path ----------------------------------
+[PROGRAM_PATH]
+
+WW_PATH = ww
+WW_CONFIG_FILE = /local/home/aguinot/stage_cea/gitlab/new/ShapePipe/modules/mask_package/config/default.ww
+CDSCLIENT_PATH = findgsc2.2
+
+
+# ----------------------------- Border parameters ----------------------------------
+[BORDER_PARAMETERS]
+
+BORDER_MAKE = True
+
+BORDER_WIDTH = 300
+BORDER_FLAG_VALUE = 4
+
+
+# ----------------------------- Halo parameters ----------------------------------
+[HALO_PARAMETERS]
+
+HALO_MAKE = True
+
+HALO_MASKMODEL_PATH = /local/home/aguinot/stage_cea/gitlab/new/ShapePipe/modules/mask_package/config/halo_mask.reg
+HALO_MAG_LIM = 13.
+HALO_SCALE_FACTOR = 0.05
+HALO_FLAG_VALUE = 1
+HALO_REG_FILE = halo.reg
+
+
+# ----------------------------- Spike parameters ----------------------------------
+[SPIKE_PARAMETERS]
+
+SPIKE_MAKE = True
+
+SPIKE_MASKMODEL_PATH = /local/home/aguinot/stage_cea/gitlab/new/ShapePipe/modules/mask_package/config/MEGAPRIME_star_i_13.8.reg
+SPIKE_MAG_LIM = 18.
+SPIKE_SCALE_FACTOR = 0.3
+SPIKE_FLAG_VALUE = 2
+SPIKE_REG_FILE = spike.reg
+
+
+# ----------------------------- Other parameters ----------------------------------
+[OTHER]
+
+KEEP_REG_FILE = False
+KEEP_INDIVIDUAL_MASK = False
+
+TEMP_DIRECTORY = /local/home/aguinot/stage_cea/gitlab/new/ShapePipe/modules/mask_package/.temp/
