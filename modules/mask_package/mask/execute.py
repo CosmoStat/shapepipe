@@ -205,7 +205,10 @@ class PackageRunner(object):
 
         """
 
-        r=ms.mask(image_path=self._fnames['input_filepath'][0], weight_path=self._fnames['input_filepath'][1], config_filepath=self._fnames['config_filepath'], output_dir=self._worker.result_output_dir)
+        r=ms.mask(image_path=self._fnames['input_filepath'][0],
+                  weight_path=self._fnames['input_filepath'][1],
+                  config_filepath=self._fnames['config_filepath'],
+                  output_dir=self._worker.result_output_dir)
         r.make_mask()
 
     def _get_exec_config_filepath(self):

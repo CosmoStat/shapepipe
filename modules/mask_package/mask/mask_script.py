@@ -106,7 +106,7 @@ class mask(object):
 
         for i in ['HALO', 'SPIKE']:
             if self._config[i]['make']:
-                self._create_mask(stars=stars, type=i, mag_limit=self._config[i]['mag_lim'], scale_factor=self._config[i]['scale_factor'])
+                self._create_mask(stars=stars, types=i, mag_limit=self._config[i]['mag_lim'], scale_factor=self._config[i]['scale_factor'])
 
         if self._config['BORDER']['make']:
             border_mask=self.mask_border(width=self._config['BORDER']['width'])
@@ -115,14 +115,14 @@ class mask(object):
 
         mask_name=[]
         if self._config['HALO']['make'] & self._config['SPIKE']['make']:
-            self._exec_WW(type='ALL')
+            self._exec_WW(types='ALL')
             mask_name.append(self._config['PATH']['temp_dir'] + 'halo_spike_flag' + self._img_number + '.fits')
             mask_name.append(None)
             # mask_name.append(self._config['PATH']['temp_dir'] + 'spike_flag' + self._img_number + '.fits')
         else:
             for i in ['HALO','SPIKE']:
                 if self._config[i]['make']:
-                    self._exec_WW(type=i)
+                    self._exec_WW(types=i)
                     mask_name.append(self._config['PATH']['temp_dir'] + i.lower()+'_flag' + self._img_number + '.fits')
                 else:
                     mask_name.append(None)
@@ -266,11 +266,11 @@ class mask(object):
         return stars
 
 
-    def _create_mask(self, stars=None, type=None, mag_limit=18., mag_pivot=13.8, scale_factor=0.3):
+    def _create_mask(self, stars=None, types=None, mag_limit=18., mag_pivot=13.8, scale_factor=0.3):
         """!
             Apply mask from model to stars and save into DS9 region file
             @param stars stars dico (output of find_stars)
-            @param type type of mask in ['halo', 'spike']
+            @param types type of mask in ['halo', 'spike']
             @param mag_limit higher magnitude to apply the mask
             @param mag_pivot pivot magnitude for the model
             @param scale_factor scaling for the model
@@ -279,19 +279,19 @@ class mask(object):
         if stars is None:
             raise ValueError('No stars catalog provided')
 
-        if self._config[type]['reg_file'] is None:
-            reg = self._config['PATH']['temp_dir'] + type.lower()+ self._img_number + '.reg'
+        if self._config[types]['reg_file'] is None:
+            reg = self._config['PATH']['temp_dir'] + types.lower()+ self._img_number + '.reg'
         else:
-            reg = self._config[type]['reg_file']
+            reg = self._config[types]['reg_file']
 
-        if type == 'HALO':
+        if types == 'HALO':
             mask_model = np.loadtxt(self._config['HALO']['maskmodel_path']).transpose()
             mask_reg = open(reg,'w')
-        elif type == 'SPIKE':
+        elif types == 'SPIKE':
             mask_model = np.loadtxt(self._config['SPIKE']['maskmodel_path']).transpose()
             mask_reg = open(reg,'w')
         else:
-            ValueError("Type need to be in ['HALO', 'SPIKE']")
+            ValueError("types need to be in ['HALO', 'SPIKE']")
 
         stars_used=[[],[],[]]
         for ra, dec, Fmag, Jmag, Vmag, Nmag, clas in zip(stars['RA(J2000)'], stars['Dec(J2000)'], stars['Fmag'], stars['Jmag'], stars['Vmag'], stars['Nmag'], stars['Clas']):
@@ -337,28 +337,28 @@ class mask(object):
         mask_reg.close()
 
 
-    def _exec_WW(self,type=None):
+    def _exec_WW(self,types=None):
         """!
             Execute WW to transform '.reg' to '.fits' flag map
-            @param type the type of mask to make in ['HALO','SPIKE']
+            @param types the type of mask to make in ['HALO','SPIKE']
         """
 
-        if type in ['HALO','SPIKE']:
-            default_reg = self._config['PATH']['temp_dir'] +  type.lower()+ self._img_number + '.reg'
-            defaul_out = self._config['PATH']['temp_dir'] +  type.lower() + '_flag' + self._img_number + '.fits'
-            if self._config[type]['reg_file'] is None:
+        if types in ['HALO','SPIKE']:
+            default_reg = self._config['PATH']['temp_dir'] +  types.lower()+ self._img_number + '.reg'
+            defaul_out = self._config['PATH']['temp_dir'] +  types.lower() + '_flag' + self._img_number + '.fits'
+            if self._config[types]['reg_file'] is None:
                 reg=default_reg
                 if not sc.BaseCatalog(reg)._helper.file_exists(reg):
                     raise sc.BaseCatalog.CatalogNotFound(reg)
-                os.system('{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3} -POLY_OUTFLAGS {4} -FLAG_NAMES "" -OUTFLAG_NAME {5} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'],self._config['PATH']['WW_configfile'],self._weight_fullpath,reg,self._config[type]['flag'],defaul_out))
+                os.system('{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3} -POLY_OUTFLAGS {4} -FLAG_NAMES "" -OUTFLAG_NAME {5} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'],self._config['PATH']['WW_configfile'],self._weight_fullpath,reg,self._config[types]['flag'],defaul_out))
                 os.system('rm {0}'.format(reg))
             else:
-                reg=self._config[type]['reg_file']
+                reg=self._config[types]['reg_file']
                 if not sc.BaseCatalog(reg)._helper.file_exists(reg):
                     raise sc.BaseCatalog.CatalogNotFound(reg)
-                os.system('{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3} -POLY_OUTFLAGS {4} -FLAG_NAMES "" -OUTFLAG_NAME {5} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'],self._config['PATH']['WW_configfile'],self._weight_fullpath,reg,self._config[type]['flag'],defaul_out))
+                os.system('{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3} -POLY_OUTFLAGS {4} -FLAG_NAMES "" -OUTFLAG_NAME {5} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'],self._config['PATH']['WW_configfile'],self._weight_fullpath,reg,self._config[types]['flag'],defaul_out))
 
-        elif type == 'ALL':
+        elif types == 'ALL':
             default_reg = [self._config['PATH']['temp_dir'] + 'halo' + self._img_number + '.reg', self._config['PATH']['temp_dir'] + 'spike' + self._img_number + '.reg']
             defaul_out = self._config['PATH']['temp_dir'] + 'halo_spike_flag' + self._img_number + '.fits'
             if self._config['HALO']['reg_file'] is None:
@@ -375,7 +375,7 @@ class mask(object):
                         raise sc.BaseCatalog.CatalogNotFound(reg[i])
                 os.system('{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3},{4} -POLY_OUTFLAGS {5},{6} -FLAG_NAMES "" -OUTFLAG_NAME {7} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'],self._config['PATH']['WW_configfile'],self._weight_fullpath,reg[0],reg[1],self._config['HALO']['flag'],self._config['SPIKE']['flag'],defaul_out))
         else:
-                ValueError("type must be in ['HALO','SPIKE','ALL']")
+                ValueError("types must be in ['HALO','SPIKE','ALL']")
 
 
     def _build_final_mask(self, path_mask1=None, path_mask2=None, border=None):
