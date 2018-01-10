@@ -1,13 +1,6 @@
-"""
-Created on Wed May 17 10:22:28 2017
-
-@package pse.pse_header header class
-@file pse_header.py
-Header class
-"""
-
 # -- Python imports
 import re
+import operator
 
 
 #---------------------------------------------------------------------------------------------------
@@ -25,9 +18,9 @@ class Header(object):
     #######################
     #   Public methods  #
     #######################
-    
 
-    def param_value(self, param=None):
+
+    def param_value(self, param):
         """!
             Return the value of a parameter from the header
             @param param parameter of the header in str type (see NOTE)
@@ -58,7 +51,7 @@ class Header(object):
     #########################
 
 
-    def _get_value(self, param=None):
+    def _get_value(self, param):
         """!
             Return the value of the corresponding parameter. Or return a float with a number as parameter.
             @param param parameter of the header in str type
@@ -80,7 +73,7 @@ class Header(object):
                 raise ValueError('param has to be a float or an header parameter')
 
 
-    def _operate(self, param=None, param_split=None):
+    def _operate(self, param, param_split):
         """!
             Make operation between header's parameters and/or numbers
             @param param parameter or linear combination of parameters
@@ -96,84 +89,52 @@ class Header(object):
         if param_split is None:
             raise ValueError("Parameters splited not specified")
 
-        try:
-            if len(re.split(op,param))==1:
-                return self._get_value(param)
-            param_add = re.split('\+',param)
-            if len(param_add) > 2:
-                tmp=0
-                for i in param_add:
-                    tmp=tmp+self._operate(i,param_split)
-                return tmp
-            elif len(param_add) == 2:
-                if (param_add[0] in param_split) & (param_add[1] in param_split):
-                    return self._get_value(param_add[0])+self._get_value(param_add[1])
-                else:
-                    if param_add[0] in param_split:
-                        return self._get_value(param_add[0])+self._operate(param_add[1],param_split)
-                    elif param_add[1] in param_split:
-                        return self._operate(param_add[0],param_split)+self._get_value(param_add[1])
-                    else:
-                        return self._operate(param_add[0],param_split)+self._operate(param_add[1],param_split)
-            else:
-                param_sub = re.split('\-',param)
-                if len(param_sub) > 2:
-                    tmp='init'
-                    for i in param_sub:
-                        if tmp=='init':
-                            tmp=self._operate(i,param_split)
-                        else:
-                            tmp=tmp-self._operate(i,param_split)
-                    return tmp
-                elif len(param_sub) == 2:
-                    if (param_sub[0] in param_split) & (param_sub[1] in param_split):
-                        return self._get_value(param_sub[0])-self._get_value(param_sub[1])
-                    else:
-                        if param_sub[0] in param_split:
-                            return self._get_value(param_sub[0])-self._operate(param_sub[1],param_split)
-                        elif param_sub[1] in param_split:
-                            return self._operate(param_sub[0],param_split)-self._get_value(param_sub[1])
-                        else:
-                            return self._operate(param_sub[0],param_split)-self._operate(param_sub[1],param_split)
-                else:
-                    param_mul = re.split('\*',param)
-                    if len(param_mul) > 2:
-                        tmp=1
-                        for i in param_mul:
-                            tmp=tmp*self._operate(i,param_split)
-                        return tmp
-                    elif len(param_mul) == 2:
-                        if (param_mul[0] in param_split) & (param_mul[1] in param_split):
-                            return self._get_value(param_mul[0])*self._get_value(param_mul[1])
-                        else:
-                            if param_mul[0] in param_split:
-                                return self._get_value(param_mul[0])*self._operate(param_mul[1],param_split)
-                            elif param_mul[1] in param_split:
-                                return self._operate(param_mul[0],param_split)*self._get_value(param_mul[1])
-                            else:
-                                return self._operate(param_mul[0],param_split)*self._operate(param_mul[1],param_split)
-                    else:
-                        param_div = re.split('\/',param)
-                        if len(param_div) > 2:
-                            tmp='init'
-                            for i in param_div:
-                                if tmp == 'init':
-                                    tmp=self._operate(i,param_split)
-                                else:
-                                    tmp=tmp/self._operate(i,param_split)
-                            return tmp
-                        elif len(param_div) == 2:
-                            if (param_div[0] in param_split) & (param_div[1] in param_split):
-                                return self._get_value(param_div[0])/self._get_value(param_div[1])
-                            else:
-                                if param_div[0] in param_split:
-                                    return self._get_value(param_div[0])/self._operate(param_div[1],param_split)
-                                elif param_div[1] in param_split:
-                                    return self._operate(param_div[0],param_split)/self._get_value(param_div[1])
-                                else:
-                                    return self._operate(param_div[0],param_split)/self._operate(param_div[1],param_split)
-        except:
-            Exception("error occurred")
+        if len(re.split(op,param))==1:
+            return self._get_value(param)
 
+        tmp = self._param_op_func(re.split('\+',param), param_split, operator.add, 0)
+        if tmp != 'pass':
+            return tmp
+        else:
+            tmp = self._param_op_func(re.split('\-',param), param_split, operator.sub, 'init')
+            if tmp != 'pass':
+                return tmp
+            else:
+                tmp = self._param_op_func(re.split('\*',param), param_split, operator.mul, 1)
+                if tmp != 'pass':
+                    return tmp
+                else:
+                    return self._param_op_func(re.split('\/',param), param_split, operator.div, 'init')
+
+
+    def _param_op_func(self, param_op, param_split, op, tmp):
+        """!
+            This function handle the posible operation between parameters
+            @param param_op list of parameters to operate
+            @param param_split the different parameter splitted using '\*|\/|\-|\+' as delimiter
+            @param op the kind of operation provide as an operator function (Example : operator.sub)
+            @param tmp temporary result of the global operation
+            @return result of the operation
+        """
+
+        if len(param_op) > 2:
+            for i in param_op:
+                if tmp == 'init':
+                    tmp = self._operate(i, param_split)
+                else:
+                    tmp = op(tmp, self._operate(i, param_split))
+            return tmp
+        elif len(param_op) == 2:
+            if param_op[0] in param_split:
+                first = self._get_value(param_op[0])
+            else:
+                first = self._operate(param_op[0], param_split)
+            if param_op[1] in param_split:
+                second = self._get_value(param_op[1])
+            else:
+                second = self._operate(param_op[1], param_split)
+            return op(first, second)
+        else:
+            return 'pass'
 
 # -- EOF header_handling.py

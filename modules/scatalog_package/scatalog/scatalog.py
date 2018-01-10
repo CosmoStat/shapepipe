@@ -1769,7 +1769,7 @@ class FITSCatalog(BaseCatalog):
 
 
    #------------------------------------------------------------------------------------------------
-   def get_header_value(self, request=None, hdu_no=None):
+   def get_header_value(self, request, hdu_no=None):
        """!
           Return the value of a parameters or a linear combination of parameters and/or numbers
           @param request parameter or a linear combination of parameters in string format
