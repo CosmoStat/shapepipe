@@ -25,6 +25,7 @@ class Header(object):
     #######################
     #   Public methods  #
     #######################
+    
 
     def param_value(self, param=None):
         """!
@@ -175,11 +176,4 @@ class Header(object):
             Exception("error occurred")
 
 
-    def _add(self, param1=None, param2=None):
-        """!
-        """
-
-
-
-
-# -- EOF pse_header.py
+# -- EOF header_handling.py
