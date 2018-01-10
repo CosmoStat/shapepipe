@@ -16,6 +16,7 @@ import astromatic_wrapper.utils as awu     # for FITS_LDAC catalogs
 
 # -- Internal imports
 from scatalog_helper import *       # Helper methods
+import header_handling as hh        # Function to deal with header's parameters
 # from numpy import ndarray
 # from astropy.io.fits.fitsrec import FITS_record
 
@@ -1505,6 +1506,8 @@ class FITSCatalog(BaseCatalog):
             NOTE : to create a SExtractor like fits you need to specify SEx_catalog=True when declaring the FITSCatalog object.
        """
 
+       if self.open_mode != FITSCatalog.OpenMode.ReadWrite:
+           raise BaseCatalog.OpenModeConflict(open_mode=self.open_mode, open_mode_needed=FITSCatalog.OpenMode.ReadWrite)
 
        if data is None:
            raise ValueError('Data not provided')
@@ -1763,6 +1766,32 @@ class FITSCatalog(BaseCatalog):
          return dict(self._cat_data[hdu_no].header.items())
       else:
          raise BaseCatalog.CatalogNotOpen(self.fullpath)
+
+
+   #------------------------------------------------------------------------------------------------
+   def get_header_value(self, request=None, hdu_no=None):
+       """!
+          Return the value of a parameters or a linear combination of parameters and/or numbers
+          @param request parameter or a linear combination of parameters in string format
+          @param hdu_no hdu containing the header
+          @return result of the request as float
+       """
+
+       if request is None:
+           raise ValueError('request not provided')
+       if type(request) is not str:
+           raise TypeError('request has to be a string')
+
+       if hdu_no is None:
+           hdu_no = self._hdu_no
+
+       header = self.get_header(hdu_no=hdu_no)
+       if header is None:
+           raise ValueError('Empty header in the hdu : {0}'.format(hdu_no))
+
+       return hh.Header(header).param_value(request)
+
+
 
    # -----------------------------------------------------------------------------------------------
    def get_headers(self):
