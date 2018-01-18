@@ -2,8 +2,7 @@
 
 """ShapePipe Python Library
 
-This module contains generic python modules that can be used for various
-projects.
+These modules provide functionality to the executable Python scripts.
 
 :Author: Samuel Farrens <samuel.farrens@cea.fr>
 
