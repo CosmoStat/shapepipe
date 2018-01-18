@@ -1,4 +1,13 @@
+# -*- coding: utf-8 -*-
+"""SETOOLS SCRIPT
 
+This script contain a class to handle operation on SExtractor output catalog.
+
+:Authors: Axel Guinot
+
+:Date: 16/01/2017
+
+"""
 
 import numpy as np
 import re
@@ -13,6 +22,15 @@ class SETools(object):
     """SETools class
 
     Tools to analyse SExtractor catalogs.
+
+    Parameters
+    ----------
+    cat_filepath : str
+        Path to SExtractor catalog (FITS_LDAC format)
+    config_filepath : str
+        Path to config.setools file
+    output_dir : str
+        Path to pipeline result directory
 
     """
 
@@ -83,7 +101,7 @@ class SETools(object):
         self._hist={}
         self._stat={}
         in_section=0
-        while 1:
+        while True:
             line_tmp = self._config_file.readline()
 
             if line_tmp == '':
@@ -213,7 +231,7 @@ class SETools(object):
         """
 
         if len(self._mask) == 0:
-            pass
+            return None
 
         self.mask = {}
         for i in self._mask.keys():

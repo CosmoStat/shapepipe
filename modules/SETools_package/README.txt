@@ -1,10 +1,6 @@
 SETools v1.0.0
 ===================
 
-!!! Don't forget to update the package name!
-
-!!! Parallel execution of ... what does this package do?
-
 Documentation
 -------------
 
@@ -18,9 +14,7 @@ Prerequisites
 - mpfx v1.x: extension layer of multiprocessing framework module
 - sconfig v1.x: configuration file parser module
 - slogger v1.x: logging module
-- scatalog v1.x: catalog management
-
-!!! - What libraries need to be installed in order to run this package?
+- scatalog v2.x: catalog management
 
 Installation:
 -------------

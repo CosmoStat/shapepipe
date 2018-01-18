@@ -122,13 +122,6 @@ class PackageRunner(object):
         This method sets all of the input and output files names needed for
         running the code.
 
-        Notes
-        -----
-        You will need to modify this method for the code you wish to implement
-        in the pipeline.
-
-        !!!TEMPLATE!!!
-
         """
 
         # --- Input files to be read
@@ -170,13 +163,6 @@ class PackageRunner(object):
 
         This method defines the command line for the code corresponding to this
         package.
-
-        Notes
-        -----
-        You will need to modify this method for the code you wish to implement
-        in the pipeline.
-
-        !!!TEMPLATE!!!
 
         """
 

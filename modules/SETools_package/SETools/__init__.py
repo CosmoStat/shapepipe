@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 
-"""PACKAGE NAME
-
-!!! Don't forget to update the package name !!!
+"""SETools PACKAGE
 
 @mainpage Multiprocessing Framework - Parallel Package Name execution
 
-Author: Marc Gentile (marc.gentile@epfl.ch) and Samuel Farrens
+Author: Marc Gentile (marc.gentile@epfl.ch), Samuel Farrens and Axel Guinot
 
 @section Description
 
@@ -30,7 +28,7 @@ Prerequisites
 - mpfx v1.x: extension layer of multiprocessing framework module
 - sconfig v1.x: configuration file parser module
 - slogger v1.x: logging module
-- scatalog v1.x: catalog management
+- scatalog v2.x: catalog management
 
 - An installation of the PSFEx tool
 (http://www.astromatic.net/software/psfex) is also required.
