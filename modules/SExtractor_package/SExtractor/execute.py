@@ -368,6 +368,9 @@ class PackageRunner(object):
         """
 
         params = self._worker.config.get_section_data('SEXTRACTOR_INPUT')
+        if params is None:
+            return None
+
         self._sex_input_params = {}
 
 
@@ -378,8 +381,6 @@ class PackageRunner(object):
         self._extra_file()
 
         self._sex_input_params['PARAMETERS_NAME'] = self._fnames['SEXTRACTOR']['input_dir'] + 'default.param'
-        if params is None:
-            return None
 
         f = sc.FITSCatalog(self._fnames['input_filepath'][0], hdu_no = 0)
         f.open()
