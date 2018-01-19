@@ -19,7 +19,7 @@ from astropy import units
 from astropy.coordinates import Angle
 from astropy.coordinates import SkyCoord
 
-import mkstuff
+import stuff
 
 
 unitdef = 'degree'
@@ -34,28 +34,28 @@ class image():
 
 
 
-def get_file_pattern(pattern, band, type):
+def get_file_pattern(pattern, band, image_type):
     """Return file pattern of CFIS image file.
     """
 
     if pattern == '':
-        if type == 'raw':
+        if image_type == 'raw':
             pattern_base = '\d{7}p'
         else:
             pattern_base  = 'CFIS.*\.{}'.format(band)
     else:
         pattern_base = pattern
 
-    if type == 'raw':
+    if image_type == 'raw':
         pattern  = '{}\.fits.fz'.format(pattern_base)
-    elif type == 'tiles':
+    elif image_type == 'tiles':
         pattern = '{}\.fits'.format(pattern_base)
-    elif type == 'cat':
+    elif image_type == 'cat':
         pattern = '{}\.cat'.format(pattern_base)
-    elif type == 'weight':
+    elif image_type == 'weight':
         pattern = '{}\.weight\.fits\.fz'.format(pattern_base)
     else:
-        mkstuff.error('Invalid type \'{}\''.format(type))
+        stuff.error('Invalid type \'{}\''.format(image_type))
 
     return pattern
 
@@ -97,7 +97,7 @@ def get_tile_number_from_coord(ra, dec, return_type=str):
         nix = xi
         niy = yi
     else:
-        mkstuff.error('Invalid return type {}'.format(return_type))
+        stuff.error('Invalid return type {}'.format(return_type))
 
     return nix, niy
 
@@ -157,7 +157,7 @@ def get_tile_name(nix, niy, band):
     	tile_name = 'CFIS.{}.{}.{}.fits'.format(nix, niy, band)
 
     else:
-        mkstuff.error('Invalid type for input tile numbers {}, {}'.format(nix, niy))
+        stuff.error('Invalid type for input tile numbers {}, {}'.format(nix, niy))
 
 
     return tile_name
@@ -182,7 +182,7 @@ def get_tile_number(tile_name):
 
     m = re.search('CFIS\.(\d{3})\.(\d{3})', tile_name)
     if m == None or len(m.groups()) != 2:
-        mkstuff.error('Image name \'{}\' does not match tile name syntax'.format(tile_name))
+        stuff.error('Image name \'{}\' does not match tile name syntax'.format(tile_name))
 
     nix = m.groups()[0]
     niy = m.groups()[1]
@@ -207,7 +207,7 @@ def get_Angle(str_coord):
         declination
     """
 
-    ra, dec = mkstuff.my_string_split(str_coord, num=2, stop=True)
+    ra, dec = stuff.my_string_split(str_coord, num=2, stop=True)
 
     return Angle(ra), Angle(dec)
 
@@ -231,7 +231,7 @@ def get_Angle_arr(str_coord, num=-1, verbose=False):
         array of sky coordinates (pairs ra, dec)
     """
 
-    angles_mixed = mkstuff.my_string_split(str_coord, num=num, verbose=verbose, stop=True)
+    angles_mixed = stuff.my_string_split(str_coord, num=num, verbose=verbose, stop=True)
     n = len(angles_mixed)
     n = int(n / 2)
 

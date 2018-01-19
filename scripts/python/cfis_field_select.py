@@ -87,14 +87,14 @@ def get_image_list(inp, band, image_type, verbose=False):
 
 
 
-def find_image_at_coord(images, coord, band, type, verbose=False):
+def find_image_at_coord(images, coord, band, image_type, verbose=False):
 
     ra, dec   = cfis.get_Angle(coord)
 
     if verbose == True:
         print('Looking for image at coordinates {}, {}'.format(ra, dec))
 
-    if type == 'tiles':
+    if image_type == 'tiles':
         nix, niy  = cfis.get_tile_number_from_coord(ra, dec, return_type=int)
         tile_name = cfis.get_tile_name(nix, niy, band)
         im_found = None
@@ -111,25 +111,29 @@ def find_image_at_coord(images, coord, band, type, verbose=False):
                 print('Image with numbers ({}, {}) not found'.format(nix, niy))
 
     else:
-        stuff.error('Only implemented for type=tiles')
+        stuff.error('Only implemented for image_type=tiles')
 
     return im_found
 
 
 
-def find_images_in_area(images, angles, band, type, verbose=False):
+def find_images_in_area(images, angles, band, image_type, verbose=False):
 
     if verbose == True:
         print('Looking for all images within coordinates ', angles)
 
-    found = []
-    for img in images:
-        nix, niy = cfis.get_tile_number(img)
-        ra, dec  = cfis.get_tile_coord_from_nixy(nix, niy)
-        if ra.is_within_bounds(angles[0].ra, angles[1].ra) \
-            and dec.is_within_bounds(angles[0].dec, angles[1].dec):
-            img = cfis.image(img, ra, dec)
-            found.append(img)
+    if image_type == 'tiles':
+        found = []
+        for img in images:
+            nix, niy = cfis.get_tile_number(img)
+            ra, dec  = cfis.get_tile_coord_from_nixy(nix, niy)
+            if ra.is_within_bounds(angles[0].ra, angles[1].ra) \
+                and dec.is_within_bounds(angles[0].dec, angles[1].dec):
+                img = cfis.image(img, ra, dec)
+                found.append(img)
+
+    else:
+        stuff.error('Image type {} not implemented yet'.format(image_type))
 
     if verbose == True:
         print('{} images found in area'.format(len(found)))
@@ -137,10 +141,10 @@ def find_images_in_area(images, angles, band, type, verbose=False):
     return found
 
 
-def get_coord_at_image(number, type, verbose=False):
+def get_coord_at_image(number, image_type, verbose=False):
 
 
-    if type == 'tiles':
+    if image_type == 'tiles':
 	# TODO: Read entire image name, not just the two tile numbers
         nix, niy = stuff.my_string_split(number, num=2, stop=True)
 
@@ -149,7 +153,7 @@ def get_coord_at_image(number, type, verbose=False):
 
         ra, dec  = cfis.get_tile_coord_from_nixy(nix, niy)
     else:
-        tuff.error('Image type {} not implemented yet'.format(type))
+        stuff.error('Image type {} not implemented yet'.format(image_type))
 
     return ra, dec
 
@@ -242,13 +246,11 @@ def plot_area(images, angles, outbase):
     if outbase is not None:
         plt.title(outbase)
 
-    border = 5
-    plt.xlim(angles[0].ra.degree - border, angles[1].ra.degree + border)
-    plt.ylim(angles[0].dec.degree - border, angles[1].dec.degree + border)
     plt.axis('equal')
 
     print('Saving plot to {}'.format(outname))
     plt.savefig(outname)
+    plt.show()
 
 
 
@@ -286,7 +288,7 @@ def params_default():
         input  = '.',
         mode  = 'c',
         band  = 'r',
-        type  = 'tiles',
+        image_type  = 'tiles',
     )
 
     return p_def
@@ -330,8 +332,8 @@ def parse_options(p_def):
     # Field and image options
     parser.add_option('-b', '--band', dest='band', type='string', default=p_def.band,
         help='band, one of \'r\' (default)|\'u\'')
-    parser.add_option('-t', '--type', dest='type', type='string', default=p_def.type,
-        help='data type, one of \'tiles\' (default)| \'cat\'|\'weight\'|\'raw\'')
+    parser.add_option('-t', '--type', dest='image_type', type='string', default=p_def.image_type,
+        help='image type, one of \'tiles\' (default)| \'cat\'|\'weight\'|\'raw\'')
 
     parser.add_option('', '--coord', dest='coord', type='string', default=None,
         help='(white-space or \'_\' separated) string of input coordinates, as astropy.coordinates.Angle')
@@ -439,7 +441,7 @@ def run_mode(images, param):
     if param.mode == 'n':
 
         # Image number search: Return number of tile that covers input coordinate
-        image_name = find_image_at_coord(images, param.coord, param.band, param.type, verbose=param.verbose)
+        image_name = find_image_at_coord(images, param.coord, param.band, param.image_type, verbose=param.verbose)
         if image_name != None:
             print('# name')
             print(image_name, file=param.fout) 
@@ -448,7 +450,7 @@ def run_mode(images, param):
     elif param.mode == 'c':
 
         # Coordinate search: Return coordinate covered by tile with input number
-        ra, dec = get_coord_at_image(param.number, param.type, verbose=param.verbose)
+        ra, dec = get_coord_at_image(param.number, param.image_type, verbose=param.verbose)
         print('# ra[{0}] dec[{0}]'.format(unitdef), file=param.fout)
         print(getattr(ra, unitdef), getattr(dec, unitdef), file=param.fout)
         ex = 0
@@ -458,7 +460,7 @@ def run_mode(images, param):
         # Area search: Return tiles within input area
         ex = 0
         angles = cfis.get_Angle_arr(param.area, num=4, verbose=param.verbose)
-        images = find_images_in_area(images, angles, param.band, param.type, verbose=param.verbose)
+        images = find_images_in_area(images, angles, param.band, param.image_type, verbose=param.verbose)
         print('# Name ra[{0}] dec[{0}]'.format(unitdef), file=param.fout)
         for img in images:
             print('{} {} {}'.format(img.name, getattr(img.ra, unitdef), getattr(img.dec, unitdef)), file=param.fout)
@@ -507,7 +509,7 @@ def main(argv=None):
 
     ### Start main program ###
 
-    images = get_image_list(param.input, param.band, param.type, verbose=param.verbose)
+    images = get_image_list(param.input, param.band, param.image_type, verbose=param.verbose)
 
 
     # Check wether images have been found, if necessary for run mode
