@@ -167,7 +167,7 @@ class PackageRunner(object):
         # --- Execution line
         exec_path = self._worker.config.get_as_string('EXEC_PATH', 'CODE')
 
-        self._exec_line = ('{0} {1} -c {2} -PSF_DIR {3} {4}').format(
+        self._exec_line = ('{0} {1} -c {2} -NTHREADS 1 -PSF_DIR {3} {4}').format(
                            exec_path,
                            self._fnames['input_filepath'][0],
                            self._fnames['config_filepath'],

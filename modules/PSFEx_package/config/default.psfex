@@ -53,6 +53,6 @@ PSF_DIR                         # Where to write PSFs (empty=same as input)
 VERBOSE_TYPE    NORMAL          # can be QUIET,NORMAL,LOG or FULL
 WRITE_XML       N               # Write XML file (Y/N)?
 XML_NAME        psfex.xml       # Filename for XML output
-NTHREADS        0               # Number of simultaneous threads for
+NTHREADS        1               # Number of simultaneous threads for
                                 # the SMP version of PSFEx
                                 # 0 = automatic
