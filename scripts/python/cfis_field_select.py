@@ -223,9 +223,11 @@ def plot_area(images, angles, outbase, interactive):
     fig, ax = plot_init()
 
     # Field center
-    ra_c  = sum([img.ra for img in images])/len(images)
-    dec_c = sum([img.dec for img in images])/len(images)
-    plt.plot(ra_c, dec_c, 'or', mfc='none', ms=3)
+    n_ima = len(images)
+    if n_ima > 0:
+        ra_c  = sum([img.ra for img in images])/float(n_ima)
+        dec_c = sum([img.dec for img in images])/float(n_ima)
+        plt.plot(ra_c, dec_c, 'or', mfc='none', ms=3)
 
     for img in images:
         # Image center
