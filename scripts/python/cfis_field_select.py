@@ -200,7 +200,7 @@ def square_from_corners(ang0, ang1):
 
 
 
-def plot_area(images, angles, outbase):
+def plot_area(images, angles, outbase, interactive):
     """Plot images within area.
 
     Parameters
@@ -211,6 +211,8 @@ def plot_area(images, angles, outbase):
         Corner coordinates of area rectangle
     outbase: string
         output file name base
+    interactive: bool
+        show plot if True
     """
 
     if outbase is None:
@@ -246,11 +248,25 @@ def plot_area(images, angles, outbase):
     if outbase is not None:
         plt.title(outbase)
 
-    plt.axis('equal')
+    # Limits
+    border = 2
+    xm = (angles[1].ra.degree + angles[0].ra.degree) / 2
+    ym = (angles[1].dec.degree + angles[0].dec.degree) / 2
+    dx = angles[1].ra.degree - angles[0].ra.degree
+    dy = angles[1].dec.degree - angles[0].dec.degree
+    lim = max(dx, dy)
+    plt.xlim(xm - lim/2 - border, xm + lim/2 + border)
+    plt.ylim(ym - lim/2 - border, ym + lim/2 + border)
+
+    # Somehow this does not work (any more?)
+    #limits = plt.axis('equal')
+    #print(limits)
 
     print('Saving plot to {}'.format(outname))
     plt.savefig(outname)
-    plt.show()
+
+    if interactive == True:
+        plt.show()
 
 
 
@@ -321,6 +337,8 @@ def parse_options(p_def):
          help='output file name base (\'.txt\' is added), default=stdout')
     parser.add_option('', '--plot', dest='plot', action='store_true',
          help='create plots')
+    parser.add_option('', '--interactive', dest='interactive', action='store_true',
+         help='interactive mode (showing plots, recommended for call from jupyer notebook)')
 
     # Job control
     parser.add_option('-m', '--mode', dest='mode', type='string', default=None,
@@ -467,7 +485,7 @@ def run_mode(images, param):
         if param.plot == True:
             if param.verbose == True:
                 print('Creating plots')
-            plot_area(images, angles, param.outbase)
+            plot_area(images, angles, param.outbase, param.interactive)
         ex = 0
 
     else:
