@@ -24,6 +24,11 @@ import stuff
 
 unitdef = 'degree'
 
+# Maybe define class for these constants?
+size = {}
+size['tile']     = 0.5
+size['exposure'] = 1
+
 
 class image():
 
@@ -32,6 +37,9 @@ class image():
         self.ra   = ra
         self.dec  = dec
 
+    def print(self, **kwds):
+        print(self.__dict__)
+
 
 
 def get_file_pattern(pattern, band, image_type):
@@ -39,16 +47,16 @@ def get_file_pattern(pattern, band, image_type):
     """
 
     if pattern == '':
-        if image_type == 'raw':
+        if image_type == 'exposure':
             pattern_base = '\d{7}p'
         else:
             pattern_base  = 'CFIS.*\.{}'.format(band)
     else:
         pattern_base = pattern
 
-    if image_type == 'raw':
+    if image_type == 'exposure':
         pattern  = '{}\.fits.fz'.format(pattern_base)
-    elif image_type == 'tiles':
+    elif image_type == 'tile':
         pattern = '{}\.fits'.format(pattern_base)
     elif image_type == 'cat':
         pattern = '{}\.cat'.format(pattern_base)
@@ -264,5 +272,46 @@ def read_list(fname):
 
     file_list.sort()
     return file_list
+
+
+def create_image_list(fname, ra, dec):
+    """Return list of image information.
+
+    Parameters
+    ----------
+    fname: list of strings
+        file names
+    ra: list of strings
+        right ascension
+    dec: list of strings
+        declination
+
+    Returns
+    -------
+    images: list of cfis.image
+        list of image information
+    """
+
+    nf = len(fname)
+    nr = len(ra)
+    nd = len(dec)
+    if nf == 0:
+        stuff.error('No entries in file name list')
+    if (nf != nr or nf != nd) and nr != 0 and nd != 0:
+        stuff.error('Lists fname, ra, dec have not same length ({}, {}, {})'.format(nf, nr, nd))
+
+    images = []
+    for i in range(nf):
+        if nr > 0 and nd > 0:
+            r = Angle('{} {}'.format(ra[i], unitdef))
+            d = Angle('{} {}'.format(dec[i], unitdef))
+        else:
+            r = None
+            d = None
+        im = image(fname[i], r, d)
+        images.append(im)
+
+    return images
+
 
 
