@@ -122,7 +122,7 @@ def find_image_at_coord(images, coord, band, image_type, verbose=False):
 
     Returns
     -------
-    im_found: list of cfis.image
+    img_found: list of cfis.image
         Found image(s), None if none found.
     """
 
@@ -135,24 +135,31 @@ def find_image_at_coord(images, coord, band, image_type, verbose=False):
         nix, niy  = cfis.get_tile_number_from_coord(ra, dec, return_type=int)
         tile_name = cfis.get_tile_name(nix, niy, band)
 
-        im_found = []
-        for im in images:
-            if im.name == tile_name:
-                im_found.append(im)
+        img_found = []
+        for img in images:
+            if img.name == tile_name:
+                # Update coordinate in image for tiles with central coordinates
+                ra_c, dec_c = cfis.get_tile_coord_from_nixy(nix, niy)
+                if img.ra is not None or img.dec is not None:
+                    stuff.error('Coordinates in image are already set to {}, {}, cannot update to {}, {}'.\
+                                format(img.ra, img.dec, ra_c, dec_c))
+                img.ra  = ra_c
+                img.dec = dec_c
+                img_found.append(img)
 
-        if len(im_found) != 0:
+        if len(img_found) != 0:
                 pass
         else:
             if verbose == True:
                 print('Tile with numbers ({}, {}) not found'.format(nix, niy))
 
-        if len(im_found) > 1:
-            stuff.error('More than one tile ({}) found'.format(len(im_found)))
+        if len(img_found) > 1:
+            stuff.error('More than one tile ({}) found'.format(len(img_found)))
 
     elif image_type == 'exposure':
         sc_input = SkyCoord(ra, dec)
 
-        im_found = []
+        img_found = []
         for img in images:
             # Check distance along ra and dec from image center
             sc_img_same_ra  = SkyCoord(ra, img.dec)
@@ -161,9 +168,9 @@ def find_image_at_coord(images, coord, band, image_type, verbose=False):
             distance_dec = sc_input.separation(sc_img_same_ra)
             #print(distance_ra.degree, distance
             if distance_ra.degree < size[image_type]/2 and distance_dec.degree < size[image_type]/2:
-                im_found.append(img)
+                img_found.append(img)
 
-        if len(im_found) != 0:
+        if len(img_found) != 0:
                 pass
         else:
             if verbose == True:
@@ -172,7 +179,7 @@ def find_image_at_coord(images, coord, band, image_type, verbose=False):
     else:
         stuff.error('Only implemented for image_type=tile')
 
-    return im_found
+    return img_found
 
 
 
@@ -340,9 +347,12 @@ def plot_area(images, angles, image_type, outbase):
     else:
         outname = '{}.pdf'.format(outbase)
 
+    lw = 0.25
+    color = {'tile': 'b', 'exposure': 'g'}
+
     fig, ax = plot_init()
 
-    # Field center
+    # Field barycenter
     ra_c  = sum([img.ra for img in images])/len(images)
     dec_c = sum([img.dec for img in images])/len(images)
     plt.plot(ra_c, dec_c, 'or', mfc='none', ms=3)
@@ -351,17 +361,17 @@ def plot_area(images, angles, image_type, outbase):
         # Image center
         x  = img.ra.degree
         y  = img.dec.degree
-        plt.plot(x, y, 'b.', markersize=1)
+        #plt.plot(x, y, 'b.', markersize=1)
 
         # Image boundary
         dx = size[image_type] / 2
         dy = size[image_type] / 2
         cx, cy = square_from_centre(x, y, dx, dy)
-        plt.plot(cx, cy, 'g-', linewidth=0.5) 
+        plt.plot(cx, cy, '{}-'.format(color[image_type]), linewidth=lw)
 
     # Area border
     cx, cy = square_from_corners(angles[0], angles[1])
-    plt.plot(cx, cy, 'r-.', linewidth=0.5)
+    plt.plot(cx, cy, 'r-.', linewidth=lw)
 
     plt.xlabel('R.A. [degree]')
     plt.ylabel('Declination [degree]')
@@ -568,9 +578,9 @@ def run_mode(images, param):
         # Image number search: Return name of image(s) covering input coordinate
         im_found = find_image_at_coord(images, param.coord, param.band, param.image_type, verbose=param.verbose)
         if im_found != None:
-            print('# name')
+            print('# name ra[degree] dec[degree]')
             for im in im_found:
-                print(im.name, file=param.fout) 
+                print(im.name, im.ra.degree, im.dec.degree, file=param.fout) 
             ex =  0
 
     elif param.mode == 'c':
