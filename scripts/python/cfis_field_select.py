@@ -56,9 +56,10 @@ def get_image_list(inp, band, image_type, verbose=False):
         image list
     """
 
-    file_list = []
-    ra_list   = []
-    dec_list  = []
+    file_list  = []
+    ra_list    = []
+    dec_list   = []
+    valid_list = []
 
     if os.path.isdir(inp):
         # Read file names from directory
@@ -74,27 +75,39 @@ def get_image_list(inp, band, image_type, verbose=False):
             # File names and coordinates in ascii file
             inp_type  = 'file'
             dat = ascii.read(inp)
-            file_list = dat['Pointing']
-            ra_list   = dat['R.A.[degree]']
-            dec_list  = dat['Declination[degree]']
+
+            if len(dat.keys()) == 3:
+                # File is exposure + coord list (obtained from get_coord_CFIS_pointings.py)
+                file_list = dat['Pointing']
+                ra_list   = dat['R.A.[degree]']
+                dec_list  = dat['Declination[degree]']
+            elif len(dat.keys()) == 12:
+                # File is log file, e.g. from http://www.cfht.hawaii.edu/Science/CFIS-DATA/logs/MCLOG-CFIS.r.qso-elx.log
+                for d in dat:
+                    file_list.append('d{}p.fits.fz'.format(d['col1']))
+                    ra  = re.split('\s*', d['col4'])[0]
+                    dec = re.split('\s*', d['col4'])[1]
+                    ra_list.append(Angle('{} hours'.format(ra)).degree)
+                    dec_list.append(dec)
+                    valid = re.split('\s*', d['col11'])[2]
+                    valid_list.append(valid)
+            else:
+                stuff.error('Wrong file format, #columns={}, has to be 3 or 12'.format(len(dat.keys())))
         else:
             stuff.error('Image type \'{}\' not supported'.format(image_type))
 
 
     # Create list of objects, coordinate lists can be empty
-    image_list = cfis.create_image_list(file_list, ra_list, dec_list)
+    image_list = cfis.create_image_list(file_list, ra_list, dec_list, valid=valid_list)
 
     # Filter file list to match CFIS image pattern
     img_list = []
     pattern = cfis.get_file_pattern('', band, image_type)
 
-    #for f in file_list:
     for img in image_list:
 
-        #m = re.findall(pattern, f)
         m = re.findall(pattern, img.name)
         if len(m) != 0:
-            #img_list.append(m[0])
             img_list.append(img)
 
     if verbose == True and len(img_list) > 0:
@@ -578,9 +591,9 @@ def run_mode(images, param):
         # Image number search: Return name of image(s) covering input coordinate
         im_found = find_image_at_coord(images, param.coord, param.band, param.image_type, verbose=param.verbose)
         if im_found != None:
-            print('# name ra[degree] dec[degree]')
+            print('# name ra[degree] dec[degree] validation')
             for im in im_found:
-                print(im.name, im.ra.degree, im.dec.degree, file=param.fout) 
+                print(im.name, im.ra.degree, im.dec.degree, im.valid, file=param.fout) 
             ex =  0
 
     elif param.mode == 'c':

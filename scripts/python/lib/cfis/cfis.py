@@ -10,6 +10,10 @@ CFIS module
 :Date: 19/01/2018
 """
 
+# Compability with python2.x for x>6
+from __future__ import print_function
+
+
 import re
 import sys
 
@@ -32,13 +36,18 @@ size['exposure'] = 1
 
 class image():
 
-    def __init__(self, name, ra, dec):
-        self.name = name
-        self.ra   = ra
-        self.dec  = dec
+    def __init__(self, name, ra, dec, valid='Unknown'):
+        self.name  = name
+        self.ra    = ra
+        self.dec   = dec
+        if valid == None:
+            self.valid = 'Unknown'
+        else:
+            self.valid = valid
 
     def print(self, **kwds):
         print(self.__dict__)
+
 
 
 
@@ -274,7 +283,7 @@ def read_list(fname):
     return file_list
 
 
-def create_image_list(fname, ra, dec):
+def create_image_list(fname, ra, dec, valid=[]):
     """Return list of image information.
 
     Parameters
@@ -285,6 +294,8 @@ def create_image_list(fname, ra, dec):
         right ascension
     dec: list of strings
         declination
+    valid: list of strings, optional, default=[]
+        QSO exposure validation flag
 
     Returns
     -------
@@ -308,10 +319,41 @@ def create_image_list(fname, ra, dec):
         else:
             r = None
             d = None
-        im = image(fname[i], r, d)
+        if len(valid) > 0:
+            v = valid[i]
+        else:
+            v = None
+        im = image(fname[i], r, d, valid=v)
         images.append(im)
 
     return images
 
 
+def get_exposure_info(logfile_name, verbose=False):  
+    """Return information on run (single exposure) from log file.
 
+    Parameters
+    ----------
+    logfile_name: string
+        file name
+    verbose: bool, optional, default=False
+        verbose output
+
+    Returns:
+    images: list of class image
+        list of exposures
+    """
+
+    images = []
+    f = open(logfile_name)
+    for line in f:
+        dat = re.split(' |', line)
+        name = dat[0]
+        ra   = Angle(' hours'.format(dat[8]))
+        dec  = Angle(' degree'.format(dat[9]))
+        valid = dat[21]
+    
+        img = image(name, ra, dec, valid=valid)
+        image.append(img)
+
+    return image
