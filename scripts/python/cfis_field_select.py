@@ -340,7 +340,7 @@ def square_from_corners(ang0, ang1):
 
 
 
-def plot_area(images, angles, outbase, interactive):
+def plot_area(images, angles, image_type, outbase, interactive):
     """Plot images within area.
 
     Parameters
@@ -636,7 +636,7 @@ def run_mode(images, param):
         if param.plot == True:
             if param.verbose == True:
                 print('Creating plots')
-            plot_area(images, angles, param.outbase, param.interactive)
+            plot_area(images, angles, param.image_type, param.outbase, param.interactive)
         ex = 0
 
     else:
