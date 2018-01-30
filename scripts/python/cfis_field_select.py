@@ -27,13 +27,12 @@ import pylab as plt
 from astropy.io import ascii
 from astropy.table import Table, Column
 from astropy import units
-from astropy.coordinates import Angle
+from astropy.coordinates import Angle, SkyCoord
 
-from optparse import OptionParser, IndentedHelpFormatter
-from optparse import OptionGroup
+from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
 
 import cfis
-from cfis import unitdef
+from cfis import unitdef, size
 import stuff
 
 
@@ -53,32 +52,50 @@ def get_image_list(inp, band, image_type, verbose=False):
 
     Return
     ------
-    img_list: list of strings
+    img_list: list of class cfis.image
         image list
     """
 
-    # Get file list
-    if os.path.isfile(inp):
-        inp_type  = 'file'
-        file_list = cfis.read_list(inp)
+    file_list = []
+    ra_list   = []
+    dec_list  = []
 
-    elif os.path.isdir(inp):
+    if os.path.isdir(inp):
+        # Read file names from directory
         inp_type  = 'dir'
         file_list = glob.glob(inp)
 
-    else:
-        file_list = None
+    elif os.path.isfile(inp):
+        if image_type == 'tile':
+            # File names in single-column ascii file
+            inp_type  = 'file'
+            file_list = cfis.read_list(inp)
+        elif image_type == 'exposure':
+            # File names and coordinates in ascii file
+            inp_type  = 'file'
+            dat = ascii.read(inp)
+            file_list = dat['Pointing']
+            ra_list   = dat['R.A.[degree]']
+            dec_list  = dat['Declination[degree]']
+        else:
+            stuff.error('Image type \'{}\' not supported'.format(image_type))
 
+
+    # Create list of objects, coordinate lists can be empty
+    image_list = cfis.create_image_list(file_list, ra_list, dec_list)
 
     # Filter file list to match CFIS image pattern
     img_list = []
     pattern = cfis.get_file_pattern('', band, image_type)
 
-    for f in file_list:
+    #for f in file_list:
+    for img in image_list:
 
-        m = re.findall(pattern, f)
+        #m = re.findall(pattern, f)
+        m = re.findall(pattern, img.name)
         if len(m) != 0:
-            img_list.append(m[0])
+            #img_list.append(m[0])
+            img_list.append(img)
 
     if verbose == True and len(img_list) > 0:
         print('{} image files found in input {} \'{}\''.format(len(img_list), inp_type, inp))
@@ -88,52 +105,127 @@ def get_image_list(inp, band, image_type, verbose=False):
 
 
 def find_image_at_coord(images, coord, band, image_type, verbose=False):
+    """Return image covering given coordinate.
+
+    Parameters
+    ----------
+    images: list of class cfis.image
+        list of images
+    coord: string
+        coordinate ra and dec with units
+    band: string
+        optical band
+    image_type: string
+        image type ('tile', 'exposure', 'cat', 'weight')
+    verbose: bool, optional
+        verbose output if True, default=False
+
+    Returns
+    -------
+    im_found: list of cfis.image
+        Found image(s), None if none found.
+    """
 
     ra, dec   = cfis.get_Angle(coord)
 
     if verbose == True:
         print('Looking for image at coordinates {}, {}'.format(ra, dec))
 
-    if image_type == 'tiles':
+    if image_type == 'tile':
         nix, niy  = cfis.get_tile_number_from_coord(ra, dec, return_type=int)
         tile_name = cfis.get_tile_name(nix, niy, band)
-        im_found = None
 
+        im_found = []
         for im in images:
-            if im == tile_name:
-                im_found = im
-                break
+            if im.name == tile_name:
+                im_found.append(im)
 
-        if im_found != None:
+        if len(im_found) != 0:
                 pass
         else:
             if verbose == True:
-                print('Image with numbers ({}, {}) not found'.format(nix, niy))
+                print('Tile with numbers ({}, {}) not found'.format(nix, niy))
+
+        if len(im_found) > 1:
+            stuff.error('More than one tile ({}) found'.format(len(im_found)))
+
+    elif image_type == 'exposure':
+        sc_input = SkyCoord(ra, dec)
+
+        im_found = []
+        for img in images:
+            # Check distance along ra and dec from image center
+            sc_img_same_ra  = SkyCoord(ra, img.dec)
+            sc_img_same_dec = SkyCoord(img.ra, dec)
+            distance_ra  = sc_input.separation(sc_img_same_dec)
+            distance_dec = sc_input.separation(sc_img_same_ra)
+            #print(distance_ra.degree, distance
+            if distance_ra.degree < size[image_type]/2 and distance_dec.degree < size[image_type]/2:
+                im_found.append(img)
+
+        if len(im_found) != 0:
+                pass
+        else:
+            if verbose == True:
+                print('No exposure image found')
 
     else:
-        stuff.error('Only implemented for image_type=tiles')
+        stuff.error('Only implemented for image_type=tile')
 
     return im_found
 
 
 
 def find_images_in_area(images, angles, band, image_type, verbose=False):
+    """Return image list within coordinate area (rectangle)
+
+    Parameters
+    ----------
+    images: list of class cfis.image
+        list of images
+    angles: string
+        coordinates ra0_dec0_ra1_dec1 with units
+    band: string
+        optical band
+    image_type: string
+        image type ('tile', 'exposure', 'cat', 'weight')
+    verbose: bool, optional
+        verbose output if True, default=False
+`
+    Returns
+    -------
+    found: list of cfis.image
+        found images
+    """
 
     if verbose == True:
         print('Looking for all images within coordinates ', angles)
 
-    if image_type == 'tiles':
-        found = []
+    found = []
+
+    if image_type == 'tile':
         for img in images:
-            nix, niy = cfis.get_tile_number(img)
+            nix, niy = cfis.get_tile_number(img.name)
             ra, dec  = cfis.get_tile_coord_from_nixy(nix, niy)
             if ra.is_within_bounds(angles[0].ra, angles[1].ra) \
                 and dec.is_within_bounds(angles[0].dec, angles[1].dec):
-                img = cfis.image(img, ra, dec)
+                # Update coordinate in image class. This could be done for all images,
+                # not just the found ones.
+                if img.ra is not None or img.dec is not None:
+                    stuff.error('Coordinates in image are already set to {}, {}, cannot update to {}, {}'.\
+                                format(img.ra, img.dec, ra, dec))
+                img.ra  = ra
+                img.dec = dec
+                found.append(img)
+
+    elif image_type == 'exposure':
+        for img in images:
+            if img.ra.is_within_bounds(angles[0].ra, angles[1].ra) \
+                and img.dec.is_within_bounds(angles[0].dec, angles[1].dec):
                 found.append(img)
 
     else:
-        stuff.error('Image type {} not implemented yet'.format(image_type))
+        stuff.error('Image type \'{}\' not implemented yet'.format(image_type))
 
     if verbose == True:
         print('{} images found in area'.format(len(found)))
@@ -141,19 +233,47 @@ def find_images_in_area(images, angles, band, image_type, verbose=False):
     return found
 
 
-def get_coord_at_image(number, image_type, verbose=False):
+def get_coord_at_image(number, image_type, images, verbose=False):
+    """Return coordinate of image with given number.
 
+    Parameters
+    ----------
+    number: string
+        image number
+    image_type: string
+        image type ('tile', 'exposure', 'cat', weight')
+    image: list of cfis.image
+        list of images, used for type='exposure'
+    verbose: bool, optional
+        verbose output if True, default=False
 
-    if image_type == 'tiles':
-	# TODO: Read entire image name, not just the two tile numbers
+    Returns
+    -------
+    ra: Angle
+        right ascension
+    dec: Angle
+        declination
+    """
+
+    if image_type == 'tile':
         nix, niy = stuff.my_string_split(number, num=2, stop=True)
 
         if verbose == True:
             print('Looking for coordinates for tile with numbers ({},{})'.format(nix, niy))
 
         ra, dec  = cfis.get_tile_coord_from_nixy(nix, niy)
+
+    elif image_type == 'exposure':
+        ra  = []
+        dec = []
+        for img in images:
+            m = re.findall(number, img.name)
+            if len(m) != 0:
+                ra  = img.ra
+                dec = img.dec
+
     else:
-        stuff.error('Image type {} not implemented yet'.format(image_type))
+        stuff.error('Image type \'{}\' not implemented yet'.format(image_type))
 
     return ra, dec
 
@@ -209,6 +329,8 @@ def plot_area(images, angles, outbase, interactive):
         images
     angles: array(SkyCoord, 2)
         Corner coordinates of area rectangle
+    image_type: string
+        image type ('tile', 'exposure', 'cat', weight')
     outbase: string
         output file name base
     interactive: bool
@@ -236,8 +358,8 @@ def plot_area(images, angles, outbase, interactive):
         plt.plot(x, y, 'b.', markersize=1)
 
         # Image boundary
-        dx = 0.25
-        dy = 0.25
+        dx = size[image_type] / 2
+        dy = size[image_type] / 2
         cx, cy = square_from_centre(x, y, dx, dy)
         plt.plot(cx, cy, 'g-', linewidth=0.5) 
 
@@ -306,7 +428,7 @@ def params_default():
         input  = '.',
         mode  = 'c',
         band  = 'r',
-        image_type  = 'tiles',
+        image_type  = 'tile',
     )
 
     return p_def
@@ -353,7 +475,7 @@ def parse_options(p_def):
     parser.add_option('-b', '--band', dest='band', type='string', default=p_def.band,
         help='band, one of \'r\' (default)|\'u\'')
     parser.add_option('-t', '--type', dest='image_type', type='string', default=p_def.image_type,
-        help='image type, one of \'tiles\' (default)| \'cat\'|\'weight\'|\'raw\'')
+        help='image type, one of \'tile\' (default)| \'cat\'|\'weight\'|\'exposure\'')
 
     parser.add_option('', '--coord', dest='coord', type='string', default=None,
         help='(white-space or \'_\' separated) string of input coordinates, as astropy.coordinates.Angle')
@@ -394,6 +516,9 @@ def check_options(options):
         stuff.error('No input image number given (option \'--number\')')
     if options.mode == 'a' and options.area == None:
         stuff.error('No input area given (option \'--area\')')
+
+    if int(options.number != None) + int(options.coord != None) + int(options.area != None) > 1:
+        stuff.error('Only one option out of \'--number\', \'--coord\', \'--area\' can be given')
 
     see_help = 'See option \'-h\' for help.'
 
@@ -444,7 +569,7 @@ def run_mode(images, param):
 
     Parameters
     ----------
-    images: list of strings
+    images: list of class cfis.images
         list of images
     param: class stuff.param
         parameter values
@@ -460,24 +585,25 @@ def run_mode(images, param):
 
     if param.mode == 'n':
 
-        # Image number search: Return number of tile that covers input coordinate
-        image_name = find_image_at_coord(images, param.coord, param.band, param.image_type, verbose=param.verbose)
-        if image_name != None:
+        # Image number search: Return name of image(s) covering input coordinate
+        im_found = find_image_at_coord(images, param.coord, param.band, param.image_type, verbose=param.verbose)
+        if im_found != None:
             print('# name')
-            print(image_name, file=param.fout) 
+            for im in im_found:
+                print(im.name, file=param.fout) 
             ex =  0
 
     elif param.mode == 'c':
 
         # Coordinate search: Return coordinate covered by tile with input number
-        ra, dec = get_coord_at_image(param.number, param.image_type, verbose=param.verbose)
+        ra, dec = get_coord_at_image(param.number, param.image_type, images, verbose=param.verbose)
         print('# ra[{0}] dec[{0}]'.format(unitdef), file=param.fout)
         print(getattr(ra, unitdef), getattr(dec, unitdef), file=param.fout)
         ex = 0
 
     elif param.mode == 'a':
 
-        # Area search: Return tiles within input area
+        # Area search: Return tile within input area
         ex = 0
         angles = cfis.get_Angle_arr(param.area, num=4, verbose=param.verbose)
         images = find_images_in_area(images, angles, param.band, param.image_type, verbose=param.verbose)
