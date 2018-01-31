@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 
-# !!! Don't forget to update the package name!
-
 from distutils.core import setup
 
-exec(open('package_name/info.py').read())
+exec(open('PSFExInterpolation/info.py').read())
 
 setup(
-      name='package_name',
-      packages=['package_name'],
+      name='PSFExInterpolation',
+      packages=['PSFExInterpolation'],
       version=__version__,
       license="GNU GPLv3",
-      description='Parallel execution of multiple PSFEx processes',
+      description='Computation of PSFEx model at desired postion',
       author='Marc Gentile + Samuel Farrens',
       author_email='marc.gentile@epfl.ch',
       long_description=open('README.txt').read(),
