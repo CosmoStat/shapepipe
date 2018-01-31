@@ -153,7 +153,15 @@ class PackageRunner(object):
 
         # -- Load an extra code option from config file
         self._fnames['extra_option'] = (self._worker.config.get_as_string(
-                                        'EXTRA_CODE_OPTION', 'CODE'))
+                                        'EXTRA_CODE_OPTION', 'CODE')).split()
+        print '''#################################
+
+
+{},{}
+
+
+
+#################################'''.format(self._fnames['extra_option'], type(self._fnames['extra_option']))
 
     def _set_exec_line(self):
 
