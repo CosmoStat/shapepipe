@@ -120,13 +120,6 @@ class PackageRunner(object):
         This method sets all of the input and output files names needed for
         running the code.
 
-        Notes
-        -----
-        You will need to modify this method for the code you wish to implement
-        in the pipeline.
-
-        !!!TEMPLATE!!!
-
         """
 
         # --- Input files to be read
@@ -137,14 +130,13 @@ class PackageRunner(object):
                           self._fnames['input_filepath'][0])[1])[0])
 
         # --- Executable configuration file
-        # !!! Uncomment this line if your code uses a config file !!!
         # self._fnames['config_filepath'] = self._get_exec_config_filepath()
 
         # --- Target directory where to store files
         output_path = os.path.join(self._worker.result_output_dir,
                                    self._job.get_branch_tree())
 
-        # --- Outpu file name
+        # --- Output file name
         self._fnames['output_filepath'] = os.path.join(output_path,
                                                        input_filename)
 
@@ -182,12 +174,12 @@ class PackageRunner(object):
         # --- Execution line
         exec_path = self._worker.config.get_as_string('EXEC_PATH', 'CODE')
 
-        self._exec_line = ('{0} {1} {2} {3} > {4}_diff.txt').format(
+        self._exec_line = ('{0} {1} {2} {3} {4}').format(
                            exec_path,
                            self._fnames['input_filepath'][0],
-                           self._fnames['input_filepath'][1],
-                           self._fnames['extra_option'],
-                           self._fnames['output_filepath'])
+                           self._fnames['output_filepath_exp'],
+                           self._fnames['extra_option'][0],
+                           self._fnames['extra_option'][1])
 
         self._log_exec_line()
 
