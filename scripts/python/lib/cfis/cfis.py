@@ -33,20 +33,74 @@ size = {}
 size['tile']     = 0.5
 size['exposure'] = 1
 
+# Cut criteria for exposures
+exp_time_min     = 95
+flag_valid       = 'V'
+
 
 class image():
 
-    def __init__(self, name, ra, dec, valid='Unknown'):
-        self.name  = name
-        self.ra    = ra
-        self.dec   = dec
+    def __init__(self, name, ra, dec, exp_time=-1, valid='Unknown'):
+        """Create image information.
+
+        Parameters
+        ----------
+        name: string
+            file name
+        ra: Angle
+            right ascension
+        dec: Angle
+            declination
+        exp_time: integer, optiona, default=-1
+            exposure time
+        valid: string, optional, default='Unknown'
+            validation flag
+
+        Returns
+        -------
+        self: class image
+            image information
+        """
+            
+        self.name     = name
+        self.ra       = ra
+        self.dec      = dec
+        self.exp_time = exp_time
         if valid == None:
             self.valid = 'Unknown'
         else:
             self.valid = valid
 
-    def print(self, **kwds):
-        print(self.__dict__)
+    def cut(self, no_cuts=False):
+        """Return True (False) if image does (not) need to be cut from selection.
+
+        Parameters
+        ----------
+        no_cuts: bool, optiona, default=False
+            do not cut if True
+
+        Returns
+        -------
+        cut: bool
+            True (False) if image is (not) cut
+        """
+
+        if no_cuts == True:
+            return False
+
+        if self.exp_time < exp_time_min:
+            return True
+
+        if self.valid != flag_valid:
+            return True
+
+        return False
+
+
+    def print(self, file=sys.stdout):
+    #def print(self, **kwds):
+        print('{} {:10.2f} {:10.2f} {:5d} {:8s}'.format(self.name, getattr(self.ra, unitdef), getattr(self.dec, unitdef), \
+              self.exp_time, self.valid), file=file)
 
 
 
@@ -283,7 +337,7 @@ def read_list(fname):
     return file_list
 
 
-def create_image_list(fname, ra, dec, valid=[]):
+def create_image_list(fname, ra, dec, exp_time=[], valid=[]):
     """Return list of image information.
 
     Parameters
@@ -294,6 +348,8 @@ def create_image_list(fname, ra, dec, valid=[]):
         right ascension
     dec: list of strings
         declination
+    exp_time: list of integers, optional, default=[]
+        exposure time
     valid: list of strings, optional, default=[]
         QSO exposure validation flag
 
@@ -319,11 +375,13 @@ def create_image_list(fname, ra, dec, valid=[]):
         else:
             r = None
             d = None
+        if len(exp_time) > 0:
+            e = exp_time[i]
         if len(valid) > 0:
             v = valid[i]
         else:
             v = None
-        im = image(fname[i], r, d, valid=v)
+        im = image(fname[i], r, d, exp_time=e, valid=v)
         images.append(im)
 
     return images

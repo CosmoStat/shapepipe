@@ -56,13 +56,14 @@ def get_image_list(inp, band, image_type, verbose=False):
         image list
     """
 
-    file_list  = []
-    ra_list    = []
-    dec_list   = []
-    valid_list = []
+    file_list     = []
+    ra_list       = []
+    dec_list      = []
+    exp_time_list = []
+    valid_list    = []
 
     if os.path.isdir(inp):
-        # Read file names from directory
+        # Read file names from directory listing
         inp_type  = 'dir'
         file_list = glob.glob(inp)
 
@@ -83,12 +84,15 @@ def get_image_list(inp, band, image_type, verbose=False):
                 dec_list  = dat['Declination[degree]']
             elif len(dat.keys()) == 12:
                 # File is log file, e.g. from http://www.cfht.hawaii.edu/Science/CFIS-DATA/logs/MCLOG-CFIS.r.qso-elx.log
+                # Default file separator is '|'
                 for d in dat:
                     file_list.append('d{}p.fits.fz'.format(d['col1']))
                     ra  = re.split('\s*', d['col4'])[0]
                     dec = re.split('\s*', d['col4'])[1]
                     ra_list.append(Angle('{} hours'.format(ra)).degree)
                     dec_list.append(dec)
+                    exp_time = int(d['col5'])
+                    exp_time_list.append(exp_time)
                     valid = re.split('\s*', d['col11'])[2]
                     valid_list.append(valid)
             else:
@@ -98,7 +102,7 @@ def get_image_list(inp, band, image_type, verbose=False):
 
 
     # Create list of objects, coordinate lists can be empty
-    image_list = cfis.create_image_list(file_list, ra_list, dec_list, valid=valid_list)
+    image_list = cfis.create_image_list(file_list, ra_list, dec_list, exp_time=exp_time_list, valid=valid_list)
 
     # Filter file list to match CFIS image pattern
     img_list = []
@@ -117,7 +121,7 @@ def get_image_list(inp, band, image_type, verbose=False):
 
 
 
-def find_image_at_coord(images, coord, band, image_type, verbose=False):
+def find_image_at_coord(images, coord, band, image_type, no_cuts=False, verbose=False):
     """Return image covering given coordinate.
 
     Parameters
@@ -130,6 +134,8 @@ def find_image_at_coord(images, coord, band, image_type, verbose=False):
         optical band
     image_type: string
         image type ('tile', 'exposure', 'cat', 'weight')
+    no_cuts: bool, optional, default=False
+        no cuts (of short exposure, validation flag) if True
     verbose: bool, optional
         verbose output if True, default=False
 
@@ -179,9 +185,9 @@ def find_image_at_coord(images, coord, band, image_type, verbose=False):
             sc_img_same_dec = SkyCoord(img.ra, dec)
             distance_ra  = sc_input.separation(sc_img_same_dec)
             distance_dec = sc_input.separation(sc_img_same_ra)
-            #print(distance_ra.degree, distance
             if distance_ra.degree < size[image_type]/2 and distance_dec.degree < size[image_type]/2:
-                img_found.append(img)
+                if img.cut(no_cuts=no_cuts) == False:
+                    img_found.append(img)
 
         if len(img_found) != 0:
                 pass
@@ -196,7 +202,7 @@ def find_image_at_coord(images, coord, band, image_type, verbose=False):
 
 
 
-def find_images_in_area(images, angles, band, image_type, verbose=False):
+def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose=False):
     """Return image list within coordinate area (rectangle)
 
     Parameters
@@ -209,8 +215,10 @@ def find_images_in_area(images, angles, band, image_type, verbose=False):
         optical band
     image_type: string
         image type ('tile', 'exposure', 'cat', 'weight')
-    verbose: bool, optional
-        verbose output if True, default=False
+    no_cuts: bool, optional, default=False
+        no cuts (of short exposure, validation flag) if True
+    verbose: bool, optional, default=False
+        verbose output if True
 `
     Returns
     -------
@@ -242,7 +250,9 @@ def find_images_in_area(images, angles, band, image_type, verbose=False):
         for img in images:
             if img.ra.is_within_bounds(angles[0].ra, angles[1].ra) \
                 and img.dec.is_within_bounds(angles[0].dec, angles[1].dec):
-                found.append(img)
+
+                if img.cut(no_cuts=no_cuts) == False:
+                    found.append(img)
 
     else:
         stuff.error('Image type \'{}\' not implemented yet'.format(image_type))
@@ -253,7 +263,7 @@ def find_images_in_area(images, angles, band, image_type, verbose=False):
     return found
 
 
-def get_coord_at_image(number, image_type, images, verbose=False):
+def get_coord_at_image(number, image_type, images, no_cuts=False, verbose=False):
     """Return coordinate of image with given number.
 
     Parameters
@@ -264,6 +274,8 @@ def get_coord_at_image(number, image_type, images, verbose=False):
         image type ('tile', 'exposure', 'cat', weight')
     image: list of cfis.image
         list of images, used for type='exposure'
+    no_cuts: bool, optional, default=False
+        no cuts (of short exposure, validation flag) if True
     verbose: bool, optional
         verbose output if True, default=False
 
@@ -289,8 +301,9 @@ def get_coord_at_image(number, image_type, images, verbose=False):
         for img in images:
             m = re.findall(number, img.name)
             if len(m) != 0:
-                ra  = img.ra
-                dec = img.dec
+                if img.cut(no_cuts=no_cuts) == False:
+                    ra  = img.ra
+                    dec = img.dec
 
     else:
         stuff.error('Image type \'{}\' not implemented yet'.format(image_type))
@@ -493,6 +506,8 @@ def parse_options(p_def):
 	      ' n: search image number given a coordinate (--coord)\n'
 	      ' c: search for image coord. given a number (--number)\n'
 	      ' a: area search, search images within area (--area)\n')
+    parser.add_option('', '--no_cuts', dest='no_cuts', action='store_true',
+        help='output all exposures, no cuts (default: cut short and invalid exposures)')
 
     # Field and image options
     parser.add_option('-b', '--band', dest='band', type='string', default=p_def.band,
@@ -542,6 +557,9 @@ def check_options(options):
 
     if int(options.number != None) + int(options.coord != None) + int(options.area != None) > 1:
         stuff.error('Only one option out of \'--number\', \'--coord\', \'--area\' can be given')
+
+    if options.image_type != 'exposure' and options.no_cuts == True:
+        stuff.error('option \'--no_cuts\' only possible for image_type=exposure')
 
     see_help = 'See option \'-h\' for help.'
 
@@ -609,30 +627,30 @@ def run_mode(images, param):
     if param.mode == 'n':
 
         # Image number search: Return name of image(s) covering input coordinate
-        im_found = find_image_at_coord(images, param.coord, param.band, param.image_type, verbose=param.verbose)
+        im_found = find_image_at_coord(images, param.coord, param.band, param.image_type, no_cuts=param.no_cuts, verbose=param.verbose)
         if im_found != None:
-            print('# name ra[degree] dec[degree] validation')
+            print('# Name ra[{0}] dec[{0}] exp_time[s] validation'.format(unitdef), file=param.fout)
             for im in im_found:
-                print(im.name, im.ra.degree, im.dec.degree, im.valid, file=param.fout) 
+                im.print(file=param.fout)
             ex =  0
 
     elif param.mode == 'c':
 
-        # Coordinate search: Return coordinate covered by tile with input number
-        ra, dec = get_coord_at_image(param.number, param.image_type, images, verbose=param.verbose)
+        # Coordinate search: Return coordinate covered by image with input number/file name
+        ra, dec = get_coord_at_image(param.number, param.image_type, images, no_cuts=param.no_cuts, verbose=param.verbose)
         print('# ra[{0}] dec[{0}]'.format(unitdef), file=param.fout)
         print(getattr(ra, unitdef), getattr(dec, unitdef), file=param.fout)
         ex = 0
 
     elif param.mode == 'a':
 
-        # Area search: Return tile within input area
+        # Area search: Return images within input area
         ex = 0
         angles = cfis.get_Angle_arr(param.area, num=4, verbose=param.verbose)
-        images = find_images_in_area(images, angles, param.band, param.image_type, verbose=param.verbose)
-        print('# Name ra[{0}] dec[{0}]'.format(unitdef), file=param.fout)
+        images = find_images_in_area(images, angles, param.band, param.image_type, no_cuts=param.no_cuts, verbose=param.verbose)
+        print('# Name ra[{0}] dec[{0}] exp_time[s] validation'.format(unitdef), file=param.fout)
         for img in images:
-            print('{} {} {}'.format(img.name, getattr(img.ra, unitdef), getattr(img.dec, unitdef)), file=param.fout)
+            img.print(file=param.fout)
         if param.plot == True:
             if param.verbose == True:
                 print('Creating plots')
