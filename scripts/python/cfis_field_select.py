@@ -235,6 +235,7 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
         for img in images:
             nix, niy = cfis.get_tile_number(img.name)
             ra, dec  = cfis.get_tile_coord_from_nixy(nix, niy)
+            # MKDEBUG TODO: bounds around 0 deg
             if ra.is_within_bounds(angles[0].ra, angles[1].ra) \
                 and dec.is_within_bounds(angles[0].dec, angles[1].dec):
                 # Update coordinate in image class. This could be done for all images,
@@ -263,13 +264,15 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
     return found
 
 
-def get_coord_at_image(number, image_type, images, no_cuts=False, verbose=False):
+def get_coord_at_image(number, band, image_type, images, no_cuts=False, verbose=False):
     """Return coordinate of image with given number.
 
     Parameters
     ----------
     number: string
         image number
+    band: string
+        optical band
     image_type: string
         image type ('tile', 'exposure', 'cat', weight')
     image: list of cfis.image
@@ -281,19 +284,21 @@ def get_coord_at_image(number, image_type, images, no_cuts=False, verbose=False)
 
     Returns
     -------
-    ra: Angle
-        right ascension
-    dec: Angle
-        declination
+    im_found: class cfis.image
+        found image
     """
+
+    img_found = None
 
     if image_type == 'tile':
         nix, niy = stuff.my_string_split(number, num=2, stop=True)
+        tile_name = cfis.get_tile_name(nix, niy, band)
 
         if verbose == True:
             print('Looking for coordinates for tile with numbers ({},{})'.format(nix, niy))
 
-        ra, dec  = cfis.get_tile_coord_from_nixy(nix, niy)
+        ra, dec   = cfis.get_tile_coord_from_nixy(nix, niy)
+        img_found = cfis.image(tile_name, ra, dec)
 
     elif image_type == 'exposure':
         ra  = []
@@ -302,13 +307,12 @@ def get_coord_at_image(number, image_type, images, no_cuts=False, verbose=False)
             m = re.findall(number, img.name)
             if len(m) != 0:
                 if img.cut(no_cuts=no_cuts) == False:
-                    ra  = img.ra
-                    dec = img.dec
+                    img_found = img
 
     else:
         stuff.error('Image type \'{}\' not implemented yet'.format(image_type))
 
-    return ra, dec
+    return img_found
 
     
 
@@ -627,35 +631,39 @@ def run_mode(images, param):
     if param.mode == 'n':
 
         # Image number search: Return name of image(s) covering input coordinate
-        im_found = find_image_at_coord(images, param.coord, param.band, param.image_type, no_cuts=param.no_cuts, verbose=param.verbose)
-        if im_found != None:
-            print('# Name ra[{0}] dec[{0}] exp_time[s] validation'.format(unitdef), file=param.fout)
-            for im in im_found:
-                im.print(file=param.fout)
+        images_found = find_image_at_coord(images, param.coord, param.band, param.image_type, no_cuts=param.no_cuts, verbose=param.verbose)
+        if len(images_found) > 0:
+            images_found[0].print_header(file=param.fout)
+            for img in images_found:
+                img.print(file=param.fout)
             ex =  0
 
     elif param.mode == 'c':
 
         # Coordinate search: Return coordinate covered by image with input number/file name
-        ra, dec = get_coord_at_image(param.number, param.image_type, images, no_cuts=param.no_cuts, verbose=param.verbose)
-        print('# ra[{0}] dec[{0}]'.format(unitdef), file=param.fout)
-        print(getattr(ra, unitdef), getattr(dec, unitdef), file=param.fout)
-        ex = 0
+        img_found = get_coord_at_image(param.number, param.band, param.image_type, images, no_cuts=param.no_cuts, verbose=param.verbose)
+        if img_found != None:
+            img_found.print_header(file=param.fout)
+            img_found.print(file=param.fout)
+            ex = 0
+        else:
+            if param.verbose:
+                print('No image found, try with --no_cuts', file=sys.stderr)
 
     elif param.mode == 'a':
 
         # Area search: Return images within input area
-        ex = 0
         angles = cfis.get_Angle_arr(param.area, num=4, verbose=param.verbose)
-        images = find_images_in_area(images, angles, param.band, param.image_type, no_cuts=param.no_cuts, verbose=param.verbose)
-        print('# Name ra[{0}] dec[{0}] exp_time[s] validation'.format(unitdef), file=param.fout)
-        for img in images:
-            img.print(file=param.fout)
-        if param.plot == True:
-            if param.verbose == True:
-                print('Creating plots')
-            plot_area(images, angles, param.image_type, param.outbase, param.interactive)
-        ex = 0
+        images_found = find_images_in_area(images, angles, param.band, param.image_type, no_cuts=param.no_cuts, verbose=param.verbose)
+        if len(images_found) > 0:
+            images_found[0].print_header(file=param.fout)
+            for img in images_found:
+                img.print(file=param.fout)
+            if param.plot == True:
+                if param.verbose == True:
+                    print('Creating plots')
+                plot_area(images_found, angles, param.image_type, param.outbase, param.interactive)
+            ex = 0
 
     else:
 
@@ -691,7 +699,7 @@ def main(argv=None):
 
 
     if param.verbose is True:
-        print('Start program {}'.format(os.path.basename(argv[0])))
+        print('Start of program {}'.format(os.path.basename(argv[0])))
 
 
     ### Start main program ###
@@ -718,7 +726,7 @@ def main(argv=None):
     ### End main program
 
     if param.verbose is True:
-        print('Finish program {}'.format(os.path.basename(argv[0])))
+        print('End of program {}'.format(os.path.basename(argv[0])))
 
     return ex
 

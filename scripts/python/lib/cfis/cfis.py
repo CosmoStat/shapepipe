@@ -65,11 +65,15 @@ class image():
         self.name     = name
         self.ra       = ra
         self.dec      = dec
-        self.exp_time = exp_time
+        if exp_time == None:
+            self.exp_time = -1
+        else:
+            self.exp_time = exp_time
         if valid == None:
             self.valid = 'Unknown'
         else:
             self.valid = valid
+
 
     def cut(self, no_cuts=False):
         """Return True (False) if image does (not) need to be cut from selection.
@@ -85,13 +89,16 @@ class image():
             True (False) if image is (not) cut
         """
 
+        # Do not cut if no_cuts flag is set
         if no_cuts == True:
             return False
 
-        if self.exp_time < exp_time_min:
+        # Cut if exposure time smaller than minimum (and not flagged as unknown or n/a)
+        if self.exp_time < exp_time_min and self.exp_time != -1:
             return True
 
-        if self.valid != flag_valid:
+        # Cut if validation flag is not valid (and not unknown)
+        if self.valid != flag_valid and self.valid != 'Unknown':
             return True
 
         return False
@@ -99,9 +106,36 @@ class image():
 
     def print(self, file=sys.stdout):
     #def print(self, **kwds):
+        """Print image information as ascii Table column
+
+        Parameters
+        ----------
+        file: file handle, optional, default=sys.stdout
+            output file handle
+
+        Returns
+        -------
+        None
+        """
+
         print('{} {:10.2f} {:10.2f} {:5d} {:8s}'.format(self.name, getattr(self.ra, unitdef), getattr(self.dec, unitdef), \
               self.exp_time, self.valid), file=file)
 
+
+    def print_header(self, file=sys.stdout):
+        """Print header for ascii Table output
+
+        Parameters
+        ----------
+        file: file handle, optional, default=sys.stdout
+            output file handle
+
+        Returns
+        -------
+        None
+        """
+
+        print('# Name ra[{0}] dec[{0}] exp_time[s] validation'.format(unitdef), file=file)
 
 
 
@@ -261,6 +295,49 @@ def get_tile_number(tile_name):
     return nix, niy
     
 
+def check_ra(ra):
+    """Range check of right ascension.
+
+    Parameters
+    ----------
+    ra: Angle
+        right ascension
+
+    Returns
+    -------
+    res: bool
+        result of check (True if pass, False if fail)
+    """
+
+    print(ra.deg)
+    if ra.deg < 0 or ra.deg > 360:
+        stuff.error('Invalid ra, valid range is 0 < ra < 360 deg')
+        return 1
+
+    return 0
+
+
+def check_dec(dec):
+    """Range check of declination.
+
+    Parameters
+    ----------
+    dec: Angle
+        declination
+
+    Returns
+    -------
+    res: bool
+        result of check (True if pass, False if fail)
+    """
+
+    if dec.deg < -90 or dec.deg > 90:
+        stuff.error('Invalid dec, valid range is -90 < dec < 90 deg')
+        return 1
+
+    return 0
+
+
 
 def get_Angle(str_coord):
     """Return Angles ra, dec from coordinate string
@@ -280,7 +357,10 @@ def get_Angle(str_coord):
 
     ra, dec = stuff.my_string_split(str_coord, num=2, stop=True)
 
-    return Angle(ra), Angle(dec)
+    a_ra  = Angle(ra)
+    a_dec = Angle(dec)
+
+    return r_ra, a_dec
 
 
 
@@ -377,6 +457,8 @@ def create_image_list(fname, ra, dec, exp_time=[], valid=[]):
             d = None
         if len(exp_time) > 0:
             e = exp_time[i]
+        else:
+            e = -1
         if len(valid) > 0:
             v = valid[i]
         else:
