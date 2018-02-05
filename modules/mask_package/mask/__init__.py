@@ -2,8 +2,6 @@
 
 """MASK
 
-!!! Don't forget to update the package name !!!
-
 @mainpage Multiprocessing Framework - Parallel Package Name execution
 
 Author: Marc Gentile (marc.gentile@epfl.ch) and Samuel Farrens
@@ -31,7 +29,7 @@ Prerequisites
 - sconfig v1.x: configuration file parser module
 - slogger v1.x: logging module
 - scatalog v2.0.1: catalog management
-- astropy v1.3.2 : coordinate handling functions (tested with this version)
+- astropy v2.0.3 : coordinate handling functions (tested with this version)
 - numpy v1.12.1 : to read ascii file (tested with this version)
 
 - CDSclient : provide star catalog (http://cdsarc.u-strasbg.fr/doc/cdsclient.html)

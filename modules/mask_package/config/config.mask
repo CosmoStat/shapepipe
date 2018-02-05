@@ -23,6 +23,7 @@ HALO_MAKE = True
 HALO_MASKMODEL_PATH = /local/home/aguinot/stage_cea/gitlab/new/ShapePipe/modules/mask_package/config/halo_mask.reg
 HALO_MAG_LIM = 13.
 HALO_SCALE_FACTOR = 0.05
+HALO_MAG_PIVOT = 13.8
 HALO_FLAG_VALUE = 1
 HALO_REG_FILE = halo.reg
 
@@ -35,6 +36,7 @@ SPIKE_MAKE = True
 SPIKE_MASKMODEL_PATH = /local/home/aguinot/stage_cea/gitlab/new/ShapePipe/modules/mask_package/config/MEGAPRIME_star_i_13.8.reg
 SPIKE_MAG_LIM = 18.
 SPIKE_SCALE_FACTOR = 0.3
+SPIKE_MAG_PIVOT = 13.8
 SPIKE_FLAG_VALUE = 2
 SPIKE_REG_FILE = spike.reg
 
