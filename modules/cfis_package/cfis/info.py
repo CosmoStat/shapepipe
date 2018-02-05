@@ -11,4 +11,4 @@ Set the package information
 """
 
 __version__ = "1.0.0"
-__whoami__ = "package_name"
+__whoami__ = "cfis"
