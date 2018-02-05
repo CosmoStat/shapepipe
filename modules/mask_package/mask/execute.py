@@ -156,11 +156,6 @@ class PackageRunner(object):
 
         This method executes the command line defined by _set_exec_line().
 
-        Notes
-        -----
-        This method need only be modified if you wish to execute the command
-        line differently. e.g. using subprocess, etc.
-
         """
 
         r=ms.mask(image_path=self._fnames['input_filepath'][0],
