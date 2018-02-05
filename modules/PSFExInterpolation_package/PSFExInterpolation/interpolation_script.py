@@ -1,6 +1,7 @@
 import numpy as np
 import psfex
 import scatalog as sc
+from astropy.io import fits
 
 class PSFExInterpolator(object):
     def __init__(self, dotpsf_path, galcat_path, output_path):
@@ -36,7 +37,5 @@ class PSFExInterpolator(object):
     def _write_output(self):
         if self.interp_PSFs is None:
             self._interpolate()
-        
-        output = sc.FITSCatalog(self._output_path, 
-                                open_mode=sc.BaseCatalog.OpenMode.ReadWrite)
-        output.save_as_fits(self.interp_PSFs, self.gal_pos)
+        output = fits.ImageHDU(self.interp_PSFs)
+        output.writeto(self._output_path, overwrite=True)
