@@ -134,12 +134,10 @@ class PackageRunner(object):
         # self._fnames['config_filepath'] = self._get_exec_config_filepath()
 
         # --- Target directory where to store files
-        output_path = os.path.join(self._worker.result_output_dir,
-                                   self._job.get_branch_tree())
+        output_path = os.path.join(self._worker.result_output_dir, '')
 
         # --- Output file name
-        self._fnames['output_filepath'] = os.path.join(output_path,
-                                                       input_filename)
+        self._fnames['output_filepath'] = output_path
 
         # --- Expected output catalog file name
         output_cat_filename_exp = (self._get_output_catalog_filename(
@@ -163,13 +161,6 @@ class PackageRunner(object):
         This method defines the command line for the code corresponding to this
         package.
 
-        Notes
-        -----
-        You will need to modify this method for the code you wish to implement
-        in the pipeline.
-
-        !!!TEMPLATE!!!
-
         """
 
         # --- Execution line
@@ -178,7 +169,7 @@ class PackageRunner(object):
                            exec_path,
                            self._fnames['input_filepath'][0],
                            self._fnames['input_filepath'][1],
-                           self._fnames['output_filepath_exp'],
+                           self._fnames['output_filepath'],
                            self._fnames['extra_option'])
 
         self._log_exec_line()
@@ -197,7 +188,7 @@ class PackageRunner(object):
         """
         interpolator = interp.PSFExInterpolator(self._fnames['input_filepath'][0], 
                                                 self._fnames['input_filepath'][1], 
-                                                self._fnames['output_filepath_exp'])
+                                                self._fnames['output_filepath'])
         interpolator.write_output()
 
     def _get_exec_config_filepath(self):
