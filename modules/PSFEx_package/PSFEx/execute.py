@@ -43,6 +43,8 @@ class PackageRunner(object):
         self.file_types = []
         self._get_file_types()
 
+        self._fnames['PSFEX'] = {'input_dir' : self._worker.log_output_dir + '/psfex_config_inputs/'}
+
     def _get_file_types(self):
 
         """Get File Types
@@ -129,9 +131,6 @@ class PackageRunner(object):
         input_filename = (os.path.splitext(os.path.split(
                           self._fnames['input_filepath'][0])[1])[0])
 
-        # --- Executable configuration file
-        self._fnames['config_filepath'] = self._get_exec_config_filepath()
-
         # --- Target directory where to store files
         output_path = os.path.join(self._worker.result_output_dir,
                                    self._job.get_branch_tree())
@@ -151,9 +150,6 @@ class PackageRunner(object):
 
         self._log_exp_output(self._fnames['output_filepath_exp'])
 
-        # -- Load an extra code option from config file
-        self._fnames['extra_option'] = (self._worker.config.get_as_string(
-                                        'EXTRA_CODE_OPTION', 'CODE'))
 
     def _set_exec_line(self):
 
@@ -162,17 +158,24 @@ class PackageRunner(object):
         This method defines the command line for the code corresponding to this
         package.
 
+        Notes
+        -----
+        In the first time it will create config file needed for PSFEx (*.psfex).
+        Then setup the command line.
+
         """
 
         # --- Execution line
         exec_path = self._worker.config.get_as_string('EXEC_PATH', 'CODE')
 
+        # --- PSFEx Configuration
+        self._config_psfex_input()
+
         self._exec_line = ('{0} {1} -c {2} -NTHREADS 1 -PSF_DIR {3} {4}').format(
                            exec_path,
                            self._fnames['input_filepath'][0],
                            self._fnames['config_filepath'],
-                           self._worker.result_output_dir,
-                           self._fnames['extra_option'])
+                           self._worker.result_output_dir)
 
         self._log_exec_line()
 
@@ -340,3 +343,138 @@ class PackageRunner(object):
                                                 self._worker.name,
                                                 self._job))
             self._worker.logger.flush()
+
+
+    def _config_psfex_input(self):
+        """ Create the *.psfex input file for PSFEx
+
+        This function mix parameters from the package config file with thus
+        provide in the default config file.
+
+        """
+
+        params = self._worker.config.get_section_data('PSFEX_INPUT')
+        if params is None:
+            return None
+
+        self._psfex_input_params = {}
+
+        for i in params.keys():
+                self._psfex_input_params[i] = params[i]
+
+        self._set_default_input()
+        self._save_psfex_input_config()
+
+
+    def _set_default_input(self):
+        """Set default input parameters
+
+        This function read the default.psfex file and fill not specified
+        parameters to run PSFEx.
+
+        """
+
+        dir_path = self._worker.base_input_dir + 'PSFEx_default'
+
+        self._read_psfex_default(dir_path + '/default.psfex')
+
+        for i in self._default_input_params.keys():
+            if not i in self._psfex_input_params.keys():
+                self._psfex_input_params[i] = self._default_input_params[i]
+
+
+    def _read_psfex_default(self, path):
+        """Read default.psfex
+
+        This function read the default.psfex file and put them in a dictionary.
+
+        Parameters
+        ----------
+        path : str
+            Path to default.psfex file.
+        """
+
+        self._default_input_params = {}
+        f=open(path, 'r')
+
+        while True:
+            line = f.readline()
+
+            if line == '':
+                break
+
+            line = self._clean_line(line)
+
+            if line != None:
+                s = re.split('\s+', line)
+                if len(s) >= 2:
+                    self._default_input_params[s[0]] = ''.join(s[1:])
+
+        f.close()
+
+
+    def _clean_line(self, line_tmp):
+        """Clean Lines
+
+        This function is called during the reading process to clean empty lines
+        and ignore comments.
+
+        Parameters
+        ----------
+        line_tmp : str
+            The string to clean up.
+
+        Returns
+        -------
+        str
+            If the line is not empty or a comment return the contents and
+            None otherwise.
+
+        """
+
+        if re.split('#',line_tmp)[0] == '':
+            return None
+
+        line_tmp = line_tmp.replace('\n','')
+        line_tmp = re.split('#', line_tmp)[0]
+
+        if line_tmp != '':
+            return line_tmp
+        else:
+            return None
+
+
+    def _save_psfex_input_config(self):
+        """Save the input *.psfex file
+
+        This function write the *.psfex file for this run and save it in the log
+        output directory.
+
+        Note
+        ----
+        Name of the file : config-***-*.psfex
+
+        """
+
+        dir_path = self._fnames['PSFEX']['input_dir']
+        s=re.split("\-([0-9]{3})\-([0-9]+)\.", self._fnames['input_filepath'][0])
+        img_num = '-{0}-{1}'.format(s[1],s[2])
+        self._fnames['PSFEX']['input_config_path'] = dir_path + '/config{0}.psfex'.format(img_num)
+
+        if not os.path.isdir(dir_path):
+            try:
+                os.system('mkdir {0}'.format(dir_path))
+            except:
+                raise Exception('Impossible to create the directory for psfex input config files in {0}'.format(self._worker.log_output_dir))
+
+        self._file_dependencies()
+
+        f = open(self._fnames['PSFEX']['input_config_path'],'w')
+
+        if len(self._psfex_input_params) == 0:
+            raise ValueError('No parameters specified for the PSFEx input config file')
+
+        for i in self._psfex_input_params.keys():
+            f.write('{0}\t{1}\n'.format(i, self._psfex_input_params[i]))
+
+        f.close()

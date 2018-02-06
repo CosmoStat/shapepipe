@@ -26,11 +26,10 @@ Prerequisites
 - Python 2.6 or 2.7 on Unix or Mac OS
 - mpfg v1.x: base multiprocessing framework module
 - mpfx v1.x: extension layer of multiprocessing framework module
-- sconfig v1.x: configuration file parser module
+- sconfig v1.0.1: configuration file parser module
 - slogger v1.x: logging module
 
-- An installation of the PSFEx tool
-(http://www.astromatic.net/software/psfex) is also required.
+- PSFEx : PSF interpolation software (http://www.astromatic.net/software/psfex).
 
 Installation
 
