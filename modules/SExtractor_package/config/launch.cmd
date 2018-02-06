@@ -1,4 +1,4 @@
-# !/bin/bash
+#! /bin/bash
 
 # Set path to package module
 export PACKAGE_DIR="$HOME/stage_cea/gitlab/new/ShapePipe/modules/SExtractor_package"
