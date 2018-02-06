@@ -4,7 +4,7 @@
 
 This module contain a class for executing the package specific code.
 
-:Authors: Samuel Farrens and Marc Gentile
+:Authors: Samuel Farrens, Marc Gentile and Axel GUINOT
 
 :Date: 23/01/2018
 
@@ -14,6 +14,8 @@ This module contain a class for executing the package specific code.
 import os
 from time import clock
 from shutil import copy
+
+import re
 
 
 class PackageRunner(object):
@@ -171,11 +173,10 @@ class PackageRunner(object):
         # --- PSFEx Configuration
         self._config_psfex_input()
 
-        self._exec_line = ('{0} {1} -c {2} -NTHREADS 1 -PSF_DIR {3} {4}').format(
+        self._exec_line = ('{0} {1} -c {2}').format(
                            exec_path,
                            self._fnames['input_filepath'][0],
-                           self._fnames['config_filepath'],
-                           self._worker.result_output_dir)
+                           self._fnames['PSFEX']['input_config_path'])
 
         self._log_exec_line()
 
@@ -359,8 +360,12 @@ class PackageRunner(object):
 
         self._psfex_input_params = {}
 
+        self._psfex_input_params['PSF_DIR'] = self._worker.result_output_dir
+
         for i in params.keys():
-                self._psfex_input_params[i] = params[i]
+            if i == 'PSF_DIR':
+                continue
+            self._psfex_input_params[i] = params[i]
 
         self._set_default_input()
         self._save_psfex_input_config()
@@ -466,8 +471,6 @@ class PackageRunner(object):
                 os.system('mkdir {0}'.format(dir_path))
             except:
                 raise Exception('Impossible to create the directory for psfex input config files in {0}'.format(self._worker.log_output_dir))
-
-        self._file_dependencies()
 
         f = open(self._fnames['PSFEX']['input_config_path'],'w')
 

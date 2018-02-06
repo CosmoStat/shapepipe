@@ -44,7 +44,6 @@ CHECKIMAGE_NAME chi.fits,proto.fits,samp.fits,resi.fits,snap.fits
 
 #----------------------------- Miscellaneous ---------------------------------
 
-PSF_DIR                         # Where to write PSFs (empty=same as input)
 VERBOSE_TYPE    NORMAL          # can be QUIET,NORMAL,LOG or FULL
 WRITE_XML       N               # Write XML file (Y/N)?
 XML_NAME        psfex.xml       # Filename for XML output
