@@ -571,8 +571,9 @@ class mask(object):
         path = temp_dir_path.replace(' ','')
 
         if path == 'OUTPUT':
-            path = self._output_dir + '/temp/'
+            path = self._output_dir + '/temp'
 
+        path += '/'
         if not os.path.isdir(path):
             os.system('mkdir ' + path)
 
