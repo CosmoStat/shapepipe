@@ -15,6 +15,7 @@ import os
 from time import clock
 from shutil import copy
 
+import interpolation_script as interp
 
 class PackageRunner(object):
 
@@ -173,13 +174,12 @@ class PackageRunner(object):
 
         # --- Execution line
         exec_path = self._worker.config.get_as_string('EXEC_PATH', 'CODE')
-
         self._exec_line = ('{0} {1} {2} {3} {4}').format(
                            exec_path,
                            self._fnames['input_filepath'][0],
+                           self._fnames['input_filepath'][1],
                            self._fnames['output_filepath_exp'],
-                           self._fnames['extra_option'][0],
-                           self._fnames['extra_option'][1])
+                           self._fnames['extra_option'])
 
         self._log_exec_line()
 
@@ -195,8 +195,10 @@ class PackageRunner(object):
         line differently. e.g. using subprocess, etc.
 
         """
-
-        os.system(self._exec_line)
+        interpolator = interp.PSFExInterpolator(self._fnames['input_filepath'][0], 
+                                                self._fnames['input_filepath'][1], 
+                                                self._fnames['output_filepath_exp'])
+        interpolator.write_output()
 
     def _get_exec_config_filepath(self):
 

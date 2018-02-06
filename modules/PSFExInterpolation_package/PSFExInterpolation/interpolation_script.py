@@ -34,7 +34,7 @@ class PSFExInterpolator(object):
         self.interp_PSFs = np.array([pex.get_rec(x,y) for x,y in zip(self.gal_pos[:,0],
                                      self.gal_pos[:,1])])
         
-    def _write_output(self):
+    def write_output(self):
         if self.interp_PSFs is None:
             self._interpolate()
         output = fits.ImageHDU(self.interp_PSFs)
