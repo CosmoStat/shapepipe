@@ -150,10 +150,6 @@ class PackageRunner(object):
 
         self._log_exp_output(self._fnames['output_filepath_exp'])
 
-        # -- Load an extra code option from config file
-        self._fnames['extra_option'] = (self._worker.config.get_as_string(
-                                        'EXTRA_CODE_OPTION', 'CODE'))
-
     def _exec_code(self):
 
         """Execute the Code
