@@ -188,7 +188,8 @@ class PackageRunner(object):
         """
         interpolator = interp.PSFExInterpolator(self._fnames['input_filepath'][0], 
                                                 self._fnames['input_filepath'][1], 
-                                                self._fnames['output_filepath'])
+                                                self._fnames['output_filepath'],
+                                                self._fnames['extra_option'])
         interpolator.write_output()
 
     def _get_exec_config_filepath(self):

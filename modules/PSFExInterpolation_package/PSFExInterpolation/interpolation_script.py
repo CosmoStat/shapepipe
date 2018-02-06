@@ -5,11 +5,16 @@ import re
 from astropy.io import fits
 
 class PSFExInterpolator(object):
-    def __init__(self, dotpsf_path, galcat_path, output_path):
+    def __init__(self, dotpsf_path, galcat_path, output_path, pos_params=''):
         self._dotpsf_path = dotpsf_path # Path to PSFEx output file
         self._galcat_path = galcat_path # Path to catalog containing galaxy positions
         self._output_path = output_path+'galaxy_psf'   # Path to output file to be written
-        self._pos_params = None
+        if pos_params:
+            if not len(pos_params)==2:
+                raise ValueError('{} position parameters were passed on; there should be exactly two.'.format(len(pos_params)))
+            self._pos_params = pos_params
+        else:
+            self._pos_params = None
         self.gal_pos = None
         self.interp_PSFs = None
         
@@ -18,7 +23,10 @@ class PSFExInterpolator(object):
         self._img_number='-{0}-{1}'.format(s[1],s[2])      
         
     def _get_position_parameters(self):
-        self._pos_params = ['XWIN_IMAGE', 'YWIN_IMAGE'] #TEMP: hardcoded pos params
+        dotpsf = sc.FITSCatalog(self._dotpsf_path)
+        dotpsf.open()
+        self._pos_params = [dotpsf.get_header()['POLNAME1'], dotpsf.get_header()['POLNAME2']] 
+        dotpsf.close()
         
     def _get_galaxy_positions(self):
         if self._pos_params is None:
@@ -26,9 +34,8 @@ class PSFExInterpolator(object):
         
         galcat = sc.FITSCatalog(self._galcat_path, SEx_catalog=True)
         galcat.open()
-        gal_data = galcat.get_data()
-        self.gal_pos = np.array([[x,y] for x,y in zip(gal_data[self._pos_params[0]],
-                                 gal_data[self._pos_params[1]])])
+        self.gal_pos = np.array([[x,y] for x,y in zip(galcat.get_data()[self._pos_params[0]],
+                                 galcat.get_data()[self._pos_params[1]])])
         galcat.close()
     
     def _interpolate(self):
