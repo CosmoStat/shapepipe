@@ -34,8 +34,15 @@ class PSFExInterpolator(object):
         
         galcat = sc.FITSCatalog(self._galcat_path, SEx_catalog=True)
         galcat.open()
-        self.gal_pos = np.array([[x,y] for x,y in zip(galcat.get_data()[self._pos_params[0]],
-                                 galcat.get_data()[self._pos_params[1]])])
+        try:
+            self.gal_pos = np.array([[x,y] for x,y in zip(galcat.get_data()[self._pos_params[0]],
+                                     galcat.get_data()[self._pos_params[1]])])
+        except KeyError as detail:
+            # extract erroneous position parameter from original exception
+            err_pos_param = detail.args[0][4:-15]
+            pos_param_err = 'Required position parameter '+err_pos_param+\
+            'was not found in galaxy catalog. Leave pos_params (or EXTRA_CODE_OPTION) blank to read them from .psf file.'
+            raise KeyError(pos_param_err)
         galcat.close()
     
     def _interpolate(self):
