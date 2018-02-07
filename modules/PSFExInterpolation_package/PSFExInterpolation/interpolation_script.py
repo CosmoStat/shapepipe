@@ -1,3 +1,19 @@
+# -*- coding: utf-8 -*-
+
+"""INTERPOLATION SCRIPT
+
+This module computes the PSFs from a PSFEx model at several galaxy positions,
+using Erin Sheldo n &Eli Rykoff's psfex module, available on GitHub at:
+https://github.com/esheldon/psfex
+
+:Author: Morgan Schmitz
+
+:Version: 1.1.0
+
+:Date: 06/02/2018
+
+"""
+
 import numpy as np
 import psfex
 import scatalog as sc
@@ -5,7 +21,29 @@ import re
 from astropy.io import fits
 
 class PSFExInterpolator(object):
+    """Interpolator class.
+
+    This class uses a PSFEx output file to compute the PSF at desired positions.
+
+    """
+    
     def __init__(self, dotpsf_path, galcat_path, output_path, pos_params=''):
+        """Class initialiser
+
+        Parameters
+        ----------
+        dotpsf_path : str
+            Path to PSFEx output file.
+        galcat_path : str
+            Path to SExtractor-like galaxy catalog.
+        output_path : str
+            Path to folder where output PSFs should be written.
+        pos_params : list, optional
+            Desired position parameters. If provided, there should be exactly two, and they must also be present in the
+            galaxy catalog. Otherwise, they are read directly from the .psf file.
+
+        """
+        
         self._dotpsf_path = dotpsf_path # Path to PSFEx output file
         self._galcat_path = galcat_path # Path to catalog containing galaxy positions
         self._output_path = output_path+'galaxy_psf'   # Path to output file to be written
@@ -23,12 +61,19 @@ class PSFExInterpolator(object):
         self._img_number='-{0}-{1}'.format(s[1],s[2])      
         
     def _get_position_parameters(self):
+        """ Read position parameters from .psf file.
+        
+        """
+        
         dotpsf = sc.FITSCatalog(self._dotpsf_path)
         dotpsf.open()
         self._pos_params = [dotpsf.get_header()['POLNAME1'], dotpsf.get_header()['POLNAME2']] 
         dotpsf.close()
         
     def _get_galaxy_positions(self):
+        """ Extract galaxy positions from galaxy catalog.
+        
+        """
         if self._pos_params is None:
             self._get_position_parameters()
         
@@ -46,6 +91,9 @@ class PSFExInterpolator(object):
         galcat.close()
     
     def _interpolate(self):
+        """ Run Sheldon & Rykoff's PSFEx interpolator method at desired positions.
+        
+        """
         if self.gal_pos is None:
             self._get_galaxy_positions()
         
@@ -54,6 +102,9 @@ class PSFExInterpolator(object):
                                      self.gal_pos[:,1])])
         
     def write_output(self):
+        """ Save computed PSFs to fits file.
+        
+        """
         if self.interp_PSFs is None:
             self._interpolate()
         output = fits.ImageHDU(self.interp_PSFs)
