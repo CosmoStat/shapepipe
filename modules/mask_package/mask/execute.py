@@ -183,12 +183,9 @@ class PackageRunner(object):
         # --- Execution line
         exec_path = self._worker.config.get_as_string('EXEC_PATH', 'CODE')
 
-        self._exec_line = ('{0} {1} {2} {3} > {4}_diff.txt').format(
-                           exec_path,
+        self._exec_line = ('ww {1} {2} (exact command to be inserted)').format(
                            self._fnames['input_filepath'][0],
-                           self._fnames['input_filepath'][1],
-                           self._fnames['extra_option'],
-                           self._fnames['output_filepath'])
+                           self._fnames['input_filepath'][1])
 
         self._log_exec_line()
 
