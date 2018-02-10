@@ -9,6 +9,10 @@ This script contain a class to handle operation on SExtractor output catalog.
 
 """
 
+# Compability with python2.x for x>6
+from __future__ import print_function
+
+
 import numpy as np
 import re
 import operator
@@ -31,14 +35,18 @@ class SETools(object):
         Path to config.setools file
     output_dir : str
         Path to pipeline result directory
+    stat_output_dir : str, optional, default=None
+        Path to pipeline statistics output directory
 
     """
 
-    def __init__(self, cat_filepath, config_filepath, output_dir):
+    def __init__(self, cat_filepath, config_filepath, output_dir, stat_output_dir=None):
 
         self._cat_filepath = cat_filepath
         self._config_filepath = config_filepath
         self._output_dir = output_dir
+        if stat_output_dir:
+            self._stat_output_dir = stat_output_dir
 
         self._cat_file = sc.FITSCatalog(self._cat_filepath, SEx_catalog=True)
         self._cat_file.open()
@@ -71,6 +79,7 @@ class SETools(object):
 
         self.read()
 
+        ### Processing: Create mask = filter input
         if len(self._mask) != 0:
             if not os.path.isdir(self._output_dir + '/mask'):
                 try:
@@ -81,6 +90,14 @@ class SETools(object):
             for i in self.mask.keys():
                 file_name = self._output_dir + '/mask/' + i + file_number + '.fits'
                 self.save_mask(self.mask[i], file_name)
+
+        ### Post-processing of output products
+        # Statistics
+        self._make_stat()
+        for mask_type in self.stat.keys():
+            file_name = self._stat_output_dir + '/' + i + file_number + '.txt'
+            self.save_stat(mask_type, file_name)
+            
 
 
     #####################
@@ -111,6 +128,10 @@ class SETools(object):
 
             if line_tmp == None:
                 continue
+
+            # Loop over SETools file, look for section headers
+            # [SECTION_TYPE:OBJECT_TYPE], e.g.
+            # [MASK:star_selection]
 
             if (in_section !=0) & (re.split('\[',line_tmp)[0] == ''):
                 in_section = 0
@@ -158,6 +179,7 @@ class SETools(object):
                     self._hist[hist_name].append(line_tmp)
                 elif in_section == 4:
                     self._stat[stat_name].append(line_tmp)
+
 
 
     def _clean_line(self, line):
@@ -219,14 +241,28 @@ class SETools(object):
         mask_file.save_as_fits(data=self._cat_file.get_data()[mask], ext_name=ext_name, sex_cat_path=self._cat_filepath)
 
 
+    def save_stat(self, mask_type, output_file):
+        print('Writing stats to file {}'.format(output_file))
+        f = open(output_file, 'w')
+        print('# Statistics', file=f)
+
+        for stat in self.stat[mask_type]:
+            string = '{} = {}'.format(stat, self.stat[mask_type][stat])
+            print(string, file=f)
+            print >>f, string
+            # MKDEBUG: Somehow output is written only if both previous lines are present!!?!?
+
+        f.close()
+
+
     #####################
     # Bulding functions #
     #####################
 
     def _make_mask(self):
-        """Make Mask
+        """Make mask
 
-        This function transform the constrain from the config file to condition.
+        This function transforms the constraints from the config file to condition.
 
         """
 
@@ -248,7 +284,34 @@ class SETools(object):
         pass
 
     def _make_stat(self):
-        pass
+        """Compute statistics on output products.
+           Fill self.stat with results of stats computations.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+        """
+
+        self.stat = {}
+        # Loop over mask types (different selections)
+        for mask_type in self._stat:
+
+            self.stat[mask_type] = {}
+
+            # Loop over statistics
+            for stat in self._stat[mask_type]:
+
+                if stat == 'NUMBER_OBJ':
+                    # Number of selected objects
+                    res = len(self.mask[mask_type])
+                    self.stat[mask_type][stat] = res
+                else:
+                    print('Warning: statistic \'{}\' not supported, continuing...'.format(stat))
+
 
 
     ##################
@@ -258,7 +321,7 @@ class SETools(object):
     def _apply_func(self, string):
         """Apply function
 
-        This function look for a function in a string and aplly it.
+        Look for a function in a string and apply it.
 
         Parameters
         ----------
