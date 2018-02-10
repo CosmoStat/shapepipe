@@ -95,7 +95,7 @@ class SETools(object):
         # Statistics
         self._make_stat()
         for mask_type in self.stat.keys():
-            file_name = self._stat_output_dir + '/' + i + file_number + '.txt'
+            file_name = self._stat_output_dir + '/' + mask_type + file_number + '.txt'
             self.save_stat(mask_type, file_name)
             
 
@@ -249,8 +249,6 @@ class SETools(object):
         for stat in self.stat[mask_type]:
             string = '{} = {}'.format(stat, self.stat[mask_type][stat])
             print(string, file=f)
-            print >>f, string
-            # MKDEBUG: Somehow output is written only if both previous lines are present!!?!?
 
         f.close()
 
@@ -307,7 +305,8 @@ class SETools(object):
 
                 if stat == 'NUMBER_OBJ':
                     # Number of selected objects
-                    res = len(self.mask[mask_type])
+                    res = len(self._cat_file.get_data()[self.mask[mask_type]])
+                    print('make_stat {} {}'.format(mask_type, res))
                     self.stat[mask_type][stat] = res
                 else:
                     print('Warning: statistic \'{}\' not supported, continuing...'.format(stat))
