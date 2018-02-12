@@ -189,7 +189,8 @@ class PackageRunner(object):
         r=setools.SETools(cat_filepath=self._fnames['input_filepath'][0],
                           config_filepath=self._fnames['config_filepath'],
                           output_dir=self._worker.result_output_dir,
-                          stat_output_dir=self._worker.stat_output_dir)
+                          stat_output_dir=self._worker.stat_output_dir,
+                          plot_output_dir=self._worker.plot_output_dir)
         r.process()
 
 

@@ -16,6 +16,11 @@ from __future__ import print_function
 import numpy as np
 import re
 import operator
+import string
+
+import matplotlib
+matplotlib.use("Agg")
+import pylab as plt
 
 import os
 
@@ -29,24 +34,31 @@ class SETools(object):
 
     Parameters
     ----------
-    cat_filepath : str
+    cat_filepath: str
         Path to SExtractor catalog (FITS_LDAC format)
-    config_filepath : str
+    config_filepath: str
         Path to config.setools file
-    output_dir : str
+    output_dir: str
         Path to pipeline result directory
-    stat_output_dir : str, optional, default=None
+    stat_output_dir: str, optional, default=None
         Path to pipeline statistics output directory
-
+    plot_output_dir: str, optiona, default=None
+        Path to pipeline plots output directory
     """
 
-    def __init__(self, cat_filepath, config_filepath, output_dir, stat_output_dir=None):
+    def __init__(self, cat_filepath, config_filepath, output_dir, stat_output_dir=None, plot_output_dir=None):
 
         self._cat_filepath = cat_filepath
         self._config_filepath = config_filepath
         self._output_dir = output_dir
+
+        # MK: The following dir names could be set to the default names if
+        # not given as argument. However, I don't know how to retrieve them here
+        # from _worker.
         if stat_output_dir:
             self._stat_output_dir = stat_output_dir
+        if plot_output_dir:
+            self._plot_output_dir = plot_output_dir
 
         self._cat_file = sc.FITSCatalog(self._cat_filepath, SEx_catalog=True)
         self._cat_file.open()
@@ -97,6 +109,9 @@ class SETools(object):
         for mask_type in self.stat.keys():
             file_name = self._stat_output_dir + '/' + mask_type + file_number + '.txt'
             self.save_stat(mask_type, file_name)
+
+        # Plotting
+        self._make_plot(file_number)
             
 
 
@@ -275,8 +290,192 @@ class SETools(object):
             self.mask[i] = mask_tmp
 
 
-    def _make_plot(self):
-        pass
+    def _make_plot(self, file_number):
+        """Produce plots, and writes them to disk as pdf files.
+           TODO: Move saving of plots outside this method.
+
+        Parameters
+        ----------
+        file_number: int
+            running image number
+
+        Returns
+        -------
+        None
+        """
+
+        self.plot = {}
+        # Loop over mask types (different selections)
+        for mask_type in self._plot:
+
+            # Loop over lines in plot section, make plot for each line
+            for plot_line in self._plot[mask_type]:
+            
+                fig, ax = self.create_new_plot()
+                plot_type, plot_x, plot_y, cmds = self.get_plot_info_from_line(plot_line)
+
+                if mask_type == 'ALL':
+
+                    # Special mask type (plot all selections in one plot). Add to plot
+                    # all objects (no mask), and all masks in config file
+                    self.fill_plot_from_mask(ax, 'ALL', plot_type, plot_x, plot_y)
+                    for mask_type_for_all in self._mask:
+                        self.fill_plot_from_mask(ax, mask_type_for_all, plot_type, plot_x, plot_y)
+
+                else:
+
+                    self.fill_plot_from_mask(ax, mask_type, plot_type, plot_x, plot_y)
+
+                self.finalize_plot(ax, plot_x, plot_y, cmds=cmds)
+                self.save_plot(mask_type, '{}:{}:{}'.format(plot_type, plot_x, plot_y), file_number)
+
+
+    def get_plot_info_from_line(self, plot_line):
+        """Return plot information from line in PLOT section
+
+        Parameters
+        ----------
+        plot_line: ':'-separated string 
+            plot information (line in config file)
+
+        Returns
+        -------
+        plot_type: string
+            plot type
+        plot_x: string
+            column name to be plotted as x axis
+        plot_y: string
+            column name to be plotted as y axis
+        cmds: string
+            extra plt commands to be run (can None)
+        """
+
+        # The following can be done with better parsing...
+        line = re.split(':', plot_line)
+        if len(line) < 3:
+            raise Exception('Plot definition needs to have at least three entries (type, x, y), found {}'.format(len(line)))
+
+        plot_type = line[0]
+        plot_x    = line[1]
+        plot_y    = line[2]
+        if len(line) > 3:
+            cmds = line[3]
+        else:
+            cmds = []
+
+        return plot_type, plot_x, plot_y, cmds
+
+
+    def create_new_plot(self):
+        """Create a new plot.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        fig: figure object
+            current figure
+        ax: axes object
+            current axes
+        """
+
+        fig = plt.clf()
+        ax  = plt.gca()
+
+        return fig, ax
+
+    
+    def fill_plot_from_mask(self, ax, mask_type, plot_type, plot_x, plot_y):
+        """Fill plot with data from mask/selection.
+
+        Parameters
+        ----------
+        ax: axes object
+            current axes
+        mask_type: string
+            mask (selection) type, define section in config file,
+            'ALL' for no mask (select all objects)
+        plot_type: string
+            plot type
+        plot_x: string
+            column name to be plotted as x axis
+        plot_y: string
+            column name to be plotted as y axis
+
+        Returns
+        -------
+        None
+        """
+
+        # Get objects in mask
+        if mask_type == 'ALL':
+            dat = self._cat_file.get_data()
+        else:
+            dat = self._cat_file.get_data()[self.mask[mask_type]]
+
+        x   = dat[plot_x]
+        y   = dat[plot_y]
+
+        # Plot
+        if plot_type == 'scatter':
+            ax.scatter(x, y, 1, label=mask_type)
+            #plt.plot(x, y, 'o', markersize=3, markeredgewidth=0.3, markerfacecolor='none', label=mask_type)
+        else:
+            raise Exception('Plot type \'{}\' not supported'.format(plot_type)) 
+
+
+    def finalize_plot(self, ax, plot_x, plot_y, cmds=[]):
+        """Performe cosmetics on plot at the end, should be called once, before saving plot.
+
+        Parameters
+        ----------
+        plot_x: string
+            column name to be plotted as x axis
+        plot_y: string
+            column name to be plotted as y axis
+        cmds: string, optiona, default=[]
+            extra plt commands
+
+        Returns
+        -------
+        None
+        """
+
+        # TODO: How do we get the units?
+        plt.xlabel(plot_x)
+        plt.ylabel(plot_y)
+        plt.legend()
+
+        if len(cmds) > 0:
+            cmd_list = re.split(';', cmds)
+            for cmd in cmd_list:
+                exec(cmd)
+
+
+    def save_plot(self, mask_type, plot_name, file_number):
+        """Save plot to file.
+
+        Parameters
+        ----------
+        mask_type: string
+            mask (selection) type
+        plot_name: string
+            plot information (line in config file)
+        file_number: int
+            running image number
+
+        Returns
+        -------
+        None
+        """
+
+        # TODO: check if plot_name already exists, if yes create unique name
+        out_name = '{}/{}-{}{}.pdf'.format(self._plot_output_dir, mask_type, plot_name, file_number)
+        print('Saving plot to file {}'.format(out_name))
+        plt.savefig('{}'.format(out_name))
+
 
     def _make_hist(self):
         pass
@@ -300,13 +499,12 @@ class SETools(object):
 
             self.stat[mask_type] = {}
 
-            # Loop over statistics
+            # Loop over statistics (lines in stat section)
             for stat in self._stat[mask_type]:
 
                 if stat == 'NUMBER_OBJ':
                     # Number of selected objects
                     res = len(self._cat_file.get_data()[self.mask[mask_type]])
-                    print('make_stat {} {}'.format(mask_type, res))
                     self.stat[mask_type][stat] = res
                 else:
                     print('Warning: statistic \'{}\' not supported, continuing...'.format(stat))
