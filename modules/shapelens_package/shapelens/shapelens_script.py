@@ -141,9 +141,9 @@ class shapelens(object):
         psf_cat.close()
 
         gal_image = self._map_vignet(gal_vign)
-        self._gal_image_path = self._temp_dir + '/gal_temp.fits'
+        self._gal_image_path = self._temp_dir + '/gal_temp{0}.fits'.format(self._img_number)
         psf_image = self._map_vignet(psf_vign)
-        self._psf_image_path = self._temp_dir + '/psf_temp.fits'
+        self._psf_image_path = self._temp_dir + '/psf_temp{0}.fits'.format(self._img_number)
 
         f_gal = sc.FITSCatalog(self._gal_image_path, open_mode = sc.BaseCatalog.OpenMode.ReadWrite)
         f_gal.save_as_fits(gal_image, image=True)
