@@ -27,7 +27,7 @@ class PSFExInterpolator(object):
 
     """
     
-    def __init__(self, dotpsf_path, galcat_path, output_path, pos_params=''):
+    def __init__(self, dotpsf_path, galcat_path, output_path, pos_params=None):
         """Class initialiser
 
         Parameters
@@ -47,7 +47,7 @@ class PSFExInterpolator(object):
         self._dotpsf_path = dotpsf_path # Path to PSFEx output file
         self._galcat_path = galcat_path # Path to catalog containing galaxy positions
         self._output_path = output_path+'galaxy_psf'   # Path to output file to be written
-        if pos_params:
+        if pos_params: # handle provided, but empty pos_params (for use within CosmoStat's ShapePipe)
             if not len(pos_params)==2:
                 raise ValueError('{} position parameters were passed on; there should be exactly two.'.format(len(pos_params)))
             self._pos_params = pos_params
