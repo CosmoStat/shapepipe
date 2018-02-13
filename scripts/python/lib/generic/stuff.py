@@ -153,22 +153,20 @@ def my_string_split(string, num=-1, verbose=False, stop=False):
 
     has_space      = string.find(' ')
     has_underscore = string.find('_')
+    has_dot        = string.find('.')
 
     if has_space != -1:
-        # string has white-space
         sep = ' '
+    elif has_underscore != -1:
+        sep = '_'
+    elif has_dot != -1:
+        sep = '.'
     else:
-        if has_underscore != -1:
-        # string has no white-space but underscore
-            sep = '_'
+        # no separator found, does string consist of only one element?
+        if num == -1 or num == 1:
+            sep = None
         else:
-            # string has neither, consists of one element
-            if num == -1 or num == 1:
-                # one-element string is ok
-                sep = None
-                pass
-            else:
-                error('Neither \' \' nor \'_\' found in string \'{}\', cannot split'.format(string))
+            error('No separator (\' \', \'_\', or \'.\') found in string \'{}\', cannot split'.format(string))
 
     #res = string.split(sep=sep) # python v>=3?
     res = string.split(sep)
