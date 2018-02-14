@@ -197,59 +197,6 @@ class PackageRunner(object):
 
         os.system(self._exec_line)
 
-    def _get_exec_config_filepath(self):
-
-        """Get Executable Configuration File
-
-        This method finds and returns the cofiguration file (with full path) to
-        use.
-
-        Returns
-        -------
-        str
-            Configuration file name with full path
-
-        """
-
-        default_filename = (self._worker.config.get_as_string(
-                            'DEFAULT_FILENAME', 'CODE'))
-        found_files = (self._helper.locate_files([default_filename],
-                       self._worker.base_input_dir))
-
-        if len(found_files) > 0:
-
-            config_filepath = found_files[0]
-
-            if self._worker.logging_enabled():
-                temp_string = ('{0} - /{1}/run-{2:03}-{3:1d} - '
-                               'Using configuration file: '
-                               '{4}')
-                self._worker.logger.log_info_p(temp_string.format(
-                                               self._worker.name,
-                                               self._job.get_branch_tree(),
-                                               self._job.img_no,
-                                               self._job.epoch,
-                                               config_filepath))
-                self._worker.logger.flush()
-
-            # --- Make a copy of the used config file to the log directory
-            # for record
-            copy(config_filepath, self._worker.log_output_dir)
-
-            return config_filepath
-
-        else:
-            if self._worker.logging_enabled():
-                temp_string = ('{0} - /{1}/img-{2:03}-{3:1d} - '
-                               'Could not find config file {4}')
-                self._worker.logger.log_warning_p(temp_string.format(
-                                                  self._worker.name,
-                                                  self._job.get_branch_tree(),
-                                                  self._job.img_no,
-                                                  self._job.epoch,
-                                                  default_filename))
-                self._worker.logger.flush()
-            return None
 
     def _get_output_catalog_filename(self, filepath):
 
