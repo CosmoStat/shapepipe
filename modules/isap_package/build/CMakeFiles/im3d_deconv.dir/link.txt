@@ -1,1 +1,0 @@
-/usr/bin/c++   -DNO_DISP_IO  -ggdb3 -fPIC -O2 -ffast-math -fomit-frame-pointer -fopenmp -Wno-write-strings -DNDEBUG   CMakeFiles/im3d_deconv.dir/src/im3d_deconv.cc.o  -o im3d_deconv -rdynamic libsparse2d.a libsparse1d.a libtools.a -lgsl -lgslcblas -lm -lcfitsio 

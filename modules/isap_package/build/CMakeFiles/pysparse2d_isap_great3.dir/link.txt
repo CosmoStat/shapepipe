@@ -1,1 +1,0 @@
-/usr/bin/c++  -fPIC -DNO_DISP_IO  -ggdb3 -fPIC -O2 -ffast-math -fomit-frame-pointer -fopenmp -Wno-write-strings -DNDEBUG  -shared -Wl,-soname,isap_great3_sparse2d.so -o isap_great3_sparse2d.so CMakeFiles/pysparse2d_isap_great3.dir/python-wrappers/src/isap_great3_sparse2d.cpp.o libsparse2d.a libsparse1d.a libtools.a -lboost_python -lpython2.7 -lgsl -lgslcblas -lm -lcfitsio 

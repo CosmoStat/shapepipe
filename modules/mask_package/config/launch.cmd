@@ -1,4 +1,4 @@
-# !/bin/bash
+#! /bin/bash
 
 # Set path to package module
 export PACKAGE_DIR="$HOME/ShapePipe/modules/mask_package"

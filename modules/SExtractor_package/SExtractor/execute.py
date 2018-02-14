@@ -121,7 +121,7 @@ class PackageRunner(object):
 
     def _set_filenames(self):
 
-        """ Set File Names
+        """Set File Names
 
         This method sets all of the input and output files names needed for
         running the code.
@@ -134,9 +134,6 @@ class PackageRunner(object):
 
         input_filename = (os.path.splitext(os.path.split(
                           self._fnames['input_filepath'][0])[1])[0])
-
-        # --- Executable configuration file
-        # self._fnames['config_filepath'] = self._get_exec_config_filepath()
 
         # --- Target directory where to store files
         output_path = os.path.join(self._worker.result_output_dir,
@@ -168,6 +165,8 @@ class PackageRunner(object):
         This method defines the command line for the code corresponding to this
         package.
 
+        Notes
+        -----
         In the first time it will create config files needed for SExtractor
         (*.sex and *.param). Then setup the command line.
 
@@ -194,67 +193,10 @@ class PackageRunner(object):
 
         This method executes the command line defined by _set_exec_line().
 
-        Notes
-        -----
-        This method need only be modified if you wish to execute the command
-        line differently. e.g. using subprocess, etc.
-
         """
 
         os.system(self._exec_line)
 
-    def _get_exec_config_filepath(self):
-
-        """ Get Executable Configuration File
-
-        This method finds and returns the cofiguration file (with full path) to
-        use.
-
-        Returns
-        -------
-        str configuration file name with full path
-
-        """
-
-        default_filename = (self._worker.config.get_as_string(
-                            'DEFAULT_FILENAME', 'CODE'))
-        found_files = (self._helper.locate_files([default_filename],
-                       self._worker.base_input_dir))
-
-        if len(found_files) > 0:
-
-            config_filepath = found_files[0]
-
-            if self._worker.logging_enabled():
-                temp_string = ('{0} - /{1}/run-{2:03}-{3:1d} - '
-                               'Using configuration file: '
-                               '{4}')
-                self._worker.logger.log_info_p(temp_string.format(
-                                               self._worker.name,
-                                               self._job.get_branch_tree(),
-                                               self._job.img_no,
-                                               self._job.epoch,
-                                               config_filepath))
-                self._worker.logger.flush()
-
-            # --- Make a copy of the used config file to the log directory
-            # for record
-            copy(config_filepath, self._worker.log_output_dir)
-
-            return config_filepath
-
-        else:
-            if self._worker.logging_enabled():
-                temp_string = ('{0} - /{1}/img-{2:03}-{3:1d} - '
-                               'Could not find config file {4}')
-                self._worker.logger.log_warning_p(temp_string.format(
-                                                  self._worker.name,
-                                                  self._job.get_branch_tree(),
-                                                  self._job.img_no,
-                                                  self._job.epoch,
-                                                  default_filename))
-                self._worker.logger.flush()
-            return None
 
     def _get_output_catalog_filename(self, filepath):
 
@@ -270,7 +212,8 @@ class PackageRunner(object):
 
         Returns
         -------
-        str output filename with full path
+        str
+            Output filename with full path
 
         """
 
@@ -363,8 +306,9 @@ class PackageRunner(object):
 
         Note
         ----
-        Parameters can be set using heard's parameters value (possibility to
+        Parameters can be set using header's parameters value (possibility to
         to make operation).
+
         """
 
         params = self._worker.config.get_section_data('SEXTRACTOR_INPUT')
@@ -412,6 +356,7 @@ class PackageRunner(object):
         Allow one to provide weight and/or flag images.
         Handle *.psf file from PSFEx.
         Allow one to provide association catalog.
+
         """
 
         if len(self._fnames['input_filepath']) == 1:
@@ -447,6 +392,7 @@ class PackageRunner(object):
 
         This function read the default.sex file and fill not specified
         parameters to run SExtractor
+
         """
 
         dir_path = self._worker.base_input_dir + 'SExtractor_default'
@@ -467,6 +413,7 @@ class PackageRunner(object):
         ----------
         path : str
             Path to default.sex file.
+
         """
 
         self._default_input_params = {}
@@ -528,6 +475,7 @@ class PackageRunner(object):
         Note
         ----
         Name of the file : config-***-*.sex
+
         """
 
         dir_path = self._fnames['SEXTRACTOR']['input_dir']
@@ -562,6 +510,7 @@ class PackageRunner(object):
         Note
         ----
         At this point it's not possible to provide an externat *.param file.
+
         """
 
         if os.path.isfile(self._fnames['SEXTRACTOR']['input_dir'] + 'default.param'):
@@ -583,6 +532,7 @@ class PackageRunner(object):
 
         This function write the *.param file for this run and save it in the log
         output directory.
+
         """
 
         dir_path = self._fnames['SEXTRACTOR']['input_dir']
@@ -605,6 +555,7 @@ class PackageRunner(object):
         Note
         ----
         The file are copied to the output log directory.
+
         """
 
         for i in ['FILTER_NAME', 'STARNNW_NAME']:

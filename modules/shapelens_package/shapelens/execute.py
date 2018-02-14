@@ -6,7 +6,7 @@ This module contain a class for executing the package specific code.
 
 :Authors: Samuel Farrens and Marc Gentile
 
-:Date: 31/10/2017 (Happy Halloween!)
+:Date: 08/02/2017
 
 """
 
@@ -15,7 +15,7 @@ import os
 from time import clock
 from shutil import copy
 
-import SETools_script as setools
+import shapelens_script as sh
 
 
 class PackageRunner(object):
@@ -128,9 +128,6 @@ class PackageRunner(object):
         input_filename = (os.path.splitext(os.path.split(
                           self._fnames['input_filepath'][0])[1])[0])
 
-        # --- Executable configuration file
-        self._fnames['config_filepath'] = self._get_exec_config_filepath()
-
         # --- Target directory where to store files
         output_path = os.path.join(self._worker.result_output_dir,
                                    self._job.get_branch_tree())
@@ -150,21 +147,29 @@ class PackageRunner(object):
 
         self._log_exp_output(self._fnames['output_filepath_exp'])
 
+        # -- Load an extra code option from config file
+        self._fnames['extra_option'] = (self._worker.config.get_as_string(
+                                        'EXTRA_CODE_OPTION', 'CODE'))
+
+
     def _exec_code(self):
 
         """Execute the Code
 
-        This method executes the script SETools_script.
+        This method executes the script shapelens_script.
 
         """
 
-        r=setools.SETools(cat_filepath=self._fnames['input_filepath'][0],
-                          config_filepath=self._fnames['config_filepath'],
-                          output_dir=self._worker.result_output_dir,
-                          stat_output_dir=self._worker.stat_output_dir,
-                          plot_output_dir=self._worker.plot_output_dir)
-        r.process()
+        exec_path = self._worker.config.get_as_string('EXEC_PATH', 'CODE')
+        temp_dir = self._worker.config.get_as_string('TEMP_DIR', 'CODE')
 
+        r = sh.shapelens(exec_path= exec_path,
+                         exec_option= self._fnames['extra_option'],
+                         gal_cat_path= self._fnames['input_filepath'][0],
+                         psf_cat_path= self._fnames['input_filepath'][1],
+                         output_dir= self._worker.result_output_dir,
+                         temp_dir= temp_dir)
+        r.process()
 
     def _get_exec_config_filepath(self):
 
@@ -264,6 +269,7 @@ class PackageRunner(object):
                                            self._job.epoch,
                                            file_path))
             self._worker.logger.flush()
+
 
     def _log_output_success(self, file_path):
 

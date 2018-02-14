@@ -22,8 +22,21 @@ import os
 
 
 class mask(object):
-    """!
-        Mask creation module
+    """Mask class
+
+    Class to create mask based on a star catalog.
+
+    Parameters
+    ----------
+    image_path : str
+        Path to image (fits format)
+    weight_path : str
+        Path to the weight image (fits format)
+    config_filepath : str
+        Path to the *.mask config file
+    output_dir : str
+        Path to the output directory
+
     """
 
     def __init__(self, image_path, weight_path, config_filepath, output_dir):
@@ -42,10 +55,16 @@ class mask(object):
         self._set_parameters()                                                  # Set parameters needed for the stars detection
 
 
-    def _get_config(self, config_filepath=None):
-        """!
-            Read config file and set parameters
-            @param config_filepath path to 'config.mask'
+    def _get_config(self, config_filepath):
+        """Get config value
+
+        Read the config file and set parameters.
+
+        Parameters
+        ----------
+        config_filepath : str
+            Path to the *.mask config file
+
         """
 
         if config_filepath is None:
@@ -58,7 +77,7 @@ class mask(object):
         self._config['PATH']['WW'] = conf.get_as_string('WW_PATH','PROGRAM_PATH')
         self._config['PATH']['WW_configfile'] = conf.get_as_string('WW_CONFIG_FILE','PROGRAM_PATH')
         self._config['PATH']['CDSclient'] = conf.get_as_string('CDSCLIENT_PATH','PROGRAM_PATH')
-        self._config['PATH']['temp_dir'] = conf.get_as_string('TEMP_DIRECTORY','OTHER')
+        self._config['PATH']['temp_dir'] = self._get_temp_dir_path(conf.get_as_string('TEMP_DIRECTORY','OTHER'))
         self._config['BORDER']['make'] = conf.get_as_boolean('BORDER_MAKE','BORDER_PARAMETERS')
         if self._config['BORDER']['make'] is True:
             self._config['BORDER']['width'] = conf.get_as_int('BORDER_WIDTH','BORDER_PARAMETERS')
@@ -70,16 +89,19 @@ class mask(object):
                 self._config[i]['maskmodel_path'] = conf.get_as_string(i+'_MASKMODEL_PATH',i+'_PARAMETERS')
                 self._config[i]['mag_lim'] = conf.get_as_float(i+'_MAG_LIM',i+'_PARAMETERS')
                 self._config[i]['scale_factor'] = conf.get_as_float(i+'_SCALE_FACTOR',i+'_PARAMETERS')
+                self._config[i]['mag_pivot'] = conf.get_as_float(i+'_MAG_PIVOT',i+'_PARAMETERS')
                 self._config[i]['flag'] = conf.get_as_int(i+'_FLAG_VALUE',i+'_PARAMETERS')
                 if conf.get_as_boolean('KEEP_REG_FILE','OTHER') == True:
-                    self._config[i]['reg_file'] = self._config['PATH']['temp_dir'] + '{0}{1}.reg'.format(re.split(".reg",conf.get_as_string(i+'_REG_FILE',i+'_PARAMETERS'))[0],self._img_number)
+                    self._config[i]['reg_file'] = self._config['PATH']['temp_dir'] + '/{0}{1}.reg'.format(re.split(".reg",conf.get_as_string(i+'_REG_FILE',i+'_PARAMETERS'))[0],self._img_number)
                 else:
                     self._config[i]['reg_file'] = None
 
 
     def _set_parameters(self):
-        """!
-            Set the parameters for the stars detection
+        """Set parameters
+
+        Set the parameters for the stars detection.
+
         """
 
         img = sc.FITSCatalog(self._image_fullpath, hdu_no=0)
@@ -98,15 +120,17 @@ class mask(object):
 
 
     def make_mask(self):
-        """!
-            Main function to create the mask
+        """Make mask
+
+        Main function to create the mask.
+
         """
 
         stars=self.find_stars(np.array([self._fieldcenter['wcs'].ra.value,self._fieldcenter['wcs'].dec.value]), radius=self._img_radius)
 
         for i in ['HALO', 'SPIKE']:
             if self._config[i]['make']:
-                self._create_mask(stars=stars, types=i, mag_limit=self._config[i]['mag_lim'], scale_factor=self._config[i]['scale_factor'])
+                self._create_mask(stars=stars, types=i, mag_limit=self._config[i]['mag_lim'], scale_factor=self._config[i]['scale_factor'], mag_pivot=self._config[i]['mag_pivot'])
 
         if self._config['BORDER']['make']:
             border_mask=self.mask_border(width=self._config['BORDER']['width'])
@@ -139,12 +163,22 @@ class mask(object):
 
 
     def find_stars(self, position, radius=None):
-        """!
-            Return GSC (Guide Star Catalog) objects for a field with center (ra,dec) and radius r
-            @param ra right ascention astropy.wcs oject
-            @param dec declinaison astropy.wcs oject
-            @param r radius in arcmin
-            @return stars dicotionnary for GSC objects in the field
+        """Find stars
+
+        Return GSC (Guide Star Catalog) objects for a field with center (ra,dec) and radius r.
+
+        Parameters
+        ----------
+        position : numpy.ndarray
+            Position of the center of the field
+        radius : float
+            Radius in which the query is done (in arcmin)
+
+        Returns
+        -------
+        dict
+            Stars dicotionnary for GSC objects in the field.
+
         """
 
         ra=position[0]
@@ -163,10 +197,22 @@ class mask(object):
 
 
     def mask_border(self, width=100, flag_value=4):
-        """!
-            Mask 'width' pixels around the image
-            @param width width of the mask mask border
-            @return array containing the mask
+        """Create mask border
+
+        Mask 'width' pixels around the image.
+
+        Parameters
+        ----------
+        width : int
+            Width of the mask mask border
+        flag_value : int
+            Value of the flag for the border (power of 2)
+
+        Returns
+        -------
+        numpy.ndarray
+            Array containing the mask.
+
         """
 
         if width is None:
@@ -183,12 +229,22 @@ class mask(object):
 
 
     def SphereDist(self, position1, position2):
-        """!
-            Compute spheric distance between 2 points
-            @param p1 array [x,y] first point (in pixel)
-            @param p2 array [x,y] second point (in pixel)
-            @param wcs astropy.wcs object containing wcs image informations
-            @return the distance in degree
+        """Compute spherical distance
+
+        Compute spherical distance between 2 points.
+
+        Parameters
+        ----------
+        position1 : numpy.ndarray
+            [x,y] first point (in pixel)
+        position2 : numpy.ndarray
+            [x,y] second point (in pixel)
+
+        Returns
+        -------
+        float
+            The distance in degree.
+
         """
 
         if not (type(position1) is np.ndarray) & (type(position2) is np.ndarray):
@@ -207,10 +263,20 @@ class mask(object):
 
 
     def _get_image_radius(self, center=None):
-        """!
-            Compute the diagonal distance of the image in arcmin.
-            @param center coordinates of the center of the image in pixel
-            @return the diagonal distance in arcmin
+        """Get image radius
+
+        Compute the diagonal distance of the image in arcmin.
+
+        Parameters
+        ----------
+        center : numpy.ndarray
+            Coordinates of the center of the image (in pixel)
+
+        Returns
+        -------
+        float
+            The diagonal distance of the image in arcmin.
+
         """
 
         if center is None:
@@ -223,10 +289,20 @@ class mask(object):
 
 
     def _make_star_cat(self, CDSclient_output):
-        """!
-            Make a dicotionnary from 'findgsc2.2' output
-            @param CDSclient_output output 'findgsc2.2'
-            @return stars dicotionnary containing all informations
+        """Make star catalog
+
+        Make a dicotionnary from 'findgsc2.2' output.
+
+        Parameters
+        ----------
+        CDSclient_output : str
+            Output of 'findgsc2.2'
+
+        Returns
+        -------
+        dict
+            Stars dicotionnary containing all informations.
+
         """
 
         h=[]
@@ -266,14 +342,24 @@ class mask(object):
         return stars
 
 
-    def _create_mask(self, stars=None, types=None, mag_limit=18., mag_pivot=13.8, scale_factor=0.3):
-        """!
-            Apply mask from model to stars and save into DS9 region file
-            @param stars stars dico (output of find_stars)
-            @param types type of mask in ['halo', 'spike']
-            @param mag_limit higher magnitude to apply the mask
-            @param mag_pivot pivot magnitude for the model
-            @param scale_factor scaling for the model
+    def _create_mask(self, stars, types=None, mag_limit=18., mag_pivot=13.8, scale_factor=0.3):
+        """Create mask
+
+        Apply mask from model to stars and save into DS9 region file.
+
+        Parameters
+        ----------
+        stars : dict
+            Stars dictionary (output of find_stars)
+        types : str
+            Type of mask in ['HALO', 'SPIKE']
+        mag_limit : float
+            Higher magnitude to apply the mask
+        mag_pivot : float
+            Pivot magnitude for the model
+        scale_factor : float
+            Scaling for the model
+
         """
 
         if stars is None:
@@ -338,9 +424,15 @@ class mask(object):
 
 
     def _exec_WW(self,types=None):
-        """!
-            Execute WW to transform '.reg' to '.fits' flag map
-            @param types the type of mask to make in ['HALO','SPIKE']
+        """Execute WeightWatcher
+
+        Execute WeightWatcher to transform '.reg' to '.fits' flag map.
+
+        Parameters
+        ----------
+        types : str
+            Type of mask to make in ['HALO','SPIKE']
+
         """
 
         if types in ['HALO','SPIKE']:
@@ -378,13 +470,25 @@ class mask(object):
                 ValueError("types must be in ['HALO','SPIKE','ALL']")
 
 
-    def _build_final_mask(self, path_mask1=None, path_mask2=None, border=None):
-        """!
-            Create the final mask by combination of individual mask
-            @param path to a mask (fits format)
-            @param path to a mask (fits format)
-            @param border array containing the border mask
-            @return final_mask array containing the final mask
+    def _build_final_mask(self, path_mask1, path_mask2=None, border=None):
+        """Create final mask
+
+        Create the final mask by combination of individual mask.
+
+        Parameters
+        ----------
+        path_mask1 : str
+            Path to a mask (fits format)
+        path_mask2 : str
+            Path to a mask (fits format)
+        border : numpy.ndarray
+            Array containing the border mask
+
+        Returns
+        -------
+        numpy.ndarray
+            Array containing the final mask.
+
         """
 
         final_mask=None
@@ -417,11 +521,18 @@ class mask(object):
         return final_mask.astype(np.int16,copy=False)
 
 
-    def _mask_to_file(self, input_mask=None, output_fullpath=None):
-        """!
-            Save the mask to a fits file
-            @param input_mask mask to save
-            @param output_fullpath path of the output file
+    def _mask_to_file(self, input_mask, output_fullpath):
+        """Mask to file
+
+        Save the mask to a fits file.
+
+        Parameters
+        ----------
+        input_mask : numpy.ndarray
+            Mask to save
+        output_fullpath : str
+            Path of the output file
+
         """
 
         if input_mask is None:
@@ -431,3 +542,39 @@ class mask(object):
 
         out=sc.FITSCatalog(output_fullpath, open_mode= sc.BaseCatalog.OpenMode.ReadWrite)
         out.save_as_fits(data=input_mask,image=True)
+
+    def _get_temp_dir_path(self, temp_dir_path):
+        """Get temporary directory path
+
+        Create the path and the directory for temporary file.
+
+        Parameters
+        -----------
+        temp_dir_path : str
+            Path to the temporary directory
+
+        Returns
+        -------
+        str
+            Path to the temporary directory
+
+        Notes
+        -----
+        It is possible to have it in the output directory of the run, just
+        enter 'OUTPUT'.
+
+        """
+
+        if temp_dir_path is None:
+            raise ValueError('temp directory path not parovided')
+
+        path = temp_dir_path.replace(' ','')
+
+        if path == 'OUTPUT':
+            path = self._output_dir + '/temp'
+
+        path += '/'
+        if not os.path.isdir(path):
+            os.system('mkdir ' + path)
+
+        return path

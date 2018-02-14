@@ -558,6 +558,8 @@ class SETools(object):
         self._stat_func['mean'] = np.mean
         self._stat_func['median'] = np.median
         self._stat_func['mode'] = self._mode
+        self._stat_func['sqrt'] = np.sqrt
+        self._stat_func['pow'] = pow
 
 
     def _mode(self, input, eps=0.001):

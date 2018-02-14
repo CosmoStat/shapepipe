@@ -10,5 +10,5 @@ Set the package information
 
 """
 
-__version__ = "1.0.1"
-__whoami__ = "mask"
+__version__ = "1.0.0"
+__whoami__ = "PSFExRun"
