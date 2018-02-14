@@ -53,9 +53,6 @@ class shapelens(object):
         self._temp_dir = temp_dir
         if not os.path.isdir(self._temp_dir):
             os.system('mkdir {}'.format(self._temp_dir))
-            self._temp_dir_bool = 1
-        else:
-            self._temp_dir_bool = 0
 
         s=re.split("\-([0-9]{3})\-([0-9]+)\.",self._gal_cat_path)
         self._img_number='-{0}-{1}'.format(s[1],s[2])
@@ -101,11 +98,8 @@ class shapelens(object):
             self._shape_cat[i] = []
 
         output = subprocess.check_output('{0} {1} -p {2} -s {3} -g {4} {5}'.format(self._exec_path, gal_image_path, psf_image_path, stamp_size, n_stamp, self._exec_option), shell=True)
-        if self._temp_dir_bool:
-            os.system('rm -r {}'.format(self._temp_dir))
-        else:
-            os.system('rm {}'.format(gal_image_path))
-            os.system('rm {}'.format(psf_image_path))
+        os.system('rm {}'.format(gal_image_path))
+        os.system('rm {}'.format(psf_image_path))
 
         output = re.split('\n', output)
         output.remove('')
