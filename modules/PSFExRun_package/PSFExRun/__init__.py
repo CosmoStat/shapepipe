@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""PSFEx
+"""PSFExRun
 
 @mainpage Multiprocessing Framework - Parallel Package Name execution
 
@@ -17,7 +17,7 @@ Executable files:
 
 Modules:
 
-The Python program files are located in the ./PSFEx/ directory and the
+The Python program files are located in the ./PSFExRun/ directory and the
 default configuration file
 @c config.cfg reside in the ./config directory.
 
@@ -33,14 +33,14 @@ Prerequisites
 
 Installation
 
-- Download and unpack the file PSFEx-1.0.0.tar.gz in the directory of
+- Download and unpack the file PSFExRun-1.0.0.tar.gz in the directory of
   your choice
-- PSFEx is a pure Python module and can then be installed using the
+- PSFExRun is a pure Python module and can then be installed using the
   standard procedure:
 
   <ol>
    <li> create a console or terminal session </li>
-   <li> cd to the directory where PSFEx-1.0.0.tar.gz was unpacked </li>
+   <li> cd to the directory where PSFExRun-1.0.0.tar.gz was unpacked </li>
    <li> enter the command: @code sudo python setup.py install @endcode </li>
    <li> if no root access, use: @code python setup install
         --home=target_directory @endcode to install the module to
@@ -52,11 +52,11 @@ Installation
 
 The general syntax is:
 
-  SMP version: PSFEx_SMP.py [options]
-  MPI version: PSFEx_MPI.py [options]
+  SMP version: PSFExRun_SMP.py [options]
+  MPI version: PSFExRun_MPI.py [options]
 
-by default, PSFEx will look for a configuration file named config.cfg in
-the ./PSFEx/config directory. The location of this file can be changed
+by default, PSFExRun will look for a configuration file named config.cfg in
+the ./PSFExRun/config directory. The location of this file can be changed
 using the -c and -d options (see below).
 
 The supported options are:
@@ -70,9 +70,9 @@ The supported options are:
   <li> -c, --config-file   Name of the configuration file </li>
 </ul>
 
-To run PSFEx_MPI.py, one has to use the mpirun executable as:
+To run PSFExRun_MPI.py, one has to use the mpirun executable as:
 
-   - <code>mpirun -np N PSFEx_MPI.py [options]</code>
+   - <code>mpirun -np N PSFExRun_MPI.py [options]</code>
 
 where @c N is the number of processors (or nodes) to use. MPI must has been
 installed and configured appropriately.
@@ -80,7 +80,7 @@ installed and configured appropriately.
 Since the manager process of Quadg3 uses one processor for itself, workers will
 share N-1 processors.
 
-For example: 'mpirun -np 6 PSFEx_MPI -d mydir -c myconfig.cfg' will run
+For example: 'mpirun -np 6 PSFExRun_MPI -d mydir -c myconfig.cfg' will run
 Quadg3 on 6 processors, 1 for the manager and 5 for the workers. The manager
 and each of the workers will look for a configuration file:
 ./mydir/myconfig.cfg.
