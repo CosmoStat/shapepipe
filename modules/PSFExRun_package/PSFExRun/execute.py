@@ -379,7 +379,7 @@ class PackageRunner(object):
 
         """
 
-        dir_path = self._worker.base_input_dir + 'PSFEx_default'
+        dir_path = self._worker.base_input_dir + '/PSFEx_default'
 
         self._read_psfex_default(dir_path + '/default.psfex')
 
