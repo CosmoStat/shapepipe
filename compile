@@ -3,9 +3,8 @@
 set module2compile = (modules/slogger_package modules/sconfig_package \
                       modules/mpfx_package modules/mpfg_package \
                       modules/scatalog_package \
-                      modules/PSFEx_package modules/SEXtractor_package \
-                      modules/cfis_package modules/mask_package \
-		                  modules/sf_deconvolve_package)
+                      modules/PSFEx_package modules/SExtractor_package \
+                      modules/mask_package modules/sf_deconvolve_package)
 
 set install_option = $1
 set cdir = `pwd`
