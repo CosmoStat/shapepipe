@@ -110,4 +110,4 @@ class PSFExInterpolator(object):
         output = sc.FITSCatalog(self._output_path+self._img_number+'.fits',
                                 open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
                                 SEx_catalog=True)
-        output.save_as_fits2(self.interp_PSFs, ['VIGNET'], sex_cat_path=self._galcat_path)
+        output.save_as_fits(self.interp_PSFs, ['VIGNET'], sex_cat_path=self._galcat_path)
