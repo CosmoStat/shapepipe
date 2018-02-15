@@ -31,6 +31,7 @@ unitdef = 'degree'
 # Maybe define class for these constants?
 size = {}
 size['tile']     = 0.5
+size['weight']   = 0.5
 size['exposure'] = 1.0
 
 # Cut criteria for exposures
