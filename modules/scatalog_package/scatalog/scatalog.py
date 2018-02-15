@@ -1551,6 +1551,117 @@ class FITSCatalog(BaseCatalog):
                raise TypeError('Data need to be a numpy.ndarray')
 
 
+   #------------------------------------------------------------------------------------------------
+   # ADDED
+   def save_as_fits2(self, data=None, names=None, ext_name=None, sex_cat_path=None, image=False, overwrite=False):
+       """!
+            Save data into an already existing fits or a new one.
+            Save data from dict, list, numpy.ndarray, numpy.recarray or astropy.io.fits.fitsrec.FITS_rec (data format in an astropy fits file)
+            When creating a new fits to store BinTable data it create a PrimaryHDU.
+            When creating a new fits to store Image there is no PrimaryHDU.
+            You can create a SExtractor format fits by specifying a SExtractor catalog from where data come from.
+            @param data data to store
+            @param names names of the diferent column (not needed for dict and rec format)
+            @param ext_name name of the HDU where data are stored (DEFAULT = NEW)
+            @param sex_cat_path path of the already existing SExtractor catalog to mimic
+            @param image if True create a fits image
+            @param overwrite only used when creating an image fits
+
+            NOTE : to create a SExtractor like fits you need to specify SEx_catalog=True when declaring the FITSCatalog object.
+       """
+
+       if self.open_mode != FITSCatalog.OpenMode.ReadWrite:
+           raise BaseCatalog.OpenModeConflict(open_mode=self.open_mode, open_mode_needed=FITSCatalog.OpenMode.ReadWrite)
+
+       if data is None:
+           raise ValueError('Data not provided')
+
+       if not image:
+           if type(data) is dict:
+               print('d')
+               names = data.keys()
+               it = range(len(names))
+               data = [np.array(data[i]) for i in names]
+               self._save_to_fits(data, names, it, ext_name, sex_cat_path)
+
+           elif type(data) is np.recarray:
+               print('r')
+               names = list(data.dtype.names)
+               it = names
+               self._save_to_fits(data, names, it, ext_name, sex_cat_path)
+
+           elif type(data) is fits.fitsrec.FITS_rec:
+               self._save_from_recarray(data,ext_name, sex_cat_path)
+
+           elif type(data) is np.ndarray:
+               print('a')
+               if names is None:
+                   raise ValueError('Names not provided')
+               it = range(len(names))
+               self._save_to_fits(data, names, it, ext_name, sex_cat_path)
+
+
+           elif type(data) is list:
+               print('l')
+               if names is None:
+                   raise ValueError('Names not provided')
+               it = range(len(names))
+               data=np.asarray(data)
+               self._save_to_fits(data, names, it, ext_name, sex_cat_path)
+       else:
+           if type(data) is np.ndarray:
+               self._save_image(data=data, overwrite=overwrite)
+           else:
+               raise TypeError('Data need to be a numpy.ndarray')
+
+
+   def _save_to_fits(self, data, names, it, ext_name=None, sex_cat_path=None):
+      """
+      """
+
+      if data is None:
+         raise ValueError('Data not provided')
+
+      if self.helper.file_exists(self.fullpath):
+          if self._cat_data is None:
+              self.open()
+          if ext_name is None:
+              ext_name='new'
+      else:
+          if self._SEx_catalog:
+             self.create(s_hdu=False, sex_cat_path=sex_cat_path)
+             self.open()
+             if ext_name is None:
+                 ext_name='LDAC_OBJECTS'
+          else:
+              self.create(s_hdu=False)
+              self.open()
+              if ext_name is None:
+                  ext_name='new'
+
+      if len(names) == 1:
+          data=np.array([data])
+      col_list = []
+      for i in it:
+          data_shape = data[i].shape[1:]
+          dim = str(tuple(data_shape))
+          name = names[it.index(i)]
+          data_type = self._get_fits_col_type(data[i])
+          mem_size = 1
+          if len(data_shape) != 0:
+              for k in data_shape:
+                  mem_size *= k
+              data_format = '{0}{1}'.format(mem_size, data_type)
+              col_list.append(fits.Column(name= name, format= data_format, array= data[i], dim= dim))
+          else:
+              data_format = '{0}{1}'.format(mem_size, data_type)
+              col_list.append(fits.Column(name= name, format= data_format, array= data[i]))
+
+      self._cat_data.append(fits.BinTableHDU.from_columns(col_list, name=ext_name))
+      self.close()
+
+
+
 
    #------------------------------------------------------------------------------------------------
    def create_from_numpy(self, matrix, col_names, ext_name=None, ext_ver=None, header=None):
