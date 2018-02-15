@@ -1,0 +1,7 @@
+digraph G
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir=LR;
+  Node1 [label="scatalog.scatalog.FITSCatalog.OpenMode",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classscatalog_1_1scatalog_1_1FITSCatalog_1_1OpenMode.html",tooltip="Supported input catalog open mode."];
+}

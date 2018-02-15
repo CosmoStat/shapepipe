@@ -1,14 +1,14 @@
 #! /bin/csh
 
-set module2compile = (trunk/slogger_package trunk/sconfig_package trunk/mpfx_package trunk/mpfg_package trunk/mpfg3_package \
-	              trunk/mpfcfhtlens_package \
-                      trunk/multifit_package trunk/scdm_package trunk/scatalog_package trunk/pse_package \
-		      branches/gfit_common_package trunk/mkpsf_package) 
+set module2compile = (modules/slogger_package modules/sconfig_package modules/mpfx_package modules/mpfg_package modules/mpfg3_package \
+                      modules/multifit_package modules/scdm_package modules/scatalog_package modules/pse_package \
+		       modules/gfit_common_package modules/mkpsf_package) 
+set install_dir = /dsm/cosmo02/sparseastro/Euclid/code/cea-epfl/ShapePipe-install-own #To change for each user. 
+#set install_dir = $HOME/astro/ShapePipe/install #for Martin
 set cdir = `pwd`
 foreach k ($module2compile)
  echo "process" $k
  cd $k
- python setup.py install --prefix=$HOME/astro/ShapePipe/install
-#install-atlas3101-dev-common
+# python setup.py install --prefix=${install_dir}
  cd cdir
 end

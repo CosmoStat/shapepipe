@@ -1,0 +1,13 @@
+include *.txt
+recursive-include sf_deconvolve *.py
+recursive-include sf_deconvolve *.cfg
+recursive-include sf_deconvolve *.txt
+recursive-include doc *.html
+recursive-include doc *.tex
+recursive-include doc *.sty
+recursive-include doc *.css
+recursive-include doc *.png
+recursive-include doc *.md5
+recursive-include doc *.map
+prune sf_deconvolve/output
+prune sf_deconvolve/completed_runs

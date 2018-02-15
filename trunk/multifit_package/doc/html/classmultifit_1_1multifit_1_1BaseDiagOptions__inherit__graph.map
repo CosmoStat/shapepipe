@@ -1,6 +1,0 @@
-<map id="multifit.multifit.BaseDiagOptions" name="multifit.multifit.BaseDiagOptions">
-<area shape="rect" id="node3" href="$classmethods_1_1kmpfit_1_1FittingMethod_1_1DiagOptions.html" title="Diagnostic options for kmpfit. " alt="" coords="329,5,527,46"/>
-<area shape="rect" id="node4" href="$classmethods_1_1scdmin_1_1FittingMethod_1_1DiagOptions.html" title="Diagnostic options for SCDM. " alt="" coords="325,70,531,111"/>
-<area shape="rect" id="node5" href="$classmethods_1_1scileastsq_1_1FittingMethod_1_1DiagOptions.html" title="Diagnostic options applicable to scipy.optimize.leastsq() " alt="" coords="341,135,515,177"/>
-<area shape="rect" id="node2" href="$classobject.html" title="object" alt="" coords="6,77,63,104"/>
-</map>

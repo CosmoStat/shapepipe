@@ -1,0 +1,33 @@
+digraph G
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir=LR;
+  Node1 [label="object",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node2 [dir=back,color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="mpfg.mp_args.Args",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmpfg_1_1mp__args_1_1Args.html",tooltip="Management of command-line options."];
+  Node1 -> Node3 [dir=back,color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="mpfg.mp_calc.Master",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmpfg_1_1mp__calc_1_1Master.html",tooltip="Master calculator: distribute jobs to workers and collect/process their results."];
+  Node3 -> Node4 [dir=back,color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="mpfg.mp_calc_MPI.MasterMPI",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmpfg_1_1mp__calc__MPI_1_1MasterMPI.html",tooltip="Master calculator for MPI: distribute jobs to workers and collect/process their results."];
+  Node3 -> Node5 [dir=back,color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="mpfg.mp_calc_SMP.MasterSMP",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmpfg_1_1mp__calc__SMP_1_1MasterSMP.html",tooltip="Master calculator for SMP: distribute jobs to workers and collect/process their results."];
+  Node1 -> Node6 [dir=back,color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="mpfg.mp_calc.Worker",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmpfg_1_1mp__calc_1_1Worker.html",tooltip="Worker calculator: process jobs supplied by master and send back the results."];
+  Node6 -> Node7 [dir=back,color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="mpfg.mp_calc_MPI.WorkerMPI",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmpfg_1_1mp__calc__MPI_1_1WorkerMPI.html",tooltip="Worker calculator: process jobs supplied by master and send back the results."];
+  Node6 -> Node8 [dir=back,color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="mpfg.mp_calc_SMP.WorkerSMP",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmpfg_1_1mp__calc__SMP_1_1WorkerSMP.html",tooltip="Worker calculator: process jobs supplied by master and send back the results."];
+  Node1 -> Node9 [dir=back,color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 [label="mpfg.mp_data.Dataset",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmpfg_1_1mp__data_1_1Dataset.html",tooltip="Represent a dataset with images, catalogs and any other kinds of files."];
+  Node1 -> Node10 [dir=back,color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node10 [label="mpfg.mp_helper.Helper",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmpfg_1_1mp__helper_1_1Helper.html",tooltip="Convenient utility functions that can be shared across sub-classes."];
+  Node1 -> Node11 [dir=back,color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node11 [label="mpfg.mp_job.Job",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmpfg_1_1mp__job_1_1Job.html",tooltip="Represents a job to process by a calculator."];
+  Node11 -> Node12 [dir=back,color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node12 [label="mpfg.mp_job.FileJob",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmpfg_1_1mp__job_1_1FileJob.html",tooltip="Represents a job to process in the form of a file path."];
+  Node1 -> Node13 [dir=back,color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node13 [label="mpfg.mp_job.JobProcessor",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmpfg_1_1mp__job_1_1JobProcessor.html",tooltip="Submit jobs and process associated job results."];
+  Node1 -> Node14 [dir=back,color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node14 [label="mpfg.mp_job.JobResult",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classmpfg_1_1mp__job_1_1JobResult.html",tooltip="Represents the result of a Job object processed by a calculator."];
+}

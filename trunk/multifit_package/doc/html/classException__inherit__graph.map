@@ -1,6 +1,0 @@
-<map id="Exception" name="Exception">
-<area shape="rect" id="node2" href="$classmultifit_1_1multifit_1_1ModelFitter_1_1ConfigError.html" title="Exception thrown in case of the configuration file specified could not be found on disk..." alt="" coords="134,5,311,46"/>
-<area shape="rect" id="node3" href="$classmultifit_1_1multifit_1_1ModelFitter_1_1FittingError.html" title="Exception thrown when a fitting error has occurred. " alt="" coords="134,70,311,111"/>
-<area shape="rect" id="node4" href="$classmultifit_1_1multifit_1_1ModelFitter_1_1InvalidArgument.html" title="Exception thrown in case of invalid argument(s) supplied. " alt="" coords="134,135,311,177"/>
-<area shape="rect" id="node5" href="$classmultifit_1_1multifit_1_1ModelFitter_1_1NotImplementedError.html" title="Exception thrown when a method that is not yet implented has been invoked. " alt="" coords="134,201,311,242"/>
-</map>

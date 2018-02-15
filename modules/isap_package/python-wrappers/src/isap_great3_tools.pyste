@@ -1,0 +1,79 @@
+declaration_code("""
+#include <numpy/arrayobject.h>
+#define PyArray_SimpleNewFromDataFortran(nd, dims, typenum, data) \
+ 	PyArray_New(&PyArray_Type, nd, dims, typenum, NULL,\
+                    data, 0, NPY_FARRAY, NULL)
+#define PyArray_SimpleNewFromDataC(nd, dims, typenum, data) \
+ 	PyArray_New(&PyArray_Type, nd, dims, typenum, NULL,\
+                    data, 0, NPY_CARRAY, NULL)
+
+#define generic_array(name,PARAM_TYPE,ARRAY_TYPE, NPY_TYPE) \
+    PyObject* name(to_array<PARAM_TYPE, ARRAY_TYPE> &self){ \
+      int ndim = self.naxis();  \
+      PyArray_ORDER order = NPY_FORTRANORDER;\
+      npy_intp * dims = new npy_intp[ndim];\
+      for(int i=0; i < ndim; i++) dims[i] = self.axis(i+1); \
+      PyObject *out= PyArray_SimpleNewFromDataFortran(ndim,dims,NPY_TYPE,self.buffer()); \
+      delete[] dims; \
+      return out;} 
+      
+#define generic_image(name,PARAM_TYPE,ARRAY_TYPE, NPY_TYPE) \
+    PyObject* name(to_array<PARAM_TYPE, ARRAY_TYPE> &self){ \
+      int ndim = self.naxis();  \
+      PyArray_ORDER order = NPY_CORDER; \
+      npy_intp * dims = new npy_intp[ndim]; \
+      for(int i=0; i < ndim; i++) dims[i] = self.axis(i+1); \
+      if(ndim >=2 ){ dims[0] = self.nl(); dims[1] = self.nc();} \
+      PyObject *out= PyArray_SimpleNewFromDataC(ndim,dims,NPY_TYPE,self.buffer()); \
+      delete[] dims; \
+      return out;} 
+      
+generic_array(dataf,float,true,NPY_FLOAT32)
+generic_array(datad,double,true,NPY_DOUBLE)
+generic_image(dataIf,float,false,NPY_FLOAT32)
+generic_image(dataId,double,false,NPY_DOUBLE)
+""")
+
+#Set numpy ndarray as numeric::array
+module_code("""
+    import_array();
+    boost::python::numeric::array::set_module_and_type("numpy", "ndarray");
+
+""")
+
+#-------------------------------------------------------------
+# Imports from GlobalInc.h
+Enum("Bool","GlobalInc.h")
+
+#-------------------------------------------------------------
+# Imports from TempArray.h
+to_array = Template("to_array","TempArray.h")
+exclude(to_array.setx)
+exclude(to_array.setxy)
+exclude(to_array.setxyz)
+exclude(to_array.buffer)
+exclude(to_array.operator['()'])
+
+fltarr = to_array("float true", "fltarr")
+class_code(fltarr,'.add_property("data",&dataf)')
+
+dblarr = to_array("double true", "dblarr")
+class_code(dblarr,'.add_property("data",&datad)')
+
+Iflt   = to_array("float false", "Iflt")
+class_code(Iflt,'.add_property("data",&dataIf)')
+
+Idbl   = to_array("double false", "Idbl")
+class_code(Idbl,'.add_property("data",&dataId)')
+
+
+#-----------------------------------------------------------
+# Imports from IM_IO.h
+Function("fits_read_fltarr","IM_IO.h")
+Function("fits_read_dblarr","IM_IO.h")
+Function("fits_write_fltarr","IM_IO.h")
+Function("fits_write_dblarr","IM_IO.h")
+Function("io_read_ima_float","IM_IO.h")
+Function("io_write_ima_float","IM_IO.h")
+
+

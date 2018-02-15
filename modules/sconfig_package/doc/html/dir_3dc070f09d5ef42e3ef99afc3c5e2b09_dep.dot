@@ -1,0 +1,6 @@
+digraph G {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  dir_3dc070f09d5ef42e3ef99afc3c5e2b09 [shape=box, label="sconfig", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_3dc070f09d5ef42e3ef99afc3c5e2b09.html"];
+}

@@ -1,6 +1,0 @@
-<map id="multifit.multifit.BaseFittingInfo" name="multifit.multifit.BaseFittingInfo">
-<area shape="rect" id="node3" href="$classmethods_1_1kmpfit_1_1FittingMethod_1_1FittingInfo.html" title="Fitting information available from kmpfit, once fitting is complete. " alt="" coords="361,5,559,46"/>
-<area shape="rect" id="node4" href="$classmethods_1_1scdmin_1_1FittingMethod_1_1FittingInfo.html" title="Fitting information available from SCDM, once fitting is complete. " alt="" coords="357,70,563,111"/>
-<area shape="rect" id="node5" href="$classmethods_1_1scileastsq_1_1FittingMethod_1_1FittingInfo.html" title="Fitting information available from scipy.optimize.leastsq(), once fitting is complete. " alt="" coords="373,135,547,177"/>
-<area shape="rect" id="node2" href="$classobject.html" title="object" alt="" coords="6,77,63,104"/>
-</map>

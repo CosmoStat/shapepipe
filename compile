@@ -1,0 +1,22 @@
+#! /bin/csh
+
+set module2compile = (modules/slogger_package modules/sconfig_package \
+                      modules/mpfx_package modules/mpfg_package \
+                      modules/scatalog_package \
+                      modules/PSFEx_package modules/SExtractor_package \
+                      modules/mask_package modules/sf_deconvolve_package)
+
+set install_option = $1
+set cdir = `pwd`
+foreach k ($module2compile)
+ echo "process" $k
+ cd $k
+ if ($install_option == "") then
+   python setup.py install
+ else if ($install_option == "local") then
+   python setup.py install --user
+ else
+   python setup.py install --prefix=$install_option
+ endif
+ cd cdir
+end

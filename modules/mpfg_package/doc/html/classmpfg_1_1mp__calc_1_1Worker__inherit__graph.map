@@ -1,0 +1,5 @@
+<map id="mpfg.mp_calc.Worker" name="mpfg.mp_calc.Worker">
+<area shape="rect" id="node3" href="$classmpfg_1_1mp__calc__MPI_1_1WorkerMPI.html" title="Worker calculator: process jobs supplied by master and send back the results. " alt="" coords="5,155,211,181"/>
+<area shape="rect" id="node4" href="$classmpfg_1_1mp__calc__SMP_1_1WorkerSMP.html" title="Worker calculator: process jobs supplied by master and send back the results. " alt="" coords="235,155,449,181"/>
+<area shape="rect" id="node2" href="$classobject.html" title="object" alt="" coords="197,5,253,32"/>
+</map>

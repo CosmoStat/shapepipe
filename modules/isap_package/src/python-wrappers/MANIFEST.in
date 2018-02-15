@@ -1,0 +1,12 @@
+include *.txt
+recursive-include mr_transform *.py
+recursive-include mr_transform *.cfg
+recursive-include mr_transform *.txt
+recursive-include doc *.html
+recursive-include doc *.tex
+recursive-include doc *.sty
+recursive-include doc *.css
+recursive-include doc *.png
+recursive-include doc *.md5
+recursive-include doc *.map
+

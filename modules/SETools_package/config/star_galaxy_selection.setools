@@ -1,0 +1,15 @@
+# Exemple of usage for a star/galaxy seperation based on size/mag properties
+
+[MASK:star_selection]
+MAG_AUTO > 18.
+MAG_AUTO < 23.
+FLAGS == 0
+IMAFLAGS_ISO == 0
+FWHM_IMAGE - 0.05 <= mode(FWHM_IMAGE)
+FWHM_IMAGE + 0.05 >= mode(FWHM_IMAGE)
+CLASS_STAR != 0
+
+[MASK:galaxy_selection]
+MAG_AUTO > 20.
+FLAGS == 0
+IMAFLAGS_ISO == 0
