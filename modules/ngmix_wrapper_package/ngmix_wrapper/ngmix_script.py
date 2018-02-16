@@ -86,7 +86,7 @@ class ngmix_wrapper(object):
             output_dict[i] = []
 
         for i in range(n_obj):
-            temp_dict = self.make_metacal(self._gal_vign[i], self._psf_vign, self._option_dict)
+            temp_dict = self.make_metacal(self._gal_vign[i], self._psf_vign[i], self._option_dict)
             for j in self._option_dict['TYPES']:
                 output_dict[j].append(temp_dict[j].image)
             try:
