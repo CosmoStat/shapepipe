@@ -158,7 +158,7 @@ class PackageRunner(object):
 
         option_dict = self._worker.config.get_section_data('NGMIX_OPTION')
 
-        r = ngmix_script.ngmix(gal_cat_path= self._fnames['input_filepath'][0],
+        r = ngmix_script.ngmix_wrapper(gal_cat_path= self._fnames['input_filepath'][0],
                          psf_cat_path= self._fnames['input_filepath'][1],
                          output_dir= self._worker.result_output_dir,
                          option_dict= option_dict)

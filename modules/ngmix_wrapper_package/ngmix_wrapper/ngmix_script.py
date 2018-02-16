@@ -18,7 +18,7 @@ import os
 
 import re
 
-class ngmix(object):
+class ngmix_wrapper(object):
     """
     """
 
