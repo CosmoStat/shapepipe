@@ -87,6 +87,8 @@ class PackageHelper(Helper):
 
             master.logger.log_info_p('\n')
 
+
+
     def locate_files(self, pattern_list, directory, sort=True,
                      recurse=True, err_check=True):
 
@@ -97,7 +99,7 @@ class PackageHelper(Helper):
         Parameters
         ----------
         pattern_list : list
-            Unix-style file search pattern list (e.g.[*.fits, ".txt] )
+            Unix-style file search pattern list (e.g.[*.fits, *.txt] )
         directory : str
             Base directory from where to search for matching files
         sort : bool, optional

@@ -378,6 +378,14 @@ class PackageRunner(object):
                         break
             i+=1
 
+        # Consistency checks on flags and file types
+        want_WEIGHT  = self._worker.config.get_as_boolean('WEIGHT', 'CODE')
+        want_FLAG    = self._worker.config.get_as_boolean('FLAG', 'CODE')
+        n_file_types = len(self._worker.config.get_as_list('INPUT_FILENAME_FORMATS', 'CODE'))
+        if int(want_WEIGHT) + int(want_FLAG) != n_file_types - 1:
+            raise Exception('Boolean flags in package config file WEIGHT={} and FLAG={} not consistent '
+                            'with number of input file types {}'.format(want_WEIGHT, want_FLAG, n_file_types))
+
 
     def _set_default_input(self):
         """Set default input parameters
