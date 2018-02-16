@@ -156,7 +156,7 @@ class PackageRunner(object):
 
         """
 
-        option_dict = self._worker.config.get_section_data('NGMIX_OPTION')
+        option_dict = self._get_option_dict()
 
         r = ngmix_script.ngmix_wrapper(gal_cat_path= self._fnames['input_filepath'][0],
                          psf_cat_path= self._fnames['input_filepath'][1],
@@ -175,6 +175,8 @@ class PackageRunner(object):
         option_dict['CHEATNOISE'] = self._worker.config.get_as_boolean('CHEATNOISE', 'NGMIX_OPTION')
         option_dict['SYMMETRIZE_PSF'] = self._worker.config.get_as_boolean('SYMMETRIZE_PSF', 'NGMIX_OPTION')
         option_dict['STEP'] = self._worker.config.get_as_float('STEP', 'NGMIX_OPTION')
+
+        return option_dict
 
     def _get_exec_config_filepath(self):
 
