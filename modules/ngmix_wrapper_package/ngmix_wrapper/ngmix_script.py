@@ -75,49 +75,6 @@ class ngmix_wrapper(object):
         except:
             raise TypeError("Data in the wrong format. Assume SExtractor like catalog with the vignet in 'VIGNET'")
 
-    def _psf_fitter(self, psf_vign):
-        """Psf fitter
-
-        Function used to create a gaussian fit of the PSF.
-
-        Parameters
-        ----------
-        psf_vign : numpy.array
-            Array containg one vignet of psf
-
-        """
-
-        psf_obs=ngmix.Observation(psf_vign)
-        pfitter=ngmix.fitting.LMSimple(psf_obs,'gauss')
-
-        shape = psf_vign.shape
-        psf_pars = np.array([shape[0]/2., shape[1]/2., 0., 0., 1., 1.])
-        pfitter.go(psf_pars)
-
-        psf_gmix_fit=pfitter.get_gmix()
-        psf_obs.set_gmix(psf_gmix_fit)
-
-        return psf_obs
-
-    def _get_weight(self, gal_vign):
-        """Make weight
-
-        Make a weight image to handle noise during the deconvolution.
-
-        Parameters
-        ----------
-        gal_vign : numpy.array
-            Array containing one vignet of galaxy
-
-        """
-
-        shape = gal_vign.shape
-
-        std = stats.mad_std(gal_vign)
-
-        w = 1./(np.random.normal(0.,std,(shape[0], shape[1])))**2.
-
-        return w
 
     def process(self):
         """Process
@@ -147,7 +104,7 @@ class ngmix_wrapper(object):
     def make_metacal(self, gal_vign, psf_vign, option_dict):
         """Make the metacalibration
 
-        This function call different ngmix functions to create images used for the metacalibration.
+        This function call different ngmix functions to create images needed for the metacalibration.
 
         Parameters
         ----------
@@ -175,6 +132,53 @@ class ngmix_wrapper(object):
 
         return obs_out
 
+
+    def _psf_fitter(self, psf_vign):
+        """Psf fitter
+
+        Function used to create a gaussian fit of the PSF.
+
+        Parameters
+        ----------
+        psf_vign : numpy.array
+            Array containg one vignet of psf
+
+        """
+
+        psf_obs=ngmix.Observation(psf_vign)
+        pfitter=ngmix.fitting.LMSimple(psf_obs,'gauss')
+
+        shape = psf_vign.shape
+        psf_pars = np.array([shape[0]/2., shape[1]/2., 0., 0., 1., 1.])
+        pfitter.go(psf_pars)
+
+        psf_gmix_fit=pfitter.get_gmix()
+        psf_obs.set_gmix(psf_gmix_fit)
+
+        return psf_obs
+
+
+    def _get_weight(self, gal_vign):
+        """Make weight
+
+        Make a weight image to handle noise during the deconvolution.
+
+        Parameters
+        ----------
+        gal_vign : numpy.array
+            Array containing one vignet of galaxy
+
+        """
+
+        shape = gal_vign.shape
+
+        std = stats.mad_std(gal_vign)
+
+        w = 1./(np.random.normal(0.,std,(shape[0], shape[1])))**2.
+
+        return w
+
+
     def _save(self, output_dict):
         """Save
 
@@ -189,7 +193,7 @@ class ngmix_wrapper(object):
         -----
 
         The catalog respect the SExtractor format of the input galaxy catalog.
-        
+
         """
 
         output_dir_path = {}
