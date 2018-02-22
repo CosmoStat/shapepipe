@@ -19,7 +19,21 @@ import os
 import re
 
 class ngmix_wrapper(object):
-    """
+    """Ngmix_wrapper class
+
+    Class to achieve the metacalibration
+
+    Parameters
+    ----------
+    gal_cat_path : str
+        Path to the catalog containing galaxies' vignet
+    psf_cat_path : str
+        Path to the catalog containing psfs' vignet
+    output_dir : str
+        Path to the output directory
+    option_dict : dict
+        Dictionnary containg option for ngmix (keys : ['TYPES', 'FIXNOISE', 'CHEATNOISE', 'SYMMETRIZE_PSF', 'STEP'])
+
     """
 
     def __init__(self, gal_cat_path, psf_cat_path, output_dir, option_dict):
@@ -37,7 +51,21 @@ class ngmix_wrapper(object):
 
 
     def _load_data(self, path):
-        """
+        """Load the data
+
+        Function used to open a catalog and return vignets.
+
+        Parameters
+        ----------
+        path : str
+            Path to the catalog
+
+        Notes
+        -----
+
+        This function assume the catalog is a SExtractor catalog with
+        the vignet in : catalog[2].data['VIGNET'] (astropy.io.fits notation)
+
         """
 
         f=sc.FITSCatalog(path, SEx_catalog=True)
@@ -47,36 +75,12 @@ class ngmix_wrapper(object):
         except:
             raise TypeError("Data in the wrong format. Assume SExtractor like catalog with the vignet in 'VIGNET'")
 
-    def _psf_fitter(self, psf_vign):
-        """
-        """
-
-        psf_obs=ngmix.Observation(psf_vign)
-        pfitter=ngmix.fitting.LMSimple(psf_obs,'gauss')
-
-        shape = psf_vign.shape
-        psf_pars = np.array([shape[0]/2., shape[1]/2., 0., 0., 1., 1.])
-        pfitter.go(psf_pars)
-
-        psf_gmix_fit=pfitter.get_gmix()
-        psf_obs.set_gmix(psf_gmix_fit)
-
-        return psf_obs
-
-    def _get_weight(self, gal_vign):
-        """
-        """
-
-        shape = gal_vign.shape
-
-        std = stats.mad_std(gal_vign)
-
-        w = 1./(np.random.normal(0.,std,(shape[0], shape[1])))**2.
-
-        return w
 
     def process(self):
-        """
+        """Process
+
+        Main function to run the metacalibration.
+
         """
 
         n_obj = len(self._gal_vign)
@@ -98,7 +102,19 @@ class ngmix_wrapper(object):
 
 
     def make_metacal(self, gal_vign, psf_vign, option_dict):
-        """
+        """Make the metacalibration
+
+        This function call different ngmix functions to create images needed for the metacalibration.
+
+        Parameters
+        ----------
+        gal_vign : numpy.array
+            Array containing one vignet of galaxy
+        psf_vign : numpy.array
+            Array containg one vignet of psf
+        option_dict : dict
+            Dictionnary containg option for ngmix (keys : ['TYPES', 'FIXNOISE', 'CHEATNOISE', 'SYMMETRIZE_PSF', 'STEP'])
+
         """
 
         psf_obs = self._psf_fitter(psf_vign)
@@ -116,8 +132,68 @@ class ngmix_wrapper(object):
 
         return obs_out
 
-    def _save(self, output_dict):
+
+    def _psf_fitter(self, psf_vign):
+        """Psf fitter
+
+        Function used to create a gaussian fit of the PSF.
+
+        Parameters
+        ----------
+        psf_vign : numpy.array
+            Array containg one vignet of psf
+
         """
+
+        psf_obs=ngmix.Observation(psf_vign)
+        pfitter=ngmix.fitting.LMSimple(psf_obs,'gauss')
+
+        shape = psf_vign.shape
+        psf_pars = np.array([shape[0]/2., shape[1]/2., 0., 0., 1., 1.])
+        pfitter.go(psf_pars)
+
+        psf_gmix_fit=pfitter.get_gmix()
+        psf_obs.set_gmix(psf_gmix_fit)
+
+        return psf_obs
+
+
+    def _get_weight(self, gal_vign):
+        """Make weight
+
+        Make a weight image to handle noise during the deconvolution.
+
+        Parameters
+        ----------
+        gal_vign : numpy.array
+            Array containing one vignet of galaxy
+
+        """
+
+        shape = gal_vign.shape
+
+        std = stats.mad_std(gal_vign)
+
+        w = 1./(np.random.normal(0.,std,(shape[0], shape[1])))**2.
+
+        return w
+
+
+    def _save(self, output_dict):
+        """Save
+
+        Function used to save ngmix output into fits.
+
+        Parameters
+        ----------
+        output_dict : dict
+            Dictionnary contiaing all the output images.
+
+        Notes
+        -----
+
+        The catalog respect the SExtractor format of the input galaxy catalog.
+
         """
 
         output_dir_path = {}
