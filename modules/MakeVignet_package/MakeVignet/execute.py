@@ -175,7 +175,7 @@ class PackageRunner(object):
         image = self._load_data(self._fnames['input_filepath'][0], image= True)
         cat = self._load_data(self._fnames['input_filepath'][1], SEx_cat= True)
 
-        pos = [[x,y] for x,y in zip(cat[self._fnames['col_name'][0]][:10], cat[self._fnames['col_name'][1]][:10])]
+        pos = [[x,y] for x,y in zip(cat[self._fnames['col_name'][0]], cat[self._fnames['col_name'][1]])]
 
         vign = self._extract_vignet(image= image, pos= pos, size= self._fnames['vign_size'])
         self._save(vign)
