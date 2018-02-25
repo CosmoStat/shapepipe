@@ -38,7 +38,7 @@ def params_default():
     """
 
     p_def = stuff.param(
-        input_dir  = '../tiles',
+        input_dir  = '../area_CVn',
         band       = 'r',
     )
 
@@ -70,6 +70,8 @@ def create_links(input_dir, band):
     file_list = glob.glob('{}/*'.format(input_dir))
     file_list.sort()
 
+    print('Found {} files'.format(len(file_list)))
+
     # Filter file list to match CFIS image pattern for tiles
     img_list = []
     pattern = cfis.get_file_pattern('', band, 'tile')
@@ -78,6 +80,8 @@ def create_links(input_dir, band):
         m = re.findall(pattern, img)
         if len(m) != 0:
             img_list.append(img)
+
+    print('Found {} CFIS images (tiles)'.format(len(img_list)))
 
     # Create links
     print('Creating links:')
