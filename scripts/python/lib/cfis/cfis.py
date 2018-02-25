@@ -159,7 +159,7 @@ def get_file_pattern(pattern, band, image_type, want_re=True):
     elif image_type == 'cat':
         pattern = '{}\.cat'.format(pattern_base)
     elif image_type == 'weight':
-        pattern = '{}\.weight\.fits'.format(pattern_base)
+        pattern = '{}\.weight\.fits.fz'.format(pattern_base)
     else:
         stuff.error('Invalid type \'{}\''.format(image_type))
 
