@@ -1,0 +1,7 @@
+# Contiguous fields, 02/2018
+
+# Name		Coordinates [(ra,dec)_lower_left, (ra,dec)_upper_right)	Comments
+W3X		190deg_45deg_240deg_63deg				WCFHTLS-W3 extended area, overlap with eBOSS main & QSO,
+									excluding high-delta band of single-exp tiles
+CVn_overlap	150deg_34deg_210deg_42deg 	               		Overlap with eBOSS main & QSO, Northern part of CVn
+
