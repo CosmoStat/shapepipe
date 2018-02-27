@@ -68,7 +68,7 @@ def get_image_list(inp, band, image_type, verbose=False):
         file_list = glob.glob(inp)
 
     elif os.path.isfile(inp):
-        if image_type == 'tile' or image_type == 'weight' or image_type == 'weight.fz':
+        if image_type in ('tile', 'weight', 'weight.fz'):
             # File names in single-column ascii file
             inp_type  = 'file'
             file_list = cfis.read_list(inp)
@@ -232,7 +232,7 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
 
     found = []
 
-    if image_type == 'tile' or image_type == 'weight' or image_type == 'weight.fz':
+    if image_type in ('tile', 'weight', 'weight.fz'):
         for img in images:
             nix, niy = cfis.get_tile_number(img.name)
             ra, dec  = cfis.get_tile_coord_from_nixy(nix, niy)
