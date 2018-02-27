@@ -11,6 +11,9 @@ handling (*i.e.* they can be run in serial).
   Copy files to and from cc@in2p3
 * `cfis_get_coord_exposures.py`
   Print coordinates extracted from FITS exposure CFIS images 
+* `create_image_links.py`
+  Create symbolic links to CFIS tiles and weight with link names
+  in pipeline format
 
 
 ## Modules/libraries
