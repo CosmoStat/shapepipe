@@ -31,7 +31,8 @@ unitdef = 'degree'
 # Maybe define class for these constants?
 size = {}
 size['tile']     = 0.5
-size['exposure'] = 1
+size['weight']   = 0.5
+size['exposure'] = 1.0
 
 # Cut criteria for exposures
 exp_time_min     = 95
@@ -139,7 +140,7 @@ class image():
 
 
 
-def get_file_pattern(pattern, band, image_type):
+def get_file_pattern(pattern, band, image_type, want_re=True):
     """Return file pattern of CFIS image file.
     """
 
@@ -158,9 +159,14 @@ def get_file_pattern(pattern, band, image_type):
     elif image_type == 'cat':
         pattern = '{}\.cat'.format(pattern_base)
     elif image_type == 'weight':
-        pattern = '{}\.weight\.fits\.fz'.format(pattern_base)
+        pattern = '{}\.weight\.fits'.format(pattern_base)
+    elif image_type == 'weight.fz':
+        pattern = '{}\.weight\.fits.fz'.format(pattern_base)
     else:
         stuff.error('Invalid type \'{}\''.format(image_type))
+
+    if want_re == False:
+        pattern = pattern.replace('\\', '')
 
     return pattern
 
@@ -412,6 +418,16 @@ def read_list(fname):
     f = open(fname, 'rU')
     file_list = [x.strip() for x in f.readlines()]
     f.close()
+
+    # from sapastro1:toolbox/python/CFIS.py
+    #except IOError as exc:
+        #if exc.errno == errno.ENOENT:
+            #if verbose == True:
+                #print('Not using exclude file')
+            #out_list = []
+        #else:
+            #raise
+
 
     file_list.sort()
     return file_list
