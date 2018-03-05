@@ -29,7 +29,7 @@ class PSFExInterpolator(object):
 
     """
     
-    def __init__(self, dotpsf_path, galcat_path, output_path, pos_params=None, get_shapes=False):
+    def __init__(self, dotpsf_path, galcat_path, output_path, pos_params=None, get_shapes=True):
         """Class initialiser
 
         Parameters
@@ -118,12 +118,6 @@ class PSFExInterpolator(object):
         self.psf_shapes = np.array([[moms.observed_shape.g1, moms.observed_shape.g2,
                         moms.moments_sigma] for moms in psf_moms])
         self.hsm_flags = np.array([bool(mom.error_message) for mom in psf_moms]).astype(int)
-        shapes = {'E1_PSF_HSM': self.psf_shapes[:,0], 'E2_PSF_HSM': self.psf_shapes[:,1], 
-                  'SIGMA_PSF_HSM': self.psf_shapes[:,2], 'HSM_FLAG': self.hsm_flags}
-        shapes_cat = sc.FITSCatalog(self._output_path+'_shapes{}.fits'.format(self._img_number),
-                                open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
-                                SEx_catalog=True)
-        shapes_cat.save_as_fits(shapes, sex_cat_path=self._galcat_path)
         
     def write_output(self):
         """ Save computed PSFs to fits file.
@@ -134,5 +128,7 @@ class PSFExInterpolator(object):
         output = sc.FITSCatalog(self._output_path+self._img_number+'.fits',
                                 open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
                                 SEx_catalog=True)
-        data = {'VIGNET': self.interp_PSFs}
+        data = {'VIGNET': self.interp_PSFs,
+                'E1_PSF_HSM': self.psf_shapes[:,0], 'E2_PSF_HSM': self.psf_shapes[:,1], 
+                'SIGMA_PSF_HSM': self.psf_shapes[:,2], 'HSM_FLAG': self.hsm_flags}
         output.save_as_fits(data, sex_cat_path=self._galcat_path)
