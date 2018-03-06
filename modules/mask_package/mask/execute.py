@@ -157,7 +157,7 @@ class PackageRunner(object):
         This method executes the command line defined by _set_exec_line().
 
         """
-
+        
         r=ms.mask(image_path=self._fnames['input_filepath'][0],
                   weight_path=self._fnames['input_filepath'][1],
                   config_filepath=self._fnames['config_filepath'],
