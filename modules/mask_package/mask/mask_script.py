@@ -72,7 +72,7 @@ class mask(object):
 
         conf=sconfig.SConfig(config_filepath)
 
-        self._config={'PATH': {}, 'BORDER': {}, 'HALO': {}, 'SPIKE': {}, 'MESSIER': {}}
+        self._config={'PATH': {}, 'BORDER': {}, 'HALO': {}, 'SPIKE': {}, 'MESSIER': {}, 'MD': {}}
 
         self._config['PATH']['WW'] = conf.get_as_string('WW_PATH','PROGRAM_PATH')
         self._config['PATH']['WW_configfile'] = conf.get_as_string('WW_CONFIG_FILE','PROGRAM_PATH')
@@ -140,7 +140,8 @@ class mask(object):
         if self._config['MD']['make']:
             self.missing_data()
 
-        stars=self.find_stars(np.array([self._fieldcenter['wcs'].ra.value,self._fieldcenter['wcs'].dec.value]), radius=self._img_radius)
+        if self._config['HALO']['make'] | self._config['SPIKE']['make']:
+            stars=self.find_stars(np.array([self._fieldcenter['wcs'].ra.value,self._fieldcenter['wcs'].dec.value]), radius=self._img_radius)
 
         for i in ['HALO', 'SPIKE']:
             if self._config[i]['make']:
@@ -175,7 +176,7 @@ class mask(object):
         except:
             im_pass = True
 
-        if not im_pass:
+        if im_pass:
             final_mask=self._build_final_mask(path_mask1=mask_name[0],path_mask2=mask_name[1], border=border_mask, messier=messier_mask)
 
             if not self._config['HALO']['individual']:
@@ -304,13 +305,17 @@ class mask(object):
 
         self._ratio = missing/tot
 
-        if self._ration >= self._config['MD']['thresh_flag']:
+        if self._ratio >= self._config['MD']['thresh_flag']:
             self._config['MD']['im_flagged'] = True
-        if slef._config['MD']['remove']:
-            if self._ration >= self._config['MD']['thresh_remove']:
+        else:
+            self._config['MD']['im_flagged'] = False
+        if self._config['MD']['remove']:
+            if self._ratio >= self._config['MD']['thresh_remove']:
                 self._config['MD']['im_remove'] = True
                 for i in ['HALO', 'SPIKE', 'MESSIER', 'BORDER']:
                     self._config[i]['make'] = False
+            else:
+                self._config['MD']['im_remove'] = False
 
         img.close()
 
@@ -641,8 +646,8 @@ class mask(object):
 
         if self._config['MD']['make']:
             out.open()
-            out.add_header_card('MASK_RATIO', self._ratio, 'ratio missing_pixels/all_pixels')
-            out.add_header_card('MASK_FLAG', self._config['MD']['im_flagged'], 'threshold value {:.3}'.format(self._config['MD']['thresh_flag']))
+            out.add_header_card('MRATIO', self._ratio, 'ratio missing_pixels/all_pixels')
+            out.add_header_card('MFLAG', self._config['MD']['im_flagged'], 'threshold value {:.3}'.format(self._config['MD']['thresh_flag']))
             out.close()
 
     def _get_temp_dir_path(self, temp_dir_path):
