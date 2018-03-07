@@ -1785,6 +1785,44 @@ class FITSCatalog(BaseCatalog):
        return hh.Header(header).param_value(request)
 
 
+   # -----------------------------------------------------------------------------------------------
+   def add_header_card(self, key, value= None, comment= None, hdu_no= None):
+       """!
+          Add a card in the header of the specified hdu
+          @param key the key to add
+          @param value the value of the key
+          @param comment comment for the key
+          @param hdu_no hdu where the header to modified is
+       """
+
+       if self.open_mode != FITSCatalog.OpenMode.ReadWrite:
+           raise BaseCatalog.OpenModeConflict(open_mode=self.open_mode, open_mode_needed=FITSCatalog.OpenMode.ReadWrite)
+
+       if self._cat_data is None:
+           raise BaseCatalog.CatalogNotOpen(self.fullpath)
+
+       if hdu_no is None:
+           hdu_no = self._hdu_no
+
+       card = []
+       if key is None:
+           raise ValueError('key not provided')
+       else:
+           card.append(key)
+
+       if value is not None:
+           card.append(value)
+       else:
+           if comment is not None:
+               card.append('')
+
+       if comment is not None:
+           card.append(comment)
+
+       card = tuple(card)
+
+       self._cat_data[hdu_no].header.append(card,end=True)
+
 
    # -----------------------------------------------------------------------------------------------
    def get_headers(self):
