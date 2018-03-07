@@ -1810,13 +1810,13 @@ class FITSCatalog(BaseCatalog):
        else:
            card.append(key)
 
-       if not value is None:
+       if value is NotImplementedError None:
            card.append(value)
        else:
-           if not comment is None:
+           if comment is not None:
                card.append('')
 
-       if not comment is None:
+       if comment is not None:
            card.append(comment)
 
        card = tuple(card)
