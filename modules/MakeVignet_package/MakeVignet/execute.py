@@ -327,6 +327,8 @@ class PackageRunner(object):
             f = sc.FITSCatalog(file_path, SEx_catalog= True)
         elif image:
             f = sc.FITSCatalog(file_path, hdu_no= 0)
+        else:
+            raise ValueError("SEx_cat or image not set. One of them has to be set on 'True' in accordingly to the file to open.")
 
         f.open()
         data = f.get_data()
