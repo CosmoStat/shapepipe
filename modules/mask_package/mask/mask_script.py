@@ -255,7 +255,24 @@ class mask(object):
 
 
     def mask_messier(self, cat_path, size_plus= 0.1, flag_value= 8):
-        """
+        """Create mask Messier
+
+        Create a circular patch for Messier objects.
+
+        Parameters
+        ----------
+        cat_path : str
+            Path to the Messier catalog
+        size_plus : float
+            Increase the size of the mask by this factor (Example : 0.1 means 10%)
+        flag_value : intMessier objects (power of 2)
+            Value of the flag for
+
+        Returns
+        -------
+        numpy.ndarray/None
+            If no Messier objectds find in the field return None and the flag map otherwise.
+
         """
 
         if cat_path == None:
@@ -292,7 +309,10 @@ class mask(object):
 
 
     def missing_data(self):
-        """
+        """Find missing data
+
+        Look for 0 value in the image and flag it depending of the configuration.
+
         """
 
         img = sc.FITSCatalog(self._image_fullpath, hdu_no=0)
@@ -575,6 +595,8 @@ class mask(object):
             Path to a mask (fits format)
         border : numpy.ndarray
             Array containing the border mask
+        messier : numpy.ndarray
+            Array containing the messier mask
 
         Returns
         -------
