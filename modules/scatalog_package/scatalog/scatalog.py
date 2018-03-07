@@ -1810,7 +1810,7 @@ class FITSCatalog(BaseCatalog):
        else:
            card.append(key)
 
-       if value is NotImplementedError None:
+       if value is not None:
            card.append(value)
        else:
            if comment is not None:
