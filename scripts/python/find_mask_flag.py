@@ -45,7 +45,7 @@ def get_files(path, file_name):
         if file_ext[1] != '.fits':
             continue
 
-        if not file_name is None:
+        if file_name is not None:
             s = re.split('-', i)
             if s[0]+file_ext[1] == file_name:
                 l.append(i)
@@ -132,7 +132,7 @@ def main(argv):
     ----------
     argv : sys.argv
         Arguments provide as input
-        
+
     """
 
     parser = argparse.ArgumentParser(description= 'Get mask flag from image header')
@@ -141,12 +141,12 @@ def main(argv):
 
     args = parser.parse_args()
 
-    if not args.path is None:
+    if args.path is not None:
         path = os.path.realpath(args.path)
     else:
         path = os.path.split(os.path.realpath(__file__))[0]
 
-    if not args.file_name is None:
+    if args.file_name is not None:
         file_name = args.file_name
     else:
         file_name = None
