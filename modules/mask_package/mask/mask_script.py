@@ -359,7 +359,7 @@ class mask(object):
 
         """
 
-        if not (type(position1) is np.ndarray) & (type(position2) is np.ndarray):
+        if (type(position1) is not np.ndarray) & (type(position2) is not np.ndarray):
             raise ValueError('Positions need to be a numpy.ndarray')
 
         p1 = (np.pi/180.)*np.hstack(self._wcs.all_pix2world(position1[0], position1[1], 1))
