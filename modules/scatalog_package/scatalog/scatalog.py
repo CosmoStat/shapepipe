@@ -2723,6 +2723,9 @@ class interpreter(object):
         self._stat_func['log'] = np.log
         self._stat_func['log10'] = np.log10
         self._stat_func['exp'] = np.exp
+        self._stat_func['std'] = np.std
+        self._stat_func['var'] = np.var
+        self._stat_func['mad'] = self._mad
 
 
     def _mode(self, input, eps=0.001):
@@ -2765,6 +2768,26 @@ class interpreter(object):
             data = data[(data > b_min) & (data < b_max)]
 
         return (b_min + b_max) / 2.
+
+
+    def _mad(self, input):
+        """Median absolute deviation
+
+        This function compute the median absolute deviation.
+
+        Parameters
+        ----------
+        input : numpy.nparray
+            Numpy array containing the data
+
+        Return
+        ------
+        float
+            The median absolute deviation of the input array.
+
+        """
+
+        return np.median(np.abs(input - np.median(input)))
 
 
     def _operate(self, string, string_split):
