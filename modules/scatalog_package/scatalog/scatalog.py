@@ -14,6 +14,8 @@ import asciidata as asc             # for text catalogs
 from astropy.io import fits         # for FITS catalogs (New)
 import astromatic_wrapper.utils as awu     # for FITS_LDAC catalogs
 
+import operator                 # for the interpreter
+
 # -- Internal imports
 from scatalog_helper import *       # Helper methods
 import header_handling as hh        # Function to deal with header's parameters
@@ -2549,6 +2551,380 @@ class LDACFITSCatalog(FITSCatalog):
       # --- Update internal data
       self._cat_imhead = hdu_list[0]
       self._cat_data = hdu_list[1:]
+
+
+class interpreter(object):
+    """Interpreter class
+
+    Class to handle operation/comparison in a string
+
+    Parameters
+    ----------
+    string : str
+        String to interpret
+    catralog : dict, recarray or str
+        If type(catalog) == str : assume a SExtractor fits catalog and read parameter in it
+        else : assume the catalog is already open and look into it
+    make_compare : bool
+        If true assume a comparison in the string
+    mask_dict : dict
+        dictionary containing mask usable for the operation
+    autorun : bool
+        If true return directly the result
+
+    """
+
+    def __init__(self, string, catalog, make_compare = False, mask_dict = None):
+
+        if type(string) is not str:
+            raise ValueError('string has to be str type')
+        else:
+            self._string = string
+
+        if catalog is not None:
+            if type(catalog) is str:
+                f = FITSCatalog(catalog, SEx_catalog= True)
+                f.open()
+                self._cat=f.get_data()
+                f.close()
+            else:
+                self._cat = catalog
+        else:
+            raise ValueError('catalog not provided')
+
+        self._make_compare = make_compare
+
+        if mask_dict is not None:
+            self._mask = mask_dict
+
+        self._init_stat_function()
+        self._comp_dict = {'<': operator.lt,
+                           '>': operator.gt,
+                           '<=': operator.le,
+                           '>=': operator.ge,
+                           '==': operator.eq,
+                           '!=': operator.ne}
+
+        self.result =  self.interpret(self._string, self._make_compare)
+
+
+    def interpret(self, string, make_compare = False, make_func = True, make_operate = True):
+        """Interpret
+
+        This function handle the different possible operation
+
+        Parameters
+        ----------
+        string : str
+            String to interpret
+        make_compare : bool
+            If true look for a comparison
+        make_func : bool
+            If true look for a function
+        make_operate : bool
+            If true look for an operation
+
+        Return
+        ------
+        array or float
+            Result of the current operation.
+
+        Notes
+        -----
+        This is a recursive function.
+
+        """
+
+        if make_compare:
+            result = self._compare(string)
+        else:
+            if make_operate:
+                string_split = re.split(r'\*|\/|\-|\+\s*(?![^()]*\))', string)
+                result = self._operate(string, string_split)
+            else:
+                if make_func:
+                    result = self._apply_func(string)
+                else:
+                    result = self._get_value(string)
+
+        return result
+
+
+    def _compare(self, string):
+        """Handle comparison in a string
+
+        This function transform condition in a string to real condition.
+
+        Parameters
+        ----------
+        string : str
+            strind containing the comparison.
+
+        """
+
+        comp='<|>|<=|>=|==|!='
+
+        if len(re.split(comp,string))!=2:
+            raise Exception('Only one comparison in [<, >, <=, >=, ==, !=] per lines')
+
+        for i in ['<=', '>=', '<','>', '==', '!=']:
+            terms = re.split(i, string)
+            if len(terms) == 2:
+                self._make_compare = False
+                first = self.interpret(terms[0], self._make_compare)
+                second = self.interpret(terms[1], self._make_compare)
+
+                return self._comp_dict[i](first, second)
+
+
+    def _apply_func(self, string):
+        """Apply function
+
+        Look for a function in a string and apply it.
+
+        Parameters
+        ----------
+        string : str
+            String containing the function.
+
+        Returns
+        -------
+        float
+            Result of the function.
+
+        """
+
+        s = re.split('\(|\)', string)
+
+        if len(s) == 1:
+            return self.interpret(s[0], self._make_compare, make_func= False, make_operate= False)
+        elif len(s) == 3:
+            try:
+                return self._stat_func[s[0]](self.interpret(s[1], self._make_compare, make_func= False, make_operate= True))
+            except:
+                raise Exception('Unknown function : {0}'.format(s[0]))
+        else:
+            raise Exception('Only one function can be applied.'
+                            'Problem with the term : {0}'.format(string))
+
+
+    def _init_stat_function(self):
+        """Initialise available stat functions
+
+        Create a dictionary containing the functions.
+
+        """
+
+        self._stat_func = {}
+
+        self._stat_func['mean'] = np.mean
+        self._stat_func['median'] = np.median
+        self._stat_func['mode'] = self._mode
+        self._stat_func['sqrt'] = np.sqrt
+        self._stat_func['pow'] = pow
+        self._stat_func['log'] = np.log
+        self._stat_func['log10'] = np.log10
+        self._stat_func['exp'] = np.exp
+        self._stat_func['std'] = np.std
+        self._stat_func['var'] = np.var
+        self._stat_func['mad'] = self._mad
+
+
+    def _mode(self, input, eps=0.001):
+        """Compute Mode
+
+        Compute the most frequent value of a continuous distribution.
+
+        Parameters
+        ----------
+        input : numpy.ndarray
+            Numpy array containing the data.
+        eps : float, optional
+            Accuracy to achieve (default is 0.001)
+
+        Note
+        ----
+
+        The input array must have 10 or more elements.
+
+        """
+
+        if self._cat_size > 100:
+            bins = int(float(self._cat_size)/10.)
+        elif self._cat_size >= 10:
+            bins = int(float(self._cat_size)/3.)
+        else:
+            raise ValueError("Can't compute with less than 10 elements in the input")
+
+        data = input
+        diff = eps+1.
+
+        while diff>eps:
+            hist = np.histogram(data, bins)
+
+            b_min = hist[1][hist[0].argmax()]
+            b_max = hist[1][hist[0].argmax()+1]
+
+            diff = b_max - b_min
+
+            data = data[(data > b_min) & (data < b_max)]
+
+        return (b_min + b_max) / 2.
+
+
+    def _mad(self, input):
+        """Median absolute deviation
+
+        This function compute the median absolute deviation.
+
+        Parameters
+        ----------
+        input : numpy.nparray
+            Numpy array containing the data
+
+        Return
+        ------
+        float
+            The median absolute deviation of the input array.
+
+        """
+
+        return np.median(np.abs(input - np.median(input)))
+
+
+    def _operate(self, string, string_split):
+        """Handle operation in a string
+
+        Make operation between catalog's parameters and/or numbers
+
+        Parameters
+        ----------
+        string : str
+            Parameter or linear combination of parameters.
+
+        Returns
+        -------
+        float
+            Result of the operation
+
+        Note
+        ----
+        It's used as a recursive function
+
+        """
+
+        op=r'\*|\/|\-|\+\s*(?![^()]*\))'
+        if string is None:
+            raise ValueError("Parameter not specified")
+        if string_split is None:
+            raise ValueError("Parameters splited not specified")
+
+        if len(re.split(op,string))==1:
+            return self.interpret(string, make_operate= False)
+
+        tmp = self._string_op_func(re.split('\+\s*(?![^()]*\))',string), string_split, operator.add, 0)
+        if tmp != 'pass':
+            return tmp
+        else:
+            tmp = self._string_op_func(re.split('\-\s*(?![^()]*\))',string), string_split, operator.sub, 'init')
+            if tmp != 'pass':
+                return tmp
+            else:
+                tmp = self._string_op_func(re.split('\*\s*(?![^()]*\))',string), string_split, operator.mul, 1)
+                if tmp != 'pass':
+                    return tmp
+                else:
+                    return self._string_op_func(re.split('\/\s*(?![^()]*\))',string), string_split, operator.div, 'init')
+
+
+    def _string_op_func(self, string_op, string_split, op, tmp):
+        """Make a specified operation
+
+        This function handle the posible operation between parameters.
+
+        Parameters
+        ----------
+        string_op : list
+            List of parameters to operate.
+        string_split : list
+            The different parameter splitted using '\*|\/|\-|\+\s*(?![^()]*\))' as delimiter.
+        op : func
+            The kind of operation provide as an operator function
+            (Example : operator.sub).
+        tmp : str or float
+            Temporary result of the global operation or value to
+            initiate operation.
+
+        Returns
+        -------
+        float or 'pass'
+            Result of the operation or 'pass' if their is remaining operations.
+
+        """
+
+        if len(string_op) > 2:
+            for i in string_op:
+                if tmp == 'init':
+                    tmp = self._operate(i, string_split)
+                else:
+                    tmp = op(tmp, self._operate(i, string_split))
+            return tmp
+        elif len(string_op) == 2:
+            if string_op[0] in string_split:
+                first = self.interpret(string_op[0], make_operate= False)
+            else:
+                first = self._operate(string_op[0], string_split)
+            if string_op[1] in string_split:
+                second = self.interpret(string_op[1], make_operate= False)
+            else:
+                second = self._operate(string_op[1], string_split)
+            return op(first, second)
+        else:
+            return 'pass'
+
+
+    def _get_value(self, string):
+        """Get Value
+
+        Return the value of the corresponding parameter. Or return a float with a number as parameter.
+
+        Parameters
+        ----------
+        string : str
+            Parameter of the catalog.
+
+        Returns
+        -------
+        float
+            Vvalue of the parameter. Or float
+
+        Note
+        ----
+        You can't make operation here !
+
+        """
+
+        if string is None:
+            raise ValueError("Parameter not specified")
+
+        try:
+            string_value=float(string)
+            return string_value
+        except:
+            s = re.split('\{|\}', string)
+            if len(s) == 1:
+                try:
+                    return self._cat[string]
+                except:
+                    raise ValueError('string has to be a float or a catalog parameter. {0} not found'.format(string))
+            if len(s) == 3:
+                if s[1] in self._mask.keys():
+                    try:
+                        return self._cat[s[0]][self._mask[s[1]]]
+                    except:
+                        raise ValueError('string has to be a catalog parameter. {0} not found'.format(s[0]))
+                else:
+                    raise ValueError('mask has to be provide. {0} not found in mask'.format(s[1]))
 
 
 # -- EOF scatalog.py
