@@ -2582,13 +2582,15 @@ class interpreter(object):
             self._string = string
 
         if catalog is not None:
-            if type(catalog) == str:
+            if type(catalog) is str:
                 f = FITSCatalog(catalog, SEx_catalog= True)
                 f.open()
                 self._cat=f.get_data()
                 f.close()
             else:
                 self._cat = catalog
+        else:
+            raise ValueError('catalog not provided')
 
         self._make_compare = make_compare
 
