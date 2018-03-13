@@ -55,7 +55,7 @@ def get_file_list(pattern, verbose=False):
     return dst_list
 
 
-def diagnostics(files):
+def diagnostics(files, verbose=False):
 
     limits = (0.0, 0.5)
     nbin   = 10
@@ -63,6 +63,9 @@ def diagnostics(files):
     diagn = []
 
     for f in files:
+
+        if verbose:
+            print('Checking file {}'.format(f))
 
         hdu  = fits.open(f)
 
@@ -231,7 +234,7 @@ def main(argv=None):
 
     files = get_file_list(param.pattern, verbose=param.verbose)
 
-    diagn = diagnostics(files)
+    diagn = diagnostics(files, verbose=param.verbose)
 
     output(diagn)
 
