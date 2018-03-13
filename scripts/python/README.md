@@ -6,7 +6,14 @@ handling (*i.e.* they can be run in serial).
 ## Programs
 
 * `cfis_field_select.py`
-  Handling and selecting CFIS fields, pointings, tiles, for book keeping
+  Handle and select CFIS fields, pointings, tiles, weight images, for book keeping
+* `scp_CFIS_cc.py`
+  Copy files to and from cc@in2p3
+* `cfis_get_coord_exposures.py`
+  Print coordinates extracted from FITS exposure CFIS images 
+* `create_image_links.py`
+  Create symbolic links to CFIS tiles and weight with link names
+  in pipeline format
 
 
 ## Modules/libraries

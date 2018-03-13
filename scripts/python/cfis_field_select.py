@@ -65,7 +65,7 @@ def get_image_list(inp, band, image_type, verbose=False):
         file_list = glob.glob(inp)
 
     elif os.path.isfile(inp):
-        if image_type == 'tile':
+        if image_type in ('tile', 'weight', 'weight.fz'):
             # File names in single-column ascii file
             inp_type  = 'file'
             file_list = cfis.read_list(inp)
@@ -130,7 +130,7 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, verbose=
     band: string
         optical band
     image_type: string
-        image type ('tile', 'exposure', 'cat', 'weight')
+        image type ('tile', 'exposure', 'cat', 'weight', 'weight.fz')
     no_cuts: bool, optional, default=False
         no cuts (of short exposure, validation flag) if True
     verbose: bool, optional
@@ -211,7 +211,7 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
     band: string
         optical band
     image_type: string
-        image type ('tile', 'exposure', 'cat', 'weight')
+        image type ('tile', 'exposure', 'cat', 'weight', 'weight.fz')
     no_cuts: bool, optional, default=False
         no cuts (of short exposure, validation flag) if True
     verbose: bool, optional, default=False
@@ -224,11 +224,12 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
     """
 
     if verbose == True:
-        print('Looking for all images within coordinates ', angles)
+        print('Looking for all images within rectangle, lower left=({},{}), upper right=({},{}) deg'.format(
+              angles[0].ra.deg, angles[0].dec.deg, angles[1].ra.deg, angles[1].dec.deg))
 
     found = []
 
-    if image_type == 'tile':
+    if image_type in ('tile', 'weight', 'weight.fz'):
         for img in images:
             nix, niy = cfis.get_tile_number(img.name)
             ra, dec  = cfis.get_tile_coord_from_nixy(nix, niy)
@@ -377,7 +378,7 @@ def plot_area(images, angles, image_type, outbase, interactive):
         outname = '{}.pdf'.format(outbase)
 
     lw = 0.25
-    color = {'tile': 'b', 'exposure': 'g'}
+    color = {'tile': 'b', 'exposure': 'g', 'weight': 'r'}
 
     fig, ax = plot_init()
 

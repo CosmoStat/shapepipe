@@ -90,9 +90,6 @@ class PackageRunner(object):
             # --- Set input and output files names required to run code
             self._set_filenames()
 
-            # --- Set the execution command for the code
-            self._set_exec_line()
-
             # --- Execute the code
             self._exec_code()
 
@@ -153,42 +150,19 @@ class PackageRunner(object):
 
         self._log_exp_output(self._fnames['output_filepath_exp'])
 
-        # -- Load an extra code option from config file
-        self._fnames['extra_option'] = (self._worker.config.get_as_string(
-                                        'EXTRA_CODE_OPTION', 'CODE'))
-
-    def _set_exec_line(self):
-
-        """Set the Command Line to be Executed
-
-        This method defines the command line for the code corresponding to this
-        package.
-
-        """
-
-        # --- Execution line
-        exec_path = self._worker.config.get_as_string('EXEC_PATH', 'CODE')
-
-        self._exec_line = ('')
-
-        self._log_exec_line()
-
     def _exec_code(self):
 
         """Execute the Code
 
-        This method executes the command line defined by _set_exec_line().
-
-        Notes
-        -----
-        This method need only be modified if you wish to execute the command
-        line differently. e.g. using subprocess, etc.
+        This method executes the script SETools_script.
 
         """
 
         r=setools.SETools(cat_filepath=self._fnames['input_filepath'][0],
                           config_filepath=self._fnames['config_filepath'],
-                          output_dir=self._worker.result_output_dir)
+                          output_dir=self._worker.result_output_dir,
+                          stat_output_dir=self._worker.stat_output_dir,
+                          plot_output_dir=self._worker.plot_output_dir)
         r.process()
 
 
@@ -289,28 +263,6 @@ class PackageRunner(object):
                                            self._job.img_no,
                                            self._job.epoch,
                                            file_path))
-            self._worker.logger.flush()
-
-    def _log_exec_line(self):
-
-        """ Update log with expected output catalogue name
-
-        Parameters
-        ----------
-        exec_line : str
-            Execution line to be run
-
-        """
-
-        if self._worker.logging_enabled():
-            temp_string = ('{0} - /{1}/run-{2:03}-{3:1d} - '
-                           'Executing command: {4}')
-            self._worker.logger.log_info_p(temp_string.format(
-                                           self._worker.name,
-                                           self._job.get_branch_tree(),
-                                           self._job.img_no,
-                                           self._job.epoch,
-                                           self._exec_line))
             self._worker.logger.flush()
 
     def _log_output_success(self, file_path):

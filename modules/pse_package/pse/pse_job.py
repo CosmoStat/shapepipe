@@ -175,7 +175,7 @@ class PseJobProcessor(MpfxJobProcessor):
       # --- Iterate over the path dictionary content to generate and process SEXtractor catalogs
       try:
 
-         # MK: file_type i the image name
+         # MK: file_type is the image name
          for file_type in job.get_file_types():    # check the type of file (looking for images) 
             filepath = job.get_file_path(file_type)
 

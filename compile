@@ -1,11 +1,17 @@
 #! /bin/csh
 
-set module2compile = (modules/slogger_package modules/sconfig_package \
-                      modules/mpfx_package modules/mpfg_package \
+set module2compile = (modules/mask_package \
+                      modules/mpfg_package \
+                      modules/mpfx_package \
+                      modules/ngmix_wrapper_package \
+                      modules/PSFExRun_package \
+                      modules/PSFExInterpolation_package \
                       modules/scatalog_package \
-                      modules/PSFEx_package modules/SExtractor_package \
-                      modules/cfis_package modules/mask_package \
-		                  modules/sf_deconvolve_package)
+                      modules/sconfig_package \
+                      modules/SExtractor_package \
+                      modules/SETools_package \
+                      modules/slogger_package \
+                      modules/shapelens_package)
 
 set install_option = $1
 set cdir = `pwd`
