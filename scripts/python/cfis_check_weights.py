@@ -28,16 +28,19 @@ from astropy.io import ascii
 from astropy.table import Table, Column
 from astropy import units
 from astropy.coordinates import Angle, SkyCoord
+from astropy.io import fits
 
 from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
+import datetime
 
 import cfis
-from cfis import unitdef, size
 import stuff
 
 
 
 def get_file_list(pattern, verbose=False):
+    """Read present working directory and return list of files accounting for input pattern.
+    """
 
     files = glob.glob('*')
 
@@ -47,9 +50,49 @@ def get_file_list(pattern, verbose=False):
     for f in files:
         m = re.findall(pattern, f)
         if len(m) != 0:
-            dst_list.append(m[0])
+            dst_list.append(f)
 
     return dst_list
+
+
+def diagnostics(files):
+
+    limits = (0.0, 0.5)
+    nbin   = 10
+
+    diagn = []
+
+    for f in files:
+
+        hdu  = fits.open(f)
+
+        dat  = hdu[0].data
+        y, x = np.histogram(dat, bins=nbin, range=limits)  
+
+        # Ratio of numer of close-to-zero pixels to total
+        ratio = y[0] / sum(y)
+
+        # Diagnostic
+        ok    = ratio > 0.01
+
+        date  = hdu[0].header['DATE']
+
+        hdu.close()
+
+        diagn.append([f, ratio, ok, date])
+
+    # Sort according to date in header
+    diagn_s = sorted(diagn, key=lambda x: datetime.datetime.strptime(x[3], '%Y-%m-%dT%H:%M:%S'))
+
+    return diagn_s
+
+
+
+def output(diagn):
+
+    print('{:30s} {:7s} {:15s} {:20s}'.format('# name', 'ratio[#0/all]', 'pass/fail', 'date'))
+    for d in diagn:
+        print('{:30s} {:13.5f} {:5s} {:20s}'.format(d[0], d[1], str(d[2]), d[3]))
 
 
 
@@ -187,8 +230,10 @@ def main(argv=None):
     ### Start main program ###
 
     files = get_file_list(param.pattern, verbose=param.verbose)
-    print(files)
 
+    diagn = diagnostics(files)
+
+    output(diagn)
 
     ### End main program
 
