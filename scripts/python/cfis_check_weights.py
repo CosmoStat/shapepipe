@@ -74,22 +74,28 @@ def diagnostics(files, verbose=False):
         hdu  = fits.open(f)
 
         dat  = hdu[0].data
-        y, x = np.histogram(dat, bins=nbin, range=limits)  
 
+        y, x = np.histogram(dat, bins=nbin, range=limits)  
         # Ratio of numer of close-to-zero pixels to total
-        ratio = y[0] / sum(y)
+        ratio = float(y[0]) / sum(y)
+
+        # Histogram without fixed bin limits
+        y, x = np.histogram(dat)
+        ratio2 = float(y[0]) / sum(y)
+
 
         # Diagnostic
         ok    = ratio > 0.01
+        ok2   = ratio2 > 0.01
 
         date  = hdu[0].header['DATE']
 
         hdu.close()
 
-        diagn.append([f, ratio, ok, date])
+        diagn.append([f, ratio, ratio2, ok, ok2, date])
 
         if verbose:
-            print_diagn(sys.stdout, f, ratio, str(ok), date)
+            print_diagn(sys.stdout, f, ratio, ratio2, str(ok), str(ok2), date)
 
         count += 1
 
@@ -100,9 +106,9 @@ def diagnostics(files, verbose=False):
 
 
 
-def print_diagn(f, name, diagn, pf, date):
+def print_diagn(f, name, diagn, diagn2, pf, pf2, date):
 
-    print('{:30s} {:13.5f} {:5s} {:20s}'.format(name, diagn, pf, date), file=f)
+    print('{:30s} {:13.5f} {:13.5f} {:5s} {:5s} {:20s}'.format(name, diagn, diag2, pf, pf2, date), file=f)
 
 
 
@@ -116,11 +122,11 @@ def output(diagn, output, verbose=False):
     if verbose:
         print('Writing diagnostics to {}'.format(output))
 
-    print('{:30s} {:7s} {:15s} {:20s}'.format('# name', 'ratio[#0/all]', 'pass/fail', 'date'), file=f)
+    print('{:30s} {:7s} {:15s} {:20s}'.format('# name', 'ratio[#0/all]', 'ratio[#0/all]_2', 'pass/fail', 'pass/fail_2', 'date'), file=f)
     #print_diagn(f, '# name', 'ratio[#0/all]', 'pass/fail', 'date')
     for d in diagn:
         #print('{:30s} {:13.5f} {:5s} {:20s}'.format(d[0], d[1], str(d[2]), d[3]), file=f)
-        print_diagn(f, d[0], d[1], str(d[2]), d[3])
+        print_diagn(f, d[0], d[1], d[2], str(d[3]), str(d[4]), d[5])
 
 
 
