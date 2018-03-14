@@ -52,20 +52,24 @@ def get_file_list(pattern, verbose=False):
         if len(m) != 0:
             dst_list.append(f)
 
+    if verbose:
+        print('Found {} matching files'.format(len(dst_list)))
+
     return dst_list
 
 
 def diagnostics(files, verbose=False):
+
+    if verbose:
+        print('Checking files...')
 
     limits = (0.0, 0.5)
     nbin   = 10
 
     diagn = []
 
+    count = 0
     for f in files:
-
-        if verbose:
-            print('Checking file {}'.format(f))
 
         hdu  = fits.open(f)
 
@@ -84,6 +88,11 @@ def diagnostics(files, verbose=False):
 
         diagn.append([f, ratio, ok, date])
 
+        if verbose:
+            print_diagn(sys.stdout, f, ratio, str(ok), date)
+
+        count += 1
+
     # Sort according to date in header
     diagn_s = sorted(diagn, key=lambda x: datetime.datetime.strptime(x[3], '%Y-%m-%dT%H:%M:%S'))
 
@@ -91,11 +100,27 @@ def diagnostics(files, verbose=False):
 
 
 
-def output(diagn):
+def print_diagn(f, name, diagn, pf, date):
 
-    print('{:30s} {:7s} {:15s} {:20s}'.format('# name', 'ratio[#0/all]', 'pass/fail', 'date'))
+    print('{:30s} {:13.5f} {:5s} {:20s}'.format(name, diagn, pf, date), file=f)
+
+
+
+def output(diagn, output, verbose=False):
+
+    if output == 'stdout':
+        f = sys.stdout
+    else:
+        f = open(output, 'w')
+
+    if verbose:
+        print('Writing diagnostics to {}'.format(output))
+
+    print('{:30s} {:7s} {:15s} {:20s}'.format('# name', 'ratio[#0/all]', 'pass/fail', 'date'), file=f)
+    #print_diagn(f, '# name', 'ratio[#0/all]', 'pass/fail', 'date')
     for d in diagn:
-        print('{:30s} {:13.5f} {:5s} {:20s}'.format(d[0], d[1], str(d[2]), d[3]))
+        #print('{:30s} {:13.5f} {:5s} {:20s}'.format(d[0], d[1], str(d[2]), d[3]), file=f)
+        print_diagn(f, d[0], d[1], str(d[2]), d[3])
 
 
 
@@ -113,6 +138,7 @@ def params_default():
     """
 
     p_def = stuff.param(
+        output   = 'stdout',
         pattern  = '.',
     )
 
@@ -138,6 +164,9 @@ def parse_options(p_def):
 
     usage  = "%prog [OPTIONS]"
     parser = OptionParser(usage=usage, formatter=stuff.IndentedHelpFormatterWithNL())
+
+    parser.add_option('-o', '--output', dest='output', type='string', default=p_def.output,
+        help='output file name, default=stdout')
 
     parser.add_option('-p', '--pattern', dest='pattern', type='string', default=p_def.pattern,
          help='file pattern to match, e.g.~\'^21\d{5}p\', default=none (=all match)')
@@ -236,7 +265,7 @@ def main(argv=None):
 
     diagn = diagnostics(files, verbose=param.verbose)
 
-    output(diagn)
+    output(diagn, param.output, verbose=param.verbose)
 
     ### End main program
 
