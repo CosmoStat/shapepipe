@@ -85,8 +85,8 @@ def diagnostics(files, verbose=False):
 
 
         # Diagnostic
-        ok    = ratio > 0.01
-        ok2   = ratio2 > 0.01
+        ok    = ratio > 0.001
+        ok2   = ratio2 > 0.001
 
         date  = hdu[0].header['DATE']
 
@@ -100,7 +100,10 @@ def diagnostics(files, verbose=False):
         count += 1
 
     # Sort according to date in header
-    diagn_s = sorted(diagn, key=lambda x: datetime.datetime.strptime(x[3], '%Y-%m-%dT%H:%M:%S'))
+    if len(diagn) > 1:
+        diagn_s = sorted(diagn, key=lambda x: datetime.datetime.strptime(x[5], '%Y-%m-%dT%H:%M:%S'))
+    else:
+        diagn_s = diagn
 
     return diagn_s
 
@@ -108,7 +111,7 @@ def diagnostics(files, verbose=False):
 
 def print_diagn(f, name, diagn, diagn2, pf, pf2, date):
 
-    print('{:30s} {:13.5f} {:13.5f} {:5s} {:5s} {:20s}'.format(name, diagn, diag2, pf, pf2, date), file=f)
+    print('{:30s} {:13.5f} {:13.5f} {:5s} {:5s} {:20s}'.format(name, diagn, diagn2, pf, pf2, date), file=f)
 
 
 
