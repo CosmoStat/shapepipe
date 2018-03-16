@@ -84,27 +84,27 @@ def diagnostics(files, verbose=False):
         ratio2 = float(y[0]) / sum(y)
 
         # Number of exact zero pixels
-        ratio3 = 1.0 - float(np.count_nonzero(data)) / float(data.size)
+        ratio3 = 1.0 - float(np.count_nonzero(dat)) / float(dat.size)
 
         # Diagnostic
         ok    = ratio > 0.001
         ok2   = ratio2 > 0.001
-        ok3   = ratio3 > 
+        ok3   = ratio3 > 0.02
 
         date  = hdu[0].header['DATE']
 
         hdu.close()
 
-        diagn.append([f, ratio, ratio2, ok, ok2, date])
+        diagn.append([f, ratio, ratio2, ratio3, ok, ok2, ok3, date])
 
         if verbose:
-            print_diagn(sys.stdout, f, ratio, ratio2, str(ok), str(ok2), date)
+            print_diagn(sys.stdout, f, ratio, ratio2, ratio3, str(ok), str(ok2), str(ok3), date)
 
         count += 1
 
     # Sort according to date in header
     if len(diagn) > 1:
-        diagn_s = sorted(diagn, key=lambda x: datetime.datetime.strptime(x[5], '%Y-%m-%dT%H:%M:%S'))
+        diagn_s = sorted(diagn, key=lambda x: datetime.datetime.strptime(x[-1], '%Y-%m-%dT%H:%M:%S'))
     else:
         diagn_s = diagn
 
@@ -112,9 +112,9 @@ def diagnostics(files, verbose=False):
 
 
 
-def print_diagn(f, name, diagn, diagn2, pf, pf2, date):
+def print_diagn(f, name, diagn, diagn2, diagn3, pf, pf2, pf3, date):
 
-    print('{:30s} {:13.5f} {:13.5f} {:5s} {:5s} {:20s}'.format(name, diagn, diagn2, pf, pf2, date), file=f)
+    print('{:30s} {:13.5f} {:13.5f} {:13.5f} {:5s} {:5s} {:5s} {:20s}'.format(name, diagn, diagn2, diagn3, pf, pf2, pf3, date), file=f)
 
 
 
@@ -128,11 +128,10 @@ def output(diagn, output, verbose=False):
     if verbose:
         print('Writing diagnostics to {}'.format(output))
 
-    print('{:30s} {:7s} {:15s} {:20s}'.format('# name', 'ratio[#0/all]', 'ratio[#0/all]_2', 'pass/fail', 'pass/fail_2', 'date'), file=f)
-    #print_diagn(f, '# name', 'ratio[#0/all]', 'pass/fail', 'date')
+    print('{:30s} {:10s} {:10s} {:10s} {:10s} {:10s} {:10s} {:20s}'.
+            format('# name', 'ratio[#0/all]', 'ratio[#0/all]_2', 'ratio[0/all]', 'pass/fail', 'pass/fail_2', 'pass/fail_3', 'date'), file=f)
     for d in diagn:
-        #print('{:30s} {:13.5f} {:5s} {:20s}'.format(d[0], d[1], str(d[2]), d[3]), file=f)
-        print_diagn(f, d[0], d[1], d[2], str(d[3]), str(d[4]), d[5])
+        print_diagn(f, d[0], d[1], d[2], d[3], str(d[4]), str(d[5]), str(d[6]), d[7])
 
 
 
