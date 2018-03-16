@@ -83,10 +83,13 @@ def diagnostics(files, verbose=False):
         y, x = np.histogram(dat)
         ratio2 = float(y[0]) / sum(y)
 
+        # Number of exact zero pixels
+        ratio3 = 1.0 - float(np.count_nonzero(data)) / float(data.size)
 
         # Diagnostic
         ok    = ratio > 0.001
         ok2   = ratio2 > 0.001
+        ok3   = ratio3 > 
 
         date  = hdu[0].header['DATE']
 
