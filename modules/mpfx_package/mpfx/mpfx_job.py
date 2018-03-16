@@ -206,7 +206,6 @@ class MpfxJobProcessor(JobProcessor):
       self._job_branches = list(set([j.branch for j in self._job_list]))      
 
       # --- Create output directories for job outputs:
-      print('MK mpfx create directories (here we would ideally like to call the mpfcfhtlens module')
       output_dir_dico = master.config.get_section_data("DIR.OUTPUT")
       for (dir_key, dir_value) in output_dir_dico.items():
          if dir_key.startswith("OUTPUT_"):

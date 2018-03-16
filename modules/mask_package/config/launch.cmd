@@ -14,6 +14,5 @@ fi
 
 # Run package
 cmd="python ${PACKAGE_DIR}/mask/mask_SMP.py -d ${CONFIG_DIR} -c package_config_smp.cfg"
-echo "Running command \"$cmd\""
 $cmd
 
