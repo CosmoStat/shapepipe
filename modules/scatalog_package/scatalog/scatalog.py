@@ -2749,10 +2749,11 @@ class interpreter(object):
 
         """
 
-        if self._cat_size > 100:
-            bins = int(float(self._cat_size)/10.)
-        elif self._cat_size >= 10:
-            bins = int(float(self._cat_size)/3.)
+        cat_size = len(input)
+        if cat_size > 100:
+            bins = int(float(cat_size)/10.)
+        elif cat_size >= 10:
+            bins = int(float(cat_size)/3.)
         else:
             raise ValueError("Can't compute with less than 10 elements in the input")
 
