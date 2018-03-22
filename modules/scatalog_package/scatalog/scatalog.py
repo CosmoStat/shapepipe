@@ -2728,6 +2728,7 @@ class interpreter(object):
         self._stat_func['std'] = np.std
         self._stat_func['var'] = np.var
         self._stat_func['mad'] = self._mad
+        self._stat_func['len'] = len
 
 
     def _mode(self, input, eps=0.001):
