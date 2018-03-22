@@ -389,17 +389,6 @@ class SETools(object):
             rand_split_file = sc.FITSCatalog(output_path + i + file_number + '.fits', open_mode= sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog=True)
             rand_split_file.save_as_fits(data=data[rand_split[i]], ext_name=ext_name, sex_cat_path=self._cat_filepath)
 
-    def save_stat(self, mask_type, output_file):
-        print('Writing stats to file {}'.format(output_file))
-        f = open(output_file, 'w')
-        print('# Statistics', file=f)
-
-        for stat in self.stat[mask_type]:
-            string = '{} = {}'.format(stat, self.stat[mask_type][stat])
-            print(string, file=f)
-
-        f.close()
-
     def save_stat2(self, stat, output_path):
         """Save statistics
 
@@ -424,6 +413,18 @@ class SETools(object):
 
         for i in stat.keys():
             f.write(i + ' = ' + str(stat[i]) + '\n')
+
+        f.close()
+
+
+    def save_stat(self, mask_type, output_file):
+        print('Writing stats to file {}'.format(output_file))
+        f = open(output_file, 'w')
+        print('# Statistics', file=f)
+
+        for stat in self.stat[mask_type]:
+            string = '{} = {}'.format(stat, self.stat[mask_type][stat])
+            print(string, file=f)
 
         f.close()
 
