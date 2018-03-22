@@ -105,10 +105,10 @@ class SETools(object):
                     os.system('mkdir {0}/plot'.format(self._output_dir))
                 except:
                     raise Exception('Impossible to create the directory plot in {0}'.format(self._output_dir))
-                self._make_plot2()
-                for i in self.plot.keys():
-                    output_path = self._output_dir + '/plot/' + i + file_number
-                    plot_tmp = SEPlot(self.plot[i], self._cat_file.get_data(), output_path, self.mask)
+            self._make_plot2()
+            for i in self.plot.keys():
+                output_path = self._output_dir + '/plot/' + i + file_number
+                plot_tmp = SEPlot(self.plot[i], self._cat_file.get_data(), output_path, self.mask)
 
         if len(self._new_cat) != 0:
             if not os.path.isdir(self._output_dir + '/new_cat'):
@@ -116,10 +116,10 @@ class SETools(object):
                     os.system('mkdir {0}/new_cat'.format(self._output_dir))
                 except:
                     raise Exception('Impossible to create the directory new_cat in {0}'.format(self._output_dir))
-                self._make_new_cat()
-                for i in self.new_cat.keys():
-                    file_name = self._output_dir + '/new_cat/' + i + file_number
-                    self.save_new_cat(self.new_cat[i], file_name)
+            self._make_new_cat()
+            for i in self.new_cat.keys():
+                file_name = self._output_dir + '/new_cat/' + i + file_number
+                self.save_new_cat(self.new_cat[i], file_name)
 
         if len(self._rand_split) != 0:
             if not os.path.isdir(self._output_dir + '/rand_split'):
@@ -127,10 +127,10 @@ class SETools(object):
                     os.system('mkdir {0}/rand_split'.format(self._output_dir))
                 except:
                     raise Exception('Impossible to create the directory rand_split in {0}'.format(self._output_dir))
-                self._make_rand_split()
-                for i in self.rand_split.keys():
-                    output_dir = self._output_dir + '/rand_split/' + i + '_'
-                    self.save_rand_split(self.rand_split[i], output_dir, file_number)
+            self._make_rand_split()
+            for i in self.rand_split.keys():
+                output_dir = self._output_dir + '/rand_split/' + i + '_'
+                self.save_rand_split(self.rand_split[i], output_dir, file_number)
 
         if len(self._stat) != 0:
             if not os.path.isdir(self._output_dir + '/stat'):
@@ -138,10 +138,10 @@ class SETools(object):
                     os.system('mkdir {0}/stat'.format(self._output_dir))
                 except:
                     raise Exception('Impossible to create the directory stat in {0}'.format(self._output_dir))
-                self._make_stat2()
-                for i in self.stat.keys():
-                    output_path = self._output_dir + '/stat/' + i + file_number + '.txt'
-                    self.save_stat2(self.stat[i], output_path)
+            self._make_stat2()
+            for i in self.stat.keys():
+                output_path = self._output_dir + '/stat/' + i + file_number + '.txt'
+                self.save_stat2(self.stat[i], output_path)
 
 
         ### Post-processing of output products
