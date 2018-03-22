@@ -36,9 +36,6 @@ from cfis import unitdef, size
 import stuff
 
 
-#unitdef = 'degree'
-
-
 
 def get_image_list(inp, band, image_type, verbose=False):
     """Return list of images.
