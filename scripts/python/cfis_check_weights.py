@@ -71,29 +71,47 @@ def diagnostics(files, verbose=False):
     count = 0
     for f in files:
 
-        hdu  = fits.open(f)
+        hdu   = fits.open(f)
+        dat   = hdu[0].data
+        date  = hdu[0].header['DATE']
 
-        dat  = hdu[0].data
+        hdu.close()
 
-        y, x = np.histogram(dat, bins=nbin, range=limits)  
+        #y, x = np.histogram(dat, bins=nbin, range=limits)  
         # Ratio of numer of close-to-zero pixels to total
-        ratio = float(y[0]) / sum(y)
+        #ratio = float(y[0]) / sum(y)
+        ratio = 0
 
         # Histogram without fixed bin limits
-        y, x = np.histogram(dat)
-        ratio2 = float(y[0]) / sum(y)
+        #y, x = np.histogram(dat)
+        #ratio2 = float(y[0]) / sum(y)
+
+        # Number of zero pixels where image pixels are zero
+
+        # Get image name from weight file name
+        img_name = re.sub('weight\.', '', f) 
+
+        hdu_img  = fits.open(f)
+        dat_img  = hdu_img[0].data
+        hdu_img.close()
+
+        # Indices where images has zero pixel values
+        idx_img_zero = np.where(dat_img == 0)
+
+        # Count non-zero weight pixels at these indices
+        ratio2 = np.count_nonzero(dat[idx_img_zero])
+
 
         # Number of exact zero pixels
         ratio3 = 1.0 - float(np.count_nonzero(dat)) / float(dat.size)
 
+
         # Diagnostic
         ok    = ratio > 0.001
-        ok2   = ratio2 > 0.001
+        ok2   = ratio2 == 0
         ok3   = ratio3 > 0.02
 
-        date  = hdu[0].header['DATE']
 
-        hdu.close()
 
         diagn.append([f, ratio, ratio2, ratio3, ok, ok2, ok3, date])
 
@@ -129,7 +147,7 @@ def output(diagn, output, verbose=False):
         print('Writing diagnostics to {}'.format(output))
 
     print('{:30s} {:10s} {:10s} {:10s} {:10s} {:10s} {:10s} {:20s}'.
-            format('# name', 'ratio[#0/all]', 'ratio[#0/all]_2', 'ratio[0/all]', 'pass/fail', 'pass/fail_2', 'pass/fail_3', 'date'), file=f)
+            format('# name', 'na      ', '#{w!=0&&img=0)', 'ratio[0/all]', 'pass/fail', 'pass/fail_2', 'pass/fail_3', 'date'), file=f)
     for d in diagn:
         print_diagn(f, d[0], d[1], d[2], d[3], str(d[4]), str(d[5]), str(d[6]), d[7])
 
