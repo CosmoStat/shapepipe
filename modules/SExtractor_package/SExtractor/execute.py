@@ -571,7 +571,21 @@ class PackageRunner(object):
                 pass
 
     def _set_checkimage_path(self, names, img_num):
-        """
+        """Set checkimage path
+
+        This function set the path for checkimages and put them in the "plot" directory.
+
+        Parameters
+        ----------
+        names : str
+            String containing the name(s) of the checkimage(s)
+        img_num : str
+            Pipeline numbering of the original image
+
+        Returns
+        -------
+        str
+            The path of the checkimage(s).
         """
 
         dir_path = self._worker.plot_output_dir
