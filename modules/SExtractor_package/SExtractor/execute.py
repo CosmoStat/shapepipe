@@ -332,6 +332,9 @@ class PackageRunner(object):
         for i in params.keys():
             if i in ['WEIGHT_IMAGE', 'FLAG_IMAGE', 'PSF_NAME', 'ASSOC_NAME', 'PARAMETERS_NAME']:
                 continue
+            if i == 'CHECKIMAGE_NAME':
+                self._sex_input_params[i] = self._set_checkimage_path(params[i], img_num)
+                continue
             ds_param = re.split('@',params[i])
             if len(ds_param) == 1:
                 self._sex_input_params[i] = params[i]
@@ -379,12 +382,14 @@ class PackageRunner(object):
             i+=1
 
         # Consistency checks on flags and file types
-        want_WEIGHT  = self._worker.config.get_as_boolean('WEIGHT', 'CODE')
-        want_FLAG    = self._worker.config.get_as_boolean('FLAG', 'CODE')
-        n_file_types = len(self._worker.config.get_as_list('INPUT_FILENAME_FORMATS', 'CODE'))
-        if int(want_WEIGHT) + int(want_FLAG) != n_file_types - 1:
-            raise Exception('Boolean flags in package config file WEIGHT={} and FLAG={} not consistent '
-                            'with number of input file types {}'.format(want_WEIGHT, want_FLAG, n_file_types))
+        # AG : This check block the execution when using PSF or ASSOC files
+
+        # want_WEIGHT  = self._worker.config.get_as_boolean('WEIGHT', 'CODE')
+        # want_FLAG    = self._worker.config.get_as_boolean('FLAG', 'CODE')
+        # n_file_types = len(self._worker.config.get_as_list('INPUT_FILENAME_FORMATS', 'CODE'))
+        # if int(want_WEIGHT) + int(want_FLAG) != n_file_types - 1:
+        #     raise Exception('Boolean flags in package config file WEIGHT={} and FLAG={} not consistent '
+        #                     'with number of input file types {}'.format(want_WEIGHT, want_FLAG, n_file_types))
 
 
     def _set_default_input(self):
@@ -564,3 +569,35 @@ class PackageRunner(object):
                 self._sex_input_params[i] = self._worker.log_output_dir + '/sextractor_config_inputs/' + self._sex_input_params[i]
             except:
                 pass
+
+    def _set_checkimage_path(self, names, img_num):
+        """Set checkimage path
+
+        This function set the path for checkimages and put them in the "plot" directory.
+
+        Parameters
+        ----------
+        names : str
+            String containing the name(s) of the checkimage(s)
+        img_num : str
+            Pipeline numbering of the original image
+
+        Returns
+        -------
+        str
+            The path of the checkimage(s).
+        """
+
+        dir_path = self._worker.plot_output_dir
+        s = re.split(',', names)
+
+        if len(s) == 1:
+            ss = os.path.splitext(s[0])
+            return dir_path + '/' + ss[0] + img_num + ss[1]
+        else:
+            ss = os.path.splitext(s[0])
+            new_names = dir_path + '/' + ss[0] + img_num + ss[1]
+            for i in s[1:]:
+                ss = os.path.splitext(i)
+                new_names += ',' + dir_path + '/' + ss[0] + img_num + ss[1]
+            return new_names
