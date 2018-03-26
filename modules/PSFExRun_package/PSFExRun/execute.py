@@ -368,7 +368,7 @@ class PackageRunner(object):
         for i in params.keys():
             if i == 'PSF_DIR':
                 continue
-            if (i == 'CHECKIMAGE_NAME') | (i == 'CHECKPLOT_NAME'):
+            if i in ['CHECKIMAGE_NAME', 'CHECKPLOT_NAME']:
                 self._psfex_input_params[i] = self._set_checkimage_path(params[i], img_num)
                 continue
             self._psfex_input_params[i] = params[i]
