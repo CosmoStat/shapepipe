@@ -819,15 +819,15 @@ class SEPlot(object):
         if 'TYPE' not in self._plot.keys():
             raise ValueError('Plot type not specified')
 
-        if (self._plot['TYPE']['0'] == 'plot') | (self._plot['TYPE']['0'] == 'PLOT'):
+        if self._plot['TYPE']['0'] in ['plot', 'PLOT']:
             if ('X' not in self._plot.keys()) | ('Y' not in self._plot.keys()):
                 raise ValueError('X and/or Y not provided')
             self._make_plot()
-        elif (self._plot['TYPE']['0'] == 'scatter') | (self._plot['TYPE']['0'] == 'SCATTER') :
+        elif self._plot['TYPE']['0'] in ['scatter', 'SCATTER']:
             if ('X' not in self._plot.keys()) | ('Y' not in self._plot.keys()):
                 raise ValueError('X and/or Y not provided')
             self._make_scatter()
-        elif (self._plot['TYPE']['0'] == 'histogram') | (self._plot['TYPE']['0'] == 'hist') | (self._plot['TYPE']['0'] == 'HISTOGRAM') | (self._plot['TYPE']['0'] == 'HIST'):
+        elif self._plot['TYPE']['0'] in ['histogram', 'hist', 'HISTOGRAM', 'HIST']:
             if 'Y' not in self._plot.keys():
                 raise ValueError('Y not provided')
             self._make_hist()
