@@ -2729,6 +2729,8 @@ class interpreter(object):
         self._stat_func['var'] = np.var
         self._stat_func['mad'] = self._mad
         self._stat_func['len'] = len
+        self._stat_func['min'] = min
+        self._stat_func['max'] = max
 
 
     def _mode(self, input, eps=0.001):

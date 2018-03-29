@@ -847,8 +847,15 @@ class SEPlot(object):
         if 'TITLE' in self._plot.keys():
             title = self._plot['TITLE']['0']
             s = re.split('@', title)
-            if len(s) == 3:
-                title = s[0] + str(sc.interpreter(s[1], self._cat, make_compare= False, mask_dict= self._mask_dict).result)
+            if len(s) >= 3:
+                title = s[0]
+                ii = 1
+                for i in s[1:-1]:
+                    if ii%2 == 0:
+                        title += i
+                    else:
+                        title += str(sc.interpreter(i, self._cat, make_compare= False, mask_dict= self._mask_dict).result)
+                    ii += 1
         else:
             title = ''
 
@@ -859,8 +866,15 @@ class SEPlot(object):
                 try:
                     label = self._plot['LABEL'][i]
                     s = re.split('@', label)
-                    if len(s) == 3:
-                        label = s[0] + str(sc.interpreter(s[1], self._cat, make_compare= False, mask_dict= self._mask_dict).result)
+                    if len(s) >= 3:
+                        label = s[0]
+                        jj = 1
+                        for j in s[1:-1]:
+                            if jj%2 == 0:
+                                label += j
+                            else:
+                                label += str(sc.interpreter(j, self._cat, make_compare= False, mask_dict= self._mask_dict).result)
+                            jj += 1
                 except:
                     label = None
             else:
@@ -935,8 +949,15 @@ class SEPlot(object):
         if 'TITLE' in self._plot.keys():
             title = self._plot['TITLE']['0']
             s = re.split('@', title)
-            if len(s) == 3:
-                title = s[0] + str(sc.interpreter(s[1], self._cat, make_compare= False, mask_dict= self._mask_dict).result)
+            if len(s) >= 3:
+                title = s[0]
+                ii = 1
+                for i in s[1:-1]:
+                    if ii%2 == 0:
+                        title += i
+                    else:
+                        title += str(sc.interpreter(i, self._cat, make_compare= False, mask_dict= self._mask_dict).result)
+                    ii += 1
         else:
             title = ''
 
@@ -947,8 +968,15 @@ class SEPlot(object):
                 try:
                     label = self._plot['LABEL'][i]
                     s = re.split('@', label)
-                    if len(s) == 3:
-                        label = s[0] + str(sc.interpreter(s[1], self._cat, make_compare= False, mask_dict= self._mask_dict).result)
+                    if len(s) >= 3:
+                        label = s[0]
+                        jj = 1
+                        for j in s[1:-1]:
+                            if jj%2 == 0:
+                                label += j
+                            else:
+                                label += str(sc.interpreter(j, self._cat, make_compare= False, mask_dict= self._mask_dict).result)
+                            jj += 1
                 except:
                     label = None
             else:
@@ -1019,8 +1047,15 @@ class SEPlot(object):
         if 'TITLE' in self._plot.keys():
             title = self._plot['TITLE']['0']
             s = re.split('@', title)
-            if len(s) == 3:
-                title = s[0] + str(sc.interpreter(s[1], self._cat, make_compare= False, mask_dict= self._mask_dict).result)
+            if len(s) >= 3:
+                title = s[0]
+                ii = 1
+                for i in s[1:-1]:
+                    if ii%2 == 0:
+                        title += i
+                    else:
+                        title += str(sc.interpreter(i, self._cat, make_compare= False, mask_dict= self._mask_dict).result)
+                    ii += 1
         else:
             title = ''
 
@@ -1043,8 +1078,15 @@ class SEPlot(object):
                 try:
                     label = self._plot['LABEL'][i]
                     s = re.split('@', label)
-                    if len(s) == 3:
-                        label = s[0] + str(sc.interpreter(s[1], self._cat, make_compare= False, mask_dict= self._mask_dict).result)
+                    if len(s) >= 3:
+                        label = s[0]
+                        jj = 1
+                        for j in s[1:-1]:
+                            if jj%2 == 0:
+                                label += j
+                            else:
+                                label += str(sc.interpreter(j, self._cat, make_compare= False, mask_dict= self._mask_dict).result)
+                            jj += 1
                 except:
                     label = None
             else:
