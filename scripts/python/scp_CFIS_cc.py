@@ -36,25 +36,6 @@ import cfis
 
 
 
-def exclude(f, exclude_list):
-    """Return True if f is on exclude_list
-
-    Parameters
-    ----------
-    f: string
-        file name
-    exclude_list: list of strings
-        list of files
-
-    Returns
-    -------
-    is_in_exclude: bool
-        True (False) if f is in list
-    """
-
-    return f in exclude_list
-
-
 def get_copy_list(param, exclude_list, include_list=None, verbose=False):
     """Read directory and return list of files to copy accounting for files to exclude.
     """
