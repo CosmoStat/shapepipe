@@ -513,3 +513,24 @@ def get_exposure_info(logfile_name, verbose=False):
         image.append(img)
 
     return image
+
+
+
+def exclude(f, exclude_list):
+    """Return True if f is on exclude_list
+
+    Parameters
+    ----------
+    f: string
+        file name
+    exclude_list: list of strings
+        list of files
+
+    Returns
+    -------
+    is_in_exclude: bool
+        True (False) if f is in list
+    """
+
+    return f in exclude_list
+

@@ -91,7 +91,7 @@ def diagnostics(files, verbose=False):
         # Get image name from weight file name
         img_name = re.sub('weight\.', '', f) 
 
-        hdu_img  = fits.open(f)
+        hdu_img  = fits.open(img_name)
         dat_img  = hdu_img[0].data
         hdu_img.close()
 
@@ -101,6 +101,11 @@ def diagnostics(files, verbose=False):
         # Count non-zero weight pixels at these indices
         ratio2 = np.count_nonzero(dat[idx_img_zero])
 
+        # MKDEBUG
+        #y = 8500
+        #x = 4000
+        #print('Image[y={}][x={}] = {}'.format(y, x, dat_img[y][x]))
+        #print('Weight[y={}][x={}] = {}'.format(y, x, dat[y][x]))
 
         # Number of exact zero pixels
         ratio3 = 1.0 - float(np.count_nonzero(dat)) / float(dat.size)
@@ -132,7 +137,7 @@ def diagnostics(files, verbose=False):
 
 def print_diagn(f, name, diagn, diagn2, diagn3, pf, pf2, pf3, date):
 
-    print('{:30s} {:13.5f} {:13.5f} {:13.5f} {:5s} {:5s} {:5s} {:20s}'.format(name, diagn, diagn2, diagn3, pf, pf2, pf3, date), file=f)
+    print('{:30s} {:13.5f} {:13d} {:13.5f} {:5s} {:5s} {:5s} {:20s}'.format(name, diagn, diagn2, diagn3, pf, pf2, pf3, date), file=f)
 
 
 
