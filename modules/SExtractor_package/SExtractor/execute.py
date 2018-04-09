@@ -301,13 +301,13 @@ class PackageRunner(object):
 
         """ Create the *.sex input file for SEXTRACTOR
 
-        This function mix parameters from the package config file with thus
-        provide in the default config file.
+        This function mixes parameters from the package config file with those
+        provided in the default config file.
 
         Note
         ----
-        Parameters can be set using header's parameters value (possibility to
-        to make operation).
+        Parameters can be set using the image header's parameters values (possibility to
+        perform mathematical operations).
 
         """
 

@@ -2639,7 +2639,7 @@ class interpreter(object):
             result = self._compare(string)
         else:
             if make_operate:
-                string_split = re.split(r'\*|\/|\-|\+\s*(?![^()]*\))', string)
+                string_split = re.split(r'\*|\/|\-|\+|\%\s*(?![^()]*\))', string)
                 result = self._operate(string, string_split)
             else:
                 if make_func:
@@ -2817,7 +2817,7 @@ class interpreter(object):
 
         """
 
-        op=r'\*|\/|\-|\+\s*(?![^()]*\))'
+        op=r'\*|\/|\-|\+|\%\s*(?![^()]*\))'
         if string is None:
             raise ValueError("Parameter not specified")
         if string_split is None:
@@ -2838,7 +2838,11 @@ class interpreter(object):
                 if tmp != 'pass':
                     return tmp
                 else:
-                    return self._string_op_func(re.split('\/\s*(?![^()]*\))',string), string_split, operator.div, 'init')
+                    tmp = self._string_op_func(re.split('\/\s*(?![^()]*\))',string), string_split, operator.div, 'init')
+                if tmp != 'pass':
+                    return tmp
+                else:
+                    return self._string_op_func(re.split('\%\s*(?![^()]*\))',string), string_split, hh.Max, 1)
 
 
     def _string_op_func(self, string_op, string_split, op, tmp):
@@ -2851,7 +2855,7 @@ class interpreter(object):
         string_op : list
             List of parameters to operate.
         string_split : list
-            The different parameter splitted using '\*|\/|\-|\+\s*(?![^()]*\))' as delimiter.
+            The different parameter splitted using '\*|\/|\-|\+|\%\s*(?![^()]*\))' as delimiter.
         op : func
             The kind of operation provide as an operator function
             (Example : operator.sub).

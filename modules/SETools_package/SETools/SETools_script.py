@@ -28,6 +28,28 @@ import os
 import scatalog as sc
 
 
+def mkdir(direc):
+   """Create directory direc.
+      This function should probably go somewhere further up.
+
+   Parameters
+   ----------
+   direc: string
+      Directory name
+
+   Returns
+   -------
+   None
+   """
+
+   if not os.path.isdir(direc):
+       try:
+           os.system('mkdir {}'.format(direc))
+       except:
+           raise Exception('Cannot create directory {}'.format(direc))
+
+
+
 class SETools(object):
     """SETools class
 
@@ -87,60 +109,46 @@ class SETools(object):
 
         ### Processing: Create mask = filter input
         if len(self._mask) != 0:
-            if not os.path.isdir(self._output_dir + '/mask'):
-                try:
-                    os.system('mkdir {0}/mask'.format(self._output_dir))
-                except:
-                    raise Exception('Impossible to create the directory mask in {0}'.format(self._output_dir))
+	    direc = self._output_dir + '/mask'
+	    mkdir(direc)
             self._make_mask()
             for i in self.mask.keys():
                 if 'NO_SAVE' in self._mask[i]:
                     continue
-                file_name = self._output_dir + '/mask/' + i + file_number + '.fits'
+		file_name = '{}/{}{}.fits'.format(direc, i, file_number)
                 self.save_mask(self.mask[i], file_name)
 
         if len(self._plot) != 0:
-            if not os.path.isdir(self._output_dir + '/plot'):
-                try:
-                    os.system('mkdir {0}/plot'.format(self._output_dir))
-                except:
-                    raise Exception('Impossible to create the directory plot in {0}'.format(self._output_dir))
+	    direc = self._output_dir + '/plot'
+	    mkdir(direc)
+
             self._make_plot2()
             for i in self.plot.keys():
-                output_path = self._output_dir + '/plot/' + i + file_number
+		output_path = '{}/{}{}'.format(direc, i, file_number)
                 plot_tmp = SEPlot(self.plot[i], self._cat_file.get_data(), output_path, self.mask)
 
         if len(self._new_cat) != 0:
-            if not os.path.isdir(self._output_dir + '/new_cat'):
-                try:
-                    os.system('mkdir {0}/new_cat'.format(self._output_dir))
-                except:
-                    raise Exception('Impossible to create the directory new_cat in {0}'.format(self._output_dir))
+	    direc = self._output_dir + '/new_cat'
+            mkdir(direc)
             self._make_new_cat()
             for i in self.new_cat.keys():
-                file_name = self._output_dir + '/new_cat/' + i + file_number
+		file_name = '{}/{}{}'.format(direc, i, file_number)
                 self.save_new_cat(self.new_cat[i], file_name)
 
         if len(self._rand_split) != 0:
-            if not os.path.isdir(self._output_dir + '/rand_split'):
-                try:
-                    os.system('mkdir {0}/rand_split'.format(self._output_dir))
-                except:
-                    raise Exception('Impossible to create the directory rand_split in {0}'.format(self._output_dir))
+	    direc = self._output_dir + '/rand_split'
+            mkdir(direc)
             self._make_rand_split()
             for i in self.rand_split.keys():
-                output_dir = self._output_dir + '/rand_split/' + i + '_'
+		output_dir = '{}/{}_'.format(direc, i)
                 self.save_rand_split(self.rand_split[i], output_dir, file_number)
 
         if len(self._stat) != 0:
-            if not os.path.isdir(self._output_dir + '/stat'):
-                try:
-                    os.system('mkdir {0}/stat'.format(self._output_dir))
-                except:
-                    raise Exception('Impossible to create the directory stat in {0}'.format(self._output_dir))
+	    direc = self._output_dir + '/stat'
+            mkdir(direc)
             self._make_stat2()
             for i in self.stat.keys():
-                output_path = self._output_dir + '/stat/' + i + file_number + '.txt'
+		output_path = '{}/{}{}.txt'.format(direc, i, file_number)
                 self.save_stat2(self.stat[i], output_path)
 
 
@@ -452,6 +460,7 @@ class SETools(object):
                 mask_tmp &= sc.interpreter(j, self._cat_file.get_data(), make_compare= True, mask_dict= self.mask).result
             self.mask[i] = mask_tmp
 
+
     def _make_plot2(self):
         """Make plot
 
@@ -468,7 +477,7 @@ class SETools(object):
             for j in self._plot[i]:
                 s = re.split('=', j)
                 if len(s) != 2:
-                    raise ValueError('Not a good format : {}'.format(j))
+                    raise ValueError('Plot option keyword/value not in correct format (key=val): {}'.format(j))
                 ss = re.split('_', s[0])
                 if len(ss) == 1:
                     self.plot[i][ss[0]] = {'0': s[1]}
@@ -477,7 +486,8 @@ class SETools(object):
                         self.plot[i][ss[0]] = {}
                     self.plot[i][ss[0]][ss[1]] = s[1]
                 else:
-                    raise ValueError('Not a good format : {}'.format(j))
+                    raise ValueError('Plot keyword not in correct format (key or key_i): {}'.format(j))
+
 
     def _make_new_cat(self):
         """Make new catalog
@@ -564,7 +574,7 @@ class SETools(object):
             for j in self._stat[i]:
                 s = re.split('=', j)
                 if len(s) != 2:
-                    raise ValueError('Not a good format : {}'.format(j))
+                    raise ValueError('Stats keyword/value not in correct format (key=val): {}'.format(j))
                 self.stat[i][s[0]] = sc.interpreter(s[1], self._cat_file.get_data(), make_compare= False, mask_dict= self.mask).result
 
 
@@ -893,6 +903,13 @@ class SEPlot(object):
                     marker = '+'
             else:
                 marker = '+'
+	    if 'MARKERSIZE' in self._plot.keys():
+                try:
+		    markersize = self._plot['MARKERSIZE'][i]
+                except:
+		    markersize = 1
+	    else:
+	        markersize = 1
             if 'LINE' in self._plot.keys():
                 try:
                     line = self._plot['LINE'][i]
@@ -916,9 +933,10 @@ class SEPlot(object):
                 else:
                     raise ValueError("You need to specified X for each Y provided if they dont have the same")
 
-            plt.plot(sc.interpreter(x, self._cat, mask_dict= self._mask_dict).result,
-                     sc.interpreter(self._plot['Y'][i], self._cat, mask_dict= self._mask_dict).result,
-                     label= label, color= color, marker= marker, ls= line, alpha= alpha, figure= self._fig)
+            plt.plot(sc.interpreter(x, self._cat, mask_dict=self._mask_dict).result,
+                     sc.interpreter(self._plot['Y'][i], self._cat, mask_dict=self._mask_dict).result,
+                     label=label, color=color, marker=marker, ls=line, alpha=alpha, figure=self._fig,
+		     markersize=markersize)
 
         if 'LABEL' in self._plot.keys():
             plt.legend()
@@ -932,6 +950,13 @@ class SEPlot(object):
             out_format = self._plot['FORMAT']['0']
         else:
             out_format = "PNG"
+
+	if 'XLIM' in self._plot.keys():
+	    try:
+	        xlim = re.split(',', self._plot['XLIM']['0'])
+	        plt.xlim(float(xlim[0]), float(xlim[1]))
+	    except:
+	        raise ValueError('Plot XLIM keyword/value not in correct format (XLIM=xl,xu): {}'.format(self._plot['XLIM']['0']))
 
         self._fig.savefig(self._output_path + '.' + out_format.lower(), format= out_format)
         plt.close()
@@ -1066,7 +1091,7 @@ class SEPlot(object):
         else:
             htype = 'bar'
         if 'LOG' in self._plot.keys():
-            if (self._plot['LOG']['0'] == 'True') | (self._plot['LOG']['0'] == 'true') | (self._plot['LOG']['0'] == '1'):
+            if self._plot['LOG']['0'] in ('True', 'true', '1'):
                 log = True
             else:
                 log = False
@@ -1115,7 +1140,7 @@ class SEPlot(object):
                 alpha = None
 
             plt.hist(sc.interpreter(self._plot['Y'][i], self._cat, mask_dict= self._mask_dict).result,
-                     bins= bins, color= color, label= label, alpha= alpha, histtype= htype, log= log)
+                     bins= bins, color= color, label= label, alpha= alpha, histtype= htype, log=log)
 
         if 'LABEL' in self._plot.keys():
             plt.legend()

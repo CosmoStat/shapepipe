@@ -3,6 +3,10 @@ import re
 import operator
 
 
+def Max(a, b):
+    return max(a, b)
+
+
 #---------------------------------------------------------------------------------------------------
 class Header(object):
     """!
@@ -39,7 +43,7 @@ class Header(object):
             raise ValueError("Parameter not specified")
 
         param=re.sub(' ','',param)
-        param_split=re.split('\*|\/|\-|\+',param)
+        param_split=re.split('\*|\/|\-|\+|\%',param)
         if len(param_split)==1:
             return self._get_value(param)
         else:
@@ -83,7 +87,7 @@ class Header(object):
             NOTE : it's used as a recursive function
         """
 
-        op='\*|\/|\-|\+'
+        op='\*|\/|\-|\+|\%'
         if param is None:
             raise ValueError("Parameter not specified")
         if param_split is None:
@@ -104,7 +108,11 @@ class Header(object):
                 if tmp != 'pass':
                     return tmp
                 else:
-                    return self._param_op_func(re.split('\/',param), param_split, operator.div, 'init')
+                    tmp = self._param_op_func(re.split('\/',param), param_split, operator.div, 'init')
+                    if tmp != 'pass':
+                        return tmp
+                    else:
+                        return self._param_op_func(re.split('\%',param), param_split, Max, 1)
 
 
     def _param_op_func(self, param_op, param_split, op, tmp):
@@ -133,7 +141,8 @@ class Header(object):
                 second = self._get_value(param_op[1])
             else:
                 second = self._operate(param_op[1], param_split)
-            return op(first, second)
+            res = op(first, second)
+            return res
         else:
             return 'pass'
 
