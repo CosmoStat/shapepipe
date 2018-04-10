@@ -10,6 +10,7 @@ set module2compile = (modules/mask_package \
                       modules/sconfig_package \
                       modules/SExtractor_package \
                       modules/SETools_package \
+                      modules/shapepipe_base \
                       modules/slogger_package \
                       modules/shapelens_package)
 

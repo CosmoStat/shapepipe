@@ -6,7 +6,7 @@ This module contain a class with 'helper' methods.
 
 :Authors: Samuel Farrens and Marc Gentile
 
-:Date: 31/10/2017 (Happy Halloween!)
+:Date: 09/04/2018
 
 """
 
@@ -17,7 +17,7 @@ import subprocess
 
 # -- External import
 from mpfg.mp_helper import Helper
-from info import __version__, __whoami__, __python_depend__, __system_depend__
+
 
 def is_executable(exe_name):
     """Check if Input is Executable
@@ -63,6 +63,7 @@ def is_executable(exe_name):
         raise IOError('{} does not appear to be a valid executable on this '
                       'system.'.format(exe_name))
 
+
 class PackageHelper(Helper):
 
     """Package Helper
@@ -71,14 +72,13 @@ class PackageHelper(Helper):
 
     """
 
-    def __init__(self):
+    def __init__(self, version, name, pydepend, sysdepend):
 
         Helper.__init__(self)
-        self.version = __version__
-        self.name = __whoami__
-        self.pydepend = __python_depend__
-        self.sysdepend = __system_depend__
-
+        self.version = version
+        self.name = name
+        self.pydepend = pydepend
+        self.sysdepend = sysdepend
 
     def _check_python_dependencies(self, master):
 
@@ -198,51 +198,3 @@ class PackageHelper(Helper):
             filepaths = sorted(filepaths)
 
         return list(set(filepaths))
-
-    @staticmethod
-    def _match_file(filename, pattern):
-
-        """Match File
-
-        This method checks if the input filename matches the required Unix
-        style pattern.
-
-        Parameters
-        ----------
-        filename : str
-            Input file name
-        pattern : str
-            Unix style file pattern
-
-        Returns
-        -------
-        bool True if a match is found, False otherwise
-
-        """
-
-        return glob.fnmatch.fnmatch(filename, pattern)
-
-    def _walk_directory(self, pattern, directory):
-
-        """Walk Directory
-
-        Recursively locate files matching pattern in a given directory.
-
-        Parameters
-        ----------
-        pattern : str
-            Unix style file pattern
-        directory : str
-            Base directory from where to search for matching files
-
-        Returns
-        -------
-        list of files matching the search criteria
-
-        """
-
-        for path, dirs, files in os.walk(directory):
-            for filename in [os.path.abspath(os.path.join(path, filename)) for
-                             filename in files if self._match_file(filename,
-                             pattern)]:
-                yield filename
