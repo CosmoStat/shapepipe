@@ -253,6 +253,7 @@ class SETools(object):
                 elif in_section == 5:
                     self._rand_split[rand_split_name].append(line_tmp)
 
+
     def _clean_line(self, line):
         """Clean Lines
 
@@ -339,10 +340,10 @@ class SETools(object):
             raise ValueError('OUTPUT_FORMAT not provided')
 
         if output_format == 'fits':
-            new_file = sc.FITSCatalog(output_path + '.fits', open_mode= sc.BaseCatalog.OpenMode.ReadWrite)
+            new_file = sc.FITSCatalog(output_path + '.fits', open_mode=sc.BaseCatalog.OpenMode.ReadWrite)
             new_file.save_as_fits(data= new_cat, ext_name= ext_name)
         elif output_format == 'SEx_cat':
-            new_file = sc.FITSCatalog(output_path + '.fits', open_mode= sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog= True)
+            new_file = sc.FITSCatalog(output_path + '.fits', open_mode=sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog=True)
             new_file.save_as_fits(data= new_cat, ext_name= ext_name, sex_cat_path= self._cat_filepath)
         elif (output_format == 'txt') | (output_format == 'ascii'):
             new_file = open(output_path + '.txt', 'w')
@@ -394,7 +395,7 @@ class SETools(object):
         mask = rand_split.pop('mask')
         data = self._cat_file.get_data()[mask]
         for i in rand_split.keys():
-            rand_split_file = sc.FITSCatalog(output_path + i + file_number + '.fits', open_mode= sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog=True)
+            rand_split_file = sc.FITSCatalog(output_path + i + file_number + '.fits', open_mode=sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog=True)
             rand_split_file.save_as_fits(data=data[rand_split[i]], ext_name=ext_name, sex_cat_path=self._cat_filepath)
 
     def save_stat2(self, stat, output_path):
@@ -457,7 +458,7 @@ class SETools(object):
             for j in self._mask[i]:
                 if j == 'NO_SAVE':
                     continue
-                mask_tmp &= sc.interpreter(j, self._cat_file.get_data(), make_compare= True, mask_dict= self.mask).result
+                mask_tmp &= sc.interpreter(j, self._cat_file.get_data(), make_compare=True, mask_dict=self.mask).result
             self.mask[i] = mask_tmp
 
 
@@ -492,7 +493,7 @@ class SETools(object):
     def _make_new_cat(self):
         """Make new catalog
 
-        This function interpret the contents for each column of the new catalog.
+        This function interprets the contents for each column of the new catalog.
 
         """
 
@@ -508,7 +509,7 @@ class SETools(object):
                     if s[0] == 'OUTPUT_FORMAT':
                         self.new_cat[i][s[0]] = s[1]
                     else:
-                        self.new_cat[i][s[0]] = sc.interpreter(s[1], self._cat_file.get_data(), make_compare= False, mask_dict= self.mask).result
+                        self.new_cat[i][s[0]] = sc.interpreter(s[1], self._cat_file.get_data(), make_compare=False, mask_dict=self.mask).result
                 else:
                     raise ValueError('Not a good format : {}'.format(j))
 
@@ -575,7 +576,7 @@ class SETools(object):
                 s = re.split('=', j)
                 if len(s) != 2:
                     raise ValueError('Stats keyword/value not in correct format (key=val): {}'.format(j))
-                self.stat[i][s[0]] = sc.interpreter(s[1], self._cat_file.get_data(), make_compare= False, mask_dict= self.mask).result
+                self.stat[i][s[0]] = sc.interpreter(s[1], self._cat_file.get_data(), make_compare=False, mask_dict=self.mask).result
 
 
     def _make_plot(self, file_number):
