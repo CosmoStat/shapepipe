@@ -17,6 +17,7 @@ from shutil import copy
 
 import interpolation_script as interp
 
+
 class PackageRunner(object):
 
     """Package Runner Class
@@ -186,10 +187,11 @@ class PackageRunner(object):
         line differently. e.g. using subprocess, etc.
 
         """
-        interpolator = interp.PSFExInterpolator(self._fnames['input_filepath'][0], 
-                                                self._fnames['input_filepath'][1], 
-                                                self._fnames['output_filepath'],
-                                                self._fnames['extra_option'])
+        interpolator = (interp.PSFExInterpolator(
+                        self._fnames['input_filepath'][0],
+                        self._fnames['input_filepath'][1],
+                        self._fnames['output_filepath'],
+                        self._fnames['extra_option']))
         interpolator.write_output()
 
     def _get_exec_config_filepath(self):
