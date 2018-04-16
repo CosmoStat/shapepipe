@@ -3,7 +3,7 @@
 
 """Package MPI Script
 
-This module contain a class for executing the package using SMP.
+This module contain a class for executing the package using MPI.
 
 :Authors: Samuel Farrens and Marc Gentile
 
