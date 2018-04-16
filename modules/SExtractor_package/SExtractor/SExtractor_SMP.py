@@ -7,7 +7,7 @@ This module contain a class for executing the package using SMP.
 
 :Authors: Samuel Farrens and Marc Gentile
 
-:Date: 06/11/2017
+:Date: 10/04/2018
 
 """
 
@@ -18,11 +18,12 @@ from shutil import copy
 
 # -- External Modules
 from mpfx import mpfx_SMP
+from shapepipe_base.args import PackageArgs
+from shapepipe_base.helper import PackageHelper
 
 # -- Module-specific imports
-from args import PackageArgs
+from info import __version__, __whoami__, __python_depend__, __system_depend__
 from job import PackageJobProcessor
-from helper import PackageHelper
 
 
 class PackageMasterSMP(mpfx_SMP.MpfxMasterSMP):
@@ -49,14 +50,15 @@ class PackageMasterSMP(mpfx_SMP.MpfxMasterSMP):
                 args.print_usage(args.helper.get_main_basename())
                 exit(0)
 
-            # --- Job Processor
-            self.job_processor = PackageJobProcessor(self)
-
             # --- Helper methods
-            self._helper = PackageHelper()
+            self._helper = PackageHelper(__version__, __whoami__,
+                                         __python_depend__, __system_depend__)
 
             # --- Show config_summary
             self._helper.show_config_summary(self)
+
+            # --- Job Processor
+            self.job_processor = PackageJobProcessor(self)
 
             # --- Save a copy of the gfit configuration file to the log dir
             copy(join(args.options['-d'], args.options['-c']),

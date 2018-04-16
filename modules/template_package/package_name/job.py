@@ -6,7 +6,7 @@ This module contain classes for managing the job processes.
 
 :Authors: Samuel Farrens and Marc Gentile
 
-:Date: 31/10/2017 (Happy Halloween!)
+:Date: 16/04/2018
 
 """
 
@@ -16,7 +16,6 @@ import sys
 
 # -- External imports
 from mpfx import mpfx_job
-from shapepipe_base.helper import PackageHelper
 
 # --- Module-specific imports
 from execute import PackageRunner
