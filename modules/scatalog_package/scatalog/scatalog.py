@@ -2841,19 +2841,19 @@ class interpreter(object):
             return self.interpret(string, make_operate= False)
 
         tmp = self._string_op_func(re.split('\+\s*(?![^()]*\))',string), string_split, operator.add, 0)
-        if np.isscalar(tmp) and tmp != 'pass':
+        if not np.isscalar(tmp) or tmp != 'pass':
             return tmp
         else:
             tmp = self._string_op_func(re.split('\-\s*(?![^()]*\))',string), string_split, operator.sub, 'init')
-            if np.isscalar(tmp) and tmp != 'pass':
+            if not np.isscalar(tmp) or tmp != 'pass':
                 return tmp
             else:
                 tmp = self._string_op_func(re.split('\*\s*(?![^()]*\))',string), string_split, operator.mul, 1)
-                if np.isscalar(tmp) and tmp != 'pass':
+                if not np.isscalar(tmp) or tmp != 'pass':
                     return tmp
                 else:
                     tmp = self._string_op_func(re.split('\/\s*(?![^()]*\))',string), string_split, operator.div, 'init')
-                if np.isscalar(tmp ) and tmp != 'pass':
+                if not np.isscalar(tmp) or tmp != 'pass':
                     return tmp
                 else:
                     return self._string_op_func(re.split('\%\s*(?![^()]*\))',string), string_split, hh.Max, 0)
