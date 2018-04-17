@@ -2700,7 +2700,13 @@ class interpreter(object):
             return self.interpret(s[0], self._make_compare, make_func= False, make_operate= False)
         elif len(s) == 3:
             try:
-                return self._stat_func[s[0]](self.interpret(s[1], self._make_compare, make_func= False, make_operate= True))
+                ss = re.split(',',s[1])
+                if len(ss)>1:
+                    p = [self.interpret(i, self._make_compare, make_func= False, make_operate= True) for i in ss]
+                    print(p)
+                    return self._stat_func[s[0]](*p)
+                else:
+                    return self._stat_func[s[0]](self.interpret(s[1], self._make_compare, make_func= False, make_operate= True))
             except:
                 raise Exception('Unknown function : {0}'.format(s[0]))
         else:
