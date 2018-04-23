@@ -18,7 +18,7 @@ import operator                 # for the interpreter
 
 # -- Internal imports
 from scatalog_helper import *       # Helper methods
-import header_handling as hh        # Function to deal with header's parameters
+
 # from numpy import ndarray
 # from astropy.io.fits.fitsrec import FITS_record
 
@@ -1784,7 +1784,7 @@ class FITSCatalog(BaseCatalog):
        if header is None:
            raise ValueError('Empty header in the hdu : {0}'.format(hdu_no))
 
-       return hh.Header(header).param_value(request)
+       return interpreter(string= request, catalog= header).result
 
 
    # -----------------------------------------------------------------------------------------------
