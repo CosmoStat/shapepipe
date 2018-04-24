@@ -199,50 +199,50 @@ class PackageHelper(Helper):
 
         return list(set(filepaths))
 
-        @staticmethod
-        def _match_file(filename, pattern):
+    @staticmethod
+    def _match_file(filename, pattern):
 
-            """Match File
+        """Match File
 
-            This method checks if the input filename matches the required Unix
-            style pattern.
+        This method checks if the input filename matches the required Unix
+        style pattern.
 
-            Parameters
-            ----------
-            filename : str
-                Input file name
-            pattern : str
-                Unix style file pattern
+        Parameters
+        ----------
+        filename : str
+            Input file name
+        pattern : str
+            Unix style file pattern
 
-            Returns
-            -------
-            bool True if a match is found, False otherwise
+        Returns
+        -------
+        bool True if a match is found, False otherwise
 
-            """
+        """
 
-            return glob.fnmatch.fnmatch(filename, pattern)
+        return glob.fnmatch.fnmatch(filename, pattern)
 
-        def _walk_directory(self, pattern, directory):
+    def _walk_directory(self, pattern, directory):
 
-            """Walk Directory
+        """Walk Directory
 
-            Recursively locate files matching pattern in a given directory.
+        Recursively locate files matching pattern in a given directory.
 
-            Parameters
-            ----------
-            pattern : str
-                Unix style file pattern
-            directory : str
-                Base directory from where to search for matching files
+        Parameters
+        ----------
+        pattern : str
+            Unix style file pattern
+        directory : str
+            Base directory from where to search for matching files
 
-            Returns
-            -------
-            list of files matching the search criteria
+        Returns
+        -------
+        list of files matching the search criteria
 
-            """
+        """
 
-            for path, dirs, files in os.walk(directory):
-                for filename in [os.path.abspath(os.path.join(path, filename)) for
-                                 filename in files if self._match_file(filename,
-                                 pattern)]:
-                    yield filename
+        for path, dirs, files in os.walk(directory):
+            for filename in [os.path.abspath(os.path.join(path, filename)) for
+                             filename in files if self._match_file(filename,
+                             pattern)]:
+                yield filename
