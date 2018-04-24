@@ -198,3 +198,51 @@ class PackageHelper(Helper):
             filepaths = sorted(filepaths)
 
         return list(set(filepaths))
+
+        @staticmethod
+        def _match_file(filename, pattern):
+
+            """Match File
+
+            This method checks if the input filename matches the required Unix
+            style pattern.
+
+            Parameters
+            ----------
+            filename : str
+                Input file name
+            pattern : str
+                Unix style file pattern
+
+            Returns
+            -------
+            bool True if a match is found, False otherwise
+
+            """
+
+            return glob.fnmatch.fnmatch(filename, pattern)
+
+        def _walk_directory(self, pattern, directory):
+
+            """Walk Directory
+
+            Recursively locate files matching pattern in a given directory.
+
+            Parameters
+            ----------
+            pattern : str
+                Unix style file pattern
+            directory : str
+                Base directory from where to search for matching files
+
+            Returns
+            -------
+            list of files matching the search criteria
+
+            """
+
+            for path, dirs, files in os.walk(directory):
+                for filename in [os.path.abspath(os.path.join(path, filename)) for
+                                 filename in files if self._match_file(filename,
+                                 pattern)]:
+                    yield filename
