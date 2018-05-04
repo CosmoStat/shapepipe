@@ -132,7 +132,7 @@ class SETools(object):
                     raise Exception('Impossible to create the directory flag_split in {0}'.format(self._output_dir))
             self._make_flag_split()
             for i in self.flag_split.keys():
-                output_dir = self._output_dir + 'flag_split/' + i + '_'
+                output_dir = self._output_dir + '/flag_split/' + i + '_'
                 self.save_flag_split(self.flag_split[i], output_dir, file_number)
 
         if len(self._stat) != 0:
@@ -398,8 +398,8 @@ class SETools(object):
         """
         """
 
-        if rand_split is None:
-            raise ValueError('rand_split not provided')
+        if flag_split is None:
+            raise ValueError('flag_split not provided')
 
         if output_path is None:
             raise ValueError('output path not provided')
@@ -407,9 +407,9 @@ class SETools(object):
             raise ValueError('file_number path not provided')
 
         for i in flag_split.keys():
-            data = self._cat_file.gat_data()[flag_split[i]]
-            flag_split_file = sc.FITSCatalog(output_path + '=i' + file_number + '.fits', open_mode= sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog= True)
-            flag_split_file.save_as_fits(data=[data], ext_name=ext_name, sex_cat_path=self._cat_filepath)
+            data = self._cat_file.get_data()[flag_split[i]]
+            flag_split_file = sc.FITSCatalog(output_path + 'flag_{}'.format(int(i)) + file_number + '.fits', open_mode= sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog= True)
+            flag_split_file.save_as_fits(data=data , ext_name=ext_name, sex_cat_path=self._cat_filepath)
 
     def save_stat(self, stat, output_path):
         """Save statistics
@@ -568,21 +568,22 @@ class SETools(object):
         self.flag_split = {}
         for i in self._flag_split.keys():
             self.flag_split[i] = {}
-            s = re.split('=', j)
-            if len(s) != 2:
-                raise ValueError('Not a good format : {}'.format(self._flag_split[i][0]))
-            if s[0] == 'PARAM_NAME':
-                param_name = s[1]
-            else:
-                raise ValueError('PARAM_NAME not provided')
+            for j in self._flag_split[i]:
+                s = re.split('=', j)
+                if len(s) != 2:
+                    raise ValueError('Not a good format : {}'.format(self._flag_split[i][0]))
+                if s[0] == 'PARAM_NAME':
+                    param_name = s[1]
+                else:
+                    raise ValueError('PARAM_NAME not provided')
 
-            try:
-                flag_values = np.array(list(set(self._cat_file.get_data()[param_name])))
-            except:
-                raise ValueError('PARAM_NAME : {0} not in catalog {1}'.format(param_name, self._cat_filepath))
+        try:
+            flag_values = np.array(list(set(self._cat_file.get_data()[param_name])))
+        except:
+            raise ValueError('PARAM_NAME : {0} not in catalog {1}'.format(param_name, self._cat_filepath))
 
-            for j in flag_values:
-                self.flag_split[i]['{}'.format(j)] = np.where(self._cat_file.get_data()[param_name] == j)[0]
+        for j in flag_values:
+            self.flag_split[i]['{}'.format(j)] = np.where(self._cat_file.get_data()[param_name] == j)[0]
 
 
     def _make_stat(self):
