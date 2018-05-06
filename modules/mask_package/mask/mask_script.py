@@ -118,14 +118,16 @@ class mask(object):
         img = sc.FITSCatalog(self._image_fullpath, hdu_no=0)
         img.open()
         self._header = img.get_header()
+        img_shape = img.get_data().shape
         img.close()
         del(img)
 
         self._wcs = wcs.WCS(self._header)
+        wcs_center = self._wcs.all_pix2world([[img_shape[0]/2., img_shape[1]/2.]], 1)[0]
 
         self._fieldcenter={}
-        self._fieldcenter['pix']=np.array([self._header['CRPIX1'],self._header['CRPIX2']])
-        self._fieldcenter['wcs']=coord.SkyCoord(ra=self._header['CRVAL1'], dec=self._header['CRVAL2'], unit='deg')
+        self._fieldcenter['pix']=np.array([img_shape[0]/2., img_shape[1]/2.])
+        self._fieldcenter['wcs']=coord.SkyCoord(ra= wcs_center[0], dec= wcs_center[1], unit='deg')
 
         self._img_radius=self._get_image_radius()
 
