@@ -70,11 +70,12 @@ class SETools(object):
 
     """
 
-    def __init__(self, cat_filepath, config_filepath, output_dir):
+    def __init__(self, cat_filepath, config_filepath, output_dir, extra_file= None):
 
         self._cat_filepath = cat_filepath
         self._config_filepath = config_filepath
         self._output_dir = output_dir
+        self._extra_file = extra_file
 
         self._cat_file = sc.FITSCatalog(self._cat_filepath, SEx_catalog=True)
         self._cat_file.open()
@@ -134,13 +135,17 @@ class SETools(object):
                 output_dir = direc + '/' + i + '_'
                 self.save_rand_split(self.rand_split[i], output_dir, file_number)
 
+        print(len(self._flag_split))
         if len(self._flag_split) != 0:
+            print('coucou')
             direc = self._output_dir + '/flag_split'
             _mkdir(direc)
             self._make_flag_split()
-            for i in self.flag_split.keys():
-                output_dir = direc + '/' + i + '_'
-                self.save_flag_split(self.flag_split[i], output_dir, file_number)
+            for i in self.flag_mask_dict.keys():
+                print(self._flag_split.keys()[0])
+                output_path = direc + '/' + self._flag_split.keys()[0] + '_flag_' + i + file_number + '.fits'
+                print(output_path)
+                self.save_flag_split(self.flag_mask_dict[i], output_path)
 
         if len(self._stat) != 0:
             direc = self._output_dir + '/stat'
@@ -398,7 +403,7 @@ class SETools(object):
             rand_split_file = sc.FITSCatalog(output_path + i + file_number + '.fits', open_mode= sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog=True)
             rand_split_file.save_as_fits(data=data[rand_split[i]], ext_name=ext_name, sex_cat_path=self._cat_filepath)
 
-    def save_flag_split(self, flag_split, output_path, file_number, ext_name='LDAC_OBJECTS'):
+    def save_flag_split(self, flag_split, output_path, ext_name='LDAC_OBJECTS'):
         """Save flag splitted catalogs
 
         Save catalogs following the flag split specified.
@@ -408,9 +413,7 @@ class SETools(object):
         flag_split : dict
             Dictionary containing the indices for the split and mask to apply
         output_path : str
-            Path of the output dir
-        file_number : str
-            Numbering of the pipeline
+            Path of the output file
         ext_name : str
             Name of the extension where data are stored
 
@@ -421,13 +424,10 @@ class SETools(object):
 
         if output_path is None:
             raise ValueError('output path not provided')
-        if file_number is None:
-            raise ValueError('file_number path not provided')
 
-        for i in flag_split.keys():
-            data = self._cat_file.get_data()[flag_split[i]]
-            flag_split_file = sc.FITSCatalog(output_path + 'flag_{}'.format(int(i)) + file_number + '.fits', open_mode= sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog= True)
-            flag_split_file.save_as_fits(data=data , ext_name=ext_name, sex_cat_path=self._cat_filepath)
+        data = self._cat_file.get_data()[flag_split]
+        flag_split_file = sc.FITSCatalog(output_path, open_mode= sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog= True)
+        flag_split_file.save_as_fits(data=data , ext_name=ext_name, sex_cat_path=self._cat_filepath)
 
     def save_stat(self, stat, output_path):
         """Save statistics
@@ -577,31 +577,27 @@ class SETools(object):
             self.rand_split[i]['ratio_{0}'.format(100-int(ratio*100))] = mask_left
 
     def _make_flag_split(self):
-        """
+        """Make flag split
+
+        This function create masks based on flags provided as a numpy extra file.
+
         """
 
         if len(self._flag_split) == 0:
             return None
 
-        self.flag_split = {}
-        for i in self._flag_split.keys():
-            self.flag_split[i] = {}
-            for j in self._flag_split[i]:
-                s = re.split('=', j)
-                if len(s) != 2:
-                    raise ValueError('Not a good format : {}'.format(self._flag_split[i][0]))
-                if s[0] == 'PARAM_NAME':
-                    param_name = s[1]
-                else:
-                    raise ValueError('PARAM_NAME not provided')
+
+        if self._extra_file is None:
+            raise ValueError('An extra numpy file containing the flags has to provide for the flag split.')
 
         try:
-            flag_values = np.array(list(set(self._cat_file.get_data()[param_name])))
+            flags = np.load(self._extra_file)
         except:
-            raise ValueError('PARAM_NAME : {0} not in catalog {1}'.format(param_name, self._cat_filepath))
+            raise ValueError("Can't open extra file : {}".format(self._extra_file))
 
-        for j in flag_values:
-            self.flag_split[i]['{}'.format(j)] = np.where(self._cat_file.get_data()[param_name] == j)[0]
+        self.flag_mask_dict = {}
+        for j in set(flags):
+            self.flag_mask_dict[str(j)] = np.where(flags == j)
 
 
     def _make_stat(self):
