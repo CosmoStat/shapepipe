@@ -135,16 +135,12 @@ class SETools(object):
                 output_dir = direc + '/' + i + '_'
                 self.save_rand_split(self.rand_split[i], output_dir, file_number)
 
-        print(len(self._flag_split))
         if len(self._flag_split) != 0:
-            print('coucou')
             direc = self._output_dir + '/flag_split'
             _mkdir(direc)
             self._make_flag_split()
             for i in self.flag_mask_dict.keys():
-                print(self._flag_split.keys()[0])
                 output_path = direc + '/' + self._flag_split.keys()[0] + '_flag_' + i + file_number + '.fits'
-                print(output_path)
                 self.save_flag_split(self.flag_mask_dict[i], output_path)
 
         if len(self._stat) != 0:
