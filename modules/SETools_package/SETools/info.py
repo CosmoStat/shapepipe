@@ -10,7 +10,7 @@ Set the package information
 
 """
 
-__version__ = "2.1.1"
+__version__ = "2.1.0"
 __whoami__ = "SETools"
 
 # Python dependencies
