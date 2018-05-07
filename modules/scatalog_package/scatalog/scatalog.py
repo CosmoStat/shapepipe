@@ -2809,7 +2809,24 @@ class interpreter(object):
 
 
     def _test_homogeneity(self, *args):
-        """
+        """Test homogeneity
+
+        Test homogeneity on 1D or 2D space.
+
+        Parameters
+        ----------
+        param1 : numpy.ndarray
+            Array on which the homogeneity test is performed
+        param2 : numpy.ndarray [optional]
+            Array on which the homogeneity test is performed
+        nb_cells : int
+            Number of cells in the space. (note : has to be a square number)
+
+        Returns
+        -------
+        float
+            Percentage of inhomogeneity compared to worse possible case (based on the standard deviation)
+            
         """
 
         if len(args) == 2:
