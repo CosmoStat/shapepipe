@@ -10,7 +10,7 @@ Set the package information
 
 """
 
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 __whoami__ = "mask"
 
 # Python dependencies
