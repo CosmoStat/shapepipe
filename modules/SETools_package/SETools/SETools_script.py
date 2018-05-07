@@ -395,7 +395,21 @@ class SETools(object):
             rand_split_file.save_as_fits(data=data[rand_split[i]], ext_name=ext_name, sex_cat_path=self._cat_filepath)
 
     def save_flag_split(self, flag_split, output_path, file_number, ext_name='LDAC_OBJECTS'):
-        """
+        """Save flag splitted catalogs
+
+        Save catalogs following the flag split specified.
+
+        Parameters
+        ----------
+        flag_split : dict
+            Dictionary containing the indices for the split and mask to apply
+        output_path : str
+            Path of the output dir
+        file_number : str
+            Numbering of the pipeline
+        ext_name : str
+            Name of the extension where data are stored
+            
         """
 
         if flag_split is None:
