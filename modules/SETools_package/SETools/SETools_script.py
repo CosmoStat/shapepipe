@@ -311,6 +311,8 @@ class SETools(object):
 
         if mask is None:
             raise ValueError('mask not provided')
+        if len(mask) == 0:
+            pass
 
         if output_path is None:
             raise ValueError('output path not provided')
@@ -468,13 +470,34 @@ class SETools(object):
             return None
 
         self.mask = {}
+
         for i in self._mask_key:
-            mask_tmp = np.ones(self._cat_size, dtype=bool)
+            global_mask = np.ones(self._cat_size, dtype=bool)
+            global_ind = np.where(global_mask)[0]
+            for j in self._mask[i]:
+                s = re.split('{|}', j)
+                if s[0] == '':
+                    try:
+                        global_mask &= self.mask[s[1]]
+                        global_ind = np.where(global_mask)[0]
+                        self._mask[i].pop(self._mask[i].index(j))
+                    except:
+                        raise ValueError("'{0}' not found in mask".format(s[1]))
+
+            mask_tmp = None
             for j in self._mask[i]:
                 if j == 'NO_SAVE':
                     continue
-                mask_tmp &= sc.interpreter(j, self._cat_file.get_data(), make_compare= True, mask_dict= self.mask).result
-            self.mask[i] = mask_tmp
+                tmp = sc.interpreter(j, self._cat_file.get_data()[global_mask], make_compare= True, mask_dict= self.mask).result
+                if mask_tmp is None:
+                    mask_tmp = np.ones(tmp.shape[0], dtype=bool)
+                mask_tmp &= tmp
+
+            new_ind = global_ind[mask_tmp]
+            final_mask = np.zeros(self._cat_size, dtype=bool)
+            final_mask[new_ind] = True
+
+            self.mask[i] = final_mask
 
     def _make_plot(self):
         """Make plot
