@@ -2708,7 +2708,6 @@ class interpreter(object):
                 ss = re.split(',',s[1])
                 if len(ss)>1:
                     p = [self.interpret(i, self._make_compare, make_func= False, make_operate= True) for i in ss]
-                    print(p)
                     return self._stat_func[s[0]](*p)
                 else:
                     return self._stat_func[s[0]](self.interpret(s[1], self._make_compare, make_func= False, make_operate= True))
@@ -2745,7 +2744,7 @@ class interpreter(object):
         self._stat_func['homogen'] = self._test_homogeneity
 
 
-    def _mode(self, input, eps=0.001):
+    def _mode(self, input, eps=0.001, iter_max=1000):
         """Compute Mode
 
         Compute the most frequent value of a continuous distribution.
@@ -2767,16 +2766,20 @@ class interpreter(object):
         cat_size = len(input)
         if cat_size > 100:
             bins = int(float(cat_size)/10.)
-        elif cat_size >= 10:
-            bins = int(float(cat_size)/3.)
+        elif cat_size >= 20:
+            bins = int(float(cat_size)/5.)
         else:
-            raise ValueError("Can't compute with less than 10 elements in the input")
+            return np.median(input)
+            # raise ValueError("Can't compute with less than 10 elements in the input")
 
         data = input
         diff = eps+1.
 
+        k = 0
         while diff>eps:
             hist = np.histogram(data, bins)
+            if hist[0].max() == 1:
+                break
 
             b_min = hist[1][hist[0].argmax()]
             b_max = hist[1][hist[0].argmax()+1]
@@ -2785,7 +2788,14 @@ class interpreter(object):
 
             data = data[(data > b_min) & (data < b_max)]
 
-        return (b_min + b_max) / 2.
+            if k == iter_max:
+                break
+            k += 1
+
+        if k == iter_max:
+            raise ValueError('Mode computation failed')
+        else:
+            return (b_min + b_max) / 2.
 
 
     def _mad(self, input):
@@ -2826,7 +2836,7 @@ class interpreter(object):
         -------
         float
             Percentage of inhomogeneity compared to worse possible case (based on the standard deviation)
-            
+
         """
 
         if len(args) == 2:
@@ -2843,6 +2853,7 @@ class interpreter(object):
         if n_param == 2:
             if len(param[0]) != len(param[1]):
                 raise ValueError('Both param_1 and param_2 must have the same lenght : {0}, {1}'.format(len(param[0]), len(param[1])))
+
         if np.sqrt(n_cells)%1 != 0:
             raise ValueError('N_cells must be a square number')
 
@@ -2856,7 +2867,6 @@ class interpreter(object):
             param_min.append([j for j in np.arange(np.min(i), np.max(i), step)])
             param_max.append([j for j in np.arange(np.min(i) + step, np.max(i) + step, step)])
 
-
         if n_param == 1:
             n_obj = np.asarray([float(len(np.where((param[0] >= param_min[0][i]) & (param[0] <= param_max[0][i]))[0])) for i in range(int(n_cells))])
         elif n_param == 2:
@@ -2865,7 +2875,7 @@ class interpreter(object):
 
         actual_std = np.std(n_obj/homo_ratio)
 
-        worse_std = np.zeros((n_cells,1))
+        worse_std = np.zeros((int(n_cells),1))
         worse_std[0] = n_tot/homo_ratio
         worse_std = np.std(worse_std)
 
