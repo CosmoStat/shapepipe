@@ -52,6 +52,12 @@ MESSIER_SIZE_PLUS = 1.
 MESSIER_FLAG_VALUE = 8
 
 
+# -------------------------------- External flag ----------------------------------
+[EXTERNAL_FLAG]
+
+EF_MAKE = True
+
+
 # -------------------------- missing data parameters ------------------------------
 [MD_PARAMETERS]
 
