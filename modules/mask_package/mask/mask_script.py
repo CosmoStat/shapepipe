@@ -661,9 +661,9 @@ class mask(object):
             external_flag = sc.FITSCatalog(path_external_flag, hdu_no= 0)
             external_flag.open()
             if final_mask is not None:
-                final_mask += external_flag
+                final_mask += external_flag.get_data()[:,:]
             else:
-                final_mask = external_flag
+                final_mask = external_flag.get_data()[:,:]
 
         return final_mask.astype(np.int16,copy=False)
 
