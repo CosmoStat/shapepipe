@@ -19,7 +19,7 @@ import sys
 import os
 import subprocess
 import shlex
-
+import errno
 
 from optparse import IndentedHelpFormatter
 import textwrap
@@ -80,6 +80,33 @@ def error(str, val=1, stop=True, verbose=True):
             print_color('red', '', file=sys.stderr)
         sys.exit(val)
 
+
+
+def mkdir_p(path, verbose=False):
+    """Create diretorcy by calling os.makedirs. Emulate shell function 'mkdir -p'.
+
+    Parameters
+    ----------
+    path: string
+        Directory name
+    verbose: boolean
+        Verbose mode, default False
+
+    Returns
+    -------
+    None
+    
+    """
+
+    if verbose is True:
+        print('Creating directory \'{}\''.format('{}'.format(path)))
+
+    try:
+        os.makedirs(str(path))
+    except OSError as exc:
+        if exc.errno == errno.EEXIST:
+            pass
+        else: raise
 
 
 
