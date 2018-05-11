@@ -107,7 +107,7 @@ class mask(object):
             self._config['MD']['thresh_flag'] = conf.get_as_float('MD_THRESH_FLAG', 'MD_PARAMETERS')
             self._config['MD']['thresh_remove'] = conf.get_as_float('MD_THRESH_REMOVE', 'MD_PARAMETERS')
             self._config['MD']['remove'] = conf.get_as_boolean('MD_REMOVE', 'MD_PARAMETERS')
-        self._config['EXTERNAL_FLAG']['make'] = conf.get_as_boolean('EXTERNAL_FLAG', 'EF_MAKE')
+        self._config['EXTERNAL_FLAG']['make'] = conf.get_as_boolean('EF_MAKE', 'EXTERNAL_FLAG')
         if self._config['EXTERNAL_FLAG']['make']:
             if self._path_external_flag is None:
                 raise ValueError('External flag file has to be provided')
