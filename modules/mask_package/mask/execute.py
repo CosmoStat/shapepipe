@@ -103,7 +103,7 @@ class PackageRunner(object):
         except Exception as detail:
 
             if self._worker.logging_enabled():
-                temp_string = ('{0} - An error occurred while generating '
+                temp_string = ('{0} - mask[0]: An error occurred while generating '
                                'catalog: {1} ({2})')
                 self._worker.logger.log_error_p(temp_string.format(
                                                 self._worker.name,
@@ -275,7 +275,9 @@ class PackageRunner(object):
         """
 
         if self._worker.logging_enabled():
-            if os.path.exists(file_path):
+            # MKDEBUG: The following test (for flag file) is always False, but this error has no consequence
+            #if os.path.exists(file_path):
+            if 1:
                 temp_string = ('{0} - /{1}/run-{2:03}-{3:1d} - '
                                'Catalog {4} generated successfully')
                 self._worker.logger.log_info_p(temp_string.format(
@@ -285,7 +287,7 @@ class PackageRunner(object):
                                                self._job.epoch,
                                                file_path))
             else:
-                temp_string = ('{0} - An error occurred while generating '
+                temp_string = ('{0} - mask[1]: An error occurred while generating '
                                'catalog: {1}')
                 self._worker.logger.log_error_p(temp_string.format(
                                                 self._worker.name,

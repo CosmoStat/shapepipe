@@ -1,36 +1,76 @@
 # Exemple of usage for a star/galaxy separation based on size/mag properties
 
+
+# Note: This selection is used in further samples. Start name with '_'
+# so it is first in hash array and known at the time when later 
+# samples are processed.
+[MASK:_bright_objects]
+MAG_AUTO < 18.5
+
 [MASK:star_selection]
 MAG_AUTO > 18.
 MAG_AUTO < 23.
 FLAGS == 0
 IMAFLAGS_ISO == 0
-FWHM_IMAGE - 0.05 <= mode(FWHM_IMAGE)
-FWHM_IMAGE + 0.05 >= mode(FWHM_IMAGE)
+FWHM_IMAGE - 0.05 <= mode(FWHM_IMAGE{_bright_objects})
+FWHM_IMAGE + 0.05 >= mode(FWHM_IMAGE{_bright_objects})
+#FWHM_IMAGE - 0.05 <= mode(FWHM_IMAGE)
+#FWHM_IMAGE + 0.05 >= mode(FWHM_IMAGE)
 CLASS_STAR != 0
 
 [MASK:galaxy_selection]
-MAG_AUTO > 20.
+#MAG_AUTO > 20.
 FLAGS == 0
-#FWHM_IMAGE - 0.25 >= mode(FWHM_IMAGE)
+FWHM_IMAGE - 0.30 >= mode(FWHM_IMAGE{_bright_objects})
+#FWHM_IMAGE - 0.30 >= mode(FWHM_IMAGE)
 IMAFLAGS_ISO == 0
 
-[STAT:star_selection]
-NUMBER_OBJ
+[STAT:numbers]
+"mean FWHM"  = mean(FWHM_IMAGE)
+"mean star FWHM"  = mean(FWHM_IMAGE{star_selection})
+"mean bright obj FWHM" = mean(FWHM_IMAGE{_bright_objects})
+"all" = len(FWHM_IMAGE)
+"stars" = len(FWHM_IMAGE{star_selection})
+"galaxies" = len(FWHM_IMAGE{galaxy_selection})
+"FWHM stars" = FWHM_IMAGE{star_selection}
 
-[STAT:galaxy_selection]
-NUMBER_OBJ
+# Plots: Axel's format
+[PLOT:star_galaxy_selection]
+TYPE   = plot
+FORMAT = pdf
+X_1      = FWHM_IMAGE{star_selection}
+Y_1      = MAG_AUTO{star_selection}
+X_2      = FWHM_IMAGE{galaxy_selection}
+Y_2      = MAG_AUTO{galaxy_selection}
+X_3      = FWHM_IMAGE
+Y_3      = MAG_AUTO
+COLOR_1  = r
+COLOR_2  = b
+COLOR_3  = k
+MARKERSIZE_1 = 0.75
+MARKERSIZE_2 = 0.75
+MARKERSIZE_3 = 0.1
+MARKER_1   = "o"
+MARKER_2   = "o"
+MARKER_3   = "o"
+LABEL_1  = "stars"
+LABEL_2  = "galaxies"
+LABEL_3  = "all"
+TITLE  = "Stars/Galaxies" 
+XLABEL = "FWHM [pix]"
+YLABEL = "magnitude (MAG_AUTO)"
+XLIM   = -1,25
 
-[PLOT:star_selection]
-# type:x:y
-scatter:FWHM_IMAGE:MAG_AUTO 
+[PLOT:test_scatter]
+TYPE = scatter
+FORMAT = pdf
+X = X_IMAGE{star_selection}
+Y = Y_IMAGE{star_selection}
+SCATTER_1 = FWHM_IMAGE{star_selection}
+LABEL_1 = "fwhm, mean: @mean(FWHM_IMAGE)@"
+MARKER_1 = .
+TITLE = "FWHM / MAG"
+XLABEL = "X (pix)"
+YLABEL = "Y (pix)"
 
-[PLOT:galaxy_selection]
-# type:x:y
-scatter:FWHM_IMAGE:MAG_AUTO 
-#
-[PLOT:ALL]
-# type:x:y
-#scatter:FWHM_IMAGE:MAG_AUTO:ax.set_xscale('log');ax.set_yscale('log')
-scatter:FWHM_IMAGE:MAG_AUTO:ax.set_xscale('log')
 

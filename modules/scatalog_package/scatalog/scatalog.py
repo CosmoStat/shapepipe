@@ -2574,7 +2574,7 @@ class interpreter(object):
 
     """
 
-    def __init__(self, string, catalog, make_compare = False, mask_dict = None):
+    def __init__(self, string, catalog, make_compare=False, mask_dict=None):
 
         if type(string) is not str:
             raise ValueError('string has to be str type')
@@ -2608,10 +2608,10 @@ class interpreter(object):
         self.result =  self.interpret(self._string, self._make_compare)
 
 
-    def interpret(self, string, make_compare = False, make_func = True, make_operate = True):
+    def interpret(self, string, make_compare=False, make_func=True, make_operate=True):
         """Interpret
 
-        This function handle the different possible operation
+        This function handles the different possible operations
 
         Parameters
         ----------
@@ -2639,7 +2639,7 @@ class interpreter(object):
             result = self._compare(string)
         else:
             if make_operate:
-                string_split = re.split(r'\*|\/|\-|\+\s*(?![^()]*\))', string)
+                string_split = re.split(r'\*|\/|\-|\+|\%\s*(?![^()]*\))', string)
                 result = self._operate(string, string_split)
             else:
                 if make_func:
@@ -2697,15 +2697,29 @@ class interpreter(object):
         s = re.split('\(|\)', string)
 
         if len(s) == 1:
-            return self.interpret(s[0], self._make_compare, make_func= False, make_operate= False)
+            return self.interpret(s[0], self._make_compare, make_func=False, make_operate=False)
         elif len(s) == 3:
-            try:
-                return self._stat_func[s[0]](self.interpret(s[1], self._make_compare, make_func= False, make_operate= True))
-            except:
-                raise Exception('Unknown function : {0}'.format(s[0]))
+	    # MKDEBUG new. Accept mask selection for function argument
+            #return self._stat_func[s[0]](self.interpret(s[1], self._make_compare, make_func=False, make_operate=True))
+	    ss = re.split('\{|\}', s[1])
+	    if len(ss) == 1:
+                try:
+		    # No selection: call function as before
+                    return self._stat_func[s[0]](self.interpret(s[1], self._make_compare, make_func=False, make_operate=True))
+                except:
+                    raise Exception('Error while evaluating function \'{}\' on argument \'{}\''.format(s[0], s[1]))
+            elif len(ss) == 3:
+	        try:
+	            # Selection: Call interpret to apply mask, then as argument to function
+		    res = self._stat_func[s[0]](self.interpret(s[1], False, make_func=False, make_operate=False))
+		    return res
+                except:
+                    raise Exception('Error while interpreting \'{}\' on argument \'{}\''.format(s[0]))
+            else:
+                raise ValueError('Format error in mask string, {} not found in mask'.format(s[1]))
         else:
             raise Exception('Only one function can be applied.'
-                            'Problem with the term : {0}'.format(string))
+                            'Problem with the term: {0}'.format(string))
 
 
     def _init_stat_function(self):
@@ -2728,6 +2742,9 @@ class interpreter(object):
         self._stat_func['std'] = np.std
         self._stat_func['var'] = np.var
         self._stat_func['mad'] = self._mad
+        self._stat_func['len'] = len
+        self._stat_func['min'] = min
+        self._stat_func['max'] = max
 
 
     def _mode(self, input, eps=0.001):
@@ -2749,10 +2766,11 @@ class interpreter(object):
 
         """
 
-        if self._cat_size > 100:
-            bins = int(float(self._cat_size)/10.)
-        elif self._cat_size >= 10:
-            bins = int(float(self._cat_size)/3.)
+        cat_size = len(input)
+        if cat_size > 100:
+            bins = int(float(cat_size)/10.)
+        elif cat_size >= 10:
+            bins = int(float(cat_size)/3.)
         else:
             raise ValueError("Can't compute with less than 10 elements in the input")
 
@@ -2813,7 +2831,7 @@ class interpreter(object):
 
         """
 
-        op=r'\*|\/|\-|\+\s*(?![^()]*\))'
+        op=r'\*|\/|\-|\+|\%\s*(?![^()]*\))'
         if string is None:
             raise ValueError("Parameter not specified")
         if string_split is None:
@@ -2823,22 +2841,26 @@ class interpreter(object):
             return self.interpret(string, make_operate= False)
 
         tmp = self._string_op_func(re.split('\+\s*(?![^()]*\))',string), string_split, operator.add, 0)
-        if tmp != 'pass':
+        if not np.isscalar(tmp) or tmp != 'pass':
             return tmp
         else:
             tmp = self._string_op_func(re.split('\-\s*(?![^()]*\))',string), string_split, operator.sub, 'init')
-            if tmp != 'pass':
+            if not np.isscalar(tmp) or tmp != 'pass':
                 return tmp
             else:
                 tmp = self._string_op_func(re.split('\*\s*(?![^()]*\))',string), string_split, operator.mul, 1)
-                if tmp != 'pass':
+                if not np.isscalar(tmp) or tmp != 'pass':
                     return tmp
                 else:
-                    return self._string_op_func(re.split('\/\s*(?![^()]*\))',string), string_split, operator.div, 'init')
+                    tmp = self._string_op_func(re.split('\/\s*(?![^()]*\))',string), string_split, operator.div, 'init')
+                if not np.isscalar(tmp) or tmp != 'pass':
+                    return tmp
+                else:
+                    return self._string_op_func(re.split('\%\s*(?![^()]*\))',string), string_split, hh.Max, 0)
 
 
     def _string_op_func(self, string_op, string_split, op, tmp):
-        """Make a specified operation
+        """Perform a specified operation
 
         This function handle the posible operation between parameters.
 
@@ -2847,9 +2869,9 @@ class interpreter(object):
         string_op : list
             List of parameters to operate.
         string_split : list
-            The different parameter splitted using '\*|\/|\-|\+\s*(?![^()]*\))' as delimiter.
+            The different parameter splitted using '\*|\/|\-|\+|\%\s*(?![^()]*\))' as delimiter.
         op : func
-            The kind of operation provide as an operator function
+            The kind of operation provided as an operator function
             (Example : operator.sub).
         tmp : str or float
             Temporary result of the global operation or value to
@@ -2900,7 +2922,7 @@ class interpreter(object):
 
         Note
         ----
-        You can't make operation here !
+        You can't perform operations here!
 
         """
 
@@ -2918,13 +2940,15 @@ class interpreter(object):
                 except:
                     raise ValueError('string has to be a float or a catalog parameter. {0} not found'.format(string))
             if len(s) == 3:
+		# MKDEBUG: For mask selection within function the corresponding mask key has not been communicated yet here
+		# in some cases. Solved with naming '_<mask>'? 
                 if s[1] in self._mask.keys():
                     try:
                         return self._cat[s[0]][self._mask[s[1]]]
                     except:
-                        raise ValueError('string has to be a catalog parameter. {0} not found'.format(s[0]))
+                        raise ValueError('String has to be a catalog parameter. {0} not found'.format(s[0]))
                 else:
-                    raise ValueError('mask has to be provide. {0} not found in mask'.format(s[1]))
+                    raise ValueError('Mask has to be provided. {0} not found in mask'.format(s[1]))
 
 
 # -- EOF scatalog.py

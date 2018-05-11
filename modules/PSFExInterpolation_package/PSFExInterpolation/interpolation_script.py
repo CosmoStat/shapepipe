@@ -3,7 +3,7 @@
 """INTERPOLATION SCRIPT
 
 This module computes the PSFs from a PSFEx model at several galaxy positions,
-using Erin Sheldo n &Eli Rykoff's psfex module, available on GitHub at:
+using Erin Sheldon & Eli Rykoff's psfex module, available on GitHub at:
 https://github.com/esheldon/psfex
 
 :Author: Morgan Schmitz
@@ -19,6 +19,8 @@ import psfex
 import scatalog as sc
 import re
 from astropy.io import fits
+import galsim.hsm as hsm
+from galsim import Image
 
 class PSFExInterpolator(object):
     """Interpolator class.
@@ -27,7 +29,7 @@ class PSFExInterpolator(object):
 
     """
     
-    def __init__(self, dotpsf_path, galcat_path, output_path, pos_params=None):
+    def __init__(self, dotpsf_path, galcat_path, output_path, pos_params=None, get_shapes=True):
         """Class initialiser
 
         Parameters
@@ -58,7 +60,12 @@ class PSFExInterpolator(object):
         
         # get number naming convention for this particular run
         s=re.split("\-([0-9]{3})\-([0-9]+)\.",self._galcat_path)
-        self._img_number='-{0}-{1}'.format(s[1],s[2])      
+        self._img_number='-{0}-{1}'.format(s[1],s[2])     
+        
+        # if required, compute and save shapes
+        if get_shapes:
+            self._get_psfshapes()
+            self._has_shapes = True
         
     def _get_position_parameters(self):
         """ Read position parameters from .psf file.
@@ -100,6 +107,18 @@ class PSFExInterpolator(object):
         pex = psfex.PSFEx(self._dotpsf_path)
         self.interp_PSFs = np.array([pex.get_rec(x,y) for x,y in zip(self.gal_pos[:,0],
                                      self.gal_pos[:,1])])
+    
+    def _get_psfshapes(self):
+        """ Compute shapes of PSF at galaxy positions using HSM.
+        
+        """
+        if self.interp_PSFs is None:
+            self._interpolate()
+        psf_moms = [hsm.FindAdaptiveMom(Image(psf), strict=False) for psf in self.interp_PSFs]
+        
+        self.psf_shapes = np.array([[moms.observed_shape.g1, moms.observed_shape.g2,
+                        moms.moments_sigma] for moms in psf_moms])
+        self.hsm_flags = np.array([bool(mom.error_message) for mom in psf_moms]).astype(int)
         
     def write_output(self):
         """ Save computed PSFs to fits file.
@@ -110,4 +129,10 @@ class PSFExInterpolator(object):
         output = sc.FITSCatalog(self._output_path+self._img_number+'.fits',
                                 open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
                                 SEx_catalog=True)
-        output.save_as_fits(self.interp_PSFs, ['VIGNET'], sex_cat_path=self._galcat_path)
+        if self._has_shapes:
+            data = {'VIGNET': self.interp_PSFs,
+                'E1_PSF_HSM': self.psf_shapes[:,0], 'E2_PSF_HSM': self.psf_shapes[:,1], 
+                'SIGMA_PSF_HSM': self.psf_shapes[:,2], 'HSM_FLAG': self.hsm_flags}
+        else:
+            data = {'VIGNET': self.interp_PSFs}
+        output.save_as_fits(data, sex_cat_path=self._galcat_path)

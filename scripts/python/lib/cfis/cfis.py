@@ -145,23 +145,42 @@ def get_file_pattern(pattern, band, image_type, want_re=True):
     """
 
     if pattern == '':
-        if image_type == 'exposure':
+        if image_type in ('exposure', 'exposure_flag', 'exposure_flag.fz', \
+		'exposure_flag', 'exposure_weight', 'exposure_weight.fz'):
             pattern_base = '\d{7}p'
         else:
             pattern_base  = 'CFIS.*\.{}'.format(band)
     else:
         pattern_base = pattern
 
+
     if image_type == 'exposure':
         pattern  = '{}\.fits.fz'.format(pattern_base)
+
+    elif image_type == 'exposure_flag':
+        pattern  = '{}\.flag.fits'.format(pattern_base)
+
+    elif image_type == 'exposure_flag.fz':
+        pattern  = '{}\.flag.fits.fz'.format(pattern_base)
+
+    elif image_type == 'exposure_weight':
+        pattern  = '{}\.weight.fits'.format(pattern_base)
+
+    elif image_type == 'exposure_weight.fz':
+        pattern  = '{}\.weight.fits.fz'.format(pattern_base)
+
     elif image_type == 'tile':
         pattern = '{}\.fits'.format(pattern_base)
+
     elif image_type == 'cat':
         pattern = '{}\.cat'.format(pattern_base)
+
     elif image_type == 'weight':
         pattern = '{}\.weight\.fits'.format(pattern_base)
+
     elif image_type == 'weight.fz':
         pattern = '{}\.weight\.fits.fz'.format(pattern_base)
+
     else:
         stuff.error('Invalid type \'{}\''.format(image_type))
 
@@ -513,3 +532,24 @@ def get_exposure_info(logfile_name, verbose=False):
         image.append(img)
 
     return image
+
+
+
+def exclude(f, exclude_list):
+    """Return True if f is on exclude_list
+
+    Parameters
+    ----------
+    f: string
+        file name
+    exclude_list: list of strings
+        list of files
+
+    Returns
+    -------
+    is_in_exclude: bool
+        True (False) if f is in list
+    """
+
+    return f in exclude_list
+
