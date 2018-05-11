@@ -71,51 +71,51 @@ def diagnostics(files, verbose=False):
     count = 0
     for f in files:
 
-        hdu   = fits.open(f)
-        dat   = hdu[0].data
-        date  = hdu[0].header['DATE']
-
-        hdu.close()
-
-        #y, x = np.histogram(dat, bins=nbin, range=limits)  
-        # Ratio of numer of close-to-zero pixels to total
-        #ratio = float(y[0]) / sum(y)
         ratio = 0
-
-        # Histogram without fixed bin limits
-        #y, x = np.histogram(dat)
-        #ratio2 = float(y[0]) / sum(y)
-
-        # Number of zero pixels where image pixels are zero
 
         # Get image name from weight file name
         img_name = re.sub('weight\.', '', f) 
 
-        hdu_img  = fits.open(img_name)
-        dat_img  = hdu_img[0].data
-        hdu_img.close()
+        date = '2017-07-07T04:47:19'
 
-        # Indices where images has zero pixel values
-        idx_img_zero = np.where(dat_img == 0)
+        try:
+            hdu   = fits.open(f)
+            dat   = hdu[0].data
+            date  = hdu[0].header['DATE']
 
-        # Count non-zero weight pixels at these indices
-        ratio2 = np.count_nonzero(dat[idx_img_zero])
+            hdu.close()
 
-        # MKDEBUG
-        #y = 8500
-        #x = 4000
-        #print('Image[y={}][x={}] = {}'.format(y, x, dat_img[y][x]))
-        #print('Weight[y={}][x={}] = {}'.format(y, x, dat[y][x]))
 
-        # Number of exact zero pixels
-        ratio3 = 1.0 - float(np.count_nonzero(dat)) / float(dat.size)
+            hdu_img  = fits.open(img_name)
+            dat_img  = hdu_img[0].data
+            hdu_img.close()
+
+
+            # Number of zero pixels where image pixels are zero
+
+            # Indices where images has zero pixel values
+            idx_img_zero = np.where(dat_img == 0)
+
+            # Count non-zero weight pixels at these indices
+            ratio2 = np.count_nonzero(dat[idx_img_zero])
+
+
+            # Number of exact zero pixels
+            ratio3 = 1.0 - float(np.count_nonzero(dat)) / float(dat.size)
+
+        except:
+
+            if verbose:
+                print('Error with FITS file {} and/or {}, continuing...'.format(f, img_name))
+
+            ratio2 = -1
+            ratio3 = -1
 
 
         # Diagnostic
         ok    = ratio > 0.001
         ok2   = ratio2 == 0
         ok3   = ratio3 > 0.02
-
 
 
         diagn.append([f, ratio, ratio2, ratio3, ok, ok2, ok3, date])
