@@ -5,30 +5,30 @@
 # so it is first in hash array and known at the time when later 
 # samples are processed.
 [MASK:_bright_objects]
-MAG_AUTO < 19
+MAG_AUTO < 18.5
 
 [MASK:star_selection]
 MAG_AUTO > 18.
 MAG_AUTO < 23.
 FLAGS == 0
 IMAFLAGS_ISO == 0
-#FWHM_IMAGE - 0.05 <= mode(FWHM_IMAGE{_bright_objects})
-#FWHM_IMAGE + 0.05 >= mode(FWHM_IMAGE{_bright_objects})
-FWHM_IMAGE - 0.05 <= mode(FWHM_IMAGE)
-FWHM_IMAGE + 0.05 >= mode(FWHM_IMAGE)
+FWHM_IMAGE - 0.05 <= mode(FWHM_IMAGE{_bright_objects})
+FWHM_IMAGE + 0.05 >= mode(FWHM_IMAGE{_bright_objects})
+#FWHM_IMAGE - 0.05 <= mode(FWHM_IMAGE)
+#FWHM_IMAGE + 0.05 >= mode(FWHM_IMAGE)
 CLASS_STAR != 0
 
 [MASK:galaxy_selection]
 #MAG_AUTO > 20.
 FLAGS == 0
-#FWHM_IMAGE - 0.30 >= mode(FWHM_IMAGE{_bright_objects})
-FWHM_IMAGE - 0.30 >= mode(FWHM_IMAGE)
+FWHM_IMAGE - 0.30 >= mode(FWHM_IMAGE{_bright_objects})
+#FWHM_IMAGE - 0.30 >= mode(FWHM_IMAGE)
 IMAFLAGS_ISO == 0
 
 [STAT:numbers]
 "mean FWHM"  = mean(FWHM_IMAGE)
 "mean star FWHM"  = mean(FWHM_IMAGE{star_selection})
-#"mean bright obj FWHM" = mean(FWHM_IMAGE{_bright_objects})
+"mean bright obj FWHM" = mean(FWHM_IMAGE{_bright_objects})
 "all" = len(FWHM_IMAGE)
 "stars" = len(FWHM_IMAGE{star_selection})
 "galaxies" = len(FWHM_IMAGE{galaxy_selection})
