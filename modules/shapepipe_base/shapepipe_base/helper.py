@@ -6,18 +6,62 @@ This module contain a class with 'helper' methods.
 
 :Authors: Samuel Farrens and Marc Gentile
 
-:Date: 31/10/2017 (Happy Halloween!)
+:Date: 09/04/2018
 
 """
 
 # -- Python imports
 import os
-import numpy as np
 import glob
+import subprocess
 
 # -- External import
 from mpfg.mp_helper import Helper
-from info import __version__, __whoami__
+
+
+def is_executable(exe_name):
+    """Check if Input is Executable
+
+    This methid checks if the input executable exists.
+
+    Parameters
+    ----------
+    exe_name : str
+        Executable name
+
+    Returns
+    -------
+    Bool result of test
+
+    Raises
+    ------
+    TypeError
+        For invalid input type
+
+    """
+
+    if not isinstance(exe_name, str):
+
+        raise TypeError('Executable name must be a string.')
+
+    def is_exe(fpath):
+
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(exe_name)
+
+    if not fpath:
+
+        res = any([is_exe(os.path.join(path, exe_name)) for path in
+                   os.environ["PATH"].split(os.pathsep)])
+
+    else:
+
+        res = is_exe(exe_name)
+
+    if not res:
+        raise IOError('{} does not appear to be a valid executable on this '
+                      'system.'.format(exe_name))
 
 
 class PackageHelper(Helper):
@@ -28,11 +72,53 @@ class PackageHelper(Helper):
 
     """
 
-    def __init__(self):
+    def __init__(self, version, name, pydepend, sysdepend):
 
         Helper.__init__(self)
-        self.version = __version__
-        self.name = __whoami__
+        self.version = version
+        self.name = name
+        self.pydepend = pydepend
+        self.sysdepend = sysdepend
+
+    def _check_python_dependencies(self, master):
+
+        master.logger.log_info_p('- Python dependencies.')
+
+        try:
+
+            for module_name in self.pydepend:
+
+                module = __import__(module_name, globals(), locals(), [],
+                                    -1)
+
+                master.logger.log_info_p('-- {0} {1}\t{2}'.format(
+                                         module_name, module.__version__,
+                                         module.__file__))
+
+        except Exception as detail:
+            master.logger.log_error_p('- some modules could not be '
+                                      'imported: {0}\n'.format(detail))
+
+    def _check_system_dependencies(self, master):
+
+        master.logger.log_info_p('- System dependencies.')
+
+        try:
+
+            for exe_name in self.sysdepend:
+
+                is_executable(exe_name)
+
+                exe_path, err = (subprocess.Popen('which {0}'.format(exe_name),
+                                 shell=True, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE).communicate())
+
+                master.logger.log_info_p('-- {0} {1}'.format(exe_name,
+                                         exe_path.rstrip()))
+
+        except Exception as detail:
+            master.logger.log_error_p('- some executables could not be '
+                                      'found: {0}\n'.format(detail))
 
     def show_config_summary(self, master):
 
@@ -51,40 +137,9 @@ class PackageHelper(Helper):
             master.logger.log_info_p('\n*** {0} v{1} ***\n'.format(self.name,
                                      self.version))
 
-            try:
-
-                # --- Python modules
-                master.logger.log_info_p('Standard Python modules:')
-
-                master.logger.log_info_p('- numpy {0}\t\t{1}'.format(
-                                         np.__version__, np.__file__))
-
-                mpl = __import__('matplotlib', globals(), locals(), [], -1)
-                master.logger.log_info_p('- matplotlib {0}\t{1}'.format(
-                                         mpl.__version__, mpl.__file__))
-
-                master.logger.log_info_p('\nMPF Python modules:')
-
-                mpfg = __import__('mpfg', globals(), locals(), [], -1)
-                master.logger.log_info_p('- mpfg {0}\t\t{1}'.format(
-                                         mpfg.__version__, mpfg.__file__))
-                mpfx = __import__('mpfx', globals(), locals(), [], -1)
-                master.logger.log_info_p('- mpfx {0}\t\t{1}'.format(
-                                         mpfx.__version__, mpfx.__file__))
-                slog = __import__('slogger', globals(), locals(), [], -1)
-                master.logger.log_info_p('- slogger {0}\t\t{1}'.format(
-                                         slog.__version__, slog.__file__))
-                sconf = __import__('sconfig', globals(), locals(), [], -1)
-                master.logger.log_info_p('- sconfig {0}\t\t{1}'.format(
-                                         sconf.__version__, sconf.__file__))
-                scat = __import__('scatalog', globals(), locals(), [], -1)
-                master.logger.log_info_p('- scatalog {0}\t{1}'.format(
-                                         scat.__version__, scat.__file__))
-
-            except Exception as detail:
-                master.logger.log_error_p('- some modules could not be '
-                                          'imported: {0}\n'.format(detail))
-
+            master.logger.log_info_p('Checking package dependencies.')
+            self._check_python_dependencies(master)
+            self._check_system_dependencies(master)
             master.logger.log_info_p('\n')
 
     def locate_files(self, pattern_list, directory, sort=True,

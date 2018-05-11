@@ -15,10 +15,11 @@ from astropy.io import fits         # for FITS catalogs (New)
 import astromatic_wrapper.utils as awu     # for FITS_LDAC catalogs
 
 import operator                 # for the interpreter
+import itertools
 
 # -- Internal imports
 from scatalog_helper import *       # Helper methods
-import header_handling as hh        # Function to deal with header's parameters
+
 # from numpy import ndarray
 # from astropy.io.fits.fitsrec import FITS_record
 
@@ -1784,7 +1785,7 @@ class FITSCatalog(BaseCatalog):
        if header is None:
            raise ValueError('Empty header in the hdu : {0}'.format(hdu_no))
 
-       return hh.Header(header).param_value(request)
+       return interpreter(string= request, catalog= header).result
 
 
    # -----------------------------------------------------------------------------------------------
@@ -1970,9 +1971,13 @@ class FITSCatalog(BaseCatalog):
 
       if col_data is None or len(col_data) == 0:
          col_type = 'D'
-      elif type(col_data[0]) is int:
+      elif type(col_data[0]) in [np.int16]:
+         col_type = 'I'
+      elif type(col_data[0]) in [np.int32]:
+         col_type = 'J'
+      elif type(col_data[0]) in [int, np.int64]:
          col_type = 'K'
-      elif type(col_data[0]) is float:
+      elif type(col_data[0]) in [float, np.float16, np.float32, np.float64]:
          col_type = 'D'
       elif type(col_data[0]) is bool:
          col_type = 'L'
@@ -2699,24 +2704,16 @@ class interpreter(object):
         if len(s) == 1:
             return self.interpret(s[0], self._make_compare, make_func=False, make_operate=False)
         elif len(s) == 3:
-	    # MKDEBUG new. Accept mask selection for function argument
-            #return self._stat_func[s[0]](self.interpret(s[1], self._make_compare, make_func=False, make_operate=True))
-	    ss = re.split('\{|\}', s[1])
-	    if len(ss) == 1:
-                try:
-		    # No selection: call function as before
-                    return self._stat_func[s[0]](self.interpret(s[1], self._make_compare, make_func=False, make_operate=True))
-                except:
-                    raise Exception('Error while evaluating function \'{}\' on argument \'{}\''.format(s[0], s[1]))
-            elif len(ss) == 3:
-	        try:
-	            # Selection: Call interpret to apply mask, then as argument to function
-		    res = self._stat_func[s[0]](self.interpret(s[1], False, make_func=False, make_operate=False))
-		    return res
-                except:
-                    raise Exception('Error while interpreting \'{}\' on argument \'{}\''.format(s[0]))
-            else:
-                raise ValueError('Format error in mask string, {} not found in mask'.format(s[1]))
+            try:
+                ss = re.split(',',s[1])
+                if len(ss)>1:
+                    p = [self.interpret(i, self._make_compare, make_func= False, make_operate= True) for i in ss]
+                    print(p)
+                    return self._stat_func[s[0]](*p)
+                else:
+                    return self._stat_func[s[0]](self.interpret(s[1], self._make_compare, make_func= False, make_operate= True))
+            except:
+                raise Exception('Unknown function : {0}'.format(s[0]))
         else:
             raise Exception('Only one function can be applied.'
                             'Problem with the term: {0}'.format(string))
@@ -2745,6 +2742,7 @@ class interpreter(object):
         self._stat_func['len'] = len
         self._stat_func['min'] = min
         self._stat_func['max'] = max
+        self._stat_func['homogen'] = self._test_homogeneity
 
 
     def _mode(self, input, eps=0.001):
@@ -2808,6 +2806,70 @@ class interpreter(object):
         """
 
         return np.median(np.abs(input - np.median(input)))
+
+
+    def _test_homogeneity(self, *args):
+        """Test homogeneity
+
+        Test homogeneity on 1D or 2D space.
+
+        Parameters
+        ----------
+        param1 : numpy.ndarray
+            Array on which the homogeneity test is performed
+        param2 : numpy.ndarray [optional]
+            Array on which the homogeneity test is performed
+        nb_cells : int
+            Number of cells in the space. (note : has to be a square number)
+
+        Returns
+        -------
+        float
+            Percentage of inhomogeneity compared to worse possible case (based on the standard deviation)
+            
+        """
+
+        if len(args) == 2:
+            n_param = 1
+            param = [args[0]]
+            n_cells = args[1]
+        elif len(args) == 3:
+            n_param = 2
+            param = [args[0], args[1]]
+            n_cells = args[2]
+        else:
+            raise ValueError('Inputs should be param_1, param_2 [optional], n_cells')
+
+        if n_param == 2:
+            if len(param[0]) != len(param[1]):
+                raise ValueError('Both param_1 and param_2 must have the same lenght : {0}, {1}'.format(len(param[0]), len(param[1])))
+        if np.sqrt(n_cells)%1 != 0:
+            raise ValueError('N_cells must be a square number')
+
+        n_tot = len(param[0])
+        homo_ratio = float(n_tot) / float(n_cells)
+
+        param_min = []
+        param_max = []
+        for i in param:
+            step = (np.max(i) - np.min(i)) / pow(n_cells, 1./float(n_param))
+            param_min.append([j for j in np.arange(np.min(i), np.max(i), step)])
+            param_max.append([j for j in np.arange(np.min(i) + step, np.max(i) + step, step)])
+
+
+        if n_param == 1:
+            n_obj = np.asarray([float(len(np.where((param[0] >= param_min[0][i]) & (param[0] <= param_max[0][i]))[0])) for i in range(int(n_cells))])
+        elif n_param == 2:
+            it = itertools.product(range(int(np.sqrt(n_cells))), repeat=2)
+            n_obj = np.asarray([float(len(np.where((param[0] >= param_min[0][i]) & (param[0] <= param_max[0][i]) & (param[1] >= param_min[1][j]) & (param[1] <= param_max[1][j]))[0])) for i,j in it])
+
+        actual_std = np.std(n_obj/homo_ratio)
+
+        worse_std = np.zeros((n_cells,1))
+        worse_std[0] = n_tot/homo_ratio
+        worse_std = np.std(worse_std)
+
+        return actual_std/worse_std*100.
 
 
     def _operate(self, string, string_split):
@@ -2923,7 +2985,6 @@ class interpreter(object):
         Note
         ----
         You can't perform operations here!
-
         """
 
         if string is None:
@@ -2948,7 +3009,7 @@ class interpreter(object):
                     except:
                         raise ValueError('String has to be a catalog parameter. {0} not found'.format(s[0]))
                 else:
-                    raise ValueError('Mask has to be provided. {0} not found in mask'.format(s[1]))
+                    raise ValueError('mask has to be provided. {0} not found in mask'.format(s[1]))
 
 
 # -- EOF scatalog.py

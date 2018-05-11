@@ -7,7 +7,7 @@ This module contain a class for executing the package using MPI.
 
 :Authors: Samuel Farrens and Marc Gentile
 
-:Date: 06/11/2017
+:Date: 10/04/2018
 
 """
 
@@ -19,11 +19,12 @@ from mpi4py import MPI
 
 # -- External Modules
 from mpfx import mpfx_MPI
+from shapepipe_base.args import PackageArgs
+from shapepipe_base.helper import PackageHelper
 
 # -- Module-specific imports
-from args import PackageArgs
+from info import __version__, __whoami__, __python_depend__, __system_depend__
 from job import PackageJobProcessor
-from helper import PackageHelper
 
 
 class PackageMasterMPI(mpfx_MPI.MpfxMasterMPI):
@@ -49,14 +50,15 @@ class PackageMasterMPI(mpfx_MPI.MpfxMasterMPI):
             # --- Master process
             mpfx_MPI.MasterMPI.__init__(self, args, comm)
 
-            # --- Job Processor
-            self.job_processor = PackageJobProcessor(self)
-
             # --- Helper methods
-            self._helper = PackageHelper()
+            self._helper = PackageHelper(__version__, __whoami__,
+                                         __python_depend__, __system_depend__)
 
             # --- Show config_summary
             self.helper.show_config_summary(self)
+
+            # --- Job Processor
+            self.job_processor = PackageJobProcessor(self)
 
             # --- Save a copy of the gfit configuration file to the log dir
             copy(join(args.options['-d'], args.options['-c']),

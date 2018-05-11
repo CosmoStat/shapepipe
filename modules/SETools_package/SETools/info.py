@@ -6,9 +6,20 @@ Set the package information
 
 :Authors: Samuel Farrens
 
-:Date: 31/10/2017 (Happy Halloween!)
+:Date: 16/04/18
 
 """
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 __whoami__ = "SETools"
+
+# Python dependencies
+pipe_depend = ['mpfg', 'mpfx', 'scatalog', 'sconfig', 'shapepipe_base',
+               'slogger']
+external_depend = ['numpy', 'matplotlib']
+
+__python_depend__ = pipe_depend + external_depend
+
+# System dependencies
+
+__system_depend__ = ['diff', 'ls']

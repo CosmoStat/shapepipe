@@ -6,7 +6,7 @@ This module contain classes for managing the job processes.
 
 :Authors: Samuel Farrens and Marc Gentile
 
-:Date: 31/10/2017 (Happy Halloween!)
+:Date: 16/04/2018
 
 """
 
@@ -19,7 +19,6 @@ from mpfx import mpfx_job
 
 # --- Module-specific imports
 from execute import PackageRunner
-from helper import PackageHelper
 
 
 class PackageJobProcessor(mpfx_job.MpfxJobProcessor):
@@ -44,7 +43,7 @@ class PackageJobProcessor(mpfx_job.MpfxJobProcessor):
 
         mpfx_job.MpfxJobProcessor.__init__(self, master)
 
-        self._helper = PackageHelper()
+        self._helper = master._helper
         self._master = master
 
     def create_dataset(self, master, dataset_name, dataset_type,

@@ -6,20 +6,19 @@ Set the package information
 
 :Authors: Samuel Farrens
 
-:Date: 16/04/18
+:Date: 09/04/2018
 
 """
 
-__version__ = "1.0.2"
-__whoami__ = "shapelens"
+__version__ = "1.0.0"
+__whoami__ = "shapepipe_base"
 
 # Python dependencies
-pipe_depend = ['mpfg', 'mpfx', 'scatalog', 'sconfig', 'shapepipe_base',
-               'slogger']
+pipe_depend = ['mpfg', 'mpfx', 'scatalog', 'sconfig', 'slogger']
 external_depend = ['numpy']
 
 __python_depend__ = pipe_depend + external_depend
 
 # System dependencies
 
-__system_depend__ = ['get_shapes']
+__system_depend__ = ['diff']

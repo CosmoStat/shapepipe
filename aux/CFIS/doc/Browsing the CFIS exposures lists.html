@@ -1,0 +1,352 @@
+<http://www.cfht.hawaii.edu/Science/CFIS-DATA/>
+CFIS Dataset Home <http://www.cfht.hawaii.edu/Science/CFIS-DATA/>
+CFIS Home <http://www.cfht.hawaii.edu/Science/CFIS/>
+CFIS Internal Pages <https://www.evernote.com/Home.action>
+CFHT Home <http://www.cfht.hawaii.edu/>
+MegaCam Home <http://www.cfht.hawaii.edu/Instruments/Imaging/MegaPrime/>
+Survey Products
+Data Access @ CADC <http://www.canfar.phys.uvic.ca/vosui/#/cfis>
+Allocation Statistics
+Global Statistics
+<http://www.cfht.hawaii.edu/Science/CFIS-DATA//cfisstats.html>
+Statistics Overview
+<http://www.cfht.hawaii.edu/Science/CFIS-DATA//cfisstatsinfo.html>
+Survey Statistics
+Sky Coverage
+<http://www.cfht.hawaii.edu/Science/CFIS-DATA//skycoverage.html>
+Data Properties
+<http://www.cfht.hawaii.edu/Science/CFIS-DATA//observingstats.html>
+Observations History
+Observing Runs Calendar
+<http://www.cfht.hawaii.edu/Science/CFIS-DATA//megacamschedule.html>
+Programs Identificators
+<http://www.cfht.hawaii.edu/Science/CFIS-DATA//cfisprograms.html>
+Acquired Exposures
+List Format Description
+<http://www.cfht.hawaii.edu/Science/CFIS-DATA//exposurescatalogs.html>
+Full List Per Component
+<http://www.cfht.hawaii.edu/Science/CFIS-DATA//exposureslogs.html>
+Real-Time Status
+<http://www.cfht.hawaii.edu/Science/CFIS-DATA//CFIS-ERT-ObsStats.html>
+2017A Observations
+<http://www.cfht.hawaii.edu/Science/CFIS-DATA//CFIS_Exposures_17Am02.html>
+2017B Observations
+<http://www.cfht.hawaii.edu/Science/CFIS-DATA//CFIS_Exposures_17Bm01.html>
+2018A Observations
+<http://www.cfht.hawaii.edu/Science/CFIS-DATA//CFIS_Exposures_18Am01.html>
+SkyProbe Archive <http://www.cfht.hawaii.edu/Instruments/Elixir/skyprobe/>
+
+	
+
+
+  Browsing the CFIS exposures lists
+
+A single ASCII string is compiled per acquired exposure based on the
+various information located in the exposure FITS header, the Elixir
+statistics and the QSO validation flags. This single line contains the
+basic properties to define and characterize that exposure.
+
+This information, uniform over all the exposures of the survey, aims at
+setting the first order of data quality assessment of the survey: the
+higher level statistics proposed on these CFIS DATA pages are derived
+from these lists of exposures.
+
+A color code is used to differentiate the 2 components of the CFIS dataset:
+
+*CFIS u-band* 	*CFIS r-band*
+
+A given exposure is documented as:
+
+ 
+ 
+ *2074309 | 16Bm07 Jan 27 03:03:44 17 | 17AP30 Nr0051_1 | 10:44:00.0  30:00:00 2000 | 300 | r | 1.02 | 0.50 0.53   687 |     OG1 |   OB151 |P 1 V Q R|**
+ *
+
+**
+
+The separator is the "|" character and there are a total of 11 fields,
+some having several sub-fields. The following sections describe each of
+the 11 fields individually.
+
+------------------------------------------------------------------------
+
+
+ 
+ *2074309* | 16Bm07 Jan 27 03:03:44 17 | 17AP30 Nr0051_1 | 10:44:00.0  30:00:00 2000 | 300 | r | 1.02 | 0.50 0.53   687 |     OG1 |   OB151 |P 1 V Q R|
+ 
+
+*The filename:* the CFHT odometer number
+
+CFHT uses a unique filename identificator for each exposure. Started in
+the 90s as a six digits code, it is now well within a 7 digits code.
+There can't be two exposures with the same odometer number, it is the
+best identificator for a given exposure.
+
+------------------------------------------------------------------------
+
+
+ 
+ 2074309 | *16Bm07* Jan 27 03:03:44 17 | 17AP30 Nr0051_1 | 10:44:00.0  30:00:00 2000 | 300 | r | 1.02 | 0.50 0.53   687 |     OG1 |   OB151 |P 1 V Q R|
+ 
+
+*The observing run:* Elixir run ID
+
+This field is the granularity element used at CFHT to track a MegaCam
+observing run (given instrument setup from start to end, regardless of
+semester boundaries). The first three letters define the semester (17A
+for the first semester of the year 2017) and the last three letters
+define the Elixir run ID.
+<http://www.cfht.hawaii.edu/Science/CFIS-DATA//megacamschedule.html>
+
+------------------------------------------------------------------------
+
+
+ 
+ 2074309 | 16Bm07 *Jan 27 03:03:44 17* | 17AP30 Nr0051_1 | 10:44:00.0  30:00:00 2000 | 300 | r | 1.02 | 0.50 0.53   687 |     OG1 |   OB151 |P 1 V Q R|
+ 
+
+*The date of observation:* Hawaii local time (not UT) at the *end* of
+the exposure readout
+
+------------------------------------------------------------------------
+
+
+ 
+ 2074309 | 16Bm07 Jan 27 03:03:44 17 | *17AP30 Nr0051_1* | 10:44:00.0  30:00:00 2000 | 300 | r | 1.02 | 0.50 0.53   687 |     OG1 |   OB151 |P 1 V Q R|
+ 
+
+*CFIS Run Identificator and Field Name:* survey component and pointing
+
+There are 4 run identificators
+<http://www.cfht.hawaii.edu/Science/CFIS-DATA//cfisprograms.html> for
+the CFIS, and they do appear in the second position of the string,
+following the relevant semester which defines how a given observation is
+charged to a given time allocation for the semester.
+
+------------------------------------------------------------------------
+
+
+ 
+ 2074309 | 16Bm07 Jan 27 03:03:44 17 | 17AP30 Nr0051_1 | *10:44:00.0  30:00:00 2000* | 300 | r | 1.02 | 0.50 0.53   687 |     OG1 |   OB151 |P 1 V Q R|
+ 
+
+*Field coordinates:* right ascension, declination and epoch
+
+The fractional seconds on the declination have been removed, but those
+coordinates are precise enough to define the pointing within a few
+arcseconds. Note that these are the telescope control system coordinates
+for the observed field, not the accurate coordinates of the center of
+field that could be derived from precise astrometry analysis of the
+image (the difference is a few arcseconds).
+
+------------------------------------------------------------------------
+
+
+ 
+ 2074309 | 16Bm07 Jan 27 03:03:44 17 | 17AP30 Nr0051_1 | 10:44:00.0  30:00:00 2000 | *300* | r | 1.02 | 0.50 0.53   687 |     OG1 |   OB151 |P 1 V Q R|
+ 
+
+*Exposure time:* nearest integer value in seconds
+
+The shutter precision is 1 ms, hence it is safe to truncate the exposure
+time to the nearest integer as the exposures are always defined to be
+taken with an integral value exposure time.
+
+------------------------------------------------------------------------
+
+
+ 
+ 2074309 | 16Bm07 Jan 27 03:03:44 17 | 17AP30 Nr0051_1 | 10:44:00.0  30:00:00 2000 | 300 | *r* | 1.02 | 0.50 0.53   687 |     OG1 |   OB151 |P 1 V Q R|
+ 
+
+*Filter:* single letter definition
+
+The filters used for the CFIS are Sloan u and r: those are the new
+MegaCam filters commissioned in 2015 (u.MP9302 and r.MP9602).
+
+------------------------------------------------------------------------
+
+
+ 
+ 2074309 | 16Bm07 Jan 27 03:03:44 17 | 17AP30 Nr0051_1 | 10:44:00.0  30:00:00 2000 | 300 | r | *1.02* | 0.50 0.53   687 |     OG1 |   OB151 |P 1 V Q R|
+ 
+
+*Airmass:* airmass at the time of the start of the exposure
+
+The CFIS footprint goes up to a declination of +84 degrees, leading to
+an airmass of 2.3 at best. All attempts will be made by QSO to observe
+the CFIS at an airmass lower than 1.5, with special exclusion cases for
+the most northern sky area.
+
+------------------------------------------------------------------------
+
+
+ 
+ 2074309 | 16Bm07 Jan 27 03:03:44 17 | 17AP30 Nr0051_1 | 10:44:00.0  30:00:00 2000 | 300 | r | 1.02 | *0.50 0.53*   687 |     OG1 |   OB151 |P 1 V Q R|
+ 
+
+*Image quality:* center and outer "ring" median image quality in arcseconds
+
+As described in the "Technical Considerations" of the MegaCam/MegaPrime
+pages (1.3 Evaluation of the image quality across the field of view),
+these two image quality values define the overall quality over the full
+field of view. A typical offset of 0.05 arcseconds between the center
+and the the outer part of the field of view is to be expected. When the
+image has not been registered yet by Elixir, the image quality and
+background level that are reported come from the summit real-time Elixir
+analysis: that main number is provided, followed by the flag "RTST".
+
+------------------------------------------------------------------------
+
+
+ 
+ 2074309 | 16Bm07 Jan 27 03:03:44 17 | 17AP30 Nr0051_1 | 10:44:00.0  30:00:00 2000 | 300 | r | 1.02 | 0.50 0.53   *687* |     OG1 |   OB151 |P 1 V Q R|
+ 
+
+*Sky background:* in ADU on the raw data for the whole length of the
+exposure
+
+The Elixir statistics analysis provides the sky background (corrected
+for the detector bias level) on all 36 CCDs of the mosaic. The value
+presented here is the median value of the stack of these 36
+measurements. To convert this value to electrons, apply the median gain
+of 1.6 e-/ADU.
+
+------------------------------------------------------------------------
+
+
+ 
+ 2074309 | 16Bm07 Jan 27 03:03:44 17 | 17AP30 Nr0051_1 | 10:44:00.0  30:00:00 2000 | 300 | r | 1.02 | 0.50 0.53   687 |     *OG1* |   *OB151* |P 1 V Q R|
+ 
+
+*QSO Observing Group & Observing Block:* as encoded in PH2
+
+The OG numbers are unique within a given run ID
+<http://www.cfht.hawaii.edu/Science/CFIS-DATA//cfisprograms.html> (e.g.
+P30). They are the exact reference used within QSO. For CFIS an
+observing block is always a single exposure while an OG can be set of
+OBs (typically 7 with CFIS-r to ensure LSB mode is enabled, 14 for
+CFIS-u). The QSO PH2 fixed target (FT) number is unique to CFIS and is
+adopted directly into the OB naming. This line indicates this exposure
+covers FT151.
+
+------------------------------------------------------------------------
+
+
+ 
+ 2074309 | 16Bm07 Jan 27 03:03:44 17 | 17AP30 Nr0051_1 | 10:44:00.0  30:00:00 2000 | 300 | r | 1.02 | 0.50 0.53   687 |     OG1 |   OB151 |*P 1 V Q R*|
+ 
+
+*The five exposure flags:* sky transparency, observing rating, exposure
+validation, observing group qualification, and Elixir registration.
+
+*1) Sky transparency: *
+
+SkyProbe <http://www.cfht.hawaii.edu/Instruments/Elixir/skyprobe/>
+provides a robust way to define the absolute value of the sky
+transparency at the time of the observations (1 point every minute in
+the V-band only, clouds being gray the value applies to both u and r).
+The service observer looks both at the SkyProbe plot (which is found to
+be reliable in 97% of the cases), the satellite map, and the guide star
+flux variations to define in absolute if the conditions are or are not
+photometric. The photometric flag is set manually in real-time during
+the night by the observer for each exposure based on these inputs.
+
+The value of the flag can be either *"P"* for *Photometric* or *"A"* for
+*Absorbed*. The actual level of absorption can be derived in the V-band
+from the SkyProbe plot archive, and the MetaData also provide a table of
+the SkyProbe zero points throughout the whole night (the tabular version
+of the plot), allowing for a direct determination of the absorption for
+a given exposure.
+
+However the "Observer Rating" and the "Coordinator Rating" flags
+described below can tell a lot on the level of absorption in the case
+the "Photometric" flag has been set to the absorbed state.
+
+When no data is available, the flag is set to *"X"*.
+
+*2) Service Observer rating: *
+
+This flag ranges from 1 to 4 and is set in real-time during the night by
+the observer at the telescope.
+
+- *1:* Taken within, or better than, the conditions defined by the
+Principal Investigator in terms of seeing, sky background, and sky
+transparency.
+
+- *2:* Taken almost within the conditions defined by the Principal
+Investigator: one of the three parameters (seeing, sky background, sky
+transparency) is slightly out of boundaries.
+
+- *3:* Taken outside the conditions defined by the Principal
+Investigator: one of the parameters (seeing, sky background, sky
+transparency) is way out of boundaries, or two, or all of the parameters
+are out of bound.
+
+- *4:* Horrible observing conditions which most likely prevent any
+science to be done.
+
+- *5:*A lost cause, nothing to be done with that exposure.
+
+Note that these three defining parameters are provided in that exposure
+information line as described above (Image Quality, Sky Background, Sky
+Transparency), hence if you see the Service Observer rating flag set to
+2, 3 or 4, you can easily conclude the reason why the exposure is
+considered faulty.
+
+When no data is available, the flag is set to *"X"*.
+
+*3) QSO exposure validation: *
+
+This flag can be set to *"V"* for "Validated" or *"O"* for "Observed".
+The QSO Coordinator checks the Service Observer rating and other
+comments to define if that exposure fits within the specifications
+defined by the PI. The fact that an exposure is validated does not
+however necessarely means that its integration time will be accounted
+for in the time balance allocated to the observing program: this depends
+on the observing group validation described below.
+
+- *V:* the exposure qualifies for the science goals defined by the
+Principal Investigator. An exposure can be validated even if the Service
+Observer rating is equal to 2 since a degradation on one of the
+parameters won't most likely affect the science dramatically.
+
+- *O:* the exposure does not qualify for the science goals defined by
+the Principal Investigator. The exposure will be archived, processed,
+and distributed but the time used to acquire it is not subtracted from
+the time allocated to the observing program.
+
+When no data is available, the flag is set to *"X"*.
+
+*4) QSO Observing Group qualification: *
+
+This flag can be set to *"Q"* for "Qualified" or *"D"* for "Dismissed".
+
+When an OG is composed of a single OB, a non-validation of the OB
+implies the OG is dismissed. When an OG is composed of several OBs as in
+CFIS, the whole OG won't be qualified until all exposures have been
+successfully acquired (read Validated). This can happen even if the
+various exposures (OBs) composing the OG were taken some time apart, for
+example if one or more exposure of the OG was not validated during the
+first visit, QSO will conduct a repeat of those specific exposures (not
+the full OG) and the OG is qualified only once these exposures are
+eventually validated. In that respect, the statistics on the survey
+focus only on qualified OGs, not simply validated exposures.
+
+In consequence, the lists proposed on these pages won't tell if a given
+exposure had its integration time deducted for the observing program.
+The QSO database has more information on these relative connections and
+can compute very precise statistics actually based on Observing Groups
+validation. See this page
+<http://www.cfht.hawaii.edu/Instruments/Queue/statistics/> to consult
+the QSO based statistics (main page only, stats are not correct for the
+Large Programs).
+
+*5) Elixir registration: *
+
+This flag can be set to *"R"* for "Registered" or *"X"* if the image has
+yet to be ingested by Elixir. If the flag is set to "X", then the entire
+line is colored red as it precludes the fine derivation of proper
+statistics (the fairly close Elixir real-time summit IQ and background
+estimates are used in the meantime).
+

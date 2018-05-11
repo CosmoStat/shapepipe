@@ -28,7 +28,7 @@ import os
 import scatalog as sc
 
 
-def mkdir(direc):
+def _mkdir(direc):
    """Create directory direc.
       This function should probably go somewhere further up.
 
@@ -70,19 +70,12 @@ class SETools(object):
 
     """
 
-    def __init__(self, cat_filepath, config_filepath, output_dir, stat_output_dir=None, plot_output_dir=None):
+    def __init__(self, cat_filepath, config_filepath, output_dir, extra_file= None):
 
         self._cat_filepath = cat_filepath
         self._config_filepath = config_filepath
         self._output_dir = output_dir
-
-        # MK: The following dir names could be set to the default names if
-        # not given as argument. However, I don't know how to retrieve them here
-        # from _worker.
-        if stat_output_dir:
-            self._stat_output_dir = stat_output_dir
-        if plot_output_dir:
-            self._plot_output_dir = plot_output_dir
+        self._extra_file = extra_file
 
         self._cat_file = sc.FITSCatalog(self._cat_filepath, SEx_catalog=True)
         self._cat_file.open()
@@ -109,58 +102,54 @@ class SETools(object):
 
         ### Processing: Create mask = filter input
         if len(self._mask) != 0:
-	    direc = self._output_dir + '/mask'
-	    mkdir(direc)
+            direc = self._output_dir + '/mask'
+            _mkdir(direc)
             self._make_mask()
             for i in self.mask.keys():
                 if 'NO_SAVE' in self._mask[i]:
                     continue
-		file_name = '{}/{}{}.fits'.format(direc, i, file_number)
+                file_name = direc + '/' + i + file_number + '.fits'
                 self.save_mask(self.mask[i], file_name)
 
         if len(self._plot) != 0:
-	    direc = self._output_dir + '/plot'
-	    mkdir(direc)
-
-            self._make_plot2()
+            direc = self._output_dir + '/plot'
+            _mkdir(direc)
+            self._make_plot()
             for i in self.plot.keys():
-		output_path = '{}/{}{}'.format(direc, i, file_number)
+                output_path = direc + '/' + i + file_number
                 plot_tmp = SEPlot(self.plot[i], self._cat_file.get_data(), output_path, self.mask)
 
         if len(self._new_cat) != 0:
-	    direc = self._output_dir + '/new_cat'
-            mkdir(direc)
+            direc = self._output_dir + '/new_cat'
+            _mkdir(direc)
             self._make_new_cat()
             for i in self.new_cat.keys():
-		file_name = '{}/{}{}'.format(direc, i, file_number)
+                file_name = direc + '/' + i + file_number
                 self.save_new_cat(self.new_cat[i], file_name)
 
         if len(self._rand_split) != 0:
-	    direc = self._output_dir + '/rand_split'
-            mkdir(direc)
+            direc = self._output_dir + '/rand_split'
+            _mkdir(direc)
             self._make_rand_split()
             for i in self.rand_split.keys():
-		output_dir = '{}/{}_'.format(direc, i)
+                output_dir = direc + '/' + i + '_'
                 self.save_rand_split(self.rand_split[i], output_dir, file_number)
 
+        if len(self._flag_split) != 0:
+            direc = self._output_dir + '/flag_split'
+            _mkdir(direc)
+            self._make_flag_split()
+            for i in self.flag_mask_dict.keys():
+                output_path = direc + '/' + self._flag_split.keys()[0] + '_flag_' + i + file_number + '.fits'
+                self.save_flag_split(self.flag_mask_dict[i], output_path)
+
         if len(self._stat) != 0:
-	    direc = self._output_dir + '/stat'
-            mkdir(direc)
-            self._make_stat2()
+            direc = self._output_dir + '/stat'
+            _mkdir(direc)
+            self._make_stat()
             for i in self.stat.keys():
-		output_path = '{}/{}{}.txt'.format(direc, i, file_number)
-                self.save_stat2(self.stat[i], output_path)
-
-
-        ### Post-processing of output products
-        # Statistics
-        # self._make_stat()
-        # for mask_type in self.stat.keys():
-        #     file_name = self._stat_output_dir + '/' + mask_type + file_number + '.txt'
-        #     self.save_stat(mask_type, file_name)
-
-        # Plotting
-        # self._make_plot(file_number)
+                output_path = direc + '/' + i + file_number + '.txt'
+                self.save_stat(self.stat[i], output_path)
 
 
     #####################
@@ -177,10 +166,12 @@ class SETools(object):
         self._config_file.seek(0)
 
         self._mask={}
+        self._mask_key=[]
         self._plot={}
         self._stat={}
         self._new_cat={}
         self._rand_split={}
+        self._flag_split={}
         in_section=0
         while True:
             line_tmp = self._config_file.readline()
@@ -194,7 +185,7 @@ class SETools(object):
                 continue
 
             # Loop over SETools file, look for section headers
-            # [SECTION_TYPE:OBJECT_TYPE], e.g.
+            # [SECTION_TYPE:OBJECT_NAME], e.g.
             # [MASK:star_selection]
 
             if (in_section !=0) & (re.split('\[',line_tmp)[0] == ''):
@@ -210,6 +201,7 @@ class SETools(object):
                         mask_name = re.split(':', sec)[1]
                     except:
                         mask_name = 'mask_{0}'.format(len(self._mask)+1)
+                    self._mask_key.append(mask_name)
                     self._mask[mask_name] = []
                 elif re.split(':', sec)[0] == 'PLOT':
                     in_section = 2
@@ -239,8 +231,15 @@ class SETools(object):
                     except:
                         rand_split_name = 'rand_split_{0}'.format(len(self._rand_split)+1)
                     self._rand_split[rand_split_name] = []
+                elif re.split(':', sec)[0] == 'FLAG_SPLIT':
+                    in_section = 6
+                    try:
+                        flag_split_name = re.split(':', sec)[1]
+                    except:
+                        flag_split_name = 'flag_split_{0}'.format(len(self._flag_split)+1)
+                    self._flag_split[flag_split_name] = []
                 else:
-                    raise Exception("Section has to be in ['MASK','PLOT','STAT','NEW_CAT','RAND_SPLIT']")
+                    raise Exception("Section has to be in ['MASK','PLOT','STAT','NEW_CAT','RAND_SPLIT','FLAG_SPLIT']")
             else:
                 if in_section == 1:
                     self._mask[mask_name].append(line_tmp)
@@ -252,6 +251,9 @@ class SETools(object):
                     self._new_cat[new_cat_name].append(line_tmp)
                 elif in_section == 5:
                     self._rand_split[rand_split_name].append(line_tmp)
+                elif in_section == 6:
+                    self._flag_split[flag_split_name].append(line_tmp)
+
 
 
     def _clean_line(self, line):
@@ -398,7 +400,33 @@ class SETools(object):
             rand_split_file = sc.FITSCatalog(output_path + i + file_number + '.fits', open_mode=sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog=True)
             rand_split_file.save_as_fits(data=data[rand_split[i]], ext_name=ext_name, sex_cat_path=self._cat_filepath)
 
-    def save_stat2(self, stat, output_path):
+    def save_flag_split(self, flag_split, output_path, ext_name='LDAC_OBJECTS'):
+        """Save flag splitted catalogs
+
+        Save catalogs following the flag split specified.
+
+        Parameters
+        ----------
+        flag_split : dict
+            Dictionary containing the indices for the split and mask to apply
+        output_path : str
+            Path of the output file
+        ext_name : str
+            Name of the extension where data are stored
+
+        """
+
+        if flag_split is None:
+            raise ValueError('flag_split not provided')
+
+        if output_path is None:
+            raise ValueError('output path not provided')
+
+        data = self._cat_file.get_data()[flag_split]
+        flag_split_file = sc.FITSCatalog(output_path, open_mode= sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog= True)
+        flag_split_file.save_as_fits(data=data , ext_name=ext_name, sex_cat_path=self._cat_filepath)
+
+    def save_stat(self, stat, output_path):
         """Save statistics
 
         Save the statistics in ASCII format.
@@ -426,18 +454,6 @@ class SETools(object):
         f.close()
 
 
-    def save_stat(self, mask_type, output_file):
-        print('Writing stats to file {}'.format(output_file))
-        f = open(output_file, 'w')
-        print('# Statistics', file=f)
-
-        for stat in self.stat[mask_type]:
-            string = '{} = {}'.format(stat, self.stat[mask_type][stat])
-            print(string, file=f)
-
-        f.close()
-
-
     #####################
     # Bulding functions #
     #####################
@@ -453,7 +469,7 @@ class SETools(object):
             return None
 
         self.mask = {}
-        for i in self._mask.keys():
+        for i in self._mask_key:
             mask_tmp = np.ones(self._cat_size, dtype=bool)
             for j in self._mask[i]:
                 if j == 'NO_SAVE':
@@ -461,8 +477,7 @@ class SETools(object):
                 mask_tmp &= sc.interpreter(j, self._cat_file.get_data(), make_compare=True, mask_dict=self.mask).result
             self.mask[i] = mask_tmp
 
-
-    def _make_plot2(self):
+    def _make_plot(self):
         """Make plot
 
         This function interpret the different parameters for the plot.
@@ -559,7 +574,30 @@ class SETools(object):
             self.rand_split[i]['ratio_{0}'.format(int(ratio*100))] = mask_ratio
             self.rand_split[i]['ratio_{0}'.format(100-int(ratio*100))] = mask_left
 
-    def _make_stat2(self):
+    def _make_flag_split(self):
+        """Make flag split
+
+        This function create masks based on flags provided as a numpy extra file.
+
+        """
+
+        if len(self._flag_split) == 0:
+            return None
+
+        if self._extra_file is None:
+            raise ValueError('An extra numpy file containing the flags has to provide for the flag split.')
+
+        try:
+            flags = np.load(self._extra_file)
+        except:
+            raise ValueError("Can't open extra file : {}".format(self._extra_file))
+
+        self.flag_mask_dict = {}
+        for j in set(flags):
+            self.flag_mask_dict[str(j)] = np.where(flags == j)
+
+
+    def _make_stat(self):
         """Make statistics
 
         This function interpret the different statistics required.
@@ -575,219 +613,9 @@ class SETools(object):
             for j in self._stat[i]:
                 s = re.split('=', j)
                 if len(s) != 2:
-                    raise ValueError('Stats keyword/value not in correct format (key=val): {}'.format(j))
-                self.stat[i][s[0]] = sc.interpreter(s[1], self._cat_file.get_data(), make_compare=False, mask_dict=self.mask).result
+                    raise ValueError('Not a good format : {}'.format(j))
+                self.stat[i][s[0]] = sc.interpreter(s[1], self._cat_file.get_data(), make_compare= False, mask_dict= self.mask).result
 
-
-    def _make_plot(self, file_number):
-        """Produce plots, and writes them to disk as pdf files.
-           TODO: Move saving of plots outside this method.
-
-        Parameters
-        ----------
-        file_number: int
-            running image number
-
-        Returns
-        -------
-        None
-        """
-
-        self.plot = {}
-        # Loop over mask types (different selections)
-        for mask_type in self._plot:
-
-            # Loop over lines in plot section, make plot for each line
-            for plot_line in self._plot[mask_type]:
-
-                fig, ax = self.create_new_plot()
-                plot_type, plot_x, plot_y, cmds = self.get_plot_info_from_line(plot_line)
-
-                if mask_type == 'ALL':
-
-                    # Special mask type (plot all selections in one plot). Add to plot
-                    # all objects (no mask), and all masks in config file
-                    self.fill_plot_from_mask(ax, 'ALL', plot_type, plot_x, plot_y)
-                    for mask_type_for_all in self._mask:
-                        self.fill_plot_from_mask(ax, mask_type_for_all, plot_type, plot_x, plot_y)
-
-                else:
-
-                    self.fill_plot_from_mask(ax, mask_type, plot_type, plot_x, plot_y)
-
-                self.finalize_plot(ax, plot_x, plot_y, cmds=cmds)
-                self.save_plot(mask_type, '{}:{}:{}'.format(plot_type, plot_x, plot_y), file_number)
-
-    def get_plot_info_from_line(self, plot_line):
-        """Return plot information from line in PLOT section
-
-        Parameters
-        ----------
-        plot_line: ':'-separated string
-            plot information (line in config file)
-
-        Returns
-        -------
-        plot_type: string
-            plot type
-        plot_x: string
-            column name to be plotted as x axis
-        plot_y: string
-            column name to be plotted as y axis
-        cmds: string
-            extra plt commands to be run (can None)
-        """
-
-        # The following can be done with better parsing...
-        line = re.split(':', plot_line)
-        if len(line) < 3:
-            raise Exception('Plot definition needs to have at least three entries (type, x, y), found {}'.format(len(line)))
-
-        plot_type = line[0]
-        plot_x    = line[1]
-        plot_y    = line[2]
-        if len(line) > 3:
-            cmds = line[3]
-        else:
-            cmds = []
-
-        return plot_type, plot_x, plot_y, cmds
-
-    def create_new_plot(self):
-        """Create a new plot.
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        -------
-        fig: figure object
-            current figure
-        ax: axes object
-            current axes
-        """
-
-        fig = plt.clf()
-        ax  = plt.gca()
-
-        return fig, ax
-
-    def fill_plot_from_mask(self, ax, mask_type, plot_type, plot_x, plot_y):
-        """Fill plot with data from mask/selection.
-
-        Parameters
-        ----------
-        ax: axes object
-            current axes
-        mask_type: string
-            mask (selection) type, define section in config file,
-            'ALL' for no mask (select all objects)
-        plot_type: string
-            plot type
-        plot_x: string
-            column name to be plotted as x axis
-        plot_y: string
-            column name to be plotted as y axis
-
-        Returns
-        -------
-        None
-        """
-
-        # Get objects in mask
-        if mask_type == 'ALL':
-            dat = self._cat_file.get_data()
-        else:
-            dat = self._cat_file.get_data()[self.mask[mask_type]]
-
-        x   = dat[plot_x]
-        y   = dat[plot_y]
-
-        # Plot
-        if plot_type == 'scatter':
-            ax.scatter(x, y, 1, label=mask_type)
-            #plt.plot(x, y, 'o', markersize=3, markeredgewidth=0.3, markerfacecolor='none', label=mask_type)
-        else:
-            raise Exception('Plot type \'{}\' not supported'.format(plot_type))
-
-    def finalize_plot(self, ax, plot_x, plot_y, cmds=[]):
-        """Performe cosmetics on plot at the end, should be called once, before saving plot.
-
-        Parameters
-        ----------
-        plot_x: string
-            column name to be plotted as x axis
-        plot_y: string
-            column name to be plotted as y axis
-        cmds: string, optiona, default=[]
-            extra plt commands
-
-        Returns
-        -------
-        None
-        """
-
-        # TODO: How do we get the units?
-        plt.xlabel(plot_x)
-        plt.ylabel(plot_y)
-        plt.legend()
-
-        if len(cmds) > 0:
-            cmd_list = re.split(';', cmds)
-            for cmd in cmd_list:
-                exec(cmd)
-
-    def save_plot(self, mask_type, plot_name, file_number):
-        """Save plot to file.
-
-        Parameters
-        ----------
-        mask_type: string
-            mask (selection) type
-        plot_name: string
-            plot information (line in config file)
-        file_number: int
-            running image number
-
-        Returns
-        -------
-        None
-        """
-
-        # TODO: check if plot_name already exists, if yes create unique name
-        out_name = '{}/{}-{}{}.pdf'.format(self._plot_output_dir, mask_type, plot_name, file_number)
-        print('Saving plot to file {}'.format(out_name))
-        plt.savefig('{}'.format(out_name))
-
-    def _make_stat(self):
-        """Compute statistics on output products.
-           Fill self.stat with results of stats computations.
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        -------
-        None
-        """
-
-        self.stat = {}
-        # Loop over mask types (different selections)
-        for mask_type in self._stat:
-
-            self.stat[mask_type] = {}
-
-            # Loop over statistics (lines in stat section)
-            for stat in self._stat[mask_type]:
-
-                if stat == 'NUMBER_OBJ':
-                    # Number of selected objects
-                    res = len(self._cat_file.get_data()[self.mask[mask_type]])
-                    self.stat[mask_type][stat] = res
-                else:
-                    print('Warning: statistic \'{}\' not supported, continuing...'.format(stat))
 
 
 class SEPlot(object):
@@ -904,13 +732,13 @@ class SEPlot(object):
                     marker = '+'
             else:
                 marker = '+'
-	    if 'MARKERSIZE' in self._plot.keys():
+            if 'MARKERSIZE' in self._plot.keys():
                 try:
-		    markersize = self._plot['MARKERSIZE'][i]
+                    markersize = self._plot['MARKERSIZE'][i]
                 except:
-		    markersize = 1
-	    else:
-	        markersize = 1
+                    markersize = 1
+            else:
+                markersize = 1
             if 'LINE' in self._plot.keys():
                 try:
                     line = self._plot['LINE'][i]
@@ -934,10 +762,16 @@ class SEPlot(object):
                 else:
                     raise ValueError("You need to specified X for each Y provided if they dont have the same")
 
-            plt.plot(sc.interpreter(x, self._cat, mask_dict=self._mask_dict).result,
-                     sc.interpreter(self._plot['Y'][i], self._cat, mask_dict=self._mask_dict).result,
-                     label=label, color=color, marker=marker, ls=line, alpha=alpha, figure=self._fig,
-		     markersize=markersize)
+            plt.plot(sc.interpreter(x, self._cat, mask_dict= self._mask_dict).result,
+                     sc.interpreter(self._plot['Y'][i], self._cat, mask_dict= self._mask_dict).result,
+                     label= label, color= color, marker= marker, markersize=markersize, ls= line, alpha= alpha, figure= self._fig)
+
+        if 'XLIM' in self._plot.keys():
+            try:
+                xlim = re.split(',', self._plot['XLIM']['0'])
+                plt.xlim(float(xlim[0]), float(xlim[1]))
+            except:
+                raise ValueError('Plot XLIM keyword/value not in correct format (XLIM=xl,xu): {}'.format(self._plot['XLIM']['0']))
 
         if 'LABEL' in self._plot.keys():
             plt.legend()
@@ -1092,7 +926,7 @@ class SEPlot(object):
         else:
             htype = 'bar'
         if 'LOG' in self._plot.keys():
-            if self._plot['LOG']['0'] in ('True', 'true', '1'):
+            if self._plot['LOG']['0'] in ['True', 'true', '1']:
                 log = True
             else:
                 log = False

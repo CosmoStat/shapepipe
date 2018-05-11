@@ -157,12 +157,17 @@ class PackageRunner(object):
         This method executes the script SETools_script.
 
         """
+        
+        extra_file = None
+        if len(self._fnames['input_filepath']) == 2:
+            extra_file = self._fnames['input_filepath'][1]
+        elif len(self._fnames['input_filepath']) > 2:
+            raise ValueError('You can provide only one extra file.')
 
         r=setools.SETools(cat_filepath=self._fnames['input_filepath'][0],
                           config_filepath=self._fnames['config_filepath'],
                           output_dir=self._worker.result_output_dir,
-                          stat_output_dir=self._worker.stat_output_dir,
-                          plot_output_dir=self._worker.plot_output_dir)
+                          extra_file=extra_file)
         r.process()
 
 

@@ -6,19 +6,19 @@ Set the package information
 
 :Authors: Samuel Farrens
 
-:Date: 31/10/2017 (Happy Halloween!)
-
+:Date: 10/04/2018
 """
 
 __version__ = "1.0.0"
 __whoami__ = "package_name"
 
 # Python dependencies
-pipe_depend = ['mpfg', 'mpfx', 'scatalog', 'sconfig', 'slogger']
+pipe_depend = ['mpfg', 'mpfx', 'scatalog', 'sconfig', 'shapepipe_base',
+               'slogger']
 external_depend = ['numpy']
 
 __python_depend__ = pipe_depend + external_depend
 
 # System dependencies
 
-__system_depend__ = ['diff']
+__system_depend__ = ['diff', 'ls']

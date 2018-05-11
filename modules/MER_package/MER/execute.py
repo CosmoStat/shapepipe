@@ -4,18 +4,20 @@
 
 This module contain a class for executing the package specific code.
 
-:Authors: Samuel Farrens and Marc Gentile
+:Authors: Samuel Farrens, Marc Gentile, Axel Guinot and Morgan Schmitz
 
-:Date: 31/10/2017 (Happy Halloween!)
+:Date: 07/05/2018
 
 """
 
 # -- Python imports
 import os
+import re
 from time import clock
 from shutil import copy
 
-import interpolation_script as interp
+import numpy as np
+import scatalog as sc
 
 
 class PackageRunner(object):
@@ -90,9 +92,6 @@ class PackageRunner(object):
             # --- Set input and output files names required to run code
             self._set_filenames()
 
-            # --- Set the execution command for the code
-            self._set_exec_line()
-
             # --- Execute the code
             self._exec_code()
 
@@ -131,14 +130,13 @@ class PackageRunner(object):
         input_filename = (os.path.splitext(os.path.split(
                           self._fnames['input_filepath'][0])[1])[0])
 
-        # --- Executable configuration file
-        # self._fnames['config_filepath'] = self._get_exec_config_filepath()
-
         # --- Target directory where to store files
-        output_path = os.path.join(self._worker.result_output_dir, '')
+        output_path = os.path.join(self._worker.result_output_dir,
+                                   self._job.get_branch_tree())
 
-        # --- Output file name
-        self._fnames['output_filepath'] = output_path
+        # --- Outpu file name
+        self._fnames['output_filepath'] = os.path.join(output_path,
+                                                       input_filename)
 
         # --- Expected output catalog file name
         output_cat_filename_exp = (self._get_output_catalog_filename(
@@ -151,29 +149,11 @@ class PackageRunner(object):
 
         self._log_exp_output(self._fnames['output_filepath_exp'])
 
-        # -- Load an extra code option from config file
-        self._fnames['extra_option'] = (self._worker.config.get_as_string(
-                                        'EXTRA_CODE_OPTION', 'CODE')).split()
+        self._fnames['world_coord'] = self._load_world_coord()
 
-    def _set_exec_line(self):
+        self._fnames['rect_file'] = self._get_rect_filepath()
 
-        """Set the Command Line to be Executed
-
-        This method defines the command line for the code corresponding to this
-        package.
-
-        """
-
-        # --- Execution line
-        exec_path = self._worker.config.get_as_string('EXEC_PATH', 'CODE')
-        self._exec_line = ('{0} {1} {2} {3} {4}').format(
-                           exec_path,
-                           self._fnames['input_filepath'][0],
-                           self._fnames['input_filepath'][1],
-                           self._fnames['output_filepath'],
-                           self._fnames['extra_option'])
-
-        self._log_exec_line()
+        # self._fnames['make_plot'] = self._worker.config.get_as_boolean('MAKE_PLOT', 'CODE')
 
     def _exec_code(self):
 
@@ -187,65 +167,8 @@ class PackageRunner(object):
         line differently. e.g. using subprocess, etc.
 
         """
-        interpolator = (interp.PSFExInterpolator(
-                        self._fnames['input_filepath'][0],
-                        self._fnames['input_filepath'][1],
-                        self._fnames['output_filepath'],
-                        self._fnames['extra_option']))
-        interpolator.write_output()
 
-    def _get_exec_config_filepath(self):
-
-        """ Get Executable Configuration File
-
-        This method finds and returns the cofiguration file (with full path) to
-        use.
-
-        Returns
-        -------
-        str configuration file name with full path
-
-        """
-
-        default_filename = (self._worker.config.get_as_string(
-                            'DEFAULT_FILENAME', 'CODE'))
-        found_files = (self._helper.locate_files([default_filename],
-                       self._worker.base_input_dir))
-
-        if len(found_files) > 0:
-
-            config_filepath = found_files[0]
-
-            if self._worker.logging_enabled():
-                temp_string = ('{0} - /{1}/run-{2:03}-{3:1d} - '
-                               'Using configuration file: '
-                               '{4}')
-                self._worker.logger.log_info_p(temp_string.format(
-                                               self._worker.name,
-                                               self._job.get_branch_tree(),
-                                               self._job.img_no,
-                                               self._job.epoch,
-                                               config_filepath))
-                self._worker.logger.flush()
-
-            # --- Make a copy of the used config file to the log directory
-            # for record
-            copy(config_filepath, self._worker.log_output_dir)
-
-            return config_filepath
-
-        else:
-            if self._worker.logging_enabled():
-                temp_string = ('{0} - /{1}/img-{2:03}-{3:1d} - '
-                               'Could not find config file {4}')
-                self._worker.logger.log_warning_p(temp_string.format(
-                                                  self._worker.name,
-                                                  self._job.get_branch_tree(),
-                                                  self._job.img_no,
-                                                  self._job.epoch,
-                                                  default_filename))
-                self._worker.logger.flush()
-            return None
+        self.process()
 
     def _get_output_catalog_filename(self, filepath):
 
@@ -293,28 +216,6 @@ class PackageRunner(object):
                                            file_path))
             self._worker.logger.flush()
 
-    def _log_exec_line(self):
-
-        """ Update log with expected output catalogue name
-
-        Parameters
-        ----------
-        exec_line : str
-            Execution line to be run
-
-        """
-
-        if self._worker.logging_enabled():
-            temp_string = ('{0} - /{1}/run-{2:03}-{3:1d} - '
-                           'Executing command: {4}')
-            self._worker.logger.log_info_p(temp_string.format(
-                                           self._worker.name,
-                                           self._job.get_branch_tree(),
-                                           self._job.img_no,
-                                           self._job.epoch,
-                                           self._exec_line))
-            self._worker.logger.flush()
-
     def _log_output_success(self, file_path):
 
         """ Update log with status of output success
@@ -343,3 +244,191 @@ class PackageRunner(object):
                                                 self._worker.name,
                                                 self._job))
             self._worker.logger.flush()
+
+    def process(self):
+        """Process
+
+        Process the tile to create region's flags file.
+
+        """
+
+        cat = sc.FITSCatalog(self._fnames['input_filepath'][0], SEx_catalog= True)
+        cat.open()
+        cat_header = cat.get_data(1)[0][0]
+        # print(np.array([cat.get_data()[self._fnames['world_coord'][0]], cat.get_data()[self._fnames['world_coord'][1]]]).T)
+
+        try:
+            field_coords = np.array([cat.get_data()[self._fnames['world_coord'][0]], cat.get_data()[self._fnames['world_coord'][1]]]).T
+        except:
+            raise ValueError('World coordinates not found : {}'.format(self._fnames['world_coord']))
+
+        cat.close()
+
+        exprs_names = self._get_exp_name(cat_header)
+        rect = self._load_rectangles()
+        flag_exp = self._make_flags(field_coords, exprs_names, rect)
+        self._save_flags(flag_exp)
+
+    def _load_world_coord(self):
+        """Load world coordinates paramaters
+
+        Load the world coordinates to use from catalog.
+
+        Returns
+        -------
+        list of the world coordinates
+
+        """
+
+        world_params = self._worker.config.get_as_string('WORLD_COORD', 'CODE').split()
+
+        if len(world_params) != 2:
+            raise ValueError('You has to provide 2 World coordinates')
+
+        return world_params
+
+    def _get_rect_filepath(self):
+        """Load rectangle file
+
+        Load the file containing the coordinates of rectangle defining each single exposures.
+
+        Returns
+        -------
+        str fullpath to the rectangle file
+
+        """
+
+        file_name = self._worker.config.get_as_string('RECT_FILE', 'CODE')
+        config_dir = self._worker.base_input_dir
+        full_path = config_dir + '/' + file_name
+
+        if not os.path.isfile(full_path):
+            raise ValueError('Rect file not found : {}'.format(full_path))
+
+        return full_path
+
+    def _get_exp_name(self, header):
+        """Get exposures name
+
+        Get the name of the single exposures used for the tiles.
+
+        Parameters
+        ----------
+        header : chararray
+            Tile's header from a SExtractor catalog (hdu = 1)
+
+        Returns
+        -------
+        list of the single exposures
+
+        """
+
+        exp_name = []
+        for i in header:
+            if i.split()[0] == 'HISTORY':
+                exp_name.append(i.split()[3][:-6])
+
+        return exp_name
+
+    def _check_obj_in_exp(self, pos, hori_rect, vert_rect):
+        """Check objects in exposures
+
+        Check if an objects belongs to a single exposure.
+
+        Parameters
+        ----------
+        pos : numpy.ndarray
+            Position of the object
+        hori_rect : numpy.ndarray
+            Limit of the horizontal rectangle
+        vert_rect : numpy.ndarray
+            Limit of the vertical rectangle
+
+        Returns
+        -------
+        Boolean
+            True if the object is in the single exposure, False otherwise
+
+        """
+
+        belong = False
+
+        if (vert_rect[0,0] < pos[0] < vert_rect[1,0]) and (vert_rect[0,1] < pos[1] < vert_rect[1,1]):
+            belong = True
+        elif (hori_rect[0,0] < pos[0] < hori_rect[1,0]) and (hori_rect[0,1] < pos[1] < hori_rect[1,1]):
+            belong = True
+
+        return belong
+
+    def _load_rectangles(self):
+        """Load rectangles
+
+        Load the rectangles of defining each single exposures
+
+        Returns
+        -------
+        list containing 2 dictionaries for each single exposures defining limits of the rectangles
+
+        """
+
+        try:
+            rect = np.load(self._fnames['rect_file'])
+        except:
+            raise ValueError('Impossible to load rectangles : {}'.format(self._fnames['rect_file']))
+
+        return rect
+
+    def _make_flags(self, field_coords, exp_name, rect):
+        """Make flags
+
+        Flag each objects depending of the combination of each single exposures.
+
+        Parameters
+        ----------
+        field_coords : numpy.ndarray
+            Position of each objects
+        exp_name : list
+            List with the name of each single exposures contributing to the tile
+        rect : list
+            List containing 2 dictionaries with the position of the rectangles for each single exposures
+
+        Returns
+        -------
+        numpy.ndarray
+            Array with a flag for each object
+        """
+
+        nb_obj = field_coords.shape[0]
+        flag_exp = np.zeros(nb_obj, dtype= int)
+        for i, exp in enumerate(exp_name):
+            hori_rect = rect[0][exp]
+            vert_rect = rect[1][exp]
+            flag_exp += np.array([2**i if self._check_obj_in_exp(pos, hori_rect, vert_rect) else 0 for pos in field_coords])
+
+        for i, flag_val in enumerate(sorted(list(set(flag_exp)))):
+            flag_exp[flag_exp == flag_val] = i
+
+        return flag_exp
+
+    def _save_flags(self, exp_flag):
+        """Save flags
+
+        Save flags into a numpy file.
+
+        Parameters
+        ----------
+        exp_flag : numpy.ndarray
+            Array with the flag for each object
+
+        """
+
+        s = re.split('-', os.path.split(self._fnames['input_filepath'][0])[1])
+        output_name = self._worker.result_output_dir + '/' + s[0] + '_exp_flag' + '-' + s[1] + '-' + s[2]
+
+        np.save(output_name, exp_flag)
+
+    def _make_plot(self):
+        """Make plot
+        """
+
+        pass
