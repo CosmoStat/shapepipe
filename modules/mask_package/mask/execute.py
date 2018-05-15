@@ -157,11 +157,19 @@ class PackageRunner(object):
         This method executes the command line defined by _set_exec_line().
 
         """
-        
-        r=ms.mask(image_path=self._fnames['input_filepath'][0],
-                  weight_path=self._fnames['input_filepath'][1],
-                  config_filepath=self._fnames['config_filepath'],
-                  output_dir=self._worker.result_output_dir)
+        if len(self._fnames['input_filepath']) > 3:
+            raise ValueError('Maximum two files can be provided : [image_path, weight_path, external_flag_path(optional)]')
+        elif len(self._fnames['input_filepath']) == 3:
+            r=ms.mask(image_path=self._fnames['input_filepath'][0],
+                      weight_path=self._fnames['input_filepath'][1],
+                      config_filepath=self._fnames['config_filepath'],
+                      output_dir=self._worker.result_output_dir,
+                      path_external_flag=self._fnames['input_filepath'][2])
+        else:
+            r=ms.mask(image_path=self._fnames['input_filepath'][0],
+                      weight_path=self._fnames['input_filepath'][1],
+                      config_filepath=self._fnames['config_filepath'],
+                      output_dir=self._worker.result_output_dir)
         r.make_mask()
 
     def _get_exec_config_filepath(self):
