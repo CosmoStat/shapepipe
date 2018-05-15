@@ -103,7 +103,7 @@ class PackageRunner(object):
         except Exception as detail:
 
             if self._worker.logging_enabled():
-                temp_string = ('{0} - An error occurred while generating '
+                temp_string = ('{0} - mask[0]: An error occurred while generating '
                                'catalog: {1} ({2})')
                 self._worker.logger.log_error_p(temp_string.format(
                                                 self._worker.name,
@@ -275,19 +275,14 @@ class PackageRunner(object):
         """
 
         if self._worker.logging_enabled():
-            if os.path.exists(file_path):
-                temp_string = ('{0} - /{1}/run-{2:03}-{3:1d} - '
-                               'Catalog {4} generated successfully')
-                self._worker.logger.log_info_p(temp_string.format(
-                                               self._worker.name,
-                                               self._job.get_branch_tree(),
-                                               self._job.img_no,
-                                               self._job.epoch,
-                                               file_path))
-            else:
-                temp_string = ('{0} - An error occurred while generating '
-                               'catalog: {1}')
-                self._worker.logger.log_error_p(temp_string.format(
-                                                self._worker.name,
-                                                self._job))
+    
+            temp_string = ('{0} - /{1}/run-{2:03}-{3:1d} - '
+                           'Catalog {4} generated successfully')
+            self._worker.logger.log_info_p(temp_string.format(
+                                           self._worker.name,
+                                           self._job.get_branch_tree(),
+                                           self._job.img_no,
+                                           self._job.epoch,
+                                           file_path))
+            
             self._worker.logger.flush()

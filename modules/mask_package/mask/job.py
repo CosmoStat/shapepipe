@@ -120,7 +120,7 @@ class PackageJobProcessor(mpfx_job.MpfxJobProcessor):
                     results_dict[file_types[0]] = {}
 
             if worker.logging_enabled():
-                temp_string = ('{0} - Processing Input Files {1}')
+                temp_string = ('{0} - mask: Processing Input Files {1}')
                 worker.logger.log_info_p(temp_string.format(worker.name,
                                          filepath))
                 worker.logger.flush()
