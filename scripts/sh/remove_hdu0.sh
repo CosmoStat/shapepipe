@@ -1,4 +1,4 @@
-#!/usr/local/bin/csh
+#!/usr/bin/env csh
 
 # Script  remove_hdu0.sh
 # Author: Martin Kilbinger
@@ -12,8 +12,8 @@
 
 foreach i (*.r.weight.fits.fz)
 	set new = `basename $i .fz`
-	echo "~/share/cexamples/imcopy $i\[1\] $new"
-	~/share/cexamples/imcopy $i\[1\] $new
+	echo "imcopy $i\[1\] $new"
+	imcopy $i\[1\] $new
 end
 
 

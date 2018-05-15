@@ -18,6 +18,10 @@ import sys
 import os
 import glob
 import re
+import copy
+
+from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
+
 
 import cfis
 import stuff
@@ -38,8 +42,10 @@ def params_default():
     """
 
     p_def = stuff.param(
-        input_dir  = '../area_CVn',
+        input_dir  = '.',
         band       = 'r',
+        tile_base_new = 'CFIS',
+        weight_base_new = 'CFIS.weight',
     )
 
     return p_def
@@ -61,16 +67,85 @@ def parse_options(p_def):
         Command line string
     """
 
-    return p_def
+    usage  = "%prog [OPTIONS]"
+    parser = OptionParser(usage=usage)
+
+    parser.add_option('-i', '--input_dir', dest='input_dir', type='string', default=p_def.input_dir,
+         help='input directorty, default=\'{}\''.format(p_def.input_dir))
+    parser.add_option('-b', '--band', dest='band', type='string', default=p_def.band,
+        help='band, one of \'r\' (default)|\'u\'')
+
+    parser.add_option('', '--tile_base_new', dest='tile_base_new', type='string', default=p_def.tile_base_new,
+         help='tile base name of link to be created, default=\'{}\''.format(p_def.tile_base_new))
+    parser.add_option('', '--weight_base_new', dest='weight_base_new', type='string', default=p_def.weight_base_new,
+         help='weight base name of link to be created, default=\'{}\''.format(p_def.weight_base_new))
+
+    parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
+
+    options, args = parser.parse_args()
+
+    return options, args
 
 
-def create_links(input_dir, band):
+
+def check_options(options):
+    """Check command line options.
+
+    Parameters
+    ----------
+    options: tuple
+        Command line options
+
+    Returns
+    -------
+    erg: bool
+        Result of option check. False if invalid option value.
+    """
+
+    return True
+
+
+
+def update_param(p_def, options):
+    """Return default parameter, updated and complemented according to options.
+    
+    Parameters
+    ----------
+    p_def:  class stuff.param
+        parameter values
+    optiosn: tuple
+        command line options
+    
+    Returns
+    -------
+    param: class stuff.param
+        updated paramter values
+    """
+
+    param = copy.copy(p_def)
+
+    # Update keys in param according to options values
+    for key in vars(param):
+        if key in vars(options):
+            setattr(param, key, getattr(options, key))
+
+    # Add remaining keys from options to param
+    for key in vars(options):
+        if not key in vars(param):
+            setattr(param, key, getattr(options, key))
+
+    return param
+
+
+
+def create_links(input_dir, tile_base_new, weight_base_new, band, verbose=False):
 
     # Read all file names
     file_list = glob.glob('{}/*'.format(input_dir))
     file_list.sort()
 
-    print('Found {} files'.format(len(file_list)))
+    if verbose:
+        print('Found {} files'.format(len(file_list)))
 
     # Filter file list to match CFIS image pattern for tiles
     img_list = []
@@ -81,10 +156,13 @@ def create_links(input_dir, band):
         if len(m) != 0:
             img_list.append(img)
 
-    print('Found {} CFIS images (tiles)'.format(len(img_list)))
+    if verbose:
+        print('Found {} CFIS images (tiles)'.format(len(img_list)))
 
     # Create links
-    print('Creating links:')
+    if verbose:
+        print('Creating links:')
+
     num = 0
     ext = 'fits'
     for img in img_list:
@@ -108,12 +186,14 @@ def create_links(input_dir, band):
         if not os.path.isfile(weight_path):
             stuff.error('Weight file \'{}\' not found'.format(weight_path))
 
-        link_name_tile = '{}-{:03d}-0.{}'.format(tile_base, num, ext)
-        print(' {} <- {}'.format(img, link_name_tile))
+        link_name_tile = '{}-{:03d}-0.{}'.format(tile_base_new, num, ext)
+        if verbose:
+            print(' {} <- {}'.format(img, link_name_tile))
         os.symlink(img, link_name_tile)
 
-        link_name_weight = '{}-{:03d}-0.{}'.format(weight_base, num, ext)
-        print(' {} <- {}'.format(weight_path, link_name_weight))
+        link_name_weight = '{}-{:03d}-0.{}'.format(weight_base_new, num, ext)
+        if verbose:
+            print(' {} <- {}'.format(weight_path, link_name_weight))
         os.symlink(weight_path, link_name_weight)
 
         num = num + 1
@@ -127,9 +207,15 @@ def main(argv=None):
     # Set default parameters
     p_def = params_default()
 
-    param = p_def
+    # Command line options
+    options, args = parse_options(p_def)
 
-    create_links(param.input_dir, param.band)
+    if check_options(options) is False:
+        return 1
+
+    param = update_param(p_def, options)
+
+    create_links(param.input_dir, param.tile_base_new, param.weight_base_new, param.band, verbose=param.verbose)
 
 
 if __name__ == "__main__":

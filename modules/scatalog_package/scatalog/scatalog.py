@@ -2579,7 +2579,7 @@ class interpreter(object):
 
     """
 
-    def __init__(self, string, catalog, make_compare = False, mask_dict = None):
+    def __init__(self, string, catalog, make_compare=False, mask_dict=None):
 
         if type(string) is not str:
             raise ValueError('string has to be str type')
@@ -2613,7 +2613,7 @@ class interpreter(object):
         self.result =  self.interpret(self._string, self._make_compare)
 
 
-    def interpret(self, string, make_compare = False, make_func = True, make_operate = True):
+    def interpret(self, string, make_compare=False, make_func=True, make_operate=True):
         """Interpret
 
         This function handles the different possible operations
@@ -2702,7 +2702,7 @@ class interpreter(object):
         s = re.split('\(|\)', string)
 
         if len(s) == 1:
-            return self.interpret(s[0], self._make_compare, make_func= False, make_operate= False)
+            return self.interpret(s[0], self._make_compare, make_func=False, make_operate=False)
         elif len(s) == 3:
             try:
                 ss = re.split(',',s[1])
@@ -2716,7 +2716,7 @@ class interpreter(object):
                 raise Exception('Unknown function : {0}'.format(s[0]))
         else:
             raise Exception('Only one function can be applied.'
-                            'Problem with the term : {0}'.format(string))
+                            'Problem with the term: {0}'.format(string))
 
 
     def _init_stat_function(self):
@@ -2903,15 +2903,15 @@ class interpreter(object):
             return self.interpret(string, make_operate= False)
 
         tmp = self._string_op_func(re.split('\+\s*(?![^()]*\))',string), string_split, operator.add, 0)
-        if tmp != 'pass':
+        if not np.isscalar(tmp) or tmp != 'pass':
             return tmp
         else:
             tmp = self._string_op_func(re.split('\-\s*(?![^()]*\))',string), string_split, operator.sub, 'init')
-            if tmp != 'pass':
+            if not np.isscalar(tmp) or tmp != 'pass':
                 return tmp
             else:
                 tmp = self._string_op_func(re.split('\*\s*(?![^()]*\))',string), string_split, operator.mul, 1)
-                if tmp != 'pass':
+                if not np.isscalar(tmp) or tmp != 'pass':
                     return tmp
                 else:
                     return self._string_op_func(re.split('\/\s*(?![^()]*\))',string), string_split, operator.div, 'init')
@@ -2980,8 +2980,7 @@ class interpreter(object):
 
         Note
         ----
-        You can't perform operations here !
-
+        You can't perform operations here!
         """
 
         if string is None:
@@ -2998,11 +2997,12 @@ class interpreter(object):
                 except:
                     raise ValueError('string has to be a float or a catalog parameter. {0} not found'.format(string))
             if len(s) == 3:
+	
                 if s[1] in self._mask.keys():
                     try:
                         return self._cat[s[0]][self._mask[s[1]]]
                     except:
-                        raise ValueError('string has to be a catalog parameter. {0} not found'.format(s[0]))
+                        raise ValueError('String has to be a catalog parameter. {0} not found'.format(s[0]))
                 else:
                     raise ValueError('mask has to be provided. {0} not found in mask'.format(s[1]))
 

@@ -255,6 +255,7 @@ class SETools(object):
                     self._flag_split[flag_split_name].append(line_tmp)
 
 
+
     def _clean_line(self, line):
         """Clean Lines
 
@@ -343,10 +344,10 @@ class SETools(object):
             raise ValueError('OUTPUT_FORMAT not provided')
 
         if output_format == 'fits':
-            new_file = sc.FITSCatalog(output_path + '.fits', open_mode= sc.BaseCatalog.OpenMode.ReadWrite)
+            new_file = sc.FITSCatalog(output_path + '.fits', open_mode=sc.BaseCatalog.OpenMode.ReadWrite)
             new_file.save_as_fits(data= new_cat, ext_name= ext_name)
         elif output_format == 'SEx_cat':
-            new_file = sc.FITSCatalog(output_path + '.fits', open_mode= sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog= True)
+            new_file = sc.FITSCatalog(output_path + '.fits', open_mode=sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog=True)
             new_file.save_as_fits(data= new_cat, ext_name= ext_name, sex_cat_path= self._cat_filepath)
         elif (output_format == 'txt') | (output_format == 'ascii'):
             new_file = open(output_path + '.txt', 'w')
@@ -398,7 +399,7 @@ class SETools(object):
         mask = rand_split.pop('mask')
         data = self._cat_file.get_data()[mask]
         for i in rand_split.keys():
-            rand_split_file = sc.FITSCatalog(output_path + i + file_number + '.fits', open_mode= sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog=True)
+            rand_split_file = sc.FITSCatalog(output_path + i + file_number + '.fits', open_mode=sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog=True)
             rand_split_file.save_as_fits(data=data[rand_split[i]], ext_name=ext_name, sex_cat_path=self._cat_filepath)
 
     def save_flag_split(self, flag_split, output_path, ext_name='LDAC_OBJECTS'):
@@ -515,7 +516,7 @@ class SETools(object):
             for j in self._plot[i]:
                 s = re.split('=', j)
                 if len(s) != 2:
-                    raise ValueError('Not a good format : {}'.format(j))
+                    raise ValueError('Plot option keyword/value not in correct format (key=val): {}'.format(j))
                 ss = re.split('_', s[0])
                 if len(ss) == 1:
                     self.plot[i][ss[0]] = {'0': s[1]}
@@ -524,7 +525,8 @@ class SETools(object):
                         self.plot[i][ss[0]] = {}
                     self.plot[i][ss[0]][ss[1]] = s[1]
                 else:
-                    raise ValueError('Not a good format : {}'.format(j))
+                    raise ValueError('Plot keyword not in correct format (key or key_i): {}'.format(j))
+
 
     def _make_new_cat(self):
         """Make new catalog
@@ -545,7 +547,7 @@ class SETools(object):
                     if s[0] == 'OUTPUT_FORMAT':
                         self.new_cat[i][s[0]] = s[1]
                     else:
-                        self.new_cat[i][s[0]] = sc.interpreter(s[1], self._cat_file.get_data(), make_compare= False, mask_dict= self.mask).result
+                        self.new_cat[i][s[0]] = sc.interpreter(s[1], self._cat_file.get_data(), make_compare=False, mask_dict=self.mask).result
                 else:
                     raise ValueError('Not a good format : {}'.format(j))
 
@@ -604,7 +606,6 @@ class SETools(object):
 
         if len(self._flag_split) == 0:
             return None
-
 
         if self._extra_file is None:
             raise ValueError('An extra numpy file containing the flags has to provide for the flag split.')
@@ -807,8 +808,9 @@ class SEPlot(object):
             out_format = self._plot['FORMAT']['0']
         else:
             out_format = "PNG"
-
-        self._fig.savefig(self._output_path + '.' + out_format.lower(), format= out_format)
+            
+        self._fig.savefig(self._output_path + '.' + out_format.lower(), 
+                          format=out_format)
         plt.close()
 
 
@@ -990,7 +992,7 @@ class SEPlot(object):
                 alpha = None
 
             plt.hist(sc.interpreter(self._plot['Y'][i], self._cat, mask_dict= self._mask_dict).result,
-                     bins= bins, color= color, label= label, alpha= alpha, histtype= htype, log= log)
+                     bins= bins, color= color, label= label, alpha= alpha, histtype= htype, log=log)
 
         if 'LABEL' in self._plot.keys():
             plt.legend()
