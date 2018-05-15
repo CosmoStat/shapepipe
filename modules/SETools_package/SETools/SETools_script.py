@@ -785,6 +785,11 @@ class SEPlot(object):
             out_format = self._plot['FORMAT']['0']
         else:
             out_format = "PNG"
+            
+        self._fig.savefig(self._output_path + '.' + out_format.lower(), 
+                          format=out_format)
+        plt.close()
+
 
     def _make_scatter(self):
         """Make scatter
