@@ -786,17 +786,6 @@ class SEPlot(object):
         else:
             out_format = "PNG"
 
-	if 'XLIM' in self._plot.keys():
-	    try:
-	        xlim = re.split(',', self._plot['XLIM']['0'])
-	        plt.xlim(float(xlim[0]), float(xlim[1]))
-	    except:
-	        raise ValueError('Plot XLIM keyword/value not in correct format (XLIM=xl,xu): {}'.format(self._plot['XLIM']['0']))
-
-        self._fig.savefig(self._output_path + '.' + out_format.lower(), format= out_format)
-        plt.close()
-
-
     def _make_scatter(self):
         """Make scatter
 
