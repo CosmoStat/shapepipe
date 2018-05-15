@@ -39,12 +39,13 @@ class mask(object):
 
     """
 
-    def __init__(self, image_path, weight_path, config_filepath, output_dir):
+    def __init__(self, image_path, weight_path, config_filepath, output_dir, path_external_flag=None):
 
         self._image_fullpath = image_path                                       # Path to the image to mask
         self._weight_fullpath = weight_path                                     # Path to the weight associated to the image
         self._config_filepath = config_filepath
         self._output_dir = output_dir                                           # Path to the output directory
+        self._path_external_flag = path_external_flag                           # Path to an external flag file
 
         s=re.split("\-([0-9]{3})\-([0-9]+)\.",self._image_fullpath)
         self._img_number='-{0}-{1}'.format(s[1],s[2])                           # Needed for temporary file
@@ -72,7 +73,7 @@ class mask(object):
 
         conf=sconfig.SConfig(config_filepath)
 
-        self._config={'PATH': {}, 'BORDER': {}, 'HALO': {}, 'SPIKE': {}, 'MESSIER': {}, 'MD': {}}
+        self._config={'PATH': {}, 'BORDER': {}, 'HALO': {}, 'SPIKE': {}, 'MESSIER': {}, 'MD': {}, 'EXTERNAL_FLAG': {}}
 
         self._config['PATH']['WW'] = conf.get_as_string('WW_PATH','PROGRAM_PATH')
         self._config['PATH']['WW_configfile'] = conf.get_as_string('WW_CONFIG_FILE','PROGRAM_PATH')
@@ -106,6 +107,12 @@ class mask(object):
             self._config['MD']['thresh_flag'] = conf.get_as_float('MD_THRESH_FLAG', 'MD_PARAMETERS')
             self._config['MD']['thresh_remove'] = conf.get_as_float('MD_THRESH_REMOVE', 'MD_PARAMETERS')
             self._config['MD']['remove'] = conf.get_as_boolean('MD_REMOVE', 'MD_PARAMETERS')
+        self._config['EXTERNAL_FLAG']['make'] = conf.get_as_boolean('EF_MAKE', 'EXTERNAL_FLAG')
+        if self._config['EXTERNAL_FLAG']['make']:
+            if self._path_external_flag is None:
+                raise ValueError('External flag file has to be provided')
+            self._config['EXTERNAL_FLAG']['path'] = self._path_external_flag
+
 
 
     def _set_parameters(self):
@@ -178,8 +185,13 @@ class mask(object):
         except:
             im_pass = True
 
+        if self._config['EXTERNAL_FLAG']['make']:
+            path_external_flag = self._config['EXTERNAL_FLAG']['path']
+        else:
+            path_external_flag = None
+
         if im_pass:
-            final_mask=self._build_final_mask(path_mask1=mask_name[0],path_mask2=mask_name[1], border=border_mask, messier=messier_mask)
+            final_mask=self._build_final_mask(path_mask1=mask_name[0],path_mask2=mask_name[1], border=border_mask, messier=messier_mask, path_external_flag=path_external_flag)
 
             if not self._config['HALO']['individual']:
                 if mask_name[0] is not None:
@@ -584,7 +596,7 @@ class mask(object):
                 ValueError("types must be in ['HALO','SPIKE','ALL']")
 
 
-    def _build_final_mask(self, path_mask1, path_mask2=None, border=None, messier=None):
+    def _build_final_mask(self, path_mask1, path_mask2=None, border=None, messier=None, path_external_flag=None):
         """Create final mask
 
         Create the final mask by combination of individual mask.
@@ -599,6 +611,8 @@ class mask(object):
             Array containing the border mask
         messier : numpy.ndarray
             Array containing the messier mask
+        path_external_flag : str
+            Path to an external flag file
 
         Returns
         -------
@@ -642,6 +656,14 @@ class mask(object):
                     final_mask=messier
             else:
                 raise TypeError('messier has to be a numpy.ndarray')
+
+        if path_external_flag is not None:
+            external_flag = sc.FITSCatalog(path_external_flag, hdu_no= 0)
+            external_flag.open()
+            if final_mask is not None:
+                final_mask += external_flag.get_data()[:,:]
+            else:
+                final_mask = external_flag.get_data()[:,:]
 
         return final_mask.astype(np.int16,copy=False)
 
