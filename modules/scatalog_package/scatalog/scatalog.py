@@ -2644,7 +2644,7 @@ class interpreter(object):
             result = self._compare(string)
         else:
             if make_operate:
-                string_split = re.split(r'\*|\/|\-|\+|\%\s*(?![^()]*\))', string)
+                string_split = re.split(r'\*|\/|\-|\+\s*(?![^()]*\))', string)
                 result = self._operate(string, string_split)
             else:
                 if make_func:
@@ -2893,7 +2893,7 @@ class interpreter(object):
 
         """
 
-        op=r'\*|\/|\-|\+|\%\s*(?![^()]*\))'
+        op=r'\*|\/|\-|\+\s*(?![^()]*\))'
         if string is None:
             raise ValueError("Parameter not specified")
         if string_split is None:
@@ -2914,11 +2914,7 @@ class interpreter(object):
                 if not np.isscalar(tmp) or tmp != 'pass':
                     return tmp
                 else:
-                    tmp = self._string_op_func(re.split('\/\s*(?![^()]*\))',string), string_split, operator.div, 'init')
-                if not np.isscalar(tmp) or tmp != 'pass':
-                    return tmp
-                else:
-                    return self._string_op_func(re.split('\%\s*(?![^()]*\))',string), string_split, hh.Max, 0)
+                    return self._string_op_func(re.split('\/\s*(?![^()]*\))',string), string_split, operator.div, 'init')
 
 
     def _string_op_func(self, string_op, string_split, op, tmp):
@@ -2931,7 +2927,7 @@ class interpreter(object):
         string_op : list
             List of parameters to operate.
         string_split : list
-            The different parameter splitted using '\*|\/|\-|\+|\%\s*(?![^()]*\))' as delimiter.
+            The different parameter splitted using '\*|\/|\-|\+\s*(?![^()]*\))' as delimiter.
         op : func
             The kind of operation provided as an operator function
             (Example : operator.sub).
@@ -3001,8 +2997,7 @@ class interpreter(object):
                 except:
                     raise ValueError('string has to be a float or a catalog parameter. {0} not found'.format(string))
             if len(s) == 3:
-		# MKDEBUG: For mask selection within function the corresponding mask key has not been communicated yet here
-		# in some cases. Solved with naming '_<mask>'? 
+	
                 if s[1] in self._mask.keys():
                     try:
                         return self._cat[s[0]][self._mask[s[1]]]
