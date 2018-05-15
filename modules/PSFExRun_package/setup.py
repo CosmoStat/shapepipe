@@ -4,11 +4,11 @@
 
 from distutils.core import setup
 
-exec(open('PSFEx/info.py').read())
+exec(open('PSFExRun/info.py').read())
 
 setup(
-      name='PSFEx',
-      packages=['PSFEx'],
+      name='PSFExRun',
+      packages=['PSFExRun'],
       version=__version__,
       license="GNU GPLv3",
       description='Parallel execution of multiple PSFEx processes',
