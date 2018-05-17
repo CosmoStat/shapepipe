@@ -464,7 +464,7 @@ class PackageRunner(object):
 
         """
 
-        s=re.split("\-([0-9]{3})\-([0-9]+)\.",self._fnames['input_filepath'][1])
+        s=re.split("\-([0-9]*)\-([0-9]+)\.",self._fnames['input_filepath'][1])
         output_path = self._worker.result_output_dir + '/' + 'vignets-{0}-{1}.fits'.format(s[1],s[2])
 
         f = sc.FITSCatalog(output_path, SEx_catalog= True, open_mode= sc.BaseCatalog.OpenMode.ReadWrite)

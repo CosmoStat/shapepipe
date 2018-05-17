@@ -318,7 +318,7 @@ class PackageRunner(object):
         self._sex_input_params = {}
 
 
-        s=re.split("\-([0-9]{3})\-([0-9]+)\.", self._fnames['input_filepath'][0])
+        s=re.split("\-([0-9]*)\-([0-9]+)\.", self._fnames['input_filepath'][0])
         img_num = '-{0}-{1}'.format(s[1],s[2])
         self._sex_input_params['CATALOG_NAME'] = self._worker.result_output_dir + '/' + re.split('\.', self.file_types[0])[0] + img_num + '.cat'
 
@@ -484,7 +484,7 @@ class PackageRunner(object):
         """
 
         dir_path = self._fnames['SEXTRACTOR']['input_dir']
-        s=re.split("\-([0-9]{3})\-([0-9]+)\.", self._fnames['input_filepath'][0])
+        s=re.split("\-([0-9]*)\-([0-9]+)\.", self._fnames['input_filepath'][0])
         img_num = '-{0}-{1}'.format(s[1],s[2])
         self._fnames['SEXTRACTOR']['input_config_path'] = dir_path + '/config{0}.sex'.format(img_num)
 

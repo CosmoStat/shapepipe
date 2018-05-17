@@ -95,7 +95,7 @@ class SETools(object):
 
         """
 
-        s=re.split("\-([0-9]{3})\-([0-9]+)\.", self._cat_filepath)
+        s=re.split("\-([0-9]*)\-([0-9]+)\.", self._cat_filepath)
         file_number = '-{0}-{1}'.format(s[1],s[2])
 
         self.read()
@@ -808,8 +808,8 @@ class SEPlot(object):
             out_format = self._plot['FORMAT']['0']
         else:
             out_format = "PNG"
-            
-        self._fig.savefig(self._output_path + '.' + out_format.lower(), 
+
+        self._fig.savefig(self._output_path + '.' + out_format.lower(),
                           format=out_format)
         plt.close()
 
