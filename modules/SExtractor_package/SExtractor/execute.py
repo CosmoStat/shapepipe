@@ -330,7 +330,7 @@ class PackageRunner(object):
         f.open()
 
         for i in params.keys():
-            if i in ['WEIGHT_IMAGE', 'FLAG_IMAGE', 'PSF_NAME', 'ASSOC_NAME']#, 'PARAMETERS_NAME']:
+            if i in ['WEIGHT_IMAGE', 'FLAG_IMAGE', 'PSF_NAME', 'ASSOC_NAME']:#, 'PARAMETERS_NAME']:
                 continue
             if i == 'CHECKIMAGE_NAME':
                 self._sex_input_params[i] = self._set_checkimage_path(params[i], img_num)
