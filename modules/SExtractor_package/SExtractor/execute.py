@@ -540,9 +540,10 @@ class PackageRunner(object):
 
         """
 
+
+        dir_path = self._fnames['SEXTRACTOR']['input_dir']
+        filename = 'default.param'
         if not os.path.exists(dir_path + filename):
-            dir_path = self._fnames['SEXTRACTOR']['input_dir']
-            filename = 'default.param'
             self._fnames['SEXTRACTOR']['output_config_path'] = dir_path + filename
 
             f = open(dir_path + filename, 'w')
