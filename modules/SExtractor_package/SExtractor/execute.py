@@ -324,13 +324,13 @@ class PackageRunner(object):
 
         self._extra_file()
 
-        self._sex_input_params['PARAMETERS_NAME'] = self._fnames['SEXTRACTOR']['input_dir'] + 'default.param'
+        #self._sex_input_params['PARAMETERS_NAME'] = self._fnames['SEXTRACTOR']['input_dir'] + 'default.param'
 
         f = sc.FITSCatalog(self._fnames['input_filepath'][0], hdu_no = 0)
         f.open()
 
         for i in params.keys():
-            if i in ['WEIGHT_IMAGE', 'FLAG_IMAGE', 'PSF_NAME', 'ASSOC_NAME', 'PARAMETERS_NAME']:
+            if i in ['WEIGHT_IMAGE', 'FLAG_IMAGE', 'PSF_NAME', 'ASSOC_NAME']#, 'PARAMETERS_NAME']:
                 continue
             if i == 'CHECKIMAGE_NAME':
                 self._sex_input_params[i] = self._set_checkimage_path(params[i], img_num)
