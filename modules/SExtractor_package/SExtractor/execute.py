@@ -540,20 +540,16 @@ class PackageRunner(object):
 
         """
 
-
         dir_path = self._fnames['SEXTRACTOR']['input_dir']
         filename = 'default.param'
-        if not os.path.exists(dir_path + filename):
-            self._fnames['SEXTRACTOR']['output_config_path'] = dir_path + filename
+        self._fnames['SEXTRACTOR']['output_config_path'] = dir_path + filename
 
-            f = open(dir_path + filename, 'w')
+        f = open(dir_path + filename, 'w')
 
-            for i in self._sex_output_params:
-                f.write('{0}\n'.format(i))
+        for i in self._sex_output_params:
+            f.write('{0}\n'.format(i))
 
-            f.close()
-        else:
-            pass
+        f.close()
 
     def _file_dependencies(self):
         """Handle file dependencies
@@ -568,13 +564,10 @@ class PackageRunner(object):
         """
 
         for i in ['FILTER_NAME', 'STARNNW_NAME']:
-            if not os.path.exists(self._worker.log_output_dir + '/sextractor_config_inputs/' + self._sex_input_params[i]):
-                try:
-                    copy(self._worker.base_input_dir + '/SExtractor_default/' + self._sex_input_params[i], self._worker.log_output_dir + '/sextractor_config_inputs/')
-                    self._sex_input_params[i] = self._worker.log_output_dir + '/sextractor_config_inputs/' + self._sex_input_params[i]
-                except:
-                    pass
-            else:
+            try:
+                copy(self._worker.base_input_dir + '/SExtractor_default/' + self._sex_input_params[i], self._worker.log_output_dir + '/sextractor_config_inputs/')
+                self._sex_input_params[i] = self._worker.log_output_dir + '/sextractor_config_inputs/' + self._sex_input_params[i]
+            except:
                 pass
 
     def _set_checkimage_path(self, names, img_num):
