@@ -17,6 +17,7 @@ from shutil import copy
 
 import scatalog as sc
 import re
+import time
 
 
 class PackageRunner(object):
@@ -178,6 +179,8 @@ class PackageRunner(object):
         # --- SExtractor configuration
         self._config_sex_input()
         self._config_sex_output()
+
+        time.sleep(0.1)
 
         self._exec_line = ('{0} {1} -c {2}').format(
                            exec_path,
