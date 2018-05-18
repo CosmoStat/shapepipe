@@ -494,7 +494,7 @@ class PackageRunner(object):
             except:
                 raise Exception('Impossible to create the directory for sextractor input config files in {0}'.format(self._worker.log_output_dir))
 
-        self._file_dependencies()
+        #self._file_dependencies()
 
         f = open(self._fnames['SEXTRACTOR']['input_config_path'],'w')
 
@@ -530,7 +530,7 @@ class PackageRunner(object):
         for i in params.keys():
             self._sex_output_params.append(i)
 
-        self._save_sex_output_config()
+        #self._save_sex_output_config()
 
     def _save_sex_output_config(self):
         """Save the output *.param file
