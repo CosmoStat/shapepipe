@@ -17,7 +17,6 @@ from shutil import copy
 
 import scatalog as sc
 import re
-import time
 
 
 class PackageRunner(object):
@@ -179,8 +178,6 @@ class PackageRunner(object):
         # --- SExtractor configuration
         self._config_sex_input()
         self._config_sex_output()
-
-        time.sleep(0.5)
 
         self._exec_line = ('{0} {1} -c {2}').format(
                            exec_path,
@@ -543,16 +540,19 @@ class PackageRunner(object):
 
         """
 
-        dir_path = self._fnames['SEXTRACTOR']['input_dir']
-        filename = 'default.param'
-        self._fnames['SEXTRACTOR']['output_config_path'] = dir_path + filename
+        if not os.path.exists(dir_path + filename):
+            dir_path = self._fnames['SEXTRACTOR']['input_dir']
+            filename = 'default.param'
+            self._fnames['SEXTRACTOR']['output_config_path'] = dir_path + filename
 
-        f = open(dir_path + filename, 'w')
+            f = open(dir_path + filename, 'w')
 
-        for i in self._sex_output_params:
-            f.write('{0}\n'.format(i))
+            for i in self._sex_output_params:
+                f.write('{0}\n'.format(i))
 
-        f.close()
+            f.close()
+        else:
+            pass
 
     def _file_dependencies(self):
         """Handle file dependencies
@@ -567,10 +567,13 @@ class PackageRunner(object):
         """
 
         for i in ['FILTER_NAME', 'STARNNW_NAME']:
-            try:
-                copy(self._worker.base_input_dir + '/SExtractor_default/' + self._sex_input_params[i], self._worker.log_output_dir + '/sextractor_config_inputs/')
-                self._sex_input_params[i] = self._worker.log_output_dir + '/sextractor_config_inputs/' + self._sex_input_params[i]
-            except:
+            if not os.path.exists(self._worker.log_output_dir + '/sextractor_config_inputs/' + self._sex_input_params[i]):
+                try:
+                    copy(self._worker.base_input_dir + '/SExtractor_default/' + self._sex_input_params[i], self._worker.log_output_dir + '/sextractor_config_inputs/')
+                    self._sex_input_params[i] = self._worker.log_output_dir + '/sextractor_config_inputs/' + self._sex_input_params[i]
+                except:
+                    pass
+            else:
                 pass
 
     def _set_checkimage_path(self, names, img_num):
