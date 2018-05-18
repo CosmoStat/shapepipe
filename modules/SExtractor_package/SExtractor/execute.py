@@ -177,7 +177,7 @@ class PackageRunner(object):
 
         # --- SExtractor configuration
         self._config_sex_input()
-        self._config_sex_output()
+        #self._config_sex_output()
 
         self._exec_line = ('{0} {1} -c {2}').format(
                            exec_path,
