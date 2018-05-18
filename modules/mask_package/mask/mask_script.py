@@ -47,7 +47,7 @@ class mask(object):
         self._output_dir = output_dir                                           # Path to the output directory
         self._path_external_flag = path_external_flag                           # Path to an external flag file
 
-        s=re.split("\-([0-9]{3})\-([0-9]+)\.",self._image_fullpath)
+        s=re.split("\-([0-9]*)\-([0-9]+)\.",self._image_fullpath)
         self._img_number='-{0}-{1}'.format(s[1],s[2])                           # Needed for temporary file
         self._img_name = os.path.split(s[0])[1]
 
