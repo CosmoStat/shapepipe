@@ -180,7 +180,7 @@ class PackageRunner(object):
         self._config_sex_input()
         self._config_sex_output()
 
-        time.sleep(0.1)
+        time.sleep(0.5)
 
         self._exec_line = ('{0} {1} -c {2}').format(
                            exec_path,
