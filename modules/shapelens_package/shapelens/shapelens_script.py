@@ -126,7 +126,7 @@ class shapelens(object):
             raise ValueError('No vignet find in : {}'.format(self._gal_cat_path))
         gal_cat.close()
 
-        sf_cat = sc.FITSCatalog(self._psf_cat_path, SEx_catalog=True)
+        psf_cat = sc.FITSCatalog(self._psf_cat_path, SEx_catalog=True)
         psf_cat.open()
         try:
             psf_vign = psf_cat.get_data()['VIGNET']
