@@ -37,15 +37,21 @@ import stuff
 
 
 
-def get_image_list(inp, band, image_type, verbose=False):
+def get_image_list(inp, band, image_type, col=None, verbose=False):
     """Return list of images.
 
     Parameters
     ----------
-    input: string
+    inp: string
         file name or direcory path
-    verbose: bool, optional
-        verbose output if True, default=False
+    band: string
+        optical band
+    image_type: string
+        image type ('tile', 'exposure', 'cat', 'weight', 'weight.fz')
+    col: string, optionalm default=None
+        column name for file list input file
+    verbose: bool, optional, default=False
+        verbose output if True
 
     Return
     ------
@@ -60,15 +66,18 @@ def get_image_list(inp, band, image_type, verbose=False):
     valid_list    = []
 
     if os.path.isdir(inp):
+        if col is not None:
+            stuff.error('Column name only valid if input is file')
+
         # Read file names from directory listing
         inp_type  = 'dir'
-        file_list = glob.glob(inp)
+        file_list = glob.glob('{}/*'.format(inp))
 
     elif os.path.isfile(inp):
         if image_type in ('tile', 'weight', 'weight.fz'):
             # File names in single-column ascii file
             inp_type  = 'file'
-            file_list = cfis.read_list(inp)
+            file_list = cfis.read_list(inp, col=col)
         elif image_type == 'exposure':
             # File names and coordinates in ascii file
             inp_type  = 'file'
@@ -495,6 +504,8 @@ def parse_options(p_def):
     # I/O
     parser.add_option('-i', '--input', dest='input', type='string', default=p_def.input,
          help='input image list, can be ascii file or directory path')
+    parser.add_option('-c', '--column', dest='col', type='string', default=None,
+         help='column name if input is file, default=file has only one column)')
     parser.add_option('-o', '--outbase', dest='outbase', type='string', default=None,
          help='output file name base (\'.txt\' is added), default=stdout')
     parser.add_option('', '--plot', dest='plot', action='store_true',
@@ -562,6 +573,9 @@ def check_options(options):
 
     if options.image_type != 'exposure' and options.no_cuts == True:
         stuff.error('option \'--no_cuts\' only possible for image_type=exposure')
+
+    if options.input in ['{}.txt'.format(options.outbase), '{}.pdf',format(options.outbase)]:
+        stuff.error('Output base same as input, latter will be overwritten!')
 
     see_help = 'See option \'-h\' for help.'
 
@@ -702,7 +716,7 @@ def main(argv=None):
 
     ### Start main program ###
 
-    images = get_image_list(param.input, param.band, param.image_type, verbose=param.verbose)
+    images = get_image_list(param.input, param.band, param.image_type, col=param.col, verbose=param.verbose)
 
 
     # Check wether images have been found, if necessary for run mode

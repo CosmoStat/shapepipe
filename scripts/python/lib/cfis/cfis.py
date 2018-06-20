@@ -106,7 +106,6 @@ class image():
 
 
     def print(self, file=sys.stdout):
-    #def print(self, **kwds):
         """Print image information as ascii Table column
 
         Parameters
@@ -136,7 +135,7 @@ class image():
         None
         """
 
-        print('# Name ra[{0}] dec[{0}] exp_time[s] validation'.format(unitdef), file=file)
+        print('#Name ra[{0}] dec[{0}] exp_time[s] validation'.format(unitdef), file=file)
 
 
 
@@ -420,13 +419,15 @@ def get_Angle_arr(str_coord, num=-1, verbose=False):
 
 
 
-def read_list(fname):
+def read_list(fname, col=None):
     """Read list of from ascii file.
 
     Parameters
     ----------
     fname: string
         ascii file name
+    col: string, optional, default=None
+        column name
 
     Returns
     -------
@@ -434,9 +435,14 @@ def read_list(fname):
         list of file name
     """
 
-    f = open(fname, 'rU')
-    file_list = [x.strip() for x in f.readlines()]
-    f.close()
+    if col is None:
+        f = open(fname, 'rU')
+        file_list = [x.strip() for x in f.readlines()]
+        f.close()
+    else:
+        import pandas as pd
+        dat = pd.read_csv(fname, sep='\s+')
+        file_list = dat[col].values
 
     # from sapastro1:toolbox/python/CFIS.py
     #except IOError as exc:

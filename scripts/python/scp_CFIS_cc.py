@@ -46,9 +46,9 @@ def get_copy_list(param, exclude_list, include_list=None, verbose=False):
         files = glob.glob('*')
     else:
         # Read files from ascii file
-        files = CFIS.read_list(include_list)
+        files = cfis.read_list(include_list)
 
-    pattern = CFIS.get_file_pattern(param.pattern, param.band, param.type)
+    pattern = cfis.get_file_pattern(param.pattern, param.band, param.type)
     
     dst_list = []
     n_exc = 0
@@ -59,7 +59,7 @@ def get_copy_list(param, exclude_list, include_list=None, verbose=False):
         if len(m) != 0:
 
             # Test if file is not on exclude list
-            if CFIS.exclude(m[0], exclude_list) == False:
+            if cfis.exclude(m[0], exclude_list) == False:
                 dst_list.append(m[0])
             elif verbose == True:
                 n_exc += 1
@@ -96,7 +96,7 @@ def scp(to_copy, t, to_cc=True, dry_run=False, verbose=False):
         sdry = ''
         print('Password for cc: Kidt9uslYon')
 
-    if t == 'raw':
+    if t == 'exposure':
         subdir = 'pitcairn'
     else:
         subdir = 'tiles'
@@ -166,7 +166,7 @@ def parse_options(p_def):
     parser.add_option('-b', '--band', dest='band', type='string', default=p_def.band,
         help='band, one of \'r\' (default)|\'u\'')
     parser.add_option('-t', '--type', dest='type', type='string', default=p_def.type,
-        help='data type, one of \'tiles\' (default)| \'cat\'|\'weight\'|\'raw\'')
+        help='data type, one of \'tiles\' (default)| \'cat\'|\'weight\'|\'exposure\'')
     parser.add_option('-p', '--pattern', dest='pattern', type='string', default=p_def.pattern,
         help='file pattern to match, e.g.~\'^21\d{5}p\', default=none (=all match)')
 
@@ -265,8 +265,8 @@ def main(argv=None):
 
     ### Start main program ###
 
-    if exclude_list != None:
-        exclude_list = CFIS.read_list(param.exclude_list)
+    if param.exclude_list != None:
+        exclude_list = cfis.read_list(param.exclude_list)
     else:
         exclude_list = []
 
