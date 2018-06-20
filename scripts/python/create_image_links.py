@@ -42,10 +42,11 @@ def params_default():
     """
 
     p_def = stuff.param(
-        input_dir  = '.',
-        band       = 'r',
-        tile_base_new = 'CFIS',
-        weight_base_new = 'CFIS.weight',
+        input            = '.',
+        output_dir       = '.',
+        band             = 'r',
+        tile_base_new    = 'CFIS',
+        weight_base_new  = 'CFIS.weight',
     )
 
     return p_def
@@ -70,8 +71,10 @@ def parse_options(p_def):
     usage  = "%prog [OPTIONS]"
     parser = OptionParser(usage=usage)
 
-    parser.add_option('-i', '--input_dir', dest='input_dir', type='string', default=p_def.input_dir,
-         help='input directorty, default=\'{}\''.format(p_def.input_dir))
+    parser.add_option('-i', '--input', dest='input', type='string', default=p_def.input,
+         help='input image list, can be ascii file or directory path, default=\'{}\''.format(p_def.input))
+    parser.add_option('-o', '--output_dir', dest='output_dir', type='string', default=p_def.output_dir,
+         help='output directory, where links will be created, default=\'{}\''.format(p_def.output_dir))
     parser.add_option('-b', '--band', dest='band', type='string', default=p_def.band,
         help='band, one of \'r\' (default)|\'u\'')
 
@@ -138,11 +141,10 @@ def update_param(p_def, options):
 
 
 
-def create_links(input_dir, tile_base_new, weight_base_new, band, verbose=False):
+def create_links(inp, output_dir, tile_base_new, weight_base_new, band, verbose=False):
 
-    # Read all file names
-    file_list = glob.glob('{}/*'.format(input_dir))
-    file_list.sort()
+    image_list = cfis.get_image_list(inp, band, 'tile', col='#Name', verbose=verbose)
+    file_list  = [i.name for i in image_list]
 
     if verbose:
         print('Found {} files'.format(len(file_list)))
@@ -167,8 +169,9 @@ def create_links(input_dir, tile_base_new, weight_base_new, band, verbose=False)
     ext = 'fits'
     for img in img_list:
 
-        # Tile name stripped of path and extension
-        base_name = os.path.basename(img)
+        # MK New: Do not strip path
+        #base_name = os.path.basename(img)
+        base_name = img
         m = re.findall('(.*)\..*', base_name)
         if len(m) == 0:
             stuff.error('Invalid file name \'{}\' found'.format(img))
@@ -182,16 +185,17 @@ def create_links(input_dir, tile_base_new, weight_base_new, band, verbose=False)
         weight_base = m[0]
 
         # Check whether weight image file exists
-        weight_path = '{}/{}'.format(input_dir, weight_name)
+        #weight_path = '{}/{}'.format(input_dir, weight_name)
+        weight_path = '{}'.format(weight_name)
         if not os.path.isfile(weight_path):
             stuff.error('Weight file \'{}\' not found'.format(weight_path))
 
-        link_name_tile = '{}-{:03d}-0.{}'.format(tile_base_new, num, ext)
+        link_name_tile = '{}/{}-{:03d}-0.{}'.format(output_dir, tile_base_new, num, ext)
         if verbose:
             print(' {} <- {}'.format(img, link_name_tile))
         os.symlink(img, link_name_tile)
 
-        link_name_weight = '{}-{:03d}-0.{}'.format(weight_base_new, num, ext)
+        link_name_weight = '{}/{}-{:03d}-0.{}'.format(output_dir, weight_base_new, num, ext)
         if verbose:
             print(' {} <- {}'.format(weight_path, link_name_weight))
         os.symlink(weight_path, link_name_weight)
@@ -215,7 +219,7 @@ def main(argv=None):
 
     param = update_param(p_def, options)
 
-    create_links(param.input_dir, param.tile_base_new, param.weight_base_new, param.band, verbose=param.verbose)
+    create_links(param.input, param.output_dir, param.tile_base_new, param.weight_base_new, param.band, verbose=param.verbose)
 
 
 if __name__ == "__main__":

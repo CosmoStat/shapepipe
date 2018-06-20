@@ -49,15 +49,59 @@ Requires on input (config)
 
 # Global variable, solve differenly
 modules_glob = {}
-modules_glob['std'] = ['mask', 'SExtractor', 'SETools', 'PSFExRun', 'PSFExInterpolation']
+modules_glob['std'] = ['select', 'mask', 'SExtractor', 'SETools', 'PSFExRun', 'PSFExInterpolation']
 
 path_sp     = '{}/ShapePipe'.format(os.environ['HOME'])
 path_spmod  = '{}/modules'.format(path_sp)
+path_sppy   = '{}/scripts/python'.format(path_sp)
 path_output = 'output' 
 path_data   = '{}/data'.format(os.environ['HOME'])
 
+path_CFIS_data = '{}/astro/data/CFIS'.format(os.environ['HOME'])
+
 name_adopted = 'adopted'
 name_results = 'results'
+
+
+class modules_local:
+    """Has modules as subroutines, priority over pipeline packages with same name.
+    """
+
+    def init(self):
+        pass
+
+    def select(self, param):
+        """Area selection.
+        Parameters
+        ----------
+        param: class param
+            parameter values
+
+        Returns
+        -------
+        None
+        """
+
+        # Check whether data dir does not exist
+        if os.path.isfile(path_data):
+            stuff.error('Path {} exists, please remove for field selection step'.format(path_data))
+        os.mkdir(path_data)
+
+        # Find fields in given area
+        fixed_options = '-i {}/tiles -t tile -m a --plot -v'.format(path_CFIS_data)
+        launch_path = '{}/cfis_field_select.py {} {}'.format(path_sppy, fixed_options, param.options)
+        stuff.run_cmd(launch_path, run=True, verbose=param.verbose, devnull=False) 
+
+        # Output file base name
+        m = re.search('-o\s+(\S+)', param.options)
+        if m:
+            name = m.groups()[0]
+        else:
+            stuff.error('No output file basename in options \'{}\' found'.format(param.options))
+
+        # Create links to original files
+        launch_path = '{}/create_image_links.py -i {}.txt -v -o {}'.format(path_sppy, name, path_data)
+        stuff.run_cmd(launch_path, run=True, verbose=param.verbose, devnull=False)
 
 
 def params_default():
@@ -69,7 +113,7 @@ def params_default():
 
     Returns
     -------
-    p_def: class tuff.param
+    p_def: class param
         parameter values
     """
 
@@ -102,10 +146,12 @@ def parse_options(p_def):
     usage  = "%prog [OPTIONS]"
     parser = OptionParser(usage=usage, formatter=stuff.IndentedHelpFormatterWithNL())
 
-    #parser.add_option('-s', '--scheme', dest='scheme', type='string', default=p_def.scheme,
-     #    help='Scheme, default={}'.format(p_def.scheme))
+    parser.add_option('-s', '--scheme', dest='scheme', type='string', default=p_def.scheme,
+            help='Scheme, default=\'{}\''.format(p_def.scheme))
     parser.add_option('-M', '--module', dest='module', type='string', default=None,
-         help='Pipeline module, see \'-l\' for list of all modules')
+            help='Pipeline module, see \'-l\' for list of all modules')
+    parser.add_option('-O', '--options', dest='options', type='string', default=None,
+            help='Options for (local) modules')
 
     # Run mode
     parser.add_option('-m', '--mode', dest='mode', default=None,
@@ -138,12 +184,13 @@ def check_options(options):
         Result of option check. False if invalid option value.
     """
 
-    #if not options.scheme in modules_glob:
-        #print('Invalid scheme {}, not found in '.format(options.scheme), modules_glob.keys())
-        #return False
+    if not options.scheme in modules_glob:
+        print('Invalid scheme {}, not found in '.format(options.scheme), modules_glob.keys())
+        return False
 
     if options.mode is None:
         print('No run mode given (option \'-r\')')
+        return False
 
     if len(options.mode) > 1:
         print('Invalid run mode \'{}\', only one allowed'.format(options.mode))
@@ -170,7 +217,7 @@ def update_param(p_def, options):
     
     Returns
     -------
-    param: class stuff.param
+    param: class param
         updated paramter values
     """
 
@@ -185,6 +232,10 @@ def update_param(p_def, options):
     for key in vars(options):
         if not key in vars(param):
             setattr(param, key, getattr(options, key))
+
+    if param.module is not None:
+        param.module = int(param.module)
+        param.smodule = modules_glob[param.scheme][param.module]
 
     return param
 
@@ -210,24 +261,38 @@ def list_modules():
 
 
 
-def run_module(module, verbose=False):
-    """Run module.
+def run_module(param):
+    """Run module param.module as subroutine from modules_local,
+       if exists, or it not, as pipeline package.
     
     Parameters
     ----------
-    module: sring
-        module name
-    verbose: bool, optional, default=False
+    param: class param
+        paramter values
 
     Returns
     -------
     None
     """
 
-    package     = '{}_package'.format(module)
-    launch_path = '{}/{}/config/launch.cmd'.format(path_spmod, package)
+    module = param.smodule
 
-    stuff.run_cmd(launch_path, run=True, verbose=verbose, devnull=False)
+    ml = modules_local()
+    if hasattr(ml, module):
+        method = getattr(ml, module, None)
+        if callable(method):
+            if param.verbose:
+                print('Running local module \'{}\''.format(module))
+            getattr(ml, module)(param)
+
+    else:
+        if param.verbose:
+            print('Running pipeline module \'{}\''.format(module))
+
+        package     = '{}_package'.format(module)
+        launch_path = '{}/{}/config/launch.cmd'.format(path_spmod, package)
+
+        stuff.run_cmd(launch_path, run=True, verbose=param.verbose, devnull=False)
     
 
 
@@ -316,7 +381,7 @@ def main(argv=None):
         list_modules()
 
     elif param.mode == 'r':
-        run_module(param.module, verbose=param.verbose)
+        run_module(param)
 
     elif param.mode == 'a':
         adopt_run(param.module, verbose=param.verbose)

@@ -37,95 +37,6 @@ import stuff
 
 
 
-def get_image_list(inp, band, image_type, col=None, verbose=False):
-    """Return list of images.
-
-    Parameters
-    ----------
-    inp: string
-        file name or direcory path
-    band: string
-        optical band
-    image_type: string
-        image type ('tile', 'exposure', 'cat', 'weight', 'weight.fz')
-    col: string, optionalm default=None
-        column name for file list input file
-    verbose: bool, optional, default=False
-        verbose output if True
-
-    Return
-    ------
-    img_list: list of class cfis.image
-        image list
-    """
-
-    file_list     = []
-    ra_list       = []
-    dec_list      = []
-    exp_time_list = []
-    valid_list    = []
-
-    if os.path.isdir(inp):
-        if col is not None:
-            stuff.error('Column name only valid if input is file')
-
-        # Read file names from directory listing
-        inp_type  = 'dir'
-        file_list = glob.glob('{}/*'.format(inp))
-
-    elif os.path.isfile(inp):
-        if image_type in ('tile', 'weight', 'weight.fz'):
-            # File names in single-column ascii file
-            inp_type  = 'file'
-            file_list = cfis.read_list(inp, col=col)
-        elif image_type == 'exposure':
-            # File names and coordinates in ascii file
-            inp_type  = 'file'
-            dat = ascii.read(inp)
-
-            if len(dat.keys()) == 3:
-                # File is exposure + coord list (obtained from get_coord_CFIS_pointings.py)
-                file_list = dat['Pointing']
-                ra_list   = dat['R.A.[degree]']
-                dec_list  = dat['Declination[degree]']
-            elif len(dat.keys()) == 12:
-                # File is log file, e.g. from http://www.cfht.hawaii.edu/Science/CFIS-DATA/logs/MCLOG-CFIS.r.qso-elx.log
-                # Default file separator is '|'
-                for d in dat:
-                    file_list.append('d{}p.fits.fz'.format(d['col1']))
-                    ra  = re.split('\s*', d['col4'])[0]
-                    dec = re.split('\s*', d['col4'])[1]
-                    ra_list.append(Angle('{} hours'.format(ra)).degree)
-                    dec_list.append(dec)
-                    exp_time = int(d['col5'])
-                    exp_time_list.append(exp_time)
-                    valid = re.split('\s*', d['col11'])[2]
-                    valid_list.append(valid)
-            else:
-                stuff.error('Wrong file format, #columns={}, has to be 3 or 12'.format(len(dat.keys())))
-        else:
-            stuff.error('Image type \'{}\' not supported'.format(image_type))
-
-
-    # Create list of objects, coordinate lists can be empty
-    image_list = cfis.create_image_list(file_list, ra_list, dec_list, exp_time=exp_time_list, valid=valid_list)
-
-    # Filter file list to match CFIS image pattern
-    img_list = []
-    pattern = cfis.get_file_pattern('', band, image_type)
-
-    for img in image_list:
-
-        m = re.findall(pattern, img.name)
-        if len(m) != 0:
-            img_list.append(img)
-
-    if verbose == True and len(img_list) > 0:
-        print('{} image files found in input {} \'{}\''.format(len(img_list), inp_type, inp))
-
-    return img_list
-
-
 
 def find_image_at_coord(images, coord, band, image_type, no_cuts=False, verbose=False):
     """Return image covering given coordinate.
@@ -716,7 +627,7 @@ def main(argv=None):
 
     ### Start main program ###
 
-    images = get_image_list(param.input, param.band, param.image_type, col=param.col, verbose=param.verbose)
+    images = cfis.get_image_list(param.input, param.band, param.image_type, col=param.col, verbose=param.verbose)
 
 
     # Check wether images have been found, if necessary for run mode
