@@ -44,9 +44,9 @@ def _mkdir(direc):
 
    if not os.path.isdir(direc):
        try:
-           os.system('mkdir {}'.format(direc))
+           os.mkdir(direc)
        except:
-           raise Exception('Cannot create directory {}'.format(direc))
+           raise Exception('SETools: Cannot create directory {}'.format(direc))
 
 
 

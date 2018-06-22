@@ -1,0 +1,46 @@
+# Selet more or less all SExtractor detections
+
+
+[MASK:valid]
+MAG_AUTO > 16
+FLAGS == 0
+IMAFLAGS_ISO == 0
+
+[STAT:numbers]
+"mean FWHM"  = mean(FWHM_IMAGE)
+"mean valid FWHM"  = mean(FWHM_IMAGE{valid})
+"all" = len(FWHM_IMAGE)
+"valid" = len(FWHM_IMAGE{valid})
+
+# Plots: Axel's format
+[PLOT:valid]
+TYPE   = plot
+FORMAT = pdf
+X_1      = FWHM_IMAGE{valid}
+Y_1      = MAG_AUTO{valid}
+X_2      = FWHM_IMAGE
+Y_2      = MAG_AUTO
+COLOR_1  = r
+COLOR_2  = b
+MARKERSIZE_1 = 0.75
+MARKERSIZE_2 = 0.1
+MARKER_1   = "o"
+MARKER_3   = "o"
+LABEL_1  = "valid"
+LABEL_3  = "all"
+TITLE  = "Valid detected objects"
+XLABEL = "FWHM [pix]"
+YLABEL = "magnitude (MAG_AUTO)"
+XLIM   = -1,25
+
+[PLOT:hist]
+TYPE = hist
+FORMAT = png
+Y = MAG_AUTO{valid}
+BIN = 20
+LABEL = "Mag of valid objects"
+XLABEL = "Magnitude"
+YLABEL = "Number"
+TITLE = "Valid detected objects"
+
+

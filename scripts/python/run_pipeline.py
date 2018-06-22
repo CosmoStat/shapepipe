@@ -90,7 +90,7 @@ class modules_local:
         # Find fields in given area
         fixed_options = '-i {}/tiles -t tile -m a --plot -v'.format(path_CFIS_data)
         launch_path = '{}/cfis_field_select.py {} {}'.format(path_sppy, fixed_options, param.options)
-        stuff.run_cmd(launch_path, run=True, verbose=param.verbose, devnull=False) 
+        stuff.run_cmd(launch_path, run=not param.dry_run, verbose=param.verbose, devnull=False) 
 
         # Output file base name
         m = re.search('-o\s+(\S+)', param.options)
@@ -101,7 +101,7 @@ class modules_local:
 
         # Create links to original files
         launch_path = '{}/create_image_links.py -i {}.txt -v -o {}'.format(path_sppy, name, path_data)
-        stuff.run_cmd(launch_path, run=True, verbose=param.verbose, devnull=False)
+        stuff.run_cmd(launch_path, run=not param.dry_run, verbose=param.verbose, devnull=False)
 
 
 def params_default():
@@ -121,6 +121,7 @@ def params_default():
         scheme  = 'std',
         band  = 'r',
         image_type  = 'tile',
+        job   = 'manual',
     )
 
     return p_def
@@ -146,13 +147,20 @@ def parse_options(p_def):
     usage  = "%prog [OPTIONS]"
     parser = OptionParser(usage=usage, formatter=stuff.IndentedHelpFormatterWithNL())
 
+    # Pipeline and modules
     parser.add_option('-s', '--scheme', dest='scheme', type='string', default=p_def.scheme,
-            help='Scheme, default=\'{}\''.format(p_def.scheme))
+            help='scheme, default=\'{}\''.format(p_def.scheme))
     parser.add_option('-M', '--module', dest='module', type='string', default=None,
-            help='Pipeline module, see \'-l\' for list of all modules')
+            help='pipeline module, see \'-l\' for list of all modules')
     parser.add_option('-O', '--options', dest='options', type='string', default=None,
-            help='Options for (local) modules')
+            help='options for (local) modules')
 
+    # Job execution
+    parser.add_option('-j', '--job', dest='job', type='string', default=p_def.job,
+            help='job exceution, one of [\'manual\'|\'qsub\'], default=\'{}\''.format(p_def.job))
+    parser.add_option('-n', '--dry-run', dest='dry_run', action='store_true', default=False,
+            help='dry run, only print commands')
+ 
     # Run mode
     parser.add_option('-m', '--mode', dest='mode', default=None,
          help='run mode, one of [l|r|a]:\n'
@@ -234,8 +242,19 @@ def update_param(p_def, options):
             setattr(param, key, getattr(options, key))
 
     if param.module is not None:
-        param.module = int(param.module)
-        param.smodule = modules_glob[param.scheme][param.module]
+        try:
+            param.module = int(param.module)
+            if param.module < 0:
+                raise IndexError
+            param.smodule = modules_glob[param.scheme][param.module]
+
+        except ValueError:
+            if not param.module in modules_glob[param.scheme]:
+                stuff.error('Module \'{}\' not found, list available options with \'-m l\''.format(param.module))
+            param.smodule = param.module
+
+        except IndexError:
+            stuff.error('Invalid module number {}, list available options with \'-m l\''.format(param.module))
 
     return param
 
@@ -261,6 +280,49 @@ def list_modules():
 
 
 
+def create_qsub_script(module):
+    """Create bash script to be submitted with qsub.
+
+    Parameters
+    ----------
+    module: string
+        module name
+
+    Returns:
+    qsub_script_name: string
+        job script name
+    """
+
+
+    qsub_script_name = 'job_{}.sh'.format(module)
+
+    f = open(qsub_script_name, 'w')
+    print('#!/usr/bin/bash\n', file=f)
+    print('#PBS -S /usr/bin/bash\n', file=f)
+    print('#PBS -N {}\n'.format(module), file=f)
+    print('#PBS -o job.out', file=f)
+    print('#PBS -j oe\n', file=f)
+    print('#PBS -l nodes=1:ppn=1,walltime=10:00:00\n', file=f)
+
+    cwd = os.getcwd()
+    print('#PBS -d {}\n'.format(cwd), file=f)
+
+    print('module load intelpython/2', file=f)
+    print('export PATH="$PATH:/softs/astromatic/bin/:$HOME/.local/bin"', file=f)
+    print('export LD_LIBRARY_PATH="$HOME/.local/lib/"', file=f)
+    print('export PYTHONPATH="$HOME/.local/lib/python2.7/site-packages:$HOME/.local/bin:/opt/intel/intelpython2/lib/python2.7/site-packages"\n', file=f)
+
+    print('echo -n "pwd = "', file=f)
+    print('pwd\n', file=f)
+
+    print('$HOME/ShapePipe/modules/{}_package/config/launch.cmd'.format(module), file=f)
+    print('ex=$?', file=f)
+    print('exit $ex\n', file=f)
+
+    f.close()
+    return qsub_script_name
+
+
 def run_module(param):
     """Run module param.module as subroutine from modules_local,
        if exists, or it not, as pipeline package.
@@ -275,29 +337,49 @@ def run_module(param):
     None
     """
 
+    # Module name as string
     module = param.smodule
 
-    ml = modules_local()
+    # Class containing modules as methods
+    ml     = modules_local()
+
     if hasattr(ml, module):
         method = getattr(ml, module, None)
         if callable(method):
+            # Run module as method of local class
             if param.verbose:
                 print('Running local module \'{}\''.format(module))
             getattr(ml, module)(param)
 
     else:
+        # Run pipeline module
         if param.verbose:
             print('Running pipeline module \'{}\''.format(module))
+
+        # Create output dir if necessary
+        stuff.mkdir_p(path_output, verbose=param.verbose)
 
         package     = '{}_package'.format(module)
         launch_path = '{}/{}/config/launch.cmd'.format(path_spmod, package)
 
-        stuff.run_cmd(launch_path, run=True, verbose=param.verbose, devnull=False)
+        # Run module
+        if param.job == 'manual':
+            ex = stuff.run_cmd(launch_path, run=not param.dry_run, verbose=param.verbose, devnull=False)
+            if param.verbose:
+                print('Sum[exit codes] = {}'.format(ex))
+
+        elif param.job == 'qsub':
+
+            qsub_script_name = create_qsub_script(module)
+            stuff.run_cmd('qsub {}'.format(qsub_script_name), run=not param.dry_run, verbose=param.verbose, devnull=False)
+
+        else:
+            stuff.error('Invalid job execution mode \'{}\''.format(param.job))
+
     
 
-
 def adopt_run(module, verbose=False):
-    """Adopt (last) run for given module.
+    """Adopt (last) run for given moduleo (set symbolic link).
 
     Parameters
     ----------
@@ -320,6 +402,30 @@ def adopt_run(module, verbose=False):
     link_name = '{}/{}'.format(path_runs, name_adopted)
 
     stuff.ln_s(source, link_name, orig_to_check=source_to_check, verbose=verbose, force=True)
+
+
+def discard_run(module, verbose=False):
+    """Discard adopted run for given module (remove symbolic link)
+
+    Parameters
+    ----------
+    module: string
+        module name
+    verbose: bool, optional, default=False
+        verbose output if True
+
+    Returns
+    -------
+    None
+    """
+
+    path = '{}/{}/adopted'.format(path_output, module)
+    if os.path.islink(path):
+        if verbose:
+            print('Discarding adopted run of module \'{}\''.format(module))
+        os.remove(path)
+    else:
+        stuff.error('No adopted run found for module \'{}\''.format(module))
 
 
 
@@ -384,10 +490,13 @@ def main(argv=None):
         run_module(param)
 
     elif param.mode == 'a':
-        adopt_run(param.module, verbose=param.verbose)
+        adopt_run(param.smodule, verbose=param.verbose)
+
+    elif param.mode == 'd':
+        discard_run(param.smodule, verbose=param.verbose)
 
     elif param.mode == 's':
-        set_results(param.module, verbose=param.verbose)
+        set_results(param.smodule, verbose=param.verbose)
 
     ### End main program
 

@@ -55,7 +55,8 @@ MESSIER_FLAG_VALUE = 8
 # -------------------------------- External flag ----------------------------------
 [EXTERNAL_FLAG]
 
-EF_MAKE = True
+#EF_MAKE = True # MKDEBUG
+EF_MAKE = False
 
 
 # -------------------------- missing data parameters ------------------------------
