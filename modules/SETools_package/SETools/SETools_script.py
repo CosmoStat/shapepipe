@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """SETOOLS SCRIPT
 
-This script contain a class to handle operation on SExtractor output catalog.
+This script contain a class to handle operations on SExtractor output catalog.
 
 :Authors: Axel Guinot
 
@@ -45,8 +45,8 @@ def _mkdir(direc):
    if not os.path.isdir(direc):
        try:
            os.mkdir(direc)
-       except:
-           raise Exception('SETools: Cannot create directory {}'.format(direc))
+       except Exception as detail:
+           raise Exception('SETools: Cannot create directory {}, error={}'.format(direc, detail))
 
 
 
@@ -63,19 +63,25 @@ class SETools(object):
         Path to config.setools file
     output_dir: str
         Path to pipeline result directory
+    plot_output_dir: str, optional, default=None
+        Path to pipeline plots output directory
     stat_output_dir: str, optional, default=None
         Path to pipeline statistics output directory
-    plot_output_dir: str, optiona, default=None
-        Path to pipeline plots output directory
 
     """
 
-    def __init__(self, cat_filepath, config_filepath, output_dir, extra_file= None):
+    def __init__(self, cat_filepath, config_filepath, output_dir, plot_output_dir=None, stat_output_dir=None, extra_file=None):
 
         self._cat_filepath = cat_filepath
         self._config_filepath = config_filepath
         self._output_dir = output_dir
         self._extra_file = extra_file
+
+        if plot_output_dir:
+            self._plot_output_dir = plot_output_dir
+
+        if stat_output_dir:
+            self._stat_output_dir = stat_output_dir
 
         self._cat_file = sc.FITSCatalog(self._cat_filepath, SEx_catalog=True)
         self._cat_file.open()
@@ -102,8 +108,11 @@ class SETools(object):
 
         ### Processing: Create mask = filter input
         if len(self._mask) != 0:
-            direc = self._output_dir + '/mask'
-            _mkdir(direc)
+            # MKDEBUG new, prevent to create directory, somehow this causes error sometimes
+            # (in multi-process run?)
+            #direc = self._output_dir + '/mask'
+            #_mkdir(direc)
+            direc = self._output_dir
             self._make_mask()
             for i in self.mask.keys():
                 if 'NO_SAVE' in self._mask[i]:
@@ -112,8 +121,14 @@ class SETools(object):
                 self.save_mask(self.mask[i], file_name)
 
         if len(self._plot) != 0:
-            direc = self._output_dir + '/plot'
-            _mkdir(direc)
+            # MKDEBUG new, prevent to create directory, somehow this causes error sometimes
+            # (in multi-process run?)
+            if self._plot_output_dir:
+                direc = self._plot_output_dir
+            else:
+                # Depreciated, should be removed, no mkdir here
+                direc = self._output_dir + '/plot'
+                _mkdir(direc)
             self._make_plot()
             for i in self.plot.keys():
                 output_path = direc + '/' + i + file_number
@@ -144,8 +159,13 @@ class SETools(object):
                 self.save_flag_split(self.flag_mask_dict[i], output_path)
 
         if len(self._stat) != 0:
-            direc = self._output_dir + '/stat'
-            _mkdir(direc)
+            # MKDEBUG new, prevent to create directory, somehow this causes error sometimes
+            # (in multi-process run?)
+            if self._stat_output_dir:
+                direc = self._plot_output_dir
+            else:
+                direc = self._output_dir + '/stat'
+                _mkdir(direc)
             self._make_stat()
             for i in self.stat.keys():
                 output_path = direc + '/' + i + file_number + '.txt'
@@ -682,19 +702,40 @@ class SEPlot(object):
             raise ValueError('Plot type not specified')
 
         if self._plot['TYPE']['0'] in ['plot', 'PLOT']:
-            if ('X' not in self._plot.keys()) | ('Y' not in self._plot.keys()):
-                raise ValueError('X and/or Y not provided')
+            self._check_key_for_plot(['X', 'Y'])
+            #if ('X' not in self._plot.keys()) | ('Y' not in self._plot.keys()):
+                #raise ValueError('X and/or Y not provided')
             self._make_plot()
         elif self._plot['TYPE']['0'] in ['scatter', 'SCATTER']:
-            if ('X' not in self._plot.keys()) | ('Y' not in self._plot.keys()):
-                raise ValueError('X and/or Y not provided')
+            self._check_key_for_plot(['X', 'Y'])
+            #if ('X' not in self._plot.keys()) | ('Y' not in self._plot.keys()):
+                #raise ValueError('X and/or Y not provided')
             self._make_scatter()
         elif self._plot['TYPE']['0'] in ['histogram', 'hist', 'HISTOGRAM', 'HIST']:
-            if 'Y' not in self._plot.keys():
-                raise ValueError('Y not provided')
+            self._check_key_for_plot(['Y'])
+            #if 'Y' not in self._plot.keys():
+                #raise ValueError('Y not provided')
             self._make_hist()
         else:
             ValueError('Type : {} not available'.format(self._plot['TYPE']['0']))
+
+
+    def _check_key_for_plot(self, key_list):
+        """Raise exception if keys not found in plot description.
+
+        Parameters
+        ----------
+        key_list: list of strings
+            list of keys
+
+        Returns
+        -------
+        None
+        """
+
+        for key in key_list:
+            if key not in self._plot.keys():
+                raise ValueError('Key \'{}\' not provided for plot of type \'{}\''.format(key, self._plot['TYPE']['0']))
 
 
     def _make_plot(self):
@@ -789,12 +830,15 @@ class SEPlot(object):
                      sc.interpreter(self._plot['Y'][i], self._cat, mask_dict= self._mask_dict).result,
                      label= label, color= color, marker= marker, markersize=markersize, ls= line, alpha= alpha, figure= self._fig)
 
-        if 'XLIM' in self._plot.keys():
-            try:
-                xlim = re.split(',', self._plot['XLIM']['0'])
-                plt.xlim(float(xlim[0]), float(xlim[1]))
-            except:
-                raise ValueError('Plot XLIM keyword/value not in correct format (XLIM=xl,xu): {}'.format(self._plot['XLIM']['0']))
+        # Set ploy limits for x and y
+        for (lim, set_lim) in zip(['XLIM', 'YLIM'], [plt.xlim, plt.ylim]):
+            if lim in self._plot.keys():
+                try:
+                    val = re.split(',', self._plot[lim]['0'])
+                except:
+                    raise ValueError('Plot {0} keyword/value not in correct format ({0}=lower,upper): {1}'.format(lim, self._plot[lim]['0']))
+
+                set_lim(float(val[0]), float(val[1]))
 
         if 'LABEL' in self._plot.keys():
             plt.legend()

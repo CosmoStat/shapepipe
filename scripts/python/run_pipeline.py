@@ -296,6 +296,34 @@ def create_qsub_script(module):
 
     qsub_script_name = 'job_{}.sh'.format(module)
 
+    import platform
+    hostname = platform.node()
+
+    if 'candid' in hostname:
+        create_qsub_script_candide(qsub_script_name, module)
+
+    else:
+        print('Warning: Using candide qsub job script for different machine')
+        create_qsub_script_candide(qsub_script_name, module)
+
+    return qsub_script_name
+
+
+
+def create_qsub_script_candide(qsub_script_name, module):
+    """Create a bash script to be submitted with qsub, working on iap:candide
+
+    Parameters
+    ----------
+    qsub_script_name: string
+        script name
+    module: string
+        module name (only used for qsub job name)
+
+    Returns:
+    None
+    """
+
     f = open(qsub_script_name, 'w')
     print('#!/usr/bin/bash\n', file=f)
     print('#PBS -S /usr/bin/bash\n', file=f)
@@ -320,7 +348,6 @@ def create_qsub_script(module):
     print('exit $ex\n', file=f)
 
     f.close()
-    return qsub_script_name
 
 
 def run_module(param):

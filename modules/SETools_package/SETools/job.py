@@ -132,13 +132,14 @@ class PackageJobProcessor(mpfx_job.MpfxJobProcessor):
             results_dict[file_types[0]]['run_dict'] = run_dict
 
             # --- Job result to return
-            return mpfx_job.MpfxJobResult(worker, job, results_dict)
+            res = mpfx_job.MpfxJobResult(worker, job, results_dict)
+            return res
 
         except Exception:
 
             if worker.logging_enabled():
-                temp_string = ('{0} - Some error occurred while processing '
-                               'job: {1} ({2})')
+                temp_string = ('SETools:{0} - Some error occurred while processing '
+                               'job: name={1} (error={2})')
                 worker.logger.log_error_p(temp_string.format(worker.name, job,
                                           sys.exc_info()[1]))
                 worker.logger.flush()

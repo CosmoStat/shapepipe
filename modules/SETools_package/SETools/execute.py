@@ -98,13 +98,14 @@ class PackageRunner(object):
                 self._fnames['output_filepath']
             results_dict['elapsed_time'] = clock() - start_time
 
-            self._log_output_success(self._fnames['output_filepath_exp'])
+            # MKDEBUG: Not used (?)
+            #self._log_output_success(self._fnames['output_filepath_exp'])
 
         except Exception as detail:
 
             if self._worker.logging_enabled():
-                temp_string = ('{0} - An error occurred while generating '
-                               'catalog: {1} ({2})')
+                temp_string = ('SETools:{0} - An error occurred while generating '
+                               'catalog: name=\'{1}\', error=\'{2}\'')
                 self._worker.logger.log_error_p(temp_string.format(
                                                 self._worker.name,
                                                 self._job, detail))
@@ -135,20 +136,22 @@ class PackageRunner(object):
         output_path = os.path.join(self._worker.result_output_dir,
                                    self._job.get_branch_tree())
 
-        # --- Outpu file name
+        # --- Output file name
         self._fnames['output_filepath'] = os.path.join(output_path,
                                                        input_filename)
 
         # --- Expected output catalog file name
-        output_cat_filename_exp = (self._get_output_catalog_filename(
-                                   input_filename))
+        # MKDEBUG: Not used (?)
+        #output_cat_filename_exp = (self._get_output_catalog_filename(
+                                   #input_filename))
 
         # --- Output catalog file path
-        self._fnames['output_filepath_exp'] = (os.path.abspath(os.path.join(
-                                               output_path,
-                                               output_cat_filename_exp)))
+        # MKDEBUG: Not used (?)
+        #self._fnames['output_filepath_exp'] = (os.path.abspath(os.path.join(
+                                               #output_path,
+                                               #output_cat_filename_exp)))
 
-        self._log_exp_output(self._fnames['output_filepath_exp'])
+        #self._log_exp_output(self._fnames['output_filepath_exp'])
 
     def _exec_code(self):
 
@@ -167,6 +170,8 @@ class PackageRunner(object):
         r=setools.SETools(cat_filepath=self._fnames['input_filepath'][0],
                           config_filepath=self._fnames['config_filepath'],
                           output_dir=self._worker.result_output_dir,
+                          plot_output_dir=self._worker.plot_output_dir,
+                          stat_output_dir=self._worker.stat_output_dir,
                           extra_file=extra_file)
         r.process()
 
@@ -279,6 +284,9 @@ class PackageRunner(object):
         file_path : str
             Output file name with full path
 
+        Returns
+        -------
+        None
         """
 
         if self._worker.logging_enabled():
@@ -292,9 +300,10 @@ class PackageRunner(object):
                                                self._job.epoch,
                                                file_path))
             else:
-                temp_string = ('{0} - An error occurred while generating '
-                               'catalog: {1}')
+                temp_string = ('SETools:{0} - An error occurred while generating '
+                               'catalog: name={1}: Path \'{2}\' does not exist')
                 self._worker.logger.log_error_p(temp_string.format(
                                                 self._worker.name,
-                                                self._job))
-            self._worker.logger.flush()
+                                                self._job, file_path))
+            #self._worker.logger.flush()
+

@@ -12,7 +12,7 @@ IMAFLAGS_ISO == 0
 "all" = len(FWHM_IMAGE)
 "valid" = len(FWHM_IMAGE{valid})
 
-# Plots: Axel's format
+# Plots
 [PLOT:valid]
 TYPE   = plot
 FORMAT = pdf
@@ -25,22 +25,23 @@ COLOR_2  = b
 MARKERSIZE_1 = 0.75
 MARKERSIZE_2 = 0.1
 MARKER_1   = "o"
-MARKER_3   = "o"
+MARKER_2   = "o"
 LABEL_1  = "valid"
-LABEL_3  = "all"
-TITLE  = "Valid detected objects"
+LABEL_2  = "all"
+TITLE  = "Detected objects"
 XLABEL = "FWHM [pix]"
 YLABEL = "magnitude (MAG_AUTO)"
 XLIM   = -1,25
+YLIM   = 15.9,27
 
 [PLOT:hist]
 TYPE = hist
 FORMAT = png
 Y = MAG_AUTO{valid}
-BIN = 20
+BIN = 50
 LABEL = "Mag of valid objects"
 XLABEL = "Magnitude"
 YLABEL = "Number"
-TITLE = "Valid detected objects"
-
+TITLE = "Detected objects"
+XLIM  = 15,30
 
