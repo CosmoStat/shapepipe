@@ -2,9 +2,9 @@
 
 
 [MASK:valid]
-MAG_AUTO > 16
-FLAGS == 0
-IMAFLAGS_ISO == 0
+#MAG_AUTO > 16
+#FLAGS == 0
+#IMAFLAGS_ISO == 0
 
 [STAT:numbers]
 "mean FWHM"  = mean(FWHM_IMAGE)
@@ -38,10 +38,22 @@ YLIM   = 15.9,27
 TYPE = hist
 FORMAT = png
 Y = MAG_AUTO{valid}
-BIN = 50
-LABEL = "Mag of valid objects"
+BIN = 25
+LABEL = "Valid objects"
 XLABEL = "Magnitude"
 YLABEL = "Number"
-TITLE = "Detected objects"
-XLIM  = 15,30
+TITLE = "Valid objects"
+#XLIM  = 15,30
+
+[PLOT:test_scatter]
+TYPE = scatter
+FORMAT = pdf
+X = X_IMAGE{valid}
+Y = Y_IMAGE{valid}
+SCATTER_1 = MAG_AUTO{valid}
+#LABEL_1 = "fwhm, mean: @mean(FWHM_IMAGE)@"
+MARKER_1 = .
+#TITLE = "FWHM / MAG"
+XLABEL = "X (pix)"
+YLABEL = "Y (pix)"
 

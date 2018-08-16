@@ -288,33 +288,33 @@ def create_qsub_script(module):
         module name
 
     Returns:
-    qsub_script_name: string
-        job script name
+    qsub_script_base: string
+        job script base name
     """
 
 
-    qsub_script_name = 'job_{}.sh'.format(module)
+    qsub_script_base = 'job_{}'.format(module)
 
     import platform
     hostname = platform.node()
 
     if 'candid' in hostname:
-        create_qsub_script_candide(qsub_script_name, module)
+        create_qsub_script_candide(qsub_script_base, module)
 
     else:
         print('Warning: Using candide qsub job script for different machine')
-        create_qsub_script_candide(qsub_script_name, module)
+        create_qsub_script_candide(qsub_script_base, module)
 
-    return qsub_script_name
+    return qsub_script_base
 
 
 
-def create_qsub_script_candide(qsub_script_name, module):
+def create_qsub_script_candide(qsub_script_base, module):
     """Create a bash script to be submitted with qsub, working on iap:candide
 
     Parameters
     ----------
-    qsub_script_name: string
+    qsub_script_base: string
         script name
     module: string
         module name (only used for qsub job name)
@@ -323,11 +323,13 @@ def create_qsub_script_candide(qsub_script_name, module):
     None
     """
 
-    f = open(qsub_script_name, 'w')
+    qsub_script_name = '{}.sh'.format(qsub_script_base)
+
+    f = open('{}'.format(qsub_script_name), 'w')
     print('#!/usr/bin/bash\n', file=f)
     print('#PBS -S /usr/bin/bash\n', file=f)
     print('#PBS -N {}\n'.format(module), file=f)
-    print('#PBS -o job.out', file=f)
+    print('#PBS -o {}.out'.format(qsub_script_base), file=f)
     print('#PBS -j oe\n', file=f)
     print('#PBS -l nodes=1:ppn=1,walltime=10:00:00\n', file=f)
 
@@ -390,14 +392,16 @@ def run_module(param):
 
         # Run module
         if param.job == 'manual':
-            ex = stuff.run_cmd(launch_path, run=not param.dry_run, verbose=param.verbose, devnull=False)
+            ex, out, err = stuff.run_cmd(launch_path, run=not param.dry_run, verbose=param.verbose, devnull=False)
             if param.verbose:
                 print('Sum[exit codes] = {}'.format(ex))
+                if ex != 0:
+                    print('output, error = ', out, err)
 
         elif param.job == 'qsub':
 
-            qsub_script_name = create_qsub_script(module)
-            stuff.run_cmd('qsub {}'.format(qsub_script_name), run=not param.dry_run, verbose=param.verbose, devnull=False)
+            qsub_script_base = create_qsub_script(module)
+            stuff.run_cmd('qsub {}.sh'.format(qsub_script_base), run=not param.dry_run, verbose=param.verbose, devnull=False)
 
         else:
             stuff.error('Invalid job execution mode \'{}\''.format(param.job))
