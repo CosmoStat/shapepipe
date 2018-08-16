@@ -22,4 +22,4 @@ __python_depend__ = pipe_depend + external_depend
 
 # System dependencies
 
-__system_depend__ = ['diff', 'ls']
+__system_depend__ = []

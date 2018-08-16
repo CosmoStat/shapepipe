@@ -162,7 +162,7 @@ class SETools(object):
             # MKDEBUG new, prevent to create directory, somehow this causes error sometimes
             # (in multi-process run?)
             if self._stat_output_dir:
-                direc = self._plot_output_dir
+                direc = self._stat_output_dir
             else:
                 direc = self._output_dir + '/stat'
                 _mkdir(direc)
@@ -703,6 +703,7 @@ class SEPlot(object):
 
         if self._plot['TYPE']['0'] in ['plot', 'PLOT']:
             self._check_key_for_plot(['X', 'Y'])
+            # MKDEBUG: Following lines have been replaced by subroutine
             #if ('X' not in self._plot.keys()) | ('Y' not in self._plot.keys()):
                 #raise ValueError('X and/or Y not provided')
             self._make_plot()
@@ -1036,7 +1037,7 @@ class SEPlot(object):
                 alpha = None
 
             plt.hist(sc.interpreter(self._plot['Y'][i], self._cat, mask_dict= self._mask_dict).result,
-                     bins= bins, color= color, label= label, alpha= alpha, histtype= htype, log=log)
+                     bins=bins, color=color, label=label, alpha=alpha, histtype=htype, log=log)
 
         if 'LABEL' in self._plot.keys():
             plt.legend()

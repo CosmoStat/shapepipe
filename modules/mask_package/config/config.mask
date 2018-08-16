@@ -9,7 +9,7 @@ CDSCLIENT_PATH = findgsc2.2
 # ----------------------------- Border parameters ----------------------------------
 [BORDER_PARAMETERS]
 
-BORDER_MAKE = True
+BORDER_MAKE = False
 
 BORDER_WIDTH = 300
 BORDER_FLAG_VALUE = 4

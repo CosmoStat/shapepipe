@@ -26,7 +26,6 @@ from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
 
 import stuff
 
-
 """
 Call each module
 	- check whether required executables are present
