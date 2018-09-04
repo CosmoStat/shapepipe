@@ -22,7 +22,8 @@ import copy
 import glob
 
 import numpy as np
-import pylab as plt
+#import pylab as plt
+import matplotlib as plt
 
 from astropy.io import ascii
 from astropy.table import Table, Column

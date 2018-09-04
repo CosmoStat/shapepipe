@@ -49,17 +49,20 @@ Requires on input (config)
 # Global variable, solve differenly
 modules_glob = {}
 modules_glob['std'] = ['select', 'mask', 'SExtractor', 'SETools', 'PSFExRun', 'PSFExInterpolation']
+modules_glob['tiles_exp'] = ['select', 'mask', 'SExtractor', 'find_exp', 'SETools', 'PSFExRun', 'PSFExInterpolation']
 
 path_sp     = '{}/ShapePipe'.format(os.environ['HOME'])
 path_spmod  = '{}/modules'.format(path_sp)
 path_sppy   = '{}/scripts/python'.format(path_sp)
 path_output = 'output' 
-path_data   = '{}/data'.format(os.environ['HOME'])
+path_data     = '{}/data'.format(os.environ['HOME'])
+path_data_exp = '{}/exp'.format(path_data)
 
 path_CFIS_data = '{}/astro/data/CFIS'.format(os.environ['HOME'])
 
 name_adopted = 'adopted'
 name_results = 'results'
+
 
 
 class modules_local:
@@ -70,7 +73,8 @@ class modules_local:
         pass
 
     def select(self, param):
-        """Area selection.
+        """Area selection. Create links to tiles.
+
         Parameters
         ----------
         param: class param
@@ -81,9 +85,9 @@ class modules_local:
         None
         """
 
-        # Check whether data dir does not exist
+        # Create tile links directory
         if os.path.isfile(path_data):
-            stuff.error('Path {} exists, please remove for field selection step'.format(path_data))
+            stuff.error('Path {} exists, please remove for field selection step (creating links)'.format(path_data))
         os.mkdir(path_data)
 
         # Find fields in given area
@@ -101,6 +105,28 @@ class modules_local:
         # Create links to original files
         launch_path = '{}/create_image_links.py -i {}.txt -v -o {}'.format(path_sppy, name, path_data)
         stuff.run_cmd(launch_path, run=not param.dry_run, verbose=param.verbose, devnull=False)
+
+
+    def find_exp(self, param):
+        """Find exposures used in selected tiles and create links.
+
+        Parameters
+        ----------
+        param: class param
+            parameter values
+
+        Returns
+        -------
+        None
+        """
+
+        # Create exposure links directory
+        if os.path.isdir(path_data_exp):
+            stuff.error('Path {} exists, please remove before setting links to exposures'.format(path_data_exp))
+        os.mkdir(path_data_exp)
+
+        cmd = '{}/cfis_create_exposures_links.py -i {} -o {} -v -p \'CFIS-\''.format(path_sppy, path_data, path_data_exp)
+        stuff.run_cmd(cmd, run=not param.dry_run, verbose=param.verbose, devnull=False) 
 
 
 def params_default():
@@ -150,7 +176,7 @@ def parse_options(p_def):
     parser.add_option('-s', '--scheme', dest='scheme', type='string', default=p_def.scheme,
             help='scheme, default=\'{}\''.format(p_def.scheme))
     parser.add_option('-M', '--module', dest='module', type='string', default=None,
-            help='pipeline module, see \'-l\' for list of all modules')
+            help='pipeline module, see \'-m l\' for list of all modules')
     parser.add_option('-O', '--options', dest='options', type='string', default=None,
             help='options for (local) modules')
 

@@ -422,7 +422,7 @@ def get_Angle_arr(str_coord, num=-1, verbose=False):
 
 
 def read_list(fname, col=None):
-    """Read list of from ascii file.
+    """Read list from ascii file.
 
     Parameters
     ----------
