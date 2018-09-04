@@ -47,10 +47,12 @@ def params_default():
     p_def = stuff.param(
         input_dir_tiles = input_dir,
         input_dir_exp   = '{}/astro/data/CFIS/pitcairn'.format(os.environ['HOME']),
+        input_dir_exp_weights = '{}/astro/data/CFIS/weights'.format(os.environ['HOME']),
         output_dir      = '{}/exposures'.format(input_dir),
         band            = 'r',
         pattern_base    = 'CFIS-',
         exp_base_new    = 'CFISexp',
+        exp_weight_base_new = 'CFISexp.weight',
     )
 
     return p_def
@@ -80,6 +82,8 @@ def parse_options(p_def):
          help='input directory for tiles, default=\'{}\''.format(p_def.input_dir_tiles))
     parser.add_option('-I', '--input_dir_exp', dest='input_dir_exp', type='string', default=p_def.input_dir_exp,
          help='input directory for exposures, default=\'{}\''.format(p_def.input_dir_exp))
+    parser.add_option('', '--input_dir_exp_weights', dest='input_dir_exp_weights', type='string', default=p_def.input_dir_exp_weights,
+         help='input directory for exposure weight maps, default=\'{}\''.format(p_def.input_dir_exp_weights))
     parser.add_option('-o', '--output_dir', dest='output_dir', type='string', default=p_def.output_dir,
          help='output directory, where links will be created, default=\'{}\''.format(p_def.output_dir))
 
@@ -88,7 +92,9 @@ def parse_options(p_def):
     parser.add_option('-p', '--pattern', dest='pattern', type='string', default=p_def.pattern_base,
         help='file pattern to match, default=\'{}\''.format(p_def.pattern_base))
     parser.add_option('', '--exp_base_new', dest='exp_base_new', type='string', default=p_def.exp_base_new,
-         help='exposure base name of link to be created, default=\'{}\''.format(p_def.exp_base_new))
+         help='exposure base name of links to be created, default=\'{}\''.format(p_def.exp_base_new))
+    parser.add_option('', '--exp_weight_base_new', dest='exp_weight_base_new', type='string', default=p_def.exp_weight_base_new,
+         help='exposure weight map base name of links to be created, default=\'{}\''.format(p_def.exp_weight_base_new))
 
 
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
@@ -231,7 +237,7 @@ def get_exposure_list(tiles, verbose=False):
 
 
 
-def create_links(exp_list, input_dir, output_dir, exp_base, verbose=False):
+def create_links(exp_list, input_dir, input_dir_weights, output_dir, exp_base, exp_weight_base, verbose=False):
     """Create links to exposures in pipeline format.
 
     Parameters
@@ -239,11 +245,15 @@ def create_links(exp_list, input_dir, output_dir, exp_base, verbose=False):
     exp_list: list of strings
         list of exposure file names
     input_dir: string
-        input directory
+        input directory for exposures
+    input_dir_weights: string
+        input directory for exposure weight maps
     output_dir: string
         output directory
     exp_base: string
         base name of exposure link names in pipeline format
+    exp_weight_base: string
+        base name of exposure weight link names in pipeline format
     verbose: bool, optional, default=False
         verbose output if True
 
@@ -257,11 +267,31 @@ def create_links(exp_list, input_dir, output_dir, exp_base, verbose=False):
 
     num = 0
     ext = 'fits.fz'
+    band = 'r'
     for exp in exp_list:
 
+        print(exp)
+        m = re.findall('(.*)\.{}'.format(ext), exp)
+        if len(m) == 0:
+            stuff.error('Invalid file name \'{}\' found'.format(exp))
+
+        # Look for correponding weight image
+        weight_name = cfis.get_file_pattern(m[0], band, 'exposure_weight.fz', want_re=False)
+        weight_path = '{}/{}'.format(input_dir_weights, weight_name)
+        if not os.path.isfile(weight_path):
+            stuff.error('Weight file \'{}\' not found'.format(weight_path))
+
+        # Link to image
         source = '{}/{}'.format(input_dir, exp)
         link   = '{}/{}-{:04d}-0.{}'.format(output_dir, exp_base, num, ext)
         os.symlink(source, link)
+        print('symlink {} <- {}'.format(source, link))
+
+        # Link to weight
+        source = weight_path
+        link   = '{}/{}-{:04d}-0.{}'.format(output_dir, exp_weight_base, num, ext)
+        os.symlink(source, link)
+        print('symlink {} <- {}'.format(source, link))
 
         num = num + 1
 
@@ -288,7 +318,7 @@ def main(argv=None):
     tiles     = get_tile_list(param.input_dir_tiles, param.pattern, param.band, verbose=param.verbose)
 
     exposures = get_exposure_list(tiles, verbose=param.verbose)
-    create_links(exposures, param.input_dir_exp, param.output_dir, param.exp_base_new, verbose=param.verbose)
+    create_links(exposures, param.input_dir_exp, param.input_dir_exp_weights, param.output_dir, param.exp_base_new, param.exp_weight_base_new, verbose=param.verbose)
 
     return 0
 

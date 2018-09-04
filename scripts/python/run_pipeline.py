@@ -19,6 +19,7 @@ import os
 import re
 import copy
 import glob
+import shutil
 
 import numpy as np
 
@@ -26,37 +27,34 @@ from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
 
 import stuff
 
-"""
-Call each module
-	- check whether required executables are present
-	- check whether input files are present
-	  if not prepare module
-	- check config files, pointing to right dirs? 
-	- run
-	- ask to adopt/not adopt/postpone run
 
-Adpot last run
-	- create link output/<module>/adopt
-
-Prepare module
-	- in data create links to previous module's adopted run results
-
-Requires on input (config)
-	- List of modules (for each pipeline sequence mode)
-
-"""
-
-# Global variable, solve differenly
+# Global variables, TODO: do differenly
 modules_glob = {}
+types_glob = {}
 modules_glob['std'] = ['select', 'mask', 'SExtractor', 'SETools', 'PSFExRun', 'PSFExInterpolation']
-modules_glob['tiles_exp'] = ['select', 'mask', 'SExtractor', 'find_exp', 'SETools', 'PSFExRun', 'PSFExInterpolation']
+types_glob['std'] = ['tile', 'tile', 'tile', 'tile', 'tile', 'tile']
 
+modules_glob['tiles_exp'] = ['select', 'mask', 'SExtractor', 'find_exp', 'mask']
+types_glob['tiles_exp'] = ['tile', 'tile', 'tile', 'exposure', 'exposure']
+
+# Basic paths for pipeline codes
 path_sp     = '{}/ShapePipe'.format(os.environ['HOME'])
 path_spmod  = '{}/modules'.format(path_sp)
 path_sppy   = '{}/scripts/python'.format(path_sp)
-path_output = 'output' 
-path_data     = '{}/data'.format(os.environ['HOME'])
-path_data_exp = '{}/exp'.format(path_data)
+config_name = 'package_config_smp.cfg'
+
+# Run-time create paths
+path_config = {}
+path_config['tile']     = 'input_tile'
+path_config['exposure'] = 'input_exp'
+path_output = {}
+path_output['tile']     = 'output_tile' 
+path_output['exposure'] = 'output_exp'
+
+# Data path(s)
+path_data = {}
+path_data['tile']     = '{}/data'.format(os.environ['HOME'])
+path_data['exposure'] = '{}/exp'.format(path_data['tile'])
 
 path_CFIS_data = '{}/astro/data/CFIS'.format(os.environ['HOME'])
 
@@ -86,9 +84,9 @@ class modules_local:
         """
 
         # Create tile links directory
-        if os.path.isfile(path_data):
-            stuff.error('Path {} exists, please remove for field selection step (creating links)'.format(path_data))
-        os.mkdir(path_data)
+        if os.path.isfile(path_data['tiles']):
+            stuff.error('Path {} exists, please remove for field selection step (creating links)'.format(path_data['tile']))
+        os.mkdir(path_data['tile'])
 
         # Find fields in given area
         fixed_options = '-i {}/tiles -t tile -m a --plot -v'.format(path_CFIS_data)
@@ -103,7 +101,7 @@ class modules_local:
             stuff.error('No output file basename in options \'{}\' found'.format(param.options))
 
         # Create links to original files
-        launch_path = '{}/create_image_links.py -i {}.txt -v -o {}'.format(path_sppy, name, path_data)
+        launch_path = '{}/create_image_links.py -i {}.txt -v -o {}'.format(path_sppy, name, path_data['tile'])
         stuff.run_cmd(launch_path, run=not param.dry_run, verbose=param.verbose, devnull=False)
 
 
@@ -121,11 +119,11 @@ class modules_local:
         """
 
         # Create exposure links directory
-        if os.path.isdir(path_data_exp):
-            stuff.error('Path {} exists, please remove before setting links to exposures'.format(path_data_exp))
-        os.mkdir(path_data_exp)
+        if os.path.isdir(path_data['exposure']):
+            stuff.error('Path {} exists, please remove before setting links to exposures'.format(path_data['exposure']))
+        os.mkdir(path_data['exposure'])
 
-        cmd = '{}/cfis_create_exposures_links.py -i {} -o {} -v -p \'CFIS-\''.format(path_sppy, path_data, path_data_exp)
+        cmd = '{}/cfis_create_exposures_links.py -i {} -o {} -v -p \'CFIS-\''.format(path_sppy, path_data['tile'], path_data['exposure'])
         stuff.run_cmd(cmd, run=not param.dry_run, verbose=param.verbose, devnull=False) 
 
 
@@ -145,7 +143,6 @@ def params_default():
     p_def = stuff.param(
         scheme  = 'std',
         band  = 'r',
-        image_type  = 'tile',
         job   = 'manual',
     )
 
@@ -271,7 +268,8 @@ def update_param(p_def, options):
             param.module = int(param.module)
             if param.module < 0:
                 raise IndexError
-            param.smodule = modules_glob[param.scheme][param.module]
+            param.smodule    = modules_glob[param.scheme][param.module]
+            param.image_type = types_glob[param.scheme][param.module]
 
         except ValueError:
             if not param.module in modules_glob[param.scheme]:
@@ -300,7 +298,7 @@ def list_modules():
     for s in modules_glob:
         print('Scheme {}'.format(s))
         for i, m in enumerate(modules_glob[s]):
-            print(i, m)
+            print('{} {} [{}]'.format(i, m, types_glob[s][i]))
         print()
 
 
@@ -410,15 +408,32 @@ def run_module(param):
         if param.verbose:
             print('Running pipeline module \'{}\''.format(module))
 
-        # Create output dir if necessary
-        stuff.mkdir_p(path_output, verbose=param.verbose)
+        package = '{}_package'.format(module)
 
-        package     = '{}_package'.format(module)
+        # Creat input dir (at the moment used for config files)
+        path = '{}/{}/{}'.format(os.getcwd(), path_config[param.image_type], package)
+        stuff.mkdir_p(path, verbose=param.verbose)
+
+        # Copy config files: copy entire config tree. Need to remove existing one first.
+        path_src  = '{}/{}/config'.format(path_spmod, package)
+        path_dest = '{}/config'.format(path)
+        if os.path.isdir(path_dest):
+            shutil.rmtree(path_dest)
+        shutil.copytree(path_src, path_dest)
+
+        # Perform substitutions in package config file
+        do_substitutions(path_dest, param.image_type)
+
+        # Create output dir if necessary
+        stuff.mkdir_p(path_output[param.image_type], verbose=param.verbose)
+
         launch_path = '{}/{}/config/launch.cmd'.format(path_spmod, package)
 
         # Run module
         if param.job == 'manual':
-            ex, out, err = stuff.run_cmd(launch_path, run=not param.dry_run, verbose=param.verbose, devnull=False)
+            my_env = os.environ.copy()
+            my_env['CONFIG_DIR'] = path_dest
+            ex, out, err = stuff.run_cmd(launch_path, run=not param.dry_run, verbose=param.verbose, devnull=False, env=my_env)
             if param.verbose:
                 print('Sum[exit codes] = {}'.format(ex))
                 if ex != 0:
@@ -434,13 +449,15 @@ def run_module(param):
 
     
 
-def adopt_run(module, verbose=False):
+def adopt_run(module, image_type, verbose=False):
     """Adopt (last) run for given moduleo (set symbolic link).
 
     Parameters
     ----------
     module: string
         module name
+    image_type: string
+        image type, one in 'tile', 'exposure'
     verbose: bool, optional, default=False
         verbose output if True
 
@@ -449,7 +466,7 @@ def adopt_run(module, verbose=False):
     None
     """
 
-    path_runs = '{}/{}'.format(path_output, module)
+    path_runs = '{}/{}'.format(path_output[image_type], module)
     f = glob.glob('{}/run_*'.format(path_runs))
     f = sorted(f)
     last_run  = f[-1]
@@ -460,13 +477,15 @@ def adopt_run(module, verbose=False):
     stuff.ln_s(source, link_name, orig_to_check=source_to_check, verbose=verbose, force=True)
 
 
-def discard_run(module, verbose=False):
+def discard_run(module, image_type, verbose=False):
     """Discard adopted run for given module (remove symbolic link)
 
     Parameters
     ----------
     module: string
         module name
+    image_type: string
+        image type, one in 'tile', 'exposure'
     verbose: bool, optional, default=False
         verbose output if True
 
@@ -475,7 +494,7 @@ def discard_run(module, verbose=False):
     None
     """
 
-    path = '{}/{}/adopted'.format(path_output, module)
+    path = '{}/{}/adopted'.format(path_output[image_type], module)
     if os.path.islink(path):
         if verbose:
             print('Discarding adopted run of module \'{}\''.format(module))
@@ -485,13 +504,15 @@ def discard_run(module, verbose=False):
 
 
 
-def set_results(module, verbose=False):
+def set_results(module, image_type, verbose=False):
     """Set file links in <data> to adopted run for given module.
 
     Parameters
     ----------
     module: string
         module name
+    image_type: string
+        image type, one in 'tile', 'exposure'
     verbose: bool, optional, default=False
         verbose output if True
 
@@ -500,13 +521,43 @@ def set_results(module, verbose=False):
     None
     """
 
-    path_results = '{}/{}/{}/{}/{}'.format(os.getcwd(), path_output, module, name_adopted, name_results)
+    path_results = '{}/{}/{}/{}/{}'.format(os.getcwd(), path_output[image_type], module, name_adopted, name_results)
 
     files = glob.glob('{}/*'.format(path_results))
     for f in files:
         source    = f
-        link_name = '{}/{}'.format(path_data, os.path.basename(f))
+        link_name = '{}/{}'.format(path_data[image_type], os.path.basename(f))
         stuff.ln_s(source, link_name, orig_to_check=source, verbose=verbose, force=True)
+
+
+def do_substitutions(path_dest, image_type):
+    """Perform basic substitutions of values for certain keys in package config file
+
+    Parameters
+    ----------
+    path_dest: string
+        path of config file
+    image_type: string
+        type of image, 'exposure' or 'image'
+
+    Returns
+    -------
+    None
+    """
+
+    in_name  = '{}/{}'.format(path_dest, config_name)
+    tmp_name = 'temp.tmp'
+    fin  = open(in_name)
+    fout = open(tmp_name, 'w')
+
+    dat = fin.read()
+    fin.close()
+    dat = stuff.substitute(dat, 'BASE_DIR', '\$HOME/data', path_data[image_type])
+
+    fout.write(dat)
+    fout.close()
+
+    os.rename(tmp_name, in_name)
 
 
 
@@ -546,13 +597,13 @@ def main(argv=None):
         run_module(param)
 
     elif param.mode == 'a':
-        adopt_run(param.smodule, verbose=param.verbose)
+        adopt_run(param.smodule, param.image_type, verbose=param.verbose)
 
     elif param.mode == 'd':
-        discard_run(param.smodule, verbose=param.verbose)
+        discard_run(param.smodule, param.image_type, verbose=param.verbose)
 
     elif param.mode == 's':
-        set_results(param.smodule, verbose=param.verbose)
+        set_results(param.smodule, param.image_type, verbose=param.verbose)
 
     ### End main program
 

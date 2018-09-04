@@ -17,6 +17,7 @@ from __future__ import print_function
 
 import sys
 import os
+import re
 import subprocess
 import shlex
 import errno
@@ -207,6 +208,42 @@ def my_string_split(string, num=-1, verbose=False, stop=False):
 
 
 
+def substitute(dat, key, val_old, val_new):
+    """Performs a substitution val_new for val_old as value corresponding to key.
+       See run_csfisher_cut_bins.py
+
+    Parameters
+    ----------
+    dat: string
+        file content
+    key: string
+        key
+    val_old: n/a
+        old value
+    val_new: n/a
+        new value
+
+    Returns
+    -------
+    dat: string
+        file content after substitution
+    """
+
+    str_old = '{}\s*=\s*{}'.format(key, val_old)
+    str_new = '{}\t\t= {}'.format(key, val_new)
+
+    #print('Replacing \'{}\' -> \'{}\''.format(str_old, str_new))
+
+    dat, n  = re.subn(str_old, str_new, dat)
+
+    if n != 1:
+        msg = 'Substitution {} -> {} failed, {} entries replaced'.format(str_old, str_new, n)
+        error(msg, val=1)
+
+    return dat
+
+
+
 class IndentedHelpFormatterWithNL(IndentedHelpFormatter):
   """Allows newline to have effect in option help.
      From https://groups.google.com/forum/#!msg/comp.lang.python/bfbmtUGhW8I/sZkGryaO8gkJ
@@ -317,7 +354,7 @@ def log_command(argv, name=None, close_no_return=True):
         f.close()
 
 
-def run_cmd(cmd_list, run=True, verbose=True, stop=False, parallel=True, file_list=None, devnull=False):
+def run_cmd(cmd_list, run=True, verbose=True, stop=False, parallel=True, file_list=None, devnull=False, env=None):
     """Run shell command or a list of commands using subprocess.Popen().
 
     Parameters
@@ -338,6 +375,8 @@ def run_cmd(cmd_list, run=True, verbose=True, stop=False, parallel=True, file_li
         If file_list[i] exists, cmd_list[i] is not run. Default value is None
     devnull: boolean
         If True, all output is suppressed. Default is False.
+    env: bool, optional, default=None
+        Modified environment in which shell command will runi
 
     Returns
     -------
@@ -356,6 +395,10 @@ def run_cmd(cmd_list, run=True, verbose=True, stop=False, parallel=True, file_li
     pipe_list = []
     out_list  = []
     err_list  = []
+
+    if env is None:
+        env = os.environ.copy()
+
     for i, cmd in enumerate(cmd_list):
 
         ex = 0
@@ -375,9 +418,9 @@ def run_cmd(cmd_list, run=True, verbose=True, stop=False, parallel=True, file_li
                 try:
                     cmds = shlex.split(cmd)
                     if devnull is True:
-                        pipe = subprocess.Popen(cmds, stdout=subprocess.DEVNULL)
+                        pipe = subprocess.Popen(cmds, stdout=subprocess.DEVNULL, env=env)
                     else:
-                        pipe = subprocess.Popen(cmds, stdout=subprocess.PIPE)
+                        pipe = subprocess.Popen(cmds, stdout=subprocess.PIPE, env=env)
                         #out, err = pipe.communicate()
                         #print(out)
                         # See https://www.endpoint.com/blog/2015/01/28/getting-realtime-output-using-python
