@@ -2,9 +2,9 @@
 
 
 [MASK:valid]
-#MAG_AUTO > 16
-#FLAGS == 0
-#IMAFLAGS_ISO == 0
+MAG_AUTO > 16
+FLAGS == 0
+IMAFLAGS_ISO == 0
 
 [STAT:numbers]
 "mean FWHM"  = mean(FWHM_IMAGE)
