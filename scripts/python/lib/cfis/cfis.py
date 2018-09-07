@@ -147,7 +147,7 @@ def get_file_pattern(pattern, band, image_type, want_re=True):
 
     if pattern == '':
         if image_type in ('exposure', 'exposure_flag', 'exposure_flag.fz', \
-		'exposure_flag', 'exposure_weight', 'exposure_weight.fz'):
+		'exposure_weight', 'exposure_weight.fz'):
             pattern_base = '\d{7}p'
         else:
             pattern_base  = 'CFIS.*\.{}'.format(band)

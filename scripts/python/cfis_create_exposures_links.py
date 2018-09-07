@@ -48,11 +48,11 @@ def params_default():
         input_dir_tiles = input_dir,
         input_dir_exp   = '{}/astro/data/CFIS/pitcairn'.format(os.environ['HOME']),
         input_dir_exp_weights = '{}/astro/data/CFIS/weights'.format(os.environ['HOME']),
+        input_dir_exp_flags = '{}/astro/data/CFIS/flags'.format(os.environ['HOME']),
         output_dir      = '{}/exposures'.format(input_dir),
         band            = 'r',
         pattern_base    = 'CFIS-',
         exp_base_new    = 'CFISexp',
-        exp_weight_base_new = 'CFISexp.weight',
     )
 
     return p_def
@@ -78,12 +78,17 @@ def parse_options(p_def):
     usage  = "%prog [OPTIONS]"
     parser = OptionParser(usage=usage, formatter=stuff.IndentedHelpFormatterWithNL())
 
+    # Input
     parser.add_option('-i', '--input_dir_tiles', dest='input_dir_tiles', type='string', default=p_def.input_dir_tiles,
          help='input directory for tiles, default=\'{}\''.format(p_def.input_dir_tiles))
     parser.add_option('-I', '--input_dir_exp', dest='input_dir_exp', type='string', default=p_def.input_dir_exp,
          help='input directory for exposures, default=\'{}\''.format(p_def.input_dir_exp))
     parser.add_option('', '--input_dir_exp_weights', dest='input_dir_exp_weights', type='string', default=p_def.input_dir_exp_weights,
          help='input directory for exposure weight maps, default=\'{}\''.format(p_def.input_dir_exp_weights))
+    parser.add_option('', '--input_dir_exp_flags', dest='input_dir_exp_flags', type='string', default=p_def.input_dir_exp_flags,
+         help='input directory for exposure flag maps, default=\'{}\''.format(p_def.input_dir_exp_flags))
+
+    # Output
     parser.add_option('-o', '--output_dir', dest='output_dir', type='string', default=p_def.output_dir,
          help='output directory, where links will be created, default=\'{}\''.format(p_def.output_dir))
 
@@ -93,9 +98,10 @@ def parse_options(p_def):
         help='file pattern to match, default=\'{}\''.format(p_def.pattern_base))
     parser.add_option('', '--exp_base_new', dest='exp_base_new', type='string', default=p_def.exp_base_new,
          help='exposure base name of links to be created, default=\'{}\''.format(p_def.exp_base_new))
-    parser.add_option('', '--exp_weight_base_new', dest='exp_weight_base_new', type='string', default=p_def.exp_weight_base_new,
-         help='exposure weight map base name of links to be created, default=\'{}\''.format(p_def.exp_weight_base_new))
-
+    parser.add_option('', '--exp_weight_base_new', dest='exp_weight_base_new', type='string',
+         help='exposure weight map base name of links to be created, default=\'<EXP_BASE_NEW>.weight\'')
+    parser.add_option('', '--exp_flag_base_new', dest='exp_flag_base_new', type='string',
+         help='exposure flag map base name of links to be created, default=\'<EXP_BASE_NEW>.flag\'')
 
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
 
@@ -150,6 +156,12 @@ def update_param(p_def, options):
     for key in vars(options):
         if not key in vars(param):
             setattr(param, key, getattr(options, key))
+
+    if param.exp_weight_base_new is None:
+        param.exp_weight_base_new = '{}.weight'.format(param.exp_base_new)
+    if param.exp_flag_base_new is None:
+        param.exp_flag_base_new = '{}.flag'.format(param.exp_base_new)
+        
 
     return param
 
@@ -237,7 +249,8 @@ def get_exposure_list(tiles, verbose=False):
 
 
 
-def create_links(exp_list, input_dir, input_dir_weights, output_dir, exp_base, exp_weight_base, verbose=False):
+def create_links(exp_list, input_dir, input_dir_weights, input_dir_flags, output_dir, \
+                 exp_base, exp_weight_base, exp_flag_base, verbose=False):
     """Create links to exposures in pipeline format.
 
     Parameters
@@ -248,12 +261,16 @@ def create_links(exp_list, input_dir, input_dir_weights, output_dir, exp_base, e
         input directory for exposures
     input_dir_weights: string
         input directory for exposure weight maps
+    input_dir_flags: string
+        input directory for exposure flag maps
     output_dir: string
         output directory
     exp_base: string
         base name of exposure link names in pipeline format
     exp_weight_base: string
         base name of exposure weight link names in pipeline format
+    exp_flag_base: string
+        base name of exposure flag link names in pipeline format
     verbose: bool, optional, default=False
         verbose output if True
 
@@ -281,15 +298,27 @@ def create_links(exp_list, input_dir, input_dir_weights, output_dir, exp_base, e
         if not os.path.isfile(weight_path):
             stuff.error('Weight file \'{}\' not found'.format(weight_path))
 
+        # Look for correponding flag image
+        flag_name = cfis.get_file_pattern(m[0], band, 'exposure_flag.fz', want_re=False)
+        flag_path = '{}/{}'.format(input_dir_flags, flag_name)
+        if not os.path.isfile(flag_path):
+            stuff.error('Weight file \'{}\' not found'.format(flag_path))
+
         # Link to image
         source = '{}/{}'.format(input_dir, exp)
-        link   = '{}/{}-{:04d}-0.{}'.format(output_dir, exp_base, num, ext)
+        link   = '{}/{}-{:03d}-0.{}'.format(output_dir, exp_base, num, ext)
         os.symlink(source, link)
         print('symlink {} <- {}'.format(source, link))
 
         # Link to weight
         source = weight_path
-        link   = '{}/{}-{:04d}-0.{}'.format(output_dir, exp_weight_base, num, ext)
+        link   = '{}/{}-{:03d}-0.{}'.format(output_dir, exp_weight_base, num, ext)
+        os.symlink(source, link)
+        print('symlink {} <- {}'.format(source, link))
+
+        # Link to flag
+        source = flag_path
+        link   = '{}/{}-{:03d}-0.{}'.format(output_dir, exp_flag_base, num, ext)
         os.symlink(source, link)
         print('symlink {} <- {}'.format(source, link))
 
@@ -318,7 +347,8 @@ def main(argv=None):
     tiles     = get_tile_list(param.input_dir_tiles, param.pattern, param.band, verbose=param.verbose)
 
     exposures = get_exposure_list(tiles, verbose=param.verbose)
-    create_links(exposures, param.input_dir_exp, param.input_dir_exp_weights, param.output_dir, param.exp_base_new, param.exp_weight_base_new, verbose=param.verbose)
+    create_links(exposures, param.input_dir_exp, param.input_dir_exp_weights, param.input_dir_exp_flags, param.output_dir, \
+                 param.exp_base_new, param.exp_weight_base_new, param.exp_flag_base_new, verbose=param.verbose)
 
     return 0
 

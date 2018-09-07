@@ -57,6 +57,9 @@ path_data['tile']     = '{}/data'.format(os.environ['HOME'])
 path_data['exposure'] = '{}/exp'.format(path_data['tile'])
 
 path_CFIS_data = '{}/astro/data/CFIS'.format(os.environ['HOME'])
+data_file_base = {}
+data_file_base['tile'] = 'CFIS'
+data_file_base['exposure'] = 'cfisexp'.format(data_file_base['tile'])
 
 name_adopted = 'adopted'
 name_results = 'results'
@@ -123,7 +126,8 @@ class modules_local:
             stuff.error('Path {} exists, please remove before setting links to exposures'.format(path_data['exposure']))
         os.mkdir(path_data['exposure'])
 
-        cmd = '{}/cfis_create_exposures_links.py -i {} -o {} -v -p \'CFIS-\''.format(path_sppy, path_data['tile'], path_data['exposure'])
+        cmd = '{}/cfis_create_exposures_links.py -i {} -o {} -v -p \'CFIS-\' --exp_base_new=\'{}\''.\
+            format(path_sppy, path_data['tile'], path_data['exposure'], data_file_base['exposure'])
         stuff.run_cmd(cmd, run=not param.dry_run, verbose=param.verbose, devnull=False) 
 
 
@@ -552,7 +556,14 @@ def do_substitutions(path_dest, image_type):
 
     dat = fin.read()
     fin.close()
+
+    # Set keys specifiy to image type (tile, exposure)
     dat = stuff.substitute(dat, 'BASE_DIR', '\$HOME/data', path_data[image_type])
+    dat = stuff.substitute(dat, 'BASE_OUTPUT_DIR', 'output', path_output[image_type])
+
+    dat = stuff.substitute_arr(dat, 'INPUT_FILENAME_FORMATS', data_file_base['tile'], data_file_base['exposure'])
+    dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}.flag.fits\''.format(data_file_base['exposure']))
+
 
     fout.write(dat)
     fout.close()
