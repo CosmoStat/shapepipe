@@ -1,8 +1,10 @@
 #!/usr/bin/env python
   
-"""Script cfis_create_exposures_links.py
+"""Script cfis_create_exposures.py
 
-Create links to exposures that are used in stacks.
+For exposures that are used in stacks, create either:
+  (1) links to the exposure files
+  (2) FITS files for each HDU
 
 :Authors: Martin Kilbinger
 
@@ -24,6 +26,7 @@ import numpy as np
 
 from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
 from astropy.io import fits
+
 
 import stuff
 import cfis
@@ -50,6 +53,7 @@ def params_default():
         input_dir_exp_weights = '{}/astro/data/CFIS/weights'.format(os.environ['HOME']),
         input_dir_exp_flags = '{}/astro/data/CFIS/flags'.format(os.environ['HOME']),
         output_dir      = '{}/exposures'.format(input_dir),
+        output_format   = 'hdu',
         band            = 'r',
         pattern_base    = 'CFIS-',
         exp_base_new    = 'CFISexp',
@@ -91,6 +95,8 @@ def parse_options(p_def):
     # Output
     parser.add_option('-o', '--output_dir', dest='output_dir', type='string', default=p_def.output_dir,
          help='output directory, where links will be created, default=\'{}\''.format(p_def.output_dir))
+    parser.add_option('-O', '--output_format', dest='output_format', type='string', default=p_def.output_format,
+         help='output format, one in \'links\' (create links), \'hdu\' (write FITS files for each HDU; default)')
 
     parser.add_option('-b', '--band', dest='band', type='string', default=p_def.band,
         help='band, one of \'r\' (default)|\'u\'')
@@ -124,6 +130,9 @@ def check_options(options):
     erg: bool
         Result of option check. False if invalid option value.
     """
+
+    if not options.output_format in ('links', 'hdu'):
+        stuff.error('Option -O (--output_format) needs to be \'links\' or \'hdu\'')
 
     return True
 
@@ -241,6 +250,8 @@ def get_exposure_list(tiles, verbose=False):
             temp = h.split(' ')
             name = '{}.fz'.format(temp[3])
             exp_list.append(name)
+
+    print('MKDEBUG TODO: Remove multiple exposures')
     
     if verbose:
         print('Found {} exposures'.format(len(exp_list)))
@@ -249,9 +260,100 @@ def get_exposure_list(tiles, verbose=False):
 
 
 
-def create_links(exp_list, input_dir, input_dir_weights, input_dir_flags, output_dir, \
-                 exp_base, exp_weight_base, exp_flag_base, verbose=False):
-    """Create links to exposures in pipeline format.
+def create_links(num, input_dir, output_dir, exp, weight_path, flag_path, exp_base, \
+                 exp_weight_base, exp_flag_base, ext, verbose=False):
+    """Create links image, weight, and flag file
+    """
+
+    source = '{}/{}'.format(input_dir, exp)
+    link   = '{}/{}-{:03d}-0.{}'.format(output_dir, exp_base, num, ext)
+    os.symlink(source, link)
+    if verbose:
+        print('symlink {} <- {}'.format(source, link))
+
+    # Link to weight
+    source = weight_path
+    link   = '{}/{}-{:03d}-0.{}'.format(output_dir, exp_weight_base, num, ext)
+    os.symlink(source, link)
+    if verbose:
+        print('symlink {} <- {}'.format(source, link))
+
+    # Link to flag
+    source = flag_path
+    link   = '{}/{}-{:03d}-0.{}'.format(output_dir, exp_flag_base, num, ext)
+    os.symlink(source, link)
+    if verbose:
+        print('symlink {} <- {}'.format(source, link))
+
+    return num + 1
+
+
+
+def create_hdus(num, input_dir, output_dir, exp, weight_path, flag_path, \
+                exp_base, exp_weight_base, exp_flag_base, ext, verbose=False):
+    """Create FITS files for each hdu in the image (CCDs)
+    """
+
+    import scatalog as sc
+    import sip_tpv as stp
+
+    image = '{}/{}'.format(input_dir, exp)
+
+    img_file = sc.FITSCatalog(image, hdu_no=1)
+    img_file.open()
+    weight_file = sc.FITSCatalog(weight_path, hdu_no=1)
+    weight_file.open()
+    flag_file = sc.FITSCatalog(flag_path, hdu_no=1)
+    flag_file.open()
+    
+    # MKDEBUG TODO: if #hdu != 40, can still use the ones that are common to the three files
+    for cat in (img_file, weight_file, flag_file):
+        hdu_max = len(cat._cat_data)
+        if hdu_max != 41:
+            stuff.error('Image \'{}\' has {} HDUs, expected 40',format(exp, hdu_max - 1))
+
+
+    # Write FITS files
+    for k in range(1, 41):
+
+        # Change coordinates to astropy-readable format
+        h = img_file._cat_data[k].header
+        stp.pv_to_sip(h)
+
+        d = img_file._cat_data[k].data
+        new_fits = fits.PrimaryHDU(data=d, header=h)
+        out_name = '{}/{}-{:04d}-0.{}'.format(output_dir, exp_base, num, ext)
+        new_fits.writeto(out_name)
+
+        h_weight = weight_file._cat_data[k].header
+        d_weight = weight_file._cat_data[k].data
+        new_fits = fits.PrimaryHDU(data=d_weight, header=h_weight)
+        out_name = '{}/{}-{:04d}-0.{}'.format(output_dir, exp_weight_base, num, ext)
+        new_fits.writeto(out_name)
+
+        h_flag = flag_file._cat_data[k].header
+        d_flag = flag_file._cat_data[k].data
+        d_flag = d_flag.astype(np.int16)
+        new_fits = fits.PrimaryHDU(data=d_flag, header=h_flag)
+        out_name = '{}/{}-{:04d}-0.{}'.format(output_dir, exp_flag_base, num, ext)
+        new_fits.writeto(out_name)
+
+        if verbose:
+            print('Written image, weight, flag for {}, num={}'.format(exp, num))
+
+        num = num + 1
+
+    img_file.close()
+    weight_file.close()
+    flag_file.close()
+
+    return num
+
+
+
+def create_output(exp_list, input_dir, input_dir_weights, input_dir_flags, output_dir, \
+                 exp_base, exp_weight_base, exp_flag_base, output_format='hdu', verbose=False):
+    """Create links/write FITS files for exposures in pipeline format.
 
     Parameters
     ----------
@@ -302,30 +404,17 @@ def create_links(exp_list, input_dir, input_dir_weights, input_dir_flags, output
         flag_name = cfis.get_file_pattern(m[0], band, 'exposure_flag.fz', want_re=False)
         flag_path = '{}/{}'.format(input_dir_flags, flag_name)
         if not os.path.isfile(flag_path):
-            stuff.error('Weight file \'{}\' not found'.format(flag_path))
+            stuff.error('Flag file \'{}\' not found'.format(flag_path))
 
-        # Link to image
-        source = '{}/{}'.format(input_dir, exp)
-        link   = '{}/{}-{:03d}-0.{}'.format(output_dir, exp_base, num, ext)
-        os.symlink(source, link)
-        print('symlink {} <- {}'.format(source, link))
-
-        # Link to weight
-        source = weight_path
-        link   = '{}/{}-{:03d}-0.{}'.format(output_dir, exp_weight_base, num, ext)
-        os.symlink(source, link)
-        print('symlink {} <- {}'.format(source, link))
-
-        # Link to flag
-        source = flag_path
-        link   = '{}/{}-{:03d}-0.{}'.format(output_dir, exp_flag_base, num, ext)
-        os.symlink(source, link)
-        print('symlink {} <- {}'.format(source, link))
-
-        num = num + 1
+        if output_format == 'links':
+            num = create_links(num, input_dir, output_dir, exp, weight_path, flag_path, \
+                               exp_base, exp_weight_base, exp_flag_base, ext, verbose=verbose)
+        else:
+            num = create_hdus(num, input_dir, output_dir, exp, weight_path, flag_path, \
+                              exp_base, exp_weight_base, exp_flag_base, ext, verbose=verbose)
 
     if verbose:
-        print('Create {} links'.format(num))
+        print('Created {} links'.format(num))
 
 
 
@@ -347,8 +436,8 @@ def main(argv=None):
     tiles     = get_tile_list(param.input_dir_tiles, param.pattern, param.band, verbose=param.verbose)
 
     exposures = get_exposure_list(tiles, verbose=param.verbose)
-    create_links(exposures, param.input_dir_exp, param.input_dir_exp_weights, param.input_dir_exp_flags, param.output_dir, \
-                 param.exp_base_new, param.exp_weight_base_new, param.exp_flag_base_new, verbose=param.verbose)
+    create_output(exposures, param.input_dir_exp, param.input_dir_exp_weights, param.input_dir_exp_flags, param.output_dir, \
+                  param.exp_base_new, param.exp_weight_base_new, param.exp_flag_base_new, verbose=param.verbose)
 
     return 0
 
