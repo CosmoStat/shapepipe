@@ -54,7 +54,7 @@ path_output['exposure'] = 'output_exp'
 # Data path(s)
 path_data = {}
 path_data['tile']     = '{}/data'.format(os.environ['HOME'])
-path_data['exposure'] = '{}/exp'.format(path_data['tile'])
+path_data['exposure'] = '{}/hdu'.format(path_data['tile'])
 
 path_CFIS_data = '{}/astro/data/CFIS'.format(os.environ['HOME'])
 data_file_base = {}
@@ -87,9 +87,9 @@ class modules_local:
         """
 
         # Create tile links directory
-        if os.path.isfile(path_data['tiles']):
+        if os.path.isfile(path_data['tile']):
             stuff.error('Path {} exists, please remove for field selection step (creating links)'.format(path_data['tile']))
-        os.mkdir(path_data['tile'])
+        stuff.mkdir_p(path_data['tile'])
 
         # Find fields in given area
         fixed_options = '-i {}/tiles -t tile -m a --plot -v'.format(path_CFIS_data)
@@ -126,8 +126,12 @@ class modules_local:
             stuff.error('Path {} exists, please remove before setting links to exposures'.format(path_data['exposure']))
         os.mkdir(path_data['exposure'])
 
-        cmd = '{}/cfis_create_exposures_links.py -i {} -o {} -v -p \'CFIS-\' --exp_base_new=\'{}\''.\
-            format(path_sppy, path_data['tile'], path_data['exposure'], data_file_base['exposure'])
+        if param.verbose:
+            verbose_flag = ' -v'
+        else:
+            verbose_flag = ''
+        cmd = '{}/cfis_create_exposures.py -i {} -o {} -p \'CFIS-\' --exp_base_new=\'{}\' -O hdu{}'.\
+            format(path_sppy, path_data['tile'], path_data['exposure'], data_file_base['exposure'], verbose_flag)
         stuff.run_cmd(cmd, run=not param.dry_run, verbose=param.verbose, devnull=False) 
 
 
@@ -561,8 +565,11 @@ def do_substitutions(path_dest, image_type):
     dat = stuff.substitute(dat, 'BASE_DIR', '\$HOME/data', path_data[image_type])
     dat = stuff.substitute(dat, 'BASE_OUTPUT_DIR', 'output', path_output[image_type])
 
-    dat = stuff.substitute_arr(dat, 'INPUT_FILENAME_FORMATS', data_file_base['tile'], data_file_base['exposure'])
-    dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}.flag.fits\''.format(data_file_base['exposure']))
+    if image_type == 'exposure':
+        dat = stuff.substitute_arr(dat, 'INPUT_FILENAME_FORMATS', data_file_base['tile'], data_file_base['exposure'])
+        dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}.flag.fits\''.format(data_file_base['exposure']))
+    elif image_type == 'tile':
+        pass
 
 
     fout.write(dat)
