@@ -83,6 +83,14 @@ def error(str, val=1, stop=True, verbose=True):
 
 
 
+def warning(str):
+    """Prints message to stderr
+    """
+
+    error('Warning: ' + str, val=None, stop=False)
+
+
+
 def mkdir_p(path, verbose=False):
     """Create diretorcy by calling os.makedirs. Emulate shell function 'mkdir -p'.
 

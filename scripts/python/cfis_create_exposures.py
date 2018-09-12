@@ -254,18 +254,18 @@ def get_exposure_list(tiles, verbose=False):
     print('MKDEBUG TODO: Remove multiple exposures')
     
     if verbose:
-        print('Found {} exposures'.format(len(exp_list)))
+        print('Found {} exposures used in {} tiles'.format(len(exp_list), len(tiles)))
 
     return exp_list
 
 
 
-def create_links(num, input_dir, output_dir, exp, weight_path, flag_path, exp_base, \
+def create_links(num, output_dir, exp_path, weight_path, flag_path, exp_base, \
                  exp_weight_base, exp_flag_base, ext, verbose=False):
     """Create links image, weight, and flag file
     """
 
-    source = '{}/{}'.format(input_dir, exp)
+    source = exp_path
     link   = '{}/{}-{:03d}-0.{}'.format(output_dir, exp_base, num, ext)
     os.symlink(source, link)
     if verbose:
@@ -287,19 +287,87 @@ def create_links(num, input_dir, output_dir, exp, weight_path, flag_path, exp_ba
 
     return num + 1
 
+    
+
+def get_n_hdu_from_log(path, log):
+
+    n_hdu = 0
+    for line in log:
+        if path in line:
+            n_hdu = n_hdu + 1
+
+    return n_hdu
 
 
-def create_hdus(num, input_dir, output_dir, exp, weight_path, flag_path, \
-                exp_base, exp_weight_base, exp_flag_base, ext, verbose=False):
+
+def write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_dir, exp_base, exp_weight_base, exp_flag_base, \
+              ext, num, exp_path, verbose=False):
+    """Write HDUs.
+    """
+
+    # Change coordinates to astropy-readable format
+    import sip_tpv as stp
+
+    h = img_file._cat_data[k_img].header
+    stp.pv_to_sip(h)
+
+    d = img_file._cat_data[k_img].data
+    new_fits = fits.PrimaryHDU(data=d, header=h)
+    out_name = '{}/{}-{:04d}-0.{}'.format(output_dir, exp_base, num, ext)
+    if not os.path.isfile(out_name):
+        new_fits.writeto(out_name)
+        img_str = 'written'
+    else:
+        # TODO: error, or earler check whehter all images in log file are written to disk
+        img_str = 'skipped'
+
+    h_weight = weight_file._cat_data[k_weight].header
+    d_weight = weight_file._cat_data[k_weight].data
+    new_fits = fits.PrimaryHDU(data=d_weight, header=h_weight)
+    out_name = '{}/{}-{:04d}-0.{}'.format(output_dir, exp_weight_base, num, ext)
+    if not os.path.isfile(out_name):
+        new_fits.writeto(out_name)
+        weight_str = 'written'
+    else:
+        # TODO: error, or earler check whehter all images in log file are written to disk
+        weight_str = 'skipped'
+
+    h_flag = flag_file._cat_data[k_flag].header
+    d_flag = flag_file._cat_data[k_flag].data
+    d_flag = d_flag.astype(np.int16)
+    new_fits = fits.PrimaryHDU(data=d_flag, header=h_flag)
+    out_name = '{}/{}-{:04d}-0.{}'.format(output_dir, exp_flag_base, num, ext)
+    if not os.path.isfile(out_name):
+        new_fits.writeto(out_name)
+        flag_str = 'written'
+    else:
+        # TODO: error, or earler check whehter all images in log file are written to disk
+        flag_str = 'skipped'
+
+    if verbose:
+         print('Image/weight/flag file name/number {}/{} hdu {}/{}/{} {}/{}/{}'.\
+                format(exp_path, num, k_img, k_weight, k_flag, img_str, weight_str, flag_str))
+
+
+
+
+def create_hdus(num, output_dir, exp_path, weight_path, flag_path, \
+                exp_base, exp_weight_base, exp_flag_base, ext, log, verbose=False):
     """Create FITS files for each hdu in the image (CCDs)
     """
 
     import scatalog as sc
-    import sip_tpv as stp
 
-    image = '{}/{}'.format(input_dir, exp)
+    log_app = []
 
-    img_file = sc.FITSCatalog(image, hdu_no=1)
+    n_hdu = get_n_hdu_from_log(exp_path, log)
+    if n_hdu != 0:
+        if verbose:
+            print('Skipping image {}, found {} HDUs in log file'.format(exp_path, n_hdu))
+        num = num + n_hdu
+        return num, log_app
+
+    img_file = sc.FITSCatalog(exp_path, hdu_no=1)
     img_file.open()
     weight_file = sc.FITSCatalog(weight_path, hdu_no=1)
     weight_file.open()
@@ -307,39 +375,50 @@ def create_hdus(num, input_dir, output_dir, exp, weight_path, flag_path, \
     flag_file.open()
     
     # MKDEBUG TODO: if #hdu != 40, can still use the ones that are common to the three files
-    for cat in (img_file, weight_file, flag_file):
-        hdu_max = len(cat._cat_data)
-        if hdu_max != 41:
-            stuff.error('Image \'{}\' has {} HDUs, expected 40',format(exp, hdu_max - 1))
+    hdu_max = [len(cat._cat_data) for cat in (img_file, weight_file, flag_file)]
+    all_hdu = True
+    if not all(np.diff(hdu_max) == 0):
+        all_hdu = False
+        #stuff.error('Inconsistent #hdus={}/{}/{} of image/weight/flag'.format(hdu_max[0], hdu_max[1], hdu_max[2]))
+        stuff.warning('Inconsistent #hdus={}/{}/{} of image/weight/flag, writing only some hdus'.format(hdu_max[0], hdu_max[1], hdu_max[2]))
 
 
     # Write FITS files
-    for k in range(1, 41):
 
-        # Change coordinates to astropy-readable format
-        h = img_file._cat_data[k].header
-        stp.pv_to_sip(h)
+    for k_img in range(1, 41):
 
-        d = img_file._cat_data[k].data
-        new_fits = fits.PrimaryHDU(data=d, header=h)
-        out_name = '{}/{}-{:04d}-0.{}'.format(output_dir, exp_base, num, ext)
-        new_fits.writeto(out_name)
+        if all_hdu:
+            k_weight = k_img
+            k_flag   = k_img
+        else:
+            h_img = img_file._cat_data[k_img].header
+            coord_img = re.findall(r"[\w]+", h_img['DETSEC'])
 
-        h_weight = weight_file._cat_data[k].header
-        d_weight = weight_file._cat_data[k].data
-        new_fits = fits.PrimaryHDU(data=d_weight, header=h_weight)
-        out_name = '{}/{}-{:04d}-0.{}'.format(output_dir, exp_weight_base, num, ext)
-        new_fits.writeto(out_name)
+            k_weight_match = -1
+            for k_weight in range(1, hdu_max[1]):
+                h_weight = img_file._cat_data[k_weight].header
+                coord_weight = re.findall(r"[\w]+", h_weight['DETSEC'])
+                if coord_img == coord_weight:
+                    k_weight_match = k_weight
 
-        h_flag = flag_file._cat_data[k].header
-        d_flag = flag_file._cat_data[k].data
-        d_flag = d_flag.astype(np.int16)
-        new_fits = fits.PrimaryHDU(data=d_flag, header=h_flag)
-        out_name = '{}/{}-{:04d}-0.{}'.format(output_dir, exp_flag_base, num, ext)
-        new_fits.writeto(out_name)
+            k_flag_match = -1
+            for k_flag in range(1, hdu_max[2]):
+                h_flag = img_file._cat_data[k_flag].header
+                coord_flag = re.findall(r"[\w]+", h_flag['DETSEC'])
+                if coord_img == coord_flag:
+                    k_flag_match = k_flag
+                    break
 
-        if verbose:
-            print('Written image, weight, flag for {}, num={}'.format(exp, num))
+            if k_weight_match == -1 and k_flag_match == -1:
+                print('No matching weight and flag HDUs found for image hdu {}'.format(k_img))
+                continue
+
+            k_weight = k_weight_match
+            k_flag   = k_flag_match
+             
+        write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_dir, exp_base, exp_weight_base, exp_flag_base, \
+                  ext, num, exp_path, verbose=verbose)
+        log_app.append('{} {} {}\n'.format(exp_path, k_img, k_weight, k_flag, num))
 
         num = num + 1
 
@@ -347,7 +426,7 @@ def create_hdus(num, input_dir, output_dir, exp, weight_path, flag_path, \
     weight_file.close()
     flag_file.close()
 
-    return num
+    return num, log_app
 
 
 
@@ -384,6 +463,18 @@ def create_output(exp_list, input_dir, input_dir_weights, input_dir_flags, outpu
     if not os.path.isdir(output_dir):
         stuff.error('Path {} does not exist'.format(output_dir))
 
+    # log file
+    name_log = '{}/log_exposures.txt'.format(output_dir)
+    if not os.path.isfile(name_log):
+        # Create empty log file
+        open(name_log, 'a').close()
+
+    f_log = open(name_log, 'a+')
+    log   = f_log.readlines()
+    if verbose:
+        print('Reading log file, {} lines found'.format(len(log)))
+
+
     num = 0
     ext = 'fits.fz'
     band = 'r'
@@ -393,6 +484,8 @@ def create_output(exp_list, input_dir, input_dir_weights, input_dir_flags, outpu
         m = re.findall('(.*)\.{}'.format(ext), exp)
         if len(m) == 0:
             stuff.error('Invalid file name \'{}\' found'.format(exp))
+
+        exp_path = '{}/{}'.format(input_dir, exp)
 
         # Look for correponding weight image
         weight_name = cfis.get_file_pattern(m[0], band, 'exposure_weight.fz', want_re=False)
@@ -407,15 +500,20 @@ def create_output(exp_list, input_dir, input_dir_weights, input_dir_flags, outpu
             stuff.error('Flag file \'{}\' not found'.format(flag_path))
 
         if output_format == 'links':
-            num = create_links(num, input_dir, output_dir, exp, weight_path, flag_path, \
+            num = create_links(num, output_dir, exp_path, weight_path, flag_path, \
                                exp_base, exp_weight_base, exp_flag_base, ext, verbose=verbose)
         else:
-            num = create_hdus(num, input_dir, output_dir, exp, weight_path, flag_path, \
-                              exp_base, exp_weight_base, exp_flag_base, ext, verbose=verbose)
+            num, log_app = create_hdus(num, output_dir, exp_path, weight_path, flag_path, \
+                                       exp_base, exp_weight_base, exp_flag_base, ext, log, verbose=verbose)
+            # Append newly written file info to log file
+            if len(log_app) > 0:
+                f_log.writelines(log_app)
+                f_log.flush()
 
     if verbose:
         print('Created {} links'.format(num))
 
+    f_log.close()
 
 
 def main(argv=None):
@@ -433,11 +531,28 @@ def main(argv=None):
 
     param = update_param(p_def, options)
 
+    # Save calling command
+    stuff.log_command(argv)
+    if param.verbose:
+        stuff.log_command(argv, name='sys.stderr')
+
+    if param.verbose is True:
+        print('Start of program {}'.format(os.path.basename(argv[0])))
+
+    ### Start main program ###
+
     tiles     = get_tile_list(param.input_dir_tiles, param.pattern, param.band, verbose=param.verbose)
 
     exposures = get_exposure_list(tiles, verbose=param.verbose)
+
     create_output(exposures, param.input_dir_exp, param.input_dir_exp_weights, param.input_dir_exp_flags, param.output_dir, \
                   param.exp_base_new, param.exp_weight_base_new, param.exp_flag_base_new, verbose=param.verbose)
+
+    ### End main program ###
+
+    if param.verbose is True:
+        print('End of program {}'.format(os.path.basename(argv[0])))
+
 
     return 0
 

@@ -600,7 +600,6 @@ def main(argv=None):
 
     ### Start main program ###
 
-
     if param.mode == 'l':
         list_modules()
 
@@ -616,7 +615,8 @@ def main(argv=None):
     elif param.mode == 's':
         set_results(param.smodule, param.image_type, verbose=param.verbose)
 
-    ### End main program
+    ### End main program ###
+
 
     if param.verbose is True:
         print('End of program {}'.format(os.path.basename(argv[0])))
