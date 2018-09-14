@@ -54,6 +54,7 @@ def params_default():
         input_dir_exp_flags = '{}/astro/data/CFIS/flags'.format(os.environ['HOME']),
         output_dir      = '{}/exposures'.format(input_dir),
         output_format   = 'hdu',
+        log_path        = '{}/log_exposures.txt'.format(input_dir),
         band            = 'r',
         pattern_base    = 'CFIS-',
         exp_base_new    = 'CFISexp',
@@ -97,6 +98,8 @@ def parse_options(p_def):
          help='output directory, where links will be created, default=\'{}\''.format(p_def.output_dir))
     parser.add_option('-O', '--output_format', dest='output_format', type='string', default=p_def.output_format,
          help='output format, one in \'links\' (create links), \'hdu\' (write FITS files for each HDU; default)')
+    parser.add_option('-l', '--log_path', dest='log_path', type='string', default=p_def.log_path,
+         help='log file name, default=\'{}\''.format(p_def.log_path))
 
     parser.add_option('-b', '--band', dest='band', type='string', default=p_def.band,
         help='band, one of \'r\' (default)|\'u\'')
@@ -105,9 +108,9 @@ def parse_options(p_def):
     parser.add_option('', '--exp_base_new', dest='exp_base_new', type='string', default=p_def.exp_base_new,
          help='exposure base name of links to be created, default=\'{}\''.format(p_def.exp_base_new))
     parser.add_option('', '--exp_weight_base_new', dest='exp_weight_base_new', type='string',
-         help='exposure weight map base name of links to be created, default=\'<EXP_BASE_NEW>.weight\'')
+         help='exposure weight map base name of links to be created, default=\'<EXP_BASE_NEW>_weight\'')
     parser.add_option('', '--exp_flag_base_new', dest='exp_flag_base_new', type='string',
-         help='exposure flag map base name of links to be created, default=\'<EXP_BASE_NEW>.flag\'')
+         help='exposure flag map base name of links to be created, default=\'<EXP_BASE_NEW>_flag\'')
 
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
 
@@ -167,9 +170,9 @@ def update_param(p_def, options):
             setattr(param, key, getattr(options, key))
 
     if param.exp_weight_base_new is None:
-        param.exp_weight_base_new = '{}.weight'.format(param.exp_base_new)
+        param.exp_weight_base_new = '{}_weight'.format(param.exp_base_new)
     if param.exp_flag_base_new is None:
-        param.exp_flag_base_new = '{}.flag'.format(param.exp_base_new)
+        param.exp_flag_base_new = '{}_flag'.format(param.exp_base_new)
         
 
     return param
@@ -251,12 +254,13 @@ def get_exposure_list(tiles, verbose=False):
             name = '{}.fz'.format(temp[3])
             exp_list.append(name)
 
-    print('MKDEBUG TODO: Remove multiple exposures')
+    exp_list_uniq = list_uniq(exp_list)
     
     if verbose:
-        print('Found {} exposures used in {} tiles'.format(len(exp_list), len(tiles)))
+        print('Found {} exposures used in {} tiles'.format(len(exp_list_uniq), len(tiles)))
+        print('{} duplicates were removed'.format(len(exp_list) - len(exp_list_uniq)))
 
-    return exp_list
+    return exp_list_uniq
 
 
 
@@ -313,7 +317,7 @@ def write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_
 
     d = img_file._cat_data[k_img].data
     new_fits = fits.PrimaryHDU(data=d, header=h)
-    out_name = '{}/{}-{:04d}-0.{}'.format(output_dir, exp_base, num, ext)
+    out_name = '{}/{}-{:03d}-0.{}'.format(output_dir, exp_base, num, ext)
     if not os.path.isfile(out_name):
         new_fits.writeto(out_name)
         img_str = 'written'
@@ -324,7 +328,7 @@ def write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_
     h_weight = weight_file._cat_data[k_weight].header
     d_weight = weight_file._cat_data[k_weight].data
     new_fits = fits.PrimaryHDU(data=d_weight, header=h_weight)
-    out_name = '{}/{}-{:04d}-0.{}'.format(output_dir, exp_weight_base, num, ext)
+    out_name = '{}/{}-{:03d}-0.{}'.format(output_dir, exp_weight_base, num, ext)
     if not os.path.isfile(out_name):
         new_fits.writeto(out_name)
         weight_str = 'written'
@@ -336,7 +340,7 @@ def write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_
     d_flag = flag_file._cat_data[k_flag].data
     d_flag = d_flag.astype(np.int16)
     new_fits = fits.PrimaryHDU(data=d_flag, header=h_flag)
-    out_name = '{}/{}-{:04d}-0.{}'.format(output_dir, exp_flag_base, num, ext)
+    out_name = '{}/{}-{:03d}-0.{}'.format(output_dir, exp_flag_base, num, ext)
     if not os.path.isfile(out_name):
         new_fits.writeto(out_name)
         flag_str = 'written'
@@ -418,7 +422,7 @@ def create_hdus(num, output_dir, exp_path, weight_path, flag_path, \
              
         write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_dir, exp_base, exp_weight_base, exp_flag_base, \
                   ext, num, exp_path, verbose=verbose)
-        log_app.append('{} {} {}\n'.format(exp_path, k_img, k_weight, k_flag, num))
+        log_app.append('{}  {} {} {}  {}\n'.format(exp_path, k_img, k_weight, k_flag, num))
 
         num = num + 1
 
@@ -431,7 +435,7 @@ def create_hdus(num, output_dir, exp_path, weight_path, flag_path, \
 
 
 def create_output(exp_list, input_dir, input_dir_weights, input_dir_flags, output_dir, \
-                 exp_base, exp_weight_base, exp_flag_base, output_format='hdu', verbose=False):
+                 exp_base, exp_weight_base, exp_flag_base, log_path, output_format='hdu', verbose=False):
     """Create links/write FITS files for exposures in pipeline format.
 
     Parameters
@@ -464,19 +468,18 @@ def create_output(exp_list, input_dir, input_dir_weights, input_dir_flags, outpu
         stuff.error('Path {} does not exist'.format(output_dir))
 
     # log file
-    name_log = '{}/log_exposures.txt'.format(output_dir)
-    if not os.path.isfile(name_log):
+    if not os.path.isfile(log_path):
         # Create empty log file
-        open(name_log, 'a').close()
+        open(log_path, 'a').close()
 
-    f_log = open(name_log, 'a+')
+    f_log = open(log_path, 'a+')
     log   = f_log.readlines()
     if verbose:
         print('Reading log file, {} lines found'.format(len(log)))
 
 
     num = 0
-    ext = 'fits.fz'
+    ext = 'fits'
     band = 'r'
     for exp in exp_list:
 
@@ -545,8 +548,9 @@ def main(argv=None):
 
     exposures = get_exposure_list(tiles, verbose=param.verbose)
 
+    print('MKDEBUG TODO: more than 3 digits for file number')
     create_output(exposures, param.input_dir_exp, param.input_dir_exp_weights, param.input_dir_exp_flags, param.output_dir, \
-                  param.exp_base_new, param.exp_weight_base_new, param.exp_flag_base_new, verbose=param.verbose)
+                  param.exp_base_new, param.exp_weight_base_new, param.exp_flag_base_new, param.log_path, output_format=param.output_format, verbose=param.verbose)
 
     ### End main program ###
 

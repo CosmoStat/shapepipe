@@ -216,6 +216,31 @@ def my_string_split(string, num=-1, verbose=False, stop=False):
 
 
 
+def list_unique(a):
+    """Return list of unique elements in a (remove duplicates).
+
+    Parameters
+    ----------
+    a: list
+        list of elements
+
+    Returns
+    -------
+    uniq: list
+        list of unique elements from a
+    """
+
+    seen = set()
+    uniq = []
+    for x in a:
+        if x not in seen:
+            uniq.append(x)
+            seen.add(x)
+
+    return uniq
+
+
+
 def substitute(dat, key, val_old, val_new):
     """Performs a substitution val_new for val_old as value corresponding to key.
        See run_csfisher_cut_bins.py

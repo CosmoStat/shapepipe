@@ -98,10 +98,14 @@ def scp(to_copy, t, to_cc=True, dry_run=False, verbose=False):
 
     if t == 'exposure':
         subdir = 'pitcairn'
+    elif t in ('exposure_weight', 'exposure_weight.fz'):
+        subdir = 'weights'
+    elif t in ('exposure_flag', 'exposure_flag.fz'):
+        subdir = 'flags'
     else:
         subdir = 'tiles'
 
-    cc_dir = 'cc:/sps/euclid/Users/mkilbing/astro/data/CFIS/{}'.format(subdir)
+    cc_dir = 'cc:/afs/in2p3.fr/home/m/mkilbing/astro/data/CFIS/{}'.format(subdir)
     if to_cc:
         arg = ' '.join(to_copy)
         dest = cc_dir

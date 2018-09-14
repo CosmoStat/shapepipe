@@ -46,7 +46,7 @@ def params_default():
         output_dir       = '.',
         band             = 'r',
         tile_base_new    = 'CFIS',
-        weight_base_new  = 'CFIS.weight',
+        weight_base_new  = 'CFIS_weight',
     )
 
     return p_def

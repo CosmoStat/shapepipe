@@ -53,8 +53,9 @@ path_output['exposure'] = 'output_exp'
 
 # Data path(s)
 path_data = {}
-path_data['tile']     = '{}/data'.format(os.environ['HOME'])
-path_data['exposure'] = '{}/hdu'.format(path_data['tile'])
+path_data['base']     = '{}/data'.format(os.environ['HOME'])
+path_data['tile']     = '{}/tiles'.format(path_data['base'])
+path_data['exposure'] = '{}/hdu'.format(path_data['base'])
 
 path_CFIS_data = '{}/astro/data/CFIS'.format(os.environ['HOME'])
 data_file_base = {}
@@ -123,15 +124,17 @@ class modules_local:
 
         # Create exposure links directory
         if os.path.isdir(path_data['exposure']):
-            stuff.error('Path {} exists, please remove before setting links to exposures'.format(path_data['exposure']))
-        os.mkdir(path_data['exposure'])
+            #stuff.error('Path {} exists, please remove before setting links to exposures'.format(path_data['exposure']))
+            stuff.warning('Path {} exists, continuing...')
+        else:
+            os.mkdir(path_data['exposure'])
 
         if param.verbose:
             verbose_flag = ' -v'
         else:
             verbose_flag = ''
-        cmd = '{}/cfis_create_exposures.py -i {} -o {} -p \'CFIS-\' --exp_base_new=\'{}\' -O hdu{}'.\
-            format(path_sppy, path_data['tile'], path_data['exposure'], data_file_base['exposure'], verbose_flag)
+        cmd = '{}/cfis_create_exposures.py -i {} -o {} -p \'CFIS-\' --exp_base_new=\'{}\' -O hdu -l {}/log_expsure.txt{}'.\
+            format(path_sppy, path_data['tile'], path_data['exposure'], data_file_base['exposure'], path_data['base'], verbose_flag)
         stuff.run_cmd(cmd, run=not param.dry_run, verbose=param.verbose, devnull=False) 
 
 
@@ -190,6 +193,8 @@ def parse_options(p_def):
             help='job exceution, one of [\'manual\'|\'qsub\'], default=\'{}\''.format(p_def.job))
     parser.add_option('-n', '--dry-run', dest='dry_run', action='store_true', default=False,
             help='dry run, only print commands')
+    parser.add_option('', '--image_list', dest='image_list', type='string', default=None,
+            help='Image list, default: None, use all images in input data directory')
  
     # Run mode
     parser.add_option('-m', '--mode', dest='mode', default=None,
@@ -238,6 +243,10 @@ def check_options(options):
         if not options.module:
             print('Module needs to be given, via \'-M\'')
             return False
+
+    if not options.mode in ('l', 'r', 'a', 'd', 's'):
+        print('Invalid mode \'{}\''.format(options.mode))
+        return False
 
     return True
 
@@ -311,13 +320,15 @@ def list_modules():
 
 
 
-def create_qsub_script(module):
+def create_qsub_script(module, path_config):
     """Create bash script to be submitted with qsub.
 
     Parameters
     ----------
     module: string
         module name
+    path_config: string
+        config input directory
 
     Returns:
     qsub_script_base: string
@@ -331,17 +342,17 @@ def create_qsub_script(module):
     hostname = platform.node()
 
     if 'candid' in hostname:
-        create_qsub_script_candide(qsub_script_base, module)
+        create_qsub_script_candide(qsub_script_base, module, path_config)
 
     else:
         print('Warning: Using candide qsub job script for different machine')
-        create_qsub_script_candide(qsub_script_base, module)
+        create_qsub_script_candide(qsub_script_base, module, path_config)
 
     return qsub_script_base
 
 
 
-def create_qsub_script_candide(qsub_script_base, module):
+def create_qsub_script_candide(qsub_script_base, module, path_dest):
     """Create a bash script to be submitted with qsub, working on iap:candide
 
     Parameters
@@ -350,6 +361,8 @@ def create_qsub_script_candide(qsub_script_base, module):
         script name
     module: string
         module name (only used for qsub job name)
+    path_config: string
+        config input directory
 
     Returns:
     None
@@ -372,6 +385,7 @@ def create_qsub_script_candide(qsub_script_base, module):
     print('export PATH="$PATH:/softs/astromatic/bin/:$HOME/.local/bin"', file=f)
     print('export LD_LIBRARY_PATH="$HOME/.local/lib/"', file=f)
     print('export PYTHONPATH="$HOME/.local/lib/python2.7/site-packages:$HOME/.local/bin:/opt/intel/intelpython2/lib/python2.7/site-packages"\n', file=f)
+    print('export CONFIG_DIR={}'.format(path_dest), file=f)
 
     print('echo -n "pwd = "', file=f)
     print('pwd\n', file=f)
@@ -430,7 +444,7 @@ def run_module(param):
         shutil.copytree(path_src, path_dest)
 
         # Perform substitutions in package config file
-        do_substitutions(path_dest, param.image_type)
+        do_substitutions(path_dest, param.image_type, module, image_list=param.image_list)
 
         # Create output dir if necessary
         stuff.mkdir_p(path_output[param.image_type], verbose=param.verbose)
@@ -449,7 +463,7 @@ def run_module(param):
 
         elif param.job == 'qsub':
 
-            qsub_script_base = create_qsub_script(module)
+            qsub_script_base = create_qsub_script(module, path_dest)
             stuff.run_cmd('qsub {}.sh'.format(qsub_script_base), run=not param.dry_run, verbose=param.verbose, devnull=False)
 
         else:
@@ -538,7 +552,7 @@ def set_results(module, image_type, verbose=False):
         stuff.ln_s(source, link_name, orig_to_check=source, verbose=verbose, force=True)
 
 
-def do_substitutions(path_dest, image_type):
+def do_substitutions(path_dest, image_type, module, image_list=None):
     """Perform basic substitutions of values for certain keys in package config file
 
     Parameters
@@ -547,6 +561,10 @@ def do_substitutions(path_dest, image_type):
         path of config file
     image_type: string
         type of image, 'exposure' or 'image'
+    module: string
+        module name
+    image_list: string, optional, default None
+        list of images
 
     Returns
     -------
@@ -561,15 +579,39 @@ def do_substitutions(path_dest, image_type):
     dat = fin.read()
     fin.close()
 
-    # Set keys specifiy to image type (tile, exposure)
+
+    # General substitutions
+    if image_list:
+        dat = stuff.add_to_arr('IMAGE_LIST', image_list)
+
+    # Set keys specificly to image type (tile, exposure)
     dat = stuff.substitute(dat, 'BASE_DIR', '\$HOME/data', path_data[image_type])
     dat = stuff.substitute(dat, 'BASE_OUTPUT_DIR', 'output', path_output[image_type])
 
+    # The following is to prevent the error "local variable 'img_num' referenced before assignment'
+    # that occured on candide, which is strange, since INPUT_FILENAME_FORMATS should take care
+    # to read only desired input files
+    #dat = stuff.substitute_arr(dat, 'FILE_PATTERNS', '\"\*\"', '"{}*"'.format(data_file_base[image_type][0]))
+
+    # Type-specific substitutions
     if image_type == 'exposure':
         dat = stuff.substitute_arr(dat, 'INPUT_FILENAME_FORMATS', data_file_base['tile'], data_file_base['exposure'])
-        dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}.flag.fits\''.format(data_file_base['exposure']))
+        dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}_flag.fits\''.format(data_file_base['exposure']))
     elif image_type == 'tile':
         pass
+
+    # Module-specific substitutions
+    if module == 'mask':
+        dat = stuff.substitute(dat, 'DEFAULT_FILENAME', 'config\.mask', 'config.mask_{}'.format(image_type))
+    elif module == 'SExtractor':
+        dat = stuff.substitute(dat, 'DETECT_THRESH', '\d+', '3')
+        dat = stuff.substitute(dat, 'DETECT_MINAREA', '(.*)0\.4(.*)0\.4(.*)', '\1max(WDSEEMED,0.4)\2max(WDSEEMED,0.4)\3')
+        dat = stuff.substitute(dat, 'SEEING_FWHM', '(.*)WIQFINAL(.*)', '\1WDSEEMED\2')
+        dat = stuff.substitute(dat, 'PHOT_APERTURES', '(.*)IQFINAL(.*)', 'WDSEEMED\2')
+        #dat = stuff.substitute(dat, 'BACK_TYPE', 'MANUAL', 'AUTO')
+        dat = stuff.substitute(dat, 'SATURATE', '@SATURATE', 'SATLEVEL')
+        # CHECKIMAGE_TYPE    BACKGROUND
+        # CHECKIMAGE_NAME    back.fits
 
 
     fout.write(dat)
