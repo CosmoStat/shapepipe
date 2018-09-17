@@ -241,7 +241,7 @@ def list_unique(a):
 
 
 
-def substitute(dat, key, val_old, val_new):
+def substitute(dat, key, val_old, val_new, sep='='):
     """Performs a substitution val_new for val_old as value corresponding to key.
        See run_csfisher_cut_bins.py
 
@@ -255,6 +255,8 @@ def substitute(dat, key, val_old, val_new):
         old value
     val_new: n/a
         new value
+    sep: character
+        separater between key and value, optional, default '='
 
     Returns
     -------
@@ -262,10 +264,8 @@ def substitute(dat, key, val_old, val_new):
         file content after substitution
     """
 
-    #str_old = '{}\s*=\s*{}'.format(key, val_old)
-
-    str_old = '{}\s*=\s*{}'.format(key, val_old)
-    str_new = '{}\t\t= {}'.format(key, val_new)
+    str_old = '{}\s*{}\s*{}'.format(key, sep, val_old)
+    str_new = '{}\t\t{} {}'.format(key, sep, val_new)
 
     #print('Replacing \'{}\' -> \'{}\''.format(str_old, str_new))
 
@@ -356,6 +356,35 @@ def add_to_arr(dat, key, val):
 
 
 
+def new_arr(dat, key, val):
+    """Adds a value to an existing value array for a given key.
+
+    Parameters
+    ----------
+    dat: string
+        file content
+    key: string
+        key
+    val: n/a
+        value to add
+
+    Returns
+    -------
+    dat: string
+        file content after substitution
+    """
+
+    n = 0
+
+    str_old = '({}\s*=.*)\]'.format(key)
+    str_new = r'\1 {}]'.format(val)
+    dat, n  = re.subn(str_old, str_new, dat)
+
+    if n != 1:
+        msg = 'Substitution {} -> {} failed, {} entries replaced'.format(str_old, str_new, n)
+        error(msg, val=1)
+
+    return dat
 
 
 

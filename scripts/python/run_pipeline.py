@@ -34,8 +34,8 @@ types_glob = {}
 modules_glob['std'] = ['select', 'mask', 'SExtractor', 'SETools', 'PSFExRun', 'PSFExInterpolation']
 types_glob['std'] = ['tile', 'tile', 'tile', 'tile', 'tile', 'tile']
 
-modules_glob['tiles_exp'] = ['select', 'mask', 'SExtractor', 'find_exp', 'mask']
-types_glob['tiles_exp'] = ['tile', 'tile', 'tile', 'exposure', 'exposure']
+modules_glob['tiles_exp'] = ['select', 'mask1', 'SExtractor1', 'find_exp', 'mask2', 'SExtractor2']
+types_glob['tiles_exp'] = ['tile', 'tile', 'tile', 'exposure', 'exposure', 'exposure']
 
 # Basic paths for pipeline codes
 path_sp     = '{}/ShapePipe'.format(os.environ['HOME'])
@@ -292,6 +292,8 @@ def update_param(p_def, options):
             if not param.module in modules_glob[param.scheme]:
                 stuff.error('Module \'{}\' not found, list available options with \'-m l\''.format(param.module))
             param.smodule = param.module
+            idx = modules_glob[param.scheme].index(param.module)
+            param.image_type = types_glob[param.scheme][idx]
 
         except IndexError:
             stuff.error('Invalid module number {}, list available options with \'-m l\''.format(param.module))
@@ -320,13 +322,15 @@ def list_modules():
 
 
 
-def create_qsub_script(module, path_config):
+def create_qsub_script(module, package, path_config):
     """Create bash script to be submitted with qsub.
 
     Parameters
     ----------
     module: string
-        module name
+        internal module name
+    package: string
+        external package name
     path_config: string
         config input directory
 
@@ -342,17 +346,17 @@ def create_qsub_script(module, path_config):
     hostname = platform.node()
 
     if 'candid' in hostname:
-        create_qsub_script_candide(qsub_script_base, module, path_config)
+        create_qsub_script_candide(qsub_script_base, module, package, path_config)
 
     else:
         print('Warning: Using candide qsub job script for different machine')
-        create_qsub_script_candide(qsub_script_base, module, path_config)
+        create_qsub_script_candide(qsub_script_base, module, package, path_config)
 
     return qsub_script_base
 
 
 
-def create_qsub_script_candide(qsub_script_base, module, path_dest):
+def create_qsub_script_candide(qsub_script_base, module, package, path_dest):
     """Create a bash script to be submitted with qsub, working on iap:candide
 
     Parameters
@@ -360,7 +364,9 @@ def create_qsub_script_candide(qsub_script_base, module, path_dest):
     qsub_script_base: string
         script name
     module: string
-        module name (only used for qsub job name)
+        internal module name (only used for qsub job name)
+    package: string
+        external package name
     path_config: string
         config input directory
 
@@ -390,11 +396,12 @@ def create_qsub_script_candide(qsub_script_base, module, path_dest):
     print('echo -n "pwd = "', file=f)
     print('pwd\n', file=f)
 
-    print('$HOME/ShapePipe/modules/{}_package/config/launch.cmd'.format(module), file=f)
+    print('$HOME/ShapePipe/modules/{}/config/launch.cmd'.format(package), file=f)
     print('ex=$?', file=f)
     print('exit $ex\n', file=f)
 
     f.close()
+
 
 
 def run_module(param):
@@ -426,11 +433,15 @@ def run_module(param):
             getattr(ml, module)(param)
 
     else:
+
+        # Get module name without trailing number(s)
+        module_name = re.findall('(\D*)\d?', module)[0]
+
         # Run pipeline module
         if param.verbose:
-            print('Running pipeline module \'{}\''.format(module))
+            print('Running pipeline module \'{}\''.format(module_name))
 
-        package = '{}_package'.format(module)
+        package = '{}_package'.format(module_name)
 
         # Creat input dir (at the moment used for config files)
         path = '{}/{}/{}'.format(os.getcwd(), path_config[param.image_type], package)
@@ -444,7 +455,7 @@ def run_module(param):
         shutil.copytree(path_src, path_dest)
 
         # Perform substitutions in package config file
-        do_substitutions(path_dest, param.image_type, module, image_list=param.image_list)
+        do_substitutions(path_dest, param.image_type, module_name, image_list=param.image_list)
 
         # Create output dir if necessary
         stuff.mkdir_p(path_output[param.image_type], verbose=param.verbose)
@@ -463,7 +474,7 @@ def run_module(param):
 
         elif param.job == 'qsub':
 
-            qsub_script_base = create_qsub_script(module, path_dest)
+            qsub_script_base = create_qsub_script(module, package, path_dest)
             stuff.run_cmd('qsub {}.sh'.format(qsub_script_base), run=not param.dry_run, verbose=param.verbose, devnull=False)
 
         else:
@@ -582,7 +593,7 @@ def do_substitutions(path_dest, image_type, module, image_list=None):
 
     # General substitutions
     if image_list:
-        dat = stuff.add_to_arr('IMAGE_LIST', image_list)
+        dat = stuff.new_arr(dat, 'IMAGE_LIST', image_list)
 
     # Set keys specificly to image type (tile, exposure)
     dat = stuff.substitute(dat, 'BASE_DIR', '\$HOME/data', path_data[image_type])
@@ -604,12 +615,12 @@ def do_substitutions(path_dest, image_type, module, image_list=None):
     if module == 'mask':
         dat = stuff.substitute(dat, 'DEFAULT_FILENAME', 'config\.mask', 'config.mask_{}'.format(image_type))
     elif module == 'SExtractor':
-        dat = stuff.substitute(dat, 'DETECT_THRESH', '\d+', '3')
-        dat = stuff.substitute(dat, 'DETECT_MINAREA', '(.*)0\.4(.*)0\.4(.*)', '\1max(WDSEEMED,0.4)\2max(WDSEEMED,0.4)\3')
-        dat = stuff.substitute(dat, 'SEEING_FWHM', '(.*)WIQFINAL(.*)', '\1WDSEEMED\2')
-        dat = stuff.substitute(dat, 'PHOT_APERTURES', '(.*)IQFINAL(.*)', 'WDSEEMED\2')
+        dat = stuff.substitute(dat, 'DETECT_THRESH', '\d+', '3', sep='')
+        dat = stuff.substitute(dat, 'DETECT_MINAREA', '(.*)0\.4(.*)0\.4(.*)', '\\1max(WDSEEMED,0.4)\\2max(WDSEEMED,0.4)\\3', sep='')
+        dat = stuff.substitute(dat, 'SEEING_FWHM', '(.*)IQFINAL(.*)', '\\1WDSEEMED\\2', sep='')
+        dat = stuff.substitute(dat, 'PHOT_APERTURES', '(.*)IQFINAL(.*)', '\\1WDSEEMED\\2', sep='')
         #dat = stuff.substitute(dat, 'BACK_TYPE', 'MANUAL', 'AUTO')
-        dat = stuff.substitute(dat, 'SATURATE', '@SATURATE', 'SATLEVEL')
+        dat = stuff.substitute(dat, 'SATUR_LEVEL', '@SATURATE', 'SATLEVEL', sep='')
         # CHECKIMAGE_TYPE    BACKGROUND
         # CHECKIMAGE_NAME    back.fits
 
