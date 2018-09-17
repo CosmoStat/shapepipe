@@ -34,8 +34,8 @@ types_glob = {}
 modules_glob['std'] = ['select', 'mask', 'SExtractor', 'SETools', 'PSFExRun', 'PSFExInterpolation']
 types_glob['std'] = ['tile', 'tile', 'tile', 'tile', 'tile', 'tile']
 
-modules_glob['tiles_exp'] = ['select', 'mask1', 'SExtractor1', 'find_exp', 'mask2', 'SExtractor2']
-types_glob['tiles_exp'] = ['tile', 'tile', 'tile', 'exposure', 'exposure', 'exposure']
+modules_glob['tiles_exp'] = ['select', 'mask1', 'SExtractor1', 'find_exp', 'mask2', 'SExtractor2', 'SETools']
+types_glob['tiles_exp'] = ['tile', 'tile', 'tile', 'exposure', 'exposure', 'exposure', 'exposure']
 
 # Basic paths for pipeline codes
 path_sp     = '{}/ShapePipe'.format(os.environ['HOME'])
@@ -125,7 +125,7 @@ class modules_local:
         # Create exposure links directory
         if os.path.isdir(path_data['exposure']):
             #stuff.error('Path {} exists, please remove before setting links to exposures'.format(path_data['exposure']))
-            stuff.warning('Path {} exists, continuing...')
+            stuff.warning('Path {} exists')
         else:
             os.mkdir(path_data['exposure'])
 
@@ -444,7 +444,7 @@ def run_module(param):
         package = '{}_package'.format(module_name)
 
         # Creat input dir (at the moment used for config files)
-        path = '{}/{}/{}'.format(os.getcwd(), path_config[param.image_type], package)
+        path = '{}/{}/{}'.format(os.getcwd(), path_config[param.image_type], module)
         stuff.mkdir_p(path, verbose=param.verbose)
 
         # Copy config files: copy entire config tree. Need to remove existing one first.
@@ -508,6 +508,7 @@ def adopt_run(module, image_type, verbose=False):
     link_name = '{}/{}'.format(path_runs, name_adopted)
 
     stuff.ln_s(source, link_name, orig_to_check=source_to_check, verbose=verbose, force=True)
+
 
 
 def discard_run(module, image_type, verbose=False):
@@ -607,14 +608,16 @@ def do_substitutions(path_dest, image_type, module, image_list=None):
     # Type-specific substitutions
     if image_type == 'exposure':
         dat = stuff.substitute_arr(dat, 'INPUT_FILENAME_FORMATS', data_file_base['tile'], data_file_base['exposure'])
-        dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}_flag.fits\''.format(data_file_base['exposure']))
     elif image_type == 'tile':
         pass
 
     # Module-specific substitutions
     if module == 'mask':
         dat = stuff.substitute(dat, 'DEFAULT_FILENAME', 'config\.mask', 'config.mask_{}'.format(image_type))
+        dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}_flag.fits\''.format(data_file_base['exposure']))
+
     elif module == 'SExtractor':
+        dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}_flagout.fits\''.format(data_file_base['exposure']))
         dat = stuff.substitute(dat, 'DETECT_THRESH', '\d+', '3', sep='')
         dat = stuff.substitute(dat, 'DETECT_MINAREA', '(.*)0\.4(.*)0\.4(.*)', '\\1max(WDSEEMED,0.4)\\2max(WDSEEMED,0.4)\\3', sep='')
         dat = stuff.substitute(dat, 'SEEING_FWHM', '(.*)IQFINAL(.*)', '\\1WDSEEMED\\2', sep='')
@@ -623,6 +626,10 @@ def do_substitutions(path_dest, image_type, module, image_list=None):
         dat = stuff.substitute(dat, 'SATUR_LEVEL', '@SATURATE', 'SATLEVEL', sep='')
         # CHECKIMAGE_TYPE    BACKGROUND
         # CHECKIMAGE_NAME    back.fits
+
+    elif module == 'SETools':
+        if image_type == 'exposure':
+            dat = stuff.substitute(dat, 'DEFAULT_FILENAME', '.*', 'star_selection.setools')
 
 
     fout.write(dat)

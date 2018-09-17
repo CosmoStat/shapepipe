@@ -254,7 +254,7 @@ def get_exposure_list(tiles, verbose=False):
             name = '{}.fz'.format(temp[3])
             exp_list.append(name)
 
-    exp_list_uniq = list_uniq(exp_list)
+    exp_list_uniq = stuff.list_unique(exp_list)
     
     if verbose:
         print('Found {} exposures used in {} tiles'.format(len(exp_list_uniq), len(tiles)))
