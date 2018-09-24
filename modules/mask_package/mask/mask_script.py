@@ -15,8 +15,9 @@ import sconfig
 
 import numpy as np
 import subprocess
-import astropy.coordinates as coord
+from astropy.coordinates import SkyCoord
 from astropy import wcs
+from astropy import units as u
 import re
 import os
 
@@ -133,8 +134,8 @@ class mask(object):
         wcs_center = self._wcs.all_pix2world([[img_shape[0]/2., img_shape[1]/2.]], 1)[0]
 
         self._fieldcenter={}
-        self._fieldcenter['pix']=np.array([img_shape[0]/2., img_shape[1]/2.])
-        self._fieldcenter['wcs']=coord.SkyCoord(ra= wcs_center[0], dec= wcs_center[1], unit='deg')
+        self._fieldcenter['pix']= np.array([img_shape[0]/2., img_shape[1]/2.])
+        self._fieldcenter['wcs']= SkyCoord(ra= wcs_center[0], dec= wcs_center[1], unit='deg')
 
         self._img_radius=self._get_image_radius()
 
@@ -268,8 +269,8 @@ class mask(object):
         return flag
 
 
-    def mask_messier(self, cat_path, size_plus= 0.1, flag_value= 8):
-        """Create mask Messier
+    def mask_messier(self, cat_path, size_plus=0.1, flag_value=8):
+        """Create mask for Messier objects
 
         Create a circular patch for Messier objects.
 
@@ -289,16 +290,36 @@ class mask(object):
 
         """
 
+        if size_plus < 0 or size_plus > 1:
+            raise ValueError('size_plus has to be in [0; 1]')
+
         if cat_path == None:
             raise ValueError('cat_path has to be provided')
 
-        if (size_plus < 0):
-            raise ValueError('size_plus has to be in [0, 1]')
+        m_cat = np.load(cat_path)
+        m_sc  = SkyCoord(ra=m_cat['ra']*u.degree, dec=m_cat['dec']*u.degree)
 
         nx = self._fieldcenter['pix'][0]*2
         ny = self._fieldcenter['pix'][1]*2
 
-        m_cat = np.load(cat_path)
+        ### MKDEBUG new 21/09
+
+        # Get the four corners of the image
+        corners    = self._wcs.calc_footprint()
+        corners_sc = SkyCoord(ra=corners[:,0]*u.degree, dec=corners[:,1]*u.degree)      
+
+        # Loop through all t=Messier objects and check whether any corner is closer
+        # than the object's radius
+        ind = []
+        for i, m_obj in enumerate(m_cat):
+            r = max(m_obj['size']) * u.arcmin
+            r_deg = r.to(u.degree)
+            if np.any(corners_sc.separation(m_sc[i]) < r_deg):
+                print('MKDEBUG Messier object found', i, m_sc[i])
+                ind.append(i)
+
+
+        ### Previous code: Only adds Messier mask if object center is in image ###
 
         ra_max = np.hstack(self._wcs.all_pix2world(0, self._fieldcenter['pix'][1], 1))[0]
         ra_min = np.hstack(self._wcs.all_pix2world(nx, self._fieldcenter['pix'][1], 1))[0]
@@ -307,8 +328,15 @@ class mask(object):
 
         ind = np.where((m_cat['ra'] > ra_min) & (m_cat['ra'] < ra_max) & (m_cat['dec'] > dec_min) & (m_cat['dec'] < dec_max))[0]
 
+        print('MKDEBUG looking for Messier objects within box ra {} {}, dec {} {}'.format(ra_min, ra_max, dec_min, dec_max))
+        print('MKDBEUG fieldcenter')
+        print(self._fieldcenter)
+
         if len(ind) == 0:
+            print('MKDEBUG no Messier objects found')
             return None
+        print('MKDEBUG 2 Messier objects found:')
+        print(ind)
 
         flag = np.zeros((int(self._fieldcenter['pix'][0]*2),int(self._fieldcenter['pix'][1]*2)),dtype='uint8')
 

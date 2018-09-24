@@ -483,7 +483,6 @@ def create_output(exp_list, input_dir, input_dir_weights, input_dir_flags, outpu
     band = 'r'
     for exp in exp_list:
 
-        print(exp)
         m = re.findall('(.*)\.{}'.format(ext), exp)
         if len(m) == 0:
             stuff.error('Invalid file name \'{}\' found'.format(exp))

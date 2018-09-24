@@ -298,6 +298,9 @@ def update_param(p_def, options):
         except IndexError:
             stuff.error('Invalid module number {}, list available options with \'-m l\''.format(param.module))
 
+    # Module name without trailing digit(s)
+    param.smodule_name = re.findall('(\D*)\d?', param.smodule)[0]
+
     return param
 
 
@@ -419,7 +422,9 @@ def run_module(param):
     """
 
     # Module name as string
-    module = param.smodule
+    module      = param.smodule
+    # Without trailing digit(s)
+    module_name = param.smodule_name
 
     # Class containing modules as methods
     ml     = modules_local()
@@ -433,9 +438,6 @@ def run_module(param):
             getattr(ml, module)(param)
 
     else:
-
-        # Get module name without trailing number(s)
-        module_name = re.findall('(\D*)\d?', module)[0]
 
         # Run pipeline module
         if param.verbose:
@@ -455,7 +457,7 @@ def run_module(param):
         shutil.copytree(path_src, path_dest)
 
         # Perform substitutions in package config file
-        do_substitutions(path_dest, param.image_type, module_name, image_list=param.image_list)
+        do_substitutions(path_dest, param.image_type, module_name, module, image_list=param.image_list)
 
         # Create output dir if necessary
         stuff.mkdir_p(path_output[param.image_type], verbose=param.verbose)
@@ -561,10 +563,15 @@ def set_results(module, image_type, verbose=False):
     for f in files:
         source    = f
         link_name = '{}/{}'.format(path_data[image_type], os.path.basename(f))
+
+        # MKDEBUG: Dirty work-around for unflexible mask output files
+        if module == 'mask':
+            link_name, n = re.subn('flag', 'flagout', link_name)
         stuff.ln_s(source, link_name, orig_to_check=source, verbose=verbose, force=True)
 
 
-def do_substitutions(path_dest, image_type, module, image_list=None):
+
+def do_substitutions(path_dest, image_type, module_base, module_name, image_list=None):
     """Perform basic substitutions of values for certain keys in package config file
 
     Parameters
@@ -573,8 +580,10 @@ def do_substitutions(path_dest, image_type, module, image_list=None):
         path of config file
     image_type: string
         type of image, 'exposure' or 'image'
-    module: string
-        module name
+    module_base: string
+        module base name
+    module_name: string
+        module name including potential trailing digit(s)
     image_list: string, optional, default None
         list of images
 
@@ -598,6 +607,8 @@ def do_substitutions(path_dest, image_type, module, image_list=None):
 
     # Set keys specificly to image type (tile, exposure)
     dat = stuff.substitute(dat, 'BASE_DIR', '\$HOME/data', path_data[image_type])
+    path = '{}/{}/{}'.format(os.getcwd(), path_config[image_type], module_name)
+    dat = stuff.substitute(dat, 'BASE_INPUT_DIR', '.*', path)
     dat = stuff.substitute(dat, 'BASE_OUTPUT_DIR', 'output', path_output[image_type])
 
     # The following is to prevent the error "local variable 'img_num' referenced before assignment'
@@ -612,11 +623,11 @@ def do_substitutions(path_dest, image_type, module, image_list=None):
         pass
 
     # Module-specific substitutions
-    if module == 'mask':
+    if module_base == 'mask':
         dat = stuff.substitute(dat, 'DEFAULT_FILENAME', 'config\.mask', 'config.mask_{}'.format(image_type))
         dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}_flag.fits\''.format(data_file_base['exposure']))
 
-    elif module == 'SExtractor':
+    elif module_base == 'SExtractor':
         dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}_flagout.fits\''.format(data_file_base['exposure']))
         dat = stuff.substitute(dat, 'DETECT_THRESH', '\d+', '3', sep='')
         dat = stuff.substitute(dat, 'DETECT_MINAREA', '(.*)0\.4(.*)0\.4(.*)', '\\1max(WDSEEMED,0.4)\\2max(WDSEEMED,0.4)\\3', sep='')
@@ -627,7 +638,7 @@ def do_substitutions(path_dest, image_type, module, image_list=None):
         # CHECKIMAGE_TYPE    BACKGROUND
         # CHECKIMAGE_NAME    back.fits
 
-    elif module == 'SETools':
+    elif module_base == 'SETools':
         if image_type == 'exposure':
             dat = stuff.substitute(dat, 'DEFAULT_FILENAME', '.*', 'star_selection.setools')
 
@@ -674,13 +685,13 @@ def main(argv=None):
         run_module(param)
 
     elif param.mode == 'a':
-        adopt_run(param.smodule, param.image_type, verbose=param.verbose)
+        adopt_run(param.smodule_name, param.image_type, verbose=param.verbose)
 
     elif param.mode == 'd':
-        discard_run(param.smodule, param.image_type, verbose=param.verbose)
+        discard_run(param.smodule_name, param.image_type, verbose=param.verbose)
 
     elif param.mode == 's':
-        set_results(param.smodule, param.image_type, verbose=param.verbose)
+        set_results(param.smodule_name, param.image_type, verbose=param.verbose)
 
     ### End main program ###
 
