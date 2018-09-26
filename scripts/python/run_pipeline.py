@@ -625,7 +625,8 @@ def do_substitutions(path_dest, image_type, module_base, module_name, image_list
     # Module-specific substitutions
     if module_base == 'mask':
         dat = stuff.substitute(dat, 'DEFAULT_FILENAME', 'config\.mask', 'config.mask_{}'.format(image_type))
-        dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}_flag.fits\''.format(data_file_base['exposure']))
+        if image_type == 'exposure':
+            dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}_flag.fits\''.format(data_file_base['exposure']))
 
     elif module_base == 'SExtractor':
         dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}_flagout.fits\''.format(data_file_base['exposure']))

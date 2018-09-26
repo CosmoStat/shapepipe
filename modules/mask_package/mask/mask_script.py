@@ -131,13 +131,15 @@ class mask(object):
         del(img)
 
         self._wcs = wcs.WCS(self._header)
-        wcs_center = self._wcs.all_pix2world([[img_shape[0]/2., img_shape[1]/2.]], 1)[0]
+        # MKDEBUG new 26/09: get_data() returns array in [y, x].
+        pix_center = [img_shape[1]/2., img_shape[0]/2.]
+        wcs_center = self._wcs.all_pix2world([pix_center], 1)[0]
 
-        self._fieldcenter={}
-        self._fieldcenter['pix']= np.array([img_shape[0]/2., img_shape[1]/2.])
-        self._fieldcenter['wcs']= SkyCoord(ra= wcs_center[0], dec= wcs_center[1], unit='deg')
+        self._fieldcenter = {}
+        self._fieldcenter['pix'] = np.array(pix_center)
+        self._fieldcenter['wcs'] = SkyCoord(ra=wcs_center[0], dec=wcs_center[1], unit='deg')
 
-        self._img_radius=self._get_image_radius()
+        self._img_radius = self._get_image_radius()
 
 
     def make_mask(self):
@@ -261,10 +263,10 @@ class mask(object):
 
         flag = np.zeros((int(self._fieldcenter['pix'][0]*2),int(self._fieldcenter['pix'][1]*2)),dtype='uint8')
 
-        flag[0:width,:]=flag_value
-        flag[-width:-1,:]=flag_value
-        flag[:,0:width]=flag_value
-        flag[:,-width:-1]=flag_value
+        flag[0:width,:]   = flag_value
+        flag[-width:-1,:] = flag_value
+        flag[:,0:width]   = flag_value
+        flag[:,-width:-1] = flag_value
 
         return flag
 
@@ -290,8 +292,8 @@ class mask(object):
 
         """
 
-        if size_plus < 0 or size_plus > 1:
-            raise ValueError('size_plus has to be in [0; 1]')
+        if size_plus < 0:
+            raise ValueError('size_plus has to be larger than 0')
 
         if cat_path == None:
             raise ValueError('cat_path has to be provided')
@@ -302,49 +304,53 @@ class mask(object):
         nx = self._fieldcenter['pix'][0]*2
         ny = self._fieldcenter['pix'][1]*2
 
-        ### MKDEBUG new 21/09
+        ### MKDEBUG new 21/09: Add mask also if center of Messier object is outside of image, but area has overlap
 
         # Get the four corners of the image
         corners    = self._wcs.calc_footprint()
         corners_sc = SkyCoord(ra=corners[:,0]*u.degree, dec=corners[:,1]*u.degree)      
 
-        # Loop through all t=Messier objects and check whether any corner is closer
+        # Loop through all Messier objects and check whether any corner is closer
         # than the object's radius
         ind = []
         for i, m_obj in enumerate(m_cat):
             r = max(m_obj['size']) * u.arcmin
             r_deg = r.to(u.degree)
             if np.any(corners_sc.separation(m_sc[i]) < r_deg):
-                print('MKDEBUG Messier object found', i, m_sc[i])
                 ind.append(i)
-
 
         ### Previous code: Only adds Messier mask if object center is in image ###
 
-        ra_max = np.hstack(self._wcs.all_pix2world(0, self._fieldcenter['pix'][1], 1))[0]
-        ra_min = np.hstack(self._wcs.all_pix2world(nx, self._fieldcenter['pix'][1], 1))[0]
-        dec_min = np.hstack(self._wcs.all_pix2world(self._fieldcenter['pix'][0], 0, 1))[1]
-        dec_max = np.hstack(self._wcs.all_pix2world(self._fieldcenter['pix'][0], ny, 1))[1]
+        #ra_max = np.hstack(self._wcs.all_pix2world(0, self._fieldcenter['pix'][1], 1))[0]
+        #ra_min = np.hstack(self._wcs.all_pix2world(nx, self._fieldcenter['pix'][1], 1))[0]
+        #dec_min = np.hstack(self._wcs.all_pix2world(self._fieldcenter['pix'][0], 0, 1))[1]
+        #dec_max = np.hstack(self._wcs.all_pix2world(self._fieldcenter['pix'][0], ny, 1))[1]
 
-        ind = np.where((m_cat['ra'] > ra_min) & (m_cat['ra'] < ra_max) & (m_cat['dec'] > dec_min) & (m_cat['dec'] < dec_max))[0]
-
-        print('MKDEBUG looking for Messier objects within box ra {} {}, dec {} {}'.format(ra_min, ra_max, dec_min, dec_max))
-        print('MKDBEUG fieldcenter')
-        print(self._fieldcenter)
+        #ind = np.where((m_cat['ra'] > ra_min) & (m_cat['ra'] < ra_max) & (m_cat['dec'] > dec_min) & (m_cat['dec'] < dec_max))[0]
 
         if len(ind) == 0:
-            print('MKDEBUG no Messier objects found')
+            #print('MKDEBUG no Messier objects found')
             return None
-        print('MKDEBUG 2 Messier objects found:')
-        print(ind)
+        #print('MKDEBUG Messier objects found: first=#{} {}/{}'.format(m_cat['No'][ind[0]], m_cat['ra'][ind[0]], m_cat['dec'][ind[0]]))
 
-        flag = np.zeros((int(self._fieldcenter['pix'][0]*2),int(self._fieldcenter['pix'][1]*2)),dtype='uint8')
+        flag = np.zeros((int(self._fieldcenter['pix'][0]*2), int(self._fieldcenter['pix'][1]*2)), dtype='uint8')
 
         for i in ind:
             m_center = np.hstack(self._wcs.all_world2pix(m_cat['ra'][i], m_cat['dec'][i], 0))
             r_pix = max(m_cat['size'][i])/60. * (1 + size_plus) / np.abs(self._wcs.pixel_scale_matrix[0][0])
-            y_c, x_c = np.ogrid[-int(m_center[1]):ny-int(m_center[1]), -int(m_center[0]):nx-int(m_center[0])]
-            mask_tmp = x_c*x_c + y_c*y_c <= r_pix*r_pix
+
+            # MKDEBUG new 26/9: The following modifications account for Messier centers outside of image, without
+            # creating masks for coordinates out of range
+            y_c, x_c = np.ogrid[0:ny, 0:nx]
+            mask_tmp = (x_c - m_center[0])**2 + (y_c - m_center[1])**2 <= r_pix**2
+
+            # Previous code
+            #y_c, x_c = np.ogrid[-int(m_center[1]):ny-int(m_center[1]), -int(m_center[0]):nx-int(m_center[0])]
+            #mask_tmp = x_c*x_c + y_c*y_c <= r_pix*r_pix
+
+            # MKDEBUG new 26/9: Don't know why but this seems necessary to have mask_tmp the same shape as flag
+            mask_tmp = mask_tmp.transpose()
+
             flag[mask_tmp] = flag_value
 
         return flag
@@ -596,7 +602,9 @@ class mask(object):
                 reg=default_reg
                 if not sc.BaseCatalog(reg)._helper.file_exists(reg):
                     raise sc.BaseCatalog.CatalogNotFound(reg)
-                os.system('{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3} -POLY_OUTFLAGS {4} -FLAG_NAMES "" -OUTFLAG_NAME {5} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'],self._config['PATH']['WW_configfile'],self._weight_fullpath,reg,self._config[types]['flag'],defaul_out))
+                cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3} -POLY_OUTFLAGS {4} -FLAG_NAMES "" -OUTFLAG_NAME {5} -OUTWEIGHT_NAME ""'.\
+                      format(self._config['PATH']['WW'],self._config['PATH']['WW_configfile'],self._weight_fullpath,reg,self._config[types]['flag'],defaul_out)
+                os.system(cmd)
                 os.system('rm {0}'.format(reg))
             else:
                 reg=self._config[types]['reg_file']
@@ -649,6 +657,8 @@ class mask(object):
 
         """
 
+        # MKDEBUG new 26/9: Add transpose to account for get_data() returning (y, x)
+
         final_mask=None
 
         if (path_mask1 is None) & (path_mask2 is None) & (border is None) & (messier is None):
@@ -657,15 +667,15 @@ class mask(object):
         if path_mask1 is not None:
             mask1=sc.FITSCatalog(path_mask1, hdu_no=0)
             mask1.open()
-            final_mask=mask1.get_data()[:,:]
+            final_mask=mask1.get_data()[:,:].transpose()
 
         if path_mask2 is not None:
             mask2=sc.FITSCatalog(path_mask2, hdu_no=0)
             mask2.open()
             if final_mask is not None:
-                final_mask+=mask2.get_data()[:,:]
+                final_mask+=mask2.get_data()[:,:].transpose()
             else:
-                final_mask=mask2.get_data()[:,:]
+                final_mask=mask2.get_data()[:,:].transpose()
 
         if border is not None:
             if type(border) is np.ndarray:
@@ -689,10 +699,11 @@ class mask(object):
             external_flag = sc.FITSCatalog(path_external_flag, hdu_no= 0)
             external_flag.open()
             if final_mask is not None:
-                final_mask += external_flag.get_data()[:,:]
+                final_mask += external_flag.get_data()[:,:].transpose()
             else:
-                final_mask = external_flag.get_data()[:,:]
+                final_mask = external_flag.get_data()[:,:].transpose()
             external_flag.close()
+
 
         return final_mask.astype(np.int16,copy=False)
 

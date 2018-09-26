@@ -46,7 +46,7 @@ SPIKE_REG_FILE = spike.reg
 
 MESSIER_MAKE = True
 
-#MESSIER_CAT_PATH = $HOME/ShapePipe/modules/mask_package/config/mask_default/Messier_catalog.npy
+MESSIER_CAT_PATH = $HOME/ShapePipe/modules/mask_package/config/mask_default/Messier_catalog_updated.npy
 MESSIER_PIXEL_SCALE = 0.187
 MESSIER_SIZE_PLUS = 1.
 MESSIER_FLAG_VALUE = 8
