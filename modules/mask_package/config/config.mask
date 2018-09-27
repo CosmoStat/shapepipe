@@ -12,7 +12,7 @@ CDSCLIENT_PATH = findgsc2.2
 BORDER_MAKE = False
 
 BORDER_WIDTH = 300
-BORDER_FLAG_VALUE = 4
+BORDER_FLAG_VALUE = 1
 
 
 # ----------------------------- Halo parameters ----------------------------------
@@ -24,7 +24,7 @@ HALO_MASKMODEL_PATH = $HOME/ShapePipe/modules/mask_package/config/mask_default/h
 HALO_MAG_LIM = 13.
 HALO_SCALE_FACTOR = 0.05
 HALO_MAG_PIVOT = 13.8
-HALO_FLAG_VALUE = 1
+HALO_FLAG_VALUE = 2
 HALO_REG_FILE = halo.reg
 
 
@@ -37,7 +37,7 @@ SPIKE_MASKMODEL_PATH = $HOME/ShapePipe/modules/mask_package/config/mask_default/
 SPIKE_MAG_LIM = 18.
 SPIKE_SCALE_FACTOR = 0.3
 SPIKE_MAG_PIVOT = 13.8
-SPIKE_FLAG_VALUE = 2
+SPIKE_FLAG_VALUE = 128
 SPIKE_REG_FILE = spike.reg
 
 
@@ -48,8 +48,8 @@ MESSIER_MAKE = True
 
 MESSIER_CAT_PATH = $HOME/ShapePipe/modules/mask_package/config/mask_default/Messier_catalog_updated.npy
 MESSIER_PIXEL_SCALE = 0.187
-MESSIER_SIZE_PLUS = 1.
-MESSIER_FLAG_VALUE = 8
+MESSIER_SIZE_PLUS = 0.0
+MESSIER_FLAG_VALUE = 4
 
 
 # -------------------------------- External flag ----------------------------------

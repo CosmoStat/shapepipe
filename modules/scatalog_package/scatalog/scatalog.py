@@ -1789,7 +1789,7 @@ class FITSCatalog(BaseCatalog):
 
 
    # -----------------------------------------------------------------------------------------------
-   def add_header_card(self, key, value= None, comment= None, hdu_no= None):
+   def add_header_card(self, key, value=None, comment=None, hdu_no=None):
        """!
           Add a card in the header of the specified hdu
           @param key the key to add

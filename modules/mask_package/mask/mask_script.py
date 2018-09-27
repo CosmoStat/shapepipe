@@ -4,7 +4,7 @@
 
 This module contain a class to create star mask for an image.
 
-:Authors: Axel Guinot
+:Authors: Axel Guinot, Martin Kilbinger
 
 :Date: 20/12/2017
 
@@ -205,6 +205,8 @@ class mask(object):
             self._mask_to_file(input_mask=final_mask, output_fullpath=self._output_dir+'/'+self._img_name+'_flag'+self._img_number+'.fits')
 
 
+
+
     def find_stars(self, position, radius=None):
         """Find stars
 
@@ -261,7 +263,8 @@ class mask(object):
         if width is None:
             raise ValueError('Width not provided')
 
-        flag = np.zeros((int(self._fieldcenter['pix'][0]*2),int(self._fieldcenter['pix'][1]*2)),dtype='uint8')
+        # MKDEBUG: Exchanged x and y in the following init call, since the python image is [y, x]
+        flag = np.zeros((int(self._fieldcenter['pix'][1]*2),int(self._fieldcenter['pix'][0]*2)),dtype='uint8')
 
         flag[0:width,:]   = flag_value
         flag[-width:-1,:] = flag_value
@@ -282,8 +285,8 @@ class mask(object):
             Path to the Messier catalog
         size_plus : float
             Increase the size of the mask by this factor (Example : 0.1 means 10%)
-        flag_value : intMessier objects (power of 2)
-            Value of the flag for
+        flag_value : float
+            Value of the flag, some power of 2
 
         Returns
         -------
@@ -333,7 +336,8 @@ class mask(object):
             return None
         #print('MKDEBUG Messier objects found: first=#{} {}/{}'.format(m_cat['No'][ind[0]], m_cat['ra'][ind[0]], m_cat['dec'][ind[0]]))
 
-        flag = np.zeros((int(self._fieldcenter['pix'][0]*2), int(self._fieldcenter['pix'][1]*2)), dtype='uint8')
+        # MKDEBUG: Exchanged x and y in the following init call, since the python image is [y, x]
+        flag = np.zeros((int(self._fieldcenter['pix'][1]*2), int(self._fieldcenter['pix'][0]*2)), dtype='uint8')
 
         for i in ind:
             m_center = np.hstack(self._wcs.all_world2pix(m_cat['ra'][i], m_cat['dec'][i], 0))
@@ -347,9 +351,6 @@ class mask(object):
             # Previous code
             #y_c, x_c = np.ogrid[-int(m_center[1]):ny-int(m_center[1]), -int(m_center[0]):nx-int(m_center[0])]
             #mask_tmp = x_c*x_c + y_c*y_c <= r_pix*r_pix
-
-            # MKDEBUG new 26/9: Don't know why but this seems necessary to have mask_tmp the same shape as flag
-            mask_tmp = mask_tmp.transpose()
 
             flag[mask_tmp] = flag_value
 
@@ -520,21 +521,24 @@ class mask(object):
         scale_factor : float
             Scaling for the model
 
+        Returns
+        -------
+        None
         """
 
         if stars is None:
             raise ValueError('No stars catalog provided')
 
         if self._config[types]['reg_file'] is None:
-            reg = self._config['PATH']['temp_dir'] + types.lower()+ self._img_number + '.reg'
+            reg = self._config['PATH']['temp_dir'] + types.lower() + self._img_number + '.reg'
         else:
             reg = self._config[types]['reg_file']
 
         if types == 'HALO':
-            mask_model = np.loadtxt(self._config['HALO']['maskmodel_path']).transpose()
+            mask_model = np.loadtxt(self._config['HALO']['maskmodel_path'])
             mask_reg = open(reg,'w')
         elif types == 'SPIKE':
-            mask_model = np.loadtxt(self._config['SPIKE']['maskmodel_path']).transpose()
+            mask_model = np.loadtxt(self._config['SPIKE']['maskmodel_path'])
             mask_reg = open(reg,'w')
         else:
             ValueError("types need to be in ['HALO', 'SPIKE']")
@@ -657,8 +661,6 @@ class mask(object):
 
         """
 
-        # MKDEBUG new 26/9: Add transpose to account for get_data() returning (y, x)
-
         final_mask=None
 
         if (path_mask1 is None) & (path_mask2 is None) & (border is None) & (messier is None):
@@ -667,15 +669,16 @@ class mask(object):
         if path_mask1 is not None:
             mask1=sc.FITSCatalog(path_mask1, hdu_no=0)
             mask1.open()
-            final_mask=mask1.get_data()[:,:].transpose()
+            final_mask=mask1.get_data()[:,:]
 
         if path_mask2 is not None:
             mask2=sc.FITSCatalog(path_mask2, hdu_no=0)
             mask2.open()
             if final_mask is not None:
-                final_mask+=mask2.get_data()[:,:].transpose()
+                final_mask+=mask2.get_data()[:,:]
             else:
-                final_mask=mask2.get_data()[:,:].transpose()
+                final_mask=mask2.get_data()[:,:]
+
 
         if border is not None:
             if type(border) is np.ndarray:
@@ -686,6 +689,7 @@ class mask(object):
             else:
                 raise TypeError('border has to be a numpy.ndarray')
 
+
         if messier is not None:
             if type(messier) is np.ndarray:
                 if final_mask is not None:
@@ -695,14 +699,16 @@ class mask(object):
             else:
                 raise TypeError('messier has to be a numpy.ndarray')
 
+
         if path_external_flag is not None:
-            external_flag = sc.FITSCatalog(path_external_flag, hdu_no= 0)
+            external_flag = sc.FITSCatalog(path_external_flag, hdu_no=0)
             external_flag.open()
             if final_mask is not None:
-                final_mask += external_flag.get_data()[:,:].transpose()
+                final_mask += external_flag.get_data()[:,:]
             else:
-                final_mask = external_flag.get_data()[:,:].transpose()
+                final_mask = external_flag.get_data()[:,:]
             external_flag.close()
+
 
 
         return final_mask.astype(np.int16,copy=False)
@@ -727,13 +733,19 @@ class mask(object):
         if output_fullpath is None:
             raise ValueError('fullpath not provided')
 
-        out=sc.FITSCatalog(output_fullpath, open_mode= sc.BaseCatalog.OpenMode.ReadWrite, hdu_no= 0)
-        out.save_as_fits(data=input_mask,image=True)
+        out = sc.FITSCatalog(output_fullpath, open_mode=sc.BaseCatalog.OpenMode.ReadWrite, hdu_no=0)
+        out.save_as_fits(data=input_mask, image=True)
 
         if self._config['MD']['make']:
             out.open()
             out.add_header_card('MRATIO', self._ratio, 'ratio missing_pixels/all_pixels')
             out.add_header_card('MFLAG', self._config['MD']['im_flagged'], 'threshold value {:.3}'.format(self._config['MD']['thresh_flag']))
+
+            # MKDEBUG 27/9/2018 new: Write WCS information to header
+            if self._wcs:
+                header_wcs = self._wcs.to_header()
+                for card in header_wcs:
+                    out.add_header_card(card, header_wcs[card], header_wcs.comments[card])
             out.close()
 
     def _get_temp_dir_path(self, temp_dir_path):
