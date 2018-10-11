@@ -12,7 +12,8 @@ set module2compile = (modules/mask_package \
                       modules/SETools_package \
                       modules/shapepipe_base \
                       modules/slogger_package \
-                      modules/shapelens_package)
+                      modules/shapelens_package \
+		      scripts)
 
 set install_option = $1
 set cdir = `pwd`
