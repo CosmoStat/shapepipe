@@ -400,7 +400,7 @@ class PackageRunner(object):
 
         """
 
-        dir_path = self._worker.base_input_dir + 'SExtractor_default'
+        dir_path = self._worker.base_input_dir + '/SExtractor_default'
 
         self._read_sex_default(dir_path + '/default.sex')
 

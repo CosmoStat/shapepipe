@@ -607,7 +607,8 @@ def do_substitutions(path_dest, image_type, module_base, module_name, image_list
 
     # Set keys specificly to image type (tile, exposure)
     dat = stuff.substitute(dat, 'BASE_DIR', '\$HOME/data', path_data[image_type])
-    path = '{}/{}/{}'.format(os.getcwd(), path_config[image_type], module_name)
+    # MKDEBUG New 10/10/2018, SExtractor_default found in config
+    path = '{}/{}/{}/config'.format(os.getcwd(), path_config[image_type], module_name)
     dat = stuff.substitute(dat, 'BASE_INPUT_DIR', '.*', path)
     dat = stuff.substitute(dat, 'BASE_OUTPUT_DIR', 'output', path_output[image_type])
 

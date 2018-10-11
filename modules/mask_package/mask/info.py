@@ -16,7 +16,7 @@ __whoami__ = "mask"
 # Python dependencies
 pipe_depend = ['mpfg', 'mpfx', 'scatalog', 'sconfig', 'shapepipe_base',
                'slogger']
-external_depend = ['numpy', 'astropy', 'astroquery']
+external_depend = ['numpy', 'astropy']
 
 __python_depend__ = pipe_depend + external_depend
 

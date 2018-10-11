@@ -535,10 +535,10 @@ class mask(object):
             reg = self._config[types]['reg_file']
 
         if types == 'HALO':
-            mask_model = np.loadtxt(self._config['HALO']['maskmodel_path'])
+            mask_model = np.loadtxt(self._config['HALO']['maskmodel_path']).transpose()
             mask_reg = open(reg,'w')
         elif types == 'SPIKE':
-            mask_model = np.loadtxt(self._config['SPIKE']['maskmodel_path'])
+            mask_model = np.loadtxt(self._config['SPIKE']['maskmodel_path']).transpose()
             mask_reg = open(reg,'w')
         else:
             ValueError("types need to be in ['HALO', 'SPIKE']")
