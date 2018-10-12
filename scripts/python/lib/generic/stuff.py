@@ -216,18 +216,20 @@ def my_string_split(string, num=-1, verbose=False, stop=False):
 
 
 
-def list_unique(a):
-    """Return list of unique elements in a (remove duplicates).
+def list_unique(a, verbose=False):
+    """Return list of unique elements of first entry in tupel in *a* (remove duplicates).
 
     Parameters
     ----------
-    a: list
+    a: list of tupels
         list of elements
+    verbose: bool, optional, default=False
+        verbose output if True
 
     Returns
     -------
     uniq: list
-        list of unique elements from a
+        list of unique tupels from a
     """
 
     seen = set()

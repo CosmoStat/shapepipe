@@ -28,8 +28,8 @@ from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
 from astropy.io import fits
 
 
-import stuff
-import cfis
+from generic import stuff
+from cfis import cfis
 
 
 def params_default():
@@ -199,7 +199,7 @@ def get_tile_list(input_dir, pattern_base, band, verbose=False):
         file name list
     """
 
-    files = glob.glob('{}/*'.format(input_dir))
+    files = glob.glob('{}/*.fits'.format(input_dir))
 
     #pattern = cfis.get_file_pattern(pattern_base, band, 'tile')
     pattern = pattern_base
@@ -221,7 +221,7 @@ def get_tile_list(input_dir, pattern_base, band, verbose=False):
 
 
 
-def get_exposure_list(tiles, verbose=False):
+def get_exposure_list(tiles, pattern_base, verbose=False):
     """Return list of exposures that are used in the tiles stacks.
 
     Parameters
@@ -233,8 +233,8 @@ def get_exposure_list(tiles, verbose=False):
 
     Returns
     -------
-    exposures: list of strings
-        file names of exposures
+    exposures: list of tuples of strings
+        tupel of file names of exposures, tile number
     """
 
     exp_list = []
@@ -245,14 +245,22 @@ def get_exposure_list(tiles, verbose=False):
             hist  = hdu[0].header['HISTORY']
 
         except:
-
             if verbose:
                 print('Error while reading FITS file {}, continuing...'.format(f))
 
+        # Get tile number
+        pattern = re.compile('{}(.*)-0'.format(pattern_base))
+        m       = re.search(pattern, f)
+        if m is not None:
+            tiles_num = m.group(1)
+        else:
+            stuff.error('Could not extract number from tile file \'{}\''.format(f))
+
+        # Get exposure file names
         for h in hist:
-            temp = h.split(' ')
-            name = '{}.fz'.format(temp[3])
-            exp_list.append(name)
+            temp     = h.split(' ')
+            exp_name = '{}.fz'.format(temp[3])
+            exp_list.append((exp_name, tiles_num))
 
     exp_list_uniq = stuff.list_unique(exp_list)
     
@@ -356,7 +364,7 @@ def write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_
 
 
 def create_hdus(num, output_dir, exp_path, weight_path, flag_path, \
-                exp_base, exp_weight_base, exp_flag_base, ext, log, verbose=False):
+                exp_base, exp_weight_base, exp_flag_base, ext, tile_num, log, verbose=False):
     """Create FITS files for each hdu in the image (CCDs)
     """
 
@@ -378,17 +386,14 @@ def create_hdus(num, output_dir, exp_path, weight_path, flag_path, \
     flag_file = sc.FITSCatalog(flag_path, hdu_no=1)
     flag_file.open()
     
-    # MKDEBUG TODO: if #hdu != 40, can still use the ones that are common to the three files
     hdu_max = [len(cat._cat_data) for cat in (img_file, weight_file, flag_file)]
     all_hdu = True
     if not all(np.diff(hdu_max) == 0):
         all_hdu = False
-        #stuff.error('Inconsistent #hdus={}/{}/{} of image/weight/flag'.format(hdu_max[0], hdu_max[1], hdu_max[2]))
         stuff.warning('Inconsistent #hdus={}/{}/{} of image/weight/flag, writing only some hdus'.format(hdu_max[0], hdu_max[1], hdu_max[2]))
 
 
     # Write FITS files
-
     for k_img in range(1, 41):
 
         if all_hdu:
@@ -422,7 +427,7 @@ def create_hdus(num, output_dir, exp_path, weight_path, flag_path, \
              
         write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_dir, exp_base, exp_weight_base, exp_flag_base, \
                   ext, num, exp_path, verbose=verbose)
-        log_app.append('{}  {} {} {}  {}\n'.format(exp_path, k_img, k_weight, k_flag, num))
+        log_app.append('{}  {}   {} {} {}  {}\n'.format(exp_path, tile_num, k_img, k_weight, k_flag, num))
 
         num = num + 1
 
@@ -440,8 +445,8 @@ def create_output(exp_list, input_dir, input_dir_weights, input_dir_flags, outpu
 
     Parameters
     ----------
-    exp_list: list of strings
-        list of exposure file names
+    exp_list: list of tupels
+        list of tupels with exposure file names, tile numbers
     input_dir: string
         input directory for exposures
     input_dir_weights: string
@@ -467,11 +472,11 @@ def create_output(exp_list, input_dir, input_dir_weights, input_dir_flags, outpu
     if not os.path.isdir(output_dir):
         stuff.error('Path {} does not exist'.format(output_dir))
 
-    # log file
     if not os.path.isfile(log_path):
         # Create empty log file
         open(log_path, 'a').close()
 
+    # Open log file for append-write
     f_log = open(log_path, 'a+')
     log   = f_log.readlines()
     if verbose:
@@ -481,7 +486,7 @@ def create_output(exp_list, input_dir, input_dir_weights, input_dir_flags, outpu
     num = 0
     ext = 'fits'
     band = 'r'
-    for exp in exp_list:
+    for (exp, tile_num) in exp_list:
 
         m = re.findall('(.*)\.{}'.format(ext), exp)
         if len(m) == 0:
@@ -506,7 +511,7 @@ def create_output(exp_list, input_dir, input_dir_weights, input_dir_flags, outpu
                                exp_base, exp_weight_base, exp_flag_base, ext, verbose=verbose)
         else:
             num, log_app = create_hdus(num, output_dir, exp_path, weight_path, flag_path, \
-                                       exp_base, exp_weight_base, exp_flag_base, ext, log, verbose=verbose)
+                                       exp_base, exp_weight_base, exp_flag_base, ext, tile_num, log, verbose=verbose)
             # Append newly written file info to log file
             if len(log_app) > 0:
                 f_log.writelines(log_app)
@@ -545,7 +550,7 @@ def main(argv=None):
 
     tiles     = get_tile_list(param.input_dir_tiles, param.pattern, param.band, verbose=param.verbose)
 
-    exposures = get_exposure_list(tiles, verbose=param.verbose)
+    exposures = get_exposure_list(tiles, param.pattern, verbose=param.verbose)
 
     print('MKDEBUG TODO: more than 3 digits for file number')
     create_output(exposures, param.input_dir_exp, param.input_dir_exp_weights, param.input_dir_exp_flags, param.output_dir, \

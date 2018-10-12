@@ -25,7 +25,7 @@ from astropy import units
 from astropy.coordinates import Angle
 from astropy.coordinates import SkyCoord
 
-import stuff
+from generic import stuff
 
 
 unitdef = 'degree'

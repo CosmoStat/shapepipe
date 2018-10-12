@@ -25,7 +25,7 @@ import numpy as np
 
 from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
 
-import stuff
+from generic import stuff
 
 
 # Global variables, TODO: do differenly
@@ -34,8 +34,8 @@ types_glob = {}
 modules_glob['std'] = ['select', 'mask', 'SExtractor', 'SETools', 'PSFExRun', 'PSFExInterpolation']
 types_glob['std'] = ['tile', 'tile', 'tile', 'tile', 'tile', 'tile']
 
-modules_glob['tiles_exp'] = ['select', 'mask1', 'SExtractor1', 'find_exp', 'mask2', 'SExtractor2', 'SETools']
-types_glob['tiles_exp'] = ['tile', 'tile', 'tile', 'exposure', 'exposure', 'exposure', 'exposure']
+modules_glob['tiles_exp'] = ['select', 'mask1', 'SExtractor1', 'find_exp', 'mask2', 'SExtractor2', 'SETools', 'PSFExRun']
+types_glob['tiles_exp'] = ['tile', 'tile', 'tile', 'exposure', 'exposure', 'exposure', 'exposure', 'exposure']
 
 # Basic paths for pipeline codes
 path_sp     = '{}/ShapePipe'.format(os.environ['HOME'])
@@ -124,8 +124,7 @@ class modules_local:
 
         # Create exposure links directory
         if os.path.isdir(path_data['exposure']):
-            #stuff.error('Path {} exists, please remove before setting links to exposures'.format(path_data['exposure']))
-            stuff.warning('Path {} exists')
+            stuff.warning('Path \'{}\' exists'.format(path_data['exposure']))
         else:
             os.mkdir(path_data['exposure'])
 
@@ -235,16 +234,12 @@ def check_options(options):
         print('No run mode given (option \'-r\')')
         return False
 
-    if len(options.mode) > 1:
-        print('Invalid run mode \'{}\', only one allowed'.format(options.mode))
-        return False
-
-    if options.mode == 'r' or options.mode == 'a':
+    if options.mode in ['r', 'a', 's', 'sa', 'as']:
         if not options.module:
             print('Module needs to be given, via \'-M\'')
             return False
 
-    if not options.mode in ('l', 'r', 'a', 'd', 's'):
+    if not options.mode in ('l', 'r', 'a', 'd', 's', 'sa', 'as'):
         print('Invalid mode \'{}\''.format(options.mode))
         return False
 
@@ -421,6 +416,9 @@ def run_module(param):
     None
     """
 
+    if param.verbose:
+        print('Running module {}...'.format(param.smodule_name))
+
     # Module name as string
     module      = param.smodule
     # Without trailing digit(s)
@@ -482,6 +480,37 @@ def run_module(param):
         else:
             stuff.error('Invalid job execution mode \'{}\''.format(param.job))
 
+
+
+def sorted_ls(path, r):
+    """Return list of all files in directory sorted by creation date (timestamp)
+
+    Parameters
+    ----------
+    path: string
+        directory name
+    r: regex string
+        file name filter
+
+    Returns
+    -------
+    res: array of string
+        file names
+    """
+
+    # Read all files in directory
+    files   = os.listdir(path)
+
+    # Filter file list
+    pattern = re.compile(r)
+    files_r = list(filter(pattern.match, files))
+
+    # Sort by timestampe
+    mtime   = lambda f: os.stat(os.path.join(path, f)).st_mtime
+    res   = list(sorted(files_r, key=mtime))
+
+    return res
+
     
 
 def adopt_run(module, image_type, verbose=False):
@@ -501,12 +530,14 @@ def adopt_run(module, image_type, verbose=False):
     None
     """
 
+    if verbose:
+        print('Adopting last run of module {}...'.format(module))
+
     path_runs = '{}/{}'.format(path_output[image_type], module)
-    f = glob.glob('{}/run_*'.format(path_runs))
-    f = sorted(f)
+    f = sorted_ls(path_runs, 'run_.*')    
     last_run  = f[-1]
-    source          = os.path.basename(last_run)
-    source_to_check = last_run
+    source          = last_run
+    source_to_check = '{}/{}'.format(path_runs, last_run)
     link_name = '{}/{}'.format(path_runs, name_adopted)
 
     stuff.ln_s(source, link_name, orig_to_check=source_to_check, verbose=verbose, force=True)
@@ -529,6 +560,9 @@ def discard_run(module, image_type, verbose=False):
     -------
     None
     """
+
+    if verbose:
+        print('Discarding last run of module {}...'.format(module))
 
     path = '{}/{}/adopted'.format(path_output[image_type], module)
     if os.path.islink(path):
@@ -556,6 +590,9 @@ def set_results(module, image_type, verbose=False):
     -------
     None
     """
+
+    if verbose:
+        print('Set links to adopted run of module {}...'.format(module))
 
     path_results = '{}/{}/{}/{}/{}'.format(os.getcwd(), path_output[image_type], module, name_adopted, name_results)
 
@@ -607,7 +644,6 @@ def do_substitutions(path_dest, image_type, module_base, module_name, image_list
 
     # Set keys specificly to image type (tile, exposure)
     dat = stuff.substitute(dat, 'BASE_DIR', '\$HOME/data', path_data[image_type])
-    # MKDEBUG New 10/10/2018, SExtractor_default found in config
     path = '{}/{}/{}/config'.format(os.getcwd(), path_config[image_type], module_name)
     dat = stuff.substitute(dat, 'BASE_INPUT_DIR', '.*', path)
     dat = stuff.substitute(dat, 'BASE_OUTPUT_DIR', 'output', path_output[image_type])
@@ -618,10 +654,11 @@ def do_substitutions(path_dest, image_type, module_base, module_name, image_list
     #dat = stuff.substitute_arr(dat, 'FILE_PATTERNS', '\"\*\"', '"{}*"'.format(data_file_base[image_type][0]))
 
     # Type-specific substitutions
-    if image_type == 'exposure':
-        dat = stuff.substitute_arr(dat, 'INPUT_FILENAME_FORMATS', data_file_base['tile'], data_file_base['exposure'])
-    elif image_type == 'tile':
-        pass
+    if module_base in ['mask', 'SEXtractor', 'SETools']:
+        if image_type == 'exposure':
+            dat = stuff.substitute_arr(dat, 'INPUT_FILENAME_FORMATS', data_file_base['tile'], data_file_base['exposure'])
+        elif image_type == 'tile':
+            pass
 
     # Module-specific substitutions
     if module_base == 'mask':
@@ -635,7 +672,7 @@ def do_substitutions(path_dest, image_type, module_base, module_name, image_list
         dat = stuff.substitute(dat, 'DETECT_MINAREA', '(.*)0\.4(.*)0\.4(.*)', '\\1max(WDSEEMED,0.4)\\2max(WDSEEMED,0.4)\\3', sep='')
         dat = stuff.substitute(dat, 'SEEING_FWHM', '(.*)IQFINAL(.*)', '\\1WDSEEMED\\2', sep='')
         dat = stuff.substitute(dat, 'PHOT_APERTURES', '(.*)IQFINAL(.*)', '\\1WDSEEMED\\2', sep='')
-        #dat = stuff.substitute(dat, 'BACK_TYPE', 'MANUAL', 'AUTO')
+        dat = stuff.substitute(dat, 'BACK_TYPE', 'MANUAL', 'AUTO', sep='')
         dat = stuff.substitute(dat, 'SATUR_LEVEL', '@SATURATE', 'SATLEVEL', sep='')
         # CHECKIMAGE_TYPE    BACKGROUND
         # CHECKIMAGE_NAME    back.fits
@@ -683,16 +720,16 @@ def main(argv=None):
     if param.mode == 'l':
         list_modules()
 
-    elif param.mode == 'r':
+    if param.mode == 'r':
         run_module(param)
 
-    elif param.mode == 'a':
+    if re.search('a', param.mode):
         adopt_run(param.smodule_name, param.image_type, verbose=param.verbose)
 
-    elif param.mode == 'd':
+    if param.mode == 'd':
         discard_run(param.smodule_name, param.image_type, verbose=param.verbose)
 
-    elif param.mode == 's':
+    if re.search('s', param.mode):
         set_results(param.smodule_name, param.image_type, verbose=param.verbose)
 
     ### End main program ###

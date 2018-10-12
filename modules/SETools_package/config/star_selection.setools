@@ -4,18 +4,19 @@
 # Note: This selection is used in further samples. Start name with '_'
 # so it is first in hash array and known at the time when later 
 # samples are processed.
-#[MASK:_bright_objects]
-#MAG_AUTO < 18.5
+[MASK:_bright_objects]
+MAG_AUTO < 18.5
+NO_SAVE
 
 [MASK:star_selection]
 MAG_AUTO > 18.
 MAG_AUTO < 23.
 FLAGS == 0
 IMAFLAGS_ISO == 0
-#FWHM_IMAGE - 0.05 <= mode(FWHM_IMAGE{_bright_objects})
-#FWHM_IMAGE + 0.05 >= mode(FWHM_IMAGE{_bright_objects})
-FWHM_IMAGE - 0.05 <= mode(FWHM_IMAGE)
-FWHM_IMAGE + 0.05 >= mode(FWHM_IMAGE)
+FWHM_IMAGE - 0.05 <= mode(FWHM_IMAGE{_bright_objects})
+FWHM_IMAGE + 0.05 >= mode(FWHM_IMAGE{_bright_objects})
+#FWHM_IMAGE - 0.05 <= mode(FWHM_IMAGE)
+#FWHM_IMAGE + 0.05 >= mode(FWHM_IMAGE)
 CLASS_STAR != 0
 
 [STAT:numbers]
