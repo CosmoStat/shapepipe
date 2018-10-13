@@ -179,48 +179,6 @@ def update_param(p_def, options):
 
 
 
-def get_tile_list(input_dir, pattern_base, band, verbose=False):
-    """Return list of CFIS tiles filenames
-
-    Parameters
-    ----------
-    input_dir: string
-        input directory
-    pattern_base: string
-        base of file name pattern
-    band: string
-        band, one of 'r', 'u, only used if pattern_base=''
-    verbose: bool, optional, default=False
-        verbose output if True
-
-    Returns
-    -------
-    dst_list: list of string
-        file name list
-    """
-
-    files = glob.glob('{}/*.fits'.format(input_dir))
-
-    #pattern = cfis.get_file_pattern(pattern_base, band, 'tile')
-    pattern = pattern_base
-
-    dst_list = []
-    for f in files:
-
-        # Test if file matches pattern
-        m = re.findall(pattern, f)
-        if len(m) != 0:
-            dst_list.append(f)
-
-    if len(dst_list) == 0:
-        stuff.error('No files found in \'{}\' that matches pattern \'{}\''.format(input_dir, pattern))
-    if verbose == True:
-        print('Found {} tiles'.format(len(dst_list)))
-
-    return dst_list
-
-
-
 def get_exposure_list(tiles, pattern_base, verbose=False):
     """Return list of exposures that are used in the tiles stacks.
 
@@ -248,13 +206,7 @@ def get_exposure_list(tiles, pattern_base, verbose=False):
             if verbose:
                 print('Error while reading FITS file {}, continuing...'.format(f))
 
-        # Get tile number
-        pattern = re.compile('{}(.*)-0'.format(pattern_base))
-        m       = re.search(pattern, f)
-        if m is not None:
-            tiles_num = m.group(1)
-        else:
-            stuff.error('Could not extract number from tile file \'{}\''.format(f))
+        tile_num = stuff.get_pipe_file_number(pattern_base, f)
 
         # Get exposure file names
         for h in hist:
@@ -427,7 +379,8 @@ def create_hdus(num, output_dir, exp_path, weight_path, flag_path, \
              
         write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_dir, exp_base, exp_weight_base, exp_flag_base, \
                   ext, num, exp_path, verbose=verbose)
-        log_app.append('{}  {}   {} {} {}  {}\n'.format(exp_path, tile_num, k_img, k_weight, k_flag, num))
+
+        log_app = cfis.log_append_to_tiles_exp(log_app, exp_path, tile_num, k_img, k_weight, k_flag, num)
 
         num = num + 1
 
@@ -548,7 +501,7 @@ def main(argv=None):
 
     ### Start main program ###
 
-    tiles     = get_tile_list(param.input_dir_tiles, param.pattern, param.band, verbose=param.verbose)
+    tiles     = stuff.get_file_list(param.input_dir_tiles, param.pattern, verbose=param.verbose)
 
     exposures = get_exposure_list(tiles, param.pattern, verbose=param.verbose)
 

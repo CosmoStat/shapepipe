@@ -319,7 +319,8 @@ def get_tile_number(tile_name):
     niy = m.groups()[1]
 
     return nix, niy
-    
+
+
 
 def check_ra(ra):
     """Range check of right ascension.
@@ -632,7 +633,6 @@ def get_image_list(inp, band, image_type, col=None, verbose=False):
 
 
 
-
 def exclude(f, exclude_list):
     """Return True if f is on exclude_list
 
@@ -650,4 +650,47 @@ def exclude(f, exclude_list):
     """
 
     return f in exclude_list
+
+
+def log_append_to_tiles_exp(log, exp_path, tile_num, k_img, k_weight, k_flag, exp_num):
+    """Append information to tiles-exposure log string lines
+    """
+
+    log.append('{}  {}   {} {} {}  {}\n'.format(exp_path, tile_num, k_img, k_weight, k_flag, exp_num))
+
+    return log
+
+
+
+def log_line_get_entry(log_line, entry):
+    """Return entry from log string line
+    """
+
+    line_s = log_line.split(' ')
+
+    if entry == 'tile_num':
+        return line_s[1]
+    elif entry == 'exp_num':
+        return line_s[5]
+    else:
+        stuff.error('Entry \'{}\' not valid in tiles-expsure log string'.format(entry))
+
+
+
+def log_get_exp_nums_for_tiles_num(log, tile_num):
+    """Return all exposure numbers for a given tile number
+    """
+
+    exp_num = []
+
+    for line in log:
+        my_tile_num = log_line_get_entry(line, 'tile_num')
+        if tile_num == my_tile_num:
+            exp_num.append(log_line_get_entry(line, 'exp_num'))
+
+    if len(exp_num) == 0:
+        stuff.error('Tile number \'{}\' not found in log file'.format(tile_num))
+
+    return exp_num
+
 

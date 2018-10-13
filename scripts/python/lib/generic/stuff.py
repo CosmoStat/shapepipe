@@ -21,6 +21,7 @@ import re
 import subprocess
 import shlex
 import errno
+import glob
 
 from optparse import IndentedHelpFormatter
 import textwrap
@@ -500,6 +501,7 @@ def log_command(argv, name=None, close_no_return=True):
         f.close()
 
 
+
 def run_cmd(cmd_list, run=True, verbose=True, stop=False, parallel=True, file_list=None, devnull=False, env=None):
     """Run shell command or a list of commands using subprocess.Popen().
 
@@ -698,5 +700,71 @@ def ln_s(orig, new, orig_to_check=False, verbose=False, force=False):
     else:
         if verbose:
             print('Original file \'{}\' does not exist, skipping...'.format(orig_to_check))
+
+
+
+
+def get_file_list(input_dir, pattern_base, ext='.fits', verbose=False):
+    """Return list of all files in directory whose names follow base pattern and pipeline numbering scheme
+
+    Parameters
+    ----------
+    input_dir: string
+        input directory
+    pattern_base: string
+        base of file name pattern
+    ext: string, optional, default='.fits'
+        file extension
+    verbose: bool, optional, default=False
+        verbose output if True
+
+    Returns
+    -------
+    dst_list: list of string
+        file name list
+    """
+
+    files = glob.glob('{}/*{}'.format(input_dir, ext))
+
+    dst_list = []
+    for f in files:
+
+        # Test if file matches pattern_base
+        m = re.findall(pattern_base, f)
+        if len(m) != 0:
+            dst_list.append(f)
+
+    if len(dst_list) == 0:
+        stuff.error('No files found in \'{}\' that matches pattern_base \'{}\''.format(input_dir, pattern_base))
+    if verbose == True:
+        print('Found {} tiles'.format(len(dst_list)))
+
+    return dst_list
+
+
+def get_pipe_file_number(pattern_base, file_name):
+    """Returns pipeline file number.
+
+    Parameters
+    ----------
+    pattern_base: string
+        base file name to match
+    file_name: string
+        file name from where to extract number
+
+    Returns
+    -------
+    num: int
+        pipeline file number
+    """
+
+    pattern = re.compile('{}(.*)-0'.format(pattern_base))
+    m       = re.search(pattern, f)
+    if m is not None:
+        num = m.group(1)
+    else:
+        stuff.error('Could not extract number from tile file \'{}\''.format(f))
+
+    return num
 
 

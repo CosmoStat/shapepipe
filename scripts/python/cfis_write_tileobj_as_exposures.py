@@ -25,10 +25,15 @@ import numpy as np
 
 from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
 from astropy.io import fits
-
+from astropy.coordinates import SkyCoord
+from astropy import wcs
+from astropy import units as u
+ 
 
 from generic import stuff
 from cfis import cfis
+
+import scatalog as sc
 
 
 def params_default():
@@ -44,14 +49,16 @@ def params_default():
         parameter values
     """
 
-    input_dir = '.'
+    base_dir = '{}/data'.format(os.environ['HOME'])
 
     p_def = stuff.param(
-        input_dir_cat_tiles    = input_dir,
-        output_dir_cat_exp     = '{}/exposures'.format(input_dir),
-        log_path               = '{}/log_exposures.txt'.format(input_dir),
-        cat_tiles_pattern_base = 'CFIS-',
-        cat_exp_pattern_base   = 'cfisexp-obj',
+        input_dir_cat_tiles = '{}/tiles'.format(base_dir),
+        input_dir_img_exp   = '{}/hdu'.format(base_dir),
+        img_exp_pattern     = 'cfisexp-',
+        output_dir_cat_exp  = 'out_cat_exp',
+        log_path            = '{}/log_exposures.txt'.format(base_dir),
+        cat_tiles_pattern   = 'CFIS-',
+        cat_exp_pattern     = 'cfisexp-obj-',
     )
 
     return p_def
@@ -114,9 +121,6 @@ def check_options(options):
         Result of option check. False if invalid option value.
     """
 
-    if not options.output_format in ('links', 'hdu'):
-        stuff.error('Option -O (--output_format) needs to be \'links\' or \'hdu\'')
-
     return True
 
 
@@ -149,13 +153,118 @@ def update_param(p_def, options):
         if not key in vars(param):
             setattr(param, key, getattr(options, key))
 
-    if param.exp_weight_base_new is None:
-        param.exp_weight_base_new = '{}_weight'.format(param.exp_base_new)
-    if param.exp_flag_base_new is None:
-        param.exp_flag_base_new = '{}_flag'.format(param.exp_base_new)
-        
-
     return param
+
+
+
+def get_log_file(path, verbose=False):
+    """Return log file content
+
+    Parameters
+    ----------
+    path: string
+        log file path
+    verbose: bool, optional, default=False
+        verbose output if True
+
+    Returns
+    -------
+    log: list of strings
+        log file lines
+    """
+
+    if not os.path.isfile(log_path):
+        stuff.error('Log file \'{}\' not found'.format(log_path))
+
+    f_log = open(log_path, 'r')
+    log   = f_log.readlines()
+    if verbose:
+        print('Reading log file, {} lines found'.format(len(log)))
+    f_log.close()
+
+    return log
+
+
+
+def write_exposure_files(cat_tiles, log, cat_tiles_pattern, input_dir_img_exp, img_exp_pattern, output_dir_cat_exp, cat_exp_pattern, verbose=False):
+    """Write catalogues corresponding to exposure coordinates with object info from corresponding tiles.
+
+    Parameters
+    ----------
+    cat_tiles: list of string
+        tiles catalogue file names
+    log: list of string
+        log file lines
+    cat_tiles_pattern: string
+        base tiles catalogue file name
+    input_dir_img_exp: string
+        input directory for expoure images
+    img_exp_base:
+        input exposure image file name base
+    output_dir_cat_exp: string
+        output directory for exposure catalogues
+    cat_exp_base:
+        output exposure catalogue file name base
+    verbose: bool, optional, default=False
+        verbose output if True
+
+    Returns
+    -------
+    None
+    """
+
+
+    for tile in cat_tiles:
+
+        print(tile)
+
+        tile_num = stuff.get_pipe_file_number(cat_tiles_pattern, tile)
+
+        # Get all exposure numbers for this tile from log file
+        exp_num_list = cfis.log_get_exp_nums_for_tiles_num(log, tile_num)
+
+        # Open those exposures, get coordinates
+        corners_sc = {}
+        for exp_num in exp_num_list:
+            exp_file_name = '{}/{}{}-0.fits'.format(input_dir_img_exp, img_exp_base, exp_num)
+            exp_file      = sc.FITSCatalog(exp_file_name)
+            header        = exp_file.get_header()
+            exp_file.close()
+
+            wcs        = wcs.WCS(header)
+            corners    = wcs.calc_footprint()
+            corners_sc[exp_num] = SkyCoord(ra=corners[:,0]*u.degree, dec=corners[:,1]*u.degree)
+
+        # Open catalogue and get data
+        f_tile = sc.FITSCatalog(tile, SEx_catalog=True)
+        f_tile.open()
+        dat_tile = f_tile.get_data()
+        size     = len(dat_tile)
+        print('#obj = {}'.format(len(dat_tile))
+
+        # Create masks, one corresponding to each exposure
+        exp_mask = []
+        for exp_num in exp_num_list:
+            exp_mask[exp_num] = np.zeros(size, dtype=bool)
+
+        # For all objects find exposure, set corresponding mask to True
+        for i, line in enumerate(dat_tile):
+            coord = SkyCoord(ra=line['RA'], dec=line['DEC'])
+            found = False
+            for exp_num in exp_num_list:
+                if IS_IN_FOOTPRINT(coord, corners_sc[exp_num]):
+                    if found:
+                        stuff.error('Object with coord {} found in more than one exposure'.format(coord))
+                    exp_mask[exp_num] = True
+
+            if not found:
+                stuff.error('Object with coord {} not found in any exposure'.format(coord))
+
+        # Write masked objects into exposure catalogue files
+        for exp_num in exp_num_list:
+            output_path = '{}/{}{}-0.fits'.format(cat_exp_base, cat_exp_pattern, exp_num)
+            exp_cat_file = sc.FITSCatalog(output_path, open_mode=sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog=True)
+            exp_cat_file.save_as_fits(data=dat_tile[mask], ext_name='LDAC_OBJECTS', sex_cat_path='what_is_this')
 
 
 
@@ -185,12 +294,13 @@ def main(argv=None):
     ### Start main program ###
 
     # Get list of catalogues of objects selected on tiles
-    cat_tiles = get_cat_list(param.input_dir_cat_tiles, param.cat_tiles_pattern_base, verbose=param.verbose)
+    cat_tiles = stuff.get_file_list(param.input_dir_cat_tiles, param.cat_tiles_pattern_base, ext='.cat', verbose=param.verbose)
 
     # The log file lists all exposures for each tile
     log = get_log_file(param.log_path, verbose=param.verbose)
 
-    write_exposure_files(cat_tiles, log, param.output_dir_cat_exp, param.cat_exp_base, verbose=param.verbose)
+    write_exposure_files(cat_tiles, log, param.cat_tiles_pattern, param.input_dir_img_exp, param.img_exp_pattern, \
+                         param.output_dir_cat_exp, param.cat_exp_pattern, verbose=param.verbose)
 
     ### End main program ###
 
