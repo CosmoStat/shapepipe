@@ -1,2 +1,0 @@
-# xdither_pixels ydither_pixels
- 0.0  0.0

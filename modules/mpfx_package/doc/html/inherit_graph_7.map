@@ -1,5 +1,0 @@
-<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classobject.html" title="object" alt="" coords="6,12,63,39"/>
-<area shape="rect" id="node2" href="$classmpfx_1_1mpfx__data_1_1MpfxFileMatcher.html" title="The responsibility of this class is to locate all files in the source dataset that match specified cr..." alt="" coords="113,12,330,39"/>
-<area shape="rect" id="node3" href="$classmpfx_1_1mpfx__data_1_1MpfxMultiEpochFileMatcher.html" title="The responsibility of this class is to locate all files in the source dataset that match specified cr..." alt="" coords="379,5,557,46"/>
-</map>

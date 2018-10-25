@@ -1,6 +1,0 @@
-<map id="multifit.multifit.BaseFittingOptions" name="multifit.multifit.BaseFittingOptions">
-<area shape="rect" id="node3" href="$classmethods_1_1kmpfit_1_1FittingMethod_1_1FittingOptions.html" title="Fitting options applicable to the kmpfit least&#45;squares minimizer. " alt="" coords="339,5,538,46"/>
-<area shape="rect" id="node4" href="$classmethods_1_1scdmin_1_1FittingMethod_1_1FittingOptions.html" title="Fitting options applicable to SCDM. " alt="" coords="336,70,541,111"/>
-<area shape="rect" id="node5" href="$classmethods_1_1scileastsq_1_1FittingMethod_1_1FittingOptions.html" title="Fitting options applicable to scipy.optimize.leastsq() " alt="" coords="351,135,526,177"/>
-<area shape="rect" id="node2" href="$classobject.html" title="object" alt="" coords="6,77,63,104"/>
-</map>
