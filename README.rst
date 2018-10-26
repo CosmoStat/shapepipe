@@ -1,9 +1,20 @@
 ShapePipe
 =========
 
+|gitlab-ci| |python35| |python36|
+
+.. |gitlab-ci| image:: https://drf-gitlab.cea.fr/cosmostat/ShapePipe/badges/shapepipe2_dev/pipeline.svg
+  :target: https://drf-gitlab.cea.fr/cosmostat/ShapePipe/tree/shapepipe2_dev
+
+.. |python35| image:: https://img.shields.io/badge/python-3.5-yellow.svg
+  :target: https://www.python.org/
+
+.. |python36| image:: https://img.shields.io/badge/python-3.6-yellow.svg
+  :target: https://www.python.org/
+
 :Version: 0.0.1
 
-:Date: 25/10/2018
+:Date: 26/10/2018
 
 ShapePipe is a galaxy shape measurement pipeline developed within the
 CosmoStat lab at CEA Paris-Saclay.
