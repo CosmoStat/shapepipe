@@ -24,7 +24,8 @@ def execute(command_line):
 
     Returns
     -------
-    tuple of stdout and stderr outputs
+    tuple
+        Stdout and stderr (both type str)
 
     Raises
     ------
