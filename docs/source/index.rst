@@ -1,16 +1,12 @@
-ShapePipe
-=========
+.. ShapePipe documentation master file, created by
+   sphinx-quickstart on Fri Oct 26 16:15:15 2018.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
 
-|gitlab-ci| |python35| |python36|
+ShapePipe Documentation
+=======================
 
-.. |gitlab-ci| image:: https://drf-gitlab.cea.fr/cosmostat/ShapePipe/badges/shapepipe2_dev/pipeline.svg
-  :target: https://drf-gitlab.cea.fr/cosmostat/ShapePipe/tree/shapepipe2_dev
-
-.. |python35| image:: https://img.shields.io/badge/python-3.5-yellow.svg
-  :target: https://www.python.org/
-
-.. |python36| image:: https://img.shields.io/badge/python-3.6-yellow.svg
-  :target: https://www.python.org/
+:Author: Samuel Farrens <samuel.farrens@cea.fr>
 
 :Version: 0.0.1
 
@@ -105,3 +101,12 @@ with the ``module_runner`` wrapper that outputs the module ``stdout`` and
     # DO SOMETHING
 
     return stdout, stderr
+
+Package Contents
+================
+
+.. toctree::
+   :numbered:
+   :maxdepth: 3
+
+   shapepipe

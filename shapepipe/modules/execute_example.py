@@ -8,8 +8,8 @@ This module defines methods for an example command line execution module.
 
 """
 
-from ..pipeline.execute import execute
-from .module_decorator import module_runner
+from shapepipe.pipeline.execute import execute
+from shapepipe.modules.module_decorator import module_runner
 
 
 @module_runner(n_inputs=1, input_module='python_example', ext='.cat')

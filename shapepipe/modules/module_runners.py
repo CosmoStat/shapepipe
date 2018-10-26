@@ -8,5 +8,5 @@ This module defines methods for running the pipeline modules.
 
 """
 
-from .python_example import python_example
-from .execute_example import execute_example
+from shapepipe.modules.python_example import python_example
+from shapepipe.modules.execute_example import execute_example

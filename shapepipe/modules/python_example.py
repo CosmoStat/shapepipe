@@ -10,7 +10,7 @@ This module defines methods for an example Python module.
 
 import time
 import numpy as np
-from .module_decorator import module_runner
+from shapepipe.modules.module_decorator import module_runner
 
 
 class Dummy(object):

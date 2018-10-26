@@ -13,7 +13,7 @@ from modopt.interface.errors import warn
 from joblib import Parallel, delayed, cpu_count
 from configparser import ConfigParser
 from logging import Logger
-from .worker_handler import WorkerHandler
+from shapepipe.pipeline.worker_handler import WorkerHandler
 
 
 class JobHandler(object):

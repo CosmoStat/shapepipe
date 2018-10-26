@@ -9,7 +9,7 @@ This module defines a class for handling pipeline files.
 """
 
 import os
-from ..modules import module_runners
+from shapepipe.modules import module_runners
 
 
 def check_dir(dir_name):

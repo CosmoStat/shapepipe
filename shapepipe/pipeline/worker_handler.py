@@ -13,8 +13,8 @@ from os import getpid
 from multiprocessing import current_process
 from modopt.interface.errors import catch_error, warn
 from modopt.interface.log import set_up_log, close_log
-from .timeout import with_timeout
-from ..modules import module_runners
+from shapepipe.pipeline.timeout import with_timeout
+from shapepipe.modules import module_runners
 
 
 class WorkerHandler(object):
@@ -67,20 +67,20 @@ class WorkerHandler(object):
     def _prepare_worker(self, job_name, process, timeout, module):
         """ Prepare Worker
 
-        This method defines a worker instance dictionaryself.
+        This method defines a worker instance dictionary.
 
-         Parameters
-         ----------
-         job_name : str
-             Job name
-         Process : str
-             File to be processed
-         config : ExpandingParser
-             Configuaration parser instance
-         timeout : int
-             Timeout limit in seconds
-         module : str
-             Module runner name
+        Parameters
+        ----------
+        job_name : str
+            Job name
+        Process : str
+            File to be processed
+        config : ExpandingParser
+            Configuaration parser instance
+        timeout : int
+            Timeout limit in seconds
+        module : str
+            Module runner name
 
         """
 
