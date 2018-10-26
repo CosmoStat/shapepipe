@@ -1,0 +1,24 @@
+language: python
+python:
+  - "3.5"
+  - "3.6"
+
+# GitHub branch
+branches:
+  only:
+    - shapepipe2_dev
+
+# install package and dependencies
+install:
+  - pip install coverage nose pytest pytest-cov
+
+# run unit tests
+script:
+  - python setup.py test
+
+# run coverage tests
+# after_success:
+
+# notification settings
+notification:
+  email: false
