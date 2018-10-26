@@ -168,8 +168,8 @@
 <span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="k">import</span> <span class="n">current_process</span>
 <span class="kn">from</span> <span class="nn">modopt.interface.errors</span> <span class="k">import</span> <span class="n">catch_error</span><span class="p">,</span> <span class="n">warn</span>
 <span class="kn">from</span> <span class="nn">modopt.interface.log</span> <span class="k">import</span> <span class="n">set_up_log</span><span class="p">,</span> <span class="n">close_log</span>
-<span class="kn">from</span> <span class="nn">.timeout</span> <span class="k">import</span> <span class="n">with_timeout</span>
-<span class="kn">from</span> <span class="nn">..modules</span> <span class="k">import</span> <span class="n">module_runners</span>
+<span class="kn">from</span> <span class="nn">shapepipe.pipeline.timeout</span> <span class="k">import</span> <span class="n">with_timeout</span>
+<span class="kn">from</span> <span class="nn">shapepipe.modules</span> <span class="k">import</span> <span class="n">module_runners</span>
 
 
 <div class="viewcode-block" id="WorkerHandler"><a class="viewcode-back" href="../../../shapepipe.pipeline.worker_handler.html#shapepipe.pipeline.worker_handler.WorkerHandler">[docs]</a><span class="k">class</span> <span class="nc">WorkerHandler</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -222,20 +222,20 @@
 <div class="viewcode-block" id="WorkerHandler._prepare_worker"><a class="viewcode-back" href="../../../shapepipe.pipeline.worker_handler.html#shapepipe.pipeline.worker_handler.WorkerHandler._prepare_worker">[docs]</a>    <span class="k">def</span> <span class="nf">_prepare_worker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_name</span><span class="p">,</span> <span class="n">process</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Prepare Worker</span>
 
-<span class="sd">        This method defines a worker instance dictionaryself.</span>
+<span class="sd">        This method defines a worker instance dictionary.</span>
 
-<span class="sd">         Parameters</span>
-<span class="sd">         ----------</span>
-<span class="sd">         job_name : str</span>
-<span class="sd">             Job name</span>
-<span class="sd">         Process : str</span>
-<span class="sd">             File to be processed</span>
-<span class="sd">         config : ExpandingParser</span>
-<span class="sd">             Configuaration parser instance</span>
-<span class="sd">         timeout : int</span>
-<span class="sd">             Timeout limit in seconds</span>
-<span class="sd">         module : str</span>
-<span class="sd">             Module runner name</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        job_name : str</span>
+<span class="sd">            Job name</span>
+<span class="sd">        Process : str</span>
+<span class="sd">            File to be processed</span>
+<span class="sd">        config : ExpandingParser</span>
+<span class="sd">            Configuaration parser instance</span>
+<span class="sd">        timeout : int</span>
+<span class="sd">            Timeout limit in seconds</span>
+<span class="sd">        module : str</span>
+<span class="sd">            Module runner name</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 

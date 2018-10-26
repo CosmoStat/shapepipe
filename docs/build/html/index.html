@@ -241,11 +241,11 @@ in order to be run.</p>
 with the <code class="docutils literal notranslate"><span class="pre">module_runner</span></code> wrapper that outputs the module <code class="docutils literal notranslate"><span class="pre">stdout</span></code> and
 <code class="docutils literal notranslate"><span class="pre">stderr</span></code>. <em>e.g.</em>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@module_runner</span><span class="p">()</span>
- <span class="k">def</span> <span class="nf">example_module</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">example_module</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-   <span class="c1"># DO SOMETHING</span>
+  <span class="c1"># DO SOMETHING</span>
 
-   <span class="k">return</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span>
+  <span class="k">return</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span>
 </pre></div>
 </div>
 </div>

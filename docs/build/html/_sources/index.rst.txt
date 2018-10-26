@@ -95,7 +95,7 @@ with the ``module_runner`` wrapper that outputs the module ``stdout`` and
 
 .. code-block:: python
 
- @module_runner()
+  @module_runner()
   def example_module(*args, **kwargs)
 
     # DO SOMETHING
