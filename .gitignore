@@ -16,7 +16,7 @@
 .eggs/
 shapepipe.egg-info/
 dist/
-build/
+/build/
 
 # Ignore pypi config
 .pypirc

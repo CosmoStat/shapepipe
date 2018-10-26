@@ -1,0 +1,112 @@
+.. ShapePipe documentation master file, created by
+   sphinx-quickstart on Fri Oct 26 16:15:15 2018.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+ShapePipe Documentation
+=======================
+
+:Author: Samuel Farrens <samuel.farrens@cea.fr>
+
+:Version: 0.0.1
+
+:Date: 26/10/2018
+
+ShapePipe is a galaxy shape measurement pipeline developed within the
+CosmoStat lab at CEA Paris-Saclay.
+
+Contents
+========
+
+1. `Dependencies`_
+
+   1. `Required Packages`_
+   2. `Optional Packages`_
+
+2. `Installation`_
+3. `Execution`_
+
+   1. `Running the Pipeline`_
+   2. `Configuration`_
+
+4. `Development`_
+
+   1. `Modules`_
+
+Dependencies
+============
+
+Required Packages
+-----------------
+TBD
+
+Optional Packages
+-----------------
+TBD
+
+Installation
+============
+
+The ShapePipe package can be installed by running:
+
+.. code-block:: bash
+
+  $ python setup.py install
+
+Execution
+=========
+
+Running the Pipeline
+--------------------
+
+The pipeline can be run as follows:
+
+.. code-block:: bash
+
+  $ ./shapepipe_run
+
+A list of command line arguments can be displayed using the ``--help``
+option:
+
+.. code-block:: bash
+
+  $ ./shapepipe_run --help
+
+Configuration
+-------------
+
+The pipeline requires a configuration file (by default called ``conifg.ini``)
+in order to be run.
+
+An example configuration file is provided in the ``example`` directory.
+
+Development
+===========
+
+Modules
+-------
+
+New modules can be implemented in the pipeline by simply writing a
+*module runner*. Example module runners are provided in ``shapepipe.modules``.
+
+The basic requirement for a new module runner is a single function decorated
+with the ``module_runner`` wrapper that outputs the module ``stdout`` and
+``stderr``. *e.g.*:
+
+.. code-block:: python
+
+ @module_runner()
+  def example_module(*args, **kwargs)
+
+    # DO SOMETHING
+
+    return stdout, stderr
+
+Package Contents
+================
+
+.. toctree::
+   :numbered:
+   :maxdepth: 3
+
+   shapepipe
