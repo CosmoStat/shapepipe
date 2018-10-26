@@ -26,7 +26,15 @@ def execute(command_line):
     -------
     tuple of stdout and stderr outputs
 
+    Raises
+    ------
+    TypeError
+        For invalid input type
+
     """
+
+    if not isinstance(command_line, str):
+        raise TypeError('Command line must be a string.')
 
     command = command_line.split()
     check_executable(command[0])

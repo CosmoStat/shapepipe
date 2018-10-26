@@ -9,6 +9,7 @@
 
 # Ignore coverage tests
 .coverage
+*.coverage.*
 .pytest_cache/
 
 # Ignore installation
