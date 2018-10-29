@@ -171,10 +171,32 @@
 
 <div class="viewcode-block" id="cutomFormatter"><a class="viewcode-back" href="../../../shapepipe.pipeline.args.html#shapepipe.pipeline.args.cutomFormatter">[docs]</a><span class="k">class</span> <span class="nc">cutomFormatter</span><span class="p">(</span><span class="n">ap</span><span class="o">.</span><span class="n">ArgumentDefaultsHelpFormatter</span><span class="p">,</span>
                      <span class="n">ap</span><span class="o">.</span><span class="n">RawDescriptionHelpFormatter</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Custom Formatter</span>
+
+<span class="sd">    This class combines the argparse ``ArgumentDefaultsHelpFormatter`` and</span>
+<span class="sd">    ``RawDescriptionHelpFormatter`` formatters.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">pass</span></div>
 
 
-<div class="viewcode-block" id="print_message"><a class="viewcode-back" href="../../../shapepipe.pipeline.args.html#shapepipe.pipeline.args.print_message">[docs]</a><span class="k">def</span> <span class="nf">print_message</span><span class="p">(</span><span class="n">additional_arg</span><span class="p">):</span>
+<div class="viewcode-block" id="print_message"><a class="viewcode-back" href="../../../shapepipe.pipeline.args.html#shapepipe.pipeline.args.print_message">[docs]</a><span class="k">def</span> <span class="nf">print_message</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Print Message</span>
+
+<span class="sd">    This method returns a custom argparse action for printing a message.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    message : str</span>
+<span class="sd">        Message to be displayed</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    customAction</span>
+<span class="sd">        Custom action class instance</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">class</span> <span class="nc">customAction</span><span class="p">(</span><span class="n">ap</span><span class="o">.</span><span class="n">Action</span><span class="p">):</span>
 
@@ -188,10 +210,26 @@
                 <span class="n">help</span><span class="o">=</span><span class="n">help</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">additional_arg</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
             <span class="n">exit</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">customAction</span></div>
+
+
+<div class="viewcode-block" id="get_module_list"><a class="viewcode-back" href="../../../shapepipe.pipeline.args.html#shapepipe.pipeline.args.get_module_list">[docs]</a><span class="k">def</span> <span class="nf">get_module_list</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot; Get Module List</span>
+
+<span class="sd">    This method returns a list of the modules current available in</span>
+<span class="sd">    module_runners.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list</span>
+<span class="sd">        List of module names</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">getmembers</span><span class="p">(</span><span class="n">module_runners</span><span class="p">,</span> <span class="n">isfunction</span><span class="p">)))[</span><span class="mi">0</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="create_arg_parser"><a class="viewcode-back" href="../../../shapepipe.pipeline.args.html#shapepipe.pipeline.args.create_arg_parser">[docs]</a><span class="k">def</span> <span class="nf">create_arg_parser</span><span class="p">():</span>
@@ -201,7 +239,8 @@
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    ArgumentParser</span>
+<span class="sd">    argparse.Namespace</span>
+<span class="sd">        Argument parser</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -228,21 +267,6 @@
 
     <span class="c1"># Return parser</span>
     <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span></div>
-
-
-<div class="viewcode-block" id="get_module_list"><a class="viewcode-back" href="../../../shapepipe.pipeline.args.html#shapepipe.pipeline.args.get_module_list">[docs]</a><span class="k">def</span> <span class="nf">get_module_list</span><span class="p">():</span>
-    <span class="sd">&quot;&quot;&quot; Get Module List</span>
-
-<span class="sd">    This method returns a list of the modules current available in</span>
-<span class="sd">    module_runners.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    list of module names</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">getmembers</span><span class="p">(</span><span class="n">module_runners</span><span class="p">,</span> <span class="n">isfunction</span><span class="p">)))[</span><span class="mi">0</span><span class="p">]</span></div>
 </pre></div>
 
            </div>

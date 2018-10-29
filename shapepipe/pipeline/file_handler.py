@@ -103,7 +103,8 @@ class FileHandler(object):
 
         Returns
         -------
-        str formated path
+        str
+            Formated path
 
         """
 
@@ -221,7 +222,8 @@ class FileHandler(object):
 
         Returns
         -------
-        list of file names
+        list
+            List of file names
 
         Raises
         ------
@@ -269,7 +271,8 @@ class FileHandler(object):
 
         Returns
         -------
-        str worker log file name
+        str
+            Worker log file name
 
         """
 

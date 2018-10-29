@@ -42,7 +42,7 @@ class WorkerHandler(object):
             Job name
         Process : str
             File to be processed
-        config : ExpandingParser
+        config : CustomParser
             Configuaration parser instance
         timeout : int
             Timeout limit in seconds
@@ -51,7 +51,8 @@ class WorkerHandler(object):
 
         Returns
         -------
-        dict worker dictionary
+        dict
+            Worker dictionary
 
         """
 
@@ -75,7 +76,7 @@ class WorkerHandler(object):
             Job name
         Process : str
             File to be processed
-        config : ExpandingParser
+        config : CustomParser
             Configuaration parser instance
         timeout : int
             Timeout limit in seconds

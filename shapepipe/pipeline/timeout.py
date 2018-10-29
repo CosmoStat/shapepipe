@@ -21,12 +21,12 @@ def with_timeout(timeout, log_file):
     ----------
     timeout : int
         Timeout limit in seconds
-    log_file : Logger
+    log_file : logging.Logger
         Logging instance
 
     Raises
     ------
-    mp.TimeoutError
+    multiprocessing.TimeoutError
         For process exceeding timeout limit
 
     Notes

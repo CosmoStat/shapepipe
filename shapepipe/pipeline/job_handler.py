@@ -30,12 +30,14 @@ class JobHandler(object):
         File handler instance
     config : CustomParser
         Configuaration parser instance
-    log : Logger
+    log : logging.Logger
         Logging instance
     batch_size : int, optional
-        Number of jobs to submitted simultaneously
+        Number of jobs to submitted simultaneously, the default is 1
     timeout : int, optional
-        Timeout limit for a given job in seconds
+        Timeout limit for a given job in seconds, the default is None
+    verbose : bool, optional
+        Verbose setting, default is True
 
     """
 
@@ -207,6 +209,11 @@ class JobHandler(object):
         time_str :  str
             Time string
 
+        Returns
+        -------
+        int
+            Time in seconds
+
         Notes
         -----
         Time strings should take the form 'HH:MM:SS'.
@@ -230,7 +237,8 @@ class JobHandler(object):
 
         Returns
         -------
-        str job name
+        str
+            Job name
 
         """
 

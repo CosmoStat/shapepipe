@@ -171,7 +171,7 @@
 <div class="viewcode-block" id="CustomParser"><a class="viewcode-back" href="../../../shapepipe.pipeline.config.html#shapepipe.pipeline.config.CustomParser">[docs]</a><span class="k">class</span> <span class="nc">CustomParser</span><span class="p">(</span><span class="n">ConfigParser</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Custom Parser</span>
 
-<span class="sd">    This class adds functionality to the ConfigParser class.</span>
+<span class="sd">    This class adds functionality to the ``ConfigParser`` class.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -189,13 +189,34 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        str with expanded enviroment variables</span>
+<span class="sd">        str</span>
+<span class="sd">            Expanded enviroment variables</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">,</span> <span class="n">option</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="CustomParser.getlist"><a class="viewcode-back" href="../../../shapepipe.pipeline.config.html#shapepipe.pipeline.config.CustomParser.getlist">[docs]</a>    <span class="k">def</span> <span class="nf">getlist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get List</span>
+
+<span class="sd">        This method retrieves a list of strings separated by a given</span>
+<span class="sd">        delimiter.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        section : str</span>
+<span class="sd">            Configuration file section</span>
+<span class="sd">        option : str</span>
+<span class="sd">            Configuration file option</span>
+<span class="sd">        delimiter : str, optional</span>
+<span class="sd">            Delimiter between list entries, default is &#39;,&#39;</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            List of strings</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="p">[</span><span class="n">opt</span> <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">delimiter</span><span class="p">)]</span></div></div>
 
@@ -212,7 +233,8 @@
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    ExpandingParser instance</span>
+<span class="sd">    CustomParser</span>
+<span class="sd">        Custom configuration file parser</span>
 
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>

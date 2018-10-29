@@ -16,7 +16,7 @@ from shapepipe.modules import module_runners
 class CustomParser(ConfigParser):
     """ Custom Parser
 
-    This class adds functionality to the ConfigParser class.
+    This class adds functionality to the ``ConfigParser`` class.
 
     """
 
@@ -34,13 +34,34 @@ class CustomParser(ConfigParser):
 
         Returns
         -------
-        str with expanded enviroment variables
+        str
+            Expanded enviroment variables
 
         """
 
         return self._get(section, os.path.expandvars, option)
 
     def getlist(self, section, option, delimiter=','):
+        """ Get List
+
+        This method retrieves a list of strings separated by a given
+        delimiter.
+
+        Parameters
+        ----------
+        section : str
+            Configuration file section
+        option : str
+            Configuration file option
+        delimiter : str, optional
+            Delimiter between list entries, default is ','
+
+        Returns
+        -------
+        list
+            List of strings
+
+        """
 
         return [opt for opt in self.get(section, option).split(delimiter)]
 
@@ -57,7 +78,8 @@ def create_config_parser(file_name):
 
     Returns
     -------
-    ExpandingParser instance
+    CustomParser
+        Custom configuration file parser
 
     Raises
     ------

@@ -16,10 +16,32 @@ from shapepipe.info import shapepipe_logo, __version__
 
 class cutomFormatter(ap.ArgumentDefaultsHelpFormatter,
                      ap.RawDescriptionHelpFormatter):
+    """ Custom Formatter
+
+    This class combines the argparse ``ArgumentDefaultsHelpFormatter`` and
+    ``RawDescriptionHelpFormatter`` formatters.
+
+    """
+
     pass
 
 
-def print_message(additional_arg):
+def print_message(message):
+    """ Print Message
+
+    This method returns a custom argparse action for printing a message.
+
+    Parameters
+    ----------
+    message : str
+        Message to be displayed
+
+    Returns
+    -------
+    customAction
+        Custom action class instance
+
+    """
 
     class customAction(ap.Action):
 
@@ -33,10 +55,26 @@ def print_message(additional_arg):
                 help=help)
 
         def __call__(self, parser, args, values, option_string=None):
-            print(additional_arg)
+            print(message)
             exit()
 
     return customAction
+
+
+def get_module_list():
+    """ Get Module List
+
+    This method returns a list of the modules current available in
+    module_runners.
+
+    Returns
+    -------
+    list
+        List of module names
+
+    """
+
+    return list(zip(*getmembers(module_runners, isfunction)))[0]
 
 
 def create_arg_parser():
@@ -46,7 +84,8 @@ def create_arg_parser():
 
     Returns
     -------
-    ArgumentParser
+    argparse.Namespace
+        Argument parser
 
     """
 
@@ -73,18 +112,3 @@ def create_arg_parser():
 
     # Return parser
     return parser.parse_args()
-
-
-def get_module_list():
-    """ Get Module List
-
-    This method returns a list of the modules current available in
-    module_runners.
-
-    Returns
-    -------
-    list of module names
-
-    """
-
-    return list(zip(*getmembers(module_runners, isfunction)))[0]

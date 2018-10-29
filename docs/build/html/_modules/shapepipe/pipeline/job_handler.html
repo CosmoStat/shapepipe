@@ -185,12 +185,14 @@
 <span class="sd">        File handler instance</span>
 <span class="sd">    config : CustomParser</span>
 <span class="sd">        Configuaration parser instance</span>
-<span class="sd">    log : Logger</span>
+<span class="sd">    log : logging.Logger</span>
 <span class="sd">        Logging instance</span>
 <span class="sd">    batch_size : int, optional</span>
-<span class="sd">        Number of jobs to submitted simultaneously</span>
+<span class="sd">        Number of jobs to submitted simultaneously, the default is 1</span>
 <span class="sd">    timeout : int, optional</span>
-<span class="sd">        Timeout limit for a given job in seconds</span>
+<span class="sd">        Timeout limit for a given job in seconds, the default is None</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        Verbose setting, default is True</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -362,6 +364,11 @@
 <span class="sd">        time_str :  str</span>
 <span class="sd">            Time string</span>
 
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        int</span>
+<span class="sd">            Time in seconds</span>
+
 <span class="sd">        Notes</span>
 <span class="sd">        -----</span>
 <span class="sd">        Time strings should take the form &#39;HH:MM:SS&#39;.</span>
@@ -385,7 +392,8 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        str job name</span>
+<span class="sd">        str</span>
+<span class="sd">            Job name</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 

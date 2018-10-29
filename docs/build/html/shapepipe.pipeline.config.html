@@ -177,7 +177,7 @@
 <em class="property">class </em><code class="descclassname">shapepipe.pipeline.config.</code><code class="descname">CustomParser</code><span class="sig-paren">(</span><em>defaults=None</em>, <em>dict_type=&lt;class 'collections.OrderedDict'&gt;</em>, <em>allow_no_value=False</em>, <em>*</em>, <em>delimiters=('='</em>, <em>':')</em>, <em>comment_prefixes=('#'</em>, <em>';')</em>, <em>inline_comment_prefixes=None</em>, <em>strict=True</em>, <em>empty_lines_in_values=True</em>, <em>default_section='DEFAULT'</em>, <em>interpolation=&lt;object object&gt;</em>, <em>converters=&lt;object object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/config.html#CustomParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.config.CustomParser" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/configparser.html#configparser.ConfigParser" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">configparser.ConfigParser</span></code></a></p>
 <p>Custom Parser</p>
-<p>This class adds functionality to the ConfigParser class.</p>
+<p>This class adds functionality to the <code class="docutils literal notranslate"><span class="pre">ConfigParser</span></code> class.</p>
 <dl class="method">
 <dt id="shapepipe.pipeline.config.CustomParser.getexpanded">
 <code class="descname">getexpanded</code><span class="sig-paren">(</span><em>section</em>, <em>option</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/config.html#CustomParser.getexpanded"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.config.CustomParser.getexpanded" title="Permalink to this definition">¶</a></dt>
@@ -193,10 +193,10 @@
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Expanded enviroment variables</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str with expanded enviroment variables</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)">str</a></p>
 </td>
 </tr>
 </tbody>
@@ -206,7 +206,29 @@
 <dl class="method">
 <dt id="shapepipe.pipeline.config.CustomParser.getlist">
 <code class="descname">getlist</code><span class="sig-paren">(</span><em>section</em>, <em>option</em>, <em>delimiter='</em>, <em>'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/config.html#CustomParser.getlist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.config.CustomParser.getlist" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Get List</p>
+<p>This method retrieves a list of strings separated by a given
+delimiter.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Configuration file section</li>
+<li><strong>option</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Configuration file option</li>
+<li><strong>delimiter</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em>, </em><em>optional</em>) – Delimiter between list entries, default is ‘,’</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">List of strings</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)">list</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="shapepipe.pipeline.config.CustomParser._abc_cache">
@@ -242,10 +264,10 @@
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>file_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Configuration file name</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Custom configuration file parser</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">ExpandingParser instance</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="#shapepipe.pipeline.config.CustomParser" title="shapepipe.pipeline.config.CustomParser">CustomParser</a></p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">

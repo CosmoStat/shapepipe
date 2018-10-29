@@ -187,9 +187,10 @@ specified number of CPUs.</p>
 <li><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Module name</li>
 <li><strong>filehd</strong> (<a class="reference internal" href="shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler" title="shapepipe.pipeline.file_handler.FileHandler"><em>FileHandler</em></a>) – File handler instance</li>
 <li><strong>config</strong> (<a class="reference internal" href="shapepipe.pipeline.config.html#shapepipe.pipeline.config.CustomParser" title="shapepipe.pipeline.config.CustomParser"><em>CustomParser</em></a>) – Configuaration parser instance</li>
-<li><strong>log</strong> (<em>Logger</em>) – Logging instance</li>
-<li><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em>) – Number of jobs to submitted simultaneously</li>
-<li><strong>timeout</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em>) – Timeout limit for a given job in seconds</li>
+<li><strong>log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.7)"><em>logging.Logger</em></a>) – Logging instance</li>
+<li><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em>) – Number of jobs to submitted simultaneously, the default is 1</li>
+<li><strong>timeout</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em>) – Timeout limit for a given job in seconds, the default is None</li>
+<li><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a><em>, </em><em>optional</em>) – Verbose setting, default is True</li>
 </ul>
 </td>
 </tr>
@@ -277,6 +278,10 @@ specified number of CPUs.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>time_str</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Time string</td>
 </tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Time in seconds</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)">int</a></td>
+</tr>
 </tbody>
 </table>
 <p class="rubric">Notes</p>
@@ -294,9 +299,9 @@ specified number of CPUs.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>num</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Process number</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Job name</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str job name</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)">str</a></td>
 </tr>
 </tbody>
 </table>

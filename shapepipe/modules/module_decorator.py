@@ -14,12 +14,12 @@ def module_runner(n_inputs=1, input_module=None, ext=None):
 
     Parameters
     ----------
-    n_inputs : int
-        Number of input files
-    input_module : str
-        Input module name
-    ext : str
-        File extension
+    n_inputs : int, optional
+        Number of input files, default is 1
+    input_module : str, optional
+        Input module name, default is None
+    ext : str, optional
+        File extension, default is None
 
     """
 

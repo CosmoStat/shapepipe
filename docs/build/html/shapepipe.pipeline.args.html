@@ -176,25 +176,25 @@
 <dt id="shapepipe.pipeline.args.cutomFormatter">
 <em class="property">class </em><code class="descclassname">shapepipe.pipeline.args.</code><code class="descname">cutomFormatter</code><span class="sig-paren">(</span><em>prog</em>, <em>indent_increment=2</em>, <em>max_help_position=24</em>, <em>width=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/args.html#cutomFormatter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.args.cutomFormatter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentDefaultsHelpFormatter" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.ArgumentDefaultsHelpFormatter</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.RawDescriptionHelpFormatter" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.RawDescriptionHelpFormatter</span></code></a></p>
+<p>Custom Formatter</p>
+<p>This class combines the argparse <code class="docutils literal notranslate"><span class="pre">ArgumentDefaultsHelpFormatter</span></code> and
+<code class="docutils literal notranslate"><span class="pre">RawDescriptionHelpFormatter</span></code> formatters.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="shapepipe.pipeline.args.print_message">
-<code class="descclassname">shapepipe.pipeline.args.</code><code class="descname">print_message</code><span class="sig-paren">(</span><em>additional_arg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/args.html#print_message"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.args.print_message" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="shapepipe.pipeline.args.create_arg_parser">
-<code class="descclassname">shapepipe.pipeline.args.</code><code class="descname">create_arg_parser</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/args.html#create_arg_parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.args.create_arg_parser" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create Argument Parser</p>
-<p>This method returns an argument parser.</p>
+<code class="descclassname">shapepipe.pipeline.args.</code><code class="descname">print_message</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/args.html#print_message"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.args.print_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print Message</p>
+<p>This method returns a custom argparse action for printing a message.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>message</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Message to be displayed</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">ArgumentParser</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Custom action class instance</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">customAction</td>
 </tr>
 </tbody>
 </table>
@@ -210,9 +210,26 @@ module_runners.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of module names</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of module names</td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)">list</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="shapepipe.pipeline.args.create_arg_parser">
+<code class="descclassname">shapepipe.pipeline.args.</code><code class="descname">create_arg_parser</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/args.html#create_arg_parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.args.create_arg_parser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create Argument Parser</p>
+<p>This method returns an argument parser.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Argument parser</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.7)">argparse.Namespace</a></td>
 </tr>
 </tbody>
 </table>
