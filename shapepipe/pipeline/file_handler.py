@@ -9,28 +9,8 @@ This module defines a class for handling pipeline files.
 """
 
 import os
+from shapepipe.pipeline.run_log import RunLog
 from shapepipe.modules import module_runners
-
-
-def check_dir(dir_name):
-    """ Check Directory
-
-    Raise error if directory exists.
-
-    Parameters
-    ----------
-    dir_name : str
-        Directory name
-
-    Raises
-    ------
-    OSError
-        If directory already exists
-
-    """
-
-    if os.path.isdir(dir_name):
-        raise OSError('Directory {} already exists.'.format(dir_name))
 
 
 class FileHandler(object):
@@ -50,16 +30,19 @@ class FileHandler(object):
     def __init__(self, run_name, config):
 
         self._run_name = run_name
-        self._input_dir = config.getexpanded('FILE', 'INPUT_DIR')
+        self._input_str = config.getexpanded('FILE', 'INPUT_DIR')
         self._output_dir = config.getexpanded('FILE', 'OUTPUT_DIR')
         self._log_name = config.get('FILE', 'LOG_NAME')
+        self._run_log_file = self.format(self._output_dir,
+                                         config.get('FILE', 'RUN_LOG_NAME'),
+                                         '.txt')
         self._module_dict = {}
 
     @property
     def run_dir(self):
         """ Run Directory
 
-        This method defines the run directory
+        This method defines the run directory.
 
         """
 
@@ -68,12 +51,50 @@ class FileHandler(object):
     @run_dir.setter
     def run_dir(self, value):
 
-        check_dir(value)
+        self.check_dir(value)
 
         self._run_dir = value
 
+    @property
+    def input_dir(self):
+        """ Input Directory
+
+        This method defines the input directory.
+
+        """
+
+        return self._input_dir
+
+    @input_dir.setter
+    def input_dir(self, value):
+
+        self.check_dir(value)
+
+        self._input_dir = value
+
     @staticmethod
-    def mkdir(dir_name):
+    def check_dir(dir_name):
+        """ Check Directory
+
+        Raise error if directory exists.
+
+        Parameters
+        ----------
+        dir_name : str
+            Directory name
+
+        Raises
+        ------
+        OSError
+            If directory already exists
+
+        """
+
+        if os.path.isdir(dir_name):
+            raise OSError('Directory {} already exists.'.format(dir_name))
+
+    @classmethod
+    def mkdir(cls, dir_name):
         """ Make Directory
 
         This method creates a directory at the specified path.
@@ -85,11 +106,11 @@ class FileHandler(object):
 
         """
 
-        check_dir(dir_name)
+        cls.check_dir(dir_name)
         os.mkdir(dir_name)
 
     @staticmethod
-    def format(path, name):
+    def format(path, name, ext=''):
         """ Format Path Name
 
         This method appends the file/directory name to the input path.
@@ -100,6 +121,8 @@ class FileHandler(object):
             Full path
         name : str
             File or directory name
+        ext : str, optional
+            File extension, default is ''
 
         Returns
         -------
@@ -108,7 +131,24 @@ class FileHandler(object):
 
         """
 
-        return '{}/{}'.format(path, name)
+        return '{}/{}{}'.format(path, name, ext)
+
+    def _get_input_dir(self):
+
+        if os.path.isdir(self._input_str):
+            input_dir = self._input_str
+
+        elif 'last' in self._input_str.lower():
+            module = self._input_str.lower().split(',')[1]
+            input_dir = self.format(self.format(self._run_log.get_last(),
+                                    module), 'output')
+
+        else:
+            string, module = self._input_str.lower().split(',')
+            input_dir = self.format(self.format(self._run_log.get_run(string),
+                                    module), 'output')
+
+        self._input_dir = input_dir
 
     def create_global_run_dirs(self):
         """ Create Global Run Directories
@@ -120,9 +160,12 @@ class FileHandler(object):
         self.run_dir = self.format(self._output_dir, self._run_name)
         self._log_dir = self.format(self.run_dir, 'logs')
         self.log_name = self.format(self._log_dir, self._log_name)
+        self._run_log = RunLog(self._run_log_file, self.run_dir)
 
         self.mkdir(self.run_dir)
         self.mkdir(self._log_dir)
+
+        self._get_input_dir()
 
     def _get_module_properties(self, module):
         """ Get Module Properties
@@ -181,7 +224,7 @@ class FileHandler(object):
         """
 
         if (isinstance(self._module_dict[module]['input_module'], type(None))
-                or len(self._module_dict[module]) == 1):
+                or len(self._module_dict) == 1):
             self._module_dict[module]['input_dir'] = self._input_dir
 
         else:

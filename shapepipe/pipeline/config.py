@@ -66,6 +66,144 @@ class CustomParser(ConfigParser):
         return [opt for opt in self.get(section, option).split(delimiter)]
 
 
+class SetUpParser(object):
+    """ Set Up Parser
+
+    This class sets up an instance of ``CustomParser`` and checks the
+    pipeline related parameters.
+
+    Parameters
+    ----------
+    file_name : str
+        Configuration file name
+
+    """
+
+    def __init__(self, file_name):
+
+        self.file_name = file_name
+        self.config = CustomParser()
+
+    @property
+    def file_name(self):
+        """ File name
+
+        This sets the configuration file name.
+
+        Raises
+        ------
+        IOError
+            For non existent configuration file
+
+        """
+
+        return self._file_name
+
+    @file_name.setter
+    def file_name(self, value):
+
+        if not os.path.exists(value):
+            raise IOError('Configuration file {} does not exist.'.format(
+                          value))
+
+        self._file_name = value
+
+    def _set_defaults(self):
+        """ Set Defaults
+
+        Set default configuration options.
+
+        """
+
+        if not self.config.has_option('DEFAULT', 'RUN_NAME'):
+            self.config.set('DEFAULT', 'RUN_NAME', 'shapepipe_run')
+
+        if not self.config.has_option('DEFAULT', 'RUN_DATETIME'):
+            self.config.set('DEFAULT', 'RUN_DATETIME', 'True')
+
+        if not self.config.has_option('DEFAULT', 'VERBOSE'):
+            self.config.set('DEFAULT', 'VERBOSE', 'True')
+
+    def _set_execution_options(self):
+        """ Set Execution Options
+
+        This method checks the execution options in the configuration file.
+
+        Raises
+        ------
+        RuntimeError
+            For no module runner specified
+        ImportError
+            For non-existent module runner
+
+        """
+
+        if not self.config.has_option('EXECUTION', 'MODULE'):
+            raise RuntimeError('No module(s) specified')
+
+        for module in self.config.getlist('EXECUTION', 'MODULE'):
+            if not hasattr(module_runners, module):
+                raise ImportError('Module runner {} not found in {}.'.format(
+                                  module, module_runners.__name__))
+
+    def _set_file_options(self):
+        """ Set File Options
+
+        This module checks the file options in the configuration file.
+
+        Raises
+        ------
+        RuntimeError
+            For no input directory specified
+        OSError
+            For non-existent input directory
+        RuntimeError
+            For no output directory specified
+        OSError
+            For non-existent output directory
+
+        """
+
+        if not self.config.has_option('FILE', 'LOG_NAME'):
+            self.config.set('FILE', 'LOG_NAME', 'shapepipe')
+
+        if not self.config.has_option('FILE', 'RUN_LOG_NAME'):
+            self.config.set('FILE', 'RUN_LOG_NAME', 'shapepipe_runs')
+
+        if not self.config.has_option('FILE', 'INPUT_DIR'):
+            raise RuntimeError('Not input directory specified')
+
+        # elif not os.path.isdir(self.config.getexpanded('FILE', 'INPUT_DIR')):
+        #     raise OSError('Directory {} not found.'.format(
+        #                   self.config.getexpanded('FILE', 'INPUT_DIR')))
+
+        if not self.config.has_option('FILE', 'OUTPUT_DIR'):
+            raise RuntimeError('Not output directory specified')
+
+        elif not os.path.isdir(self.config.getexpanded('FILE', 'OUTPUT_DIR')):
+            raise OSError('Directory {} not found.'.format(
+                          self.config.getexpanded('FILE', 'OUTPUT_DIR')))
+
+    def get_parser(self):
+        """ Get Parser
+
+        Return a configuration file parser instance.
+
+        Returns
+        -------
+        CustomParser
+            Custom configuration file parser
+
+        """
+
+        self.config.read(self.file_name)
+        self._set_defaults()
+        self._set_execution_options()
+        self._set_file_options()
+
+        return self.config
+
+
 def create_config_parser(file_name):
     """ Create Configuration Parser
 
@@ -81,59 +219,6 @@ def create_config_parser(file_name):
     CustomParser
         Custom configuration file parser
 
-    Raises
-    ------
-    IOError
-        For non existent configuration file
-    RuntimeError
-        For no module runner specified
-    RuntimeError
-        For non-existent module runner
-
     """
 
-    if not os.path.exists(file_name):
-        raise IOError('Configuration file {} does not exist.'.format(
-                      file_name))
-
-    config = CustomParser()
-    config.read(file_name)
-
-    # Set default options
-    if not config.has_option('DEFAULT', 'RUN_NAME'):
-        config.set('DEFAULT', 'RUN_NAME', 'shapepipe_run')
-
-    if not config.has_option('DEFAULT', 'RUN_DATETIME'):
-        config.set('DEFAULT', 'RUN_DATETIME', 'True')
-
-    if not config.has_option('DEFAULT', 'VERBOSE'):
-        config.set('DEFAULT', 'VERBOSE', 'True')
-
-    # Check execution options
-    if not config.has_option('EXECUTION', 'MODULE'):
-        raise RuntimeError('Not module(s) specified')
-
-    for module in config.getlist('EXECUTION', 'MODULE'):
-        if not hasattr(module_runners, module):
-            raise ImportError('Module runner {} not found in {}.'.format(
-                              module, module_runners.__name__))
-
-    # Check file options
-    if not config.has_option('FILE', 'LOG_NAME'):
-        config.set('FILE', 'LOG_NAME', 'shapepipe')
-
-    if not config.has_option('FILE', 'INPUT_DIR'):
-        raise RuntimeError('Not input directory specified')
-
-    elif not os.path.isdir(config.getexpanded('FILE', 'INPUT_DIR')):
-        raise OSError('Directory {} not found.'.format(
-                      config.getexpanded('FILE', 'INPUT_DIR')))
-
-    if not config.has_option('FILE', 'OUTPUT_DIR'):
-        raise RuntimeError('Not output directory specified')
-
-    elif not os.path.isdir(config.getexpanded('FILE', 'OUTPUT_DIR')):
-        raise OSError('Directory {} not found.'.format(
-                      config.getexpanded('FILE', 'OUTPUT_DIR')))
-
-    return config
+    return SetUpParser(file_name).get_parser()
