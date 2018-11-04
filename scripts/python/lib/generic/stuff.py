@@ -742,6 +742,7 @@ def get_file_list(input_dir, pattern_base, ext='.fits', verbose=False):
     return dst_list
 
 
+
 def get_pipe_file_number(pattern_base, file_name):
     """Returns pipeline file number.
 
@@ -758,12 +759,12 @@ def get_pipe_file_number(pattern_base, file_name):
         pipeline file number
     """
 
-    pattern = re.compile('{}(.*)-0'.format(pattern_base))
-    m       = re.search(pattern, f)
+    pattern = re.compile('{}(\d*)-0'.format(pattern_base))
+    m       = re.search(pattern, file_name)
     if m is not None:
         num = m.group(1)
     else:
-        stuff.error('Could not extract number from tile file \'{}\''.format(f))
+        stuff.error('Could not extract number from tile file \'{}\''.format(file_name))
 
     return num
 

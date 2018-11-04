@@ -28,7 +28,7 @@ from astropy.io import fits
 from astropy.coordinates import SkyCoord
 from astropy import wcs
 from astropy import units as u
- 
+from astropy.table import Table
 
 from generic import stuff
 from cfis import cfis
@@ -56,7 +56,7 @@ def params_default():
         input_dir_img_exp   = '{}/hdu'.format(base_dir),
         img_exp_pattern     = 'cfisexp-',
         output_dir_cat_exp  = 'out_cat_exp',
-        log_path            = '{}/log_exposures.txt'.format(base_dir),
+        log_path            = '{}/log_exposure.txt'.format(base_dir),
         cat_tiles_pattern   = 'CFIS-',
         cat_exp_pattern     = 'cfisexp-obj-',
     )
@@ -173,10 +173,10 @@ def get_log_file(path, verbose=False):
         log file lines
     """
 
-    if not os.path.isfile(log_path):
-        stuff.error('Log file \'{}\' not found'.format(log_path))
+    if not os.path.isfile(path):
+        stuff.error('Log file \'{}\' not found'.format(path))
 
-    f_log = open(log_path, 'r')
+    f_log = open(path, 'r')
     log   = f_log.readlines()
     if verbose:
         print('Reading log file, {} lines found'.format(len(log)))
@@ -199,7 +199,7 @@ def write_exposure_files(cat_tiles, log, cat_tiles_pattern, input_dir_img_exp, i
         base tiles catalogue file name
     input_dir_img_exp: string
         input directory for expoure images
-    img_exp_base:
+    img_exp_pattern:
         input exposure image file name base
     output_dir_cat_exp: string
         output directory for exposure catalogues
@@ -213,59 +213,85 @@ def write_exposure_files(cat_tiles, log, cat_tiles_pattern, input_dir_img_exp, i
     None
     """
 
+    cols  = ('X_IMAGE', 'Y_IMAGE', 'X_WORLD', 'Y_WORLD')
+    dtype = [(c, float) for c in cols]
+    dt    = [float for c in cols]
 
+    exp_wcs = {}
+    exp_cat = {}
+
+    # First loop over tiles: Initialise exposure catalogues
+    if verbose:
+        print('First loop over tiles')
     for tile in cat_tiles:
 
-        print(tile)
+        if verbose:
+            print('tile {}'.format(tile))
 
         tile_num = stuff.get_pipe_file_number(cat_tiles_pattern, tile)
 
         # Get all exposure numbers for this tile from log file
         exp_num_list = cfis.log_get_exp_nums_for_tiles_num(log, tile_num)
 
-        # Open those exposures, get coordinates
-        corners_sc = {}
+        # If not already done (for previous tile): Get WCS header
         for exp_num in exp_num_list:
-            exp_file_name = '{}/{}{}-0.fits'.format(input_dir_img_exp, img_exp_base, exp_num)
-            exp_file      = sc.FITSCatalog(exp_file_name)
-            header        = exp_file.get_header()
-            exp_file.close()
+            if not exp_num in exp_wcs:
+                exp_img_name = '{}/{}{}-0.fits'.format(input_dir_img_exp, img_exp_pattern, exp_num)
+                exp_img      = sc.FITSCatalog(exp_img_name, hdu_no=0)
+                exp_img.open()
+                header        = exp_img.get_header(hdu_no=0)
+                ny, nx = exp_img.get_data().shape
+                exp_img.close()
 
-            wcs        = wcs.WCS(header)
-            corners    = wcs.calc_footprint()
-            corners_sc[exp_num] = SkyCoord(ra=corners[:,0]*u.degree, dec=corners[:,1]*u.degree)
+                exp_wcs[exp_num] = wcs.WCS(header)
+
+    if verbose:
+        print('{} exposures found'.format(len(exp_wcs)))
+
+    # Second loop over tiles: Distribute objects on tiles to exposure catalogues
+    if verbose:
+        print('Second loop over tiles')
+    for tile in cat_tiles:
+
+        if verbose:
+            print('tile {}'.format(tile))
 
         # Open catalogue and get data
         f_tile = sc.FITSCatalog(tile, SEx_catalog=True)
         f_tile.open()
-        dat_tile = f_tile.get_data()
-        size     = len(dat_tile)
-        print('#obj = {}'.format(len(dat_tile))
+        tmp   = f_tile.get_data()
 
-        # Create masks, one corresponding to each exposure
-        exp_mask = []
-        for exp_num in exp_num_list:
-            exp_mask[exp_num] = np.zeros(size, dtype=bool)
+        # Use only columns given above
+        dat_tile = Table([tmp[:][c] for c in cols], names=cols, dtype=dt)
+        size  = len(dat_tile)
+
+        tile_num     = stuff.get_pipe_file_number(cat_tiles_pattern, tile)
+        exp_num_list = cfis.log_get_exp_nums_for_tiles_num(log, tile_num)
 
         # For all objects find exposure, set corresponding mask to True
-        for i, line in enumerate(dat_tile):
-            coord = SkyCoord(ra=line['RA'], dec=line['DEC'])
-            found = False
-            for exp_num in exp_num_list:
-                if IS_IN_FOOTPRINT(coord, corners_sc[exp_num]):
-                    if found:
-                        stuff.error('Object with coord {} found in more than one exposure'.format(coord))
-                    exp_mask[exp_num] = True
-
-            if not found:
-                stuff.error('Object with coord {} not found in any exposure'.format(coord))
-
-        # Write masked objects into exposure catalogue files
+        all_coord_tile_wcs = SkyCoord(ra=dat_tile['X_WORLD']*u.degree, dec=dat_tile['Y_WORLD']*u.degree)
         for exp_num in exp_num_list:
-            output_path = '{}/{}{}-0.fits'.format(cat_exp_base, cat_exp_pattern, exp_num)
-            exp_cat_file = sc.FITSCatalog(output_path, open_mode=sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog=True)
-            exp_cat_file.save_as_fits(data=dat_tile[mask], ext_name='LDAC_OBJECTS', sex_cat_path='what_is_this')
+            all_coord_tile_xy  = exp_wcs[exp_num].all_world2pix(all_coord_tile_wcs.ra, all_coord_tile_wcs.dec, 0)
+            ind_in_range       = ((all_coord_tile_xy[0] >= 0) & (all_coord_tile_xy[0] < nx) & \
+                                  (all_coord_tile_xy[1] >= 0) & (all_coord_tile_xy[1] < ny))
+            if ind_in_range.any():
+                # Append objects within range to exposure catalogue
+                if exp_num in exp_cat:
+                    for d in dat_tile[ind_in_range]:
+                        exp_cat[exp_num].add_row(d)
+                else:
+                    exp_cat[exp_num] = dat_tile[ind_in_range]
 
+    # Write exposure catalogues to disk
+    for exp_num in exp_cat:
+        output_path = '{}/{}{}-0.fits'.format(output_dir_cat_exp, cat_exp_pattern, exp_num)
+        print(output_path)
+        exp_cat_file = sc.FITSCatalog(output_path, open_mode=sc.BaseCatalog.OpenMode.ReadWrite)
+        #exp_cat_file.save_as_fits(data=np.array(exp_cat[exp_num]), names=cols, ext_name='LDAC_OBJECTS')
+        exp_cat_file.save_as_fits(data=exp_cat[exp_num], names=cols, ext_name='LDAC_OBJECTS')
+
+    if verbose:
+        print('{} object files written'.format(len(exp_cat)))
 
 
 def main(argv=None):
@@ -294,7 +320,7 @@ def main(argv=None):
     ### Start main program ###
 
     # Get list of catalogues of objects selected on tiles
-    cat_tiles = stuff.get_file_list(param.input_dir_cat_tiles, param.cat_tiles_pattern_base, ext='.cat', verbose=param.verbose)
+    cat_tiles = stuff.get_file_list(param.input_dir_cat_tiles, param.cat_tiles_pattern, ext='.cat', verbose=param.verbose)
 
     # The log file lists all exposures for each tile
     log = get_log_file(param.log_path, verbose=param.verbose)

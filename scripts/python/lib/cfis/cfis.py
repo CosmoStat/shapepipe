@@ -666,7 +666,7 @@ def log_line_get_entry(log_line, entry):
     """Return entry from log string line
     """
 
-    line_s = log_line.split(' ')
+    line_s = log_line.split()
 
     if entry == 'tile_num':
         return line_s[1]

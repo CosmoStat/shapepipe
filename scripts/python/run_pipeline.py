@@ -34,13 +34,19 @@ types_glob = {}
 modules_glob['std'] = ['select', 'mask', 'SExtractor', 'SETools', 'PSFExRun', 'PSFExInterpolation']
 types_glob['std'] = ['tile', 'tile', 'tile', 'tile', 'tile', 'tile']
 
-modules_glob['tiles_exp'] = ['select', 'mask1', 'SExtractor1', 'find_exp', 'mask2', 'SExtractor2', 'SETools', 'PSFExRun']
-types_glob['tiles_exp'] = ['tile', 'tile', 'tile', 'exposure', 'exposure', 'exposure', 'exposure', 'exposure']
+modules_glob['tiles_exp'] = ['select', 'mask1', 'SExtractor1', 'find_exp', 'mask2', 'SExtractor2', 'SETools', 'PSFExRun', 'PSFExInterpolation']
+types_glob['tiles_exp'] = ['tile', 'tile', 'tile', 'exposure', 'exposure', 'exposure', 'exposure', 'exposure', 'exposure']
 
 # Basic paths for pipeline codes
 path_sp     = '{}/ShapePipe'.format(os.environ['HOME'])
 path_spmod  = '{}/modules'.format(path_sp)
-path_sppy   = '{}/scripts/python'.format(path_sp)
+
+# Scripts in pipeline development directory
+#path_sppy   = '{}/scripts/python/'.format(path_sp)
+
+# No path required if scripts installed as python modules and programs
+path_sppy = ''
+
 config_name = 'package_config_smp.cfg'
 
 # Run-time create paths
@@ -94,7 +100,7 @@ class modules_local:
 
         # Find fields in given area
         fixed_options = '-i {}/tiles -t tile -m a --plot -v'.format(path_CFIS_data)
-        launch_path = '{}/cfis_field_select.py {} {}'.format(path_sppy, fixed_options, param.options)
+        launch_path = '{}cfis_field_select.py {} {}'.format(path_sppy, fixed_options, param.options)
         stuff.run_cmd(launch_path, run=not param.dry_run, verbose=param.verbose, devnull=False) 
 
         # Output file base name
@@ -105,7 +111,7 @@ class modules_local:
             stuff.error('No output file basename in options \'{}\' found'.format(param.options))
 
         # Create links to original files
-        launch_path = '{}/create_image_links.py -i {}.txt -v -o {}'.format(path_sppy, name, path_data['tile'])
+        launch_path = '{}create_image_links.py -i {}.txt -v -o {}'.format(path_sppy, name, path_data['tile'])
         stuff.run_cmd(launch_path, run=not param.dry_run, verbose=param.verbose, devnull=False)
 
 
@@ -132,7 +138,7 @@ class modules_local:
             verbose_flag = ' -v'
         else:
             verbose_flag = ''
-        cmd = '{}/cfis_create_exposures.py -i {} -o {} -p \'CFIS-\' --exp_base_new=\'{}\' -O hdu -l {}/log_expsure.txt{}'.\
+        cmd = '{}cfis_create_exposures.py -i {} -o {} -p \'CFIS-\' --exp_base_new=\'{}\' -O hdu -l {}/log_exposure.txt{}'.\
             format(path_sppy, path_data['tile'], path_data['exposure'], data_file_base['exposure'], path_data['base'], verbose_flag)
         stuff.run_cmd(cmd, run=not param.dry_run, verbose=param.verbose, devnull=False) 
 
@@ -293,8 +299,8 @@ def update_param(p_def, options):
         except IndexError:
             stuff.error('Invalid module number {}, list available options with \'-m l\''.format(param.module))
 
-    # Module name without trailing digit(s)
-    param.smodule_name = re.findall('(\D*)\d?', param.smodule)[0]
+        # Module name without trailing digit(s)
+        param.smodule_name = re.findall('(\D*)\d?', param.smodule)[0]
 
     return param
 

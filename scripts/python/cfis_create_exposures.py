@@ -212,7 +212,7 @@ def get_exposure_list(tiles, pattern_base, verbose=False):
         for h in hist:
             temp     = h.split(' ')
             exp_name = '{}.fz'.format(temp[3])
-            exp_list.append((exp_name, tiles_num))
+            exp_list.append((exp_name, tile_num))
 
     exp_list_uniq = stuff.list_unique(exp_list)
     
@@ -277,12 +277,18 @@ def write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_
 
     d = img_file._cat_data[k_img].data
     new_fits = fits.PrimaryHDU(data=d, header=h)
+
+    from astropy import wcs
+    print('MKDEBUG Header WCS for num={}'.format(num))
+    print(wcs.WCS(h))
+    print(wcs.WCS(h).calc_footprint())
+    
     out_name = '{}/{}-{:03d}-0.{}'.format(output_dir, exp_base, num, ext)
     if not os.path.isfile(out_name):
         new_fits.writeto(out_name)
         img_str = 'written'
     else:
-        # TODO: error, or earler check whehter all images in log file are written to disk
+        # TODO: error, or earlier check whether all images in log file are written to disk
         img_str = 'skipped'
 
     h_weight = weight_file._cat_data[k_weight].header
@@ -293,7 +299,7 @@ def write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_
         new_fits.writeto(out_name)
         weight_str = 'written'
     else:
-        # TODO: error, or earler check whehter all images in log file are written to disk
+        # TODO: error, or earlier check whether all images in log file are written to disk
         weight_str = 'skipped'
 
     h_flag = flag_file._cat_data[k_flag].header
@@ -305,7 +311,7 @@ def write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_
         new_fits.writeto(out_name)
         flag_str = 'written'
     else:
-        # TODO: error, or earler check whehter all images in log file are written to disk
+        # TODO: error, or earlier check whether all images in log file are written to disk
         flag_str = 'skipped'
 
     if verbose:
@@ -377,6 +383,7 @@ def create_hdus(num, output_dir, exp_path, weight_path, flag_path, \
             k_weight = k_weight_match
             k_flag   = k_flag_match
              
+        print('MKDEBUG Writing HDUs for exposure {}'.format(exp_path))
         write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_dir, exp_base, exp_weight_base, exp_flag_base, \
                   ext, num, exp_path, verbose=verbose)
 

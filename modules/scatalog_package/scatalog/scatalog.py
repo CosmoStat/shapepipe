@@ -12,6 +12,7 @@ import re
 import numpy as np
 import asciidata as asc             # for text catalogs
 from astropy.io import fits         # for FITS catalogs (New)
+from astropy.table import Table
 import astromatic_wrapper.utils as awu     # for FITS_LDAC catalogs
 
 import operator                 # for the interpreter
@@ -1542,6 +1543,14 @@ class FITSCatalog(BaseCatalog):
                it = range(len(names))
                data=np.asarray(data)
                self._save_to_fits(data, names, it, ext_name, sex_cat_path)
+
+           # MKDEBUG 25/10/2018 new
+           elif type(data) is Table:
+               if names is None:
+                   raise ValueError('Names not provided')
+               it = names
+               self._save_to_fits(data, names, it, ext_name, sex_cat_path)
+        
        else:
            if type(data) is np.ndarray:
                self._save_image(data=data, overwrite=overwrite)
