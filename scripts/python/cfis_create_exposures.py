@@ -279,9 +279,6 @@ def write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_
     new_fits = fits.PrimaryHDU(data=d, header=h)
 
     from astropy import wcs
-    print('MKDEBUG Header WCS for num={}'.format(num))
-    print(wcs.WCS(h))
-    print(wcs.WCS(h).calc_footprint())
     
     out_name = '{}/{}-{:03d}-0.{}'.format(output_dir, exp_base, num, ext)
     if not os.path.isfile(out_name):
@@ -383,7 +380,6 @@ def create_hdus(num, output_dir, exp_path, weight_path, flag_path, \
             k_weight = k_weight_match
             k_flag   = k_flag_match
              
-        print('MKDEBUG Writing HDUs for exposure {}'.format(exp_path))
         write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_dir, exp_base, exp_weight_base, exp_flag_base, \
                   ext, num, exp_path, verbose=verbose)
 

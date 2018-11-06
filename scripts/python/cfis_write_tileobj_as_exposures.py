@@ -59,6 +59,7 @@ def params_default():
         log_path            = '{}/log_exposure.txt'.format(base_dir),
         cat_tiles_pattern   = 'CFIS-',
         cat_exp_pattern     = 'cfisexp-obj-',
+        sex_cat_path        = 'star_selection.fits',
     )
 
     return p_def
@@ -87,7 +88,9 @@ def parse_options(p_def):
     # Input
     parser.add_option('-i', '--input_dir_cat_tiles', dest='input_dir_cat_tiles', type='string', default=p_def.input_dir_cat_tiles,
          help='input directory for tiles catalogues, default=\'{}\''.format(p_def.input_dir_cat_tiles))
-
+    parser.add_option('-s', '--sex_cat_path', dest='sex_cat_path', type='string', default=p_def.sex_cat_path,
+         help='Existing SExtractor FITS catalogue to mimic, default=\'{}\''.format(p_def.sex_cat_path))
+    
     # Output
     parser.add_option('-o', '--output_dir_cat_exp', dest='output_dir_cat_exp', type='string', default=p_def.output_dir_cat_exp,
          help='output directory for exposure catalogues, default=\'{}\''.format(p_def.output_dir_cat_exp))
@@ -120,6 +123,9 @@ def check_options(options):
     erg: bool
         Result of option check. False if invalid option value.
     """
+
+    if not os.path.isfile(options.sex_cat_path):
+        stuff.error('SExtractor FITS catalogue \'{}\' not found'.format(options.sex_cat_path))
 
     return True
 
@@ -186,7 +192,8 @@ def get_log_file(path, verbose=False):
 
 
 
-def write_exposure_files(cat_tiles, log, cat_tiles_pattern, input_dir_img_exp, img_exp_pattern, output_dir_cat_exp, cat_exp_pattern, verbose=False):
+def write_exposure_files(cat_tiles, log, cat_tiles_pattern, input_dir_img_exp, img_exp_pattern, output_dir_cat_exp, cat_exp_pattern,
+                         sex_cat_path, verbose=False):
     """Write catalogues corresponding to exposure coordinates with object info from corresponding tiles.
 
     Parameters
@@ -205,6 +212,8 @@ def write_exposure_files(cat_tiles, log, cat_tiles_pattern, input_dir_img_exp, i
         output directory for exposure catalogues
     cat_exp_base:
         output exposure catalogue file name base
+    sex_cat_path:
+        Path to existing SEXtractor output FITS catalogue, to mimic
     verbose: bool, optional, default=False
         verbose output if True
 
@@ -286,9 +295,8 @@ def write_exposure_files(cat_tiles, log, cat_tiles_pattern, input_dir_img_exp, i
     for exp_num in exp_cat:
         output_path = '{}/{}{}-0.fits'.format(output_dir_cat_exp, cat_exp_pattern, exp_num)
         print(output_path)
-        exp_cat_file = sc.FITSCatalog(output_path, open_mode=sc.BaseCatalog.OpenMode.ReadWrite)
-        #exp_cat_file.save_as_fits(data=np.array(exp_cat[exp_num]), names=cols, ext_name='LDAC_OBJECTS')
-        exp_cat_file.save_as_fits(data=exp_cat[exp_num], names=cols, ext_name='LDAC_OBJECTS')
+        exp_cat_file = sc.FITSCatalog(output_path, open_mode=sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog=True)
+        exp_cat_file.save_as_fits(data=exp_cat[exp_num], names=cols, ext_name='LDAC_OBJECTS', sex_cat_path=sex_cat_path)
 
     if verbose:
         print('{} object files written'.format(len(exp_cat)))
@@ -326,7 +334,7 @@ def main(argv=None):
     log = get_log_file(param.log_path, verbose=param.verbose)
 
     write_exposure_files(cat_tiles, log, param.cat_tiles_pattern, param.input_dir_img_exp, param.img_exp_pattern, \
-                         param.output_dir_cat_exp, param.cat_exp_pattern, verbose=param.verbose)
+                         param.output_dir_cat_exp, param.cat_exp_pattern, param.sex_cat_path, verbose=param.verbose)
 
     ### End main program ###
 

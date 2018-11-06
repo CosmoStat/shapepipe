@@ -34,8 +34,8 @@ types_glob = {}
 modules_glob['std'] = ['select', 'mask', 'SExtractor', 'SETools', 'PSFExRun', 'PSFExInterpolation']
 types_glob['std'] = ['tile', 'tile', 'tile', 'tile', 'tile', 'tile']
 
-modules_glob['tiles_exp'] = ['select', 'mask1', 'SExtractor1', 'find_exp', 'mask2', 'SExtractor2', 'SETools', 'PSFExRun', 'PSFExInterpolation']
-types_glob['tiles_exp'] = ['tile', 'tile', 'tile', 'exposure', 'exposure', 'exposure', 'exposure', 'exposure', 'exposure']
+modules_glob['tiles_exp'] = ['select', 'mask1', 'SExtractor1', 'find_exp', 'mask2',    'SExtractor2', 'SETools',  'PSFExRun', 'write_tileobj', 'PSFExInterpolation']
+types_glob['tiles_exp']   = ['tile',   'tile',  'tile',        'exposure', 'exposure', 'exposure',    'exposure', 'exposure', 'tile',          'exposure']
 
 # Basic paths for pipeline codes
 path_sp     = '{}/ShapePipe'.format(os.environ['HOME'])
@@ -67,6 +67,7 @@ path_CFIS_data = '{}/astro/data/CFIS'.format(os.environ['HOME'])
 data_file_base = {}
 data_file_base['tile'] = 'CFIS'
 data_file_base['exposure'] = 'cfisexp'.format(data_file_base['tile'])
+data_file_base['exposure-object'] = '{}-obj'.format(data_file_base['exposure'])
 
 name_adopted = 'adopted'
 name_results = 'results'
@@ -141,6 +142,39 @@ class modules_local:
         cmd = '{}cfis_create_exposures.py -i {} -o {} -p \'CFIS-\' --exp_base_new=\'{}\' -O hdu -l {}/log_exposure.txt{}'.\
             format(path_sppy, path_data['tile'], path_data['exposure'], data_file_base['exposure'], path_data['base'], verbose_flag)
         stuff.run_cmd(cmd, run=not param.dry_run, verbose=param.verbose, devnull=False) 
+
+
+    def write_tileobj(self, param):
+        """Write selected objects from tiles to files according to exposures on which the object was observed.
+
+            Parameters
+        ----------
+        param: class param
+            parameter values
+
+        Returns
+        -------
+        None
+        """
+
+        # Create exposure links directory
+        if os.path.isdir(path_data['exposure']):
+            stuff.warning('Path \'{}\' exists'.format(path_data['exposure']))
+        else:
+            os.mkdir(path_data['exposure'])
+
+        if param.verbose:
+            verbose_flag = ' -v'
+        else:
+            verbose_flag = ''
+
+        # Find SExtractor FITS example catalogue to mimic.
+        files = glob.glob('{}/adopted/results'.format(path_output['exposure']))
+        sex_cat_path = files[0]
+
+        cmd = '{}cfis_write_tileobj_as_exposures.py -i {} -o {} -p \'CFIS-\' --cat_exp_pattern=\'{}\' -s {} -l {}/log_exposure.txt{}'.\
+            format(path_sppy, path_data['tile'], path_data['exposure'], data_file_base['exposure-object'], path_data['base'], sex_cat_path, verbose_flag)
+        stuff.run_cmd(cmd, run=not param.dry_run, verbose=param.verbose, devnull=False)
 
 
 def params_default():
