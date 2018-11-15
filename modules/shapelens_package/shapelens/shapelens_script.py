@@ -54,7 +54,7 @@ class shapelens(object):
         if not os.path.isdir(self._temp_dir):
             os.system('mkdir {}'.format(self._temp_dir))
 
-        s=re.split("\-([0-9]{3})\-([0-9]+)\.",self._gal_cat_path)
+        s=re.split("\-([0-9]*)\-([0-9]+)\.",self._gal_cat_path)
         self._img_number='-{0}-{1}'.format(s[1],s[2])
 
 

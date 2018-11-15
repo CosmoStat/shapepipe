@@ -28,7 +28,7 @@ class PSFExInterpolator(object):
     This class uses a PSFEx output file to compute the PSF at desired positions.
 
     """
-    
+
     def __init__(self, dotpsf_path, galcat_path, output_path, pos_params=None, get_shapes=True):
         """Class initialiser
 
@@ -45,7 +45,7 @@ class PSFExInterpolator(object):
             galaxy catalog. Otherwise, they are read directly from the .psf file.
 
         """
-        
+
         self._dotpsf_path = dotpsf_path # Path to PSFEx output file
         self._galcat_path = galcat_path # Path to catalog containing galaxy positions
         self._output_path = output_path+'galaxy_psf'   # Path to output file to be written
@@ -57,33 +57,33 @@ class PSFExInterpolator(object):
             self._pos_params = None
         self.gal_pos = None
         self.interp_PSFs = None
-        
+
         # get number naming convention for this particular run
-        s=re.split("\-([0-9]{3})\-([0-9]+)\.",self._galcat_path)
-        self._img_number='-{0}-{1}'.format(s[1],s[2])     
-        
+        s=re.split("\-([0-9]*)\-([0-9]+)\.",self._galcat_path)
+        self._img_number='-{0}-{1}'.format(s[1],s[2])
+
         # if required, compute and save shapes
         if get_shapes:
             self._get_psfshapes()
             self._has_shapes = True
-        
+
     def _get_position_parameters(self):
         """ Read position parameters from .psf file.
-        
+
         """
-        
+
         dotpsf = sc.FITSCatalog(self._dotpsf_path)
         dotpsf.open()
-        self._pos_params = [dotpsf.get_header()['POLNAME1'], dotpsf.get_header()['POLNAME2']] 
+        self._pos_params = [dotpsf.get_header()['POLNAME1'], dotpsf.get_header()['POLNAME2']]
         dotpsf.close()
-        
+
     def _get_galaxy_positions(self):
         """ Extract galaxy positions from galaxy catalog.
-        
+
         """
         if self._pos_params is None:
             self._get_position_parameters()
-        
+
         galcat = sc.FITSCatalog(self._galcat_path, SEx_catalog=True)
         galcat.open()
         try:
@@ -96,33 +96,33 @@ class PSFExInterpolator(object):
             'was not found in galaxy catalog. Leave pos_params (or EXTRA_CODE_OPTION) blank to read them from .psf file.'
             raise KeyError(pos_param_err)
         galcat.close()
-    
+
     def _interpolate(self):
         """ Run Sheldon & Rykoff's PSFEx interpolator method at desired positions.
-        
+
         """
         if self.gal_pos is None:
             self._get_galaxy_positions()
-        
+
         pex = psfex.PSFEx(self._dotpsf_path)
         self.interp_PSFs = np.array([pex.get_rec(x,y) for x,y in zip(self.gal_pos[:,0],
                                      self.gal_pos[:,1])])
-    
+
     def _get_psfshapes(self):
         """ Compute shapes of PSF at galaxy positions using HSM.
-        
+
         """
         if self.interp_PSFs is None:
             self._interpolate()
         psf_moms = [hsm.FindAdaptiveMom(Image(psf), strict=False) for psf in self.interp_PSFs]
-        
+
         self.psf_shapes = np.array([[moms.observed_shape.g1, moms.observed_shape.g2,
                         moms.moments_sigma] for moms in psf_moms])
         self.hsm_flags = np.array([bool(mom.error_message) for mom in psf_moms]).astype(int)
-        
+
     def write_output(self):
         """ Save computed PSFs to fits file.
-        
+
         """
         if self.interp_PSFs is None:
             self._interpolate()
@@ -131,7 +131,7 @@ class PSFExInterpolator(object):
                                 SEx_catalog=True)
         if self._has_shapes:
             data = {'VIGNET': self.interp_PSFs,
-                'E1_PSF_HSM': self.psf_shapes[:,0], 'E2_PSF_HSM': self.psf_shapes[:,1], 
+                'E1_PSF_HSM': self.psf_shapes[:,0], 'E2_PSF_HSM': self.psf_shapes[:,1],
                 'SIGMA_PSF_HSM': self.psf_shapes[:,2], 'HSM_FLAG': self.hsm_flags}
         else:
             data = {'VIGNET': self.interp_PSFs}

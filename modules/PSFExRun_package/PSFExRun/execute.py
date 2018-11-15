@@ -360,7 +360,7 @@ class PackageRunner(object):
 
         self._psfex_input_params = {}
 
-        s=re.split("\-([0-9]{3})\-([0-9]+)\.", self._fnames['input_filepath'][0])
+        s=re.split("\-([0-9]*)\-([0-9]+)\.", self._fnames['input_filepath'][0])
         img_num = '-{0}-{1}'.format(s[1],s[2])
 
         self._psfex_input_params['PSF_DIR'] = self._worker.result_output_dir
@@ -468,7 +468,7 @@ class PackageRunner(object):
         """
 
         dir_path = self._fnames['PSFEX']['input_dir']
-        s=re.split("\-([0-9]{3})\-([0-9]+)\.", self._fnames['input_filepath'][0])
+        s=re.split("\-([0-9]*)\-([0-9]+)\.", self._fnames['input_filepath'][0])
         img_num = '-{0}-{1}'.format(s[1],s[2])
         self._fnames['PSFEX']['input_config_path'] = dir_path + '/config{0}.psfex'.format(img_num)
 

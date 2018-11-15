@@ -43,7 +43,7 @@ class ngmix_wrapper(object):
         self._output_dir = output_dir
         self._option_dict = option_dict
 
-        s=re.split("\-([0-9]{3})\-([0-9]+)\.",self._gal_cat_path)
+        s=re.split("\-([0-9]*)\-([0-9]+)\.",self._gal_cat_path)
         self._img_number='-{0}-{1}'.format(s[1],s[2])
 
         self._gal_vign = self._load_data(self._gal_cat_path)
