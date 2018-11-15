@@ -664,6 +664,7 @@ class mask(object):
                 final_mask += external_flag.get_data()[:,:]
             else:
                 final_mask = external_flag.get_data()[:,:]
+            external_flag.close()
 
         return final_mask.astype(np.int16,copy=False)
 
