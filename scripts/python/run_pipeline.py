@@ -131,7 +131,7 @@ class modules_local:
 
         # Create exposure links directory
         if os.path.isdir(path_data['exposure']):
-            stuff.warning('Path \'{}\' exists'.format(path_data['exposure']))
+            warning.warn('Path \'{}\' exists'.format(path_data['exposure']))
         else:
             os.mkdir(path_data['exposure'])
 
@@ -159,7 +159,7 @@ class modules_local:
 
         # Create exposure links directory
         if os.path.isdir(path_data['exposure']):
-            stuff.warning('Path \'{}\' exists'.format(path_data['exposure']))
+            warning.warn('Path \'{}\' exists'.format(path_data['exposure']))
         else:
             os.mkdir(path_data['exposure'])
 

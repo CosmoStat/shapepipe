@@ -345,7 +345,7 @@ def create_hdus(num, output_dir, exp_path, weight_path, flag_path, \
     all_hdu = True
     if not all(np.diff(hdu_max) == 0):
         all_hdu = False
-        stuff.warning('Inconsistent #hdus={}/{}/{} of image/weight/flag, writing only some hdus'.format(hdu_max[0], hdu_max[1], hdu_max[2]))
+        warning.warn('Inconsistent #hdus={}/{}/{} of image/weight/flag, writing only some hdus'.format(hdu_max[0], hdu_max[1], hdu_max[2]))
 
 
     # Write FITS files

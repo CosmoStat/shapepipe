@@ -84,14 +84,6 @@ def error(str, val=1, stop=True, verbose=True):
 
 
 
-def warning(str):
-    """Prints message to stderr
-    """
-
-    error('Warning: ' + str, val=None, stop=False)
-
-
-
 def mkdir_p(path, verbose=False):
     """Create diretorcy by calling os.makedirs. Emulate shell function 'mkdir -p'.
 
@@ -214,33 +206,6 @@ def my_string_split(string, num=-1, verbose=False, stop=False):
         raise MyError('String \'{}\' has length {}, required is {}'.format(string, len(res), num))
 
     return res
-
-
-
-def list_unique(a, verbose=False):
-    """Return list of unique elements of first entry in tupel in *a* (remove duplicates).
-
-    Parameters
-    ----------
-    a: list of tupels
-        list of elements
-    verbose: bool, optional, default=False
-        verbose output if True
-
-    Returns
-    -------
-    uniq: list
-        list of unique tupels from a
-    """
-
-    seen = set()
-    uniq = []
-    for x in a:
-        if x not in seen:
-            uniq.append(x)
-            seen.add(x)
-
-    return uniq
 
 
 
