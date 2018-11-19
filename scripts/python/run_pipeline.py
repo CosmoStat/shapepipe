@@ -680,7 +680,7 @@ def do_substitutions(path_dest, image_type, module_base, module_name, image_list
 
     # General substitutions
     if image_list:
-        dat = stuff.new_arr(dat, 'IMAGE_LIST', image_list)
+        dat = stuff.add_to_arr(dat, 'IMAGE_LIST', image_list)
 
     # Set keys specificly to image type (tile, exposure)
     dat = stuff.substitute(dat, 'BASE_DIR', '\$HOME/data', path_data[image_type])

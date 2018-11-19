@@ -324,38 +324,6 @@ def add_to_arr(dat, key, val):
 
 
 
-def new_arr(dat, key, val):
-    """Adds a value to an existing value array for a given key.
-
-    Parameters
-    ----------
-    dat: string
-        file content
-    key: string
-        key
-    val: n/a
-        value to add
-
-    Returns
-    -------
-    dat: string
-        file content after substitution
-    """
-
-    n = 0
-
-    str_old = '({}\s*=.*)\]'.format(key)
-    str_new = r'\1 {}]'.format(val)
-    dat, n  = re.subn(str_old, str_new, dat)
-
-    if n != 1:
-        msg = 'Substitution {} -> {} failed, {} entries replaced'.format(str_old, str_new, n)
-        error(msg, val=1)
-
-    return dat
-
-
-
 class IndentedHelpFormatterWithNL(IndentedHelpFormatter):
   """Allows newline to have effect in option help.
      From https://groups.google.com/forum/#!msg/comp.lang.python/bfbmtUGhW8I/sZkGryaO8gkJ
