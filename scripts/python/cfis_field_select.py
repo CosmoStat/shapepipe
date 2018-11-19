@@ -23,6 +23,7 @@ import glob
 
 import numpy as np
 import pylab as plt
+#import matplotlib as plt
 
 from astropy.io import ascii
 from astropy.table import Table, Column
@@ -300,7 +301,7 @@ def plot_area(images, angles, image_type, outbase, interactive):
     lw = 0.25
     color = {'tile': 'b', 'exposure': 'g', 'weight': 'r'}
 
-    fig, ax = plot_init()
+    ax = plot_init()
 
     # Field center
     n_ima = len(images)
@@ -355,7 +356,8 @@ def plot_area(images, angles, image_type, outbase, interactive):
 def plot_init():
 
     fs = 12
-    fig = plt.figure()
+    fig, ax = plt.subplots()
+    #fig = plt.figure()
 
     ax = plt.gca()
     ax.yaxis.label.set_size(fs)
@@ -365,7 +367,8 @@ def plot_init():
 
     plt.rcParams.update({'figure.autolayout': True})
 
-    return fig, ax
+    #return fig, ax
+    return ax
 
 
 

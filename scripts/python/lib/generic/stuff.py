@@ -17,9 +17,11 @@ from __future__ import print_function
 
 import sys
 import os
+import re
 import subprocess
 import shlex
 import errno
+import glob
 
 from optparse import IndentedHelpFormatter
 import textwrap
@@ -207,6 +209,121 @@ def my_string_split(string, num=-1, verbose=False, stop=False):
 
 
 
+def substitute(dat, key, val_old, val_new, sep='='):
+    """Performs a substitution val_new for val_old as value corresponding to key.
+       See run_csfisher_cut_bins.py
+
+    Parameters
+    ----------
+    dat: string
+        file content
+    key: string
+        key
+    val_old: n/a
+        old value
+    val_new: n/a
+        new value
+    sep: character
+        separater between key and value, optional, default '='
+
+    Returns
+    -------
+    dat: string
+        file content after substitution
+    """
+
+    str_old = '{}\s*{}\s*{}'.format(key, sep, val_old)
+    str_new = '{}\t\t{} {}'.format(key, sep, val_new)
+
+    #print('Replacing \'{}\' -> \'{}\''.format(str_old, str_new))
+
+    dat, n  = re.subn(str_old, str_new, dat)
+
+    if n != 1:
+        msg = 'Substitution {} -> {} failed, {} entries replaced'.format(str_old, str_new, n)
+        error(msg, val=1)
+
+    return dat
+
+
+
+def substitute_arr(dat, key, val_old, val_new):
+    """Performs a substitution val_new for val_old as values in an array corresponding to key.
+
+    Parameters
+    ----------
+    dat: string
+        file content
+    key: string
+        key
+    val_old: n/a
+        old value
+    val_new: n/a
+        new value
+
+    Returns
+    -------
+    dat: string
+        file content after substitution
+    """
+
+    n = 0
+    str_old = '({}\s*=\s*[\[,].*){}(.*[,\]])'.format(key, val_old)
+    str_new = r'\1{}\2'.format(val_new)
+
+    #print('Replacing \'{}\' -> \'{}\''.format(str_old, str_new))
+
+    n_tries = 0
+    while True:
+        dat, n  = re.subn(str_old, str_new, dat)
+
+        # If first time there is no substitution -> error
+        if n_tries == 0 and n != 1:
+            msg = 'Substitution {} -> {} failed, {} entries replaced'.format(str_old, str_new, n)
+            error(msg, val=1)
+
+        n_tries = n_tries + 1
+
+        # After first time, break when no more subsitutions
+        if n == 0:
+            break
+
+    return dat
+
+
+
+def add_to_arr(dat, key, val):
+    """Adds a value to an existing value array for a given key.
+
+    Parameters
+    ----------
+    dat: string
+        file content
+    key: string
+        key
+    val: n/a
+        value to add
+
+    Returns
+    -------
+    dat: string
+        file content after substitution
+    """
+
+    n = 0
+
+    str_old = '({}\s*=.*)\]'.format(key)
+    str_new = r'\1, {}]'.format(val)
+    dat, n  = re.subn(str_old, str_new, dat)
+
+    if n != 1:
+        msg = 'Substitution {} -> {} failed, {} entries replaced'.format(str_old, str_new, n)
+        error(msg, val=1)
+
+    return dat
+
+
+
 class IndentedHelpFormatterWithNL(IndentedHelpFormatter):
   """Allows newline to have effect in option help.
      From https://groups.google.com/forum/#!msg/comp.lang.python/bfbmtUGhW8I/sZkGryaO8gkJ
@@ -317,7 +434,8 @@ def log_command(argv, name=None, close_no_return=True):
         f.close()
 
 
-def run_cmd(cmd_list, run=True, verbose=True, stop=False, parallel=True, file_list=None, devnull=False):
+
+def run_cmd(cmd_list, run=True, verbose=True, stop=False, parallel=True, file_list=None, devnull=False, env=None):
     """Run shell command or a list of commands using subprocess.Popen().
 
     Parameters
@@ -338,6 +456,8 @@ def run_cmd(cmd_list, run=True, verbose=True, stop=False, parallel=True, file_li
         If file_list[i] exists, cmd_list[i] is not run. Default value is None
     devnull: boolean
         If True, all output is suppressed. Default is False.
+    env: bool, optional, default=None
+        Modified environment in which shell command will runi
 
     Returns
     -------
@@ -356,6 +476,10 @@ def run_cmd(cmd_list, run=True, verbose=True, stop=False, parallel=True, file_li
     pipe_list = []
     out_list  = []
     err_list  = []
+
+    if env is None:
+        env = os.environ.copy()
+
     for i, cmd in enumerate(cmd_list):
 
         ex = 0
@@ -375,9 +499,9 @@ def run_cmd(cmd_list, run=True, verbose=True, stop=False, parallel=True, file_li
                 try:
                     cmds = shlex.split(cmd)
                     if devnull is True:
-                        pipe = subprocess.Popen(cmds, stdout=subprocess.DEVNULL)
+                        pipe = subprocess.Popen(cmds, stdout=subprocess.DEVNULL, env=env)
                     else:
-                        pipe = subprocess.Popen(cmds, stdout=subprocess.PIPE)
+                        pipe = subprocess.Popen(cmds, stdout=subprocess.PIPE, env=env)
                         #out, err = pipe.communicate()
                         #print(out)
                         # See https://www.endpoint.com/blog/2015/01/28/getting-realtime-output-using-python
@@ -509,5 +633,72 @@ def ln_s(orig, new, orig_to_check=False, verbose=False, force=False):
     else:
         if verbose:
             print('Original file \'{}\' does not exist, skipping...'.format(orig_to_check))
+
+
+
+
+def get_file_list(input_dir, pattern_base, ext='.fits', verbose=False):
+    """Return list of all files in directory whose names follow base pattern and pipeline numbering scheme
+
+    Parameters
+    ----------
+    input_dir: string
+        input directory
+    pattern_base: string
+        base of file name pattern
+    ext: string, optional, default='.fits'
+        file extension
+    verbose: bool, optional, default=False
+        verbose output if True
+
+    Returns
+    -------
+    dst_list: list of string
+        file name list
+    """
+
+    files = glob.glob('{}/*{}'.format(input_dir, ext))
+
+    dst_list = []
+    for f in files:
+
+        # Test if file matches pattern_base
+        m = re.findall(pattern_base, f)
+        if len(m) != 0:
+            dst_list.append(f)
+
+    if len(dst_list) == 0:
+        stuff.error('No files found in \'{}\' that matches pattern_base \'{}\''.format(input_dir, pattern_base))
+    if verbose == True:
+        print('Found {} tiles'.format(len(dst_list)))
+
+    return dst_list
+
+
+
+def get_pipe_file_number(pattern_base, file_name):
+    """Returns pipeline file number.
+
+    Parameters
+    ----------
+    pattern_base: string
+        base file name to match
+    file_name: string
+        file name from where to extract number
+
+    Returns
+    -------
+    num: int
+        pipeline file number
+    """
+
+    pattern = re.compile('{}(\d*)-0'.format(pattern_base))
+    m       = re.search(pattern, file_name)
+    if m is not None:
+        num = m.group(1)
+    else:
+        stuff.error('Could not extract number from tile file \'{}\''.format(file_name))
+
+    return num
 
 

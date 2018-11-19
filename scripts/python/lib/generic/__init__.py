@@ -8,3 +8,8 @@ projects.
 :Author: Samuel Farrens <samuel.farrens@cea.fr>
 
 """
+
+from . import *
+from .info import __version__, __whoami__
+
+

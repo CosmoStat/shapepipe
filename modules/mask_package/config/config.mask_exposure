@@ -9,9 +9,9 @@ CDSCLIENT_PATH = findgsc2.2
 # ----------------------------- Border parameters ----------------------------------
 [BORDER_PARAMETERS]
 
-BORDER_MAKE = False
+BORDER_MAKE = True
 
-BORDER_WIDTH = 300
+BORDER_WIDTH = 10
 BORDER_FLAG_VALUE = 1
 
 
@@ -37,6 +37,8 @@ SPIKE_MASKMODEL_PATH = $HOME/ShapePipe/modules/mask_package/config/mask_default/
 SPIKE_MAG_LIM = 18.
 SPIKE_SCALE_FACTOR = 0.3
 SPIKE_MAG_PIVOT = 13.8
+# The following value cannot be < 128! Something to do with int8 and int16...:
+# (Cannot cast ufunc add output from dtype('int16') to dtype('uint8') with casting rule 'same_kind')
 SPIKE_FLAG_VALUE = 128
 SPIKE_REG_FILE = spike.reg
 
@@ -48,15 +50,14 @@ MESSIER_MAKE = True
 
 MESSIER_CAT_PATH = $HOME/ShapePipe/modules/mask_package/config/mask_default/Messier_catalog_updated.npy
 MESSIER_PIXEL_SCALE = 0.187
-MESSIER_SIZE_PLUS = 0.0
+MESSIER_SIZE_PLUS = 0.
 MESSIER_FLAG_VALUE = 4
 
 
 # -------------------------------- External flag ----------------------------------
 [EXTERNAL_FLAG]
 
-#EF_MAKE = True # MKDEBUG
-EF_MAKE = False
+EF_MAKE = True
 
 
 # -------------------------- missing data parameters ------------------------------

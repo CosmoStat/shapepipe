@@ -46,7 +46,7 @@ def params_default():
         output_dir       = '.',
         band             = 'r',
         tile_base_new    = 'CFIS',
-        weight_base_new  = 'CFIS.weight',
+        weight_base_new  = 'CFIS_weight',
     )
 
     return p_def
@@ -169,13 +169,10 @@ def create_links(inp, output_dir, tile_base_new, weight_base_new, band, verbose=
     ext = 'fits'
     for img in img_list:
 
-        # MK New: Do not strip path
-        #base_name = os.path.basename(img)
         base_name = img
         m = re.findall('(.*)\..*', base_name)
         if len(m) == 0:
             stuff.error('Invalid file name \'{}\' found'.format(img))
-        tile_base = m[0]
 
         # Look for correponding weight image
         weight_name = cfis.get_file_pattern(m[0], band, 'weight', want_re=False)

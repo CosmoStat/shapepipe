@@ -9,7 +9,7 @@ CDSCLIENT_PATH = findgsc2.2
 # ----------------------------- Border parameters ----------------------------------
 [BORDER_PARAMETERS]
 
-BORDER_MAKE = False
+BORDER_MAKE = True
 
 BORDER_WIDTH = 300
 BORDER_FLAG_VALUE = 1
@@ -55,7 +55,6 @@ MESSIER_FLAG_VALUE = 4
 # -------------------------------- External flag ----------------------------------
 [EXTERNAL_FLAG]
 
-#EF_MAKE = True # MKDEBUG
 EF_MAKE = False
 
 
