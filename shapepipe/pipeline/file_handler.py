@@ -9,8 +9,68 @@ This module defines a class for handling pipeline files.
 """
 
 import os
+from glob import glob
 from shapepipe.pipeline.run_log import RunLog
 from shapepipe.modules import module_runners
+
+
+def find_files(path, pattern='*', ext='*'):
+        """ Find Files
+
+        This method recursively retrieves file names from a given path that
+        match a given pattern and/or have a given extension.
+
+        Parameters
+        ----------
+        path : str
+            Full path to files
+        pattern : str, optional
+            File pattern, default is '*'
+        ext : str, optional
+            File extension, default is '*'
+
+        Returns
+        -------
+        list
+            List of file names
+
+        Raises
+        ------
+        ValueError
+            For '*' in pattern
+        ValueError
+            For '*' in extension
+        ValueError
+            For invalid extension format
+        RuntimeError
+            For empty file list
+
+        """
+
+        dot = '.'
+        star = '*'
+
+        if pattern != star and star in pattern:
+            raise ValueError('Do not include "*" in pattern.')
+
+        if ext != star and star in ext:
+            raise ValueError('Do not include "*" in extension.')
+
+        if not ext.startswith(dot) and dot in ext:
+            raise ValueError('Invalid extension format.')
+
+        if ext != star and not ext.startswith(dot):
+            ext = dot + ext
+
+        search_string = '{}/**/*{}*{}'.format(path, pattern, ext)
+
+        file_list = glob(search_string, recursive=True)
+
+        if not file_list:
+            raise RuntimeError('No files found matching the conditions in {}'
+                               '.'.format(path))
+
+        return [file for file in file_list if not os.path.isdir(file)]
 
 
 class FileHandler(object):
