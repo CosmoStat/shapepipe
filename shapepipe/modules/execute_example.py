@@ -12,7 +12,8 @@ from shapepipe.pipeline.execute import execute
 from shapepipe.modules.module_decorator import module_runner
 
 
-@module_runner(n_inputs=1, input_module='python_example', ext='.cat')
+@module_runner(n_inputs=1, input_module='python_example',
+               file_pattern='process', file_ext='.cat')
 def execute_example(worker_dict, filehd, config, w_log):
 
     command_line = 'head {}'.format(worker_dict['process'])

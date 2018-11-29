@@ -56,8 +56,8 @@ def find_files(path, pattern='*', ext='*'):
         if ext != star and star in ext:
             raise ValueError('Do not include "*" in extension.')
 
-        if not ext.startswith(dot) and dot in ext:
-            raise ValueError('Invalid extension format.')
+        if (not ext.startswith(dot) and dot in ext) or (ext.count(dot) > 1):
+            raise ValueError('Invalid extension format: "{}".'.format(ext))
 
         if ext != star and not ext.startswith(dot):
             ext = dot + ext
@@ -243,7 +243,10 @@ class FileHandler(object):
             getattr(module_runners, module).n_inputs
         self._module_dict[module]['input_module'] = \
             getattr(module_runners, module).input_module
-        self._module_dict[module]['ext'] = getattr(module_runners, module).ext
+        self._module_dict[module]['file_pattern'] = \
+            getattr(module_runners, module).file_pattern
+        self._module_dict[module]['file_ext'] = \
+            getattr(module_runners, module).file_ext
 
     def _create_module_run_dirs(self, module):
         """ Create Module Run Directories
@@ -305,44 +308,11 @@ class FileHandler(object):
         """
 
         self._module_dict[module]['files'] = \
-            self._get_files_by_ext(self._module_dict[module]['input_dir'],
-                                   self._module_dict[module]['ext'])
+            find_files(self._module_dict[module]['input_dir'],
+                       self._module_dict[module]['file_pattern'],
+                       self._module_dict[module]['file_ext'])
 
         self.process_list = self._module_dict[module]['files']
-
-    def _get_files_by_ext(self, path, ext):
-        """ Get Files by Extension
-
-        This method retrieves file names from a given path with a given file
-        extension.
-
-        Parameters
-        ----------
-        path : str
-            Full path to files
-        ext : str
-            File extension
-
-        Returns
-        -------
-        list
-            List of file names
-
-        Raises
-        ------
-        RuntimeError
-            For empty file list
-
-        """
-
-        file_list = [self.format(path, file) for file in os.listdir(path)
-                     if file.endswith(ext)]
-
-        if not file_list:
-            raise RuntimeError('No files found matching the conditions in {}'
-                               '.'.format(path))
-
-        return file_list
 
     def set_up_module(self, module):
         """ Set Up Module

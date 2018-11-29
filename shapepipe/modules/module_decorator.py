@@ -7,7 +7,7 @@
 """
 
 
-def module_runner(n_inputs=1, input_module=None, ext=None):
+def module_runner(n_inputs=1, input_module=None, file_pattern='', file_ext=''):
     """ Module Runner Wrapper
 
     This method adds properties to module runners.
@@ -18,8 +18,10 @@ def module_runner(n_inputs=1, input_module=None, ext=None):
         Number of input files, default is 1
     input_module : str, optional
         Input module name, default is None
-    ext : str, optional
-        File extension, default is None
+    file_pattern : str, optional
+        File pattern, default is ''
+    file_ext : str, optional
+        File extension, default is ''
 
     """
 
@@ -27,7 +29,8 @@ def module_runner(n_inputs=1, input_module=None, ext=None):
 
         func.n_inputs = n_inputs
         func.input_module = input_module
-        func.ext = ext
+        func.file_pattern = file_pattern
+        func.file_ext = file_ext
 
         return func
 

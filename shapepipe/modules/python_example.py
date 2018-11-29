@@ -41,7 +41,7 @@ class Dummy(object):
         text_file.close()
 
 
-@module_runner(n_inputs=1, ext='.txt')
+@module_runner(n_inputs=1, file_pattern='file', file_ext='.txt')
 def python_example(worker_dict, filehd, config, w_log):
 
     input_file_name = worker_dict['process']
