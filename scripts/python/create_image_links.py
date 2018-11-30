@@ -23,8 +23,8 @@ import copy
 from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
 
 
-import cfis
-import stuff
+from cfis import cfis
+from generic import stuff
 
 
 

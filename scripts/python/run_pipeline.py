@@ -24,6 +24,7 @@ import shutil
 import numpy as np
 
 from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
+import warnings
 
 from generic import stuff
 
@@ -131,7 +132,7 @@ class modules_local:
 
         # Create exposure links directory
         if os.path.isdir(path_data['exposure']):
-            warning.warn('Path \'{}\' exists'.format(path_data['exposure']))
+            warnings.warn('Path \'{}\' exists'.format(path_data['exposure']))
         else:
             os.mkdir(path_data['exposure'])
 
@@ -159,7 +160,8 @@ class modules_local:
 
         # Create exposure links directory
         if os.path.isdir(path_data['exposure']):
-            warning.warn('Path \'{}\' exists'.format(path_data['exposure']))
+            #warnings.warn('Path \'{}\' exists'.format(path_data['exposure']))
+            pass
         else:
             os.mkdir(path_data['exposure'])
 
@@ -169,11 +171,16 @@ class modules_local:
             verbose_flag = ''
 
         # Find SExtractor FITS example catalogue to mimic.
-        files = glob.glob('{}/adopted/results'.format(path_output['exposure']))
+        #path  = '{}/adopted/results'.format(path_output['exposure'])
+        path = '{}/star_selection*'.format(path_data['exposure'])
+        print(path)
+        files = glob.glob(path)
+        if len(files) == 0:
+           stuff.error('No SExtractor example file \'{}\' found'.format(path)) 
         sex_cat_path = files[0]
 
         cmd = '{}cfis_write_tileobj_as_exposures.py -i {} -o {} -p \'CFIS-\' --cat_exp_pattern=\'{}\' -s {} -l {}/log_exposure.txt{}'.\
-            format(path_sppy, path_data['tile'], path_data['exposure'], data_file_base['exposure-object'], path_data['base'], sex_cat_path, verbose_flag)
+            format(path_sppy, path_data['tile'], path_data['exposure'], data_file_base['exposure-object'], sex_cat_path, path_data['base'], verbose_flag)
         stuff.run_cmd(cmd, run=not param.dry_run, verbose=param.verbose, devnull=False)
 
 
@@ -428,7 +435,7 @@ def create_qsub_script_candide(qsub_script_base, module, package, path_dest):
     print('module load intelpython/2', file=f)
     print('export PATH="$PATH:/softs/astromatic/bin/:$HOME/.local/bin"', file=f)
     print('export LD_LIBRARY_PATH="$HOME/.local/lib/"', file=f)
-    print('export PYTHONPATH="$HOME/.local/lib/python2.7/site-packages:$HOME/.local/bin:/opt/intel/intelpython2/lib/python2.7/site-packages"\n', file=f)
+    print('export PYTHONPATH="$HOME/.local/lib/python2.7/site-packages:$HOME/.local/bin:/opt/intel/intelpython2/lib/python2.7/site-packages:/home/guinot/.local/lib/python2.7/site-packages"\n', file=f)
     print('export CONFIG_DIR={}'.format(path_dest), file=f)
 
     print('echo -n "pwd = "', file=f)
@@ -680,7 +687,7 @@ def do_substitutions(path_dest, image_type, module_base, module_name, image_list
 
     # General substitutions
     if image_list:
-        dat = stuff.add_to_arr(dat, 'IMAGE_LIST', image_list)
+        dat = stuff.add_to_arr(dat, 'IMAGE_LIST', image_list, empty=True)
 
     # Set keys specificly to image type (tile, exposure)
     dat = stuff.substitute(dat, 'BASE_DIR', '\$HOME/data', path_data[image_type])
@@ -693,29 +700,29 @@ def do_substitutions(path_dest, image_type, module_base, module_name, image_list
     # to read only desired input files
     #dat = stuff.substitute_arr(dat, 'FILE_PATTERNS', '\"\*\"', '"{}*"'.format(data_file_base[image_type][0]))
 
-    # Type-specific substitutions
-    if module_base in ['mask', 'SEXtractor', 'SETools']:
+    # Module-specific substitutions
+    if module_base in ['mask', 'SExtractor', 'SETools']:
         if image_type == 'exposure':
             dat = stuff.substitute_arr(dat, 'INPUT_FILENAME_FORMATS', data_file_base['tile'], data_file_base['exposure'])
-        elif image_type == 'tile':
-            pass
 
-    # Module-specific substitutions
     if module_base == 'mask':
         dat = stuff.substitute(dat, 'DEFAULT_FILENAME', 'config\.mask', 'config.mask_{}'.format(image_type))
         if image_type == 'exposure':
             dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}_flag.fits\''.format(data_file_base['exposure']))
 
     elif module_base == 'SExtractor':
-        dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}_flagout.fits\''.format(data_file_base['exposure']))
-        dat = stuff.substitute(dat, 'DETECT_THRESH', '\d+', '3', sep='')
-        dat = stuff.substitute(dat, 'DETECT_MINAREA', '(.*)0\.4(.*)0\.4(.*)', '\\1max(WDSEEMED,0.4)\\2max(WDSEEMED,0.4)\\3', sep='')
-        dat = stuff.substitute(dat, 'SEEING_FWHM', '(.*)IQFINAL(.*)', '\\1WDSEEMED\\2', sep='')
-        dat = stuff.substitute(dat, 'PHOT_APERTURES', '(.*)IQFINAL(.*)', '\\1WDSEEMED\\2', sep='')
-        dat = stuff.substitute(dat, 'BACK_TYPE', 'MANUAL', 'AUTO', sep='')
-        dat = stuff.substitute(dat, 'SATUR_LEVEL', '@SATURATE', 'SATLEVEL', sep='')
+        if image_type == 'exposure':
+            #dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}_flagout.fits\''.format(data_file_base['exposure']))
+            dat = stuff.substitute(dat, 'DETECT_THRESH', '\d+', '3', sep='')
+            dat = stuff.substitute(dat, 'DETECT_MINAREA', '(.*)0\.4(.*)0\.4(.*)', '\\1max(WDSEEMED,0.4)\\2max(WDSEEMED,0.4)\\3', sep='')
+            dat = stuff.substitute(dat, 'SEEING_FWHM', '(.*)IQFINAL(.*)', '\\1WDSEEMED\\2', sep='')
+            dat = stuff.substitute(dat, 'PHOT_APERTURES', '(.*)IQFINAL(.*)', '\\1WDSEEMED\\2', sep='')
+            dat = stuff.substitute(dat, 'BACK_TYPE', 'MANUAL', 'AUTO', sep='')
+            dat = stuff.substitute(dat, 'SATUR_LEVEL', '@SATURATE', 'SATLEVEL', sep='')
         # CHECKIMAGE_TYPE    BACKGROUND
         # CHECKIMAGE_NAME    back.fits
+        else:
+            print('*** tile ***')
 
     elif module_base == 'SETools':
         if image_type == 'exposure':

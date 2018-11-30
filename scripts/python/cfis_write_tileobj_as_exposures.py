@@ -222,6 +222,8 @@ def write_exposure_files(cat_tiles, log, cat_tiles_pattern, input_dir_img_exp, i
     None
     """
 
+    # Note: The following order is somewhat hard-coded later when creating
+    # temp_table
     cols  = ('X_IMAGE', 'Y_IMAGE', 'X_WORLD', 'Y_WORLD')
     dtype = [(c, float) for c in cols]
     dt    = [float for c in cols]
@@ -242,10 +244,12 @@ def write_exposure_files(cat_tiles, log, cat_tiles_pattern, input_dir_img_exp, i
         # Get all exposure numbers for this tile from log file
         exp_num_list = cfis.log_get_exp_nums_for_tiles_num(log, tile_num)
 
+        n_exp_new = 0 # For testing
+
         # If not already done (for previous tile): Get WCS header
         for exp_num in exp_num_list:
             if not exp_num in exp_wcs:
-                exp_img_name = '{}/{}{}-0.fits'.format(input_dir_img_exp, img_exp_pattern, exp_num)
+                exp_img_name = '{}/{}{:03d}-0.fits'.format(input_dir_img_exp, img_exp_pattern, int(exp_num))
                 exp_img      = sc.FITSCatalog(exp_img_name, hdu_no=0)
                 exp_img.open()
                 header        = exp_img.get_header(hdu_no=0)
@@ -253,9 +257,12 @@ def write_exposure_files(cat_tiles, log, cat_tiles_pattern, input_dir_img_exp, i
                 exp_img.close()
 
                 exp_wcs[exp_num] = wcs.WCS(header)
+                n_exp_new = n_exp_new + 1
+
+        print('{} new exposures found in this tile'.format(n_exp_new))
 
     if verbose:
-        print('{} exposures found'.format(len(exp_wcs)))
+        print('{} total number of exposures found'.format(len(exp_wcs)))
 
     # Second loop over tiles: Distribute objects on tiles to exposure catalogues
     if verbose:
@@ -268,7 +275,7 @@ def write_exposure_files(cat_tiles, log, cat_tiles_pattern, input_dir_img_exp, i
         # Open catalogue and get data
         f_tile = sc.FITSCatalog(tile, SEx_catalog=True)
         f_tile.open()
-        tmp   = f_tile.get_data()
+        tmp = f_tile.get_data()
 
         # Use only columns given above
         dat_tile = Table([tmp[:][c] for c in cols], names=cols, dtype=dt)
@@ -277,23 +284,37 @@ def write_exposure_files(cat_tiles, log, cat_tiles_pattern, input_dir_img_exp, i
         tile_num     = stuff.get_pipe_file_number(cat_tiles_pattern, tile)
         exp_num_list = cfis.log_get_exp_nums_for_tiles_num(log, tile_num)
 
-        # For all objects find exposure, set corresponding mask to True
+        # Get all objects' (ra, dec), go through list of exposures, map to corresponding (x, y),
+        # check which objects are in exposure, add to object exposure catalogue
         all_coord_tile_wcs = SkyCoord(ra=dat_tile['X_WORLD']*u.degree, dec=dat_tile['Y_WORLD']*u.degree)
         for exp_num in exp_num_list:
             all_coord_tile_xy  = exp_wcs[exp_num].all_world2pix(all_coord_tile_wcs.ra, all_coord_tile_wcs.dec, 0)
             ind_in_range       = ((all_coord_tile_xy[0] >= 0) & (all_coord_tile_xy[0] < nx) & \
                                   (all_coord_tile_xy[1] >= 0) & (all_coord_tile_xy[1] < ny))
             if ind_in_range.any():
+
+                # Create temporary table with image coordinates from expoure, world coordinates from tile
+                temp_table = Table([all_coord_tile_xy[0][ind_in_range],
+                                    all_coord_tile_xy[1][ind_in_range],
+                                    all_coord_tile_wcs.ra[ind_in_range],
+                                    all_coord_tile_wcs.dec[ind_in_range]], names=cols, dtype=dt)
+
                 # Append objects within range to exposure catalogue
                 if exp_num in exp_cat:
-                    for d in dat_tile[ind_in_range]:
+                    if verbose:
+                        print('Add to exposure {:03d} {} objects'.format(int(exp_num), len(temp_table)))
+                    for d in temp_table:
                         exp_cat[exp_num].add_row(d)
                 else:
-                    exp_cat[exp_num] = dat_tile[ind_in_range]
+                    if verbose:
+                        print('Create new exposure {:03d} with {} objects'.format(int(exp_num), len(temp_table)))
+                    exp_cat[exp_num] = temp_table
+            else:
+                print('For exposure {} no objects found'.format(exp_num))
 
-    # Write exposure catalogues to disk
+    # Write object exposure catalogues to disk
     for exp_num in exp_cat:
-        output_path = '{}/{}{}-0.fits'.format(output_dir_cat_exp, cat_exp_pattern, exp_num)
+        output_path = '{}/{}{:03d}-0.fits'.format(output_dir_cat_exp, cat_exp_pattern, int(exp_num))
         print(output_path)
         exp_cat_file = sc.FITSCatalog(output_path, open_mode=sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog=True)
         exp_cat_file.save_as_fits(data=exp_cat[exp_num], names=cols, ext_name='LDAC_OBJECTS', sex_cat_path=sex_cat_path)

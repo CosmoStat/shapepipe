@@ -32,9 +32,9 @@ from astropy.coordinates import Angle, SkyCoord
 
 from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
 
-import cfis
-from cfis import unitdef, size
-import stuff
+from cfis import cfis
+from cfis.cfis import unitdef, size
+from generic import stuff
 
 
 
