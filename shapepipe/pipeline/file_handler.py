@@ -64,7 +64,7 @@ def find_files(path, pattern='*', ext='*'):
 
         search_string = '{}/**/*{}*{}'.format(path, pattern, ext)
 
-        file_list = glob(search_string, recursive=True)
+        file_list = sorted(glob(search_string, recursive=True))
 
         if not file_list:
             raise RuntimeError('No files found matching the conditions in {}'
@@ -97,6 +97,15 @@ class FileHandler(object):
                                          config.get('FILE', 'RUN_LOG_NAME'),
                                          '.txt')
         self._module_dict = {}
+
+        if config.has_option('FILE', 'FILE_PATTERN'):
+            self._file_pattern = config.getlist('FILE', 'FILE_PATTERN')
+        else:
+            self._file_pattern = None
+        if config.has_option('FILE', 'FILE_EXT'):
+            self._file_ext = config.getlist('FILE', 'FILE_EXT')
+        else:
+            self._file_ext = None
 
     @property
     def run_dir(self):
@@ -194,6 +203,11 @@ class FileHandler(object):
         return '{}/{}{}'.format(path, name, ext)
 
     def _get_input_dir(self):
+        """ Get Input Directory
+
+        This method sets the module input directory
+
+        """
 
         if os.path.isdir(self._input_str):
             input_dir = self._input_str
@@ -239,14 +253,43 @@ class FileHandler(object):
 
         """
 
-        self._module_dict[module]['n_inputs'] = \
-            getattr(module_runners, module).n_inputs
+        # Get the name of the input module from module runner
         self._module_dict[module]['input_module'] = \
             getattr(module_runners, module).input_module
-        self._module_dict[module]['file_pattern'] = \
-            getattr(module_runners, module).file_pattern
-        self._module_dict[module]['file_ext'] = \
-            getattr(module_runners, module).file_ext
+
+        # Get the input file pattern from module runner (or config file)
+        if (not isinstance(self._file_pattern, type(None))
+                and len(self._module_dict) == 1):
+            self._module_dict[module]['file_pattern'] = self._file_pattern
+        else:
+            self._module_dict[module]['file_pattern'] = \
+                getattr(module_runners, module).file_pattern
+
+        # Get the input file extesion from module runner (or config file)
+        if (not isinstance(self._file_ext, type(None))
+                and len(self._module_dict) == 1):
+            self._module_dict[module]['file_ext'] = self._file_ext
+        else:
+            self._module_dict[module]['file_ext'] = \
+                getattr(module_runners, module).file_ext
+
+        # Make sure the number of patterns and extensions match
+        if ((len(self._module_dict[module]['file_ext']) == 1) and
+                (len(self._module_dict[module]['file_pattern']) > 1)):
+            self._module_dict[module]['file_ext'] = \
+                [self._module_dict[module]['file_ext'][0] for i in
+                 self._module_dict[module]['file_pattern']]
+
+        elif ((len(self._module_dict[module]['file_pattern']) == 1) and
+                (len(self._module_dict[module]['file_ext']) > 1)):
+            self._module_dict[module]['file_pattern'] = \
+                [self._module_dict[module]['file_pattern'][0] for i in
+                 self._module_dict[module]['file_ext']]
+
+        if (len(self._module_dict[module]['file_ext']) !=
+                len(self._module_dict[module]['file_pattern'])):
+            raise ValueError('The number of file_ext values does not match '
+                             'the number of file_pattern values.')
 
     def _create_module_run_dirs(self, module):
         """ Create Module Run Directories
@@ -307,10 +350,17 @@ class FileHandler(object):
 
         """
 
-        self._module_dict[module]['files'] = \
-            find_files(self._module_dict[module]['input_dir'],
-                       self._module_dict[module]['file_pattern'],
-                       self._module_dict[module]['file_ext'])
+        file_list = [find_files(self._module_dict[module]['input_dir'],
+                     pattern, ext) for pattern, ext in
+                     zip(self._module_dict[module]['file_pattern'],
+                     self._module_dict[module]['file_ext'])]
+
+        if len(file_list) == 1:
+            file_list = file_list[0]
+        else:
+            file_list = list(map(list, zip(*file_list)))
+
+        self._module_dict[module]['files'] = file_list
 
         self.process_list = self._module_dict[module]['files']
 

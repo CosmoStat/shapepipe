@@ -9,7 +9,7 @@ This module defines methods for an example Python module.
 """
 
 import time
-import numpy as np
+from numpy.random import randint
 from shapepipe.modules.module_decorator import module_runner
 
 
@@ -21,16 +21,26 @@ class Dummy(object):
             self.sleep_time = sleep_time
 
         else:
-            self.sleep_time = np.random.randint(1, 10)
+            self.sleep_time = randint(1, 10)
 
     def _wait(self):
 
         time.sleep(self.sleep_time)
 
-    def read_file(self, file_name):
+    def _read_file(self, file_name):
+
+        with open(file_name) as data_file:
+            content = data_file.read().replace('\n', '')
+
+        return content
+
+    def read_files(self, file_name1, file_name2):
 
         self._wait()
-        self.content = np.genfromtxt(file_name)
+        content1 = self._read_file(file_name1)
+        content2 = self._read_file(file_name2)
+
+        self.content = '{} and {}'.format(content1, content2)
 
     def write_file(self, file_name, message):
 
@@ -41,17 +51,17 @@ class Dummy(object):
         text_file.close()
 
 
-@module_runner(n_inputs=1, file_pattern='file', file_ext='.txt')
+@module_runner(file_pattern=['numbers', 'letters'], file_ext='.txt')
 def python_example(worker_dict, filehd, config, w_log):
 
-    input_file_name = worker_dict['process']
+    input_file_names = worker_dict['process']
     output_dir = filehd.output_dir
     output_file_name = ('{}/{}.cat'.format(output_dir,
                         worker_dict['job_name']))
     message = config.get('PYTHON_EXAMPLE', 'MESSAGE')
 
     inst = Dummy()
-    inst.read_file(input_file_name)
+    inst.read_files(*input_file_names)
     inst.write_file(output_file_name, message)
 
     return inst.content, None
