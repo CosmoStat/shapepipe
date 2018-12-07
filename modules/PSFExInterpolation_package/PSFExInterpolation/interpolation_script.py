@@ -58,14 +58,19 @@ class PSFExInterpolator(object):
         self.gal_pos = None
         self.interp_PSFs = None
 
+        # MK: Temporary solution, missing input files should really be caught before this step
         # get number naming convention for this particular run
-        s=re.split("\-([0-9]*)\-([0-9]+)\.",self._galcat_path)
-        self._img_number='-{0}-{1}'.format(s[1],s[2])
+        try:
+            s=re.split("\-([0-9]*)\-([0-9]+)\.",self._galcat_path)
+            self._img_number='-{0}-{1}'.format(s[1],s[2])
+        except:
+            raise OSError('Galaxy catalog not identified')
 
         # if required, compute and save shapes
         if get_shapes:
             self._get_psfshapes()
             self._has_shapes = True
+
 
     def _get_position_parameters(self):
         """ Read position parameters from .psf file.
@@ -74,6 +79,7 @@ class PSFExInterpolator(object):
 
         dotpsf = sc.FITSCatalog(self._dotpsf_path)
         dotpsf.open()
+
         self._pos_params = [dotpsf.get_header()['POLNAME1'], dotpsf.get_header()['POLNAME2']]
         dotpsf.close()
 
