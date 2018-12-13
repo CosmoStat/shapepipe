@@ -22,6 +22,7 @@ import glob
 import numpy as np
 
 from astropy import units
+from astropy.io import ascii
 from astropy.coordinates import Angle
 from astropy.coordinates import SkyCoord
 
