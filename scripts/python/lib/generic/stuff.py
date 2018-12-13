@@ -599,7 +599,7 @@ def check_error_stop(ex_list, verbose=True, stop=False):
 
 
 
-def ln_s(orig, new, orig_to_check=False, verbose=False, force=False):
+def ln_s(orig, new, orig_to_check=None, verbose=False, force=False):
     """Create symbolic link.
 
     Parameters:
@@ -608,7 +608,7 @@ def ln_s(orig, new, orig_to_check=False, verbose=False, force=False):
         Name of original file
     new: string
         Name of new, to be created, link
-    orig_to_check: string, optional, default=False
+    orig_to_check: string, optional, default=None
         Original file to check for existance (can be different than orig
         is link is not created in same directory where this function is called)
     verbose: bool

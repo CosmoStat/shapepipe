@@ -201,6 +201,7 @@ def params_default():
         scheme  = 'std',
         band  = 'r',
         job   = 'manual',
+        ncpu  = -1,
     )
 
     return p_def
@@ -240,15 +241,23 @@ def parse_options(p_def):
     parser.add_option('-n', '--dry-run', dest='dry_run', action='store_true', default=False,
             help='dry run, only print commands')
     parser.add_option('', '--image_list', dest='image_list', type='string', default=None,
-            help='Image list, default: None, use all images in input data directory')
+            help='image list, default: None, use all images in input data directory')
+    parser.add_option('', '--image_range', dest='image_range', type='string', default=None,
+            help='image range: <MIN>,<MAX>, default: None, use all images in input data directory')
+    parser.add_option('-p', '--ncpu', dest='ncpu', type='int', default=p_def.ncpu,
+            help='number of CPUs. -1=automatic, Default: {}'.format(p_def.ncpu))
  
     # Run mode
     parser.add_option('-m', '--mode', dest='mode', default=None,
          help='run mode, one of [l|r|a]:\n'
           ' l: list modules of all scheme and exit\n'
           ' r: run module given by \'-M\'\n'
+          ' m: merge results of last N runs of module given by \'-M\'. Specify N with \'--n_merge\'\n'
           ' a: adopt (last) run for module given by \'-M\'\n'
-          ' s: set input file links in <data> to results from adopted run of module given by \'-M\'\n')
+          ' d: discard adopted run for module given by \'-M\'n'
+          ' s: set input file links in <data> to results from adopted run for module given by \'-M\'\n')
+    parser.add_option('', '--n_merge', dest='n_merge', type='int', default=None,
+            help='number of runs to merge, for \'-m m\' run mode')
 
     # Monitoring
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
@@ -281,14 +290,20 @@ def check_options(options):
         print('No run mode given (option \'-r\')')
         return False
 
-    if options.mode in ['r', 'a', 's', 'sa', 'as']:
+    if options.mode in ['r', 'm', 'a', 'd', 's', 'sa', 'as']:
         if not options.module:
             print('Module needs to be given, via \'-M\'')
             return False
 
-    if not options.mode in ('l', 'r', 'a', 'd', 's', 'sa', 'as'):
+    if not options.mode in ('l', 'r', 'm', 'a', 'd', 's', 'sa', 'as'):
         print('Invalid mode \'{}\''.format(options.mode))
         return False
+
+    if (options.mode == 'm' and options.n_merge is None) or (options.mode != 'm' and options.n_merge is not None):
+        print('If and only if run mode is \'merge\' (\'-m m\'), \'--n_merge\' needs to be set')
+
+    if options.image_list is not None and options.image_range is not None:
+        print('Only one option \'--image_list\' or \'--image_range\' can be given')
 
     return True
 
@@ -502,7 +517,7 @@ def run_module(param):
         shutil.copytree(path_src, path_dest)
 
         # Perform substitutions in package config file
-        do_substitutions(path_dest, param.image_type, module_name, module, image_list=param.image_list)
+        do_substitutions(path_dest, param.image_type, module_name, module, image_list=param.image_list, image_range=param.image_range)
 
         # Create output dir if necessary
         stuff.mkdir_p(path_output[param.image_type], verbose=param.verbose)
@@ -558,10 +573,53 @@ def sorted_ls(path, r):
 
     return res
 
+
+def merge_run(module, image_type, n_merge, verbose=False):
+    """Merge last n_merge runs for given module (set symbolic link).
+
+    Parameters
+    ----------
+    module: string
+        module name
+    image_type: string
+        image type, one in 'tile', 'exposure'
+    n_merge: int
+        number of runs to merge
+    verbose: bool, optional, default=False
+        verbose output if True
+
+    Returns
+    -------
+    None
+    """
+
+    if verbose:
+        print('Merging last {} runs of module {}...'.format(n_merge, module))
     
+    path_runs = '{}/{}'.format(path_output[image_type], module)
+    f = sorted_ls(path_runs, 'run_.*')
+    if len(f) < n_merge:
+        stuff.error('Cannot merge {} runs, found only {}'.format(n_merge, len(f)))
+    to_merge = f[-n_merge:]
+    print(to_merge)
+
+    merge_dir_path = '{}/{}/run_merged/results'.format(path_output[image_type], module)
+    stuff.mkdir_p(merge_dir_path)
+
+    # Loop over directories to merge
+    for run in to_merge:
+        files = glob.glob('{}/{}/results/*'.format(path_runs, run))
+
+        # Loop over result files
+        for img in files:
+            source    = '../../{}/results/{}'.format(run, os.path.basename(img))
+            link_name = '{}/{}'.format(merge_dir_path, os.path.basename(img)) 
+            stuff.ln_s(source, link_name, verbose=verbose, force=False)
+
+
 
 def adopt_run(module, image_type, verbose=False):
-    """Adopt (last) run for given moduleo (set symbolic link).
+    """Adopt (last) run for given module (set symbolic link).
 
     Parameters
     ----------
@@ -655,7 +713,7 @@ def set_results(module, image_type, verbose=False):
 
 
 
-def do_substitutions(path_dest, image_type, module_base, module_name, image_list=None):
+def do_substitutions(path_dest, image_type, module_base, module_name, image_list=None, image_range=None):
     """Perform basic substitutions of values for certain keys in package config file
 
     Parameters
@@ -670,6 +728,8 @@ def do_substitutions(path_dest, image_type, module_base, module_name, image_list
         module name including potential trailing digit(s)
     image_list: string, optional, default None
         list of images
+    image_range: string, optional, default None
+        range of images
 
     Returns
     -------
@@ -688,6 +748,8 @@ def do_substitutions(path_dest, image_type, module_base, module_name, image_list
     # General substitutions
     if image_list:
         dat = stuff.add_to_arr(dat, 'IMAGE_LIST', image_list, empty=True)
+    elif image_range:
+        dat = stuff.add_to_arr(dat, 'IMAGE_RANGE', image_range, empty=True)
 
     # Set keys specificly to image type (tile, exposure)
     dat = stuff.substitute(dat, 'BASE_DIR', '\$HOME/data', path_data[image_type])
@@ -769,6 +831,9 @@ def main(argv=None):
 
     if param.mode == 'r':
         run_module(param)
+
+    if param.mode == 'm':
+        merge_run(param.smodule_name, param.image_type, param.n_merge, verbose=param.verbose)
 
     if re.search('a', param.mode):
         adopt_run(param.smodule_name, param.image_type, verbose=param.verbose)
