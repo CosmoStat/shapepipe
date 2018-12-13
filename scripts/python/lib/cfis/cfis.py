@@ -699,7 +699,9 @@ def log_line_get_entry(log_line, entry):
 
     line_s = log_line.split()
 
-    if entry == 'tile_num':
+    if entry == 'exp_name':
+        return line_s[0]
+    elif entry == 'tile_num':
         return line_s[1]
     elif entry == 'exp_num':
         return line_s[5]
@@ -723,6 +725,25 @@ def log_get_exp_nums_for_tiles_num(log, tile_num):
         stuff.error('Tile number \'{}\' not found in log file'.format(tile_num))
 
     return exp_num
+
+
+
+def log_get_exp_names_for_tiles_num(log, tile_num):
+    """Return all exposure file names for a given tile number
+    """
+
+    exp_names = []
+
+    for line in log:
+        my_tile_num = log_line_get_entry(line, 'tile_num')
+        if tile_num == my_tile_num:
+            exp_names.append(log_line_get_entry(line, 'exp_name'))
+
+    if len(exp_names) == 0:
+        stuff.error('Tile number \'{}\' not found in log file'.format(tile_num))
+
+    return exp_names
+
 
 
 def log_get_tile_nums(log):
