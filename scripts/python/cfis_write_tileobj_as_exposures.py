@@ -199,6 +199,7 @@ def write_exposure_files(cat_tiles, log, cat_tiles_pattern, input_dir_img_exp, i
     exp_cat = {}
 
     f = open('exp_footprints.txt', 'w')
+    print('# name num  cx1 cy1  cx2 cy2  cx3 cy3  cx4 cy4', file=f)
 
     # First loop over tiles: Initialise exposure catalogues
     if verbose:
@@ -211,12 +212,13 @@ def write_exposure_files(cat_tiles, log, cat_tiles_pattern, input_dir_img_exp, i
         tile_num = stuff.get_pipe_file_number(cat_tiles_pattern, tile)
 
         # Get all exposure numbers for this tile from log file
-        exp_num_list = cfis.log_get_exp_nums_for_tiles_num(log, tile_num)
+        exp_num_list   = cfis.log_get_exp_nums_for_tiles_num(log, tile_num)
+        exp_names_list = cfis.log_get_exp_names_for_tiles_num(log, tile_num)
 
         n_exp_new = 0 # For testing
 
         # If not already done (for previous tile): Get WCS header
-        for exp_num in exp_num_list:
+        for exp_num, exp_name in zip(exp_num_list, exp_names_list):
             if not exp_num in exp_wcs:
                 exp_img_name = '{}/{}{:03d}-0.fits'.format(input_dir_img_exp, img_exp_pattern, int(exp_num))
                 exp_img      = sc.FITSCatalog(exp_img_name, hdu_no=0)
@@ -228,10 +230,10 @@ def write_exposure_files(cat_tiles, log, cat_tiles_pattern, input_dir_img_exp, i
                 exp_wcs[exp_num] = wcs.WCS(header)
                 n_exp_new = n_exp_new + 1
 
-                # Footprint: testing
+                # Write footprint to ascii file
                 corners    = exp_wcs[exp_num].calc_footprint()
                 corners_sc = SkyCoord(ra=corners[:,0]*u.degree, dec=corners[:,1]*u.degree)
-                print('{}  '.format(exp_num), file=f, end='')
+                print('{} {}  '.format(exp_name, exp_num), file=f, end='')
                 for c in corners_sc:
                     print('{} {}   '.format(c.ra.degree, c.dec.degree), file=f, end='')
                 print('', file=f)
@@ -331,6 +333,8 @@ def write_exposure_files(cat_tiles, log, cat_tiles_pattern, input_dir_img_exp, i
     # Write object exposure catalogues to disk
     for exp_num in exp_cat:
         output_path  = '{}/{}{:03d}-0.fits'.format(output_dir_cat_exp, cat_exp_pattern, int(exp_num))
+        if os.path.exists(output_path):
+            os.ulink(output_path)
         exp_cat_file = sc.FITSCatalog(output_path, open_mode=sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog=True)
         exp_cat_file.save_as_fits(data=exp_cat[exp_num], names=cols_ext, ext_name='LDAC_OBJECTS', sex_cat_path=sex_cat_path)
 
