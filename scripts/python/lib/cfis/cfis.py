@@ -797,6 +797,7 @@ def log_get_exp_num(log, exp_name, k_img, k_weight, k_flag):
         exposure number, None if not found
     """
 
+
     for line in log:
         this_exp_name = log_line_get_entry(line, 'exp_name')
         this_k_img    = log_line_get_entry(line, 'k_img')
@@ -804,9 +805,9 @@ def log_get_exp_num(log, exp_name, k_img, k_weight, k_flag):
         this_k_flag   = log_line_get_entry(line, 'k_flag')
 
         if this_exp_name == exp_name  and \
-            this_k_img == k_img and \
-            this_k_weight == k_weight and \
-            this_k_flag == k_flag:
+            int(this_k_img) == k_img and \
+            int(this_k_weight) == k_weight and \
+            int(this_k_flag) == k_flag:
             return log_line_get_entry(line, 'exp_num')
 
     # No matching entry found

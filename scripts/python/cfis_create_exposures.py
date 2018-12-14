@@ -279,7 +279,10 @@ def write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_
     new_fits = fits.PrimaryHDU(data=d, header=h)
 
     from astropy import wcs
-    
+
+    # TODO: Write original exposure file name and CCD/HDU number to header,
+    # such that consistency can be checked in a later run.
+
     out_name = '{}/{}-{:03d}-0.{}'.format(output_dir, exp_base, num, ext)
     if not os.path.isfile(out_name):
         new_fits.writeto(out_name)
@@ -327,12 +330,12 @@ def create_hdus(num, output_dir, exp_path, weight_path, flag_path, \
 
     log_app = []
 
-    n_hdu = get_n_hdu_from_log(exp_path, log)
-    if n_hdu != 0:
-        if verbose:
-            print('Skipping image {}, found {} HDUs in log file'.format(exp_path, n_hdu))
-        num = num + n_hdu
-        return num, log_app
+    #n_hdu = get_n_hdu_from_log(exp_path, log)
+    #if n_hdu != 0:
+        #if verbose:
+            #print('Skipping existing image {}, found {} HDUs in log file'.format(exp_path, n_hdu))
+        #num = num + n_hdu
+        #return num, log_app
 
     img_file = sc.FITSCatalog(exp_path, hdu_no=1)
     img_file.open()
@@ -348,7 +351,7 @@ def create_hdus(num, output_dir, exp_path, weight_path, flag_path, \
         warning.warn('Inconsistent #hdus={}/{}/{} of image/weight/flag, writing only some hdus'.format(hdu_max[0], hdu_max[1], hdu_max[2]))
 
 
-    # Write FITS files
+    # Get weight and flag HDU numbers
     for k_img in range(1, 41):
 
         if all_hdu:
@@ -380,18 +383,20 @@ def create_hdus(num, output_dir, exp_path, weight_path, flag_path, \
             k_weight = k_weight_match
             k_flag   = k_flag_match
 
+        # Has this CCD already been written for some other tiles?
         exp_num_prev = cfis.log_get_exp_num(log, exp_path, k_img, k_weight, k_flag)
         if exp_num_prev:
-            num_to_og = exp_num_prev
-            import ipdb; ipdb.set_trace()
+            if verbose:
+                print('Exposure {}-{}/{}/{} already accounted for, using previously assigned number {}'.format(os.path.basename(exp_path), k_img, k_weight, k_flag, exp_num_prev))
+            num_to_log = exp_num_prev
         else:
             write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_dir, exp_base, exp_weight_base, exp_flag_base, \
                     ext, num, exp_path, verbose=verbose)
             num_to_log = num
+            num = num + 1
 
         log_app = cfis.log_append_to_tiles_exp(log_app, exp_path, tile_num, k_img, k_weight, k_flag, num_to_log)
 
-        num = num + 1
 
     img_file.close()
     weight_file.close()
@@ -471,7 +476,6 @@ def create_output(exp_list, input_dir, input_dir_weights, input_dir_flags, outpu
             num = create_links(num, output_dir, exp_path, weight_path, flag_path, \
                                exp_base, exp_weight_base, exp_flag_base, ext, verbose=verbose)
         else:
-            import ipdb; ipdb.set_trace()
             num, log_app = create_hdus(num, output_dir, exp_path, weight_path, flag_path, \
                                        exp_base, exp_weight_base, exp_flag_base, ext, tile_num, log, verbose=verbose)
             if len(log_app) > 0:
