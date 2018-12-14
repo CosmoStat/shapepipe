@@ -703,6 +703,12 @@ def log_line_get_entry(log_line, entry):
         return line_s[0]
     elif entry == 'tile_num':
         return line_s[1]
+    elif entry == 'k_img':
+        return line_s[2]
+    elif entry == 'k_weight':
+        return line_s[3]
+    elif entry == 'k_flag':
+        return line_s[4]
     elif entry == 'exp_num':
         return line_s[5]
     else:
@@ -766,5 +772,44 @@ def log_get_tile_nums(log):
         tile_nums.append(my_tile_num)
 
     return set(tile_nums)
+
+
+
+def log_get_exp_num(log, exp_name, k_img, k_weight, k_flag):
+    """Return exposure number from log file for given exposure name and HDU numbers.
+
+    Parameters
+    ----------
+    log: list of strings
+        log file content
+    exp_name: string
+        exposure name
+    k_img: int
+        image HDU number
+    k_weight: int
+        weight HDU number
+    k_flag: int
+        flag HDU number
+
+    Return
+    ------
+    exp_num: int
+        exposure number, None if not found
+    """
+
+    for line in log:
+        this_exp_name = log_line_get_entry(line, 'exp_name')
+        this_k_img    = log_line_get_entry(line, 'k_img')
+        this_k_weight = log_line_get_entry(line, 'k_weight')
+        this_k_flag   = log_line_get_entry(line, 'k_flag')
+
+        if this_exp_name == exp_name  and \
+            this_k_img == k_img and \
+            this_k_weight == k_weight and \
+            this_k_flag == k_flag:
+            return log_line_get_entry(line, 'exp_num')
+
+    # No matching entry found
+    return None
 
 

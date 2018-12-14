@@ -192,7 +192,7 @@ def get_exposure_list(tiles, pattern_base, verbose=False):
     Returns
     -------
     exposures: list of tuples of strings
-        tupel of file names of exposures, tile number
+        list of tuples (file name of exposure, tile number)
     """
 
     exp_list = []
@@ -379,11 +379,17 @@ def create_hdus(num, output_dir, exp_path, weight_path, flag_path, \
 
             k_weight = k_weight_match
             k_flag   = k_flag_match
-             
-        write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_dir, exp_base, exp_weight_base, exp_flag_base, \
-                  ext, num, exp_path, verbose=verbose)
 
-        log_app = cfis.log_append_to_tiles_exp(log_app, exp_path, tile_num, k_img, k_weight, k_flag, num)
+        exp_num_prev = cfis.log_get_exp_num(log, exp_path, k_img, k_weight, k_flag)
+        if exp_num_prev:
+            num_to_og = exp_num_prev
+            import ipdb; ipdb.set_trace()
+        else:
+            write_hdu(k_img, k_weight, k_flag, img_file, weight_file, flag_file, output_dir, exp_base, exp_weight_base, exp_flag_base, \
+                    ext, num, exp_path, verbose=verbose)
+            num_to_log = num
+
+        log_app = cfis.log_append_to_tiles_exp(log_app, exp_path, tile_num, k_img, k_weight, k_flag, num_to_log)
 
         num = num + 1
 
@@ -438,7 +444,6 @@ def create_output(exp_list, input_dir, input_dir_weights, input_dir_flags, outpu
     if verbose:
         print('Reading log file, {} lines found'.format(len(log)))
 
-
     num = 0
     ext = 'fits'
     band = 'r'
@@ -466,15 +471,21 @@ def create_output(exp_list, input_dir, input_dir_weights, input_dir_flags, outpu
             num = create_links(num, output_dir, exp_path, weight_path, flag_path, \
                                exp_base, exp_weight_base, exp_flag_base, ext, verbose=verbose)
         else:
+            import ipdb; ipdb.set_trace()
             num, log_app = create_hdus(num, output_dir, exp_path, weight_path, flag_path, \
                                        exp_base, exp_weight_base, exp_flag_base, ext, tile_num, log, verbose=verbose)
-            # Append newly written file info to log file
             if len(log_app) > 0:
+
+                # Append newly written file info to log file
                 f_log.writelines(log_app)
                 f_log.flush()
 
+                # Append new log info to previous log info
+                for l in log_app:
+                    log.append(l)
+
     if verbose:
-        print('Created {} links'.format(num))
+        print('Created {} {}'.format(num, output_format))
 
     f_log.close()
 
