@@ -63,7 +63,7 @@ class PSFExInterpolator(object):
 
     """
 
-    def __init__(self, dotpsf_path, galcat_path, output_path, pos_params=None, get_shapes=False):
+    def __init__(self, dotpsf_path, galcat_path, output_path, pos_params=None, get_shapes=True):
         """Class initialiser
 
         Parameters
