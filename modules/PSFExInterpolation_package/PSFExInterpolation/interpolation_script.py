@@ -2,13 +2,11 @@
 
 """INTERPOLATION SCRIPT
 
-This module computes the PSFs from a PSFEx model at several galaxy positions,
-using Erin Sheldon & Eli Rykoff's psfex module, available on GitHub at:
-https://github.com/esheldon/psfex
+This module computes the PSFs from a PSFEx model at several galaxy positions
 
 :Author: Morgan Schmitz
 
-:Version: 1.1.0
+:Version: 1.2.0
 
 :Date: 06/02/2018
 
@@ -19,8 +17,6 @@ import psfex
 import scatalog as sc
 import re
 from astropy.io import fits
-import galsim.hsm as hsm
-from galsim import Image
 
 class PSFExInterpolator(object):
     """Interpolator class.
@@ -29,7 +25,7 @@ class PSFExInterpolator(object):
 
     """
 
-    def __init__(self, dotpsf_path, galcat_path, output_path, pos_params=None, get_shapes=True):
+    def __init__(self, dotpsf_path, galcat_path, output_path, pos_params=None, get_shapes=False):
         """Class initialiser
 
         Parameters
@@ -43,6 +39,8 @@ class PSFExInterpolator(object):
         pos_params : list, optional
             Desired position parameters. If provided, there should be exactly two, and they must also be present in the
             galaxy catalog. Otherwise, they are read directly from the .psf file.
+        get_shapes : bool, optional
+            Whether to compute PSF model shapes and add them to the catalog. Shapes are computed using galsim's HSM module.
 
         """
 
@@ -66,6 +64,8 @@ class PSFExInterpolator(object):
         if get_shapes:
             self._get_psfshapes()
             self._has_shapes = True
+        else:
+            self._has_shapes = False
 
     def _get_position_parameters(self):
         """ Read position parameters from .psf file.
@@ -112,6 +112,8 @@ class PSFExInterpolator(object):
         """ Compute shapes of PSF at galaxy positions using HSM.
 
         """
+        import galsim.hsm as hsm
+        from galsim import Image
         if self.interp_PSFs is None:
             self._interpolate()
         psf_moms = [hsm.FindAdaptiveMom(Image(psf), strict=False) for psf in self.interp_PSFs]
