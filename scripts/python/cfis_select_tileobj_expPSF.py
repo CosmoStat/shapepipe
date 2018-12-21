@@ -9,6 +9,7 @@ new multi-exposure files according to the exposures where the object appears.
 
 :Date: 11/12/2018
 
+Plan:
     1. Loop over tile, get contributing exposures
        2. Read files galaxy_psf (PSF info at galaxy positions)
           and cfisexp-obj (galaxy information inc. ID).
@@ -168,6 +169,7 @@ def update_param(p_def, options):
 
     return param
 
+
  
 def collect_info_gal_psf(log, input_dir_cat_exp, cat_exp_pattern, input_dir_psf, psf_pattern, output_dir, outcat_pattern, verbose=False):
     """Collect information about galaxies and PSF from exposures used in tiles
@@ -256,8 +258,11 @@ def collect_info_gal_psf(log, input_dir_cat_exp, cat_exp_pattern, input_dir_psf,
 
         # Saving to file maybe only for testing. Note that tile_num here is string
         out_path = '{}/{}-{}-0.fits'.format(output_dir, outcat_pattern, tile_num)
+        print('Writing tile data to file \'{}\''.format(out_path))
+        if os.path.exists(out_path):
+            os.ulink(out_path)
         output = sc.FITSCatalog(out_path, open_mode=sc.BaseCatalog.OpenMode.ReadWrite)
-        output.save_as_fits(exp_cat_data_plus)
+        output.save_as_fits(tile_data)
 
 
 

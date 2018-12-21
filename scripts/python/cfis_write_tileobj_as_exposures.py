@@ -238,7 +238,7 @@ def write_exposure_files(cat_tiles, log, cat_tiles_pattern, input_dir_img_exp, i
                     print('{} {}   '.format(c.ra.degree, c.dec.degree), file=f, end='')
                 print('', file=f)
             else:
-                print('WCS for exposure {:03d} already obtained, continuing...'.format(exp_num))
+                print('WCS for exposure {:03d} already obtained, continuing...'.format(int(exp_num)))
 
         print('{} new exposures found in this tile'.format(n_exp_new))
 
