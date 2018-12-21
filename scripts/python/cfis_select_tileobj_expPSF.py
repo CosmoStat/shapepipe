@@ -81,7 +81,7 @@ def parse_options(p_def):
 
     Parameters
     ----------
-    p_def: class tuff.param
+    p_def: class stuff.param
         parameter values
 
     Returns

@@ -76,11 +76,15 @@ name_results = 'results'
 
 
 class modules_local:
-    """Has modules as subroutines, priority over pipeline packages with same name.
+    """Contains local modules as subroutines. Local means not a pipeline module. If a pipeline module with
+       the same name exists, the priority is for local moduels over pipeline packages.
     """
 
     def init(self):
         pass
+
+    # The following methods are local modules, and return the command string to be run as shell command
+    # or as job to be submitted
 
     def select(self, param):
         """Area selection. Create links to tiles.
@@ -113,8 +117,9 @@ class modules_local:
             stuff.error('No output file basename in options \'{}\' found'.format(param.options))
 
         # Create links to original files
-        launch_path = '{}create_image_links.py -i {}.txt -v -o {}'.format(path_sppy, name, path_data['tile'])
-        stuff.run_cmd(launch_path, run=not param.dry_run, verbose=param.verbose, devnull=False)
+        cmd = '{}create_image_links.py -i {}.txt -v -o {}'.format(path_sppy, name, path_data['tile'])
+
+        return cmd
 
 
     def find_exp(self, param):
@@ -142,7 +147,8 @@ class modules_local:
             verbose_flag = ''
         cmd = '{}cfis_create_exposures.py -i {} -o {} -p \'CFIS-\' --exp_base_new=\'{}\' -O hdu -l {}/log_exposure.txt{}'.\
             format(path_sppy, path_data['tile'], path_data['exposure'], data_file_base['exposure'], path_data['base'], verbose_flag)
-        stuff.run_cmd(cmd, run=not param.dry_run, verbose=param.verbose, devnull=False) 
+
+        return cmd
 
 
     def write_tileobj(self, param):
@@ -181,7 +187,8 @@ class modules_local:
 
         cmd = '{}cfis_write_tileobj_as_exposures.py -i {} -o {} -p \'CFIS-\' --cat_exp_pattern=\'{}\' -s {} -l {}/log_exposure.txt{}'.\
             format(path_sppy, path_data['tile'], path_data['exposure'], data_file_base['exposure-object'], sex_cat_path, path_data['base'], verbose_flag)
-        stuff.run_cmd(cmd, run=not param.dry_run, verbose=param.verbose, devnull=False)
+
+        return cmd
 
 
     def select_tileobj(self, param):
@@ -210,10 +217,19 @@ class modules_local:
             verbose_flag = ''
 
         cmd = '{0}cfis_select_tileobj_expPSF.py --input_dir_cat_exp {1} --input_dir_psf {1} -o {2} -P \'{3}\' -p \'galaxy_psf-\' -O \'CFIS_MOBJ\' -l {4}/log_exposure.txt{5}'.\
-p--input_dir_cat_exp {1}
             format(path_sppy, path_data['exposure'], path_data['tile'], data_file_base['exposure-object'], path_data['base'], verbose_flag)
-        stuff.run_cmd(cmd, run=not param.dry_run, verbose=param.verbose, devnull=False)
 
+        return cmd
+
+    ### end local modules methods
+
+    def run(self, cmd, dry_run, verbose):
+        """Run local module as shell command or submit a job
+        """
+
+        res = stuff.run_cmd(cmd, run=not dry_run, verbose=verbose, devnull=False)
+
+        return res
 
 
 def params_default():
@@ -414,7 +430,7 @@ def list_modules():
 
 
 
-def create_qsub_script(module, package, path_config):
+def create_qsub_script(module, package, path_config, cmd=None):
     """Create bash script to be submitted with qsub.
 
     Parameters
@@ -425,6 +441,8 @@ def create_qsub_script(module, package, path_config):
         external package name
     path_config: string
         config input directory
+    cmd: string, optional, default=None
+        If not None, run this string as command instead of package launch script
 
     Returns:
     qsub_script_base: string
@@ -438,17 +456,17 @@ def create_qsub_script(module, package, path_config):
     hostname = platform.node()
 
     if 'candid' in hostname:
-        create_qsub_script_candide(qsub_script_base, module, package, path_config)
+        create_qsub_script_candide(qsub_script_base, module, package, path_config, cmd=cmd)
 
     else:
         print('Warning: Using candide qsub job script for different machine')
-        create_qsub_script_candide(qsub_script_base, module, package, path_config)
+        create_qsub_script_candide(qsub_script_base, module, package, path_config, cmd=cmd)
 
     return qsub_script_base
 
 
 
-def create_qsub_script_candide(qsub_script_base, module, package, path_dest):
+def create_qsub_script_candide(qsub_script_base, module, package, path_dest, cmd=None):
     """Create a bash script to be submitted with qsub, working on iap:candide
 
     Parameters
@@ -458,9 +476,11 @@ def create_qsub_script_candide(qsub_script_base, module, package, path_dest):
     module: string
         internal module name (only used for qsub job name)
     package: string
-        external package name
-    path_config: string
+        external package name, used to run launch script if cmd=None
+    path_dest: string
         config input directory
+    cmd: string, optional, default=None
+        If not None, run this string as command instead of package launch script
 
     Returns:
     None
@@ -483,12 +503,16 @@ def create_qsub_script_candide(qsub_script_base, module, package, path_dest):
     print('export PATH="$PATH:/softs/astromatic/bin/:$HOME/.local/bin"', file=f)
     print('export LD_LIBRARY_PATH="$HOME/.local/lib/"', file=f)
     print('export PYTHONPATH="$HOME/.local/lib/python2.7/site-packages:$HOME/.local/bin:/opt/intel/intelpython2/lib/python2.7/site-packages:/home/guinot/.local/lib/python2.7/site-packages"\n', file=f)
-    print('export CONFIG_DIR={}'.format(path_dest), file=f)
+    if path_dest is not None:
+        print('export CONFIG_DIR={}'.format(path_dest), file=f)
 
     print('echo -n "pwd = "', file=f)
     print('pwd\n', file=f)
 
-    print('$HOME/ShapePipe/modules/{}/config/launch.cmd'.format(package), file=f)
+    if cmd is None:
+        print('$HOME/ShapePipe/modules/{}/config/launch.cmd'.format(package), file=f)
+    else:
+        print(cmd, file=f)
     print('ex=$?', file=f)
     print('exit $ex\n', file=f)
 
@@ -522,16 +546,29 @@ def run_module(param):
     ml     = modules_local()
 
     if hasattr(ml, module):
+
         method = getattr(ml, module, None)
         if callable(method):
-            # Run module as method of local class
+            # Module is callable method of local class: run this method
             if param.verbose:
                 print('Running local module \'{}\''.format(module))
-            getattr(ml, module)(param)
+
+            cmd = getattr(ml, module)(param)
+
+            if param.job == 'manual':
+                print('shell command')
+                res = ml.run(cmd, param.dry_run, param.verbose)
+            elif param.job == 'qsub':
+                print('qsub job')
+                package = ''
+                qsub_script_base = create_qsub_script(module, package, None, cmd=cmd)
+                stuff.run_cmd('qsub {}.sh'.format(qsub_script_base), run=not param.dry_run, verbose=param.verbose, devnull=False)
+        else:
+            stuff.error('No callable method \'{}\' in local module class found'.format(module))
 
     else:
 
-        # Run pipeline module
+        # Module is not local-class method: Run the corresponding pipeline module
         if param.verbose:
             print('Running pipeline module \'{}\''.format(module_name))
 
