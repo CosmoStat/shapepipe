@@ -1518,9 +1518,12 @@ class FITSCatalog(BaseCatalog):
 
        if not image:
            if type(data) is dict:
-               names = data.keys()
-               it = range(len(names))
-               data = [np.array(data[i]) for i in names]
+               names = list(data.keys())
+               it = list(range(len(names)))
+               if len(names) == 1:
+                  data = np.array(data[names[0]])
+               else:
+                  data = [np.array(data[i]) for i in names]
                self._save_to_fits(data, names, it, ext_name, sex_cat_path)
 
            elif type(data) is np.recarray:

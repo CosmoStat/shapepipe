@@ -2,25 +2,59 @@
 
 """INTERPOLATION SCRIPT
 
-This module computes the PSFs from a PSFEx model at several galaxy positions,
-using Erin Sheldon & Eli Rykoff's psfex module, available on GitHub at:
-https://github.com/esheldon/psfex
+This module computes the PSFs from a PSFEx model at several galaxy positions
 
 :Author: Morgan Schmitz
 
-:Version: 1.1.0
+:Version: 1.2.0
 
 :Date: 06/02/2018
 
 """
 
 import numpy as np
-import psfex
 import scatalog as sc
 import re
 from astropy.io import fits
-import galsim.hsm as hsm
-from galsim import Image
+
+def interpsfex(dotpsfpath, pos):
+    """Use PSFEx generated model to perform spatial PSF interpolation.
+
+        Parameters
+        ----------
+        dotpsfpath : string
+            Path to .psf file (PSFEx output).
+
+        pos : np.ndaray
+            Positions where the PSF model should be evaluated.
+
+        Returns
+        -------
+        PSFs : np.ndarray
+            Each row is the PSF imagette at the corresponding asked position.
+    """
+    # read PSF model and extract basis and polynomial degree and scale position
+    PSF_model = fits.open(dotpsfpath)[1]
+    PSF_basis = np.array(PSF_model.data)[0][0]
+    try:
+        deg = PSF_model.header['POLDEG1']
+    except KeyError:
+        # constant PSF model
+        return PSF_basis[0,:,:]
+    
+    # scale coordinates
+    x_interp, x_scale = PSF_model.header['POLZERO1'], PSF_model.header['POLSCAL1']
+    y_interp, y_scale = PSF_model.header['POLZERO2'], PSF_model.header['POLSCAL2']
+    xs, ys = (pos[:,0]-x_interp)/x_scale, (pos[:,1]-y_interp)/y_scale
+    
+    # compute polynomial coefficients
+    coeffs = np.array([[x**i for i in xrange(deg+1)] for x in xs])
+    cross_coeffs = np.array([np.concatenate([[(x**j)*(y**i) for j in xrange(deg-i+1)] for i in xrange(1, deg+1)]) for x,y in zip(xs,ys)])
+    coeffs = np.hstack((coeffs,cross_coeffs))
+    
+    # compute interpolated PSF
+    PSFs = np.array([np.sum([coeff * atom for coeff,atom in zip(coeffs_posi,PSF_basis)], axis=0) for coeffs_posi in coeffs])
+    return PSFs
 
 class PSFExInterpolator(object):
     """Interpolator class.
@@ -43,6 +77,8 @@ class PSFExInterpolator(object):
         pos_params : list, optional
             Desired position parameters. If provided, there should be exactly two, and they must also be present in the
             galaxy catalog. Otherwise, they are read directly from the .psf file.
+        get_shapes : bool, optional
+            Whether to compute PSF model shapes and add them to the catalog. Shapes are computed using galsim's HSM module.
 
         """
 
@@ -70,6 +106,8 @@ class PSFExInterpolator(object):
         if get_shapes:
             self._get_psfshapes()
             self._has_shapes = True
+        else:
+            self._has_shapes = False
 
 
     def _get_position_parameters(self):
@@ -110,14 +148,14 @@ class PSFExInterpolator(object):
         if self.gal_pos is None:
             self._get_galaxy_positions()
 
-        pex = psfex.PSFEx(self._dotpsf_path)
-        self.interp_PSFs = np.array([pex.get_rec(x,y) for x,y in zip(self.gal_pos[:,0],
-                                     self.gal_pos[:,1])])
+        self.interp_PSFs = interpsfex(self._dotpsf_path, self.gal_pos)
 
     def _get_psfshapes(self):
         """ Compute shapes of PSF at galaxy positions using HSM.
 
         """
+        import galsim.hsm as hsm
+        from galsim import Image
         if self.interp_PSFs is None:
             self._interpolate()
         psf_moms = [hsm.FindAdaptiveMom(Image(psf), strict=False) for psf in self.interp_PSFs]
