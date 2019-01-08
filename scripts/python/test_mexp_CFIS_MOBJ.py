@@ -49,6 +49,9 @@ def params_default():
     p_def = stuff.param(
         input_dir = '{}/tiles'.format(base_dir),
         pattern   = 'CFIS_MOBJ',
+        key       = 'ID',
+        hdu       = 1,
+        mode      = 'count_unique',
     )
 
     return p_def
@@ -79,6 +82,12 @@ def parse_options(p_def):
          help='input directory, default=\'{}\''.format(p_def.input_dir))
     parser.add_option('-p', '--pattern', dest='pattern', type='string', default=p_def.pattern,
          help='input file pattern, default=\'{}\''.format(p_def.pattern))
+    parser.add_option('-k', '--key', dest='key', type='string', default=p_def.key,
+         help='FITS column key, default=\'{}\''.format(p_def.key))
+    parser.add_option('-m', '--mode', dest='mode', type='string', default=p_def.mode,
+         help='output mode, default=\'{}\''.format(p_def.mode))
+    parser.add_option('', '--hdu', dest='hdu', type='int', default=p_def.hdu,
+         help='FITS hdu, default=\'{}\''.format(p_def.hdu))
 
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
 
@@ -165,17 +174,28 @@ def main(argv=None):
 
     obj_list = glob.glob('{}/{}*'.format(param.input_dir, param.pattern))
 
+    n_zero_max = 3
+
     for obj in obj_list:
         f = fits.open(obj)
-        u, i = np.unique(f[1].data['ID'], return_counts=True)
-        print(obj, len(f[1].data))
-        j = 0
-        while True:
-            n = len(u[i == j])
-            print(j, n)
-            if n == 0 and j != 0:
-                break
-            j = j + 1
+        u, i = np.unique(f[param.hdu].data[param.key], return_counts=True)
+        print(obj, len(f[param.hdu].data))
+
+        if param.mode == 'count_unique':
+            j = 0
+            n_zero = 0
+            while True:
+                n = len(u[i == j])
+                print(j, n)
+                if n == 0:
+                    n_zero += 1
+                if n_zero == n_zero_max:
+                    break
+                j = j + 1
+
+        elif param.mode == 'hist':
+            for uu, ii in zip(u, i):
+                print(uu, ii)
 
             
 

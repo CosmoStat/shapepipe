@@ -35,7 +35,7 @@ types_glob = {}
 modules_glob['std'] = ['select', 'mask', 'SExtractor', 'SETools', 'PSFExRun', 'PSFExInterpolation']
 types_glob['std'] = ['tile', 'tile', 'tile', 'tile', 'tile', 'tile']
 
-modules_glob['tiles_exp'] = ['select', 'mask1', 'SExtractor1', 'find_exp', 'mask2',    'SExtractor2', 'SETools',  'PSFExRun', 'write_tileobj', 'PSFExInterpolation', 'select_tileobj']
+modules_glob['tiles_exp'] = ['select', 'mask1', 'SExtractor1', 'find_exp', 'mask2',    'SExtractor2', 'SETools',  'PSFExRun', 'write_tileobj', 'PSFExInterpolation', 'write_mexp']
 types_glob['tiles_exp']   = ['tile',   'tile',  'tile',        'exposure', 'exposure', 'exposure',    'exposure', 'exposure', 'tile',          'exposure',           'tile']
 
 # Basic paths for pipeline codes
@@ -191,8 +191,8 @@ class modules_local:
         return cmd
 
 
-    def select_tileobj(self, param):
-        """Select objects detected on  tiles using their multi-exposure data
+    def write_mexp(self, param):
+        """Write objects detected on tiles into multi-exposure catalogues
 
         Parameters
         ----------
@@ -206,7 +206,6 @@ class modules_local:
 
         # Create exposure links directory. TODO: Use types_glob[module]
         if os.path.isdir(path_data['tile']):
-            #warnings.warn('Path \'{}\' exists'.format(path_data['exposure']))
             pass
         else:
             os.mkdir(path_data['tile'])
@@ -216,7 +215,7 @@ class modules_local:
         else:
             verbose_flag = ''
 
-        cmd = '{0}cfis_select_tileobj_expPSF.py --input_dir_cat_exp {1} --input_dir_psf {1} -o {2} -P \'{3}\' -p \'galaxy_psf-\' -O \'CFIS_MOBJ\' -l {4}/log_exposure.txt{5}'.\
+        cmd = '{0}cfis_write_tileobj_as_mexp.py --input_dir_cat_exp {1} --input_dir_psf {1} -o {2} -P \'{3}\' -p \'galaxy_psf-\' -O \'CFIS_MOBJ\' -l {4}/log_exposure.txt{5}'.\
             format(path_sppy, path_data['exposure'], path_data['tile'], data_file_base['exposure-object'], path_data['base'], verbose_flag)
 
         return cmd

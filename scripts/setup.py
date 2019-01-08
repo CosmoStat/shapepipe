@@ -14,7 +14,7 @@ def readme():
 python_names = ['run_pipeline.py', 'cfis_download_images.py', 'cfis_field_select.py', 'find_mask_flag.py',
                   'scp_CFIS_cc.py', 'cfis_check_weights.py', 'cfis_get_coord_exposures.py',
                   'cfis_create_exposures.py', 'create_image_links.py', 'cfis_write_tileobj_as_exposures.py',
-                  'cfis_select_tileobj_expPSF.py', 'test_mexp_CFIS_MOBJ.py']
+                  'cfis_write_mexp_tileobj.py', 'test_mexp_CFIS_MOBJ.py', 'cfis_select_mexp.py']
 sh_names     = ['remove_hdu0.sh']
 
 scripts_py     = ['python/{}'.format(fn) for fn in python_names]

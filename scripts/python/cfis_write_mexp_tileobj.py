@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Script cfis_select_tileobj_expPSF.py
+"""Script cfis_write_mexp_tileobj.py
 
 For objects in catalogue detected on tiles, write
 new multi-exposure files according to the exposures where the object appears.
@@ -9,16 +9,6 @@ new multi-exposure files according to the exposures where the object appears.
 
 :Date: 11/12/2018
 
-Plan:
-    1. Loop over tile, get contributing exposures
-       2. Read files galaxy_psf (PSF info at galaxy positions)
-          and cfisexp-obj (galaxy information inc. ID).
-       3. Group galaxies with the same ID.
-       [3a. Maybe write to file.]
-       4. Select objects as galaxies if larger than individual (or stacked PSF)
-          with some margin.
-       5. Create new multi-epoch files
-          with new numbering, containing gal info and PSF vignet
 """
 
 
@@ -69,7 +59,7 @@ def params_default():
         cat_exp_pattern     = 'cfisexp-obj-',
         psf_pattern         = 'galaxy_psf-',
         output_dir          = 'outdir_gal_psf_mexp',
-        outcat_pattern      = 'CFIS_MOBJ',
+        outcat_pattern      = 'CFIS_MOBJ-',
     )
 
     return p_def
@@ -112,6 +102,7 @@ def parse_options(p_def):
          help='output directory, default=\'{}\''.format(p_def.output_dir))
     parser.add_option('-O', '--outcat_pattern', dest='outcat_pattern', type='string', default=p_def.outcat_pattern,
          help='output catalogue file pattern, default=\'{}\''.format(p_def.outcat_pattern))
+    parser.add_option('', '--vignet', dest='vignet', action='store_true', help='Add PSF vignets to output files')
 
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
 
@@ -171,15 +162,30 @@ def update_param(p_def, options):
 
 
  
-def collect_info_gal_psf(log, input_dir_cat_exp, cat_exp_pattern, input_dir_psf, psf_pattern, output_dir, outcat_pattern, verbose=False):
+def collect_info_gal_psf(log, input_dir_cat_exp, cat_exp_pattern, input_dir_psf, psf_pattern, output_dir, outcat_pattern,
+                         verbose=False, vignet=False):
     """Collect information about galaxies and PSF from exposures used in tiles
        given in log file.
     Parameters
     ----------
     log: list of string
         log file lines
-     verbose: bool, optional, default=False
+    input_dir_cat_exp: string
+        input directory for exposure catalogues
+    cat_exp_pattern: string
+        file name pattern for exposure catalogues
+    input_dir_psf: string
+        input directory for PSF files
+    psf_pattern: string
+        file name pattern for PSF files
+    outut_dir: string
+        output directory
+    outcat_pattern: string
+        name pattern for output files
+    verbose: bool, optional, default=False
         verbose output if True
+     vignet: bool, optional, default=False
+        if True, adds PSF vignet to output files
 
     Returns
     -------
@@ -203,12 +209,12 @@ def collect_info_gal_psf(log, input_dir_cat_exp, cat_exp_pattern, input_dir_psf,
 
             # Object exposure catalogue
             exp_cat_name = '{}/{}{:03d}-0.fits'.format(input_dir_cat_exp, cat_exp_pattern, int(exp_num))
-            hdu_no = 2
+            hdu_no       = 2
             exp_cat      = sc.FITSCatalog(exp_cat_name, hdu_no=hdu_no)
             try:
                 exp_cat.open()
             except:
-                #print('Object exposure catalogue \'{}\' not found, continuing...'.format(exp_cat_name))
+                print('Object exposure catalogue \'{}\' not found, continuing...'.format(exp_cat_name))
                 continue
 
             print('Found \'{}\''.format(exp_cat_name))
@@ -241,7 +247,9 @@ def collect_info_gal_psf(log, input_dir_cat_exp, cat_exp_pattern, input_dir_psf,
 
                 # Add PSF information to object catalogue
                 for c in psf.get_col_names():
-                    exp_cat_data_plus[c] = psf_data[c][ind_tile]
+                    if vignet or c != 'VIGNET':
+                        # Add vignet only if argument 'vignet' is True
+                        exp_cat_data_plus[c] = psf_data[c][ind_tile]
 
                 if tile_data is None:
                     tile_data = exp_cat_data_plus
@@ -257,10 +265,10 @@ def collect_info_gal_psf(log, input_dir_cat_exp, cat_exp_pattern, input_dir_psf,
         # TODO (here?) selecting objects according to size
 
         # Saving to file maybe only for testing. Note that tile_num here is string
-        out_path = '{}/{}-{}-0.fits'.format(output_dir, outcat_pattern, tile_num)
+        out_path = '{}/{}{}-0.fits'.format(output_dir, outcat_pattern, tile_num)
         print('Writing tile data to file \'{}\''.format(out_path))
         if os.path.exists(out_path):
-            os.ulink(out_path)
+            os.unlink(out_path)
         output = sc.FITSCatalog(out_path, open_mode=sc.BaseCatalog.OpenMode.ReadWrite)
         output.save_as_fits(tile_data)
 
@@ -294,7 +302,8 @@ def main(argv=None):
     # The log file lists all exposures for each tile
     log = cfis.get_log_file(param.log_path, verbose=param.verbose)
  
-    collect_info_gal_psf(log, param.input_dir_cat_exp, param.cat_exp_pattern, param.input_dir_psf, param.psf_pattern, param.output_dir, param.outcat_pattern, verbose=param.verbose)
+    collect_info_gal_psf(log, param.input_dir_cat_exp, param.cat_exp_pattern, param.input_dir_psf, param.psf_pattern, param.output_dir, param.outcat_pattern,
+                         verbose=param.verbose, vignet=param.vignet)
 
 
     ### End main program ###
