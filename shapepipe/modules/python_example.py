@@ -51,7 +51,8 @@ class Dummy(object):
         text_file.close()
 
 
-@module_runner(file_pattern=['numbers', 'letters'], file_ext='.txt')
+@module_runner(version='1.0', file_pattern=['numbers', 'letters'],
+               file_ext='.txt', depends='numpy')
 def python_example(worker_dict, filehd, config, w_log):
 
     input_file_names = worker_dict['process']

@@ -192,10 +192,11 @@ class JobHandler(object):
 
         self._distribute_smp_jobs()
         self._check_for_errors()
-        self.log.info('All processes complete.')
+        self.log.info('All processes complete')
+        self.log.info('')
 
         if self._verbose:
-            print('Finishing job handler')
+            print('All processes complete')
             print('')
 
     @staticmethod

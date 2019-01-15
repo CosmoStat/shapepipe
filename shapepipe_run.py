@@ -12,9 +12,12 @@ This script runs the shape measurement pipeline.
 from datetime import datetime
 from modopt.interface.errors import catch_error
 from modopt.interface.log import set_up_log, close_log
-from shapepipe.info import shapepipe_logo, line
+from shapepipe.info import shapepipe_logo, line, __installs__
+from shapepipe.modules.module_tools import get_module_depends
+from shapepipe.modules.module_tools import get_module_version
 from shapepipe.pipeline.args import create_arg_parser
 from shapepipe.pipeline.config import create_config_parser
+from shapepipe.pipeline.dependency_handler import DependencyHandler
 from shapepipe.pipeline.file_handler import FileHandler
 from shapepipe.pipeline.job_handler import JobHandler
 
@@ -60,6 +63,7 @@ class ShapePipe():
 
         self.log.info(shapepipe_logo())
         self.log.info(start_text)
+        self.log.info('')
 
         if self._verbose:
             print(shapepipe_logo())
@@ -87,6 +91,72 @@ class ShapePipe():
             print(end_text)
             print(line())
 
+    def _check_dependencies(self):
+        """ Check Dependencies
+
+        Check that all pipeline dependencies have been installed.
+
+        """
+
+        module_dep, module_exe = get_module_depends()
+        dependencies = __installs__ + module_dep
+
+        dh = DependencyHandler(dependencies, module_exe)
+
+        dep_text = 'Checking Python Dependencies:'
+        exe_text = 'Checking System Executables:'
+
+        self.log.info(dep_text)
+        if self._verbose:
+            print(dep_text)
+
+        for dep in dh.check_dependencies():
+
+            self.log.info(dep)
+
+            if self._verbose:
+                print(dep)
+
+        self.log.info('')
+        if self._verbose:
+            print('')
+
+        self.log.info(exe_text)
+        if self._verbose:
+            print(exe_text)
+
+        for exe in dh.check_executables():
+
+            self.log.info(exe)
+
+            if self._verbose:
+                print(exe)
+
+        self.log.info('')
+        if self._verbose:
+            print('')
+
+    def _check_module_versions(self, modules):
+
+        ver_text = 'Checking Module Versions:'
+
+        self.log.info(ver_text)
+        if self._verbose:
+            print(ver_text)
+
+        for module in modules:
+
+            module_txt = (' - {} {}'.format(
+                          module, get_module_version(module)))
+            self.log.info(module_txt)
+
+            if self._verbose:
+                print(module_txt)
+
+        self.log.info('')
+        if self._verbose:
+            print('')
+
     def run(self):
         """ Run
 
@@ -102,6 +172,12 @@ class ShapePipe():
 
         # Get a list of the modules to run
         modules = self._config.getlist('EXECUTION', 'MODULE')
+
+        # Check the pipeline dependencies
+        self._check_dependencies()
+
+        # Check the versions of these modules
+        self._check_module_versions(modules)
 
         for module in modules:
 

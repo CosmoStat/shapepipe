@@ -9,8 +9,7 @@ This module defines methods for handling the pipeline arguments.
 """
 
 import argparse as ap
-from inspect import getmembers, isfunction
-from shapepipe.modules import module_runners
+from shapepipe.modules.module_tools import get_module_list
 from shapepipe.info import shapepipe_logo, __version__
 
 
@@ -59,22 +58,6 @@ def print_message(message):
             exit()
 
     return customAction
-
-
-def get_module_list():
-    """ Get Module List
-
-    This method returns a list of the modules current available in
-    module_runners.
-
-    Returns
-    -------
-    list
-        List of module names
-
-    """
-
-    return list(zip(*getmembers(module_runners, isfunction)))[0]
 
 
 def create_arg_parser():
