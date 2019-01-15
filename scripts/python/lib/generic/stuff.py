@@ -271,7 +271,7 @@ def substitute_arr(dat, key, val_old, val_new):
     str_old = '({}\s*=\s*[\[,].*){}(.*[,\]])'.format(key, val_old)
     str_new = r'\1{}\2'.format(val_new)
 
-    #print('Replacing \'{}\' -> \'{}\''.format(str_old, str_new))
+    print('Replacing \'{}\' -> \'{}\''.format(str_old, str_new))
 
     n_tries = 0
     while True:
@@ -292,7 +292,7 @@ def substitute_arr(dat, key, val_old, val_new):
 
 
 
-def add_to_arr(dat, key, val):
+def add_to_arr(dat, key, val, empty=False):
     """Adds a value to an existing value array for a given key.
 
     Parameters
@@ -303,6 +303,8 @@ def add_to_arr(dat, key, val):
         key
     val: n/a
         value to add
+    empty: bool, optional, default=False
+        if True, original array assumed empty
 
     Returns
     -------
@@ -313,7 +315,10 @@ def add_to_arr(dat, key, val):
     n = 0
 
     str_old = '({}\s*=.*)\]'.format(key)
-    str_new = r'\1, {}]'.format(val)
+    if empty:
+        str_new = r'\1 {}]'.format(val)
+    else:
+        str_new = r'\1, {}]'.format(val)
     dat, n  = re.subn(str_old, str_new, dat)
 
     if n != 1:
@@ -594,7 +599,7 @@ def check_error_stop(ex_list, verbose=True, stop=False):
 
 
 
-def ln_s(orig, new, orig_to_check=False, verbose=False, force=False):
+def ln_s(orig, new, orig_to_check=None, verbose=False, force=False):
     """Create symbolic link.
 
     Parameters:
@@ -603,7 +608,7 @@ def ln_s(orig, new, orig_to_check=False, verbose=False, force=False):
         Name of original file
     new: string
         Name of new, to be created, link
-    orig_to_check: string, optional, default=False
+    orig_to_check: string, optional, default=None
         Original file to check for existance (can be different than orig
         is link is not created in same directory where this function is called)
     verbose: bool

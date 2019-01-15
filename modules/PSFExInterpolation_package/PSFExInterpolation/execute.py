@@ -14,6 +14,7 @@ This module contain a class for executing the package specific code.
 import os
 from time import clock
 from shutil import copy
+import time
 
 import interpolation_script as interp
 
@@ -103,15 +104,23 @@ class PackageRunner(object):
 
             self._log_output_success(self._fnames['output_filepath_exp'])
 
+        except OSError as detail:
+
+            print('A non-fatal error occured: {}'.format(str(detail)))
+            return None
+
         except Exception as detail:
 
             if self._worker.logging_enabled():
                 temp_string = ('{0} - An error occurred while generating '
-                               'catalog: {1} ({2})')
+                               'catalog: {1} ({2}: {3})')
                 self._worker.logger.log_error_p(temp_string.format(
                                                 self._worker.name,
-                                                self._job, detail))
+                                                self._job, type(detail).__name__, detail))
                 self._worker.logger.flush()
+
+        print('MKDEBUG waiting...')
+        time.sleep(1)
 
         return results_dict
 
@@ -128,6 +137,10 @@ class PackageRunner(object):
         self._fnames['input_filepath'] = [self._job.get_file_path(file_type)
                                           for file_type in self.file_types]
 
+        # MK new 07/12/2018: Temporary solution, missing input files should really be caught before this step
+        #print('MKDEBUG checking for input file names')
+        if self._fnames['input_filepath'][0] is None and self._fnames['input_filepath'][1] is None:
+            raise OSError('Both input files missing')
         input_filename = (os.path.splitext(os.path.split(
                           self._fnames['input_filepath'][0])[1])[0])
 
@@ -327,19 +340,20 @@ class PackageRunner(object):
         """
 
         if self._worker.logging_enabled():
-            if os.path.exists(file_path):
-                temp_string = ('{0} - /{1}/run-{2:03}-{3:1d} - '
-                               'Catalog {4} generated successfully')
-                self._worker.logger.log_info_p(temp_string.format(
-                                               self._worker.name,
-                                               self._job.get_branch_tree(),
-                                               self._job.img_no,
-                                               self._job.epoch,
-                                               file_path))
-            else:
-                temp_string = ('{0} - An error occurred while generating '
-                               'catalog: {1}')
-                self._worker.logger.log_error_p(temp_string.format(
-                                                self._worker.name,
-                                                self._job))
+            # MK new 07/12: Removed file test, actual output file name is inaccesible here
+            #if os.path.exists(file_path):
+                #temp_string = ('{0} - /{1}/run-{2:03}-{3:1d} - '
+                               #'Catalog {4} generated successfully')
+                #self._worker.logger.log_info_p(temp_string.format(
+                                               #self._worker.name,
+                                               #self._job.get_branch_tree(),
+                                               #self._job.img_no,
+                                               #self._job.epoch,
+                                               #file_path))
+            #else:
+                #temp_string = ('{0} - An error occurred while generating '
+                               #'catalog: {1}')
+                #self._worker.logger.log_error_p(temp_string.format(
+                                                #self._worker.name,
+                                                #self._job))
             self._worker.logger.flush()

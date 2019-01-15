@@ -22,6 +22,7 @@ import glob
 import numpy as np
 
 from astropy import units
+from astropy.io import ascii
 from astropy.coordinates import Angle
 from astropy.coordinates import SkyCoord
 
@@ -322,6 +323,35 @@ def get_tile_number(tile_name):
 
 
 
+def get_log_file(path, verbose=False):
+    """Return log file content
+
+    Parameters
+    ----------
+    path: string
+        log file path
+    verbose: bool, optional, default=False
+        verbose output if True
+
+    Returns
+    -------
+    log: list of strings
+        log file lines
+    """
+
+    if not os.path.isfile(path):
+        stuff.error('Log file \'{}\' not found'.format(path))
+
+    f_log = open(path, 'r')
+    log   = f_log.readlines()
+    if verbose:
+        print('Reading log file, {} lines found'.format(len(log)))
+    f_log.close()
+
+    return log
+
+
+
 def check_ra(ra):
     """Range check of right ascension.
 
@@ -342,6 +372,7 @@ def check_ra(ra):
         return 1
 
     return 0
+
 
 
 def check_dec(dec):
@@ -668,8 +699,16 @@ def log_line_get_entry(log_line, entry):
 
     line_s = log_line.split()
 
-    if entry == 'tile_num':
+    if entry == 'exp_name':
+        return line_s[0]
+    elif entry == 'tile_num':
         return line_s[1]
+    elif entry == 'k_img':
+        return line_s[2]
+    elif entry == 'k_weight':
+        return line_s[3]
+    elif entry == 'k_flag':
+        return line_s[4]
     elif entry == 'exp_num':
         return line_s[5]
     else:
@@ -692,5 +731,86 @@ def log_get_exp_nums_for_tiles_num(log, tile_num):
         stuff.error('Tile number \'{}\' not found in log file'.format(tile_num))
 
     return exp_num
+
+
+
+def log_get_exp_names_for_tiles_num(log, tile_num):
+    """Return all exposure file names for a given tile number
+    """
+
+    exp_names = []
+
+    for line in log:
+        my_tile_num = log_line_get_entry(line, 'tile_num')
+        if tile_num == my_tile_num:
+            exp_names.append(log_line_get_entry(line, 'exp_name'))
+
+    if len(exp_names) == 0:
+        stuff.error('Tile number \'{}\' not found in log file'.format(tile_num))
+
+    return exp_names
+
+
+
+def log_get_tile_nums(log):
+    """Return all tile numbers from log file.
+
+    Parameters
+    ----------
+    log: list of strings
+        log file content
+
+    Returns
+    -------
+    tile_nums: list of strings
+        list of tile numbers
+    """
+
+    tile_nums = []
+    for line in log:
+        my_tile_num = log_line_get_entry(line, 'tile_num')
+        tile_nums.append(my_tile_num)
+
+    return set(tile_nums)
+
+
+
+def log_get_exp_num(log, exp_name, k_img, k_weight, k_flag):
+    """Return exposure number from log file for given exposure name and HDU numbers.
+
+    Parameters
+    ----------
+    log: list of strings
+        log file content
+    exp_name: string
+        exposure name
+    k_img: int
+        image HDU number
+    k_weight: int
+        weight HDU number
+    k_flag: int
+        flag HDU number
+
+    Return
+    ------
+    exp_num: int
+        exposure number, None if not found
+    """
+
+
+    for line in log:
+        this_exp_name = log_line_get_entry(line, 'exp_name')
+        this_k_img    = log_line_get_entry(line, 'k_img')
+        this_k_weight = log_line_get_entry(line, 'k_weight')
+        this_k_flag   = log_line_get_entry(line, 'k_flag')
+
+        if this_exp_name == exp_name  and \
+            int(this_k_img) == k_img and \
+            int(this_k_weight) == k_weight and \
+            int(this_k_flag) == k_flag:
+            return log_line_get_entry(line, 'exp_num')
+
+    # No matching entry found
+    return None
 
 

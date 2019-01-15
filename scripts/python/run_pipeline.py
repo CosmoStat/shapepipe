@@ -24,6 +24,7 @@ import shutil
 import numpy as np
 
 from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
+import warnings
 
 from generic import stuff
 
@@ -34,8 +35,8 @@ types_glob = {}
 modules_glob['std'] = ['select', 'mask', 'SExtractor', 'SETools', 'PSFExRun', 'PSFExInterpolation']
 types_glob['std'] = ['tile', 'tile', 'tile', 'tile', 'tile', 'tile']
 
-modules_glob['tiles_exp'] = ['select', 'mask1', 'SExtractor1', 'find_exp', 'mask2',    'SExtractor2', 'SETools',  'PSFExRun', 'write_tileobj', 'PSFExInterpolation']
-types_glob['tiles_exp']   = ['tile',   'tile',  'tile',        'exposure', 'exposure', 'exposure',    'exposure', 'exposure', 'tile',          'exposure']
+modules_glob['tiles_exp'] = ['select', 'mask1', 'SExtractor1', 'find_exp', 'mask2',    'SExtractor2', 'SETools',  'PSFExRun', 'write_tileobj', 'PSFExInterpolation', 'write_mexp']
+types_glob['tiles_exp']   = ['tile',   'tile',  'tile',        'exposure', 'exposure', 'exposure',    'exposure', 'exposure', 'tile',          'exposure',           'tile']
 
 # Basic paths for pipeline codes
 path_sp     = '{}/ShapePipe'.format(os.environ['HOME'])
@@ -75,11 +76,15 @@ name_results = 'results'
 
 
 class modules_local:
-    """Has modules as subroutines, priority over pipeline packages with same name.
+    """Contains local modules as subroutines. Local means not a pipeline module. If a pipeline module with
+       the same name exists, the priority is for local moduels over pipeline packages.
     """
 
     def init(self):
         pass
+
+    # The following methods are local modules, and return the command string to be run as shell command
+    # or as job to be submitted
 
     def select(self, param):
         """Area selection. Create links to tiles.
@@ -112,8 +117,9 @@ class modules_local:
             stuff.error('No output file basename in options \'{}\' found'.format(param.options))
 
         # Create links to original files
-        launch_path = '{}create_image_links.py -i {}.txt -v -o {}'.format(path_sppy, name, path_data['tile'])
-        stuff.run_cmd(launch_path, run=not param.dry_run, verbose=param.verbose, devnull=False)
+        cmd = '{}create_image_links.py -i {}.txt -v -o {}'.format(path_sppy, name, path_data['tile'])
+
+        return cmd
 
 
     def find_exp(self, param):
@@ -131,7 +137,7 @@ class modules_local:
 
         # Create exposure links directory
         if os.path.isdir(path_data['exposure']):
-            warning.warn('Path \'{}\' exists'.format(path_data['exposure']))
+            warnings.warn('Path \'{}\' exists'.format(path_data['exposure']))
         else:
             os.mkdir(path_data['exposure'])
 
@@ -141,7 +147,8 @@ class modules_local:
             verbose_flag = ''
         cmd = '{}cfis_create_exposures.py -i {} -o {} -p \'CFIS-\' --exp_base_new=\'{}\' -O hdu -l {}/log_exposure.txt{}'.\
             format(path_sppy, path_data['tile'], path_data['exposure'], data_file_base['exposure'], path_data['base'], verbose_flag)
-        stuff.run_cmd(cmd, run=not param.dry_run, verbose=param.verbose, devnull=False) 
+
+        return cmd
 
 
     def write_tileobj(self, param):
@@ -159,7 +166,8 @@ class modules_local:
 
         # Create exposure links directory
         if os.path.isdir(path_data['exposure']):
-            warning.warn('Path \'{}\' exists'.format(path_data['exposure']))
+            #warnings.warn('Path \'{}\' exists'.format(path_data['exposure']))
+            pass
         else:
             os.mkdir(path_data['exposure'])
 
@@ -169,12 +177,58 @@ class modules_local:
             verbose_flag = ''
 
         # Find SExtractor FITS example catalogue to mimic.
-        files = glob.glob('{}/adopted/results'.format(path_output['exposure']))
+        #path  = '{}/adopted/results'.format(path_output['exposure'])
+        path = '{}/star_selection*'.format(path_data['exposure'])
+        print(path)
+        files = glob.glob(path)
+        if len(files) == 0:
+           stuff.error('No SExtractor example file \'{}\' found'.format(path)) 
         sex_cat_path = files[0]
 
         cmd = '{}cfis_write_tileobj_as_exposures.py -i {} -o {} -p \'CFIS-\' --cat_exp_pattern=\'{}\' -s {} -l {}/log_exposure.txt{}'.\
-            format(path_sppy, path_data['tile'], path_data['exposure'], data_file_base['exposure-object'], path_data['base'], sex_cat_path, verbose_flag)
-        stuff.run_cmd(cmd, run=not param.dry_run, verbose=param.verbose, devnull=False)
+            format(path_sppy, path_data['tile'], path_data['exposure'], data_file_base['exposure-object'], sex_cat_path, path_data['base'], verbose_flag)
+
+        return cmd
+
+
+    def write_mexp(self, param):
+        """Write objects detected on tiles into multi-exposure catalogues
+
+        Parameters
+        ----------
+        param: class param
+            parameter values
+
+        Returns
+        -------
+        None
+        """
+
+        # Create exposure links directory. TODO: Use types_glob[module]
+        if os.path.isdir(path_data['tile']):
+            pass
+        else:
+            os.mkdir(path_data['tile'])
+
+        if param.verbose:
+            verbose_flag = ' -v'
+        else:
+            verbose_flag = ''
+
+        cmd = '{0}cfis_write_tileobj_as_mexp.py --input_dir_cat_exp {1} --input_dir_psf {1} -o {2} -P \'{3}\' -p \'galaxy_psf-\' -O \'CFIS_MOBJ\' -l {4}/log_exposure.txt{5}'.\
+            format(path_sppy, path_data['exposure'], path_data['tile'], data_file_base['exposure-object'], path_data['base'], verbose_flag)
+
+        return cmd
+
+    ### end local modules methods
+
+    def run(self, cmd, dry_run, verbose):
+        """Run local module as shell command or submit a job
+        """
+
+        res = stuff.run_cmd(cmd, run=not dry_run, verbose=verbose, devnull=False)
+
+        return res
 
 
 def params_default():
@@ -194,6 +248,7 @@ def params_default():
         scheme  = 'std',
         band  = 'r',
         job   = 'manual',
+        ncpu  = -1,
     )
 
     return p_def
@@ -233,15 +288,23 @@ def parse_options(p_def):
     parser.add_option('-n', '--dry-run', dest='dry_run', action='store_true', default=False,
             help='dry run, only print commands')
     parser.add_option('', '--image_list', dest='image_list', type='string', default=None,
-            help='Image list, default: None, use all images in input data directory')
+            help='image list, default: None, use all images in input data directory')
+    parser.add_option('', '--image_range', dest='image_range', type='string', default=None,
+            help='image range: <MIN>,<MAX>, default: None, use all images in input data directory')
+    parser.add_option('-p', '--ncpu', dest='ncpu', type='int', default=p_def.ncpu,
+            help='number of CPUs. -1=automatic, Default: {}'.format(p_def.ncpu))
  
     # Run mode
     parser.add_option('-m', '--mode', dest='mode', default=None,
          help='run mode, one of [l|r|a]:\n'
           ' l: list modules of all scheme and exit\n'
           ' r: run module given by \'-M\'\n'
+          ' m: merge results of last N runs of module given by \'-M\'. Specify N with \'--n_merge\'\n'
           ' a: adopt (last) run for module given by \'-M\'\n'
-          ' s: set input file links in <data> to results from adopted run of module given by \'-M\'\n')
+          ' d: discard adopted run for module given by \'-M\'n'
+          ' s: set input file links in <data> to results from adopted run for module given by \'-M\'\n')
+    parser.add_option('', '--n_merge', dest='n_merge', type='int', default=None,
+            help='number of runs to merge, for \'-m m\' run mode')
 
     # Monitoring
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
@@ -274,14 +337,20 @@ def check_options(options):
         print('No run mode given (option \'-r\')')
         return False
 
-    if options.mode in ['r', 'a', 's', 'sa', 'as']:
+    if options.mode in ['r', 'm', 'a', 'd', 's', 'sa', 'as']:
         if not options.module:
             print('Module needs to be given, via \'-M\'')
             return False
 
-    if not options.mode in ('l', 'r', 'a', 'd', 's', 'sa', 'as'):
+    if not options.mode in ('l', 'r', 'm', 'a', 'd', 's', 'sa', 'as'):
         print('Invalid mode \'{}\''.format(options.mode))
         return False
+
+    if (options.mode == 'm' and options.n_merge is None) or (options.mode != 'm' and options.n_merge is not None):
+        print('If and only if run mode is \'merge\' (\'-m m\'), \'--n_merge\' needs to be set')
+
+    if options.image_list is not None and options.image_range is not None:
+        print('Only one option \'--image_list\' or \'--image_range\' can be given')
 
     return True
 
@@ -360,7 +429,7 @@ def list_modules():
 
 
 
-def create_qsub_script(module, package, path_config):
+def create_qsub_script(module, package, path_config, cmd=None):
     """Create bash script to be submitted with qsub.
 
     Parameters
@@ -371,6 +440,8 @@ def create_qsub_script(module, package, path_config):
         external package name
     path_config: string
         config input directory
+    cmd: string, optional, default=None
+        If not None, run this string as command instead of package launch script
 
     Returns:
     qsub_script_base: string
@@ -384,17 +455,17 @@ def create_qsub_script(module, package, path_config):
     hostname = platform.node()
 
     if 'candid' in hostname:
-        create_qsub_script_candide(qsub_script_base, module, package, path_config)
+        create_qsub_script_candide(qsub_script_base, module, package, path_config, cmd=cmd)
 
     else:
         print('Warning: Using candide qsub job script for different machine')
-        create_qsub_script_candide(qsub_script_base, module, package, path_config)
+        create_qsub_script_candide(qsub_script_base, module, package, path_config, cmd=cmd)
 
     return qsub_script_base
 
 
 
-def create_qsub_script_candide(qsub_script_base, module, package, path_dest):
+def create_qsub_script_candide(qsub_script_base, module, package, path_dest, cmd=None):
     """Create a bash script to be submitted with qsub, working on iap:candide
 
     Parameters
@@ -404,9 +475,11 @@ def create_qsub_script_candide(qsub_script_base, module, package, path_dest):
     module: string
         internal module name (only used for qsub job name)
     package: string
-        external package name
-    path_config: string
+        external package name, used to run launch script if cmd=None
+    path_dest: string
         config input directory
+    cmd: string, optional, default=None
+        If not None, run this string as command instead of package launch script
 
     Returns:
     None
@@ -428,13 +501,17 @@ def create_qsub_script_candide(qsub_script_base, module, package, path_dest):
     print('module load intelpython/2', file=f)
     print('export PATH="$PATH:/softs/astromatic/bin/:$HOME/.local/bin"', file=f)
     print('export LD_LIBRARY_PATH="$HOME/.local/lib/"', file=f)
-    print('export PYTHONPATH="$HOME/.local/lib/python2.7/site-packages:$HOME/.local/bin:/opt/intel/intelpython2/lib/python2.7/site-packages"\n', file=f)
-    print('export CONFIG_DIR={}'.format(path_dest), file=f)
+    print('export PYTHONPATH="$HOME/.local/lib/python2.7/site-packages:$HOME/.local/bin:/opt/intel/intelpython2/lib/python2.7/site-packages:/home/guinot/.local/lib/python2.7/site-packages"\n', file=f)
+    if path_dest is not None:
+        print('export CONFIG_DIR={}'.format(path_dest), file=f)
 
     print('echo -n "pwd = "', file=f)
     print('pwd\n', file=f)
 
-    print('$HOME/ShapePipe/modules/{}/config/launch.cmd'.format(package), file=f)
+    if cmd is None:
+        print('$HOME/ShapePipe/modules/{}/config/launch.cmd'.format(package), file=f)
+    else:
+        print(cmd, file=f)
     print('ex=$?', file=f)
     print('exit $ex\n', file=f)
 
@@ -468,16 +545,29 @@ def run_module(param):
     ml     = modules_local()
 
     if hasattr(ml, module):
+
         method = getattr(ml, module, None)
         if callable(method):
-            # Run module as method of local class
+            # Module is callable method of local class: run this method
             if param.verbose:
                 print('Running local module \'{}\''.format(module))
-            getattr(ml, module)(param)
+
+            cmd = getattr(ml, module)(param)
+
+            if param.job == 'manual':
+                print('shell command')
+                res = ml.run(cmd, param.dry_run, param.verbose)
+            elif param.job == 'qsub':
+                print('qsub job')
+                package = ''
+                qsub_script_base = create_qsub_script(module, package, None, cmd=cmd)
+                stuff.run_cmd('qsub {}.sh'.format(qsub_script_base), run=not param.dry_run, verbose=param.verbose, devnull=False)
+        else:
+            stuff.error('No callable method \'{}\' in local module class found'.format(module))
 
     else:
 
-        # Run pipeline module
+        # Module is not local-class method: Run the corresponding pipeline module
         if param.verbose:
             print('Running pipeline module \'{}\''.format(module_name))
 
@@ -495,7 +585,7 @@ def run_module(param):
         shutil.copytree(path_src, path_dest)
 
         # Perform substitutions in package config file
-        do_substitutions(path_dest, param.image_type, module_name, module, image_list=param.image_list)
+        do_substitutions(path_dest, param.image_type, module_name, module, image_list=param.image_list, image_range=param.image_range)
 
         # Create output dir if necessary
         stuff.mkdir_p(path_output[param.image_type], verbose=param.verbose)
@@ -551,10 +641,53 @@ def sorted_ls(path, r):
 
     return res
 
+
+def merge_run(module, image_type, n_merge, verbose=False):
+    """Merge last n_merge runs for given module (set symbolic link).
+
+    Parameters
+    ----------
+    module: string
+        module name
+    image_type: string
+        image type, one in 'tile', 'exposure'
+    n_merge: int
+        number of runs to merge
+    verbose: bool, optional, default=False
+        verbose output if True
+
+    Returns
+    -------
+    None
+    """
+
+    if verbose:
+        print('Merging last {} runs of module {}...'.format(n_merge, module))
     
+    path_runs = '{}/{}'.format(path_output[image_type], module)
+    f = sorted_ls(path_runs, 'run_.*')
+    if len(f) < n_merge:
+        stuff.error('Cannot merge {} runs, found only {}'.format(n_merge, len(f)))
+    to_merge = f[-n_merge:]
+    print(to_merge)
+
+    merge_dir_path = '{}/{}/run_merged/results'.format(path_output[image_type], module)
+    stuff.mkdir_p(merge_dir_path)
+
+    # Loop over directories to merge
+    for run in to_merge:
+        files = glob.glob('{}/{}/results/*'.format(path_runs, run))
+
+        # Loop over result files
+        for img in files:
+            source    = '../../{}/results/{}'.format(run, os.path.basename(img))
+            link_name = '{}/{}'.format(merge_dir_path, os.path.basename(img)) 
+            stuff.ln_s(source, link_name, verbose=verbose, force=False)
+
+
 
 def adopt_run(module, image_type, verbose=False):
-    """Adopt (last) run for given moduleo (set symbolic link).
+    """Adopt (last) run for given module (set symbolic link).
 
     Parameters
     ----------
@@ -648,7 +781,7 @@ def set_results(module, image_type, verbose=False):
 
 
 
-def do_substitutions(path_dest, image_type, module_base, module_name, image_list=None):
+def do_substitutions(path_dest, image_type, module_base, module_name, image_list=None, image_range=None):
     """Perform basic substitutions of values for certain keys in package config file
 
     Parameters
@@ -663,6 +796,8 @@ def do_substitutions(path_dest, image_type, module_base, module_name, image_list
         module name including potential trailing digit(s)
     image_list: string, optional, default None
         list of images
+    image_range: string, optional, default None
+        range of images
 
     Returns
     -------
@@ -680,7 +815,9 @@ def do_substitutions(path_dest, image_type, module_base, module_name, image_list
 
     # General substitutions
     if image_list:
-        dat = stuff.add_to_arr(dat, 'IMAGE_LIST', image_list)
+        dat = stuff.add_to_arr(dat, 'IMAGE_LIST', image_list, empty=True)
+    elif image_range:
+        dat = stuff.add_to_arr(dat, 'IMAGE_RANGE', image_range, empty=True)
 
     # Set keys specificly to image type (tile, exposure)
     dat = stuff.substitute(dat, 'BASE_DIR', '\$HOME/data', path_data[image_type])
@@ -693,29 +830,29 @@ def do_substitutions(path_dest, image_type, module_base, module_name, image_list
     # to read only desired input files
     #dat = stuff.substitute_arr(dat, 'FILE_PATTERNS', '\"\*\"', '"{}*"'.format(data_file_base[image_type][0]))
 
-    # Type-specific substitutions
-    if module_base in ['mask', 'SEXtractor', 'SETools']:
+    # Module-specific substitutions
+    if module_base in ['mask', 'SExtractor', 'SETools']:
         if image_type == 'exposure':
             dat = stuff.substitute_arr(dat, 'INPUT_FILENAME_FORMATS', data_file_base['tile'], data_file_base['exposure'])
-        elif image_type == 'tile':
-            pass
 
-    # Module-specific substitutions
     if module_base == 'mask':
         dat = stuff.substitute(dat, 'DEFAULT_FILENAME', 'config\.mask', 'config.mask_{}'.format(image_type))
         if image_type == 'exposure':
             dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}_flag.fits\''.format(data_file_base['exposure']))
 
     elif module_base == 'SExtractor':
-        dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}_flagout.fits\''.format(data_file_base['exposure']))
-        dat = stuff.substitute(dat, 'DETECT_THRESH', '\d+', '3', sep='')
-        dat = stuff.substitute(dat, 'DETECT_MINAREA', '(.*)0\.4(.*)0\.4(.*)', '\\1max(WDSEEMED,0.4)\\2max(WDSEEMED,0.4)\\3', sep='')
-        dat = stuff.substitute(dat, 'SEEING_FWHM', '(.*)IQFINAL(.*)', '\\1WDSEEMED\\2', sep='')
-        dat = stuff.substitute(dat, 'PHOT_APERTURES', '(.*)IQFINAL(.*)', '\\1WDSEEMED\\2', sep='')
-        dat = stuff.substitute(dat, 'BACK_TYPE', 'MANUAL', 'AUTO', sep='')
-        dat = stuff.substitute(dat, 'SATUR_LEVEL', '@SATURATE', 'SATLEVEL', sep='')
+        if image_type == 'exposure':
+            #dat = stuff.add_to_arr(dat, 'INPUT_FILENAME_FORMATS', '\'{}_flagout.fits\''.format(data_file_base['exposure']))
+            dat = stuff.substitute(dat, 'DETECT_THRESH', '\d+', '3', sep='')
+            dat = stuff.substitute(dat, 'DETECT_MINAREA', '(.*)0\.4(.*)0\.4(.*)', '\\1max(WDSEEMED,0.4)\\2max(WDSEEMED,0.4)\\3', sep='')
+            dat = stuff.substitute(dat, 'SEEING_FWHM', '(.*)IQFINAL(.*)', '\\1WDSEEMED\\2', sep='')
+            dat = stuff.substitute(dat, 'PHOT_APERTURES', '(.*)IQFINAL(.*)', '\\1WDSEEMED\\2', sep='')
+            dat = stuff.substitute(dat, 'BACK_TYPE', 'MANUAL', 'AUTO', sep='')
+            dat = stuff.substitute(dat, 'SATUR_LEVEL', '@SATURATE', 'SATLEVEL', sep='')
         # CHECKIMAGE_TYPE    BACKGROUND
         # CHECKIMAGE_NAME    back.fits
+        else:
+            print('*** tile ***')
 
     elif module_base == 'SETools':
         if image_type == 'exposure':
@@ -762,6 +899,9 @@ def main(argv=None):
 
     if param.mode == 'r':
         run_module(param)
+
+    if param.mode == 'm':
+        merge_run(param.smodule_name, param.image_type, param.n_merge, verbose=param.verbose)
 
     if re.search('a', param.mode):
         adopt_run(param.smodule_name, param.image_type, verbose=param.verbose)
