@@ -40,13 +40,21 @@ Contents
 Dependencies
 ============
 
-Required Packages
------------------
-TBD
+Core Pipeline Packages
+----------------------
+- joblib>=0.13.1
+- modopt>=1.2.0
+- numpy>=1.16.0
 
-Optional Packages
------------------
-TBD
+Module Packages
+---------------
+- astropy>=3.1.1
+- GalSim
+- matplotlib>=3.0.2
+- ngmix
+- psfex
+- pybind11>=2.2
+- sf-tools>=2.0.0
 
 Installation
 ============
@@ -56,6 +64,26 @@ The ShapePipe package can be installed by running:
 .. code-block:: bash
 
   $ python setup.py install
+
+Conda
+-----
+
+A ShapePipe Conda environment can be built and activated by running:
+
+.. code-block:: bash
+
+  $ conda create -f environment.yml
+  $ source activate shapepipe
+
+Pip
+---
+
+The ShapePipe dependencies can also be installed using ``pip`` as follows:
+
+.. code-block:: bash
+
+  $ pip install -r requirements.txt
+  $ pip install -r requirements_git.txt
 
 Execution
 =========
