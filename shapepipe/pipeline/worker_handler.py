@@ -166,9 +166,17 @@ class WorkerHandler(object):
 
         moduler_runner = getattr(module_runners, self.worker_dict['module'])
 
-        self._stdout, self._stderr = moduler_runner(self.worker_dict,
-                                                    self._filehd, self._config,
-                                                    self.w_log)
+        input_file_list = self.worker_dict['process']
+
+        if isinstance(input_file_list, str):
+            input_file_list = [input_file_list]
+
+        output_dir = self._filehd.output_dir
+        job_name = self.worker_dict['job_name']
+
+        self._stdout, self._stderr = moduler_runner(input_file_list,
+                                                    output_dir, job_name,
+                                                    self._config, self.w_log)
 
     def _log_stdout(self):
         """ Log STDOUT

@@ -90,7 +90,7 @@ class FileHandler(object):
     def __init__(self, run_name, config):
 
         self._run_name = run_name
-        self._input_str = config.getexpanded('FILE', 'INPUT_DIR')
+        self._input_list = config.getlist('FILE', 'INPUT_DIR')
         self._output_dir = config.getexpanded('FILE', 'OUTPUT_DIR')
         self._log_name = config.get('FILE', 'LOG_NAME')
         self._run_log_file = self.format(self._output_dir,
@@ -209,18 +209,23 @@ class FileHandler(object):
 
         """
 
-        if os.path.isdir(self._input_str):
-            input_dir = self._input_str
+        input_dir = []
 
-        elif 'last' in self._input_str.lower():
-            module = self._input_str.lower().split(',')[1]
-            input_dir = self.format(self.format(self._run_log.get_last(),
-                                    module), 'output')
+        for dir in self._input_list:
 
-        else:
-            string, module = self._input_str.lower().split(',')
-            input_dir = self.format(self.format(self._run_log.get_run(string),
-                                    module), 'output')
+            if os.path.isdir(dir):
+                input_dir.append(dir)
+
+            elif 'last' in dir.lower():
+                module = dir.lower().split(':')[1]
+                input_dir.append(self.format(self.format(
+                                 self._run_log.get_last(), module), 'output'))
+
+            else:
+                string, module = dir.lower().split(':')
+                input_dir.append(self.format(self.format(
+                                 self._run_log.get_run(string), module),
+                                 'output'))
 
         self._input_dir = input_dir
 
@@ -335,8 +340,59 @@ class FileHandler(object):
 
         else:
             self._module_dict[module]['input_dir'] = \
-                (self._module_dict[self._module_dict[module]
-                 ['input_module']]['output_dir'])
+                ([self._module_dict[input_mod]['output_dir'] for input_mod in
+                  self._module_dict[module]['input_module']])
+
+    @staticmethod
+    def _one_pattern_per_dir(dir_list, pattern_list, ext_list):
+        """ One Pattern Per Directory
+
+        Find module files assuming one file pattern per input directory.
+
+        Parameters
+        ----------
+        dir_list : list
+            List of input directories
+        pattern_list : list
+            List of file patterns
+        ext_list : list
+            List of file extensions
+
+        Returns
+        -------
+        list
+            List of input files
+
+        """
+
+        return [find_files(dir, pattern, ext) for dir, pattern, ext in
+                zip(dir_list, pattern_list, ext_list)]
+
+    @staticmethod
+    def _all_pattern_per_dir(dir_list, pattern_list, ext_list):
+        """ All Patterns Per Directory
+
+        Find module files assuming all file patterns are applied to all input
+        directories.
+
+        Parameters
+        ----------
+        dir_list : list
+            List of input directories
+        pattern_list : list
+            List of file patterns
+        ext_list : list
+            List of file extensions
+
+        Returns
+        -------
+        list
+            List of input files
+
+        """
+
+        return [find_files(dir, pattern, ext) for pattern, ext in
+                zip(pattern_list, ext_list) for dir in dir_list]
 
     def _get_module_input_files(self, module):
         """ Get Module Input Files
@@ -350,10 +406,16 @@ class FileHandler(object):
 
         """
 
-        file_list = [find_files(self._module_dict[module]['input_dir'],
-                     pattern, ext) for pattern, ext in
-                     zip(self._module_dict[module]['file_pattern'],
-                     self._module_dict[module]['file_ext'])]
+        dir_list = self._module_dict[module]['input_dir']
+        pattern_list = self._module_dict[module]['file_pattern']
+        ext_list = self._module_dict[module]['file_ext']
+
+        if len(dir_list) == len(pattern_list):
+            file_list = self._one_pattern_per_dir(dir_list, pattern_list,
+                                                  ext_list)
+        else:
+            file_list = self._all_pattern_per_dir(dir_list, pattern_list,
+                                                  ext_list)
 
         if len(file_list) == 1:
             file_list = file_list[0]

@@ -14,11 +14,10 @@ from shapepipe.modules.module_decorator import module_runner
 
 @module_runner(input_module='python_example', version='1.0',
                file_pattern='process', file_ext='.cat', executes='head')
-def execute_example(worker_dict, filehd, config, w_log):
+def execute_example(input_file_list, output_dir, job_name, *args):
 
-    command_line = 'head {}'.format(worker_dict['process'])
-    output_file_name = (filehd.format(filehd.output_dir,
-                        '{}_head_out.txt'.format(worker_dict['job_name'])))
+    command_line = 'head {}'.format(input_file_list[0])
+    output_file_name = '{}/{}_head_out.txt'.format(output_dir, job_name)
 
     stdout, stderr = execute(command_line)
 

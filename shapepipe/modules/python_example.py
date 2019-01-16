@@ -53,16 +53,13 @@ class Dummy(object):
 
 @module_runner(version='1.0', file_pattern=['numbers', 'letters'],
                file_ext='.txt', depends='numpy')
-def python_example(worker_dict, filehd, config, w_log):
+def python_example(input_file_list, output_dir, job_name, config, w_log):
 
-    input_file_names = worker_dict['process']
-    output_dir = filehd.output_dir
-    output_file_name = ('{}/{}.cat'.format(output_dir,
-                        worker_dict['job_name']))
+    output_file_name = ('{}/{}.cat'.format(output_dir, job_name))
     message = config.get('PYTHON_EXAMPLE', 'MESSAGE')
 
     inst = Dummy()
-    inst.read_files(*input_file_names)
+    inst.read_files(*input_file_list)
     inst.write_file(output_file_name, message)
 
     return inst.content, None

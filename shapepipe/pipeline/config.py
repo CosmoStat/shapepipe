@@ -63,7 +63,8 @@ class CustomParser(ConfigParser):
 
         """
 
-        return [opt for opt in self.get(section, option).split(delimiter)]
+        return [opt for opt in self.getexpanded(section,
+                option).split(delimiter)]
 
 
 class SetUpParser(object):

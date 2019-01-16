@@ -24,8 +24,10 @@ def module_runner(input_module=None, version='0.0', file_pattern='',
 
     """
 
-    if not isinstance(input_module, (str, type(None))):
-        raise TypeError('Module name must be a string.')
+    if isinstance(input_module, str):
+        input_module = [input_module]
+    elif not isinstance(input_module, (list, type(None))):
+        raise TypeError('Input module must be a list or a string.')
 
     if not isinstance(version, str):
         raise TypeError('Module version must be a string.')
