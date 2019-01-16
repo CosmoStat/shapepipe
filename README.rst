@@ -78,7 +78,7 @@ A ShapePipe Conda environment can be built and activated by running:
 .. code-block:: bash
 
   $ conda env create -f environment.yml
-   $ source activate shapepipe
+  $ source activate shapepipe
 
 Pip
 ---
@@ -88,7 +88,7 @@ The ShapePipe dependencies can also be installed using ``pip`` as follows:
 .. code-block:: bash
 
   $ pip install -r requirements.txt
-   $ pip install -r requirements_git.txt
+  $ pip install -r requirements_git.txt
 
 Execution
 =========
@@ -184,11 +184,11 @@ with the ``module_runner`` wrapper that outputs the module ``stdout`` and
 .. code-block:: python
 
   @module_runner()
-   def example_module(*args)
+  def example_module(*args)
 
-     # DO SOMETHING
+    # DO SOMETHING
 
-     return stdout, stderr
+    return stdout, stderr
 
 The module runner decorator takes the following keyword arguments:
 
@@ -216,6 +216,7 @@ The arguments passed to the module runner are the following:
    .. code-block:: python
 
      parameter_value = config.get('MODULE_NAME', 'PARAMETER')
+
 5. ``w_log`` : The worker log instance, which can be used to record additional
    messages in the module output logs using the following structure:
 
@@ -244,17 +245,17 @@ return ``None, None``.
 .. code-block:: python
 
   @module_runner(version='1.0', file_pattern=['numbers', 'letters'],
-                  file_ext='.txt', depends='numpy')
-   def python_example(input_file_list, output_dir, job_name, config, w_log):
+                file_ext='.txt', depends='numpy')
+  def python_example(input_file_list, output_dir, job_name, config, w_log):
 
-       output_file_name = ('{}/{}.cat'.format(output_dir, job_name))
-       message = config.get('PYTHON_EXAMPLE', 'MESSAGE')
+      output_file_name = ('{}/{}.cat'.format(output_dir, job_name))
+      message = config.get('PYTHON_EXAMPLE', 'MESSAGE')
 
-       inst = Dummy()
-       inst.read_files(*input_file_list)
-       inst.write_file(output_file_name, message)
+      inst = Dummy()
+      inst.read_files(*input_file_list)
+      inst.write_file(output_file_name, message)
 
-       return inst.content, None
+      return inst.content, None
 
 **Executable Example**
 
@@ -265,15 +266,15 @@ the file pattern ``'process'`` with file extension ``'.cat'``.
 .. code-block:: python
 
   @module_runner(input_module='python_example', version='1.0',
-                  file_pattern='process', file_ext='.cat', executes='head')
-   def execute_example(input_file_list, output_dir, job_name, *args):
+                file_pattern='process', file_ext='.cat', executes='head')
+  def execute_example(input_file_list, output_dir, job_name, *args):
 
-       command_line = 'head {}'.format(input_file_list[0])
-       output_file_name = '{}/{}_head_out.txt'.format(output_dir, job_name)
+      command_line = 'head {}'.format(input_file_list[0])
+      output_file_name = '{}/{}_head_out.txt'.format(output_dir, job_name)
 
-       stdout, stderr = execute(command_line)
+      stdout, stderr = execute(command_line)
 
-       text_file = open(output_file_name, 'w')
-       text_file.write(stdout)
+      text_file = open(output_file_name, 'w')
+      text_file.write(stdout)
 
-       return stdout, stderr
+      return stdout, stderr
