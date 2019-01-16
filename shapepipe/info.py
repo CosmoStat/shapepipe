@@ -16,7 +16,7 @@ __author__ = 'Samuel Farrens'
 __email__ = 'samuel.farrens@cea.fr'
 __about__ = ('ShapePipe is a shape measurement pipeline developed with the'
              'CosmoStat lab at CEA Paris-Saclay.')
-__setups__ = []
+__setups__ = ['pytest-runner']
 __installs__ = ['joblib>=0.13',
                 'modopt>=1.2',
                 'numpy>=1.14']
