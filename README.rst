@@ -157,7 +157,7 @@ The configuration parameters for the pipeline are:
 
 1. ``BATCH_SIZE`` : (``int``) Number of jobs to run in parallel. Default value
    is ``1``.
-1. ``TIMEOUT`` : (``int``) Timeout limit in seconds for a given job.
+2. ``TIMEOUT`` : (``int``) Timeout limit in seconds for a given job.
 
 **Module Options**
 
