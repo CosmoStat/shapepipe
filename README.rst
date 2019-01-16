@@ -3,8 +3,8 @@ ShapePipe
 
 |gitlab-ci| |python35| |python36|
 
-.. |gitlab-ci| image:: https://drf-gitlab.cea.fr/cosmostat/ShapePipe/badges/shapepipe2_dev/pipeline.svg
-  :target: https://drf-gitlab.cea.fr/cosmostat/ShapePipe/tree/shapepipe2_dev
+.. |gitlab-ci| image:: https://drf-gitlab.cea.fr/cosmostat/ShapePipe/badges/master/pipeline.svg
+  :target: https://drf-gitlab.cea.fr/cosmostat/ShapePipe/tree/master
 
 .. |python35| image:: https://img.shields.io/badge/python-3.5-yellow.svg
   :target: https://www.python.org/
