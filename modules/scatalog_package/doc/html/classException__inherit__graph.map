@@ -1,5 +1,0 @@
-<map id="Exception" name="Exception">
-<area shape="rect" id="node2" href="$classscatalog_1_1scatalog_1_1BaseCatalog_1_1CatalogFileNotFound.html" title="Exception thrown when a catalog file is not found on disk. " alt="" coords="134,5,341,46"/>
-<area shape="rect" id="node3" href="$classscatalog_1_1scatalog_1_1BaseCatalog_1_1CatalogNotOpen.html" title="scatalog.scatalog.BaseCatalog.\lCatalogNotOpen" alt="" coords="134,70,341,111"/>
-<area shape="rect" id="node4" href="$classscatalog_1_1scatalog_1_1BaseCatalog_1_1ColumnNotFound.html" title="Exception thrown when a named catalog column could not be found. " alt="" coords="134,135,341,177"/>
-</map>

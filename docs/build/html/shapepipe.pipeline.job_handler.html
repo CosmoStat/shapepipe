@@ -1,0 +1,410 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>1.1.2.1.6. shapepipe.pipeline.job_handler module &mdash; ShapePipe  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="1.1.2.1.7. shapepipe.pipeline.timeout module" href="shapepipe.pipeline.timeout.html" />
+    <link rel="prev" title="1.1.2.1.5. shapepipe.pipeline.file_handler module" href="shapepipe.pipeline.file_handler.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> ShapePipe
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="shapepipe.html">1. shapepipe package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="shapepipe.html#subpackages">1.1. Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.html">1.1.1. shapepipe.modules package</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="shapepipe.pipeline.html">1.1.2. shapepipe.pipeline package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.html#submodules">1.2. Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.info.html">1.2.1. shapepipe.info module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.html#module-shapepipe">1.3. Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ShapePipe</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="shapepipe.html">1. shapepipe package</a> &raquo;</li>
+        
+          <li><a href="shapepipe.pipeline.html">1.1.2. shapepipe.pipeline package</a> &raquo;</li>
+        
+      <li>1.1.2.1.6. shapepipe.pipeline.job_handler module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/shapepipe.pipeline.job_handler.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-shapepipe.pipeline.job_handler">
+<span id="shapepipe-pipeline-job-handler-module"></span><h1>1.1.2.1.6. shapepipe.pipeline.job_handler module<a class="headerlink" href="#module-shapepipe.pipeline.job_handler" title="Permalink to this headline">¶</a></h1>
+<p>JOB HANDLER</p>
+<p>This module defines a class for handling pipeline jobs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Author:</th><td class="field-body">Samuel Farrens &lt;<a class="reference external" href="mailto:samuel&#46;farrens&#37;&#52;&#48;cea&#46;fr">samuel<span>&#46;</span>farrens<span>&#64;</span>cea<span>&#46;</span>fr</a>&gt;</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="shapepipe.pipeline.job_handler.JobHandler">
+<em class="property">class </em><code class="descclassname">shapepipe.pipeline.job_handler.</code><code class="descname">JobHandler</code><span class="sig-paren">(</span><em>module</em>, <em>filehd</em>, <em>config</em>, <em>log</em>, <em>batch_size=1</em>, <em>timeout=None</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/job_handler.html#JobHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.job_handler.JobHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Job Handler</p>
+<p>This class handles the submition of jobs to workers distributed among a
+specified number of CPUs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Module name</li>
+<li><strong>filehd</strong> (<a class="reference internal" href="shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler" title="shapepipe.pipeline.file_handler.FileHandler"><em>FileHandler</em></a>) – File handler instance</li>
+<li><strong>config</strong> (<a class="reference internal" href="shapepipe.pipeline.config.html#shapepipe.pipeline.config.CustomParser" title="shapepipe.pipeline.config.CustomParser"><em>CustomParser</em></a>) – Configuaration parser instance</li>
+<li><strong>log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.7)"><em>logging.Logger</em></a>) – Logging instance</li>
+<li><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em>) – Number of jobs to submitted simultaneously, the default is 1</li>
+<li><strong>timeout</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em>) – Timeout limit for a given job in seconds, the default is None</li>
+<li><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a><em>, </em><em>optional</em>) – Verbose setting, default is True</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="shapepipe.pipeline.job_handler.JobHandler.config">
+<code class="descname">config</code><a class="headerlink" href="#shapepipe.pipeline.job_handler.JobHandler.config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Config</p>
+<p>This method defines the configuation parser instance</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">TypeError</span></code></a> – For incorrect input type</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="shapepipe.pipeline.job_handler.JobHandler.log">
+<code class="descname">log</code><a class="headerlink" href="#shapepipe.pipeline.job_handler.JobHandler.log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log</p>
+<p>This method defines the logging instance</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">TypeError</span></code></a> – For incorrect input type</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="shapepipe.pipeline.job_handler.JobHandler.batch_size">
+<code class="descname">batch_size</code><a class="headerlink" href="#shapepipe.pipeline.job_handler.JobHandler.batch_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Batch Size</p>
+<p>This method defines the job batch size.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code></a> – For invalid batch size value</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="shapepipe.pipeline.job_handler.JobHandler.timeout">
+<code class="descname">timeout</code><a class="headerlink" href="#shapepipe.pipeline.job_handler.JobHandler.timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Timeout Limit</p>
+<p>This method defines the timeout limit for all jobs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">TypeError</span></code></a> – For incorrect input type</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code></a> – For invalid timeout limit value</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.job_handler.JobHandler.submit_jobs">
+<code class="descname">submit_jobs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/job_handler.html#JobHandler.submit_jobs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.job_handler.JobHandler.submit_jobs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submit Jobs</p>
+<p>This method submits the jobs and checks the results.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="shapepipe.pipeline.job_handler.JobHandler.hms2sec">
+<em class="property">static </em><code class="descname">hms2sec</code><span class="sig-paren">(</span><em>time_str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/job_handler.html#JobHandler.hms2sec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.job_handler.JobHandler.hms2sec" title="Permalink to this definition">¶</a></dt>
+<dd><p>HMS to Seconds</p>
+<p>Convert a string from hours, minutes and seconds to seconds.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>time_str</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Time string</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Time in seconds</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)">int</a></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>Time strings should take the form ‘HH:MM:SS’.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="shapepipe.pipeline.job_handler.JobHandler._set_job_name">
+<em class="property">static </em><code class="descname">_set_job_name</code><span class="sig-paren">(</span><em>num</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/job_handler.html#JobHandler._set_job_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.job_handler.JobHandler._set_job_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set Job Name</p>
+<p>This method creates a job name for a given process number.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>num</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Process number</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Job name</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)">str</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.job_handler.JobHandler._log_job_parameters">
+<code class="descname">_log_job_parameters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/job_handler.html#JobHandler._log_job_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.job_handler.JobHandler._log_job_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log Job Parameters</p>
+<p>This method logs the class instance parameters.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.job_handler.JobHandler._distribute_smp_jobs">
+<code class="descname">_distribute_smp_jobs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/job_handler.html#JobHandler._distribute_smp_jobs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.job_handler.JobHandler._distribute_smp_jobs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Distribute SMP Jobs</p>
+<p>This method distributes the jobs to the workers using SMP.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.job_handler.JobHandler._check_for_errors">
+<code class="descname">_check_for_errors</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/job_handler.html#JobHandler._check_for_errors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.job_handler.JobHandler._check_for_errors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check for Errors</p>
+<p>This method checks the worker dictionaries for errors and exceptions.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.job_handler.JobHandler._check_exception_status">
+<code class="descname">_check_exception_status</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/job_handler.html#JobHandler._check_exception_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.job_handler.JobHandler._check_exception_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check Exception Status</p>
+<p>This method checks the worker dictionaries for exceptions raised by
+Python and logs the instances.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.job_handler.JobHandler._check_stderr_status">
+<code class="descname">_check_stderr_status</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/job_handler.html#JobHandler._check_stderr_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.job_handler.JobHandler._check_stderr_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check STDERR Status</p>
+<p>This method checks the worker dictionaries for errors raised by
+stderr and logs the instances.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="shapepipe.pipeline.timeout.html" class="btn btn-neutral float-right" title="1.1.2.1.7. shapepipe.pipeline.timeout module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="shapepipe.pipeline.file_handler.html" class="btn btn-neutral" title="1.1.2.1.5. shapepipe.pipeline.file_handler module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Samuel Farrens
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,5 +1,0 @@
-<map id="models.scsersic.FittingModel" name="models.scsersic.FittingModel">
-<area shape="rect" id="node2" href="$classmultifit_1_1multifit_1_1BaseFittingModel.html" title="Represents a parametric model to which the data must be fitted. " alt="" coords="14,171,188,213"/>
-<area shape="rect" id="node3" href="$classmultifit_1_1multifit_1_1FittingElement.html" title="A fitting model or algorithm/method. " alt="" coords="29,81,173,122"/>
-<area shape="rect" id="node4" href="$classobject.html" title="object" alt="" coords="73,5,129,32"/>
-</map>

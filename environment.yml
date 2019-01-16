@@ -1,0 +1,15 @@
+name: shapepipe
+channels:
+  - conda-forge
+dependencies:
+  - python=3.6
+  - astropy>=3.0
+  - galsim>=2.1.4
+  - joblib>=0.13
+  - matplotlib>=3.0.2
+  - pip:
+    - modopt>=1.2
+    - numba>=0.4.2
+    - sf_tools>=2.0
+    - git+https://github.com/esheldon/ngmix
+    - git+https://github.com/esheldon/psfex

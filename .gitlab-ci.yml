@@ -1,0 +1,7 @@
+# Install dependencies
+before_script:
+  - pip install coverage nose pytest pytest-cov
+
+# Install package
+Install:
+  script: python setup.py test

@@ -1,0 +1,450 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>1.1.2.1.5. shapepipe.pipeline.file_handler module &mdash; ShapePipe  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="1.1.2.1.6. shapepipe.pipeline.job_handler module" href="shapepipe.pipeline.job_handler.html" />
+    <link rel="prev" title="1.1.2.1.4. shapepipe.pipeline.fileIO module" href="shapepipe.pipeline.fileIO.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> ShapePipe
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="shapepipe.html">1. shapepipe package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="shapepipe.html#subpackages">1.1. Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.html">1.1.1. shapepipe.modules package</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="shapepipe.pipeline.html">1.1.2. shapepipe.pipeline package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.html#submodules">1.2. Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.info.html">1.2.1. shapepipe.info module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.html#module-shapepipe">1.3. Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ShapePipe</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="shapepipe.html">1. shapepipe package</a> &raquo;</li>
+        
+          <li><a href="shapepipe.pipeline.html">1.1.2. shapepipe.pipeline package</a> &raquo;</li>
+        
+      <li>1.1.2.1.5. shapepipe.pipeline.file_handler module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/shapepipe.pipeline.file_handler.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-shapepipe.pipeline.file_handler">
+<span id="shapepipe-pipeline-file-handler-module"></span><h1>1.1.2.1.5. shapepipe.pipeline.file_handler module<a class="headerlink" href="#module-shapepipe.pipeline.file_handler" title="Permalink to this headline">¶</a></h1>
+<p>FILE HANDLER</p>
+<p>This module defines a class for handling pipeline files.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Author:</th><td class="field-body">Samuel Farrens &lt;<a class="reference external" href="mailto:samuel&#46;farrens&#37;&#52;&#48;cea&#46;fr">samuel<span>&#46;</span>farrens<span>&#64;</span>cea<span>&#46;</span>fr</a>&gt;</td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="shapepipe.pipeline.file_handler.check_dir">
+<code class="descclassname">shapepipe.pipeline.file_handler.</code><code class="descname">check_dir</code><span class="sig-paren">(</span><em>dir_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#check_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.check_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check Directory</p>
+<p>Raise error if directory exists.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dir_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Directory name</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#OSError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OSError</span></code></a> – If directory already exists</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="shapepipe.pipeline.file_handler.FileHandler">
+<em class="property">class </em><code class="descclassname">shapepipe.pipeline.file_handler.</code><code class="descname">FileHandler</code><span class="sig-paren">(</span><em>run_name</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>File Handler</p>
+<p>This class manages the files used and produced during a pipeline run.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>run_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Run name</li>
+<li><strong>config</strong> (<a class="reference internal" href="shapepipe.pipeline.config.html#shapepipe.pipeline.config.CustomParser" title="shapepipe.pipeline.config.CustomParser"><em>CustomParser</em></a>) – Configuaration parser instance</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="shapepipe.pipeline.file_handler.FileHandler.run_dir">
+<code class="descname">run_dir</code><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler.run_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run Directory</p>
+<p>This method defines the run directory</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="shapepipe.pipeline.file_handler.FileHandler.mkdir">
+<em class="property">static </em><code class="descname">mkdir</code><span class="sig-paren">(</span><em>dir_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler.mkdir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler.mkdir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make Directory</p>
+<p>This method creates a directory at the specified path.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dir_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Directory name with full path</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="shapepipe.pipeline.file_handler.FileHandler.format">
+<em class="property">static </em><code class="descname">format</code><span class="sig-paren">(</span><em>path</em>, <em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler.format"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler.format" title="Permalink to this definition">¶</a></dt>
+<dd><p>Format Path Name</p>
+<p>This method appends the file/directory name to the input path.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Full path</li>
+<li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – File or directory name</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Formated path</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)">str</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.file_handler.FileHandler.create_global_run_dirs">
+<code class="descname">create_global_run_dirs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler.create_global_run_dirs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler.create_global_run_dirs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create Global Run Directories</p>
+<p>This method creates the pipeline output directories for a given run.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.file_handler.FileHandler._get_module_properties">
+<code class="descname">_get_module_properties</code><span class="sig-paren">(</span><em>module</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler._get_module_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler._get_module_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Module Properties</p>
+<p>Get module properties defined in module runner wrapper.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Module name</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.file_handler.FileHandler._create_module_run_dirs">
+<code class="descname">_create_module_run_dirs</code><span class="sig-paren">(</span><em>module</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler._create_module_run_dirs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler._create_module_run_dirs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create Module Run Directories</p>
+<p>This method creates the module output directories for a given run.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Module name</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.file_handler.FileHandler._set_module_input_dir">
+<code class="descname">_set_module_input_dir</code><span class="sig-paren">(</span><em>module</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler._set_module_input_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler._set_module_input_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set Module Input Directory</p>
+<p>Specify the module input directory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Module name</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.file_handler.FileHandler._get_module_input_files">
+<code class="descname">_get_module_input_files</code><span class="sig-paren">(</span><em>module</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler._get_module_input_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler._get_module_input_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Module Input Files</p>
+<p>Retrieve the module input files names from the input directory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Module name</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.file_handler.FileHandler._get_files_by_ext">
+<code class="descname">_get_files_by_ext</code><span class="sig-paren">(</span><em>path</em>, <em>ext</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler._get_files_by_ext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler._get_files_by_ext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Files by Extension</p>
+<p>This method retrieves file names from a given path with a given file
+extension.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Full path to files</li>
+<li><strong>ext</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – File extension</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">List of file names</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)">list</a></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">RuntimeError</span></code></a> – For empty file list</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.file_handler.FileHandler.set_up_module">
+<code class="descname">set_up_module</code><span class="sig-paren">(</span><em>module</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler.set_up_module"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler.set_up_module" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set Up Module</p>
+<p>Set up module parameters for file handler.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Module name</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.file_handler.FileHandler.get_worker_log_name">
+<code class="descname">get_worker_log_name</code><span class="sig-paren">(</span><em>module</em>, <em>job_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler.get_worker_log_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler.get_worker_log_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Worker Log Name</p>
+<p>This method generates a worker log name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>job_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Job name</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Worker log file name</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)">str</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="shapepipe.pipeline.job_handler.html" class="btn btn-neutral float-right" title="1.1.2.1.6. shapepipe.pipeline.job_handler module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="shapepipe.pipeline.fileIO.html" class="btn btn-neutral" title="1.1.2.1.4. shapepipe.pipeline.fileIO module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Samuel Farrens
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

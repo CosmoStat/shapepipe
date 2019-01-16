@@ -1,5 +1,0 @@
-<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classException.html" title="Exception" alt="" coords="5,45,85,72"/>
-<area shape="rect" id="node2" href="$classmpfg_1_1mp__args_1_1Args_1_1ParsingError.html" title="Exception thrown in case of error detected while parsing the command&#45;line. " alt="" coords="140,5,324,46"/>
-<area shape="rect" id="node3" href="$classmpfg_1_1mp__args_1_1Args_1_1ValidationError.html" title="Exception thrown in case the validating of the arguments and options failed. " alt="" coords="133,70,331,111"/>
-</map>
