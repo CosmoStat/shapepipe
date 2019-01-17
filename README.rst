@@ -152,6 +152,12 @@ The configuration parameters for the pipeline are:
    identify input files for the first module.
 6. ``FILE_EXT`` : (``str`` or ``list``) A list of file extensions to identify
    input files for the first module.
+7. ``NUMBERING_SCHEME`` : (``str``) A string indicating the expected numbering
+   system for the input files (*e.g.* ``000-0``). Single digits indicate
+   integer values without limit, multiples of digits indicate integers with a
+   maximum value. Standard characters can be placed around digits (*e.g.*
+   ``.``, ``-``, ``:``, *etc.*). Optionally a regular expression can also be
+   passed if it is preceded by ``RE:`` (*e.g.* ``RE:-\d{9}``).
 
 **Job Options**
 
@@ -208,7 +214,8 @@ The arguments passed to the module runner are the following:
 
 1. ``input_file_list`` : The list of input files.
 2. ``output_dir`` : The directory for the module output files.
-3. ``job_name`` : The name given by the pipeline to the current job.
+3. ``file_number_string`` : The number pattern corresponding to the current
+   process.
 4. ``config`` : The config parser instance, which provides access to the
    configuration file parameter values. Module specific parameters can be passed
    using the following structure:
@@ -222,7 +229,7 @@ The arguments passed to the module runner are the following:
 
    .. code-block:: python
 
-      self.w_log.info('MESSAGE')
+      w_log.info('MESSAGE')
 
 Examples
 --------
