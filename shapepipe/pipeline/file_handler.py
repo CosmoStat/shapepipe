@@ -83,14 +83,17 @@ class FileHandler(object):
     ----------
     run_name : str
         Run name
+    module_list : list
+        List of modules to be run
     config : CustomParser
         Configuaration parser instance
 
     """
 
-    def __init__(self, run_name, config):
+    def __init__(self, run_name, modules, config):
 
         self._run_name = run_name
+        self._module_list = modules
         self._input_list = config.getlist('FILE', 'INPUT_DIR')
         self._output_dir = config.getexpanded('FILE', 'OUTPUT_DIR')
         self._log_name = config.get('FILE', 'LOG_NAME')
@@ -224,7 +227,8 @@ class FileHandler(object):
             elif 'last' in dir.lower():
                 module = dir.lower().split(':')[1]
                 input_dir.append(self.format(self.format(
-                                 self._run_log.get_last(), module), 'output'))
+                                 self._run_log.get_last(module),
+                                 module), 'output'))
 
             elif ':' in dir.lower():
                 string, module = dir.lower().split(':')
@@ -249,7 +253,8 @@ class FileHandler(object):
         self.run_dir = self.format(self._output_dir, self._run_name)
         self._log_dir = self.format(self.run_dir, 'logs')
         self.log_name = self.format(self._log_dir, self._log_name)
-        self._run_log = RunLog(self._run_log_file, self.run_dir)
+        self._run_log = RunLog(self._run_log_file, self._module_list,
+                               self.run_dir)
 
         self.mkdir(self.run_dir)
         self.mkdir(self._log_dir)
