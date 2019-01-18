@@ -29,8 +29,8 @@ Contents
 
 2. `Installation`_
 
-   a. `Conda`_
-   b. `Pip`_
+   a. `Installing ShapePipe`_
+   b. `Installing Module Dependencies`_
 
 3. `Execution`_
 
