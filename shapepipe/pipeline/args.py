@@ -9,7 +9,7 @@ This module defines methods for handling the pipeline arguments.
 """
 
 import argparse as ap
-from shapepipe.modules.module_tools import get_module_list
+from shapepipe.modules import __module_list__
 from shapepipe.info import shapepipe_logo, __version__
 
 
@@ -87,7 +87,7 @@ def create_arg_parser():
     optional.add_argument('-l', '--list_modules',
                           action=print_message('ShapePipe modules currently '
                                                'available: '
-                                               '{}'.format(get_module_list())),
+                                               '{}'.format(__module_list__)),
                           help='list modules currently available and exit')
 
     optional.add_argument('-c', '--config', default='config.ini',

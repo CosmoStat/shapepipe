@@ -13,8 +13,6 @@ from datetime import datetime
 from modopt.interface.errors import catch_error
 from modopt.interface.log import set_up_log, close_log
 from shapepipe.info import shapepipe_logo, line, __installs__
-from shapepipe.modules.module_tools import get_module_depends
-from shapepipe.modules.module_tools import get_module_version
 from shapepipe.pipeline.args import create_arg_parser
 from shapepipe.pipeline.config import create_config_parser
 from shapepipe.pipeline.dependency_handler import DependencyHandler
@@ -92,6 +90,29 @@ class ShapePipe():
             print(end_text)
             print(line())
 
+    def _get_module_depends(self):
+        """ Get Module Dependencies
+
+        List the Python packages and executables needed to run the modules.
+
+        Returns
+        -------
+        tuple
+            List of python dependencies, list of system executables
+
+        """
+
+        depends = []
+        executes = []
+
+        module_runners = self._filehd.module_runners
+
+        for module in module_runners.keys():
+            depends += module_runners[module].depends
+            executes += module_runners[module].executes
+
+        return depends, executes
+
     def _check_dependencies(self):
         """ Check Dependencies
 
@@ -99,7 +120,7 @@ class ShapePipe():
 
         """
 
-        module_dep, module_exe = get_module_depends()
+        module_dep, module_exe = self._get_module_depends()
         dependencies = __installs__ + module_dep
 
         dh = DependencyHandler(dependencies, module_exe)
@@ -138,6 +159,11 @@ class ShapePipe():
             print('')
 
     def _check_module_versions(self):
+        """ Check Module Version
+
+        Check versions of the modules.
+
+        """
 
         ver_text = 'Checking Module Versions:'
 
@@ -148,9 +174,10 @@ class ShapePipe():
         for module in self._modules:
 
             module_txt = (' - {} {}'.format(
-                          module, get_module_version(module)))
-            self.log.info(module_txt)
+                          module,
+                          self._filehd.module_runners[module].version))
 
+            self.log.info(module_txt)
             if self._verbose:
                 print(module_txt)
 

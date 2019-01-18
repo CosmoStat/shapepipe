@@ -12,7 +12,7 @@ import os
 import re
 from glob import glob
 from shapepipe.pipeline.run_log import RunLog
-from shapepipe.modules import module_runners
+from shapepipe.modules.module_runners import get_module_runners
 
 
 def find_files(path, pattern='*', ext='*'):
@@ -94,6 +94,7 @@ class FileHandler(object):
 
         self._run_name = run_name
         self._module_list = modules
+        self.module_runners = get_module_runners(self._module_list)
         self._input_list = config.getlist('FILE', 'INPUT_DIR')
         self._output_dir = config.getexpanded('FILE', 'OUTPUT_DIR')
         self._log_name = config.get('FILE', 'LOG_NAME')
@@ -275,7 +276,7 @@ class FileHandler(object):
 
         # Get the name of the input module from module runner
         self._module_dict[module]['input_module'] = \
-            getattr(module_runners, module).input_module
+            self.module_runners[module].input_module
 
         # Get the input file pattern from module runner (or config file)
         if (not isinstance(self._file_pattern, type(None))
@@ -283,7 +284,7 @@ class FileHandler(object):
             self._module_dict[module]['file_pattern'] = self._file_pattern
         else:
             self._module_dict[module]['file_pattern'] = \
-                getattr(module_runners, module).file_pattern
+                self.module_runners[module].file_pattern
 
         # Get the input file extesion from module runner (or config file)
         if (not isinstance(self._file_ext, type(None))
@@ -291,7 +292,7 @@ class FileHandler(object):
             self._module_dict[module]['file_ext'] = self._file_ext
         else:
             self._module_dict[module]['file_ext'] = \
-                getattr(module_runners, module).file_ext
+                self.module_runners[module].file_ext
 
         # Make sure the number of patterns and extensions match
         if ((len(self._module_dict[module]['file_ext']) == 1) and
