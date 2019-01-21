@@ -20,3 +20,6 @@ dist/
 
 # Ignore pypi config
 .pypirc
+
+#Ignore .DS_Store
+.DS_Store
