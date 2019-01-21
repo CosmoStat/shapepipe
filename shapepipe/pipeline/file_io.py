@@ -20,9 +20,6 @@ from astropy.io import fits         # for FITS catalogs
 import operator                 # for the interpreter
 import itertools
 
-# -- Internal imports
-from shapepipe.pipeline.file_io.file_io_helper import *       # Helper methods
-
 
 # --------------------------------------------------------------------------------------------------
 class BaseCatalog(object):
@@ -39,7 +36,6 @@ class BaseCatalog(object):
       # --- Public members
       self._directory, self._filename = os.path.split(fullpath)  # catalog file path
       self._format = BaseCatalog.InputFormat.Undefined  # input/output format
-      self._helper = Helper()
 
       # --- Private members
       self._cat_data = None  # catalog internal data (e.g. AsciiData class)
@@ -84,14 +80,6 @@ class BaseCatalog(object):
                scatalog.scatalog.BaseCatalog.InputFormat.Undefined for this class
       """
       return self._format
-
-   @property
-   def helper(self):
-      """!
-         Get the helper class
-         @return helper class
-      """
-      return self._helper
 
 
    # ~~~~~~~~~~~~~~
@@ -143,6 +131,18 @@ class BaseCatalog(object):
       """
       raise BaseCatalog.FeatureNotImplemented("add_col()")
 
+   def _file_exists(self, filepath):
+      """ File Exists
+
+      Check if input file path is a valid file.
+
+      """
+      if not os.path.isfile(filepath):
+            raise IOError('{} does not appear to be a valid file'.format(filepath))
+      else:
+         return True
+
+
 
    # ~~~~~~~~~~~~~
    # Inner Classes
@@ -167,7 +167,6 @@ class BaseCatalog(object):
       def __init__(self):
 
          self._cat_col = None
-         self._helper = Helper()
 
       # ~~~~~~~~~~~
       # Properties
@@ -198,14 +197,6 @@ class BaseCatalog(object):
             @return data data associated with the column
          """
          raise BaseCatalog.FeatureNotImplemented("column.data")
-
-      @property
-      def helper(self):
-         """!
-            Get the helper class
-            @return helper class
-         """
-         return self._helper
 
 
       # ~~~~~~~~~~~~~~
@@ -442,7 +433,7 @@ class FITSCatalog(BaseCatalog):
    def open(self):
 
       """! Open an existing catalog """
-      if self.helper.file_exists(self.fullpath):
+      if self._file_exists(self.fullpath):
 
          # --- Open catalog file
          self._cat_data = fits.open(self.fullpath, mode=self.open_mode, memmap=self.use_memmap)
@@ -463,7 +454,7 @@ class FITSCatalog(BaseCatalog):
       primary_hdu = fits.PrimaryHDU()
       if self._SEx_catalog:
           if sex_cat_path is not None:
-              if self.helper.file_exists(sex_cat_path):
+              if self._file_exists(sex_cat_path):
                   sex_cat=FITSCatalog(sex_cat_path, hdu_no=1)
                   sex_cat.open()
                   secondary_hdu=sex_cat._cat_data[1]
@@ -1085,7 +1076,7 @@ class FITSCatalog(BaseCatalog):
       if data is None:
          raise ValueError('Data not provided')
 
-      if self.helper.file_exists(self.fullpath):
+      if self._file_exists(self.fullpath):
           if self._cat_data is None:
               self.open()
           if ext_name is None:
@@ -1137,7 +1128,7 @@ class FITSCatalog(BaseCatalog):
        if data is None:
            raise ValueError('Data not provided')
 
-       if self.helper.file_exists(self.fullpath):
+       if self_file_exists(self.fullpath):
            if self._cat_data is None:
                self.open()
            if ext_name is None:
