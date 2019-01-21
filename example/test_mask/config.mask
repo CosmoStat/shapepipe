@@ -2,7 +2,7 @@
 [PROGRAM_PATH]
 
 WW_PATH = ww
-WW_CONFIG_FILE = /Users/aguinot/Documents/pipeline/ShapePipe/example/test_mask/mask_default/default.ww
+WW_CONFIG_FILE = ${HOME}/Documents/pipeline/ShapePipe/example/test_mask/mask_default/default.ww
 CDSCLIENT_PATH = findgsc2.2
 
 

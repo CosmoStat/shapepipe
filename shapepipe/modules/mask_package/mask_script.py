@@ -8,6 +8,8 @@ This module contain a class to create star mask for an image.
 
 :Date: 20/12/2017
 
+:Version: 1.0
+
 """
 
 import shapepipe.pipeline.file_io as sc
@@ -649,7 +651,7 @@ class mask(object):
             if self._config[types]['reg_file'] is None:
                 reg=default_reg
                 if not sc.BaseCatalog(reg)._file_exists(reg):
-                    raise sc.BaseCatalog.CatalogNotFound(reg)
+                    raise sc.BaseCatalog.CatalogFileNotFound(reg)
                 cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3} -POLY_OUTFLAGS {4} -FLAG_NAMES "" -OUTFLAG_NAME {5} -OUTWEIGHT_NAME ""'.\
                       format(self._config['PATH']['WW'],self._config['PATH']['WW_configfile'],self._weight_fullpath,reg,self._config[types]['flag'],defaul_out)
                 # os.system(cmd)
@@ -670,8 +672,8 @@ class mask(object):
             if self._config['HALO']['reg_file'] is None:
                 reg=default_reg
                 for i in range(2):
-                    if not sc.BaseCatalog(reg[i])._helper.file_exists(reg[i]):
-                        raise sc.BaseCatalog.CatalogNotFound(reg[i])
+                    if not sc.BaseCatalog(reg[i])._file_exists(reg[i]):
+                        raise sc.BaseCatalog.CatalogFileNotFound(reg[i])
                 cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3},{4} -POLY_OUTFLAGS {5},{6} -FLAG_NAMES "" -OUTFLAG_NAME {7} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'],self._config['PATH']['WW_configfile'],self._weight_fullpath,reg[0],reg[1],self._config['HALO']['flag'],self._config['SPIKE']['flag'],defaul_out)
                 # os.system(cmd)
                 self._WW_stdout, self._WW_stderr = execute(cmd)
@@ -680,8 +682,8 @@ class mask(object):
             else:
                 reg=[self._config['HALO']['reg_file'], self._config['SPIKE']['reg_file']]
                 for i in range(2):
-                    if not sc.BaseCatalog(reg[i])._helper.file_exists(reg[i]):
-                        raise sc.BaseCatalog.CatalogNotFound(reg[i])
+                    if not sc.BaseCatalog(reg[i])._file_exists(reg[i]):
+                        raise sc.BaseCatalog.CatalogFileNotFound(reg[i])
                 cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3},{4} -POLY_OUTFLAGS {5},{6} -FLAG_NAMES "" -OUTFLAG_NAME {7} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'],self._config['PATH']['WW_configfile'],self._weight_fullpath,reg[0],reg[1],self._config['HALO']['flag'],self._config['SPIKE']['flag'],defaul_out)
                 # os.system(cmd)
                 self._WW_stdout, self._WW_stderr = execute(cmd)
