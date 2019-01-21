@@ -9,6 +9,7 @@ This module defines a class for handling pipeline files.
 """
 
 import os
+import re
 from glob import glob
 from shapepipe.pipeline.run_log import RunLog
 from shapepipe.modules import module_runners
@@ -82,14 +83,17 @@ class FileHandler(object):
     ----------
     run_name : str
         Run name
+    module_list : list
+        List of modules to be run
     config : CustomParser
         Configuaration parser instance
 
     """
 
-    def __init__(self, run_name, config):
+    def __init__(self, run_name, modules, config):
 
         self._run_name = run_name
+        self._module_list = modules
         self._input_list = config.getlist('FILE', 'INPUT_DIR')
         self._output_dir = config.getexpanded('FILE', 'OUTPUT_DIR')
         self._log_name = config.get('FILE', 'LOG_NAME')
@@ -106,6 +110,10 @@ class FileHandler(object):
             self._file_ext = config.getlist('FILE', 'FILE_EXT')
         else:
             self._file_ext = None
+        if config.has_option('FILE', 'NUMBERING_SCHEME'):
+            self._num_scheme = config.get('FILE', 'NUMBERING_SCHEME')
+        else:
+            self._num_scheme = r'RE:\_\d+'
 
     @property
     def run_dir(self):
@@ -219,13 +227,19 @@ class FileHandler(object):
             elif 'last' in dir.lower():
                 module = dir.lower().split(':')[1]
                 input_dir.append(self.format(self.format(
-                                 self._run_log.get_last(), module), 'output'))
+                                 self._run_log.get_last(module),
+                                 module), 'output'))
 
-            else:
+            elif ':' in dir.lower():
                 string, module = dir.lower().split(':')
                 input_dir.append(self.format(self.format(
                                  self._run_log.get_run(string), module),
                                  'output'))
+
+            else:
+                raise ValueError('Invalid INPUT_DIR. Make sure the paths '
+                                 'provided are valid directories or use the '
+                                 'allowed special keys.')
 
         self._input_dir = input_dir
 
@@ -239,7 +253,8 @@ class FileHandler(object):
         self.run_dir = self.format(self._output_dir, self._run_name)
         self._log_dir = self.format(self.run_dir, 'logs')
         self.log_name = self.format(self._log_dir, self._log_name)
-        self._run_log = RunLog(self._run_log_file, self.run_dir)
+        self._run_log = RunLog(self._run_log_file, self._module_list,
+                               self.run_dir)
 
         self.mkdir(self.run_dir)
         self.mkdir(self._log_dir)
@@ -394,6 +409,160 @@ class FileHandler(object):
         return [find_files(dir, pattern, ext) for pattern, ext in
                 zip(pattern_list, ext_list) for dir in dir_list]
 
+    @staticmethod
+    def _generate_re_pattern(match_pattern):
+        """ Generate Regular Expression Pattern
+
+        Generate a regular expression pattern from an input string.
+
+        Parameters
+        ----------
+        match_pattern : str
+            Pattern string
+
+        Returns
+        -------
+        _sre.SRE_Pattern
+            Regular expression pattern
+
+        Raises
+        ------
+        TypeError
+            For invalid input type
+
+        """
+
+        if not isinstance(match_pattern, str):
+            TypeError('Match pattern must be a string.')
+
+        chars = [char for char in match_pattern if not char.isalnum()]
+        split_pattern = '|'.join(chars).replace('.', r'\.')
+        chars = ['\\{}'.format(char) for char in chars] + ['']
+        num_length = ['\\d{{{}}}'.format(len(digits)) for digits in
+                      re.split(split_pattern, match_pattern)]
+        re_pattern = r''.join([a for b in zip(num_length, chars)
+                               for a in b]).replace('{1}', '+')
+
+        return re.compile(re_pattern)
+
+    def _strip_dir_from_file(self, file_name, dir_list):
+        """ Strip Directory from File Name
+
+        Remove the directory string from the file name.
+
+        Parameters
+        ----------
+        file_name : str
+            File name
+        dir_list : list
+            Input directory list
+
+        Returns
+        -------
+        str
+            File name
+
+        """
+
+        return [file_name.replace(_dir, '') for _dir in dir_list
+                if _dir in file_name][0]
+
+    def _get_file_pattern(self, file_name, dir_list):
+        """ Get File Pattern
+
+        Get the string component of the input file name matching the specified
+        regular expression.
+
+        Parameters
+        ----------
+        file_name : str
+            File name
+        dir_list : list
+            Input directory list
+
+        Returns
+        -------
+        str
+            File pattern
+
+        """
+
+        file_name = self._strip_dir_from_file(file_name, dir_list)
+
+        return re.search(self._re_pattern, file_name).group()
+
+    def _match_list_items(self, file_list, dir_list):
+        """ Match List Items
+
+        Match files names in a list of lists.
+
+        Parameters
+        ----------
+        file_list : list
+            List of file names
+        dir_list : list
+            Input directory list
+
+        Returns
+        -------
+        tuple
+            List of matched file names, list of unmatched file names
+
+        Raises
+        ------
+        TypeError
+            For invalid input type
+
+        """
+
+        if not isinstance(file_list, list):
+            TypeError('File list must be a list.')
+
+        all_patterns = [self._get_file_pattern(file, dir_list) for file in
+                        max(file_list, key=len)]
+        new_list = [[item for sublist in file_list for item in sublist if
+                     pattern in self._strip_dir_from_file(item, dir_list)]
+                    for pattern in all_patterns]
+
+        file_dict = dict(zip(all_patterns, new_list))
+
+        max_n_cols = max([len(flist) for flist in new_list])
+        matched = dict([(key, val) for key, val in file_dict.items() if
+                        len(val) == max_n_cols])
+        missing = dict([(key, val) for key, val in file_dict.items() if
+                        len(val) < max_n_cols])
+
+        return matched, missing
+
+    def _check_file_list(self, file_list, dir_list):
+        """ Check File List
+
+        Check the file list for missing files.
+
+        Parameters
+        ----------
+        file_list : list
+            List of file names
+        dir_list : list
+            Input directory list
+
+        Returns
+        -------
+        tuple
+            List of matched file names, list of unmatched file names
+
+        """
+
+        if self._num_scheme.startswith('RE:'):
+
+            self._re_pattern = self._num_scheme.replace('RE:', '')
+
+        else:
+
+            self._re_pattern = self._generate_re_pattern(self._num_scheme)
+
+        return self._match_list_items(file_list, dir_list)
+
     def _get_module_input_files(self, module):
         """ Get Module Input Files
 
@@ -417,14 +586,8 @@ class FileHandler(object):
             file_list = self._all_pattern_per_dir(dir_list, pattern_list,
                                                   ext_list)
 
-        if len(file_list) == 1:
-            file_list = file_list[0]
-        else:
-            file_list = list(map(list, zip(*file_list)))
-
-        self._module_dict[module]['files'] = file_list
-
-        self.process_list = self._module_dict[module]['files']
+        self.process_list, self.missed = self._check_file_list(file_list,
+                                                               dir_list)
 
     def set_up_module(self, module):
         """ Set Up Module

@@ -192,6 +192,7 @@ class JobHandler(object):
 
         self._distribute_smp_jobs()
         self._check_for_errors()
+        self._check_missed_processes()
         self.log.info('All processes complete')
         self.log.info('')
 
@@ -286,7 +287,7 @@ class JobHandler(object):
                   (delayed(WorkerHandler(verbose=self._verbose).worker)
                    (job_name, process, self.filehd, self.config, self.timeout,
                    self._module) for job_name, process in
-                   zip(self._job_names, self.filehd.process_list)))
+                   zip(self._job_names, self.filehd.process_list.items())))
 
         self._worker_dicts = result
 
@@ -328,3 +329,23 @@ class JobHandler(object):
                 self.log.info('ERROR: stderr recorded in: {}'.format(
                               worker_dict['log']))
                 self.error_count += 1
+
+    def _check_missed_processes(self):
+        """ Check Missed Processes
+
+        This method checks the file handler for processes that were not
+        submitted.
+
+        """
+
+        missed_txt = (' - The following processes were not submitted to '
+                      'workers:')
+
+        if self.filehd.missed:
+
+            self.log.info(missed_txt)
+            self.log.info(' - {}'.format(self.filehd.missed))
+
+            if self._verbose:
+                print(missed_txt)
+                print(' - {}'.format(self.filehd.missed))

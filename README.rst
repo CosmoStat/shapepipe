@@ -29,8 +29,8 @@ Contents
 
 2. `Installation`_
 
-   a. `Conda`_
-   b. `Pip`_
+   a. `Installing ShapePipe`_
+   b. `Installing Module Dependencies`_
 
 3. `Execution`_
 
@@ -64,14 +64,41 @@ Module Dependencies
 Installation
 ============
 
-The ShapePipe package can be installed by running:
+Installing ShapePipe
+--------------------
+
+The ShapePipe package can be installed in the following ways. In both case the
+core dependencies will be installed but not the Module dependencies.
+
+**Using Pip**
+
+ShapePipe can be directly installed from the repository as follows:
+
+.. code-block:: python
+
+  $ pip install git+ssh://git@drf-gitlab.cea.fr/cosmostat/ShapePipe.git
+
+**Using Git**
+
+Alternatively, the ShapePipe package can be downloaded from the repository
+and built as follows:
 
 .. code-block:: bash
 
+  $ git clone https://drf-gitlab.cea.fr/cosmostat/ShapePipe
+  $ cd ShapePipe
   $ python setup.py install
 
-Conda
------
+This method is recommend for development.
+
+Installing Module Dependencies
+------------------------------
+
+At present, ShapePipe dependencies have to be installed independently. This,
+however, can be simplified by using the conda environment or pip requirements
+files provided.
+
+**Using Conda**
 
 A ShapePipe Conda environment can be built and activated by running:
 
@@ -80,8 +107,7 @@ A ShapePipe Conda environment can be built and activated by running:
   $ conda env create -f environment.yml
   $ source activate shapepipe
 
-Pip
----
+**Using Pip**
 
 The ShapePipe dependencies can also be installed using ``pip`` as follows:
 
@@ -152,6 +178,12 @@ The configuration parameters for the pipeline are:
    identify input files for the first module.
 6. ``FILE_EXT`` : (``str`` or ``list``) A list of file extensions to identify
    input files for the first module.
+7. ``NUMBERING_SCHEME`` : (``str``) A string indicating the expected numbering
+   system for the input files (*e.g.* ``000-0``). Single digits indicate
+   integer values without limit, multiples of digits indicate integers with a
+   maximum value. Standard characters can be placed around digits (*e.g.*
+   ``.``, ``-``, ``:``, *etc.*). Optionally a regular expression can also be
+   passed if it is preceded by ``RE:`` (*e.g.* ``RE:-\d{9}``).
 
 **Job Options**
 
@@ -208,7 +240,8 @@ The arguments passed to the module runner are the following:
 
 1. ``input_file_list`` : The list of input files.
 2. ``output_dir`` : The directory for the module output files.
-3. ``job_name`` : The name given by the pipeline to the current job.
+3. ``file_number_string`` : The number pattern corresponding to the current
+   process.
 4. ``config`` : The config parser instance, which provides access to the
    configuration file parameter values. Module specific parameters can be passed
    using the following structure:
@@ -222,7 +255,7 @@ The arguments passed to the module runner are the following:
 
    .. code-block:: python
 
-      self.w_log.info('MESSAGE')
+      w_log.info('MESSAGE')
 
 Examples
 --------
@@ -245,10 +278,12 @@ return ``None, None``.
 .. code-block:: python
 
   @module_runner(version='1.0', file_pattern=['numbers', 'letters'],
-                file_ext='.txt', depends='numpy')
-  def python_example(input_file_list, output_dir, job_name, config, w_log):
+                 file_ext='.txt', depends='numpy')
+  def python_example(input_file_list, output_dir, file_number_string,
+                     config, w_log):
 
-      output_file_name = ('{}/{}.cat'.format(output_dir, job_name))
+      output_file_name = ('{}/pyex_output{}.cat'.format(output_dir,
+                          file_number_string))
       message = config.get('PYTHON_EXAMPLE', 'MESSAGE')
 
       inst = Dummy()
@@ -266,11 +301,12 @@ the file pattern ``'process'`` with file extension ``'.cat'``.
 .. code-block:: python
 
   @module_runner(input_module='python_example', version='1.0',
-                file_pattern='process', file_ext='.cat', executes='head')
-  def execute_example(input_file_list, output_dir, job_name, *args):
+                 file_pattern='pyex_output', file_ext='.cat', executes='head')
+  def execute_example(input_file_list, output_dir, file_number_string, *args):
 
       command_line = 'head {}'.format(input_file_list[0])
-      output_file_name = '{}/{}_head_out.txt'.format(output_dir, job_name)
+      output_file_name = '{}/head_output{}.txt'.format(output_dir,
+                                                       file_number_string)
 
       stdout, stderr = execute(command_line)
 

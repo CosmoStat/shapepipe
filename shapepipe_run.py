@@ -34,7 +34,8 @@ class ShapePipe():
         self._args = create_arg_parser()
         self._config = create_config_parser(self._args.config)
         self._set_run_name()
-        self._filehd = FileHandler(self._run_name, self._config)
+        self._modules = self._config.getlist('EXECUTION', 'MODULE')
+        self._filehd = FileHandler(self._run_name, self._modules, self._config)
         self._verbose = self._config.getboolean('DEFAULT', 'VERBOSE')
         self._error_count = 0
 
@@ -136,7 +137,7 @@ class ShapePipe():
         if self._verbose:
             print('')
 
-    def _check_module_versions(self, modules):
+    def _check_module_versions(self):
 
         ver_text = 'Checking Module Versions:'
 
@@ -144,7 +145,7 @@ class ShapePipe():
         if self._verbose:
             print(ver_text)
 
-        for module in modules:
+        for module in self._modules:
 
             module_txt = (' - {} {}'.format(
                           module, get_module_version(module)))
@@ -170,16 +171,13 @@ class ShapePipe():
         # Make a log for the pipeline run
         self._create_pipeline_log()
 
-        # Get a list of the modules to run
-        modules = self._config.getlist('EXECUTION', 'MODULE')
-
         # Check the pipeline dependencies
         self._check_dependencies()
 
         # Check the versions of these modules
-        self._check_module_versions(modules)
+        self._check_module_versions()
 
-        for module in modules:
+        for module in self._modules:
 
             # Create a job handler for the current module
             jh = JobHandler(module, filehd=self._filehd,
