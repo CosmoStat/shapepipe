@@ -23,7 +23,7 @@ def mask_runner(input_file_list, output_dir, file_number_string,
     elif len(input_file_list) == 3:
         ext_flag_name = input_file_list[2]
     else:
-        raise IOError("Input files must be 'image', 'weight' and 'ext_flags' (optionnal)")
+        raise ValueError("Input files must be 'image', 'weight' and 'ext_flags' (optionnal)")
     
     config_file = config.get('MASK', 'MASK_CONFIG_PATH')
 
