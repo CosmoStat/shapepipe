@@ -9,4 +9,4 @@ This module contains sub-modules that can be run with ShapePipe.
 """
 
 __all__ = ['module_decorator', 'module_runners']
-__module_list__ = ['python_example', 'execute_example']
+__module_list__ = ['python_example', 'execute_example', 'sextractor_runner']
