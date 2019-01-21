@@ -341,7 +341,13 @@ class FileHandler(object):
     def _set_module_input_dir(self, module):
         """ Set Module Input Directory
 
-        Specify the module input directory.
+        Set the module input directory. If the module specified is the
+        first module in the pipeline or does not have any input modules then
+        only the `INPUT_DIR` from `[FILE]` is used, otherwise the output
+        directory from the preceding module is used.
+
+        Additional input directories can be specified with `INPUT_DIR` from
+        `[MODULE]`.
 
         Parameters
         ----------
@@ -358,6 +364,10 @@ class FileHandler(object):
             self._module_dict[module]['input_dir'] = \
                 ([self._module_dict[input_mod]['output_dir'] for input_mod in
                   self._module_dict[module]['input_module']])
+
+            if if config.has_option(module, 'INPUT_DIR'):
+                self._module_dict[module]['input_dir'] += \
+                    config.getlist(module, 'INPUT_DIR')
 
     @staticmethod
     def _one_pattern_per_dir(dir_list, pattern_list, ext_list):
