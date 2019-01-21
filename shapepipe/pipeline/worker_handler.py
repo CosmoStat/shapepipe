@@ -14,7 +14,6 @@ from multiprocessing import current_process
 from modopt.interface.errors import catch_error, warn
 from modopt.interface.log import set_up_log, close_log
 from shapepipe.pipeline.timeout import with_timeout
-from shapepipe.modules import module_runners
 
 
 class WorkerHandler(object):
@@ -108,7 +107,8 @@ class WorkerHandler(object):
 
         self.w_log = set_up_log(self._filehd.get_worker_log_name(
                                 self.worker_dict['module'],
-                                self.worker_dict['job_name']),
+                                self.worker_dict['job_name'],
+                                self.worker_dict['process'][0]),
                                 verbose=False)
         self.worker_dict['log'] = self.w_log.name
         self.w_log.info('Worker process running with:')
@@ -157,14 +157,11 @@ class WorkerHandler(object):
 
         """
 
-        if not hasattr(module_runners, self.worker_dict['module']):
-            raise RuntimeError('Module runner {} does not exist.'.format(
-                               self.worker_dict['module']))
-
         self.w_log.info(' - Running module: {}'.format(
                         self.worker_dict['module']))
 
-        moduler_runner = getattr(module_runners, self.worker_dict['module'])
+        moduler_runner = (self._filehd.module_runners[
+                          self.worker_dict['module']])
 
         file_number_string = self.worker_dict['process'][0]
         input_file_list = self.worker_dict['process'][1]
