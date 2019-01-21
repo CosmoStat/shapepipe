@@ -107,7 +107,8 @@ class WorkerHandler(object):
 
         self.w_log = set_up_log(self._filehd.get_worker_log_name(
                                 self.worker_dict['module'],
-                                self.worker_dict['job_name']),
+                                self.worker_dict['job_name'],
+                                self.worker_dict['process'][0]),
                                 verbose=False)
         self.worker_dict['log'] = self.w_log.name
         self.w_log.info('Worker process running with:')

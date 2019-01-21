@@ -608,15 +608,19 @@ class FileHandler(object):
         self._set_module_input_dir(module)
         self._get_module_input_files(module)
 
-    def get_worker_log_name(self, module, job_name):
+    def get_worker_log_name(self, module, job_name, file_number_string):
         """ Get Worker Log Name
 
         This method generates a worker log name.
 
         Parameters
         ----------
+        module : str
+            Module name
         job_name : str
             Job name
+        file_number_string : str
+            File numbering in output
 
         Returns
         -------
@@ -625,4 +629,5 @@ class FileHandler(object):
 
         """
 
-        return self.format(self._module_dict[module]['log_dir'], job_name)
+        return '{}/{}_file{}'.format(self._module_dict[module]['log_dir'],
+                                     job_name, file_number_string)
