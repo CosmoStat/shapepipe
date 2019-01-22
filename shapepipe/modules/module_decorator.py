@@ -15,12 +15,18 @@ def module_runner(input_module=None, version='0.0', file_pattern='',
 
     Parameters
     ----------
-    input_module : str, optional
+    input_module : str or list, optional
         Input module name, default is None
+    version : str, optional
+        Module version string
     file_pattern : str or list, optional
         File pattern, default is ''
     file_ext : str or list, optional
         File extension, default is ''
+    depends : str or list, optional
+        Module dependencies, default is []
+    executes : str or list, optional
+        Module executables, default is []
 
     """
 

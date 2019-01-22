@@ -94,6 +94,7 @@ class FileHandler(object):
 
         self._run_name = run_name
         self._module_list = modules
+        self._config = config
         self.module_runners = get_module_runners(self._module_list)
         self._input_list = config.getlist('FILE', 'INPUT_DIR')
         self._output_dir = config.getexpanded('FILE', 'OUTPUT_DIR')
@@ -341,7 +342,13 @@ class FileHandler(object):
     def _set_module_input_dir(self, module):
         """ Set Module Input Directory
 
-        Specify the module input directory.
+        Set the module input directory. If the module specified is the
+        first module in the pipeline or does not have any input modules then
+        only the `INPUT_DIR` from `[FILE]` is used, otherwise the output
+        directory from the preceding module is used.
+
+        Additional input directories can be specified with `INPUT_DIR` from
+        `[MODULE]`.
 
         Parameters
         ----------
@@ -358,6 +365,10 @@ class FileHandler(object):
             self._module_dict[module]['input_dir'] = \
                 ([self._module_dict[input_mod]['output_dir'] for input_mod in
                   self._module_dict[module]['input_module']])
+
+            if self._config.has_option(module.upper(), 'INPUT_DIR'):
+                self._module_dict[module]['input_dir'] += \
+                    self._config.getlist(module.upper(), 'INPUT_DIR')
 
     @staticmethod
     def _one_pattern_per_dir(dir_list, pattern_list, ext_list):
@@ -446,7 +457,8 @@ class FileHandler(object):
 
         return re.compile(re_pattern)
 
-    def _strip_dir_from_file(self, file_name, dir_list):
+    @staticmethod
+    def _strip_dir_from_file(file_name, dir_list):
         """ Strip Directory from File Name
 
         Remove the directory string from the file name.
@@ -465,7 +477,7 @@ class FileHandler(object):
 
         """
 
-        return [file_name.replace(_dir, '') for _dir in dir_list
+        return [file_name.replace(_dir + '/', '') for _dir in dir_list
                 if _dir in file_name][0]
 
     def _get_file_pattern(self, file_name, dir_list):
@@ -491,6 +503,57 @@ class FileHandler(object):
         file_name = self._strip_dir_from_file(file_name, dir_list)
 
         return re.search(self._re_pattern, file_name).group()
+
+    @staticmethod
+    def _flatten_list(input_list):
+        """ Flatten List
+
+        Flatten a list of lists.
+
+        Parameters
+        ----------
+        input_list : list
+            A list of lists
+
+        Returns
+        -------
+        list
+            Flattened list
+
+        """
+
+        return [item for sublist in input_list for item in sublist]
+
+    @classmethod
+    def _check_pattern(cls, file_list, pattern):
+        """ Check Pattern
+
+        Find files in file list that match the input pattern.
+
+        Parameters
+        ----------
+        file_list : list
+            List of file names
+        pattern : str
+            File pattern
+
+        Returns
+        -------
+        list
+            List of files matching the pattern
+
+        """
+
+        new_list = []
+
+        for item in cls._flatten_list(file_list):
+
+            if (len(item.split(pattern)) > 1 and
+                (not item.split(pattern)[1] or not
+                 item.split(pattern)[1][0].isdigit())):
+                new_list.append(item)
+
+        return new_list
 
     def _match_list_items(self, file_list, dir_list):
         """ Match List Items
@@ -521,9 +584,9 @@ class FileHandler(object):
 
         all_patterns = [self._get_file_pattern(file, dir_list) for file in
                         max(file_list, key=len)]
-        new_list = [[item for sublist in file_list for item in sublist if
-                     pattern in self._strip_dir_from_file(item, dir_list)]
-                    for pattern in all_patterns]
+        new_list = [self._check_pattern(file_list, pattern) for pattern in
+                    all_patterns]
+        new_list = [item for item in new_list if item]
 
         file_dict = dict(zip(all_patterns, new_list))
 
