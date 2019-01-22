@@ -94,6 +94,7 @@ class FileHandler(object):
 
         self._run_name = run_name
         self._module_list = modules
+        self._config = config
         self.module_runners = get_module_runners(self._module_list)
         self._input_list = config.getlist('FILE', 'INPUT_DIR')
         self._output_dir = config.getexpanded('FILE', 'OUTPUT_DIR')
@@ -365,9 +366,9 @@ class FileHandler(object):
                 ([self._module_dict[input_mod]['output_dir'] for input_mod in
                   self._module_dict[module]['input_module']])
 
-            if config.has_option(module, 'INPUT_DIR'):
+            if self._config.has_option(module.upper(), 'INPUT_DIR'):
                 self._module_dict[module]['input_dir'] += \
-                    config.getlist(module, 'INPUT_DIR')
+                    self._config.getlist(module.upper(), 'INPUT_DIR')
 
     @staticmethod
     def _one_pattern_per_dir(dir_list, pattern_list, ext_list):
