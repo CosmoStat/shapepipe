@@ -365,7 +365,7 @@ class FileHandler(object):
                 ([self._module_dict[input_mod]['output_dir'] for input_mod in
                   self._module_dict[module]['input_module']])
 
-            if if config.has_option(module, 'INPUT_DIR'):
+            if config.has_option(module, 'INPUT_DIR'):
                 self._module_dict[module]['input_dir'] += \
                     config.getlist(module, 'INPUT_DIR')
 
