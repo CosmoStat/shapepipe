@@ -17,7 +17,6 @@ from shapepipe.pipeline.config import CustomParser
 from shapepipe.pipeline.execute import execute
 
 import numpy as np
-import subprocess
 from astropy.coordinates import SkyCoord
 from astropy import wcs
 from astropy import units as u
@@ -91,19 +90,19 @@ class mask(object):
         if self._config['BORDER']['make']:
             self._config['BORDER']['width'] = conf.getint('BORDER_PARAMETERS', 'BORDER_WIDTH')
             self._config['BORDER']['flag'] = conf.get('BORDER_PARAMETERS', 'BORDER_FLAG_VALUE')
-        for i in ['HALO','SPIKE']:
-            self._config[i]['make'] = conf.getboolean(i+'_PARAMETERS', i+'_MAKE')
-            self._config[i]['individual'] = conf.getboolean('OTHER', 'KEEP_INDIVIDUAL_MASK')
-            if self._config[i]['make']:
-                self._config[i]['maskmodel_path'] = conf.getexpanded(i+'_PARAMETERS', i+'_MASKMODEL_PATH')
-                self._config[i]['mag_lim'] = conf.getfloat(i+'_PARAMETERS', i+'_MAG_LIM')
-                self._config[i]['scale_factor'] = conf.getfloat(i+'_PARAMETERS', i+'_SCALE_FACTOR')
-                self._config[i]['mag_pivot'] = conf.getfloat(i+'_PARAMETERS', i+'_MAG_PIVOT')
-                self._config[i]['flag'] = conf.getint(i+'_PARAMETERS', i+'_FLAG_VALUE')
+        for mask_shape in ['HALO','SPIKE']:
+            self._config[mask_shape]['make'] = conf.getboolean(mask_shape+'_PARAMETERS', mask_shape+'_MAKE')
+            self._config[mask_shape]['individual'] = conf.getboolean('OTHER', 'KEEP_INDIVIDUAL_MASK')
+            if self._config[mask_shape]['make']:
+                self._config[mask_shape]['maskmodel_path'] = conf.getexpanded(mask_shape+'_PARAMETERS', mask_shape+'_MASKMODEL_PATH')
+                self._config[mask_shape]['mag_lim'] = conf.getfloat(mask_shape+'_PARAMETERS', mask_shape+'_MAG_LIM')
+                self._config[mask_shape]['scale_factor'] = conf.getfloat(mask_shape+'_PARAMETERS', mask_shape+'_SCALE_FACTOR')
+                self._config[mask_shape]['mag_pivot'] = conf.getfloat(mask_shape+'_PARAMETERS', mask_shape+'_MAG_PIVOT')
+                self._config[mask_shape]['flag'] = conf.getint(mask_shape+'_PARAMETERS', mask_shape+'_FLAG_VALUE')
                 if conf.getboolean('OTHER', 'KEEP_REG_FILE'):
-                    self._config[i]['reg_file'] = self._config['PATH']['temp_dir'] + '/{0}{1}.reg'.format(re.split(".reg",conf.getexpanded(i+'_PARAMETERS', i+'_REG_FILE'))[0],self._img_number)
+                    self._config[mask_shape]['reg_file'] = self._config['PATH']['temp_dir'] + '/{0}{1}.reg'.format(re.split(".reg",conf.getexpanded(mask_shape+'_PARAMETERS', mask_shape+'_REG_FILE'))[0],self._img_number)
                 else:
-                    self._config[i]['reg_file'] = None
+                    self._config[mask_shape]['reg_file'] = None
         self._config['MESSIER']['make'] = conf.getboolean('MESSIER_PARAMETERS', 'MESSIER_MAKE')
         if self._config['MESSIER']['make']:
             self._config['MESSIER']['cat_path'] = conf.getexpanded('MESSIER_PARAMETERS', 'MESSIER_CAT_PATH')
