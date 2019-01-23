@@ -10,7 +10,6 @@ This module run find_exposures: Identify exposures that are used in selected til
 
 """
 
-import re
 
 from shapepipe.pipeline.execute import execute
 from shapepipe.modules.module_decorator import module_runner
