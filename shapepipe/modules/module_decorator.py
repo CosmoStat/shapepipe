@@ -8,7 +8,7 @@
 
 
 def module_runner(input_module=None, version='0.0', file_pattern='',
-                  file_ext='', depends=[], executes=[]):
+                  file_ext='', depends=[], executes=[], numbering_scheme=None):
     """ Module Runner Wrapper
 
     This method adds properties to module runners.
@@ -27,6 +27,8 @@ def module_runner(input_module=None, version='0.0', file_pattern='',
         Module dependencies, default is []
     executes : str or list, optional
         Module executables, default is []
+    numbering_scheme : str, optional
+        Module numbering scheme, default is None
 
     """
 
@@ -58,6 +60,9 @@ def module_runner(input_module=None, version='0.0', file_pattern='',
     elif not isinstance(depends, list):
         raise TypeError('Executables must be a string or a list of strings')
 
+    if not isinstance(numbering_scheme, str):
+        raise TypeError('Numbering scheme must be a string.')
+
     if (len(file_ext) == 1) and (len(file_pattern) > 1):
         file_ext = [file_ext[0] for i in file_pattern]
     elif (len(file_pattern) == 1) and (len(file_ext) > 1):
@@ -76,6 +81,7 @@ def module_runner(input_module=None, version='0.0', file_pattern='',
         func.file_ext = file_ext
         func.depends = depends
         func.executes = executes
+        func.numbering_scheme = numbering_scheme
 
         return func
 

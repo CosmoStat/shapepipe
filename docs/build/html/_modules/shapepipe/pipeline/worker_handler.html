@@ -169,7 +169,7 @@
 <span class="kn">from</span> <span class="nn">modopt.interface.errors</span> <span class="k">import</span> <span class="n">catch_error</span><span class="p">,</span> <span class="n">warn</span>
 <span class="kn">from</span> <span class="nn">modopt.interface.log</span> <span class="k">import</span> <span class="n">set_up_log</span><span class="p">,</span> <span class="n">close_log</span>
 <span class="kn">from</span> <span class="nn">shapepipe.pipeline.timeout</span> <span class="k">import</span> <span class="n">with_timeout</span>
-<span class="kn">from</span> <span class="nn">shapepipe.modules</span> <span class="k">import</span> <span class="n">module_runners</span>
+<span class="c1"># from shapepipe.modules import module_runners</span>
 
 
 <div class="viewcode-block" id="WorkerHandler"><a class="viewcode-back" href="../../../shapepipe.pipeline.worker_handler.html#shapepipe.pipeline.worker_handler.WorkerHandler">[docs]</a><span class="k">class</span> <span class="nc">WorkerHandler</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -312,18 +312,25 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">module_runners</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">]):</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Module runner </span><span class="si">{}</span><span class="s1"> does not exist.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                               <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">]))</span>
+        <span class="c1"># if not hasattr(module_runners, self.worker_dict[&#39;module&#39;]):</span>
+        <span class="c1">#     raise RuntimeError(&#39;Module runner {} does not exist.&#39;.format(</span>
+        <span class="c1">#                        self.worker_dict[&#39;module&#39;]))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39; - Running module: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">]))</span>
 
-        <span class="n">moduler_runner</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">module_runners</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">])</span>
+        <span class="n">moduler_runner</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filehd</span><span class="o">.</span><span class="n">module_runners</span><span class="p">[</span>
+                          <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">]])</span>
+        <span class="c1"># moduler_runner = getattr(module_runners, self.worker_dict[&#39;module&#39;])</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span> <span class="o">=</span> <span class="n">moduler_runner</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">,</span>
-                                                    <span class="bp">self</span><span class="o">.</span><span class="n">_filehd</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">,</span>
-                                                    <span class="bp">self</span><span class="o">.</span><span class="n">w_log</span><span class="p">)</span></div>
+        <span class="n">file_number_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;process&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">input_file_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;process&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filehd</span><span class="o">.</span><span class="n">output_dir</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span> <span class="o">=</span> <span class="n">moduler_runner</span><span class="p">(</span><span class="n">input_file_list</span><span class="p">,</span>
+                                                    <span class="n">output_dir</span><span class="p">,</span>
+                                                    <span class="n">file_number_string</span><span class="p">,</span>
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_log</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="WorkerHandler._log_stdout"><a class="viewcode-back" href="../../../shapepipe.pipeline.worker_handler.html#shapepipe.pipeline.worker_handler.WorkerHandler._log_stdout">[docs]</a>    <span class="k">def</span> <span class="nf">_log_stdout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Log STDOUT</span>
@@ -376,7 +383,7 @@
         <script type="text/javascript" src="../../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
     
 
   

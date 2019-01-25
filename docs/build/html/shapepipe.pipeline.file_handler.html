@@ -173,8 +173,76 @@
 </tbody>
 </table>
 <dl class="function">
-<dt id="shapepipe.pipeline.file_handler.check_dir">
-<code class="descclassname">shapepipe.pipeline.file_handler.</code><code class="descname">check_dir</code><span class="sig-paren">(</span><em>dir_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#check_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.check_dir" title="Permalink to this definition">¶</a></dt>
+<dt id="shapepipe.pipeline.file_handler.find_files">
+<code class="descclassname">shapepipe.pipeline.file_handler.</code><code class="descname">find_files</code><span class="sig-paren">(</span><em>path</em>, <em>pattern='*'</em>, <em>ext='*'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#find_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.find_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find Files</p>
+<p>This method recursively retrieves file names from a given path that
+match a given pattern and/or have a given extension.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Full path to files</li>
+<li><strong>pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em>, </em><em>optional</em>) – File pattern, default is ‘*’</li>
+<li><strong>ext</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em>, </em><em>optional</em>) – File extension, default is ‘*’</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">List of file names</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)">list</a></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code></a> – For ‘*’ in pattern</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code></a> – For ‘*’ in extension</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code></a> – For invalid extension format</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">RuntimeError</span></code></a> – For empty file list</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="shapepipe.pipeline.file_handler.FileHandler">
+<em class="property">class </em><code class="descclassname">shapepipe.pipeline.file_handler.</code><code class="descname">FileHandler</code><span class="sig-paren">(</span><em>run_name</em>, <em>modules</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>File Handler</p>
+<p>This class manages the files used and produced during a pipeline run.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>run_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Run name</li>
+<li><strong>module_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – List of modules to be run</li>
+<li><strong>config</strong> (<a class="reference internal" href="shapepipe.pipeline.config.html#shapepipe.pipeline.config.CustomParser" title="shapepipe.pipeline.config.CustomParser"><em>CustomParser</em></a>) – Configuaration parser instance</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="shapepipe.pipeline.file_handler.FileHandler.run_dir">
+<code class="descname">run_dir</code><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler.run_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run Directory</p>
+<p>This method defines the run directory.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="shapepipe.pipeline.file_handler.FileHandler.input_dir">
+<code class="descname">input_dir</code><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler.input_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Input Directory</p>
+<p>This method defines the input directory.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="shapepipe.pipeline.file_handler.FileHandler.check_dir">
+<em class="property">static </em><code class="descname">check_dir</code><span class="sig-paren">(</span><em>dir_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler.check_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler.check_dir" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check Directory</p>
 <p>Raise error if directory exists.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -189,34 +257,9 @@
 </table>
 </dd></dl>
 
-<dl class="class">
-<dt id="shapepipe.pipeline.file_handler.FileHandler">
-<em class="property">class </em><code class="descclassname">shapepipe.pipeline.file_handler.</code><code class="descname">FileHandler</code><span class="sig-paren">(</span><em>run_name</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<p>File Handler</p>
-<p>This class manages the files used and produced during a pipeline run.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>run_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Run name</li>
-<li><strong>config</strong> (<a class="reference internal" href="shapepipe.pipeline.config.html#shapepipe.pipeline.config.CustomParser" title="shapepipe.pipeline.config.CustomParser"><em>CustomParser</em></a>) – Configuaration parser instance</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<dl class="attribute">
-<dt id="shapepipe.pipeline.file_handler.FileHandler.run_dir">
-<code class="descname">run_dir</code><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler.run_dir" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run Directory</p>
-<p>This method defines the run directory</p>
-</dd></dl>
-
-<dl class="staticmethod">
+<dl class="classmethod">
 <dt id="shapepipe.pipeline.file_handler.FileHandler.mkdir">
-<em class="property">static </em><code class="descname">mkdir</code><span class="sig-paren">(</span><em>dir_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler.mkdir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler.mkdir" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><code class="descname">mkdir</code><span class="sig-paren">(</span><em>dir_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler.mkdir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler.mkdir" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make Directory</p>
 <p>This method creates a directory at the specified path.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -231,7 +274,7 @@
 
 <dl class="staticmethod">
 <dt id="shapepipe.pipeline.file_handler.FileHandler.format">
-<em class="property">static </em><code class="descname">format</code><span class="sig-paren">(</span><em>path</em>, <em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler.format"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler.format" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">format</code><span class="sig-paren">(</span><em>path</em>, <em>name</em>, <em>ext=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler.format"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler.format" title="Permalink to this definition">¶</a></dt>
 <dd><p>Format Path Name</p>
 <p>This method appends the file/directory name to the input path.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -241,6 +284,7 @@
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Full path</li>
 <li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – File or directory name</li>
+<li><strong>ext</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em>, </em><em>optional</em>) – File extension, default is ‘’</li>
 </ul>
 </td>
 </tr>
@@ -252,6 +296,13 @@
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.file_handler.FileHandler._get_input_dir">
+<code class="descname">_get_input_dir</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler._get_input_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler._get_input_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Input Directory</p>
+<p>This method sets the module input directory</p>
 </dd></dl>
 
 <dl class="method">
@@ -306,6 +357,184 @@
 </table>
 </dd></dl>
 
+<dl class="staticmethod">
+<dt id="shapepipe.pipeline.file_handler.FileHandler._one_pattern_per_dir">
+<em class="property">static </em><code class="descname">_one_pattern_per_dir</code><span class="sig-paren">(</span><em>dir_list</em>, <em>pattern_list</em>, <em>ext_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler._one_pattern_per_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler._one_pattern_per_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>One Pattern Per Directory</p>
+<p>Find module files assuming one file pattern per input directory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dir_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – List of input directories</li>
+<li><strong>pattern_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – List of file patterns</li>
+<li><strong>ext_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – List of file extensions</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">List of input files</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)">list</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="shapepipe.pipeline.file_handler.FileHandler._all_pattern_per_dir">
+<em class="property">static </em><code class="descname">_all_pattern_per_dir</code><span class="sig-paren">(</span><em>dir_list</em>, <em>pattern_list</em>, <em>ext_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler._all_pattern_per_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler._all_pattern_per_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>All Patterns Per Directory</p>
+<p>Find module files assuming all file patterns are applied to all input
+directories.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dir_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – List of input directories</li>
+<li><strong>pattern_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – List of file patterns</li>
+<li><strong>ext_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – List of file extensions</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">List of input files</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)">list</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="shapepipe.pipeline.file_handler.FileHandler._generate_re_pattern">
+<em class="property">static </em><code class="descname">_generate_re_pattern</code><span class="sig-paren">(</span><em>match_pattern</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler._generate_re_pattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler._generate_re_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate Regular Expression Pattern</p>
+<p>Generate a regular expression pattern from an input string.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>match_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Pattern string</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Regular expression pattern</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">_sre.SRE_Pattern</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">TypeError</span></code></a> – For invalid input type</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.file_handler.FileHandler._strip_dir_from_file">
+<code class="descname">_strip_dir_from_file</code><span class="sig-paren">(</span><em>file_name</em>, <em>dir_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler._strip_dir_from_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler._strip_dir_from_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Strip Directory from File Name</p>
+<p>Remove the directory string from the file name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>file_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – File name</li>
+<li><strong>dir_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – Input directory list</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">File name</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)">str</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.file_handler.FileHandler._get_file_pattern">
+<code class="descname">_get_file_pattern</code><span class="sig-paren">(</span><em>file_name</em>, <em>dir_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler._get_file_pattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler._get_file_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get File Pattern</p>
+<p>Get the string component of the input file name matching the specified
+regular expression.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>file_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – File name</li>
+<li><strong>dir_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – Input directory list</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">File pattern</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)">str</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.file_handler.FileHandler._match_list_items">
+<code class="descname">_match_list_items</code><span class="sig-paren">(</span><em>file_list</em>, <em>dir_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler._match_list_items"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler._match_list_items" title="Permalink to this definition">¶</a></dt>
+<dd><p>Match List Items</p>
+<p>Match files names in a list of lists.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>file_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – List of file names</li>
+<li><strong>dir_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – Input directory list</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">List of matched file names, list of unmatched file names</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)">tuple</a></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">TypeError</span></code></a> – For invalid input type</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.file_handler.FileHandler._check_file_list">
+<code class="descname">_check_file_list</code><span class="sig-paren">(</span><em>file_list</em>, <em>dir_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler._check_file_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler._check_file_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check File List</p>
+<p>Check the file list for missing files.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>file_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – List of file names</li>
+<li><strong>dir_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – Input directory list</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">List of matched file names, list of unmatched file names</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)">tuple</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="shapepipe.pipeline.file_handler.FileHandler._get_module_input_files">
 <code class="descname">_get_module_input_files</code><span class="sig-paren">(</span><em>module</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler._get_module_input_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler._get_module_input_files" title="Permalink to this definition">¶</a></dt>
@@ -316,35 +545,6 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Module name</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="shapepipe.pipeline.file_handler.FileHandler._get_files_by_ext">
-<code class="descname">_get_files_by_ext</code><span class="sig-paren">(</span><em>path</em>, <em>ext</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_handler.html#FileHandler._get_files_by_ext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.file_handler.FileHandler._get_files_by_ext" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get Files by Extension</p>
-<p>This method retrieves file names from a given path with a given file
-extension.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Full path to files</li>
-<li><strong>ext</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – File extension</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">List of file names</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)">list</a></p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">RuntimeError</span></code></a> – For empty file list</p>
-</td>
 </tr>
 </tbody>
 </table>
@@ -433,7 +633,7 @@ extension.</p>
         <script type="text/javascript" src="_static/jquery.js"></script>
         <script type="text/javascript" src="_static/underscore.js"></script>
         <script type="text/javascript" src="_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
     
 
   

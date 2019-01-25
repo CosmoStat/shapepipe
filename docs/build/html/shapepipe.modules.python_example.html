@@ -182,8 +182,13 @@
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="shapepipe.modules.python_example.Dummy.read_file">
-<code class="descname">read_file</code><span class="sig-paren">(</span><em>file_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/python_example.html#Dummy.read_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.modules.python_example.Dummy.read_file" title="Permalink to this definition">¶</a></dt>
+<dt id="shapepipe.modules.python_example.Dummy._read_file">
+<code class="descname">_read_file</code><span class="sig-paren">(</span><em>file_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/python_example.html#Dummy._read_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.modules.python_example.Dummy._read_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.modules.python_example.Dummy.read_files">
+<code class="descname">read_files</code><span class="sig-paren">(</span><em>file_name1</em>, <em>file_name2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/python_example.html#Dummy.read_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.modules.python_example.Dummy.read_files" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -195,8 +200,70 @@
 
 <dl class="function">
 <dt id="shapepipe.modules.python_example.python_example">
-<code class="descclassname">shapepipe.modules.python_example.</code><code class="descname">python_example</code><span class="sig-paren">(</span><em>worker_dict</em>, <em>filehd</em>, <em>config</em>, <em>w_log</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/python_example.html#python_example"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.modules.python_example.python_example" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">shapepipe.modules.python_example.</code><code class="descname">python_example</code><span class="sig-paren">(</span><em>input_file_list</em>, <em>output_dir</em>, <em>file_number_string</em>, <em>config</em>, <em>w_log</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/python_example.html#python_example"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.modules.python_example.python_example" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="function">
+<dt id="shapepipe.modules.python_example.randint">
+<code class="descclassname">shapepipe.modules.python_example.</code><code class="descname">randint</code><span class="sig-paren">(</span><em>low</em>, <em>high=None</em>, <em>size=None</em>, <em>dtype='l'</em><span class="sig-paren">)</span><a class="headerlink" href="#shapepipe.modules.python_example.randint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return random integers from <cite>low</cite> (inclusive) to <cite>high</cite> (exclusive).</p>
+<p>Return random integers from the “discrete uniform” distribution of
+the specified dtype in the “half-open” interval [<cite>low</cite>, <cite>high</cite>). If
+<cite>high</cite> is None (the default), then results are from [0, <cite>low</cite>).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>low</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Lowest (signed) integer to be drawn from the distribution (unless
+<code class="docutils literal notranslate"><span class="pre">high=None</span></code>, in which case this parameter is one above the
+<em>highest</em> such integer).</li>
+<li><strong>high</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em>) – If provided, one above the largest (signed) integer to be drawn
+from the distribution (see above for behavior if <code class="docutils literal notranslate"><span class="pre">high=None</span></code>).</li>
+<li><strong>size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em> or </em><em>tuple of ints</em><em>, </em><em>optional</em>) – Output shape.  If the given shape is, e.g., <code class="docutils literal notranslate"><span class="pre">(m,</span> <span class="pre">n,</span> <span class="pre">k)</span></code>, then
+<code class="docutils literal notranslate"><span class="pre">m</span> <span class="pre">*</span> <span class="pre">n</span> <span class="pre">*</span> <span class="pre">k</span></code> samples are drawn.  Default is None, in which case a
+single value is returned.</li>
+<li><strong>dtype</strong> (<em>dtype</em><em>, </em><em>optional</em>) – <p>Desired dtype of the result. All dtypes are determined by their
+name, i.e., ‘int64’, ‘int’, etc, so byteorder is not available
+and a specific precision may have different C types depending
+on the platform. The default value is ‘np.int’.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 1.11.0.</span></p>
+</div>
+</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>out</strong> – <cite>size</cite>-shaped array of random integers from the appropriate
+distribution, or a single such random int if <cite>size</cite> not provided.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)">int</a> or ndarray of ints</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<dl class="last docutils">
+<dt><code class="xref py py-func docutils literal notranslate"><span class="pre">random.random_integers()</span></code></dt>
+<dd>similar to <cite>randint</cite>, only for the closed interval [<cite>low</cite>, <cite>high</cite>], and 1 is the lowest value if <cite>high</cite> is omitted. In particular, this other one is the one to use to generate uniformly distributed discrete non-integers.</dd>
+</dl>
+</div>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">array([1, 0, 0, 0, 1, 1, 0, 0, 1, 0])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])</span>
+</pre></div>
+</div>
+<p>Generate a 2 x 4 array of ints between 0 and 4, inclusive:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="go">array([[4, 0, 2, 1],</span>
+<span class="go">       [3, 2, 2, 0]])</span>
+</pre></div>
+</div>
+</dd></dl>
 
 </div>
 
@@ -245,7 +312,7 @@
         <script type="text/javascript" src="_static/jquery.js"></script>
         <script type="text/javascript" src="_static/underscore.js"></script>
         <script type="text/javascript" src="_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
     
 
   

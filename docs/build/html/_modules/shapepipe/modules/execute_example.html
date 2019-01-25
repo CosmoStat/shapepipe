@@ -167,12 +167,13 @@
 <span class="kn">from</span> <span class="nn">shapepipe.modules.module_decorator</span> <span class="k">import</span> <span class="n">module_runner</span>
 
 
-<div class="viewcode-block" id="execute_example"><a class="viewcode-back" href="../../../shapepipe.modules.execute_example.html#shapepipe.modules.execute_example.execute_example">[docs]</a><span class="nd">@module_runner</span><span class="p">(</span><span class="n">n_inputs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">input_module</span><span class="o">=</span><span class="s1">&#39;python_example&#39;</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="s1">&#39;.cat&#39;</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">execute_example</span><span class="p">(</span><span class="n">worker_dict</span><span class="p">,</span> <span class="n">filehd</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">w_log</span><span class="p">):</span>
+<div class="viewcode-block" id="execute_example"><a class="viewcode-back" href="../../../shapepipe.modules.execute_example.html#shapepipe.modules.execute_example.execute_example">[docs]</a><span class="nd">@module_runner</span><span class="p">(</span><span class="n">input_module</span><span class="o">=</span><span class="s1">&#39;python_example&#39;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s1">&#39;1.0&#39;</span><span class="p">,</span>
+               <span class="n">file_pattern</span><span class="o">=</span><span class="s1">&#39;pyex_output&#39;</span><span class="p">,</span> <span class="n">file_ext</span><span class="o">=</span><span class="s1">&#39;.cat&#39;</span><span class="p">,</span> <span class="n">executes</span><span class="o">=</span><span class="s1">&#39;head&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">execute_example</span><span class="p">(</span><span class="n">input_file_list</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">file_number_string</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
 
-    <span class="n">command_line</span> <span class="o">=</span> <span class="s1">&#39;head </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;process&#39;</span><span class="p">])</span>
-    <span class="n">output_file_name</span> <span class="o">=</span> <span class="p">(</span><span class="n">filehd</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filehd</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span>
-                        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_head_out.txt&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;job_name&#39;</span><span class="p">])))</span>
+    <span class="n">command_line</span> <span class="o">=</span> <span class="s1">&#39;head </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">output_file_name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/head_output</span><span class="si">{}</span><span class="s1">.txt&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span>
+                                                     <span class="n">file_number_string</span><span class="p">)</span>
 
     <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span> <span class="o">=</span> <span class="n">execute</span><span class="p">(</span><span class="n">command_line</span><span class="p">)</span>
 
@@ -217,7 +218,7 @@
         <script type="text/javascript" src="../../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
     
 
   

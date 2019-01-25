@@ -90,7 +90,7 @@ class ShapePipe():
             print(end_text)
             print(line())
 
-    def _get_module_depends(self):
+    def _get_module_depends(self, property):
         """ Get Module Dependencies
 
         List the Python packages and executables needed to run the modules.
@@ -102,16 +102,23 @@ class ShapePipe():
 
         """
 
-        depends = []
-        executes = []
+        prop_list = []
 
         module_runners = self._filehd.module_runners
 
         for module in module_runners.keys():
-            depends += module_runners[module].depends
-            executes += module_runners[module].executes
 
-        return depends, executes
+            if self._config.has_option(module.upper(), property.upper()):
+                prop_list += self._config.getlist(module.upper(),
+                                                  property.upper())
+            else:
+                prop_list += getattr(module_runners[module], property)
+
+            if self._filehd.get_add_module_property(module, property):
+                prop_list += self._filehd.get_add_module_property(module,
+                                                                  property)
+
+        return prop_list
 
     def _check_dependencies(self):
         """ Check Dependencies
@@ -120,10 +127,10 @@ class ShapePipe():
 
         """
 
-        module_dep, module_exe = self._get_module_depends()
-        dependencies = __installs__ + module_dep
+        module_dep = self._get_module_depends('depends') + __installs__
+        module_exe = self._get_module_depends('executes')
 
-        dh = DependencyHandler(dependencies, module_exe)
+        dh = DependencyHandler(module_dep, module_exe)
 
         dep_text = 'Checking Python Dependencies:'
         exe_text = 'Checking System Executables:'
