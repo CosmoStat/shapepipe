@@ -14,7 +14,7 @@ ShapePipe
 
 :Version: 0.0.1
 
-:Date: 26/10/2018
+:Date: 25/01/2019
 
 ShapePipe is a galaxy shape measurement pipeline developed within the
 CosmoStat lab at CEA Paris-Saclay.
@@ -74,7 +74,7 @@ core dependencies will be installed but not the Module dependencies.
 
 ShapePipe can be directly installed from the repository as follows:
 
-.. code-block:: python
+.. code-block:: bash
 
   $ pip install git+ssh://git@drf-gitlab.cea.fr/cosmostat/ShapePipe.git
 
@@ -200,6 +200,14 @@ Additional module options can be added using the following structure:
    [MODULE_NAME]
     PARAMETER = PARAMETER VALUE
 
+This mechanism can also be used to modify module decorator properties or append
+additional values to list properties as follows:
+
+.. code-block:: bash
+
+   [MODULE_NAME]
+    ADD_PARAMETER = PARAMETER VALUE
+
 Development
 ===========
 
@@ -235,6 +243,8 @@ The module runner decorator takes the following keyword arguments:
    on. Default value is ``[]``.
 6. ``executes`` : (``str`` or ``list``) The system executable(s) the module
    implements. Default value is ``[]``.
+7. ``numbering_scheme`` : (``str``) The numbering scheme implemented by the
+   module to find input files.
 
 The arguments passed to the module runner are the following:
 

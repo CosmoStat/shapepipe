@@ -164,28 +164,69 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">shapepipe.modules</span> <span class="k">import</span> <span class="n">module_runners</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">glob</span> <span class="k">import</span> <span class="n">glob</span>
+<span class="kn">from</span> <span class="nn">shapepipe.pipeline.run_log</span> <span class="k">import</span> <span class="n">RunLog</span>
+<span class="kn">from</span> <span class="nn">shapepipe.modules.module_runners</span> <span class="k">import</span> <span class="n">get_module_runners</span>
 
 
-<div class="viewcode-block" id="check_dir"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.check_dir">[docs]</a><span class="k">def</span> <span class="nf">check_dir</span><span class="p">(</span><span class="n">dir_name</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; Check Directory</span>
+<div class="viewcode-block" id="find_files"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.find_files">[docs]</a><span class="k">def</span> <span class="nf">find_files</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Find Files</span>
 
-<span class="sd">    Raise error if directory exists.</span>
+<span class="sd">        This method recursively retrieves file names from a given path that</span>
+<span class="sd">        match a given pattern and/or have a given extension.</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    dir_name : str</span>
-<span class="sd">        Directory name</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path : str</span>
+<span class="sd">            Full path to files</span>
+<span class="sd">        pattern : str, optional</span>
+<span class="sd">            File pattern, default is &#39;*&#39;</span>
+<span class="sd">        ext : str, optional</span>
+<span class="sd">            File extension, default is &#39;*&#39;</span>
 
-<span class="sd">    Raises</span>
-<span class="sd">    ------</span>
-<span class="sd">    OSError</span>
-<span class="sd">        If directory already exists</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            List of file names</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            For &#39;*&#39; in pattern</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            For &#39;*&#39; in extension</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            For invalid extension format</span>
+<span class="sd">        RuntimeError</span>
+<span class="sd">            For empty file list</span>
 
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dir_name</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">OSError</span><span class="p">(</span><span class="s1">&#39;Directory </span><span class="si">{}</span><span class="s1"> already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dir_name</span><span class="p">))</span></div>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">dot</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span>
+        <span class="n">star</span> <span class="o">=</span> <span class="s1">&#39;*&#39;</span>
+
+        <span class="k">if</span> <span class="n">pattern</span> <span class="o">!=</span> <span class="n">star</span> <span class="ow">and</span> <span class="n">star</span> <span class="ow">in</span> <span class="n">pattern</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Do not include &quot;*&quot; in pattern.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">ext</span> <span class="o">!=</span> <span class="n">star</span> <span class="ow">and</span> <span class="n">star</span> <span class="ow">in</span> <span class="n">ext</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Do not include &quot;*&quot; in extension.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">ext</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">dot</span><span class="p">)</span> <span class="ow">and</span> <span class="n">dot</span> <span class="ow">in</span> <span class="n">ext</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">ext</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">dot</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid extension format: &quot;</span><span class="si">{}</span><span class="s1">&quot;.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ext</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">ext</span> <span class="o">!=</span> <span class="n">star</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ext</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">dot</span><span class="p">):</span>
+            <span class="n">ext</span> <span class="o">=</span> <span class="n">dot</span> <span class="o">+</span> <span class="n">ext</span>
+
+        <span class="n">search_string</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/**/*</span><span class="si">{}</span><span class="s1">*</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span>
+
+        <span class="n">file_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">search_string</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">file_list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;No files found matching the conditions in </span><span class="si">{}</span><span class="s1">&#39;</span>
+                               <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">file</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">file_list</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">file</span><span class="p">)]</span></div>
 
 
 <div class="viewcode-block" id="FileHandler"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler">[docs]</a><span class="k">class</span> <span class="nc">FileHandler</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -197,24 +238,44 @@
 <span class="sd">    ----------</span>
 <span class="sd">    run_name : str</span>
 <span class="sd">        Run name</span>
+<span class="sd">    module_list : list</span>
+<span class="sd">        List of modules to be run</span>
 <span class="sd">    config : CustomParser</span>
 <span class="sd">        Configuaration parser instance</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_name</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_name</span><span class="p">,</span> <span class="n">modules</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_run_name</span> <span class="o">=</span> <span class="n">run_name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_input_dir</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">getexpanded</span><span class="p">(</span><span class="s1">&#39;FILE&#39;</span><span class="p">,</span> <span class="s1">&#39;INPUT_DIR&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_list</span> <span class="o">=</span> <span class="n">modules</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">module_runners</span> <span class="o">=</span> <span class="n">get_module_runners</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_input_list</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">getlist</span><span class="p">(</span><span class="s1">&#39;FILE&#39;</span><span class="p">,</span> <span class="s1">&#39;INPUT_DIR&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">getexpanded</span><span class="p">(</span><span class="s1">&#39;FILE&#39;</span><span class="p">,</span> <span class="s1">&#39;OUTPUT_DIR&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_log_name</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FILE&#39;</span><span class="p">,</span> <span class="s1">&#39;LOG_NAME&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_run_log_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="p">,</span>
+                                         <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FILE&#39;</span><span class="p">,</span> <span class="s1">&#39;RUN_LOG_NAME&#39;</span><span class="p">),</span>
+                                         <span class="s1">&#39;.txt&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s1">&#39;FILE&#39;</span><span class="p">,</span> <span class="s1">&#39;FILE_PATTERN&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_file_pattern</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">getlist</span><span class="p">(</span><span class="s1">&#39;FILE&#39;</span><span class="p">,</span> <span class="s1">&#39;FILE_PATTERN&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_file_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s1">&#39;FILE&#39;</span><span class="p">,</span> <span class="s1">&#39;FILE_EXT&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_file_ext</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">getlist</span><span class="p">(</span><span class="s1">&#39;FILE&#39;</span><span class="p">,</span> <span class="s1">&#39;FILE_EXT&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_file_ext</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s1">&#39;FILE&#39;</span><span class="p">,</span> <span class="s1">&#39;NUMBERING_SCHEME&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_num_scheme</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FILE&#39;</span><span class="p">,</span> <span class="s1">&#39;NUMBERING_SCHEME&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_num_scheme</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;RE:\_\d+&#39;</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">run_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Run Directory</span>
 
-<span class="sd">        This method defines the run directory</span>
+<span class="sd">        This method defines the run directory.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -223,12 +284,50 @@
     <span class="nd">@run_dir</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">run_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 
-        <span class="n">check_dir</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_dir</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_run_dir</span> <span class="o">=</span> <span class="n">value</span>
 
-<div class="viewcode-block" id="FileHandler.mkdir"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.mkdir">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">mkdir</span><span class="p">(</span><span class="n">dir_name</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">input_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Input Directory</span>
+
+<span class="sd">        This method defines the input directory.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_dir</span>
+
+    <span class="nd">@input_dir</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">input_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_dir</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_input_dir</span> <span class="o">=</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="FileHandler.check_dir"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.check_dir">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">check_dir</span><span class="p">(</span><span class="n">dir_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Check Directory</span>
+
+<span class="sd">        Raise error if directory exists.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dir_name : str</span>
+<span class="sd">            Directory name</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        OSError</span>
+<span class="sd">            If directory already exists</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dir_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">OSError</span><span class="p">(</span><span class="s1">&#39;Directory </span><span class="si">{}</span><span class="s1"> already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dir_name</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="FileHandler.mkdir"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.mkdir">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">mkdir</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dir_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Make Directory</span>
 
 <span class="sd">        This method creates a directory at the specified path.</span>
@@ -240,11 +339,11 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">check_dir</span><span class="p">(</span><span class="n">dir_name</span><span class="p">)</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">check_dir</span><span class="p">(</span><span class="n">dir_name</span><span class="p">)</span>
         <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">dir_name</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="FileHandler.format"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.format">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">format</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">format</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Format Path Name</span>
 
 <span class="sd">        This method appends the file/directory name to the input path.</span>
@@ -255,6 +354,8 @@
 <span class="sd">            Full path</span>
 <span class="sd">        name : str</span>
 <span class="sd">            File or directory name</span>
+<span class="sd">        ext : str, optional</span>
+<span class="sd">            File extension, default is &#39;&#39;</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -263,7 +364,40 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FileHandler._get_input_dir"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._get_input_dir">[docs]</a>    <span class="k">def</span> <span class="nf">_get_input_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get Input Directory</span>
+
+<span class="sd">        This method sets the module input directory</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">input_dir</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="nb">dir</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_list</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="nb">dir</span><span class="p">):</span>
+                <span class="n">input_dir</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">dir</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="s1">&#39;last&#39;</span> <span class="ow">in</span> <span class="nb">dir</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="n">module</span> <span class="o">=</span> <span class="nb">dir</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">input_dir</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">_run_log</span><span class="o">.</span><span class="n">get_last</span><span class="p">(</span><span class="n">module</span><span class="p">),</span>
+                                 <span class="n">module</span><span class="p">),</span> <span class="s1">&#39;output&#39;</span><span class="p">))</span>
+
+            <span class="k">elif</span> <span class="s1">&#39;:&#39;</span> <span class="ow">in</span> <span class="nb">dir</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="n">string</span><span class="p">,</span> <span class="n">module</span> <span class="o">=</span> <span class="nb">dir</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+                <span class="n">input_dir</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">_run_log</span><span class="o">.</span><span class="n">get_run</span><span class="p">(</span><span class="n">string</span><span class="p">),</span> <span class="n">module</span><span class="p">),</span>
+                                 <span class="s1">&#39;output&#39;</span><span class="p">))</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid INPUT_DIR. Make sure the paths &#39;</span>
+                                 <span class="s1">&#39;provided are valid directories or use the &#39;</span>
+                                 <span class="s1">&#39;allowed special keys.&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_input_dir</span> <span class="o">=</span> <span class="n">input_dir</span></div>
 
 <div class="viewcode-block" id="FileHandler.create_global_run_dirs"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.create_global_run_dirs">[docs]</a>    <span class="k">def</span> <span class="nf">create_global_run_dirs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Create Global Run Directories</span>
@@ -275,9 +409,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">run_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_log_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_dir</span><span class="p">,</span> <span class="s1">&#39;logs&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_log_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_run_log</span> <span class="o">=</span> <span class="n">RunLog</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_run_log_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_list</span><span class="p">,</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">run_dir</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_dir</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_log_dir</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_log_dir</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_input_dir</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="FileHandler._get_module_properties"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._get_module_properties">[docs]</a>    <span class="k">def</span> <span class="nf">_get_module_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Get Module Properties</span>
@@ -291,11 +429,46 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;n_inputs&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="nb">getattr</span><span class="p">(</span><span class="n">module_runners</span><span class="p">,</span> <span class="n">module</span><span class="p">)</span><span class="o">.</span><span class="n">n_inputs</span>
+        <span class="c1"># Get the name of the input module from module runner</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;input_module&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="nb">getattr</span><span class="p">(</span><span class="n">module_runners</span><span class="p">,</span> <span class="n">module</span><span class="p">)</span><span class="o">.</span><span class="n">input_module</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;ext&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">module_runners</span><span class="p">,</span> <span class="n">module</span><span class="p">)</span><span class="o">.</span><span class="n">ext</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module_runners</span><span class="p">[</span><span class="n">module</span><span class="p">]</span><span class="o">.</span><span class="n">input_module</span>
+        <span class="c1">#     getattr(module_runners, module).input_module</span>
+
+        <span class="c1"># Get the input file pattern from module runner (or config file)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_pattern</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+                <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;file_pattern&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_pattern</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;file_pattern&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">module_runners</span><span class="p">[</span><span class="n">module</span><span class="p">]</span><span class="o">.</span><span class="n">file_pattern</span>
+        <span class="c1">#     getattr(module_runners, module).file_pattern</span>
+
+        <span class="c1"># Get the input file extesion from module runner (or config file)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_ext</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+                <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;file_ext&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_ext</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;file_ext&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">module_runners</span><span class="p">[</span><span class="n">module</span><span class="p">]</span><span class="o">.</span><span class="n">file_ext</span>
+        <span class="c1"># getattr(module_runners, module).file_ext</span>
+
+        <span class="c1"># Make sure the number of patterns and extensions match</span>
+        <span class="k">if</span> <span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;file_ext&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;file_pattern&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;file_ext&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;file_ext&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span>
+                 <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;file_pattern&#39;</span><span class="p">]]</span>
+
+        <span class="k">elif</span> <span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;file_pattern&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;file_ext&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;file_pattern&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;file_pattern&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span>
+                 <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;file_ext&#39;</span><span class="p">]]</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;file_ext&#39;</span><span class="p">])</span> <span class="o">!=</span>
+                <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;file_pattern&#39;</span><span class="p">])):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The number of file_ext values does not match &#39;</span>
+                             <span class="s1">&#39;the number of file_pattern values.&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="FileHandler._create_module_run_dirs"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._create_module_run_dirs">[docs]</a>    <span class="k">def</span> <span class="nf">_create_module_run_dirs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Create Module Run Directories</span>
@@ -336,13 +509,218 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;input_module&#39;</span><span class="p">],</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
-                <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;input_dir&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_dir</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;input_dir&#39;</span><span class="p">]</span> <span class="o">=</span> \
-                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">]</span>
-                 <span class="p">[</span><span class="s1">&#39;input_module&#39;</span><span class="p">]][</span><span class="s1">&#39;output_dir&#39;</span><span class="p">])</span></div>
+                <span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">input_mod</span><span class="p">][</span><span class="s1">&#39;output_dir&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">input_mod</span> <span class="ow">in</span>
+                  <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;input_module&#39;</span><span class="p">]])</span></div>
+
+<div class="viewcode-block" id="FileHandler._one_pattern_per_dir"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._one_pattern_per_dir">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_one_pattern_per_dir</span><span class="p">(</span><span class="n">dir_list</span><span class="p">,</span> <span class="n">pattern_list</span><span class="p">,</span> <span class="n">ext_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; One Pattern Per Directory</span>
+
+<span class="sd">        Find module files assuming one file pattern per input directory.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dir_list : list</span>
+<span class="sd">            List of input directories</span>
+<span class="sd">        pattern_list : list</span>
+<span class="sd">            List of file patterns</span>
+<span class="sd">        ext_list : list</span>
+<span class="sd">            List of file extensions</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            List of input files</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">find_files</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span> <span class="k">for</span> <span class="nb">dir</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">ext</span> <span class="ow">in</span>
+                <span class="nb">zip</span><span class="p">(</span><span class="n">dir_list</span><span class="p">,</span> <span class="n">pattern_list</span><span class="p">,</span> <span class="n">ext_list</span><span class="p">)]</span></div>
+
+<div class="viewcode-block" id="FileHandler._all_pattern_per_dir"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._all_pattern_per_dir">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_all_pattern_per_dir</span><span class="p">(</span><span class="n">dir_list</span><span class="p">,</span> <span class="n">pattern_list</span><span class="p">,</span> <span class="n">ext_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; All Patterns Per Directory</span>
+
+<span class="sd">        Find module files assuming all file patterns are applied to all input</span>
+<span class="sd">        directories.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dir_list : list</span>
+<span class="sd">            List of input directories</span>
+<span class="sd">        pattern_list : list</span>
+<span class="sd">            List of file patterns</span>
+<span class="sd">        ext_list : list</span>
+<span class="sd">            List of file extensions</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            List of input files</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">find_files</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span> <span class="k">for</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">ext</span> <span class="ow">in</span>
+                <span class="nb">zip</span><span class="p">(</span><span class="n">pattern_list</span><span class="p">,</span> <span class="n">ext_list</span><span class="p">)</span> <span class="k">for</span> <span class="nb">dir</span> <span class="ow">in</span> <span class="n">dir_list</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="FileHandler._generate_re_pattern"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._generate_re_pattern">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_generate_re_pattern</span><span class="p">(</span><span class="n">match_pattern</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate Regular Expression Pattern</span>
+
+<span class="sd">        Generate a regular expression pattern from an input string.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        match_pattern : str</span>
+<span class="sd">            Pattern string</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        _sre.SRE_Pattern</span>
+<span class="sd">            Regular expression pattern</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            For invalid input type</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">match_pattern</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Match pattern must be a string.&#39;</span><span class="p">)</span>
+
+        <span class="n">chars</span> <span class="o">=</span> <span class="p">[</span><span class="n">char</span> <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">match_pattern</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">char</span><span class="o">.</span><span class="n">isalnum</span><span class="p">()]</span>
+        <span class="n">split_pattern</span> <span class="o">=</span> <span class="s1">&#39;|&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">chars</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\.&#39;</span><span class="p">)</span>
+        <span class="n">chars</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\\</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">char</span><span class="p">)</span> <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">chars</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">]</span>
+        <span class="n">num_length</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">d{{</span><span class="si">{}</span><span class="s1">}}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">digits</span><span class="p">))</span> <span class="k">for</span> <span class="n">digits</span> <span class="ow">in</span>
+                      <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">split_pattern</span><span class="p">,</span> <span class="n">match_pattern</span><span class="p">)]</span>
+        <span class="n">re_pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">a</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">num_length</span><span class="p">,</span> <span class="n">chars</span><span class="p">)</span>
+                               <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">b</span><span class="p">])</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;+&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">re_pattern</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FileHandler._strip_dir_from_file"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._strip_dir_from_file">[docs]</a>    <span class="k">def</span> <span class="nf">_strip_dir_from_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">dir_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Strip Directory from File Name</span>
+
+<span class="sd">        Remove the directory string from the file name.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file_name : str</span>
+<span class="sd">            File name</span>
+<span class="sd">        dir_list : list</span>
+<span class="sd">            Input directory list</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            File name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">file_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">_dir</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">_dir</span> <span class="ow">in</span> <span class="n">dir_list</span>
+                <span class="k">if</span> <span class="n">_dir</span> <span class="ow">in</span> <span class="n">file_name</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="FileHandler._get_file_pattern"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._get_file_pattern">[docs]</a>    <span class="k">def</span> <span class="nf">_get_file_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">dir_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get File Pattern</span>
+
+<span class="sd">        Get the string component of the input file name matching the specified</span>
+<span class="sd">        regular expression.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file_name : str</span>
+<span class="sd">            File name</span>
+<span class="sd">        dir_list : list</span>
+<span class="sd">            Input directory list</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            File pattern</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">file_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strip_dir_from_file</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="n">dir_list</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_re_pattern</span><span class="p">,</span> <span class="n">file_name</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="FileHandler._match_list_items"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._match_list_items">[docs]</a>    <span class="k">def</span> <span class="nf">_match_list_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_list</span><span class="p">,</span> <span class="n">dir_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Match List Items</span>
+
+<span class="sd">        Match files names in a list of lists.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file_list : list</span>
+<span class="sd">            List of file names</span>
+<span class="sd">        dir_list : list</span>
+<span class="sd">            Input directory list</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            List of matched file names, list of unmatched file names</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            For invalid input type</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;File list must be a list.&#39;</span><span class="p">)</span>
+
+        <span class="n">all_patterns</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_file_pattern</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">dir_list</span><span class="p">)</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span>
+                        <span class="nb">max</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="nb">len</span><span class="p">)]</span>
+        <span class="n">new_list</span> <span class="o">=</span> <span class="p">[[</span><span class="n">item</span> <span class="k">for</span> <span class="n">sublist</span> <span class="ow">in</span> <span class="n">file_list</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">sublist</span> <span class="k">if</span>
+                     <span class="n">pattern</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strip_dir_from_file</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">dir_list</span><span class="p">)]</span>
+                    <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">all_patterns</span><span class="p">]</span>
+
+        <span class="n">file_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">all_patterns</span><span class="p">,</span> <span class="n">new_list</span><span class="p">))</span>
+
+        <span class="n">max_n_cols</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">flist</span><span class="p">)</span> <span class="k">for</span> <span class="n">flist</span> <span class="ow">in</span> <span class="n">new_list</span><span class="p">])</span>
+        <span class="n">matched</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">file_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="n">max_n_cols</span><span class="p">])</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">file_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">max_n_cols</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">matched</span><span class="p">,</span> <span class="n">missing</span></div>
+
+<div class="viewcode-block" id="FileHandler._check_file_list"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._check_file_list">[docs]</a>    <span class="k">def</span> <span class="nf">_check_file_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_list</span><span class="p">,</span> <span class="n">dir_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Check File List</span>
+
+<span class="sd">        Check the file list for missing files.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file_list : list</span>
+<span class="sd">            List of file names</span>
+<span class="sd">        dir_list : list</span>
+<span class="sd">            Input directory list</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            List of matched file names, list of unmatched file names</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_scheme</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;RE:&#39;</span><span class="p">):</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_re_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_scheme</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;RE:&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_re_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_re_pattern</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_scheme</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_match_list_items</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">dir_list</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="FileHandler._get_module_input_files"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._get_module_input_files">[docs]</a>    <span class="k">def</span> <span class="nf">_get_module_input_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Get Module Input Files</span>
@@ -356,45 +734,19 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;files&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="bp">self</span><span class="o">.</span><span class="n">_get_files_by_ext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;input_dir&#39;</span><span class="p">],</span>
-                                   <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;ext&#39;</span><span class="p">])</span>
+        <span class="n">dir_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;input_dir&#39;</span><span class="p">]</span>
+        <span class="n">pattern_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;file_pattern&#39;</span><span class="p">]</span>
+        <span class="n">ext_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;file_ext&#39;</span><span class="p">]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">process_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s1">&#39;files&#39;</span><span class="p">]</span></div>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dir_list</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">pattern_list</span><span class="p">):</span>
+            <span class="n">file_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_one_pattern_per_dir</span><span class="p">(</span><span class="n">dir_list</span><span class="p">,</span> <span class="n">pattern_list</span><span class="p">,</span>
+                                                  <span class="n">ext_list</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">file_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_pattern_per_dir</span><span class="p">(</span><span class="n">dir_list</span><span class="p">,</span> <span class="n">pattern_list</span><span class="p">,</span>
+                                                  <span class="n">ext_list</span><span class="p">)</span>
 
-<div class="viewcode-block" id="FileHandler._get_files_by_ext"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._get_files_by_ext">[docs]</a>    <span class="k">def</span> <span class="nf">_get_files_by_ext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">ext</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Get Files by Extension</span>
-
-<span class="sd">        This method retrieves file names from a given path with a given file</span>
-<span class="sd">        extension.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        path : str</span>
-<span class="sd">            Full path to files</span>
-<span class="sd">        ext : str</span>
-<span class="sd">            File extension</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        list</span>
-<span class="sd">            List of file names</span>
-
-<span class="sd">        Raises</span>
-<span class="sd">        ------</span>
-<span class="sd">        RuntimeError</span>
-<span class="sd">            For empty file list</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">file_list</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-                     <span class="k">if</span> <span class="n">file</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">ext</span><span class="p">)]</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">file_list</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;No files found matching the conditions in </span><span class="si">{}</span><span class="s1">&#39;</span>
-                               <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
-
-        <span class="k">return</span> <span class="n">file_list</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">missed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_file_list</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span>
+                                                               <span class="n">dir_list</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="FileHandler.set_up_module"><a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.set_up_module">[docs]</a>    <span class="k">def</span> <span class="nf">set_up_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Set Up Module</span>
@@ -469,7 +821,7 @@
         <script type="text/javascript" src="../../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
     
 
   
