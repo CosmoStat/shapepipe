@@ -26,7 +26,11 @@ def mask_runner(input_file_list, output_dir, file_number_string,
         raise ValueError("Input files must be 'image', 'weight' and 'ext_flags' (optionnal)")
     
     config_file = config.get('MASK_RUNNER', 'MASK_CONFIG_PATH')
-    suffix = config.get('MASK_RUNNER', 'SUFFIX')
+    
+    if config.has_option('MASK_RUNNER', 'SUFFIX'):
+        suffix = config.get('MASK_RUNNER', 'SUFFIX')
+    else:
+        suffix = ''
 
     inst = mask(*input_file_list[:2], suffix.replace(" ",""), file_number_string, config_file, output_dir, path_external_flag=ext_flag_name)
     stdout, stderr = inst.make_mask()
