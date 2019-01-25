@@ -25,11 +25,14 @@ import shapepipe.pipeline.file_io as sc
 
 
 
-class MyError(Exception):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
+class FindExposureError(Exception):
+   """ FindExposureError
+
+   Generic error that is raised by this script.
+
+   """
+
+   pass
 
 
 
@@ -67,7 +70,7 @@ class find_exposures():
         fbasen  = os.path.basename(cat_tile_path)
         m = re.search('(.*).{}'.format(ext), fbasen)
         if not m:
-            raise MyError('Extension \'{}\' does not match tile cataog basename \'{}\''.format(ext, fbasen))
+            raise FindExposureError('Extension \'{}\' does not match tile cataog basename \'{}\''.format(ext, fbasen))
         self._cat_tile_basename = m.group(1)
 
 
@@ -118,7 +121,7 @@ class find_exposures():
             pattern = '(.*)\.{1}.*'
             m = re.search(pattern, temp[3])
             if not m:
-                raise MyError('re match \'{}\' failed for filename \'{}\''.format(pattern, temp[3]))
+                raise FindExposureError('re match \'{}\' failed for filename \'{}\''.format(pattern, temp[3]))
 
             exp_name = m.group(1)
 
