@@ -15,7 +15,7 @@ from shapepipe.pipeline.run_log import RunLog
 from shapepipe.modules.module_runners import get_module_runners
 
 
-def find_files(path, pattern='*', ext='*'):
+def find_files(path, pattern='*', ext='*', empty_error=False):
         """ Find Files
 
         This method recursively retrieves file names from a given path that
@@ -29,6 +29,8 @@ def find_files(path, pattern='*', ext='*'):
             File pattern, default is '*'
         ext : str, optional
             File extension, default is '*'
+        empty_error : bool, optional
+            Raise error if file list is empty, default is False
 
         Returns
         -------
@@ -67,7 +69,7 @@ def find_files(path, pattern='*', ext='*'):
 
         file_list = sorted(glob(search_string, recursive=True))
 
-        if not file_list:
+        if empty_error and not file_list:
             raise RuntimeError('No files found matching the conditions in {}'
                                '.'.format(path))
 
@@ -113,9 +115,9 @@ class FileHandler(object):
         else:
             self._file_ext = None
         if config.has_option('FILE', 'NUMBERING_SCHEME'):
-            self._num_scheme = config.get('FILE', 'NUMBERING_SCHEME')
+            self._numbering_scheme = config.get('FILE', 'NUMBERING_SCHEME')
         else:
-            self._num_scheme = r'RE:\_\d+'
+            self._numbering_scheme = r'RE:\_\d+'
 
     @property
     def run_dir(self):
@@ -263,7 +265,89 @@ class FileHandler(object):
 
         self._get_input_dir()
 
-    def _get_module_properties(self, module):
+    def get_add_module_property(self, module, property):
+        """ Get Additional Module Properties
+
+        Get a list of additional module property values.
+
+        Parameters
+        ----------
+        module : str
+            Module name
+        property : str
+            Property name
+
+        Returns
+        -------
+        list
+            Additional module property values
+
+        """
+
+        if (self._config.has_option(module.upper(), 'ADD_{}'.format(
+                property.upper()))):
+
+            return self._config.getlist(module.upper(), 'ADD_{}'.format(
+                                        property.upper()))
+
+    def _set_module_property(self, module, property):
+        """ Get Module Property
+
+        Get a module property from either the configuration file or the module
+        runner.
+
+        Parameters
+        ----------
+        module : str
+            Module name
+        property : str
+            Property name
+
+        """
+
+        if self._config.has_option(module.upper(), property.upper()):
+            prop_val = self._config.get(module.upper(), property.upper())
+
+        else:
+            prop_val = getattr(self.module_runners[module], property)
+
+        if len(self._module_dict) == 1 or isinstance(prop_val, type(None)):
+            prop_val = getattr(self, '_{}'.format(property))
+
+        self._module_dict[module][property] = prop_val
+
+    def _set_module_list_property(self, module, property):
+        """ Get Module List Property
+
+        Get a module list property from either the configuration file or the
+        module runner.
+
+        Parameters
+        ----------
+        module : str
+            Module name
+        property : str
+            Property name
+
+        """
+
+        if self._config.has_option(module.upper(), property.upper()):
+            prop_list = self._config.getlist(module.upper(), property.upper())
+
+        elif (property in ('file_pattern', 'file_list') and not
+                isinstance(getattr(self, '_{}'.format(property)), type(None))
+                and len(self._module_dict) == 1):
+            prop_list = getattr(self, '_{}'.format(property))
+
+        else:
+            prop_list = getattr(self.module_runners[module], property)
+
+        if self.get_add_module_property(module, property):
+            prop_list += self.get_add_module_property(module, property)
+
+        self._module_dict[module][property] = prop_list
+
+    def _set_module_properties(self, module):
         """ Get Module Properties
 
         Get module properties defined in module runner wrapper.
@@ -275,25 +359,14 @@ class FileHandler(object):
 
         """
 
-        # Get the name of the input module from module runner
-        self._module_dict[module]['input_module'] = \
-            self.module_runners[module].input_module
+        module_props = ('numbering_scheme',)
+        module_list_props = ('input_module', 'file_pattern', 'file_ext',
+                             'depends', 'executes')
 
-        # Get the input file pattern from module runner (or config file)
-        if (not isinstance(self._file_pattern, type(None))
-                and len(self._module_dict) == 1):
-            self._module_dict[module]['file_pattern'] = self._file_pattern
-        else:
-            self._module_dict[module]['file_pattern'] = \
-                self.module_runners[module].file_pattern
-
-        # Get the input file extesion from module runner (or config file)
-        if (not isinstance(self._file_ext, type(None))
-                and len(self._module_dict) == 1):
-            self._module_dict[module]['file_ext'] = self._file_ext
-        else:
-            self._module_dict[module]['file_ext'] = \
-                self.module_runners[module].file_ext
+        [self._set_module_property(module, property) for property in
+         module_props]
+        [self._set_module_list_property(module, property) for property in
+         module_list_props]
 
         # Make sure the number of patterns and extensions match
         if ((len(self._module_dict[module]['file_ext']) == 1) and
@@ -367,33 +440,12 @@ class FileHandler(object):
                   self._module_dict[module]['input_module']])
 
             if self._config.has_option(module.upper(), 'INPUT_DIR'):
-                self._module_dict[module]['input_dir'] += \
+                self._module_dict[module]['input_dir'] = \
                     self._config.getlist(module.upper(), 'INPUT_DIR')
 
-    @staticmethod
-    def _one_pattern_per_dir(dir_list, pattern_list, ext_list):
-        """ One Pattern Per Directory
-
-        Find module files assuming one file pattern per input directory.
-
-        Parameters
-        ----------
-        dir_list : list
-            List of input directories
-        pattern_list : list
-            List of file patterns
-        ext_list : list
-            List of file extensions
-
-        Returns
-        -------
-        list
-            List of input files
-
-        """
-
-        return [find_files(dir, pattern, ext) for dir, pattern, ext in
-                zip(dir_list, pattern_list, ext_list)]
+        if self.get_add_module_property(module, 'input_dir'):
+            self._module_dict[module]['input_dir'] += \
+                self.get_add_module_property(module, 'input_dir')
 
     @staticmethod
     def _all_pattern_per_dir(dir_list, pattern_list, ext_list):
@@ -418,8 +470,16 @@ class FileHandler(object):
 
         """
 
-        return [find_files(dir, pattern, ext) for pattern, ext in
-                zip(pattern_list, ext_list) for dir in dir_list]
+        file_list = [find_files(dir, pattern, ext) for pattern, ext in
+                     zip(pattern_list, ext_list) for dir in dir_list]
+        file_list = [item for item in file_list if item]
+
+        if not file_list:
+            raise RuntimeError('No files found matching patterns ({}) and/or '
+                               'extensions ({}) in directories provided ({})'
+                               ''.format(pattern_list, ext_list, dir_list))
+        else:
+            return file_list
 
     @staticmethod
     def _generate_re_pattern(match_pattern):
@@ -480,7 +540,8 @@ class FileHandler(object):
         return [file_name.replace(_dir + '/', '') for _dir in dir_list
                 if _dir in file_name][0]
 
-    def _get_file_pattern(self, file_name, dir_list):
+    @classmethod
+    def _get_file_pattern(cls, file_name, dir_list, re_pattern):
         """ Get File Pattern
 
         Get the string component of the input file name matching the specified
@@ -492,6 +553,8 @@ class FileHandler(object):
             File name
         dir_list : list
             Input directory list
+        re_pattern : str
+            Regular rexpression pattern
 
         Returns
         -------
@@ -500,9 +563,12 @@ class FileHandler(object):
 
         """
 
-        file_name = self._strip_dir_from_file(file_name, dir_list)
+        file_name = cls._strip_dir_from_file(file_name, dir_list)
 
-        return re.search(self._re_pattern, file_name).group()
+        if not re.search(re_pattern, file_name):
+            raise RuntimeError('No files found matching {}'.format(re_pattern))
+
+        return re.search(re_pattern, file_name).group()
 
     @staticmethod
     def _flatten_list(input_list):
@@ -555,7 +621,8 @@ class FileHandler(object):
 
         return new_list
 
-    def _match_list_items(self, file_list, dir_list):
+    @classmethod
+    def _match_list_items(cls, file_list, dir_list, re_pattern):
         """ Match List Items
 
         Match files names in a list of lists.
@@ -566,6 +633,8 @@ class FileHandler(object):
             List of file names
         dir_list : list
             Input directory list
+        re_pattern : str
+            Regular rexpression pattern
 
         Returns
         -------
@@ -582,9 +651,9 @@ class FileHandler(object):
         if not isinstance(file_list, list):
             TypeError('File list must be a list.')
 
-        all_patterns = [self._get_file_pattern(file, dir_list) for file in
-                        max(file_list, key=len)]
-        new_list = [self._check_pattern(file_list, pattern) for pattern in
+        all_patterns = [cls._get_file_pattern(file, dir_list, re_pattern)
+                        for file in max(file_list, key=len)]
+        new_list = [cls._check_pattern(file_list, pattern) for pattern in
                     all_patterns]
         new_list = [item for item in new_list if item]
 
@@ -598,7 +667,8 @@ class FileHandler(object):
 
         return matched, missing
 
-    def _check_file_list(self, file_list, dir_list):
+    @classmethod
+    def _check_file_list(cls, file_list, dir_list, num_scheme):
         """ Check File List
 
         Check the file list for missing files.
@@ -609,6 +679,8 @@ class FileHandler(object):
             List of file names
         dir_list : list
             Input directory list
+        num_scheme : str
+            Numbering scheme
 
         Returns
         -------
@@ -617,15 +689,15 @@ class FileHandler(object):
 
         """
 
-        if self._num_scheme.startswith('RE:'):
+        if num_scheme.startswith('RE:'):
 
-            self._re_pattern = self._num_scheme.replace('RE:', '')
+            re_pattern = num_scheme.replace('RE:', '')
 
         else:
 
-            self._re_pattern = self._generate_re_pattern(self._num_scheme)
+            re_pattern = cls._generate_re_pattern(num_scheme)
 
-        return self._match_list_items(file_list, dir_list)
+        return cls._match_list_items(file_list, dir_list, re_pattern)
 
     def _get_module_input_files(self, module):
         """ Get Module Input Files
@@ -642,16 +714,14 @@ class FileHandler(object):
         dir_list = self._module_dict[module]['input_dir']
         pattern_list = self._module_dict[module]['file_pattern']
         ext_list = self._module_dict[module]['file_ext']
+        num_scheme = self._module_dict[module]['numbering_scheme']
 
-        if len(dir_list) == len(pattern_list):
-            file_list = self._one_pattern_per_dir(dir_list, pattern_list,
-                                                  ext_list)
-        else:
-            file_list = self._all_pattern_per_dir(dir_list, pattern_list,
-                                                  ext_list)
+        file_list = self._all_pattern_per_dir(dir_list, pattern_list,
+                                              ext_list)
 
         self.process_list, self.missed = self._check_file_list(file_list,
-                                                               dir_list)
+                                                               dir_list,
+                                                               num_scheme)
 
     def set_up_module(self, module):
         """ Set Up Module
@@ -666,7 +736,7 @@ class FileHandler(object):
         """
 
         self._module_dict[module] = {}
-        self._get_module_properties(module)
+        self._set_module_properties(module)
         self._create_module_run_dirs(module)
         self._set_module_input_dir(module)
         self._get_module_input_files(module)
