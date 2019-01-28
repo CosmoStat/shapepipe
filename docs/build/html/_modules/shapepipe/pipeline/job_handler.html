@@ -347,10 +347,12 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_distribute_smp_jobs</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_for_errors</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;All processes complete.&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_missed_processes</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;All processes complete&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Finishing job handler&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;All processes complete&#39;</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="JobHandler.hms2sec"><a class="viewcode-back" href="../../../shapepipe.pipeline.job_handler.html#shapepipe.pipeline.job_handler.JobHandler.hms2sec">[docs]</a>    <span class="nd">@staticmethod</span>
@@ -440,7 +442,7 @@
                   <span class="p">(</span><span class="n">delayed</span><span class="p">(</span><span class="n">WorkerHandler</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span><span class="p">)</span><span class="o">.</span><span class="n">worker</span><span class="p">)</span>
                    <span class="p">(</span><span class="n">job_name</span><span class="p">,</span> <span class="n">process</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">,</span>
                    <span class="bp">self</span><span class="o">.</span><span class="n">_module</span><span class="p">)</span> <span class="k">for</span> <span class="n">job_name</span><span class="p">,</span> <span class="n">process</span> <span class="ow">in</span>
-                   <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_job_names</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">process_list</span><span class="p">)))</span>
+                   <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_job_names</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">process_list</span><span class="o">.</span><span class="n">items</span><span class="p">())))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_worker_dicts</span> <span class="o">=</span> <span class="n">result</span></div>
 
@@ -481,7 +483,27 @@
             <span class="k">if</span> <span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;stderr&#39;</span><span class="p">]:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;ERROR: stderr recorded in: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                               <span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;log&#39;</span><span class="p">]))</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">error_count</span> <span class="o">+=</span> <span class="mi">1</span></div></div>
+                <span class="bp">self</span><span class="o">.</span><span class="n">error_count</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="JobHandler._check_missed_processes"><a class="viewcode-back" href="../../../shapepipe.pipeline.job_handler.html#shapepipe.pipeline.job_handler.JobHandler._check_missed_processes">[docs]</a>    <span class="k">def</span> <span class="nf">_check_missed_processes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Check Missed Processes</span>
+
+<span class="sd">        This method checks the file handler for processes that were not</span>
+<span class="sd">        submitted.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">missed_txt</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39; - The following processes were not submitted to &#39;</span>
+                      <span class="s1">&#39;workers:&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">missed</span><span class="p">:</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">missed_txt</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39; - </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">missed</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">missed_txt</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39; - </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">missed</span><span class="p">))</span></div></div>
 </pre></div>
 
            </div>
@@ -519,7 +541,7 @@
         <script type="text/javascript" src="../../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
     
 
   

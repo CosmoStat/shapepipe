@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>shapepipe.pipeline.timeout &mdash; ShapePipe  documentation</title>
+  <title>shapepipe.modules.module_runners &mdash; ShapePipe  documentation</title>
   
 
   
@@ -137,7 +137,7 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-      <li>shapepipe.pipeline.timeout</li>
+      <li>shapepipe.modules.module_runners</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -152,58 +152,44 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>Source code for shapepipe.pipeline.timeout</h1><div class="highlight"><pre>
+  <h1>Source code for shapepipe.modules.module_runners</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 
-<span class="sd">&quot;&quot;&quot;TIMEOUT</span>
+<span class="sd">&quot;&quot;&quot;MODULE RUNNERS</span>
 
-<span class="sd">This module defines a function for handling job timeout limits.</span>
+<span class="sd">This module defines methods for running the pipeline modules.</span>
 
 <span class="sd">:Author: Samuel Farrens &lt;samuel.farrens@cea.fr&gt;</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">importlib</span> <span class="k">import</span> <span class="n">import_module</span>
 
 
-<div class="viewcode-block" id="with_timeout"><a class="viewcode-back" href="../../../shapepipe.pipeline.timeout.html#shapepipe.pipeline.timeout.with_timeout">[docs]</a><span class="k">def</span> <span class="nf">with_timeout</span><span class="p">(</span><span class="n">timeout</span><span class="p">,</span> <span class="n">log_file</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; Timeout Limit Decorator</span>
+<div class="viewcode-block" id="get_module_runners"><a class="viewcode-back" href="../../../shapepipe.modules.module_runners.html#shapepipe.modules.module_runners.get_module_runners">[docs]</a><span class="k">def</span> <span class="nf">get_module_runners</span><span class="p">(</span><span class="n">modules</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Get Module Runners</span>
 
-<span class="sd">    This method provides a timeout decorator for a given input function.</span>
+<span class="sd">    Import the specified module runners.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    timeout : int</span>
-<span class="sd">        Timeout limit in seconds</span>
-<span class="sd">    log_file : logging.Logger</span>
-<span class="sd">        Logging instance</span>
+<span class="sd">    modules : list</span>
+<span class="sd">        List of module names</span>
 
-<span class="sd">    Raises</span>
-<span class="sd">    ------</span>
-<span class="sd">    multiprocessing.TimeoutError</span>
-<span class="sd">        For process exceeding timeout limit</span>
-
-<span class="sd">    Notes</span>
-<span class="sd">    -----</span>
-<span class="sd">    Thise method was taken from: https://github.com/joblib/joblib/pull/366</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Dictionary of module runners</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">decorated</span><span class="p">):</span>
+    <span class="n">package</span> <span class="o">=</span> <span class="s1">&#39;shapepipe.modules&#39;</span>
 
-        <span class="nd">@wraps</span><span class="p">(</span><span class="n">decorated</span><span class="p">)</span>
-        <span class="k">def</span> <span class="nf">inner</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-            <span class="n">pool</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">ThreadPool</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">async_result</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">decorated</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">async_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
-            <span class="k">except</span> <span class="n">mp</span><span class="o">.</span><span class="n">TimeoutError</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span><span class="s1">&#39;The process time exceeded </span><span class="si">{}</span><span class="s1">s in &#39;</span>
-                                   <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">timeout</span><span class="p">,</span> <span class="n">log_file</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">inner</span>
+    <span class="n">module_runners</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">module</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">import_module</span><span class="p">(</span><span class="s1">&#39;.</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">module</span><span class="p">),</span>
+                                            <span class="n">package</span><span class="o">=</span><span class="n">package</span><span class="p">),</span> <span class="n">module</span><span class="p">))</span>
+                           <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">modules</span><span class="p">])</span>
 
-    <span class="k">return</span> <span class="n">decorator</span></div>
+    <span class="k">return</span> <span class="n">module_runners</span></div>
 </pre></div>
 
            </div>

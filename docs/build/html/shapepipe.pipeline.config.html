@@ -252,6 +252,102 @@ delimiter.</p>
 
 </dd></dl>
 
+<dl class="class">
+<dt id="shapepipe.pipeline.config.SetUpParser">
+<em class="property">class </em><code class="descclassname">shapepipe.pipeline.config.</code><code class="descname">SetUpParser</code><span class="sig-paren">(</span><em>file_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/config.html#SetUpParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.config.SetUpParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Set Up Parser</p>
+<p>This class sets up an instance of <code class="docutils literal notranslate"><span class="pre">CustomParser</span></code> and checks the
+pipeline related parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Configuration file name</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="shapepipe.pipeline.config.SetUpParser.file_name">
+<code class="descname">file_name</code><a class="headerlink" href="#shapepipe.pipeline.config.SetUpParser.file_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>File name</p>
+<p>This sets the configuration file name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#IOError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">IOError</span></code></a> – For non existent configuration file</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.config.SetUpParser._set_defaults">
+<code class="descname">_set_defaults</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/config.html#SetUpParser._set_defaults"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.config.SetUpParser._set_defaults" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set Defaults</p>
+<p>Set default configuration options.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.config.SetUpParser._set_execution_options">
+<code class="descname">_set_execution_options</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/config.html#SetUpParser._set_execution_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.config.SetUpParser._set_execution_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set Execution Options</p>
+<p>This method checks the execution options in the configuration file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">RuntimeError</span></code></a> – For no module runner specified</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ImportError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ImportError</span></code></a> – For non-existent module runner</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.config.SetUpParser._set_file_options">
+<code class="descname">_set_file_options</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/config.html#SetUpParser._set_file_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.config.SetUpParser._set_file_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set File Options</p>
+<p>This module checks the file options in the configuration file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">RuntimeError</span></code></a> – For no input directory specified</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#OSError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OSError</span></code></a> – For non-existent input directory</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">RuntimeError</span></code></a> – For no output directory specified</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#OSError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OSError</span></code></a> – For non-existent output directory</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="shapepipe.pipeline.config.SetUpParser.get_parser">
+<code class="descname">get_parser</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/config.html#SetUpParser.get_parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.config.SetUpParser.get_parser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Parser</p>
+<p>Return a configuration file parser instance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Custom configuration file parser</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#shapepipe.pipeline.config.CustomParser" title="shapepipe.pipeline.config.CustomParser">CustomParser</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="function">
 <dt id="shapepipe.pipeline.config.create_config_parser">
 <code class="descclassname">shapepipe.pipeline.config.</code><code class="descname">create_config_parser</code><span class="sig-paren">(</span><em>file_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/config.html#create_config_parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.config.create_config_parser" title="Permalink to this definition">¶</a></dt>
@@ -261,21 +357,11 @@ delimiter.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>file_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Configuration file name</p>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Configuration file name</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Custom configuration file parser</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Custom configuration file parser</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="#shapepipe.pipeline.config.CustomParser" title="shapepipe.pipeline.config.CustomParser">CustomParser</a></p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#IOError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">IOError</span></code></a> – For non existent configuration file</li>
-<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">RuntimeError</span></code></a> – For no module runner specified</li>
-<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">RuntimeError</span></code></a> – For non-existent module runner</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#shapepipe.pipeline.config.CustomParser" title="shapepipe.pipeline.config.CustomParser">CustomParser</a></td>
 </tr>
 </tbody>
 </table>
@@ -328,7 +414,7 @@ delimiter.</p>
         <script type="text/javascript" src="_static/jquery.js"></script>
         <script type="text/javascript" src="_static/underscore.js"></script>
         <script type="text/javascript" src="_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
     
 
   
