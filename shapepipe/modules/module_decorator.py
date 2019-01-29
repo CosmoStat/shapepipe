@@ -60,13 +60,11 @@ def module_runner(input_module=None, version='0.0', file_pattern='',
     elif not isinstance(depends, list):
         raise TypeError('Executables must be a string or a list of strings')
 
-    if not isinstance(numbering_scheme, str):
+    if not isinstance(numbering_scheme, (str, type(None))):
         raise TypeError('Numbering scheme must be a string.')
 
     if (len(file_ext) == 1) and (len(file_pattern) > 1):
         file_ext = [file_ext[0] for i in file_pattern]
-    elif (len(file_pattern) == 1) and (len(file_ext) > 1):
-        file_pattern = [file_pattern[0] for i in file_ext]
 
     if len(file_ext) != len(file_pattern):
         raise ValueError('The number of file_ext values does not match the '
