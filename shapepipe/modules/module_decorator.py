@@ -61,7 +61,7 @@ def module_runner(input_module=None, version='0.0', file_pattern='',
         raise TypeError('Executables must be a string or a list of strings')
 
     if not isinstance(numbering_scheme, str):
-        raise TypeError('Numbering scheme must be a string.')
+        raise TypeError('Numbering scheme must be a string, found \'{}\'.'.format(numbering_scheme))
 
     if (len(file_ext) == 1) and (len(file_pattern) > 1):
         file_ext = [file_ext[0] for i in file_pattern]
@@ -69,9 +69,9 @@ def module_runner(input_module=None, version='0.0', file_pattern='',
         file_pattern = [file_pattern[0] for i in file_ext]
 
     if len(file_ext) != len(file_pattern):
-        raise ValueError('The number of file_ext values does not match the '
-                         'number of file_pattern values in the module '
-                         'decorator.')
+        raise ValueError('The number of file_ext values ({}) does not match the '
+                         'number of file_pattern values ({}) in the module '
+                         'decorator.'.format(len(file_ext), len(file_pattern)))
 
     def decorator(func):
 
