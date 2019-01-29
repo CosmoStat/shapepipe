@@ -334,7 +334,7 @@ class FileHandler(object):
         if self._config.has_option(module.upper(), property.upper()):
             prop_list = self._config.getlist(module.upper(), property.upper())
 
-        elif (property in ('file_pattern', 'file_list') and not
+        elif (property in ('file_pattern', 'file_ext') and not
                 isinstance(getattr(self, '_{}'.format(property)), type(None))
                 and len(self._module_dict) == 1):
             prop_list = getattr(self, '_{}'.format(property))
@@ -374,12 +374,6 @@ class FileHandler(object):
             self._module_dict[module]['file_ext'] = \
                 [self._module_dict[module]['file_ext'][0] for i in
                  self._module_dict[module]['file_pattern']]
-
-        elif ((len(self._module_dict[module]['file_pattern']) == 1) and
-                (len(self._module_dict[module]['file_ext']) > 1)):
-            self._module_dict[module]['file_pattern'] = \
-                [self._module_dict[module]['file_pattern'][0] for i in
-                 self._module_dict[module]['file_ext']]
 
         if (len(self._module_dict[module]['file_ext']) !=
                 len(self._module_dict[module]['file_pattern'])):
@@ -447,8 +441,8 @@ class FileHandler(object):
             self._module_dict[module]['input_dir'] += \
                 self.get_add_module_property(module, 'input_dir')
 
-    @staticmethod
-    def _all_pattern_per_dir(dir_list, pattern_list, ext_list):
+    @classmethod
+    def _all_pattern_per_dir(cls, dir_list, pattern_list, ext_list):
         """ All Patterns Per Directory
 
         Find module files assuming all file patterns are applied to all input
@@ -470,16 +464,22 @@ class FileHandler(object):
 
         """
 
-        file_list = [find_files(dir, pattern, ext) for pattern, ext in
-                     zip(pattern_list, ext_list) for dir in dir_list]
-        file_list = [item for item in file_list if item]
+        file_list = []
 
-        if not file_list:
-            raise RuntimeError('No files found matching patterns ({}) and/or '
-                               'extensions ({}) in directories provided ({})'
-                               ''.format(pattern_list, ext_list, dir_list))
-        else:
-            return file_list
+        for pattern, ext in zip(pattern_list, ext_list):
+
+            sub_file_list = [find_files(dir, pattern, ext) for dir in dir_list]
+            sub_file_list = cls._flatten_list(sub_file_list)
+
+            if not sub_file_list:
+                raise RuntimeError('No files found matching patterns ({})'
+                                   ' and or extensions ({}) in directories '
+                                   ' provided ({})'.format(pattern, ext,
+                                                           dir_list))
+            else:
+                file_list.append(sub_file_list)
+
+        return file_list
 
     @staticmethod
     def _generate_re_pattern(match_pattern):
@@ -591,7 +591,7 @@ class FileHandler(object):
         return [item for sublist in input_list for item in sublist]
 
     @classmethod
-    def _check_pattern(cls, file_list, pattern):
+    def _check_pattern(cls, file_list, dir_list, pattern):
         """ Check Pattern
 
         Find files in file list that match the input pattern.
@@ -612,12 +612,14 @@ class FileHandler(object):
 
         new_list = []
 
-        for item in cls._flatten_list(file_list):
+        for file in cls._flatten_list(file_list):
+
+            item = cls._strip_dir_from_file(file, dir_list)
 
             if (len(item.split(pattern)) > 1 and
                 (not item.split(pattern)[1] or not
                  item.split(pattern)[1][0].isdigit())):
-                new_list.append(item)
+                new_list.append(file)
 
         return new_list
 
@@ -653,8 +655,8 @@ class FileHandler(object):
 
         all_patterns = [cls._get_file_pattern(file, dir_list, re_pattern)
                         for file in max(file_list, key=len)]
-        new_list = [cls._check_pattern(file_list, pattern) for pattern in
-                    all_patterns]
+        new_list = [cls._check_pattern(file_list, dir_list, pattern)
+                    for pattern in all_patterns]
         new_list = [item for item in new_list if item]
 
         file_dict = dict(zip(all_patterns, new_list))
