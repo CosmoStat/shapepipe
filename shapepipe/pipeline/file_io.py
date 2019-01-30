@@ -138,7 +138,7 @@ class BaseCatalog(object):
 
       """
       if not os.path.isfile(filepath):
-            raise IOError('{} does not appear to be a valid file'.format(filepath))
+         return False
       else:
          return True
 
