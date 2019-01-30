@@ -189,9 +189,7 @@ class find_exposures():
                 d = d.astype(np.int16)
             new_fits = fits.PrimaryHDU(data=d, header=h_img)
 
-            #out_name = '{}/{}-hdu{:02d}.{}'.format(self._output_dir, exp_base, dnum, ext_out)
             out_name = '{}/{}_{:02d}.{}'.format(self._output_dir, exp_base, dnum, ext_out)
-            print('MKDEBUG writing file {}'.format(out_name))
             new_fits.writeto(out_name)
 
             dnum = dnum + 1
@@ -230,8 +228,16 @@ class find_exposures():
 
             exp_path = '{}/{}{}.{}'.format(input_dir_exp, exp_name, input_pattern, ext_in)
 
-            #exp_base_new = '{}{}-{}'.format(exp_name, input_pattern, self._cat_tile_basename)
-            exp_base_new = 'exp{}{}_{}'.format(input_pattern, self._image_number, i)
+            # This is a bad hack to avoid the case where the image has no unique type specifier,
+            # in which case the image file pattern also matches the weight and flag, and the
+            # number of input images to the next (mask) module is more than the required number.
+            if input_pattern == '':
+                type_spec = '.img'
+            else:
+                type_spec = input_pattern
+            basename = 'exp{}'.format(type_spec)
+
+            exp_base_new = '{}{}_{}'.format(basename, self._image_number, i)
 
             # Data-specific options
 
