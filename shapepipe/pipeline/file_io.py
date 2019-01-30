@@ -1128,7 +1128,7 @@ class FITSCatalog(BaseCatalog):
        if data is None:
            raise ValueError('Data not provided')
 
-       if self_file_exists(self.fullpath):
+       if self._file_exists(self.fullpath):
            if self._cat_data is None:
                self.open()
            if ext_name is None:
