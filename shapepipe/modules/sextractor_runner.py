@@ -15,7 +15,7 @@ from shapepipe.modules.module_decorator import module_runner
 
 @module_runner(input_module='mask_runner', version='1.0',
                file_pattern=['image', 'weight', 'flag'], file_ext=['.fits','.fits','.fits'],
-               executes='sex')
+               executes='sex', numbering_scheme='_0')
 def sextractor_runner(input_file_list, output_dir, file_number_string,
                    config, w_log):
 

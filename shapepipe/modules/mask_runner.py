@@ -14,7 +14,7 @@ from shapepipe.modules.mask_package.mask_script import mask
 
 @module_runner(version='1.0', file_pattern=['image', 'weight', 'flag'],
                file_ext=['.fits','.fits','.fits'], depends=['numpy','astropy'],
-               executes=['ww','findgsc2.2'])
+               executes=['ww','findgsc2.2'], numbering_scheme='_0')
 def mask_runner(input_file_list, output_dir, file_number_string,
                    config, w_log):
 
@@ -23,7 +23,7 @@ def mask_runner(input_file_list, output_dir, file_number_string,
     elif len(input_file_list) == 3:
         ext_flag_name = input_file_list[2]
     else:
-        raise ValueError("Input files must be 'image', 'weight' and 'ext_flags' (optionnal)")
+        raise ValueError("Input file list of length {} found, must be 'image', 'weight' and 'ext_flags' (optional)".format(len(input_file_list)))
     
     config_file = config.get('MASK_RUNNER', 'MASK_CONFIG_PATH')
     

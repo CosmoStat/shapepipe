@@ -19,7 +19,7 @@ from shapepipe.modules.find_exposures_package import find_exposures_script as fi
 
 
 @module_runner(version='1.0', file_pattern=['image'], file_ext='.fits',
-               depends=['numpy', 'astropy', 'sip_tpv'])
+               depends=['numpy', 'astropy', 'sip_tpv'], numbering_scheme='_0')
 def find_exposures_runner(input_file_list, output_dir, file_number_string, config, w_log):
 
     input_file_name = input_file_list[0]
