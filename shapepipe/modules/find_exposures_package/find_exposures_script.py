@@ -79,8 +79,10 @@ class find_exposures():
 
         exp_list_uniq = self.get_exposure_list()
 
-        input_dir_exp = self._config.getlist('FIND_EXPOSURES', 'INPUT_DIR_EXP')
+        input_dir_exp = self._config.getlist('FIND_EXPOSURES_RUNNER', 'INPUT_DIR_EXP')
         num = []
+
+        # Loop over exposure file types (image, weight, flag)
         for i in range(len(input_dir_exp)):
             num_idx = self.create_exposures(exp_list_uniq, i)
             num.append(num_idx)
@@ -162,12 +164,14 @@ class find_exposures():
         img_file = sc.FITSCatalog(exp_path, hdu_no=1)
         img_file.open()
 
-        ext_out = self._config.get('FIND_EXPOSURES', 'OUTPUT_FILE_EXT')
+        ext_out = self._config.get('FIND_EXPOSURES_RUNNER', 'OUTPUT_FILE_EXT')
 
         hdu_max = len(img_file._cat_data)
-        n_hdu   = int(self._config.get('FIND_EXPOSURES', 'N_HDU'))
+        n_hdu   = int(self._config.get('FIND_EXPOSURES_RUNNER', 'N_HDU'))
 
         dnum = 0
+
+        # Loop over CCD/HDU
         for k_img in range(1, n_hdu+1):
 
             h_img = img_file._cat_data[k_img].header
@@ -185,7 +189,9 @@ class find_exposures():
                 d = d.astype(np.int16)
             new_fits = fits.PrimaryHDU(data=d, header=h_img)
 
-            out_name = '{}/{}-hdu{:02d}.{}'.format(self._output_dir, exp_base, dnum, ext_out)
+            #out_name = '{}/{}-hdu{:02d}.{}'.format(self._output_dir, exp_base, dnum, ext_out)
+            out_name = '{}/{}_{:02d}.{}'.format(self._output_dir, exp_base, dnum, ext_out)
+            print('MKDEBUG writing file {}'.format(out_name))
             new_fits.writeto(out_name)
 
             dnum = dnum + 1
@@ -213,16 +219,19 @@ class find_exposures():
             number of files written
         """
 
-        input_dir_exp = self._config.getlist('FIND_EXPOSURES', 'INPUT_DIR_EXP')[idx_type]
-        input_pattern = self._config.getlist('FIND_EXPOSURES', 'INPUT_FILE_PATTERN')[idx_type]
-        ext_in = self._config.get('FIND_EXPOSURES', 'INPUT_FILE_EXT')
+        input_dir_exp = self._config.getlist('FIND_EXPOSURES_RUNNER', 'INPUT_DIR_EXP')[idx_type]
+        input_pattern = self._config.getlist('FIND_EXPOSURES_RUNNER', 'INPUT_FILE_PATTERN')[idx_type]
+        ext_in = self._config.get('FIND_EXPOSURES_RUNNER', 'INPUT_FILE_EXT')
 
         num = 0
-        for exp_name in exp_list:
+
+        # Loop over exposure files used to create current tile
+        for i, exp_name in enumerate(exp_list):
 
             exp_path = '{}/{}{}.{}'.format(input_dir_exp, exp_name, input_pattern, ext_in)
 
-            exp_base_new = '{}{}-{}'.format(exp_name, input_pattern, self._cat_tile_basename)
+            #exp_base_new = '{}{}-{}'.format(exp_name, input_pattern, self._cat_tile_basename)
+            exp_base_new = 'exp{}{}_{}'.format(input_pattern, self._image_number, i)
 
             # Data-specific options
 
