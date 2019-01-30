@@ -14,7 +14,7 @@ from shapepipe.modules.mask_package.mask_script import mask
 
 @module_runner(version='1.0', file_pattern=['image', 'weight', 'flag'],
                file_ext=['.fits','.fits','.fits'], depends=['numpy','astropy'],
-               executes=['ww','findgsc2.2'], numbering_scheme='')
+               executes=['ww','findgsc2.2'], numbering_scheme='_0')
 def mask_runner(input_file_list, output_dir, file_number_string,
                    config, w_log):
 
