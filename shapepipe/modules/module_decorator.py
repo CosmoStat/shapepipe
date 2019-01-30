@@ -57,10 +57,10 @@ def module_runner(input_module=None, version='0.0', file_pattern='',
 
     if isinstance(executes, str):
         executes = [executes]
-    elif not isinstance(depends, list):
+    elif not isinstance(executes, list):
         raise TypeError('Executables must be a string or a list of strings')
 
-    if not isinstance(numbering_scheme, str):
+    if not isinstance(numbering_scheme, (str, type(None))):
         raise TypeError('Numbering scheme must be a string, found \'{}\'.'.format(numbering_scheme))
 
     if (len(file_ext) == 1) and (len(file_pattern) > 1):
