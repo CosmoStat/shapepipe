@@ -14,7 +14,7 @@ import numpy as np
 from astropy.wcs import WCS
 import re
 from sf_tools.image.stamp import FetchStamps
-import shapepipe.pipeline.file_io as sc
+import shapepipe.pipeline.file_io as io
 
     
 def get_pos(galcat_path, pos_params, pos_type):
@@ -36,7 +36,7 @@ def get_pos(galcat_path, pos_params, pos_type):
 
     """
 
-    f = sc.FITSCatalog(galcat_path, SEx_catalog=True)
+    f = io.FITSCatalog(galcat_path, SEx_catalog=True)
     f.open()
 
     pos = np.array([f.get_data()[pos_params[1]], f.get_data()[pos_params[0]]]).T
@@ -46,10 +46,25 @@ def get_pos(galcat_path, pos_params, pos_type):
     return pos
 
 def convert_pos(pos, image_path):
-    """
+    """Convert position
+
+    Convert positions from world coordinates to pixel coordinates.
+
+    Parameters
+    ----------
+    pos : numpy.ndarray
+        Positions in world coordinates.
+    image_path : str
+        Path to the image from where the stamp are created.
+
+    Return
+    ------
+    numpy.ndarray
+        New positions in pixel coordinates.
+
     """
 
-    f = sc.FITSCatalog(image_path)
+    f = io.FITSCatalog(image_path)
     f.open()
     h = f.get_header(0)
     f.close()
@@ -88,7 +103,7 @@ def get_stamp(img_path, galcat_path, pos, rad):
 
     """
 
-    img_file = sc.FITSCatalog(img_path)
+    img_file = io.FITSCatalog(img_path)
     img_file.open()
     img = img_file.get_data(0)
     img_file.close()
@@ -118,7 +133,7 @@ def get_original_vignet(galcat_path):
 
     """
 
-    f = sc.FITSCatalog(galcat_path, SEx_catalog=True)
+    f = io.FITSCatalog(galcat_path, SEx_catalog=True)
     f.open()
 
     vign = f.get_data()['VIGNET']
@@ -170,7 +185,7 @@ def save_vignet(vign, sexcat_path, output_dir, suffix):
     num = '-{0}-{1}'.format(s[1],s[2])
 
     output_name = output_dir + '/' + suffix + '_vignet{}.fits'.format(num)
-    f = sc.FITSCatalog(output_name, SEx_catalog=True, open_mode=sc.BaseCatalog.OpenMode.ReadWrite)
+    f = io.FITSCatalog(output_name, SEx_catalog=True, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
     f.save_as_fits(vign, names=['VIGNET'], sex_cat_path=sexcat_path)
 
 
