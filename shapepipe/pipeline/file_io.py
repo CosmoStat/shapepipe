@@ -138,7 +138,7 @@ class BaseCatalog(object):
 
       """
       if not os.path.isfile(filepath):
-            raise IOError('{} does not appear to be a valid file'.format(filepath))
+         return False
       else:
          return True
 
@@ -1128,7 +1128,7 @@ class FITSCatalog(BaseCatalog):
        if data is None:
            raise ValueError('Data not provided')
 
-       if self_file_exists(self.fullpath):
+       if self._file_exists(self.fullpath):
            if self._cat_data is None:
                self.open()
            if ext_name is None:
