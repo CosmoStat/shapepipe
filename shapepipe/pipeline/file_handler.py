@@ -238,7 +238,7 @@ class FileHandler(object):
                 string, module = dir.lower().split(':')
                 input_dir.append(self.format(self.format(
                                  self._run_log.get_run(string), module),
-                                 'output'))
+                                             'output'))
 
             else:
                 raise ValueError('Invalid INPUT_DIR. Make sure the paths '

@@ -60,8 +60,8 @@ def print_message(message):
     return customAction
 
 
-def format_module_list():
-    """ Format Module List
+def module_str():
+    """ Module String
 
     Format the list of modules as a single string.
 
@@ -107,8 +107,7 @@ def create_arg_parser():
     optional.add_argument('-l', '--list_modules',
                           action=print_message('ShapePipe modules currently '
                                                'available:\n'
-                                               '{}'.format(
-                                                format_module_list())),
+                                               '{}'.format(module_str())),
                           help='list modules currently available and exit')
 
     optional.add_argument('-c', '--config', default='config.ini',

@@ -42,8 +42,8 @@ def psfex_runner(input_file_list, output_dir, file_number_string,
         check_name = []
         for i in check_image:
             check_type.append(i.upper())
-            check_name.append(output_dir + '/' + suffix + '_' + i.lower() +
-                              file_number_string+'.fits')
+            check_name.append(output_dir + '/' + suffix + '_' + i.lower()
+                              + file_number_string+'.fits')
 
     command_line += (' -CHECKIMAGE_TYPE {0} -CHECKIMAGE_NAME {1}'
                      ''.format(','.join(check_type), ','.join(check_name)))
