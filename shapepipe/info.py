@@ -21,7 +21,8 @@ __installs__ = ['joblib>=0.13',
                 'modopt>=1.2',
                 'numpy>=1.14']
 __tests__ = ['pytest',
-             'pytest-cov']
+             'pytest-cov',
+             'pytest-pep8']
 
 
 def shapepipe_logo():

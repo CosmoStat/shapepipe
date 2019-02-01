@@ -8,4 +8,4 @@ This module contains SETools methods.
 
 """
 
-__all__ = ['SETools_script'] 
+__all__ = ['SETools_script']

@@ -16,64 +16,64 @@ from shapepipe.modules.module_runners import get_module_runners
 
 
 def find_files(path, pattern='*', ext='*', empty_error=False):
-        """ Find Files
+    """ Find Files
 
-        This method recursively retrieves file names from a given path that
-        match a given pattern and/or have a given extension.
+    This method recursively retrieves file names from a given path that
+    match a given pattern and/or have a given extension.
 
-        Parameters
-        ----------
-        path : str
-            Full path to files
-        pattern : str, optional
-            File pattern, default is '*'
-        ext : str, optional
-            File extension, default is '*'
-        empty_error : bool, optional
-            Raise error if file list is empty, default is False
+    Parameters
+    ----------
+    path : str
+        Full path to files
+    pattern : str, optional
+        File pattern, default is '*'
+    ext : str, optional
+        File extension, default is '*'
+    empty_error : bool, optional
+        Raise error if file list is empty, default is False
 
-        Returns
-        -------
-        list
-            List of file names
+    Returns
+    -------
+    list
+        List of file names
 
-        Raises
-        ------
-        ValueError
-            For '*' in pattern
-        ValueError
-            For '*' in extension
-        ValueError
-            For invalid extension format
-        RuntimeError
-            For empty file list
+    Raises
+    ------
+    ValueError
+        For '*' in pattern
+    ValueError
+        For '*' in extension
+    ValueError
+        For invalid extension format
+    RuntimeError
+        For empty file list
 
-        """
+    """
 
-        dot = '.'
-        star = '*'
+    dot = '.'
+    star = '*'
 
-        if pattern != star and star in pattern:
-            raise ValueError('Do not include "*" in pattern.')
+    if pattern != star and star in pattern:
+        raise ValueError('Do not include "*" in pattern.')
 
-        if ext != star and star in ext:
-            raise ValueError('Do not include "*" in extension.')
+    if ext != star and star in ext:
+        raise ValueError('Do not include "*" in extension.')
 
-        if (not ext.startswith(dot) and dot in ext) or (ext.count(dot) > 1):
-            raise ValueError('Invalid extension format: "{}".'.format(ext))
+    if (not ext.startswith(dot) and dot in ext) or (ext.count(dot) > 1):
+        raise ValueError('Invalid extension format: "{}".'.format(ext))
 
-        if ext != star and not ext.startswith(dot):
-            ext = dot + ext
+    if ext != star and not ext.startswith(dot):
+        ext = dot + ext
 
-        search_string = '{}/**/*{}*{}'.format(path, pattern, ext)
+    search_string = '{}/**/*{}*{}'.format(path, pattern, ext)
 
-        file_list = sorted(glob(search_string, recursive=True))
+    file_list = sorted(glob(search_string, recursive=True))
 
-        if empty_error and not file_list:
-            raise RuntimeError('No files found matching the conditions in {}'
-                               '.'.format(path))
+    if empty_error and not file_list:
+        raise RuntimeError('No files found matching the conditions in {}'
+                           '.'.format(path))
 
-        return [file for file in file_list if not os.path.isdir(file)]
+    return [file for file in file_list if not os.path.isdir(file)]
 
 
 class FileHandler(object):

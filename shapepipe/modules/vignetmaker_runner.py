@@ -8,15 +8,14 @@ This file contains methods to create stamp from images.
 
 """
 
-from shapepipe.modules.module_decorator import module_runner
-
 import numpy as np
 from astropy.wcs import WCS
 import re
 from sf_tools.image.stamp import FetchStamps
 import shapepipe.pipeline.file_io as io
+from shapepipe.modules.module_decorator import module_runner
 
-    
+
 def get_pos(galcat_path, pos_params, pos_type):
     """Get positions
 
@@ -27,7 +26,8 @@ def get_pos(galcat_path, pos_params, pos_type):
     galcat_path : str
         Path to the SExtractor catalog
     pos_params : list
-        List of string containing the SExtractor's parameters to use as positions
+        List of string containing the SExtractor's parameters to use as
+        positions
 
     Returns
     -------
@@ -39,11 +39,13 @@ def get_pos(galcat_path, pos_params, pos_type):
     f = io.FITSCatalog(galcat_path, SEx_catalog=True)
     f.open()
 
-    pos = np.array([f.get_data()[pos_params[1]], f.get_data()[pos_params[0]]]).T
+    pos = np.array([f.get_data()[pos_params[1]],
+                    f.get_data()[pos_params[0]]]).T
 
     f.close()
 
     return pos
+
 
 def convert_pos(pos, image_path):
     """Convert position
@@ -72,13 +74,14 @@ def convert_pos(pos, image_path):
     w = WCS(h)
 
     pos_tmp = np.copy(pos)
-    pos_tmp[:,[0,1]]=pos_tmp[:,[1,0]]
+    pos_tmp[:, [0, 1]] = pos_tmp[:, [1, 0]]
 
     new_pos = w.all_world2pix(pos_tmp, 1)
 
-    new_pos[:,[0,1]]=new_pos[:,[1,0]]
+    new_pos[:, [0, 1]] = new_pos[:, [1, 0]]
 
     return new_pos
+
 
 def get_stamp(img_path, galcat_path, pos, rad):
     """Get stamp
@@ -92,10 +95,11 @@ def get_stamp(img_path, galcat_path, pos, rad):
     galcat_path : str
         Path to the SExtractor catalog
     pos_params : list
-        List of string containing the SExtractor's parameters to use as positions
+        List of string containing the SExtractor's parameters to use as
+        positions
     rad : int
         Radius of the stamp, must be odd
-        
+
     Returns
     -------
     numpy.array
@@ -142,6 +146,7 @@ def get_original_vignet(galcat_path):
 
     return vign
 
+
 def make_mask(galcat_path, mask_value):
     """Make mask
 
@@ -167,6 +172,7 @@ def make_mask(galcat_path, mask_value):
 
     return vign
 
+
 def save_vignet(vign, sexcat_path, output_dir, suffix):
     """Save vignet
 
@@ -181,11 +187,12 @@ def save_vignet(vign, sexcat_path, output_dir, suffix):
 
     """
 
-    s = re.split("\-([0-9]*)\-([0-9]+)\.", sexcat_path)
-    num = '-{0}-{1}'.format(s[1],s[2])
+    s = re.split(r"\-([0-9]*)\-([0-9]+)\.", sexcat_path)
+    num = '-{0}-{1}'.format(s[1], s[2])
 
     output_name = output_dir + '/' + suffix + '_vignet{}.fits'.format(num)
-    f = io.FITSCatalog(output_name, SEx_catalog=True, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+    f = io.FITSCatalog(output_name, SEx_catalog=True,
+                       open_mode=io.BaseCatalog.OpenMode.ReadWrite)
     f.save_as_fits(vign, names=['VIGNET'], sex_cat_path=sexcat_path)
 
 
@@ -193,10 +200,10 @@ def save_vignet(vign, sexcat_path, output_dir, suffix):
                file_pattern=['galaxy_selection', 'image'],
                file_ext=['.fits', '.fits'])
 def vignetmaker_runner(input_file_list, output_dir, file_number_string,
-                   config, w_log):
+                       config, w_log):
 
     galcat_path = input_file_list[0]
-    
+
     do_masking = config.getboolean("VIGNETMAKER_RUNNER", "MASKING")
     if do_masking:
         mask_value = config.getfloat("VIGNETMAKER_RUNNER", "MASK_VALUE")
@@ -211,14 +218,15 @@ def vignetmaker_runner(input_file_list, output_dir, file_number_string,
 
         suffix = config.getlist("VIGNETMAKER_RUNNER", "SUFFIX")
         if len(suffix) != len(input_file_list[1:]):
-            raise ValueError("You must provide a suffix for each image from which you extract stamps.")
+            raise ValueError("You must provide a suffix for each image from "
+                             "which you extract stamps.")
 
         pos_type = config.get("VIGNETMAKER_RUNNER", "COORD")
         pos_params = config.getlist("VIGNETMAKER_RUNNER", "POSITION_PARAMS")
 
         pos = get_pos(galcat_path, pos_params, pos_type)
 
-        for n,img in enumerate(input_file_list[1:]):
+        for n, img in enumerate(input_file_list[1:]):
             image_path = img
 
             if pos_type == 'PIX':
@@ -226,7 +234,8 @@ def vignetmaker_runner(input_file_list, output_dir, file_number_string,
             elif pos_type == 'SPHE':
                 pos = convert_pos(pos, image_path)
             else:
-                raise ValueError('Coordinates type must be in : PIX (pixel), SPHE (spherical).')
+                raise ValueError('Coordinates type must be in : PIX (pixel), '
+                                 'SPHE (spherical).')
 
             vign = get_stamp(image_path, galcat_path, pos-1, rad)
 
