@@ -237,7 +237,8 @@ class FileHandler(object):
             elif ':' in dir.lower():
                 string, module = dir.lower().split(':')
                 input_dir.append(self.format(self.format(
-                                 self._run_log.get_run(string), module),
+                                             self._run_log.get_run(string),
+                                             module),
                                              'output'))
 
             else:
