@@ -22,7 +22,7 @@ __installs__ = ['joblib>=0.13',
                 'numpy>=1.14']
 __tests__ = ['pytest',
              'pytest-cov',
-             'pytest-pep8']
+             'pytest-codestyle']
 
 
 def shapepipe_logo():
