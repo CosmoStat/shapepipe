@@ -74,6 +74,8 @@ def sextractor_runner(input_file_list, output_dir, file_number_string,
     
     command_line += ' -CHECKIMAGE_TYPE {0} -CHECKIMAGE_NAME {1}'.format(','.join(check_type), ','.join(check_name))
 
+    self._w_log.info('Calling command \'{}\''.format(command_line))
+
     stderr, stdout = execute(command_line)
 
     check_error = re.findall('error', stdout.lower())

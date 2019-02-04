@@ -15,6 +15,8 @@ import re
 import operator 
 import string
 
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pylab as plt
 
 import os
@@ -52,16 +54,18 @@ class SETools(object):
     ----------
     cat: str, numpy.ndarray
         Path to SExtractor catalog (FITS_LDAC format) or numpy.ndarray (structure array)
-    config_filepath: str
-        Path to config.setools file
     output_dir: str
         Path to pipeline result directory
+    file_number_string: string
+        input catalogue number/specifier
+    config_filepath: str
+        Path to config.setools file
     cat_file: boolean
         True if 'cat' is a path to a file. False otherwise
 
     """
 
-    def __init__(self, cat, config_filepath, output_dir, cat_file = True): #, plot_output_dir=None, stat_output_dir=None, extra_file=None):
+    def __init__(self, cat, output_dir, file_number_string, config_filepath, cat_file=True): #, plot_output_dir=None, stat_output_dir=None, extra_file=None):
 
         if cat_file:
             self._is_file = True
@@ -76,9 +80,11 @@ class SETools(object):
             self._data = cat
         self._cat_size = len(self._data)
 
-        self._config_file = open(config_filepath)        
+        self._config_file = open(config_filepath)
 
         self._output_dir = output_dir
+
+        self._file_number_string = file_number_string
 
 
     #################
@@ -93,8 +99,9 @@ class SETools(object):
         """
 
         if self._is_file:
-            s=re.split("\-([0-9]*)\-([0-9]+)\.", self._cat_filepath)
-            file_number = '-{0}-{1}'.format(s[1],s[2])
+            #s=re.split("\-([0-9]*)\-([0-9]+)\.", self._cat_filepath)
+            #file_number = '-{0}-{1}'.format(s[1],s[2])
+            file_number = self._file_number_string
         else:
             file_number = ''
 

@@ -48,6 +48,8 @@ class find_exposures():
         config file content
     output_dir: string
         output directory
+    image_number: string
+        image number according to numbering scheme from config file
     w_log: log file class
         log file
 

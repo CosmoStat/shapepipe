@@ -42,13 +42,14 @@ class mask(object):
 
     """
 
-    def __init__(self, image_path, weight_path, image_suffix, image_num, config_filepath, output_dir, path_external_flag=None):
+    def __init__(self, image_path, weight_path, image_suffix, image_num, config_filepath, output_dir, path_external_flag=None, outname_base='flag'):
 
         self._image_fullpath = image_path                                       # Path to the image to mask
         self._weight_fullpath = weight_path                                     # Path to the weight associated to the image
         self._config_filepath = config_filepath
         self._output_dir = output_dir                                           # Path to the output directory
         self._path_external_flag = path_external_flag                           # Path to an external flag file
+        self._outname_base = outname_base                                       # Output file base name
 
         #s=re.split("\-([0-9]*)\-([0-9]+)\.",self._image_fullpath)
         #self._img_number='-{0}-{1}'.format(s[1],s[2])                           # Needed for temporary file
@@ -221,7 +222,7 @@ class mask(object):
                         # os.system('rm {1}'.format(mask_name[1]))
                         self._rm_fits2_stdout, self._rm_fits2_stderr = execute('rm {0}'.format(mask_name[1]))
 
-                self._mask_to_file(input_mask=final_mask, output_fullpath=self._output_dir+'/'+self._img_suffix+'flag'+self._img_number+'.fits')
+                self._mask_to_file(input_mask=final_mask, output_fullpath=self._output_dir+'/'+self._img_suffix+self._outname_base+self._img_number+'.fits')
 
         # Handle stdout / stderr
         general_stdout = '\nCDSClient\n' + self._CDS_stdout
