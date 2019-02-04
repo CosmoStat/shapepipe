@@ -12,4 +12,3 @@ dependencies:
     - numba>=0.4.2
     - sf_tools>=2.0
     - git+https://github.com/esheldon/ngmix
-    - git+https://github.com/esheldon/psfex
