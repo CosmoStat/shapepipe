@@ -15,13 +15,11 @@ from shapepipe.modules.module_decorator import module_runner
 
 @module_runner(input_module='mask_runner', version='1.0',
                file_pattern=['image', 'weight', 'flag'], file_ext=['.fits','.fits','.fits'],
-               executes='sex', numbering_scheme='_0')
+               executes=['sex'])
 def sextractor_runner(input_file_list, output_dir, file_number_string,
                    config, w_log):
 
     num = file_number_string
-    output_file_name = 'sexcat{0}.fits'.format(num)
-    output_file_path = '{0}/{1}'.format(output_dir, output_file_name)
 
     exec_path = config.getexpanded("SEXTRACTOR_RUNNER", "EXEC_PATH")
     dot_sex = config.getexpanded("SEXTRACTOR_RUNNER", "DOT_SEX_FILE")
@@ -31,7 +29,22 @@ def sextractor_runner(input_file_list, output_dir, file_number_string,
     flag_file = config.getboolean("SEXTRACTOR_RUNNER", "FLAG_IMAGE")
     psf_file = config.getboolean("SEXTRACTOR_RUNNER", "PSF_FILE")
 
-    check_image = config.getlist("SEXTRACTOR_RUNNER", "CHECKIMAGE")
+    if config.has_option('SEXTRACTOR_RUNNER', "CHECKIMAGE"):
+        check_image = config.getlist("SEXTRACTOR_RUNNER", "CHECKIMAGE")
+    else:
+        check_image = ['']
+
+    if config.has_option('SEXTRACTOR_RUNNER', 'SUFFIX'):
+        suffix = config.get('SEXTRACTOR_RUNNER', 'SUFFIX')
+        if (suffix.lower() != 'none') & (suffix != ''):
+            suffix = suffix + '_'
+        else:
+            suffix = ''
+    else:
+        suffix = ''
+
+    output_file_name = suffix + 'sexcat{0}.fits'.format(num)
+    output_file_path = '{0}/{1}'.format(output_dir, output_file_name)
 
     command_line = '{0} {1} -c {2} -PARAMETERS_NAME {3} -CATALOG_NAME {4}'.format(exec_path, input_file_list[0], dot_sex, dot_param, output_file_path)
 
@@ -57,7 +70,7 @@ def sextractor_runner(input_file_list, output_dir, file_number_string,
         check_name = []
         for i in check_image:
             check_type.append(i.upper())
-            check_name.append(output_dir + '/' +i.lower()+num+'.fits')
+            check_name.append(output_dir + '/' + suffix+i.lower()+num+'.fits')
     
     command_line += ' -CHECKIMAGE_TYPE {0} -CHECKIMAGE_NAME {1}'.format(','.join(check_type), ','.join(check_name))
 
