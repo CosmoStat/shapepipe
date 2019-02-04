@@ -314,6 +314,8 @@ class FileHandler(object):
         if len(self._module_dict) == 1 or isinstance(prop_val, type(None)):
             prop_val = getattr(self, '_{}'.format(property))
 
+        print('MKDEBUG set property {} to {}'.format(property, prop_val))
+
         self._module_dict[module][property] = prop_val
 
     def _set_module_list_property(self, module, property):

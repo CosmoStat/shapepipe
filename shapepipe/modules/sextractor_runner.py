@@ -46,7 +46,8 @@ def sextractor_runner(input_file_list, output_dir, file_number_string,
         command_line += ' -PSF_NAME {0}'.format(input_file_list[extra])
         extra += 1
     if extra != len(input_file_list):
-        raise ValueError("Incoherence between input files and keys related to extra files.")
+        raise ValueError("Incoherence between input files and keys related to extra files: Found {} extra files, but input file list lenght is {}"
+                         .format(extra, len(input_file_list)))
 
     if (len(check_image) == 1) & (check_image[0] == ''):
         check_type = ['NONE']
