@@ -14,4 +14,5 @@ dependencies:
     - numba>=0.4.2
     - sip_tpv>=1.1
     - sf_tools>=2.0
+    - termcolor>=1.1
     - git+https://github.com/esheldon/ngmix

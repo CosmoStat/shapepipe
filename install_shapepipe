@@ -1,0 +1,307 @@
+#!/usr/bin/env bash
+LC_CTYPE=en_US.utf8
+
+##############################################################################
+# Install ShapePipe Executables
+#
+# This script can only be run after the ShapePipe environment has been
+# installed.
+#
+##############################################################################
+
+##############################################################################
+# EXTERNAL PACKAGE VERSIONS
+##############################################################################
+
+# SExtractor Package
+sex_url="https://github.com/astromatic/sextractor/archive/2.25.0.tar.gz"
+sex_tar="2.25.0.tar.gz"
+sex_dir="sextractor-2.25.0"
+sex_bin="sex"
+
+# PSFEx Package
+psfex_url="https://github.com/astromatic/psfex/archive/3.21.1.tar.gz"
+psfex_tar="3.21.1.tar.gz"
+psfex_dir="psfex-3.21.1"
+psfex_bin="psfex"
+
+# WeightWatcher Package
+ww_url="https://www.astromatic.net/download/weightwatcher/weightwatcher-1.12.tar.gz"
+ww_tar="weightwatcher-1.12.tar.gz"
+ww_dir="weightwatcher-1.12"
+ww_bin="ww"
+
+# CDSclient Package (need Findgsc2.2)
+cdsclient_url="http://cdsarc.u-strasbg.fr/ftp/pub/sw/cdsclient.tar.gz"
+cdscleint_tar="cdsclient.tar.gz"
+cdsclient_dir="cdsclient-3.84"
+cdsclient_bin="findgsc2.2"
+
+# Divider line
+line="########################################################################"
+
+##############################################################################
+# SCRIPT FUNCTIONS
+##############################################################################
+
+# Function to download, and unzip and untar a package
+download_package() {
+  cd $BUILD_DIR
+  wget $1
+  tar -xzf $2
+  rm $2
+}
+
+# Function to build astromatic software on macOS
+build_astromatic_macos() {
+  cd $BUILD_DIR/$1
+  ./autogen.sh
+  ./configure --prefix=$CONDA_PREFIX --enable-openblas --with-fftw-libdir=$CONDA_PREFIX/lib \
+  --with-fftw-incdir=$CONDA_PREFIX/include --with-openblas-libdir=$CONDA_PREFIX/lib \
+  --with-openblas-incdir=$CONDA_PREFIX/include --quiet
+  make -j --quiet
+  make install
+}
+
+# Function to build astromatic software on Linux
+build_astromatic_linux() {
+  cd $BUILD_DIR/$1
+  ./autogen.sh
+  ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$CONDA_PREFIX/lib \
+  --with-fftw-incdir=$CONDA_PREFIX/include --with-atlas-libdir=$CONDA_PREFIX/lib \
+  --with-atlas-incdir=$CONDA_PREFIX/include --quiet
+  make -j --quiet
+  make install
+}
+
+# Function to build a standard package
+build_standard() {
+  cd $BUILD_DIR/$1
+  ./configure --prefix=$CONDA_PREFIX --quiet
+  make --quiet
+  make install
+}
+
+# Check if a binary executable is already installed in the conda environment
+check_binary() {
+  if ! type "$CONDA_PREFIX/bin/$1" > /dev/null
+  then
+    return 0
+  else
+    echo "Executable '$1' is already installed, skipping."
+    echo ""
+    return 1
+  fi
+}
+
+# Function to report progress
+report_progress() {
+  echo ''
+  echo $line
+  echo 'Installing' $1
+  echo $line
+  echo ''
+}
+
+start() {
+  echo ''
+  echo $line
+  echo 'ShapePipe Installation Script' $1
+  echo $line
+  echo ''
+}
+
+finish() {
+  echo ''
+  echo $line
+  echo 'Installation Complete!' $1
+  echo $line
+  echo ''
+}
+
+setup() {
+  echo 'Operating System:' $SYSOS
+  echo 'Build Conda Environment:' $BUILD_ENV
+  echo 'Install SExtractor:' $INSTALL_SEX
+  echo 'Install PSFEx:' $INSTALL_PSFEX
+  echo 'Install WeightWatcher:' $INSTALL_WW
+  echo 'Install CDSclient:' $INSTALL_CDSCLIENT
+  echo 'ShapePipe Directory:' $PIPE_DIR
+  echo 'Build Directory:' $BUILD_DIR
+  echo ''
+  echo $line
+}
+
+##############################################################################
+# SCRIPT OPTIONS
+##############################################################################
+
+# Set variable defaults
+PIPE_DIR=$PWD
+BUILD_DIR=$PIPE_DIR/build
+BUILD_ENV=TRUE
+DEVELOP=FALSE
+INSTALL_SEX=TRUE
+INSTALL_PSFEX=TRUE
+INSTALL_WW=TRUE
+INSTALL_CDSCLIENT=TRUE
+
+# Parse command line options
+for i in "$@"
+do
+case $i in
+    --develop)
+    DEVELOP=TRUE
+    shift
+    ;;
+    --no-env)
+    BUILD_ENV=FALSE
+    shift
+    ;;
+    --no-sex)
+    INSTALL_SEX=FALSE
+    shift
+    ;;
+    --no-psfex)
+    INSTALL_PSFEX=FALSE
+    shift
+    ;;
+    --no-ww)
+    INSTALL_WW=FALSE
+    shift
+    ;;
+    --no-cdsclient)
+    INSTALL_CDSCLIENT=FALSE
+    shift
+    ;;
+    --no-exe)
+    INSTALL_SEX=FALSE
+    INSTALL_PSFEX=FALSE
+    INSTALL_WW=FALSE
+    INSTALL_CDSCLIENT=FALSE
+    shift
+    ;;
+    *)
+    echo "Invalid option, see help!"
+    exit 1
+    ;;
+esac
+done
+
+##############################################################################
+# CREATE CONDA ENVIRONMENT
+##############################################################################
+
+# Start script
+start
+
+# Find the operating system
+case "$OSTYPE" in
+  darwin*)
+  SYSOS="macOS"
+  ;;
+  linux*)
+  SYSOS="LINUX"
+  ;;
+  *)
+  echo "unknown: $OSTYPE"
+  exit 1
+  ;;
+esac
+
+# Create build directory if it does not already exist
+if [ ! -d "$BUILD_DIR" ]
+then
+  mkdir $BUILD_DIR
+fi
+
+# Print script set-up
+setup
+
+# Build conda environment
+if [ "$BUILD_ENV" == TRUE ]
+then
+  report_progress 'ShapePipe Environment'
+  conda env create -f environment.yml
+fi
+
+# Activate conda environment
+source activate shapepipe
+
+# Install development packages
+if [ "$DEVELOP" == TRUE ]
+then
+  pip install pytest pytest-cov pytest-codestyle sphinx sphinx-rtd-theme
+fi
+
+# Set up macOS environment
+if [ "$SYSOS" == "macOS" ]
+then
+  conda install wget -y
+  conda install automake autoconf libtool -y
+  export C_INCLUDE_PATH=$CONDA_PREFIX/include
+  export CFLAGS="-Wl,-rpath,$CONDA_PREFIX/lib"
+fi
+
+##############################################################################
+# BUILD EXTERNAL EXECUTABLES
+##############################################################################
+
+# Build SExtractor
+if [ "$INSTALL_SEX" == TRUE ] && check_binary $sex_bin
+then
+  report_progress 'SExtractor'
+  conda install -c conda-forge fftw -y
+  conda install -c conda-forge openblas -y
+  download_package $sex_url $sex_tar $sex_dir
+  if [ "$SYSOS" == "macOS" ]
+  then
+    build_astromatic_macos $sex_dir
+  else
+    build_astromatic_linux $sex_dir
+  fi
+fi
+
+# Build PSFEx
+if [ "$INSTALL_PSFEX" == TRUE ] && check_binary $psfex_bin
+then
+  report_progress 'PSFEx'
+  conda install -c cefca plplot  -y
+  conda install -c conda-forge fftw -y
+  conda install -c conda-forge -y
+  download_package $psfex_url $psfex_tar $psfex_dir
+  if [ "$SYSOS" == "macOS" ]
+  then
+    build_astromatic_macos $psfex_dir
+  else
+    build_astromatic_linux $psfex_dir
+  fi
+fi
+
+# Build WeightWatcher
+if [ "$INSTALL_WW" == TRUE ] && check_binary $ww_bin
+then
+  report_progress 'WeightWatcher'
+  download_package $ww_url $ww_tar $ww_dir
+  build_standard $ww_dir
+fi
+
+# Build CDSclient
+if [ "$INSTALL_CDSCLIENT" == TRUE ] && check_binary $cdsclient_bin
+then
+  report_progress 'CDSclient'
+  download_package $cdsclient_url $cdscleint_tar $cdsclient_dir
+  build_standard $cdsclient_dir
+fi
+
+##############################################################################
+# INSTALL SHAPEPIPE LIBRARY
+##############################################################################
+
+report_progress 'ShapePipe'
+cd $PIPE_DIR
+echo $PWD
+python setup.py install
+finish
+
+##############################################################################
