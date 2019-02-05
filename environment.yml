@@ -1,6 +1,8 @@
 name: shapepipe
 channels:
+  - cefca
   - conda-forge
+  - defaults
 dependencies:
   - python=3.6
   - astropy>=3.0
@@ -10,5 +12,6 @@ dependencies:
   - pip:
     - modopt>=1.2
     - numba>=0.4.2
+    - sip_tpv>=1.1
     - sf_tools>=2.0
     - git+https://github.com/esheldon/ngmix
