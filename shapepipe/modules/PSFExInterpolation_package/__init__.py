@@ -8,4 +8,4 @@ This module contains methods to interpolate the PSF.
 
 """
 
-__all__ = ['interpolation_script'] 
+__all__ = ['interpolation_script']
