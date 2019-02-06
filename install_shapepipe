@@ -27,6 +27,11 @@ psfex_tar="3.21.1.tar.gz"
 psfex_dir="psfex-3.21.1"
 psfex_bin="psfex"
 
+# PLplot Package
+plplot_url="https://github.com/PLplot/PLplot/archive/plplot-5.13.0.tar.gz"
+plplot_tar="plplot-5.13.0.tar.gz"
+plplot_dir="PLplot-plplot-5.13.0"
+
 # WeightWatcher Package
 ww_url="https://www.astromatic.net/download/weightwatcher/weightwatcher-1.12.tar.gz"
 ww_tar="weightwatcher-1.12.tar.gz"
@@ -54,7 +59,7 @@ download_package() {
   rm $2
 }
 
-# Function to build SExtractor on macOS
+# Function to build SExtractor with OpenBLAS
 build_sex_blas() {
   astromatic_setup
   cd $BUILD_DIR/$1
@@ -66,21 +71,38 @@ build_sex_blas() {
   make install
 }
 
-# Function to build SExtractor on Linux
+# Function to build SExtractor with ATLAS
 build_sex_atlas() {
   astromatic_setup
   cd $BUILD_DIR/$1
   ./autogen.sh
-  ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$FFTW_LIB \
-  --with-fftw-incdir=$FFTW_INC --with-atlas-libdir=$ATLAS_LIB \
-  --with-atlas-incdir=$ATLAS_INC --quiet
+  if [ "$ATLAS_SEARCH" == TRUE ]
+  then
+    ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$FFTW_LIB \
+    --with-fftw-incdir=$FFTW_INC --quiet
+  else
+    ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$FFTW_LIB \
+    --with-fftw-incdir=$FFTW_INC --with-atlas-libdir=$ATLAS_LIB \
+    --with-atlas-incdir=$ATLAS_INC --quiet
+  fi
   make -j --quiet
   make install
 }
 
-# Function to build PSFEx on macOS
+# Function to build PLplot
+build_plplot() {
+  echo 'Building PLplot...'
+  download_package $plplot_url $plplot_tar
+  cd $BUILD_DIR/$plplot_dir
+  cmake -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX
+  make
+  make install
+}
+
+# Function to build PSFEx with OpenBLAS
 build_psfex_blas() {
   astromatic_setup
+  build_plplot
   cd $BUILD_DIR/$1
   ./autogen.sh
   ./configure --prefix=$CONDA_PREFIX --enable-openblas --with-fftw-libdir=$FFTW_LIB \
@@ -91,15 +113,23 @@ build_psfex_blas() {
   make install
 }
 
-# Function to build PSFEx on Linux
+# Function to build PSFEx with ATLAS
 build_psfex_atlas() {
   astromatic_setup
+  build_plplot
   cd $BUILD_DIR/$1
   ./autogen.sh
-  ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$FFTW_LIB \
-  --with-fftw-incdir=$FFTW_INC --with-atlas-libdir=$ATLAS_LIB \
-  --with-atlas-incdir=$ATLAS_INC -with-plplot-libdir=$PLPLOT_LIB \
-  --with-plplot-incdir=$PLPLOT_INC --quiet
+  if [ "$ATLAS_SEARCH" == TRUE ]
+  then
+    ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$FFTW_LIB \
+    --with-fftw-incdir=$FFTW_INC -with-plplot-libdir=$PLPLOT_LIB \
+    --with-plplot-incdir=$PLPLOT_INC --quiet
+  else
+    ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$FFTW_LIB \
+    --with-fftw-incdir=$FFTW_INC --with-atlas-libdir=$ATLAS_LIB \
+    --with-atlas-incdir=$ATLAS_INC -with-plplot-libdir=$PLPLOT_LIB \
+    --with-plplot-incdir=$PLPLOT_INC --quiet
+  fi
   make -j --quiet
   make install
 }
@@ -197,6 +227,7 @@ INSTALL_SEX=TRUE
 INSTALL_PSFEX=TRUE
 INSTALL_WW=TRUE
 INSTALL_CDSCLIENT=TRUE
+ATLAS_SEARCH=FALSE
 
 help="$(basename "$0") [OPTIONS]\n\n
 Options:\n
@@ -210,7 +241,20 @@ Options:\n
 \t--no-psfex\t do not build PSFEx\n
 \t--no-ww\t\t do not build WeightWatcher\n
 \t--no-cds\t do not build CDSclient\n
-\t--no-exe\t do not build any system executables\n\n"
+\t--no-exe\t do not build any system executables\n\n
+
+Executable Build Options:\n
+\t--fftw-lib\t path to FFTW library directory\n
+\t--fftw-inc\t path to FFTW include directory\n
+\t--blas-lib\t path to OpenBLAS library directory\n
+\t--blas-inc\t path to OpenBLAS include directory\n
+\t--atlas-lib\t path to ATLAS library directory\n
+\t--atlas-inc\t path to ATLAS include directory\n
+\t--atlas-search\t search system path for ATLAS directories\n
+\t--plplot-lib\t path to PLPlot library directory\n
+\t--plplot-inc\t path to PLPlot include directory\n\n
+
+"
 
 # Parse command line options
 for i in "$@"
@@ -283,6 +327,10 @@ case $i in
     ATLAS_INC="${i#*=}"
     shift
     ;;
+    --atlas-search)
+    ATLAS_SEARCH=TRUE
+    shift
+    ;;
     --plplot-lib=*)
     PLPLOT_LIB="${i#*=}"
     shift
@@ -322,6 +370,7 @@ case "$OSTYPE" in
   ;;
   linux*)
   SYSOS="LINUX"
+  if [ -z "$ATLAS_LIB" ]; then ATLAS_SEARCH=TRUE; fi
   ;;
   *)
   echo "unknown: $OSTYPE"
@@ -390,7 +439,7 @@ if [ "$INSTALL_SEX" == TRUE ] && check_binary $sex_bin
 then
   report_progress 'SExtractor'
   conda install -c conda-forge fftw -y
-  download_package $sex_url $sex_tar $sex_dir
+  download_package $sex_url $sex_tar
   if [ -z "$ATLAS_LIB" ]
   then
     conda install -c conda-forge openblas -y
@@ -404,9 +453,8 @@ fi
 if [ "$INSTALL_PSFEX" == TRUE ] && check_binary $psfex_bin
 then
   report_progress 'PSFEx'
-  conda install -c cefca plplot  -y
   conda install -c conda-forge fftw -y
-  download_package $psfex_url $psfex_tar $psfex_dir
+  download_package $psfex_url $psfex_tar
   if [ -z "$ATLAS_LIB" ]
   then
     conda install -c conda-forge openblas -y
@@ -420,7 +468,7 @@ fi
 if [ "$INSTALL_WW" == TRUE ] && check_binary $ww_bin
 then
   report_progress 'WeightWatcher'
-  download_package $ww_url $ww_tar $ww_dir
+  download_package $ww_url $ww_tar
   build_standard $ww_dir
 fi
 
@@ -428,7 +476,7 @@ fi
 if [ "$INSTALL_CDSCLIENT" == TRUE ] && check_binary $cdsclient_bin
 then
   report_progress 'CDSclient'
-  download_package $cdsclient_url $cdscleint_tar $cdsclient_dir
+  download_package $cdsclient_url $cdscleint_tar
   build_standard $cdsclient_dir
 fi
 
