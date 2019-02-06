@@ -41,8 +41,8 @@ class find_exposures():
 
     Parameters
     ----------
-    cat_tile_path: string
-        path to tile catalogue file
+    img_tile_path: string
+        path to tile image file
     config: config class
         config file content
     output_dir: string
@@ -57,9 +57,9 @@ class find_exposures():
     None
     """
 
-    def __init__(self, cat_tile_path, output_dir, image_number, config, w_log):
+    def __init__(self, img_tile_path, output_dir, image_number, config, w_log):
 
-        self._cat_tile_path = cat_tile_path
+        self._img_tile_path = cat_tile_path
         self._output_dir    = output_dir
         self._image_number  = image_number
         self._config        = config
@@ -96,13 +96,12 @@ class find_exposures():
         """
 
         try:
-            hdu   = fits.open(self._cat_tile_path)
+            hdu   = fits.open(self._img_tile_path)
             hist  = hdu[0].header['HISTORY']
 
         except:
-            self._w_log.info('Error while reading tile catalogue FITS file {}, continuing...'.format(self._cat_tile_path))
+            self._w_log.info('Error while reading tile catalogue FITS file {}, continuing...'.format(self._img_tile_path))
 
-        # MKDEBUG: This has to be checked, here we only want the input tile number.
         tile_num = self._image_number
 
         exp_list = []
