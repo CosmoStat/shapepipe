@@ -163,6 +163,16 @@ check_binary() {
   fi
 }
 
+# Check if a binary executable is already installed in the conda environment
+check_binary2() {
+  if type -t $1 > /dev/null
+  then
+    echo "$2: SUCCESS"
+  else
+    echo "$2: FAIL"
+  fi
+}
+
 # Function to report progress
 report_progress() {
   echo ''
@@ -440,7 +450,7 @@ then
   report_progress 'SExtractor'
   conda install -c conda-forge fftw -y
   download_package $sex_url $sex_tar
-  if [ -z "$ATLAS_LIB" ]
+  if [ -z "$ATLAS_LIB" ] && [ "$ATLAS_SEARCH" == TRUE ]
   then
     conda install -c conda-forge openblas -y
     build_sex_blas $sex_dir
@@ -455,7 +465,7 @@ then
   report_progress 'PSFEx'
   conda install -c conda-forge fftw -y
   download_package $psfex_url $psfex_tar
-  if [ -z "$ATLAS_LIB" ]
+  if [ -z "$ATLAS_LIB" ] && [ "$ATLAS_SEARCH" == TRUE ]
   then
     conda install -c conda-forge openblas -y
     build_psfex_blas $psfex_dir
@@ -479,6 +489,12 @@ then
   download_package $cdsclient_url $cdscleint_tar
   build_standard $cdsclient_dir
 fi
+
+# Installation Summary
+check_binary2 $sex_bin "SExtractor"
+check_binary2 $psfex_bin "PSFEx"
+check_binary2 $ww_bin "WeightWatcher"
+check_binary2 $cds_bin "CDSclient"
 
 ##############################################################################
 # INSTALL SHAPEPIPE LIBRARY
