@@ -128,18 +128,12 @@ class tileobj_as_exp():
         # Basic columns from FITS file
 
         # MKDEBUG TODO: Get from dat_tile
-        import pdb
-        pdb.set_trace()
-        cols   = ('X_IMAGE', 'Y_IMAGE', 'X_WORLD', 'Y_WORLD', 'FWHM_IMAGE')
-        dtype  = [(c, float) for c in cols]
-        dt     = [float for c in cols]
+        cols = dat_tile.keys()
 
-        cols_ext = [c for c in cols]
-        dt_ext   = [d for d in dt]
-        
-        # Added columns from this script
-        cols_ext.append('ID')
-        dt_ext.append(int)
+        # Assumes all but last column are float, and last (ID) is int.
+        # I couldn't extract this information from dat_tile.
+        dt = [float for c in cols[:-1]]
+        dt.append(int)
 
 
         all_coord_tile_wcs = SkyCoord(ra=dat_tile['X_WORLD']*u.degree, dec=dat_tile['Y_WORLD']*u.degree)
@@ -163,14 +157,14 @@ class tileobj_as_exp():
                                  all_coord_tile_wcs.dec[ind_in_range],
                                  dat_tile['FWHM_IMAGE'][ind_in_range],
                                  dat_tile['ID'][ind_in_range]],
-                                names=cols_ext, dtype=dt_ext)
+                                names=cols, dtype=dt)
 
                 # Write to FITS file
                 output_path  = '{}/{}{}.{}'.format(self._output_dir, out_base, exp_CCD, ext_out)
                 exp_cat_file = io.FITSCatalog(output_path, open_mode=io.BaseCatalog.OpenMode.ReadWrite, SEx_catalog=True)
                 #import pdb
                 #pdb.set_trace()
-                exp_cat_file.save_as_fits(data=tileobj, names=cols_ext, ext_name='LDAC_OBJECTS', sex_cat_path=sex_cat_template)
+                exp_cat_file.save_as_fits(data=tileobj, names=cols, ext_name='LDAC_OBJECTS', sex_cat_path=sex_cat_template)
 
                 n_tileobj = n_tileobj + 1
 
@@ -194,9 +188,8 @@ class tileobj_as_exp():
         ### Set columns to be returned in catalogue data
 
         # Basic columns from FITS file
-        cols   = ('X_IMAGE', 'Y_IMAGE', 'X_WORLD', 'Y_WORLD', 'FWHM_IMAGE')
-        dtype  = [(c, float) for c in cols]
-        dt     = [float for c in cols]
+        cols = ('X_IMAGE', 'Y_IMAGE', 'X_WORLD', 'Y_WORLD', 'FWHM_IMAGE')
+        dt   = [float for c in cols]
 
         f_tile = io.FITSCatalog(self._cat_tile_path, SEx_catalog=True)
         f_tile.open()
