@@ -252,7 +252,6 @@ fi
 
 # Print script set-up
 setup
-exit
 
 # Build conda environment
 if [ "$BUILD_ENV" == TRUE ]
