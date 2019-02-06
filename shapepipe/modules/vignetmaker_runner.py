@@ -198,7 +198,7 @@ def save_vignet(vign, sexcat_path, output_dir, suffix):
 
 @module_runner(input_module='setools_runner',
                file_pattern=['galaxy_selection', 'image'],
-               file_ext=['.fits', '.fits'])
+               file_ext=['.fits', '.fits'], depends=['numpy', 'astropy', 'sf_tools'])
 def vignetmaker_runner(input_file_list, output_dir, file_number_string,
                        config, w_log):
 
