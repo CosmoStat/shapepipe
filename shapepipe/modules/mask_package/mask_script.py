@@ -50,10 +50,10 @@ class mask(object):
         self._output_dir = output_dir                                           # Path to the output directory
         self._path_external_flag = path_external_flag                           # Path to an external flag file
 
-        #s=re.split("\-([0-9]*)\-([0-9]+)\.",self._image_fullpath)
-        #self._img_number='-{0}-{1}'.format(s[1],s[2])                           # Needed for temporary file
+        # s=re.split("\-([0-9]*)\-([0-9]+)\.",self._image_fullpath)
+        # self._img_number='-{0}-{1}'.format(s[1],s[2])                           # Needed for temporary file
         self._img_number = image_num
-        #self._img_name = os.path.split(re.split(image_num, image_path)[0])[1]
+        # self._img_name = os.path.split(re.split(image_num, image_path)[0])[1]
         if (image_suffix.lower() != 'none') & (image_suffix != ''):
             self._img_suffix = image_suffix + '_'
         else:
@@ -64,7 +64,6 @@ class mask(object):
         self._set_parameters()                                       # Set parameters needed for the stars detection
 
         self._err = False
-
 
     def _get_config(self, config_filepath):
         """Get config value
@@ -84,7 +83,7 @@ class mask(object):
         conf = CustomParser()
         conf.read(config_filepath)
 
-        self._config={'PATH': {}, 'BORDER': {}, 'HALO': {}, 'SPIKE': {}, 'MESSIER': {}, 'MD': {}, 'EXTERNAL_FLAG': {}}
+        self._config = {'PATH': {}, 'BORDER': {}, 'HALO': {}, 'SPIKE': {}, 'MESSIER': {}, 'MD': {}, 'EXTERNAL_FLAG': {}}
 
         self._config['PATH']['WW'] = conf.getexpanded('PROGRAM_PATH', 'WW_PATH')
         self._config['PATH']['WW_configfile'] = conf.getexpanded('PROGRAM_PATH', 'WW_CONFIG_FILE')
@@ -94,8 +93,8 @@ class mask(object):
         if self._config['BORDER']['make']:
             self._config['BORDER']['width'] = conf.getint('BORDER_PARAMETERS', 'BORDER_WIDTH')
             self._config['BORDER']['flag'] = conf.get('BORDER_PARAMETERS', 'BORDER_FLAG_VALUE')
-        for mask_shape in ['HALO','SPIKE']:
-            self._config[mask_shape]['make'] = conf.getboolean(mask_shape+'_PARAMETERS', mask_shape+'_MAKE')
+        for mask_shape in ['HALO', 'SPIKE']:
+            self._config[mask_shape]['make'] = conf.getboolean(mask_shape + '_PARAMETERS', mask_shape + '_MAKE')
             self._config[mask_shape]['individual'] = conf.getboolean('OTHER', 'KEEP_INDIVIDUAL_MASK')
             if self._config[mask_shape]['make']:
                 self._config[mask_shape]['maskmodel_path'] = conf.getexpanded(mask_shape+'_PARAMETERS', mask_shape+'_MASKMODEL_PATH')
@@ -104,13 +103,13 @@ class mask(object):
                 self._config[mask_shape]['mag_pivot'] = conf.getfloat(mask_shape+'_PARAMETERS', mask_shape+'_MAG_PIVOT')
                 self._config[mask_shape]['flag'] = conf.getint(mask_shape+'_PARAMETERS', mask_shape+'_FLAG_VALUE')
                 if conf.getboolean('OTHER', 'KEEP_REG_FILE'):
-                    self._config[mask_shape]['reg_file'] = self._config['PATH']['temp_dir'] + '/{0}{1}.reg'.format(re.split(".reg",conf.getexpanded(mask_shape+'_PARAMETERS', mask_shape+'_REG_FILE'))[0],self._img_number)
+                    self._config[mask_shape]['reg_file'] = self._config['PATH']['temp_dir'] + '/{0}{1}.reg'.format(re.split(".reg", conf.getexpanded(mask_shape+'_PARAMETERS', mask_shape+'_REG_FILE'))[0], self._img_number)
                 else:
                     self._config[mask_shape]['reg_file'] = None
         self._config['MESSIER']['make'] = conf.getboolean('MESSIER_PARAMETERS', 'MESSIER_MAKE')
         if self._config['MESSIER']['make']:
             self._config['MESSIER']['cat_path'] = conf.getexpanded('MESSIER_PARAMETERS', 'MESSIER_CAT_PATH')
-            self._config['MESSIER']['pixel_scale'] = conf.getfloat( 'MESSIER_PARAMETERS', 'MESSIER_PIXEL_SCALE')
+            self._config['MESSIER']['pixel_scale'] = conf.getfloat('MESSIER_PARAMETERS', 'MESSIER_PIXEL_SCALE')
             self._config['MESSIER']['size_plus'] = conf.getfloat('MESSIER_PARAMETERS', 'MESSIER_SIZE_PLUS')
             self._config['MESSIER']['flag'] = conf.getint('MESSIER_PARAMETERS', 'MESSIER_FLAG_VALUE')
         self._config['MD']['make'] = conf.getboolean('MD_PARAMETERS', 'MD_MAKE')
@@ -123,8 +122,6 @@ class mask(object):
             if self._path_external_flag is None:
                 raise ValueError('External flag file has to be provided')
             self._config['EXTERNAL_FLAG']['path'] = self._path_external_flag
-
-
 
     def _set_parameters(self):
         """Set parameters
@@ -151,7 +148,6 @@ class mask(object):
 
         self._img_radius = self._get_image_radius()
 
-
     def make_mask(self):
         """Make mask
 
@@ -163,7 +159,7 @@ class mask(object):
             self.missing_data()
 
         if self._config['HALO']['make'] | self._config['SPIKE']['make']:
-            stars=self.find_stars(np.array([self._fieldcenter['wcs'].ra.value,self._fieldcenter['wcs'].dec.value]), radius=self._img_radius)
+            stars = self.find_stars(np.array([self._fieldcenter['wcs'].ra.value, self._fieldcenter['wcs'].dec.value]), radius=self._img_radius)
 
         if not self._err:
             for i in ['HALO', 'SPIKE']:
@@ -172,19 +168,19 @@ class mask(object):
 
         if not self._err:
             if self._config['BORDER']['make']:
-                border_mask=self.mask_border(width=self._config['BORDER']['width'])
+                border_mask = self.mask_border(width=self._config['BORDER']['width'])
             else:
-                border_mask=None
+                border_mask = None
 
         if not self._err:
-            mask_name=[]
+            mask_name = []
             if self._config['HALO']['make'] & self._config['SPIKE']['make']:
                 self._exec_WW(types='ALL')
                 mask_name.append(self._config['PATH']['temp_dir'] + 'halo_spike_flag' + self._img_number + '.fits')
                 mask_name.append(None)
                 # mask_name.append(self._config['PATH']['temp_dir'] + 'spike_flag' + self._img_number + '.fits')
             else:
-                for i in ['HALO','SPIKE']:
+                for i in ['HALO', 'SPIKE']:
                     if self._config[i]['make']:
                         self._exec_WW(types=i)
                         mask_name.append(self._config['PATH']['temp_dir'] + i.lower()+'_flag' + self._img_number + '.fits')
@@ -193,7 +189,7 @@ class mask(object):
 
         if not self._err:
             if self._config['MESSIER']['make']:
-                messier_mask = self.mask_messier(self._config['MESSIER']['cat_path'], size_plus= self._config['MESSIER']['size_plus'], flag_value= self._config['MESSIER']['flag'])
+                messier_mask = self.mask_messier(self._config['MESSIER']['cat_path'], size_plus=self._config['MESSIER']['size_plus'], flag_value=self._config['MESSIER']['flag'])
             else:
                 messier_mask = None
 
@@ -211,7 +207,7 @@ class mask(object):
 
         if not self._err:
             if im_pass:
-                final_mask=self._build_final_mask(path_mask1=mask_name[0],path_mask2=mask_name[1], border=border_mask, messier=messier_mask, path_external_flag=path_external_flag)
+                final_mask = self._build_final_mask(path_mask1=mask_name[0], path_mask2=mask_name[1], border=border_mask, messier=messier_mask, path_external_flag=path_external_flag)
 
                 if not self._config['HALO']['individual']:
                     if mask_name[0] is not None:
@@ -247,7 +243,6 @@ class mask(object):
 
         return general_stdout, general_stderr
 
-
     def find_stars(self, position, radius=None):
         """Find stars
 
@@ -267,15 +262,15 @@ class mask(object):
 
         """
 
-        ra=position[0]
-        dec=position[1]
+        ra = position[0]
+        dec = position[1]
 
-        #check ra dec types
+        # check ra dec types
 
-        if dec>0. :
-            sign='+'
+        if dec > 0.:
+            sign = '+'
         else:
-            sign=''
+            sign = ''
 
         cmd_line = '{0} {1} {2}{3} -r {4} -n 1000000'.format(self._config['PATH']['CDSclient'], ra, sign, dec, radius)
 
@@ -283,12 +278,11 @@ class mask(object):
         self._CDS_stdout, self._CDS_stderr = execute(cmd_line)
 
         if self._CDS_stderr != '':
-            self._err =True
+            self._err = True
             return None
 
         # return self._make_star_cat(output.decode("utf-8"))
         return self._make_star_cat(self._CDS_stdout)
-
 
     def mask_border(self, width=100, flag_value=4):
         """Create mask border
@@ -313,15 +307,14 @@ class mask(object):
             raise ValueError('Width not provided')
 
         # MKDEBUG: Exchanged x and y in the following init call, since the python image is [y, x]
-        flag = np.zeros((int(self._fieldcenter['pix'][1]*2),int(self._fieldcenter['pix'][0]*2)),dtype='uint8')
+        flag = np.zeros((int(self._fieldcenter['pix'][1]*2), int(self._fieldcenter['pix'][0]*2)), dtype='uint8')
 
-        flag[0:width,:]   = flag_value
-        flag[-width:,:] = flag_value
-        flag[:,0:width]   = flag_value
-        flag[:,-width:] = flag_value
+        flag[0:width, :] = flag_value
+        flag[-width:, :] = flag_value
+        flag[:, 0:width] = flag_value
+        flag[:, -width:] = flag_value
 
         return flag
-
 
     def mask_messier(self, cat_path, size_plus=0.1, flag_value=8):
         """Create mask for Messier objects
@@ -347,20 +340,20 @@ class mask(object):
         if size_plus < 0:
             raise ValueError('size_plus has to be larger than 0')
 
-        if cat_path == None:
+        if cat_path is None:
             raise ValueError('cat_path has to be provided')
 
         m_cat = np.load(cat_path)
-        m_sc  = SkyCoord(ra=m_cat['ra']*u.degree, dec=m_cat['dec']*u.degree)
+        m_sc = SkyCoord(ra=m_cat['ra'] * u.degree, dec=m_cat['dec'] * u.degree)
 
-        nx = self._fieldcenter['pix'][0]*2
-        ny = self._fieldcenter['pix'][1]*2
+        nx = self._fieldcenter['pix'][0] * 2
+        ny = self._fieldcenter['pix'][1] * 2
 
-        ### MKDEBUG new 21/09: Add mask also if center of Messier object is outside of image, but area has overlap
+        # MKDEBUG new 21/09: Add mask also if center of Messier object is outside of image, but area has overlap
 
         # Get the four corners of the image
-        corners    = self._wcs.calc_footprint()
-        corners_sc = SkyCoord(ra=corners[:,0]*u.degree, dec=corners[:,1]*u.degree)      
+        corners = self._wcs.calc_footprint()
+        corners_sc = SkyCoord(ra=corners[:, 0] * u.degree, dec=corners[:, 1] * u.degree)
 
         # Loop through all Messier objects and check whether any corner is closer
         # than the object's radius
@@ -371,19 +364,19 @@ class mask(object):
             if np.any(corners_sc.separation(m_sc[i]) < r_deg):
                 ind.append(i)
 
-        ### Previous code: Only adds Messier mask if object center is in image ###
+        # Previous code: Only adds Messier mask if object center is in image ###
 
-        #ra_max = np.hstack(self._wcs.all_pix2world(0, self._fieldcenter['pix'][1], 1))[0]
-        #ra_min = np.hstack(self._wcs.all_pix2world(nx, self._fieldcenter['pix'][1], 1))[0]
-        #dec_min = np.hstack(self._wcs.all_pix2world(self._fieldcenter['pix'][0], 0, 1))[1]
-        #dec_max = np.hstack(self._wcs.all_pix2world(self._fieldcenter['pix'][0], ny, 1))[1]
+        # ra_max = np.hstack(self._wcs.all_pix2world(0, self._fieldcenter['pix'][1], 1))[0]
+        # ra_min = np.hstack(self._wcs.all_pix2world(nx, self._fieldcenter['pix'][1], 1))[0]
+        # dec_min = np.hstack(self._wcs.all_pix2world(self._fieldcenter['pix'][0], 0, 1))[1]
+        # dec_max = np.hstack(self._wcs.all_pix2world(self._fieldcenter['pix'][0], ny, 1))[1]
 
-        #ind = np.where((m_cat['ra'] > ra_min) & (m_cat['ra'] < ra_max) & (m_cat['dec'] > dec_min) & (m_cat['dec'] < dec_max))[0]
+        # ind = np.where((m_cat['ra'] > ra_min) & (m_cat['ra'] < ra_max) & (m_cat['dec'] > dec_min) & (m_cat['dec'] < dec_max))[0]
 
         if len(ind) == 0:
-            #print('MKDEBUG no Messier objects found')
+            # print('MKDEBUG no Messier objects found')
             return None
-        #print('MKDEBUG Messier objects found: first=#{} {}/{}'.format(m_cat['No'][ind[0]], m_cat['ra'][ind[0]], m_cat['dec'][ind[0]]))
+        # print('MKDEBUG Messier objects found: first=#{} {}/{}'.format(m_cat['No'][ind[0]], m_cat['ra'][ind[0]], m_cat['dec'][ind[0]]))
 
         # MKDEBUG: Exchanged x and y in the following init call, since the python image is [y, x]
         flag = np.zeros((int(self._fieldcenter['pix'][1]*2), int(self._fieldcenter['pix'][0]*2)), dtype='uint8')
@@ -398,13 +391,12 @@ class mask(object):
             mask_tmp = (x_c - m_center[0])**2 + (y_c - m_center[1])**2 <= r_pix**2
 
             # Previous code
-            #y_c, x_c = np.ogrid[-int(m_center[1]):ny-int(m_center[1]), -int(m_center[0]):nx-int(m_center[0])]
-            #mask_tmp = x_c*x_c + y_c*y_c <= r_pix*r_pix
+            # y_c, x_c = np.ogrid[-int(m_center[1]):ny-int(m_center[1]), -int(m_center[0]):nx-int(m_center[0])]
+            # mask_tmp = x_c*x_c + y_c*y_c <= r_pix*r_pix
 
             flag[mask_tmp] = flag_value
 
         return flag
-
 
     def missing_data(self):
         """Find missing data
@@ -436,7 +428,6 @@ class mask(object):
                 self._config['MD']['im_remove'] = False
 
         img.close()
-
 
     def SphereDist(self, position1, position2):
         """Compute spherical distance
@@ -471,7 +462,6 @@ class mask(object):
 
         return dist*(180./np.pi)*3600.
 
-
     def _get_image_radius(self, center=None):
         """Get image radius
 
@@ -497,7 +487,6 @@ class mask(object):
             else:
                 raise TypeError('center has to be a numpy.ndarray')
 
-
     def _make_star_cat(self, CDSclient_output):
         """Make star catalog
 
@@ -515,42 +504,41 @@ class mask(object):
 
         """
 
-        h=[]
-        stars={}
-        #get header
+        h = []
+        stars = {}
+        # get header
         for i in CDSclient_output.splitlines()[3].split(' '):
             if (i != '') & (i != ';'):
-                #cleaning output
-                i=i.replace(' ','')
-                for v in re.split(',|#|;',i):
+                # cleaning output
+                i = i.replace(' ', '')
+                for v in re.split(',|#|;', i):
                     if v != '':
-                        i=v
+                        i = v
                 h.append(i)
-                stars[i]=[]
+                stars[i] = []
 
-        #get data
-        for i in range(4,len(CDSclient_output.splitlines())-5):
-            k=0
+        # get data
+        for i in range(4, len(CDSclient_output.splitlines()) - 5):
+            k = 0
             for j in CDSclient_output.splitlines()[i].split(' '):
                 if (j != '') & (j != ';'):
-                    #cleaning output
-                    j=j.replace(' ','')
-                    for v in re.split(',|#|;',j):
+                    # cleaning output
+                    j = j.replace(' ', '')
+                    for v in re.split(',|#|;', j):
                         if v != '':
-                            j=v
-                    #handle missing data
+                            j = v
+                    # handle missing data
                     try:
-                        j=float(j)
+                        j = float(j)
                         stars[h[k]].append(j)
                     except:
                         if j == '---':
                             stars[h[k]].append(None)
                         else:
                             stars[h[k]].append(j)
-                    k+=1
+                    k += 1
 
         return stars
-
 
     def _create_mask(self, stars, types=None, mag_limit=18., mag_pivot=13.8, scale_factor=0.3):
         """Create mask
@@ -585,49 +573,49 @@ class mask(object):
 
         if types == 'HALO':
             mask_model = np.loadtxt(self._config['HALO']['maskmodel_path']).transpose()
-            mask_reg = open(reg,'w')
+            mask_reg = open(reg, 'w')
         elif types == 'SPIKE':
             mask_model = np.loadtxt(self._config['SPIKE']['maskmodel_path']).transpose()
-            mask_reg = open(reg,'w')
+            mask_reg = open(reg, 'w')
         else:
             ValueError("types need to be in ['HALO', 'SPIKE']")
 
-        stars_used=[[],[],[]]
+        stars_used = [[], [], []]
         for ra, dec, Fmag, Jmag, Vmag, Nmag, clas in zip(stars['RA(J2000)'], stars['Dec(J2000)'], stars['Fmag'], stars['Jmag'], stars['Vmag'], stars['Nmag'], stars['Clas']):
-            mag=0.
-            i=0.
-            if Fmag!=None:
-                mag+=Fmag
-                i+=1.
-            if Jmag!=None:
-                mag+=Jmag
-                i+=1.
-            if Vmag!=None:
-                mag+=Vmag
-                i+=1.
-            if Nmag!=None:
-                mag+=Nmag
-                i+=1.
-            if i==0.:
-                mag=None
+            mag = 0.
+            i = 0.
+            if Fmag is not None:
+                mag += Fmag
+                i += 1.
+            if Jmag is not None:
+                mag += Jmag
+                i += 1.
+            if Vmag is not None:
+                mag += Vmag
+                i += 1.
+            if Nmag is not None:
+                mag += Nmag
+                i += 1.
+            if i == 0.:
+                mag = None
             else:
-                mag/=i
+                mag /= i
 
-            if (ra!=None) & (dec!=None) & (mag!=None) & (clas!=None):
-                if (mag<mag_limit) & (clas==0):
+            if (ra is not None) & (dec is not None) & (mag is not None) & (clas is not None):
+                if (mag < mag_limit) & (clas == 0):
                     scaling = 1. - scale_factor * (mag - mag_pivot)
-                    pos = self._wcs.all_world2pix(ra,dec,0)
+                    pos = self._wcs.all_world2pix(ra, dec, 0)
                     stars_used[0].append(pos[0])
                     stars_used[1].append(pos[1])
                     stars_used[2].append(scaling)
 
         for i in range(len(stars_used[0])):
             poly = 'polygon('
-            for x,y in zip(mask_model[0],mask_model[1]):
-                angle = np.arctan2(y,x)
-                l = stars_used[2][i] * np.sqrt(x**2. + y**2.)
-                xnew = l * np.cos(angle)
-                ynew = l * np.sin(angle)
+            for x, y in zip(mask_model[0], mask_model[1]):
+                angle = np.arctan2(y, x)
+                ll = stars_used[2][i] * np.sqrt(x ** 2. + y ** 2.)
+                xnew = ll * np.cos(angle)
+                ynew = ll * np.sin(angle)
 
                 poly = poly + str(stars_used[0][i] + xnew + 0.5) + ' ' + str(stars_used[1][i] + ynew + 0.5) + ' '
             poly = poly + ')\n'
@@ -635,8 +623,7 @@ class mask(object):
 
         mask_reg.close()
 
-
-    def _exec_WW(self,types=None):
+    def _exec_WW(self, types=None):
         """Execute WeightWatcher
 
         Execute WeightWatcher to transform '.reg' to '.fits' flag map.
@@ -648,24 +635,24 @@ class mask(object):
 
         """
 
-        if types in ['HALO','SPIKE']:
-            default_reg = self._config['PATH']['temp_dir'] +  types.lower()+ self._img_number + '.reg'
-            defaul_out = self._config['PATH']['temp_dir'] +  types.lower() + '_flag' + self._img_number + '.fits'
+        if types in ['HALO', 'SPIKE']:
+            default_reg = self._config['PATH']['temp_dir'] + types.lower() + self._img_number + '.reg'
+            defaul_out = self._config['PATH']['temp_dir'] + types.lower() + '_flag' + self._img_number + '.fits'
             if self._config[types]['reg_file'] is None:
-                reg=default_reg
+                reg = default_reg
                 if not sc.BaseCatalog(reg)._file_exists(reg):
                     raise sc.BaseCatalog.CatalogFileNotFound(reg)
                 cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3} -POLY_OUTFLAGS {4} -FLAG_NAMES "" -OUTFLAG_NAME {5} -OUTWEIGHT_NAME ""'.\
-                      format(self._config['PATH']['WW'],self._config['PATH']['WW_configfile'],self._weight_fullpath,reg,self._config[types]['flag'],defaul_out)
+                      format(self._config['PATH']['WW'], self._config['PATH']['WW_configfile'], self._weight_fullpath, reg, self._config[types]['flag'], defaul_out)
                 # os.system(cmd)
                 self._WW_stdout, self._WW_stderr = execute(cmd)
                 # os.system('rm {0}'.format(reg))
                 self._rm_reg_stdout, self._rm_reg_stderr = execute('rm {0}'.format(reg))
             else:
-                reg=self._config[types]['reg_file']
+                reg = self._config[types]['reg_file']
                 if not sc.BaseCatalog(reg)._file_exists(reg):
                     raise sc.BaseCatalog.CatalogFileNotFound(reg)
-                cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3} -POLY_OUTFLAGS {4} -FLAG_NAMES "" -OUTFLAG_NAME {5} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'],self._config['PATH']['WW_configfile'],self._weight_fullpath,reg,self._config[types]['flag'],defaul_out)
+                cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3} -POLY_OUTFLAGS {4} -FLAG_NAMES "" -OUTFLAG_NAME {5} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'], self._config['PATH']['WW_configfile'], self._weight_fullpath, reg, self._config[types]['flag'], defaul_out)
                 # os.system(cmd)
                 self._WW_stdout, self._WW_stderr = execute(cmd)
 
@@ -673,29 +660,28 @@ class mask(object):
             default_reg = [self._config['PATH']['temp_dir'] + 'halo' + self._img_number + '.reg', self._config['PATH']['temp_dir'] + 'spike' + self._img_number + '.reg']
             defaul_out = self._config['PATH']['temp_dir'] + 'halo_spike_flag' + self._img_number + '.fits'
             if self._config['HALO']['reg_file'] is None:
-                reg=default_reg
+                reg = default_reg
                 for i in range(2):
                     if not sc.BaseCatalog(reg[i])._file_exists(reg[i]):
                         raise sc.BaseCatalog.CatalogFileNotFound(reg[i])
-                cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3},{4} -POLY_OUTFLAGS {5},{6} -FLAG_NAMES "" -OUTFLAG_NAME {7} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'],self._config['PATH']['WW_configfile'],self._weight_fullpath,reg[0],reg[1],self._config['HALO']['flag'],self._config['SPIKE']['flag'],defaul_out)
+                cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3},{4} -POLY_OUTFLAGS {5},{6} -FLAG_NAMES "" -OUTFLAG_NAME {7} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'], self._config['PATH']['WW_configfile'], self._weight_fullpath, reg[0], reg[1], self._config['HALO']['flag'], self._config['SPIKE']['flag'], defaul_out)
                 # os.system(cmd)
                 self._WW_stdout, self._WW_stderr = execute(cmd)
                 # os.system('rm {0} {1}'.format(reg[0],reg[1]))
-                self._rm_reg_stdout, self._rm_reg_stderr = execute('rm {0} {1}'.format(reg[0],reg[1]))
+                self._rm_reg_stdout, self._rm_reg_stderr = execute('rm {0} {1}'.format(reg[0], reg[1]))
             else:
-                reg=[self._config['HALO']['reg_file'], self._config['SPIKE']['reg_file']]
+                reg = [self._config['HALO']['reg_file'], self._config['SPIKE']['reg_file']]
                 for i in range(2):
                     if not sc.BaseCatalog(reg[i])._file_exists(reg[i]):
                         raise sc.BaseCatalog.CatalogFileNotFound(reg[i])
-                cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3},{4} -POLY_OUTFLAGS {5},{6} -FLAG_NAMES "" -OUTFLAG_NAME {7} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'],self._config['PATH']['WW_configfile'],self._weight_fullpath,reg[0],reg[1],self._config['HALO']['flag'],self._config['SPIKE']['flag'],defaul_out)
+                cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3},{4} -POLY_OUTFLAGS {5},{6} -FLAG_NAMES "" -OUTFLAG_NAME {7} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'], self._config['PATH']['WW_configfile'], self._weight_fullpath, reg[0], reg[1], self._config['HALO']['flag'], self._config['SPIKE']['flag'], defaul_out)
                 # os.system(cmd)
                 self._WW_stdout, self._WW_stderr = execute(cmd)
         else:
-                ValueError("types must be in ['HALO','SPIKE','ALL']")
+            ValueError("types must be in ['HALO','SPIKE','ALL']")
 
         if (self._WW_stderr != '') | (self._rm_reg_stderr != ''):
             self._err = True
-
 
     def _build_final_mask(self, path_mask1, path_mask2=None, border=None, messier=None, path_external_flag=None):
         """Create final mask
@@ -722,58 +708,52 @@ class mask(object):
 
         """
 
-        final_mask=None
+        final_mask = None
 
         if (path_mask1 is None) & (path_mask2 is None) & (border is None) & (messier is None):
             raise ValueError('No path to a mask, border or messier provided')
 
         if path_mask1 is not None:
-            mask1=sc.FITSCatalog(path_mask1, hdu_no=0)
+            mask1 = sc.FITSCatalog(path_mask1, hdu_no=0)
             mask1.open()
-            final_mask=mask1.get_data()[:,:]
+            final_mask = mask1.get_data()[:, :]
 
         if path_mask2 is not None:
-            mask2=sc.FITSCatalog(path_mask2, hdu_no=0)
+            mask2 = sc.FITSCatalog(path_mask2, hdu_no=0)
             mask2.open()
             if final_mask is not None:
-                final_mask+=mask2.get_data()[:,:]
+                final_mask += mask2.get_data()[:, :]
             else:
-                final_mask=mask2.get_data()[:,:]
-
+                final_mask = mask2.get_data()[:, :]
 
         if border is not None:
             if type(border) is np.ndarray:
                 if final_mask is not None:
-                    final_mask+=border
+                    final_mask += border
                 else:
-                    final_mask=border
+                    final_mask = border
             else:
                 raise TypeError('border has to be a numpy.ndarray')
-
 
         if messier is not None:
             if type(messier) is np.ndarray:
                 if final_mask is not None:
-                    final_mask+=messier
+                    final_mask += messier
                 else:
-                    final_mask=messier
+                    final_mask = messier
             else:
                 raise TypeError('messier has to be a numpy.ndarray')
-
 
         if path_external_flag is not None:
             external_flag = sc.FITSCatalog(path_external_flag, hdu_no=0)
             external_flag.open()
             if final_mask is not None:
-                final_mask += external_flag.get_data()[:,:]
+                final_mask += external_flag.get_data()[:, :]
             else:
-                final_mask = external_flag.get_data()[:,:]
+                final_mask = external_flag.get_data()[:, :]
             external_flag.close()
 
-
-
-        return final_mask.astype(np.int16,copy=False)
-
+        return final_mask.astype(np.int16, copy=False)
 
     def _mask_to_file(self, input_mask, output_fullpath):
         """Mask to file
@@ -834,7 +814,7 @@ class mask(object):
         if temp_dir_path is None:
             raise ValueError('temp directory path not parovided')
 
-        path = temp_dir_path.replace(' ','')
+        path = temp_dir_path.replace(' ', '')
 
         if path == 'OUTPUT':
             path = self._output_dir + '/temp'
