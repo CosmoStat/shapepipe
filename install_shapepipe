@@ -56,6 +56,7 @@ download_package() {
 
 # Function to build SExtractor on macOS
 build_sex_blas() {
+  astromatic_setup
   cd $BUILD_DIR/$1
   ./autogen.sh
   ./configure --prefix=$CONDA_PREFIX --enable-openblas --with-fftw-libdir=$FFTW_LIB \
@@ -67,6 +68,7 @@ build_sex_blas() {
 
 # Function to build SExtractor on Linux
 build_sex_atlas() {
+  astromatic_setup
   cd $BUILD_DIR/$1
   ./autogen.sh
   ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$FFTW_LIB \
@@ -78,6 +80,7 @@ build_sex_atlas() {
 
 # Function to build PSFEx on macOS
 build_psfex_blas() {
+  astromatic_setup
   cd $BUILD_DIR/$1
   ./autogen.sh
   ./configure --prefix=$CONDA_PREFIX --enable-openblas --with-fftw-libdir=$FFTW_LIB \
@@ -90,6 +93,7 @@ build_psfex_blas() {
 
 # Function to build PSFEx on Linux
 build_psfex_atlas() {
+  astromatic_setup
   cd $BUILD_DIR/$1
   ./autogen.sh
   ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$FFTW_LIB \
@@ -167,6 +171,16 @@ setup() {
   echo 'Install CDSclient:' $INSTALL_CDSCLIENT
   echo 'ShapePipe Directory:' $PIPE_DIR
   echo 'Build Directory:' $BUILD_DIR
+  echo ''
+}
+
+astromatic_setup() {
+  echo 'FFTW Library Path:' $FFTW_LIB
+  echo 'FFTW Include Path:' $FFTW_INC
+  echo 'OpenBLAS Library Path:' $BLAS_LIB
+  echo 'OpenBLAS Include Path:' $BLAS_INC
+  echo 'ATLAS Library Path:' $ATLAS_LIB
+  echo 'ATLAS Include Path:' $ATLAS_INC
   echo ''
 }
 
