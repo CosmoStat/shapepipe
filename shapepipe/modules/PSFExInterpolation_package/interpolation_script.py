@@ -67,8 +67,8 @@ def interpsfex(dotpsfpath, pos):
     # compute polynomial coefficients
     coeffs = np.array([[x**i for i in range(deg+1)] for x in xs])
     cross_coeffs = np.array([np.concatenate([[(x ** j) * (y ** i)
-                             for j in range(deg - i + 1)]
-                             for i in range(1, deg + 1)])
+                                              for j in range(deg - i + 1)]
+                                             for i in range(1, deg + 1)])
                              for x, y in zip(xs, ys)])
     coeffs = np.hstack((coeffs, cross_coeffs))
 
