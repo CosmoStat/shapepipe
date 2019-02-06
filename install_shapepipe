@@ -245,35 +245,35 @@ case $i in
     INSTALL_CDSCLIENT=FALSE
     shift
     ;;
-    --fftw_lib=*)
+    --fftw-lib=*)
     FFTW_LIB="${i#*=}"
     shift
     ;;
-    --fftw_inc=*)
+    --fftw-inc=*)
     FFTW_INC="${i#*=}"
     shift
     ;;
-    --blas_lib=*)
+    --blas-lib=*)
     BLAS_LIB="${i#*=}"
     shift
     ;;
-    --blas_inc=*)
+    --blas-inc=*)
     BLAS_INC="${i#*=}"
     shift
     ;;
-    --atlas_lib=*)
+    --atlas-lib=*)
     ATLAS_LIB="${i#*=}"
     shift
     ;;
-    --atlas_inc=*)
+    --atlas-inc=*)
     ATLAS_INC="${i#*=}"
     shift
     ;;
-    --plplot_lib=*)
+    --plplot-lib=*)
     PLPLOT_LIB="${i#*=}"
     shift
     ;;
-    --plplot_inc=*)
+    --plplot-inc=*)
     PLPLOT_INC="${i#*=}"
     shift
     ;;
