@@ -221,10 +221,14 @@ setup() {
 astromatic_setup() {
   echo 'FFTW Library Path:' $FFTW_LIB
   echo 'FFTW Include Path:' $FFTW_INC
-  echo 'OpenBLAS Library Path:' $BLAS_LIB
-  echo 'OpenBLAS Include Path:' $BLAS_INC
-  echo 'ATLAS Library Path:' $ATLAS_LIB
-  echo 'ATLAS Include Path:' $ATLAS_INC
+  if [ "$use_atlas" == TRUE ]
+  then
+    echo 'ATLAS Library Path:' $ATLAS_LIB
+    echo 'ATLAS Include Path:' $ATLAS_INC
+  else
+    echo 'OpenBLAS Library Path:' $BLAS_LIB
+    echo 'OpenBLAS Include Path:' $BLAS_INC
+  fi
   echo ''
 }
 
