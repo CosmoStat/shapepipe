@@ -13,31 +13,31 @@ from shapepipe.modules.mask_package.mask_script import mask
 
 
 @module_runner(version='1.0', file_pattern=['image', 'weight', 'flag'],
-               file_ext=['.fits','.fits','.fits'], depends=['numpy','astropy'],
-               executes=['ww','findgsc2.2'], numbering_scheme='_0')
+               file_ext=['.fits', '.fits', '.fits'],
+               depends=['numpy', 'astropy'], executes=['ww', 'findgsc2.2'],
+               numbering_scheme='_0')
 def mask_runner(input_file_list, output_dir, file_number_string,
-                   config, w_log):
+                config, w_log):
 
     if len(input_file_list) == 2:
         ext_flag_name = None
     elif len(input_file_list) == 3:
         ext_flag_name = input_file_list[2]
     else:
-        raise ValueError("Input file list of length {} found, must be 'image', 'weight' and 'ext_flags' (optional)".format(len(input_file_list)))
-    
+        raise ValueError("Input file list of length {} found, must be "
+                         "'image', 'weight' and 'ext_flags' (optional)"
+                         "".format(len(input_file_list)))
+
     config_file = config.get('MASK_RUNNER', 'MASK_CONFIG_PATH')
-    
+
     if config.has_option('MASK_RUNNER', 'SUFFIX'):
         suffix = config.get('MASK_RUNNER', 'SUFFIX')
     else:
         suffix = ''
 
-    if config.has_option('MASK_RUNNER', 'OUTNAME_BASE'):
-        outname_base = config.get('MASK_RUNNER', 'OUTNAME_BASE')
-    else:
-        outname_base = 'flag'
-
-    inst = mask(*input_file_list[:2], suffix.replace(" ",""), file_number_string, config_file, output_dir, path_external_flag=ext_flag_name, outname_base=outname_base)
+    inst = mask(*input_file_list[:2], suffix.replace(" ", ""),
+                file_number_string, config_file, output_dir,
+                path_external_flag=ext_flag_name)
     stdout, stderr = inst.make_mask()
 
     return stdout, stderr
