@@ -167,9 +167,9 @@ check_binary() {
 check_binary2() {
   if type -t $1 > /dev/null
   then
-    echo -ne "$2:\t SUCCESS"
+    echo -ne "$2:\t SUCCESS\n"
   else
-    echo -ne "$2:\t FAIL"
+    echo -ne "$2:\t FAIL\n"
   fi
 }
 
