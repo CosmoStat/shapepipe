@@ -9,6 +9,8 @@ LC_CTYPE=en_US.utf8
 #
 ##############################################################################
 
+version="1.0"
+
 ##############################################################################
 # EXTERNAL PACKAGE VERSIONS
 ##############################################################################
@@ -146,10 +148,43 @@ INSTALL_PSFEX=TRUE
 INSTALL_WW=TRUE
 INSTALL_CDSCLIENT=TRUE
 
+help="$(basename "$0") [OPTIONS]\n\n
+Options:\n
+\t-h,--help\t show this help message and exit\n
+\t-v,--version\t print script version and exit\n
+\t--pipe-dir\t set the path to the ShapePipe base directory (default is PWD)\n
+\t--build-dir\t set the path to the ShapePipe build (default is PWD/build)\n
+\t--develop\t option to install additional development packages\n
+\t--no-env\t do not build Conda environment\n
+\t--no-sex\t do not build SExtractor\n
+\t--no-psfex\t do not build PSFEx\n
+\t--no-ww\t\t do not build WeightWatcher\n
+\t--no-cds\t do not build CDSclient\n
+\t--no-exe\t do not build any system executables\n\n"
+
 # Parse command line options
 for i in "$@"
 do
 case $i in
+    -h|--help)
+    start
+    echo -ne $help
+    shift
+    exit
+    ;;
+    -v|--version)
+    echo $(basename "$0") $version
+    shift
+    exit
+    ;;
+    --pipe-dir=*)
+    PIPE_DIR="${i#*=}"
+    shift
+    ;;
+    --build-dir=*)
+    BUILD_DIR="${i#*=}"
+    shift
+    ;;
     --develop)
     DEVELOP=TRUE
     shift
@@ -170,7 +205,7 @@ case $i in
     INSTALL_WW=FALSE
     shift
     ;;
-    --no-cdsclient)
+    --no-cds)
     INSTALL_CDSCLIENT=FALSE
     shift
     ;;
@@ -217,6 +252,7 @@ fi
 
 # Print script set-up
 setup
+exit
 
 # Build conda environment
 if [ "$BUILD_ENV" == TRUE ]
@@ -252,12 +288,13 @@ if [ "$INSTALL_SEX" == TRUE ] && check_binary $sex_bin
 then
   report_progress 'SExtractor'
   conda install -c conda-forge fftw -y
-  conda install -c conda-forge openblas -y
   download_package $sex_url $sex_tar $sex_dir
   if [ "$SYSOS" == "macOS" ]
   then
+    conda install -c conda-forge openblas -y
     build_astromatic_macos $sex_dir
   else
+    conda install -c conda-forge atlas -y
     build_astromatic_linux $sex_dir
   fi
 fi
@@ -268,12 +305,13 @@ then
   report_progress 'PSFEx'
   conda install -c cefca plplot  -y
   conda install -c conda-forge fftw -y
-  conda install -c conda-forge -y
   download_package $psfex_url $psfex_tar $psfex_dir
   if [ "$SYSOS" == "macOS" ]
   then
+    conda install -c conda-forge openblas -y
     build_astromatic_macos $psfex_dir
   else
+    conda install -c conda-forge atlas -y
     build_astromatic_linux $psfex_dir
   fi
 fi
