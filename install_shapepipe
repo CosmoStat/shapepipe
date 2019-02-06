@@ -55,47 +55,47 @@ download_package() {
 }
 
 # Function to build SExtractor on macOS
-build_sex_macos() {
+build_sex_blas() {
   cd $BUILD_DIR/$1
   ./autogen.sh
-  ./configure --prefix=$CONDA_PREFIX --enable-openblas --with-fftw-libdir=$CONDA_PREFIX/lib \
-  --with-fftw-incdir=$CONDA_PREFIX/include --with-openblas-libdir=$CONDA_PREFIX/lib \
-  --with-openblas-incdir=$CONDA_PREFIX/include --quiet
+  ./configure --prefix=$CONDA_PREFIX --enable-openblas --with-fftw-libdir=$FFTW_LIB \
+  --with-fftw-incdir=$FFTW_INC --with-openblas-libdir=$BLAS_LIB \
+  --with-openblas-incdir=$BLAS_INC --quiet
   make -j --quiet
   make install
 }
 
 # Function to build SExtractor on Linux
-build_sex_linux() {
+build_sex_atlas() {
   cd $BUILD_DIR/$1
   ./autogen.sh
-  ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$CONDA_PREFIX/lib \
-  --with-fftw-incdir=$CONDA_PREFIX/include --with-atlas-libdir=$CONDA_PREFIX/lib \
-  --with-atlas-incdir=$CONDA_PREFIX/include/atlas --quiet
+  ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$FFTW_LIB \
+  --with-fftw-incdir=$FFTW_INC --with-atlas-libdir=$ATLAS_LIB \
+  --with-atlas-incdir=$ATLAS_INC --quiet
   make -j --quiet
   make install
 }
 
 # Function to build PSFEx on macOS
-build_psfex_macos() {
+build_psfex_blas() {
   cd $BUILD_DIR/$1
   ./autogen.sh
-  ./configure --prefix=$CONDA_PREFIX --enable-openblas --with-fftw-libdir=$CONDA_PREFIX/lib \
-  --with-fftw-incdir=$CONDA_PREFIX/include --with-openblas-libdir=$CONDA_PREFIX/lib \
-  --with-openblas-incdir=$CONDA_PREFIX/include --with-plplot-libdir=$CONDA_PREFIX/lib \
-  --with-plplot-incdir=$CONDA_PREFIX/include/plplot --quiet
+  ./configure --prefix=$CONDA_PREFIX --enable-openblas --with-fftw-libdir=$FFTW_LIB \
+  --with-fftw-incdir=$FFTW_INC --with-openblas-libdir=$BLAS_LIB \
+  --with-openblas-incdir=$BLAS_INC --with-plplot-libdir=$PLPLOT_LIB \
+  --with-plplot-incdir=$PLPLOT_INC --quiet
   make -j --quiet
   make install
 }
 
 # Function to build PSFEx on Linux
-build_psfex_linux() {
+build_psfex_atlas() {
   cd $BUILD_DIR/$1
   ./autogen.sh
-  ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$CONDA_PREFIX/lib \
-  --with-fftw-incdir=$CONDA_PREFIX/include --with-atlas-libdir=$CONDA_PREFIX/lib \
-  --with-atlas-incdir=$CONDA_PREFIX/include/atlas --with-plplot-libdir=$CONDA_PREFIX/lib \
-  --with-plplot-incdir=$CONDA_PREFIX/include/plplot --quiet
+  ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$FFTW_LIB \
+  --with-fftw-incdir=$FFTW_INC --with-atlas-libdir=$ATLAS_LIB \
+  --with-atlas-incdir=$ATLAS_INC -with-plplot-libdir=$PLPLOT_LIB \
+  --with-plplot-incdir=$PLPLOT_INC --quiet
   make -j --quiet
   make install
 }
@@ -106,6 +106,15 @@ build_standard() {
   ./configure --prefix=$CONDA_PREFIX --quiet
   make --quiet
   make install
+}
+
+# Check if a binary executable is already installed in the conda environment
+check_conda() {
+  if ! type -t "conda" > /dev/null
+  then
+    echo "Conda command not found, make sure it is installed before proceding."
+    exit
+  fi
 }
 
 # Check if a binary executable is already installed in the conda environment
@@ -236,6 +245,38 @@ case $i in
     INSTALL_CDSCLIENT=FALSE
     shift
     ;;
+    --fftw_lib=*)
+    FFTW_LIB="${i#*=}"
+    shift
+    ;;
+    --fftw_inc=*)
+    FFTW_INC="${i#*=}"
+    shift
+    ;;
+    --blas_lib=*)
+    BLAS_LIB="${i#*=}"
+    shift
+    ;;
+    --blas_inc=*)
+    BLAS_INC="${i#*=}"
+    shift
+    ;;
+    --atlas_lib=*)
+    ATLAS_LIB="${i#*=}"
+    shift
+    ;;
+    --atlas_inc=*)
+    ATLAS_INC="${i#*=}"
+    shift
+    ;;
+    --plplot_lib=*)
+    PLPLOT_LIB="${i#*=}"
+    shift
+    ;;
+    --plplot_inc=*)
+    PLPLOT_INC="${i#*=}"
+    shift
+    ;;
     --no-exe)
     INSTALL_SEX=FALSE
     INSTALL_PSFEX=FALSE
@@ -257,11 +298,8 @@ done
 # Start script
 start
 
-if ! check_binary "conda"
-then
-  echo "Conda command not found, make sure it is installed before proceding."
-  exit
-fi
+# Check if conda is installed
+check_conda
 
 # Find the operating system
 case "$OSTYPE" in
@@ -295,6 +333,14 @@ fi
 
 # Activate conda environment
 source activate shapepipe
+echo "Activating Conda environment" $CONDA_PREFIX
+
+if [ -z "$FFTW_LIB" ]; then FFTW_LIB=$CONDA_PREFIX/lib; fi
+if [ -z "$FFTW_INC" ]; then FFTW_INC=$CONDA_PREFIX/include; fi
+if [ -z "$BLAS_LIB" ]; then BLAS_LIB=$CONDA_PREFIX/lib; fi
+if [ -z "$BLAS_INC" ]; then BLAS_INC=$CONDA_PREFIX/include; fi
+if [ -z "$PLPLOT_LIB" ]; then PLPLOT_LIB=$CONDA_PREFIX/lib; fi
+if [ -z "$PLPLOT_INC" ]; then PLPLOT_INC=$CONDA_PREFIX/include/plplot; fi
 
 ##############################################################################
 # INSTALL DEVELOPER PACKAGES
@@ -331,13 +377,12 @@ then
   report_progress 'SExtractor'
   conda install -c conda-forge fftw -y
   download_package $sex_url $sex_tar $sex_dir
-  if [ "$SYSOS" == "macOS" ]
+  if [ -z "$ATLAS_LIB" ]
   then
     conda install -c conda-forge openblas -y
-    build_sex_macos $sex_dir
+    build_sex_blas $sex_dir
   else
-    conda install -c conda-forge atlas -y
-    build_sex_linux $sex_dir
+    build_sex_atlas $sex_dir
   fi
 fi
 
@@ -348,13 +393,12 @@ then
   conda install -c cefca plplot  -y
   conda install -c conda-forge fftw -y
   download_package $psfex_url $psfex_tar $psfex_dir
-  if [ "$SYSOS" == "macOS" ]
+  if [ -z "$ATLAS_LIB" ]
   then
     conda install -c conda-forge openblas -y
-    build_psfex_macos $psfex_dir
+    build_psfex_blas $psfex_dir
   else
-    conda install -c conda-forge atlas -y
-    build_psfex_linux $psfex_dir
+    build_psfex_atlas $psfex_dir
   fi
 fi
 
