@@ -2,7 +2,7 @@
 
 """FIND_EXPOSURES SCRIPT
 
-This script contains a class to handle processing for the find_exposures modules: Identify exposures that are used in selected tiles.
+This script contains a class to handle processing for the find_exposures module: Identify exposures that are used in selected tiles.
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
@@ -18,10 +18,9 @@ import re
 
 import numpy as np
 import astropy.io.fits as fits
-from astropy import wcs
 import sip_tpv as stp
 
-import shapepipe.pipeline.file_io as sc
+import shapepipe.pipeline.file_io as io
 
 
 
@@ -66,16 +65,6 @@ class find_exposures():
         self._config        = config
         self._w_log         = w_log
 
-        # Input file basename
-        ext_arr = config.get('FILE', 'FILE_EXT')
-        ext     = ext_arr.split(',')[0]
-        fbasen  = os.path.basename(cat_tile_path)
-        m = re.search('(.*).{}'.format(ext), fbasen)
-        if not m:
-            raise FindExposureError('Extension \'{}\' does not match tile cataog basename \'{}\''.format(ext, fbasen))
-        self._cat_tile_basename = m.group(1)
-
-
 
     def process(self):
 
@@ -95,7 +84,7 @@ class find_exposures():
 
 
     def get_exposure_list(self):
-        """Read list of exposure file used for the tile in process
+        """Return list of exposure file used for the tile in process, from tiles FITS header
 
         Parameters
         ----------
@@ -163,12 +152,11 @@ class find_exposures():
             number of files written
         """
 
-        img_file = sc.FITSCatalog(exp_path, hdu_no=1)
+        img_file = io.FITSCatalog(exp_path, hdu_no=1)
         img_file.open()
 
         ext_out = self._config.get('FIND_EXPOSURES_RUNNER', 'OUTPUT_FILE_EXT')
 
-        hdu_max = len(img_file._cat_data)
         n_hdu   = int(self._config.get('FIND_EXPOSURES_RUNNER', 'N_HDU'))
 
         dnum = 0

@@ -2,7 +2,7 @@
 
 """FIND_EXPOSURES RUNNER
 
-This module run find_exposures: Identify exposures that are used in selected tiles.
+This module runs find_exposures: Identify exposures that are used in selected tiles.
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
