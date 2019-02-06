@@ -167,9 +167,9 @@ check_binary() {
 check_binary2() {
   if type -t $1 > /dev/null
   then
-    echo "$2: SUCCESS"
+    echo -ne "$2:\t SUCCESS"
   else
-    echo "$2: FAIL"
+    echo -ne "$2:\t FAIL"
   fi
 }
 
@@ -198,6 +198,10 @@ finish() {
   echo ''
   echo $line
   echo 'Installation Complete!'
+  check_binary2 $sex_bin "SExtractor"
+  check_binary2 $psfex_bin "PSFEx"
+  check_binary2 $ww_bin "WeightWatcher"
+  check_binary2 $cdsclient_bin "CDSclient"
   echo $line
   echo ''
 }
@@ -238,6 +242,7 @@ INSTALL_PSFEX=TRUE
 INSTALL_WW=TRUE
 INSTALL_CDSCLIENT=TRUE
 ATLAS_SEARCH=FALSE
+use_atlas=FALSE
 
 help="$(basename "$0") [OPTIONS]\n\n
 Options:\n
@@ -388,6 +393,11 @@ case "$OSTYPE" in
   ;;
 esac
 
+if [ ! -z "$ATLAS_LIB" ] || [ "$ATLAS_SEARCH" == TRUE ]
+then
+  use_atlas=TRUE
+fi
+
 # Create build directory if it does not already exist
 if [ ! -d "$BUILD_DIR" ]
 then
@@ -444,18 +454,20 @@ fi
 # BUILD EXTERNAL EXECUTABLES
 ##############################################################################
 
+
+
 # Build SExtractor
 if [ "$INSTALL_SEX" == TRUE ] && check_binary $sex_bin
 then
   report_progress 'SExtractor'
   conda install -c conda-forge fftw -y
   download_package $sex_url $sex_tar
-  if [ -z "$ATLAS_LIB" ] && [ "$ATLAS_SEARCH" == TRUE ]
+  if [ "$use_atlas" == TRUE ]
   then
+    build_sex_atlas $sex_dir
+  else
     conda install -c conda-forge openblas -y
     build_sex_blas $sex_dir
-  else
-    build_sex_atlas $sex_dir
   fi
 fi
 
@@ -465,12 +477,12 @@ then
   report_progress 'PSFEx'
   conda install -c conda-forge fftw -y
   download_package $psfex_url $psfex_tar
-  if [ -z "$ATLAS_LIB" ] && [ "$ATLAS_SEARCH" == TRUE ]
+  if [ "$use_atlas" == TRUE ]
   then
+    build_psfex_atlas $psfex_dir
+  else
     conda install -c conda-forge openblas -y
     build_psfex_blas $psfex_dir
-  else
-    build_psfex_atlas $psfex_dir
   fi
 fi
 
@@ -489,12 +501,6 @@ then
   download_package $cdsclient_url $cdscleint_tar
   build_standard $cdsclient_dir
 fi
-
-# Installation Summary
-check_binary2 $sex_bin "SExtractor"
-check_binary2 $psfex_bin "PSFEx"
-check_binary2 $ww_bin "WeightWatcher"
-check_binary2 $cds_bin "CDSclient"
 
 ##############################################################################
 # INSTALL SHAPEPIPE LIBRARY
