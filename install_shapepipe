@@ -54,8 +54,8 @@ download_package() {
   rm $2
 }
 
-# Function to build astromatic software on macOS
-build_astromatic_macos() {
+# Function to build SExtractor on macOS
+build_sex_macos() {
   cd $BUILD_DIR/$1
   ./autogen.sh
   ./configure --prefix=$CONDA_PREFIX --enable-openblas --with-fftw-libdir=$CONDA_PREFIX/lib \
@@ -65,13 +65,37 @@ build_astromatic_macos() {
   make install
 }
 
-# Function to build astromatic software on Linux
-build_astromatic_linux() {
+# Function to build SExtractor on Linux
+build_sex_linux() {
   cd $BUILD_DIR/$1
   ./autogen.sh
   ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$CONDA_PREFIX/lib \
   --with-fftw-incdir=$CONDA_PREFIX/include --with-atlas-libdir=$CONDA_PREFIX/lib \
-  --with-atlas-incdir=$CONDA_PREFIX/include --quiet
+  --with-atlas-incdir=$CONDA_PREFIX/include/atlas --quiet
+  make -j --quiet
+  make install
+}
+
+# Function to build PSFEx on macOS
+build_psfex_macos() {
+  cd $BUILD_DIR/$1
+  ./autogen.sh
+  ./configure --prefix=$CONDA_PREFIX --enable-openblas --with-fftw-libdir=$CONDA_PREFIX/lib \
+  --with-fftw-incdir=$CONDA_PREFIX/include --with-openblas-libdir=$CONDA_PREFIX/lib \
+  --with-openblas-incdir=$CONDA_PREFIX/include --with-plplot-libdir=$CONDA_PREFIX/lib \
+  --with-plplot-incdir=$CONDA_PREFIX/include/plplot --quiet
+  make -j --quiet
+  make install
+}
+
+# Function to build PSFEx on Linux
+build_psfex_linux() {
+  cd $BUILD_DIR/$1
+  ./autogen.sh
+  ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$CONDA_PREFIX/lib \
+  --with-fftw-incdir=$CONDA_PREFIX/include --with-atlas-libdir=$CONDA_PREFIX/lib \
+  --with-atlas-incdir=$CONDA_PREFIX/include/atlas --with-plplot-libdir=$CONDA_PREFIX/lib \
+  --with-plplot-incdir=$CONDA_PREFIX/include/plplot --quiet
   make -j --quiet
   make install
 }
@@ -86,7 +110,7 @@ build_standard() {
 
 # Check if a binary executable is already installed in the conda environment
 check_binary() {
-  if ! type "$CONDA_PREFIX/bin/$1" > /dev/null
+  if ! type -t "$CONDA_PREFIX/bin/$1" > /dev/null
   then
     return 0
   else
@@ -108,7 +132,11 @@ report_progress() {
 start() {
   echo ''
   echo $line
-  echo 'ShapePipe Installation Script' $1
+  echo 'ShapePipe Installation Script'
+  echo ''
+  echo 'Author: Samuel Farrens'
+  echo 'Year: 2019'
+  echo 'Version:' $version
   echo $line
   echo ''
 }
@@ -116,7 +144,7 @@ start() {
 finish() {
   echo ''
   echo $line
-  echo 'Installation Complete!' $1
+  echo 'Installation Complete!'
   echo $line
   echo ''
 }
@@ -131,7 +159,6 @@ setup() {
   echo 'ShapePipe Directory:' $PIPE_DIR
   echo 'Build Directory:' $BUILD_DIR
   echo ''
-  echo $line
 }
 
 ##############################################################################
@@ -230,6 +257,12 @@ done
 # Start script
 start
 
+if ! check_binary "conda"
+then
+  echo "Conda command not found, make sure it is installed before proceding."
+  exit
+fi
+
 # Find the operating system
 case "$OSTYPE" in
   darwin*)
@@ -263,15 +296,25 @@ fi
 # Activate conda environment
 source activate shapepipe
 
+##############################################################################
+# INSTALL DEVELOPER PACKAGES
+##############################################################################
+
 # Install development packages
 if [ "$DEVELOP" == TRUE ]
 then
+  report_progress 'Developer Packages'
   pip install pytest pytest-cov pytest-codestyle sphinx sphinx-rtd-theme
 fi
+
+##############################################################################
+# INSTALL MACOS REQUIRMENTS
+##############################################################################
 
 # Set up macOS environment
 if [ "$SYSOS" == "macOS" ]
 then
+  report_progress 'macOS Requirements'
   conda install wget -y
   conda install automake autoconf libtool -y
   export C_INCLUDE_PATH=$CONDA_PREFIX/include
@@ -291,10 +334,10 @@ then
   if [ "$SYSOS" == "macOS" ]
   then
     conda install -c conda-forge openblas -y
-    build_astromatic_macos $sex_dir
+    build_sex_macos $sex_dir
   else
     conda install -c conda-forge atlas -y
-    build_astromatic_linux $sex_dir
+    build_sex_linux $sex_dir
   fi
 fi
 
@@ -308,10 +351,10 @@ then
   if [ "$SYSOS" == "macOS" ]
   then
     conda install -c conda-forge openblas -y
-    build_astromatic_macos $psfex_dir
+    build_psfex_macos $psfex_dir
   else
     conda install -c conda-forge atlas -y
-    build_astromatic_linux $psfex_dir
+    build_psfex_linux $psfex_dir
   fi
 fi
 
