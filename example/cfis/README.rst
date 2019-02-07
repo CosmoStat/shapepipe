@@ -40,22 +40,26 @@ in corresponding directories.
 Run
 ---
 
-1. Mask tiles
+A. Tiles processing
+^^^^^^^^^^^^^^^^^^^
+
+1. Mask
 
 .. code-block:: bash
         mkdir -p output_tiles/mask
         ~/ShapePipe/shapepipe_run.py -c config_tiles/config.mask.ini
 
-1a. Link to flag files.
+On output flag files `flag_*.fits` are created.
 
-   This step will be made obsolete. For the moment, when only one input directory is possible,
-   the flag files procuced in the last step have to be linked.
-
-2. Decect objects on tiles using SExtractor
+2. Detect objects
 
 .. code-block:: bash
         mkdir -p output_tiles/SExtractor
         ~/ShapePipe/shapepipe_run.py -c config_tiles/config.sex.ini
+
+On input, the original images and weights, as well as the flag files from the last step (A.1) are read.
+
+On output, 
 
 3. Identify exposures for selected tiles, and write all HDUs to FITS files.
 
