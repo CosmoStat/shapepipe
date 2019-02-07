@@ -21,5 +21,8 @@ dist/
 # Ignore pypi config
 .pypirc
 
-#Ignore .DS_Store
+# Ignore .DS_Store
 .DS_Store
+
+# Ignore example output
+/example/output/*
