@@ -284,7 +284,7 @@ class tileobj_as_exp():
         for h in hist:
             temp = h.split(' ')
 
-            pattern = '(.*)\.{1}.*'
+            pattern = r'(.*)\.{1}.*'
             m = re.search(pattern, temp[3])
             if not m:
                 raise FindExposureError('re match \'{}\' failed for filename \'{}\''.format(pattern, temp[3]))
