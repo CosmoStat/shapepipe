@@ -20,7 +20,7 @@ def setools_runner(input_file_list, output_dir, file_number_string,
 
     config_file = config.get('SETOOLS_RUNNER', 'SETOOLS_CONFIG_PATH')
 
-    inst = setools.SETools(input_file_list[0], config_file, output_dir)
+    inst = setools.SETools(input_file_list[0], output_dir, file_number_string, config_file)
     inst.process()
 
     return None, None
