@@ -3,7 +3,7 @@
 """FIND_EXPOSURES SCRIPT
 
 This script contains a class to handle processing for the find_exposures
-modules: Identify exposures that are used in selected tiles.
+module: Identify exposures that are used in selected tiles.
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
@@ -19,10 +19,9 @@ import re
 
 import numpy as np
 import astropy.io.fits as fits
-from astropy import wcs
 import sip_tpv as stp
 
-import shapepipe.pipeline.file_io as sc
+import shapepipe.pipeline.file_io as io
 
 
 class FindExposureError(Exception):
@@ -41,12 +40,14 @@ class find_exposures():
 
     Parameters
     ----------
-    cat_tile_path: string
-        path to tile catalogue file
+    img_tile_path: string
+        path to tile image file
     config: config class
         config file content
     output_dir: string
         output directory
+    image_number: string
+        image number according to numbering scheme from config file
     w_log: log file class
         log file
 
@@ -55,24 +56,13 @@ class find_exposures():
     None
     """
 
-    def __init__(self, cat_tile_path, output_dir, image_number, config, w_log):
+    def __init__(self, img_tile_path, output_dir, image_number, config, w_log):
 
         self._cat_tile_path = cat_tile_path
         self._output_dir = output_dir
         self._image_number = image_number
         self._config = config
         self._w_log = w_log
-
-        # Input file basename
-        ext_arr = config.get('FILE', 'FILE_EXT')
-        ext = ext_arr.split(',')[0]
-        fbasen = os.path.basename(cat_tile_path)
-        m = re.search('(.*).{}'.format(ext), fbasen)
-        if not m:
-            raise FindExposureError('Extension \'{}\' does not match tile '
-                                    'cataog basename \'{}\''
-                                    ''.format(ext, fbasen))
-        self._cat_tile_basename = m.group(1)
 
     def process(self):
 
@@ -92,7 +82,7 @@ class find_exposures():
                              ''.format(num[i], i))
 
     def get_exposure_list(self):
-        """Read list of exposure file used for the tile in process
+        """Return list of exposure file used for the tile in process, from tiles FITS header
 
         Parameters
         ----------
@@ -111,8 +101,6 @@ class find_exposures():
             self._w_log.info('Error while reading tile catalogue FITS file '
                              '{}, continuing...'.format(self._cat_tile_path))
 
-        # MKDEBUG: This has to be checked, here we only want the input tile
-        # number.
         tile_num = self._image_number
 
         exp_list = []
@@ -165,12 +153,11 @@ class find_exposures():
             number of files written
         """
 
-        img_file = sc.FITSCatalog(exp_path, hdu_no=1)
+        img_file = io.FITSCatalog(exp_path, hdu_no=1)
         img_file.open()
 
         ext_out = self._config.get('FIND_EXPOSURES_RUNNER', 'OUTPUT_FILE_EXT')
 
-        hdu_max = len(img_file._cat_data)
         n_hdu = int(self._config.get('FIND_EXPOSURES_RUNNER', 'N_HDU'))
 
         dnum = 0
