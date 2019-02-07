@@ -63,7 +63,7 @@ class SETools(object):
 
     """
 
-    def __init__(self, cat, output_dir, file_number_string, config_filepath, cat_file=True): #, plot_output_dir=None, stat_output_dir=None, extra_file=None):
+    def __init__(self, cat, output_dir, file_number_string, config_filepath, cat_file=True):
 
         if cat_file:
             self._is_file = True
@@ -84,16 +84,9 @@ class SETools(object):
 
         self._file_number_string = file_number_string
 
-
-    #################
-    # Main function #
-    #################
-
     def process(self):
         """Process
-
         Main function called to process a SExtractor catalog.
-
         """
 
         if self._is_file:

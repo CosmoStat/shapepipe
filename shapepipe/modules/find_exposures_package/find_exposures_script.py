@@ -64,7 +64,6 @@ class find_exposures():
         self._config = config
         self._w_log = w_log
 
-
     def process(self):
 
         exp_list_uniq = self.get_exposure_list()
