@@ -4,4 +4,5 @@ matplotlib>=3.0.2
 modopt>=1.2.0
 numpy>=1.16.0
 pybind11>=2.2
+sip_tpv>=1.1
 sf-tools>=2.0.0

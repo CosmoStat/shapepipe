@@ -40,7 +40,6 @@ class BaseCatalog(object):
       # --- Private members
       self._cat_data = None  # catalog internal data (e.g. AsciiData class)
 
-
    # ~~~~~~~~~~~
    # Properties
    # ~~~~~~~~~~~
@@ -81,7 +80,6 @@ class BaseCatalog(object):
       """
       return self._format
 
-
    # ~~~~~~~~~~~~~~
    # Public Methods
    # ~~~~~~~~~~~~~~
@@ -117,9 +115,6 @@ class BaseCatalog(object):
       """
       raise BaseCatalog.FeatureNotImplemented("get_col_names()")
 
-
-
-
    # -----------------------------------------------------------------------------------------------
    def add_col(self, col_name, col_format=None, col_comment=None, col_data=None):
       """!
@@ -142,8 +137,6 @@ class BaseCatalog(object):
       else:
          return True
 
-
-
    # ~~~~~~~~~~~~~
    # Inner Classes
    # ~~~~~~~~~~~~~
@@ -153,12 +146,10 @@ class BaseCatalog(object):
       """! Supported input catalog formats"""
       (Undefined, TabulatedText, SExtractor, FITS, FITS_LDAC) = (0, 1, 2, 4, 5)
 
-
    # -----------------------------------------------------------------------------------------------
    class OpenMode:
       """! Supported input catalog open mode """
       (ReadOnly, ReadWrite, Append) = ("readonly", "update", "append")
-
 
    # -----------------------------------------------------------------------------------------------
    class Column(object):
@@ -198,7 +189,6 @@ class BaseCatalog(object):
          """
          raise BaseCatalog.FeatureNotImplemented("column.data")
 
-
       # ~~~~~~~~~~~~~~
       # Public Methods
       # ~~~~~~~~~~~~~~
@@ -221,7 +211,6 @@ class BaseCatalog(object):
           """
          raise BaseCatalog.FeatureNotImplemented("get_type()")
 
-
    # -----------------------------------------------------------------------------------------------
    class FeatureNotImplemented(NotImplementedError):
       """ Feature Not Implemented """
@@ -230,8 +219,8 @@ class BaseCatalog(object):
          self._msg = msg
 
       def __str__(self):
-         return "SCatalog *** ERROR ***: Feature: {0} is not implemented in this class".format(
-                                                                                         self._msg)
+         return "SCatalog *** ERROR ***: Feature: {0} is not implemented in this class".format(self._msg)
+
    # -----------------------------------------------------------------------------------------------
    class CatalogNotOpen(Exception):
       """ Catalog has not been open yet """
@@ -305,10 +294,9 @@ class BaseCatalog(object):
          self._open_mode = open_mode
 
       def __str__(self):
-         return "SCatalog *** ERROR ***: Catalog: {0} Open Mode {1} not supported".format(
-                                                               self._filepath, self._open_mode)
+         return "SCatalog *** ERROR ***: Catalog: {0} Open Mode {1} not supported".format(self._filepath, self._open_mode)
 
-   #------------------------------------------------------------------------------------------------
+   # ------------------------------------------------------------------------------------------------
    # ADDED
    class OpenModeConflict(Exception):
        """ Opening mode is in conflict with an action """
@@ -325,12 +313,12 @@ class BaseCatalog(object):
        def __str__(self):
            return "SCatalog *** ERROR ***: Catalog has to be open as : {0} , Mode used : {1}".format(self._open_mode_needed, self._open_mode)
 
+
 # ~~~~~~~~~~~
 # Subclasses
 # ~~~~~~~~~~~
 
 # --------------------------------------------------------------------------------------------------
-
 # --------------------------------------------------------------------------------------------------
 class FITSCatalog(BaseCatalog):
    """!
@@ -343,12 +331,12 @@ class FITSCatalog(BaseCatalog):
    # -----------------------------------------------------------------------------------------------
    # MODIFIED
    def __init__(self, fullpath, hdu_no=None,
-                      open_mode=BaseCatalog.OpenMode.ReadOnly, memmap=False, SEx_catalog=False):
+                open_mode=BaseCatalog.OpenMode.ReadOnly, memmap=False, SEx_catalog=False):
       BaseCatalog.__init__(self, fullpath)
 
       self._format = BaseCatalog.InputFormat.FITS  # default input/output format
 
-      self._open_mode  = open_mode      # opening mode (see FITSCatalog.OpenMode)
+      self._open_mode = open_mode      # opening mode (see FITSCatalog.OpenMode)
       self._SEx_catalog = SEx_catalog   # Work with SExtractor fits format or not
       if hdu_no is None:                # HDU number of the underlying .FITS table
           if SEx_catalog:               # Default is 1 (or 2 if you are using )
@@ -429,7 +417,7 @@ class FITSCatalog(BaseCatalog):
    # Public Methods
    # ~~~~~~~~~~~~~~
 
-   #------------------------------------------------------------------------------------------------
+   # ------------------------------------------------------------------------------------------------
    def open(self):
 
       """! Open an existing catalog """
@@ -440,7 +428,7 @@ class FITSCatalog(BaseCatalog):
       else:
          raise BaseCatalog.CatalogFileNotFound(self.fullpath)
 
-   #------------------------------------------------------------------------------------------------
+   # ------------------------------------------------------------------------------------------------
    # MODIFIED
    def create(self, ext_name=None, overwrite=True, s_hdu=True, sex_cat_path=None):
       """!
@@ -455,9 +443,9 @@ class FITSCatalog(BaseCatalog):
       if self._SEx_catalog:
           if sex_cat_path is not None:
               if self._file_exists(sex_cat_path):
-                  sex_cat=FITSCatalog(sex_cat_path, hdu_no=1)
+                  sex_cat = FITSCatalog(sex_cat_path, hdu_no=1)
                   sex_cat.open()
-                  secondary_hdu=sex_cat._cat_data[1]
+                  secondary_hdu = sex_cat._cat_data[1]
                   self._cat_data = fits.HDUList([primary_hdu, secondary_hdu])
                   self._cat_data.writeto(self.fullpath, overwrite=overwrite)
                   sex_cat.close()
@@ -474,7 +462,7 @@ class FITSCatalog(BaseCatalog):
           self._cat_data = fits.HDUList([primary_hdu])
           self._cat_data.writeto(self.fullpath, overwrite=overwrite)
 
-   #------------------------------------------------------------------------------------------------
+   # ------------------------------------------------------------------------------------------------
    # ADDED
    def copy_hdu(self, fits_file=None, hdu_no=None, hdu_name=None):
        """!
@@ -486,7 +474,7 @@ class FITSCatalog(BaseCatalog):
        """
 
        if fits_file is None:
-           fits_file=self
+           fits_file = self
 
        if self._cat_data is None:
           raise BaseCatalog.CatalogNotOpen(self.fullpath)
@@ -494,16 +482,16 @@ class FITSCatalog(BaseCatalog):
          raise BaseCatalog.CatalogNotOpen(fits_file.fullpath)
 
        if hdu_no is None:
-           hdu_no=fits_file.hdu_no
+           hdu_no = fits_file.hdu_no
 
        if hdu_name is None:
-           hdu_name=fits_file._cat_data[hdu_no].name
+           hdu_name = fits_file._cat_data[hdu_no].name
 
-       self._cat_data.append(fits.BinTableHDU(fits_file.get_data(hdu_no=hdu_no),name=hdu_name))
+       self._cat_data.append(fits.BinTableHDU(fits_file.get_data(hdu_no=hdu_no), name=hdu_name))
 
-   #------------------------------------------------------------------------------------------------
+   # ------------------------------------------------------------------------------------------------
    #    ADDED
-   def apply_mask(self, fits_file=None, hdu_no=None, mask=None , hdu_name=None):
+   def apply_mask(self, fits_file=None, hdu_no=None, mask=None, hdu_name=None):
        """!
            Apply a mask on data on data of a specified HDU
            @param fits file where the data to mask are
@@ -515,7 +503,7 @@ class FITSCatalog(BaseCatalog):
            NOTE : this will create a new hdu with data[mask] in it
        """
        if fits_file is None:
-           fits_file=self
+           fits_file = self
        if self._cat_data is None:
           raise BaseCatalog.CatalogNotOpen(self.fullpath)
        if fits_file._cat_data is None:
@@ -525,20 +513,20 @@ class FITSCatalog(BaseCatalog):
        if type(mask) is not np.ndarray:
            raise TypeError('Mask need to be a numpy.ndarray')
        if hdu_no is None:
-           hdu_no=fits_file.hdu_no
+           hdu_no = fits_file.hdu_no
 
        if hdu_name is None:
-           hdu_name=fits_file._cat_data[hdu_no].name
+           hdu_name = fits_file._cat_data[hdu_no].name
 
-       if mask.dtype==bool:
-           mask=np.where(mask==True)
-           self._cat_data.append(fits.BinTableHDU(fits_file.get_data(hdu_no)[:][mask],name=hdu_name))
-       elif mask.dtype==int:
-           self._cat_data.append(fits.BinTableHDU(fits_file.get_data(hdu_no)[:][mask],name=hdu_name))
+       if mask.dtype == bool:
+           mask = np.where(mask is True)
+           self._cat_data.append(fits.BinTableHDU(fits_file.get_data(hdu_no)[:][mask], name=hdu_name))
+       elif mask.dtype == int:
+           self._cat_data.append(fits.BinTableHDU(fits_file.get_data(hdu_no)[:][mask], name=hdu_name))
        else:
            raise TypeError('Mask type has to be int or bool')
 
-   #------------------------------------------------------------------------------------------------
+   # ------------------------------------------------------------------------------------------------
    # ADDED
    def save_as_fits(self, data=None, names=None, ext_name=None, sex_cat_path=None, image=False, overwrite=False):
        """!
@@ -579,7 +567,7 @@ class FITSCatalog(BaseCatalog):
                self._save_to_fits(data, names, it, ext_name, sex_cat_path)
 
            elif type(data) is fits.fitsrec.FITS_rec:
-               self._save_from_recarray(data,ext_name, sex_cat_path)
+               self._save_from_recarray(data, ext_name, sex_cat_path)
 
            elif type(data) is np.ndarray:
                if names is None:
@@ -596,7 +584,7 @@ class FITSCatalog(BaseCatalog):
                if names is None:
                    raise ValueError('Names not provided')
                it = range(len(names))
-               data=np.asarray(data)
+               data = np.asarray(data)
                self._save_to_fits(data, names, it, ext_name, sex_cat_path)
        else:
            if type(data) is np.ndarray:
@@ -604,7 +592,7 @@ class FITSCatalog(BaseCatalog):
            else:
                raise TypeError('Data need to be a numpy.ndarray')
 
-   #------------------------------------------------------------------------------------------------
+   # ------------------------------------------------------------------------------------------------
    def create_from_numpy(self, matrix, col_names, ext_name=None, ext_ver=None, header=None):
       """!
          Create a new catalog from a two-dimensional numpy array
@@ -632,9 +620,9 @@ class FITSCatalog(BaseCatalog):
             fits_header[k] = v
 
       # --- HDUs
-      primary_hdu   = fits.PrimaryHDU()
+      primary_hdu = fits.PrimaryHDU()
       secondary_hdu = fits.BinTableHDU.from_columns(col_list, header=fits_header)
-      if not ext_name is None:
+      if ext_name is not None:
          secondary_hdu.name = ext_name
 
       # --- Save to disk
@@ -644,7 +632,7 @@ class FITSCatalog(BaseCatalog):
    # -----------------------------------------------------------------------------------------------
    # MODIFIED
    def close(self):
-      if not self._cat_data is None:
+      if self._cat_data is not None:
           if self.open_mode == FITSCatalog.OpenMode.ReadWrite:
               self.save()
           self._cat_data.close()
@@ -723,7 +711,7 @@ class FITSCatalog(BaseCatalog):
          @return a dictionary with detailed information
          @note See the fitsio documentation of the info() function for the details
       """
-      if not self._cat_data is None:
+      if self._cat_data is not None:
          return self._cat_data.info()
       else:
          return fits.info(self.fullpath)
@@ -747,7 +735,7 @@ class FITSCatalog(BaseCatalog):
          @note Checks disabled for performance reasons
       """
       col_names = self.get_col_names()
-      if not col_name in col_names:
+      if col_name not in col_names:
          raise BaseCatalog.ColumnNotFound(col_name)
       return col_names.index(col_name)
 
@@ -759,7 +747,7 @@ class FITSCatalog(BaseCatalog):
          @param hdu_no HDU index (default is 1)
          @return data associated with the column as a numpy array
       """
-      if not self._cat_data is None:
+      if self._cat_data is not None:
          if hdu_no is None:
             hdu_no = self.hdu_no
 
@@ -778,7 +766,7 @@ class FITSCatalog(BaseCatalog):
          @param hdu_no HDU index (default is 1)
          @return data associated with the column as a numpy array
       """
-      if not self._cat_data is None:
+      if self._cat_data is not None:
          if hdu_no is None:
             hdu_no = self.hdu_no
 
@@ -796,9 +784,9 @@ class FITSCatalog(BaseCatalog):
          Return data of the specified hdu
          @param hdu_no HDU index
       """
-      if not self._cat_data is None:
+      if self._cat_data is not None:
           if hdu_no is None:
-              hdu_no=self.hdu_no
+              hdu_no = self.hdu_no
 
           return self._cat_data[hdu_no].data
       else:
@@ -812,15 +800,14 @@ class FITSCatalog(BaseCatalog):
          @return header
          @see astropy documentation
       """
-      if not self._cat_data is None:
+      if self._cat_data is not None:
          if hdu_no is None:
             hdu_no = self.hdu_no
          return dict(self._cat_data[hdu_no].header.items())
       else:
          raise BaseCatalog.CatalogNotOpen(self.fullpath)
 
-
-   #------------------------------------------------------------------------------------------------
+   # ------------------------------------------------------------------------------------------------
    def get_header_value(self, request, hdu_no=None):
        """!
           Return the value of a parameters or a linear combination of parameters and/or numbers
@@ -841,11 +828,10 @@ class FITSCatalog(BaseCatalog):
        if header is None:
            raise ValueError('Empty header in the hdu : {0}'.format(hdu_no))
 
-       return interpreter(string= request, catalog= header).result
-
+       return interpreter(string=request, catalog=header).result
 
    # -----------------------------------------------------------------------------------------------
-   def add_header_card(self, key, value= None, comment= None, hdu_no= None):
+   def add_header_card(self, key, value=None, comment=None, hdu_no=None):
        """!
           Add a card in the header of the specified hdu
           @param key the key to add
@@ -880,8 +866,7 @@ class FITSCatalog(BaseCatalog):
 
        card = tuple(card)
 
-       self._cat_data[hdu_no].header.append(card,end=True)
-
+       self._cat_data[hdu_no].header.append(card, end=True)
 
    # -----------------------------------------------------------------------------------------------
    def get_headers(self):
@@ -905,14 +890,13 @@ class FITSCatalog(BaseCatalog):
          Return the list catalog comments
          @param hdu_no HDU index (default is 1)
       """
-      if not self._cat_data is None:
+      if self._cat_data is not None:
          if hdu_no is None:
             hdu_no = self.hdu_no
-         return [self._cat_data[hdu_no].header.comments[c] \
-                                                  for c in self._cat_data[hdu_no].header.keys()]
+         return [self._cat_data[hdu_no].header.comments[c]
+                 for c in self._cat_data[hdu_no].header.keys()]
       else:
          raise BaseCatalog.CatalogNotOpen(self.fullpath)
-
 
    # -----------------------------------------------------------------------------------------------
    def get_col_comments(self, hdu_no=None):
@@ -920,7 +904,7 @@ class FITSCatalog(BaseCatalog):
          Return the list of column comments
          @param hdu_no HDU index (default is 1)
       """
-      if not self._cat_data is None:
+      if self._cat_data is not None:
          if hdu_no is None:
             hdu_no = self.hdu_no
          hdr_col_types = [tt for tt in self._cat_data[hdu_no].header.keys() if "TTYPE" in tt]
@@ -935,13 +919,12 @@ class FITSCatalog(BaseCatalog):
          @param hdu_no HDU index (default is 1)
          @return list of column formats in order
       """
-      if not self._cat_data is None:
+      if self._cat_data is not None:
          if hdu_no is None:
             hdu_no = self.hdu_no
          return self._cat_data[hdu_no].columns.formats
       else:
          raise BaseCatalog.CatalogNotOpen(self.fullpath)
-
 
    # -----------------------------------------------------------------------------------------------
    def add_col(self, col_name, col_format=None, col_comment=None, col_data=None, hdu_no=None):
@@ -956,8 +939,8 @@ class FITSCatalog(BaseCatalog):
 
       # -- Add new column
       col_type = self._get_fits_col_type(col_data)
-      new_col = FITSCatalog.Column(name=col_name, format=col_type, comment=col_comment,
-                                                  data=col_data)
+      new_col = FITSCatalog.Column(name=col_name, format=col_type,
+                                   comment=col_comment, data=col_data)
       if hdu_no is None:
          hdu_no = self.hdu_no
       self._append_col(new_col, hdu_no)
@@ -966,7 +949,6 @@ class FITSCatalog(BaseCatalog):
       self._cat_data.close()
       del self._cat_data
       self._cat_data = fits.open(self.fullpath, mode=self.open_mode, memmap=self.use_memmap)
-
 
    # -----------------------------------------------------------------------------------------------
    def remove_col(self, col_index):
@@ -984,14 +966,12 @@ class FITSCatalog(BaseCatalog):
          Delete a named column
          @param col_name name of the column to delete
       """
-      if not self._cat_data is None:
+      if self._cat_data is not None:
          col_index = self.get_col_index(col_name)
          self.remove_col(col_index)
       else:
          raise BaseCatalog.CatalogNotOpen(self.fullpath)
 
-
-#
    # ~~~~~~~~~~~~~~~
    # Private methods
    # ~~~~~~~~~~~~~~~
@@ -1003,7 +983,7 @@ class FITSCatalog(BaseCatalog):
          @param column an object derived from BaseCatalog.Column
       """
 
-      if not self._cat_data is None:
+      if self._cat_data is not None:
          new_col = fits.Column(name=column.name, format=column.format, array=column.data)
 
          if hdu_no is None:
@@ -1012,8 +992,8 @@ class FITSCatalog(BaseCatalog):
          orig_table = fits.open(self.fullpath)[hdu_no].data
          orig_cols = orig_table.columns
 
-         new_col = fits.ColDefs([ fits.Column(name=column.name, format=column.format,
-                                             array=np.zeros(len(orig_table))) ])
+         new_col = fits.ColDefs([fits.Column(name=column.name, format=column.format,
+                                             array=np.zeros(len(orig_table)))])
          col_list = orig_cols + new_col
          hdu = fits.BinTableHDU.from_columns(col_list)
          hdu.data[column.name] = column.data
@@ -1060,8 +1040,7 @@ class FITSCatalog(BaseCatalog):
 
       return pcol_type
 
-
-   #------------------------------------------------------------------------------------------------
+   # ------------------------------------------------------------------------------------------------
    # ADDED
    def _save_to_fits(self, data, names, it, ext_name=None, sex_cat_path=None):
       """!
@@ -1080,21 +1059,21 @@ class FITSCatalog(BaseCatalog):
           if self._cat_data is None:
               self.open()
           if ext_name is None:
-              ext_name='new'
+              ext_name = 'new'
       else:
           if self._SEx_catalog:
              self.create(s_hdu=False, sex_cat_path=sex_cat_path)
              self.open()
              if ext_name is None:
-                 ext_name='LDAC_OBJECTS'
+                 ext_name = 'LDAC_OBJECTS'
           else:
               self.create(s_hdu=False)
               self.open()
               if ext_name is None:
-                  ext_name='new'
+                  ext_name = 'new'
 
       if len(names) == 1:
-          data=np.array([data])
+          data = np.array([data])
       col_list = []
       for i in it:
           data_shape = data[i].shape[1:]
@@ -1106,15 +1085,17 @@ class FITSCatalog(BaseCatalog):
               for k in data_shape:
                   mem_size *= k
               data_format = '{0}{1}'.format(mem_size, data_type)
-              col_list.append(fits.Column(name= name, format= data_format, array= data[i], dim= dim))
+              col_list.append(fits.Column(name=name, format=data_format,
+                                          array=data[i], dim=dim))
           else:
               data_format = '{0}{1}'.format(mem_size, data_type)
-              col_list.append(fits.Column(name= name, format= data_format, array= data[i]))
+              col_list.append(fits.Column(name=name, format=data_format,
+                                          array=data[i]))
 
       self._cat_data.append(fits.BinTableHDU.from_columns(col_list, name=ext_name))
       self.close()
 
-   #------------------------------------------------------------------------------------------------
+   # ------------------------------------------------------------------------------------------------
    # ADDED
    def _save_from_recarray(self, data=None, ext_name=None, sex_cat_path=None):
        """!
@@ -1132,26 +1113,26 @@ class FITSCatalog(BaseCatalog):
            if self._cat_data is None:
                self.open()
            if ext_name is None:
-               ext_name='new'
-           self._cat_data.append(fits.BinTableHDU(data,name=ext_name))
+               ext_name = 'new'
+           self._cat_data.append(fits.BinTableHDU(data, name=ext_name))
            self.close()
        else:
            if self._SEx_catalog:
               self.create(s_hdu=False, sex_cat_path=sex_cat_path)
               self.open()
               if ext_name is None:
-                  ext_name='LDAC_OBJECTS'
-              self._cat_data.append(fits.BinTableHDU(data,name=ext_name))
+                  ext_name = 'LDAC_OBJECTS'
+              self._cat_data.append(fits.BinTableHDU(data, name=ext_name))
               self.close()
            else:
               self.create(s_hdu=False)
               self.open()
               if ext_name is None:
-                  ext_name='new'
-              self._cat_data.append(fits.BinTableHDU(data,name=ext_name))
+                  ext_name = 'new'
+              self._cat_data.append(fits.BinTableHDU(data, name=ext_name))
               self.close()
 
-   #------------------------------------------------------------------------------------------------
+   # ------------------------------------------------------------------------------------------------
    # ADDED
    def _save_image(self, data=None, overwrite=False):
        """!
@@ -1162,10 +1143,9 @@ class FITSCatalog(BaseCatalog):
        """
 
        if (data is not None):
-           fits.PrimaryHDU(data).writeto(self.fullpath,overwrite=overwrite)
+           fits.PrimaryHDU(data).writeto(self.fullpath, overwrite=overwrite)
        else:
            raise ValueError('Data or names not provided')
-
 
    # -----------------------------------------------------------------------------------------------
    class Column(BaseCatalog.Column):
@@ -1319,9 +1299,9 @@ class interpreter(object):
 
         if catalog is not None:
             if type(catalog) is str:
-                f = FITSCatalog(catalog, SEx_catalog= True)
+                f = FITSCatalog(catalog, SEx_catalog=True)
                 f.open()
-                self._cat=f.get_data()
+                self._cat = f.get_data()
                 f.close()
             else:
                 self._cat = catalog
@@ -1341,8 +1321,7 @@ class interpreter(object):
                            '==': operator.eq,
                            '!=': operator.ne}
 
-        self.result =  self.interpret(self._string, self._make_compare)
-
+        self.result = self.interpret(self._string, self._make_compare)
 
     def interpret(self, string, make_compare=False, make_func=True, make_operate=True):
         """Interpret
@@ -1385,7 +1364,6 @@ class interpreter(object):
 
         return result
 
-
     def _compare(self, string):
         """Handle comparison in a string
 
@@ -1398,12 +1376,12 @@ class interpreter(object):
 
         """
 
-        comp='<|>|<=|>=|==|!='
+        comp = '<|>|<=|>=|==|!='
 
-        if len(re.split(comp,string))!=2:
+        if len(re.split(comp, string)) != 2:
             raise Exception('Only one comparison in [<, >, <=, >=, ==, !=] per lines')
 
-        for i in ['<=', '>=', '<','>', '==', '!=']:
+        for i in ['<=', '>=', '<', '>', '==', '!=']:
             terms = re.split(i, string)
             if len(terms) == 2:
                 self._make_compare = False
@@ -1411,7 +1389,6 @@ class interpreter(object):
                 second = self.interpret(terms[1], self._make_compare)
 
                 return self._comp_dict[i](first, second)
-
 
     def _apply_func(self, string):
         """Apply function
@@ -1430,24 +1407,23 @@ class interpreter(object):
 
         """
 
-        s = re.split('\(|\)', string)
+        s = re.split(r'\(|\)', string)
 
         if len(s) == 1:
             return self.interpret(s[0], self._make_compare, make_func=False, make_operate=False)
         elif len(s) == 3:
             try:
-                ss = re.split(',',s[1])
-                if len(ss)>1:
-                    p = [self.interpret(i, self._make_compare, make_func= False, make_operate= True) for i in ss]
+                ss = re.split(',', s[1])
+                if len(ss) > 1:
+                    p = [self.interpret(i, self._make_compare, make_func=False, make_operate=True) for i in ss]
                     return self._stat_func[s[0]](*p)
                 else:
-                    return self._stat_func[s[0]](self.interpret(s[1], self._make_compare, make_func= False, make_operate= True))
+                    return self._stat_func[s[0]](self.interpret(s[1], self._make_compare, make_func=False, make_operate=True))
             except:
                 raise Exception('Unknown function : {0}'.format(s[0]))
         else:
             raise Exception('Only one function can be applied.'
                             'Problem with the term: {0}'.format(string))
-
 
     def _init_stat_function(self):
         """Initialise available stat functions
@@ -1473,7 +1449,6 @@ class interpreter(object):
         self._stat_func['min'] = min
         self._stat_func['max'] = max
         self._stat_func['homogen'] = self._test_homogeneity
-
 
     def _mode(self, input, eps=0.001, iter_max=1000):
         """Compute Mode
@@ -1507,7 +1482,7 @@ class interpreter(object):
         diff = eps+1.
 
         k = 0
-        while diff>eps:
+        while diff > eps:
             hist = np.histogram(data, bins)
             if hist[0].max() == 1:
                 break
@@ -1528,7 +1503,6 @@ class interpreter(object):
         else:
             return (b_min + b_max) / 2.
 
-
     def _mad(self, input):
         """Median absolute deviation
 
@@ -1547,7 +1521,6 @@ class interpreter(object):
         """
 
         return np.median(np.abs(input - np.median(input)))
-
 
     def _test_homogeneity(self, *args):
         """Test homogeneity
@@ -1585,7 +1558,7 @@ class interpreter(object):
             if len(param[0]) != len(param[1]):
                 raise ValueError('Both param_1 and param_2 must have the same lenght : {0}, {1}'.format(len(param[0]), len(param[1])))
 
-        if np.sqrt(n_cells)%1 != 0:
+        if np.sqrt(n_cells) % 1 != 0:
             raise ValueError('N_cells must be a square number')
 
         n_tot = len(param[0])
@@ -1602,16 +1575,15 @@ class interpreter(object):
             n_obj = np.asarray([float(len(np.where((param[0] >= param_min[0][i]) & (param[0] <= param_max[0][i]))[0])) for i in range(int(n_cells))])
         elif n_param == 2:
             it = itertools.product(range(int(np.sqrt(n_cells))), repeat=2)
-            n_obj = np.asarray([float(len(np.where((param[0] >= param_min[0][i]) & (param[0] <= param_max[0][i]) & (param[1] >= param_min[1][j]) & (param[1] <= param_max[1][j]))[0])) for i,j in it])
+            n_obj = np.asarray([float(len(np.where((param[0] >= param_min[0][i]) & (param[0] <= param_max[0][i]) & (param[1] >= param_min[1][j]) & (param[1] <= param_max[1][j]))[0])) for i, j in it])
 
         actual_std = np.std(n_obj/homo_ratio)
 
-        worse_std = np.zeros((int(n_cells),1))
+        worse_std = np.zeros((int(n_cells), 1))
         worse_std[0] = n_tot/homo_ratio
         worse_std = np.std(worse_std)
 
         return actual_std/worse_std*100.
-
 
     def _operate(self, string, string_split):
         """Handle operation in a string
@@ -1634,32 +1606,31 @@ class interpreter(object):
 
         """
 
-        op=r'\*|\/|\-|\+\s*(?![^()]*\))'
+        op = r'\*|\/|\-|\+\s*(?![^()]*\))'
         if string is None:
             raise ValueError("Parameter not specified")
         if string_split is None:
             raise ValueError("Parameters splited not specified")
 
-        if len(re.split(op,string))==1:
-            return self.interpret(string, make_operate= False)
+        if len(re.split(op, string)) == 1:
+            return self.interpret(string, make_operate=False)
 
-        tmp = self._string_op_func(re.split('\+\s*(?![^()]*\))',string), string_split, operator.add, 0)
+        tmp = self._string_op_func(re.split(r'\+\s*(?![^()]*\))', string), string_split, operator.add, 0)
         if not np.isscalar(tmp) or tmp != 'pass':
             return tmp
         else:
-            tmp = self._string_op_func(re.split('\-\s*(?![^()]*\))',string), string_split, operator.sub, 'init')
+            tmp = self._string_op_func(re.split(r'\-\s*(?![^()]*\))', string), string_split, operator.sub, 'init')
             if not np.isscalar(tmp) or tmp != 'pass':
                 return tmp
             else:
-                tmp = self._string_op_func(re.split('\*\s*(?![^()]*\))',string), string_split, operator.mul, 1)
+                tmp = self._string_op_func(re.split(r'\*\s*(?![^()]*\))', string), string_split, operator.mul, 1)
                 if not np.isscalar(tmp) or tmp != 'pass':
                     return tmp
                 else:
-                    return self._string_op_func(re.split('\/\s*(?![^()]*\))',string), string_split, operator.truediv, 'init')
-
+                    return self._string_op_func(re.split(r'\/\s*(?![^()]*\))', string), string_split, operator.truediv, 'init')
 
     def _string_op_func(self, string_op, string_split, op, tmp):
-        """Perform a specified operation
+        r"""Perform a specified operation
 
         This function handle the posible operation between parameters.
 
@@ -1692,17 +1663,16 @@ class interpreter(object):
             return tmp
         elif len(string_op) == 2:
             if string_op[0] in string_split:
-                first = self.interpret(string_op[0], make_operate= False)
+                first = self.interpret(string_op[0], make_operate=False)
             else:
                 first = self._operate(string_op[0], string_split)
             if string_op[1] in string_split:
-                second = self.interpret(string_op[1], make_operate= False)
+                second = self.interpret(string_op[1], make_operate=False)
             else:
                 second = self._operate(string_op[1], string_split)
             return op(first, second)
         else:
             return 'pass'
-
 
     def _get_value(self, string):
         """Get Value
@@ -1728,17 +1698,17 @@ class interpreter(object):
             raise ValueError("Parameter not specified")
 
         try:
-            string_value=float(string)
+            string_value = float(string)
             return string_value
         except:
-            s = re.split('\{|\}', string)
+            s = re.split(r'\{|\}', string)
             if len(s) == 1:
                 try:
                     return self._cat[string]
                 except:
                     raise ValueError('string has to be a float or a catalog parameter. {0} not found'.format(string))
             if len(s) == 3:
-	
+
                 if s[1] in self._mask.keys():
                     try:
                         return self._cat[s[0]][self._mask[s[1]]]
