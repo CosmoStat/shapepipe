@@ -40,7 +40,18 @@ in corresponding directories.
 Run
 ---
 
-A. Tiles processing
+
+A. Preprocessing
+^^^^^^^^^^^^^^^^
+
+1. Identify exposures for selected tiles, and write all HDUs to FITS files.
+
+.. code-block:: bash
+        mkdir -p output_tiles/find_exposures
+        ~/ShapePipe/shapepipe_run.py -c config_tiles/config.find_exposures.ini
+
+
+B. Tiles processing
 ^^^^^^^^^^^^^^^^^^^
 
 1. Mask
@@ -57,13 +68,8 @@ On output flag files `flag_*.fits` are created.
         mkdir -p output_tiles/SExtractor
         ~/ShapePipe/shapepipe_run.py -c config_tiles/config.sex.ini
 
-On input, the original images and weights, as well as the flag files from the last step (A.1) are read.
+On input, the original images and weights, as well as the flag files from the last step (B.1) are read.
 
-On output, 
+On output, SExtractor files `sexcat_*.fits` are created.
 
-3. Identify exposures for selected tiles, and write all HDUs to FITS files.
-
-.. code-block:: bash
-        mkdir -p output_tiles/find_exposures
-        ~/ShapePipe/shapepipe_run.py -c config_tiles/config.find_exposures.ini
 

@@ -17,7 +17,6 @@ from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.tileobj_as_exp_package import tileobj_as_exp_script as tileobj_as_exp
 
 
-
 @module_runner(version='1.0', file_pattern=['image', 'cat'], file_ext=['.fits', '.fits'],
                depends=['numpy', 'astropy'], numbering_scheme='_0')
 def tileobj_as_exp_runner(input_file_list, output_dir, file_number_string, config, w_log):

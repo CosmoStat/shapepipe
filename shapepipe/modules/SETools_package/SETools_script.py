@@ -97,8 +97,7 @@ class SETools(object):
         """
 
         if self._is_file:
-            s = re.split(r"\-([0-9]*)\-([0-9]+)\.", self._cat_filepath)
-            file_number = '-{0}-{1}'.format(s[1], s[2])
+            file_number = self._file_number_string
         else:
             file_number = ''
 
