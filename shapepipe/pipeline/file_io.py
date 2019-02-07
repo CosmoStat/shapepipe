@@ -16,6 +16,7 @@ import string
 import re
 import numpy as np
 from astropy.io import fits         # for FITS catalogs
+from astropy.table import Table
 
 import operator                 # for the interpreter
 import itertools
@@ -586,6 +587,13 @@ class FITSCatalog(BaseCatalog):
                it = range(len(names))
                data = np.asarray(data)
                self._save_to_fits(data, names, it, ext_name, sex_cat_path)
+
+           elif type(data) is Table:
+               if names is None:
+                   raise ValueError('Names not provided')
+               it = names
+               self._save_to_fits(data, names, it, ext_name, sex_cat_path)
+
        else:
            if type(data) is np.ndarray:
                self._save_image(data=data, overwrite=overwrite)

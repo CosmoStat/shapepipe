@@ -18,4 +18,5 @@ __module_list__ = ['execute_example',
                    'python_example',
                    'setools_runner',
                    'sextractor_runner',
+                   'tileobj_as_exp_runner',
                    'vignetmaker_runner']

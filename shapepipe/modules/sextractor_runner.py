@@ -63,7 +63,9 @@ def sextractor_runner(input_file_list, output_dir, file_number_string,
         extra += 1
     if extra != len(input_file_list):
         raise ValueError("Incoherence between input files and keys related "
-                         "to extra files.")
+                         "to extra files: Found {} extra files, but input "
+                         "file list lenght is {}"
+                         .format(extra, len(input_file_list)))
 
     if (len(check_image) == 1) & (check_image[0] == ''):
         check_type = ['NONE']
@@ -77,6 +79,8 @@ def sextractor_runner(input_file_list, output_dir, file_number_string,
 
     command_line += (' -CHECKIMAGE_TYPE {0} -CHECKIMAGE_NAME {1}'
                      ''.format(','.join(check_type), ','.join(check_name)))
+
+    w_log.info('Calling command \'{}\''.format(command_line))
 
     stderr, stdout = execute(command_line)
 
