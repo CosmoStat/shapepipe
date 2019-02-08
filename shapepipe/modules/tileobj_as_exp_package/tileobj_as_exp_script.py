@@ -75,7 +75,7 @@ class tileobj_as_exp():
         # List of exposures contributing to this tile
         exp_list_uniq = self.get_exposure_list()
 
-        # List of exposure-single-CCD file names that were created by the
+        # List of exposure-single-CCD file image names that were created by the
         # find_exposures modules
         exp_CCD_list = self.get_exp_CCD_list(len(exp_list_uniq))
 
@@ -230,7 +230,7 @@ class tileobj_as_exp():
         return wcs_list, nx_list, ny_list
 
     def get_exp_CCD_list(self, n_exp):
-        """Return a list of exposure-single-CCD names.
+        """Return a list of exposure-single-CCD image file names.
 
         Parameters
         ----------

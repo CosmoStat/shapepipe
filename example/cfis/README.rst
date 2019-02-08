@@ -138,7 +138,7 @@ C. Exposure-single-CCD images processing
   On output, star candidate catalogues ``star_selection_*.fits`` are created.
 
 
-4. Create PSF model. Module ``PSFEx'.
+4. Create PSF model. Module ``PSFEx``.
 
   .. code-block:: bash
 
@@ -149,3 +149,18 @@ C. Exposure-single-CCD images processing
   On input, the star candidate catalogues from the previous step (C.3) are used.
 
   On output, PSF files ``*.psf`` are created.
+
+5. Interpolate PSF model to tile object positions. Module ``PSFExInterp``.
+
+  .. code-block:: bash
+
+    mkdir -p output_exp/PSFExInterp
+    ~/ShapePipe/shapepipe_run.py -c config_exp/config.psfexinterp.ini
+
+
+  On input, the tile objects as exposure-single-CCD image (from step B.3), and the PSF model files
+  from the previous step (C.5) are used.
+
+  On output, files `galaxy_psf_*` with galaxy vignets and HSM parameters are created.
+
+
