@@ -8,10 +8,10 @@ Set up
 Create a new directory and link to the CFIS example configuration directories.
 
 .. code-block:: bash
-        mkdir run_cfis
-        cd run_cfis
-        ln -s ~/ShapePipe/example/cfis/config_exp
-        ln -s ~/ShapePipe/example/cfis/config_exp
+   mkdir run_cfis
+   cd run_cfis
+   ln -s ~/ShapePipe/example/cfis/config_exp
+   ln -s ~/ShapePipe/example/cfis/config_exp
 
 (This assumes that `ShapePipe` git repository has been cloned in `~/`).
 
