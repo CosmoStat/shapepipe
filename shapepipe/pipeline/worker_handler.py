@@ -8,6 +8,7 @@ This module defines a class for handling pipeline wokers.
 
 """
 
+import platform
 from os import getpid
 from modopt.interface.errors import catch_error, warn
 from modopt.interface.log import set_up_log, close_log
@@ -83,6 +84,9 @@ class WorkerHandler(object):
         """
 
         self.worker_dict['pid'] = getpid()
+        self.worker_dict['node'] = platform.node()
+        self.worker_dict['system'] = platform.system()
+        self.worker_dict['machine'] = platform.machine()
         self.worker_dict['exception'] = False
         self.worker_dict['stderr'] = False
         self.worker_dict['process'] = process
@@ -113,6 +117,9 @@ class WorkerHandler(object):
         self.w_log.info(' - Job Name: {}'.format(
                         self.worker_dict['job_name']))
         self.w_log.info(' - PID: {}'.format(self.worker_dict['pid']))
+        self.w_log.info(' - Node: {}'.format(self.worker_dict['node']))
+        self.w_log.info(' - System: {}'.format(self.worker_dict['system']))
+        self.w_log.info(' - Machine: {}'.format(self.worker_dict['machine']))
         self.w_log.info(' - Timeout Limit: {}'.format(
                         self.worker_dict['timeout']))
         self.w_log.info(' - Process: {}'.format(self.worker_dict['process']))
