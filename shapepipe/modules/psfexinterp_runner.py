@@ -25,8 +25,8 @@ def psfexinterp_runner(input_file_list, output_dir, file_number_string,
     get_shapes = config.getboolean('PSFEXINTERP_RUNNER', 'GET_SHAPES')
 
     inst = interpolation_script.PSFExInterpolator(psfcat_path, galcat_path,
-                                                  output_dir, pos_params,
-                                                  get_shapes)
+                                                  output_dir, file_number_string,
+                                                  pos_params, get_shapes)
     inst.write_output()
 
     return None, None
