@@ -10,6 +10,7 @@ This script runs the shape measurement pipeline.
 """
 
 from datetime import datetime
+from mpi4py import MPI
 from modopt.interface.errors import catch_error
 from modopt.interface.log import set_up_log, close_log
 from shapepipe.info import shapepipe_logo, line, __installs__
@@ -29,6 +30,7 @@ class ShapePipe():
 
     def __init__(self):
 
+        self._comm = MPI.COMM_WORLD
         self._args = create_arg_parser()
         self._config = create_config_parser(self._args.config)
         self._set_run_name()

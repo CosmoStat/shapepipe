@@ -437,7 +437,7 @@ if [ -z "$PLPLOT_INC" ]; then PLPLOT_INC=$CONDA_PREFIX/include/plplot; fi
 if [ "$DEVELOP" == TRUE ]
 then
   report_progress 'Developer Packages'
-  pip install pytest pytest-cov pytest-codestyle sphinx sphinx-rtd-theme
+  pip install coverage nose pytest pytest-cov pytest-codestyle sphinx sphinx-rtd-theme
 fi
 
 ##############################################################################

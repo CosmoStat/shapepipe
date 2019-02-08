@@ -36,7 +36,7 @@ class Dummy(object):
 
     def read_files(self, file_name1, file_name2):
 
-        self._wait()
+        # self._wait()
         content1 = self._read_file(file_name1)
         content2 = self._read_file(file_name2)
 

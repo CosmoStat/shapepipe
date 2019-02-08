@@ -9,6 +9,7 @@ This module defines a class for handling pipeline jobs.
 """
 
 import multiprocessing as mp
+from mpi4py import MPI
 from modopt.interface.errors import warn
 from joblib import Parallel, delayed, cpu_count
 from configparser import ConfigParser
@@ -190,7 +191,8 @@ class JobHandler(object):
 
         """
 
-        self._distribute_smp_jobs()
+        # self._distribute_smp_jobs()
+        self._distribute_mpi_jobs()
         self._check_for_errors()
         self._check_missed_processes()
         self.log.info('All processes complete')
@@ -290,6 +292,43 @@ class JobHandler(object):
                    zip(self._job_names, self.filehd.process_list.items())))
 
         self._worker_dicts = result
+
+    def _distribute_mpi_jobs(self):
+        """
+        """
+
+        def split(container, count):
+            """
+            Simple function splitting a container into equal length chunks.
+            Order is not preserved but this is potentially an advantage
+            depending on
+            the use case.
+            """
+            return [container[_i::count] for _i in range(count)]
+
+        COMM = MPI.COMM_WORLD
+
+        # if COMM.rank == 0:
+        #     jobs = list(zip(self._job_names, self.filehd.process_list.items()))
+        #     jobs = split(jobs, COMM.size)
+        # else:
+        #     jobs = None
+
+        results = []
+        for job_name, process in zip(self._job_names,
+                                     self.filehd.process_list.items()):
+
+            result = (WorkerHandler(verbose=self._verbose).worker(job_name,
+                      process, self.filehd, self.config, self.timeout,
+                      self._module))
+            results.append(result)
+
+        xxx = MPI.COMM_WORLD.gather(results, root=0)
+        print('XXX', xxx)
+        # exit()
+
+        # if COMM.rank == 0:
+        self._worker_dicts = results
 
     def _check_for_errors(self):
         """ Check for Errors
