@@ -138,7 +138,7 @@ C. Exposure-single-CCD images processing
   On output, star candidate catalogues ``star_selection_*.fits`` are created.
 
 
-4. Create PSF model. Module ``PSFEx'.
+4. Create PSF model. Module ``PSFEx``.
 
   .. code-block:: bash
 
@@ -150,7 +150,7 @@ C. Exposure-single-CCD images processing
 
   On output, PSF files ``*.psf`` are created.
 
-5. Interpolate PSF model to tile object positions. Module *PSFExInterp*.
+5. Interpolate PSF model to tile object positions. Module ``PSFExInterp``.
 
   .. code-block:: bash
 
