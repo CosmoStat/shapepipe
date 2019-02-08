@@ -20,6 +20,7 @@ from shapepipe.pipeline.file_handler import FileHandler
 from shapepipe.pipeline.job_handler import JobHandler
 
 from mpi4py import MPI
+from shapepipe.pipeline.mpi_run import mpi_run
 
 
 class ShapePipe():
@@ -231,28 +232,96 @@ class ShapePipe():
         # self._close_pipeline_log()
 
 
+def split(container, count):
+
+    return [container[_i::count] for _i in range(count)]
+
+
+def print_thing(thing, rank):
+
+    print('{}: {}'.format(rank, thing))
+
+
 def run(pipe, comm):
 
-    filehd = comm.bcast(pipe._filehd, root=0)
-    config = comm.bcast(pipe._config, root=0)
-    log = comm.bcast(pipe.log, root=0)
-    verbose = comm.bcast(pipe._verbose, root=0)
+    if comm.rank == 0:
+        modules = pipe._modules
 
-    for module in pipe._modules:
+    else:
+        modules = None
 
-        # Create a job handler for the current module
-        jh = JobHandler(module, filehd=filehd, config=config, log=log,
-                        verbose=verbose)
+    modules = comm.bcast(modules, root=0)
 
-        exit()
+    for module in modules:
 
-        # Submit the job handler jobs
-        jh.submit_jobs()
+        if comm.rank == 0:
+            filehd = pipe._filehd
+            config = pipe._config
+            verbose = pipe._verbose
+            jh = JobHandler(module, filehd=filehd, config=config,
+                            log=pipe.log, verbose=verbose)
+            timeout = jh.timeout
+            job_names = jh._job_names
+            process_list = list(jh.filehd.process_list.items())
+            jobs = split(list(zip(job_names, process_list)), comm.size)
+        else:
+            jh = None
+            timeout = None
+            jobs = None
+            filehd = None
+            config = None
+            verbose = None
 
-        # Update error count
-        pipe._error_count += jh.error_count
+        filehd = comm.bcast(filehd, root=0)
+        config = comm.bcast(config, root=0)
+        verbose = comm.bcast(verbose, root=0)
+        timeout = comm.bcast(timeout, root=0)
+        jobs = comm.scatter(jobs, root=0)
 
-    pipe._close_pipeline_log()
+        results = []
+        for job in jobs:
+            res = mpi_run(job, filehd, config, timeout, module, verbose)
+            results.append(res)
+
+        results = comm.gather(results, root=0)
+
+        if comm.rank == 0:
+            jh._worker_dicts = [_i for temp in results for _i in temp]
+            jh._check_for_errors()
+            jh._check_missed_processes()
+            jh.log.info('All processes complete')
+            jh.log.info('')
+
+            if jh._verbose:
+                print('All processes complete')
+                print('')
+
+            pipe._error_count += jh.error_count
+
+    if comm.rank == 0:
+        pipe._close_pipeline_log()
+
+    # if comm.rank == 0:
+    #
+    #     for module in pipe._modules[:1]:
+    #
+    #         # Create a job handler for the current module
+    #         jh = JobHandler(module, filehd=pipe._filehd, config=pipe._config,
+    #                         log=pipe.log, verbose=pipe._verbose)
+    #
+    # filehd = comm.bcast(pipe._filehd, root=0)
+    # config = comm.bcast(pipe._config, root=0)
+    # verbose = comm.bcast(pipe._verbose, root=0)
+
+        #     exit()
+        #
+        #     # Submit the job handler jobs
+        #     jh.submit_jobs()
+        #
+        #     # Update error count
+        #     pipe._error_count += jh.error_count
+        #
+        # pipe._close_pipeline_log()
 
 
 def main(args=None):
@@ -260,6 +329,7 @@ def main(args=None):
     comm = MPI.COMM_WORLD
 
     try:
+
         if comm.rank == 0:
             pipe = ShapePipe()
         else:
@@ -268,8 +338,9 @@ def main(args=None):
         run(pipe, comm)
 
     except Exception as err:
-        catch_error(err, pipe.log)
-        return 1
+        if comm.rank == 0:
+            catch_error(err, pipe.log)
+            return 1
 
 
 if __name__ == "__main__":

@@ -23,3 +23,6 @@ dist/
 
 #Ignore .DS_Store
 .DS_Store
+
+*shapepipe_run_*
+*shapepipe_runs*
