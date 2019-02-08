@@ -13,6 +13,12 @@ Create a new directory and link to the CFIS example configuration directories.
    ln -s ~/ShapePipe/example/cfis/config_exp
    ln -s ~/ShapePipe/example/cfis/config_exp
 
+.. code-block:: bash
+
+  $ pip install git+ssh://git@drf-gitlab.cea.fr/cosmostat/ShapePipe.git
+
+
+
 (This assumes that `ShapePipe` git repository has been cloned in `~/`).
 
 Select CFIS images
