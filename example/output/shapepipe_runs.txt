@@ -1,0 +1,5 @@
+./example/output/shapepipe_run_2019-02-08_14-52-06 python_example,execute_example
+./example/output/shapepipe_run_2019-02-08_14-52-06 python_example,execute_example
+./example/output/shapepipe_run_2019-02-08_14-52-06 python_example,execute_example
+./example/output/shapepipe_run_2019-02-08_15-03-16 python_example,execute_example
+./example/output/shapepipe_run_2019-02-08_15-03-36 python_example,execute_example

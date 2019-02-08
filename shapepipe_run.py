@@ -19,6 +19,8 @@ from shapepipe.pipeline.dependency_handler import DependencyHandler
 from shapepipe.pipeline.file_handler import FileHandler
 from shapepipe.pipeline.job_handler import JobHandler
 
+from mpi4py import MPI
+
 
 class ShapePipe():
     """ ShapePipe
@@ -36,6 +38,7 @@ class ShapePipe():
         self._filehd = FileHandler(self._run_name, self._modules, self._config)
         self._verbose = self._config.getboolean('DEFAULT', 'VERBOSE')
         self._error_count = 0
+        self._prep_run()
 
     def _set_run_name(self):
         """ Set Run Name
@@ -192,7 +195,7 @@ class ShapePipe():
         if self._verbose:
             print('')
 
-    def run(self):
+    def _prep_run(self):
         """ Run
 
         Run the pipeline.
@@ -211,28 +214,58 @@ class ShapePipe():
         # Check the versions of these modules
         self._check_module_versions()
 
-        for module in self._modules:
+        # for module in self._modules:
+        #
+        #     # Create a job handler for the current module
+        #     jh = JobHandler(module, filehd=self._filehd,
+        #                     config=self._config,
+        #                     log=self.log, verbose=self._verbose)
+        #
+        #     # Submit the job handler jobs
+        #     jh.submit_jobs()
+        #
+        #     # Update error count
+        #     self._error_count += jh.error_count
+        #
+        # # Finish and close the pipeline log
+        # self._close_pipeline_log()
 
-            # Create a job handler for the current module
-            jh = JobHandler(module, filehd=self._filehd,
-                            config=self._config,
-                            log=self.log, verbose=self._verbose)
 
-            # Submit the job handler jobs
-            jh.submit_jobs()
+def run(pipe, comm):
 
-            # Update error count
-            self._error_count += jh.error_count
+    filehd = comm.bcast(pipe._filehd, root=0)
+    config = comm.bcast(pipe._config, root=0)
+    log = comm.bcast(pipe.log, root=0)
+    verbose = comm.bcast(pipe._verbose, root=0)
 
-        # Finish and close the pipeline log
-        self._close_pipeline_log()
+    for module in pipe._modules:
+
+        # Create a job handler for the current module
+        jh = JobHandler(module, filehd=filehd, config=config, log=log,
+                        verbose=verbose)
+
+        exit()
+
+        # Submit the job handler jobs
+        jh.submit_jobs()
+
+        # Update error count
+        pipe._error_count += jh.error_count
+
+    pipe._close_pipeline_log()
 
 
 def main(args=None):
 
+    comm = MPI.COMM_WORLD
+
     try:
-        pipe = ShapePipe()
-        pipe.run()
+        if comm.rank == 0:
+            pipe = ShapePipe()
+        else:
+            pipe = None
+
+        run(pipe, comm)
 
     except Exception as err:
         catch_error(err, pipe.log)
