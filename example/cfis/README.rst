@@ -8,8 +8,8 @@ Set up
 Create a new directory and link to the CFIS example configuration directories.
 
 .. code-block:: bash
-  mkdir run_cfis
-  cd run_cfis
+  $ mkdir run_cfis
+  $ cd run_cfis
   ln -s ~/ShapePipe/example/cfis/config_exp
   ln -s ~/ShapePipe/example/cfis/config_exp
 
@@ -25,7 +25,7 @@ that match the input file pattern. For an area selection, use e.g. `cfis_field_s
 on a machine where the CFIS images are stored:
 
 .. code-block:: bash
-  cfis_field_select.py -i /home/mkilbing/astro/data/CFIS/tiles -t tile -m a --plot -v --area 210deg_55deg_211deg_56deg -o area_W3_1deg
+  $ cfis_field_select.py -i /home/mkilbing/astro/data/CFIS/tiles -t tile -m a --plot -v --area 210deg_55deg_211deg_56deg -o area_W3_1deg
 
 
 Retrieve to local machine from cc
