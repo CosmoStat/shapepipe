@@ -53,14 +53,13 @@ Run
 A. Preprocessing
 ^^^^^^^^^^^^^^^^
 
-1. Identify exposures for selected tiles, and write all HDUs to FITS files.
-
-   Module `find_exposures`.
+1. Identify exposures for selected tiles, and write all HDUs to FITS files. Module `find_exposures`.
 
   .. code-block:: bash
 
     mkdir -p output_tiles/find_exposures
     ~/ShapePipe/shapepipe_run.py -c config_tiles/config.find_exposures.ini
+
 
   On input, original tile images are read (their FITS header), and the images, weight, and flag files of the original exposures.
 
@@ -70,33 +69,30 @@ A. Preprocessing
 B. Tiles processing
 ^^^^^^^^^^^^^^^^^^^
 
-1. Mask images
-
-   Module `mask`.
+1. Mask images. Module `mask`.
 
 .. code-block:: bash
 
   mkdir -p output_tiles/mask
   ~/ShapePipe/shapepipe_run.py -c config_tiles/config.mask.ini
 
-On input, the original images and weights are used.
 
-On output flag files `flag_*.fits` are created.
+  On input, the original images and weights are used.
 
-2. Detect objects
+  On output flag files `flag_*.fits` are created.
 
-   Module `sextractor`.
+2. Detect objects. Module `sextractor`.
 
 .. code-block:: bash
 
   mkdir -p output_tiles/SExtractor
   ~/ShapePipe/shapepipe_run.py -c config_tiles/config.sex.ini
 
-On input, the original images and weights, as well as the flag files from the last step (B.1) are read.
+  On input, the original images and weights, as well as the flag files from the last step (B.1) are read.
 
-On output, SExtractor files `sexcat_*.fits` are created.
+  On output, SExtractor files `sexcat_*.fits` are created.
 
-3. Write detected tiles obects as exposure-single-CCD catalogue files
+3. Write detected tiles obects as exposure-single-CCD catalogue files. `Module tileobj_as_exp`.
 
 .. code-block:: bash
 
@@ -111,47 +107,48 @@ On output, exposure-single-CCD catalogues `cat.exp*.fits` are created.
 C. Exposure-single-CCD images processing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1. Mask images
+1. Mask images. Module `mask`.
 
-.. code-block:: bash
+  .. code-block:: bash
 
-  mkdir -p output_exp/mask
-  ~/ShapePipe/shapepipe_run.py -c config_exp/config.mask.ini
+    mkdir -p output_exp/mask
+    ~/ShapePipe/shapepipe_run.py -c config_exp/config.mask.ini
 
-On input, the exposure-single-CCD images, weights, and flag files (step A.1) are used.
+  On input, the exposure-single-CCD images, weights, and flag files (step A.1) are used.
 
-On output, flag files `mask_*.fits` are created. Note that their base names should be different
-from the original flag files.
+  On output, flag files `mask_*.fits` are created. Note that their base names should be different
+  from the original flag files.
 
-2. Detect objects
+2. Detect objects. Module `sextractor`.
 
-.. code-block:: bash
+  .. code-block:: bash
 
-  mkdir -p output_exp/SExtractor
-  ~/ShapePipe/shapepipe_run.py -c config_exp/config.sex.ini
+    mkdir -p output_exp/SExtractor
+    ~/ShapePipe/shapepipe_run.py -c config_exp/config.sex.ini
 
-On input, the exposure-single-CCD images and  weights (step A.1), and the exposure-single-CCD flags (C.1) are used.
+  On input, the exposure-single-CCD images and  weights (step A.1), and the exposure-single-CCD flags (C.1) are used.
 
-On output, SExtractor catalogue files `sexcat_*.fits` are created.
+  On output, SExtractor catalogue files `sexcat_*.fits` are created.
 
-3. Select stars
+3. Select stars. Module `setools`.
 
-.. code-block:: bash
+  .. code-block:: bash
 
-  mkdir -p output_exp/setools
-  ~/ShapePipe/shapepipe_run.py -c config_exp/config.setools.ini
+    mkdir -p output_exp/setools
+    ~/ShapePipe/shapepipe_run.py -c config_exp/config.setools.ini
 
-On input, the SExtractor catalogue fies from the previous step (C.2) are used.
+  On input, the SExtractor catalogue fies from the previous step (C.2) are used.
 
-On output, star candidate catalogues `star_selection_*.fits` are created.
+  On output, star candidate catalogues `star_selection_*.fits` are created.
 
-4. Create PSF model
 
-.. code-block:: bash
+4. Create PSF model. Module `PSFEx'.
 
-  mkdir -p output_exp/PSFEx
-  ~/ShapePipe/shapepipe_run.py -c config_exp/config.psfex.ini
+  .. code-block:: bash
 
-On input, the star candidate catalogues from the previous step (C.3) are used.
+    mkdir -p output_exp/PSFEx
+    ~/ShapePipe/shapepipe_run.py -c config_exp/config.psfex.ini
 
-On output, PSF files `*.psf` are created.
+  On input, the star candidate catalogues from the previous step (C.3) are used.
+
+  On output, PSF files `*.psf` are created.
