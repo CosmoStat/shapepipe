@@ -9,14 +9,10 @@ Create a new directory and link to the CFIS example configuration directories.
 
 .. code-block:: bash
 
-  $ mkdir run_cfis
-  $ cd run_cfis
-  $ ln -s ~/ShapePipe/example/cfis/config_exp
-  $ ln -s ~/ShapePipe/example/cfis/config_exp
-
-.. code-block:: bash
-
-  $ pip install git+ssh://git@drf-gitlab.cea.fr/cosmostat/ShapePipe.git
+  mkdir run_cfis
+  cd run_cfis
+  ln -s ~/ShapePipe/example/cfis/config_tiles
+  ln -s ~/ShapePipe/example/cfis/config_exp
 
 
 (This assumes that `ShapePipe` git repository has been cloned in `~/`).
@@ -30,11 +26,11 @@ on a machine where the CFIS images are stored:
 
 .. code-block:: bash
 
-  $ cfis_field_select.py -i /home/mkilbing/astro/data/CFIS/tiles -t tile -m a --plot -v --area 210deg_55deg_211deg_56deg -o area_W3_1deg
+  cfis_field_select.py -i /home/mkilbing/astro/data/CFIS/tiles -t tile -m a --plot -v --area 210deg_55deg_211deg_56deg -o area_W3_1deg
 
 .. code-block:: bash
 
-  $ cfis_field_select.py -i /home/mkilbing/astro/data/CFIS/tiles -t tile -m a --plot -v --area 210deg_55deg_211deg_56deg -o area_W3_1deg
+  cfis_field_select.py -i /home/mkilbing/astro/data/CFIS/tiles -t tile -m a --plot -v --area 210deg_55deg_211deg_56deg -o area_W3_1deg
 
 
 
@@ -58,22 +54,24 @@ A. Preprocessing
 ^^^^^^^^^^^^^^^^
 
 1. Identify exposures for selected tiles, and write all HDUs to FITS files.
+
    Module `find_exposures`.
 
-.. code-block:: bash
+  .. code-block:: bash
 
-  mkdir -p output_tiles/find_exposures
-  ~/ShapePipe/shapepipe_run.py -c config_tiles/config.find_exposures.ini
+    mkdir -p output_tiles/find_exposures
+    ~/ShapePipe/shapepipe_run.py -c config_tiles/config.find_exposures.ini
 
-On input, original tile images are read (their FITS header), and the images, weight, and flag files of the original exposures.
+  On input, original tile images are read (their FITS header), and the images, weight, and flag files of the original exposures.
 
-On output, exposure-single-CCD files (images, weights, and flags) are created.
+  On output, exposure-single-CCD files (images, weights, and flags) are created.
 
 
 B. Tiles processing
 ^^^^^^^^^^^^^^^^^^^
 
 1. Mask images
+
    Module `mask`.
 
 .. code-block:: bash
@@ -86,6 +84,7 @@ On input, the original images and weights are used.
 On output flag files `flag_*.fits` are created.
 
 2. Detect objects
+
    Module `sextractor`.
 
 .. code-block:: bash
