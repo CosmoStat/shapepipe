@@ -57,9 +57,9 @@ A. Preprocessing
     ~/ShapePipe/shapepipe_run.py -c config_tiles/config.find_exposures.ini
 
 
-   On input, original tile images are read (their FITS header), and the images, weight, and flag files of the original exposures.
+  On input, original tile images are read (their FITS header), and the images, weight, and flag files of the original exposures.
 
-   On output, exposure-single-CCD files (images, weights, and flags) are created.
+  On output, exposure-single-CCD files (images, weights, and flags) are created.
 
 
 B. Tiles processing
@@ -67,10 +67,10 @@ B. Tiles processing
 
 1. Mask images. Module ``mask``.
 
-.. code-block:: bash
+  .. code-block:: bash
 
-  mkdir -p output_tiles/mask
-  ~/ShapePipe/shapepipe_run.py -c config_tiles/config.mask.ini
+    mkdir -p output_tiles/mask
+    ~/ShapePipe/shapepipe_run.py -c config_tiles/config.mask.ini
 
 
   On input, the original images and weights are used.
@@ -79,10 +79,10 @@ B. Tiles processing
 
 2. Detect objects. Module ``sextractor``.
 
-.. code-block:: bash
+  .. code-block:: bash
 
-  mkdir -p output_tiles/SExtractor
-  ~/ShapePipe/shapepipe_run.py -c config_tiles/config.sex.ini
+    mkdir -p output_tiles/SExtractor
+    ~/ShapePipe/shapepipe_run.py -c config_tiles/config.sex.ini
 
   On input, the original images and weights, as well as the flag files from the last step (B.1) are read.
 
@@ -95,9 +95,9 @@ B. Tiles processing
   mkdir -p output_tiles/tileobj_as_exp
   ~/ShapePipe/shapepipe_run.py -c config_tiles/config.tileobj_as_exp.ini
 
-On input, the original tile images (to read their FITS header), the SExtractor catalogues (step B.2), and
+  On input, the original tile images (to read their FITS header), the SExtractor catalogues (step B.2), and
 the exposure-single-CCD images (to use their WCS header information; from A.1) are used.
-
+  
 On output, exposure-single-CCD catalogues ``cat.exp*.fits`` are created.
 
 C. Exposure-single-CCD images processing
@@ -144,6 +144,7 @@ C. Exposure-single-CCD images processing
 
     mkdir -p output_exp/PSFEx
     ~/ShapePipe/shapepipe_run.py -c config_exp/config.psfex.ini
+
 
   On input, the star candidate catalogues from the previous step (C.3) are used.
 
