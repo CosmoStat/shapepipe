@@ -10,9 +10,12 @@ Create a new directory and link to the CFIS example configuration directories.
 .. code-block:: bash
   $ mkdir run_cfis
   $ cd run_cfis
-  ln -s ~/ShapePipe/example/cfis/config_exp
-  ln -s ~/ShapePipe/example/cfis/config_exp
+  $ ln -s ~/ShapePipe/example/cfis/config_exp
+  $ ln -s ~/ShapePipe/example/cfis/config_exp
 
+.. code-block:: bash
+
+  $ pip install git+ssh://git@drf-gitlab.cea.fr/cosmostat/ShapePipe.git
 
 
 (This assumes that `ShapePipe` git repository has been cloned in `~/`).
@@ -26,6 +29,11 @@ on a machine where the CFIS images are stored:
 
 .. code-block:: bash
   $ cfis_field_select.py -i /home/mkilbing/astro/data/CFIS/tiles -t tile -m a --plot -v --area 210deg_55deg_211deg_56deg -o area_W3_1deg
+
+.. code-block:: bash
+
+  $ cfis_field_select.py -i /home/mkilbing/astro/data/CFIS/tiles -t tile -m a --plot -v --area 210deg_55deg_211deg_56deg -o area_W3_1deg
+
 
 
 Retrieve to local machine from cc
