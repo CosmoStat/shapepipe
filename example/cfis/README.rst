@@ -90,15 +90,15 @@ B. Tiles processing
 
 3. Write detected tiles obects as exposure-single-CCD catalogue files. ``Module tileobj_as_exp``.
 
-.. code-block:: bash
+  .. code-block:: bash
 
-  mkdir -p output_tiles/tileobj_as_exp
-  ~/ShapePipe/shapepipe_run.py -c config_tiles/config.tileobj_as_exp.ini
+    mkdir -p output_tiles/tileobj_as_exp
+    ~/ShapePipe/shapepipe_run.py -c config_tiles/config.tileobj_as_exp.ini
 
   On input, the original tile images (to read their FITS header), the SExtractor catalogues (step B.2), and
 the exposure-single-CCD images (to use their WCS header information; from A.1) are used.
   
-On output, exposure-single-CCD catalogues ``cat.exp*.fits`` are created.
+  On output, exposure-single-CCD catalogues ``cat.exp*.fits`` are created.
 
 C. Exposure-single-CCD images processing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
