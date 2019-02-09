@@ -174,7 +174,7 @@ class tileobj_as_exp():
         # Set columns to be returned in catalogue data
 
         # Basic columns from FITS file
-        cols = ('X_IMAGE', 'Y_IMAGE', 'X_WORLD', 'Y_WORLD', 'FWHM_IMAGE')
+        cols = ('XWIN_IMAGE', 'YWIN_IMAGE', 'X_WORLD', 'Y_WORLD', 'FWHM_IMAGE')
         dt = [float for c in cols]
 
         f_tile = io.FITSCatalog(self._cat_tile_path, SEx_catalog=True)

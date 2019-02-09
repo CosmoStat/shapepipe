@@ -101,7 +101,7 @@ class PSFExInterpolator(object):
 
     """
 
-    def __init__(self, dotpsf_path, galcat_path, output_path,
+    def __init__(self, dotpsf_path, galcat_path, output_path, img_number,
                  pos_params=None, get_shapes=True):
 
         # Path to PSFEx output file
@@ -125,8 +125,9 @@ class PSFExInterpolator(object):
         self.interp_PSFs = None
 
         # get number naming convention for this particular run
-        s = re.split(r"\-([0-9]*)\-([0-9]+)\.", self._galcat_path)
-        self._img_number = '-{0}-{1}'.format(s[1], s[2])
+        #s = re.split(r"\-([0-9]*)\-([0-9]+)\.", self._galcat_path)
+        #self._img_number = '-{0}-{1}'.format(s[1], s[2])
+        self._img_number = img_number
 
         # if required, compute and save shapes
         if get_shapes:
