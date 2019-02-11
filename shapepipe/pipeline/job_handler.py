@@ -183,14 +183,13 @@ class JobHandler(object):
 
         self._timeout = value
 
-    def submit_jobs(self):
-        """ Submit Jobs
+    def finish_up(self):
+        """ Finish Up
 
-        This method submits the jobs and checks the results.
+        Finish up JobHandler session.
 
         """
 
-        self._distribute_smp_jobs()
         self._check_for_errors()
         self._check_missed_processes()
         self.log.info('All processes complete')
@@ -199,6 +198,16 @@ class JobHandler(object):
         if self._verbose:
             print('All processes complete')
             print('')
+
+    def submit_smp_jobs(self):
+        """ Submit Jobs
+
+        This method submits the jobs and checks the results.
+
+        """
+
+        self._distribute_smp_jobs()
+        self.finish_up()
 
     @staticmethod
     def hms2sec(time_str):
