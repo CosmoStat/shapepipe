@@ -71,19 +71,46 @@ class combine_mexp():
 
         self._vignet = True
         self._do_check_consistency = True
-        self._method = 'PSFsize'
+        self._method = 'PSF_size'
+        self._params = None
+
+        self._write_all_mobj = False
 
     def process(self):
 
         # List of exposures contributing to this tile
         exp_list_uniq = self.get_exposure_list()
 
-        # List of exposure-single-CCD catalogue and PSF file names that were created by the
-        # tileobj_as_exp modules
-        exp_CCD_cat_list, psf_list = self.get_exp_CCD_cat_and_PSF_list(len(exp_list_uniq))
+        # List of exposure-single-CCD catalogue and PSF file names that were
+        # created by the tileobj_as_exp modules
+        exp_CCD_cat_list, psf_list = self.get_exp_CCD_cat_and_PSF_list(
+            len(exp_list_uniq))
 
-        n_ok = self.combine_information(exp_CCD_cat_list, psf_list)
-        self._w_log.info('Processed {} pairs of exposure-single-CCD and galaxy PSF files'.format(n_ok))
+        # Combine the above gathered data
+        combined_data, n_exp_ok = self.combine_information(exp_CCD_cat_list,
+                                                           psf_list)
+        if combined_data:
+
+            if self._write_all_mobj:
+                # Write all combined data to file (for testing)
+                outcat_pattern = 'mobj_all'
+                self.write_combined_data(combined_data, outcat_pattern)
+
+            # Perform galaxy selection
+            galaxies = self.select_galaxies(combined_data)
+
+            n_gal = len(galaxies['nexp'])
+            n_tot = len(combined_data['ID'])
+
+            # Write all galaxies
+            outcat_pattern = 'mobj_gal'
+            self.write_combined_data(galaxies, outcat_pattern)
+        else:
+            n_gal = n_tot = 0
+
+        self._w_log.info('Processed {} pairs of exposure-single-CCD and '
+                         'galaxy PSF files'.format(n_exp_ok))
+        self._w_log.info('{}/{} objects selected as galaxies'.format(n_gal, n_tot))
 
         return None, None
 
@@ -99,31 +126,36 @@ class combine_mexp():
 
         Returns
         -------
-        None
+        combined_data: FITS_rec
+            combined exposure-single-CCD and PSF data covering the tile
         """
-
-        outcat_pattern = 'mobj' 
 
         input_dir_exp_cat = self._config.get('COMBINE_MEXP_RUNNER',
                                              'INPUT_DIR_EXP_CAT')
         exp_cat_ext = self._config.get('COMBINE_MEXP_RUNNER',
                                        'INPUT_EXP_CAT_EXT')
-
         input_dir_psf = self._config.get('COMBINE_MEXP_RUNNER',
                                          'INPUT_DIR_PSF')
         psf_ext = self._config.get('COMBINE_MEXP_RUNNER', 'INPUT_PSF_EXT')
 
-        tile_data = None
+        combined_data = None
 
-        n_ok = 0
+        n_exp_ok = 0
         for exp_base_name, psf_base_name in zip(exp_CCD_cat_list, psf_list):
 
-            exp_cat = self.open_or_continue(input_dir_exp_cat, exp_base_name,
+            exp_cat = self.open_or_continue(input_dir_exp_cat,
+                                            exp_base_name,
                                             exp_cat_ext)
-            psf = self.open_or_continue(input_dir_psf, psf_base_name, psf_ext)
-
-            if not exp_cat or not psf:
+            if not exp_cat:
                 continue
+
+            psf = self.open_or_continue(input_dir_psf, psf_base_name,
+                                        psf_ext)
+            if not psf:
+                continue
+
+            print('{}: both exposure-single CCD and PSF found'.format(
+                  exp_base_name))
 
             exp_cat_data = exp_cat.get_data()
             exp_cat_cols = exp_cat.get_col_names()
@@ -134,70 +166,104 @@ class combine_mexp():
 
             if n_data != len(psf_data):
                 raise CombineMExpError('Length of objects ({}) and PSF ({}) '
-                                       'have to be the same'.format(n_data,
-                                        len(psf_data)))
+                                       'have to be the same'.
+                                       format(n_data, len(psf_data)))
 
-            combined_data = self.combine_exp_psf(exp_cat_data, exp_cat_cols, psf_data, psf_cols)
-
-            self.select_galaxies(combined_data)
+            exp_cat_data_plus = self.combine_exp_psf(exp_cat_data,
+                                                     exp_cat_cols,
+                                                     psf_data, psf_cols)
 
             exp_cat.close()
             psf.close()
 
-            # TODO (here?) selecting objects according to size
+            if combined_data is None:
+                combined_data = exp_cat_data_plus
+            else:
+                for c in exp_cat_data_plus:
+                    combined_data[c] = np.concatenate((exp_cat_data_plus[c], combined_data[c]))
 
-            # Saving to file maybe only for testing. Note that tile_num here is string
-            out_path = '{}/{}{}-0.fits'.format(self._output_dir, outcat_pattern, self._image_number)
-            print('Writing tile data to file \'{}\''.format(out_path))
-            output = io.FITSCatalog(out_path, open_mode=sc.BaseCatalog.OpenMode.ReadWrite)
-            output.save_as_fits(tile_data)
+            n_exp_ok = n_exp_ok + 1
 
-            n_ok = n_ok + 1
+        return combined_data, n_exp_ok
 
-        return n_ok
+    def write_combined_data(self, data, outcat_pattern):
+        """Save data to file.
+
+        Parameters
+        ----------
+        data: FITS_rec
+            catalogue data
+        outcat_pattern: string
+            output catalogue file name pattern
+
+        Returns
+        -------
+        None
+        """
+
+        out_path = '{}/{}{}-0.fits'.format(self._output_dir, outcat_pattern, self._image_number)
+        print('Writing tile data to file \'{}\''.format(out_path))
+        output = io.FITSCatalog(out_path, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+        output.save_as_fits(data)
 
     def select_galaxies(self, combined_data):
+        """Perform galaxy selection.
+
+        Parameters
+        ----------
+        combined_data: FITS_rec
+            combined exposure-single-CCD and PSF data covering the tile
+
+        Returns
+        -------
+        dat_gal: FITS_rec
+            multi-exposure galaxy catalogue data
+        """
 
         # Create empty data array for selected galaxies
         dat_gal = {}
-        for c in col_names:
+        for c in combined_data:
             dat_gal[c] = []
 
-        # Add new column to store number of exposures for which object
-        # passes galaxy selection
+        # Add new column for number of exposures on which object is observed
         dat_gal['nexp'] = []
 
         # Find all objects with same ID and their frequency
-        IDs = dat['ID']
+        IDs = combined_data['ID']
         IDs_unique, nexp = np.unique(IDs, return_counts=True)
 
         n_is_gal = 0
         for u, n in zip(IDs_unique, nexp):
-            gal = dat[IDs == u]
+            indices = np.where(IDs == u)[0]
 
-            if self.is_consistent(gal, n):
-                raise CombineMExpError('Length of galaxy data {} != number of '
-                                       'exposures {}'.format(len(gal), nexp))
+            self.check_consistency(indices, n)
 
-            is_gal, params_out = self.select_one(gal, n, method, params_in)
+            is_gal, params_out = self.select_one(combined_data, indices)
             if is_gal:
                 n_is_gal += 1
-                for c in col_names:
-                    dat_gal[c].append(gal[0][c])
+
+                # MKDEBUG: For the time being, append information from
+                # first exposure only. Should be extended later.
+                for c in combined_data:
+                    dat_gal[c].append(combined_data[c][indices[0]])
                 dat_gal['nexp'].append(n)
 
+            # TODO: param_out, vignets, data other than 1st exposure
+
         print(n_is_gal)
-        if verbose:
-            print('{}/{} galaxies  selected'.format(len(dat_gal['nexp']), len(dat)))
 
+        import pdb
+        pdb.set_trace()
 
-    def is_consistency(self, gal, nexp):
+        return dat_gal
+
+    def check_consistency(self, indices, nexp):
         """Check consistency of multi-exposure galaxy data
 
         Parameters
         ----------
-        gal: FITS_rec
-            galaxy and PSF data from multiple exposures
+        indices: numpy array of int
+            list of indices
         nexp: int
             number of exposures
 
@@ -210,25 +276,22 @@ class combine_mexp():
         if not self._do_check_consistency:
             return True
 
-        if len(gal) != nexp:
-            return False
+        if len(indices) != nexp:
+            raise CombineMExpError('Length of galaxy data {} != number of '
+                                   'exposures {}'.format(len(indices), nexp))
         else:
             return True
 
-
-    def select_one(self, gal, nexp, method, params):
+    def select_one(self, data, indices):
         """Select galaxy according to multi-exposure information.
 
         Parameters
         ----------
-        gal: list of FITS_rec
-            galaxy and PSF data from multiple exposures
-        nexp: int
-            number of exposures
-        method: string
-            selection method name
-        params: dict
-            method parameters
+        data: numpy array
+            galaxy and PSF data
+        indices: numpy array of int
+            indices of corresponding to the same object from
+            different exposures
 
         Returns
         -------
@@ -236,15 +299,18 @@ class combine_mexp():
             True if object is selected as galaxy
         """
 
-        is_gal    = False
+        is_gal = False
         params_out = {}
+
+        nexp = len(indices)
 
         if self._method == 'PSF_size':
 
-            fwhm = gal['FWHM_IMAGE'][0]
+            # MKDEBUG: Why fwhm only from one exposure? Are all the same, or from the tile?
+            fwhm = data['FWHM_IMAGE'][indices[0]]
             n_larger = 0
-            for g in gal:
-                if g['HSM_FLAG'] == 0 and fwhm > 2.355 * g['SIGMA_PSF_HSM']:
+            for idx in indices:
+                if data['HSM_FLAG'][idx] == 0 and fwhm > 2.355 * data['SIGMA_PSF_HSM'][idx]:
                     n_larger += 1
             params_out['n_larger'] = n_larger
             if n_larger == nexp:
@@ -252,8 +318,9 @@ class combine_mexp():
 
         else:
 
-            raise CombineMExpError('Invalid selection method \'{}\''.format(method))
+            raise CombineMExpError('Invalid selection method \'{}\''.format(self._method))
 
+        return is_gal, params_out
 
     def combine_exp_psf(self, exp_cat_data, exp_cat_cols, psf_data, psf_cols):
         """Return data array with combined information from exposure-
@@ -263,38 +330,32 @@ class combine_mexp():
         ----------
         exp_cat_data: FITS_rec
             exposure-single-CCD data
-       exp_cols: array of string
+        exp_cols: array of string
             exposure-single-CCD column names
-       psf_data: FITS_rec
-           PSF data
-       psf_cols: array of string
-           PSF column names
+        psf_data: FITS_rec
+            PSF data
+        psf_cols: array of string
+            PSF column names
 
         Returns
         -------
-        combined_data: array
-            combined data for this tile
+        exp_cat_data_plut: FITS_rec
+            exposure-single-CCD and PSF joined data
         """
 
         exp_cat_data_plus = {}
 
         # Copy object data
-        for c in exp_cat.get_col_names():
+        for c in exp_cat_cols:
             exp_cat_data_plus[c] = exp_cat_data[c]
 
         # Add PSF information to object catalogue
-        for c in psf.get_col_names():
+        for c in psf_cols:
             if self._vignet or c != 'VIGNET':
                 # Add vignet only if argument 'vignet' is True
                 exp_cat_data_plus[c] = psf_data[c]
 
-        if combined_data is None:
-            combined_data = exp_cat_data_plus
-        else:
-            for c in exp_cat_data_plus:
-                combined_data[c] = np.concatenate((exp_cat_data_plus[c], combined_data[c]))
-
-        return combined_data
+        return exp_cat_data_plus
 
     def open_or_continue(self, input_dir, base_name, ext):
         """Return file content, or continue if file does not exist.
@@ -395,7 +456,7 @@ class combine_mexp():
         psf_basename = 'galaxy_psf'
 
         exp_CCD_list = []
-        psf_list     = []
+        psf_list = []
         for i in range(n_exp):
             exp_CCD_base = '{}{}_{}'.format(exp_basename, self._image_number, i)
             psf_base = '{}{}_{}'.format(psf_basename, self._image_number, i)

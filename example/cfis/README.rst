@@ -163,4 +163,15 @@ C. Exposure-single-CCD images processing
 
   On output, files `galaxy_psf_*` with galaxy vignets and HSM parameters are created.
 
+6. Combine exposure-single-CCD and PSF catalogues. Module ``combine_mexp``.
+
+  .. code-block:: bash
+
+    mkdir -p output_exp/combine_mexp
+    ~/ShapePipe/shapepipe_run.py -c config_exp/config.combine_mexp.ini
+
+
+  On input, the original tile images are read (to extract their FITS header). In addition, the 
+  exposure-single-CCD catalogues (from step B.3) and the galaxy PSF files from the previous
+  step (C.5) are used.
 
