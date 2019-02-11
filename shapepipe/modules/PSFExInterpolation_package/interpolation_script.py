@@ -124,9 +124,6 @@ class PSFExInterpolator(object):
         self.gal_pos = None
         self.interp_PSFs = None
 
-        # get number naming convention for this particular run
-        #s = re.split(r"\-([0-9]*)\-([0-9]+)\.", self._galcat_path)
-        #self._img_number = '-{0}-{1}'.format(s[1], s[2])
         self._img_number = img_number
 
         # if required, compute and save shapes
