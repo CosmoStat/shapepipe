@@ -28,6 +28,19 @@ on a machine where the CFIS images are stored:
 
   cfis_field_select.py -i /home/mkilbing/astro/data/CFIS/tiles -t tile -m a --plot -v --area 210deg_55deg_211deg_56deg -o area_W3_1deg
 
+This creates the ascii file `area_W3_1deg.txt`.
+
+Create links with pipeline numbering scheme
+-------------------------------------------
+
+Create a new directory, which will be the input directory containing links to the original image and weight tiles.
+Call the script `cfis_create_image_links.py` to create those links.
+
+.. code-block:: back
+
+  mkdir data
+  cfis_create_image_links.py -i area_W3_1deg.txt -o data_new --tile_base CFIS_img
+
 
 
 Retrieve to local machine from cc
