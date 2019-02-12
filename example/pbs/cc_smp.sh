@@ -19,11 +19,10 @@
 # Activate conda environment
 ccenv anaconda
 source activate $HOME/.conda/envs/shapepipe
-alias python="$HOME/.conda/envs/shapepipe/bin/python"
 
 # Run ShapePipe
 cd $HOME/ShapePipe
-python shapepipe_run.py -c example/pbs/config_smp.ini
+$HOME/.conda/envs/shapepipe/bin/python shapepipe_run.py -c example/pbs/config_smp.ini
 
 # Return exit code
 exit 0
