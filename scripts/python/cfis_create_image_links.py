@@ -22,9 +22,7 @@ import copy
 
 from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
 
-
-from cfis import cfis
-from generic import stuff
+import cfis
 
 
 
@@ -41,11 +39,11 @@ def params_default():
         parameter values
     """
 
-    p_def = stuff.param(
+    p_def = cfis.param(
         input            = '.',
         output_dir       = '.',
         band             = 'r',
-        tile_base_new    = 'CFIS',
+        tile_base_new    = 'CFIS_img',
         weight_base_new  = 'CFIS_weight',
     )
 
@@ -73,6 +71,8 @@ def parse_options(p_def):
 
     parser.add_option('-i', '--input', dest='input', type='string', default=p_def.input,
          help='input image list, can be ascii file or directory path, default=\'{}\''.format(p_def.input))
+    parser.add_option('-w', '--link_weights', dest='link_weights', action='store_true',
+         help='link to weight even if not given in input (file)')
     parser.add_option('-o', '--output_dir', dest='output_dir', type='string', default=p_def.output_dir,
          help='output directory, where links will be created, default=\'{}\''.format(p_def.output_dir))
     parser.add_option('-b', '--band', dest='band', type='string', default=p_def.band,
@@ -114,14 +114,14 @@ def update_param(p_def, options):
     
     Parameters
     ----------
-    p_def:  class stuff.param
+    p_def:  class cfis.param
         parameter values
     optiosn: tuple
         command line options
     
     Returns
     -------
-    param: class stuff.param
+    param: class cfis.param
         updated paramter values
     """
 
@@ -143,8 +143,7 @@ def update_param(p_def, options):
 
 def create_links(inp, output_dir, tile_base_new, weight_base_new, band, verbose=False):
 
-    #image_list = cfis.get_image_list(inp, band, 'tile', col='#Name', verbose=verbose)
-    image_list = cfis.get_image_list(inp, band, 'tile', verbose=verbose)
+    image_list = cfis.get_image_list(inp, band, 'tile', col='#Name', verbose=verbose)
     file_list  = [i.name for i in image_list]
 
     if verbose:
@@ -173,27 +172,27 @@ def create_links(inp, output_dir, tile_base_new, weight_base_new, band, verbose=
         base_name = img
         m = re.findall('(.*)\..*', base_name)
         if len(m) == 0:
-            stuff.error('Invalid file name \'{}\' found'.format(img))
+            raise cfis.CfisError('Invalid file name \'{}\' found'.format(img))
 
         # Look for correponding weight image
         weight_name = cfis.get_file_pattern(m[0], band, 'weight', want_re=False)
         m = re.findall('(.*)\..*', weight_name)
         if len(m) == 0:
-            stuff.error('Invalid file name \'{}\' found'.format(img))
+            raise cfis.CfisError('Invalid file name \'{}\' found'.format(img))
         weight_base = m[0]
 
         # Check whether weight image file exists
         #weight_path = '{}/{}'.format(input_dir, weight_name)
         weight_path = '{}'.format(weight_name)
         if not os.path.isfile(weight_path):
-            stuff.error('Weight file \'{}\' not found'.format(weight_path))
+            raise cfis.CfisError('Weight file \'{}\' not found'.format(weight_path))
 
-        link_name_tile = '{}/{}-{:03d}-0.{}'.format(output_dir, tile_base_new, num, ext)
+        link_name_tile = '{}/{}-{:03d}.{}'.format(output_dir, tile_base_new, num, ext)
         if verbose:
             print(' {} <- {}'.format(img, link_name_tile))
         os.symlink(img, link_name_tile)
 
-        link_name_weight = '{}/{}-{:03d}-0.{}'.format(output_dir, weight_base_new, num, ext)
+        link_name_weight = '{}/{}-{:03d}.{}'.format(output_dir, weight_base_new, num, ext)
         if verbose:
             print(' {} <- {}'.format(weight_path, link_name_weight))
         os.symlink(weight_path, link_name_weight)

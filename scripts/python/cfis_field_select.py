@@ -23,7 +23,6 @@ import glob
 
 import numpy as np
 import pylab as plt
-#import matplotlib as plt
 
 from astropy.io import ascii
 from astropy.table import Table, Column
@@ -35,6 +34,7 @@ import textwrap
 
 
 from cfis import CfisError, param, unitdef, size, my_string_split
+import cfis
 
 
 
@@ -172,13 +172,13 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, verbose=
         Found image(s), None if none found.
     """
 
-    ra, dec   = cfis.get_Angle(coord)
+    ra, dec   = get_Angle(coord)
 
     if verbose == True:
         print('Looking for image at coordinates {}, {}'.format(ra, dec))
 
     if image_type == 'tile':
-        nix, niy  = cfis.get_tile_number_from_coord(ra, dec, return_type=int)
+        nix, niy  = get_tile_number_from_coord(ra, dec, return_type=int)
         tile_name = cfis.get_tile_name(nix, niy, band)
 
         img_found = []
