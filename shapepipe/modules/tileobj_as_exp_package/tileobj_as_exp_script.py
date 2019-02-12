@@ -75,7 +75,7 @@ class tileobj_as_exp():
         # List of exposures contributing to this tile
         exp_list_uniq = self.get_exposure_list()
 
-        # List of exposure-single-CCD file names that were created by the
+        # List of exposure-single-CCD file image names that were created by the
         # find_exposures modules
         exp_CCD_list = self.get_exp_CCD_list(len(exp_list_uniq))
 
@@ -174,7 +174,7 @@ class tileobj_as_exp():
         # Set columns to be returned in catalogue data
 
         # Basic columns from FITS file
-        cols = ('X_IMAGE', 'Y_IMAGE', 'X_WORLD', 'Y_WORLD', 'FWHM_IMAGE')
+        cols = ('XWIN_IMAGE', 'YWIN_IMAGE', 'X_WORLD', 'Y_WORLD', 'FWHM_IMAGE')
         dt = [float for c in cols]
 
         f_tile = io.FITSCatalog(self._cat_tile_path, SEx_catalog=True)
@@ -230,7 +230,7 @@ class tileobj_as_exp():
         return wcs_list, nx_list, ny_list
 
     def get_exp_CCD_list(self, n_exp):
-        """Return a list of exposure-single-CCD names.
+        """Return a list of exposure-single-CCD image file names.
 
         Parameters
         ----------

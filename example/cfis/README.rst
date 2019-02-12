@@ -42,7 +42,6 @@ Call the script `cfis_create_image_links.py` to create those links.
   cfis_create_image_links.py -i area_W3_1deg.txt -o data
 
 
-
 Retrieve to local machine from cc
 ---------------------------------
 
