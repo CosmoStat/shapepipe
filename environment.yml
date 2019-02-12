@@ -11,7 +11,7 @@ dependencies:
   - mpi4py>=3.0.0
   - pip:
     - modopt>=1.2
-    - numba>=0.4.2
+    - numba==0.4.0
     - sip_tpv>=1.1
     - sf_tools>=2.0
     - termcolor>=1.1

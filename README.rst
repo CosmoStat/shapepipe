@@ -59,6 +59,7 @@ Module Dependencies
 - astropy>=3.1.1
 - GalSim>=2.1.4
 - matplotlib>=3.0.2
+- numbda==0.4.0
 - ngmix>=1.2
 - pybind11>=2.2
 - sf-tools>=2.0.0

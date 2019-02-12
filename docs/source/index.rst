@@ -39,21 +39,31 @@ Contents
 Dependencies
 ============
 
-Pipeline Dependencies
----------------------
+Core Dependencies
+-----------------
 - joblib>=0.13.1
 - modopt>=1.2.0
 - numpy>=1.16.0
 
 Module Dependencies
 -------------------
+
+**Python Dependencies**
+
 - astropy>=3.1.1
-- GalSim
+- GalSim>=2.1.4
 - matplotlib>=3.0.2
-- ngmix
-- psfex
+- numbda==0.4.0
+- ngmix>=1.2
 - pybind11>=2.2
 - sf-tools>=2.0.0
+
+**Executable Dependencies**
+
+- CDSclient
+- PSFEx
+- SExtractor
+- WeightWatcher
 
 Installation
 ============
@@ -61,20 +71,33 @@ Installation
 Installing ShapePipe
 --------------------
 
-The ShapePipe package can be installed in the following ways. In both case the
-core dependencies will be installed but not the Module dependencies.
-
-**Using Pip**
-
-ShapePipe can be directly installed from the repository as follows:
+The entire ShapePipe package, include dependencies, can be built as follows:
 
 .. code-block:: bash
 
-  $ pip install git+ssh://git@drf-gitlab.cea.fr/cosmostat/ShapePipe.git
+  $ git clone https://drf-gitlab.cea.fr/cosmostat/ShapePipe
+  $ cd ShapePipe
+  $ ./install_shapepipe
+
+The ``install_shapepipe`` script will create the recommended Conda environment
+along with all of the required core and module dependencies.
+
+A list installation options can be seen using the ``--help`` option:
+
+.. code-block:: bash
+
+  $ ./install_shapepipe --help
+
+
+Installing the ShapePipe Library Only
+-------------------------------------
+
+The ShapePipe library, *i.e.* the core package not including module dependencies,
+can be installed in the following ways.
 
 **Using Git**
 
-Alternatively, the ShapePipe package can be downloaded from the repository
+The ShapePipe package can be downloaded from the repository
 and built as follows:
 
 .. code-block:: bash
@@ -85,16 +108,25 @@ and built as follows:
 
 This method is recommend for development.
 
-Installing Module Dependencies
-------------------------------
+**Using Pip**
 
-At present, ShapePipe dependencies have to be installed independently. This,
-however, can be simplified by using the conda environment or pip requirements
-files provided.
+Alternatively, the ShapePipe library can be directly installed from the
+repository as follows:
+
+.. code-block:: bash
+
+  $ pip install git+ssh://git@drf-gitlab.cea.fr/cosmostat/ShapePipe.git
+
+Note, this method will not include any executable scripts or examples.
+
+Installing the Module Python Dependencies
+-----------------------------------------
+
+Module Python dependencies can be installed in the following ways.
 
 **Using Conda**
 
-A ShapePipe Conda environment can be built and activated by running:
+The ShapePipe Conda environment can be built and activated by running:
 
 .. code-block:: bash
 
@@ -103,7 +135,7 @@ A ShapePipe Conda environment can be built and activated by running:
 
 **Using Pip**
 
-The ShapePipe dependencies can also be installed using ``pip`` as follows:
+Module Python dependencies can also be installed using ``pip`` as follows:
 
 .. code-block:: bash
 
@@ -113,10 +145,10 @@ The ShapePipe dependencies can also be installed using ``pip`` as follows:
 Execution
 =========
 
-Running the Pipeline
---------------------
+Running the Pipeline with SMP
+-----------------------------
 
-The pipeline can be run as follows:
+The pipeline can be run with SMP as follows:
 
 .. code-block:: bash
 
@@ -128,6 +160,17 @@ option:
 .. code-block:: bash
 
   $ ./shapepipe_run --help
+
+Running the Pipeline with MPI
+-----------------------------
+
+The pipeline can be run with MPI as follows:
+
+.. code-block:: bash
+
+  $ mpiexec -n <number_of_cores> ./shapepipe_run
+
+where ``<number_of_cores>`` is the number of cores to allocate to the run.
 
 Configuration
 -------------
@@ -150,6 +193,8 @@ The configuration parameters for the pipeline are:
 
 1. ``MODULE`` : (``str`` or ``list``) A valid module runner name (or a comma
    separated list of names).
+2. ``MODE`` : (``str``) The pipeline execution mode. Options are ``smp`` or
+   ``mpi``. Default value is ``smp``.
 
 **File Options**
 
@@ -181,8 +226,8 @@ The configuration parameters for the pipeline are:
 
 **Job Options**
 
-1. ``BATCH_SIZE`` : (``int``) Number of jobs to run in parallel. Default value
-   is ``1``.
+1. ``SMP_BATCH_SIZE`` : (``int``) Number of SMP jobs to run in parallel.
+   Default value is ``1``.
 2. ``TIMEOUT`` : (``int``) Timeout limit in seconds for a given job.
 
 **Module Options**
