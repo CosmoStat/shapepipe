@@ -470,7 +470,7 @@ class FileHandler(object):
         for pattern, ext in zip(pattern_list, ext_list):
 
             sub_file_list = [find_files(dir, pattern, ext) for dir in dir_list]
-            sub_file_list = cls._flatten_list(sub_file_list)
+            sub_file_list = cls.flatten_list(sub_file_list)
 
             if not sub_file_list:
                 raise RuntimeError('No files found matching patterns ({})'
@@ -572,7 +572,7 @@ class FileHandler(object):
         return re.search(re_pattern, file_name).group()
 
     @staticmethod
-    def _flatten_list(input_list):
+    def flatten_list(input_list):
         """ Flatten List
 
         Flatten a list of lists.
@@ -613,7 +613,7 @@ class FileHandler(object):
 
         new_list = []
 
-        for file in cls._flatten_list(file_list):
+        for file in cls.flatten_list(file_list):
 
             item = cls._strip_dir_from_file(file, dir_list)
 

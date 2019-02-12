@@ -77,8 +77,8 @@ class JobHandler(object):
         self._n_jobs = len(self.filehd.process_list)
 
         # Set the job names
-        self._job_names = [self._set_job_name(job) for job in
-                           range(self._n_jobs)]
+        self.job_names = [self._set_job_name(job) for job in
+                          range(self._n_jobs)]
 
         self._log_job_parameters()
 
@@ -296,9 +296,9 @@ class JobHandler(object):
                   (delayed(WorkerHandler(verbose=self._verbose).worker)
                    (job_name, process, self.filehd, self.config, self.timeout,
                    self._module) for job_name, process in
-                   zip(self._job_names, self.filehd.process_list.items())))
+                   zip(self.job_names, self.filehd.process_list.items())))
 
-        self._worker_dicts = result
+        self.worker_dicts = result
 
     def _check_for_errors(self):
         """ Check for Errors
@@ -319,7 +319,7 @@ class JobHandler(object):
 
         """
 
-        for worker_dict in self._worker_dicts:
+        for worker_dict in self.worker_dicts:
             if worker_dict['exception']:
                 self.log.info('ERROR: {} recorded in: {}'.format(
                               worker_dict['exception'], worker_dict['log']))
@@ -333,7 +333,7 @@ class JobHandler(object):
 
         """
 
-        for worker_dict in self._worker_dicts:
+        for worker_dict in self.worker_dicts:
             if worker_dict['stderr']:
                 self.log.info('ERROR: stderr recorded in: {}'.format(
                               worker_dict['log']))
