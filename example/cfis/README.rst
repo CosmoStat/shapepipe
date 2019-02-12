@@ -28,7 +28,7 @@ on a machine where the CFIS images are stored:
 
   cfis_field_select.py -i /home/mkilbing/astro/data/CFIS/tiles -t tile -m a --plot -v --area 210deg_55deg_211deg_56deg -o area_W3_1deg
 
-This creates the ascii file `area_W3_1deg.txt`.
+This creates the ascii file `area_W3_1deg.txt`. The pdf file `area_W3_1deg.pdf` shows the (projected) geometry of the selected tiles.
 
 Create links with pipeline numbering scheme
 -------------------------------------------
@@ -39,7 +39,7 @@ Call the script `cfis_create_image_links.py` to create those links.
 .. code-block:: back
 
   mkdir data
-  cfis_create_image_links.py -i area_W3_1deg.txt -o data_new --tile_base CFIS_img
+  cfis_create_image_links.py -i area_W3_1deg.txt -o data
 
 
 
