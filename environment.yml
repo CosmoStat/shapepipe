@@ -1,6 +1,5 @@
 name: shapepipe
 channels:
-  - cefca
   - conda-forge
   - defaults
 dependencies:
