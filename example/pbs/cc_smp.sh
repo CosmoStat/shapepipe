@@ -1,17 +1,29 @@
 #!/bin/bash
+
+##########################
+# SMP Script for ccin2p3 #
+##########################
+
+# Receive email when job finishes or aborts
 #$ -M <name>@cea.fr
 #$ -m ea
-#$ -N shapepipe_run
+# Set a name for the job
+#$ -N shapepipe_smp
+# Set a group for the job
 #$ -P P_euclid
+# Join output and errors in one file
 #$ -j y
+# Request muliprocessing resources
 #$ -l os=cl7
-#$ -pe multicores 4
 
+# Activate conda environment
 ccenv anaconda
 source activate $HOME/.conda/envs/shapepipe
+alias python="$HOME/.conda/envs/shapepipe/bin/python"
 
+# Run ShapePipe
 cd $HOME/ShapePipe
+python shapepipe_run.py -c example/pbs/config_smp.ini
 
-$HOME/.conda/envs/sshapepipe/bin/python shapepipe_run.py -c example/pbs/config_smp.ini
-
+# Return exit code
 exit 0

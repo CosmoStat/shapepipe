@@ -52,8 +52,8 @@ class JobHandler(object):
         self._verbose = verbose
 
         # Set the bacth size
-        if self.config.has_option('JOB', 'BATCH_SIZE'):
-            self.batch_size = self.config.getint('JOB', 'BATCH_SIZE')
+        if self.config.has_option('JOB', 'SMP_BATCH_SIZE'):
+            self.batch_size = self.config.getint('JOB', 'SMP_BATCH_SIZE')
         else:
             self.batch_size = batch_size
 

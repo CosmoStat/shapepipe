@@ -10,7 +10,6 @@ This module defines methods for handling the pipeline configuration file.
 
 import os
 from configparser import ConfigParser
-# from shapepipe.modules import module_runners
 
 
 class CustomParser(ConfigParser):
