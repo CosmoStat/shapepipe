@@ -25,7 +25,7 @@ alias python="$HOME/.conda/envs/shapepipe/bin/python"
 
 # Run ShapePipe
 cd $HOME/ShapePipe
-mpiexec -n $NSLOTS python shapepipe_run.py -c example/config_mpi.ini
+mpiexec -n $NSLOTS python shapepipe_run.py -c example/pbs/config_mpi.ini
 
 # Return exit code
 exit 0
