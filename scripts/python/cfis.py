@@ -389,9 +389,6 @@ def log_command(argv, name=None, close_no_return=True):
     if name != 'sys.stdout' and name != 'sys.stderr':
         f.close()
 
-<<<<<<< HEAD
-=======
-
 
 def print_color(color, txt, file=sys.stdout, end='\n'):
     """Print text with color. If not supported, print standard text.
