@@ -15,6 +15,8 @@
 #$ -j y
 # Request muliprocessing resources
 #$ -l os=cl7
+# Request number of cores
+#$ -pe multicores 4
 
 # Activate conda environment
 ccenv anaconda
