@@ -52,8 +52,8 @@ class JobHandler(object):
         self._verbose = verbose
 
         # Set the bacth size
-        if self.config.has_option('JOB', 'BATCH_SIZE'):
-            self.batch_size = self.config.getint('JOB', 'BATCH_SIZE')
+        if self.config.has_option('JOB', 'SMP_BATCH_SIZE'):
+            self.batch_size = self.config.getint('JOB', 'SMP_BATCH_SIZE')
         else:
             self.batch_size = batch_size
 
@@ -77,8 +77,8 @@ class JobHandler(object):
         self._n_jobs = len(self.filehd.process_list)
 
         # Set the job names
-        self._job_names = [self._set_job_name(job) for job in
-                           range(self._n_jobs)]
+        self.job_names = [self._set_job_name(job) for job in
+                          range(self._n_jobs)]
 
         self._log_job_parameters()
 
@@ -183,14 +183,13 @@ class JobHandler(object):
 
         self._timeout = value
 
-    def submit_jobs(self):
-        """ Submit Jobs
+    def finish_up(self):
+        """ Finish Up
 
-        This method submits the jobs and checks the results.
+        Finish up JobHandler session.
 
         """
 
-        self._distribute_smp_jobs()
         self._check_for_errors()
         self._check_missed_processes()
         self.log.info('All processes complete')
@@ -199,6 +198,16 @@ class JobHandler(object):
         if self._verbose:
             print('All processes complete')
             print('')
+
+    def submit_smp_jobs(self):
+        """ Submit Jobs
+
+        This method submits the jobs and checks the results.
+
+        """
+
+        self._distribute_smp_jobs()
+        self.finish_up()
 
     @staticmethod
     def hms2sec(time_str):
@@ -287,9 +296,9 @@ class JobHandler(object):
                   (delayed(WorkerHandler(verbose=self._verbose).worker)
                    (job_name, process, self.filehd, self.config, self.timeout,
                    self._module) for job_name, process in
-                   zip(self._job_names, self.filehd.process_list.items())))
+                   zip(self.job_names, self.filehd.process_list.items())))
 
-        self._worker_dicts = result
+        self.worker_dicts = result
 
     def _check_for_errors(self):
         """ Check for Errors
@@ -310,7 +319,7 @@ class JobHandler(object):
 
         """
 
-        for worker_dict in self._worker_dicts:
+        for worker_dict in self.worker_dicts:
             if worker_dict['exception']:
                 self.log.info('ERROR: {} recorded in: {}'.format(
                               worker_dict['exception'], worker_dict['log']))
@@ -324,7 +333,7 @@ class JobHandler(object):
 
         """
 
-        for worker_dict in self._worker_dicts:
+        for worker_dict in self.worker_dicts:
             if worker_dict['stderr']:
                 self.log.info('ERROR: stderr recorded in: {}'.format(
                               worker_dict['log']))
