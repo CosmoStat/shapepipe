@@ -12,7 +12,8 @@
 # Join output and errors in one file
 #PBS -j oe
 # Request number of cores
-#PBS -l nodes=4
+#PBS -l select=4:ncpus=1
+NSLOTS=`cat $PBS_NODEFILE | wc -l`
 
 # Activate conda environment
 module load intelpython/3
@@ -20,7 +21,7 @@ source activate $HOME/.conda/envs/shapepipe
 
 # Run ShapePipe
 cd $HOME/ShapePipe
-mpiexec -n 4 $HOME/.conda/envs/shapepipe/bin/python shapepipe_run.py -c example/pbs/config_mpi.ini
+mpiexec -n $NSLOTS $HOME/.conda/envs/shapepipe/bin/python shapepipe_run.py -c example/pbs/config_mpi.ini
 
 # Return exit code
 exit 0

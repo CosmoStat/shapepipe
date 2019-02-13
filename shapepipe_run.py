@@ -135,6 +135,8 @@ class ShapePipe():
         module_dep = self._get_module_depends('depends') + __installs__
         module_exe = self._get_module_depends('executes')
 
+        module_dep += ['mpi4py'] if self.mode == 'mpi' else module_dep
+
         dh = DependencyHandler(module_dep, module_exe)
 
         dep_text = 'Checking Python Dependencies:'
