@@ -18,6 +18,7 @@ import re
 import sys
 import os
 import glob
+import shlex
 
 import numpy as np
 
@@ -165,6 +166,182 @@ class image():
         print('#Name ra[{0}] dec[{0}] exp_time[s] validation'.format(unitdef), file=file)
 
 
+def run_cmd(cmd, verbose=True, run=True):
+    """Run shell command using shapepipe.pipeline.execute
+    """
+
+    from shapepipe.pipeline.execute import execute
+
+    if not run:
+        if verbose:
+            print_color('yellow', 'Not running command \'{0}\''.format(cmd))
+        out = ''
+        err = ''
+    else:
+        if verbose:
+            print_color('green', 'Running command \'{0}\''.format(cmd))
+        out, err = execute(cmd)
+
+    return out, err
+
+
+def run_cmd_old(cmd_list, run=True, verbose=True, stop=False, parallel=True, file_list=None, devnull=False, env=None):
+    """Run shell command or a list of commands using subprocess.Popen().
+
+    Parameters
+    ----------
+
+    cmd_list: string, or array of strings
+        list of commands
+    run: bool
+        If True (default), run commands. run=False is for testing and debugging purpose
+    verbose: bool
+        If True (default), verbose output
+    stop: bool
+        If False (default), do not stop after command exits with error.
+    parallel: bool
+        If True (default), run commands in parallel, i.e. call subsequent comands via
+        subprocess.Popen() without waiting for the previous job to finish.
+    file_list: array of strings
+        If file_list[i] exists, cmd_list[i] is not run. Default value is None
+    devnull: boolean
+        If True, all output is suppressed. Default is False.
+    env: bool, optional, default=None
+        Modified environment in which shell command will runi
+
+    Returns
+    -------
+    sum_ex: int
+        Sum of exit codes of all commands
+    """
+
+    if type(cmd_list) is not list:
+        cmd_list = [cmd_list]
+
+    if verbose is True and len(cmd_list) > 1:
+        print('Running {} commands, parallel = {}'.format(len(cmd_list), parallel))
+
+
+    ex_list   = []
+    pipe_list = []
+    out_list  = []
+    err_list  = []
+
+    if env is None:
+        env = os.environ.copy()
+
+    for i, cmd in enumerate(cmd_list):
+
+        ex = 0
+        out = ''
+        err = ''
+
+        if run is True:
+            # Check for existing file
+            if file_list is not None and os.path.isfile(file_list[i]):
+                if verbose is True:
+                    print_color('blue', 'Skipping command \'{}\', file \'{}\' exists'.format(cmd, file_list[i]))
+            else:
+                if verbose is True:
+                        print_color('green', 'Running command \'{0}\''.format(cmd))
+
+                # Run command
+                try:
+                    cmds = shlex.split(cmd)
+                    if devnull is True:
+                        pipe = subprocess.Popen(cmds, stdout=subprocess.DEVNULL, env=env)
+                    else:
+                        pipe = subprocess.Popen(cmds, stdout=subprocess.PIPE, env=env)
+                        #out, err = pipe.communicate()
+                        #print(out)
+                        # See https://www.endpoint.com/blog/2015/01/28/getting-realtime-output-using-python
+                        while True:
+                            output = pipe.stdout.readline()
+                            if output == '' and pipe.poll() is not None:
+                                break
+                            if output:
+                                print(output.strip())
+                            ex = pipe.poll()
+
+                    if parallel is False:
+                        # Wait for process to terminate
+                        pipe.wait()
+
+                    pipe_list.append(pipe)
+
+                    # If process has not terminated, ex will be None
+                    #ex = pipe.returncode
+                except OSError as e:
+                    print_color('red', 'Error: {0}'.format(e.strerror))
+                    ex = e.errno
+
+                    check_error_stop([ex], verbose=verbose, stop=stop)
+
+        else:
+            if verbose is True:
+                print_color('yellow', 'Not running command \'{0}\''.format(cmd))
+
+        ex_list.append(ex)
+        out_list.append(out)
+        err_list.append(err)
+
+
+    if parallel is True:
+        for i, pipe in enumerate(pipe_list):
+            pipe.wait()
+
+            # Update exit code list
+            ex_list[i] = pipe.returncode
+    s = check_error_stop(ex_list, verbose=verbose, stop=stop)
+
+    #return s
+    return s, out_list, err_list
+
+
+def check_error_stop(ex_list, verbose=True, stop=False):
+    """Check error list and stop if one or more are != 0 and stop=True
+
+    Parameters
+    ----------
+    ex_list: list of integers
+        List of exit codes
+    verbose: boolean
+        Verbose output, default=True
+    stop: boolean
+        If False (default), does not stop program
+
+    Returns
+    -------
+    s: integer
+        sum of absolute values of exit codes
+    """
+
+    if ex_list is None:
+        s = 0
+    else:
+        s = sum([abs(i) for i in ex_list])
+
+
+    # Evaluate exit codes
+    if s > 0:
+        n_ex = sum([1 for i in ex_list if i != 0])
+        if verbose is True:
+            if len(ex_list) == 1:
+                print_color('red', 'The last command returned sum|exit codes|={}'.format(s), end='')
+            else:
+                print_color('red', '{} of the last {} commands returned sum|exit codes|={}'.format(n_ex, len(ex_list), s), end='')
+        if stop is True:
+            print_color('red', ', stopping')
+        else:
+            print_color('red', ', continuing')
+
+        if stop is True:
+            sys.exit(s)
+
+
+    return s
+
+
 def log_command(argv, name=None, close_no_return=True):
     """Write command with arguments to a file or stdout.
        Choose name = 'sys.stdout' or 'sys.stderr' for output on sceen.
@@ -212,6 +389,50 @@ def log_command(argv, name=None, close_no_return=True):
     if name != 'sys.stdout' and name != 'sys.stderr':
         f.close()
 
+<<<<<<< HEAD
+=======
+
+
+def print_color(color, txt, file=sys.stdout, end='\n'):
+    """Print text with color. If not supported, print standard text.
+
+    Parameters
+    ----------
+    color: string
+        color name
+    txt: string
+        message
+    file: file handler
+        output file handler, default=sys.stdout
+    end: string
+        end string, default='\n'
+
+    Returns
+    -------
+    None
+    """
+
+    try:
+        import colorama
+        colors = {'red'    : colorama.Fore.RED,
+                  'green'  : colorama.Fore.GREEN,
+                  'blue'   : colorama.Fore.BLUE,
+                  'yellow' : colorama.Fore.YELLOW,
+                  'black'  : colorama.Fore.BLACK,
+                 }
+
+        if colors[color] is None:
+            col = colorama.Fore.BLACK
+        else:
+            col = colors[color]
+
+        print(col + txt + colors['black'] + '', file=file, end=end)
+
+    except ImportError:
+        print(txt, file=file, end=end)
+
+
+>>>>>>> 85136ef2b689f496844378a77732d1364bfc7b00
 
 def my_string_split(string, num=-1, verbose=False, stop=False):
     """Split a *string* into a list of strings. Choose as separator
