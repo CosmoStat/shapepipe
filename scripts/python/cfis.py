@@ -429,8 +429,6 @@ def print_color(color, txt, file=sys.stdout, end='\n'):
         print(txt, file=file, end=end)
 
 
->>>>>>> 85136ef2b689f496844378a77732d1364bfc7b00
-
 def my_string_split(string, num=-1, verbose=False, stop=False):
     """Split a *string* into a list of strings. Choose as separator
         the first in the list [space, underscore] that occurs in the string.
