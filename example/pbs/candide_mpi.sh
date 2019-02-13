@@ -1,25 +1,22 @@
 #!/bin/bash
 
 ##########################
-# MPI Script for ccin2p3 #
+# MPI Script for Candide #
 ##########################
 
 # Receive email when job finishes or aborts
-#$ -M <name>@cea.fr
-#$ -m ea
+#PBS -M <name>@cea.fr
+#PBS -m ea
 # Set a name for the job
-#$ -N shapepipe_mpi
-# Set a group for the job
-#$ -P P_euclid
+#PBS -N shapepipe_mpi
 # Join output and errors in one file
-#$ -j y
-# Request muliprocessing resources
-#$ -l os=cl7
+#PBS -j oe
 # Request number of cores
-#$ -pe multicores 4
+#PBS -l select=4:ncpus=1
+NSLOTS=`cat $PBS_NODEFILE | wc -l`
 
 # Activate conda environment
-ccenv anaconda
+module load intelpython/3
 source activate $HOME/.conda/envs/shapepipe
 
 # Run ShapePipe
