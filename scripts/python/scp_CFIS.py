@@ -31,7 +31,6 @@ from astropy.table import Table, Column
 from optparse import OptionParser
 from optparse import OptionGroup
 
-from generic import stuff
 import cfis
 
 
@@ -68,12 +67,12 @@ def get_copy_list(param, exclude_list, include_list=None, verbose=False):
         print('Excluding {} files'.format(n_exc))
 
     if len(dst_list) == 0:
-        raise stuff.MyError('No matching files found')
+        raise cfis.CfisError('No matching files found')
 
     return dst_list
 
 
-def scp(to_copy, t, remote, to=True, dry_run=False, verbose=False):
+def scp(to_copy, t, remote, scp_cmd, to=True, dry_run=False, verbose=False):
     """Secure-copies files.
 
     Parameters
@@ -119,7 +118,12 @@ def scp(to_copy, t, remote, to=True, dry_run=False, verbose=False):
         to_copy.insert(0, ' ')
         arg  = ' {}'.format(remote_dir).join(to_copy)
         dest = '.'
-    stuff.run_cmd('scp {} {}'.format(arg, dest), verbose=verbose, run=not dry_run)
+
+    cfis.run_cmd('{} {} {}'.format(scp_cmd, arg, dest), verbose=verbose, run=not dry_run)
+    #arg_list = arg.split(' ')
+    #for tc in arg_list:
+        #if tc != '':
+            #cfis.run_cmd('{} {} {}'.format(scp_cmd, tc, dest), verbose=verbose, run=not dry_run)
 
     if verbose == True:
         print('scp-ed {} files{}'.format(n_files, sdry))
@@ -135,15 +139,16 @@ def params_default():
 
     Returns
     -------
-    p_def: class stuff.param
+    p_def: class cfis.param
         parameter values
     """
 
-    p_def = stuff.param(
+    p_def = cfis.param(
         band         = 'r',
         type         = 'tile',
         pattern      = '',
         remote       = 'cc2',
+        scp_cmd      = 'scp',
     )
 
     return p_def
@@ -155,7 +160,7 @@ def parse_options(p_def):
 
     Parameters
     ----------
-    p_def: class stuff.param
+    p_def: class cfis.param
         parameter values
 
     Returns
@@ -177,10 +182,12 @@ def parse_options(p_def):
     parser.add_option('-b', '--band', dest='band', type='string', default=p_def.band,
         help='band, one of \'r\' (default)|\'u\'')
     parser.add_option('-t', '--type', dest='type', type='string', default=p_def.type,
-        help='data type, one of \'tiles\' (default)| \'cat\'|\'weight\'|\'exposure\'')
+        help='data type, one in tiles (default)|cat|weight[.fz]|exposure|exposure_weight[.fz]|exposure_flag[.fz]]')
     parser.add_option('-p', '--pattern', dest='pattern', type='string', default=p_def.pattern,
         help='file pattern to match, e.g.~\'^21\d{5}p\', default=none (=all match)')
 
+    parser.add_option('-s', '--scp_cmd', dest='scp_cmd', type='string', default=p_def.scp_cmd,
+        help='scp command, default=\'{}\''.format(p_def.scp_cmd))
     parser.add_option('-r', '--remote', dest='remote', type='string', default=p_def.remote,
         help='remote name, default=\'{}\''.format(p_def.remote))
     parser.add_option('', '--from', dest='fromR', action='store_true', default=False,
@@ -220,14 +227,14 @@ def update_param(p_def, options):
     
     Parameters
     ----------
-    p_def:  class stuff.param
+    p_def:  class cfis.param
         parameter values
     optiosn: tuple
         command line options
     
     Returns
     -------
-    param: class stuff.param
+    param: class cfis.param
         updated paramter values
     """
 
@@ -267,9 +274,9 @@ def main(argv=None):
 
 
     # Save calling command
-    stuff.log_command(argv)
+    cfis.log_command(argv)
     if options.verbose:
-        stuff.log_command(argv, name='sys.stderr')
+        cfis.log_command(argv, name='sys.stderr')
 
 
     if options.verbose is True:
@@ -285,7 +292,7 @@ def main(argv=None):
 
     to_copy = get_copy_list(param, exclude_list, include_list=param.include_list, verbose=param.verbose)
 
-    scp(to_copy, param.type, param.remote, to=param.to, dry_run=param.dry_run, verbose=param.verbose)
+    scp(to_copy, param.type, param.remote, param.scp_cmd, to=param.to, dry_run=param.dry_run, verbose=param.verbose)
 
 
     ### End main program
