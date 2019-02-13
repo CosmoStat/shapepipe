@@ -216,8 +216,14 @@ def main(argv=None):
 
     param = update_param(p_def, options)
 
+    # Save calling command
+    cfis.log_command(argv)
+    if param.verbose:
+        cfis.log_command(argv, name='sys.stderr')
+
     create_links(param.input, param.output_dir, param.tile_base_new, param.weight_base_new, param.band, verbose=param.verbose)
 
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
