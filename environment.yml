@@ -8,9 +8,10 @@ dependencies:
   - galsim>=2.1.4
   - joblib>=0.13
   - matplotlib>=3.0.2
+  - mpi4py>=3.0.0
   - pip:
     - modopt>=1.2
-    - numba>=0.4.2
+    - numba==0.40.0
     - sip_tpv>=1.1
     - sf_tools>=2.0
     - termcolor>=1.1

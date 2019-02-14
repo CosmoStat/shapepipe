@@ -19,6 +19,9 @@ from shapepipe.pipeline.dependency_handler import DependencyHandler
 from shapepipe.pipeline.file_handler import FileHandler
 from shapepipe.pipeline.job_handler import JobHandler
 
+from mpi4py import MPI
+from shapepipe.pipeline.mpi_run import split_mpi_jobs, submit_mpi_jobs
+
 
 class ShapePipe():
     """ ShapePipe
@@ -30,12 +33,14 @@ class ShapePipe():
     def __init__(self):
 
         self._args = create_arg_parser()
-        self._config = create_config_parser(self._args.config)
+        self.config = create_config_parser(self._args.config)
         self._set_run_name()
-        self._modules = self._config.getlist('EXECUTION', 'MODULE')
-        self._filehd = FileHandler(self._run_name, self._modules, self._config)
-        self._verbose = self._config.getboolean('DEFAULT', 'VERBOSE')
-        self._error_count = 0
+        self.modules = self.config.getlist('EXECUTION', 'MODULE')
+        self.mode = self.config.get('EXECUTION', 'MODE')
+        self.filehd = FileHandler(self._run_name, self.modules, self.config)
+        self.verbose = self.config.getboolean('DEFAULT', 'VERBOSE')
+        self.error_count = 0
+        self._prep_run()
 
     def _set_run_name(self):
         """ Set Run Name
@@ -44,9 +49,9 @@ class ShapePipe():
 
         """
 
-        self._run_name = self._config.get('DEFAULT', 'RUN_NAME')
+        self._run_name = self.config.get('DEFAULT', 'RUN_NAME')
 
-        if self._config.getboolean('DEFAULT', 'RUN_DATETIME'):
+        if self.config.getboolean('DEFAULT', 'RUN_DATETIME'):
             self._run_name += datetime.now().strftime('_%Y-%m-%d_%H-%M-%S')
 
     def _create_pipeline_log(self):
@@ -56,7 +61,7 @@ class ShapePipe():
 
         """
 
-        self.log = set_up_log(self._filehd.log_name, verbose=False)
+        self.log = set_up_log(self.filehd.log_name, verbose=False)
 
         start_text = 'Starting ShapePipe Run: {}'.format(self._run_name)
 
@@ -64,12 +69,12 @@ class ShapePipe():
         self.log.info(start_text)
         self.log.info('')
 
-        if self._verbose:
+        if self.verbose:
             print(shapepipe_logo())
             print(start_text)
             print('')
 
-    def _close_pipeline_log(self):
+    def close_pipeline_log(self):
         """ Close Pipeline Log
 
         Close general logging instance for the pipeline run.
@@ -77,7 +82,7 @@ class ShapePipe():
         """
 
         final_error_count = ('A total of {} errors were recorded.'.format(
-                             self._error_count))
+                             self.error_count))
         end_text = 'Finishing ShapePipe Run'
 
         self.log.info(final_error_count)
@@ -85,7 +90,7 @@ class ShapePipe():
         self.log.info(line())
         close_log(self.log, verbose=False)
 
-        if self._verbose:
+        if self.verbose:
             print(final_error_count)
             print(end_text)
             print(line())
@@ -104,19 +109,19 @@ class ShapePipe():
 
         prop_list = []
 
-        module_runners = self._filehd.module_runners
+        module_runners = self.filehd.module_runners
 
         for module in module_runners.keys():
 
-            if self._config.has_option(module.upper(), property.upper()):
-                prop_list += self._config.getlist(module.upper(),
-                                                  property.upper())
+            if self.config.has_option(module.upper(), property.upper()):
+                prop_list += self.config.getlist(module.upper(),
+                                                 property.upper())
             else:
                 prop_list += getattr(module_runners[module], property)
 
-            if self._filehd.get_add_module_property(module, property):
-                prop_list += self._filehd.get_add_module_property(module,
-                                                                  property)
+            if self.filehd.get_add_module_property(module, property):
+                prop_list += self.filehd.get_add_module_property(module,
+                                                                 property)
 
         return prop_list
 
@@ -130,39 +135,41 @@ class ShapePipe():
         module_dep = self._get_module_depends('depends') + __installs__
         module_exe = self._get_module_depends('executes')
 
+        module_dep += ['mpi4py'] if self.mode == 'mpi' else module_dep
+
         dh = DependencyHandler(module_dep, module_exe)
 
         dep_text = 'Checking Python Dependencies:'
         exe_text = 'Checking System Executables:'
 
         self.log.info(dep_text)
-        if self._verbose:
+        if self.verbose:
             print(dep_text)
 
         for dep in dh.check_dependencies():
 
             self.log.info(dep)
 
-            if self._verbose:
+            if self.verbose:
                 print(dep)
 
         self.log.info('')
-        if self._verbose:
+        if self.verbose:
             print('')
 
         self.log.info(exe_text)
-        if self._verbose:
+        if self.verbose:
             print(exe_text)
 
         for exe in dh.check_executables():
 
             self.log.info(exe)
 
-            if self._verbose:
+            if self.verbose:
                 print(exe)
 
         self.log.info('')
-        if self._verbose:
+        if self.verbose:
             print('')
 
     def _check_module_versions(self):
@@ -175,24 +182,24 @@ class ShapePipe():
         ver_text = 'Checking Module Versions:'
 
         self.log.info(ver_text)
-        if self._verbose:
+        if self.verbose:
             print(ver_text)
 
-        for module in self._modules:
+        for module in self.modules:
 
             module_txt = (' - {} {}'.format(
                           module,
-                          self._filehd.module_runners[module].version))
+                          self.filehd.module_runners[module].version))
 
             self.log.info(module_txt)
-            if self._verbose:
+            if self.verbose:
                 print(module_txt)
 
         self.log.info('')
-        if self._verbose:
+        if self.verbose:
             print('')
 
-    def run(self):
+    def _prep_run(self):
         """ Run
 
         Run the pipeline.
@@ -200,7 +207,7 @@ class ShapePipe():
         """
 
         # Make output directories for the pipeline run
-        self._filehd.create_global_run_dirs()
+        self.filehd.create_global_run_dirs()
 
         # Make a log for the pipeline run
         self._create_pipeline_log()
@@ -211,32 +218,125 @@ class ShapePipe():
         # Check the versions of these modules
         self._check_module_versions()
 
-        for module in self._modules:
 
+def run_smp(pipe):
+    """ Run SMP
+
+    Run ShapePipe using SMP.
+
+    Parameters
+    ----------
+    pipe : ShapePipe
+        ShapePipe instance
+
+    """
+
+    # Loop through modules to be run
+    for module in pipe.modules:
+
+        # Create a job handler for the current module
+        jh = JobHandler(module, filehd=pipe.filehd,
+                        config=pipe.config,
+                        log=pipe.log, verbose=pipe.verbose)
+
+        # Submit the SMP jobs
+        jh.submit_smp_jobs()
+
+        # Update error count
+        pipe.error_count += jh.error_count
+
+    # Finish and close the pipeline log
+    pipe.close_pipeline_log()
+
+
+def run_mpi(pipe, comm):
+    """ Run MPI
+
+    Run ShapePipe using MPI.
+
+    Parameters
+    ----------
+    pipe : ShapePipe
+        ShapePipe instance
+    comm : MPI.COMM_WORLD
+        MPI common world instance
+
+    """
+
+    # Assign master node
+    master = comm.rank == 0
+
+    # Get the module to be run
+    modules = pipe.modules if master else None
+    modules = comm.bcast(modules, root=0)
+
+    # Loop through modules to be run
+    for module in modules:
+
+        if master:
+            # Get ShapePipe objects
+            filehd, config, verbose = pipe.filehd, pipe.config, pipe.verbose
             # Create a job handler for the current module
-            jh = JobHandler(module, filehd=self._filehd,
-                            config=self._config,
-                            log=self.log, verbose=self._verbose)
+            jh = JobHandler(module, filehd=filehd, config=config,
+                            log=pipe.log, verbose=verbose)
+            # Get JobHandler objects
+            timeout, job_names = jh.timeout, jh.job_names
+            # Define process list
+            process_list = list(jh.filehd.process_list.items())
+            # Define job list
+            jobs = split_mpi_jobs(list(zip(job_names, process_list)),
+                                  comm.size)
+        else:
+            filehd, config, verbose = None, None, None
+            jh, timeout, jobs = None, None, None
 
-            # Submit the job handler jobs
-            jh.submit_jobs()
+        # Broadcast objects to all nodes
+        filehd = comm.bcast(filehd, root=0)
+        config = comm.bcast(config, root=0)
+        verbose = comm.bcast(verbose, root=0)
+        timeout = comm.bcast(timeout, root=0)
+        jobs = comm.scatter(jobs, root=0)
 
+        # Submit the MPI jobs and gather results
+        results = comm.gather(submit_mpi_jobs(jobs, filehd, config, timeout,
+                              module, verbose), root=0)
+
+        if master:
+            # Assign worker dictionaries
+            jh.worker_dicts = filehd.flatten_list(results)
+            # Finish up job handler session
+            jh.finish_up()
             # Update error count
-            self._error_count += jh.error_count
+            pipe.error_count += jh.error_count
 
-        # Finish and close the pipeline log
-        self._close_pipeline_log()
+    # Finish and close the pipeline log
+    pipe.close_pipeline_log() if master else None
 
 
 def main(args=None):
 
+    comm = MPI.COMM_WORLD
+
     try:
-        pipe = ShapePipe()
-        pipe.run()
+
+        if comm.rank == 0:
+            pipe = ShapePipe()
+            mode = pipe.mode
+        else:
+            pipe = None
+            mode = None
+
+        mode = comm.bcast(mode, root=0)
+
+        if mode == 'mpi':
+            run_mpi(pipe, comm)
+        else:
+            run_smp(pipe)
 
     except Exception as err:
-        catch_error(err, pipe.log)
-        return 1
+        if comm.rank == 0:
+            catch_error(err, pipe.log)
+            return 1
 
 
 if __name__ == "__main__":
