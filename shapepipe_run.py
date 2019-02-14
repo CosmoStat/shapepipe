@@ -222,6 +222,21 @@ class ShapePipe():
         # Check the versions of these modules
         self._check_module_versions()
 
+    def record_mode(self):
+        """ Record Mode
+
+        Log mode in which ShapePipe is running.
+
+        """
+
+        mode_text = 'Running ShapePipe using {}'.format(self.mode)
+
+        self.log.info(mode_text)
+        self.log.info('')
+        if self.verbose:
+            print(mode_text)
+            print('')
+
 
 def run_smp(pipe):
     """ Run SMP
@@ -234,14 +249,6 @@ def run_smp(pipe):
         ShapePipe instance
 
     """
-
-    mode_text = 'Running ShapePipe with SMP'
-
-    pipe.log.info(mode_text)
-    pipe.log.info('')
-    if pipe.verbose:
-        print(mode_text)
-        print('')
 
     # Loop through modules to be run
     for module in pipe.modules:
@@ -274,14 +281,6 @@ def run_mpi(pipe, comm):
         MPI common world instance
 
     """
-
-    mode_text = 'Running ShapePipe with MPI'
-
-    pipe.log.info(mode_text)
-    pipe.log.info('')
-    if pipe.verbose:
-        print(mode_text)
-        print('')
 
     # Assign master node
     master = comm.rank == 0
@@ -335,13 +334,13 @@ def run_mpi(pipe, comm):
 
 def main(args=None):
 
-    if import_mpi:
-        comm = MPI.COMM_WORLD
-        master = comm.rank == 0
-    else:
-        master = True
-
     try:
+
+        if import_mpi:
+            comm = MPI.COMM_WORLD
+            master = comm.rank == 0
+        else:
+            master = True
 
         if master:
             pipe = ShapePipe()
@@ -351,6 +350,10 @@ def main(args=None):
             mode = None
 
         mode = comm.bcast(mode, root=0) if import_mpi else 'smp'
+
+        if master:
+            pipe.mode = mode
+            pipe.record_mode()
 
         if mode == 'mpi':
             run_mpi(pipe, comm)
