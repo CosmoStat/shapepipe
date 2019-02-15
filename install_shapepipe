@@ -44,6 +44,12 @@ cdscleint_tar="cdsclient.tar.gz"
 cdsclient_dir="cdsclient-3.84"
 cdsclient_bin="findgsc2.2"
 
+# mpi4py Package
+mpi_url="https://github.com/mpi4py/mpi4py/archive/3.0.0.tar.gz"
+mpi_tar="3.0.0.tar.gz"
+mpi_dir="mpi4py-3.0.0"
+mpi_bin="mpiexec"
+
 # Divider line
 line="########################################################################"
 
@@ -142,6 +148,12 @@ build_standard() {
   make install
 }
 
+build_mpi(){
+  cd $BUILD_DIR/$1
+  python setup.py build --mpicc=$MPI_ROOT
+  python setup.py install
+}
+
 # Check if a binary executable is already installed in the conda environment
 check_conda() {
   if ! type -t "conda" > /dev/null
@@ -198,10 +210,11 @@ finish() {
   echo ''
   echo $line
   echo 'Installation Complete!'
-  check_binary2 $sex_bin "SExtractor"
-  check_binary2 $psfex_bin "PSFEx"
-  check_binary2 $ww_bin "WeightWatcher"
-  check_binary2 $cdsclient_bin "CDSclient"
+  if [ "$INSTALL_SEX" == TRUE ]; then check_binary2 $sex_bin "SExtractor"; fi
+  if [ "$INSTALL_PSFEX" == TRUE ]; then check_binary2 $psfex_bin "PSFEx"; fi
+  if [ "$INSTALL_WW" == TRUE ]; then check_binary2 $ww_bin "WeightWatcher"; fi
+  if [ "$INSTALL_CDSCLIENT" == TRUE ]; then check_binary2 $cdsclient_bin "CDSclient"; fi
+  if [ "$USE_MPI" == TRUE ]; then check_binary2 $mpi_bin "MPI"; fi
   echo $line
   echo ''
 }
@@ -213,6 +226,7 @@ setup() {
   echo 'Install PSFEx:' $INSTALL_PSFEX
   echo 'Install WeightWatcher:' $INSTALL_WW
   echo 'Install CDSclient:' $INSTALL_CDSCLIENT
+  echo 'Use MPI:' $USE_MPI
   echo 'ShapePipe Directory:' $PIPE_DIR
   echo 'Build Directory:' $BUILD_DIR
   echo ''
@@ -247,6 +261,7 @@ INSTALL_WW=TRUE
 INSTALL_CDSCLIENT=TRUE
 ATLAS_SEARCH=FALSE
 use_atlas=FALSE
+USE_MPI=TRUE
 
 help="$(basename "$0") [OPTIONS]\n\n
 Options:\n
@@ -272,6 +287,10 @@ Executable Build Options:\n
 \t--atlas-search\t search system path for ATLAS directories\n
 \t--plplot-lib\t path to PLPlot library directory\n
 \t--plplot-inc\t path to PLPlot include directory\n\n
+
+MPI Build Options:\n
+\t--no_mpi\t do not use MPI\n
+\t--mpi_root\t path to MPI installation\n\n
 
 "
 
@@ -356,6 +375,14 @@ case $i in
     ;;
     --plplot-inc=*)
     PLPLOT_INC="${i#*=}"
+    shift
+    ;;
+    --no-mpi)
+    USE_MPI=FALSE
+    shift
+    ;;
+    --mpi-root=*)
+    MPI_ROOT="${i#*=}"
     shift
     ;;
     --no-exe)
@@ -455,10 +482,25 @@ then
 fi
 
 ##############################################################################
-# BUILD EXTERNAL EXECUTABLES
+# INSTALL MPI REQUIRMENTS
 ##############################################################################
 
+# Install mpi4py
+if [ "$USE_MPI" == TRUE ]
+then
+  report_progress 'MPI'
+  if [ -z "$MPI_ROOT" ]
+  then
+    conda install mpi4py -y
+  else
+    download_package $mpi_url $mpi_tar
+    build_mpi $mpi_dir
+  fi
+fi
 
+##############################################################################
+# BUILD EXTERNAL EXECUTABLES
+##############################################################################
 
 # Build SExtractor
 if [ "$INSTALL_SEX" == TRUE ] && check_binary $sex_bin
