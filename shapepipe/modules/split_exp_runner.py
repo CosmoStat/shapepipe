@@ -38,7 +38,7 @@ def create_hdus(exp_path, output_dir, output_name, output_sufix, n_hdu=40,
             d = d.astype(np.int16)
 
         file_name = output_dir + '/' + output_sufix + output_name \
-                  + '-' + str(i-1) + '.fits'
+                    + '-' + str(i-1) + '.fits'
         new_file = io.FITSCatalog(file_name,
                                   open_mode=io.BaseCatalog.OpenMode.ReadWrite)
         new_file.save_as_fits(data=d, image=True, image_header=h)
