@@ -42,7 +42,7 @@ class JobHandler(object):
     """
 
     def __init__(self, module, filehd, config, log, batch_size=1,
-                 timeout=None, verbose=True):
+                 backend='loky', timeout=None, verbose=True):
 
         self.filehd = filehd
         self.log = log
@@ -56,6 +56,12 @@ class JobHandler(object):
             self.batch_size = self.config.getint('JOB', 'SMP_BATCH_SIZE')
         else:
             self.batch_size = batch_size
+
+        # Set the backend
+        if self.config.has_option('JOB', 'SMP_BACKEND'):
+            self.backend = self.config.get('JOB', 'SMP_BACKEND')
+        else:
+            self.backend = backend
 
         # Set the job timeout limit
         if self.config.has_option('JOB', 'TIMEOUT'):
@@ -292,7 +298,7 @@ class JobHandler(object):
 
         """
 
-        result = (Parallel(n_jobs=self.batch_size)
+        result = (Parallel(n_jobs=self.batch_size, backend=self.backend)
                   (delayed(WorkerHandler(verbose=self._verbose).worker)
                    (job_name, process, self.filehd, self.config, self.timeout,
                    self._module) for job_name, process in
