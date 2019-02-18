@@ -83,11 +83,12 @@ class tileobj_as_exp():
 
         dat_tile = self.get_tile_cat_data()
 
-        n_tileobj = self.write_tileobj_to_exp_CCDs(dat_tile, exp_CCD_list, wcs_list, nx_list, ny_list)
+        n_tileobj, n_empty = self.write_tileobj_to_exp_CCDs(dat_tile, exp_CCD_list, wcs_list, nx_list, ny_list)
 
         self._w_log.info('Number of exposure-single-CCD images on input: {}'.format(len(exp_CCD_list)))
         self._w_log.info('Number of headers with WCS information: {}'.format(len(wcs_list)))
         self._w_log.info('Number of tile-object catalogues in expoure-single-CCD format written: {}'.format(n_tileobj))
+        self._w_log.info('Number of CCDs not covered by tile and therefore empty, no file written: {}'.format(n_empty))
 
     def write_tileobj_to_exp_CCDs(self, dat_tile, exp_CCD_list, wcs_list, nx_list, ny_list):
         """Write objects from tile to exposure-single-CCD catalogues
@@ -109,6 +110,8 @@ class tileobj_as_exp():
         -------
         n_tileobj: int
             number of tile-object catalogues written
+        n_empty: int
+            number of empty CCDs (tile coordinates do not cover those CCDs)
         """
 
         out_base = self._config.get('TILEOBJ_AS_EXP_RUNNER', 'OUTPUT_FILE_PATTERN')
@@ -129,6 +132,7 @@ class tileobj_as_exp():
         all_coord_tile_wcs = SkyCoord(ra=dat_tile['X_WORLD']*u.degree, dec=dat_tile['Y_WORLD']*u.degree)
 
         n_tileobj = 0
+        n_empty = 0 
         for exp_CCD in exp_CCD_list:
 
             # Tile object coordinates in x, y using exposure-CCD WCS
@@ -156,7 +160,11 @@ class tileobj_as_exp():
 
                 n_tileobj = n_tileobj + 1
 
-        return n_tileobj
+            else:
+
+                n_empty = n_empty + 1
+
+        return n_tileobj, n_empty
 
     def get_tile_cat_data(self):
         """Return data from tiles catalogue.

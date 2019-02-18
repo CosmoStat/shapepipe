@@ -14,9 +14,6 @@ fi
 # Environment
 #$ -pe multicores 4
 
-# Queue
-#$ -q long
-
 #$ -l os=cl7
 
 #$ -j y
