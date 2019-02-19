@@ -174,6 +174,9 @@ class find_exposures():
 
         n_hdu = int(self._config.get('FIND_EXPOSURES_RUNNER', 'N_HDU'))
 
+        if len(img_file._cat_data) < n_hdu+1:
+            raise FindExposureError('Image {} has only {} primary HDUs, not {} as given in config file'.format(exp_path, len(img_file._cat_data)-1, n_hdu))
+
         dnum = 0
 
         # Loop over CCD/HDU
