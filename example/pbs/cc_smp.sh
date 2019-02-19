@@ -6,7 +6,7 @@
 
 # Receive email when job finishes or aborts
 #$ -M <name>@cea.fr
-#$ -m ea
+#$ -m bea
 # Set a name for the job
 #$ -N shapepipe_smp
 # Set a group for the job
