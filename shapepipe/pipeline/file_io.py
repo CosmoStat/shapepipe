@@ -725,6 +725,22 @@ class FITSCatalog(BaseCatalog):
          return fits.info(self.fullpath)
 
    # -----------------------------------------------------------------------------------------------
+   # ADDED
+   def get_ext_name(self, hdu_no=None):
+      """
+         Return the name of an extansion or all of them.
+         @param hdu_no index of the hdu to return. If None return all of them
+         @return a string of the hdu name or a list of string.
+      """
+
+      if hdu_no is None:
+         n =[self._cat_data[i].name for i in range(len(self._cat_data))]
+      else:
+         n = self._cat_data[int(hdu_no)].name
+
+      return n
+
+   # -----------------------------------------------------------------------------------------------
    def col_exists(self, col_name, hdu_no=None):
       """!
          Tell whether a named column exists
@@ -960,8 +976,13 @@ class FITSCatalog(BaseCatalog):
 
    # -----------------------------------------------------------------------------------------------
    # ADDED
-   def add_col(self, col_name, col_data, ext_name=None, hdu_no=None):
+   def add_col(self, col_name, col_data, hdu_no=None, ext_name=None):
       """
+         Add a Column to the catalog
+         @param col_name column name
+         @param col_data column data as a numpy array
+         @param hdu_no HDU index where to add the column
+         @param ext_name change the name of the extansion (optional)
       """
       if self._cat_data is None:
          raise BaseCatalog.CatalogNotOpen(self.fullpath)
