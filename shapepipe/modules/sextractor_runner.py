@@ -63,7 +63,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
             w = f_wcs[exp][j]
             pix_tmp = w.all_world2pix(cat.get_data()[pos_params[0]], cat.get_data()[pos_params[1]], 0)
             ind = ((pix_tmp[0] > 0) & (pix_tmp[0] < int(ccd_size[0])) &
-                   (pix_tmp[1] > 0) & (pix_tmp[1] < int(ccd_size[0])))
+                   (pix_tmp[1] > 0) & (pix_tmp[1] < int(ccd_size[1])))
             pos_tmp[ind] = j
             n_epoch[ind] += 1
         exp_name = np.array([exp_list[i] for n in range(len(obj_id))])
