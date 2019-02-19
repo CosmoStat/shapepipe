@@ -1,9 +1,6 @@
 # Ignore Python compilation
 *.pyc
 
-# Ignore scripts
-*.sh
-
 # Ignore cache
 *.cache/
 

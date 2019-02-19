@@ -308,7 +308,7 @@ class mask(object):
             raise ValueError('Width not provided')
 
         # MKDEBUG: Exchanged x and y in the following init call, since the python image is [y, x]
-        flag = np.zeros((int(self._fieldcenter['pix'][1]*2), int(self._fieldcenter['pix'][0]*2)), dtype='uint8')
+        flag = np.zeros((int(self._fieldcenter['pix'][1]*2), int(self._fieldcenter['pix'][0]*2)), dtype='uint16')
 
         flag[0:width, :] = flag_value
         flag[-width:, :] = flag_value
@@ -380,7 +380,7 @@ class mask(object):
         # print('MKDEBUG Messier objects found: first=#{} {}/{}'.format(m_cat['No'][ind[0]], m_cat['ra'][ind[0]], m_cat['dec'][ind[0]]))
 
         # MKDEBUG: Exchanged x and y in the following init call, since the python image is [y, x]
-        flag = np.zeros((int(self._fieldcenter['pix'][1]*2), int(self._fieldcenter['pix'][0]*2)), dtype='uint8')
+        flag = np.zeros((int(self._fieldcenter['pix'][1]*2), int(self._fieldcenter['pix'][0]*2)), dtype='uint16')
 
         for i in ind:
             m_center = np.hstack(self._wcs.all_world2pix(m_cat['ra'][i], m_cat['dec'][i], 0))

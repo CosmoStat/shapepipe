@@ -10,7 +10,6 @@ This module defines methods for handling the pipeline configuration file.
 
 import os
 from configparser import ConfigParser
-# from shapepipe.modules import module_runners
 
 
 class CustomParser(ConfigParser):
@@ -142,10 +141,8 @@ class SetUpParser(object):
         if not self.config.has_option('EXECUTION', 'MODULE'):
             raise RuntimeError('No module(s) specified')
 
-        # for module in self.config.getlist('EXECUTION', 'MODULE'):
-        #     if not hasattr(module_runners, module):
-        #         raise ImportError('Module runner {} not found in {}.'.format(
-        #                           module, module_runners.__name__))
+        if not self.config.has_option('EXECUTION', 'MODE'):
+            self.config.set('EXECUTION', 'MODE', 'smp')
 
     def _set_file_options(self):
         """ Set File Options
