@@ -6,7 +6,7 @@ This file contains methods for file I/O handling.
 
 :Author: Marc Gentile and Axel Guinot
 
-:Version: 1.0
+:Version: 1.0.1
 
 """
 
@@ -935,32 +935,32 @@ class FITSCatalog(BaseCatalog):
          raise BaseCatalog.CatalogNotOpen(self.fullpath)
 
    # -----------------------------------------------------------------------------------------------
-   def add_col(self, col_name, col_format=None, col_comment=None, col_data=None, hdu_no=None):
-      """!
-         Add a Column to the catalog
-         @param hdu_no HDU index (default is 1)
-         @param col_name column name
-         @param col_format column format: (ignored in this class, automatically determined)
-         @param col_comment column comment
-         @param col_data column data as a numpy array
-      """
+   # def add_col(self, col_name, col_format=None, col_comment=None, col_data=None, hdu_no=None):
+   #    """!
+   #       Add a Column to the catalog
+   #       @param hdu_no HDU index (default is 1)
+   #       @param col_name column name
+   #       @param col_format column format: (ignored in this class, automatically determined)
+   #       @param col_comment column comment
+   #       @param col_data column data as a numpy array
+   #    """
 
-      # -- Add new column
-      col_type = self._get_fits_col_type(col_data)
-      new_col = FITSCatalog.Column(name=col_name, format=col_type,
-                                   comment=col_comment, data=col_data)
-      if hdu_no is None:
-         hdu_no = self.hdu_no
-      self._append_col(new_col, hdu_no)
+   #    # -- Add new column
+   #    col_type = self._get_fits_col_type(col_data)
+   #    new_col = FITSCatalog.Column(name=col_name, format=col_type,
+   #                                 comment=col_comment, data=col_data)
+   #    if hdu_no is None:
+   #       hdu_no = self.hdu_no
+   #    self._append_col(new_col, hdu_no)
 
-      # --- Update internal data
-      self._cat_data.close()
-      del self._cat_data
-      self._cat_data = fits.open(self.fullpath, mode=self.open_mode, memmap=self.use_memmap)
+   #    # --- Update internal data
+   #    self._cat_data.close()
+   #    del self._cat_data
+   #    self._cat_data = fits.open(self.fullpath, mode=self.open_mode, memmap=self.use_memmap)
 
    # -----------------------------------------------------------------------------------------------
    # ADDED
-   def add_col2(self, col_name, col_data, ext_name=None, hdu_no=None):
+   def add_col(self, col_name, col_data, ext_name=None, hdu_no=None):
       """
       """
       if self._cat_data is None:
