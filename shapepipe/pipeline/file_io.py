@@ -734,7 +734,7 @@ class FITSCatalog(BaseCatalog):
       """
 
       if hdu_no is None:
-         n =[self._cat_data[i].name for i in range(len(self._cat_data))]
+         n = [self._cat_data[i].name for i in range(len(self._cat_data))]
       else:
          n = self._cat_data[int(hdu_no)].name
 
