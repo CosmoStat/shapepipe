@@ -959,6 +959,71 @@ class FITSCatalog(BaseCatalog):
       self._cat_data = fits.open(self.fullpath, mode=self.open_mode, memmap=self.use_memmap)
 
    # -----------------------------------------------------------------------------------------------
+   # ADDED
+   def add_col2(self, col_name, col_data, ext_name=None, hdu_no=None):
+      """
+      """
+      if self._cat_data is None:
+         raise BaseCatalog.CatalogNotOpen(self.fullpath)
+
+      if self.open_mode != FITSCatalog.OpenMode.ReadWrite:
+         raise BaseCatalog.OpenModeConflict(open_mode=self.open_mode, open_mode_needed=FITSCatalog.OpenMode.ReadWrite)
+
+      if type(col_data) != np.ndarray:
+         TypeError("col_data must be a numpy.ndarray")
+
+      if hdu_no is None:
+         hdu_no = self.hdu_no
+      if ext_name is None:
+         ext_name = self._cat_data[hdu_no].name
+      
+      n_of_hdu = len(self._cat_data)
+      old_hdu_prev = []
+      for i in range(0,hdu_no):
+         old_hdu_prev.append(self._cat_data[i])
+      old_hdu_next = []
+      for i in range(hdu_no+1, n_of_hdu):
+         old_hdu_next.append(self._cat_data[i])
+      
+      new_fits = fits.HDUList(old_hdu_prev)
+
+      col_list = self._cat_data[hdu_no].data.columns
+      
+      data_type = self._get_fits_col_type(col_data)
+      data_shape = col_data.shape[1:]
+      dim = str(tuple(data_shape))
+      mem_size = 1
+      if len(data_shape) != 0:
+         for k in data_shape:
+            mem_size *= k
+         data_format = '{0}{1}'.format(mem_size,data_type)
+         new_col = fits.ColDefs([fits.Column(name=col_name, format=data_format,
+                                 array=col_data, dim=dim)])
+         col_list += new_col
+      elif data_type == 'A':
+         mem_size *= len(max(col_data, key=len))
+         data_format = '{0}{1}'.format(mem_size,data_type)
+         new_col = fits.ColDefs([fits.Column(name=col_name, format=data_format,
+                                 array=col_data, dim=str((mem_size,)))])
+         col_list += new_col
+      else:
+         data_format = '{0}{1}'.format(mem_size,data_type)
+         new_col = fits.ColDefs([fits.Column(name=col_name, format=data_format,
+                                 array=col_data)])
+         col_list += new_col
+
+      new_fits.append(fits.BinTableHDU.from_columns(col_list, name=ext_name))
+
+      new_fits += fits.HDUList(old_hdu_next)
+
+      new_fits.writeto(self.fullpath, overwrite=True)
+
+      self._cat_data.close()
+      del self._cat_data
+      self._cat_data = fits.open(self.fullpath, mode=self.open_mode, memmap=self.use_memmap)
+      
+
+   # -----------------------------------------------------------------------------------------------
    def remove_col(self, col_index):
       """!
          Delete a column from its index
@@ -1025,7 +1090,7 @@ class FITSCatalog(BaseCatalog):
          col_type = 'D'
       elif type(col_data[0]) is bool:
          col_type = 'L'
-      elif type(col_data[0]) is string:
+      elif type(col_data[0]) in [str, np.str, np.str_, np.str0]:
          col_type = 'A'
       else:
          col_type = 'D'
@@ -1095,6 +1160,11 @@ class FITSCatalog(BaseCatalog):
               data_format = '{0}{1}'.format(mem_size, data_type)
               col_list.append(fits.Column(name=name, format=data_format,
                                           array=data[i], dim=dim))
+          elif data_type == 'A':
+            mem_size *= len(max(data[i], key=len))
+            data_format = '{0}{1}'.format(mem_size,data_type)
+            col_list.append(fits.Column(name=name, format=data_format,
+                                 array=data[i], dim=str((mem_size,))))
           else:
               data_format = '{0}{1}'.format(mem_size, data_type)
               col_list.append(fits.Column(name=name, format=data_format,
