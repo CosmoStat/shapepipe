@@ -132,7 +132,7 @@ class tileobj_as_exp():
         all_coord_tile_wcs = SkyCoord(ra=dat_tile['X_WORLD']*u.degree, dec=dat_tile['Y_WORLD']*u.degree)
 
         n_tileobj = 0
-        n_empty = 0 
+        n_empty = 0
         for exp_CCD in exp_CCD_list:
 
             # Tile object coordinates in x, y using exposure-CCD WCS
