@@ -12,7 +12,7 @@ fi
 #$ -P P_euclid_sci
 
 # Environment
-#$ -pe multicores 4
+#$ -pe multicores 16
 
 #$ -l os=cl7
 
