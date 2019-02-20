@@ -145,7 +145,6 @@ class PSFExInterpolator(object):
             self._success = 0
             self._has_shapes = False
 
-
     def _get_position_parameters(self):
         """ Read position parameters from .psf file.
 
