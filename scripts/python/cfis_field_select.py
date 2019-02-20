@@ -369,6 +369,18 @@ def plot_area(images, angles, image_type, outbase, interactive):
         ra_c  = sum([img.ra for img in images])/float(n_ima)
         dec_c = sum([img.dec for img in images])/float(n_ima)
         plt.plot(ra_c, dec_c, 'or', mfc='none', ms=3)
+    else:
+        ra_c = 0
+        dec_c = 0
+
+    # Circle around field
+    dx = abs(angles[0].ra - angles[1].ra)
+    dy = abs(angles[0].dec - angles[1].dec)
+    dx = getattr(dx, unitdef)
+    dy = getattr(dy, unitdef)
+    radius = max(dx, dy)/2 + (cfis.size['exposure'] + cfis.size['tile']) * np.sqrt(2)
+    circle = plt.Circle((ra_c.deg, dec_c.deg), radius, color='r', fill=False)
+    ax.add_artist(circle)
 
     for img in images:
         # Image center
@@ -411,6 +423,7 @@ def plot_area(images, angles, image_type, outbase, interactive):
     if interactive == True:
         plt.show()
 
+    return ra_c, dec_c, radius
 
 
 def plot_init():
@@ -648,7 +661,10 @@ def run_mode(images, param):
             if param.plot == True:
                 if param.verbose == True:
                     print('Creating plots')
-                plot_area(images_found, angles, param.image_type, param.outbase, param.interactive)
+                ra_c, dec_c, radius = plot_area(images_found, angles, param.image_type, param.outbase, param.interactive)
+
+                if param.verbose:
+                    print('RA_c[deg] DEC_c[deg] radius[argmin] = {:.2f} {:.2f} {:.2f}'.format(ra_c.deg, dec_c.deg, radius*60))
             ex = 0
 
     else:
