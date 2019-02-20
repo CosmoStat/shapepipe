@@ -26,7 +26,11 @@ def psfexinterp_runner(input_file_list, output_dir, file_number_string,
 
     inst = interpolation_script.PSFExInterpolator(psfcat_path, galcat_path,
                                                   output_dir, file_number_string,
-                                                  pos_params, get_shapes)
-    inst.write_output()
+                                                  w_log, pos_params, get_shapes)
+
+    if inst._success == 0:
+        inst.write_output()
+    else:
+        w_log.info('Not writing file with number {}'.format(file_number_string))
 
     return None, None
