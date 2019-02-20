@@ -264,6 +264,9 @@ def run_smp(pipe):
         # Update error count
         pipe.error_count += jh.error_count
 
+        # Delete job handler
+        del jh
+
     # Finish and close the pipeline log
     pipe.close_pipeline_log()
 
@@ -327,6 +330,8 @@ def run_mpi(pipe, comm):
             jh.finish_up()
             # Update error count
             pipe.error_count += jh.error_count
+            # Delete job handler
+            del jh
 
     # Finish and close the pipeline log
     pipe.close_pipeline_log() if master else None

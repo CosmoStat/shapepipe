@@ -14,6 +14,14 @@ from configparser import ConfigParser
 from logging import Logger
 from shapepipe.pipeline.worker_handler import WorkerHandler
 
+import psutil
+import gc
+
+
+def memory_usage_psutil():
+    gc.collect()
+    return psutil.Process().memory_info().rss / (2 ** 20)
+
 
 class JobHandler(object):
     """ Job Handler
@@ -203,6 +211,7 @@ class JobHandler(object):
 
         if self._verbose:
             print('All processes complete')
+            print('Memory Usage:', memory_usage_psutil())
             print('')
 
     def submit_smp_jobs(self):
