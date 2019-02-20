@@ -547,7 +547,7 @@ class mask(object):
         for line in CDSclient_output.splitlines():
             m = re.findall('#', line)
             if len(m) != 0:
-                 # Header or footer
+                # Header or footer
                 pass
             else:
                 line = line.replace(';', '')
