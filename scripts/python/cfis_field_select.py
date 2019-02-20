@@ -24,7 +24,6 @@ import glob
 import numpy as np
 import pylab as plt
 
-from astropy.io import ascii
 from astropy.table import Table, Column
 from astropy import units
 from astropy.coordinates import Angle, SkyCoord
