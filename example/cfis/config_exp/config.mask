@@ -3,7 +3,8 @@
 
 WW_PATH = ww
 WW_CONFIG_FILE = config_tiles/mask_default/default.ww
-CDSCLIENT_PATH = findgsc2.2
+#CDSCLIENT_PATH = findgsc2.2
+STAR_CAT = star_cat_W3_600amin.txt
 
 
 # ----------------------------- Border parameters ----------------------------------

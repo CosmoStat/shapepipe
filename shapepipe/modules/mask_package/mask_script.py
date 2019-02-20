@@ -35,14 +35,26 @@ class mask(object):
         Path to image (fits format)
     weight_path : str
         Path to the weight image (fits format)
+    image_suffix: str
+        Image file name suffix
+    image_num: str
+        Image number according to numbering scheme from config file
     config_filepath : str
         Path to the *.mask config file
     output_dir : str
         Path to the output directory
+    w_log: Log file class
+        log file
 
+    Returns
+    -------
+    inst: class mask
+        mask object
     """
 
-    def __init__(self, image_path, weight_path, image_suffix, image_num, config_filepath, output_dir, path_external_flag=None, outname_base='flag'):
+    def __init__(self, image_path, weight_path, image_suffix, image_num,
+                 config_filepath, output_dir, w_log, path_external_flag=None,
+                 outname_base='flag'):
 
         self._image_fullpath = image_path                                       # Path to the image to mask
         self._weight_fullpath = weight_path                                     # Path to the weight associated to the image
@@ -50,11 +62,9 @@ class mask(object):
         self._output_dir = output_dir                                           # Path to the output directory
         self._path_external_flag = path_external_flag                           # Path to an external flag file
         self._outname_base = outname_base                                       # Output file base name
+        self._w_log = w_log
 
-        # s=re.split("\-([0-9]*)\-([0-9]+)\.",self._image_fullpath)
-        # self._img_number='-{0}-{1}'.format(s[1],s[2])                           # Needed for temporary file
         self._img_number = image_num
-        # self._img_name = os.path.split(re.split(image_num, image_path)[0])[1]
         if (image_suffix.lower() != 'none') & (image_suffix != ''):
             self._img_suffix = image_suffix + '_'
         else:
@@ -88,7 +98,14 @@ class mask(object):
 
         self._config['PATH']['WW'] = conf.getexpanded('PROGRAM_PATH', 'WW_PATH')
         self._config['PATH']['WW_configfile'] = conf.getexpanded('PROGRAM_PATH', 'WW_CONFIG_FILE')
-        self._config['PATH']['CDSclient'] = conf.getexpanded('PROGRAM_PATH', 'CDSCLIENT_PATH')
+
+        if conf.has_option('PROGRAM_PATH', 'CDSCLIENT_PATH'):
+            self._config['PATH']['CDSclient'] = conf.getexpanded('PROGRAM_PATH', 'CDSCLIENT_PATH')
+        elif conf.has_option('PROGRAM_PATH', 'STAR_CAT'):
+            self._config['PATH']['star_cat'] = conf.getexpanded('PROGRAM_PATH', 'STAR_CAT')
+        else:
+            raise ValueError('Either CDSCLIENT_PATH or STAR_CAT needs to be given in the [PROGRAM_PATH] section of the mask config file')
+
         self._config['PATH']['temp_dir'] = self._get_temp_dir_path(conf.getexpanded('OTHER', 'TEMP_DIRECTORY'))
         self._config['BORDER']['make'] = conf.getboolean('BORDER_PARAMETERS', 'BORDER_MAKE')
         if self._config['BORDER']['make']:
@@ -212,10 +229,8 @@ class mask(object):
 
                 if not self._config['HALO']['individual']:
                     if mask_name[0] is not None:
-                        # os.system('rm {0}'.format(mask_name[0]))
                         self._rm_fits1_stdout, self._rm_fits1_stderr = execute('rm {0}'.format(mask_name[0]))
                     if mask_name[1] is not None:
-                        # os.system('rm {1}'.format(mask_name[1]))
                         self._rm_fits2_stdout, self._rm_fits2_stderr = execute('rm {0}'.format(mask_name[1]))
 
                 self._mask_to_file(input_mask=final_mask, output_fullpath=self._output_dir+'/'+self._img_suffix+self._outname_base+self._img_number+'.fits')
@@ -273,16 +288,23 @@ class mask(object):
         else:
             sign = ''
 
-        cmd_line = '{0} {1} {2}{3} -r {4} -n 1000000'.format(self._config['PATH']['CDSclient'], ra, sign, dec, radius)
-
-        # output=subprocess.check_output(cmd_line, shell=True)
-        self._CDS_stdout, self._CDS_stderr = execute(cmd_line)
+        if 'CDSclient' in self._config['PATH']:
+            cmd_line = '{0} {1} {2}{3} -r {4} -n 1000000'.format(self._config['PATH']['CDSclient'], ra, sign, dec, radius)
+            self._w_log.info('Calling command \'{}\''.format(cmd_line))
+            self._CDS_stdout, self._CDS_stderr = execute(cmd_line)
+        elif 'star_cat' in self._config['PATH']:
+            self._w_log.info('Reading star catalogue file \'{}\''.format(self._config['PATH']['star_cat']))
+            f = open(self._config['PATH']['star_cat'], 'r')
+            self._CDS_stdout = f.read()
+            self._CDS_stderr = ''
+            f.close()
+        else:
+            raise ValueError('Either CDSCLIENT_PATH or STAR_CAT needs to be given in the [PROGRAM_PATH] section of the mask config file')
 
         if self._CDS_stderr != '':
             self._err = True
             return None
 
-        # return self._make_star_cat(output.decode("utf-8"))
         return self._make_star_cat(self._CDS_stdout)
 
     def mask_border(self, width=100, flag_value=4):
@@ -375,9 +397,7 @@ class mask(object):
         # ind = np.where((m_cat['ra'] > ra_min) & (m_cat['ra'] < ra_max) & (m_cat['dec'] > dec_min) & (m_cat['dec'] < dec_max))[0]
 
         if len(ind) == 0:
-            # print('MKDEBUG no Messier objects found')
             return None
-        # print('MKDEBUG Messier objects found: first=#{} {}/{}'.format(m_cat['No'][ind[0]], m_cat['ra'][ind[0]], m_cat['dec'][ind[0]]))
 
         # MKDEBUG: Exchanged x and y in the following init call, since the python image is [y, x]
         flag = np.zeros((int(self._fieldcenter['pix'][1]*2), int(self._fieldcenter['pix'][0]*2)), dtype='uint16')
@@ -501,7 +521,7 @@ class mask(object):
         Returns
         -------
         dict
-            Stars dicotionnary containing all informations.
+            Stars dictionnary containing all information
 
         """
 
@@ -519,25 +539,23 @@ class mask(object):
                 stars[i] = []
 
         # get data
-        for i in range(4, len(CDSclient_output.splitlines()) - 5):
-            k = 0
-            for j in CDSclient_output.splitlines()[i].split(' '):
-                if (j != '') & (j != ';'):
-                    # cleaning output
-                    j = j.replace(' ', '')
-                    for v in re.split(',|#|;', j):
-                        if v != '':
-                            j = v
-                    # handle missing data
-                    try:
-                        j = float(j)
-                        stars[h[k]].append(j)
-                    except:
-                        if j == '---':
-                            stars[h[k]].append(None)
-                        else:
-                            stars[h[k]].append(j)
-                    k += 1
+        # 20/2/2019, new version to replace invalid fields. Much faster than previous,
+        # takes a few second for 1.5 million objects (field with radius 10000 arcmin)
+        # This could eventually be taken out of the pipeline in a script to be called
+        # once before processing.
+        for line in CDSclient_output.splitlines():
+            m = re.findall('#', line)
+            if len(m) != 0:
+                 # Header or footer
+                pass
+            else:
+                line = line.replace(';', '')
+                line = line.replace(', ', '-1')
+                line = line.replace('---', ' -1')
+                line = line.replace(',', '')
+                words = line.split()
+                for k, w in enumerate(words):
+                    stars[h[k]].append(w)
 
         return stars
 
@@ -581,34 +599,43 @@ class mask(object):
         else:
             ValueError("types need to be in ['HALO', 'SPIKE']")
 
+        # Get the four corners of the image
+        # MKDEBUG TODO: Re-use corners from make_messier
+        corners = self._wcs.calc_footprint()
+        corners_sc = SkyCoord(ra=corners[:, 0] * u.degree, dec=corners[:, 1] * u.degree)
+
         stars_used = [[], [], []]
         for ra, dec, Fmag, Jmag, Vmag, Nmag, clas in zip(stars['RA(J2000)'], stars['Dec(J2000)'], stars['Fmag'], stars['Jmag'], stars['Vmag'], stars['Nmag'], stars['Clas']):
-            mag = 0.
-            i = 0.
-            if Fmag is not None:
-                mag += Fmag
-                i += 1.
-            if Jmag is not None:
-                mag += Jmag
-                i += 1.
-            if Vmag is not None:
-                mag += Vmag
-                i += 1.
-            if Nmag is not None:
-                mag += Nmag
-                i += 1.
-            if i == 0.:
-                mag = None
+            mag = 0.0
+            i = 0
+            if Fmag != -1:
+                mag += float(Fmag)
+                i += 1
+            if Jmag != -1:
+                mag += float(Jmag)
+                i += 1
+            if Vmag != -1:
+                mag += float(Vmag)
+                i += 1
+            if Nmag != -1:
+                mag += float(Nmag)
+                i += 1
+            if i == 0:
+                mag = -1
             else:
-                mag /= i
+                mag /= float(i)
 
-            if (ra is not None) & (dec is not None) & (mag is not None) & (clas is not None):
+            if (ra != -1) & (dec != -1) & (mag > 0) & (clas != -1):
                 if (mag < mag_limit) & (clas == 0):
                     scaling = 1. - scale_factor * (mag - mag_pivot)
-                    pos = self._wcs.all_world2pix(ra, dec, 0)
-                    stars_used[0].append(pos[0])
-                    stars_used[1].append(pos[1])
-                    stars_used[2].append(scaling)
+                    s_sc = SkyCoord(ra=ra * u.degree, dec=dec * u.degree)
+                    r = 10.0 * u.arcmin
+                    r_deg = r.to(u.degree)
+                    if np.any(corners_sc.separation(s_sc) < r_deg):
+                        pos = self._wcs.all_world2pix(ra, dec, 0)
+                        stars_used[0].append(pos[0])
+                        stars_used[1].append(pos[1])
+                        stars_used[2].append(scaling)
 
         for i in range(len(stars_used[0])):
             poly = 'polygon('
@@ -645,16 +672,17 @@ class mask(object):
                     raise sc.BaseCatalog.CatalogFileNotFound(reg)
                 cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3} -POLY_OUTFLAGS {4} -FLAG_NAMES "" -OUTFLAG_NAME {5} -OUTWEIGHT_NAME ""'.\
                       format(self._config['PATH']['WW'], self._config['PATH']['WW_configfile'], self._weight_fullpath, reg, self._config[types]['flag'], defaul_out)
-                # os.system(cmd)
+
+                self._w_log.info('Calling command \'{}\''.format(cmd))
                 self._WW_stdout, self._WW_stderr = execute(cmd)
-                # os.system('rm {0}'.format(reg))
                 self._rm_reg_stdout, self._rm_reg_stderr = execute('rm {0}'.format(reg))
             else:
                 reg = self._config[types]['reg_file']
                 if not sc.BaseCatalog(reg)._file_exists(reg):
                     raise sc.BaseCatalog.CatalogFileNotFound(reg)
                 cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3} -POLY_OUTFLAGS {4} -FLAG_NAMES "" -OUTFLAG_NAME {5} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'], self._config['PATH']['WW_configfile'], self._weight_fullpath, reg, self._config[types]['flag'], defaul_out)
-                # os.system(cmd)
+
+                self._w_log.info('Calling command \'{}\''.format(cmd))
                 self._WW_stdout, self._WW_stderr = execute(cmd)
 
         elif types == 'ALL':
@@ -666,9 +694,9 @@ class mask(object):
                     if not sc.BaseCatalog(reg[i])._file_exists(reg[i]):
                         raise sc.BaseCatalog.CatalogFileNotFound(reg[i])
                 cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3},{4} -POLY_OUTFLAGS {5},{6} -FLAG_NAMES "" -OUTFLAG_NAME {7} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'], self._config['PATH']['WW_configfile'], self._weight_fullpath, reg[0], reg[1], self._config['HALO']['flag'], self._config['SPIKE']['flag'], defaul_out)
-                # os.system(cmd)
+
+                self._w_log.info('Calling command \'{}\''.format(cmd))
                 self._WW_stdout, self._WW_stderr = execute(cmd)
-                # os.system('rm {0} {1}'.format(reg[0],reg[1]))
                 self._rm_reg_stdout, self._rm_reg_stderr = execute('rm {0} {1}'.format(reg[0], reg[1]))
             else:
                 reg = [self._config['HALO']['reg_file'], self._config['SPIKE']['reg_file']]
@@ -676,7 +704,8 @@ class mask(object):
                     if not sc.BaseCatalog(reg[i])._file_exists(reg[i]):
                         raise sc.BaseCatalog.CatalogFileNotFound(reg[i])
                 cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3},{4} -POLY_OUTFLAGS {5},{6} -FLAG_NAMES "" -OUTFLAG_NAME {7} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'], self._config['PATH']['WW_configfile'], self._weight_fullpath, reg[0], reg[1], self._config['HALO']['flag'], self._config['SPIKE']['flag'], defaul_out)
-                # os.system(cmd)
+
+                self._w_log.info('Calling command \'{}\''.format(cmd))
                 self._WW_stdout, self._WW_stderr = execute(cmd)
         else:
             ValueError("types must be in ['HALO','SPIKE','ALL']")
