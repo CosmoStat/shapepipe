@@ -12,14 +12,16 @@ fi
 
 #PBS -j oe
 
-#PBS -l nodes=1:ppn=16,walltime=10:00:00
+#PBS -l nodes=1:ppn=4,walltime=10:00:00
 
 #PBS -d /home/mkilbing/area_W3
 
 echo -n "pwd = "
 pwd
 
-$HOME/ShapePipe/shapepipe_run.py -c $1
+cmd="$HOME/ShapePipe/shapepipe_run.py -c $1"
+echo "Running command $cmd"
+$cmd
 ex=$?
 exit $ex
 

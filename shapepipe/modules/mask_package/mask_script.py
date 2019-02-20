@@ -278,27 +278,28 @@ class mask(object):
 
         """
 
-        ra = position[0]
-        dec = position[1]
-
-        # check ra dec types
-
-        if dec > 0.:
-            sign = '+'
-        else:
-            sign = ''
-
         if 'CDSclient' in self._config['PATH']:
+
+            ra = position[0]
+            dec = position[1]
+            if dec > 0.:
+                sign = '+'
+            else:
+                sign = ''
             cmd_line = '{0} {1} {2}{3} -r {4} -n 1000000'.format(self._config['PATH']['CDSclient'], ra, sign, dec, radius)
             self._w_log.info('Calling command \'{}\''.format(cmd_line))
             self._CDS_stdout, self._CDS_stderr = execute(cmd_line)
+
         elif 'star_cat' in self._config['PATH']:
+
             self._w_log.info('Reading star catalogue file \'{}\''.format(self._config['PATH']['star_cat']))
             f = open(self._config['PATH']['star_cat'], 'r')
             self._CDS_stdout = f.read()
             self._CDS_stderr = ''
             f.close()
+
         else:
+
             raise ValueError('Either CDSCLIENT_PATH or STAR_CAT needs to be given in the [PROGRAM_PATH] section of the mask config file')
 
         if self._CDS_stderr != '':
