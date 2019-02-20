@@ -99,55 +99,6 @@ class IndentedHelpFormatterWithNL(IndentedHelpFormatter):
     return "".join(result)
 
 
-def log_command(argv, name=None, close_no_return=True):
-    """Write command with arguments to a file or stdout.
-       Choose name = 'sys.stdout' or 'sys.stderr' for output on sceen.
-
-    Parameters
-    ----------
-    argv: array of strings
-        Command line arguments
-    name: string
-        Output file name (default: 'log_<command>')
-    close_no_return: bool
-        If True (default), close log file. If False, keep log file open
-        and return file handler
-
-    Returns
-    -------
-    log: filehandler
-        log file handler (if close_no_return is False)
-    """
-
-    if name is None:
-        name = 'log_' + os.path.basename(argv[0])
-
-    if name == 'sys.stdout':
-        f = sys.stdout
-    elif name == 'sys.stderr':
-        f = sys.stderr
-    else:
-        f = open(name, 'w')
-
-    for a in argv:
-
-        # Quote argument if special characters
-        if ']' in a or ']' in a:
-            a = '\"{}\"'.format(a)
-
-        print(a, end='', file=f)
-        print(' ', end='', file=f)
-
-    print('', file=f)
-
-    if close_no_return == False:
-        return f
-
-    if name != 'sys.stdout' and name != 'sys.stderr':
-        f.close()
-
-
-
 def find_image_at_coord(images, coord, band, image_type, no_cuts=False, verbose=False):
     """Return image covering given coordinate.
 
@@ -418,6 +369,18 @@ def plot_area(images, angles, image_type, outbase, interactive):
         ra_c  = sum([img.ra for img in images])/float(n_ima)
         dec_c = sum([img.dec for img in images])/float(n_ima)
         plt.plot(ra_c, dec_c, 'or', mfc='none', ms=3)
+    else:
+        ra_c = 0
+        dec_c = 0
+
+    # Circle around field
+    dx = abs(angles[0].ra - angles[1].ra)
+    dy = abs(angles[0].dec - angles[1].dec)
+    dx = getattr(dx, unitdef)
+    dy = getattr(dy, unitdef)
+    radius = max(dx, dy)/2 + (cfis.size['exposure'] + cfis.size['tile']) * np.sqrt(2)
+    circle = plt.Circle((ra_c.deg, dec_c.deg), radius, color='r', fill=False)
+    ax.add_artist(circle)
 
     for img in images:
         # Image center
@@ -460,6 +423,7 @@ def plot_area(images, angles, image_type, outbase, interactive):
     if interactive == True:
         plt.show()
 
+    return ra_c, dec_c, radius
 
 
 def plot_init():
@@ -697,7 +661,10 @@ def run_mode(images, param):
             if param.plot == True:
                 if param.verbose == True:
                     print('Creating plots')
-                plot_area(images_found, angles, param.image_type, param.outbase, param.interactive)
+                ra_c, dec_c, radius = plot_area(images_found, angles, param.image_type, param.outbase, param.interactive)
+
+                if param.verbose:
+                    print('RA_c[deg] DEC_c[deg] radius[argmin] = {:.2f} {:.2f} {:.2f}'.format(ra_c.deg, dec_c.deg, radius*60))
             ex = 0
 
     else:
@@ -728,9 +695,9 @@ def main(argv=None):
 
 
     # Save calling command
-    log_command(argv)
+    cfis.log_command(argv)
     if param.verbose:
-        log_command(argv, name='sys.stderr')
+        cfis.log_command(argv, name='sys.stderr')
 
 
     if param.verbose is True:
