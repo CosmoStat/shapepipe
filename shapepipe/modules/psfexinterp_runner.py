@@ -29,7 +29,7 @@ def psfexinterp_runner(input_file_list, output_dir, file_number_string,
         psfcat_path, galcat_path = input_file_list
 
         inst = interpolation_script.PSFExInterpolator(psfcat_path, galcat_path,
-                                                      output_dir, file_number_string,
+                                                      output_dir, file_number_string, w_log,
                                                       pos_params, get_shapes, star_thresh)
         inst.process()
 
@@ -41,7 +41,7 @@ def psfexinterp_runner(input_file_list, output_dir, file_number_string,
         galcat_path = input_file_list[0]
 
         inst = interpolation_script.PSFExInterpolator(None, galcat_path,
-                                                      output_dir, file_number_string,
+                                                      output_dir, file_number_string, w_log,
                                                       pos_params, get_shapes, star_thresh)
 
         inst.process_me(dot_psf_dir, dot_psf_pattern, f_wcs_path)

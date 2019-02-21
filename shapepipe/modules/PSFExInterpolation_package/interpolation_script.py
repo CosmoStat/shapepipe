@@ -116,7 +116,7 @@ class PSFExInterpolator(object):
 
     """
 
-    def __init__(self, dotpsf_path, galcat_path, output_path, img_number,
+    def __init__(self, dotpsf_path, galcat_path, output_path, img_number, w_log,
                  pos_params=None, get_shapes=True, star_thresh=20):
 
         # Path to PSFEx output file
@@ -129,6 +129,9 @@ class PSFExInterpolator(object):
         self._make_shape = get_shapes
         # Number of stars under which we don't interpolate the PSF
         self._star_thresh = star_thresh
+
+        # Logging
+        self._w_log = w_log
 
         # handle provided, but empty pos_params (for use within
         # CosmoStat's ShapePipe)
@@ -162,7 +165,10 @@ class PSFExInterpolator(object):
         if self.interp_PSFs is None:
             self._interpolate()
 
-        if self.interp_PSFs != NOT_ENOUGHT_STARS:
+        if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGHT_STARS:
+            self._w_log.info('Not enought stars to interpolate the psf'
+                             ' in the file {}.'.format(self._dotpsf_path))
+        else:
             if self._make_shape:
                 self._get_psfshapes()
 
@@ -322,7 +328,10 @@ class PSFExInterpolator(object):
 
                 self.interp_PSFs = interpsfex(dot_psf_path, gal_pos, self._star_thresh)
 
-                if self.interp_PSFs == NOT_ENOUGHT_STARS:
+                if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGHT_STARS:
+                    self._w_log.info('Not enought stars find in the ccd'
+                                     ' {} of the exposure {}. Object inside'
+                                     ' this ccd will lose an epoch.'.format(j, exp_name))
                     continue
 
                 if array_psf is None:
