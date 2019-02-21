@@ -302,8 +302,8 @@ class PSFExInterpolator(object):
         all_id = np.copy(cat.get_data()['NUMBER'])
         n_epoch = np.copy(cat.get_data()['N_EPOCH'])
 
-        l = cat.get_ext_name()
-        hdu_ind = [i for i in range(len(l)) if 'EPOCH' in cat.get_ext_name(i)]
+        list_ext_name = cat.get_ext_name()
+        hdu_ind = [i for i in range(len(list_ext_name)) if 'EPOCH' in list_ext_name[i]]
 
         final_list = []
         for i in hdu_ind:
@@ -316,9 +316,9 @@ class PSFExInterpolator(object):
                 if j == -1:
                     continue
                 dot_psf_path = self._dot_psf_dir + '/' + self._dot_psf_pattern + '-' + exp_name + '-' + str(j) + '.psf'
-                ind_obj = np.where(cat.get_data(i)['CCD_N']==j)[0]
+                ind_obj = np.where(cat.get_data(i)['CCD_N'] == j)[0]
                 obj_id = all_id[ind_obj]
-                gal_pos = np.array(self._f_wcs_file[exp_name][j].all_pix2world(self.gal_pos[:,0][ind_obj], self.gal_pos[:,1][ind_obj], 0)).T
+                gal_pos = np.array(self._f_wcs_file[exp_name][j].all_pix2world(self.gal_pos[:, 0][ind_obj], self.gal_pos[:, 1][ind_obj], 0)).T
 
                 self.interp_PSFs = interpsfex(dot_psf_path, gal_pos, self._star_thresh)
 
@@ -365,7 +365,6 @@ class PSFExInterpolator(object):
 
         return [output_list_id, output_list_vign, output_list_shape]
 
-
     def _write_output_me(self, output_list):
         """ Save computed PSFs to fits file for multi-epoch run.
 
@@ -373,7 +372,7 @@ class PSFExInterpolator(object):
         ----------
         output_list : list
             List of outputs to save
-            
+
         """
 
         output_file = sc.FITSCatalog(self._output_path+self._img_number+'.fits',
