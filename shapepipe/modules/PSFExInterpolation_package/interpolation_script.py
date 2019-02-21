@@ -54,10 +54,10 @@ def interpsfex(dotpsfpath, pos, thresh):
             Each row is the PSF imagette at the corresponding asked position.
 
     """
-
     # read PSF model and extract basis and polynomial degree and scale position
     PSF_model = fits.open(dotpsfpath)[1]
 
+    # Check number of stars used to compute the PSF
     if PSF_model.header['ACCEPTED'] < thresh:
         return NOT_ENOUGHT_STARS
 
@@ -148,13 +148,6 @@ class PSFExInterpolator(object):
 
         self._img_number = img_number
 
-        # # if required, compute and save shapes
-        # if get_shapes:
-        #     self._get_psfshapes()
-        #     self._has_shapes = True
-        # else:
-        #     self._has_shapes = False
-
     def process(self):
         """ Process the PSF interpolation single-epoch run.
 
@@ -178,7 +171,6 @@ class PSFExInterpolator(object):
         """ Read position parameters from .psf file.
 
         """
-
         dotpsf = sc.FITSCatalog(self._dotpsf_path)
         dotpsf.open()
         self._pos_params = [dotpsf.get_header()['POLNAME1'],
@@ -215,15 +207,11 @@ class PSFExInterpolator(object):
         positions.)
 
         """
-        # if self.gal_pos is None:
-        #     self._get_galaxy_positions()
-
         # pex = psfex.PSFEx(self._dotpsf_path)
         # self.interp_PSFs = np.array([pex.get_rec(x,y) for x,y in
         # zip(self.gal_pos[:,0],
         #                              self.gal_pos[:,1])])
 
-        # self.interp_PSFs = interpsfex(self._dotpsf_path, self.gal_pos)
         self.interp_PSFs = interpsfex(self._dotpsf_path, self.gal_pos, self._star_thresh)
 
     def _get_psfshapes(self):
@@ -233,8 +221,6 @@ class PSFExInterpolator(object):
         if import_fail:
             raise ImportError('Galsim is required to get shapes information')
 
-        # if self.interp_PSFs is None:
-        #     self._interpolate()
         psf_moms = [hsm.FindAdaptiveMom(Image(psf), strict=False)
                     for psf in self.interp_PSFs]
 
@@ -242,26 +228,20 @@ class PSFExInterpolator(object):
                                      moms.observed_shape.g2,
                                      moms.moments_sigma,
                                      int(bool(moms.error_message))] for moms in psf_moms])
-        # self.hsm_flags = np.array([bool(mom.error_message)
-        #                            for mom in psf_moms]).astype(int)
 
-    # def write_output(self):
     def _write_output(self):
         """ Save computed PSFs to fits file.
 
         """
-        # if self.interp_PSFs is None:
-        #     self._interpolate()
         output = sc.FITSCatalog(self._output_path+self._img_number+'.fits',
                                 open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
                                 SEx_catalog=True)
-        # if self._has_shapes:
+
         if self._make_shape:
             data = {'VIGNET': self.interp_PSFs,
                     'E1_PSF_HSM': self.psf_shapes[:, 0],
                     'E2_PSF_HSM': self.psf_shapes[:, 1],
                     'SIGMA_PSF_HSM': self.psf_shapes[:, 2],
-                    # 'HSM_FLAG': self.hsm_flags}
                     'HSM_FLAG': self.psf_shapes[:, 3].astype(int)}
         else:
             data = {'VIGNET': self.interp_PSFs}
@@ -280,7 +260,6 @@ class PSFExInterpolator(object):
             Path to the log file containing the WCS for each CCDs.
 
         """
-
         self._dot_psf_dir = dot_psf_dir
         self._dot_psf_pattern = dot_psf_pattern
         self._f_wcs_file = np.load(f_wcs_path).item()
@@ -301,7 +280,6 @@ class PSFExInterpolator(object):
             List contianing object Ids, the interpolated PSFs and shapes (optionally)
 
         """
-
         cat = sc.FITSCatalog(self._galcat_path, SEx_catalog=True)
         cat.open()
 
@@ -383,7 +361,6 @@ class PSFExInterpolator(object):
             List of outputs to save
 
         """
-
         output_file = sc.FITSCatalog(self._output_path+self._img_number+'.fits',
                                      open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
                                      SEx_catalog=True)
