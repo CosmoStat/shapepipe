@@ -25,7 +25,7 @@ def psfexinterp_runner(input_file_list, output_dir, file_number_string,
     get_shapes = config.getboolean('PSFEXINTERP_RUNNER', 'GET_SHAPES')
     star_thresh = config.getint('PSFEXINTERP_RUNNER', 'STAR_THRESH')
 
-    if mode == 'C':
+    if mode == 'CLASSIC':
         psfcat_path, galcat_path = input_file_list
 
         inst = interpolation_script.PSFExInterpolator(psfcat_path, galcat_path,
@@ -33,7 +33,7 @@ def psfexinterp_runner(input_file_list, output_dir, file_number_string,
                                                       pos_params, get_shapes, star_thresh)
         inst.process()
 
-    elif mode == 'ME':
+    elif mode == 'MULTI-EPOCH':
         dot_psf_dir = config.getexpanded('PSFEXINTERP_RUNNER', 'ME_DOT_PSF_DIR')
         dot_psf_pattern = config.get('PSFEXINTERP_RUNNER', 'ME_DOT_PSF_PATTERN')
         f_wcs_path = config.getexpanded('PSFEXINTERP_RUNNER', 'ME_LOG_WCS')
