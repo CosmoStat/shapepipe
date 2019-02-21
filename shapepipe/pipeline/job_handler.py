@@ -8,19 +8,12 @@ This module defines a class for handling pipeline jobs.
 
 """
 
-from modopt.interface.errors import warn
-from joblib import Parallel, delayed, cpu_count
 from configparser import ConfigParser
+from gc import collect
+from joblib import Parallel, delayed, cpu_count
 from logging import Logger
+from modopt.interface.errors import warn
 from shapepipe.pipeline.worker_handler import WorkerHandler
-
-import psutil
-import gc
-
-
-def memory_usage_psutil():
-    gc.collect()
-    return psutil.Process().memory_info().rss / (2 ** 20)
 
 
 class JobHandler(object):
@@ -211,8 +204,9 @@ class JobHandler(object):
 
         if self._verbose:
             print('All processes complete')
-            print('Memory Usage:', memory_usage_psutil())
             print('')
+
+        collect()
 
     def submit_smp_jobs(self):
         """ Submit Jobs
