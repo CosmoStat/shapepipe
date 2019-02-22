@@ -35,8 +35,15 @@ def submit_mpi_jobs(jobs, filehd, config, timeout, module, verbose):
     result = []
 
     for job in jobs:
+
+        job_name = job[0]
+        process = job[1]
+        w_log_name = filehd.get_worker_log_name(module, job_name, process[0])
+        output_dir = filehd.output_dir
+        module_runner = filehd.module_runners[module]
+
         wh = WorkerHandler(verbose=verbose)
-        result.append(wh.worker(job[0], job[1], filehd, config, timeout,
-                      module))
+        result.append(wh.worker(job_name, process, w_log_name, output_dir,
+                      config, timeout, module_runner))
 
     return result
