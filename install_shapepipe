@@ -475,8 +475,8 @@ fi
 if [ "$SYSOS" == "macOS" ]
 then
   report_progress 'macOS Requirements'
-  conda install wget -y
-  conda install automake autoconf libtool -y
+  conda install -n shapepipe wget -y
+  conda install -n shapepipe automake autoconf libtool -y
   export C_INCLUDE_PATH=$CONDA_PREFIX/include
   export CFLAGS="-Wl,-rpath,$CONDA_PREFIX/lib"
 fi
@@ -491,7 +491,7 @@ then
   report_progress 'MPI'
   if [ -z "$MPI_ROOT" ]
   then
-    conda install mpi4py -y
+    conda install -n shapepipe mpi4py -y
   else
     download_package $mpi_url $mpi_tar
     build_mpi $mpi_dir
@@ -506,13 +506,13 @@ fi
 if [ "$INSTALL_SEX" == TRUE ] && check_binary $sex_bin
 then
   report_progress 'SExtractor'
-  conda install -c conda-forge fftw -y
+  conda install -n shapepipe -c conda-forge fftw -y
   download_package $sex_url $sex_tar
   if [ "$use_atlas" == TRUE ]
   then
     build_sex_atlas $sex_dir
   else
-    conda install -c conda-forge openblas -y
+    conda install -n shapepipe -c conda-forge openblas -y
     build_sex_blas $sex_dir
   fi
 fi
@@ -523,13 +523,13 @@ then
   report_progress 'PSFEx'
   conda install cmake -y
   conda install libpng -y
-  conda install -c conda-forge fftw -y
+  conda install -n shapepipe -c conda-forge fftw -y
   download_package $psfex_url $psfex_tar
   if [ "$use_atlas" == TRUE ]
   then
     build_psfex_atlas $psfex_dir
   else
-    conda install -c conda-forge openblas -y
+    conda install -n shapepipe -c conda-forge openblas -y
     build_psfex_blas $psfex_dir
   fi
 fi
