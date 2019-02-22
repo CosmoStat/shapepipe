@@ -31,7 +31,7 @@ else:
 from shapepipe.pipeline import file_io as sc
 
 
-NOT_ENOUGHT_STARS = 'Fail'
+NOT_ENOUGH_STARS = 'Fail'
 
 
 def interpsfex(dotpsfpath, pos, thresh):
@@ -59,7 +59,7 @@ def interpsfex(dotpsfpath, pos, thresh):
 
     # Check number of stars used to compute the PSF
     if PSF_model.header['ACCEPTED'] < thresh:
-        return NOT_ENOUGHT_STARS
+        return NOT_ENOUGH_STARS
 
     PSF_basis = np.array(PSF_model.data)[0][0]
     try:
@@ -126,7 +126,7 @@ class PSFExInterpolator(object):
         # Path to output file to be written
         self._output_path = output_path+'/galaxy_psf'
         # if required, compute and save shapes
-        self._make_shape = get_shapes
+        self._compute_shape = get_shapes
         # Number of stars under which we don't interpolate the PSF
         self._star_thresh = star_thresh
 
@@ -158,11 +158,11 @@ class PSFExInterpolator(object):
         if self.interp_PSFs is None:
             self._interpolate()
 
-        if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGHT_STARS:
-            self._w_log.info('Not enought stars to interpolate the psf'
+        if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGH_STARS:
+            self._w_log.info('Not ENOUGH stars to interpolate the psf'
                              ' in the file {}.'.format(self._dotpsf_path))
         else:
-            if self._make_shape:
+            if self._compute_shape:
                 self._get_psfshapes()
 
             self._write_output()
@@ -237,7 +237,7 @@ class PSFExInterpolator(object):
                                 open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
                                 SEx_catalog=True)
 
-        if self._make_shape:
+        if self._compute_shape:
             data = {'VIGNET': self.interp_PSFs,
                     'E1_PSF_HSM': self.psf_shapes[:, 0],
                     'E2_PSF_HSM': self.psf_shapes[:, 1],
@@ -306,8 +306,8 @@ class PSFExInterpolator(object):
 
                 self.interp_PSFs = interpsfex(dot_psf_path, gal_pos, self._star_thresh)
 
-                if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGHT_STARS:
-                    self._w_log.info('Not enought stars find in the ccd'
+                if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGH_STARS:
+                    self._w_log.info('Not ENOUGH stars find in the ccd'
                                      ' {} of the exposure {}. Object inside'
                                      ' this ccd will lose an epoch.'.format(j, exp_name))
                     continue
@@ -322,7 +322,7 @@ class PSFExInterpolator(object):
                 else:
                     array_id = np.concatenate((array_id, np.copy(obj_id)))
 
-                if self._make_shape:
+                if self._compute_shape:
                     self._get_psfshapes()
                     if array_shape is None:
                         array_shape = np.copy(self.psf_shapes)
@@ -346,7 +346,7 @@ class PSFExInterpolator(object):
                 if (len(where_res) != 0):
                     output_list_id[k].append(final_list[j][0][where_res])
                     output_list_vign[k].append(final_list[j][1][where_res])
-                    if self._make_shape:
+                    if self._compute_shape:
                         output_list_shape[k].append(final_list[j][2][where_res])
                     k += 1
 
@@ -369,7 +369,7 @@ class PSFExInterpolator(object):
             out_dict = {}
             out_dict['NUMBER'] = np.array(output_list[0][i]).squeeze()
             out_dict['VIGNET'] = np.array(output_list[1][i]).squeeze()
-            if self._make_shape:
+            if self._compute_shape:
                 out_dict['E1_PSF_HSM'] = np.array(output_list[2][i]).squeeze()[:, 0]
                 out_dict['E2_PSF_HSM'] = np.array(output_list[2][i]).squeeze()[:, 1]
                 out_dict['SIGMA_PSF_HSM'] = np.array(output_list[2][i]).squeeze()[:, 2]
