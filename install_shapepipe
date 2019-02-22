@@ -27,11 +27,6 @@ psfex_tar="3.21.1.tar.gz"
 psfex_dir="psfex-3.21.1"
 psfex_bin="psfex"
 
-# PLplot Package
-plplot_url="https://github.com/PLplot/PLplot/archive/plplot-5.13.0.tar.gz"
-plplot_tar="plplot-5.13.0.tar.gz"
-plplot_dir="PLplot-plplot-5.13.0"
-
 # WeightWatcher Package
 ww_url="https://www.astromatic.net/download/weightwatcher/weightwatcher-1.12.tar.gz"
 ww_tar="weightwatcher-1.12.tar.gz"
@@ -95,26 +90,14 @@ build_sex_atlas() {
   make install
 }
 
-# Function to build PLplot
-build_plplot() {
-  echo 'Building PLplot...'
-  download_package $plplot_url $plplot_tar
-  cd $BUILD_DIR/$plplot_dir
-  cmake -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DENABLE_fortran=OFF
-  make
-  make install
-}
-
 # Function to build PSFEx with OpenBLAS
 build_psfex_blas() {
   astromatic_setup
-  build_plplot
   cd $BUILD_DIR/$1
   ./autogen.sh
-  ./configure --prefix=$CONDA_PREFIX --enable-openblas --with-fftw-libdir=$FFTW_LIB \
-  --with-fftw-incdir=$FFTW_INC --with-openblas-libdir=$BLAS_LIB \
-  --with-openblas-incdir=$BLAS_INC --with-plplot-libdir=$PLPLOT_LIB \
-  --with-plplot-incdir=$PLPLOT_INC --quiet
+  ./configure --prefix=$CONDA_PREFIX --enable-openblas --enable-plplot=no \
+  --with-fftw-libdir=$FFTW_LIB --with-fftw-incdir=$FFTW_INC \
+  --with-openblas-libdir=$BLAS_LIB --with-openblas-incdir=$BLAS_INC --quiet
   make -j --quiet
   make install
 }
@@ -122,19 +105,16 @@ build_psfex_blas() {
 # Function to build PSFEx with ATLAS
 build_psfex_atlas() {
   astromatic_setup
-  build_plplot
   cd $BUILD_DIR/$1
   ./autogen.sh
   if [ "$ATLAS_SEARCH" == TRUE ]
   then
-    ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$FFTW_LIB \
-    --with-fftw-incdir=$FFTW_INC -with-plplot-libdir=$PLPLOT_LIB \
-    --with-plplot-incdir=$PLPLOT_INC --quiet
+    ./configure --prefix=$CONDA_PREFIX --enable-plplot=no \
+    --with-fftw-libdir=$FFTW_LIB --with-fftw-incdir=$FFTW_INC --quiet
   else
-    ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$FFTW_LIB \
-    --with-fftw-incdir=$FFTW_INC --with-atlas-libdir=$ATLAS_LIB \
-    --with-atlas-incdir=$ATLAS_INC -with-plplot-libdir=$PLPLOT_LIB \
-    --with-plplot-incdir=$PLPLOT_INC --quiet
+    ./configure --prefix=$CONDA_PREFIX --enable-plplot=no \
+    --with-fftw-libdir=$FFTW_LIB --with-fftw-incdir=$FFTW_INC \
+    --with-atlas-libdir=$ATLAS_LIB --with-atlas-incdir=$ATLAS_INC --quiet
   fi
   make -j --quiet
   make install
@@ -285,8 +265,6 @@ Executable Build Options:\n
 \t--atlas-lib\t path to ATLAS library directory\n
 \t--atlas-inc\t path to ATLAS include directory\n
 \t--atlas-search\t search system path for ATLAS directories\n
-\t--plplot-lib\t path to PLPlot library directory\n
-\t--plplot-inc\t path to PLPlot include directory\n\n
 
 MPI Build Options:\n
 \t--no_mpi\t do not use MPI\n
@@ -369,14 +347,6 @@ case $i in
     ATLAS_SEARCH=TRUE
     shift
     ;;
-    --plplot-lib=*)
-    PLPLOT_LIB="${i#*=}"
-    shift
-    ;;
-    --plplot-inc=*)
-    PLPLOT_INC="${i#*=}"
-    shift
-    ;;
     --no-mpi)
     USE_MPI=FALSE
     shift
@@ -453,8 +423,6 @@ if [ -z "$FFTW_LIB" ]; then FFTW_LIB=$CONDA_PREFIX/lib; fi
 if [ -z "$FFTW_INC" ]; then FFTW_INC=$CONDA_PREFIX/include; fi
 if [ -z "$BLAS_LIB" ]; then BLAS_LIB=$CONDA_PREFIX/lib; fi
 if [ -z "$BLAS_INC" ]; then BLAS_INC=$CONDA_PREFIX/include; fi
-if [ -z "$PLPLOT_LIB" ]; then PLPLOT_LIB=$CONDA_PREFIX/lib; fi
-if [ -z "$PLPLOT_INC" ]; then PLPLOT_INC=$CONDA_PREFIX/include/plplot; fi
 
 ##############################################################################
 # INSTALL DEVELOPER PACKAGES
