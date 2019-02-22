@@ -100,7 +100,7 @@ build_plplot() {
   echo 'Building PLplot...'
   download_package $plplot_url $plplot_tar
   cd $BUILD_DIR/$plplot_dir
-  cmake -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX
+  cmake -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DENABLE_fortran=OFF
   make
   make install
 }
@@ -521,6 +521,8 @@ fi
 if [ "$INSTALL_PSFEX" == TRUE ] && check_binary $psfex_bin
 then
   report_progress 'PSFEx'
+  conda install cmake -y
+  conda install libpng -y
   conda install -c conda-forge fftw -y
   download_package $psfex_url $psfex_tar
   if [ "$use_atlas" == TRUE ]
