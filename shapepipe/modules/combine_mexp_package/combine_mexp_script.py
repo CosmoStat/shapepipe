@@ -69,7 +69,7 @@ class combine_mexp():
         self._config = config
         self._w_log = w_log
 
-        self._vignet = True
+        self._vignet = False
         self._do_check_consistency = True
         self._method = 'PSF_size'
         self._params = None
@@ -204,7 +204,7 @@ class combine_mexp():
         out_path = '{}/{}{}-0.fits'.format(self._output_dir, outcat_pattern, self._image_number)
         print('Writing tile data to file \'{}\''.format(out_path))
         output = io.FITSCatalog(out_path, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
-        output.save_as_fits(data)
+        output.save_as_fits(data)e
 
     def select_galaxies(self, combined_data):
         """Perform galaxy selection.
@@ -242,9 +242,12 @@ class combine_mexp():
             if is_gal:
                 n_is_gal += 1
 
-                # Append information from first exposure only. Info from
-                # other exposures is identical, since it comes from the same
-                # tile-selected object.
+                # Append information from first exposure only.
+                # Galaxy info from all exposures is identical, since it came
+                # from the same tile-selected object.
+                # However, this is not the case for the PSF Info.
+                # MKDEBUG TODO: Include PSF info from all exposures, here
+                # or in a different module.
                 for c in combined_data:
                     dat_gal[c].append(combined_data[c][indices[0]])
                 dat_gal['nexp'].append(n)

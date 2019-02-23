@@ -2,7 +2,7 @@
 
 """VIGNET MAKER RUNNER
 
-This file contains methods to create stamp from images.
+This file contains methods to create postage stamps from images.
 
 :Author: Axel Guinot
 
@@ -123,7 +123,7 @@ def get_stamp(img_path, galcat_path, pos, rad):
 def get_original_vignet(galcat_path):
     """Get original vignet
 
-    Get the vignets fromù te SExtractor catalog
+    Get the vignets from the SExtractor catalog
 
     Parameters
     ----------
