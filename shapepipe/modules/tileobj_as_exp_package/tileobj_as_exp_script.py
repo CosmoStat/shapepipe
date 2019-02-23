@@ -4,7 +4,7 @@
 
 This script contains a class to handle processing for the tileobj_as_exp_script module:
 Writing object information (position and other parameters) selected on tiles to catalogue
-files in expoure-single-CCD format. These catalogues serve as input for 
+files in expoure-single-CCD format. These catalogues serve as input for
 PSF interpolation, and combining of exposures with the interpolated PSF for multi-epoch
 shape measurement.
 
