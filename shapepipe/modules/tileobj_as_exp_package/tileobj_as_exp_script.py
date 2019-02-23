@@ -3,7 +3,10 @@
 """TILEOBJ_AS_EXP_SCRIPT
 
 This script contains a class to handle processing for the tileobj_as_exp_script module:
-Writing objects selected on tiles to catalogue files in expoure-single-CCD format.
+Writing object information (position and other parameters) selected on tiles to catalogue
+files in expoure-single-CCD format. These catalogues serve as input for 
+PSF interpolation, and combining of exposures with the interpolated PSF for multi-epoch
+shape measurement.
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
@@ -144,7 +147,7 @@ class tileobj_as_exp():
 
             if ind_in_range.any():
 
-                # Create temporary table with image coordinates from expoure, world coordinates from tile
+                # Create table with image coordinates from expoure, world coordinates from tile
                 tileobj = Table([all_coord_tile_xy[0][ind_in_range],
                                  all_coord_tile_xy[1][ind_in_range],
                                  all_coord_tile_wcs.ra[ind_in_range],

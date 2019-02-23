@@ -4,7 +4,7 @@
 
 This script contains a class to handle processing for the combine_mexp_script
 module: Combine information on objects and PSF from multiple
-exposure-single-CCD catalogues.
+exposure-single-CCD tile-object catalogues.
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
@@ -242,18 +242,16 @@ class combine_mexp():
             if is_gal:
                 n_is_gal += 1
 
-                # MKDEBUG: For the time being, append information from
-                # first exposure only. Should be extended later.
+                # Append information from first exposure only. Info from
+                # other exposures is identical, since it comes from the same
+                # tile-selected object.
                 for c in combined_data:
                     dat_gal[c].append(combined_data[c][indices[0]])
                 dat_gal['nexp'].append(n)
 
-            # TODO: param_out, vignets, data other than 1st exposure
+            # TODO: param_out
 
         print(n_is_gal)
-
-        import pdb
-        pdb.set_trace()
 
         return dat_gal
 
@@ -306,7 +304,7 @@ class combine_mexp():
 
         if self._method == 'PSF_size':
 
-            # MKDEBUG: Why fwhm only from one exposure? Are all the same, or from the tile?
+            # fwhm from first exposure, identical to other exposures (from same tile object)
             fwhm = data['FWHM_IMAGE'][indices[0]]
             n_larger = 0
             for idx in indices:
