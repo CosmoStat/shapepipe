@@ -10,7 +10,7 @@ This module defines a class for handling pipeline files.
 
 import os
 import re
-from glob import glob
+from glob import iglob
 from shapepipe.pipeline.run_log import RunLog
 from shapepipe.modules.module_runners import get_module_runners
 
@@ -67,13 +67,13 @@ def find_files(path, pattern='*', ext='*', empty_error=False):
 
     search_string = '{}/**/*{}*{}'.format(path, pattern, ext)
 
-    file_list = sorted(glob(search_string, recursive=True))
+    file_list = iglob(search_string, recursive=True)
 
     if empty_error and not file_list:
         raise RuntimeError('No files found matching the conditions in {}'
                            '.'.format(path))
 
-    return [file for file in file_list if not os.path.isdir(file)]
+    return (file for file in file_list if not os.path.isdir(file))
 
 
 class FileHandler(object):
