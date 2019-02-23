@@ -98,24 +98,16 @@ class PSFExInterpolator(object):
         Desired position parameters. If provided, there should be exactly two,
         and they must also be present in the galaxy catalog. Otherwise,
         they are read directly from the .psf file.
-    get_shapes: bool
-        Return PSF shapes if True
 
-    Returns
-    -------
-    inst: class PSFExInterpolator
-        PSF interpolator object, None if no output is to be produced
     """
 
     def __init__(self, dotpsf_path, galcat_path, output_path, img_number,
-                 w_log, pos_params=None, get_shapes=True):
+                 pos_params=None, get_shapes=True):
 
         # Path to PSFEx output file
         self._dotpsf_path = dotpsf_path
-
         # Path to catalog containing galaxy positions
         self._galcat_path = galcat_path
-
         # Path to output file to be written
         self._output_path = output_path+'/galaxy_psf'
 
@@ -129,20 +121,16 @@ class PSFExInterpolator(object):
             self._pos_params = pos_params
         else:
             self._pos_params = None
-
         self.gal_pos = None
         self.interp_PSFs = None
 
         self._img_number = img_number
 
-        self._w_log = w_log
-
         # if required, compute and save shapes
         if get_shapes:
-            self._success = self._get_psfshapes()
+            self._get_psfshapes()
             self._has_shapes = True
         else:
-            self._success = 0
             self._has_shapes = False
 
     def _get_position_parameters(self):
@@ -181,8 +169,9 @@ class PSFExInterpolator(object):
 
     def _interpolate(self):
         """
-        Run Sheldon & Rykoff's PSFEx interpolator method at desired
-        positions.
+
+        (Run Sheldon & Rykoff's PSFEx interpolator method at desired
+        positions.)
 
         """
         if self.gal_pos is None:
@@ -198,26 +187,12 @@ class PSFExInterpolator(object):
     def _get_psfshapes(self):
         """ Compute shapes of PSF at galaxy positions using HSM.
 
-        Returns
-        -------
-        res: int
-            0 for success, 1 for failure
         """
-
         if import_fail:
             raise ImportError('Galsim is required to get shapes information')
 
         if self.interp_PSFs is None:
             self._interpolate()
-        else:
-            raise ValueError('PSF interpolation is None')
-
-        if len(self.interp_PSFs.shape) == 2:
-            # Only one vignet found instead of array
-            self._w_log.info('No interpolated PSF found, probably because '
-                             'there is no input object. Ignoring this cat.')
-            return 1
-
         psf_moms = [hsm.FindAdaptiveMom(Image(psf), strict=False)
                     for psf in self.interp_PSFs]
 
@@ -226,8 +201,6 @@ class PSFExInterpolator(object):
                                      moms.moments_sigma] for moms in psf_moms])
         self.hsm_flags = np.array([bool(mom.error_message)
                                    for mom in psf_moms]).astype(int)
-
-        return 0
 
     def write_output(self):
         """ Save computed PSFs to fits file.
