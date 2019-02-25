@@ -6,11 +6,11 @@
 
 # Receive email when job finishes or aborts
 #$ -M <name>@cea.fr
-#$ -m ea
+#$ -m bea
 # Set a name for the job
 #$ -N shapepipe_smp
 # Set a group for the job
-#$ -P P_euclid
+#$ -P P_euclid_sci
 # Join output and errors in one file
 #$ -j y
 # Request muliprocessing resources
