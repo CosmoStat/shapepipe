@@ -990,7 +990,7 @@ class FITSCatalog(BaseCatalog):
           open_mode = new_cat_inst.open_mode
           output_path = new_cat_inst.fullpath
       else:
-          open_mode =  self.open_mode
+          open_mode = self.open_mode
           output_path = self.fullpath
 
       if self._cat_data is None:

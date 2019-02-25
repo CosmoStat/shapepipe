@@ -20,7 +20,7 @@ def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
     """
     """
 
-    m = (obj_vign != -1e30) & (weight_vign>0.)
+    m = (obj_vign != -1e30) & (weight_vign > 0.)
     w = m.astype(float)
 
     t_v = model_vign.ravel()
@@ -53,6 +53,7 @@ def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
 
     return sm, sm_err
 
+
 def get_model(sigma, flux, img_shape, pixel_scale=0.186):
     """
     """
@@ -67,6 +68,7 @@ def get_model(sigma, flux, img_shape, pixel_scale=0.186):
     psf_vign = psf_obj.drawImage(nx=img_shape[0], ny=img_shape[1], scale=pixel_scale).array
 
     return gal_vign, psf_vign
+
 
 def save_results(sex_cat_path, output_path, sm, sm_err):
     """
@@ -117,7 +119,7 @@ def spread_model_runner(input_file_list, output_dir, file_number_string,
     ext_name = psf_cat.get_ext_name()
     hdu_ind = [i for i in range(len(ext_name)) if 'EPOCH' in ext_name[i]]
     dict_psf = []
-    for i,i_h in enumerate(hdu_ind):
+    for i, i_h in enumerate(hdu_ind):
         dict_psf.append({})
         dict_psf[i]['id'] = psf_cat.get_data(i_h)['NUMBER']
         dict_psf[i]['sigma'] = psf_cat.get_data(i_h)['SIGMA_PSF_HSM']
