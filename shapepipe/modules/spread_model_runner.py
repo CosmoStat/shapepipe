@@ -17,7 +17,28 @@ from shapepipe.pipeline import file_io as io
 
 
 def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
-    """
+    """ Get Spread model
+
+    This method compute the spread moel for an object.
+
+    Parameters
+    ----------
+    obj_vign : numpy.ndarray
+        Vignet of the object.
+    psf_vign : numpy.ndarray
+        Vignet of the gaussian model of the PSF.
+    model_vign : numpy.ndarray
+        Vignet of the galaxy model.
+    weight_vign : numpy.ndarray
+        Vignet of the weight at the object position.
+
+    Returns
+    -------
+    sm : float
+        Spread model value.
+    sm_err : float
+        Spread model error value.
+
     """
 
     m = (obj_vign != -1e30) & (weight_vign > 0.)
@@ -55,7 +76,30 @@ def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
 
 
 def get_model(sigma, flux, img_shape, pixel_scale=0.186):
-    """
+    """ Get model
+
+    This method compute :
+     - an exponential galaxy model with scale radius = 1/16 FWHM
+     - a gaussian model for the PSF
+
+    Parameters
+    ----------
+    sigma : float
+        Sigma of the PSF (in pixel units).
+    flux : float
+        Flux of the galaxy for the model.
+    img_shape : list
+        Size of the output vignet [xsize, ysize].
+    pixel_scale : float
+        Pixel scale to use for the model (in arcsec/pixel)
+
+    Returns
+    -------
+    gal_vign : numpy.ndarray
+        Vignet of the galaxy model.
+    psf_vign : numpy.ndarray
+        Vignet of the PSF model.
+
     """
 
     gal_obj = galsim.Exponential(scale_radius=1./16.*sigma*2.634*pixel_scale, flux=flux)
@@ -70,18 +114,50 @@ def get_model(sigma, flux, img_shape, pixel_scale=0.186):
     return gal_vign, psf_vign
 
 
-def save_results(sex_cat_path, output_path, sm, sm_err):
-    """
+def save_results(sex_cat_path, output_path, sm, sm_err, mag, number, mode='new'):
+    """ Save results
+
+    Save the spread model results.
+
+    Parameters
+    ----------
+    sex_cat_path : str
+        Path of the original SExtractor catalog.
+    output_path : str
+        Path of the output catalog.
+    sm : numpy.ndarray
+        Value of the spread model for all objects.
+    sm_err : numpy.ndarray
+        Value of the spread model error for all objects.
+    mag : numpy.ndarray
+        Magnitude of all objects (only for new catalog).
+    number : numpy.ndarray
+        Id of all objects (only for new catalog).
+    mode : str
+        Must be in ['new', 'add'].
+        'new' will create a new catalog with : [number, mag, sm, sm_err]
+        'add' will output a copy of the input SExtractor with the column sm and sm_err.
+
     """
 
-    ori_cat = io.FITSCatalog(sex_cat_path, SEx_catalog=True)
-    ori_cat.open()
-    new_cat = io.FITSCatalog(output_path, SEx_catalog=True, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
-    ori_cat.add_col('SPREAD_MODEL', sm, new_cat=True, new_cat_inst=new_cat)
-    ori_cat.close()
-    new_cat.open()
-    new_cat.add_col('SPREADERR_MODEL', sm_err)
-    new_cat.close()
+    if mode == 'new':
+        new_cat = io.FITSCatalog(output_path, SEx_catalog=True, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+        dict_data = {'NUMBER': number,
+                     'MAG': mag,
+                     'SPREAD_MODEL': sm,
+                     'SPREADERR_MODEL': sm_err}
+        new_cat.save_as_fits(data=dict_data, sex_cat_path=sex_cat_path)
+    elif mode == 'add':
+        ori_cat = io.FITSCatalog(sex_cat_path, SEx_catalog=True)
+        ori_cat.open()
+        new_cat = io.FITSCatalog(output_path, SEx_catalog=True, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+        ori_cat.add_col('SPREAD_MODEL', sm, new_cat=True, new_cat_inst=new_cat)
+        ori_cat.close()
+        new_cat.open()
+        new_cat.add_col('SPREADERR_MODEL', sm_err)
+        new_cat.close()
+    else:
+        ValueError('Mode must be in [new, add].')
 
 
 @module_runner(input_module=['sextractor_runner', 'psfexinterp_runner', 'vignetmaker_runner'], version='1.0',
@@ -103,6 +179,7 @@ def spread_model_runner(input_file_list, output_dir, file_number_string,
         suffix = ''
 
     pixel_scale = config.getfloat('SPREAD_MODEL_RUNNER', 'PIXEL_SCALE')
+    output_mode = config.get('SPREAD_MODEL_RUNNER', 'OUTPUT_MODE')
 
     file_name = suffix + 'sexcat_sm' + file_number_string + '.fits'
     output_path = output_dir + '/' + file_name
@@ -112,6 +189,9 @@ def spread_model_runner(input_file_list, output_dir, file_number_string,
     sex_cat.open()
     obj_id = np.copy(sex_cat.get_data()['NUMBER'])
     obj_vign = np.copy(sex_cat.get_data()['VIGNET'])
+    obj_mag = None
+    if output_mode == 'new':
+        obj_mag = np.copy(sex_cat.get_data()['MAG_AUTO'])
     sex_cat.close()
 
     psf_cat = io.FITSCatalog(psf_cat_path, SEx_catalog=True)
@@ -171,6 +251,10 @@ def spread_model_runner(input_file_list, output_dir, file_number_string,
     spread_model_final = np.array(spread_model_final)
     spread_model_err_final = np.array(spread_model_err_final)
 
-    save_results(sex_cat_path, output_path, spread_model_final, spread_model_err_final, )
+    save_results(sex_cat_path, output_path, spread_model_final,
+                 spread_model_err_final,
+                 obj_mag,
+                 obj_id,
+                 output_mode)
 
     return None, None
