@@ -16,7 +16,6 @@ import shapepipe.pipeline.file_io as io
 from shapepipe.modules.module_decorator import module_runner
 
 
-
 class vignetmaker(object):
     """
     """
@@ -78,7 +77,7 @@ class vignetmaker(object):
 
         return pos
 
-    def convert_pos(self, image_path, wcs = None):
+    def convert_pos(self, image_path):
         """Convert position
 
         Convert positions from world coordinates to pixel coordinates.
@@ -97,15 +96,15 @@ class vignetmaker(object):
 
         """
 
-        if wcs is None :
-            f = io.FITSCatalog(image_path)
-            f.open()
-            h = f.get_header(0)
-            f.close()
 
-            w = WCS(h)
-        else:
-            w = wcs
+        f = io.FITSCatalog(image_path)
+        f.open()
+        h = f.get_header(0)
+        f.close()
+
+        w = WCS(h)
+
+        w = wcs
 
         pos_tmp = np.copy(self._pos)
         pos_tmp[:, [0, 1]] = pos_tmp[:, [1, 0]]
@@ -207,7 +206,6 @@ class vignetmaker(object):
 
         return [output_list_id, output_list_vign]
 
-
     def process_me(self, image_dir, image_pattern, f_wcs_path, rad):
         """
         """
@@ -224,7 +222,6 @@ class vignetmaker(object):
 
             self._save_vignet_me(output, image_pattern[i])
 
-
     def _save_vignet_me(self, output, suffix):
         """
         """
@@ -233,8 +230,8 @@ class vignetmaker(object):
                            open_mode=io.BaseCatalog.OpenMode.ReadWrite)
 
         for i in range(len(output[0])):
-            out_dict = {'NUMBER' : np.array(output[0][i]).squeeze(),
-                        'VIGNET' : np.array(output[1][i]).squeeze()}
+            out_dict = {'NUMBER': np.array(output[0][i]).squeeze(),
+                        'VIGNET': np.array(output[1][i]).squeeze()}
             f.save_as_fits(data=out_dict, ext_name='N_EPOCH_{}'.format(i),
                            sex_cat_path=self._galcat_path)
 
