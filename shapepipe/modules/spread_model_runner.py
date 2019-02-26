@@ -10,7 +10,6 @@ This module compute the spread model.
 
 import numpy as np
 import galsim
-from astropy import stats
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.pipeline import file_io as io
