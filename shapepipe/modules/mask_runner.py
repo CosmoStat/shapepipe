@@ -28,7 +28,7 @@ def mask_runner(input_file_list, output_dir, file_number_string,
                          "'image', 'weight' and 'ext_flags' (optional)"
                          "".format(len(input_file_list)))
 
-    config_file = config.get('MASK_RUNNER', 'MASK_CONFIG_PATH')
+    config_file = config.getexpanded('MASK_RUNNER', 'MASK_CONFIG_PATH')
 
     if config.has_option('MASK_RUNNER', 'SUFFIX'):
         suffix = config.get('MASK_RUNNER', 'SUFFIX')

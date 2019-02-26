@@ -18,7 +18,7 @@ from shapepipe.modules.SETools_package import SETools_script as setools
 def setools_runner(input_file_list, output_dir, file_number_string,
                    config, w_log):
 
-    config_file = config.get('SETOOLS_RUNNER', 'SETOOLS_CONFIG_PATH')
+    config_file = config.getexpanded('SETOOLS_RUNNER', 'SETOOLS_CONFIG_PATH')
 
     inst = setools.SETools(input_file_list[0], output_dir, file_number_string, config_file)
     inst.process()
