@@ -302,7 +302,7 @@ class PSFExInterpolator(object):
                 dot_psf_path = self._dot_psf_dir + '/' + self._dot_psf_pattern + '-' + exp_name + '-' + str(j) + '.psf'
                 ind_obj = np.where(cat.get_data(i)['CCD_N'] == j)[0]
                 obj_id = all_id[ind_obj]
-                gal_pos = np.array(self._f_wcs_file[exp_name][j].all_pix2world(self.gal_pos[:, 0][ind_obj], self.gal_pos[:, 1][ind_obj], 0)).T
+                gal_pos = np.array(self._f_wcs_file[exp_name][j].all_world2pix(self.gal_pos[:, 0][ind_obj], self.gal_pos[:, 1][ind_obj], 0)).T
 
                 self.interp_PSFs = interpsfex(dot_psf_path, gal_pos, self._star_thresh)
 
