@@ -64,7 +64,7 @@ class vignetmaker(object):
 
         """
 
-        for n, img in enumerate(image_path_list):
+        for _suffix, img in zip(suffix, image_path_list):
             image_path = img
 
             if self._pos_type == 'PIX':
@@ -77,7 +77,7 @@ class vignetmaker(object):
 
             vign = self._get_stamp(image_path, pos-1, rad)
 
-            save_vignet(vign, self._galcat_path, self._output_dir, suffix[n], self._image_num)
+            save_vignet(vign, self._galcat_path, self._output_dir, _suffix, self._image_num)
 
     def get_pos(self, pos_params):
         """Get positions
@@ -130,8 +130,6 @@ class vignetmaker(object):
         f.close()
 
         w = WCS(h)
-
-        w = wcs
 
         pos_tmp = np.copy(self._pos)
         pos_tmp[:, [0, 1]] = pos_tmp[:, [1, 0]]
@@ -218,7 +216,7 @@ class vignetmaker(object):
                 pos = np.array(self._f_wcs_file[exp_name][ccd].all_world2pix(self._pos[:, 1][ind_obj], self._pos[:, 0][ind_obj], 1)).T
                 pos[:, [0, 1]] = pos[:, [1, 0]]
 
-                tmp_vign = self._get_stamp(img_path, pos, self._rad)
+                tmp_vign = self._get_stamp(img_path, pos-1, self._rad)
 
                 if array_vign is None:
                     array_vign = np.copy(tmp_vign)
