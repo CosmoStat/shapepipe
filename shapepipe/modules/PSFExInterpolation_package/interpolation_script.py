@@ -159,7 +159,7 @@ class PSFExInterpolator(object):
             self._interpolate()
 
         if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGH_STARS:
-            self._w_log.info('Not ENOUGH stars to interpolate the psf'
+            self._w_log.info('Not enough stars to interpolate the psf'
                              ' in the file {}.'.format(self._dotpsf_path))
         else:
             if self._compute_shape:
@@ -307,7 +307,7 @@ class PSFExInterpolator(object):
                 self.interp_PSFs = interpsfex(dot_psf_path, gal_pos, self._star_thresh)
 
                 if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGH_STARS:
-                    self._w_log.info('Not ENOUGH stars find in the ccd'
+                    self._w_log.info('Not enough stars find in the ccd'
                                      ' {} of the exposure {}. Object inside'
                                      ' this ccd will lose an epoch.'.format(j, exp_name))
                     continue
