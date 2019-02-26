@@ -290,26 +290,26 @@ class PSFExInterpolator(object):
         hdu_ind = [i for i in range(len(list_ext_name)) if 'EPOCH' in list_ext_name[i]]
 
         final_list = []
-        for i in hdu_ind:
-            exp_name = cat.get_data(i)['EXP_NAME'][0]
-            ccd_list = list(set(cat.get_data(i)['CCD_N']))
+        for hdu_index in hdu_ind:
+            exp_name = cat.get_data(hdu_index)['EXP_NAME'][0]
+            ccd_list = list(set(cat.get_data(hdu_index)['CCD_N']))
             array_psf = None
             array_id = None
             array_shape = None
-            for j in ccd_list:
-                if j == -1:
+            for ccd in ccd_list:
+                if ccd == -1:
                     continue
-                dot_psf_path = self._dot_psf_dir + '/' + self._dot_psf_pattern + '-' + exp_name + '-' + str(j) + '.psf'
-                ind_obj = np.where(cat.get_data(i)['CCD_N'] == j)[0]
+                dot_psf_path = self._dot_psf_dir + '/' + self._dot_psf_pattern + '-' + exp_name + '-' + str(ccd) + '.psf'
+                ind_obj = np.where(cat.get_data(hdu_index)['CCD_N'] == ccd)[0]
                 obj_id = all_id[ind_obj]
-                gal_pos = np.array(self._f_wcs_file[exp_name][j].all_world2pix(self.gal_pos[:, 0][ind_obj], self.gal_pos[:, 1][ind_obj], 0)).T
+                gal_pos = np.array(self._f_wcs_file[exp_name][ccd].all_world2pix(self.gal_pos[:, 0][ind_obj], self.gal_pos[:, 1][ind_obj], 0)).T
 
                 self.interp_PSFs = interpsfex(dot_psf_path, gal_pos, self._star_thresh)
 
                 if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGH_STARS:
                     self._w_log.info('Not enough stars find in the ccd'
                                      ' {} of the exposure {}. Object inside'
-                                     ' this ccd will lose an epoch.'.format(j, exp_name))
+                                     ' this ccd will lose an epoch.'.format(ccd, exp_name))
                     continue
 
                 if array_psf is None:
@@ -339,16 +339,16 @@ class PSFExInterpolator(object):
         output_list_vign = [[] for i in range(max(n_epoch))]
         output_list_shape = [[] for i in range(max(n_epoch))]
         for i in range(len(all_id)):
-            k = 0
+            counter = 0
             for j in range(len(final_list)):
                 where_res = np.where(final_list[j][0] == all_id[i])[0]
 
                 if (len(where_res) != 0):
-                    output_list_id[k].append(final_list[j][0][where_res])
-                    output_list_vign[k].append(final_list[j][1][where_res])
+                    output_list_id[counter].append(final_list[j][0][where_res])
+                    output_list_vign[counter].append(final_list[j][1][where_res])
                     if self._compute_shape:
-                        output_list_shape[k].append(final_list[j][2][where_res])
-                    k += 1
+                        output_list_shape[counter].append(final_list[j][2][where_res])
+                    counter += 1
 
         return [output_list_id, output_list_vign, output_list_shape]
 
