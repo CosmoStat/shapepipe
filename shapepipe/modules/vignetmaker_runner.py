@@ -17,7 +17,25 @@ from shapepipe.modules.module_decorator import module_runner
 
 
 class vignetmaker(object):
-    """
+    """ Vignetmaker
+
+    This class handle the creation of vignets.
+
+    Parameters
+    ----------
+    galcat_path : str
+        Path to catalog containing the positions.
+    pos_type : str
+        Must be in ['PIX', 'SPHE']
+        PIX : position in pixel coordinates.
+        SPHE : position in world coordinates.
+    pos_params : list
+        Parameters to use as positions ['xpos', 'ypos'].
+    output_dir : str
+        Path to the output directory.
+    image_num : str
+        Image numbering.
+
     """
 
     def __init__(self, galcat_path, pos_type, pos_params,
@@ -31,7 +49,19 @@ class vignetmaker(object):
         self._pos_type = pos_type
 
     def process(self, image_path_list, rad, suffix):
-        """
+        """ Process
+
+        Main function to create the stamps
+
+        Parameters
+        ----------
+        image_path_list : list
+            List of path for the input images.
+        rad : int
+            Radius to use for the stamps.
+        suffix : str
+            Suffix of the output file.
+
         """
 
         for n, img in enumerate(image_path_list):
@@ -84,8 +114,6 @@ class vignetmaker(object):
 
         Parameters
         ----------
-        pos : numpy.ndarray
-            Positions in world coordinates.
         image_path : str
             Path to the image from where the stamp are created.
 
@@ -95,7 +123,6 @@ class vignetmaker(object):
             New positions in pixel coordinates.
 
         """
-
 
         f = io.FITSCatalog(image_path)
         f.open()
@@ -124,11 +151,10 @@ class vignetmaker(object):
         ----------
         img_path : str
             Path to the image
-        pos_params : list
-            List of string containing the SExtractor's parameters to use as
-            positions
+        pos : numpy.ndarray
+            Array of positions for the vignet's centers.
         rad : int
-            Radius of the stamp, must be odd
+            Radius of the stamp, must be odd.
 
         Returns
         -------
@@ -149,8 +175,23 @@ class vignetmaker(object):
 
         return vign
 
-    def _get_stemp_me(self, image_dir, image_pattern):
-        """
+    def _get_stamp_me(self, image_dir, image_pattern):
+        """ Get stamp ME
+
+        Get stamps for multi-epoch data.
+
+        Parameters
+        ----------
+        image_dir : str
+            Path to the directory where the image are.
+        image_pattern : str
+            Common part of the files.
+
+        Returns
+        -------
+        output_list : list
+            List containing object id and vignets for each epoch.
+
         """
 
         cat = io.FITSCatalog(self._galcat_path, SEx_catalog=True)
@@ -207,7 +248,23 @@ class vignetmaker(object):
         return [output_list_id, output_list_vign]
 
     def process_me(self, image_dir, image_pattern, f_wcs_path, rad):
-        """
+        """ Process ME
+
+        Main function to create the stamps in the multi-epoch case.
+
+        Parameters
+        ----------
+        image_dir : list
+            List of directories where the image are.
+            If len(image_dir) == 1 -> all images in the same directory.
+            Else len(image_dir) must match len(image_pattern).
+        image_pattern : list
+            Common part of each kind of files.
+        f_wcs_path : str
+            Path to the log file containing the WCS for each CCDs.
+        rad : int
+            Radius of the stamp, must be odd.
+
         """
 
         self._f_wcs_file = np.load(f_wcs_path).item()
@@ -216,22 +273,32 @@ class vignetmaker(object):
         for i in range(len(image_pattern)):
 
             if len(image_dir) != len(image_pattern):
-                output = self._get_stemp_me(image_dir[0], image_pattern[i])
+                output_list = self._get_stamp_me(image_dir[0], image_pattern[i])
             else:
-                output = self._get_stemp_me(image_dir[0], image_pattern[i])
+                output_list = self._get_stamp_me(image_dir[0], image_pattern[i])
 
-            self._save_vignet_me(output, image_pattern[i])
+            self._save_vignet_me(output_list, image_pattern[i])
 
-    def _save_vignet_me(self, output, suffix):
-        """
+    def _save_vignet_me(self, output_list, suffix):
+        """ Save vignet ME
+
+        Save vignets for the multi-epoch case.
+
+        Parameters
+        ----------
+        output_list : list
+            List containing object id and vignets for each epoch.
+        suffix : str
+            Suffix to use for the output file name.
+
         """
         output_name = self._output_dir + '/' + suffix + '_vignet{}.fits'.format(self._image_num)
         f = io.FITSCatalog(output_name, SEx_catalog=True,
                            open_mode=io.BaseCatalog.OpenMode.ReadWrite)
 
         for i in range(len(output[0])):
-            out_dict = {'NUMBER': np.array(output[0][i]).squeeze(),
-                        'VIGNET': np.array(output[1][i]).squeeze()}
+            out_dict = {'NUMBER': np.array(output_list[0][i]).squeeze(),
+                        'VIGNET': np.array(output_list[1][i]).squeeze()}
             f.save_as_fits(data=out_dict, ext_name='N_EPOCH_{}'.format(i),
                            sex_cat_path=self._galcat_path)
 
@@ -300,6 +367,10 @@ def save_vignet(vign, sexcat_path, output_dir, suffix, image_num):
         Path to the original SExtractor catalog
     output_dir : str
         Path to the output directory
+    suffix : str
+        Suffix to use for the output file name.
+    image_num : str
+        Image numbering.
 
     """
 
@@ -351,23 +422,5 @@ def vignetmaker_runner(input_file_list, output_dir, file_number_string,
             inst = vignetmaker(galcat_path, pos_type, pos_params,
                                output_dir, file_number_string)
             inst.process_me(image_dir, image_pattern, f_wcs_path, rad)
-
-        #
-        # pos = get_pos(galcat_path, pos_params, pos_type)
-        #
-        # for n, img in enumerate(input_file_list[1:]):
-        #     image_path = img
-        #
-        #     if pos_type == 'PIX':
-        #         pass
-        #     elif pos_type == 'SPHE':
-        #         pos = convert_pos(pos, image_path)
-        #     else:
-        #         raise ValueError('Coordinates type must be in : PIX (pixel), '
-        #                          'SPHE (spherical).')
-        #
-        #     vign = get_stamp(image_path, galcat_path, pos-1, rad)
-        #
-        #     save_vignet(vign, galcat_path, output_dir, suffix[n])
 
     return None, None
