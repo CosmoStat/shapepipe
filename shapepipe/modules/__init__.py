@@ -21,4 +21,5 @@ __module_list__ = ['combine_mexp_runner',
                    'setools_runner',
                    'sextractor_runner',
                    'tileobj_as_exp_runner',
-                   'vignetmaker_runner']
+                   'vignetmaker_runner',
+                   'spread_model_runner']
