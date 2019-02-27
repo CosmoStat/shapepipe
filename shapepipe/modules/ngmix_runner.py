@@ -64,8 +64,8 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, prior):
 
     n_epoch = len(gals)
 
-    psf_jacob=ngmix.UnitJacobian(row=psfs[0].shape[0]/2., col=psfs[0].shape[1]/2.)
-    gal_jacob=ngmix.UnitJacobian(row=gals[0].shape[0]/2., col=gals[0].shape[1]/2.)
+    psf_jacob = ngmix.UnitJacobian(row=psfs[0].shape[0]/2., col=psfs[0].shape[1]/2.)
+    gal_jacob = ngmix.UnitJacobian(row=gals[0].shape[0]/2., col=gals[0].shape[1]/2.)
 
     # Make observation
     gal_obs_list = ObsList()
@@ -85,11 +85,11 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, prior):
         T_guess_psf.append(psf_T)
 
     boot = ngmix.bootstrap.MaxMetacalBootstrapper(gal_obs_list)
-    psf_model='em3'
-    gal_model='gauss'
+    psf_model = 'em3'
+    gal_model = 'gauss'
 
     # metacal specific parameters
-    metacal_pars={'types': ['noshear','1p','1m','2p','2m'],
+    metacal_pars={'types': ['noshear', '1p', '1m', '2p', '2m'],
                   'psf': 'gauss',
                   'fixnoise': True,
                   'cheatnoise': False,
@@ -97,20 +97,18 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, prior):
 
     # maximum likelihood fitter parameters
     # parameters for the Levenberg-Marquardt fitter in scipy
-    lm_pars = {'maxfev':2000,
-               'xtol':5.0e-5,
-               'ftol':5.0e-5}
+    lm_pars = {'maxfev': 2000,
+               'xtol': 5.0e-5,
+               'ftol': 5.0e-5}
     max_pars = {
         # use scipy.leastsq for the fitting
         'method': 'lm',
 
         # parameters for leastsq
-        'lm_pars': lm_pars,
-                }
+        'lm_pars': lm_pars,}
 
     psf_pars = {'maxiter': 5000,
                 'tol': 5.0e-6}
-    #psf_pars = {'maxfev':2000, 'xtol':5.0e-5, 'ftol':5.0e-5}
 
     Tguess = np.mean(T_guess_psf)#*pixel_scale**2  # size guess in arcsec
     ntry = 2       # retry the fit twice
@@ -138,6 +136,7 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, prior):
 
     return metacal_res
 
+
 def compile_results(results):
     """
     """
@@ -161,6 +160,7 @@ def compile_results(results):
 
     return output_dict
 
+
 def save_results(output_dict, output_name):
     """
     """
@@ -169,6 +169,7 @@ def save_results(output_dict, output_name):
 
     for key in output_dict.keys():
         f.save_as_fits(output_dict[key], ext_name=key.upper())
+
 
 def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             psf_vignet_path, weight_vignet_path, flag_vignet_path):
@@ -210,7 +211,7 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
         counter = 0
         for hdu_index in hdu_ind:
             id_epoch = gal_vign_cat.get_data(hdu_index)['NUMBER']
-            i_exp = np.where(i_tile==id_epoch)[0]
+            i_exp = np.where(i_tile == id_epoch)[0]
             if len(i_exp) == 0:
                 if counter == 0:
                     skip_obj = True
@@ -230,7 +231,7 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             weight_vign.append(weight_vign_tmp)
             flag_vign_add_mask = np.copy(flag_vignet_tmp)
             flag_vign_add_mask[np.where(tile_vign_tmp == -1e30)] = 2**10
-            if len(np.where(flag_vign_add_mask.ravel()!=0)[0]) == (51*51):
+            if len(np.where(flag_vign_add_mask.ravel() != 0)[0]) == (51*51):
                 if counter == 0:
                     skip_obj = True
                     break
@@ -266,7 +267,7 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
 
 @module_runner(input_module=['sextractor_runner', 'psfexinterp_runner', 'vignetmaker_runner'],
                version='1.0',
-               file_pattern=['tile_sexcat', 'image', 'background', 'galaxy_psf',  'weight', 'flag'],
+               file_pattern=['tile_sexcat', 'image', 'background', 'galaxy_psf', 'weight', 'flag'],
                file_ext=['.fits', '.fits', '.fits', '.fits', '.fits', '.fits'],
                depends=['numpy', 'ngmix'])
 def ngmix_runner(input_file_list, output_dir, file_number_string,
@@ -277,6 +278,5 @@ def ngmix_runner(input_file_list, output_dir, file_number_string,
     metacal_res = process(*input_file_list)
     res_dict = compile_results(metacal_res)
     save_results(res_dict, output_name)
-
 
     return None, None
