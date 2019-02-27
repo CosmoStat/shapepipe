@@ -20,8 +20,8 @@ from shapepipe.modules.module_decorator import module_runner
 def psfex_runner(input_file_list, output_dir, file_number_string,
                  config, w_log):
 
-    exec_path = config.get("PSFEX_RUNNER", "EXEC_PATH")
-    dot_sex = config.get("PSFEX_RUNNER", "DOT_PSFEX_FILE")
+    exec_path = config.getexpanded("PSFEX_RUNNER", "EXEC_PATH")
+    dot_sex = config.getexpanded("PSFEX_RUNNER", "DOT_PSFEX_FILE")
     outcat_name = '{0}/psfex_cat{1}.cat'.format(output_dir, file_number_string)
 
     command_line = ('{0} {1} -c {2} -PSF_DIR {3} -OUTCAT_NAME {4}'
