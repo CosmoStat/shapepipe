@@ -58,7 +58,7 @@ class find_exposures():
 
     def __init__(self, img_tile_path, output_dir, image_number, config, w_log):
 
-        self._cat_tile_path = cat_tile_path
+        self._img_tile_path = img_tile_path
         self._output_dir = output_dir
         self._image_number = image_number
         self._config = config
@@ -66,20 +66,27 @@ class find_exposures():
 
     def process(self):
 
+        types = ['image', 'weight', 'flag']
+
         exp_list_uniq = self.get_exposure_list()
 
         input_dir_exp = self._config.getlist('FIND_EXPOSURES_RUNNER',
                                              'INPUT_DIR_EXP')
         num = []
 
+        exp_missing = 0
         # Loop over exposure file types (image, weight, flag)
         for i in range(len(input_dir_exp)):
-            num_idx = self.create_exposures(exp_list_uniq, i)
+            num_idx, this_exp_missing = self.create_exposures(exp_list_uniq, i)
             num.append(num_idx)
+            exp_missing = exp_missing + this_exp_missing
 
         for i in range(len(input_dir_exp)):
-            self._w_log.info('Created {} exposure files of type {}'
-                             ''.format(num[i], i))
+            self._w_log.info('Created {} exposure files of type {} ({})'
+                             ''.format(num[i], i, types[i]))
+
+        if exp_missing > 0:
+            raise FindExposureError('{} exposure files were not found'.format(exp_missing))
 
     def get_exposure_list(self):
         """Return list of exposure file used for the tile in process, from tiles FITS header
@@ -94,12 +101,12 @@ class find_exposures():
         """
 
         try:
-            hdu = fits.open(self._cat_tile_path)
+            hdu = fits.open(self._img_tile_path)
             hist = hdu[0].header['HISTORY']
 
         except Exception:
-            self._w_log.info('Error while reading tile catalogue FITS file '
-                             '{}, continuing...'.format(self._cat_tile_path))
+            self._w_log.info('Error while reading tile image FITS file '
+                             '{}, continuing...'.format(self._img_tile_path))
 
         tile_num = self._image_number
 
@@ -150,15 +157,25 @@ class find_exposures():
         Returns
         -------
         dnum: int
-            number of files written
+            number of files written, -1 if input exposure file is missing
         """
 
         img_file = io.FITSCatalog(exp_path, hdu_no=1)
-        img_file.open()
+
+        try:
+            img_file.open()
+        except io.BaseCatalog.CatalogFileNotFound:
+            self._w_log.info('Exposure file \'{}\' not found'.format(exp_path))
+            return -1
+        except:
+            raise FindExposureError('Unknown error while opening file \'{}\''.format(exp_path))
 
         ext_out = self._config.get('FIND_EXPOSURES_RUNNER', 'OUTPUT_FILE_EXT')
 
         n_hdu = int(self._config.get('FIND_EXPOSURES_RUNNER', 'N_HDU'))
+
+        if len(img_file._cat_data) < n_hdu+1:
+            raise FindExposureError('Image {} has only {} primary HDUs, not {} as given in config file'.format(exp_path, len(img_file._cat_data)-1, n_hdu))
 
         dnum = 0
 
@@ -206,6 +223,8 @@ class find_exposures():
         -------
         num: int
             number of files written
+        exp_missing: int
+            Number of missing exposures
         """
 
         input_dir_exp = self._config.getlist('FIND_EXPOSURES_RUNNER',
@@ -216,6 +235,7 @@ class find_exposures():
 
         num = 0
 
+        exp_missing = 0
         # Loop over exposure files used to create current tile
         for i, exp_name in enumerate(exp_list):
 
@@ -245,6 +265,9 @@ class find_exposures():
             dnum = self.create_hdus(num, exp_path, exp_base_new,
                                     transf_coord=transf_coord,
                                     transf_int=transf_int)
-            num = num + dnum
+            if dnum == -1:
+                exp_missing = exp_missing + 1
+            else:
+                num = num + dnum
 
-        return num
+        return num, exp_missing
