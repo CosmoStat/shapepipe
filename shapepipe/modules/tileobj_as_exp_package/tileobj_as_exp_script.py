@@ -139,7 +139,8 @@ class tileobj_as_exp():
         for exp_CCD in exp_CCD_list:
 
             # Tile object coordinates in x, y using exposure-CCD WCS
-            all_coord_tile_xy = wcs_list[exp_CCD].all_world2pix(all_coord_tile_wcs.ra, all_coord_tile_wcs.dec, 0)
+            # MKDEBUG new: 1 as origin
+            all_coord_tile_xy = wcs_list[exp_CCD].all_world2pix(all_coord_tile_wcs.ra, all_coord_tile_wcs.dec, 1)
 
             # Find objects that are within this CCD
             ind_in_range = ((all_coord_tile_xy[0] >= 0) & (all_coord_tile_xy[0] < nx_list[exp_CCD]) &

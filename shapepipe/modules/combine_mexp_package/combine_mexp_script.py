@@ -21,10 +21,9 @@ import re
 import numpy as np
 
 from astropy.io import fits
-from astropy.coordinates import SkyCoord
 from astropy import wcs
-from astropy import units as u
-from astropy.table import Table
+
+from sf_tools.image.stamp import FetchStamps
 
 import shapepipe.pipeline.file_io as io
 
@@ -81,14 +80,12 @@ class combine_mexp():
         # List of exposures contributing to this tile
         exp_list_uniq = self.get_exposure_list()
 
-        # List of exposure-single-CCD catalogue and PSF file names that were
-        # created by the tileobj_as_exp modules
-        exp_CCD_cat_list, psf_list = self.get_exp_CCD_cat_and_PSF_list(
-            len(exp_list_uniq))
+        # List of exposure-single-CCD file numbers, default format is
+        # 000-0-00 (tile-exposure-hdu)
+        sexp_number_list = self.get_sexp_number_list(len(exp_list_uniq))
 
         # Combine the above gathered data
-        combined_data, n_exp_ok = self.combine_information(exp_CCD_cat_list,
-                                                           psf_list)
+        combined_data, n_exp_ok = self.combine_information(sexp_number_list)
         if combined_data:
 
             if self._write_all_mobj:
@@ -99,13 +96,19 @@ class combine_mexp():
             # Perform galaxy selection
             galaxies = self.select_galaxies(combined_data)
 
+            # For selected galaxies retrieve postage stamps from
+            # exposure-single-CCD images
+            vignets = self.get_vignets(galaxies, sexp_number_list)
+
+            # Write all selected galaxies
+            outcat_pattern = 'mobj_gal'
+            self.write_combined_data(galaxies, outcat_pattern)
+
             n_gal = len(galaxies['nexp'])
             n_tot = len(combined_data['ID'])
 
-            # Write all galaxies
-            outcat_pattern = 'mobj_gal'
-            self.write_combined_data(galaxies, outcat_pattern)
         else:
+
             n_gal = n_tot = 0
 
         self._w_log.info('Processed {} pairs of exposure-single-CCD and '
@@ -114,26 +117,86 @@ class combine_mexp():
 
         return None, None
 
-    def combine_information(self, exp_CCD_cat_list, psf_list):
+    def get_vignets(self, galaxies, sexp_number_list):
+        """Return list of vignets corresponding to positions in list galaxies.
+
+           See vignet_runner.py.
+
+        Parameters
+        ----------
+        galaxies: FITS_rec
+            multi-exposure galaxy catalogue data
+        sexp_number_list: list of strings
+            exposure-single-CCD file numbers
+
+        Returns
+        -------
+        vignets: TBD
+            list of vignets
+        """
+
+        img_basename = 'exp.img'
+        input_dir_img = self._config.get('COMBINE_MEXP_RUNNER',
+                                         'INPUT_DIR_IMG')
+        img_ext = self._config.get('COMBINE_MEXP_RUNNER',
+                                   'INPUT_IMG_EXT')
+
+        stamp_size = config.getint("COMBINE_MEXP_RUNNER", "STAMP_SIZE") - 1
+        if stamp_size % 2 != 0:
+            raise ValueError("COMBINE_MEXP_RUNNER:STAMP_SIZE has to be an odd number.")
+        rad = int(stamp_size/2)
+
+        # Loop over input file numbers, get all vignets
+        vignets = []
+        for sexp_number in sexp_number_list:
+
+            img_base_name = self.get_file_name(img_basename, sexp_number)
+            img = self.open(input_dir_img, img_base_name, img_ext, hdu_no=0)
+            header = img.get_header(hdu_no=0)
+            wcs.WCS(header)
+
+            # Get positions of galaxies from current exposure-single-CCD
+            indices = np.where(galaxies['sepx_number'] == sexp_number)
+
+            # see vignet_runner.py:get_pos
+            ra = galaxies['X_WORLD'][indices]
+            dec = galaxies['Y_WORLD'][indices]
+            pox_xy = wcs.all_world2pix(ra, dec, 1)
+
+            fs = FetchStamps(img, int(rad))
+            fs.get_pixels(np.round(pos).astype(int))
+            vign = fs.scan()
+
+            vignets.add(vign)
+
+
+        # Associate each vignet with galaxy ID 
+        pass
+
+    def combine_information(self, sexp_number_list):
         """Combine galaxy and PSF information.
 
         Parameters
         ----------
-        exp_CCD_list: list of strings
-            exposure-single-CCD catalogue base names
-        psf_list: list of strings
-            PSF vignet file base names
+        sexp_number_list: list of strings
+            exposure-single-CCD file numbers
 
         Returns
         -------
         combined_data: FITS_rec
             combined exposure-single-CCD and PSF data covering the tile
+        n_exp_ok: int
+            number of exposure-single-CCDs for which galaxy and PSF
+            information contributed to combined_data
         """
 
+        exp_basename = 'cat.exp.img'
         input_dir_exp_cat = self._config.get('COMBINE_MEXP_RUNNER',
                                              'INPUT_DIR_EXP_CAT')
         exp_cat_ext = self._config.get('COMBINE_MEXP_RUNNER',
                                        'INPUT_EXP_CAT_EXT')
+
+        psf_basename = 'galaxy_psf'
         input_dir_psf = self._config.get('COMBINE_MEXP_RUNNER',
                                          'INPUT_DIR_PSF')
         psf_ext = self._config.get('COMBINE_MEXP_RUNNER', 'INPUT_PSF_EXT')
@@ -141,16 +204,18 @@ class combine_mexp():
         combined_data = None
 
         n_exp_ok = 0
-        for exp_base_name, psf_base_name in zip(exp_CCD_cat_list, psf_list):
+        for sexp_number in sexp_number_list:
 
+            exp_base_name = self._get_file_name(exp_basename, sexp_number)
             exp_cat = self.open_or_continue(input_dir_exp_cat,
                                             exp_base_name,
-                                            exp_cat_ext)
+                                            exp_cat_ext, hdu_no=2)
             if not exp_cat:
                 continue
 
+            psf_base_name = self._get_file_name(exp_basename, sexp_number)
             psf = self.open_or_continue(input_dir_psf, psf_base_name,
-                                        psf_ext)
+                                        psf_ext, hdu_no=2)
             if not psf:
                 continue
 
@@ -171,7 +236,8 @@ class combine_mexp():
 
             exp_cat_data_plus = self.combine_exp_psf(exp_cat_data,
                                                      exp_cat_cols,
-                                                     psf_data, psf_cols)
+                                                     psf_data, psf_cols,
+                                                     sexp_number)
 
             exp_cat.close()
             psf.close()
@@ -319,11 +385,13 @@ class combine_mexp():
 
         else:
 
-            raise CombineMExpError('Invalid selection method \'{}\''.format(self._method))
+            raise CombineMExpError('Invalid selection method \'{}\''
+                                   .format(self._method))
 
         return is_gal, params_out
 
-    def combine_exp_psf(self, exp_cat_data, exp_cat_cols, psf_data, psf_cols):
+    def combine_exp_psf(self, exp_cat_data, exp_cat_cols, psf_data,
+                        psf_cols, sexp_number):
         """Return data array with combined information from exposure-
            single-CCD and PSF.
 
@@ -337,6 +405,8 @@ class combine_mexp():
             PSF data
         psf_cols: array of string
             PSF column names
+        sexp_number: string
+            exposure-single-CCD file number
 
         Returns
         -------
@@ -356,9 +426,13 @@ class combine_mexp():
                 # Add vignet only if argument 'vignet' is True
                 exp_cat_data_plus[c] = psf_data[c]
 
+        # Add exposure-single-CCD file number
+        n = len(exp_cat_data_plus[exp_cat_cols[0]])
+        exp_cat_data_plus['sexp_number'] = np.full(n, sexp_number)
+
         return exp_cat_data_plus
 
-    def open_or_continue(self, input_dir, base_name, ext):
+    def open_or_continue(self, input_dir, base_name, ext, hdu_no=0):
         """Return file content, or continue if file does not exist.
 
         Parameters
@@ -369,6 +443,8 @@ class combine_mexp():
             file base name
         ext: string
             file extension
+        hdu_no: int, optional, default=0
+            HDU number
 
         Returns
         -------
@@ -376,17 +452,39 @@ class combine_mexp():
             file content
         """
 
-        hdu_no = 2
-        cat_name = '{}/{}{}'.format(input_dir, base_name, ext)
-
-        cat = io.FITSCatalog(cat_name, hdu_no=hdu_no)
         try:
-            cat.open()
+            cat = self.open(self, input_dir, base_name, ext, no_hdu=no_hdu)
         except:
             msg = 'File \'{}\' not found, continuing...'.format(cat_name)
             self._w_log.info(msg)
             cat = None
 
+        return cat
+
+    def open(self, input_dir, base_name, ext, hdu_no):
+        """Return file content"
+
+        Parameters
+        ----------
+        input_dir: string
+            input directory
+        base_name: string
+            file base name
+        ext: string
+            file extension
+        hdu_no: int, optional, default=0
+            HDU number
+
+        Returns
+        -------
+        cat: io.FITSCatalogue
+            file content
+        """
+
+        cat_name = '{}/{}{}'.format(input_dir, base_name, ext)
+
+        cat = io.FITSCatalog(cat_name, hdu_no=hdu_no)
+        cat.open()
         return cat
 
     def get_exposure_list(self):
@@ -433,11 +531,8 @@ class combine_mexp():
 
         return exp_list_uniq
 
-    def get_exp_CCD_cat_and_PSF_list(self, n_exp):
-        """Return lists of exposure-single-CCD catalogue file base names and
-           PSF vignet file base names.
-           MKDEBUG note: This function is identical to the tileob_as_exp
-           class routine.
+    def get_file_list(self, n_exp):
+        """Return lists of exposure-single-CCD file numbers.
 
         Parameters
         ----------
@@ -446,27 +541,33 @@ class combine_mexp():
 
         Returns
         -------
-        exp_CCD_list: list of strings
-            exposure-single-CCD catalogue base names
-        psf_list: list of strings
-            PSF vignet file base names
+        sexp_number_list: list of strings
+            exposure-single-CCD file numbers
         """
 
         n_hdu = int(self._config.get('COMBINE_MEXP_RUNNER', 'N_HDU'))
-        exp_basename = 'cat.exp.img'
-        psf_basename = 'galaxy_psf'
-
-        exp_CCD_list = []
-        psf_list = []
+        sexp_number_list = []
         for i in range(n_exp):
-            exp_CCD_base = '{}{}_{}'.format(exp_basename, self._image_number, i)
-            psf_base = '{}{}_{}'.format(psf_basename, self._image_number, i)
-
             for k_img in range(n_hdu):
-                exp_CCD_name = '{}_{:02d}'.format(exp_CCD_base, k_img)
-                exp_CCD_list.append(exp_CCD_name)
+                sexp_number = '{}{}_{:02d}'.format(self._image_number, i, k_img)
+                sexp_number_list.append(sexp_number)
 
-                psf_name = '{}_{:02d}'.format(psf_base, k_img)
-                psf_list.append(psf_name)
+        return sexp_number
 
-        return exp_CCD_list, psf_list
+    def get_file_name(basename, sexp_number):
+        """ Return file name.
+
+        Parameters
+        ----------
+        basename: string
+            file base name
+        sexp_number: string
+            exposure-single-CCD file number
+
+        Returns
+        -------
+        filename: string
+            file name
+        """
+
+        return '{}{}'.format(basename, sexp_number)
