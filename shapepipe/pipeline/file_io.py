@@ -976,19 +976,28 @@ class FITSCatalog(BaseCatalog):
 
    # -----------------------------------------------------------------------------------------------
    # ADDED
-   def add_col(self, col_name, col_data, hdu_no=None, ext_name=None):
+   def add_col(self, col_name, col_data, hdu_no=None, ext_name=None, new_cat=False, new_cat_inst=None):
       """
          Add a Column to the catalog
          @param col_name column name
          @param col_data column data as a numpy array
          @param hdu_no HDU index where to add the column
          @param ext_name change the name of the extansion (optional)
+         @param new_cat if True will save the change into a new catalog
+         @param new_cat_inst io.FITSCatalog object for the new catalog
       """
+      if new_cat:
+          open_mode = new_cat_inst.open_mode
+          output_path = new_cat_inst.fullpath
+      else:
+          open_mode = self.open_mode
+          output_path = self.fullpath
+
       if self._cat_data is None:
          raise BaseCatalog.CatalogNotOpen(self.fullpath)
 
-      if self.open_mode != FITSCatalog.OpenMode.ReadWrite:
-         raise BaseCatalog.OpenModeConflict(open_mode=self.open_mode, open_mode_needed=FITSCatalog.OpenMode.ReadWrite)
+      if open_mode != FITSCatalog.OpenMode.ReadWrite:
+         raise BaseCatalog.OpenModeConflict(open_mode=open_mode, open_mode_needed=FITSCatalog.OpenMode.ReadWrite)
 
       if type(col_data) != np.ndarray:
          TypeError("col_data must be a numpy.ndarray")
@@ -1037,11 +1046,12 @@ class FITSCatalog(BaseCatalog):
 
       new_fits += fits.HDUList(old_hdu_next)
 
-      new_fits.writeto(self.fullpath, overwrite=True)
+      new_fits.writeto(output_path, overwrite=True)
 
-      self._cat_data.close()
-      del self._cat_data
-      self._cat_data = fits.open(self.fullpath, mode=self.open_mode, memmap=self.use_memmap)
+      if not new_cat:
+          self._cat_data.close()
+          del self._cat_data
+          self._cat_data = fits.open(self.fullpath, mode=self.open_mode, memmap=self.use_memmap)
 
    # -----------------------------------------------------------------------------------------------
    def remove_col(self, col_index):
