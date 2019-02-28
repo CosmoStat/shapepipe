@@ -84,25 +84,28 @@ class combine_mexp():
         # 000-0-00 (tile-exposure-hdu)
         sexp_number_list = self.get_sexp_number_list(len(exp_list_uniq))
 
-        # Combine the above gathered data
+        # Get detected objects from all input catalogues, and combine
+        # into one array
         combined_data, n_exp_ok = self.combine_information(sexp_number_list)
         if combined_data:
 
             if self._write_all_mobj:
-                # Write all combined data to file (for testing)
+                # Write all selected objects to file (for testing)
                 outcat_pattern = 'mobj_all'
                 self.write_combined_data(combined_data, outcat_pattern)
 
             # Perform galaxy selection
             galaxies = self.select_galaxies(combined_data)
 
-            # For selected galaxies retrieve postage stamps from
-            # exposure-single-CCD images
-            vignets = self.get_vignets(galaxies, sexp_number_list)
-
             # Write all selected galaxies
             outcat_pattern = 'mobj_gal'
             self.write_combined_data(galaxies, outcat_pattern)
+
+            # For selected galaxies retrieve postage stamps and
+            # corresponding IDs from exposure-single-CCD images
+            vignets, IDs = self.get_vignets(galaxies, sexp_number_list)
+
+            self.write_vignets(vignets, IDs)
 
             n_gal = len(galaxies['nexp'])
             n_tot = len(combined_data['ID'])
@@ -131,8 +134,11 @@ class combine_mexp():
 
         Returns
         -------
-        vignets: TBD
+        vignets: array of class FetchStamps
             list of vignets
+        IDs: array of int
+            list of object IDs corresponding to the postage stamps,
+            including multiples.
         """
 
         img_basename = 'exp.img'
@@ -144,10 +150,11 @@ class combine_mexp():
         stamp_size = config.getint("COMBINE_MEXP_RUNNER", "STAMP_SIZE") - 1
         if stamp_size % 2 != 0:
             raise ValueError("COMBINE_MEXP_RUNNER:STAMP_SIZE has to be an odd number.")
-        rad = int(stamp_size/2)
+        half_size = int(stamp_size/2)
 
         # Loop over input file numbers, get all vignets
         vignets = []
+        IDs = []
         for sexp_number in sexp_number_list:
 
             img_base_name = self.get_file_name(img_basename, sexp_number)
@@ -163,18 +170,18 @@ class combine_mexp():
             dec = galaxies['Y_WORLD'][indices]
             pox_xy = wcs.all_world2pix(ra, dec, 1)
 
-            fs = FetchStamps(img, int(rad))
+            fs = FetchStamps(img, int(half_size))
             fs.get_pixels(np.round(pos).astype(int))
             vign = fs.scan()
 
+            # Get galaxy IDs along with vignets
             vignets.add(vign)
+            IDs.append(galaxies['ID'][indices])
 
-
-        # Associate each vignet with galaxy ID 
-        pass
+        return vignets, IDs
 
     def combine_information(self, sexp_number_list):
-        """Combine galaxy and PSF information.
+        """Combine galaxy and PSF information from all input files.
 
         Parameters
         ----------
@@ -252,12 +259,48 @@ class combine_mexp():
 
         return combined_data, n_exp_ok
 
-    def write_combined_data(self, data, outcat_pattern):
+    def write_vignets(vignets, IDs):
+        """Save vignets and IDs to multi-HDU files.
+
+        Parameters
+        ----------
+        vignets: array of class FetchStamps
+            list of vignets
+        IDs: array of int
+            list of galaxy IDs corresponding to the postage stamps
+
+        Returns
+        -------
+        None
+        """
+
+        IDs_unique, nexp = np.unique(IDs, return_counts=True)
+        nexp_max = max(nexp_max)
+
+        # Create nexp_max empty data arrays
+        dat = []
+        for m in range(nexp_max):
+            dat_m = {}
+            dat_m['ID'] = []
+            dat_m['vignet'] = []
+            dat.append(dat_m)
+
+        # Loop over all unique IDs, write vignets of the nexp
+        # contributing exposures to first nexp HDUs
+        for u, n in zip(IDs_unique, nexp):
+            indices = np.where(IDs == u)[0]
+
+            # Append m-th ID and vignet to data array m
+            for m in range(n):
+                dat['ID'][m] = IDs[indices[m]]
+                dat['vignet'][m] = vignets[incides[m]]
+
+    def write_combined_data(self, galaxies, outcat_pattern):
         """Save data to file.
 
         Parameters
         ----------
-        data: FITS_rec
+        galaxies: FITS_rec
             catalogue data
         outcat_pattern: string
             output catalogue file name pattern
@@ -270,7 +313,7 @@ class combine_mexp():
         out_path = '{}/{}{}-0.fits'.format(self._output_dir, outcat_pattern, self._image_number)
         print('Writing tile data to file \'{}\''.format(out_path))
         output = io.FITSCatalog(out_path, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
-        output.save_as_fits(data)e
+        output.save_as_fits(galaxies)
 
     def select_galaxies(self, combined_data):
         """Perform galaxy selection.
@@ -283,7 +326,8 @@ class combine_mexp():
         Returns
         -------
         dat_gal: FITS_rec
-            multi-exposure galaxy catalogue data
+            catalogue with unique galaxies (one entry per multi-exposure
+            object)
         """
 
         # Create empty data array for selected galaxies
