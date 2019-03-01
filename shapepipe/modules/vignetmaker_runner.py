@@ -304,7 +304,7 @@ class vignetmaker(object):
             Suffix to use for the output file name.
 
         """
-        output_name = self._output_dir + '/' + suffix + '_vignet{}.fits'.format(self._image_num)
+        output_name = self._output_dir + '/' + suffix + '_vignet{}'.format(self._image_num)
         np.save(output_name, output_dict)
         # f = io.FITSCatalog(output_name, SEx_catalog=True,
         #                    open_mode=io.BaseCatalog.OpenMode.ReadWrite)
