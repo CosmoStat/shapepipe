@@ -7,7 +7,7 @@ This module computes the PSFs from a PSFEx model at several galaxy positions.
 Was using Erin Sheldon & Eli Rykoff's psfex module, available on GitHub at:
 https://github.com/esheldon/psfex
 
-:Author: Morgan Schmitz
+:Author: Morgan Schmitz and Axel Guinot
 
 :Version: 1.2.0
 
@@ -355,7 +355,8 @@ class PSFExInterpolator(object):
 
         data['ACCEPTED'] = np.ones_like(data['NUMBER'], dtype='int16')
         star_used = psfex_cat_dict.pop('SOURCE_NUMBER')
-        for i, obj_id in range(len(data['NUMBER'])):
+
+        for i in range(len(data['NUMBER'])):
             if i+1 not in star_used:
                 data['ACCEPTED'][i] = 0
 
@@ -381,17 +382,17 @@ class PSFExInterpolator(object):
         if self.gal_pos is None:
             self._get_galaxy_positions()
 
-        output_list = self._interpolate_me()
+        output_dict = self._interpolate_me()
 
-        self._write_output_me(output_list)
+        self._write_output_me(output_dict)
 
     def _interpolate_me(self):
         """ Interpolate PSFs for multi-epoch run.
 
         Returns
         -------
-        list
-            List containing object Ids, the interpolated PSFs and shapes (optionally)
+        dict
+            Dictionnary containing object Ids, the interpolated PSFs and shapes (optionally)
 
         """
         cat = sc.FITSCatalog(self._galcat_path, SEx_catalog=True)
@@ -410,6 +411,7 @@ class PSFExInterpolator(object):
             array_psf = None
             array_id = None
             array_shape = None
+            array_exp_name = None
             for ccd in ccd_list:
                 if ccd == -1:
                     continue
@@ -445,50 +447,46 @@ class PSFExInterpolator(object):
                 else:
                     array_shape = None
 
-            final_list.append([array_id, array_psf, array_shape])
+                exp_name_tmp = np.array([exp_name + '-' + str(ccd) for i in range(len(obj_id))])
+                if array_exp_name is None:
+                    array_exp_name = exp_name_tmp
+                else:
+                    array_exp_name = np.concatenate((array_exp_name, exp_name_tmp))
+
+            final_list.append([array_id, array_psf, array_shape, array_exp_name])
 
         cat.close()
 
-        output_list_id = [[] for i in range(max(n_epoch))]
-        output_list_vign = [[] for i in range(max(n_epoch))]
-        output_list_shape = [[] for i in range(max(n_epoch))]
-        for i in range(len(all_id)):
+        output_dict = {}
+        for i, id_tmp in enumerate(all_id):
+            output_dict[i] = {}
             counter = 0
             for j in range(len(final_list)):
                 where_res = np.where(final_list[j][0] == all_id[i])[0]
-
                 if (len(where_res) != 0):
-                    output_list_id[counter].append(final_list[j][0][where_res])
-                    output_list_vign[counter].append(final_list[j][1][where_res])
+                    output_dict[i][final_list[j][3][where_res[0]]] ={}
+                    output_dict[i][final_list[j][3][where_res[0]]]['VIGNET'] = final_list[j][1][where_res[0]]
                     if self._compute_shape:
-                        output_list_shape[counter].append(final_list[j][2][where_res])
+                        shape_dict = {}
+                        shape_dict['E1_PSF_HSM'] = final_list[j][2][where_res[0]][0]
+                        shape_dict['E2_PSF_HSM'] = final_list[j][2][where_res[0]][1]
+                        shape_dict['SIGMA_PSF_HSM'] = final_list[j][2][where_res[0]][2]
+                        shape_dict['FLAG_PSF_HSM'] = final_list[j][2][where_res[0]][3]
+                        output_dict[i][final_list[j][3][where_res[0]]]['SHAPES'] = shape_dict
                     counter += 1
+            if counter == 0:
+                print('here')
+                output_dict[i] = 'empty'
 
-        return [output_list_id, output_list_vign, output_list_shape]
+        return output_dict
 
-    def _write_output_me(self, output_list):
-        """ Save computed PSFs to fits file for multi-epoch run.
+    def _write_output_me(self, output_dict):
+        """ Save computed PSFs to numpy object file for multi-epoch run.
 
         Parameters
         ----------
-        output_list : list
-            List of outputs to save
+        output_dict : dict
+            Dictionnary of outputs to save
 
         """
-        output_file = sc.FITSCatalog(self._output_path+self._img_number+'.fits',
-                                     open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
-                                     SEx_catalog=True)
-
-        for i in range(len(output_list[0])):
-            out_dict = {}
-            out_dict['NUMBER'] = np.array(output_list[0][i]).squeeze()
-            out_dict['VIGNET'] = np.array(output_list[1][i]).squeeze()
-            if self._compute_shape:
-                out_dict['E1_PSF_HSM'] = np.array(output_list[2][i]).squeeze()[:, 0]
-                out_dict['E2_PSF_HSM'] = np.array(output_list[2][i]).squeeze()[:, 1]
-                out_dict['SIGMA_PSF_HSM'] = np.array(output_list[2][i]).squeeze()[:, 2]
-                out_dict['FLAG_PSF_HSM'] = np.array(output_list[2][i]).squeeze()[:, 3].astype(int)
-
-            output_file.save_as_fits(out_dict,
-                                     ext_name='N_EPOCH_{}'.format(i+1),
-                                     sex_cat_path=self._galcat_path)
+        np.save(self._output_path+self._img_number+'.fits', output_dict)
