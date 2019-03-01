@@ -239,24 +239,19 @@ class vignetmaker(object):
 
         cat.close()
 
-        # output_list_id = [[] for i in range(max(n_epoch))]
-        # output_list_vign = [[] for i in range(max(n_epoch))]
         output_dict = {}
-        for i in range(len(all_id)):
-            output_dict[i] = {}
+        for id_tmp in all_id:
+            output_dict[id_tmp] = {}
             counter = 0
             for j in range(len(final_list)):
-                where_res = np.where(final_list[j][0] == all_id[i])[0]
+                where_res = np.where(final_list[j][0] == id_tmp)[0]
                 if (len(where_res) != 0):
-                    output_dict[i][final_list[j][2][where_res[0]]] = {}
-                    output_dict[i][final_list[j][2][where_res[0]]]['VIGNET'] = final_list[j][1][where_res[0]]
-                    # output_list_id[counter].append(final_list[j][0][where_res])
-                    # output_list_vign[counter].append(final_list[j][1][where_res])
+                    output_dict[id_tmp][final_list[j][2][where_res[0]]] = {}
+                    output_dict[id_tmp][final_list[j][2][where_res[0]]]['VIGNET'] = final_list[j][1][where_res[0]]
                     counter += 1
             if counter == 0:
-                output_dict[i] = 'empty'
+                output_dict[id_tmp] = 'empty'
 
-        # return [output_list_id, output_list_vign]
         return output_dict
 
     def process_me(self, image_dir, image_pattern, f_wcs_path, rad):
