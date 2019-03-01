@@ -488,4 +488,4 @@ class PSFExInterpolator(object):
             Dictionnary of outputs to save
 
         """
-        np.save(self._output_path+self._img_number+'.fits', output_dict)
+        np.save(self._output_path+self._img_number, output_dict)
