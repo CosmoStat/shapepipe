@@ -295,7 +295,7 @@ class PSFExInterpolator(object):
             raise ImportError('Galsim is required to get shapes information')
 
         star_moms = [hsm.FindAdaptiveMom(Image(star), strict=False)
-                    for star in star_vign]
+                     for star in star_vign]
 
         self.star_shapes = np.array([[moms.observed_shape.g1,
                                      moms.observed_shape.g2,
@@ -464,7 +464,7 @@ class PSFExInterpolator(object):
             for j in range(len(final_list)):
                 where_res = np.where(final_list[j][0] == all_id[i])[0]
                 if (len(where_res) != 0):
-                    output_dict[i][final_list[j][3][where_res[0]]] ={}
+                    output_dict[i][final_list[j][3][where_res[0]]] = {}
                     output_dict[i][final_list[j][3][where_res[0]]]['VIGNET'] = final_list[j][1][where_res[0]]
                     if self._compute_shape:
                         shape_dict = {}
