@@ -2,7 +2,7 @@
 
 """VIGNET MAKER RUNNER
 
-This file contains methods to create stamp from images.
+This file contains methods to create postage stamps from images.
 
 :Author: Axel Guinot
 
@@ -187,8 +187,8 @@ class vignetmaker(object):
 
         Returns
         -------
-        output_list : list
-            List containing object id and vignets for each epoch.
+        output_dict : dict
+            Directory containing object id and vignets for each epoch.
 
         """
 
@@ -207,6 +207,7 @@ class vignetmaker(object):
             ccd_list = list(set(cat.get_data(hdu_index)['CCD_N']))
             array_vign = None
             array_id = None
+            array_exp_name = None
             for ccd in ccd_list:
                 if ccd == -1:
                     continue
@@ -228,22 +229,35 @@ class vignetmaker(object):
                 else:
                     array_id = np.concatenate((array_id, np.copy(obj_id)))
 
-            final_list.append([array_id, array_vign])
+                exp_name_tmp = np.array([exp_name + '-' + str(ccd) for i in range(len(obj_id))])
+                if array_exp_name is None:
+                    array_exp_name = exp_name_tmp
+                else:
+                    array_exp_name = np.concatenate((array_exp_name, exp_name_tmp))
+
+            final_list.append([array_id, array_vign, array_exp_name])
 
         cat.close()
 
-        output_list_id = [[] for i in range(max(n_epoch))]
-        output_list_vign = [[] for i in range(max(n_epoch))]
+        # output_list_id = [[] for i in range(max(n_epoch))]
+        # output_list_vign = [[] for i in range(max(n_epoch))]
+        output_dict = {}
         for i in range(len(all_id)):
+            output_dict[i] = {}
             counter = 0
             for j in range(len(final_list)):
                 where_res = np.where(final_list[j][0] == all_id[i])[0]
                 if (len(where_res) != 0):
-                    output_list_id[counter].append(final_list[j][0][where_res])
-                    output_list_vign[counter].append(final_list[j][1][where_res])
+                    output_dict[i][final_list[j][2][where_res[0]]] = {}
+                    output_dict[i][final_list[j][2][where_res[0]]]['VIGNET'] = final_list[j][1][where_res[0]]
+                    # output_list_id[counter].append(final_list[j][0][where_res])
+                    # output_list_vign[counter].append(final_list[j][1][where_res])
                     counter += 1
+            if counter == 0:
+                output_dict[i] = 'empty'
 
-        return [output_list_id, output_list_vign]
+        # return [output_list_id, output_list_vign]
+        return output_dict
 
     def process_me(self, image_dir, image_pattern, f_wcs_path, rad):
         """ Process ME
@@ -271,40 +285,41 @@ class vignetmaker(object):
         for i in range(len(image_pattern)):
 
             if len(image_dir) != len(image_pattern):
-                output_list = self._get_stamp_me(image_dir[0], image_pattern[i])
+                output_dict = self._get_stamp_me(image_dir[0], image_pattern[i])
             else:
-                output_list = self._get_stamp_me(image_dir[0], image_pattern[i])
+                output_dict = self._get_stamp_me(image_dir[0], image_pattern[i])
 
-            self._save_vignet_me(output_list, image_pattern[i])
+            self._save_vignet_me(output_dict, image_pattern[i])
 
-    def _save_vignet_me(self, output_list, suffix):
+    def _save_vignet_me(self, output_dict, suffix):
         """ Save vignet ME
 
         Save vignets for the multi-epoch case.
 
         Parameters
         ----------
-        output_list : list
-            List containing object id and vignets for each epoch.
+        output_dict : dict
+            Dictionary containing object id and vignets for each epoch.
         suffix : str
             Suffix to use for the output file name.
 
         """
         output_name = self._output_dir + '/' + suffix + '_vignet{}.fits'.format(self._image_num)
-        f = io.FITSCatalog(output_name, SEx_catalog=True,
-                           open_mode=io.BaseCatalog.OpenMode.ReadWrite)
-
-        for i in range(len(output[0])):
-            out_dict = {'NUMBER': np.array(output_list[0][i]).squeeze(),
-                        'VIGNET': np.array(output_list[1][i]).squeeze()}
-            f.save_as_fits(data=out_dict, ext_name='N_EPOCH_{}'.format(i),
-                           sex_cat_path=self._galcat_path)
+        np.save(output_name, output_dict)
+        # f = io.FITSCatalog(output_name, SEx_catalog=True,
+        #                    open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+        #
+        # for i in range(len(output[0])):
+        #     out_dict = {'NUMBER': np.array(output_list[0][i]).squeeze(),
+        #                 'VIGNET': np.array(output_list[1][i]).squeeze()}
+        #     f.save_as_fits(data=out_dict, ext_name='N_EPOCH_{}'.format(i),
+        #                    sex_cat_path=self._galcat_path)
 
 
 def get_original_vignet(galcat_path):
     """Get original vignet
 
-    Get the vignets fromù te SExtractor catalog
+    Get the vignets from the SExtractor catalog
 
     Parameters
     ----------
