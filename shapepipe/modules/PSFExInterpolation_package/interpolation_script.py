@@ -458,24 +458,24 @@ class PSFExInterpolator(object):
         cat.close()
 
         output_dict = {}
-        for i, id_tmp in enumerate(all_id):
-            output_dict[i] = {}
+        for id_tmp in all_id:
+            output_dict[id_tmp] = {}
             counter = 0
             for j in range(len(final_list)):
-                where_res = np.where(final_list[j][0] == all_id[i])[0]
+                where_res = np.where(final_list[j][0] == id_tmp)[0]
                 if (len(where_res) != 0):
-                    output_dict[i][final_list[j][3][where_res[0]]] = {}
-                    output_dict[i][final_list[j][3][where_res[0]]]['VIGNET'] = final_list[j][1][where_res[0]]
+                    output_dict[id_tmp][final_list[j][3][where_res[0]]] = {}
+                    output_dict[id_tmp][final_list[j][3][where_res[0]]]['VIGNET'] = final_list[j][1][where_res[0]]
                     if self._compute_shape:
                         shape_dict = {}
                         shape_dict['E1_PSF_HSM'] = final_list[j][2][where_res[0]][0]
                         shape_dict['E2_PSF_HSM'] = final_list[j][2][where_res[0]][1]
                         shape_dict['SIGMA_PSF_HSM'] = final_list[j][2][where_res[0]][2]
                         shape_dict['FLAG_PSF_HSM'] = final_list[j][2][where_res[0]][3]
-                        output_dict[i][final_list[j][3][where_res[0]]]['SHAPES'] = shape_dict
+                        output_dict[id_tmp][final_list[j][3][where_res[0]]]['SHAPES'] = shape_dict
                     counter += 1
             if counter == 0:
-                output_dict[i] = 'empty'
+                output_dict[id_tmp] = 'empty'
 
         return output_dict
 
