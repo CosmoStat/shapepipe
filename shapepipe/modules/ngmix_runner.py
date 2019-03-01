@@ -39,18 +39,17 @@ def get_prior():
     g_sigma = 0.4
     g_prior = ngmix.priors.GPriorBA(g_sigma)
 
-
     # 2-d gaussian prior on the center
     # row and column center (relative to the center of the jacobian, which would be zero)
     # and the sigma of the gaussians
     # units same as jacobian, probably arcsec
     row, col = 0.0, 0.0
-    row_sigma, col_sigma = 0.186, 0.186 # pixel size of DES
+    row_sigma, col_sigma = 0.186, 0.186  # pixel size of DES
     cen_prior = ngmix.priors.CenPrior(row, col, row_sigma, col_sigma)
 
     # T prior.  This one is flat, but another uninformative you might
     # try is the two-sided error function (TwoSidedErf)
-    Tminval = -10.0 # arcsec squared
+    Tminval = -10.0  # arcsec squared
     Tmaxval = 1.e6
     T_prior = ngmix.priors.FlatPrior(Tminval, Tmaxval)
 
@@ -93,7 +92,7 @@ def get_jacob(wcs, ra, dec):
 
     g_wcs = galsim.fitswcs.AstropyWCS(wcs=wcs)
     world_pos = galsim.CelestialCoord(ra=ra*galsim.angle.degrees,
-                                    dec=dec*galsim.angle.degrees)
+                                      dec=dec*galsim.angle.degrees)
     galsim_jacob = g_wcs.jacobian(world_pos=world_pos)
 
     return galsim_jacob
@@ -156,11 +155,11 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list, prior):
     gal_model = 'exp'
 
     # metacal specific parameters
-    metacal_pars={'types': ['noshear', '1p', '1m', '2p', '2m'],
-                  'psf': 'gauss',
-                  'fixnoise': True,
-                  'cheatnoise': False,
-                  'symmetrize_psf': False}
+    metacal_pars = {'types': ['noshear', '1p', '1m', '2p', '2m'],
+                    'psf': 'gauss',
+                    'fixnoise': True,
+                    'cheatnoise': False,
+                    'symmetrize_psf': False}
 
     # maximum likelihood fitter parameters
     # parameters for the Levenberg-Marquardt fitter in scipy
@@ -172,7 +171,7 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list, prior):
         'method': 'lm',
 
         # parameters for leastsq
-        'lm_pars': lm_pars,}
+        'lm_pars': lm_pars}
 
     psf_pars = {'maxiter': 5000,
                 'tol': 5.0e-6}
@@ -281,7 +280,7 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
     -------
     final_res : dict
         Dictionary containing the ngmix metacal results.
-        
+
     """
 
     tile_cat = io.FITSCatalog(tile_cat_path, SEx_catalog=True)
@@ -303,7 +302,7 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
     final_res = []
     prior = get_prior()
     for i_tile, id_tmp in enumerate(obj_id[:1000]):
-        print("{}/{}".format(i_tile,len(obj_id[:1000])))
+        print("{}/{}".format(i_tile, len(obj_id[:1000])))
 
         gal_vign = []
         psf_vign = []
