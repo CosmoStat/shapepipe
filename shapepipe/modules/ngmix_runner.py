@@ -11,6 +11,8 @@ This file contains methods to run ngmix for shape measurement.
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.pipeline import file_io as io
 
+import re
+
 import numpy as np
 
 import ngmix
@@ -21,7 +23,15 @@ import galsim
 
 
 def get_prior():
-    """
+    """ Get prior
+
+    Return prior for the different parameters
+
+    Return
+    ------
+    prior : ngmix.priors
+        Priors for the different parameters.
+
     """
 
     # prior on ellipticity.  The details don't matter, as long
@@ -61,7 +71,24 @@ def get_prior():
 
 
 def get_jacob(wcs, ra, dec):
-    """
+    """ Get jacobian
+
+    Return the jacobian of the wcs at the required position.
+
+    Parameters
+    ----------
+    wcs : astropy.wcs.WCS
+        WCS object for wich we want the jacobian.
+    ra : float
+        Ra position of the center of the vignet.
+    dec : float
+        Dec position of the center of the vignet.
+
+    Returns
+    -------
+    galsim_jacob : galsim.wcs.BaseWCS.jacobian
+        Jacobian of the WCS at the required position.
+
     """
 
     g_wcs = galsim.fitswcs.AstropyWCS(wcs=wcs)
@@ -73,13 +100,36 @@ def get_jacob(wcs, ra, dec):
 
 
 def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list, prior):
-    """
+    """ Do ngmix metacal
+
+    Do the metacalibration on a multi-epoch object and return the join shape
+    measurement with ngmix
+
+    Parameters
+    ---------
+    gals : list
+        List of the galaxy vignets.
+    psfs : list
+        List of the PSF vignets.
+    psfs_sigma : list
+        List of the sigma PSFs.
+    weights : list
+        List of the weight vignets.
+    flags : list
+        List of the flag vignets.
+    jacob_list : list
+        List of the jacobians.
+    prior : ngmix.priors
+        Priors for the fitting parameters.
+
+    Returns
+    -------
+    metacal_res : dict
+        Dictionary containing the results of ngmix metacal.
+
     """
 
     n_epoch = len(gals)
-
-    # psf_jacob = ngmix.UnitJacobian(row=psfs[0].shape[0]/2., col=psfs[0].shape[1]/2.)
-    # gal_jacob = ngmix.UnitJacobian(row=gals[0].shape[0]/2., col=gals[0].shape[1]/2.)
 
     # Make observation
     gal_obs_list = ObsList()
@@ -103,7 +153,7 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list, prior):
 
     boot = ngmix.bootstrap.MaxMetacalBootstrapper(gal_obs_list)
     psf_model = 'em3'
-    gal_model = 'gauss'
+    gal_model = 'exp'
 
     # metacal specific parameters
     metacal_pars={'types': ['noshear', '1p', '1m', '2p', '2m'],
@@ -142,24 +192,28 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list, prior):
     # result dictionary, keyed by the types in metacal_pars above
     metacal_res = boot.get_metacal_result()
 
-    # out_dict = {}
-    # out_dict['R11'] = (metacal_res['1p']['g'][0] - metacal_res['1m']['g'][0])/0.02
-    # out_dict['R22']= (metacal_res['2p']['g'][1] - metacal_res['2m']['g'][1])/0.02
-    # out_dict['R12'] = (metacal_res['2p']['g'][0] - metacal_res['2m']['g'][0])/0.02
-    # out_dict['R21']= (metacal_res['1p']['g'][1] - metacal_res['1m']['g'][1])/0.02
-    # out_dict['g_noshear'] = metacal_res['noshear']['g']
-    # out_dict['g_psf'] = g_psf
-    # out_dict['gal_snr'] = gal_snr
-
     return metacal_res
 
 
 def compile_results(results):
-    """
+    """ Compile results
+
+    Prepare the results of ngmix before saving.
+
+    Parameters
+    ----------
+    results : dict
+        Dictionary containing the results of ngmix metacal.
+
+    Returns
+    -------
+    output_dict : dict
+        Dictionary containing ready to be saved.
+
     """
 
     names = ['1m', '1p', '2m', '2p', 'noshear']
-    names2 = ['id', 'n_epoch_model', 'g1', 'g1_err', 'g2', 'g2_err', 'T', 'Tpsf', 's2n', 'flags', 'mcal_flags']
+    names2 = ['id', 'n_epoch_model', 'g1', 'g1_err', 'g2', 'g2_err', 'T', 'T_err', 'Tpsf', 's2n', 'flags', 'mcal_flags']
     output_dict = {k: {kk: [] for kk in names2} for k in names}
     for i in range(len(results)):
         for name in names:
@@ -170,6 +224,7 @@ def compile_results(results):
             output_dict[name]['g2'].append(results[i][name]['g'][1])
             output_dict[name]['g2_err'].append(results[i][name]['pars_err'][3])
             output_dict[name]['T'].append(results[i][name]['T'])
+            output_dict[name]['T_err'].append(results[i][name]['T_err'])
             output_dict[name]['Tpsf'].append(results[i][name]['Tpsf'])
             output_dict[name]['s2n'].append(results[i][name]['s2n'])
             output_dict[name]['flags'].append(results[i][name]['flags'])
@@ -179,7 +234,17 @@ def compile_results(results):
 
 
 def save_results(output_dict, output_name):
-    """
+    """ Save results
+
+    Save the results into a fits file.
+
+    Parameters
+    ----------
+    output_dict : dict
+        Dictionary containing the results.
+    output_name : str
+        Name of the output file.
+
     """
 
     f = io.FITSCatalog(output_name, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
@@ -191,7 +256,32 @@ def save_results(output_dict, output_name):
 def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             psf_vignet_path, weight_vignet_path, flag_vignet_path,
             f_wcs_path):
-    """
+    """ Process
+
+    Process function.
+
+    Parameters
+    ----------
+    tile_cat_path : str
+        Path to the tile SExtractor catalog.
+    gal_vignet_path : str
+        Path to the galaxy vignets catalog.
+    bkg_vignet_path : str
+        Path to the background vignets catalog.
+    psf_vignet_path : str
+        Path to the PSF vignets catalog.
+    weight_vignet_path : str
+        Path to the weight vignets catalog.
+    flag_vignet_path : str
+        Path to the flag vignets catalog.
+    f_wcs_path : str
+        Path to the log file containing the WCS for each CCDs.
+
+    Returns
+    -------
+    final_res : dict
+        Dictionary containing the ngmix metacal results.
+        
     """
 
     tile_cat = io.FITSCatalog(tile_cat_path, SEx_catalog=True)
@@ -202,118 +292,50 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
     tile_imaflag = np.copy(tile_cat.get_data()['IMAFLAGS_ISO'])
     tile_ra = np.copy(tile_cat.get_data()['XWIN_WORLD'])
     tile_dec = np.copy(tile_cat.get_data()['YWIN_WORLD'])
-    list_exp_name = tile_cat.get_ext_name()
-    hdu_ind_tile = [i for i in range(len(list_exp_name)) if 'EPOCH' in list_exp_name[i]]
-    mask = (tile_flag == 0) & (tile_imaflag == 0)
-    gal_vign_cat = io.FITSCatalog(gal_vignet_path)
-    gal_vign_cat.open()
-    bkg_vign_cat = io.FITSCatalog(bkg_vignet_path)
-    bkg_vign_cat.open()
-    psf_vign_cat = io.FITSCatalog(psf_vignet_path)
-    psf_vign_cat.open()
-    weight_vign_cat = io.FITSCatalog(weight_vignet_path)
-    weight_vign_cat.open()
-    flag_vignet_cat = io.FITSCatalog(flag_vignet_path)
-    flag_vignet_cat.open()
+    tile_cat.close()
+    gal_vign_cat = np.load(gal_vignet_path).item()
+    bkg_vign_cat = np.load(bkg_vignet_path).item()
+    psf_vign_cat = np.load(psf_vignet_path).item()
+    weight_vign_cat = np.load(weight_vignet_path).item()
+    flag_vign_cat = np.load(flag_vignet_path).item()
     f_wcs_file = np.load(f_wcs_path).item()
 
-    list_exp_name = gal_vign_cat.get_ext_name()
-    hdu_ind_exp = [i for i in range(len(list_exp_name)) if 'EPOCH' in list_exp_name[i]]
-
-    skip_obj = False
     final_res = []
     prior = get_prior()
-    for i_tile, id_tmp in enumerate(obj_id[::250]):
-        i_tile *= 250
-        print(id_tmp, obj_id[i_tile])
-        print("{}/{}".format(i_tile,len(obj_id[::250])))
-        jacob_list = []
-        # counter = 0
-        # for hdu_index in hdu_ind_tile:
-        #     id_epoch = tile_cat.get_data(hdu_index)['NUMBER']
-        #     i_tmp = np.where(id_tmp == id_epoch)[0]
-        #     # if len(i_tmp) == 0:
-        #     #     if counter == 0:
-        #     #         break
-        #     #     else:
-        #     #         continue
-        #     exp_name = tile_cat.get_data(hdu_index)['EXP_NAME'][i_tmp[0]]
-        #     ccd_n = tile_cat.get_data(hdu_index)['CCD_N'][i_tmp[0]]
-        #     if ccd_n == -1:
-        #         continue
-        #     jacob_list.append(get_jacob(f_wcs_file[exp_name][ccd_n],
-        #                                 tile_ra[i_tmp[0]],
-        #                                 tile_dec[i_tmp[0]]))
+    for i_tile, id_tmp in enumerate(obj_id[:1000]):
+        print("{}/{}".format(i_tile,len(obj_id[:1000])))
+
         gal_vign = []
         psf_vign = []
         sigma_psf = []
         weight_vign = []
         flag_vign = []
-        counter = 0
-        for hdu_index in hdu_ind_exp:
-            id_epoch = psf_vign_cat.get_data(hdu_index)['NUMBER']
-            i_exp = np.where(id_tmp == id_epoch)[0]
-            if len(i_exp) == 0:
-                if counter == 0:
-                    skip_obj = True
-                    break
-                else:
-                    continue
-            tile_vign_tmp = tile_vign[i_tile]
-            gal_vign_tmp = gal_vign_cat.get_data(hdu_index)['VIGNET'][i_exp[0]]
-            bkg_vign_tmp = bkg_vign_cat.get_data(hdu_index)['VIGNET'][i_exp[0]]
-            psf_vign_tmp = psf_vign_cat.get_data(hdu_index)['VIGNET'][i_exp[0]]
-            weight_vign_tmp = weight_vign_cat.get_data(hdu_index)['VIGNET'][i_exp[0]]
-            flag_vignet_tmp = flag_vignet_cat.get_data(hdu_index)['VIGNET'][i_exp[0]]
+        jacob_list = []
+        if (psf_vign_cat[id_tmp] == 'empty') | (gal_vign_cat[id_tmp] == 'empty'):
+            continue
+        psf_expccd_name = list(psf_vign_cat[id_tmp].keys())
+        for expccd_name_tmp in psf_expccd_name:
+            psf_vign.append(psf_vign_cat[id_tmp][expccd_name_tmp]['VIGNET'])
+            sigma_psf.append(psf_vign_cat[id_tmp][expccd_name_tmp]['SHAPES']['SIGMA_PSF_HSM'])
+
+            gal_vign_tmp = gal_vign_cat[id_tmp][expccd_name_tmp]['VIGNET']
+            bkg_vign_tmp = bkg_vign_cat[id_tmp][expccd_name_tmp]['VIGNET']
             gal_vign_sub_bkg = gal_vign_tmp - bkg_vign_tmp
             gal_vign.append(gal_vign_sub_bkg)
-            psf_vign.append(psf_vign_tmp)
-            sigma_psf.append(psf_vign_cat.get_data(hdu_index)['SIGMA_PSF_HSM'][i_exp[0]])
-            weight_vign.append(weight_vign_tmp)
-            flag_vign_add_mask = np.copy(flag_vignet_tmp)
-            flag_vign_add_mask[np.where(tile_vign_tmp == -1e30)] = 2**10
-            # if len(np.where(flag_vign_add_mask.ravel() != 0)[0]) == (51*51):
-            #     if counter == 0:
-            #         skip_obj = True
-            #         break
-            #     else:
-            #         continue
-            flag_vign.append(flag_vign_add_mask)
-            counter += 1
 
-        if skip_obj:
-            skip_obj = False
-            continue
+            weight_vign.append(weight_vign_cat[id_tmp][expccd_name_tmp]['VIGNET'])
 
-        for hdu_index in hdu_ind_tile:
-            id_epoch = tile_cat.get_data(hdu_index)['NUMBER']
-            i_tmp = np.where(id_tmp == id_epoch)[0]
-            # if len(i_tmp) == 0:
-            #     if counter == 0:
-            #         break
-            #     else:
-            #         continue
-            exp_name = tile_cat.get_data(hdu_index)['EXP_NAME'][i_tmp[0]]
-            ccd_n = tile_cat.get_data(hdu_index)['CCD_N'][i_tmp[0]]
-            if ccd_n == -1:
-                continue
-            # print("###")
-            # print(tile_cat.get_data(hdu_index)[i_tmp[0]])
-            # print(hdu_index)
-            # print(ccd_n)
-            jacob_list.append(get_jacob(f_wcs_file[exp_name][ccd_n],
-                                        tile_ra[i_tmp[0]],
-                                        tile_dec[i_tmp[0]]))
-        # print("###")
+            tile_vign_tmp = np.copy(tile_vign[i_tile])
+            flag_vign_tmp = flag_vign_cat[id_tmp][expccd_name_tmp]['VIGNET']
+            flag_vign_tmp[np.where(tile_vign_tmp == -1e30)] = 2**10
+            flag_vign.append(flag_vign_tmp)
+
+            exp_name, ccd_n = re.split('-', expccd_name_tmp)
+            jacob_list.append(get_jacob(f_wcs_file[exp_name][int(ccd_n)],
+                                        tile_ra[i_tile],
+                                        tile_dec[i_tile]))
 
         try:
-            print(len(gal_vign))
-            print(len(psf_vign))
-            print(len(sigma_psf))
-            print(len(weight_vign))
-            print(len(flag_vign))
-            print(len(jacob_list))
-            print(tile_cat.get_data()['N_EPOCH'][i_tile])
             res = do_ngmix_metacal(gal_vign,
                                    psf_vign,
                                    sigma_psf,
@@ -326,12 +348,6 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
         res['obj_id'] = id_tmp
         res['n_epoch_model'] = len(gal_vign)
         final_res.append(res)
-    tile_cat.close()
-    gal_vign_cat.close()
-    bkg_vign_cat.close()
-    psf_vign_cat.close()
-    weight_vign_cat.close()
-    flag_vignet_cat.close()
 
     return final_res
 
