@@ -475,7 +475,6 @@ class PSFExInterpolator(object):
                         output_dict[i][final_list[j][3][where_res[0]]]['SHAPES'] = shape_dict
                     counter += 1
             if counter == 0:
-                print('here')
                 output_dict[i] = 'empty'
 
         return output_dict
