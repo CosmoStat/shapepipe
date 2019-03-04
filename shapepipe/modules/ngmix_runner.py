@@ -352,7 +352,7 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
 
 
 @module_runner(input_module=['sextractor_runner', 'psfexinterp_runner', 'vignetmaker_runner'],
-               version='1.0',
+               version='0.0.1',
                file_pattern=['tile_sexcat', 'image', 'background', 'galaxy_psf', 'weight', 'flag'],
                file_ext=['.fits', '.fits', '.fits', '.fits', '.fits', '.fits'],
                depends=['numpy', 'ngmix', 'galsim'])
