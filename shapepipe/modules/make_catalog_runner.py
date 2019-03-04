@@ -135,14 +135,14 @@ def save_ngmix_data(final_cat_file, ngmix_cat_path):
     # max_epoch = np.max(ngmix_n_epoch)
 
     keys = ['1M', '1P', '2M', '2P', 'NOSHEAR']
-    output_dict = {'NGMIX_ELL_{}'.format(i): np.ones((len(obj_id),2)) * -10. for i in keys}
-    output_dict = {**output_dict, **{'NGMIX_ELL_ERR_{}'.format(i): np.ones((len(obj_id),2)) * -10. for i in keys}}
+    output_dict = {'NGMIX_ELL_{}'.format(i): np.ones((len(obj_id), 2)) * -10. for i in keys}
+    output_dict = {**output_dict, **{'NGMIX_ELL_ERR_{}'.format(i): np.ones((len(obj_id), 2)) * -10. for i in keys}}
     output_dict = {**output_dict, **{'NGMIX_T_{}'.format(i): np.ones((len(obj_id))) * 0. for i in keys}}
     output_dict = {**output_dict, **{'NGMIX_T_ERR_{}'.format(i): np.ones((len(obj_id))) * 1e30 for i in keys}}
     output_dict = {**output_dict, **{'NGMIX_Tpsf_{}'.format(i): np.ones((len(obj_id))) * 0. for i in keys}}
     output_dict = {**output_dict, **{'NGMIX_SNR_{}'.format(i): np.ones((len(obj_id))) * 0. for i in keys}}
     output_dict = {**output_dict, **{'NGMIX_FLAGS_{}'.format(i): np.ones((len(obj_id)), dtype='int16') for i in keys}}
-    for i,id_tmp in enumerate(obj_id[:1000]):
+    for i, id_tmp in enumerate(obj_id):
         ind = np.where(id_tmp == ngmix_id)[0]
         if len(ind) > 0:
             for key in keys:
@@ -187,7 +187,7 @@ def save_psf_data(final_cat_file, galaxy_psf_path):
 
     galaxy_psf_cat = np.load(galaxy_psf_path).item()
 
-    output_dict = {'PSF_ELL_{}'.format(i+1): np.ones((len(obj_id),2)) * -10. for i in range(max_epoch)}
+    output_dict = {'PSF_ELL_{}'.format(i+1): np.ones((len(obj_id), 2)) * -10. for i in range(max_epoch)}
     output_dict = {**output_dict, **{'PSF_FWHM_{}'.format(i+1): np.ones((len(obj_id))) * 0. for i in range(max_epoch)}}
     output_dict = {**output_dict, **{'PSF_FLAG_{}'.format(i+1): np.ones((len(obj_id)), dtype='int16') for i in range(max_epoch)}}
     for i, id_tmp in enumerate(obj_id):
