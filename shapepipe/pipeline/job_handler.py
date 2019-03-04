@@ -8,11 +8,11 @@ This module defines a class for handling pipeline jobs.
 
 """
 
-import multiprocessing as mp
-from modopt.interface.errors import warn
-from joblib import Parallel, delayed, cpu_count
 from configparser import ConfigParser
+from gc import collect
+from joblib import Parallel, delayed, cpu_count
 from logging import Logger
+from modopt.interface.errors import warn
 from shapepipe.pipeline.worker_handler import WorkerHandler
 
 
@@ -42,12 +42,13 @@ class JobHandler(object):
     """
 
     def __init__(self, module, filehd, config, log, batch_size=1,
-                 timeout=None, verbose=True):
+                 backend='loky', timeout=None, verbose=True):
 
         self.filehd = filehd
         self.log = log
         self.config = config
         self._module = module
+        self._module_runner = self.filehd.module_runners[self._module]
         self.error_count = 0
         self._verbose = verbose
 
@@ -56,6 +57,12 @@ class JobHandler(object):
             self.batch_size = self.config.getint('JOB', 'SMP_BATCH_SIZE')
         else:
             self.batch_size = batch_size
+
+        # Set the backend
+        if self.config.has_option('JOB', 'SMP_BACKEND'):
+            self.backend = self.config.get('JOB', 'SMP_BACKEND')
+        else:
+            self.backend = backend
 
         # Set the job timeout limit
         if self.config.has_option('JOB', 'TIMEOUT'):
@@ -199,6 +206,8 @@ class JobHandler(object):
             print('All processes complete')
             print('')
 
+        collect()
+
     def submit_smp_jobs(self):
         """ Submit Jobs
 
@@ -292,10 +301,14 @@ class JobHandler(object):
 
         """
 
-        result = (Parallel(n_jobs=self.batch_size)
+        result = (Parallel(n_jobs=self.batch_size, backend=self.backend)
                   (delayed(WorkerHandler(verbose=self._verbose).worker)
-                   (job_name, process, self.filehd, self.config, self.timeout,
-                   self._module) for job_name, process in
+                   (job_name, process,
+                    self.filehd.get_worker_log_name(self._module, job_name,
+                                                    process[0]),
+                    self.filehd.output_dir, self.config, self.timeout,
+                    self._module_runner)
+                   for job_name, process in
                    zip(self.job_names, self.filehd.process_list.items())))
 
         self.worker_dicts = result

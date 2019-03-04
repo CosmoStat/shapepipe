@@ -6,7 +6,7 @@ This file contains methods for file I/O handling.
 
 :Author: Marc Gentile and Axel Guinot
 
-:Version: 1.0
+:Version: 1.0.1
 
 """
 
@@ -726,6 +726,22 @@ class FITSCatalog(BaseCatalog):
          return fits.info(self.fullpath)
 
    # -----------------------------------------------------------------------------------------------
+   # ADDED
+   def get_ext_name(self, hdu_no=None):
+      """
+         Return the name of an extansion or all of them.
+         @param hdu_no index of the hdu to return. If None return all of them
+         @return a string of the hdu name or a list of string.
+      """
+
+      if hdu_no is None:
+         n = [self._cat_data[i].name for i in range(len(self._cat_data))]
+      else:
+         n = self._cat_data[int(hdu_no)].name
+
+      return n
+
+   # -----------------------------------------------------------------------------------------------
    def col_exists(self, col_name, hdu_no=None):
       """!
          Tell whether a named column exists
@@ -936,28 +952,107 @@ class FITSCatalog(BaseCatalog):
          raise BaseCatalog.CatalogNotOpen(self.fullpath)
 
    # -----------------------------------------------------------------------------------------------
-   def add_col(self, col_name, col_format=None, col_comment=None, col_data=None, hdu_no=None):
-      """!
-         Add a Column to the catalog
-         @param hdu_no HDU index (default is 1)
-         @param col_name column name
-         @param col_format column format: (ignored in this class, automatically determined)
-         @param col_comment column comment
-         @param col_data column data as a numpy array
-      """
+   # def add_col(self, col_name, col_format=None, col_comment=None, col_data=None, hdu_no=None):
+   #    """!
+   #       Add a Column to the catalog
+   #       @param hdu_no HDU index (default is 1)
+   #       @param col_name column name
+   #       @param col_format column format: (ignored in this class, automatically determined)
+   #       @param col_comment column comment
+   #       @param col_data column data as a numpy array
+   #    """
 
-      # -- Add new column
-      col_type = self._get_fits_col_type(col_data)
-      new_col = FITSCatalog.Column(name=col_name, format=col_type,
-                                   comment=col_comment, data=col_data)
+   #    # -- Add new column
+   #    col_type = self._get_fits_col_type(col_data)
+   #    new_col = FITSCatalog.Column(name=col_name, format=col_type,
+   #                                 comment=col_comment, data=col_data)
+   #    if hdu_no is None:
+   #       hdu_no = self.hdu_no
+   #    self._append_col(new_col, hdu_no)
+
+   #    # --- Update internal data
+   #    self._cat_data.close()
+   #    del self._cat_data
+   #    self._cat_data = fits.open(self.fullpath, mode=self.open_mode, memmap=self.use_memmap)
+
+   # -----------------------------------------------------------------------------------------------
+   # ADDED
+   def add_col(self, col_name, col_data, hdu_no=None, ext_name=None, new_cat=False, new_cat_inst=None):
+      """
+         Add a Column to the catalog
+         @param col_name column name
+         @param col_data column data as a numpy array
+         @param hdu_no HDU index where to add the column
+         @param ext_name change the name of the extansion (optional)
+         @param new_cat if True will save the change into a new catalog
+         @param new_cat_inst io.FITSCatalog object for the new catalog
+      """
+      if new_cat:
+          open_mode = new_cat_inst.open_mode
+          output_path = new_cat_inst.fullpath
+      else:
+          open_mode = self.open_mode
+          output_path = self.fullpath
+
+      if self._cat_data is None:
+         raise BaseCatalog.CatalogNotOpen(self.fullpath)
+
+      if open_mode != FITSCatalog.OpenMode.ReadWrite:
+         raise BaseCatalog.OpenModeConflict(open_mode=open_mode, open_mode_needed=FITSCatalog.OpenMode.ReadWrite)
+
+      if type(col_data) != np.ndarray:
+         TypeError("col_data must be a numpy.ndarray")
+
       if hdu_no is None:
          hdu_no = self.hdu_no
-      self._append_col(new_col, hdu_no)
+      if ext_name is None:
+         ext_name = self._cat_data[hdu_no].name
 
-      # --- Update internal data
-      self._cat_data.close()
-      del self._cat_data
-      self._cat_data = fits.open(self.fullpath, mode=self.open_mode, memmap=self.use_memmap)
+      n_of_hdu = len(self._cat_data)
+      old_hdu_prev = []
+      for i in range(0, hdu_no):
+         old_hdu_prev.append(self._cat_data[i])
+      old_hdu_next = []
+      for i in range(hdu_no+1, n_of_hdu):
+         old_hdu_next.append(self._cat_data[i])
+
+      new_fits = fits.HDUList(old_hdu_prev)
+
+      col_list = self._cat_data[hdu_no].data.columns
+
+      data_type = self._get_fits_col_type(col_data)
+      data_shape = col_data.shape[1:]
+      dim = str(tuple(data_shape))
+      mem_size = 1
+      if len(data_shape) != 0:
+         for k in data_shape:
+            mem_size *= k
+         data_format = '{0}{1}'.format(mem_size, data_type)
+         new_col = fits.ColDefs([fits.Column(name=col_name, format=data_format,
+                                 array=col_data, dim=dim)])
+         col_list += new_col
+      elif data_type == 'A':
+         mem_size *= len(max(col_data, key=len))
+         data_format = '{0}{1}'.format(mem_size, data_type)
+         new_col = fits.ColDefs([fits.Column(name=col_name, format=data_format,
+                                 array=col_data, dim=str((mem_size,)))])
+         col_list += new_col
+      else:
+         data_format = '{0}{1}'.format(mem_size, data_type)
+         new_col = fits.ColDefs([fits.Column(name=col_name, format=data_format,
+                                 array=col_data)])
+         col_list += new_col
+
+      new_fits.append(fits.BinTableHDU.from_columns(col_list, name=ext_name))
+
+      new_fits += fits.HDUList(old_hdu_next)
+
+      new_fits.writeto(output_path, overwrite=True)
+
+      if not new_cat:
+          self._cat_data.close()
+          del self._cat_data
+          self._cat_data = fits.open(self.fullpath, mode=self.open_mode, memmap=self.use_memmap)
 
    # -----------------------------------------------------------------------------------------------
    def remove_col(self, col_index):
@@ -1026,7 +1121,7 @@ class FITSCatalog(BaseCatalog):
          col_type = 'D'
       elif type(col_data[0]) is bool:
          col_type = 'L'
-      elif type(col_data[0]) is string:
+      elif type(col_data[0]) in [str, np.str, np.str_, np.str0]:
          col_type = 'A'
       else:
          col_type = 'D'
@@ -1096,6 +1191,11 @@ class FITSCatalog(BaseCatalog):
               data_format = '{0}{1}'.format(mem_size, data_type)
               col_list.append(fits.Column(name=name, format=data_format,
                                           array=data[i], dim=dim))
+          elif data_type == 'A':
+            mem_size *= len(max(data[i], key=len))
+            data_format = '{0}{1}'.format(mem_size, data_type)
+            col_list.append(fits.Column(name=name, format=data_format,
+                                        array=data[i], dim=str((mem_size,))))
           else:
               data_format = '{0}{1}'.format(mem_size, data_type)
               col_list.append(fits.Column(name=name, format=data_format,

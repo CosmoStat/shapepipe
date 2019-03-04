@@ -27,11 +27,6 @@ psfex_tar="3.21.1.tar.gz"
 psfex_dir="psfex-3.21.1"
 psfex_bin="psfex"
 
-# PLplot Package
-plplot_url="https://github.com/PLplot/PLplot/archive/plplot-5.13.0.tar.gz"
-plplot_tar="plplot-5.13.0.tar.gz"
-plplot_dir="PLplot-plplot-5.13.0"
-
 # WeightWatcher Package
 ww_url="https://www.astromatic.net/download/weightwatcher/weightwatcher-1.12.tar.gz"
 ww_tar="weightwatcher-1.12.tar.gz"
@@ -43,6 +38,12 @@ cdsclient_url="http://cdsarc.u-strasbg.fr/ftp/pub/sw/cdsclient.tar.gz"
 cdscleint_tar="cdsclient.tar.gz"
 cdsclient_dir="cdsclient-3.84"
 cdsclient_bin="findgsc2.2"
+
+# mpi4py Package
+mpi_url="https://github.com/mpi4py/mpi4py/archive/3.0.0.tar.gz"
+mpi_tar="3.0.0.tar.gz"
+mpi_dir="mpi4py-3.0.0"
+mpi_bin="mpiexec"
 
 # Divider line
 line="########################################################################"
@@ -89,26 +90,14 @@ build_sex_atlas() {
   make install
 }
 
-# Function to build PLplot
-build_plplot() {
-  echo 'Building PLplot...'
-  download_package $plplot_url $plplot_tar
-  cd $BUILD_DIR/$plplot_dir
-  cmake -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX
-  make
-  make install
-}
-
 # Function to build PSFEx with OpenBLAS
 build_psfex_blas() {
   astromatic_setup
-  build_plplot
   cd $BUILD_DIR/$1
   ./autogen.sh
-  ./configure --prefix=$CONDA_PREFIX --enable-openblas --with-fftw-libdir=$FFTW_LIB \
-  --with-fftw-incdir=$FFTW_INC --with-openblas-libdir=$BLAS_LIB \
-  --with-openblas-incdir=$BLAS_INC --with-plplot-libdir=$PLPLOT_LIB \
-  --with-plplot-incdir=$PLPLOT_INC --quiet
+  ./configure --prefix=$CONDA_PREFIX --enable-openblas --enable-plplot=no \
+  --with-fftw-libdir=$FFTW_LIB --with-fftw-incdir=$FFTW_INC \
+  --with-openblas-libdir=$BLAS_LIB --with-openblas-incdir=$BLAS_INC --quiet
   make -j --quiet
   make install
 }
@@ -116,19 +105,16 @@ build_psfex_blas() {
 # Function to build PSFEx with ATLAS
 build_psfex_atlas() {
   astromatic_setup
-  build_plplot
   cd $BUILD_DIR/$1
   ./autogen.sh
   if [ "$ATLAS_SEARCH" == TRUE ]
   then
-    ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$FFTW_LIB \
-    --with-fftw-incdir=$FFTW_INC -with-plplot-libdir=$PLPLOT_LIB \
-    --with-plplot-incdir=$PLPLOT_INC --quiet
+    ./configure --prefix=$CONDA_PREFIX --enable-plplot=no \
+    --with-fftw-libdir=$FFTW_LIB --with-fftw-incdir=$FFTW_INC --quiet
   else
-    ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$FFTW_LIB \
-    --with-fftw-incdir=$FFTW_INC --with-atlas-libdir=$ATLAS_LIB \
-    --with-atlas-incdir=$ATLAS_INC -with-plplot-libdir=$PLPLOT_LIB \
-    --with-plplot-incdir=$PLPLOT_INC --quiet
+    ./configure --prefix=$CONDA_PREFIX --enable-plplot=no \
+    --with-fftw-libdir=$FFTW_LIB --with-fftw-incdir=$FFTW_INC \
+    --with-atlas-libdir=$ATLAS_LIB --with-atlas-incdir=$ATLAS_INC --quiet
   fi
   make -j --quiet
   make install
@@ -140,6 +126,12 @@ build_standard() {
   ./configure --prefix=$CONDA_PREFIX --quiet
   make --quiet
   make install
+}
+
+build_mpi(){
+  cd $BUILD_DIR/$1
+  python setup.py build --mpicc=$MPI_ROOT
+  python setup.py install
 }
 
 # Check if a binary executable is already installed in the conda environment
@@ -198,10 +190,11 @@ finish() {
   echo ''
   echo $line
   echo 'Installation Complete!'
-  check_binary2 $sex_bin "SExtractor"
-  check_binary2 $psfex_bin "PSFEx"
-  check_binary2 $ww_bin "WeightWatcher"
-  check_binary2 $cdsclient_bin "CDSclient"
+  if [ "$INSTALL_SEX" == TRUE ]; then check_binary2 $sex_bin "SExtractor"; fi
+  if [ "$INSTALL_PSFEX" == TRUE ]; then check_binary2 $psfex_bin "PSFEx"; fi
+  if [ "$INSTALL_WW" == TRUE ]; then check_binary2 $ww_bin "WeightWatcher"; fi
+  if [ "$INSTALL_CDSCLIENT" == TRUE ]; then check_binary2 $cdsclient_bin "CDSclient"; fi
+  if [ "$USE_MPI" == TRUE ]; then check_binary2 $mpi_bin "MPI"; fi
   echo $line
   echo ''
 }
@@ -213,6 +206,7 @@ setup() {
   echo 'Install PSFEx:' $INSTALL_PSFEX
   echo 'Install WeightWatcher:' $INSTALL_WW
   echo 'Install CDSclient:' $INSTALL_CDSCLIENT
+  echo 'Use MPI:' $USE_MPI
   echo 'ShapePipe Directory:' $PIPE_DIR
   echo 'Build Directory:' $BUILD_DIR
   echo ''
@@ -247,6 +241,7 @@ INSTALL_WW=TRUE
 INSTALL_CDSCLIENT=TRUE
 ATLAS_SEARCH=FALSE
 use_atlas=FALSE
+USE_MPI=TRUE
 
 help="$(basename "$0") [OPTIONS]\n\n
 Options:\n
@@ -270,8 +265,10 @@ Executable Build Options:\n
 \t--atlas-lib\t path to ATLAS library directory\n
 \t--atlas-inc\t path to ATLAS include directory\n
 \t--atlas-search\t search system path for ATLAS directories\n
-\t--plplot-lib\t path to PLPlot library directory\n
-\t--plplot-inc\t path to PLPlot include directory\n\n
+
+MPI Build Options:\n
+\t--no_mpi\t do not use MPI\n
+\t--mpi_root\t path to MPI installation\n\n
 
 "
 
@@ -350,12 +347,12 @@ case $i in
     ATLAS_SEARCH=TRUE
     shift
     ;;
-    --plplot-lib=*)
-    PLPLOT_LIB="${i#*=}"
+    --no-mpi)
+    USE_MPI=FALSE
     shift
     ;;
-    --plplot-inc=*)
-    PLPLOT_INC="${i#*=}"
+    --mpi-root=*)
+    MPI_ROOT="${i#*=}"
     shift
     ;;
     --no-exe)
@@ -426,8 +423,6 @@ if [ -z "$FFTW_LIB" ]; then FFTW_LIB=$CONDA_PREFIX/lib; fi
 if [ -z "$FFTW_INC" ]; then FFTW_INC=$CONDA_PREFIX/include; fi
 if [ -z "$BLAS_LIB" ]; then BLAS_LIB=$CONDA_PREFIX/lib; fi
 if [ -z "$BLAS_INC" ]; then BLAS_INC=$CONDA_PREFIX/include; fi
-if [ -z "$PLPLOT_LIB" ]; then PLPLOT_LIB=$CONDA_PREFIX/lib; fi
-if [ -z "$PLPLOT_INC" ]; then PLPLOT_INC=$CONDA_PREFIX/include/plplot; fi
 
 ##############################################################################
 # INSTALL DEVELOPER PACKAGES
@@ -448,29 +443,44 @@ fi
 if [ "$SYSOS" == "macOS" ]
 then
   report_progress 'macOS Requirements'
-  conda install wget -y
-  conda install automake autoconf libtool -y
+  conda install -n shapepipe wget -y
+  conda install -n shapepipe automake autoconf libtool -y
   export C_INCLUDE_PATH=$CONDA_PREFIX/include
   export CFLAGS="-Wl,-rpath,$CONDA_PREFIX/lib"
+fi
+
+##############################################################################
+# INSTALL MPI REQUIRMENTS
+##############################################################################
+
+# Install mpi4py
+if [ "$USE_MPI" == TRUE ]
+then
+  report_progress 'MPI'
+  if [ -z "$MPI_ROOT" ]
+  then
+    conda install -n shapepipe mpi4py -y
+  else
+    download_package $mpi_url $mpi_tar
+    build_mpi $mpi_dir
+  fi
 fi
 
 ##############################################################################
 # BUILD EXTERNAL EXECUTABLES
 ##############################################################################
 
-
-
 # Build SExtractor
 if [ "$INSTALL_SEX" == TRUE ] && check_binary $sex_bin
 then
   report_progress 'SExtractor'
-  conda install -c conda-forge fftw -y
+  conda install -n shapepipe -c conda-forge fftw -y
   download_package $sex_url $sex_tar
   if [ "$use_atlas" == TRUE ]
   then
     build_sex_atlas $sex_dir
   else
-    conda install -c conda-forge openblas -y
+    conda install -n shapepipe -c conda-forge openblas -y
     build_sex_blas $sex_dir
   fi
 fi
@@ -479,13 +489,15 @@ fi
 if [ "$INSTALL_PSFEX" == TRUE ] && check_binary $psfex_bin
 then
   report_progress 'PSFEx'
-  conda install -c conda-forge fftw -y
+  conda install cmake -y
+  conda install libpng -y
+  conda install -n shapepipe -c conda-forge fftw -y
   download_package $psfex_url $psfex_tar
   if [ "$use_atlas" == TRUE ]
   then
     build_psfex_atlas $psfex_dir
   else
-    conda install -c conda-forge openblas -y
+    conda install -n shapepipe -c conda-forge openblas -y
     build_psfex_blas $psfex_dir
   fi
 fi

@@ -28,6 +28,18 @@ on a machine where the CFIS images are stored:
 
   cfis_field_select.py -i /home/mkilbing/astro/data/CFIS/tiles -t tile -m a --plot -v --area 210deg_55deg_211deg_56deg -o area_W3_1deg
 
+This creates the ascii file `area_W3_1deg.txt`. The pdf file `area_W3_1deg.pdf` shows the (projected) geometry of the selected tiles.
+
+Create links with pipeline numbering scheme
+-------------------------------------------
+
+Create a new directory, which will be the input directory containing links to the original image and weight tiles.
+Call the script `cfis_create_image_links.py` to create those links.
+
+.. code-block:: back
+
+  mkdir data
+  cfis_create_image_links.py -i area_W3_1deg.txt -o data
 
 
 Retrieve to local machine from cc
@@ -88,7 +100,7 @@ B. Tiles processing
 
   On output, SExtractor files ``sexcat_*.fits`` are created.
 
-3. Write detected tiles obects as exposure-single-CCD catalogue files. ``Module tileobj_as_exp``.
+3. Write detected tiles obects as exposure-single-CCD catalogue files. Module ``tileobj_as_exp``.
 
   .. code-block:: bash
 
@@ -96,7 +108,7 @@ B. Tiles processing
     ~/ShapePipe/shapepipe_run.py -c config_tiles/config.tileobj_as_exp.ini
 
   On input, the original tile images (to read their FITS header), the SExtractor catalogues (step B.2), and
-the exposure-single-CCD images (to use their WCS header information; from A.1) are used.
+  the exposure-single-CCD images (to use their WCS header information; from A.1) are used.
   
   On output, exposure-single-CCD catalogues ``cat.exp*.fits`` are created.
 

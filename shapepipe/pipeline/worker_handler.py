@@ -29,7 +29,8 @@ class WorkerHandler(object):
         self._stderr = None
         self._verbose = verbose
 
-    def worker(self, job_name, process, filehd, config, timeout, module):
+    def worker(self, job_name, process, w_log_name, output_dir, config,
+               timeout, module_runner):
         """ Worker
 
         This method defines a worker.
@@ -38,14 +39,18 @@ class WorkerHandler(object):
         ----------
         job_name : str
             Job name
-        Process : str
+        process : str
             File to be processed
+        w_log_name : str
+            Worker log name
+        module_runner : function
+            Module runner
+        output_dir : str
+            Output directory
         config : CustomParser
             Configuaration parser instance
         timeout : int
             Timeout limit in seconds
-        module : str
-            Module runner name
 
         Returns
         -------
@@ -54,9 +59,12 @@ class WorkerHandler(object):
 
         """
 
-        self._filehd = filehd
+        self._w_log_name = w_log_name
+        self._output_dir = output_dir
         self._config = config
-        self._prepare_worker(job_name, process, timeout, module)
+        self._module_runner = module_runner
+        self._prepare_worker(job_name, process, timeout,
+                             module_runner.__name__)
         self._create_worker_log()
         self._run_worker()
         close_log(self.w_log, verbose=False)
@@ -107,11 +115,7 @@ class WorkerHandler(object):
                   self.worker_dict['job_name'], self.worker_dict['pid'],
                   self.worker_dict['process']))
 
-        self.w_log = set_up_log(self._filehd.get_worker_log_name(
-                                self.worker_dict['module'],
-                                self.worker_dict['job_name'],
-                                self.worker_dict['process'][0]),
-                                verbose=False)
+        self.w_log = set_up_log(self._w_log_name, verbose=False)
         self.worker_dict['log'] = self.w_log.name
         self.w_log.info('Worker process running with:')
         self.w_log.info(' - Job Name: {}'.format(
@@ -165,17 +169,14 @@ class WorkerHandler(object):
         self.w_log.info(' - Running module: {}'.format(
                         self.worker_dict['module']))
 
-        moduler_runner = (self._filehd.module_runners[
-                          self.worker_dict['module']])
-
         file_number_string = self.worker_dict['process'][0]
         input_file_list = self.worker_dict['process'][1]
-        output_dir = self._filehd.output_dir
 
-        self._stdout, self._stderr = moduler_runner(input_file_list,
-                                                    output_dir,
-                                                    file_number_string,
-                                                    self._config, self.w_log)
+        self._stdout, self._stderr = self._module_runner(input_file_list,
+                                                         self._output_dir,
+                                                         file_number_string,
+                                                         self._config,
+                                                         self.w_log)
 
     def _log_stdout(self):
         """ Log STDOUT

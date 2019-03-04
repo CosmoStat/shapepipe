@@ -25,7 +25,8 @@ def split_mpi_jobs(jobs, batch_size):
     return [jobs[_i::batch_size] for _i in range(batch_size)]
 
 
-def submit_mpi_jobs(jobs, filehd, config, timeout, module, verbose):
+def submit_mpi_jobs(jobs, config, timeout, output_dir, module_runner,
+                    worker_log, verbose):
     """ Submit MPI Jobs
 
     This method distributes the jobs to the workers using MPI.
@@ -35,8 +36,13 @@ def submit_mpi_jobs(jobs, filehd, config, timeout, module, verbose):
     result = []
 
     for job in jobs:
+
+        job_name = job[0]
+        process = job[1]
+        w_log_name = worker_log(module_runner.__name__, job_name, process[0])
+
         wh = WorkerHandler(verbose=verbose)
-        result.append(wh.worker(job[0], job[1], filehd, config, timeout,
-                      module))
+        result.append(wh.worker(job_name, process, w_log_name, output_dir,
+                      config, timeout, module_runner))
 
     return result

@@ -51,10 +51,7 @@ class mask(object):
         self._path_external_flag = path_external_flag                           # Path to an external flag file
         self._outname_base = outname_base                                       # Output file base name
 
-        # s=re.split("\-([0-9]*)\-([0-9]+)\.",self._image_fullpath)
-        # self._img_number='-{0}-{1}'.format(s[1],s[2])                           # Needed for temporary file
         self._img_number = image_num
-        # self._img_name = os.path.split(re.split(image_num, image_path)[0])[1]
         if (image_suffix.lower() != 'none') & (image_suffix != ''):
             self._img_suffix = image_suffix + '_'
         else:
@@ -308,7 +305,7 @@ class mask(object):
             raise ValueError('Width not provided')
 
         # MKDEBUG: Exchanged x and y in the following init call, since the python image is [y, x]
-        flag = np.zeros((int(self._fieldcenter['pix'][1]*2), int(self._fieldcenter['pix'][0]*2)), dtype='uint8')
+        flag = np.zeros((int(self._fieldcenter['pix'][1]*2), int(self._fieldcenter['pix'][0]*2)), dtype='uint16')
 
         flag[0:width, :] = flag_value
         flag[-width:, :] = flag_value
@@ -380,7 +377,7 @@ class mask(object):
         # print('MKDEBUG Messier objects found: first=#{} {}/{}'.format(m_cat['No'][ind[0]], m_cat['ra'][ind[0]], m_cat['dec'][ind[0]]))
 
         # MKDEBUG: Exchanged x and y in the following init call, since the python image is [y, x]
-        flag = np.zeros((int(self._fieldcenter['pix'][1]*2), int(self._fieldcenter['pix'][0]*2)), dtype='uint8')
+        flag = np.zeros((int(self._fieldcenter['pix'][1]*2), int(self._fieldcenter['pix'][0]*2)), dtype='uint16')
 
         for i in ind:
             m_center = np.hstack(self._wcs.all_world2pix(m_cat['ra'][i], m_cat['dec'][i], 0))

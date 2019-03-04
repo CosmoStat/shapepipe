@@ -18,9 +18,13 @@ from shapepipe.pipeline.config import create_config_parser
 from shapepipe.pipeline.dependency_handler import DependencyHandler
 from shapepipe.pipeline.file_handler import FileHandler
 from shapepipe.pipeline.job_handler import JobHandler
-
-from mpi4py import MPI
 from shapepipe.pipeline.mpi_run import split_mpi_jobs, submit_mpi_jobs
+try:
+    from mpi4py import MPI
+except ImportError:  # pragma: no cover
+    import_mpi = False
+else:
+    import_mpi = True
 
 
 class ShapePipe():
@@ -135,7 +139,7 @@ class ShapePipe():
         module_dep = self._get_module_depends('depends') + __installs__
         module_exe = self._get_module_depends('executes')
 
-        module_dep += ['mpi4py'] if self.mode == 'mpi' else module_dep
+        module_dep += ['mpi4py'] if import_mpi else module_dep
 
         dh = DependencyHandler(module_dep, module_exe)
 
@@ -218,6 +222,21 @@ class ShapePipe():
         # Check the versions of these modules
         self._check_module_versions()
 
+    def record_mode(self):
+        """ Record Mode
+
+        Log mode in which ShapePipe is running.
+
+        """
+
+        mode_text = 'Running ShapePipe using {}'.format(self.mode)
+
+        self.log.info(mode_text)
+        self.log.info('')
+        if self.verbose:
+            print(mode_text)
+            print('')
+
 
 def run_smp(pipe):
     """ Run SMP
@@ -245,6 +264,9 @@ def run_smp(pipe):
         # Update error count
         pipe.error_count += jh.error_count
 
+        # Delete job handler
+        del jh
+
     # Finish and close the pipeline log
     pipe.close_pipeline_log()
 
@@ -270,44 +292,61 @@ def run_mpi(pipe, comm):
     modules = pipe.modules if master else None
     modules = comm.bcast(modules, root=0)
 
+    # Get ShapePipe objects
+    if master:
+        config = pipe.config
+        verbose = pipe.config
+    else:
+        config, verbose, worker_log = None, None, None
+    config = comm.bcast(config, root=0)
+    verbose = comm.bcast(verbose, root=0)
+
     # Loop through modules to be run
     for module in modules:
 
         if master:
-            # Get ShapePipe objects
-            filehd, config, verbose = pipe.filehd, pipe.config, pipe.verbose
             # Create a job handler for the current module
-            jh = JobHandler(module, filehd=filehd, config=config,
+            jh = JobHandler(module, filehd=pipe.filehd, config=config,
                             log=pipe.log, verbose=verbose)
             # Get JobHandler objects
             timeout, job_names = jh.timeout, jh.job_names
+            # Get file handler objects
+            output_dir = jh.filehd.output_dir
+            module_runner = jh.filehd.module_runners[module]
+            worker_log = jh.filehd.get_worker_log_name
             # Define process list
             process_list = list(jh.filehd.process_list.items())
             # Define job list
             jobs = split_mpi_jobs(list(zip(job_names, process_list)),
                                   comm.size)
+            del job_names, process_list
         else:
-            filehd, config, verbose = None, None, None
-            jh, timeout, jobs = None, None, None
+            output_dir, module_runner, worker_log, timeout, jobs = \
+             (None, None, None, None, None)
 
         # Broadcast objects to all nodes
-        filehd = comm.bcast(filehd, root=0)
-        config = comm.bcast(config, root=0)
-        verbose = comm.bcast(verbose, root=0)
+        output_dir = comm.bcast(output_dir, root=0)
+        module_runner = comm.bcast(module_runner, root=0)
+        worker_log = comm.bcast(worker_log, root=0)
         timeout = comm.bcast(timeout, root=0)
         jobs = comm.scatter(jobs, root=0)
 
         # Submit the MPI jobs and gather results
-        results = comm.gather(submit_mpi_jobs(jobs, filehd, config, timeout,
-                              module, verbose), root=0)
+        results = comm.gather(submit_mpi_jobs(jobs, config, timeout,
+                              output_dir, module_runner, worker_log,
+                              verbose), root=0)
+
+        del output_dir, module_runner, timeout, jobs
 
         if master:
             # Assign worker dictionaries
-            jh.worker_dicts = filehd.flatten_list(results)
+            jh.worker_dicts = jh.filehd.flatten_list(results)
             # Finish up job handler session
             jh.finish_up()
             # Update error count
             pipe.error_count += jh.error_count
+            # Delete job handler
+            del jh
 
     # Finish and close the pipeline log
     pipe.close_pipeline_log() if master else None
@@ -315,18 +354,26 @@ def run_mpi(pipe, comm):
 
 def main(args=None):
 
-    comm = MPI.COMM_WORLD
-
     try:
 
-        if comm.rank == 0:
+        if import_mpi:
+            comm = MPI.COMM_WORLD
+            master = comm.rank == 0
+        else:
+            master = True
+
+        if master:
             pipe = ShapePipe()
             mode = pipe.mode
         else:
             pipe = None
             mode = None
 
-        mode = comm.bcast(mode, root=0)
+        mode = comm.bcast(mode, root=0) if import_mpi else 'smp'
+
+        if master:
+            pipe.mode = mode
+            pipe.record_mode()
 
         if mode == 'mpi':
             run_mpi(pipe, comm)
@@ -334,7 +381,7 @@ def main(args=None):
             run_smp(pipe)
 
     except Exception as err:
-        if comm.rank == 0:
+        if master:
             catch_error(err, pipe.log)
             return 1
 
