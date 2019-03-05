@@ -301,9 +301,7 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
 
     final_res = []
     prior = get_prior()
-    for i_tile, id_tmp in enumerate(obj_id[:1000]):
-        print("{}/{}".format(i_tile, len(obj_id[:1000])))
-
+    for i_tile, id_tmp in enumerate(obj_id):
         gal_vign = []
         psf_vign = []
         sigma_psf = []
@@ -353,8 +351,8 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
 
 @module_runner(input_module=['sextractor_runner', 'psfexinterp_runner', 'vignetmaker_runner'],
                version='0.0.1',
-               file_pattern=['tile_sexcat', 'image', 'background', 'galaxy_psf', 'weight', 'flag'],
-               file_ext=['.fits', '.fits', '.fits', '.fits', '.fits', '.fits'],
+               file_pattern=['tile_sexcat', 'image', 'exp_background', 'galaxy_psf', 'weight', 'flag'],
+               file_ext=['.fits', '.npy', '.npy', '.npy', '.npy', '.npy'],
                depends=['numpy', 'ngmix', 'galsim'])
 def ngmix_runner(input_file_list, output_dir, file_number_string,
                  config, w_log):
