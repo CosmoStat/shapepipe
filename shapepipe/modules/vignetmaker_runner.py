@@ -282,7 +282,7 @@ class vignetmaker(object):
             if len(image_dir) != len(image_pattern):
                 output_dict = self._get_stamp_me(image_dir[0], image_pattern[i])
             else:
-                output_dict = self._get_stamp_me(image_dir[0], image_pattern[i])
+                output_dict = self._get_stamp_me(image_dir[i], image_pattern[i])
 
             self._save_vignet_me(output_dict, image_pattern[i])
 
@@ -301,14 +301,6 @@ class vignetmaker(object):
         """
         output_name = self._output_dir + '/' + suffix + '_vignet{}'.format(self._image_num)
         np.save(output_name, output_dict)
-        # f = io.FITSCatalog(output_name, SEx_catalog=True,
-        #                    open_mode=io.BaseCatalog.OpenMode.ReadWrite)
-        #
-        # for i in range(len(output[0])):
-        #     out_dict = {'NUMBER': np.array(output_list[0][i]).squeeze(),
-        #                 'VIGNET': np.array(output_list[1][i]).squeeze()}
-        #     f.save_as_fits(data=out_dict, ext_name='N_EPOCH_{}'.format(i),
-        #                    sex_cat_path=self._galcat_path)
 
 
 def get_original_vignet(galcat_path):
@@ -408,17 +400,17 @@ def vignetmaker_runner(input_file_list, output_dir, file_number_string,
             raise ValueError("The STAMP_SIZE must be odd")
         rad = int(stamp_size/2)
 
-        suffix = config.getlist("VIGNETMAKER_RUNNER", "SUFFIX")
-        if len(suffix) != len(input_file_list[1:]):
-            raise ValueError("You must provide a suffix for each image from "
-                             "which you extract stamps.")
-
         pos_type = config.get("VIGNETMAKER_RUNNER", "COORD")
         pos_params = config.getlist("VIGNETMAKER_RUNNER", "POSITION_PARAMS")
 
         mode = config.get("VIGNETMAKER_RUNNER", "MODE")
 
         if mode == 'CLASSIC':
+            suffix = config.getlist("VIGNETMAKER_RUNNER", "SUFFIX")
+            if len(suffix) != len(input_file_list[1:]):
+                raise ValueError("You must provide a suffix for each image from "
+                                 "which you extract stamps.")
+                                 
             inst = vignetmaker(galcat_path, pos_type, pos_params,
                                output_dir, file_number_string)
             inst.process(input_file_list[1:], rad, suffix)
