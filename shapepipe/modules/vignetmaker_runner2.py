@@ -384,7 +384,7 @@ def save_vignet(vign, sexcat_path, output_dir, suffix, image_num):
                file_pattern=['galaxy_selection', 'image'],
                file_ext=['.fits', '.fits'], depends=['numpy', 'astropy', 'sf_tools'])
 def vignetmaker_runner2(input_file_list, output_dir, file_number_string,
-                       config, w_log):
+                        config, w_log):
 
     galcat_path = input_file_list[0]
 
