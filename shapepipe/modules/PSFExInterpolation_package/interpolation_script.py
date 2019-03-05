@@ -7,7 +7,7 @@ This module computes the PSFs from a PSFEx model at several galaxy positions.
 Was using Erin Sheldon & Eli Rykoff's psfex module, available on GitHub at:
 https://github.com/esheldon/psfex
 
-:Author: Morgan Schmitz
+:Author: Morgan Schmitz and Axel Guinot
 
 :Version: 1.2.0
 
@@ -125,6 +125,8 @@ class PSFExInterpolator(object):
         self._galcat_path = galcat_path
         # Path to output file to be written
         self._output_path = output_path+'/galaxy_psf'
+        # Path to output file to be written for validation
+        self._output_path_validation = output_path+'/validation_psf'
         # if required, compute and save shapes
         self._compute_shape = get_shapes
         # Number of stars under which we don't interpolate the PSF
@@ -242,9 +244,122 @@ class PSFExInterpolator(object):
                     'E1_PSF_HSM': self.psf_shapes[:, 0],
                     'E2_PSF_HSM': self.psf_shapes[:, 1],
                     'SIGMA_PSF_HSM': self.psf_shapes[:, 2],
-                    'HSM_FLAG': self.psf_shapes[:, 3].astype(int)}
+                    'FLAG_PSF_HSM': self.psf_shapes[:, 3].astype(int)}
         else:
             data = {'VIGNET': self.interp_PSFs}
+        output.save_as_fits(data, sex_cat_path=self._galcat_path)
+
+    def process_validation(self, psfex_cat_path):
+        """
+        """
+
+        if self.gal_pos is None:
+            self._get_galaxy_positions()
+
+        if self.interp_PSFs is None:
+            self._interpolate()
+
+        if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGH_STARS:
+            self._w_log.info('Not enough stars to interpolate the psf'
+                             ' in the file {}.'.format(self._dotpsf_path))
+        else:
+            star_cat = sc.FITSCatalog(self._galcat_path, SEx_catalog=True)
+            star_cat.open()
+            star_dict = {}
+            star_vign = np.copy(star_cat.get_data()['VIGNET'])
+            star_dict['NUMBER'] = np.copy(star_cat.get_data()['NUMBER'])
+            star_dict['X'] = np.copy(star_cat.get_data()['XWIN_IMAGE'])
+            star_dict['Y'] = np.copy(star_cat.get_data()['YWIN_IMAGE'])
+            star_dict['RA'] = np.copy(star_cat.get_data()['XWIN_WORLD'])
+            star_dict['DEC'] = np.copy(star_cat.get_data()['YWIN_WORLD'])
+            star_dict['MAG'] = np.copy(star_cat.get_data()['MAG_AUTO'])
+            star_dict['SNR'] = np.copy(star_cat.get_data()['SNR_WIN'])
+            star_cat.close()
+
+            self._get_psfshapes()
+            self._get_starshapes(star_vign)
+            psfex_cat_dict = self._get_psfexcatdict(psfex_cat_path)
+
+            self._write_output_validation(star_dict, psfex_cat_dict)
+
+    def _get_starshapes(self, star_vign):
+        """ Compute shapes of stars at stars positions using HSM.
+
+        Parameters
+        ----------
+        star_vign : numpy.ndarray
+            Array containing the star's vignets.
+
+        """
+        if import_fail:
+            raise ImportError('Galsim is required to get shapes information')
+
+        star_moms = [hsm.FindAdaptiveMom(Image(star), strict=False)
+                     for star in star_vign]
+
+        self.star_shapes = np.array([[moms.observed_shape.g1,
+                                     moms.observed_shape.g2,
+                                     moms.moments_sigma,
+                                     int(bool(moms.error_message))] for moms in star_moms])
+
+    def _get_psfexcatdict(self, psfex_cat_path):
+        """ Get data from PSFEx .cat file.
+
+        Parameters
+        ----------
+        psfex_cat_path : str
+            Path to the .cat file from PSFEx.
+
+        Returns
+        -------
+        psfex_cat_dict : dict
+            Dictionary containing information from PFSEx .cat file.
+
+        """
+
+        psfex_cat = sc.FITSCatalog(psfex_cat_path, SEx_catalog=True)
+        psfex_cat.open()
+
+        psfex_cat_dict = {}
+        psfex_cat_dict['SOURCE_NUMBER'] = np.copy(psfex_cat.get_data()['SOURCE_NUMBER'])
+        psfex_cat_dict['DELTAX_IMAGE'] = np.copy(psfex_cat.get_data()['DELTAX_IMAGE'])
+        psfex_cat_dict['DELTAY_IMAGE'] = np.copy(psfex_cat.get_data()['DELTAY_IMAGE'])
+        psfex_cat_dict['CHI2_PSF'] = np.copy(psfex_cat.get_data()['CHI2_PSF'])
+
+        return psfex_cat_dict
+
+    def _write_output_validation(self, star_dict, psfex_cat_dict):
+        """ Save computed PSFs and stars to fits file.
+
+        Parameters
+        ----------
+        star_dict : dict
+            Dictionary containing star informations.
+        psfex_cat_dict : dict
+            Dictionary containing information from PFSEx .cat file.
+
+        """
+        output = sc.FITSCatalog(self._output_path_validation+self._img_number+'.fits',
+                                open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
+                                SEx_catalog=True)
+
+        data = {'E1_PSF_HSM': self.psf_shapes[:, 0],
+                'E2_PSF_HSM': self.psf_shapes[:, 1],
+                'SIGMA_PSF_HSM': self.psf_shapes[:, 2],
+                'FLAG_PSF_HSM': self.psf_shapes[:, 3].astype(int),
+                'E1_STAR_HSM': self.star_shapes[:, 0],
+                'E2_STAR_HSM': self.star_shapes[:, 1],
+                'SIGMA_STAR_HSM': self.star_shapes[:, 2],
+                'FLAG_STAR_HSM': self.star_shapes[:, 3].astype(int)}
+        data = {**data, **star_dict}
+
+        data['ACCEPTED'] = np.ones_like(data['NUMBER'], dtype='int16')
+        star_used = psfex_cat_dict.pop('SOURCE_NUMBER')
+
+        for i in range(len(data['NUMBER'])):
+            if i+1 not in star_used:
+                data['ACCEPTED'][i] = 0
+
         output.save_as_fits(data, sex_cat_path=self._galcat_path)
 
     def process_me(self, dot_psf_dir, dot_psf_pattern, f_wcs_path):
@@ -267,17 +382,17 @@ class PSFExInterpolator(object):
         if self.gal_pos is None:
             self._get_galaxy_positions()
 
-        output_list = self._interpolate_me()
+        output_dict = self._interpolate_me()
 
-        self._write_output_me(output_list)
+        self._write_output_me(output_dict)
 
     def _interpolate_me(self):
         """ Interpolate PSFs for multi-epoch run.
 
         Returns
         -------
-        list
-            List contianing object Ids, the interpolated PSFs and shapes (optionally)
+        dict
+            Dictionnary containing object Ids, the interpolated PSFs and shapes (optionally)
 
         """
         cat = sc.FITSCatalog(self._galcat_path, SEx_catalog=True)
@@ -296,6 +411,7 @@ class PSFExInterpolator(object):
             array_psf = None
             array_id = None
             array_shape = None
+            array_exp_name = None
             for ccd in ccd_list:
                 if ccd == -1:
                     continue
@@ -331,50 +447,45 @@ class PSFExInterpolator(object):
                 else:
                     array_shape = None
 
-            final_list.append([array_id, array_psf, array_shape])
+                exp_name_tmp = np.array([exp_name + '-' + str(ccd) for i in range(len(obj_id))])
+                if array_exp_name is None:
+                    array_exp_name = exp_name_tmp
+                else:
+                    array_exp_name = np.concatenate((array_exp_name, exp_name_tmp))
+
+            final_list.append([array_id, array_psf, array_shape, array_exp_name])
 
         cat.close()
 
-        output_list_id = [[] for i in range(max(n_epoch))]
-        output_list_vign = [[] for i in range(max(n_epoch))]
-        output_list_shape = [[] for i in range(max(n_epoch))]
-        for i in range(len(all_id)):
+        output_dict = {}
+        for id_tmp in all_id:
+            output_dict[id_tmp] = {}
             counter = 0
             for j in range(len(final_list)):
-                where_res = np.where(final_list[j][0] == all_id[i])[0]
-
+                where_res = np.where(final_list[j][0] == id_tmp)[0]
                 if (len(where_res) != 0):
-                    output_list_id[counter].append(final_list[j][0][where_res])
-                    output_list_vign[counter].append(final_list[j][1][where_res])
+                    output_dict[id_tmp][final_list[j][3][where_res[0]]] = {}
+                    output_dict[id_tmp][final_list[j][3][where_res[0]]]['VIGNET'] = final_list[j][1][where_res[0]]
                     if self._compute_shape:
-                        output_list_shape[counter].append(final_list[j][2][where_res])
+                        shape_dict = {}
+                        shape_dict['E1_PSF_HSM'] = final_list[j][2][where_res[0]][0]
+                        shape_dict['E2_PSF_HSM'] = final_list[j][2][where_res[0]][1]
+                        shape_dict['SIGMA_PSF_HSM'] = final_list[j][2][where_res[0]][2]
+                        shape_dict['FLAG_PSF_HSM'] = final_list[j][2][where_res[0]][3]
+                        output_dict[id_tmp][final_list[j][3][where_res[0]]]['SHAPES'] = shape_dict
                     counter += 1
+            if counter == 0:
+                output_dict[id_tmp] = 'empty'
 
-        return [output_list_id, output_list_vign, output_list_shape]
+        return output_dict
 
-    def _write_output_me(self, output_list):
-        """ Save computed PSFs to fits file for multi-epoch run.
+    def _write_output_me(self, output_dict):
+        """ Save computed PSFs to numpy object file for multi-epoch run.
 
         Parameters
         ----------
-        output_list : list
-            List of outputs to save
+        output_dict : dict
+            Dictionnary of outputs to save
 
         """
-        output_file = sc.FITSCatalog(self._output_path+self._img_number+'.fits',
-                                     open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
-                                     SEx_catalog=True)
-
-        for i in range(len(output_list[0])):
-            out_dict = {}
-            out_dict['NUMBER'] = np.array(output_list[0][i]).squeeze()
-            out_dict['VIGNET'] = np.array(output_list[1][i]).squeeze()
-            if self._compute_shape:
-                out_dict['E1_PSF_HSM'] = np.array(output_list[2][i]).squeeze()[:, 0]
-                out_dict['E2_PSF_HSM'] = np.array(output_list[2][i]).squeeze()[:, 1]
-                out_dict['SIGMA_PSF_HSM'] = np.array(output_list[2][i]).squeeze()[:, 2]
-                out_dict['HSM_FLAG'] = np.array(output_list[2][i]).squeeze()[:, 3].astype(int)
-
-            output_file.save_as_fits(out_dict,
-                                     ext_name='N_EPOCH_{}'.format(i+1),
-                                     sex_cat_path=self._galcat_path)
+        np.save(self._output_path+self._img_number, output_dict)
