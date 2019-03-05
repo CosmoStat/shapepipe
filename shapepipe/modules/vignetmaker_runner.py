@@ -410,7 +410,7 @@ def vignetmaker_runner(input_file_list, output_dir, file_number_string,
             if len(suffix) != len(input_file_list[1:]):
                 raise ValueError("You must provide a suffix for each image from "
                                  "which you extract stamps.")
-                                 
+
             inst = vignetmaker(galcat_path, pos_type, pos_params,
                                output_dir, file_number_string)
             inst.process(input_file_list[1:], rad, suffix)
