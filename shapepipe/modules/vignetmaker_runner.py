@@ -294,7 +294,7 @@ class vignetmaker(object):
         f = io.FITSCatalog(output_name, SEx_catalog=True,
                            open_mode=io.BaseCatalog.OpenMode.ReadWrite)
 
-        for i in range(len(output_list[0])):
+        for i in range(len(output[0])):
             out_dict = {'NUMBER': np.array(output_list[0][i]).squeeze(),
                         'VIGNET': np.array(output_list[1][i]).squeeze()}
             f.save_as_fits(data=out_dict, ext_name='N_EPOCH_{}'.format(i),
