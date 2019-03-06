@@ -14,7 +14,7 @@ from shapepipe.pipeline import file_io as io
 import numpy as np
 
 
-def remove_field_name(a, name):
+def remove_field_name(arr, name):
     """ Remove field name
 
     Remove a column of a structured array from the given name.
@@ -32,11 +32,11 @@ def remove_field_name(a, name):
         The structured with the field removed.
 
     """
-    names = list(a.dtype.names)
+    names = list(arr.dtype.names)
     if name in names:
         names.remove(name)
-    b = a[names]
-    return b
+    arr2 = arr[names]
+    return arr2
 
 
 def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
@@ -137,11 +137,11 @@ def save_ngmix_data(final_cat_file, ngmix_cat_path):
     keys = ['1M', '1P', '2M', '2P', 'NOSHEAR']
     output_dict = {'NGMIX_ELL_{}'.format(i): np.ones((len(obj_id), 2)) * -10. for i in keys}
     output_dict = {**output_dict, **{'NGMIX_ELL_ERR_{}'.format(i): np.ones((len(obj_id), 2)) * -10. for i in keys}}
-    output_dict = {**output_dict, **{'NGMIX_T_{}'.format(i): np.ones((len(obj_id))) * 0. for i in keys}}
-    output_dict = {**output_dict, **{'NGMIX_T_ERR_{}'.format(i): np.ones((len(obj_id))) * 1e30 for i in keys}}
-    output_dict = {**output_dict, **{'NGMIX_Tpsf_{}'.format(i): np.ones((len(obj_id))) * 0. for i in keys}}
-    output_dict = {**output_dict, **{'NGMIX_SNR_{}'.format(i): np.ones((len(obj_id))) * 0. for i in keys}}
-    output_dict = {**output_dict, **{'NGMIX_FLAGS_{}'.format(i): np.ones((len(obj_id)), dtype='int16') for i in keys}}
+    output_dict = {**output_dict, **{'NGMIX_T_{}'.format(i): np.zeros(len(obj_id)) for i in keys}}
+    output_dict = {**output_dict, **{'NGMIX_T_ERR_{}'.format(i): np.ones(len(obj_id)) * 1e30 for i in keys}}
+    output_dict = {**output_dict, **{'NGMIX_Tpsf_{}'.format(i): np.zeros(len(obj_id)) for i in keys}}
+    output_dict = {**output_dict, **{'NGMIX_SNR_{}'.format(i): np.zeros(len(obj_id)) for i in keys}}
+    output_dict = {**output_dict, **{'NGMIX_FLAGS_{}'.format(i): np.ones(len(obj_id), dtype='int16') for i in keys}}
     for i, id_tmp in enumerate(obj_id):
         ind = np.where(id_tmp == ngmix_id)[0]
         if len(ind) > 0:
@@ -188,8 +188,8 @@ def save_psf_data(final_cat_file, galaxy_psf_path):
     galaxy_psf_cat = np.load(galaxy_psf_path).item()
 
     output_dict = {'PSF_ELL_{}'.format(i+1): np.ones((len(obj_id), 2)) * -10. for i in range(max_epoch)}
-    output_dict = {**output_dict, **{'PSF_FWHM_{}'.format(i+1): np.ones((len(obj_id))) * 0. for i in range(max_epoch)}}
-    output_dict = {**output_dict, **{'PSF_FLAG_{}'.format(i+1): np.ones((len(obj_id)), dtype='int16') for i in range(max_epoch)}}
+    output_dict = {**output_dict, **{'PSF_FWHM_{}'.format(i+1): np.zeros(len(obj_id)) for i in range(max_epoch)}}
+    output_dict = {**output_dict, **{'PSF_FLAG_{}'.format(i+1): np.ones(len(obj_id), dtype='int16') for i in range(max_epoch)}}
     for i, id_tmp in enumerate(obj_id):
         if galaxy_psf_cat[id_tmp] == 'empty':
             continue
@@ -198,7 +198,7 @@ def save_psf_data(final_cat_file, galaxy_psf_path):
                 continue
             output_dict['PSF_ELL_{}'.format(epoch+1)][i][0] = galaxy_psf_cat[id_tmp][key]['SHAPES']['E1_PSF_HSM']
             output_dict['PSF_ELL_{}'.format(epoch+1)][i][1] = galaxy_psf_cat[id_tmp][key]['SHAPES']['E2_PSF_HSM']
-            output_dict['PSF_FWHM_{}'.format(epoch+1)][i] = galaxy_psf_cat[id_tmp][key]['SHAPES']['SIGMA_PSF_HSM'] * 2.634
+            output_dict['PSF_FWHM_{}'.format(epoch+1)][i] = galaxy_psf_cat[id_tmp][key]['SHAPES']['SIGMA_PSF_HSM'] * 2.355
             output_dict['PSF_FLAG_{}'.format(epoch+1)][i] = galaxy_psf_cat[id_tmp][key]['SHAPES']['FLAG_PSF_HSM']
 
     for key in output_dict.keys():
