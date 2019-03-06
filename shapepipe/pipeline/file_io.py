@@ -529,7 +529,7 @@ class FITSCatalog(BaseCatalog):
 
    # ------------------------------------------------------------------------------------------------
    # ADDED
-   def save_as_fits(self, data=None, names=None, ext_name=None, sex_cat_path=None, image=False, overwrite=False):
+   def save_as_fits(self, data=None, names=None, ext_name=None, sex_cat_path=None, image=False, image_header=None, overwrite=False):
        """!
             Save data into an already existing fits or a new one.
             Save data from dict, list, numpy.ndarray, numpy.recarray or astropy.io.fits.fitsrec.FITS_rec (data format in an astropy fits file)
@@ -541,6 +541,7 @@ class FITSCatalog(BaseCatalog):
             @param ext_name name of the HDU where data are stored (DEFAULT = NEW)
             @param sex_cat_path path of the already existing SExtractor catalog to mimic
             @param image if True create a fits image
+            @param image_header header to use when saving an image, astropy.io.fits.heade format (optional)
             @param overwrite only used when creating an image fits
 
             NOTE : to create a SExtractor like fits you need to specify SEx_catalog=True when declaring the FITSCatalog object.
@@ -596,7 +597,7 @@ class FITSCatalog(BaseCatalog):
 
        else:
            if type(data) is np.ndarray:
-               self._save_image(data=data, overwrite=overwrite)
+               self._save_image(data=data, header=image_header, overwrite=overwrite)
            else:
                raise TypeError('Data need to be a numpy.ndarray')
 
@@ -1242,16 +1243,17 @@ class FITSCatalog(BaseCatalog):
 
    # ------------------------------------------------------------------------------------------------
    # ADDED
-   def _save_image(self, data=None, overwrite=False):
+   def _save_image(self, data=None, header=None, overwrite=False):
        """!
             Save an image into a fits.
             No PrimaryHDU
             @param data image to store
+            @param header external image header (optional)
             @param overwrite only used when creating an image fits
        """
 
        if (data is not None):
-           fits.PrimaryHDU(data).writeto(self.fullpath, overwrite=overwrite)
+           fits.PrimaryHDU(data, header).writeto(self.fullpath, overwrite=overwrite)
        else:
            raise ValueError('Data or names not provided')
 
