@@ -19,7 +19,25 @@ from shapepipe.pipeline import file_io as io
 
 def create_hdus(exp_path, output_dir, output_name, output_sufix, n_hdu=40,
                 transf_coord=True, transf_int=False, save_header=False):
-    """
+    """ Create HDUs
+
+    Split a single exposures CCDs into separate files.
+
+    exp_path : str
+        Path to the single exp.
+    output_dir : str
+        Path to the output directory.
+    output_sufix : str
+        Suffix for the output file.
+    n_hdu : int
+        Number of HDUs (i.e. : number of CCDs).
+    transf_coord : bool
+        If True will transform the WCS (pv to sip).
+    transf_int : bool
+        If True will set datas to int.
+    save_header : bool
+        If True will save WCS information
+        
     """
 
     exp_file = io.FITSCatalog(exp_path, hdu_no=1)
