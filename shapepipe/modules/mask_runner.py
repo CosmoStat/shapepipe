@@ -21,8 +21,13 @@ def mask_runner(input_file_list, output_dir, file_number_string,
 
     if len(input_file_list) == 2:
         ext_flag_name = None
+        ext_star_cat = None
     elif len(input_file_list) == 3:
         ext_flag_name = input_file_list[2]
+        ext_star_cat = None
+    elif len(input_file_list) == 4:
+        ext_flag_name = input_file_list[2]
+        ext_star_cat  = input_file_list[3]
     else:
         raise ValueError("Input file list of length {} found, must be "
                          "'image', 'weight' and 'ext_flags' (optional)"
@@ -42,7 +47,8 @@ def mask_runner(input_file_list, output_dir, file_number_string,
 
     inst = mask(*input_file_list[:2], suffix.replace(" ", ""),
                 file_number_string, config_file, output_dir,
-                path_external_flag=ext_flag_name, outname_base=outname_base)
+                path_external_flag=ext_flag_name, outname_base=outname_base,
+                star_cat_path=ext_star_cat)
     stdout, stderr = inst.make_mask()
 
     return stdout, stderr

@@ -3,8 +3,8 @@
 
 WW_PATH = ww
 WW_CONFIG_FILE = ./example/test_mask/mask_default/default.ww
-CDSCLIENT_PATH = findgsc2.2
-
+#CDSCLIENT_PATH = findgsc2.2
+#STAR_CAT = ./example/test_mask/star.cat
 
 # ----------------------------- Border parameters ----------------------------------
 [BORDER_PARAMETERS]
@@ -55,13 +55,13 @@ MESSIER_FLAG_VALUE = 4
 # -------------------------------- External flag ----------------------------------
 [EXTERNAL_FLAG]
 
-EF_MAKE = False
+EF_MAKE = True
 
 
 # -------------------------- missing data parameters ------------------------------
 [MD_PARAMETERS]
 
-MD_MAKE = True
+MD_MAKE = False
 
 MD_THRESH_FLAG = 0.3
 MD_THRESH_REMOVE = 0.75

@@ -42,7 +42,7 @@ class mask(object):
 
     """
 
-    def __init__(self, image_path, weight_path, image_suffix, image_num, config_filepath, output_dir, path_external_flag=None, outname_base='flag'):
+    def __init__(self, image_path, weight_path, image_suffix, image_num, config_filepath, output_dir, path_external_flag=None, outname_base='flag', star_cat_path=None):
 
         self._image_fullpath = image_path                                       # Path to the image to mask
         self._weight_fullpath = weight_path                                     # Path to the weight associated to the image
@@ -56,6 +56,9 @@ class mask(object):
             self._img_suffix = image_suffix + '_'
         else:
             self._img_suffix = ''
+
+        if star_cat_path is not None:
+            self._star_cat_path = star_cat_path
 
         self._get_config(self._config_filepath)                                 # Get parameters from config file
 
@@ -85,7 +88,14 @@ class mask(object):
 
         self._config['PATH']['WW'] = conf.getexpanded('PROGRAM_PATH', 'WW_PATH')
         self._config['PATH']['WW_configfile'] = conf.getexpanded('PROGRAM_PATH', 'WW_CONFIG_FILE')
-        self._config['PATH']['CDSclient'] = conf.getexpanded('PROGRAM_PATH', 'CDSCLIENT_PATH')
+        # self._config['PATH']['CDSclient'] = conf.getexpanded('PROGRAM_PATH', 'CDSCLIENT_PATH')
+        if conf.has_option('PROGRAM_PATH', 'CDSCLIENT_PATH'):
+            self._config['PATH']['CDSclient'] = conf.getexpanded('PROGRAM_PATH', 'CDSCLIENT_PATH')
+        elif self._star_cat_path is not None:
+            self._config['PATH']['star_cat'] = self._star_cat_path
+        else:
+            raise ValueError('Either CDSCLIENT_PATH or STAR_CAT needs to be given in the [PROGRAM_PATH] section of the mask config file')
+
         self._config['PATH']['temp_dir'] = self._get_temp_dir_path(conf.getexpanded('OTHER', 'TEMP_DIRECTORY'))
         self._config['BORDER']['make'] = conf.getboolean('BORDER_PARAMETERS', 'BORDER_MAKE')
         if self._config['BORDER']['make']:
@@ -241,46 +251,95 @@ class mask(object):
 
         return general_stdout, general_stderr
 
+    # def find_stars(self, position, radius=None):
+    #     """Find stars
+    #
+    #     Return GSC (Guide Star Catalog) objects for a field with center (ra,dec) and radius r.
+    #
+    #     Parameters
+    #     ----------
+    #     position : numpy.ndarray
+    #         Position of the center of the field
+    #     radius : float
+    #         Radius in which the query is done (in arcmin)
+    #
+    #     Returns
+    #     -------
+    #     dict
+    #         Stars dicotionnary for GSC objects in the field.
+    #
+    #     """
+    #
+    #     ra = position[0]
+    #     dec = position[1]
+    #
+    #     # check ra dec types
+    #
+    #     if dec > 0.:
+    #         sign = '+'
+    #     else:
+    #         sign = ''
+    #
+    #     cmd_line = '{0} {1} {2}{3} -r {4} -n 1000000'.format(self._config['PATH']['CDSclient'], ra, sign, dec, radius)
+    #
+    #     # output=subprocess.check_output(cmd_line, shell=True)
+    #     self._CDS_stdout, self._CDS_stderr = execute(cmd_line)
+    #
+    #     if self._CDS_stderr != '':
+    #         self._err = True
+    #         return None
+    #
+    #     # return self._make_star_cat(output.decode("utf-8"))
+    #     return self._make_star_cat(self._CDS_stdout)
+
     def find_stars(self, position, radius=None):
-        """Find stars
+          """Find stars
 
-        Return GSC (Guide Star Catalog) objects for a field with center (ra,dec) and radius r.
+          Return GSC (Guide Star Catalog) objects for a field with center (ra,dec) and radius r.
 
-        Parameters
-        ----------
-        position : numpy.ndarray
-            Position of the center of the field
-        radius : float
-            Radius in which the query is done (in arcmin)
+          Parameters
+          ----------
+          position : numpy.ndarray
+              Position of the center of the field
+          radius : float
+              Radius in which the query is done (in arcmin)
 
-        Returns
-        -------
-        dict
-            Stars dicotionnary for GSC objects in the field.
+          Returns
+          -------
+          dict
+              Stars dicotionnary for GSC objects in the field.
 
-        """
+          """
 
-        ra = position[0]
-        dec = position[1]
+          if 'CDSclient' in self._config['PATH']:
 
-        # check ra dec types
+              ra = position[0]
+              dec = position[1]
+              if dec > 0.:
+                  sign = '+'
+              else:
+                  sign = ''
+              cmd_line = '{0} {1} {2}{3} -r {4} -n 1000000'.format(self._config['PATH']['CDSclient'], ra, sign, dec, radius)
+              # self._w_log.info('Calling command \'{}\''.format(cmd_line))
+              self._CDS_stdout, self._CDS_stderr = execute(cmd_line)
 
-        if dec > 0.:
-            sign = '+'
-        else:
-            sign = ''
+          elif 'star_cat' in self._config['PATH']:
 
-        cmd_line = '{0} {1} {2}{3} -r {4} -n 1000000'.format(self._config['PATH']['CDSclient'], ra, sign, dec, radius)
+              # self._w_log.info('Reading star catalogue file \'{}\''.format(self._config['PATH']['star_cat']))
+              f = open(self._config['PATH']['star_cat'], 'r')
+              self._CDS_stdout = f.read()
+              self._CDS_stderr = ''
+              f.close()
 
-        # output=subprocess.check_output(cmd_line, shell=True)
-        self._CDS_stdout, self._CDS_stderr = execute(cmd_line)
+          else:
 
-        if self._CDS_stderr != '':
-            self._err = True
-            return None
+              raise ValueError('Either CDSCLIENT_PATH or STAR_CAT needs to be given in the [PROGRAM_PATH] section of the mask config file')
 
-        # return self._make_star_cat(output.decode("utf-8"))
-        return self._make_star_cat(self._CDS_stdout)
+          if self._CDS_stderr != '':
+              self._err = True
+              return None
+
+          return self._make_star_cat(self._CDS_stdout)
 
     def mask_border(self, width=100, flag_value=4):
         """Create mask border
@@ -620,6 +679,155 @@ class mask(object):
             mask_reg.write(poly)
 
         mask_reg.close()
+
+    # def _make_star_cat(self, CDSclient_output):
+    #     """Make star catalog
+    #
+    #     Make a dicotionnary from 'findgsc2.2' output.
+    #
+    #     Parameters
+    #     ----------
+    #     CDSclient_output : str
+    #         Output of 'findgsc2.2'
+    #
+    #     Returns
+    #     -------
+    #     dict
+    #         Stars dictionnary containing all information
+    #
+    #     """
+    #
+    #     h = []
+    #     stars = {}
+    #     # get header
+    #     for i in CDSclient_output.splitlines()[3].split(' '):
+    #         if (i != '') & (i != ';'):
+    #             # cleaning output
+    #             i = i.replace(' ', '')
+    #             for v in re.split(',|#|;', i):
+    #                 if v != '':
+    #                     i = v
+    #             h.append(i)
+    #             stars[i] = []
+    #
+    #     # get data
+    #     # 20/2/2019, new version to replace invalid fields. Much faster than previous,
+    #     # takes a few second for 1.5 million objects (field with radius 10000 arcmin)
+    #     # This could eventually be taken out of the pipeline in a script to be called
+    #     # once before processing.
+    #     for line in CDSclient_output.splitlines():
+    #         m = re.findall('#', line)
+    #         if len(m) != 0:
+    #             # Header or footer
+    #             pass
+    #         else:
+    #             line = line.replace(';', '')
+    #             line = line.replace(', ', '-1')
+    #             line = line.replace('---', ' -1')
+    #             line = line.replace(',', '')
+    #             words = line.split()
+    #             for k, w in enumerate(words):
+    #                 stars[h[k]].append(w)
+    #
+    #     return stars
+    #
+    # def _create_mask(self, stars, types=None, mag_limit=18., mag_pivot=13.8, scale_factor=0.3):
+    #     """Create mask
+    #
+    #     Apply mask from model to stars and save into DS9 region file.
+    #
+    #     Parameters
+    #     ----------
+    #     stars : dict
+    #         Stars dictionary (output of find_stars)
+    #     types : str
+    #         Type of mask in ['HALO', 'SPIKE']
+    #     mag_limit : float
+    #         Higher magnitude to apply the mask
+    #     mag_pivot : float
+    #         Pivot magnitude for the model
+    #     scale_factor : float
+    #         Scaling for the model
+    #
+    #     Returns
+    #     -------
+    #     None
+    #     """
+    #
+    #     if stars is None:
+    #         raise ValueError('No stars catalog provided')
+    #
+    #     if self._config[types]['reg_file'] is None:
+    #         reg = self._config['PATH']['temp_dir'] + types.lower() + self._img_number + '.reg'
+    #     else:
+    #         reg = self._config[types]['reg_file']
+    #
+    #     if types == 'HALO':
+    #         mask_model = np.loadtxt(self._config['HALO']['maskmodel_path']).transpose()
+    #         mask_reg = open(reg, 'w')
+    #     elif types == 'SPIKE':
+    #         mask_model = np.loadtxt(self._config['SPIKE']['maskmodel_path']).transpose()
+    #         mask_reg = open(reg, 'w')
+    #     else:
+    #         ValueError("types need to be in ['HALO', 'SPIKE']")
+    #
+    #     print(len(stars['RA(J2000)']))
+    #
+    #     # Get the four corners of the image
+    #     # MKDEBUG TODO: Re-use corners from make_messier
+    #     corners = self._wcs.calc_footprint()
+    #     corners_sc = SkyCoord(ra=corners[:, 0] * u.degree, dec=corners[:, 1] * u.degree)
+    #
+    #     stars_used = [[], [], []]
+    #     for ra, dec, Fmag, Jmag, Vmag, Nmag, clas in zip(stars['RA(J2000)'], stars['Dec(J2000)'], stars['Fmag'], stars['Jmag'], stars['Vmag'], stars['Nmag'], stars['Clas']):
+    #         mag = 0.0
+    #         i = 0
+    #         if Fmag != -1:
+    #             mag += float(Fmag)
+    #             i += 1
+    #         if Jmag != -1:
+    #             mag += float(Jmag)
+    #             i += 1
+    #         if Vmag != -1:
+    #             mag += float(Vmag)
+    #             i += 1
+    #         if Nmag != -1:
+    #             mag += float(Nmag)
+    #             i += 1
+    #         if i == 0:
+    #             mag = -1
+    #         else:
+    #             mag /= float(i)
+    #
+    #         ra = float(ra)
+    #         dec = float(dec)
+    #         clas = float(clas)
+    #
+    #         if (ra != -1) & (dec != -1) & (mag > 0) & (clas != -1):
+    #             if (mag < mag_limit) & (clas == 0):
+    #                 scaling = 1. - scale_factor * (mag - mag_pivot)
+    #                 s_sc = SkyCoord(ra=ra * u.degree, dec=dec * u.degree)
+    #                 r = 10.0 * u.arcmin
+    #                 r_deg = r.to(u.degree)
+    #                 if np.any(corners_sc.separation(s_sc) < r_deg):
+    #                     pos = self._wcs.all_world2pix(ra, dec, 0)
+    #                     stars_used[0].append(pos[0])
+    #                     stars_used[1].append(pos[1])
+    #                     stars_used[2].append(scaling)
+    #
+    #     for i in range(len(stars_used[0])):
+    #         poly = 'polygon('
+    #         for x, y in zip(mask_model[0], mask_model[1]):
+    #             angle = np.arctan2(y, x)
+    #             ll = stars_used[2][i] * np.sqrt(x ** 2. + y ** 2.)
+    #             xnew = ll * np.cos(angle)
+    #             ynew = ll * np.sin(angle)
+    #
+    #             poly = poly + str(stars_used[0][i] + xnew + 0.5) + ' ' + str(stars_used[1][i] + ynew + 0.5) + ' '
+    #         poly = poly + ')\n'
+    #         mask_reg.write(poly)
+    #
+    #     mask_reg.close()
 
     def _exec_WW(self, types=None):
         """Execute WeightWatcher
