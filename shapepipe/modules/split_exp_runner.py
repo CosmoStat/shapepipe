@@ -37,7 +37,7 @@ def create_hdus(exp_path, output_dir, output_name, output_sufix, n_hdu=40,
         If True will set datas to int.
     save_header : bool
         If True will save WCS information
-        
+
     """
 
     exp_file = io.FITSCatalog(exp_path, hdu_no=1)
