@@ -79,9 +79,9 @@ def get_jacob(wcs, ra, dec):
     wcs : astropy.wcs.WCS
         WCS object for wich we want the jacobian.
     ra : float
-        Ra position of the center of the vignet.
+        Ra position of the center of the vignet (in Deg).
     dec : float
-        Dec position of the center of the vignet.
+        Dec position of the center of the vignet (in Deg).
 
     Returns
     -------
@@ -254,7 +254,7 @@ def save_results(output_dict, output_name):
 
 def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             psf_vignet_path, weight_vignet_path, flag_vignet_path,
-            f_wcs_path):
+            f_wcs_path, w_log):
     """ Process
 
     Process function.
@@ -341,6 +341,7 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
                                    jacob_list,
                                    prior)
         except:
+            w_log.info('ngmix fail on object {}'.format(id_tmp))
             continue
         res['obj_id'] = id_tmp
         res['n_epoch_model'] = len(gal_vign)
@@ -361,7 +362,7 @@ def ngmix_runner(input_file_list, output_dir, file_number_string,
 
     f_wcs_path = config.getexpanded('NGMIX_RUNNER', 'LOG_WCS')
 
-    metacal_res = process(*input_file_list, f_wcs_path)
+    metacal_res = process(*input_file_list, f_wcs_path, w_log)
     res_dict = compile_results(metacal_res)
     save_results(res_dict, output_name)
 
