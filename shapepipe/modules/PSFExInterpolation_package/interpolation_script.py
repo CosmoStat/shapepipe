@@ -31,10 +31,11 @@ else:
 from shapepipe.pipeline import file_io as sc
 
 
-NOT_ENOUGH_STARS = 'Fail'
+NOT_ENOUGH_STARS = 'Fail_stars'
+BAD_CHI2 = 'Fail_chi2'
 
 
-def interpsfex(dotpsfpath, pos, thresh):
+def interpsfex(dotpsfpath, pos, thresh_star, thresh_chi2):
     """Use PSFEx generated model to perform spatial PSF interpolation.
 
         Parameters
@@ -58,8 +59,10 @@ def interpsfex(dotpsfpath, pos, thresh):
     PSF_model = fits.open(dotpsfpath)[1]
 
     # Check number of stars used to compute the PSF
-    if PSF_model.header['ACCEPTED'] < thresh:
+    if PSF_model.header['ACCEPTED'] < thresh_star:
         return NOT_ENOUGH_STARS
+    if PSF_model.header['CHI2'] < thresh_chi2:
+        return BAD_CHI2
 
     PSF_basis = np.array(PSF_model.data)[0][0]
     try:
@@ -163,6 +166,9 @@ class PSFExInterpolator(object):
         if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGH_STARS:
             self._w_log.info('Not enough stars to interpolate the psf'
                              ' in the file {}.'.format(self._dotpsf_path))
+        if isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
+            self._w_log.info('Bad chi2 for the psf model'
+                             ' in the file {}.'.format(self._dotpsf_path))
         else:
             if self._compute_shape:
                 self._get_psfshapes()
@@ -262,6 +268,10 @@ class PSFExInterpolator(object):
         if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGH_STARS:
             self._w_log.info('Not enough stars to interpolate the psf'
                              ' in the file {}.'.format(self._dotpsf_path))
+        if isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
+            self._w_log.info('Bad chi2 for the psf model'
+                             ' in the file {}.'.format(self._dotpsf_path))
+
         else:
             star_cat = sc.FITSCatalog(self._galcat_path, SEx_catalog=True)
             star_cat.open()
@@ -294,8 +304,11 @@ class PSFExInterpolator(object):
         if import_fail:
             raise ImportError('Galsim is required to get shapes information')
 
-        star_moms = [hsm.FindAdaptiveMom(Image(star), strict=False)
-                     for star in star_vign]
+        masks = np.zeros_like(star_vign)
+        masks[np.where(star_vign == -1e30)] = 1
+
+        star_moms = [hsm.FindAdaptiveMom(Image(star), badpix=Image(mask), strict=False)
+                     for star, mask in zip(star_vign, masks)]
 
         self.star_shapes = np.array([[moms.observed_shape.g1,
                                      moms.observed_shape.g2,
@@ -426,6 +439,11 @@ class PSFExInterpolator(object):
                     self._w_log.info('Not enough stars find in the ccd'
                                      ' {} of the exposure {}. Object inside'
                                      ' this ccd will lose an epoch.'.format(ccd, exp_name))
+                if isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
+                    self._w_log.info('Bad chi2 for the psf model in the ccd'
+                                     ' {} of the exposure {}. Object inside'
+                                     ' this ccd will lose an epoch.'.format(ccd, exp_name))
+
                     continue
 
                 if array_psf is None:
