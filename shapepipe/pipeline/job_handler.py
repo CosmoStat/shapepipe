@@ -78,16 +78,15 @@ class JobHandler(object):
             self.timeout = timeout
 
         # Set up module in file handler
-        print('salut')
         self.filehd.set_up_module(self._module)
-        print('salut2')
+
         # Set the total number of jobs
         self._n_jobs = len(self.filehd.process_list)
-        print('salut3')
+
         # Set the job names
         self.job_names = [self._set_job_name(job) for job in
                           range(self._n_jobs)]
-        print('salut4')
+
         self._log_job_parameters()
 
     @property

@@ -466,23 +466,20 @@ class FileHandler(object):
         """
 
         file_list = []
-        print('ici1')
+
         for pattern, ext in zip(pattern_list, ext_list):
-            print('ici2')
+
             sub_file_list = [find_files(dir, pattern, ext) for dir in dir_list]
-            print('ici3')
             sub_file_list = cls.flatten_list(sub_file_list)
-            print('ici4')
+
             if not sub_file_list:
-                print('ici5')
                 raise RuntimeError('No files found matching patterns ({})'
                                    ' and or extensions ({}) in directories '
                                    ' provided ({})'.format(pattern, ext,
                                                            dir_list))
             else:
-                print('ici6')
                 file_list.append(sub_file_list)
-        print('ici7')
+
         return file_list
 
     @staticmethod
@@ -656,32 +653,23 @@ class FileHandler(object):
 
         if not isinstance(file_list, list):
             TypeError('File list must be a list.')
-        print('la1')
+
         all_patterns = [cls._get_file_pattern(file, dir_list, re_pattern)
                         for file in max(file_list, key=len)]
-        print('la2')
-        print(len(all_patterns))
-        new_list = []
-        k = 0
-        for pattern in all_patterns:
-            print(k)
-            new_list.append(cls._check_pattern(file_list, dir_list, pattern))
-            k += 1
-        #new_list = [cls._check_pattern(file_list, dir_list, pattern)
-        #            for pattern in all_patterns]
-        print('la3')
+
+        new_list = [cls._check_pattern(file_list, dir_list, pattern)
+                   for pattern in all_patterns]
+
         new_list = [item for item in new_list if item]
-        print('la4')
+
         file_dict = dict(zip(all_patterns, new_list))
-        print('la5')
+
         max_n_cols = max([len(flist) for flist in new_list])
-        print('la6')
         matched = dict([(key, val) for key, val in file_dict.items() if
                         len(val) == max_n_cols])
-        print('la7')
         missing = dict([(key, val) for key, val in file_dict.items() if
                         len(val) < max_n_cols])
-        print('la8')
+
         return matched, missing
 
     @classmethod
@@ -707,13 +695,13 @@ class FileHandler(object):
         """
 
         if num_scheme.startswith('RE:'):
-            print('here1')
+
             re_pattern = num_scheme.replace('RE:', '')
-            print('here2')
+
         else:
-            print('here3')
+
             re_pattern = cls._generate_re_pattern(num_scheme)
-            print('here4')
+
         return cls._match_list_items(file_list, dir_list, re_pattern)
 
     def _get_module_input_files(self, module):
@@ -727,22 +715,18 @@ class FileHandler(object):
             Module name
 
         """
-        print('coucou1')
+
         dir_list = self._module_dict[module]['input_dir']
-        print('coucou2')
         pattern_list = self._module_dict[module]['file_pattern']
-        print('coucou3')
         ext_list = self._module_dict[module]['file_ext']
-        print('coucou4')
         num_scheme = self._module_dict[module]['numbering_scheme']
-        print('coucou5')
+
         file_list = self._all_pattern_per_dir(dir_list, pattern_list,
                                               ext_list)
-        print('coucou6')
+
         self.process_list, self.missed = self._check_file_list(file_list,
                                                                dir_list,
                                                                num_scheme)
-        print('coucou7')
 
     def set_up_module(self, module):
         """ Set Up Module
@@ -755,17 +739,12 @@ class FileHandler(object):
             Module name
 
         """
-        print('hello1')
+
         self._module_dict[module] = {}
-        print('hello2')
         self._set_module_properties(module)
-        print('hello3')
         self._create_module_run_dirs(module)
-        print('hello4')
         self._set_module_input_dir(module)
-        print('hello5')
         self._get_module_input_files(module)
-        print('hello6')
 
     def get_worker_log_name(self, module, job_name, file_number_string):
         """ Get Worker Log Name
