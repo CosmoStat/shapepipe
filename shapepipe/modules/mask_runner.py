@@ -18,7 +18,7 @@ from shapepipe.modules.mask_package.mask_script import mask
                numbering_scheme='_0')
 def mask_runner(input_file_list, output_dir, file_number_string,
                 config, w_log):
-
+    print('ici')
     if len(input_file_list) == 2:
         ext_flag_name = None
         ext_star_cat = None
@@ -32,7 +32,8 @@ def mask_runner(input_file_list, output_dir, file_number_string,
         raise ValueError("Input file list of length {} found, must be "
                          "'image', 'weight' and 'ext_flags' (optional)"
                          "".format(len(input_file_list)))
-
+    
+    print('coucou')
     config_file = config.getexpanded('MASK_RUNNER', 'MASK_CONFIG_PATH')
 
     if config.has_option('MASK_RUNNER', 'SUFFIX'):

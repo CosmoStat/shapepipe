@@ -2,8 +2,8 @@
 [PROGRAM_PATH]
 
 WW_PATH = ww
-WW_CONFIG_FILE = ./example/test_mask/mask_default/default.ww
-CDSCLIENT_PATH = findgsc2.2
+WW_CONFIG_FILE = /home/guinot/pipeline/ShapePipe/example/test_mask/mask_default/default.ww
+#CDSCLIENT_PATH = findgsc2.2
 
 
 # ----------------------------- Border parameters ----------------------------------
@@ -20,7 +20,7 @@ BORDER_FLAG_VALUE = 4
 
 HALO_MAKE = True
 
-HALO_MASKMODEL_PATH = ./example/test_mask/mask_default/halo_mask.reg
+HALO_MASKMODEL_PATH = /home/guinot/pipeline/ShapePipe/example/test_mask/mask_default/halo_mask.reg
 HALO_MAG_LIM = 13.
 HALO_SCALE_FACTOR = 0.05
 HALO_MAG_PIVOT = 13.8
@@ -33,7 +33,7 @@ HALO_REG_FILE = halo.reg
 
 SPIKE_MAKE = True
 
-SPIKE_MASKMODEL_PATH = ./example/test_mask/mask_default/MEGAPRIME_star_i_13.8.reg
+SPIKE_MASKMODEL_PATH = /home/guinot/pipeline/ShapePipe/example/test_mask/mask_default/MEGAPRIME_star_i_13.8.reg
 SPIKE_MAG_LIM = 18.
 SPIKE_SCALE_FACTOR = 0.3
 SPIKE_MAG_PIVOT = 13.8
@@ -46,10 +46,10 @@ SPIKE_REG_FILE = spike.reg
 
 MESSIER_MAKE = True
 
-MESSIER_CAT_PATH = ./example/test_mask/mask_default/Messier_catalog_updated.npy
+MESSIER_CAT_PATH = /home/guinot/pipeline/ShapePipe/example/test_mask/mask_default/Messier_catalog_updated.npy
 MESSIER_PIXEL_SCALE = 0.186
 MESSIER_SIZE_PLUS = 0.
-MESSIER_FLAG_VALUE = 4
+MESSIER_FLAG_VALUE = 16
 
 
 # -------------------------------- External flag ----------------------------------
@@ -61,7 +61,7 @@ EF_MAKE = True
 # -------------------------- missing data parameters ------------------------------
 [MD_PARAMETERS]
 
-MD_MAKE = True
+MD_MAKE = False
 
 MD_THRESH_FLAG = 0.3
 MD_THRESH_REMOVE = 0.75
@@ -74,4 +74,4 @@ MD_REMOVE = False
 KEEP_REG_FILE = False
 KEEP_INDIVIDUAL_MASK = False
 
-TEMP_DIRECTORY = .temp
+TEMP_DIRECTORY = /home/guinot/ShapePipe_dir/.temp

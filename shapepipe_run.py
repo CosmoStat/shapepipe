@@ -249,7 +249,7 @@ def run_smp(pipe):
         ShapePipe instance
 
     """
-
+    print('here')
     # Loop through modules to be run
     for module in pipe.modules:
 
@@ -257,13 +257,13 @@ def run_smp(pipe):
         jh = JobHandler(module, filehd=pipe.filehd,
                         config=pipe.config,
                         log=pipe.log, verbose=pipe.verbose)
-
+        print('now')
         # Submit the SMP jobs
         jh.submit_smp_jobs()
-
+        print('aqui')
         # Update error count
         pipe.error_count += jh.error_count
-
+        print('ok')
         # Delete job handler
         del jh
 
@@ -355,7 +355,7 @@ def run_mpi(pipe, comm):
 def main(args=None):
 
     try:
-
+        print('hello')
         if import_mpi:
             comm = MPI.COMM_WORLD
             master = comm.rank == 0
