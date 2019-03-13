@@ -10,6 +10,7 @@ This file contains methods to run ngmix for shape measurement.
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.pipeline import file_io as io
+from klepto.archives import dir_archive
 
 import re
 
@@ -252,7 +253,7 @@ def save_results(output_dict, output_name):
         f.save_as_fits(output_dict[key], ext_name=key.upper())
 
 
-def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
+def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
             psf_vignet_path, weight_vignet_path, flag_vignet_path,
             f_wcs_path, w_log):
     """ Process
@@ -292,16 +293,35 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
     tile_ra = np.copy(tile_cat.get_data()['XWIN_WORLD'])
     tile_dec = np.copy(tile_cat.get_data()['YWIN_WORLD'])
     tile_cat.close()
+    sm_cat = io.FITSCatalog(sm_cat_path, SEx_catalog=True)
+    sm_cat.open()
+    sm = np.copy(sm_cat.get_data()['SPREAD_MODEL'])
+    sm_err = np.copy(sm_cat.get_data()['SPREADERR_MODEL'])
+    sm_cat.close()
     gal_vign_cat = np.load(gal_vignet_path).item()
     bkg_vign_cat = np.load(bkg_vignet_path).item()
     psf_vign_cat = np.load(psf_vignet_path).item()
     weight_vign_cat = np.load(weight_vignet_path).item()
     flag_vign_cat = np.load(flag_vignet_path).item()
+    #gal_vign_cat = dir_archive(gal_vignet_path, {}, serialized=True, cached=False)
+    #gal_vign_cat.load()
+    #bkg_vign_cat = dir_archive(bkg_vignet_path, {}, serialized=True, cached=False)
+    #bkg_vign_cat.load()
+    #psf_vign_cat = dir_archive(psf_vignet_path, {}, serialized=True, cached=False)
+    #psf_vign_cat.load()
+    #weight_vign_cat = dir_archive(weight_vignet_path, {}, serialized=True, cached=False)
+    #weight_vign_cat.load()
+    #flag_vign_cat = dir_archive(flag_vignet_path, {}, serialized=True, cached=False)
+    #flag_vign_cat.load()
     f_wcs_file = np.load(f_wcs_path).item()
 
     final_res = []
     prior = get_prior()
     for i_tile, id_tmp in enumerate(obj_id):
+        if tile_flag[i_tile] > 1:
+            continue
+        if sm[i_tile] + (5. / 3.) * sm_err[i_tile] < 0.01:
+            continue
         gal_vign = []
         psf_vign = []
         sigma_psf = []
@@ -325,13 +345,17 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             tile_vign_tmp = np.copy(tile_vign[i_tile])
             flag_vign_tmp = flag_vign_cat[id_tmp][expccd_name_tmp]['VIGNET']
             flag_vign_tmp[np.where(tile_vign_tmp == -1e30)] = 2**10
-            flag_vign.append(flag_vign_tmp)
+            v_flag_tmp=flag_vign_tmp.ravel()
+            if len(np.where(v_flag_tmp!=0)[0])/(51*51) > 1/3.:
+                continue
+            flag_vign.append(flag_vign_tmp)  
 
             exp_name, ccd_n = re.split('-', expccd_name_tmp)
             jacob_list.append(get_jacob(f_wcs_file[exp_name][int(ccd_n)],
                                         tile_ra[i_tile],
                                         tile_dec[i_tile]))
-
+        if len(gal_vign) == 0:
+            continue
         try:
             res = do_ngmix_metacal(gal_vign,
                                    psf_vign,
@@ -347,6 +371,11 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
         res['n_epoch_model'] = len(gal_vign)
         final_res.append(res)
 
+    del gal_vign_cat
+    del bkg_vign_cat
+    del flag_vign_cat
+    del weight_vign_cat
+    del psf_vign_cat
     return final_res
 
 

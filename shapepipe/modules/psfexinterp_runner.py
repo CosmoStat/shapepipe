@@ -24,13 +24,14 @@ def psfexinterp_runner(input_file_list, output_dir, file_number_string,
     pos_params = config.getlist('PSFEXINTERP_RUNNER', 'POSITION_PARAMS')
     get_shapes = config.getboolean('PSFEXINTERP_RUNNER', 'GET_SHAPES')
     star_thresh = config.getint('PSFEXINTERP_RUNNER', 'STAR_THRESH')
+    chi2_thresh = config.getint('PSFEXINTERP_RUNNER', 'CHI2_THRESH')
 
     if mode == 'CLASSIC':
         psfcat_path, galcat_path = input_file_list
 
         inst = interpolation_script.PSFExInterpolator(psfcat_path, galcat_path,
                                                       output_dir, file_number_string, w_log,
-                                                      pos_params, get_shapes, star_thresh)
+                                                      pos_params, get_shapes, star_thresh, chi2_thresh)
         inst.process()
 
     elif mode == 'MULTI-EPOCH':
@@ -42,7 +43,7 @@ def psfexinterp_runner(input_file_list, output_dir, file_number_string,
 
         inst = interpolation_script.PSFExInterpolator(None, galcat_path,
                                                       output_dir, file_number_string, w_log,
-                                                      pos_params, get_shapes, star_thresh)
+                                                      pos_params, get_shapes, star_thresh, chi2_thresh)
 
         inst.process_me(dot_psf_dir, dot_psf_pattern, f_wcs_path)
 
@@ -51,7 +52,7 @@ def psfexinterp_runner(input_file_list, output_dir, file_number_string,
 
         inst = interpolation_script.PSFExInterpolator(psfcat_path, galcat_path,
                                                       output_dir, file_number_string, w_log,
-                                                      pos_params, get_shapes, star_thresh)
+                                                      pos_params, get_shapes, star_thresh, chi2_thresh)
 
         inst.process_validation(psfex_cat_path)
 
@@ -59,3 +60,4 @@ def psfexinterp_runner(input_file_list, output_dir, file_number_string,
         ValueError('MODE has to be in : [C, ME]')
 
     return None, None
+

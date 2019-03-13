@@ -13,6 +13,7 @@ import galsim
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.pipeline import file_io as io
+from klepto.archives import dir_archive
 
 
 def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
@@ -101,7 +102,7 @@ def get_model(sigma, flux, img_shape, pixel_scale=0.186):
 
     """
 
-    gal_obj = galsim.Exponential(scale_radius=1./16.*sigma*2.634*pixel_scale, flux=flux)
+    gal_obj = galsim.Exponential(scale_radius=1./16.*sigma*2.355*pixel_scale, flux=flux)
 
     psf_obj = galsim.Gaussian(sigma=sigma*pixel_scale)
 
@@ -161,7 +162,7 @@ def save_results(sex_cat_path, output_path, sm, sm_err, mag, number, mode='new')
 
 @module_runner(input_module=['sextractor_runner', 'psfexinterp_runner', 'vignetmaker_runner'], version='1.0',
                file_pattern=['sexcat', 'galaxy_psf', 'weight_vign'],
-               file_ext=['.fits', '.fits', '.fits'],
+               file_ext=['.fits', '.npy', '.fits'],
                depends=['numpy', 'galsim'])
 def spread_model_runner(input_file_list, output_dir, file_number_string,
                         config, w_log):
@@ -193,16 +194,9 @@ def spread_model_runner(input_file_list, output_dir, file_number_string,
         obj_mag = np.copy(sex_cat.get_data()['MAG_AUTO'])
     sex_cat.close()
 
-    psf_cat = io.FITSCatalog(psf_cat_path, SEx_catalog=True)
-    psf_cat.open()
-    ext_name = psf_cat.get_ext_name()
-    hdu_ind = [i for i in range(len(ext_name)) if 'EPOCH' in ext_name[i]]
-    dict_psf = []
-    for i, i_h in enumerate(hdu_ind):
-        dict_psf.append({})
-        dict_psf[i]['id'] = psf_cat.get_data(i_h)['NUMBER']
-        dict_psf[i]['sigma'] = psf_cat.get_data(i_h)['SIGMA_PSF_HSM']
-    psf_cat.close()
+    #psf_cat = np.load(psf_cat_path).item()
+    psf_cat = dir_archive(psf_cat_path, {}, serialized=True, cached=False)
+    psf_cat.load()
 
     weight_cat = io.FITSCatalog(weight_cat_path, SEx_catalog=True)
     weight_cat.open()
@@ -213,23 +207,19 @@ def spread_model_runner(input_file_list, output_dir, file_number_string,
     skip_obj = False
     spread_model_final = []
     spread_model_err_final = []
-    for i in range(len(obj_id)):
+    for i, id_tmp in enumerate(obj_id):
         sigma_list = []
-        obj_id_tmp = obj_id[i]
-        for h in range(len(hdu_ind)):
-            ind_tmp = np.where(dict_psf[h]['id'] == obj_id_tmp)[0]
-            if len(ind_tmp) == 0:
-                if h == 0:
-                    skip_obj = True
-                    break
-                else:
-                    continue
-            sigma_list.append(dict_psf[h]['sigma'][ind_tmp])
-        if skip_obj:
-            skip_obj = False
+
+        if psf_cat[id_tmp] == 'empty':
             spread_model_final.append(-1)
             spread_model_err_final.append(1)
             continue
+
+        psf_expccd_name = list(psf_cat[id_tmp].keys())
+
+        for expccd_name_tmp in psf_expccd_name:
+            sigma_list.append(psf_cat[id_tmp][expccd_name_tmp]['SHAPES']['SIGMA_PSF_HSM'])
+
         obj_vign_tmp = obj_vign[i]
         obj_flux_tmp = 1.
         obj_sigma_tmp = np.mean(sigma_list)
@@ -257,3 +247,4 @@ def spread_model_runner(input_file_list, output_dir, file_number_string,
                  output_mode)
 
     return None, None
+

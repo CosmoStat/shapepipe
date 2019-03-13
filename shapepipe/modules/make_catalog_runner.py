@@ -183,7 +183,7 @@ def save_psf_data(final_cat_file, galaxy_psf_path):
     final_cat_file.open()
     obj_id = np.copy(final_cat_file.get_data()['NUMBER'])
     max_epoch = np.max(final_cat_file.get_data()['NGMIX_N_EPOCH'])
-    max_epoch = 5
+    max_epoch = 10
 
     galaxy_psf_cat = np.load(galaxy_psf_path).item()
 

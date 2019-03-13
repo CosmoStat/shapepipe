@@ -14,6 +14,7 @@ import re
 from sf_tools.image.stamp import FetchStamps
 import shapepipe.pipeline.file_io as io
 from shapepipe.modules.module_decorator import module_runner
+from klepto.archives import dir_archive
 
 
 class vignetmaker(object):
@@ -300,7 +301,9 @@ class vignetmaker(object):
 
         """
         output_name = self._output_dir + '/' + suffix + '_vignet{}'.format(self._image_num)
-        np.save(output_name, output_dict)
+        # np.save(output_name, output_dict)
+        output_file = dir_archive(output_name, output_dict, serialized=True)
+        output_file.dump()
 
 
 def get_original_vignet(galcat_path):

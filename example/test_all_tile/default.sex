@@ -6,7 +6,7 @@
 
 CATALOG_TYPE     FITS_LDAC
 
-PARAMETERS_NAME  ./example/test_sex/default.param
+PARAMETERS_NAME  /home/guinot/pipeline/ShapePipe/example/test_sex/default.param
 
 #------------------------------- Extraction ----------------------------------
 
@@ -19,7 +19,7 @@ DETECT_THRESH    1.5             # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 ANALYSIS_THRESH  1.5             # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 
 FILTER           Y              # apply filter for detection (Y or N)?
-FILTER_NAME      ./example/test_sex/default.conv
+FILTER_NAME      /home/guinot/pipeline/ShapePipe/example/test_sex/default.conv
 FILTER_THRESH                   # Threshold[s] for retina filtering
 
 DEBLEND_NTHRESH  32             # Number of deblending sub-thresholds
@@ -67,7 +67,7 @@ PIXEL_SCALE      0.            # size of pixel in arcsec (0=use FITS WCS info)
 #------------------------- Star/Galaxy Separation ----------------------------
 
 SEEING_FWHM      0.6            # stellar FWHM in arcsec
-STARNNW_NAME     ./example/test_sex/default.nnw
+STARNNW_NAME     /home/guinot/pipeline/ShapePipe/example/test_sex/default.nnw
 
 #------------------------------ Background -----------------------------------
 
