@@ -383,30 +383,30 @@ def save_vignet(vign, sexcat_path, output_dir, suffix, image_num):
 @module_runner(input_module='setools_runner',
                file_pattern=['galaxy_selection', 'image'],
                file_ext=['.fits', '.fits'], depends=['numpy', 'astropy', 'sf_tools'])
-def vignetmaker_runner(input_file_list, output_dir, file_number_string,
-                       config, w_log):
+def vignetmaker_runner2(input_file_list, output_dir, file_number_string,
+                        config, w_log):
 
     galcat_path = input_file_list[0]
 
-    do_masking = config.getboolean("VIGNETMAKER_RUNNER", "MASKING")
+    do_masking = config.getboolean("VIGNETMAKER_RUNNER2", "MASKING")
     if do_masking:
-        mask_value = config.getfloat("VIGNETMAKER_RUNNER", "MASK_VALUE")
+        mask_value = config.getfloat("VIGNETMAKER_RUNNER2", "MASK_VALUE")
         vign = make_mask(galcat_path, mask_value)
         save_vignet(vign, galcat_path, output_dir, 'cat', file_number_string)
 
     else:
-        stamp_size = config.getint("VIGNETMAKER_RUNNER", "STAMP_SIZE") - 1
+        stamp_size = config.getint("VIGNETMAKER_RUNNER2", "STAMP_SIZE") - 1
         if stamp_size % 2 != 0:
             raise ValueError("The STAMP_SIZE must be odd")
         rad = int(stamp_size/2)
 
-        pos_type = config.get("VIGNETMAKER_RUNNER", "COORD")
-        pos_params = config.getlist("VIGNETMAKER_RUNNER", "POSITION_PARAMS")
+        pos_type = config.get("VIGNETMAKER_RUNNER2", "COORD")
+        pos_params = config.getlist("VIGNETMAKER_RUNNER2", "POSITION_PARAMS")
 
-        mode = config.get("VIGNETMAKER_RUNNER", "MODE")
+        mode = config.get("VIGNETMAKER_RUNNER2", "MODE")
 
         if mode == 'CLASSIC':
-            suffix = config.getlist("VIGNETMAKER_RUNNER", "SUFFIX")
+            suffix = config.getlist("VIGNETMAKER_RUNNER2", "SUFFIX")
             if len(suffix) != len(input_file_list[1:]):
                 raise ValueError("You must provide a suffix for each image from "
                                  "which you extract stamps.")
@@ -415,9 +415,9 @@ def vignetmaker_runner(input_file_list, output_dir, file_number_string,
                                output_dir, file_number_string)
             inst.process(input_file_list[1:], rad, suffix)
         elif mode == 'MULTI-EPOCH':
-            image_dir = config.getlist("VIGNETMAKER_RUNNER", "ME_IMAGE_DIR")
-            image_pattern = config.getlist("VIGNETMAKER_RUNNER", "ME_IMAGE_PATTERN")
-            f_wcs_path = config.getexpanded("VIGNETMAKER_RUNNER", "ME_LOG_WCS")
+            image_dir = config.getlist("VIGNETMAKER_RUNNER2", "ME_IMAGE_DIR")
+            image_pattern = config.getlist("VIGNETMAKER_RUNNER2", "ME_IMAGE_PATTERN")
+            f_wcs_path = config.getexpanded("VIGNETMAKER_RUNNER2", "ME_LOG_WCS")
 
             inst = vignetmaker(galcat_path, pos_type, pos_params,
                                output_dir, file_number_string)

@@ -46,6 +46,15 @@ def psfexinterp_runner(input_file_list, output_dir, file_number_string,
 
         inst.process_me(dot_psf_dir, dot_psf_pattern, f_wcs_path)
 
+    elif mode == 'VALIDATION':
+        psfcat_path, galcat_path, psfex_cat_path = input_file_list
+
+        inst = interpolation_script.PSFExInterpolator(psfcat_path, galcat_path,
+                                                      output_dir, file_number_string, w_log,
+                                                      pos_params, get_shapes, star_thresh)
+
+        inst.process_validation(psfex_cat_path)
+
     else:
         ValueError('MODE has to be in : [C, ME]')
 
