@@ -19,18 +19,43 @@ from shapepipe.modules.PSFExInterpolation_package import interpolation_script
 def psfexinterp_runner(input_file_list, output_dir, file_number_string,
                        config, w_log):
 
-    psfcat_path, galcat_path = input_file_list
+    mode = config.get('PSFEXINTERP_RUNNER', 'MODE')
 
     pos_params = config.getlist('PSFEXINTERP_RUNNER', 'POSITION_PARAMS')
     get_shapes = config.getboolean('PSFEXINTERP_RUNNER', 'GET_SHAPES')
+    star_thresh = config.getint('PSFEXINTERP_RUNNER', 'STAR_THRESH')
 
-    inst = interpolation_script.PSFExInterpolator(psfcat_path, galcat_path,
-                                                  output_dir, file_number_string,
-                                                  w_log, pos_params, get_shapes)
+    if mode == 'CLASSIC':
+        psfcat_path, galcat_path = input_file_list
 
-    if inst._success == 0:
-        inst.write_output()
+        inst = interpolation_script.PSFExInterpolator(psfcat_path, galcat_path,
+                                                      output_dir, file_number_string, w_log,
+                                                      pos_params, get_shapes, star_thresh)
+        inst.process()
+
+    elif mode == 'MULTI-EPOCH':
+        dot_psf_dir = config.getexpanded('PSFEXINTERP_RUNNER', 'ME_DOT_PSF_DIR')
+        dot_psf_pattern = config.get('PSFEXINTERP_RUNNER', 'ME_DOT_PSF_PATTERN')
+        f_wcs_path = config.getexpanded('PSFEXINTERP_RUNNER', 'ME_LOG_WCS')
+
+        galcat_path = input_file_list[0]
+
+        inst = interpolation_script.PSFExInterpolator(None, galcat_path,
+                                                      output_dir, file_number_string, w_log,
+                                                      pos_params, get_shapes, star_thresh)
+
+        inst.process_me(dot_psf_dir, dot_psf_pattern, f_wcs_path)
+
+    elif mode == 'VALIDATION':
+        psfcat_path, galcat_path, psfex_cat_path = input_file_list
+
+        inst = interpolation_script.PSFExInterpolator(psfcat_path, galcat_path,
+                                                      output_dir, file_number_string, w_log,
+                                                      pos_params, get_shapes, star_thresh)
+
+        inst.process_validation(psfex_cat_path)
+
     else:
-        w_log.info('Not writing file with number {}'.format(file_number_string))
+        ValueError('MODE has to be in : [C, ME]')
 
     return None, None
