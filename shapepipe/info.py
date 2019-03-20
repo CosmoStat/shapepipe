@@ -33,7 +33,7 @@ __tests__ = ['pytest',
              'pytest-codestyle']
 
 
-def shapepipe_logo():
+def shapepipe_logo(colour=False):
     """ ShapePipe Logo
 
     Returns
@@ -52,7 +52,7 @@ def shapepipe_logo():
 |_______||__| |__||__| |__||___|    |_______||___|    |___| |___|    |_______|
     '''
 
-    if not import_fail:
+    if not import_fail and colour:
         shape = colored(shape, 'cyan', attrs=['bold'])
 
     logo = r'''

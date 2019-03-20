@@ -74,7 +74,7 @@ class ShapePipe():
         self.log.info('')
 
         if self.verbose:
-            print(shapepipe_logo())
+            print(shapepipe_logo(colour=True))
             print(start_text)
             print('')
 
