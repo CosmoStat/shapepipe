@@ -589,9 +589,10 @@ class FileHandler(object):
         for substring in (ext, first_num):
             new_pattern = new_pattern.replace(substring, '')
 
-        np.save(output_file, np.array([re.search(re_pattern,
-                cls._strip_dir_from_file(file, dir_list)).group()
-                for file in true_file_list]))
+        np.save(output_file,
+                np.array([re.search(re_pattern,
+                          cls._strip_dir_from_file(file, dir_list)).group()
+                          for file in true_file_list]))
 
         del true_file_list
 
