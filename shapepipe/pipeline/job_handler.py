@@ -83,10 +83,6 @@ class JobHandler(object):
         # Set the total number of jobs
         self._n_jobs = len(self.filehd.process_list)
 
-        # Set the job names
-        self.job_names = [self._set_job_name(job) for job in
-                          range(self._n_jobs)]
-
         self._log_job_parameters()
 
     @property
@@ -208,6 +204,8 @@ class JobHandler(object):
 
         collect()
 
+        self.clean_up()
+
     def submit_smp_jobs(self):
         """ Submit Jobs
 
@@ -243,26 +241,6 @@ class JobHandler(object):
         h, m, s = time_str.split(':')
 
         return int(h) * 3600 + int(m) * 60 + int(s)
-
-    @staticmethod
-    def _set_job_name(num):
-        """ Set Job Name
-
-        This method creates a job name for a given process number.
-
-        Parameters
-        ----------
-        num : int
-            Process number
-
-        Returns
-        -------
-        str
-            Job name
-
-        """
-
-        return 'process_{}'.format(num)
 
     def _log_job_parameters(self):
         """ Log Job Parameters
@@ -303,13 +281,11 @@ class JobHandler(object):
 
         result = (Parallel(n_jobs=self.batch_size, backend=self.backend)
                   (delayed(WorkerHandler(verbose=self._verbose).worker)
-                   (job_name, process,
-                    self.filehd.get_worker_log_name(self._module, job_name,
-                                                    process[0]),
+                   (process, self.filehd.get_worker_log_name(self._module,
+                                                             process[0]),
                     self.filehd.output_dir, self.config, self.timeout,
                     self._module_runner)
-                   for job_name, process in
-                   zip(self.job_names, self.filehd.process_list.items())))
+                   for process in self.filehd.process_list))
 
         self.worker_dicts = result
 
@@ -371,3 +347,12 @@ class JobHandler(object):
             if self._verbose:
                 print(missed_txt)
                 print(' - {}'.format(self.filehd.missed))
+
+    def clean_up(self):
+        """ Finish
+
+        Finish job handler instance.
+
+        """
+
+        self.filehd.remove_process_mmap()

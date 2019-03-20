@@ -17,7 +17,7 @@ from shapepipe.pipeline.run_log import RunLog
 from shapepipe.modules.module_runners import get_module_runners
 
 
-def find_files(path, pattern='*', ext='*', empty_error=False):
+def find_files(path, pattern='*', ext='*'):
     """ Find Files
 
     This method recursively retrieves file names from a given path that
@@ -31,8 +31,6 @@ def find_files(path, pattern='*', ext='*', empty_error=False):
         File pattern, default is '*'
     ext : str, optional
         File extension, default is '*'
-    empty_error : bool, optional
-        Raise error if file list is empty, default is False
 
     Returns
     -------
@@ -47,8 +45,6 @@ def find_files(path, pattern='*', ext='*', empty_error=False):
         For '*' in extension
     ValueError
         For invalid extension format
-    RuntimeError
-        For empty file list
 
     """
 
@@ -69,13 +65,7 @@ def find_files(path, pattern='*', ext='*', empty_error=False):
 
     search_string = '{}/**/*{}*{}'.format(path, pattern, ext)
 
-    file_list = iglob(search_string, recursive=True)
-
-    if empty_error and not file_list:
-        raise RuntimeError('No files found matching the conditions in {}'
-                           '.'.format(path))
-
-    return (file for file in file_list if not os.path.isdir(file))
+    return glob(search_string, recursive=True)
 
 
 class FileHandler(object):
@@ -215,6 +205,26 @@ class FileHandler(object):
         """
 
         return '{}/{}{}'.format(path, name, ext)
+
+    @staticmethod
+    def flatten_list(input_list):
+        """ Flatten List
+
+        Flatten a list of lists.
+
+        Parameters
+        ----------
+        input_list : list
+            A list of lists
+
+        Returns
+        -------
+        list
+            Flattened list
+
+        """
+
+        return [item for sublist in input_list for item in sublist]
 
     def _get_input_dir(self):
         """ Get Input Directory
@@ -446,46 +456,6 @@ class FileHandler(object):
             self._module_dict[module]['input_dir'] += \
                 self.get_add_module_property(module, 'input_dir')
 
-    @classmethod
-    def _all_pattern_per_dir(cls, dir_list, pattern_list, ext_list):
-        """ All Patterns Per Directory
-
-        Find module files assuming all file patterns are applied to all input
-        directories.
-
-        Parameters
-        ----------
-        dir_list : list
-            List of input directories
-        pattern_list : list
-            List of file patterns
-        ext_list : list
-            List of file extensions
-
-        Returns
-        -------
-        list
-            List of input files
-
-        """
-
-        file_list = []
-
-        for pattern, ext in zip(pattern_list, ext_list):
-
-            sub_file_list = [find_files(dir, pattern, ext) for dir in dir_list]
-            sub_file_list = cls.flatten_list(sub_file_list)
-
-            if not sub_file_list:
-                raise RuntimeError('No files found matching patterns ({})'
-                                   ' and or extensions ({}) in directories '
-                                   ' provided ({})'.format(pattern, ext,
-                                                           dir_list))
-            else:
-                file_list.append(sub_file_list)
-
-        return file_list
-
     @staticmethod
     def _generate_re_pattern(match_pattern):
         """ Generate Regular Expression Pattern
@@ -546,135 +516,6 @@ class FileHandler(object):
                 if _dir in file_name][0]
 
     @classmethod
-    def _get_file_pattern(cls, file_name, dir_list, re_pattern):
-        """ Get File Pattern
-
-        Get the string component of the input file name matching the specified
-        regular expression.
-
-        Parameters
-        ----------
-        file_name : str
-            File name
-        dir_list : list
-            Input directory list
-        re_pattern : str
-            Regular rexpression pattern
-
-        Returns
-        -------
-        str
-            File pattern
-
-        """
-
-        file_name = cls._strip_dir_from_file(file_name, dir_list)
-
-        if not re.search(re_pattern, file_name):
-            raise RuntimeError('No files found matching {}'.format(re_pattern))
-
-        return re.search(re_pattern, file_name).group()
-
-    @staticmethod
-    def flatten_list(input_list):
-        """ Flatten List
-
-        Flatten a list of lists.
-
-        Parameters
-        ----------
-        input_list : list
-            A list of lists
-
-        Returns
-        -------
-        list
-            Flattened list
-
-        """
-
-        return [item for sublist in input_list for item in sublist]
-
-    @classmethod
-    def _check_pattern(cls, file_list, dir_list, pattern):
-        """ Check Pattern
-
-        Find files in file list that match the input pattern.
-
-        Parameters
-        ----------
-        file_list : list
-            List of file names
-        pattern : str
-            File pattern
-
-        Returns
-        -------
-        list
-            List of files matching the pattern
-
-        """
-
-        new_list = []
-
-        for file in cls.flatten_list(file_list):
-
-            item = cls._strip_dir_from_file(file, dir_list)
-
-            if (len(item.split(pattern)) > 1 and
-                (not item.split(pattern)[1] or not
-                 item.split(pattern)[1][0].isdigit())):
-                new_list.append(file)
-
-        return new_list
-
-    @classmethod
-    def _match_list_items(cls, file_list, dir_list, re_pattern):
-        """ Match List Items
-
-        Match files names in a list of lists.
-
-        Parameters
-        ----------
-        file_list : list
-            List of file names
-        dir_list : list
-            Input directory list
-        re_pattern : str
-            Regular rexpression pattern
-
-        Returns
-        -------
-        tuple
-            List of matched file names, list of unmatched file names
-
-        Raises
-        ------
-        TypeError
-            For invalid input type
-
-        """
-
-        if not isinstance(file_list, list):
-            TypeError('File list must be a list.')
-
-        all_patterns = [cls._get_file_pattern(file, dir_list, re_pattern)
-                        for file in max(file_list, key=len)]
-        new_list = [cls._check_pattern(file_list, dir_list, pattern)
-                    for pattern in all_patterns]
-        new_list = [item for item in new_list if item]
-
-        file_dict = dict(zip(all_patterns, new_list))
-
-        max_n_cols = max([len(flist) for flist in new_list])
-        matched = dict([(key, val) for key, val in file_dict.items() if
-                        len(val) == max_n_cols])
-        missing = dict([(key, val) for key, val in file_dict.items() if
-                        len(val) < max_n_cols])
-
-        return matched, missing
-
-    @classmethod
     def _get_re(cls, num_scheme):
         """ Get Regular Expression
 
@@ -703,72 +544,150 @@ class FileHandler(object):
         return re_pattern
 
     @classmethod
-    def _save_num_patterns(cls, dir_list, num_scheme, pattern='*', ext='*',
-                           mmap_file=''):
-        """NEW METHOD
+    def _save_num_patterns(cls, dir_list, num_scheme, pattern, ext,
+                           output_file):
+        """ Save Number Patterns
+
+        Save file number patterns to numpy binary, update file patterns and
+        get correct file paths.
+
+        Parameters
+        ----------
+        dir_list : list
+            List of input directories
+        num_scheme : str
+            Numbering scheme
+        pattern : str
+            File pattern
+        ext : str
+            File extension
+        output_file : str
+            Output file name
+
         """
 
-        dot = '.'
-        star = '*'
-
-        if pattern != star and star in pattern:
-            raise ValueError('Do not include "*" in pattern.')
-
-        if ext != star and star in ext:
-            raise ValueError('Do not include "*" in extension.')
-
-        if (not ext.startswith(dot) and dot in ext) or (ext.count(dot) > 1):
-            raise ValueError('Invalid extension format: "{}".'.format(ext))
-
-        if ext != star and not ext.startswith(dot):
-            ext = dot + ext
-
-        file_list = []
-        true_path = ''
+        true_file_list = None
+        true_path = None
 
         for path in dir_list:
 
-            search_string = '{}/**/*{}*{}'.format(path, pattern, ext)
-            file_list = glob(search_string, recursive=True)
+            file_list = find_files(path, pattern, ext)
 
             if file_list:
+                true_file_list = file_list
                 true_path = path
+                del file_list
                 break
 
-        re_pattern = cls._get_re(num_scheme)
-        first_num = re.search(re_pattern, file_list[0]).group()
+        if not true_file_list:
+            raise RuntimeError('No files found matching "{}" and "{}"'
+                               ''.format(pattern, ext))
 
-        new_pattern = cls._strip_dir_from_file(file_list[0], dir_list)
+        new_pattern = cls._strip_dir_from_file(true_file_list[0], dir_list)
+        re_pattern = cls._get_re(num_scheme)
+        first_num = re.search(re_pattern, new_pattern).group()
         for substring in (ext, first_num):
             new_pattern = new_pattern.replace(substring, '')
 
-        np.save(mmap_file, np.array([re.search(re_pattern, file).group()
-                for file in file_list]))
+        np.save(output_file, np.array([re.search(re_pattern,
+                cls._strip_dir_from_file(file, dir_list)).group()
+                for file in true_file_list]))
+
+        del true_file_list
 
         return new_pattern, true_path
 
     @staticmethod
     def _save_match_patterns(output_file, mmap_list):
+        """ Save Match Patterns
+
+        Save matching number patterns to numpy binary.
+
+        Parameters
+        ----------
+        output_file : str
+            Output file name
+        mmap_list : list
+            List of memory maps
+
+        """
 
         num_pattern_list = [np.load(mmap, mmap_mode='r') for mmap in mmap_list]
 
         np.save(output_file, reduce(partial(np.intersect1d,
                 assume_unique=True), num_pattern_list))
 
-    @staticmethod
-    def _get_file_name(path, file_pattern, number, ext):
+        del num_pattern_list
 
-        return '{}/{}{}{}'.format(path, file_pattern, number, ext)
+    @staticmethod
+    def _get_file_name(path, pattern, number, ext):
+        """ Get File Name
+
+        Get file name corresponding to the path, file pattern, number pattern
+        and file extension.
+
+        Parameters
+        ----------
+        path : str
+            Path to file
+        pattern : str
+            File pattern
+        number : str
+            Number pattern
+        ext : str
+            File extension
+
+        Retunrs
+        -------
+        str
+            File name
+
+        """
+
+        return '{}/{}{}{}'.format(path, pattern, number, ext)
+
+    @staticmethod
+    def _remove_mmaps(mmap_list):
+        """ Remove Memory Maps
+
+        Remove memory map files in input list.
+
+        Parameters
+        ----------
+        mmap_list : list or str
+            List of memory map files
+
+        """
+
+        if isinstance(mmap_list, str):
+            mmap_list = [str]
+
+        for mmap in mmap_list:
+            os.remove(mmap)
 
     def _save_process_list(self, dir_list, pattern_list, ext_list, num_scheme):
-        """NEW METHOD
+        """ Save Process List
+
+        Save list of processes to a numpy binary.
+
+        Parameters
+        ----------
+        dir_list : list
+            List of input directories
+        pattern_list : list
+            List of file patterns
+        ext_list : list
+            List of file extensions
+        num_scheme : str
+            Numbering scheme
+
         """
 
         np_mmap_list = [self.format(self._tmp_dir,
-                        'nums_{}.npy'.format({pattern}))
+                        'nums_{}.npy'.format(pattern))
                         for pattern in pattern_list]
         match_mmap = self.format(self._tmp_dir, 'matching_num_patterns.npy')
-        process_mmap = self.format(self._tmp_dir, 'process_list.npy')
+        self.process_mmap = self.format(self._tmp_dir, 'process_list.npy')
 
         temp = [self._save_num_patterns(dir_list, num_scheme, pattern, ext,
                 np_mmap) for pattern, ext, np_mmap in
@@ -782,13 +701,29 @@ class FileHandler(object):
 
         for number in np.load(match_mmap, mmap_mode='r'):
 
-            process_list.append([self._get_file_name(path, fp, number, ext)
-                                 for path, fp, ext in
-                                 zip(path_list, pattern_list, ext_list)])
+            process_items = [number]
+            process_items.extend([self._get_file_name(path, fp, number, ext)
+                                  for path, fp, ext in
+                                  zip(path_list, pattern_list, ext_list)])
+            process_list.append(process_items)
 
-        np.save(process_mmap, np.array(process_list))
-        self.process_list = np.load(process_mmap, mmap_mode='r')
+        np.save(self.process_mmap, np.array(process_list))
+        del process_list
+
+        self.process_list = np.load(self.process_mmap, mmap_mode='r')
+
         self.missed = []
+
+        self._remove_mmaps(np_mmap_list + [match_mmap])
+
+    def remove_process_mmap(self):
+        """ Remove Process MMAP
+
+        Remove process list memory map.
+
+        """
+
+        self._remove_mmaps([self.process_mmap])
 
     def _get_module_input_files(self, module):
         """ Get Module Input Files
@@ -809,16 +744,6 @@ class FileHandler(object):
 
         self._save_process_list(dir_list, pattern_list, ext_list, num_scheme)
 
-        print(list(self.process_list[0]))
-        # exit()
-
-        # file_list = self._all_pattern_per_dir(dir_list, pattern_list,
-        #                                       ext_list)
-        #
-        # self.process_list, self.missed = self._check_file_list(file_list,
-        #                                                        dir_list,
-        #                                                        num_scheme)
-
     def set_up_module(self, module):
         """ Set Up Module
 
@@ -837,7 +762,7 @@ class FileHandler(object):
         self._set_module_input_dir(module)
         self._get_module_input_files(module)
 
-    def get_worker_log_name(self, module, job_name):
+    def get_worker_log_name(self, module, file_number_string):
         """ Get Worker Log Name
 
         This method generates a worker log name.
@@ -846,8 +771,6 @@ class FileHandler(object):
         ----------
         module : str
             Module name
-        job_name : str
-            Job name
         file_number_string : str
             File numbering in output
 
@@ -858,8 +781,5 @@ class FileHandler(object):
 
         """
 
-        return '{}/{}_file'.format(self._module_dict[module]['log_dir'],
-                                   job_name)
-
-        # return '{}/{}_file{}'.format(self._module_dict[module]['log_dir'],
-        #                              job_name, file_number_string)
+        return '{}/process{}'.format(self._module_dict[module]['log_dir'],
+                                     file_number_string)
