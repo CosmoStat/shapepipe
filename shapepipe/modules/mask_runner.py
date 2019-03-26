@@ -34,7 +34,7 @@ def mask_runner(input_file_list, output_dir, file_number_string,
     elif len(input_file_list) == 4:
         if config.getboolean('MASK_RUNNER', 'USE_EXT_FLAG') & config.getboolean('MASK_RUNNER', 'USE_EXT_STAR'):
             ext_flag_name = input_file_list[2]
-            ext_star_cat  = input_file_list[3]
+            ext_star_cat = input_file_list[3]
         else:
             raise ValueError('Expecting external flag and external star catalog.')
     else:

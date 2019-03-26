@@ -10,7 +10,7 @@ This module defines a class for handling pipeline files.
 
 import os
 import re
-from glob import iglob, glob
+from glob import iglob
 from shapepipe.pipeline.run_log import RunLog
 from shapepipe.modules.module_runners import get_module_runners
 
@@ -64,13 +64,8 @@ def find_files(path, pattern='*', ext='*', empty_error=False):
 
     if ext != star and not ext.startswith(dot):
         ext = dot + ext
-    
-    #if "sexcat" in pattern:
+
     search_string = '{}/**/*{}*{}'.format(path, pattern, ext)
-    #else:
-    #    if ext == dot:
-    #        ext = ''
-    #    search_string = '{}/*{}*{}/'.format(path, pattern, ext)
 
     file_list = iglob(search_string, recursive=True)
 
@@ -78,7 +73,7 @@ def find_files(path, pattern='*', ext='*', empty_error=False):
         raise RuntimeError('No files found matching the conditions in {}'
                            '.'.format(path))
 
-    return (file for file in file_list)# if not os.path.isdir(file))
+    return (file for file in file_list if not os.path.isdir(file))
 
 
 class FileHandler(object):
@@ -471,14 +466,12 @@ class FileHandler(object):
         """
 
         file_list = []
-        print('ici1')
+
         for pattern, ext in zip(pattern_list, ext_list):
 
-            print('ici2')		
             sub_file_list = [find_files(dir, pattern, ext) for dir in dir_list]
-            print('ici3')
             sub_file_list = cls.flatten_list(sub_file_list)
-            print('ici4')
+
             if not sub_file_list:
                 raise RuntimeError('No files found matching patterns ({})'
                                    ' and or extensions ({}) in directories '
@@ -486,7 +479,7 @@ class FileHandler(object):
                                                            dir_list))
             else:
                 file_list.append(sub_file_list)
-        print('ici5')
+
         return file_list
 
     @staticmethod
@@ -595,7 +588,7 @@ class FileHandler(object):
             Flattened list
 
         """
-        print('la')        
+
         return [item for sublist in input_list for item in sublist]
 
     @classmethod
@@ -663,10 +656,8 @@ class FileHandler(object):
 
         all_patterns = [cls._get_file_pattern(file, dir_list, re_pattern)
                         for file in max(file_list, key=len)]
-
         new_list = [cls._check_pattern(file_list, dir_list, pattern)
-                   for pattern in all_patterns]
-
+                    for pattern in all_patterns]
         new_list = [item for item in new_list if item]
 
         file_dict = dict(zip(all_patterns, new_list))
