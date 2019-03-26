@@ -131,6 +131,10 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list, prior):
 
     n_epoch = len(gals)
 
+    if n_epoch == 0:
+        print("aie aie aie")
+        raise ValueError("0 epoch to process")
+
     # Make observation
     gal_obs_list = ObsList()
     T_guess_psf = []
@@ -153,7 +157,7 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list, prior):
 
     boot = ngmix.bootstrap.MaxMetacalBootstrapper(gal_obs_list)
     psf_model = 'em3'
-    gal_model = 'exp'
+    gal_model = 'gauss'
 
     # metacal specific parameters
     metacal_pars = {'types': ['noshear', '1p', '1m', '2p', '2m'],
@@ -177,7 +181,8 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list, prior):
     psf_pars = {'maxiter': 5000,
                 'tol': 5.0e-6}
 
-    Tguess = np.mean(T_guess_psf)*0.186**2  # size guess in arcsec
+    # Tguess = np.mean(T_guess_psf)*0.186**2  # size guess in arcsec
+    Tguess = 4.0*0.186**2
     ntry = 2       # retry the fit twice
     boot.fit_metacal(psf_model,
                      gal_model,
@@ -318,9 +323,9 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
     final_res = []
     prior = get_prior()
     for i_tile, id_tmp in enumerate(obj_id):
-        if tile_flag[i_tile] > 1:
+        if (tile_flag[i_tile] > 1) or (tile_imaflag[i_tile] > 0):
             continue
-        if sm[i_tile] + (5. / 3.) * sm_err[i_tile] < 0.01:
+        if (sm[i_tile] + (5. / 3.) * sm_err[i_tile] < 0.01) and (np.abs(sm[i_tile] + (5. / 3.) * sm_err[i_tile]) > 0.003):
             continue
         gal_vign = []
         psf_vign = []
@@ -328,14 +333,17 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
         weight_vign = []
         flag_vign = []
         jacob_list = []
-        if (psf_vign_cat[id_tmp] == 'empty') | (gal_vign_cat[id_tmp] == 'empty'):
+        if (psf_vign_cat[id_tmp] == 'empty') or (gal_vign_cat[id_tmp] == 'empty'):
             continue
         psf_expccd_name = list(psf_vign_cat[id_tmp].keys())
         for expccd_name_tmp in psf_expccd_name:
+            gal_vign_tmp = gal_vign_cat[id_tmp][expccd_name_tmp]['VIGNET']
+            if len(np.where(gal_vign_tmp.ravel() == 0)[0]) != 0:
+                continue
+
             psf_vign.append(psf_vign_cat[id_tmp][expccd_name_tmp]['VIGNET'])
             sigma_psf.append(psf_vign_cat[id_tmp][expccd_name_tmp]['SHAPES']['SIGMA_PSF_HSM'])
 
-            gal_vign_tmp = gal_vign_cat[id_tmp][expccd_name_tmp]['VIGNET']
             bkg_vign_tmp = bkg_vign_cat[id_tmp][expccd_name_tmp]['VIGNET']
             gal_vign_sub_bkg = gal_vign_tmp - bkg_vign_tmp
             gal_vign.append(gal_vign_sub_bkg)
