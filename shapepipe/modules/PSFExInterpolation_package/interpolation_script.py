@@ -62,7 +62,11 @@ def interpsfex(dotpsfpath, pos, thresh_star, thresh_chi2):
     # Check number of stars used to compute the PSF
     if PSF_model.header['ACCEPTED'] < thresh_star:
         return NOT_ENOUGH_STARS
+<<<<<<< HEAD
     if PSF_model.header['CHI2'] > thresh_chi2:
+=======
+    if PSF_model.header['CHI2'] < thresh_chi2:
+>>>>>>> 29963e13d88022258b18b4dd693e9914d14885a9
         return BAD_CHI2
 
     PSF_basis = np.array(PSF_model.data)[0][0]
@@ -169,7 +173,11 @@ class PSFExInterpolator(object):
         if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGH_STARS:
             self._w_log.info('Not enough stars to interpolate the psf'
                              ' in the file {}.'.format(self._dotpsf_path))
+<<<<<<< HEAD
         elif isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
+=======
+        if isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
+>>>>>>> 29963e13d88022258b18b4dd693e9914d14885a9
             self._w_log.info('Bad chi2 for the psf model'
                              ' in the file {}.'.format(self._dotpsf_path))
         else:
@@ -271,7 +279,11 @@ class PSFExInterpolator(object):
         if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGH_STARS:
             self._w_log.info('Not enough stars to interpolate the psf'
                              ' in the file {}.'.format(self._dotpsf_path))
+<<<<<<< HEAD
         elif isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
+=======
+        if isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
+>>>>>>> 29963e13d88022258b18b4dd693e9914d14885a9
             self._w_log.info('Bad chi2 for the psf model'
                              ' in the file {}.'.format(self._dotpsf_path))
 
@@ -442,6 +454,11 @@ class PSFExInterpolator(object):
                     self._w_log.info('Not enough stars find in the ccd'
                                      ' {} of the exposure {}. Object inside'
                                      ' this ccd will lose an epoch.'.format(ccd, exp_name))
+                if isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
+                    self._w_log.info('Bad chi2 for the psf model in the ccd'
+                                     ' {} of the exposure {}. Object inside'
+                                     ' this ccd will lose an epoch.'.format(ccd, exp_name))
+
                     continue
                 if isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
                     self._w_log.info('Bad chi2 for the psf model in the ccd'
