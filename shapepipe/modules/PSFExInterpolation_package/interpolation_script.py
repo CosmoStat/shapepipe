@@ -29,7 +29,6 @@ else:
     import_fail = False
 
 from shapepipe.pipeline import file_io as sc
-from klepto.archives import dir_archive
 
 
 NOT_ENOUGH_STARS = 'Fail_stars'
@@ -441,11 +440,6 @@ class PSFExInterpolator(object):
                     self._w_log.info('Not enough stars find in the ccd'
                                      ' {} of the exposure {}. Object inside'
                                      ' this ccd will lose an epoch.'.format(ccd, exp_name))
-                if isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
-                    self._w_log.info('Bad chi2 for the psf model in the ccd'
-                                     ' {} of the exposure {}. Object inside'
-                                     ' this ccd will lose an epoch.'.format(ccd, exp_name))
-
                     continue
                 if isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
                     self._w_log.info('Bad chi2 for the psf model in the ccd'
@@ -513,7 +507,4 @@ class PSFExInterpolator(object):
             Dictionnary of outputs to save
 
         """
-        # np.save(self._output_path+self._img_number, output_dict)
-        output_name = self._output_path+self._img_number + '.npy'
-        output_file = dir_archive(output_name, output_dict, serialized=True)
-        output_file.dump()
+        np.save(self._output_path+self._img_number, output_dict)
