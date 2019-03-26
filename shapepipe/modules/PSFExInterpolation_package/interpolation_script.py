@@ -271,14 +271,9 @@ class PSFExInterpolator(object):
         if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGH_STARS:
             self._w_log.info('Not enough stars to interpolate the psf'
                              ' in the file {}.'.format(self._dotpsf_path))
-<<<<<<< HEAD
         elif isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
-=======
-        if isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
->>>>>>> 29963e13d88022258b18b4dd693e9914d14885a9
             self._w_log.info('Bad chi2 for the psf model'
                              ' in the file {}.'.format(self._dotpsf_path))
-
         else:
             star_cat = sc.FITSCatalog(self._galcat_path, SEx_catalog=True)
             star_cat.open()
