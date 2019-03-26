@@ -13,7 +13,6 @@ import galsim
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.pipeline import file_io as io
-from klepto.archives import dir_archive
 
 
 def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
@@ -194,9 +193,7 @@ def spread_model_runner(input_file_list, output_dir, file_number_string,
         obj_mag = np.copy(sex_cat.get_data()['MAG_AUTO'])
     sex_cat.close()
 
-    #psf_cat = np.load(psf_cat_path).item()
-    psf_cat = dir_archive(psf_cat_path, {}, serialized=True, cached=False)
-    psf_cat.load()
+    psf_cat = np.load(psf_cat_path).item()
 
     weight_cat = io.FITSCatalog(weight_cat_path, SEx_catalog=True)
     weight_cat.open()
@@ -247,4 +244,3 @@ def spread_model_runner(input_file_list, output_dir, file_number_string,
                  output_mode)
 
     return None, None
-

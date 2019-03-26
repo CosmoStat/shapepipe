@@ -10,7 +10,6 @@ This file contains methods to run ngmix for shape measurement.
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.pipeline import file_io as io
-from klepto.archives import dir_archive
 
 import re
 
@@ -308,16 +307,6 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
     psf_vign_cat = np.load(psf_vignet_path).item()
     weight_vign_cat = np.load(weight_vignet_path).item()
     flag_vign_cat = np.load(flag_vignet_path).item()
-    #gal_vign_cat = dir_archive(gal_vignet_path, {}, serialized=True, cached=False)
-    #gal_vign_cat.load()
-    #bkg_vign_cat = dir_archive(bkg_vignet_path, {}, serialized=True, cached=False)
-    #bkg_vign_cat.load()
-    #psf_vign_cat = dir_archive(psf_vignet_path, {}, serialized=True, cached=False)
-    #psf_vign_cat.load()
-    #weight_vign_cat = dir_archive(weight_vignet_path, {}, serialized=True, cached=False)
-    #weight_vign_cat.load()
-    #flag_vign_cat = dir_archive(flag_vignet_path, {}, serialized=True, cached=False)
-    #flag_vign_cat.load()
     f_wcs_file = np.load(f_wcs_path).item()
 
     final_res = []
@@ -353,10 +342,10 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
             tile_vign_tmp = np.copy(tile_vign[i_tile])
             flag_vign_tmp = flag_vign_cat[id_tmp][expccd_name_tmp]['VIGNET']
             flag_vign_tmp[np.where(tile_vign_tmp == -1e30)] = 2**10
-            v_flag_tmp=flag_vign_tmp.ravel()
-            if len(np.where(v_flag_tmp!=0)[0])/(51*51) > 1/3.:
+            v_flag_tmp = flag_vign_tmp.ravel()
+            if len(np.where(v_flag_tmp != 0)[0])/(51*51) > 1/3.:
                 continue
-            flag_vign.append(flag_vign_tmp)  
+            flag_vign.append(flag_vign_tmp)
 
             exp_name, ccd_n = re.split('-', expccd_name_tmp)
             jacob_list.append(get_jacob(f_wcs_file[exp_name][int(ccd_n)],

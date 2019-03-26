@@ -8,7 +8,7 @@ This module contain a class to create star mask for an image.
 
 :Date: 20/12/2017
 
-:Version: 1.0
+:Version: 1.1
 
 """
 
@@ -251,95 +251,54 @@ class mask(object):
 
         return general_stdout, general_stderr
 
-    # def find_stars(self, position, radius=None):
-    #     """Find stars
-    #
-    #     Return GSC (Guide Star Catalog) objects for a field with center (ra,dec) and radius r.
-    #
-    #     Parameters
-    #     ----------
-    #     position : numpy.ndarray
-    #         Position of the center of the field
-    #     radius : float
-    #         Radius in which the query is done (in arcmin)
-    #
-    #     Returns
-    #     -------
-    #     dict
-    #         Stars dicotionnary for GSC objects in the field.
-    #
-    #     """
-    #
-    #     ra = position[0]
-    #     dec = position[1]
-    #
-    #     # check ra dec types
-    #
-    #     if dec > 0.:
-    #         sign = '+'
-    #     else:
-    #         sign = ''
-    #
-    #     cmd_line = '{0} {1} {2}{3} -r {4} -n 1000000'.format(self._config['PATH']['CDSclient'], ra, sign, dec, radius)
-    #
-    #     # output=subprocess.check_output(cmd_line, shell=True)
-    #     self._CDS_stdout, self._CDS_stderr = execute(cmd_line)
-    #
-    #     if self._CDS_stderr != '':
-    #         self._err = True
-    #         return None
-    #
-    #     # return self._make_star_cat(output.decode("utf-8"))
-    #     return self._make_star_cat(self._CDS_stdout)
-
     def find_stars(self, position, radius=None):
-          """Find stars
+        """Find stars
 
-          Return GSC (Guide Star Catalog) objects for a field with center (ra,dec) and radius r.
+        Return GSC (Guide Star Catalog) objects for a field with center (ra,dec) and radius r.
 
-          Parameters
-          ----------
-          position : numpy.ndarray
-              Position of the center of the field
-          radius : float
-              Radius in which the query is done (in arcmin)
+        Parameters
+        ----------
+        position : numpy.ndarray
+          Position of the center of the field
+        radius : float
+          Radius in which the query is done (in arcmin)
 
-          Returns
-          -------
-          dict
-              Stars dicotionnary for GSC objects in the field.
+        Returns
+        -------
+        dict
+          Stars dicotionnary for GSC objects in the field.
 
-          """
+        """
 
-          if 'CDSclient' in self._config['PATH']:
+        if 'CDSclient' in self._config['PATH']:
 
-              ra = position[0]
-              dec = position[1]
-              if dec > 0.:
-                  sign = '+'
-              else:
-                  sign = ''
-              cmd_line = '{0} {1} {2}{3} -r {4} -n 1000000'.format(self._config['PATH']['CDSclient'], ra, sign, dec, radius)
-              # self._w_log.info('Calling command \'{}\''.format(cmd_line))
-              self._CDS_stdout, self._CDS_stderr = execute(cmd_line)
-
-          elif 'star_cat' in self._config['PATH']:
-
-              # self._w_log.info('Reading star catalogue file \'{}\''.format(self._config['PATH']['star_cat']))
-              f = open(self._config['PATH']['star_cat'], 'r')
-              self._CDS_stdout = f.read()
-              self._CDS_stderr = ''
-              f.close()
-
+          ra = position[0]
+          dec = position[1]
+          if dec > 0.:
+              sign = '+'
           else:
+              sign = ''
+          cmd_line = '{0} {1} {2}{3} -r {4} -n 1000000'.format(self._config['PATH']['CDSclient'], ra, sign, dec, radius)
+          # self._w_log.info('Calling command \'{}\''.format(cmd_line))
+          self._CDS_stdout, self._CDS_stderr = execute(cmd_line)
 
-              raise ValueError('Either CDSCLIENT_PATH or STAR_CAT needs to be given in the [PROGRAM_PATH] section of the mask config file')
+        elif 'star_cat' in self._config['PATH']:
 
-          if self._CDS_stderr != '':
-              self._err = True
-              return None
+          # self._w_log.info('Reading star catalogue file \'{}\''.format(self._config['PATH']['star_cat']))
+          f = open(self._config['PATH']['star_cat'], 'r')
+          self._CDS_stdout = f.read()
+          self._CDS_stderr = ''
+          f.close()
 
-          return self._make_star_cat(self._CDS_stdout)
+        else:
+
+          raise ValueError('Either CDSCLIENT_PATH or STAR_CAT needs to be given in the [PROGRAM_PATH] section of the mask config file')
+
+        if self._CDS_stderr != '':
+          self._err = True
+          return None
+
+        return self._make_star_cat(self._CDS_stdout)
 
     def mask_border(self, width=100, flag_value=4):
         """Create mask border

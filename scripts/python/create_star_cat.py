@@ -12,7 +12,6 @@ import os
 import sys
 
 
-
 def _get_image_radius(center, wcs):
     """Get image radius
 
@@ -124,7 +123,7 @@ def main(input_dir, output_dir):
     file_list = os.listdir(input_dir)
 
     for f in file_list:
-        if not 'image' in f:
+        if 'image' not in f:
             continue
 
         img = fits.open(input_dir + '/' + f)
@@ -157,7 +156,5 @@ if __name__ == '__main__':
         output_path = argv[2]
     except:
         output_path = '.'
-
-    # output_name = output_path + '/log_exp_headers.npy'
 
     main(input_path, output_path)

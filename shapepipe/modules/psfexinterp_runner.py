@@ -60,4 +60,3 @@ def psfexinterp_runner(input_file_list, output_dir, file_number_string,
         ValueError('MODE has to be in : [C, ME]')
 
     return None, None
-

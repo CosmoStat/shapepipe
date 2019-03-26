@@ -62,11 +62,7 @@ def interpsfex(dotpsfpath, pos, thresh_star, thresh_chi2):
     # Check number of stars used to compute the PSF
     if PSF_model.header['ACCEPTED'] < thresh_star:
         return NOT_ENOUGH_STARS
-<<<<<<< HEAD
     if PSF_model.header['CHI2'] > thresh_chi2:
-=======
-    if PSF_model.header['CHI2'] < thresh_chi2:
->>>>>>> 29963e13d88022258b18b4dd693e9914d14885a9
         return BAD_CHI2
 
     PSF_basis = np.array(PSF_model.data)[0][0]
@@ -530,4 +526,3 @@ class PSFExInterpolator(object):
         output_name = self._output_path+self._img_number + '.npy'
         output_file = dir_archive(output_name, output_dict, serialized=True)
         output_file.dump()
-
