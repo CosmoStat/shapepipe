@@ -29,7 +29,7 @@ class WorkerHandler(object):
         self._stderr = None
         self._verbose = verbose
 
-    def worker(self, job_name, process, w_log_name, output_dir, config,
+    def worker(self, process, w_log_name, output_dir, config,
                timeout, module_runner):
         """ Worker
 
@@ -37,8 +37,6 @@ class WorkerHandler(object):
 
         Parameters
         ----------
-        job_name : str
-            Job name
         process : str
             File to be processed
         w_log_name : str
@@ -63,23 +61,40 @@ class WorkerHandler(object):
         self._output_dir = output_dir
         self._config = config
         self._module_runner = module_runner
-        self._prepare_worker(job_name, process, timeout,
-                             module_runner.__name__)
+        self._prepare_worker(process, timeout, module_runner.__name__)
         self._create_worker_log()
         self._run_worker()
         close_log(self.w_log, verbose=False)
 
         return self.worker_dict
 
-    def _prepare_worker(self, job_name, process, timeout, module):
+    @staticmethod
+    def _set_job_name(num):
+        """ Set Job Name
+
+        This method creates a job name for a given process number.
+
+        Parameters
+        ----------
+        num : int
+            Process number
+
+        Returns
+        -------
+        str
+            Job name
+
+        """
+
+        return 'process{}'.format(num)
+
+    def _prepare_worker(self, process, timeout, module):
         """ Prepare Worker
 
         This method defines a worker instance dictionary.
 
         Parameters
         ----------
-        job_name : str
-            Job name
         Process : str
             File to be processed
         config : CustomParser
@@ -97,8 +112,8 @@ class WorkerHandler(object):
         self.worker_dict['machine'] = platform.machine()
         self.worker_dict['exception'] = False
         self.worker_dict['stderr'] = False
-        self.worker_dict['process'] = process
-        self.worker_dict['job_name'] = job_name
+        self.worker_dict['process'] = list(process)
+        self.worker_dict['job_name'] = self._set_job_name(process[0])
         self.worker_dict['timeout'] = timeout
         self.worker_dict['module'] = module
 
@@ -170,7 +185,7 @@ class WorkerHandler(object):
                         self.worker_dict['module']))
 
         file_number_string = self.worker_dict['process'][0]
-        input_file_list = self.worker_dict['process'][1]
+        input_file_list = self.worker_dict['process'][1:]
 
         self._stdout, self._stderr = self._module_runner(input_file_list,
                                                          self._output_dir,
