@@ -31,10 +31,11 @@ else:
 from shapepipe.pipeline import file_io as sc
 
 
-NOT_ENOUGH_STARS = 'Fail'
+NOT_ENOUGH_STARS = 'Fail_stars'
+BAD_CHI2 = 'Fail_chi2'
 
 
-def interpsfex(dotpsfpath, pos, thresh):
+def interpsfex(dotpsfpath, pos, thresh_star, thresh_chi2):
     """Use PSFEx generated model to perform spatial PSF interpolation.
 
         Parameters
@@ -58,8 +59,10 @@ def interpsfex(dotpsfpath, pos, thresh):
     PSF_model = fits.open(dotpsfpath)[1]
 
     # Check number of stars used to compute the PSF
-    if PSF_model.header['ACCEPTED'] < thresh:
+    if PSF_model.header['ACCEPTED'] < thresh_star:
         return NOT_ENOUGH_STARS
+    if PSF_model.header['CHI2'] > thresh_chi2:
+        return BAD_CHI2
 
     PSF_basis = np.array(PSF_model.data)[0][0]
     try:
@@ -117,7 +120,7 @@ class PSFExInterpolator(object):
     """
 
     def __init__(self, dotpsf_path, galcat_path, output_path, img_number, w_log,
-                 pos_params=None, get_shapes=True, star_thresh=20):
+                 pos_params=None, get_shapes=True, star_thresh=20, chi2_thresh=2):
 
         # Path to PSFEx output file
         self._dotpsf_path = dotpsf_path
@@ -131,6 +134,8 @@ class PSFExInterpolator(object):
         self._compute_shape = get_shapes
         # Number of stars under which we don't interpolate the PSF
         self._star_thresh = star_thresh
+
+        self._chi2_thresh = chi2_thresh
 
         # Logging
         self._w_log = w_log
@@ -162,6 +167,9 @@ class PSFExInterpolator(object):
 
         if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGH_STARS:
             self._w_log.info('Not enough stars to interpolate the psf'
+                             ' in the file {}.'.format(self._dotpsf_path))
+        elif isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
+            self._w_log.info('Bad chi2 for the psf model'
                              ' in the file {}.'.format(self._dotpsf_path))
         else:
             if self._compute_shape:
@@ -214,7 +222,7 @@ class PSFExInterpolator(object):
         # zip(self.gal_pos[:,0],
         #                              self.gal_pos[:,1])])
 
-        self.interp_PSFs = interpsfex(self._dotpsf_path, self.gal_pos, self._star_thresh)
+        self.interp_PSFs = interpsfex(self._dotpsf_path, self.gal_pos, self._star_thresh, self._chi2_thresh)
 
     def _get_psfshapes(self):
         """ Compute shapes of PSF at galaxy positions using HSM.
@@ -262,6 +270,9 @@ class PSFExInterpolator(object):
         if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGH_STARS:
             self._w_log.info('Not enough stars to interpolate the psf'
                              ' in the file {}.'.format(self._dotpsf_path))
+        elif isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
+            self._w_log.info('Bad chi2 for the psf model'
+                             ' in the file {}.'.format(self._dotpsf_path))
         else:
             star_cat = sc.FITSCatalog(self._galcat_path, SEx_catalog=True)
             star_cat.open()
@@ -294,8 +305,11 @@ class PSFExInterpolator(object):
         if import_fail:
             raise ImportError('Galsim is required to get shapes information')
 
-        star_moms = [hsm.FindAdaptiveMom(Image(star), strict=False)
-                     for star in star_vign]
+        masks = np.zeros_like(star_vign)
+        masks[np.where(star_vign == -1e30)] = 1
+
+        star_moms = [hsm.FindAdaptiveMom(Image(star), badpix=Image(mask), strict=False)
+                     for star, mask in zip(star_vign, masks)]
 
         self.star_shapes = np.array([[moms.observed_shape.g1,
                                      moms.observed_shape.g2,
@@ -420,10 +434,15 @@ class PSFExInterpolator(object):
                 obj_id = all_id[ind_obj]
                 gal_pos = np.array(self._f_wcs_file[exp_name][ccd].all_world2pix(self.gal_pos[:, 0][ind_obj], self.gal_pos[:, 1][ind_obj], 0)).T
 
-                self.interp_PSFs = interpsfex(dot_psf_path, gal_pos, self._star_thresh)
+                self.interp_PSFs = interpsfex(dot_psf_path, gal_pos, self._star_thresh, self._chi2_thresh)
 
                 if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGH_STARS:
                     self._w_log.info('Not enough stars find in the ccd'
+                                     ' {} of the exposure {}. Object inside'
+                                     ' this ccd will lose an epoch.'.format(ccd, exp_name))
+                    continue
+                if isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
+                    self._w_log.info('Bad chi2 for the psf model in the ccd'
                                      ' {} of the exposure {}. Object inside'
                                      ' this ccd will lose an epoch.'.format(ccd, exp_name))
                     continue

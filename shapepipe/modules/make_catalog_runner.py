@@ -142,6 +142,8 @@ def save_ngmix_data(final_cat_file, ngmix_cat_path):
     output_dict = {**output_dict, **{'NGMIX_Tpsf_{}'.format(i): np.zeros(len(obj_id)) for i in keys}}
     output_dict = {**output_dict, **{'NGMIX_SNR_{}'.format(i): np.zeros(len(obj_id)) for i in keys}}
     output_dict = {**output_dict, **{'NGMIX_FLAGS_{}'.format(i): np.ones(len(obj_id), dtype='int16') for i in keys}}
+    output_dict['NGMIX_N_EPOCH'] = np.zeros(len(obj_id))
+    output_dict['NGMIX_MCAL_FLAGS'] = np.zeros(len(obj_id))
     for i, id_tmp in enumerate(obj_id):
         ind = np.where(id_tmp == ngmix_id)[0]
         if len(ind) > 0:
@@ -156,8 +158,8 @@ def save_ngmix_data(final_cat_file, ngmix_cat_path):
                 output_dict['NGMIX_SNR_{}'.format(key)][i] = ngmix_cat_file.get_data(key)['s2n'][ind[0]]
                 output_dict['NGMIX_FLAGS_{}'.format(key)][i] = ngmix_cat_file.get_data(key)['flags'][ind[0]]
 
-    output_dict['NGMIX_N_EPOCH'] = ngmix_n_epoch
-    output_dict['NGMIX_MCAL_FLAGS'] = ngmix_mcal_flags
+            output_dict['NGMIX_N_EPOCH'][i] = ngmix_n_epoch[ind[0]]
+            output_dict['NGMIX_MCAL_FLAGS'][i] = ngmix_mcal_flags[ind[0]]
 
     for key in output_dict.keys():
         final_cat_file.add_col(key, output_dict[key])
@@ -183,7 +185,7 @@ def save_psf_data(final_cat_file, galaxy_psf_path):
     final_cat_file.open()
     obj_id = np.copy(final_cat_file.get_data()['NUMBER'])
     max_epoch = np.max(final_cat_file.get_data()['NGMIX_N_EPOCH'])
-    max_epoch = 5
+    max_epoch = 10
 
     galaxy_psf_cat = np.load(galaxy_psf_path).item()
 
