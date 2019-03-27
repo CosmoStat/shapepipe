@@ -72,7 +72,7 @@ def get_history(coadd_path, image_path_list):
                file_ext=['.txt'],
                executes=['swarp'], depends=['numpy', 'astropy', 'sip_tpv'])
 def swarp_runner(input_file_list, output_dir, file_number_string,
-                      config, w_log):
+                 config, w_log):
 
     num = file_number_string
 
