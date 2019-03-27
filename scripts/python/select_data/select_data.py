@@ -268,8 +268,10 @@ class Selection(object):
                 f_select.write(names[i] + 'p{}.fits.fz\n'.format(suffix))
             if self.config['SINGLE']['LINK']:
                 f_link.write('https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/files/vault/cfis/{}/'.format(img_dir) + names[i] + 'p{}.fits.fz\n'.format(suffix))
-        f_select.close()
-        f_link.close()
+        if self.config['SINGLE'][img_type.upper()]:
+            f_select.close()
+        if self.config['SINGLE']['LINK']:
+            f_link.close()
 
     def _plot_single(self, ra, dec):
         """ Plot single exposures
