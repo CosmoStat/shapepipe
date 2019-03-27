@@ -81,6 +81,8 @@ class Selection(object):
 
         self.config['COADD']['MAKE'] = config.getboolean('COADD_PARAMETERS', 'MAKE_TILE')
         if self.config['COADD']['MAKE']:
+            self.config['COADD']['SINGLE_DIR'] = config.getexpanded('COADD_PARAMETERS', 'PATH_SINGLE_DIR')
+
             ra = config.getlist('COADD_PARAMETERS', 'RA')
             dec = config.getlist('COADD_PARAMETERS', 'DEC')
             self.config['COADD']['FIELD'] = np.array([[float(ra[0]), float(ra[1])],        # ra_min , ra_max      Deg
@@ -210,6 +212,8 @@ class Selection(object):
         space = self.config['COADD']['SPACE']    # Deg
         size = self.config['COADD']['SIZE']     # Pix
 
+        single_dir = self.config['COADD']['SINGLE_DIR']
+
         ra_corr = np.cos(np.array(dec_single)*np.pi/180.)
         tree = cKDTree(np.array([np.array(ra_single) * ra_corr, dec_single]).T)
         count = 0
@@ -221,7 +225,7 @@ class Selection(object):
                 exp_names = np.array(names_single)[res[1][np.where(res[0] != np.inf)]]
                 f_tile = open(output_dir + '/tile_{:.1f}_{:.1f}-{}.txt'.format(ra, dec, count), 'w')
                 for n in exp_names:
-                    f_tile.write('image-{}.fits\n'.format(n))
+                    f_tile.write(single_dir + '/image-{}.fits\n'.format(n))
                 f_tile.close()
                 n_exp.append(len(exp_names))
                 count += 1
