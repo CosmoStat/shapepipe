@@ -32,7 +32,7 @@ def get_history(coadd_path, image_path_list):
         Path to the coadd image.
     image_path_list : list
         List of the single exposures path to check
-        
+
     """
     coadd_file = io.FITSCatalog(coadd_path, hdu_no=0, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
     coadd_file.open()
@@ -42,9 +42,9 @@ def get_history(coadd_path, image_path_list):
     for img_path in image_path_list:
         if (img_path == '\n') | (img_path == ''):
             continue
-        img_path = img_path.replace('\n', '')
-        img_path = img_path.replace('\s+', '')
-            
+        img_path = img_path.replace(r'\n', '')
+        img_path = img_path.replace(r'\s+', '')
+
         f_tmp = io.FITSCatalog(img_path)
         f_tmp.open()
         n_hdu = len(f_tmp.get_ext_name())
@@ -58,16 +58,16 @@ def get_history(coadd_path, image_path_list):
                 continue
             if np.min(corner_coadd[1]) > np.max(corner_tmp[1]) or np.max(corner_coadd[1]) < np.min(corner_tmp[1]):
                 continue
-            
+
             ccd_inter += 1
         f_tmp.close()
-        
+
         if ccd_inter != 0:
             coadd_file.add_header_card("HISTORY", "From file {} {} extension(s) used".format(os.path.split(img_path)[1], ccd_inter))
     coadd_file.close()
 
 
-@module_runner( version='1.0',
+@module_runner(version='1.0',
                file_pattern=['tile'],
                file_ext=['.txt'],
                executes=['swarp'], depends=['numpy', 'astropy', 'sip_tpv'])
@@ -97,7 +97,7 @@ def swarp_runner(input_file_list, output_dir, file_number_string,
 
     # Get center position
     tmp = os.path.split(os.path.splitext(input_file_list[0])[0])[1]
-    tmp = re.split('_|\-', tmp)
+    tmp = re.split(r'_|\-', tmp)
     ra, dec = tmp[1], tmp[2]
 
     # Get weight list
@@ -115,7 +115,7 @@ def swarp_runner(input_file_list, output_dir, file_number_string,
                    ' -IMAGEOUT_NAME {} -WEIGHTOUT_NAME {}' \
                    ' -RESAMPLE_SUFFIX .resamp{}.fits ' \
                    ' -CENTER_TYPE MANUAL -CENTER {},{} '.format(exec_path, input_file_list[0], dot_swarp, ','.join(weight_list), output_image_path, output_weight_path, num, ra, dec)
-    
+
     stderr, stdout = execute(command_line)
 
     check_error = re.findall('error', stdout.lower())
@@ -131,4 +131,3 @@ def swarp_runner(input_file_list, output_dir, file_number_string,
     get_history(output_image_path, image_list)
 
     return stdout, stderr2
-
