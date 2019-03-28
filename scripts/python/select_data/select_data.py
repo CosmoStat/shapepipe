@@ -214,14 +214,13 @@ class Selection(object):
 
         single_dir = self.config['COADD']['SINGLE_DIR']
 
-        ra_corr = np.cos(np.array(dec_single)*np.pi/180.)
+        ra_corr = np.cos(np.mean(self.config['COADD']['FIELD'][1])*np.pi/180.)
         tree = cKDTree(np.array([np.array(ra_single) * ra_corr, dec_single]).T)
         count = 0
         n_exp = []
         for dec in np.arange(dec_min + space, dec_max, space):
-            ra_corr2 = np.cos(dec*np.pi/180.)
-            for ra in np.arange(ra_min + space/ra_corr2, ra_max, space/ra_corr2):
-                res = tree.query(np.array([ra * ra_corr2, dec]), k=30, distance_upper_bound=1., n_jobs=-1)
+            for ra in np.arange(ra_min + space/ra_corr, ra_max, space/ra_corr):
+                res = tree.query(np.array([ra * ra_corr, dec]), k=30, distance_upper_bound=1.2, n_jobs=-1)
                 exp_names = np.array(names_single)[res[1][np.where(res[0] != np.inf)]]
                 f_tile = open(output_dir + '/tile_{:.1f}_{:.1f}-{}.txt'.format(ra, dec, count), 'w')
                 for n in exp_names:
