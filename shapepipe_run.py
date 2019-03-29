@@ -74,7 +74,7 @@ class ShapePipe():
         self.log.info('')
 
         if self.verbose:
-            print(shapepipe_logo())
+            print(shapepipe_logo(colour=True))
             print(start_text)
             print('')
 
@@ -309,17 +309,16 @@ def run_mpi(pipe, comm):
             jh = JobHandler(module, filehd=pipe.filehd, config=config,
                             log=pipe.log, verbose=verbose)
             # Get JobHandler objects
-            timeout, job_names = jh.timeout, jh.job_names
+            timeout = jh.timeout
             # Get file handler objects
             output_dir = jh.filehd.output_dir
             module_runner = jh.filehd.module_runners[module]
             worker_log = jh.filehd.get_worker_log_name
             # Define process list
-            process_list = list(jh.filehd.process_list.items())
+            process_list = jh.filehd.process_list
             # Define job list
-            jobs = split_mpi_jobs(list(zip(job_names, process_list)),
-                                  comm.size)
-            del job_names, process_list
+            jobs = split_mpi_jobs(process_list, comm.size)
+            del process_list
         else:
             output_dir, module_runner, worker_log, timeout, jobs = \
              (None, None, None, None, None)
