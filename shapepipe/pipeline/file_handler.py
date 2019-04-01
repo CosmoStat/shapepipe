@@ -124,29 +124,40 @@ class FileHandler(object):
     @run_dir.setter
     def run_dir(self, value):
 
-        self.check_dir(value)
-
-        self._run_dir = value
+        self._run_dir = self.check_dir(value, check_exists=True)
 
     @property
-    def input_dir(self):
+    def _input_dir(self):
         """ Input Directory
 
-        This method defines the input directory.
+        This method defines the input directories.
 
         """
 
-        return self._input_dir
+        return self.__input_dir
 
-    @input_dir.setter
-    def input_dir(self, value):
+    @_input_dir.setter
+    def _input_dir(self, value):
 
-        self.check_dir(value)
+        self.__input_dir = self.check_dirs(value)
 
-        self._input_dir = value
+    @property
+    def _output_dir(self):
+        """ Output Directory
 
-    @staticmethod
-    def check_dir(dir_name):
+        This method defines the output directory.
+
+        """
+
+        return self.__output_dir
+
+    @_output_dir.setter
+    def _output_dir(self, value):
+
+        self.__output_dir = self.check_dir(value)
+
+    @classmethod
+    def check_dir(cls, dir_name, check_exists=False):
         """ Check Directory
 
         Raise error if directory exists.
@@ -163,8 +174,25 @@ class FileHandler(object):
 
         """
 
-        if os.path.isdir(dir_name):
+        if check_exists and os.path.isdir(dir_name):
             raise OSError('Directory {} already exists.'.format(dir_name))
+
+        return cls.strip_slash(dir_name)
+
+    @classmethod
+    def check_dirs(cls, dir_list):
+        """ Check Directories
+
+        Check directories in list
+
+        Parameters
+        ----------
+        dir_list : list
+            Directory list
+
+        """
+
+        return [cls.check_dir(dir) for dir in dir_list]
 
     @classmethod
     def mkdir(cls, dir_name):
@@ -179,7 +207,7 @@ class FileHandler(object):
 
         """
 
-        cls.check_dir(dir_name)
+        cls.check_dir(dir_name, check_exists=True)
         os.mkdir(dir_name)
 
     @staticmethod
@@ -205,6 +233,46 @@ class FileHandler(object):
         """
 
         return '{}/{}{}'.format(path, name, ext)
+
+    @staticmethod
+    def strip_slash(path):
+        """ Strip Slash
+
+        This method removes the trailing slash from a path.
+
+        Parameters
+        ----------
+        path : str
+            Full path
+
+        Returns
+        -------
+        str
+            Updated path
+
+        """
+
+        return path.rstrip('/')
+
+    @classmethod
+    def strip_slash_list(cls, path_list):
+        """ Strip Slash List
+
+        This method removes the trailing slash from a list of paths.
+
+        Parameters
+        ----------
+        path_list : list
+            List of paths
+
+        Returns
+        -------
+        list
+            Updated paths
+
+        """
+
+        return [cls.strip_slash(path) for path in path_list]
 
     @staticmethod
     def flatten_list(input_list):
@@ -441,20 +509,20 @@ class FileHandler(object):
 
         if (isinstance(self._module_dict[module]['input_module'], type(None))
                 or len(self._module_dict) == 1):
-            self._module_dict[module]['input_dir'] = self._input_dir
+            input_dir = self._input_dir
 
         else:
-            self._module_dict[module]['input_dir'] = \
-                ([self._module_dict[input_mod]['output_dir'] for input_mod in
-                  self._module_dict[module]['input_module']])
+            input_dir = [self._module_dict[input_mod]['output_dir']
+                         for input_mod in
+                         self._module_dict[module]['input_module']]
 
             if self._config.has_option(module.upper(), 'INPUT_DIR'):
-                self._module_dict[module]['input_dir'] = \
-                    self._config.getlist(module.upper(), 'INPUT_DIR')
+                input_dir = self._config.getlist(module.upper(), 'INPUT_DIR')
 
         if self.get_add_module_property(module, 'input_dir'):
-            self._module_dict[module]['input_dir'] += \
-                self.get_add_module_property(module, 'input_dir')
+            input_dir += self.get_add_module_property(module, 'input_dir')
+
+        self._module_dict[module]['input_dir'] = self.check_dirs(input_dir)
 
     @staticmethod
     def _generate_re_pattern(match_pattern):
@@ -583,10 +651,11 @@ class FileHandler(object):
             raise RuntimeError('No files found matching "{}" and "{}"'
                                ''.format(pattern, ext))
 
+        new_ext = '.' + ext if not ext.startswith('.') else ext
         new_pattern = cls._strip_dir_from_file(true_file_list[0], dir_list)
         re_pattern = cls._get_re(num_scheme)
         first_num = re.search(re_pattern, new_pattern).group()
-        for substring in (ext, first_num):
+        for substring in (new_ext, first_num):
             new_pattern = new_pattern.replace(substring, '')
 
         np.save(output_file,
@@ -596,7 +665,7 @@ class FileHandler(object):
 
         del true_file_list
 
-        return new_pattern, true_path
+        return new_pattern, new_ext, true_path
 
     @staticmethod
     def _save_match_patterns(output_file, mmap_list):
@@ -685,8 +754,8 @@ class FileHandler(object):
         """
 
         np_mmap_list = [self.format(self._tmp_dir,
-                        'nums_{}.npy'.format(pattern))
-                        for pattern in pattern_list]
+                        'nums_{}_{}.npy'.format(pattern, ext))
+                        for pattern, ext in zip(pattern_list, ext_list)]
         match_mmap = self.format(self._tmp_dir, 'matching_num_patterns.npy')
         self.process_mmap = self.format(self._tmp_dir, 'process_list.npy')
 
@@ -694,7 +763,7 @@ class FileHandler(object):
                 np_mmap) for pattern, ext, np_mmap in
                 zip(pattern_list, ext_list, np_mmap_list)]
 
-        pattern_list, path_list = list(zip(*temp))
+        pattern_list, ext_list, path_list = list(zip(*temp))
 
         self._save_match_patterns(match_mmap, np_mmap_list)
 
