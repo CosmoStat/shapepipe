@@ -130,6 +130,10 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list, prior):
 
     n_epoch = len(gals)
 
+    if n_epoch == 0:
+        print("aie aie aie")
+        raise ValueError("0 epoch to process")
+
     # Make observation
     gal_obs_list = ObsList()
     T_guess_psf = []
@@ -152,7 +156,7 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list, prior):
 
     boot = ngmix.bootstrap.MaxMetacalBootstrapper(gal_obs_list)
     psf_model = 'em3'
-    gal_model = 'exp'
+    gal_model = 'gauss'
 
     # metacal specific parameters
     metacal_pars = {'types': ['noshear', '1p', '1m', '2p', '2m'],
@@ -176,7 +180,8 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list, prior):
     psf_pars = {'maxiter': 5000,
                 'tol': 5.0e-6}
 
-    Tguess = np.mean(T_guess_psf)*0.186**2  # size guess in arcsec
+    # Tguess = np.mean(T_guess_psf)*0.186**2  # size guess in arcsec
+    Tguess = 4.0*0.186**2
     ntry = 2       # retry the fit twice
     boot.fit_metacal(psf_model,
                      gal_model,
@@ -252,7 +257,7 @@ def save_results(output_dict, output_name):
         f.save_as_fits(output_dict[key], ext_name=key.upper())
 
 
-def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
+def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
             psf_vignet_path, weight_vignet_path, flag_vignet_path,
             f_wcs_path, w_log):
     """ Process
@@ -292,6 +297,11 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
     tile_ra = np.copy(tile_cat.get_data()['XWIN_WORLD'])
     tile_dec = np.copy(tile_cat.get_data()['YWIN_WORLD'])
     tile_cat.close()
+    sm_cat = io.FITSCatalog(sm_cat_path, SEx_catalog=True)
+    sm_cat.open()
+    sm = np.copy(sm_cat.get_data()['SPREAD_MODEL'])
+    sm_err = np.copy(sm_cat.get_data()['SPREADERR_MODEL'])
+    sm_cat.close()
     gal_vign_cat = np.load(gal_vignet_path).item()
     bkg_vign_cat = np.load(bkg_vignet_path).item()
     psf_vign_cat = np.load(psf_vignet_path).item()
@@ -302,20 +312,27 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
     final_res = []
     prior = get_prior()
     for i_tile, id_tmp in enumerate(obj_id):
+        if (tile_flag[i_tile] > 1) or (tile_imaflag[i_tile] > 0):
+            continue
+        if (sm[i_tile] + (5. / 3.) * sm_err[i_tile] < 0.01) and (np.abs(sm[i_tile] + (5. / 3.) * sm_err[i_tile]) > 0.003):
+            continue
         gal_vign = []
         psf_vign = []
         sigma_psf = []
         weight_vign = []
         flag_vign = []
         jacob_list = []
-        if (psf_vign_cat[id_tmp] == 'empty') | (gal_vign_cat[id_tmp] == 'empty'):
+        if (psf_vign_cat[id_tmp] == 'empty') or (gal_vign_cat[id_tmp] == 'empty'):
             continue
         psf_expccd_name = list(psf_vign_cat[id_tmp].keys())
         for expccd_name_tmp in psf_expccd_name:
+            gal_vign_tmp = gal_vign_cat[id_tmp][expccd_name_tmp]['VIGNET']
+            if len(np.where(gal_vign_tmp.ravel() == 0)[0]) != 0:
+                continue
+
             psf_vign.append(psf_vign_cat[id_tmp][expccd_name_tmp]['VIGNET'])
             sigma_psf.append(psf_vign_cat[id_tmp][expccd_name_tmp]['SHAPES']['SIGMA_PSF_HSM'])
 
-            gal_vign_tmp = gal_vign_cat[id_tmp][expccd_name_tmp]['VIGNET']
             bkg_vign_tmp = bkg_vign_cat[id_tmp][expccd_name_tmp]['VIGNET']
             gal_vign_sub_bkg = gal_vign_tmp - bkg_vign_tmp
             gal_vign.append(gal_vign_sub_bkg)
@@ -325,13 +342,17 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             tile_vign_tmp = np.copy(tile_vign[i_tile])
             flag_vign_tmp = flag_vign_cat[id_tmp][expccd_name_tmp]['VIGNET']
             flag_vign_tmp[np.where(tile_vign_tmp == -1e30)] = 2**10
+            v_flag_tmp = flag_vign_tmp.ravel()
+            if len(np.where(v_flag_tmp != 0)[0])/(51*51) > 1/3.:
+                continue
             flag_vign.append(flag_vign_tmp)
 
             exp_name, ccd_n = re.split('-', expccd_name_tmp)
             jacob_list.append(get_jacob(f_wcs_file[exp_name][int(ccd_n)],
                                         tile_ra[i_tile],
                                         tile_dec[i_tile]))
-
+        if len(gal_vign) == 0:
+            continue
         try:
             res = do_ngmix_metacal(gal_vign,
                                    psf_vign,
@@ -347,6 +368,11 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
         res['n_epoch_model'] = len(gal_vign)
         final_res.append(res)
 
+    del gal_vign_cat
+    del bkg_vign_cat
+    del flag_vign_cat
+    del weight_vign_cat
+    del psf_vign_cat
     return final_res
 
 
