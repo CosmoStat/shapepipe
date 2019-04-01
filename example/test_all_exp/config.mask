@@ -74,4 +74,4 @@ MD_REMOVE = False
 KEEP_REG_FILE = False
 KEEP_INDIVIDUAL_MASK = False
 
-TEMP_DIRECTORY = /home/guinot/ShapePipe_dir/.temp
+TEMP_DIRECTORY = /home/guinot/ShapePipe_dir/.temp2

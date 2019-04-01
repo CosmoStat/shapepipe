@@ -10,6 +10,7 @@ This file contains methods to run ngmix for shape measurement.
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.pipeline import file_io as io
+from sqlitedict import SqliteDict
 
 import re
 
@@ -302,12 +303,17 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
     sm = np.copy(sm_cat.get_data()['SPREAD_MODEL'])
     sm_err = np.copy(sm_cat.get_data()['SPREADERR_MODEL'])
     sm_cat.close()
-    gal_vign_cat = np.load(gal_vignet_path).item()
-    bkg_vign_cat = np.load(bkg_vignet_path).item()
-    psf_vign_cat = np.load(psf_vignet_path).item()
-    weight_vign_cat = np.load(weight_vignet_path).item()
-    flag_vign_cat = np.load(flag_vignet_path).item()
+    # gal_vign_cat = np.load(gal_vignet_path).item()
+    # bkg_vign_cat = np.load(bkg_vignet_path).item()
+    # psf_vign_cat = np.load(psf_vignet_path).item()
+    # weight_vign_cat = np.load(weight_vignet_path).item()
+    # flag_vign_cat = np.load(flag_vignet_path).item()
     f_wcs_file = np.load(f_wcs_path).item()
+    gal_vign_cat = SqliteDict(gal_vignet_path)
+    bkg_vign_cat = SqliteDict(bkg_vignet_path)
+    psf_vign_cat = SqliteDict(psf_vignet_path)
+    weight_vign_cat = SqliteDict(weight_vignet_path)
+    flag_vign_cat = SqliteDict(flag_vignet_path)
 
     final_res = []
     prior = get_prior()
@@ -322,25 +328,25 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
         weight_vign = []
         flag_vign = []
         jacob_list = []
-        if (psf_vign_cat[id_tmp] == 'empty') or (gal_vign_cat[id_tmp] == 'empty'):
+        if (psf_vign_cat[str(id_tmp)] == 'empty') or (gal_vign_cat[str(id_tmp)] == 'empty'):
             continue
-        psf_expccd_name = list(psf_vign_cat[id_tmp].keys())
+        psf_expccd_name = list(psf_vign_cat[str(id_tmp)].keys())
         for expccd_name_tmp in psf_expccd_name:
-            gal_vign_tmp = gal_vign_cat[id_tmp][expccd_name_tmp]['VIGNET']
+            gal_vign_tmp = gal_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET']
             if len(np.where(gal_vign_tmp.ravel() == 0)[0]) != 0:
                 continue
 
-            psf_vign.append(psf_vign_cat[id_tmp][expccd_name_tmp]['VIGNET'])
-            sigma_psf.append(psf_vign_cat[id_tmp][expccd_name_tmp]['SHAPES']['SIGMA_PSF_HSM'])
+            psf_vign.append(psf_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET'])
+            sigma_psf.append(psf_vign_cat[str(id_tmp)][expccd_name_tmp]['SHAPES']['SIGMA_PSF_HSM'])
 
-            bkg_vign_tmp = bkg_vign_cat[id_tmp][expccd_name_tmp]['VIGNET']
+            bkg_vign_tmp = bkg_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET']
             gal_vign_sub_bkg = gal_vign_tmp - bkg_vign_tmp
             gal_vign.append(gal_vign_sub_bkg)
 
-            weight_vign.append(weight_vign_cat[id_tmp][expccd_name_tmp]['VIGNET'])
+            weight_vign.append(weight_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET'])
 
             tile_vign_tmp = np.copy(tile_vign[i_tile])
-            flag_vign_tmp = flag_vign_cat[id_tmp][expccd_name_tmp]['VIGNET']
+            flag_vign_tmp = flag_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET']
             flag_vign_tmp[np.where(tile_vign_tmp == -1e30)] = 2**10
             v_flag_tmp = flag_vign_tmp.ravel()
             if len(np.where(v_flag_tmp != 0)[0])/(51*51) > 1/3.:
@@ -368,18 +374,24 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
         res['n_epoch_model'] = len(gal_vign)
         final_res.append(res)
 
-    del gal_vign_cat
-    del bkg_vign_cat
-    del flag_vign_cat
-    del weight_vign_cat
-    del psf_vign_cat
+    # del gal_vign_cat
+    # del bkg_vign_cat
+    # del flag_vign_cat
+    # del weight_vign_cat
+    # del psf_vign_cat
+    gal_vign_cat.close()
+    bkg_vign_cat.close()
+    flag_vign_cat.close()
+    weight_vign_cat.close()
+    psf_vign_cat.close()
+
     return final_res
 
 
 @module_runner(input_module=['sextractor_runner', 'psfexinterp_runner', 'vignetmaker_runner'],
                version='0.0.1',
                file_pattern=['tile_sexcat', 'image', 'exp_background', 'galaxy_psf', 'weight', 'flag'],
-               file_ext=['.fits', '.npy', '.npy', '.npy', '.npy', '.npy'],
+               file_ext=['.fits', '.sqlite', '.sqlite', '.sqlite', '.sqlite', '.sqlite'],
                depends=['numpy', 'ngmix', 'galsim'])
 def ngmix_runner(input_file_list, output_dir, file_number_string,
                  config, w_log):

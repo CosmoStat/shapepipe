@@ -30,7 +30,7 @@ IMAGE_SIZE		10000,10000		# Image size (0 = AUTOMATIC)
 #-------------------------------- Resampling ----------------------------------
  
 RESAMPLE		Y				# Resample input images (Y/N)?
-RESAMPLE_DIR	/data/pipeline/new_pipeline/test_swarp/resamp
+RESAMPLE_DIR	/home/guinot/ShapePipe_dir/.temp
  
 RESAMPLING_TYPE		LANCZOS3	# "NEAREST","BILINEAR","LANCZOS2",
 								# "LANCZOS3" or "LANCZOS4" (1 per axis)
@@ -81,4 +81,4 @@ VERBOSE_TYPE		NORMAL		# "QUIET","NORMAL" or "FULL"
 
 WRITE_XML	N
  
-NTHREADS		5 			#1 single thread
+NTHREADS		1 			#1 single thread

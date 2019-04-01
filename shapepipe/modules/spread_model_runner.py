@@ -13,6 +13,7 @@ import galsim
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.pipeline import file_io as io
+from sqlitedict import SqliteDict
 
 
 def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
@@ -161,7 +162,7 @@ def save_results(sex_cat_path, output_path, sm, sm_err, mag, number, mode='new')
 
 @module_runner(input_module=['sextractor_runner', 'psfexinterp_runner', 'vignetmaker_runner'], version='1.0',
                file_pattern=['sexcat', 'galaxy_psf', 'weight_vign'],
-               file_ext=['.fits', '.npy', '.fits'],
+               file_ext=['.fits', '.sqlite', '.fits'],
                depends=['numpy', 'galsim'])
 def spread_model_runner(input_file_list, output_dir, file_number_string,
                         config, w_log):
@@ -193,7 +194,8 @@ def spread_model_runner(input_file_list, output_dir, file_number_string,
         obj_mag = np.copy(sex_cat.get_data()['MAG_AUTO'])
     sex_cat.close()
 
-    psf_cat = np.load(psf_cat_path).item()
+    # psf_cat = np.load(psf_cat_path).item()
+    psf_cat = SqliteDict(psf_cat_path)
 
     weight_cat = io.FITSCatalog(weight_cat_path, SEx_catalog=True)
     weight_cat.open()
@@ -207,15 +209,15 @@ def spread_model_runner(input_file_list, output_dir, file_number_string,
     for i, id_tmp in enumerate(obj_id):
         sigma_list = []
 
-        if psf_cat[id_tmp] == 'empty':
+        if psf_cat[str(id_tmp)] == 'empty':
             spread_model_final.append(-1)
             spread_model_err_final.append(1)
             continue
 
-        psf_expccd_name = list(psf_cat[id_tmp].keys())
+        psf_expccd_name = list(psf_cat[str(id_tmp)].keys())
 
         for expccd_name_tmp in psf_expccd_name:
-            sigma_list.append(psf_cat[id_tmp][expccd_name_tmp]['SHAPES']['SIGMA_PSF_HSM'])
+            sigma_list.append(psf_cat[str(id_tmp)][expccd_name_tmp]['SHAPES']['SIGMA_PSF_HSM'])
 
         obj_vign_tmp = obj_vign[i]
         obj_flux_tmp = 1.
@@ -236,6 +238,8 @@ def spread_model_runner(input_file_list, output_dir, file_number_string,
 
     spread_model_final = np.array(spread_model_final)
     spread_model_err_final = np.array(spread_model_err_final)
+
+    psf_cat.close()
 
     save_results(sex_cat_path, output_path, spread_model_final,
                  spread_model_err_final,

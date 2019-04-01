@@ -81,6 +81,8 @@ class Selection(object):
 
         self.config['COADD']['MAKE'] = config.getboolean('COADD_PARAMETERS', 'MAKE_TILE')
         if self.config['COADD']['MAKE']:
+            self.config['COADD']['SINGLE_DIR'] = config.getexpanded('COADD_PARAMETERS', 'PATH_SINGLE_DIR')
+
             ra = config.getlist('COADD_PARAMETERS', 'RA')
             dec = config.getlist('COADD_PARAMETERS', 'DEC')
             self.config['COADD']['FIELD'] = np.array([[float(ra[0]), float(ra[1])],        # ra_min , ra_max      Deg
@@ -210,18 +212,20 @@ class Selection(object):
         space = self.config['COADD']['SPACE']    # Deg
         size = self.config['COADD']['SIZE']     # Pix
 
-        ra_corr = np.cos(np.array(dec_single)*np.pi/180.)
+        single_dir = self.config['COADD']['SINGLE_DIR']
+
+        ra_corr = np.cos(np.mean(self.config['COADD']['FIELD'][1])*np.pi/180.)
         tree = cKDTree(np.array([np.array(ra_single) * ra_corr, dec_single]).T)
         count = 0
         n_exp = []
         for dec in np.arange(dec_min + space, dec_max, space):
-            ra_corr2 = np.cos(dec*np.pi/180.)
-            for ra in np.arange(ra_min + space/ra_corr2, ra_max, space/ra_corr2):
-                res = tree.query(np.array([ra * ra_corr2, dec]), k=30, distance_upper_bound=1., n_jobs=-1)
+            # ra_corr2 = np.cos(dec*np.pi/180.)
+            for ra in np.arange(ra_min + space/ra_corr, ra_max, space/ra_corr):
+                res = tree.query(np.array([ra * ra_corr, dec]), k=30, distance_upper_bound=1.2, n_jobs=-1)
                 exp_names = np.array(names_single)[res[1][np.where(res[0] != np.inf)]]
                 f_tile = open(output_dir + '/tile_{:.1f}_{:.1f}-{}.txt'.format(ra, dec, count), 'w')
                 for n in exp_names:
-                    f_tile.write('image-{}.fits\n'.format(n))
+                    f_tile.write(single_dir + '/image-{}.fits\n'.format(n))
                 f_tile.close()
                 n_exp.append(len(exp_names))
                 count += 1
@@ -268,8 +272,10 @@ class Selection(object):
                 f_select.write(names[i] + 'p{}.fits.fz\n'.format(suffix))
             if self.config['SINGLE']['LINK']:
                 f_link.write('https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/files/vault/cfis/{}/'.format(img_dir) + names[i] + 'p{}.fits.fz\n'.format(suffix))
-        f_select.close()
-        f_link.close()
+        if self.config['SINGLE'][img_type.upper()]:
+            f_select.close()
+        if self.config['SINGLE']['LINK']:
+            f_link.close()
 
     def _plot_single(self, ra, dec):
         """ Plot single exposures
@@ -350,3 +356,4 @@ if __name__ == '__main__':
         raise ValueError('No config file provided')
 
     Selection(config_path)
+

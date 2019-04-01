@@ -8,11 +8,11 @@
 #PBS -M axel.guinot@cea.fr
 #PBS -m ea
 # Set a name for the job
-#PBS -N shapepipe_smp_split_exp
+#PBS -N shapepipe_smp_all_exp
 # Join output and errors in one file
 #PBS -j oe
 # Request number of cores
-#PBS -l nodes=n09:ppn=48
+#PBS -l nodes=n08:ppn=48
 #PBS -l walltime=100:00:00
 
 # Activate conda environment

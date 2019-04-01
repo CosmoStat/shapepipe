@@ -12,7 +12,7 @@
 # Join output and errors in one file
 #PBS -j oe
 # Request number of cores
-#PBS -l nodes=n08:ppn=48
+#PBS -l nodes=n01:ppn=48
 #PBS -l walltime=10:00:00
 
 # Activate conda environment
