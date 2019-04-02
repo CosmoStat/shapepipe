@@ -293,12 +293,12 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
                file_pattern=['tile_sexcat', 'image', 'exp_background', 'galaxy_psf', 'weight', 'flag'],
                file_ext=['.fits', '.sqlite', '.sqlite', '.sqlite', '.sqlite', '.sqlite'],
                depends=['numpy', 'ngmix', 'galsim'])
-def ngmix_runner(input_file_list, output_dir, file_number_string,
-                 config, w_log):
+def galsim_shapes_runner(input_file_list, output_dir, file_number_string,
+                         config, w_log):
 
-    output_name = output_dir + '/' + 'ngmix' + file_number_string + '.fits'
+    output_name = output_dir + '/' + 'galsim' + file_number_string + '.fits'
 
-    f_wcs_path = config.getexpanded('NGMIX_RUNNER', 'LOG_WCS')
+    # f_wcs_path = config.getexpanded('NGMIX_RUNNER', 'LOG_WCS')
 
     metacal_res = process(*input_file_list, f_wcs_path, w_log)
     res_dict = compile_results(metacal_res)
