@@ -59,12 +59,19 @@ def stack_psfs(psfs, weights):
     for i in range(n_epoch):
         s = np.shape(weights[i])
         cx, cy = round(s[0]/2.), round(s[1]/2.)
-        w = np.mean(weights[cx-2:cx+2,cy-2:cy+2])
-
+        w = np.mean(weights[i][cx-3:cx+3,cy-3:cy+3])
+        if w < 0:
+            print("Weight < 0 !")
+            return 'Error'
+        if w == 0:
+            return 'Error'
+        psf_tmp = psfs[i]/np.sum(psfs[i])
         psf_sum += w * psfs[i]
         w_sum += w
 
-    return psf_sum /= w_sum
+    psf_sum /= w_sum
+    
+    return psf_sum
 
 
 def do_galsim_shapes(gal, gal_sig, psfs, psfs_sigma, weights, flags, pixel_scale):
@@ -100,6 +107,8 @@ def do_galsim_shapes(gal, gal_sig, psfs, psfs_sigma, weights, flags, pixel_scale
     g_gal = galsim.Image(gal, scale=pixel_scale)
 
     psf = stack_psfs(psfs, weights)
+    if psf == 'Error':
+        return 'Error'
     psf_sig = np.mean(psfs_sigma)
     g_psf = galsim.Image(psf, scale=pixel_scale)
 
@@ -108,12 +117,12 @@ def do_galsim_shapes(gal, gal_sig, psfs, psfs_sigma, weights, flags, pixel_scale
     weight[np.where(flag != 0)] = 0
     g_weight = galsim.Image(weight)
 
-    res_psf = galsim.hsm.FindAdaptiveMom(g_psf, weight=g_weight, guess_sig=psf_sig, strict=False)
+    #res_psf = galsim.hsm.FindAdaptiveMom(g_psf, weight=g_weight, guess_sig=psf_sig, strict=False)
 
-    res_gal = galsim.hsm.EstimateShear(g_gal, g_psf, weight=g_weight,
-                                       guess_sig_gal=gal_sig, guess_sig_PSF=psf_sig, stric=False)
+    res_gal = galsim.hsm.EstimateShear(g_gal, g_psf, weight=g_weight, strict=False)# shear_est='KSB',
+                                       #guess_sig_gal=gal_sig, guess_sig_PSF=psf_sig, strict=False)
 
-    return res_psf, res_gal
+    return res_gal
 
 
 def compile_results(results):
@@ -136,19 +145,39 @@ def compile_results(results):
     output_dict = {'id': [],
                    'gal_g1': [], 'gal_g2': [],
                    'gal_uncorr_g1': [], 'gal_uncorr_g2': [],
+                   'gal_sigma': [],
+                   'gal_resolution': [],
                    'gal_flag': [],
                    'psf_g1': [], 'psf_g2': [],
-                   'psf_flag': []}
+                   'psf_sigma': []}
     for i in range(len(results)):
         output_dict['id'].append(results[i]['obj_id'])
-        output_dict['gal_g1'].append(g1)
-        output_dict['gal_g2'].append(g2)
+        if (results[i]['gal'].error_message == ''):# & (results[i]['gal'].corrected_e1 >= 0) & (results[i]['gal'].corrected_e1 <= 1) & (results[i]['gal'].corrected_e2 >= 0) & (results[i]['gal'].corrected_e2 <= 1.):
+            try:
+                gal_shapes = galsim.Shear(e1 = results[i]['gal'].corrected_e1, e2 = results[i]['gal'].corrected_e2)
+                output_dict['gal_g1'].append(gal_shapes.g1)
+                output_dict['gal_g2'].append(gal_shapes.g2)
+                gal_err = 0
+            except:
+                output_dict['gal_g1'].append(results[i]['gal'].corrected_e1)
+                output_dict['gal_g2'].append(results[i]['gal'].corrected_e2)  
+                gal_err = 2
+            #output_dict['gal_g1'].append(results[i]['gal'].corrected_g1)
+            #output_dict['gal_g2'].append(results[i]['gal'].corrected_g2)
+            #gal_err = 0
+        else:
+            output_dict['gal_g1'].append(-10.)
+            output_dict['gal_g2'].append(-10.)
+            gal_err = 1
+
         output_dict['gal_uncorr_g1'].append(results[i]['gal'].observed_shape.g1)
         output_dict['gal_uncorr_g2'].append(results[i]['gal'].observed_shape.g2)
-        output_dict['gal_flag'].append(results[i]['gal'].error_message)
-        output_dict['psf_g1'].append(results[i]['psf'].observed_shape.g1)
-        output_dict['psf_g2'].append(results[i]['psf'].observed_shape.g2)
-        output_dict['psf_flag'].append(results[i]['psf'].error_message)
+        output_dict['gal_sigma'].append(results[i]['gal'].moments_sigma)
+        output_dict['gal_flag'].append(gal_err)
+        output_dict['gal_resolution'].append(results[i]['gal'].resolution_factor)
+        output_dict['psf_g1'].append(results[i]['gal'].psf_shape.g1)
+        output_dict['psf_g2'].append(results[i]['gal'].psf_shape.g2)
+        output_dict['psf_sigma'].append(results[i]['gal'].psf_sigma)
 
     return output_dict
 
@@ -169,13 +198,13 @@ def save_results(output_dict, output_name):
 
     f = io.FITSCatalog(output_name, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
 
-    for key in output_dict.keys():
-        f.save_as_fits(output_dict[key], ext_name=key.upper())
+    # for key in output_dict.keys():
+    f.save_as_fits(output_dict, ext_name='RESULTS')
 
 
 def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
             psf_vignet_path, weight_vignet_path, flag_vignet_path,
-            f_wcs_path, w_log):
+            w_log):
     """ Process
 
     Process function.
@@ -227,13 +256,18 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
     flag_vign_cat = SqliteDict(flag_vignet_path)
 
     final_res = []
-    prior = get_prior()
-    res = {}
+    # prior = get_prior()
+    output_vignet = {'PSF' : [], 'WEIGHT': [], 'FLAG': [], 'GAL': [], 'id': [], 'gal_flag': []}
     for i_tile, id_tmp in enumerate(obj_id):
+        res = {}
         if (tile_flag[i_tile] > 1) or (tile_imaflag[i_tile] > 0):
             continue
         if (sm[i_tile] + (5. / 3.) * sm_err[i_tile] < 0.01) and (np.abs(sm[i_tile] + (5. / 3.) * sm_err[i_tile]) > 0.003):
             continue
+        if sm[i_tile] + (5. / 3.) * sm_err[i_tile] > 0.01:
+            gal_flag = 1
+        else:
+            gal_flag = 0
 
         psf_vign = []
         sigma_psf = []
@@ -242,15 +276,16 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
         if (psf_vign_cat[str(id_tmp)] == 'empty'):
             continue
 
+        skip =False
         psf_expccd_name = list(psf_vign_cat[str(id_tmp)].keys())
         for expccd_name_tmp in psf_expccd_name:
 
             psf_vign.append(psf_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET'])
             sigma_psf.append(psf_vign_cat[str(id_tmp)][expccd_name_tmp]['SHAPES']['SIGMA_PSF_HSM'])
 
-            bkg_vign_tmp = bkg_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET']
-            gal_vign_sub_bkg = gal_vign_tmp - bkg_vign_tmp
-            gal_vign.append(gal_vign_sub_bkg)
+            #bkg_vign_tmp = bkg_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET']
+            #gal_vign_sub_bkg = gal_vign_tmp - bkg_vign_tmp
+            #gal_vign.append(gal_vign_sub_bkg)
 
             weight_vign.append(weight_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET'])
 
@@ -258,14 +293,19 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
             flag_vign_tmp = flag_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET']
             flag_vign_tmp[np.where(tile_vign_tmp == -1e30)] = 2**10
             v_flag_tmp = flag_vign_tmp.ravel()
-            # if len(np.where(v_flag_tmp != 0)[0])/(51*51) > 1/3.:
-            #     continue
+            if len(np.where(v_flag_tmp != 0)[0])/(51*51) > 1/3.:
+                 skip = True
+                 continue
             flag_vign.append(flag_vign_tmp)
 
-        if len(psf_vign) != tile_n_epoch:
+        if len(psf_vign) != tile_n_epoch[i_tile]:
             continue
+        if skip:
+            skip = False
+            continue
+
         try:
-            res['psf'], res['gal'] = do_galsim_shapes(tile_vign[i_tile],
+            res['gal'] = do_galsim_shapes(tile_vign[i_tile],
                                    tile_fwhm[i_tile]/2.335,
                                    psf_vign,
                                    sigma_psf,
@@ -275,11 +315,23 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
         except:
             w_log.info('Galsim fail on object {}'.format(id_tmp))
             continue
+
+        if res['gal'] == 'Error':
+            w_log.info('Something went wrong with the psf on object id : {}.'.format(id_tmp))
+            continue
+
         res['obj_id'] = id_tmp
-        # res['n_epoch_model'] = len(psf_vign)
+
         final_res.append(res)
 
-    gal_vign_cat.close()
+        #output_vignet['PSF'].append(psf_vign)
+        #output_vignet['WEIGHT'].append(weight_vign)
+        #output_vignet['FLAG'].append(flag_vign)
+        #output_vignet['GAL'].append(tile_vign[i_tile])
+        #output_vignet['id'].append(id_tmp)
+        #output_vignet['gal_flag'].append(gal_flag)
+
+    # gal_vign_cat.close()
     bkg_vign_cat.close()
     flag_vign_cat.close()
     weight_vign_cat.close()
@@ -300,8 +352,8 @@ def galsim_shapes_runner(input_file_list, output_dir, file_number_string,
 
     # f_wcs_path = config.getexpanded('NGMIX_RUNNER', 'LOG_WCS')
 
-    metacal_res = process(*input_file_list, f_wcs_path, w_log)
+    metacal_res = process(*input_file_list, w_log)
     res_dict = compile_results(metacal_res)
     save_results(res_dict, output_name)
-
+    
     return None, None
