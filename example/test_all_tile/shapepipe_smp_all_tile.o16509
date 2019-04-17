@@ -1,0 +1,839 @@
+
+-------------------------------------------------------------------------------
+[1m[36m
+ _______  __   __  _______  _______  _______  _______  ___   _______  _______
+|       ||  | |  ||   _   ||       ||       ||       ||   | |       ||       |
+|  _____||  |_|  ||  |_|  ||    _  ||    ___||    _  ||   | |    _  ||    ___|
+| |_____ |       ||       ||   |_| ||   |___ |   |_| ||   | |   |_| ||   |___
+|_____  ||       ||       ||    ___||    ___||    ___||   | |    ___||    ___|
+ _____| ||   _   ||   _   ||   |    |   |___ |   |    |   | |   |    |   |___
+|_______||__| |__||__| |__||___|    |_______||___|    |___| |___|    |_______|
+    [0m
+
+
+    Shape measurement pipeline developed at CosmoStat.
+
+    Authors: Samuel Farrens   <samuel.farrens@cea.fr>
+             Martin Kilbinger <martin.kilbinger@cea.fr>
+             Axel Guinot
+             Morgan Schmitz
+
+    Version: 0.0.1
+
+-------------------------------------------------------------------------------
+    
+Starting ShapePipe Run: shapepipe_run_2019-03-29_17-49-20
+
+Checking Python Dependencies:
+ - ngmix v1.2 /home/guinot/.conda/envs/shapepipe/lib/python3.6/site-packages/ngmix
+ - modopt 1.2.0 /home/guinot/.conda/envs/shapepipe/lib/python3.6/site-packages/modopt
+ - galsim 2.1.4 /home/guinot/.conda/envs/shapepipe/lib/python3.6/site-packages/galsim
+ - joblib 0.13.2 /home/guinot/.conda/envs/shapepipe/lib/python3.6/site-packages/joblib
+ - sf_tools 2.0.1 /home/guinot/.conda/envs/shapepipe/lib/python3.6/site-packages/sf_tools
+ - numpy 1.15.4 /home/guinot/.conda/envs/shapepipe/lib/python3.6/site-packages/numpy
+ - astropy 3.1.2 /home/guinot/.conda/envs/shapepipe/lib/python3.6/site-packages/astropy
+
+Checking System Executables:
+
+Checking Module Versions:
+ - vignetmaker_runner 0.0
+ - spread_model_runner 1.0
+ - vignetmaker_runner2 0.0
+ - ngmix_runner 0.0.1
+
+Running ShapePipe using smp
+
+Starting job handler with:
+ - Number of available CPUs: 48
+ - Total number of jobs: 194
+ - Batch size: 48
+ - Timeout Limit: 54000s
+ - Module: vignetmaker_runner
+[31mERROR[0m: 'sextractor_runner'
+All processes complete
+
+ - process-03 PID: 225300 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225300 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225300 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225336 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225336 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225336 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225343 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225343 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225343 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225314 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225314 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225314 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225333 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225333 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225333 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225329 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225329 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225329 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225340 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225340 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225340 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225337 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225337 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225337 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225345 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225345 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225345 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225291 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225291 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225291 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225291 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225296 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225296 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225296 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225296 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225332 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225332 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225332 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225330 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225330 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225330 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225297 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225297 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225297 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225297 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225295 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225295 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225295 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225295 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225298 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225298 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225298 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225302 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225302 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225302 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225339 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225339 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225317 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225317 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225317 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225307 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225307 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225307 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225327 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225327 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225327 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225324 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225324 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225324 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225310 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225310 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225310 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225301 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225301 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225301 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225305 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225305 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225305 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225280 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225280 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225280 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225280 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225280 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225280 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225280 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225280 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225320 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225320 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225320 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225276 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225276 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225276 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225276 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225276 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225276 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225276 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225285 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225285 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225285 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225285 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225285 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225285 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225285 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225284 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225284 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225284 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225284 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225282 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225282 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225282 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225282 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225282 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225282 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225283 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225283 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225283 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225283 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225283 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225308 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225308 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225308 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225278 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225278 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225278 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225278 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225278 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225278 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225286 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225286 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225286 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225286 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225286 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225281 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225281 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225281 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225281 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225281 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225281 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225288 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225288 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225288 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225288 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225288 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225290 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225290 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225290 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225290 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225304 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225304 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225304 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225294 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225294 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225294 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225294 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225299 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225299 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225299 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225299 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225279 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225279 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225279 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225279 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225279 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225279 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225287 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225287 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225287 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225287 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225289 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225289 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225289 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225289 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225289 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225275 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225275 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225275 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225275 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225275 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225275 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225277 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225277 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225277 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225277 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225277 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225277 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225293 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225293 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225293 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225293 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225293 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+ - process-03 PID: 225292 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225292 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225292 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+ - process-03 PID: 225292 processing ['-03', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits', '/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_14-09-05/swarp_runner/output///home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-28_14-09-05/swarp_runner/output/CFIS_weight-29-03.fits']
+/home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits
+-03
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+[31mERROR[0m: SCatalog *** ERROR ***: file /home/guinot/ShapePipe_dir/output_tiles2/shapepipe_run_2019-03-28_21-21-23/sextractor_runner/output/tile_sexcat-03.fits no found
+* JOBID: 16509.cmaster
+* USER: guinot
+* GROUP: guinot
+* JOBNAME: shapepipe_smp_all_tile
+* SESSIONID: 225131
+* RESOURCESLIST: neednodes=n02:ppn=48,nodes=n02:ppn=48,walltime=100:00:00
+* RESOURCESUSED: cput=00:02:16,mem=45868kb,vmem=352352kb,walltime=00:00:11
+* QUEUE: batchl
+* JOB EXIT STATUS: 0
