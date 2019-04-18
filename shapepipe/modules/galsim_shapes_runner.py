@@ -59,7 +59,7 @@ def stack_psfs(psfs, weights):
     for i in range(n_epoch):
         s = np.shape(weights[i])
         cx, cy = round(s[0]/2.), round(s[1]/2.)
-        w = np.mean(weights[i][cx-3:cx+3,cy-3:cy+3])
+        w = np.mean(weights[i][cx-3:cx+3, cy-3:cy+3])
         if w < 0:
             print("Weight < 0 !")
             return 'Error'
@@ -70,7 +70,7 @@ def stack_psfs(psfs, weights):
         w_sum += w
 
     psf_sum /= w_sum
-    
+
     return psf_sum
 
 
@@ -117,10 +117,7 @@ def do_galsim_shapes(gal, gal_sig, psfs, psfs_sigma, weights, flags, pixel_scale
     weight[np.where(flag != 0)] = 0
     g_weight = galsim.Image(weight)
 
-    #res_psf = galsim.hsm.FindAdaptiveMom(g_psf, weight=g_weight, guess_sig=psf_sig, strict=False)
-
-    res_gal = galsim.hsm.EstimateShear(g_gal, g_psf, weight=g_weight, strict=False)# shear_est='KSB',
-                                       #guess_sig_gal=gal_sig, guess_sig_PSF=psf_sig, strict=False)
+    res_gal = galsim.hsm.EstimateShear(g_gal, g_psf, weight=g_weight, strict=False)
 
     return res_gal
 
@@ -152,19 +149,18 @@ def compile_results(results):
                    'psf_sigma': []}
     for i in range(len(results)):
         output_dict['id'].append(results[i]['obj_id'])
-        if (results[i]['gal'].error_message == ''):# & (results[i]['gal'].corrected_e1 >= 0) & (results[i]['gal'].corrected_e1 <= 1) & (results[i]['gal'].corrected_e2 >= 0) & (results[i]['gal'].corrected_e2 <= 1.):
-            try:
-                gal_shapes = galsim.Shear(e1 = results[i]['gal'].corrected_e1, e2 = results[i]['gal'].corrected_e2)
+        if (results[i]['gal'].error_message == ''):
+                gal_shapes = galsim.Shear(e1=results[i]['gal'].corrected_e1, e2=results[i]['gal'].corrected_e2)
                 output_dict['gal_g1'].append(gal_shapes.g1)
                 output_dict['gal_g2'].append(gal_shapes.g2)
                 gal_err = 0
             except:
                 output_dict['gal_g1'].append(results[i]['gal'].corrected_e1)
-                output_dict['gal_g2'].append(results[i]['gal'].corrected_e2)  
+                output_dict['gal_g2'].append(results[i]['gal'].corrected_e2)
                 gal_err = 2
-            #output_dict['gal_g1'].append(results[i]['gal'].corrected_g1)
-            #output_dict['gal_g2'].append(results[i]['gal'].corrected_g2)
-            #gal_err = 0
+            # output_dict['gal_g1'].append(results[i]['gal'].corrected_g1)
+            # output_dict['gal_g2'].append(results[i]['gal'].corrected_g2)
+            # gal_err = 0
         else:
             output_dict['gal_g1'].append(-10.)
             output_dict['gal_g2'].append(-10.)
@@ -257,17 +253,18 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
 
     final_res = []
     # prior = get_prior()
-    output_vignet = {'PSF' : [], 'WEIGHT': [], 'FLAG': [], 'GAL': [], 'id': [], 'gal_flag': []}
+    output_vignet = {'PSF': [], 'WEIGHT': [], 'FLAG': [], 'GAL': [], 'id': [], 'gal_flag': []}
     for i_tile, id_tmp in enumerate(obj_id):
         res = {}
-        if (tile_flag[i_tile] > 1) or (tile_imaflag[i_tile] > 0):
-            continue
-        if (sm[i_tile] + (5. / 3.) * sm_err[i_tile] < 0.01) and (np.abs(sm[i_tile] + (5. / 3.) * sm_err[i_tile]) > 0.003):
-            continue
-        if sm[i_tile] + (5. / 3.) * sm_err[i_tile] > 0.01:
-            gal_flag = 1
-        else:
-            gal_flag = 0
+        # Preselection step
+        # if (tile_flag[i_tile] > 1) or (tile_imaflag[i_tile] > 0):
+        #     continue
+        # if (sm[i_tile] + (5. / 3.) * sm_err[i_tile] < 0.01) and (np.abs(sm[i_tile] + (5. / 3.) * sm_err[i_tile]) > 0.003):
+        #     continue
+        # if sm[i_tile] + (5. / 3.) * sm_err[i_tile] > 0.01:
+        #     gal_flag = 1
+        # else:
+        #     gal_flag = 0
 
         psf_vign = []
         sigma_psf = []
@@ -276,16 +273,12 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
         if (psf_vign_cat[str(id_tmp)] == 'empty'):
             continue
 
-        skip =False
+        skip = False
         psf_expccd_name = list(psf_vign_cat[str(id_tmp)].keys())
         for expccd_name_tmp in psf_expccd_name:
 
             psf_vign.append(psf_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET'])
             sigma_psf.append(psf_vign_cat[str(id_tmp)][expccd_name_tmp]['SHAPES']['SIGMA_PSF_HSM'])
-
-            #bkg_vign_tmp = bkg_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET']
-            #gal_vign_sub_bkg = gal_vign_tmp - bkg_vign_tmp
-            #gal_vign.append(gal_vign_sub_bkg)
 
             weight_vign.append(weight_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET'])
 
@@ -294,8 +287,8 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
             flag_vign_tmp[np.where(tile_vign_tmp == -1e30)] = 2**10
             v_flag_tmp = flag_vign_tmp.ravel()
             if len(np.where(v_flag_tmp != 0)[0])/(51*51) > 1/3.:
-                 skip = True
-                 continue
+                skip = True
+                continue
             flag_vign.append(flag_vign_tmp)
 
         if len(psf_vign) != tile_n_epoch[i_tile]:
@@ -306,12 +299,12 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
 
         try:
             res['gal'] = do_galsim_shapes(tile_vign[i_tile],
-                                   tile_fwhm[i_tile]/2.335,
-                                   psf_vign,
-                                   sigma_psf,
-                                   weight_vign,
-                                   flag_vign,
-                                   0.186)
+                                          tile_fwhm[i_tile]/2.335,
+                                          psf_vign,
+                                          sigma_psf,
+                                          weight_vign,
+                                          flag_vign,
+                                          0.186)
         except:
             w_log.info('Galsim fail on object {}'.format(id_tmp))
             continue
@@ -324,14 +317,6 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
 
         final_res.append(res)
 
-        #output_vignet['PSF'].append(psf_vign)
-        #output_vignet['WEIGHT'].append(weight_vign)
-        #output_vignet['FLAG'].append(flag_vign)
-        #output_vignet['GAL'].append(tile_vign[i_tile])
-        #output_vignet['id'].append(id_tmp)
-        #output_vignet['gal_flag'].append(gal_flag)
-
-    # gal_vign_cat.close()
     bkg_vign_cat.close()
     flag_vign_cat.close()
     weight_vign_cat.close()
@@ -355,5 +340,5 @@ def galsim_shapes_runner(input_file_list, output_dir, file_number_string,
     metacal_res = process(*input_file_list, w_log)
     res_dict = compile_results(metacal_res)
     save_results(res_dict, output_name)
-    
+
     return None, None

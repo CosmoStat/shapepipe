@@ -43,7 +43,7 @@ def get_history(coadd_path, image_path_list):
         if (img_path == '\n') | (img_path == ''):
             continue
         img_path = img_path.replace('\n', '')
-        img_path = img_path.replace('\s+', '')
+        img_path = img_path.replace(' ', '')
 
         f_tmp = io.FITSCatalog(img_path)
         f_tmp.open()
@@ -74,7 +74,7 @@ def get_history(coadd_path, image_path_list):
 def swarp_runner(input_file_list, output_dir, file_number_string,
                  config, w_log):
 
-    num = '-' + re.split('\-', file_number_string)[1]
+    num = '-' + re.split('-', file_number_string)[1]
 
     exec_path = config.getexpanded("SWARP_RUNNER", "EXEC_PATH")
     dot_swarp = config.getexpanded("SWARP_RUNNER", "DOT_SWARP_FILE")
@@ -97,7 +97,7 @@ def swarp_runner(input_file_list, output_dir, file_number_string,
 
     # Get center position
     tmp = os.path.split(os.path.splitext(input_file_list[0])[0])[1]
-    tmp = re.split('_|\-', tmp)
+    tmp = re.split('_|-', tmp)
     ra, dec = tmp[1], tmp[2]
 
     # Get weight list
