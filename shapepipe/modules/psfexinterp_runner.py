@@ -15,7 +15,7 @@ from shapepipe.modules.PSFExInterpolation_package import interpolation_script
 @module_runner(input_module=['psfex_runner', 'setools_runner'], version='1.0',
                file_pattern=['star_selection', 'galaxy_selection'],
                file_ext=['.psf', '.fits'],
-               depends=['numpy', 'astropy', 'galsim'])
+               depends=['numpy', 'astropy', 'galsim', 'sqlitedict'])
 def psfexinterp_runner(input_file_list, output_dir, file_number_string,
                        config, w_log):
 

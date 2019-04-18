@@ -132,7 +132,6 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list, prior):
     n_epoch = len(gals)
 
     if n_epoch == 0:
-        print("aie aie aie")
         raise ValueError("0 epoch to process")
 
     # Make observation
@@ -303,11 +302,6 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
     sm = np.copy(sm_cat.get_data()['SPREAD_MODEL'])
     sm_err = np.copy(sm_cat.get_data()['SPREADERR_MODEL'])
     sm_cat.close()
-    # gal_vign_cat = np.load(gal_vignet_path).item()
-    # bkg_vign_cat = np.load(bkg_vignet_path).item()
-    # psf_vign_cat = np.load(psf_vignet_path).item()
-    # weight_vign_cat = np.load(weight_vignet_path).item()
-    # flag_vign_cat = np.load(flag_vignet_path).item()
     f_wcs_file = np.load(f_wcs_path).item()
     gal_vign_cat = SqliteDict(gal_vignet_path)
     bkg_vign_cat = SqliteDict(bkg_vignet_path)
@@ -318,10 +312,11 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
     final_res = []
     prior = get_prior()
     for i_tile, id_tmp in enumerate(obj_id):
-        if (tile_flag[i_tile] > 1) or (tile_imaflag[i_tile] > 0):
-            continue
-        if (sm[i_tile] + (5. / 3.) * sm_err[i_tile] < 0.01) and (np.abs(sm[i_tile] + (5. / 3.) * sm_err[i_tile]) > 0.003):
-            continue
+        # Preselection step
+        # if (tile_flag[i_tile] > 1) or (tile_imaflag[i_tile] > 0):
+        #     continue
+        # if (sm[i_tile] + (5. / 3.) * sm_err[i_tile] < 0.01) and (np.abs(sm[i_tile] + (5. / 3.) * sm_err[i_tile]) > 0.003):
+        #     continue
         gal_vign = []
         psf_vign = []
         sigma_psf = []
@@ -374,11 +369,6 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
         res['n_epoch_model'] = len(gal_vign)
         final_res.append(res)
 
-    # del gal_vign_cat
-    # del bkg_vign_cat
-    # del flag_vign_cat
-    # del weight_vign_cat
-    # del psf_vign_cat
     gal_vign_cat.close()
     bkg_vign_cat.close()
     flag_vign_cat.close()
@@ -392,7 +382,7 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
                version='0.0.1',
                file_pattern=['tile_sexcat', 'image', 'exp_background', 'galaxy_psf', 'weight', 'flag'],
                file_ext=['.fits', '.sqlite', '.sqlite', '.sqlite', '.sqlite', '.sqlite'],
-               depends=['numpy', 'ngmix', 'galsim'])
+               depends=['numpy', 'ngmix', 'galsim', 'sqlitedict'])
 def ngmix_runner(input_file_list, output_dir, file_number_string,
                  config, w_log):
 

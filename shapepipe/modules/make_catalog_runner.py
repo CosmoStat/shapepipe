@@ -220,7 +220,6 @@ def save_galsim_shapes(final_cat_file, galsim_cat_path):
     galsim_cat_file.close()
 
 
-
 def save_psf_data(final_cat_file, galaxy_psf_path, w_log):
     """ Save PSF data
 
@@ -237,20 +236,13 @@ def save_psf_data(final_cat_file, galaxy_psf_path, w_log):
 
     final_cat_file.open()
     obj_id = np.copy(final_cat_file.get_data()['NUMBER'])
-    #max_epoch = np.max(final_cat_file.get_data()['NGMIX_N_EPOCH'])
-    max_epoch = 10
+    max_epoch = np.max(final_cat_file.get_data()['N_EPOCH']) + 1
 
-    w_log.info('here')
-    # galaxy_psf_cat = np.load(galaxy_psf_path).item()
     galaxy_psf_cat = SqliteDict(galaxy_psf_path)
-    w_log.info('there')
-    print('a')
     output_dict = {'PSF_ELL_{}'.format(i+1): np.ones((len(obj_id), 2)) * -10. for i in range(max_epoch)}
     output_dict = {**output_dict, **{'PSF_FWHM_{}'.format(i+1): np.zeros(len(obj_id)) for i in range(max_epoch)}}
     output_dict = {**output_dict, **{'PSF_FLAG_{}'.format(i+1): np.ones(len(obj_id), dtype='int16') for i in range(max_epoch)}}
-    print('b')
     for i, id_tmp in enumerate(obj_id):
-        w_log.info('{}'.format(id_tmp))
         if galaxy_psf_cat[str(id_tmp)] == 'empty':
             continue
         for epoch, key in enumerate(galaxy_psf_cat[str(id_tmp)].keys()):
@@ -260,39 +252,49 @@ def save_psf_data(final_cat_file, galaxy_psf_path, w_log):
             output_dict['PSF_ELL_{}'.format(epoch+1)][i][1] = galaxy_psf_cat[str(id_tmp)][key]['SHAPES']['E2_PSF_HSM']
             output_dict['PSF_FWHM_{}'.format(epoch+1)][i] = galaxy_psf_cat[str(id_tmp)][key]['SHAPES']['SIGMA_PSF_HSM'] * 2.355
             output_dict['PSF_FLAG_{}'.format(epoch+1)][i] = galaxy_psf_cat[str(id_tmp)][key]['SHAPES']['FLAG_PSF_HSM']
-    print('c')
+
     for key in output_dict.keys():
         final_cat_file.add_col(key, output_dict[key])
-    print('d')
+
     final_cat_file.close()
     galaxy_psf_cat.close()
-    print('e')
+
 
 @module_runner(input_module=['sextractor_runner', 'spread_model_runner', 'psfexinterp_runner', 'ngmix_runner'],
                version='1.0', file_pattern=['tile_sexcat', 'sexcat_sm', 'galaxy_psf', 'ngmix'],
                file_ext=['.fits', '.fits', '.npy', '.fits'],
-               depends=['numpy'])
+               depends=['numpy', 'sqlitedict'])
 def make_catalog_runner(input_file_list, output_dir, file_number_string,
                         config, w_log):
 
     tile_sexcat_path, sexcat_sm_path, galaxy_psf_path, ngmix_cat_path = input_file_list
 
     do_classif = config.getboolean("MAKE_CATALOG_RUNNER", "SM_DO_CLASSIFICATION")
-    star_thresh = config.getfloat("MAKE_CATALOG_RUNNER", "SM_STAR_STRESH")
-    gal_thresh = config.getfloat("MAKE_CATALOG_RUNNER", "SM_GAL_THRESH")
+    if do_classif:
+        star_thresh = config.getfloat("MAKE_CATALOG_RUNNER", "SM_STAR_STRESH")
+        gal_thresh = config.getfloat("MAKE_CATALOG_RUNNER", "SM_GAL_THRESH")
+    else:
+        star_thresh = None
+        gal_thresh = None
+
+    shape_type = config.get("MAKE_CATALOG_RUNNER", "SHAPE_MEASUREMENT_TYPE")
+    if shape_type.lower() not in ["ngmix", "galsim"]:
+        raise ValueError("SHAPE_MEASUREMENT_TYPE must be in [ngmix, galsim]")
 
     output_name = output_dir + '/final_cat' + file_number_string + '.fits'
     final_cat_file = io.FITSCatalog(output_name, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
 
     w_log.info('Save SExtractor data')
     save_sextractor_data(final_cat_file, tile_sexcat_path)
-    
+
     w_log.info('Save spread-model data')
     save_sm_data(final_cat_file, sexcat_sm_path, do_classif, star_thresh, gal_thresh)
 
     w_log.info('Save ngmix data')
-    #save_ngmix_data(final_cat_file, ngmix_cat_path)
-    save_galsim_shapes(final_cat_file, ngmix_cat_path)
+    if shape_type.lower() == "ngmix":
+        save_ngmix_data(final_cat_file, ngmix_cat_path)
+    elif shape_type.lower() == "galsim":
+        save_galsim_shapes(final_cat_file, ngmix_cat_path)
 
     w_log.info('Save PSF data')
     save_psf_data(final_cat_file, galaxy_psf_path, w_log)
