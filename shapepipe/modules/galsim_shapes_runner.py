@@ -150,6 +150,7 @@ def compile_results(results):
     for i in range(len(results)):
         output_dict['id'].append(results[i]['obj_id'])
         if (results[i]['gal'].error_message == ''):
+            try:
                 gal_shapes = galsim.Shear(e1=results[i]['gal'].corrected_e1, e2=results[i]['gal'].corrected_e2)
                 output_dict['gal_g1'].append(gal_shapes.g1)
                 output_dict['gal_g2'].append(gal_shapes.g2)
