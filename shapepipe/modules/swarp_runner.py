@@ -12,7 +12,6 @@ import re
 import os
 
 import numpy as np
-from astropy.io import fits
 from astropy.wcs import WCS
 import sip_tpv as stp
 
@@ -40,7 +39,7 @@ def get_history(coadd_path, image_path_list):
     corner_coadd = wcs_coadd.calc_footprint().T
 
     for img_path in image_path_list:
-        if (img_path == '\n') | (img_path == ''):
+        if (img_path == '\n') or (img_path == ''):
             continue
         img_path = img_path.replace('\n', '')
         img_path = img_path.replace(' ', '')
@@ -83,7 +82,7 @@ def swarp_runner(input_file_list, output_dir, file_number_string,
 
     if config.has_option('SWARP_RUNNER', 'SUFFIX'):
         suffix = config.get('SWARP_RUNNER', 'SUFFIX')
-        if (suffix.lower() != 'none') & (suffix != ''):
+        if (suffix.lower() != 'none') and (suffix != ''):
             suffix = suffix + '_'
         else:
             suffix = ''

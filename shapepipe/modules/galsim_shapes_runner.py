@@ -49,7 +49,22 @@ def get_jacob(wcs, ra, dec):
 
 
 def stack_psfs(psfs, weights):
-    """
+    """ Stack PSFs
+
+    Perform the weighted average stacking of the PSFs.
+
+    Parameters
+    ----------
+    psfs : numpy.ndarray
+        Array containing the PSF for all epochs of one object.
+    weights : numpy.ndarray
+        Array containing the weights for all epochs of one objects.
+
+    Returns
+    -------
+    psf_sum : np.ndarray
+        Stacked PSF.
+        
     """
 
     n_epoch = len(psfs)

@@ -387,8 +387,6 @@ def vignetmaker_runner(input_file_list, output_dir, file_number_string,
                        config, w_log):
 
     galcat_path = input_file_list[0]
-    print(input_file_list[0])
-    print(file_number_string)
 
     do_masking = config.getboolean("VIGNETMAKER_RUNNER", "MASKING")
     if do_masking:
