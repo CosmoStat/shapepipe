@@ -21,7 +21,7 @@ source activate $HOME/.conda/envs/shapepipe
 
 # Run ShapePipe
 #cd $HOME/ShapePipe
-$HOME/.conda/envs/shapepipe/bin/python /home/guinot/pipeline/ShapePipe/shapepipe_run.py -c /home/guinot/pipeline/ShapePipe/example/test_all_tile/config4.ini
+$HOME/.conda/envs/shapepipe/bin/python /home/guinot/pipeline/ShapePipe/shapepipe_run.py -c /home/guinot/pipeline/ShapePipe/example/test_all_tile/config2.ini
 
 # Return exit code
 exit 0

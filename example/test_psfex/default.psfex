@@ -11,10 +11,10 @@ BASIS_SCALE     1.0             # Gauss-Laguerre beta parameter
 NEWBASIS_TYPE   NONE            # Create new basis: NONE, PCA_INDEPENDENT
                                 # or PCA_COMMON
 NEWBASIS_NUMBER 8               # Number of new basis vectors
-PSF_SAMPLING    .5              # Sampling step in pixel units (0.0 = auto)
+PSF_SAMPLING    1.              # Sampling step in pixel units (0.0 = auto)
 PSF_PIXELSIZE   1.0             # Effective pixel size in pixel step units
 PSF_ACCURACY    0.01            # Accuracy to expect from PSF "pixel" values
-PSF_SIZE        102,102           # Image size of the PSF model
+PSF_SIZE        51,51           # Image size of the PSF model
 PSF_RECENTER    N               # Allow recentering of PSF-candidates Y/N ?
 MEF_TYPE        INDEPENDENT     # INDEPENDENT or COMMON
  

@@ -12,7 +12,7 @@
 # Join output and errors in one file
 #PBS -j oe
 # Request number of cores
-#PBS -l nodes=n05:ppn=24
+#PBS -l nodes=n08:ppn=48
 #PBS -l walltime=100:00:00
 
 # Activate conda environment
@@ -21,7 +21,7 @@ source activate $HOME/.conda/envs/shapepipe
 
 # Run ShapePipe
 #cd $HOME/ShapePipe
-$HOME/.conda/envs/shapepipe/bin/python /home/guinot/pipeline/ShapePipe/shapepipe_run.py -c /home/guinot/pipeline/ShapePipe/example/test_all_tile/config3.ini
+$HOME/.conda/envs/shapepipe/bin/python /home/guinot/pipeline/ShapePipe/shapepipe_run.py -c /home/guinot/pipeline/ShapePipe/example/test_all_tile/config.ini
 
 # Return exit code
 exit 0

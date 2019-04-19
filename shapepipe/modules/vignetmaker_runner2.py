@@ -14,6 +14,7 @@ import re
 from sf_tools.image.stamp import FetchStamps
 import shapepipe.pipeline.file_io as io
 from shapepipe.modules.module_decorator import module_runner
+from sqlitedict import SqliteDict
 
 
 class vignetmaker(object):
@@ -300,7 +301,13 @@ class vignetmaker(object):
 
         """
         output_name = self._output_dir + '/' + suffix + '_vignet{}'.format(self._image_num)
-        np.save(output_name, output_dict)
+        # np.save(output_name, output_dict)
+
+        output_file = SqliteDict(output_name+'.sqlite')
+        for i in output_dict.keys():
+            output_file[str(i)] = output_dict[i]
+        output_file.commit()
+        output_file.close()
 
 
 def get_original_vignet(galcat_path):
@@ -382,7 +389,8 @@ def save_vignet(vign, sexcat_path, output_dir, suffix, image_num):
 
 @module_runner(input_module='setools_runner',
                file_pattern=['galaxy_selection', 'image'],
-               file_ext=['.fits', '.fits'], depends=['numpy', 'astropy', 'sf_tools'])
+               file_ext=['.fits', '.fits'],
+               depends=['numpy', 'astropy', 'sf_tools', 'sqlitedict'])
 def vignetmaker_runner2(input_file_list, output_dir, file_number_string,
                         config, w_log):
 

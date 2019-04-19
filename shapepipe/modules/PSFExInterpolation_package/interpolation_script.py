@@ -29,6 +29,7 @@ else:
     import_fail = False
 
 from shapepipe.pipeline import file_io as sc
+from sqlitedict import SqliteDict
 
 
 NOT_ENOUGH_STARS = 'Fail_stars'
@@ -507,4 +508,10 @@ class PSFExInterpolator(object):
             Dictionnary of outputs to save
 
         """
-        np.save(self._output_path+self._img_number, output_dict)
+        # np.save(self._output_path+self._img_number, output_dict)
+
+        output_file = SqliteDict(self._output_path+self._img_number+'.sqlite')
+        for i in output_dict.keys():
+            output_file[str(i)] = output_dict[i]
+        output_file.commit()
+        output_file.close()

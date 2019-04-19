@@ -49,7 +49,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
             hist.append(i)
 
     exp_list = []
-    pattern = r'([0-9]*)p\.(.*)'
+    pattern = r'([0-9]*)\.(.*)'
     for i in hist:
         m = re.search(pattern, i)
         exp_list.append(m.group(1))
@@ -62,8 +62,8 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
         for j in range(n_hdu):
             w = f_wcs[exp][j]
             pix_tmp = w.all_world2pix(cat.get_data()[pos_params[0]], cat.get_data()[pos_params[1]], 0)
-            ind = ((pix_tmp[0] > 0) & (pix_tmp[0] < int(ccd_size[0])) &
-                   (pix_tmp[1] > 0) & (pix_tmp[1] < int(ccd_size[1])))
+            ind = ((pix_tmp[0] > int(ccd_size[0])) & (pix_tmp[0] < int(ccd_size[1])) &
+                   (pix_tmp[1] > int(ccd_size[2])) & (pix_tmp[1] < int(ccd_size[3])))
             pos_tmp[ind] = j
             n_epoch[ind] += 1
         exp_name = np.array([exp_list[i] for n in range(len(obj_id))])
