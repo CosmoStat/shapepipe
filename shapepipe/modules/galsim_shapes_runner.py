@@ -64,7 +64,7 @@ def stack_psfs(psfs, weights):
     -------
     psf_sum : np.ndarray
         Stacked PSF.
-        
+
     """
 
     n_epoch = len(psfs)
