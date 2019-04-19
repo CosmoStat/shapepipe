@@ -7,3 +7,4 @@ numpy>=1.16.0
 pybind11>=2.2
 sip_tpv>=1.1
 sf-tools>=2.0.0
+sqlitedict>=1.6.0

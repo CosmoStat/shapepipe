@@ -17,32 +17,34 @@
   
 
   
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
-
-  
-  <script src="../../../_static/js/modernizr.min.js"></script>
-
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -163,13 +165,11 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">subprocess</span> <span class="k">as</span> <span class="nn">sp</span>
+<span class="kn">import</span> <span class="nn">platform</span>
 <span class="kn">from</span> <span class="nn">os</span> <span class="k">import</span> <span class="n">getpid</span>
-<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="k">import</span> <span class="n">current_process</span>
 <span class="kn">from</span> <span class="nn">modopt.interface.errors</span> <span class="k">import</span> <span class="n">catch_error</span><span class="p">,</span> <span class="n">warn</span>
 <span class="kn">from</span> <span class="nn">modopt.interface.log</span> <span class="k">import</span> <span class="n">set_up_log</span><span class="p">,</span> <span class="n">close_log</span>
 <span class="kn">from</span> <span class="nn">shapepipe.pipeline.timeout</span> <span class="k">import</span> <span class="n">with_timeout</span>
-<span class="c1"># from shapepipe.modules import module_runners</span>
 
 
 <div class="viewcode-block" id="WorkerHandler"><a class="viewcode-back" href="../../../shapepipe.pipeline.worker_handler.html#shapepipe.pipeline.worker_handler.WorkerHandler">[docs]</a><span class="k">class</span> <span class="nc">WorkerHandler</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -186,7 +186,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span> <span class="o">=</span> <span class="n">verbose</span>
 
-<div class="viewcode-block" id="WorkerHandler.worker"><a class="viewcode-back" href="../../../shapepipe.pipeline.worker_handler.html#shapepipe.pipeline.worker_handler.WorkerHandler.worker">[docs]</a>    <span class="k">def</span> <span class="nf">worker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_name</span><span class="p">,</span> <span class="n">process</span><span class="p">,</span> <span class="n">filehd</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="WorkerHandler.worker"><a class="viewcode-back" href="../../../shapepipe.pipeline.worker_handler.html#shapepipe.pipeline.worker_handler.WorkerHandler.worker">[docs]</a>    <span class="k">def</span> <span class="nf">worker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_name</span><span class="p">,</span> <span class="n">process</span><span class="p">,</span> <span class="n">w_log_name</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span>
+               <span class="n">timeout</span><span class="p">,</span> <span class="n">module_runner</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Worker</span>
 
 <span class="sd">        This method defines a worker.</span>
@@ -195,14 +196,18 @@
 <span class="sd">        ----------</span>
 <span class="sd">        job_name : str</span>
 <span class="sd">            Job name</span>
-<span class="sd">        Process : str</span>
+<span class="sd">        process : str</span>
 <span class="sd">            File to be processed</span>
+<span class="sd">        w_log_name : str</span>
+<span class="sd">            Worker log name</span>
+<span class="sd">        module_runner : function</span>
+<span class="sd">            Module runner</span>
+<span class="sd">        output_dir : str</span>
+<span class="sd">            Output directory</span>
 <span class="sd">        config : CustomParser</span>
 <span class="sd">            Configuaration parser instance</span>
 <span class="sd">        timeout : int</span>
 <span class="sd">            Timeout limit in seconds</span>
-<span class="sd">        module : str</span>
-<span class="sd">            Module runner name</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -211,9 +216,12 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_filehd</span> <span class="o">=</span> <span class="n">filehd</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log_name</span> <span class="o">=</span> <span class="n">w_log_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_config</span> <span class="o">=</span> <span class="n">config</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_worker</span><span class="p">(</span><span class="n">job_name</span><span class="p">,</span> <span class="n">process</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">module</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_runner</span> <span class="o">=</span> <span class="n">module_runner</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_worker</span><span class="p">(</span><span class="n">job_name</span><span class="p">,</span> <span class="n">process</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span>
+                             <span class="n">module_runner</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_create_worker_log</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_run_worker</span><span class="p">()</span>
         <span class="n">close_log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w_log</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -241,6 +249,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">getpid</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;node&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">node</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;system&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;machine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">machine</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;exception&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;stderr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;process&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">process</span>
@@ -261,15 +272,15 @@
                   <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;job_name&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">],</span>
                   <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;process&#39;</span><span class="p">]))</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">w_log</span> <span class="o">=</span> <span class="n">set_up_log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filehd</span><span class="o">.</span><span class="n">get_worker_log_name</span><span class="p">(</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">],</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;job_name&#39;</span><span class="p">]),</span>
-                                <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w_log</span> <span class="o">=</span> <span class="n">set_up_log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_w_log_name</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;log&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_log</span><span class="o">.</span><span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Worker process running with:&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39; - Job Name: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;job_name&#39;</span><span class="p">]))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39; - PID: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39; - Node: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;node&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39; - System: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;system&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39; - Machine: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;machine&#39;</span><span class="p">]))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39; - Timeout Limit: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;timeout&#39;</span><span class="p">]))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39; - Process: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;process&#39;</span><span class="p">]))</span></div>
@@ -312,25 +323,17 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c1"># if not hasattr(module_runners, self.worker_dict[&#39;module&#39;]):</span>
-        <span class="c1">#     raise RuntimeError(&#39;Module runner {} does not exist.&#39;.format(</span>
-        <span class="c1">#                        self.worker_dict[&#39;module&#39;]))</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39; - Running module: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">]))</span>
 
-        <span class="n">moduler_runner</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filehd</span><span class="o">.</span><span class="n">module_runners</span><span class="p">[</span>
-                          <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">]])</span>
-        <span class="c1"># moduler_runner = getattr(module_runners, self.worker_dict[&#39;module&#39;])</span>
-
         <span class="n">file_number_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;process&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">input_file_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;process&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filehd</span><span class="o">.</span><span class="n">output_dir</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span> <span class="o">=</span> <span class="n">moduler_runner</span><span class="p">(</span><span class="n">input_file_list</span><span class="p">,</span>
-                                                    <span class="n">output_dir</span><span class="p">,</span>
-                                                    <span class="n">file_number_string</span><span class="p">,</span>
-                                                    <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_log</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_runner</span><span class="p">(</span><span class="n">input_file_list</span><span class="p">,</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="p">,</span>
+                                                         <span class="n">file_number_string</span><span class="p">,</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">,</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">w_log</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="WorkerHandler._log_stdout"><a class="viewcode-back" href="../../../shapepipe.pipeline.worker_handler.html#shapepipe.pipeline.worker_handler.WorkerHandler._log_stdout">[docs]</a>    <span class="k">def</span> <span class="nf">_log_stdout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Log STDOUT</span>
@@ -375,26 +378,16 @@
   
 
 
-  
-
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
-    
-
-  
-
-  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>
