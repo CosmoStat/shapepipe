@@ -1,0 +1,570 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>shapepipe.pipeline.dependency_handler &mdash; ShapePipe  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> ShapePipe
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../shapepipe.html">1. shapepipe package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.html#subpackages">1.1. Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.modules.html">1.1.1. shapepipe.modules package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.html">1.1.2. shapepipe.pipeline package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.html#submodules">1.2. Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.info.html">1.2.1. shapepipe.info module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.html#module-shapepipe">1.3. Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ShapePipe</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>shapepipe.pipeline.dependency_handler</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for shapepipe.pipeline.dependency_handler</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="sd">&quot;&quot;&quot;DEPENDENCY HANDLER</span>
+
+<span class="sd">This module defines a class for handling pipeline dependencies.</span>
+
+<span class="sd">:Author: Samuel Farrens &lt;samuel.farrens@cea.fr&gt;</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">importlib</span>
+
+
+<div class="viewcode-block" id="DependencyHandler"><a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler">[docs]</a><span class="k">class</span> <span class="nc">DependencyHandler</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Dependency Handler</span>
+
+<span class="sd">    This class manages the required Python packages and system executables</span>
+<span class="sd">    required to run the pipeline.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dependencies : list</span>
+<span class="sd">        List of Python packages names, optionally with required versions</span>
+<span class="sd">    executables : list</span>
+<span class="sd">        List of system executables</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="p">[],</span> <span class="n">executables</span><span class="o">=</span><span class="p">[]):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">depend</span> <span class="o">=</span> <span class="n">dependencies</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">execute</span> <span class="o">=</span> <span class="n">executables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_greq</span> <span class="o">=</span> <span class="s1">&#39;&gt;=&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_equal</span> <span class="o">=</span> <span class="s1">&#39;==&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_great</span> <span class="o">=</span> <span class="s1">&#39;&gt;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_less</span> <span class="o">=</span> <span class="s1">&#39;&lt;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dependency_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">executable_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">dependencies</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_split_strings</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_unique_dependencies</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">depend</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Input Dependency List</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_depend</span>
+
+    <span class="nd">@depend</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">depend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Input must be list type.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">value</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;List elements must be strings.&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_depend</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Input Executable List</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_execute</span>
+
+    <span class="nd">@execute</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Input must be list type.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">value</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;List elements must be strings.&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_execute</span> <span class="o">=</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="DependencyHandler._convert_to_float"><a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._convert_to_float">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_convert_to_float</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Convert String to Float</span>
+
+<span class="sd">        This method converts numerical strings to floats.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        string : str</span>
+<span class="sd">            Input string</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Converted value</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="k">return</span> <span class="n">val</span></div>
+
+<div class="viewcode-block" id="DependencyHandler._slice_1d"><a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._slice_1d">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_slice_1d</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Slice 1D</span>
+
+<span class="sd">        Slice 1D list by indices.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        array : list</span>
+<span class="sd">            List of values</span>
+<span class="sd">        indices : list</span>
+<span class="sd">            List of inidices</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            Sliced list</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">array</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="DependencyHandler._slice_2d"><a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._slice_2d">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_slice_2d</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Slice 2D</span>
+
+<span class="sd">        Slice a list of lists by indices.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        array : list</span>
+<span class="sd">            List of lists</span>
+<span class="sd">        indices : list</span>
+<span class="sd">            List of inidices</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            Sliced list</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="bp">cls</span><span class="o">.</span><span class="n">_slice_1d</span><span class="p">(</span><span class="n">sublist</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span> <span class="k">for</span> <span class="n">sublist</span> <span class="ow">in</span> <span class="n">array</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="DependencyHandler._get_indices"><a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._get_indices">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_get_indices</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get Indices</span>
+
+<span class="sd">        Get indices of array elements equal to input value.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        array : list</span>
+<span class="sd">            List of values</span>
+<span class="sd">        value : str</span>
+<span class="sd">            Value string</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            List of indices</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">index</span> <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">element</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">array</span><span class="p">)</span> <span class="k">if</span>
+                <span class="n">element</span> <span class="o">==</span> <span class="n">value</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="DependencyHandler._slice_col_val"><a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._slice_col_val">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_slice_col_val</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Slice by Column and Value</span>
+
+<span class="sd">        Slice a list of lists by elements in a given column equal to a given</span>
+<span class="sd">        value.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        array : list</span>
+<span class="sd">            List of lists</span>
+<span class="sd">        col : int</span>
+<span class="sd">            Column number</span>
+<span class="sd">        value : str</span>
+<span class="sd">            Value string</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            Slices list</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_slice_2d</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_get_indices</span><span class="p">(</span><span class="n">array</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">value</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="DependencyHandler._check_executable"><a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._check_executable">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_check_executable</span><span class="p">(</span><span class="n">exe_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check if Input is Executable</span>
+
+<span class="sd">        This methid checks if the input executable exists.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        exe_name : str</span>
+<span class="sd">            Executable name</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Bool result of test</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            For invalid input type</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exe_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Executable name must be a string.&#39;</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">is_exe</span><span class="p">(</span><span class="n">fpath</span><span class="p">):</span>
+
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fpath</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">X_OK</span><span class="p">)</span>
+
+        <span class="n">fpath</span><span class="p">,</span> <span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">exe_name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">fpath</span><span class="p">:</span>
+
+            <span class="n">res</span> <span class="o">=</span> <span class="nb">any</span><span class="p">([</span><span class="n">is_exe</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">exe_name</span><span class="p">))</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span>
+                       <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">pathsep</span><span class="p">)])</span>
+
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="n">res</span> <span class="o">=</span> <span class="n">is_exe</span><span class="p">(</span><span class="n">exe_name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">res</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> does not appear to be a valid executable on &#39;</span>
+                          <span class="s1">&#39;this system.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">exe_name</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="DependencyHandler._split_string"><a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._split_string">[docs]</a>    <span class="k">def</span> <span class="nf">_split_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Split String</span>
+
+<span class="sd">        This method splits the version number from the input module string.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        string : str</span>
+<span class="sd">            Input module string</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Array of string components</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_greq</span> <span class="ow">in</span> <span class="n">string</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;(</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_greq</span><span class="p">),</span> <span class="n">string</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_equal</span> <span class="ow">in</span> <span class="n">string</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;(</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_equal</span><span class="p">),</span> <span class="n">string</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_great</span> <span class="ow">in</span> <span class="n">string</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;(</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_great</span><span class="p">),</span> <span class="n">string</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_less</span> <span class="ow">in</span> <span class="n">string</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;&quot;&lt;&quot; not permitted in package version string.&#39;</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="p">[</span><span class="n">string</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">val</span></div>
+
+<div class="viewcode-block" id="DependencyHandler._split_strings"><a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._split_strings">[docs]</a>    <span class="k">def</span> <span class="nf">_split_strings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Split Strings</span>
+
+<span class="sd">        This method splits the input dependency modules strings.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_depend_arr</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_split_string</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+                                <span class="k">for</span> <span class="n">string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">depend</span><span class="p">])))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dependency_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_depend_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="DependencyHandler._unique_dependencies"><a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler._unique_dependencies">[docs]</a>    <span class="k">def</span> <span class="nf">_unique_dependencies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Unique Dependencies</span>
+
+<span class="sd">        This method creates a unique list of depencies.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">package_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dependency_set</span><span class="p">:</span>
+
+            <span class="n">subset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_slice_col_val</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_depend_arr</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">package_name</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_equal</span> <span class="ow">in</span> <span class="n">element</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">):</span>
+
+                <span class="n">subset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_slice_col_val</span><span class="p">(</span><span class="n">subset</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_equal</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">ver</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span> <span class="k">for</span> <span class="n">ver</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">[</span><span class="mi">2</span><span class="p">]]):</span>
+
+                <span class="n">subset</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_slice_col_val</span><span class="p">(</span><span class="n">subset</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span>
+                          <span class="nb">str</span><span class="p">(</span><span class="nb">max</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_convert_to_float</span><span class="p">(</span><span class="n">ver</span><span class="p">)</span>
+                                   <span class="k">for</span> <span class="n">ver</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">[</span><span class="mi">2</span><span class="p">]]))))</span>
+
+            <span class="n">subset</span> <span class="o">=</span> <span class="p">[</span><span class="n">element</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_slice_2d</span><span class="p">(</span><span class="n">subset</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">dependency_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subset</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="DependencyHandler.check_dependencies"><a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler.check_dependencies">[docs]</a>    <span class="k">def</span> <span class="nf">check_dependencies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Check Dependencies</span>
+
+<span class="sd">        This method checks that the required dependencies are installed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            List of depenecies with versions and paths</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">dependency_status_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">dependency</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dependency_set</span><span class="p">:</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">package</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">dependency</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;Could not import pipeline dependency &#39;</span>
+                                  <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dependency</span><span class="p">))</span>
+
+            <span class="n">dependency_status_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39; - </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                          <span class="n">package</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+                                          <span class="n">package</span><span class="o">.</span><span class="n">__version__</span><span class="p">,</span>
+                                          <span class="n">package</span><span class="o">.</span><span class="n">__path__</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">dependency_status_list</span></div>
+
+<div class="viewcode-block" id="DependencyHandler.check_executables"><a class="viewcode-back" href="../../../shapepipe.pipeline.dependency_handler.html#shapepipe.pipeline.dependency_handler.DependencyHandler.check_executables">[docs]</a>    <span class="k">def</span> <span class="nf">check_executables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Check Executables</span>
+
+<span class="sd">        This method checks that the required executables are installed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            List of executables with paths</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">executable_status_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">executable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">executable_list</span><span class="p">:</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_check_executable</span><span class="p">(</span><span class="n">executable</span><span class="p">)</span>
+
+            <span class="n">exe_path</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="p">(</span><span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="s1">&#39;which </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">executable</span><span class="p">),</span>
+                             <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
+                             <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span><span class="o">.</span><span class="n">communicate</span><span class="p">())</span>
+
+            <span class="n">string</span> <span class="o">=</span> <span class="s1">&#39; - </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">executable</span><span class="p">,</span>
+                                       <span class="n">exe_path</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+
+            <span class="n">executable_status_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">executable_status_list</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Samuel Farrens
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

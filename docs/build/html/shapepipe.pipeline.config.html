@@ -17,34 +17,36 @@
   
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="1.1.2.1.3. shapepipe.pipeline.execute module" href="shapepipe.pipeline.execute.html" />
+    <link rel="next" title="1.1.2.1.3. shapepipe.pipeline.dependency_handler module" href="shapepipe.pipeline.dependency_handler.html" />
     <link rel="prev" title="1.1.2.1.1. shapepipe.pipeline.args module" href="shapepipe.pipeline.args.html" /> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -164,14 +166,11 @@
 <span id="shapepipe-pipeline-config-module"></span><h1>1.1.2.1.2. shapepipe.pipeline.config module<a class="headerlink" href="#module-shapepipe.pipeline.config" title="Permalink to this headline">¶</a></h1>
 <p>CONFIGURATION FILE HANDLING</p>
 <p>This module defines methods for handling the pipeline configuration file.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Author:</th><td class="field-body">Samuel Farrens &lt;<a class="reference external" href="mailto:samuel&#46;farrens&#37;&#52;&#48;cea&#46;fr">samuel<span>&#46;</span>farrens<span>&#64;</span>cea<span>&#46;</span>fr</a>&gt;</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Author</dt>
+<dd class="field-odd"><p>Samuel Farrens &lt;<a class="reference external" href="mailto:samuel&#46;farrens&#37;&#52;&#48;cea&#46;fr">samuel<span>&#46;</span>farrens<span>&#64;</span>cea<span>&#46;</span>fr</a>&gt;</p>
+</dd>
+</dl>
 <dl class="class">
 <dt id="shapepipe.pipeline.config.CustomParser">
 <em class="property">class </em><code class="descclassname">shapepipe.pipeline.config.</code><code class="descname">CustomParser</code><span class="sig-paren">(</span><em>defaults=None</em>, <em>dict_type=&lt;class 'collections.OrderedDict'&gt;</em>, <em>allow_no_value=False</em>, <em>*</em>, <em>delimiters=('='</em>, <em>':')</em>, <em>comment_prefixes=('#'</em>, <em>';')</em>, <em>inline_comment_prefixes=None</em>, <em>strict=True</em>, <em>empty_lines_in_values=True</em>, <em>default_section='DEFAULT'</em>, <em>interpolation=&lt;object object&gt;</em>, <em>converters=&lt;object object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/config.html#CustomParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.config.CustomParser" title="Permalink to this definition">¶</a></dt>
@@ -183,24 +182,20 @@
 <code class="descname">getexpanded</code><span class="sig-paren">(</span><em>section</em>, <em>option</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/config.html#CustomParser.getexpanded"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.config.CustomParser.getexpanded" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get Expanded</p>
 <p>This method expands enviroment varibles obtaiened using the get method.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Configuration file section</li>
-<li><strong>option</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Configuration file option</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Configuration file section</p></li>
+<li><p><strong>option</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Configuration file option</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Expanded enviroment variables</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)">str</a></p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Expanded enviroment variables</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)">str</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -209,25 +204,21 @@
 <dd><p>Get List</p>
 <p>This method retrieves a list of strings separated by a given
 delimiter.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Configuration file section</li>
-<li><strong>option</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Configuration file option</li>
-<li><strong>delimiter</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em>, </em><em>optional</em>) – Delimiter between list entries, default is ‘,’</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Configuration file section</p></li>
+<li><p><strong>option</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Configuration file option</p></li>
+<li><p><strong>delimiter</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em>, </em><em>optional</em>) – Delimiter between list entries, default is ‘,’</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">List of strings</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)">list</a></p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>List of strings</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)">list</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="attribute">
@@ -242,7 +233,7 @@ delimiter.</p>
 
 <dl class="attribute">
 <dt id="shapepipe.pipeline.config.CustomParser._abc_negative_cache_version">
-<code class="descname">_abc_negative_cache_version</code><em class="property"> = 46</em><a class="headerlink" href="#shapepipe.pipeline.config.CustomParser._abc_negative_cache_version" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_abc_negative_cache_version</code><em class="property"> = 57</em><a class="headerlink" href="#shapepipe.pipeline.config.CustomParser._abc_negative_cache_version" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -259,27 +250,21 @@ delimiter.</p>
 <p>Set Up Parser</p>
 <p>This class sets up an instance of <code class="docutils literal notranslate"><span class="pre">CustomParser</span></code> and checks the
 pipeline related parameters.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Configuration file name</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>file_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Configuration file name</p>
+</dd>
+</dl>
 <dl class="attribute">
 <dt id="shapepipe.pipeline.config.SetUpParser.file_name">
 <code class="descname">file_name</code><a class="headerlink" href="#shapepipe.pipeline.config.SetUpParser.file_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>File name</p>
 <p>This sets the configuration file name.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#IOError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">IOError</span></code></a> – For non existent configuration file</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#IOError" title="(in Python v3.7)"><strong>IOError</strong></a> – For non existent configuration file</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -294,18 +279,14 @@ pipeline related parameters.</p>
 <code class="descname">_set_execution_options</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/config.html#SetUpParser._set_execution_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.config.SetUpParser._set_execution_options" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set Execution Options</p>
 <p>This method checks the execution options in the configuration file.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">RuntimeError</span></code></a> – For no module runner specified</li>
-<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ImportError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ImportError</span></code></a> – For non-existent module runner</li>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.7)"><strong>RuntimeError</strong></a> – For no module runner specified</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ImportError" title="(in Python v3.7)"><strong>ImportError</strong></a> – For non-existent module runner</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -313,20 +294,16 @@ pipeline related parameters.</p>
 <code class="descname">_set_file_options</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/config.html#SetUpParser._set_file_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.config.SetUpParser._set_file_options" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set File Options</p>
 <p>This module checks the file options in the configuration file.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">RuntimeError</span></code></a> – For no input directory specified</li>
-<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#OSError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OSError</span></code></a> – For non-existent input directory</li>
-<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">RuntimeError</span></code></a> – For no output directory specified</li>
-<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#OSError" title="(in Python v3.7)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OSError</span></code></a> – For non-existent output directory</li>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.7)"><strong>RuntimeError</strong></a> – For no input directory specified</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#OSError" title="(in Python v3.7)"><strong>OSError</strong></a> – For non-existent input directory</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.7)"><strong>RuntimeError</strong></a> – For no output directory specified</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#OSError" title="(in Python v3.7)"><strong>OSError</strong></a> – For non-existent output directory</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -334,16 +311,14 @@ pipeline related parameters.</p>
 <code class="descname">get_parser</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/config.html#SetUpParser.get_parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.config.SetUpParser.get_parser" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get Parser</p>
 <p>Return a configuration file parser instance.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Custom configuration file parser</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#shapepipe.pipeline.config.CustomParser" title="shapepipe.pipeline.config.CustomParser">CustomParser</a></td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Custom configuration file parser</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="#shapepipe.pipeline.config.CustomParser" title="shapepipe.pipeline.config.CustomParser">CustomParser</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -353,18 +328,17 @@ pipeline related parameters.</p>
 <code class="descclassname">shapepipe.pipeline.config.</code><code class="descname">create_config_parser</code><span class="sig-paren">(</span><em>file_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/config.html#create_config_parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.pipeline.config.create_config_parser" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create Configuration Parser</p>
 <p>This method creates a configuration file parser instance.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Configuration file name</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Custom configuration file parser</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#shapepipe.pipeline.config.CustomParser" title="shapepipe.pipeline.config.CustomParser">CustomParser</a></td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>file_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Configuration file name</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Custom configuration file parser</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#shapepipe.pipeline.config.CustomParser" title="shapepipe.pipeline.config.CustomParser">CustomParser</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 </div>
@@ -377,10 +351,10 @@ pipeline related parameters.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="shapepipe.pipeline.execute.html" class="btn btn-neutral float-right" title="1.1.2.1.3. shapepipe.pipeline.execute module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="shapepipe.pipeline.dependency_handler.html" class="btn btn-neutral float-right" title="1.1.2.1.3. shapepipe.pipeline.dependency_handler module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="shapepipe.pipeline.args.html" class="btn btn-neutral" title="1.1.2.1.1. shapepipe.pipeline.args module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="shapepipe.pipeline.args.html" class="btn btn-neutral float-left" title="1.1.2.1.1. shapepipe.pipeline.args module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -406,26 +380,16 @@ pipeline related parameters.</p>
   
 
 
-  
-
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
-    
-
-  
-
-  <script type="text/javascript" src="_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

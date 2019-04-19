@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>1.1.1.1.3. shapepipe.modules.module_runners module &mdash; ShapePipe  documentation</title>
+  <title>1.1.1.2.8. shapepipe.modules.module_runners module &mdash; ShapePipe  documentation</title>
   
 
   
@@ -17,34 +17,36 @@
   
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="1.1.1.1.4. shapepipe.modules.python_example module" href="shapepipe.modules.python_example.html" />
-    <link rel="prev" title="1.1.1.1.2. shapepipe.modules.module_decorator module" href="shapepipe.modules.module_decorator.html" /> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
+    <link rel="next" title="1.1.1.2.9. shapepipe.modules.ngmix_runner module" href="shapepipe.modules.ngmix_runner.html" />
+    <link rel="prev" title="1.1.1.2.7. shapepipe.modules.module_decorator module" href="shapepipe.modules.module_decorator.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -141,7 +143,7 @@
         
           <li><a href="shapepipe.modules.html">1.1.1. shapepipe.modules package</a> &raquo;</li>
         
-      <li>1.1.1.1.3. shapepipe.modules.module_runners module</li>
+      <li>1.1.1.2.8. shapepipe.modules.module_runners module</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -161,34 +163,30 @@
            <div itemprop="articleBody">
             
   <div class="section" id="module-shapepipe.modules.module_runners">
-<span id="shapepipe-modules-module-runners-module"></span><h1>1.1.1.1.3. shapepipe.modules.module_runners module<a class="headerlink" href="#module-shapepipe.modules.module_runners" title="Permalink to this headline">¶</a></h1>
+<span id="shapepipe-modules-module-runners-module"></span><h1>1.1.1.2.8. shapepipe.modules.module_runners module<a class="headerlink" href="#module-shapepipe.modules.module_runners" title="Permalink to this headline">¶</a></h1>
 <p>MODULE RUNNERS</p>
 <p>This module defines methods for running the pipeline modules.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Author:</th><td class="field-body">Samuel Farrens &lt;<a class="reference external" href="mailto:samuel&#46;farrens&#37;&#52;&#48;cea&#46;fr">samuel<span>&#46;</span>farrens<span>&#64;</span>cea<span>&#46;</span>fr</a>&gt;</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Author</dt>
+<dd class="field-odd"><p>Samuel Farrens &lt;<a class="reference external" href="mailto:samuel&#46;farrens&#37;&#52;&#48;cea&#46;fr">samuel<span>&#46;</span>farrens<span>&#64;</span>cea<span>&#46;</span>fr</a>&gt;</p>
+</dd>
+</dl>
 <dl class="function">
 <dt id="shapepipe.modules.module_runners.get_module_runners">
 <code class="descclassname">shapepipe.modules.module_runners.</code><code class="descname">get_module_runners</code><span class="sig-paren">(</span><em>modules</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/module_runners.html#get_module_runners"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shapepipe.modules.module_runners.get_module_runners" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get Module Runners</p>
 <p>Import the specified module runners.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>modules</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – List of module names</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Dictionary of module runners</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a></td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>modules</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – List of module names</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dictionary of module runners</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 </div>
@@ -201,10 +199,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="shapepipe.modules.python_example.html" class="btn btn-neutral float-right" title="1.1.1.1.4. shapepipe.modules.python_example module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="shapepipe.modules.ngmix_runner.html" class="btn btn-neutral float-right" title="1.1.1.2.9. shapepipe.modules.ngmix_runner module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="shapepipe.modules.module_decorator.html" class="btn btn-neutral" title="1.1.1.1.2. shapepipe.modules.module_decorator module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="shapepipe.modules.module_decorator.html" class="btn btn-neutral float-left" title="1.1.1.2.7. shapepipe.modules.module_decorator module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -230,26 +228,16 @@
   
 
 
-  
-
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
-    
-
-  
-
-  <script type="text/javascript" src="_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

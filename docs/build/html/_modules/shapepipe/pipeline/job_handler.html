@@ -17,32 +17,34 @@
   
 
   
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
-
-  
-  <script src="../../../_static/js/modernizr.min.js"></script>
-
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -163,11 +165,11 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
-<span class="kn">from</span> <span class="nn">modopt.interface.errors</span> <span class="k">import</span> <span class="n">warn</span>
-<span class="kn">from</span> <span class="nn">joblib</span> <span class="k">import</span> <span class="n">Parallel</span><span class="p">,</span> <span class="n">delayed</span><span class="p">,</span> <span class="n">cpu_count</span>
 <span class="kn">from</span> <span class="nn">configparser</span> <span class="k">import</span> <span class="n">ConfigParser</span>
+<span class="kn">from</span> <span class="nn">gc</span> <span class="k">import</span> <span class="n">collect</span>
+<span class="kn">from</span> <span class="nn">joblib</span> <span class="k">import</span> <span class="n">Parallel</span><span class="p">,</span> <span class="n">delayed</span><span class="p">,</span> <span class="n">cpu_count</span>
 <span class="kn">from</span> <span class="nn">logging</span> <span class="k">import</span> <span class="n">Logger</span>
+<span class="kn">from</span> <span class="nn">modopt.interface.errors</span> <span class="k">import</span> <span class="n">warn</span>
 <span class="kn">from</span> <span class="nn">shapepipe.pipeline.worker_handler</span> <span class="k">import</span> <span class="n">WorkerHandler</span>
 
 
@@ -197,20 +199,27 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">filehd</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">log</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                 <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                 <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;loky&#39;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">filehd</span> <span class="o">=</span> <span class="n">filehd</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">log</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_module</span> <span class="o">=</span> <span class="n">module</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_runner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">module_runners</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_module</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">error_count</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span> <span class="o">=</span> <span class="n">verbose</span>
 
         <span class="c1"># Set the bacth size</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s1">&#39;JOB&#39;</span><span class="p">,</span> <span class="s1">&#39;BATCH_SIZE&#39;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">getint</span><span class="p">(</span><span class="s1">&#39;JOB&#39;</span><span class="p">,</span> <span class="s1">&#39;BATCH_SIZE&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s1">&#39;JOB&#39;</span><span class="p">,</span> <span class="s1">&#39;SMP_BATCH_SIZE&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">getint</span><span class="p">(</span><span class="s1">&#39;JOB&#39;</span><span class="p">,</span> <span class="s1">&#39;SMP_BATCH_SIZE&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
+
+        <span class="c1"># Set the backend</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s1">&#39;JOB&#39;</span><span class="p">,</span> <span class="s1">&#39;SMP_BACKEND&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;JOB&#39;</span><span class="p">,</span> <span class="s1">&#39;SMP_BACKEND&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="n">backend</span>
 
         <span class="c1"># Set the job timeout limit</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s1">&#39;JOB&#39;</span><span class="p">,</span> <span class="s1">&#39;TIMEOUT&#39;</span><span class="p">):</span>
@@ -232,8 +241,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_n_jobs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">process_list</span><span class="p">)</span>
 
         <span class="c1"># Set the job names</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_job_names</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_job_name</span><span class="p">(</span><span class="n">job</span><span class="p">)</span> <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span>
-                           <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_jobs</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">job_names</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_job_name</span><span class="p">(</span><span class="n">job</span><span class="p">)</span> <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span>
+                          <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_jobs</span><span class="p">)]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_log_job_parameters</span><span class="p">()</span>
 
@@ -338,14 +347,13 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span> <span class="o">=</span> <span class="n">value</span>
 
-<div class="viewcode-block" id="JobHandler.submit_jobs"><a class="viewcode-back" href="../../../shapepipe.pipeline.job_handler.html#shapepipe.pipeline.job_handler.JobHandler.submit_jobs">[docs]</a>    <span class="k">def</span> <span class="nf">submit_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Submit Jobs</span>
+<div class="viewcode-block" id="JobHandler.finish_up"><a class="viewcode-back" href="../../../shapepipe.pipeline.job_handler.html#shapepipe.pipeline.job_handler.JobHandler.finish_up">[docs]</a>    <span class="k">def</span> <span class="nf">finish_up</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Finish Up</span>
 
-<span class="sd">        This method submits the jobs and checks the results.</span>
+<span class="sd">        Finish up JobHandler session.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_distribute_smp_jobs</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_for_errors</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_missed_processes</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;All processes complete&#39;</span><span class="p">)</span>
@@ -353,7 +361,19 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;All processes complete&#39;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span></div>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+        <span class="n">collect</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="JobHandler.submit_smp_jobs"><a class="viewcode-back" href="../../../shapepipe.pipeline.job_handler.html#shapepipe.pipeline.job_handler.JobHandler.submit_smp_jobs">[docs]</a>    <span class="k">def</span> <span class="nf">submit_smp_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Submit Jobs</span>
+
+<span class="sd">        This method submits the jobs and checks the results.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_distribute_smp_jobs</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finish_up</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="JobHandler.hms2sec"><a class="viewcode-back" href="../../../shapepipe.pipeline.job_handler.html#shapepipe.pipeline.job_handler.JobHandler.hms2sec">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">hms2sec</span><span class="p">(</span><span class="n">time_str</span><span class="p">):</span>
@@ -438,13 +458,17 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="p">)</span>
                   <span class="p">(</span><span class="n">delayed</span><span class="p">(</span><span class="n">WorkerHandler</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span><span class="p">)</span><span class="o">.</span><span class="n">worker</span><span class="p">)</span>
-                   <span class="p">(</span><span class="n">job_name</span><span class="p">,</span> <span class="n">process</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">,</span>
-                   <span class="bp">self</span><span class="o">.</span><span class="n">_module</span><span class="p">)</span> <span class="k">for</span> <span class="n">job_name</span><span class="p">,</span> <span class="n">process</span> <span class="ow">in</span>
-                   <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_job_names</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">process_list</span><span class="o">.</span><span class="n">items</span><span class="p">())))</span>
+                   <span class="p">(</span><span class="n">job_name</span><span class="p">,</span> <span class="n">process</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">get_worker_log_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module</span><span class="p">,</span> <span class="n">job_name</span><span class="p">,</span>
+                                                    <span class="n">process</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_module_runner</span><span class="p">)</span>
+                   <span class="k">for</span> <span class="n">job_name</span><span class="p">,</span> <span class="n">process</span> <span class="ow">in</span>
+                   <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">job_names</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filehd</span><span class="o">.</span><span class="n">process_list</span><span class="o">.</span><span class="n">items</span><span class="p">())))</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_worker_dicts</span> <span class="o">=</span> <span class="n">result</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker_dicts</span> <span class="o">=</span> <span class="n">result</span></div>
 
 <div class="viewcode-block" id="JobHandler._check_for_errors"><a class="viewcode-back" href="../../../shapepipe.pipeline.job_handler.html#shapepipe.pipeline.job_handler.JobHandler._check_for_errors">[docs]</a>    <span class="k">def</span> <span class="nf">_check_for_errors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Check for Errors</span>
@@ -465,7 +489,7 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">for</span> <span class="n">worker_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_worker_dicts</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">worker_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_dicts</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;exception&#39;</span><span class="p">]:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;ERROR: </span><span class="si">{}</span><span class="s1"> recorded in: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                               <span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;exception&#39;</span><span class="p">],</span> <span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;log&#39;</span><span class="p">]))</span>
@@ -479,7 +503,7 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">for</span> <span class="n">worker_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_worker_dicts</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">worker_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_dicts</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;stderr&#39;</span><span class="p">]:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;ERROR: stderr recorded in: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                               <span class="n">worker_dict</span><span class="p">[</span><span class="s1">&#39;log&#39;</span><span class="p">]))</span>
@@ -533,26 +557,16 @@
   
 
 
-  
-
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
-    
-
-  
-
-  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>
