@@ -21,6 +21,7 @@
     1. [Spread-Model](#Spread-Model)
     1. [Prepare shape measurement](#Prepare-shape-measurement)
     1. [NGMIX : Shape measurement](#NGMIX-:-Shape measurement)
+    1. [Make final catalog](#Make-final-catalog)
 
 ## Introduction
 
@@ -914,3 +915,194 @@ The first 3 HDUs correspond to the usual SExtractor output. Then, the HDUs `EPOC
 Those additionnal HDUs contain all the multi-epoch informations we need for the rest of the processing.
 
 ### PSF interpolation
+
+**Module :** psfexinterp_runner
+
+Now we need to interpolate the PSF at the position of all detected sources for all epochs where the object appears. Here is a commented example config file for the pipeline :
+
+```ini
+[PSFEXINTERP_RUNNER]
+
+# Define the way psfexinter will run.
+# CLASSIC for classical run.
+# MULTI-EPOCH for multi epoch.
+# VALIDATION for output allowing validation (only on single epoch !)
+MODE = MULTI-EPOCH
+
+STAR_THRESH = 20
+CHI2_THRESH = 2
+# When running in multi-epoch those position has to be WCS !
+POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD
+GET_SHAPES = True
+
+# Directory where all the .psf files are for the CCD images (output of the PSFEx run)
+ME_DOT_PSF_DIR = /single/epoch/run/shapepipe_run_date_hour/psfex_runner/output/
+# Common part of the .psf files.
+# Example : for "star_single-0123456-34.psf" set "star_single"
+ME_DOT_PSF_PATTERN = star_selection_psfex
+# Create with the split_exp_hdu module
+ME_LOG_WCS = /path/to/file/containing/WCS/information/log_exp_headers.npy
+```
+
+The output format is `sqlite`. The structure is similar to a dictionary with the following format :
+```python
+{'object_id': {'exp_name-CCD_number' : {'VIGNET': numpy.ndarray, 'SHAPES': {}}}
+```
+
+Example :
+
+```python
+{'1': {'2104127-35': {'VIGNET': numpy.ndarray, 'SHAPES': {}},
+       '2105224-13': {'VIGNET': numpy.ndarray, 'SHAPES': {}},
+       '2105382-3':  {'VIGNET': numpy.ndarray, 'SHAPES': {}}},
+ '2': {'2104127-33': {'VIGNET': numpy.ndarray, 'SHAPES': {}},
+       '2105224-12': {'VIGNET': numpy.ndarray, 'SHAPES': {}},
+       '2105382-2':  {'VIGNET': numpy.ndarray, 'SHAPES': {}}},
+ ...}
+```
+
+
+### Prepare spread-model
+
+**Module :** vignetmaker_runner
+
+To select the galaxy sample we will use the spread-model. To compute it we need :
+* The vignet of the object on the stack
+* The PSF information at the object location
+* The vignet of the weight image at the object location
+
+We already have the first two. In order to get the weight information we use the module : `vignetmaker_runner` to get postage stamps at the location of all objects detected by SExtractor. The weight we use here is the stacked weight since the detection is done on the stacks. Here is a commented example config file for the pipeline :
+
+```ini
+[VIGNETMAKER_RUNNER]
+
+MASKING = False
+MASK_VALUE = 0
+
+MODE = CLASSIC
+
+# Set type of coordinates to use in : PIX (pixel), SPHE (spherical).
+COORD = PIX
+POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE
+STAMP_SIZE = 51
+# The name will be : SUFFIX_vignet.fits
+SUFFIX = weight
+```
+
+### Spread-Model
+
+**Module :** spread_model_runner
+
+As mentioned above, to classify objects we use the spread-model. Now we have all the informations we need to compute it. Here is a commented example config file for the pipeline :
+
+```ini
+[SPREAD_MODEL_RUNNER]
+
+# Suffix for the output file. (OPTIONAL)
+# ex : SUFFIX_sexcat_sm_NUMBERING.fits or sexcat_sm_NUMBERING.fits if not provided
+;SUFFIX =
+PIXEL_SCALE = 0.186
+
+; Must be in [new, add].
+; 'new' will create a new catalog with : [number, mag, sm, sm_err]
+; 'add' will output a copy of the input SExtractor with the column sm and sm_err.
+OUTPUT_MODE = new
+```
+
+### Prepare shape measurement
+
+**Module :** vignetmaker_runner2
+
+As for the previous step, the shape measurement need some preparation. We will use the `vignetmaker_runner2` with the `MULTI-EPOCH` mode.
+This time the postage stamps are done from the single epoch files. Here is a commented example config file for the pipeline :
+
+```ini
+[VIGNETMAKER_RUNNER2]
+
+MASKING = False
+MASK_VALUE = 0
+
+MODE = MULTI-EPOCH
+
+# Set type of coordinates to use in : PIX (pixel), SPHE (spherical).
+COORD = SPHE
+POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD
+STAMP_SIZE = 51
+# The name will be : SUFFIX_vignet.fits
+SUFFIX =
+
+# List of the directories where the images are
+# NOTE : one directory per image type
+ME_IMAGE_DIR = /directory/of/flags/split_exp_runner/output,
+               /directory/of/images/split_exp_runner/output,
+               /directory/of/weights/split_exp_runner/output,
+               /directory/of/backgrounds/sextractor_runner/output
+# Common part of the different file types.
+# Example : for "image-0123456-34.fits" set "image"           
+ME_IMAGE_PATTERN = flag,image,weight,exp_background
+
+# Create with the split_exp_hdu module
+ME_LOG_WCS = /path/to/file/containing/WCS/information/log_exp_headers.npy
+```
+
+For those files the data structure is the same as the one use for the module `psfexinterp_runner` in multi-epoch mode.
+
+### NGMIX : Shape measurement
+
+Now we run the shape measurement. At the moment it's done with NGMIX. Most of the features are hard coded (will be more flexible in the future). Here is a commented example config file for the pipeline :
+
+```ini
+[NGMIX_RUNNER]
+
+# Create with the split_exp_hdu module
+LOG_WCS = /path/to/file/containing/WCS/information/log_exp_headers.npy
+```
+
+### Make final catalog
+
+**Module :** make_catalog_runner
+
+We finally merge all the results into one catalog per tiles. Here is a commented example config file for the pipeline :
+
+```ini
+[MAKE_CATALOG_RUNNER]
+
+# If true will add a column in the final catalog : "SPREAD_CLASS"
+SM_DO_CLASSIFICATION = True
+# The classification is done by computing :
+# classif = SPREAD_MODEL + 5/3 * SPREADERR_MODEL
+# The cut for the star : |classif| < SM_STAR_STRESH
+SM_STAR_STRESH = 0.003
+# The cut for the galaxies : classif > SM_GAL_THRESH
+SM_GAL_THRESH = 0.01
+```
+
+**Tips :** At the end we have one catalog per tiles. Here are a piece of code to merge all of them (assuming you are in the directory with all the catalogs) :
+
+```python
+import os
+import numpy as np
+from shapepipe.pipeline import file_io as io
+
+all_file = os.listdir()
+
+cat = io.FITSCatalog(all_file[0])
+cat.open()
+
+data = np.copy(cat.get_data())
+
+cat.close
+
+for f in all_file[1:]:
+  cat = io.FITSCatalog(f)
+  cat.open()
+
+  data = np.concatenate((data, np.copy(cat.get_data())))
+
+  cat.close()
+
+final_catalog = io.FITSCatalog('final_cat.fits', open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+
+final_catalog.save_as_fits(data, ext_name='RESULTS')
+
+```
