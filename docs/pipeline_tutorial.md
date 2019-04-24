@@ -3,24 +3,24 @@
 ## Index
 
 1. [Introduction](#Introduction)
-  1. [Numbering](#Numbering)
-  1. [CFIS porcessing](#CFIS-processing)
+    1. [Numbering](#Numbering)
+    1. [CFIS porcessing](#CFIS-processing)
 1. [ Single exposures processing](#Single-exposures-processing)
-  1. [Spliting](#Spliting)
-  1. [Masking single exposures](#Masking-single-exposures)
-  1. [Source identification single exposures](#Source-identificationg-single-exposures)
-  1. [Star selection](#Star-selection)
-  1. [PSF estimation](#PSF-estimation)
-  1. [Validation tests](#Validation tests)
-  1. [Full run config file](#Full-run-config-file)
+    1. [Spliting](#Spliting)
+    1. [Masking single exposures](#Masking-single-exposures)
+    1. [Source identification single exposures](#Source-identificationg-single-exposures)
+    1. [Star selection](#Star-selection)
+    1. [PSF estimation](#PSF-estimation)
+    1. [Validation tests](#Validation tests)
+    1. [Full run config file](#Full-run-config-file)
 1. [Stacks processing](#Stack-processing)
-  1. [Masking stacked images](#Masking-stacked-images)
-  1. [Source identification stacked images](#Source-identification-stacked-images)
-  1. [PSF interpolation](#PSF-interpolation)
-  1. [Prepare spread-model](#Prepare-spread-model)
-  1. [Spread-Model](#Spread-Model)
-  1. [Prepare shape measurement](#Prepare-shape-measurement)
-  1. [NGMIX : Shape measurement](#NGMIX-:-Shape measurement)
+    1. [Masking stacked images](#Masking-stacked-images)
+    1. [Source identification stacked images](#Source-identification-stacked-images)
+    1. [PSF interpolation](#PSF-interpolation)
+    1. [Prepare spread-model](#Prepare-spread-model)
+    1. [Spread-Model](#Spread-Model)
+    1. [Prepare shape measurement](#Prepare-shape-measurement)
+    1. [NGMIX : Shape measurement](#NGMIX-:-Shape measurement)
 
 ## Introduction
 
@@ -337,7 +337,7 @@ SETOOLS_CONFIG_PATH = /home/guinot/pipeline/ShapePipe/example/test_all_exp/star_
 ```
 
 Here is a commented example config file for the module :
-```ini
+```text
 [MASK:preselect]
 # NOTE : This mask is only use to preselect the region where the we expect to have the stellar locus. This avoid weird behavior
 MAG_AUTO > 0
