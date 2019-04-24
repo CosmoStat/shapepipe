@@ -60,7 +60,7 @@ To process CFIS images the steps are the following (details of each step can be 
 
 Flowchart presenting the process :
 
-![ShapePipe_FlowChart](/Users/aguinot/Documents/pipeline/ShapePipe/docs/ShapePipe_v0.0.1.png)
+![ShapePipe_FlowChart](./ShapePipe_v0.0.1.png)
 
 ## Single exposures processing
 
