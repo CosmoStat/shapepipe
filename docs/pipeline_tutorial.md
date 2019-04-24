@@ -1013,7 +1013,16 @@ OUTPUT_MODE = new
 
 **Module :** vignetmaker_runner2
 
-As for the previous step, the shape measurement need some preparation. We will use the `vignetmaker_runner2` with the `MULTI-EPOCH` mode.
+As for the previous step, the shape measurement need some preparation. Here is all the files required :
+* The SExtractor catalogs from the tiles
+* The vignets of all objects for all single epochs
+* The vignets of the weights for all single epochs
+* The vignets of the flags for all single epochs
+* The vignets of the backgrounds for all single epochs
+* The vignets of the PSFs for all single epochs
+
+
+ We will use the `vignetmaker_runner2` to get all the informations we need with the `MULTI-EPOCH` mode.
 This time the postage stamps are done from the single epoch files. Here is a commented example config file for the pipeline :
 
 ```ini
