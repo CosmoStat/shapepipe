@@ -211,6 +211,8 @@ On the single exposures we focus the source identification on stars. Thats means
 Here is a commented example config file for the pipeline :
 
 ```ini
+[SEXTRACTOR_RUNNER]
+
 EXEC_PATH = sex
 
 DOT_SEX_FILE = ./example/test_all_exp/default.sex
@@ -237,7 +239,7 @@ MAKE_POST_PROCESS = False
 
 Here is a commented example config file for the module :
 
-```ini
+```text
 #-------------------------------- Catalog ------------------------------------
 
 CATALOG_TYPE     FITS_LDAC
@@ -436,6 +438,7 @@ YLABEL = "Y (pix)"
 The PSF estimation is done with PSFEx. Here is a commented example config file for the pipeline :
 
 ```ini
+[PSFEX_RUNNER]
 EXEC_PATH = psfex
 
 DOT_PSFEX_FILE = ./example/test_psfex/default.psfex
@@ -443,7 +446,7 @@ DOT_PSFEX_FILE = ./example/test_psfex/default.psfex
 
 Here is a commented example config file for the module :
 
-```ini
+```text
 #-------------------------------- PSF model ----------------------------------
 
 BASIS_TYPE      PIXEL      # NONE, PIXEL, GAUSS-LAGUERRE or FILE
@@ -800,7 +803,7 @@ CCD_SIZE = 33,2080,1,4612
 
 Here is a commented example config file for the module :
 
-```ini
+```text
 #-------------------------------- Catalog ------------------------------------
 
 CATALOG_TYPE     FITS_LDAC
