@@ -203,6 +203,20 @@ class ShapePipe():
         if self.verbose:
             print('')
 
+    def _get_module_run_methods(self):
+        """ Get Module Run Method
+
+        Create a dictionary of modules with corresponding run methods.
+
+        """
+
+        self.run_method = {}
+
+        for module in self.modules:
+
+            self.run_method[module] = \
+                self.filehd.module_runners[module].run_method
+
     def _prep_run(self):
         """ Run
 
@@ -221,6 +235,9 @@ class ShapePipe():
 
         # Check the versions of these modules
         self._check_module_versions()
+
+        # Get run method for each module
+        self._get_module_run_methods()
 
     def record_mode(self):
         """ Record Mode
@@ -253,13 +270,18 @@ def run_smp(pipe):
     # Loop through modules to be run
     for module in pipe.modules:
 
+        print('RUN METHOD:', pipe.run_method[module])
+
         # Create a job handler for the current module
         jh = JobHandler(module, filehd=pipe.filehd,
                         config=pipe.config,
                         log=pipe.log, verbose=pipe.verbose)
 
         # Submit the SMP jobs
-        jh.submit_smp_jobs()
+        if pipe.run_method[module] == 'serial':
+            jh.submit_serial_job()
+        else:
+            jh.submit_smp_jobs()
 
         # Update error count
         pipe.error_count += jh.error_count
@@ -354,7 +376,7 @@ def run_mpi(pipe, comm):
 def main(args=None):
 
     try:
-        
+
         if import_mpi:
             comm = MPI.COMM_WORLD
             master = comm.rank == 0

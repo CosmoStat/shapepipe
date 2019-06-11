@@ -216,6 +216,11 @@ class JobHandler(object):
         self._distribute_smp_jobs()
         self.finish_up()
 
+    def submit_serial_job(self):
+
+        self._distribute_serial_job()
+        self.finish_up()
+
     @staticmethod
     def hms2sec(time_str):
         """ HMS to Seconds
@@ -281,13 +286,27 @@ class JobHandler(object):
 
         result = (Parallel(n_jobs=self.batch_size, backend=self.backend)
                   (delayed(WorkerHandler(verbose=self._verbose).worker)
-                   (process, self.filehd.get_worker_log_name(self._module,
-                                                             process[0]),
+                   (process[1:], process[0],
+                    self.filehd.get_worker_log_name(self._module,
+                                                    process[0]),
                     self.filehd.output_dir, self.config, self.timeout,
                     self._module_runner)
                    for process in self.filehd.process_list))
 
         self.worker_dicts = result
+
+    def _distribute_serial_job(self):
+
+        wh = WorkerHandler(verbose=self._verbose)
+        process = self.filehd.process_list
+
+        result = wh.worker(process, '',
+                           self.filehd.get_worker_log_name(self._module,
+                                                           'serial'),
+                           self.filehd.output_dir, self.config, self.timeout,
+                           self._module_runner)
+
+        self.worker_dicts = [result]
 
     def _check_for_errors(self):
         """ Check for Errors

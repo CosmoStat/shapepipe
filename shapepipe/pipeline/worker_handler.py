@@ -29,7 +29,7 @@ class WorkerHandler(object):
         self._stderr = None
         self._verbose = verbose
 
-    def worker(self, process, w_log_name, output_dir, config,
+    def worker(self, process, job_name, w_log_name, output_dir, config,
                timeout, module_runner):
         """ Worker
 
@@ -37,8 +37,8 @@ class WorkerHandler(object):
 
         Parameters
         ----------
-        process : str
-            File to be processed
+        process : np.ndarray
+            File(s) to be processed
         w_log_name : str
             Worker log name
         module_runner : function
@@ -61,7 +61,8 @@ class WorkerHandler(object):
         self._output_dir = output_dir
         self._config = config
         self._module_runner = module_runner
-        self._prepare_worker(process, timeout, module_runner.__name__)
+        self._prepare_worker(process, job_name, timeout,
+                             module_runner.__name__)
         self._create_worker_log()
         self._run_worker()
         close_log(self.w_log, verbose=False)
@@ -88,7 +89,7 @@ class WorkerHandler(object):
 
         return 'process{}'.format(num)
 
-    def _prepare_worker(self, process, timeout, module):
+    def _prepare_worker(self, process, job_name, timeout, module):
         """ Prepare Worker
 
         This method defines a worker instance dictionary.
@@ -113,7 +114,7 @@ class WorkerHandler(object):
         self.worker_dict['exception'] = False
         self.worker_dict['stderr'] = False
         self.worker_dict['process'] = list(process)
-        self.worker_dict['job_name'] = self._set_job_name(process[0])
+        self.worker_dict['job_name'] = self._set_job_name(job_name)
         self.worker_dict['timeout'] = timeout
         self.worker_dict['module'] = module
 
@@ -125,10 +126,18 @@ class WorkerHandler(object):
 
         """
 
+        process_size = len(str(self.worker_dict['process']))
+
         if self._verbose:
-            print(' - {} PID: {} processing {}'.format(
-                  self.worker_dict['job_name'], self.worker_dict['pid'],
-                  self.worker_dict['process']))
+
+            print(' - {} PID: {} '.format(
+                  self.worker_dict['job_name'],
+                  self.worker_dict['pid'],), end='')
+
+            if process_size < 200:
+                print('processing {}'.format(self.worker_dict['process']))
+            else:
+                print()
 
         self.w_log = set_up_log(self._w_log_name, verbose=False)
         self.worker_dict['log'] = self.w_log.name
@@ -184,8 +193,8 @@ class WorkerHandler(object):
         self.w_log.info(' - Running module: {}'.format(
                         self.worker_dict['module']))
 
-        file_number_string = self.worker_dict['process'][0]
-        input_file_list = self.worker_dict['process'][1:]
+        file_number_string = self.worker_dict['job_name']
+        input_file_list = self.worker_dict['process']
 
         self._stdout, self._stderr = self._module_runner(input_file_list,
                                                          self._output_dir,

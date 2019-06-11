@@ -373,7 +373,7 @@ class FileHandler(object):
             return self._config.getlist(module.upper(), 'ADD_{}'.format(
                                         property.upper()))
 
-    def _set_module_property(self, module, property):
+    def _set_module_property(self, module, property, file_property=True):
         """ Get Module Property
 
         Get a module property from either the configuration file or the module
@@ -394,7 +394,8 @@ class FileHandler(object):
         else:
             prop_val = getattr(self.module_runners[module], property)
 
-        if len(self._module_dict) == 1 or isinstance(prop_val, type(None)):
+        if (file_property and (len(self._module_dict) == 1 or
+                               isinstance(prop_val, type(None)))):
             prop_val = getattr(self, '_{}'.format(property))
 
         self._module_dict[module][property] = prop_val
@@ -450,6 +451,7 @@ class FileHandler(object):
          module_props]
         [self._set_module_list_property(module, property) for property in
          module_list_props]
+        self._set_module_property(module, 'run_method', file_property=False)
 
         # Make sure the number of patterns and extensions match
         if ((len(self._module_dict[module]['file_ext']) == 1) and
@@ -735,7 +737,27 @@ class FileHandler(object):
         for mmap in mmap_list:
             os.remove(mmap)
 
-    def _save_process_list(self, dir_list, pattern_list, ext_list, num_scheme):
+    def _format_process_list(self, patterns, memory_map, run_method):
+
+        pattern_list, ext_list, path_list = list(zip(*patterns))
+
+        process_list = []
+
+        for number in np.load(memory_map, mmap_mode='r'):
+
+            if run_method == 'serial':
+                process_items = []
+            else:
+                process_items = [number]
+            process_items.extend([self._get_file_name(path, fp, number, ext)
+                                  for path, fp, ext in
+                                  zip(path_list, pattern_list, ext_list)])
+            process_list.append(process_items)
+
+        return process_list
+
+    def _save_process_list(self, dir_list, pattern_list, ext_list, num_scheme,
+                           run_method):
         """ Save Process List
 
         Save list of processes to a numpy binary.
@@ -763,19 +785,9 @@ class FileHandler(object):
                 np_mmap) for pattern, ext, np_mmap in
                 zip(pattern_list, ext_list, np_mmap_list)]
 
-        pattern_list, ext_list, path_list = list(zip(*temp))
-
         self._save_match_patterns(match_mmap, np_mmap_list)
 
-        process_list = []
-
-        for number in np.load(match_mmap, mmap_mode='r'):
-
-            process_items = [number]
-            process_items.extend([self._get_file_name(path, fp, number, ext)
-                                  for path, fp, ext in
-                                  zip(path_list, pattern_list, ext_list)])
-            process_list.append(process_items)
+        process_list = self._format_process_list(temp, match_mmap, run_method)
 
         np.save(self.process_mmap, np.array(process_list))
         del process_list
@@ -811,8 +823,10 @@ class FileHandler(object):
         pattern_list = self._module_dict[module]['file_pattern']
         ext_list = self._module_dict[module]['file_ext']
         num_scheme = self._module_dict[module]['numbering_scheme']
+        run_method = self._module_dict[module]['run_method']
 
-        self._save_process_list(dir_list, pattern_list, ext_list, num_scheme)
+        self._save_process_list(dir_list, pattern_list, ext_list, num_scheme,
+                                run_method)
 
     def set_up_module(self, module):
         """ Set Up Module
