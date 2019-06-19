@@ -354,7 +354,7 @@ def run_mpi(pipe, comm):
 def main(args=None):
 
     try:
-        
+
         if import_mpi:
             comm = MPI.COMM_WORLD
             master = comm.rank == 0
