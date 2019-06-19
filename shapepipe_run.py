@@ -270,18 +270,13 @@ def run_smp(pipe):
     # Loop through modules to be run
     for module in pipe.modules:
 
-        print('RUN METHOD:', pipe.run_method[module])
-
         # Create a job handler for the current module
-        jh = JobHandler(module, filehd=pipe.filehd,
-                        config=pipe.config,
-                        log=pipe.log, verbose=pipe.verbose)
+        jh = JobHandler(module, filehd=pipe.filehd, config=pipe.config,
+                        log=pipe.log, job_type=pipe.run_method[module],
+                        verbose=pipe.verbose)
 
-        # Submit the SMP jobs
-        if pipe.run_method[module] == 'serial':
-            jh.submit_serial_job()
-        else:
-            jh.submit_smp_jobs()
+        # Submit jobs
+        jh.submit_jobs()
 
         # Update error count
         pipe.error_count += jh.error_count
@@ -329,7 +324,8 @@ def run_mpi(pipe, comm):
         if master:
             # Create a job handler for the current module
             jh = JobHandler(module, filehd=pipe.filehd, config=config,
-                            log=pipe.log, verbose=verbose)
+                            log=pipe.log, job_type=pipe.run_method[module],
+                            verbose=verbose)
             # Get JobHandler objects
             timeout = jh.timeout
             # Get file handler objects
@@ -345,17 +341,20 @@ def run_mpi(pipe, comm):
             output_dir, module_runner, worker_log, timeout, jobs = \
              (None, None, None, None, None)
 
-        # Broadcast objects to all nodes
-        output_dir = comm.bcast(output_dir, root=0)
-        module_runner = comm.bcast(module_runner, root=0)
-        worker_log = comm.bcast(worker_log, root=0)
-        timeout = comm.bcast(timeout, root=0)
-        jobs = comm.scatter(jobs, root=0)
+        if jh.job_type == 'parallel':
+            # Broadcast objects to all nodes
+            output_dir = comm.bcast(output_dir, root=0)
+            module_runner = comm.bcast(module_runner, root=0)
+            worker_log = comm.bcast(worker_log, root=0)
+            timeout = comm.bcast(timeout, root=0)
+            jobs = comm.scatter(jobs, root=0)
 
-        # Submit the MPI jobs and gather results
-        results = comm.gather(submit_mpi_jobs(jobs, config, timeout,
-                              output_dir, module_runner, worker_log,
-                              verbose), root=0)
+            # Submit the MPI jobs and gather results
+            results = comm.gather(submit_mpi_jobs(jobs, config, timeout,
+                                  output_dir, module_runner, worker_log,
+                                  verbose), root=0)
+        elif master:
+            results = jh._distribute_serial_job()
 
         del output_dir, module_runner, timeout, jobs
 
