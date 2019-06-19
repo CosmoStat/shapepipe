@@ -9,7 +9,7 @@ LC_CTYPE=en_US.utf8
 #
 ##############################################################################
 
-version="1.0"
+version="1.1"
 
 ##############################################################################
 # EXTERNAL PACKAGE VERSIONS
@@ -40,9 +40,9 @@ cdsclient_dir="cdsclient-3.84"
 cdsclient_bin="findgsc2.2"
 
 # mpi4py Package
-mpi_url="https://github.com/mpi4py/mpi4py/archive/3.0.0.tar.gz"
-mpi_tar="3.0.0.tar.gz"
-mpi_dir="mpi4py-3.0.0"
+mpi_url="https://github.com/mpi4py/mpi4py/archive/3.0.2.tar.gz"
+mpi_tar="3.0.2.tar.gz"
+mpi_dir="mpi4py-3.0.2"
 mpi_bin="mpiexec"
 
 # Divider line
@@ -459,7 +459,7 @@ then
   report_progress 'MPI'
   if [ -z "$MPI_ROOT" ]
   then
-    conda install -n shapepipe mpi4py -y
+    conda install -n shapepipe -c conda-forge mpi4py>=3.0.1 -y
   else
     download_package $mpi_url $mpi_tar
     build_mpi $mpi_dir
