@@ -34,6 +34,8 @@ class JobHandler(object):
         Logging instance
     job_type : str, optional
         Job type, the default is 'parallel'
+    parallel_mode : str, optional
+        Parallisation mode, default is 'smp'
     batch_size : int, optional
         Number of jobs to submitted simultaneously, the default is None
     backend : str, optional
@@ -46,11 +48,13 @@ class JobHandler(object):
     """
 
     def __init__(self, module, filehd, config, log, job_type='parallel',
-                 batch_size=None, backend=None, timeout=None, verbose=True):
+                 parallel_mode='smp', batch_size=None, backend=None,
+                 timeout=None, verbose=True):
 
         self.filehd = filehd
         self.log = log
         self.job_type = job_type
+        self.parallel_mode = parallel_mode
         self.config = config
         self.batch_size = batch_size
         self.backend = backend
@@ -137,6 +141,29 @@ class JobHandler(object):
             raise TypeError('{} is not a valid job type.'.format(value))
 
         self._job_type = value
+
+    @property
+    def parallel_mode(self):
+        """ Parallel Mode
+
+        This method defines the mode of parallelisation.
+
+        Raises
+        ------
+        TypeError
+            For incorrect input type
+
+        """
+
+        return self._parallel_mode
+
+    @parallel_mode.setter
+    def parallel_mode(self, value):
+
+        if value not in ('smp', 'mpi'):
+            raise TypeError('{} is not a valid parallel mode.'.format(value))
+
+        self._parallel_mode = value
 
     @property
     def batch_size(self):
@@ -258,7 +285,7 @@ class JobHandler(object):
         """
 
         if self.job_type == 'serial':
-            self._distribute_serial_job()
+            self.submit_serial_job()
         else:
             self._distribute_smp_jobs()
 
@@ -311,7 +338,7 @@ class JobHandler(object):
             print(cpu_info)
             print(proc_info)
             print(job_type)
-            if self.job_type == 'parallel':
+            if self.job_type == 'parallel' and self.parallel_mode == 'smp':
                 print(batch_info)
             print(time_info)
 
@@ -321,7 +348,7 @@ class JobHandler(object):
         self.log.info(cpu_info)
         self.log.info(proc_info)
         self.log.info(job_type)
-        if self.job_type == 'parallel':
+        if self.job_type == 'parallel' and self.parallel_mode == 'smp':
             self.log.info(batch_info)
         self.log.info(time_info)
 
@@ -343,7 +370,12 @@ class JobHandler(object):
 
         self.worker_dicts = result
 
-    def _distribute_serial_job(self):
+    def submit_serial_job(self):
+        """ Submit Serial Job
+
+        Submit a single serial job with access to all processes.
+
+        """
 
         wh = WorkerHandler(verbose=self._verbose)
         process = self.filehd.process_list

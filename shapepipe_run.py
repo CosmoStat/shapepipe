@@ -325,23 +325,36 @@ def run_mpi(pipe, comm):
             # Create a job handler for the current module
             jh = JobHandler(module, filehd=pipe.filehd, config=config,
                             log=pipe.log, job_type=pipe.run_method[module],
-                            verbose=verbose)
-            # Get JobHandler objects
-            timeout = jh.timeout
-            # Get file handler objects
-            output_dir = jh.filehd.output_dir
-            module_runner = jh.filehd.module_runners[module]
-            worker_log = jh.filehd.get_worker_log_name
-            # Define process list
-            process_list = jh.filehd.process_list
-            # Define job list
-            jobs = split_mpi_jobs(process_list, comm.size)
-            del process_list
-        else:
-            output_dir, module_runner, worker_log, timeout, jobs = \
-             (None, None, None, None, None)
+                            parallel_mode='mpi', verbose=verbose)
 
-        if jh.job_type == 'parallel':
+            # Get job type
+            job_type = jh.job_type
+
+            # handle serial jobs
+            if job_type == 'serial':
+                jh.submit_serial_job()
+
+            # handle parallel jobs
+            else:
+                # Get JobHandler objects
+                timeout = jh.timeout
+                # Get file handler objects
+                output_dir = jh.filehd.output_dir
+                module_runner = jh.filehd.module_runners[module]
+                worker_log = jh.filehd.get_worker_log_name
+                # Define process list
+                process_list = jh.filehd.process_list
+                # Define job list
+                jobs = split_mpi_jobs(process_list, comm.size)
+                del process_list
+        else:
+            job_type, output_dir, module_runner, worker_log, timeout, jobs = \
+             (None, None, None, None, None, None)
+
+        job_type = comm.bcast(job_type, root=0)
+
+        if job_type == 'parallel':
+
             # Broadcast objects to all nodes
             output_dir = comm.bcast(output_dir, root=0)
             module_runner = comm.bcast(module_runner, root=0)
@@ -353,10 +366,8 @@ def run_mpi(pipe, comm):
             results = comm.gather(submit_mpi_jobs(jobs, config, timeout,
                                   output_dir, module_runner, worker_log,
                                   verbose), root=0)
-        elif master:
-            results = jh._distribute_serial_job()
 
-        del output_dir, module_runner, timeout, jobs
+            del output_dir, module_runner, timeout, jobs
 
         if master:
             # Assign worker dictionaries
