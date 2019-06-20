@@ -110,6 +110,14 @@ class FileHandler(object):
             self._numbering_scheme = config.get('FILE', 'NUMBERING_SCHEME')
         else:
             self._numbering_scheme = r'RE:\_\d+'
+        if config.has_option('FILE', 'NUMBER_LIST'):
+            if os.path.isfile(config.get('FILE', 'NUMBER_LIST')):
+                self._number_list = (self.read_number_list(config.get('FILE',
+                                     'NUMBER_LIST')))
+            else:
+                self._number_list = config.getlist('FILE', 'NUMBER_LIST')
+        else:
+            self._number_list = None
 
     @property
     def run_dir(self):
@@ -155,6 +163,23 @@ class FileHandler(object):
     def _output_dir(self, value):
 
         self.__output_dir = self.check_dir(value)
+
+    @staticmethod
+    def read_number_list(file_name):
+        """ Read Number List
+
+        Extract number strings to be processed from a file.
+
+        Parameters
+        ----------
+        file_name : str
+            Number list file name
+
+        """
+
+        number_list = list(np.genfromtxt(file_name, dtype='|U5'))
+
+        return number_list
 
     @classmethod
     def check_dir(cls, dir_name, check_exists=False):
@@ -612,7 +637,7 @@ class FileHandler(object):
         return re_pattern
 
     @classmethod
-    def _save_num_patterns(cls, dir_list, num_scheme, pattern, ext,
+    def _save_num_patterns(cls, dir_list, re_pattern, pattern, ext,
                            output_file):
         """ Save Number Patterns
 
@@ -653,7 +678,6 @@ class FileHandler(object):
 
         new_ext = '.' + ext if not ext.startswith('.') else ext
         new_pattern = cls._strip_dir_from_file(true_file_list[0], dir_list)
-        re_pattern = cls._get_re(num_scheme)
         first_num = re.search(re_pattern, new_pattern).group()
         for substring in (new_ext, first_num):
             new_pattern = new_pattern.replace(substring, '')
@@ -759,7 +783,9 @@ class FileHandler(object):
         match_mmap = self.format(self._tmp_dir, 'matching_num_patterns.npy')
         self.process_mmap = self.format(self._tmp_dir, 'process_list.npy')
 
-        temp = [self._save_num_patterns(dir_list, num_scheme, pattern, ext,
+        re_pattern = self._get_re(num_scheme)
+
+        temp = [self._save_num_patterns(dir_list, re_pattern, pattern, ext,
                 np_mmap) for pattern, ext, np_mmap in
                 zip(pattern_list, ext_list, np_mmap_list)]
 
@@ -767,9 +793,19 @@ class FileHandler(object):
 
         self._save_match_patterns(match_mmap, np_mmap_list)
 
+        if isinstance(self._number_list, type(None)):
+            number_list = np.load(match_mmap, mmap_mode='r')
+        else:
+            number_list = self._number_list
+
         process_list = []
 
-        for number in np.load(match_mmap, mmap_mode='r'):
+        for number in number_list:
+
+            if not re.search(re_pattern, number):
+                raise ValueError('The string "{}" does not match the '
+                                 'numbering scheme "{}"'
+                                 ''.format(number, num_scheme))
 
             process_items = [number]
             process_items.extend([self._get_file_name(path, fp, number, ext)
