@@ -52,7 +52,7 @@ class Dummy(object):
 
 
 @module_runner(version='1.0', file_pattern=['numbers', 'letters'],
-               file_ext='.txt', depends='numpy')
+               file_ext='.txt', depends='numpy', run_method='parallel')
 def python_example(input_file_list, output_dir, file_number_string,
                    config, w_log):
 

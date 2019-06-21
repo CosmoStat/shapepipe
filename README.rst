@@ -12,9 +12,9 @@ ShapePipe
 .. |python36| image:: https://img.shields.io/badge/python-3.6-yellow.svg
   :target: https://www.python.org/
 
-:Version: 0.0.1
+:Version: 0.0.2
 
-:Date: 19/04/2019
+:Date: 19/06/2019
 
 ShapePipe is a galaxy shape measurement pipeline developed within the
 CosmoStat lab at CEA Paris-Saclay.
