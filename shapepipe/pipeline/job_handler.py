@@ -382,7 +382,7 @@ class JobHandler(object):
 
         result = wh.worker(process, '',
                            self.filehd.get_worker_log_name(self._module,
-                                                           'serial'),
+                                                           '_serial'),
                            self.filehd.output_dir, self.config, self.timeout,
                            self._module_runner)
 

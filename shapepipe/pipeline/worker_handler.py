@@ -114,6 +114,7 @@ class WorkerHandler(object):
         self.worker_dict['exception'] = False
         self.worker_dict['stderr'] = False
         self.worker_dict['process'] = list(process)
+        self.worker_dict['file_number_string'] = job_name
         self.worker_dict['job_name'] = self._set_job_name(job_name)
         self.worker_dict['timeout'] = timeout
         self.worker_dict['module'] = module
@@ -135,7 +136,9 @@ class WorkerHandler(object):
                   self.worker_dict['pid'],), end='')
 
             if process_size < 200:
-                print('processing {}'.format(self.worker_dict['process']))
+                print('processing {} {}'.format(
+                      self.worker_dict['file_number_string'],
+                      self.worker_dict['process']))
             else:
                 print()
 
@@ -193,7 +196,7 @@ class WorkerHandler(object):
         self.w_log.info(' - Running module: {}'.format(
                         self.worker_dict['module']))
 
-        file_number_string = self.worker_dict['job_name']
+        file_number_string = self.worker_dict['file_number_string']
         input_file_list = self.worker_dict['process']
 
         self._stdout, self._stderr = self._module_runner(input_file_list,
