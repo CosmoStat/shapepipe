@@ -674,14 +674,41 @@ class FileHandler(object):
                 break
 
         if not true_file_list:
-            raise RuntimeError('No files found matching "{}" and "{}"'
+            raise RuntimeError('No files found matching "{}" and "{}".'
                                ''.format(pattern, ext))
 
         new_ext = '.' + ext if not ext.startswith('.') else ext
-        new_pattern = cls._strip_dir_from_file(true_file_list[0], dir_list)
-        first_num = re.search(re_pattern, new_pattern).group()
-        for substring in (new_ext, first_num):
-            new_pattern = new_pattern.replace(substring, '')
+
+        first_num = None
+
+        for file in true_file_list:
+
+            new_pattern = cls._strip_dir_from_file(file, dir_list)
+            search_first = re.search(re_pattern, new_pattern)
+
+            if search_first:
+                first_num = search_first.group()
+                break
+
+        if not isinstance(first_num, type(None)):
+
+            for substring in (new_ext, first_num):
+                new_pattern = new_pattern.replace(substring, '')
+
+            if new_pattern != pattern:
+                print('Updating pattern "{}" to "{}".'
+                      ''.format(pattern, new_pattern))
+                print()
+
+        else:
+            raise RuntimeError('Could not match numbering scheme to any of the'
+                               ' input files matching "{}" and "{}".'
+                               ''.format(pattern, ext))
+
+        for file in true_file_list:
+            temp = re.search(re_pattern, cls._strip_dir_from_file(file,
+                             dir_list))
+
 
         np.save(output_file,
                 np.array([re.search(re_pattern,
