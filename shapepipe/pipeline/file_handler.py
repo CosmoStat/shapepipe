@@ -177,9 +177,10 @@ class FileHandler(object):
 
         """
 
-        number_list = list(np.genfromtxt(file_name, dtype='|U5'))
+        with open(file_name) as data_file:
+            number_list = data_file.readlines()
 
-        return number_list
+        return [value.rstrip('\n') for value in number_list]
 
     @classmethod
     def check_dir(cls, dir_name, check_exists=False):
