@@ -215,4 +215,7 @@ def create_config_parser(file_name):
 
     """
 
-    return SetUpParser(file_name).get_parser()
+    parser = SetUpParser(file_name).get_parser()
+    parser.file_name = file_name
+
+    return parser

@@ -11,6 +11,7 @@ This module defines a class for handling pipeline files.
 import os
 import re
 import numpy as np
+from shutil import copyfile
 from glob import glob
 from functools import reduce, partial
 from shapepipe.pipeline.run_log import RunLog
@@ -347,6 +348,19 @@ class FileHandler(object):
         self.mkdir(self._tmp_dir)
 
         self._get_input_dir()
+        self._copy_config_to_log()
+
+    def _copy_config_to_log(self):
+        """ Copy Config to Log
+
+        Copy configuration file to run log directory.
+
+        """
+
+        config_file_name = os.path.basename(self._config.file_name)
+
+        copyfile(self._config.file_name, '{}/{}'.format(self._log_dir,
+                 config_file_name))
 
     def get_add_module_property(self, module, property):
         """ Get Additional Module Properties
