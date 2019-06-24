@@ -798,6 +798,27 @@ class FileHandler(object):
 
     def _format_process_list(self, patterns, memory_map, re_pattern,
                              run_method):
+        """ Format Process List
+
+        Format the list of files to be processed.
+
+        Parameters
+        ----------
+        patterns : list
+            List of file patterns
+        memory_map : str
+            Name of mempry map file
+        re_pattern : str
+            Regular expression for numbering scheme
+        run_method : str
+            Run method
+
+        Returns
+        -------
+        list
+            List of processes
+
+        """
 
         pattern_list, ext_list, path_list = list(zip(*patterns))
 
