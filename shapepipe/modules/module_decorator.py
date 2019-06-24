@@ -8,7 +8,8 @@
 
 
 def module_runner(input_module=None, version='0.0', file_pattern='',
-                  file_ext='', depends=[], executes=[], numbering_scheme=None):
+                  file_ext='', depends=[], executes=[], numbering_scheme=None,
+                  run_method='parallel'):
     """ Module Runner Wrapper
 
     This method adds properties to module runners.
@@ -82,6 +83,7 @@ def module_runner(input_module=None, version='0.0', file_pattern='',
         func.depends = depends
         func.executes = executes
         func.numbering_scheme = numbering_scheme
+        func.run_method = run_method
 
         return func
 

@@ -40,7 +40,7 @@ def submit_mpi_jobs(jobs, config, timeout, output_dir, module_runner,
         w_log_name = worker_log(module_runner.__name__, process[0])
 
         wh = WorkerHandler(verbose=verbose)
-        result.append(wh.worker(process, w_log_name, output_dir,
-                      config, timeout, module_runner))
+        result.append(wh.worker(process[1:], process[0], w_log_name,
+                      output_dir, config, timeout, module_runner))
 
     return result

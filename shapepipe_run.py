@@ -203,6 +203,20 @@ class ShapePipe():
         if self.verbose:
             print('')
 
+    def _get_module_run_methods(self):
+        """ Get Module Run Method
+
+        Create a dictionary of modules with corresponding run methods.
+
+        """
+
+        self.run_method = {}
+
+        for module in self.modules:
+
+            self.run_method[module] = \
+                self.filehd.module_runners[module].run_method
+
     def _prep_run(self):
         """ Run
 
@@ -221,6 +235,9 @@ class ShapePipe():
 
         # Check the versions of these modules
         self._check_module_versions()
+
+        # Get run method for each module
+        self._get_module_run_methods()
 
     def record_mode(self):
         """ Record Mode
@@ -254,12 +271,12 @@ def run_smp(pipe):
     for module in pipe.modules:
 
         # Create a job handler for the current module
-        jh = JobHandler(module, filehd=pipe.filehd,
-                        config=pipe.config,
-                        log=pipe.log, verbose=pipe.verbose)
+        jh = JobHandler(module, filehd=pipe.filehd, config=pipe.config,
+                        log=pipe.log, job_type=pipe.run_method[module],
+                        verbose=pipe.verbose)
 
-        # Submit the SMP jobs
-        jh.submit_smp_jobs()
+        # Submit jobs
+        jh.submit_jobs()
 
         # Update error count
         pipe.error_count += jh.error_count
@@ -307,35 +324,50 @@ def run_mpi(pipe, comm):
         if master:
             # Create a job handler for the current module
             jh = JobHandler(module, filehd=pipe.filehd, config=config,
-                            log=pipe.log, verbose=verbose)
-            # Get JobHandler objects
-            timeout = jh.timeout
-            # Get file handler objects
-            output_dir = jh.filehd.output_dir
-            module_runner = jh.filehd.module_runners[module]
-            worker_log = jh.filehd.get_worker_log_name
-            # Define process list
-            process_list = jh.filehd.process_list
-            # Define job list
-            jobs = split_mpi_jobs(process_list, comm.size)
-            del process_list
+                            log=pipe.log, job_type=pipe.run_method[module],
+                            parallel_mode='mpi', verbose=verbose)
+
+            # Get job type
+            job_type = jh.job_type
+
+            # handle serial jobs
+            if job_type == 'serial':
+                jh.submit_serial_job()
+
+            # handle parallel jobs
+            else:
+                # Get JobHandler objects
+                timeout = jh.timeout
+                # Get file handler objects
+                output_dir = jh.filehd.output_dir
+                module_runner = jh.filehd.module_runners[module]
+                worker_log = jh.filehd.get_worker_log_name
+                # Define process list
+                process_list = jh.filehd.process_list
+                # Define job list
+                jobs = split_mpi_jobs(process_list, comm.size)
+                del process_list
         else:
-            output_dir, module_runner, worker_log, timeout, jobs = \
-             (None, None, None, None, None)
+            job_type, output_dir, module_runner, worker_log, timeout, jobs = \
+             (None, None, None, None, None, None)
 
-        # Broadcast objects to all nodes
-        output_dir = comm.bcast(output_dir, root=0)
-        module_runner = comm.bcast(module_runner, root=0)
-        worker_log = comm.bcast(worker_log, root=0)
-        timeout = comm.bcast(timeout, root=0)
-        jobs = comm.scatter(jobs, root=0)
+        job_type = comm.bcast(job_type, root=0)
 
-        # Submit the MPI jobs and gather results
-        results = comm.gather(submit_mpi_jobs(jobs, config, timeout,
-                              output_dir, module_runner, worker_log,
-                              verbose), root=0)
+        if job_type == 'parallel':
 
-        del output_dir, module_runner, timeout, jobs
+            # Broadcast objects to all nodes
+            output_dir = comm.bcast(output_dir, root=0)
+            module_runner = comm.bcast(module_runner, root=0)
+            worker_log = comm.bcast(worker_log, root=0)
+            timeout = comm.bcast(timeout, root=0)
+            jobs = comm.scatter(jobs, root=0)
+
+            # Submit the MPI jobs and gather results
+            results = comm.gather(submit_mpi_jobs(jobs, config, timeout,
+                                  output_dir, module_runner, worker_log,
+                                  verbose), root=0)
+
+            del output_dir, module_runner, timeout, jobs
 
         if master:
             # Assign worker dictionaries
