@@ -660,6 +660,8 @@ class FileHandler(object):
 
         """
 
+        # Find all files matching the input pattern and extension from the
+        # available input directories and identify the correct path
         true_file_list = None
         true_path = None
 
@@ -677,26 +679,38 @@ class FileHandler(object):
             raise RuntimeError('No files found matching "{}" and "{}".'
                                ''.format(pattern, ext))
 
+        # Correct the extension if necessary
         new_ext = '.' + ext if not ext.startswith('.') else ext
 
-        first_num = None
+        if new_ext != ext:
+            print('Updating extension from "{}" to "{}".'
+                  ''.format(ext, new_ext))
+            print()
+
+        # Select files matching the numbering scheme
+        final_file_list = []
+        found_match = False
 
         for file in true_file_list:
 
-            new_pattern = cls._strip_dir_from_file(file, dir_list)
-            search_first = re.search(re_pattern, new_pattern)
+            striped = cls._strip_dir_from_file(file, dir_list)
+            search_res = re.search(re_pattern, striped)
 
-            if search_first:
-                first_num = search_first.group()
-                break
+            if search_res:
+                file_name = search_res.group()
+                final_file_list.append(file_name)
+                found_match = True
 
-        if not isinstance(first_num, type(None)):
+        # Correct the pattern if necessary
+        if found_match:
 
-            for substring in (new_ext, first_num):
+            new_pattern = striped
+
+            for substring in (new_ext, file_name):
                 new_pattern = new_pattern.replace(substring, '')
 
             if new_pattern != pattern:
-                print('Updating pattern "{}" to "{}".'
+                print('Updating pattern from "{}" to "{}".'
                       ''.format(pattern, new_pattern))
                 print()
 
@@ -705,17 +719,10 @@ class FileHandler(object):
                                ' input files matching "{}" and "{}".'
                                ''.format(pattern, ext))
 
-        for file in true_file_list:
-            temp = re.search(re_pattern, cls._strip_dir_from_file(file,
-                             dir_list))
+        # Save file list
+        np.save(output_file, np.array(final_file_list))
 
-
-        np.save(output_file,
-                np.array([re.search(re_pattern,
-                          cls._strip_dir_from_file(file, dir_list)).group()
-                          for file in true_file_list]))
-
-        del true_file_list
+        del true_file_list, final_file_list
 
         return new_pattern, new_ext, true_path
 
