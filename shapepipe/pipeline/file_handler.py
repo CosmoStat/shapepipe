@@ -692,6 +692,7 @@ class FileHandler(object):
         # Select files matching the numbering scheme
         final_file_list = []
         found_match = False
+        pattern_corrected = False
 
         for file in true_file_list:
 
@@ -703,20 +704,22 @@ class FileHandler(object):
                 final_file_list.append(file_name)
                 found_match = True
 
-        # Correct the pattern if necessary
-        if found_match:
+            # Correct the pattern if necessary
+            if found_match and not pattern_corrected:
 
-            new_pattern = striped
+                new_pattern = striped
 
-            for substring in (new_ext, file_name):
-                new_pattern = new_pattern.replace(substring, '')
+                for substring in (new_ext, file_name):
+                    new_pattern = new_pattern.replace(substring, '')
 
-            if new_pattern != pattern:
-                print('Updating pattern from "{}" to "{}".'
-                      ''.format(pattern, new_pattern))
-                print()
+                if new_pattern != pattern:
+                    print('Updating pattern from "{}" to "{}".'
+                          ''.format(pattern, new_pattern))
+                    print()
 
-        else:
+                pattern_corrected = True
+
+        if not found_match:
             raise RuntimeError('Could not match numbering scheme to any of the'
                                ' input files matching "{}" and "{}".'
                                ''.format(pattern, ext))
