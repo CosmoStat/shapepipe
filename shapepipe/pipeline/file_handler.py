@@ -110,6 +110,14 @@ class FileHandler(object):
             self._numbering_scheme = config.get('FILE', 'NUMBERING_SCHEME')
         else:
             self._numbering_scheme = r'RE:\_\d+'
+        if config.has_option('FILE', 'NUMBER_LIST'):
+            if os.path.isfile(config.get('FILE', 'NUMBER_LIST')):
+                self._number_list = (self.read_number_list(config.get('FILE',
+                                     'NUMBER_LIST')))
+            else:
+                self._number_list = config.getlist('FILE', 'NUMBER_LIST')
+        else:
+            self._number_list = None
 
     @property
     def run_dir(self):
@@ -155,6 +163,24 @@ class FileHandler(object):
     def _output_dir(self, value):
 
         self.__output_dir = self.check_dir(value)
+
+    @staticmethod
+    def read_number_list(file_name):
+        """ Read Number List
+
+        Extract number strings to be processed from a file.
+
+        Parameters
+        ----------
+        file_name : str
+            Number list file name
+
+        """
+
+        with open(file_name) as data_file:
+            number_list = data_file.readlines()
+
+        return [value.rstrip('\n') for value in number_list]
 
     @classmethod
     def check_dir(cls, dir_name, check_exists=False):
@@ -614,7 +640,7 @@ class FileHandler(object):
         return re_pattern
 
     @classmethod
-    def _save_num_patterns(cls, dir_list, num_scheme, pattern, ext,
+    def _save_num_patterns(cls, dir_list, re_pattern, pattern, ext,
                            output_file):
         """ Save Number Patterns
 
@@ -636,6 +662,8 @@ class FileHandler(object):
 
         """
 
+        # Find all files matching the input pattern and extension from the
+        # available input directories and identify the correct path
         true_file_list = None
         true_path = None
 
@@ -650,22 +678,56 @@ class FileHandler(object):
                 break
 
         if not true_file_list:
-            raise RuntimeError('No files found matching "{}" and "{}"'
+            raise RuntimeError('No files found matching "{}" and "{}".'
                                ''.format(pattern, ext))
 
+        # Correct the extension if necessary
         new_ext = '.' + ext if not ext.startswith('.') else ext
-        new_pattern = cls._strip_dir_from_file(true_file_list[0], dir_list)
-        re_pattern = cls._get_re(num_scheme)
-        first_num = re.search(re_pattern, new_pattern).group()
-        for substring in (new_ext, first_num):
-            new_pattern = new_pattern.replace(substring, '')
 
-        np.save(output_file,
-                np.array([re.search(re_pattern,
-                          cls._strip_dir_from_file(file, dir_list)).group()
-                          for file in true_file_list]))
+        if new_ext != ext:
+            print('Updating extension from "{}" to "{}".'
+                  ''.format(ext, new_ext))
+            print()
 
-        del true_file_list
+        # Select files matching the numbering scheme
+        final_file_list = []
+        found_match = False
+        pattern_corrected = False
+
+        for file in true_file_list:
+
+            striped = cls._strip_dir_from_file(file, dir_list)
+            search_res = re.search(re_pattern, striped)
+
+            if search_res:
+                file_name = search_res.group()
+                final_file_list.append(file_name)
+                found_match = True
+
+            # Correct the pattern if necessary
+            if found_match and not pattern_corrected:
+
+                new_pattern = striped
+
+                for substring in (new_ext, file_name):
+                    new_pattern = new_pattern.replace(substring, '')
+
+                if new_pattern != pattern:
+                    print('Updating pattern from "{}" to "{}".'
+                          ''.format(pattern, new_pattern))
+                    print()
+
+                pattern_corrected = True
+
+        if not found_match:
+            raise RuntimeError('Could not match numbering scheme to any of the'
+                               ' input files matching "{}" and "{}".'
+                               ''.format(pattern, ext))
+
+        # Save file list
+        np.save(output_file, np.array(final_file_list))
+
+        del true_file_list, final_file_list
 
         return new_pattern, new_ext, true_path
 
@@ -737,13 +799,45 @@ class FileHandler(object):
         for mmap in mmap_list:
             os.remove(mmap)
 
-    def _format_process_list(self, patterns, memory_map, run_method):
+    def _format_process_list(self, patterns, memory_map, re_pattern,
+                             run_method):
+        """ Format Process List
+
+        Format the list of files to be processed.
+
+        Parameters
+        ----------
+        patterns : list
+            List of file patterns
+        memory_map : str
+            Name of mempry map file
+        re_pattern : str
+            Regular expression for numbering scheme
+        run_method : str
+            Run method
+
+        Returns
+        -------
+        list
+            List of processes
+
+        """
 
         pattern_list, ext_list, path_list = list(zip(*patterns))
 
+        if isinstance(self._number_list, type(None)):
+            number_list = np.load(memory_map, mmap_mode='r')
+        else:
+            number_list = self._number_list
+
         process_list = []
 
-        for number in np.load(memory_map, mmap_mode='r'):
+        for number in number_list:
+
+            if not re.search(re_pattern, number):
+                raise ValueError('The string "{}" does not match the '
+                                 'numbering scheme "{}"'
+                                 ''.format(number, num_scheme))
 
             if run_method == 'serial':
                 process_items = []
@@ -781,13 +875,16 @@ class FileHandler(object):
         match_mmap = self.format(self._tmp_dir, 'matching_num_patterns.npy')
         self.process_mmap = self.format(self._tmp_dir, 'process_list.npy')
 
-        temp = [self._save_num_patterns(dir_list, num_scheme, pattern, ext,
+        re_pattern = self._get_re(num_scheme)
+
+        temp = [self._save_num_patterns(dir_list, re_pattern, pattern, ext,
                 np_mmap) for pattern, ext, np_mmap in
                 zip(pattern_list, ext_list, np_mmap_list)]
 
         self._save_match_patterns(match_mmap, np_mmap_list)
 
-        process_list = self._format_process_list(temp, match_mmap, run_method)
+        process_list = self._format_process_list(temp, match_mmap, re_pattern,
+                                                 run_method)
 
         np.save(self.process_mmap, np.array(process_list))
         del process_list
