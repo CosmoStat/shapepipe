@@ -178,6 +178,19 @@ class SetUpParser(object):
             raise OSError('Directory {} not found.'.format(
                           self.config.getexpanded('FILE', 'OUTPUT_DIR')))
 
+    def _set_worker_options(self):
+        """ Set Worker Options
+
+        This module checks the worker options in the configuration file.
+
+        """
+
+        if not self.config.has_section('WORKER'):
+            self.config.add_section('WORKER')
+
+        if not self.config.has_option('WORKER', 'PROCESS_PRINT_LIMIT'):
+            self.config.set('WORKER', 'PROCESS_PRINT_LIMIT', '200')
+
     def get_parser(self):
         """ Get Parser
 
@@ -194,6 +207,7 @@ class SetUpParser(object):
         self._set_defaults()
         self._set_execution_options()
         self._set_file_options()
+        self._set_worker_options()
 
         return self.config
 

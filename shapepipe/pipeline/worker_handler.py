@@ -135,7 +135,8 @@ class WorkerHandler(object):
                   self.worker_dict['job_name'],
                   self.worker_dict['pid'],), end='')
 
-            if process_size < 200:
+            if (process_size <
+                    self._config.getint('WORKER', 'PROCESS_PRINT_LIMIT')):
                 print('processing {} {}'.format(
                       self.worker_dict['file_number_string'],
                       self.worker_dict['process']))
