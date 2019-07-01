@@ -27,12 +27,8 @@ from shapepipe.pipeline import file_io as sc
 def merge_star_cat_runner(input_file_list, output_dir, file_number_string,
                           config, w_log):
 
-    # starcats_path = '/home/guinot/ShapePipe_dir/output_singles2/shapepipe_run_2019-03-29_15-46-39/psfexinterp_runner/output/'
-    # stub = 'validation_psf'
-
-    # Read starcats and save full
-    # starcat_names = os.listdir(starcats_path)
-    # starcat_names = [starcats_path+name for name in starcat_names if stub in name]
+    if config.has_option('MERGE_STAR_CAT', 'OUTPUT_PATH'):
+        output_dir = config.getexpanded('MERGE_STAR_CAT', 'OUTPUT_PATH')
 
     x, y, ra, dec = [], [], [], []
     g1_psf, g2_psf, size_psf = [], [], []
@@ -40,7 +36,6 @@ def merge_star_cat_runner(input_file_list, output_dir, file_number_string,
     flag_psf, flag_star = [], []
     mag, snr, psfex_acc = [], [], []
     ccd_nb = []
-
 
     for name in input_file_list:
         starcat_j = fits.open(name[0])
