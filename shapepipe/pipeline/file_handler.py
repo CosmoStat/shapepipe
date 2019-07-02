@@ -94,6 +94,8 @@ class FileHandler(object):
         self._input_list = config.getlist('FILE', 'INPUT_DIR')
         self._output_dir = config.getexpanded('FILE', 'OUTPUT_DIR')
         self._log_name = config.get('FILE', 'LOG_NAME')
+        self._correct_pattern = config.getboolean('FILE',
+                                                  'CORRECT_FILE_PATTERN')
         self._run_log_file = self.format(self._output_dir,
                                          config.get('FILE', 'RUN_LOG_NAME'),
                                          '.txt')
@@ -653,8 +655,7 @@ class FileHandler(object):
 
         return re_pattern
 
-    @classmethod
-    def _save_num_patterns(cls, dir_list, re_pattern, pattern, ext,
+    def _save_num_patterns(self, dir_list, re_pattern, pattern, ext,
                            output_file):
         """ Save Number Patterns
 
@@ -706,11 +707,12 @@ class FileHandler(object):
         # Select files matching the numbering scheme
         final_file_list = []
         found_match = False
-        pattern_corrected = False
+        correct_pattern = self._correct_pattern
+        new_pattern = pattern
 
         for file in true_file_list:
 
-            striped = cls._strip_dir_from_file(file, dir_list)
+            striped = self._strip_dir_from_file(file, dir_list)
             search_res = re.search(re_pattern, striped)
 
             if search_res:
@@ -719,7 +721,7 @@ class FileHandler(object):
                 found_match = True
 
             # Correct the pattern if necessary
-            if found_match and not pattern_corrected:
+            if found_match and correct_pattern:
 
                 new_pattern = striped
 
@@ -731,7 +733,7 @@ class FileHandler(object):
                           ''.format(pattern, new_pattern))
                     print()
 
-                pattern_corrected = True
+                correct_pattern = False
 
         if not found_match:
             raise RuntimeError('Could not match numbering scheme to any of the'
