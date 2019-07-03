@@ -90,6 +90,10 @@ However, one might want to pre-select images before the pipeline is run. For exa
 and stacks) in a given sky area. These can then be copied to a dedicated directory (or linked using symbolic links),
 or downloaded to a local machine.
 
+### Selection of exposures.
+
+Option 1. Selection by area from log file.
+
 ## Single-exposures processing
 
 ### Spliting
