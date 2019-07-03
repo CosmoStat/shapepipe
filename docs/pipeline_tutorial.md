@@ -32,6 +32,7 @@ The `ShapePipe` pipeline can process single-exposures images, and stacked images
 ### File naming and numbering schemes
 
 To facilitate bookkeeping for tracking relevant image information we adopt a numbering schemes as follows.
+
  - Single-exposure single-CCD image:  
    **<image_type>-<exposure_name>-<CCD_number>.fits**  
    Examples: `image-2079614-9.fits`, `weight-2079614-3.fits`
@@ -42,15 +43,19 @@ To facilitate bookkeeping for tracking relevant image information we adopt a num
 
 ### CFIS processing
 
-At the moment the single exposures has to be split into individual CCDs images and there are process independently.
-To process CFIS images the steps are the following (details of each step can be found below) :
-* Single exposures :
+Processing of CFIS images can be separated into three categories: Field selection, analysis of single exposures,
+analysis of stacks.
+
+At the moment, single exposures have to be split into single-CCDs images, i.e. one FITS file contains one CCD from a single exposure.
+The single-exposure single-CCD images are then processed independently.
+
+* Processing of single exposures:
   * Split each CCDs
-  * Create masks for bright stars, spikes, border, ...
+  * Create masks for bright stars, spikes, borders, Messier objects, ...
   * Detect sources of potential stars
   * PSF modeling
   * Validation of the PSF model (optional)
-* Stack images :
+* Stack images:
   * Create mask for bright stars, spikes, border, ...
   * Detect all sources
   * Interpolate the PSF model at the location of each sources for all epochs contributing
