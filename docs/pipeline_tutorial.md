@@ -32,16 +32,12 @@ The `ShapePipe` pipeline can process single-exposures images, and stacked images
 ### File naming and numbering schemes
 
 To facilitate bookkeeping for tracking relevant image information we adopt a numbering schemes as follows.
- - Single-exposure single-CCD image:
- 
-   **<image_type>-<exposure_name>-<CCD_number>.fits**
-   
+ - Single-exposure single-CCD image:  
+   **<image_type>-<exposure_name>-<CCD_number>.fits**  
    Examples: `image-2079614-9.fits`, `weight-2079614-3.fits`
 
- - Stacked images:
-
-   ** <image_type>-<number>.fits** 
-
+ - Stacked images:  
+   **<image_type>-<number>.fits**  
    Examples: `CFIS_image-51.fits`, `pipeline_flag-2134.fits`
 
 ### CFIS processing
