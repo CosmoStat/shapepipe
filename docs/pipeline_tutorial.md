@@ -25,19 +25,19 @@
 
 ## Introduction
 
-The pipeline is able to process single exposures images and stacked images. The images has to be calibrated for astrometry and photometry.
+The `ShapePipe` pipeline can process single-exposures images, and stacked images. The input images have to be calibrated beforehand for astrometry and photometry.
 
 ***WARNING /!\ :*** All the paths on the examples are relatives. When running on clusters make sure they make sense. Prefer absolute paths to avoid problems. Some of them are dummy examples.
 
-### Numbering
+### File naming and numbering schemes
 
-In order to keep track of the image informations we adopt a numerotation as follow for ingle exposures :
-  - type-exposures_name-CCD_number.fits  
-  Example : image-2079614-9.fits, weight-2079614-9.fits, ...
-
-And for stacked images :
-  - type-number.fits  
-  Example : CFIS_image-51.fits, pipeline_flag-51.fits, ...
+To facilitate bookkeeping for tracking relevant image information we adopt a numbering schemes as follows.
+ - Single-exposure single-CCD image:
+   `<type>-<exposure_name>-<CCD_number>.fits`  
+   Examples: image-2079614-9.fits, weight-2079614-3.fits
+ - Stacked images:
+   `<type>-<number>.fits` 
+   Examples: CFIS_image-51.fits, pipeline_flag-2134.fits
 
 ### CFIS processing
 
