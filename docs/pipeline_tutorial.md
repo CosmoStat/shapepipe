@@ -5,6 +5,7 @@
 1. [Introduction](#Introduction)
     1. [Numbering](#Numbering)
     1. [CFIS porcessing](#CFIS-processing)
+1. [ Field and image selection](#Selection)
 1. [ Single exposures processing](#Single-exposures-processing)
     1. [Spliting](#Spliting)
     1. [Masking single exposures](#Masking-single-exposures)
@@ -42,13 +43,13 @@ tracking relevant image information. We adopt a numbering schemes as follows.
   by `ShapePipe`. The pixel data can contain the observed image, a weight map, or a flag map.
 
 - Single-exposure single-CCD image.  
-  FITS file containing a single CCD from an individual exposure. The pixel data can contain the observed image, a weight map, or a flag map.
+  FITS file containing a single CCD from an individual exposure. The pixel data can contain the observed image, a weight map, or a flag map.  
   **<image_type>-<exposure_name>-<CCD_number>.fits**  
   Examples: `image-2079614-9.fits`, `weight-2079614-3.fits`
 
 - Stacked images:  
   FITS file containing a stack of different single exposures, or tile, for example created by `swarp`.
-  The pixel data can contain the observed image, a weight map, or a flag map.
+  The pixel data can contain the observed image, a weight map, or a flag map.  
   **<image_type>-<number>.fits**  
   Examples: `CFIS_image-51.fits`, `pipeline_flag-2134.fits`
 
@@ -57,16 +58,17 @@ tracking relevant image information. We adopt a numbering schemes as follows.
 Processing of CFIS images can be separated into three categories: Field selection, analysis of single exposures,
 analysis of stacks.
 
-At the moment, single exposures have to be split into single-CCDs images, i.e. one FITS file contains one CCD from a single exposure.
+At the moment, single exposures first have to be split into single-CCDs images.
 The single-exposure single-CCD images are then processed independently.
 
-* Processing of single exposures:
+* Field and image selection.
+* Processing of single exposures.
   * Split each CCDs
   * Create masks for bright stars, spikes, borders, Messier objects, ...
   * Detect sources of potential stars
   * PSF modeling
   * Validation of the PSF model (optional)
-* Stack images:
+* Stack images.
   * Create mask for bright stars, spikes, border, ...
   * Detect all sources
   * Interpolate the PSF model at the location of each sources for all epochs contributing
@@ -76,11 +78,13 @@ The single-exposure single-CCD images are then processed independently.
   * Shape measurement (NGMIX only at the moment)
   * Merge all results into on main catalog
 
-Flowchart presenting the process :
+Flowchart presenting the process:
 
 ![ShapePipe_FlowChart](./ShapePipe_v0.0.1.png)
 
-## Single exposures processing
+## Field and image selection
+
+## Single-exposures processing
 
 ### Spliting
 
