@@ -29,7 +29,7 @@ The `ShapePipe` pipeline can process single-exposures images, and stacked images
 
 ***WARNING /!\ :*** All the paths on the examples are relatives. When running on clusters make sure they make sense. Prefer absolute paths to avoid problems. Some of them are dummy examples.
 
-### File naming and numbering schemes
+### File types, naming and numbering convention
 
 To facilitate bookkeeping for tracking relevant image information we adopt a numbering schemes as follows.
 
