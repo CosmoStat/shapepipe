@@ -31,15 +31,26 @@ The `ShapePipe` pipeline can process single-exposures images, and stacked images
 
 ### File types, naming and numbering convention
 
-To facilitate bookkeeping for tracking relevant image information we adopt a numbering schemes as follows.
+The `ShapePipe` pipeline handles different image and file types, some of which
+are create by the pipeline during analysis. These types are listed below. Those
+files follow a naming and numbering convention, to facilitate bookkeeping for
+tracking relevant image information. We adopt a numbering schemes as follows.
 
- - Single-exposure single-CCD image:  
-   **<image_type>-<exposure_name>-<CCD_number>.fits**  
-   Examples: `image-2079614-9.fits`, `weight-2079614-3.fits`
+- Single-exposure image.  
+  Multi-HDU FITS file containing a mosaic from multiple CCDs of a single exposure (one CCD per HDU).
+  These images are typically created by a telescope analysis software (e.g.~`pitcairn`), and used on input
+  by `ShapePipe`. The pixel data can contain the observed image, a weight map, or a flag map.
 
- - Stacked images:  
-   **<image_type>-<number>.fits**  
-   Examples: `CFIS_image-51.fits`, `pipeline_flag-2134.fits`
+- Single-exposure single-CCD image.  
+  FITS file containing a single CCD from an individual exposure. The pixel data can contain the observed image, a weight map, or a flag map.
+  **<image_type>-<exposure_name>-<CCD_number>.fits**  
+  Examples: `image-2079614-9.fits`, `weight-2079614-3.fits`
+
+- Stacked images:  
+  FITS file containing a stack of different single exposures, or tile, for example created by `swarp`.
+  The pixel data can contain the observed image, a weight map, or a flag map.
+  **<image_type>-<number>.fits**  
+  Examples: `CFIS_image-51.fits`, `pipeline_flag-2134.fits`
 
 ### CFIS processing
 
