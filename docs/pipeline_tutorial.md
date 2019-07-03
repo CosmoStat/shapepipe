@@ -65,7 +65,7 @@ The single-exposure single-CCD images are then processed independently.
 * Processing of single exposures.
   * Split each CCDs
   * Create masks for bright stars, spikes, borders, Messier objects, ...
-  * Detect sources of potential stars
+  * Detect stars
   * PSF modeling
   * Validation of the PSF model (optional)
 * Stack images.
@@ -73,7 +73,7 @@ The single-exposure single-CCD images are then processed independently.
   * Detect all sources
   * Interpolate the PSF model at the location of each sources for all epochs contributing
   * Create postage stamps necessary for the spread-model
-  * Get the spread-model for each sources
+  * Get the spread model for each source
   * Create postage stamps for the shape measurement
   * Shape measurement (NGMIX only at the moment)
   * Merge all results into on main catalog
@@ -83,6 +83,12 @@ Flowchart presenting the process:
 ![ShapePipe_FlowChart](./ShapePipe_v0.0.1.png)
 
 ## Field and image selection
+
+The selection of images in input can be done in the config files of the relevant modules, by specifying input
+path(s) and input file name patterns. Thus, a sub-selection of images in a given input directory can be done.
+However, one might want to pre-select images before the pipeline is run. For example, to find all images (exposures
+and stacks) in a given sky area. These can then be copied to a dedicated directory (or linked using symbolic links),
+or downloaded to a local machine.
 
 ## Single-exposures processing
 
