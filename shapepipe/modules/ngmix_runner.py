@@ -257,7 +257,7 @@ def save_results(output_dict, output_name):
         f.save_as_fits(output_dict[key], ext_name=key.upper())
 
 
-def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
+def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             psf_vignet_path, weight_vignet_path, flag_vignet_path,
             f_wcs_path, w_log):
     """ Process
@@ -297,12 +297,12 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
     tile_ra = np.copy(tile_cat.get_data()['XWIN_WORLD'])
     tile_dec = np.copy(tile_cat.get_data()['YWIN_WORLD'])
     tile_cat.close()
-    sm_cat = io.FITSCatalog(sm_cat_path, SEx_catalog=True)
-    sm_cat.open()
-    sm = np.copy(sm_cat.get_data()['SPREAD_MODEL'])
-    sm_err = np.copy(sm_cat.get_data()['SPREADERR_MODEL'])
-    sm_cat.close()
-    f_wcs_file = np.load(f_wcs_path).item()
+    # sm_cat = io.FITSCatalog(sm_cat_path, SEx_catalog=True)
+    # sm_cat.open()
+    # sm = np.copy(sm_cat.get_data()['SPREAD_MODEL'])
+    # sm_err = np.copy(sm_cat.get_data()['SPREADERR_MODEL'])
+    # sm_cat.close()
+    f_wcs_file = SqliteDict(f_wcs_path)
     gal_vign_cat = SqliteDict(gal_vignet_path)
     bkg_vign_cat = SqliteDict(bkg_vignet_path)
     psf_vign_cat = SqliteDict(psf_vignet_path)
@@ -311,7 +311,7 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
 
     final_res = []
     prior = get_prior()
-    for i_tile, id_tmp in enumerate(obj_id):
+    for i_tile, id_tmp in enumerate(obj_id[:100]):
         # Preselection step
         # if (tile_flag[i_tile] > 1) or (tile_imaflag[i_tile] > 0):
         #     continue
@@ -369,6 +369,7 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
         res['n_epoch_model'] = len(gal_vign)
         final_res.append(res)
 
+    f_wcs_file.close()
     gal_vign_cat.close()
     bkg_vign_cat.close()
     flag_vign_cat.close()
@@ -378,7 +379,7 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
     return final_res
 
 
-@module_runner(input_module=['sextractor_runner', 'psfexinterp_runner', 'vignetmaker_runner'],
+@module_runner(input_module=['sextractor_runner', 'psfexinterp_runner_me', 'vignetmaker_runner2'],
                version='0.0.1',
                file_pattern=['tile_sexcat', 'image', 'exp_background', 'galaxy_psf', 'weight', 'flag'],
                file_ext=['.fits', '.sqlite', '.sqlite', '.sqlite', '.sqlite', '.sqlite'],

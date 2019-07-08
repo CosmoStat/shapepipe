@@ -17,23 +17,23 @@ from shapepipe.modules.mask_package.mask_script import mask
                file_ext=['.fits', '.fits', '.fits'],
                depends=['numpy', 'astropy'], executes=['ww', 'findgsc2.2'],
                numbering_scheme='_0')
-def mask_runner(input_file_list, output_dir, file_number_string,
-                config, w_log):
+def mask_runner_exp(input_file_list, output_dir, file_number_string,
+                    config, w_log):
 
     if len(input_file_list) == 2:
         ext_flag_name = None
         ext_star_cat = None
     elif len(input_file_list) == 3:
-        if config.getboolean('MASK_RUNNER', 'USE_EXT_FLAG'):
+        if config.getboolean('MASK_RUNNER_EXP', 'USE_EXT_FLAG'):
             ext_flag_name = input_file_list[2]
             ext_star_cat = None
-        elif config.getboolean('MASK_RUNNER', 'USE_EXT_STAR'):
+        elif config.getboolean('MASK_RUNNER_EXP', 'USE_EXT_STAR'):
             ext_flag_name = None
             ext_star_cat = input_file_list[2]
         else:
             raise ValueError('Expecting external flag or external star catalog.')
     elif len(input_file_list) == 4:
-        if config.getboolean('MASK_RUNNER', 'USE_EXT_FLAG') & config.getboolean('MASK_RUNNER', 'USE_EXT_STAR'):
+        if config.getboolean('MASK_RUNNER_EXP', 'USE_EXT_FLAG') & config.getboolean('MASK_RUNNER_EXP', 'USE_EXT_STAR'):
             ext_flag_name = input_file_list[2]
             ext_star_cat = input_file_list[3]
         else:
@@ -43,15 +43,15 @@ def mask_runner(input_file_list, output_dir, file_number_string,
                          "'image', 'weight' and 'ext_flags', 'ext_star_cat' (optional)"
                          "".format(len(input_file_list)))
 
-    config_file = config.getexpanded('MASK_RUNNER', 'MASK_CONFIG_PATH')
+    config_file = config.getexpanded('MASK_RUNNER_EXP', 'MASK_CONFIG_PATH')
 
-    if config.has_option('MASK_RUNNER', 'SUFFIX'):
-        suffix = config.get('MASK_RUNNER', 'SUFFIX')
+    if config.has_option('MASK_RUNNER_EXP', 'SUFFIX'):
+        suffix = config.get('MASK_RUNNER_EXP', 'SUFFIX')
     else:
         suffix = ''
 
-    if config.has_option('MASK_RUNNER', 'OUTNAME_BASE'):
-        outname_base = config.get('MASK_RUNNER', 'OUTNAME_BASE')
+    if config.has_option('MASK_RUNNER_EXP', 'OUTNAME_BASE'):
+        outname_base = config.get('MASK_RUNNER_EXP', 'OUTNAME_BASE')
     else:
         outname_base = 'flag'
 

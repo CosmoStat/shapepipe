@@ -260,9 +260,9 @@ def save_psf_data(final_cat_file, galaxy_psf_path, w_log):
     galaxy_psf_cat.close()
 
 
-@module_runner(input_module=['sextractor_runner', 'spread_model_runner', 'psfexinterp_runner', 'ngmix_runner'],
+@module_runner(input_module=['sextractor_runner', 'spread_model_runner', 'psfexinterp_runner_me', 'ngmix_runner'],
                version='1.0', file_pattern=['tile_sexcat', 'sexcat_sm', 'galaxy_psf', 'ngmix'],
-               file_ext=['.fits', '.fits', '.npy', '.fits'],
+               file_ext=['.fits', '.fits', '.sqlite', '.fits'],
                depends=['numpy', 'sqlitedict'])
 def make_catalog_runner(input_file_list, output_dir, file_number_string,
                         config, w_log):

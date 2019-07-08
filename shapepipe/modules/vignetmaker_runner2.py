@@ -275,7 +275,7 @@ class vignetmaker(object):
 
         """
 
-        self._f_wcs_file = np.load(f_wcs_path).item()
+        self._f_wcs_file = SqliteDict(f_wcs_path)
         self._rad = rad
 
         for i in range(len(image_pattern)):
@@ -286,6 +286,8 @@ class vignetmaker(object):
                 output_dict = self._get_stamp_me(image_dir[i], image_pattern[i])
 
             self._save_vignet_me(output_dict, image_pattern[i])
+
+        self._f_wcs_file.close()
 
     def _save_vignet_me(self, output_dict, suffix):
         """ Save vignet ME
@@ -387,7 +389,14 @@ def save_vignet(vign, sexcat_path, output_dir, suffix, image_num):
     f.save_as_fits(vign, names=['VIGNET'], sex_cat_path=sexcat_path)
 
 
-@module_runner(input_module='setools_runner',
+def get_image_dir(output_dir, input_module_list):
+    """
+    """
+
+    return  ['/' + '/'.join(re.split('/', output_dir)[1:-2]) + '/' + input_module for input_module in input_module_list]
+
+
+@module_runner(input_module='sextractor_runner',
                file_pattern=['galaxy_selection', 'image'],
                file_ext=['.fits', '.fits'],
                depends=['numpy', 'astropy', 'sf_tools', 'sqlitedict'])
@@ -423,7 +432,7 @@ def vignetmaker_runner2(input_file_list, output_dir, file_number_string,
                                output_dir, file_number_string)
             inst.process(input_file_list[1:], rad, suffix)
         elif mode == 'MULTI-EPOCH':
-            image_dir = config.getlist("VIGNETMAKER_RUNNER2", "ME_IMAGE_DIR")
+            image_dir = get_image_dir(output_dir, config.getlist("VIGNETMAKER_RUNNER2", "ME_IMAGE_DIR"))
             image_pattern = config.getlist("VIGNETMAKER_RUNNER2", "ME_IMAGE_PATTERN")
             f_wcs_path = config.getexpanded("VIGNETMAKER_RUNNER2", "ME_LOG_WCS")
 

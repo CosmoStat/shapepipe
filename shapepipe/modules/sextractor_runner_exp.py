@@ -50,7 +50,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
             hist.append(i)
 
     exp_list = []
-    pattern = r'([0-9]*)p\.(.*)'
+    pattern = r'([0-9]*)\.(.*)'
     for i in hist:
         m = re.search(pattern, i)
         exp_list.append(m.group(1))
@@ -73,37 +73,35 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
         cat.save_as_fits(data=a, ext_name='EPOCH_{}'.format(i))
         cat.open()
 
-    f_wcs.close()
-
     cat.add_col('N_EPOCH', n_epoch)
 
     cat.close()
 
 
-@module_runner(input_module='mask_runner', version='1.0.1',
+@module_runner(input_module=['split_exp_runner', 'mask_runner_exp'], version='1.0.1',
                file_pattern=['image', 'weight', 'flag'],
                file_ext=['.fits', '.fits', '.fits'],
                executes=['sex'], depends=['numpy'])
-def sextractor_runner(input_file_list, output_dir, file_number_string,
-                      config, w_log):
+def sextractor_runner_exp(input_file_list, output_dir, file_number_string,
+                          config, w_log):
 
     num = file_number_string
 
-    exec_path = config.getexpanded("SEXTRACTOR_RUNNER", "EXEC_PATH")
-    dot_sex = config.getexpanded("SEXTRACTOR_RUNNER", "DOT_SEX_FILE")
-    dot_param = config.getexpanded("SEXTRACTOR_RUNNER", "DOT_PARAM_FILE")
+    exec_path = config.getexpanded("SEXTRACTOR_RUNNER_EXP", "EXEC_PATH")
+    dot_sex = config.getexpanded("SEXTRACTOR_RUNNER_EXP", "DOT_SEX_FILE")
+    dot_param = config.getexpanded("SEXTRACTOR_RUNNER_EXP", "DOT_PARAM_FILE")
 
-    weight_file = config.getboolean("SEXTRACTOR_RUNNER", "WEIGHT_IMAGE")
-    flag_file = config.getboolean("SEXTRACTOR_RUNNER", "FLAG_IMAGE")
-    psf_file = config.getboolean("SEXTRACTOR_RUNNER", "PSF_FILE")
+    weight_file = config.getboolean("SEXTRACTOR_RUNNER_EXP", "WEIGHT_IMAGE")
+    flag_file = config.getboolean("SEXTRACTOR_RUNNER_EXP", "FLAG_IMAGE")
+    psf_file = config.getboolean("SEXTRACTOR_RUNNER_EXP", "PSF_FILE")
 
-    if config.has_option('SEXTRACTOR_RUNNER', "CHECKIMAGE"):
-        check_image = config.getlist("SEXTRACTOR_RUNNER", "CHECKIMAGE")
+    if config.has_option('SEXTRACTOR_RUNNER_EXP', "CHECKIMAGE"):
+        check_image = config.getlist("SEXTRACTOR_RUNNER_EXP", "CHECKIMAGE")
     else:
         check_image = ['']
 
-    if config.has_option('SEXTRACTOR_RUNNER', 'SUFFIX'):
-        suffix = config.get('SEXTRACTOR_RUNNER', 'SUFFIX')
+    if config.has_option('SEXTRACTOR_RUNNER_EXP', 'SUFFIX'):
+        suffix = config.get('SEXTRACTOR_RUNNER_EXP', 'SUFFIX')
         if (suffix.lower() != 'none') & (suffix != ''):
             suffix = suffix + '_'
         else:
@@ -161,10 +159,10 @@ def sextractor_runner(input_file_list, output_dir, file_number_string,
     if check_error2 == []:
         stderr2 = stdout
 
-    if config.getboolean("SEXTRACTOR_RUNNER", "MAKE_POST_PROCESS"):
-        f_wcs_path = config.getexpanded("SEXTRACTOR_RUNNER", "LOG_WCS")
-        pos_params = config.getlist("SEXTRACTOR_RUNNER", "WORLD_POSITION")
-        ccd_size = config.getlist("SEXTRACTOR_RUNNER", "CCD_SIZE")
+    if config.getboolean("SEXTRACTOR_RUNNER_EXP", "MAKE_POST_PROCESS"):
+        f_wcs_path = config.getexpanded("SEXTRACTOR_RUNNER_EXP", "LOG_WCS")
+        pos_params = config.getlist("SEXTRACTOR_RUNNER_EXP", "WORLD_POSITION")
+        ccd_size = config.getlist("SEXTRACTOR_RUNNER_EXP", "CCD_SIZE")
         make_post_process(output_file_path, f_wcs_path, pos_params, ccd_size)
 
     return stdout, stderr2

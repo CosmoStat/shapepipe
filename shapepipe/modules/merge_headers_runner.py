@@ -26,8 +26,8 @@ from shapepipe.modules.module_decorator import module_runner
 def merge_headers_runner(input_file_list, output_dir, file_number_string,
                          config, w_log):
 
-    if config.has_option('MERGE_HEADER', 'OUTPUT_PATH'):
-        output_dir = config.getexpanded('MERGE_HEADER', 'OUTPUT_PATH')
+    if config.has_option('MERGE_HEADER_RUNNER', 'OUTPUT_PATH'):
+        output_dir = config.getexpanded('MERGE_HEADER_RUNNER', 'OUTPUT_PATH')
 
     final_file = SqliteDict(output_dir + '/log_exp_headers.sqlite')
     for file_path in input_file_list:

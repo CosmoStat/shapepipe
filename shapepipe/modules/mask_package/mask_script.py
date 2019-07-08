@@ -57,6 +57,7 @@ class mask(object):
         else:
             self._img_suffix = ''
 
+        self._star_cat_path = None
         if star_cat_path is not None:
             self._star_cat_path = star_cat_path
 
