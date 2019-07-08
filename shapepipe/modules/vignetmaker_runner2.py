@@ -393,7 +393,7 @@ def get_image_dir(output_dir, input_module_list):
     """
     """
 
-    return  ['/' + '/'.join(re.split('/', output_dir)[1:-2]) + '/' + input_module for input_module in input_module_list]
+    return ['/' + '/'.join(re.split('/', output_dir)[1:-2]) + '/' + input_module for input_module in input_module_list]
 
 
 @module_runner(input_module='sextractor_runner',
