@@ -364,7 +364,7 @@ class JobHandler(object):
                    (process[1:], process[0],
                     self.filehd.get_worker_log_name(self._module,
                                                     process[0]),
-                    self.filehd.output_dir, self.config, self.timeout,
+                    self.filehd.module_run_dirs, self.config, self.timeout,
                     self._module_runner)
                    for process in self.filehd.process_list))
 
@@ -383,8 +383,8 @@ class JobHandler(object):
         result = wh.worker(process, '',
                            self.filehd.get_worker_log_name(self._module,
                                                            '_serial'),
-                           self.filehd.output_dir, self.config, self.timeout,
-                           self._module_runner)
+                           self.filehd.module_run_dirs, self.config,
+                           self.timeout, self._module_runner)
 
         self.worker_dicts = [result]
 

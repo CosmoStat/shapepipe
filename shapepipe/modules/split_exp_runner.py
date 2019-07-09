@@ -2,7 +2,8 @@
 
 """SPLIT EXP RUNNER
 
-This module split the different CCD's hdu of a single exposure into separate files.
+This module split the different CCD's hdu of a single exposure into separate
+files.
 
 :Author: Axel Guinot
 
@@ -73,7 +74,7 @@ def create_hdus(exp_path, output_dir, output_name, output_sufix, n_hdu=40,
 @module_runner(version='1.0', file_pattern=['image', 'weight', 'flag'],
                file_ext=['.fz', '.fz', '.fz'],
                depends=['numpy', 'astropy', 'sip_tpv'])
-def split_exp_runner(input_file_list, output_dir, file_number_string,
+def split_exp_runner(input_file_list, run_dirs, file_number_string,
                      config, w_log):
 
     file_suffix = config.getlist("SPLIT_EXP_RUNNER", "OUTPUT_SUFFIX")
@@ -85,7 +86,7 @@ def split_exp_runner(input_file_list, output_dir, file_number_string,
         transf_coord = 'image' in exp_suffix
         save_header = 'image' in exp_suffix
 
-        create_hdus(exp_path, output_dir, file_number_string, exp_suffix,
-                    n_hdu, transf_coord, transf_int, save_header)
+        create_hdus(exp_path, run_dirs['output'], file_number_string,
+                    exp_suffix, n_hdu, transf_coord, transf_int, save_header)
 
     return None, None

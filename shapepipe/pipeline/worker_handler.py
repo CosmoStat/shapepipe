@@ -29,7 +29,7 @@ class WorkerHandler(object):
         self._stderr = None
         self._verbose = verbose
 
-    def worker(self, process, job_name, w_log_name, output_dir, config,
+    def worker(self, process, job_name, w_log_name, run_dirs, config,
                timeout, module_runner):
         """ Worker
 
@@ -43,8 +43,8 @@ class WorkerHandler(object):
             Worker log name
         module_runner : function
             Module runner
-        output_dir : str
-            Output directory
+        run_dirs : dict
+            Run directories
         config : CustomParser
             Configuaration parser instance
         timeout : int
@@ -58,7 +58,7 @@ class WorkerHandler(object):
         """
 
         self._w_log_name = w_log_name
-        self._output_dir = output_dir
+        self._run_dirs = run_dirs
         self._config = config
         self._module_runner = module_runner
         self._prepare_worker(process, job_name, timeout,
@@ -200,7 +200,7 @@ class WorkerHandler(object):
         input_file_list = self.worker_dict['process']
 
         self._stdout, self._stderr = self._module_runner(input_file_list,
-                                                         self._output_dir,
+                                                         self._run_dirs,
                                                          file_number_string,
                                                          self._config,
                                                          self.w_log)

@@ -43,10 +43,10 @@ class Dummy(object):
                file_pattern=['numbers', 'letters', 'pyex_output'],
                file_ext=['.txt', '.txt', '.cat'], depends='numpy',
                run_method='serial')
-def serial_example(input_file_list, output_dir, file_number_string,
+def serial_example(input_file_list, run_dirs, file_number_string,
                    config, w_log):
 
-    output_file_name = ('{}/serial_output{}.cat'.format(output_dir,
+    output_file_name = ('{}/serial_output{}.cat'.format(run_dirs['output'],
                         file_number_string))
 
     inst = Dummy()
