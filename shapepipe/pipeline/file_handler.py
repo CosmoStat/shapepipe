@@ -320,16 +320,27 @@ class FileHandler(object):
 
         return [item for sublist in input_list for item in sublist]
 
-    def _get_input_dir(self):
-        """ Get Input Directory
+    def _check_input_dir_list(self, dir_list):
+        """ Check Input Directory List
 
-        This method sets the module input directory
+        Check an input list to see if the directories exist or if the the run
+        log should be serarched for an appropriate output directory.
+
+        Parameters
+        ----------
+        dir_list : list
+            List of directories
+
+        Raises
+        ------
+        ValueError
+            For invalid input directory value
 
         """
 
         input_dir = []
 
-        for dir in self._input_list:
+        for dir in dir_list:
 
             if os.path.isdir(dir):
                 input_dir.append(dir)
@@ -352,7 +363,16 @@ class FileHandler(object):
                                  'provided are valid directories or use the '
                                  'allowed special keys.')
 
-        self._input_dir = input_dir
+        return input_dir
+
+    def _get_input_dir(self):
+        """ Get Input Directory
+
+        This method sets the module input directory
+
+        """
+
+        self._input_dir = self._check_input_dir_list(self._input_list)
 
     def create_global_run_dirs(self):
         """ Create Global Run Directories
@@ -540,15 +560,23 @@ class FileHandler(object):
             input_dir = self._input_dir
 
         else:
+
             input_dir = [self._module_dict[input_mod]['output_dir']
                          for input_mod in
-                         self._module_dict[module]['input_module']]
+                         self._module_dict[module]['input_module']
+                         if input_mod in self._module_dict]
 
-            if self._config.has_option(module.upper(), 'INPUT_DIR'):
-                input_dir = self._config.getlist(module.upper(), 'INPUT_DIR')
+        if self._config.has_option(module.upper(), 'INPUT_DIR'):
+            input_dir = (self._check_input_dir_list(
+                         self._config.getlist(module.upper(),
+                                              'INPUT_DIR')))
 
         if self.get_add_module_property(module, 'input_dir'):
             input_dir += self.get_add_module_property(module, 'input_dir')
+
+        if not input_dir:
+            raise RuntimeError('Could not find appropriate input directory '
+                               'for module {}.'.format(module))
 
         self._module_dict[module]['input_dir'] = self.check_dirs(input_dir)
 
