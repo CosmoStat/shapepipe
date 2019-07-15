@@ -23,9 +23,10 @@ from shapepipe.modules.module_decorator import module_runner
                file_pattern=['header'],
                file_ext=['.npy'], depends=['numpy', 'sqlitedict'],
                run_method='serial')
-def merge_headers_runner(input_file_list, output_dir, file_number_string,
+def merge_headers_runner(input_file_list, run_dirs, file_number_string,
                          config, w_log):
 
+    output_dir = run_dirs['output']
     if config.has_option('MERGE_HEADER', 'OUTPUT_PATH'):
         output_dir = config.getexpanded('MERGE_HEADER', 'OUTPUT_PATH')
 
