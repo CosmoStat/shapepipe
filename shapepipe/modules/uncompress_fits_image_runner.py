@@ -35,4 +35,3 @@ def uncompress_fits_image_runner(input_file_list, output_dir, file_number_string
     hdul.writeto(output_dir + '/' + output_pattern + file_number_string + '.fits')
 
     return None, None
-
