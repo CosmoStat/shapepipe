@@ -178,6 +178,9 @@ class SetUpParser(object):
             raise OSError('Directory {} not found.'.format(
                           self.config.getexpanded('FILE', 'OUTPUT_DIR')))
 
+        if not self.config.has_option('FILE', 'CORRECT_FILE_PATTERN'):
+            self.config.set('FILE', 'CORRECT_FILE_PATTERN', 'True')
+
     def _set_worker_options(self):
         """ Set Worker Options
 

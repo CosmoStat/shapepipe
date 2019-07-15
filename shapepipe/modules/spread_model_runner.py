@@ -102,19 +102,23 @@ def get_model(sigma, flux, img_shape, pixel_scale=0.186):
 
     """
 
-    gal_obj = galsim.Exponential(scale_radius=1./16.*sigma*2.355*pixel_scale, flux=flux)
+    gal_obj = galsim.Exponential(scale_radius=1./16.*sigma*2.355*pixel_scale,
+                                 flux=flux)
 
     psf_obj = galsim.Gaussian(sigma=sigma*pixel_scale)
 
     gal_obj = galsim.Convolve(gal_obj, psf_obj)
 
-    gal_vign = gal_obj.drawImage(nx=img_shape[0], ny=img_shape[1], scale=pixel_scale).array
-    psf_vign = psf_obj.drawImage(nx=img_shape[0], ny=img_shape[1], scale=pixel_scale).array
+    gal_vign = gal_obj.drawImage(nx=img_shape[0], ny=img_shape[1],
+                                 scale=pixel_scale).array
+    psf_vign = psf_obj.drawImage(nx=img_shape[0], ny=img_shape[1],
+                                 scale=pixel_scale).array
 
     return gal_vign, psf_vign
 
 
-def save_results(sex_cat_path, output_path, sm, sm_err, mag, number, mode='new'):
+def save_results(sex_cat_path, output_path, sm, sm_err, mag, number,
+                 mode='new'):
     """ Save results
 
     Save the spread model results.
@@ -136,12 +140,14 @@ def save_results(sex_cat_path, output_path, sm, sm_err, mag, number, mode='new')
     mode : str
         Must be in ['new', 'add'].
         'new' will create a new catalog with : [number, mag, sm, sm_err]
-        'add' will output a copy of the input SExtractor with the column sm and sm_err.
+        'add' will output a copy of the input SExtractor with the column sm
+        and sm_err.
 
     """
 
     if mode == 'new':
-        new_cat = io.FITSCatalog(output_path, SEx_catalog=True, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+        new_cat = io.FITSCatalog(output_path, SEx_catalog=True,
+                                 open_mode=io.BaseCatalog.OpenMode.ReadWrite)
         dict_data = {'NUMBER': number,
                      'MAG': mag,
                      'SPREAD_MODEL': sm,
@@ -150,7 +156,8 @@ def save_results(sex_cat_path, output_path, sm, sm_err, mag, number, mode='new')
     elif mode == 'add':
         ori_cat = io.FITSCatalog(sex_cat_path, SEx_catalog=True)
         ori_cat.open()
-        new_cat = io.FITSCatalog(output_path, SEx_catalog=True, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+        new_cat = io.FITSCatalog(output_path, SEx_catalog=True,
+                                 open_mode=io.BaseCatalog.OpenMode.ReadWrite)
         ori_cat.add_col('SPREAD_MODEL', sm, new_cat=True, new_cat_inst=new_cat)
         ori_cat.close()
         new_cat.open()
@@ -160,11 +167,12 @@ def save_results(sex_cat_path, output_path, sm, sm_err, mag, number, mode='new')
         ValueError('Mode must be in [new, add].')
 
 
-@module_runner(input_module=['sextractor_runner', 'psfexinterp_runner', 'vignetmaker_runner'], version='1.0',
+@module_runner(input_module=['sextractor_runner', 'psfexinterp_runner',
+                             'vignetmaker_runner'], version='1.0',
                file_pattern=['sexcat', 'galaxy_psf', 'weight_vign'],
                file_ext=['.fits', '.sqlite', '.fits'],
                depends=['numpy', 'galsim'])
-def spread_model_runner(input_file_list, output_dir, file_number_string,
+def spread_model_runner(input_file_list, run_dirs, file_number_string,
                         config, w_log):
 
     sex_cat_path, psf_cat_path, weight_cat_path = input_file_list
@@ -182,7 +190,7 @@ def spread_model_runner(input_file_list, output_dir, file_number_string,
     output_mode = config.get('SPREAD_MODEL_RUNNER', 'OUTPUT_MODE')
 
     file_name = suffix + 'sexcat_sm' + file_number_string + '.fits'
-    output_path = output_dir + '/' + file_name
+    output_path = run_dirs['output'] + '/' + file_name
 
     # Get data
     sex_cat = io.FITSCatalog(sex_cat_path, SEx_catalog=True)

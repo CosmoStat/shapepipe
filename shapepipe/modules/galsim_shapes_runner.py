@@ -89,7 +89,8 @@ def stack_psfs(psfs, weights):
     return psf_sum
 
 
-def do_galsim_shapes(gal, gal_sig, psfs, psfs_sigma, weights, flags, pixel_scale):
+def do_galsim_shapes(gal, gal_sig, psfs, psfs_sigma, weights, flags,
+                     pixel_scale):
     """ Do ngmix metacal
 
     Do the metacalibration on a multi-epoch object and return the join shape
@@ -132,7 +133,8 @@ def do_galsim_shapes(gal, gal_sig, psfs, psfs_sigma, weights, flags, pixel_scale
     weight[np.where(flag != 0)] = 0
     g_weight = galsim.Image(weight)
 
-    res_gal = galsim.hsm.EstimateShear(g_gal, g_psf, weight=g_weight, strict=False)
+    res_gal = galsim.hsm.EstimateShear(g_gal, g_psf, weight=g_weight,
+                                       strict=False)
 
     return res_gal
 
@@ -166,11 +168,12 @@ def compile_results(results):
         output_dict['id'].append(results[i]['obj_id'])
         if (results[i]['gal'].error_message == ''):
             try:
-                gal_shapes = galsim.Shear(e1=results[i]['gal'].corrected_e1, e2=results[i]['gal'].corrected_e2)
+                gal_shapes = galsim.Shear(e1=results[i]['gal'].corrected_e1,
+                                          e2=results[i]['gal'].corrected_e2)
                 output_dict['gal_g1'].append(gal_shapes.g1)
                 output_dict['gal_g2'].append(gal_shapes.g2)
                 gal_err = 0
-            except:
+            except Exception:
                 output_dict['gal_g1'].append(results[i]['gal'].corrected_e1)
                 output_dict['gal_g2'].append(results[i]['gal'].corrected_e2)
                 gal_err = 2
@@ -208,7 +211,8 @@ def save_results(output_dict, output_name):
 
     """
 
-    f = io.FITSCatalog(output_name, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+    f = io.FITSCatalog(output_name,
+                       open_mode=io.BaseCatalog.OpenMode.ReadWrite)
 
     # for key in output_dict.keys():
     f.save_as_fits(output_dict, ext_name='RESULTS')
@@ -269,13 +273,15 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
 
     final_res = []
     # prior = get_prior()
-    output_vignet = {'PSF': [], 'WEIGHT': [], 'FLAG': [], 'GAL': [], 'id': [], 'gal_flag': []}
+    output_vignet = {'PSF': [], 'WEIGHT': [], 'FLAG': [], 'GAL': [], 'id': [],
+                     'gal_flag': []}
     for i_tile, id_tmp in enumerate(obj_id):
         res = {}
         # Preselection step
         # if (tile_flag[i_tile] > 1) or (tile_imaflag[i_tile] > 0):
         #     continue
-        # if (sm[i_tile] + (5. / 3.) * sm_err[i_tile] < 0.01) and (np.abs(sm[i_tile] + (5. / 3.) * sm_err[i_tile]) > 0.003):
+        # if (sm[i_tile] + (5. / 3.) * sm_err[i_tile] < 0.01) and
+        # (np.abs(sm[i_tile] + (5. / 3.) * sm_err[i_tile]) > 0.003):
         #     continue
         # if sm[i_tile] + (5. / 3.) * sm_err[i_tile] > 0.01:
         #     gal_flag = 1
@@ -321,12 +327,13 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
                                           weight_vign,
                                           flag_vign,
                                           0.186)
-        except:
+        except Exception:
             w_log.info('Galsim fail on object {}'.format(id_tmp))
             continue
 
         if res['gal'] == 'Error':
-            w_log.info('Something went wrong with the psf on object id : {}.'.format(id_tmp))
+            w_log.info('Something went wrong with the psf on object id : '
+                       '{}.'.format(id_tmp))
             continue
 
         res['obj_id'] = id_tmp
@@ -341,15 +348,19 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
     return final_res
 
 
-@module_runner(input_module=['sextractor_runner', 'psfexinterp_runner', 'vignetmaker_runner'],
+@module_runner(input_module=['sextractor_runner', 'psfexinterp_runner',
+                             'vignetmaker_runner'],
                version='0.0.1',
-               file_pattern=['tile_sexcat', 'image', 'exp_background', 'galaxy_psf', 'weight', 'flag'],
-               file_ext=['.fits', '.sqlite', '.sqlite', '.sqlite', '.sqlite', '.sqlite'],
+               file_pattern=['tile_sexcat', 'image', 'exp_background',
+                             'galaxy_psf', 'weight', 'flag'],
+               file_ext=['.fits', '.sqlite', '.sqlite', '.sqlite', '.sqlite',
+                         '.sqlite'],
                depends=['numpy', 'ngmix', 'galsim'])
-def galsim_shapes_runner(input_file_list, output_dir, file_number_string,
+def galsim_shapes_runner(input_file_list, run_dirs, file_number_string,
                          config, w_log):
 
-    output_name = output_dir + '/' + 'galsim' + file_number_string + '.fits'
+    output_name = (run_dirs['output'] + '/' + 'galsim' +
+                   file_number_string + '.fits')
 
     # f_wcs_path = config.getexpanded('NGMIX_RUNNER', 'LOG_WCS')
 
