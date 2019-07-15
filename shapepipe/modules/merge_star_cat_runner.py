@@ -24,11 +24,12 @@ from shapepipe.pipeline import file_io as sc
                file_pattern=['validation_psf'],
                file_ext=['.fits'], depends=['numpy', 'sqlitedict'],
                run_method='serial')
-def merge_star_cat_runner(input_file_list, output_dir, file_number_string,
+def merge_star_cat_runner(input_file_list, run_dirs, file_number_string,
                           config, w_log):
 
-    if config.has_option('MERGE_STAR_CAT_RUNNER', 'OUTPUT_PATH'):
-        output_dir = config.getexpanded('MERGE_STAR_CAT_RUNNER', 'OUTPUT_PATH')
+    output_dir = run_dirs['output']
+    if config.has_option('MERGE_STAR_CAT', 'OUTPUT_PATH'):
+        output_dir = config.getexpanded('MERGE_STAR_CAT', 'OUTPUT_PATH')
 
     x, y, ra, dec = [], [], [], []
     g1_psf, g2_psf, size_psf = [], [], []

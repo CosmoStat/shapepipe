@@ -41,7 +41,8 @@ def get_prior():
     g_prior = ngmix.priors.GPriorBA(g_sigma)
 
     # 2-d gaussian prior on the center
-    # row and column center (relative to the center of the jacobian, which would be zero)
+    # row and column center (relative to the center of the jacobian, which
+    # would be zero)
     # and the sigma of the gaussians
     # units same as jacobian, probably arcsec
     row, col = 0.0, 0.0
@@ -99,7 +100,8 @@ def get_jacob(wcs, ra, dec):
     return galsim_jacob
 
 
-def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list, prior):
+def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
+                     prior):
     """ Do ngmix metacal
 
     Do the metacalibration on a multi-epoch object and return the join shape
@@ -139,8 +141,12 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list, prior):
     T_guess_psf = []
     for n_e in range(n_epoch):
 
-        psf_jacob = ngmix.Jacobian(row=psfs[0].shape[0]/2., col=psfs[0].shape[1]/2., wcs=jacob_list[n_e])
-        gal_jacob = ngmix.Jacobian(row=gals[0].shape[0]/2., col=gals[0].shape[1]/2., wcs=jacob_list[n_e])
+        psf_jacob = ngmix.Jacobian(row=psfs[0].shape[0]/2.,
+                                   col=psfs[0].shape[1]/2.,
+                                   wcs=jacob_list[n_e])
+        gal_jacob = ngmix.Jacobian(row=gals[0].shape[0]/2.,
+                                   col=gals[0].shape[1]/2.,
+                                   wcs=jacob_list[n_e])
 
         psf_obs = Observation(psfs[n_e], jacobian=psf_jacob)
 
@@ -149,7 +155,8 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list, prior):
         w = np.copy(weights[n_e])
         w[np.where(flags[n_e] != 0)] = 0.
 
-        gal_obs = Observation(gals[n_e], weight=w, jacobian=gal_jacob, psf=psf_obs)
+        gal_obs = Observation(gals[n_e], weight=w, jacobian=gal_jacob,
+                              psf=psf_obs)
 
         gal_obs_list.append(gal_obs)
         T_guess_psf.append(psf_T)
@@ -217,7 +224,8 @@ def compile_results(results):
     """
 
     names = ['1m', '1p', '2m', '2p', 'noshear']
-    names2 = ['id', 'n_epoch_model', 'g1', 'g1_err', 'g2', 'g2_err', 'T', 'T_err', 'Tpsf', 's2n', 'flags', 'mcal_flags']
+    names2 = ['id', 'n_epoch_model', 'g1', 'g1_err', 'g2', 'g2_err', 'T',
+              'T_err', 'Tpsf', 's2n', 'flags', 'mcal_flags']
     output_dict = {k: {kk: [] for kk in names2} for k in names}
     for i in range(len(results)):
         for name in names:
@@ -251,7 +259,8 @@ def save_results(output_dict, output_name):
 
     """
 
-    f = io.FITSCatalog(output_name, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+    f = io.FITSCatalog(output_name,
+                       open_mode=io.BaseCatalog.OpenMode.ReadWrite)
 
     for key in output_dict.keys():
         f.save_as_fits(output_dict[key], ext_name=key.upper())
@@ -315,7 +324,8 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
         # Preselection step
         # if (tile_flag[i_tile] > 1) or (tile_imaflag[i_tile] > 0):
         #     continue
-        # if (sm[i_tile] + (5. / 3.) * sm_err[i_tile] < 0.01) and (np.abs(sm[i_tile] + (5. / 3.) * sm_err[i_tile]) > 0.003):
+        # if (sm[i_tile] + (5. / 3.) * sm_err[i_tile] < 0.01) and
+        # (np.abs(sm[i_tile] + (5. / 3.) * sm_err[i_tile]) > 0.003):
         #     continue
         gal_vign = []
         psf_vign = []
@@ -362,7 +372,7 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
                                    flag_vign,
                                    jacob_list,
                                    prior)
-        except:
+        except Exception:
             w_log.info('ngmix fail on object {}'.format(id_tmp))
             continue
         res['obj_id'] = id_tmp
@@ -379,15 +389,19 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
     return final_res
 
 
-@module_runner(input_module=['sextractor_runner', 'psfexinterp_runner_me', 'vignetmaker_runner2'],
+@module_runner(input_module=['sextractor_runner', 'psfexinterp_runner',
+                             'vignetmaker_runner'],
                version='0.0.1',
-               file_pattern=['tile_sexcat', 'image', 'exp_background', 'galaxy_psf', 'weight', 'flag'],
-               file_ext=['.fits', '.sqlite', '.sqlite', '.sqlite', '.sqlite', '.sqlite'],
+               file_pattern=['tile_sexcat', 'image', 'exp_background',
+                             'galaxy_psf', 'weight', 'flag'],
+               file_ext=['.fits', '.sqlite', '.sqlite', '.sqlite', '.sqlite',
+                         '.sqlite'],
                depends=['numpy', 'ngmix', 'galsim', 'sqlitedict'])
-def ngmix_runner(input_file_list, output_dir, file_number_string,
+def ngmix_runner(input_file_list, run_dirs, file_number_string,
                  config, w_log):
 
-    output_name = output_dir + '/' + 'ngmix' + file_number_string + '.fits'
+    output_name = (run_dirs['output'] + '/' + 'ngmix' +
+                   file_number_string + '.fits')
 
     f_wcs_path = config.getexpanded('NGMIX_RUNNER', 'LOG_WCS')
 

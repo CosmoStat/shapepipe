@@ -94,6 +94,8 @@ class FileHandler(object):
         self._input_list = config.getlist('FILE', 'INPUT_DIR')
         self._output_dir = config.getexpanded('FILE', 'OUTPUT_DIR')
         self._log_name = config.get('FILE', 'LOG_NAME')
+        self._correct_pattern = config.getboolean('FILE',
+                                                  'CORRECT_FILE_PATTERN')
         self._run_log_file = self.format(self._output_dir,
                                          config.get('FILE', 'RUN_LOG_NAME'),
                                          '.txt')
@@ -321,16 +323,27 @@ class FileHandler(object):
 
         return [item for sublist in input_list for item in sublist]
 
-    def _get_input_dir(self):
-        """ Get Input Directory
+    def _check_input_dir_list(self, dir_list):
+        """ Check Input Directory List
 
-        This method sets the module input directory
+        Check an input list to see if the directories exist or if the the run
+        log should be serarched for an appropriate output directory.
+
+        Parameters
+        ----------
+        dir_list : list
+            List of directories
+
+        Raises
+        ------
+        ValueError
+            For invalid input directory value
 
         """
 
         input_dir = []
 
-        for dir in self._input_list:
+        for dir in dir_list:
 
             if os.path.isdir(dir):
                 input_dir.append(dir)
@@ -353,7 +366,16 @@ class FileHandler(object):
                                  'provided are valid directories or use the '
                                  'allowed special keys.')
 
-        self._input_dir = input_dir
+        return input_dir
+
+    def _get_input_dir(self):
+        """ Get Input Directory
+
+        This method sets the module input directory
+
+        """
+
+        self._input_dir = self._check_input_dir_list(self._input_list)
 
     def create_global_run_dirs(self):
         """ Create Global Run Directories
@@ -530,6 +552,9 @@ class FileHandler(object):
 
         # Set current output directory to module output directory
         self.output_dir = self._module_dict[module]['output_dir']
+        self.module_run_dirs = {'run': self.run_dir, 'log': self._log_dir,
+                                'tmp': self._tmp_dir,
+                                'output': self.output_dir}
 
     def _set_module_input_dir(self, module):
         """ Set Module Input Directory
@@ -554,15 +579,23 @@ class FileHandler(object):
             input_dir = self._input_dir
         
         else:
+
             input_dir = [self._module_dict[input_mod]['output_dir']
                          for input_mod in
-                         self._module_dict[module]['input_module']]
-            
-            if self._config.has_option(module.upper(), 'INPUT_DIR'):
-                input_dir = self._config.getlist(module.upper(), 'INPUT_DIR')
+                         self._module_dict[module]['input_module']
+                         if input_mod in self._module_dict]
+
+        if self._config.has_option(module.upper(), 'INPUT_DIR'):
+            input_dir = (self._check_input_dir_list(
+                         self._config.getlist(module.upper(),
+                                              'INPUT_DIR')))
 
         if self.get_add_module_property(module, 'input_dir'):
             input_dir += self.get_add_module_property(module, 'input_dir')
+
+        if not input_dir:
+            raise RuntimeError('Could not find appropriate input directory '
+                               'for module {}.'.format(module))
 
         self._module_dict[module]['input_dir'] = self.check_dirs(input_dir)
 
@@ -653,8 +686,7 @@ class FileHandler(object):
 
         return re_pattern
 
-    @classmethod
-    def _save_num_patterns(cls, dir_list, re_pattern, pattern, ext,
+    def _save_num_patterns(self, dir_list, re_pattern, pattern, ext,
                            output_file):
         """ Save Number Patterns
 
@@ -706,11 +738,12 @@ class FileHandler(object):
         # Select files matching the numbering scheme
         final_file_list = []
         found_match = False
-        pattern_corrected = False
+        correct_pattern = self._correct_pattern
+        new_pattern = pattern
 
         for file in true_file_list:
 
-            striped = cls._strip_dir_from_file(file, dir_list)
+            striped = self._strip_dir_from_file(file, dir_list)
             search_res = re.search(re_pattern, striped)
 
             if search_res:
@@ -719,7 +752,7 @@ class FileHandler(object):
                 found_match = True
 
             # Correct the pattern if necessary
-            if found_match and not pattern_corrected:
+            if found_match and correct_pattern:
 
                 new_pattern = striped
 
@@ -731,7 +764,7 @@ class FileHandler(object):
                           ''.format(pattern, new_pattern))
                     print()
 
-                pattern_corrected = True
+                correct_pattern = False
 
         if not found_match:
             raise RuntimeError('Could not match numbering scheme to any of the'

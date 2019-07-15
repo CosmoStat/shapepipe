@@ -78,7 +78,8 @@ class vignetmaker(object):
 
             vign = self._get_stamp(image_path, pos-1, rad)
 
-            save_vignet(vign, self._galcat_path, self._output_dir, _suffix, self._image_num)
+            save_vignet(vign, self._galcat_path, self._output_dir, _suffix,
+                        self._image_num)
 
     def get_pos(self, pos_params):
         """Get positions
@@ -200,7 +201,8 @@ class vignetmaker(object):
         n_epoch = np.copy(cat.get_data()['N_EPOCH'])
 
         list_ext_name = cat.get_ext_name()
-        hdu_ind = [i for i in range(len(list_ext_name)) if 'EPOCH' in list_ext_name[i]]
+        hdu_ind = [i for i in range(len(list_ext_name))
+                   if 'EPOCH' in list_ext_name[i]]
 
         final_list = []
         for hdu_index in hdu_ind:
@@ -212,7 +214,8 @@ class vignetmaker(object):
             for ccd in ccd_list:
                 if ccd == -1:
                     continue
-                img_path = image_dir + '/' + image_pattern + '-' + exp_name + '-' + str(ccd) + '.fits'
+                img_path = (image_dir + '/' + image_pattern + '-' +
+                            exp_name + '-' + str(ccd) + '.fits')
                 ind_obj = np.where(cat.get_data(hdu_index)['CCD_N'] == ccd)[0]
                 obj_id = all_id[ind_obj]
                 pos = np.array(self._f_wcs_file[exp_name][ccd].all_world2pix(self._pos[:, 1][ind_obj], self._pos[:, 0][ind_obj], 1)).T
@@ -223,18 +226,21 @@ class vignetmaker(object):
                 if array_vign is None:
                     array_vign = np.copy(tmp_vign)
                 else:
-                    array_vign = np.concatenate((array_vign, np.copy(tmp_vign)))
+                    array_vign = np.concatenate((array_vign,
+                                                 np.copy(tmp_vign)))
 
                 if array_id is None:
                     array_id = np.copy(obj_id)
                 else:
                     array_id = np.concatenate((array_id, np.copy(obj_id)))
 
-                exp_name_tmp = np.array([exp_name + '-' + str(ccd) for i in range(len(obj_id))])
+                exp_name_tmp = np.array([exp_name + '-' + str(ccd)
+                                         for i in range(len(obj_id))])
                 if array_exp_name is None:
                     array_exp_name = exp_name_tmp
                 else:
-                    array_exp_name = np.concatenate((array_exp_name, exp_name_tmp))
+                    array_exp_name = np.concatenate((array_exp_name,
+                                                     exp_name_tmp))
 
             final_list.append([array_id, array_vign, array_exp_name])
 
@@ -281,9 +287,11 @@ class vignetmaker(object):
         for i in range(len(image_pattern)):
 
             if len(image_dir) != len(image_pattern):
-                output_dict = self._get_stamp_me(image_dir[0], image_pattern[i])
+                output_dict = self._get_stamp_me(image_dir[0],
+                                                 image_pattern[i])
             else:
-                output_dict = self._get_stamp_me(image_dir[i], image_pattern[i])
+                output_dict = self._get_stamp_me(image_dir[i],
+                                                 image_pattern[i])
 
             self._save_vignet_me(output_dict, image_pattern[i])
 
@@ -302,7 +310,8 @@ class vignetmaker(object):
             Suffix to use for the output file name.
 
         """
-        output_name = self._output_dir + '/' + suffix + '_vignet{}'.format(self._image_num)
+        output_name = (self._output_dir + '/' + suffix +
+                       '_vignet{}'.format(self._image_num))
         # np.save(output_name, output_dict)
 
         output_file = SqliteDict(output_name+'.sqlite')
@@ -383,7 +392,8 @@ def save_vignet(vign, sexcat_path, output_dir, suffix, image_num):
 
     """
 
-    output_name = output_dir + '/' + suffix + '_vignet{}.fits'.format(image_num)
+    output_name = (output_dir + '/' + suffix +
+                   '_vignet{}.fits'.format(image_num))
     f = io.FITSCatalog(output_name, SEx_catalog=True,
                        open_mode=io.BaseCatalog.OpenMode.ReadWrite)
     f.save_as_fits(vign, names=['VIGNET'], sex_cat_path=sexcat_path)
@@ -400,7 +410,7 @@ def get_image_dir(output_dir, input_module_list):
                file_pattern=['galaxy_selection', 'image'],
                file_ext=['.fits', '.fits'],
                depends=['numpy', 'astropy', 'sf_tools', 'sqlitedict'])
-def vignetmaker_runner2(input_file_list, output_dir, file_number_string,
+def vignetmaker_runner2(input_file_list, run_dirs, file_number_string,
                         config, w_log):
 
     galcat_path = input_file_list[0]
@@ -409,7 +419,8 @@ def vignetmaker_runner2(input_file_list, output_dir, file_number_string,
     if do_masking:
         mask_value = config.getfloat("VIGNETMAKER_RUNNER2", "MASK_VALUE")
         vign = make_mask(galcat_path, mask_value)
-        save_vignet(vign, galcat_path, output_dir, 'cat', file_number_string)
+        save_vignet(vign, galcat_path, run_dirs['output'], 'cat',
+                    file_number_string)
 
     else:
         stamp_size = config.getint("VIGNETMAKER_RUNNER2", "STAMP_SIZE") - 1
@@ -425,19 +436,21 @@ def vignetmaker_runner2(input_file_list, output_dir, file_number_string,
         if mode == 'CLASSIC':
             suffix = config.getlist("VIGNETMAKER_RUNNER2", "SUFFIX")
             if len(suffix) != len(input_file_list[1:]):
-                raise ValueError("You must provide a suffix for each image from "
-                                 "which you extract stamps.")
+                raise ValueError("You must provide a suffix for each image "
+                                 "from which you extract stamps.")
 
             inst = vignetmaker(galcat_path, pos_type, pos_params,
-                               output_dir, file_number_string)
+                               run_dirs['output'], file_number_string)
             inst.process(input_file_list[1:], rad, suffix)
         elif mode == 'MULTI-EPOCH':
-            image_dir = get_image_dir(output_dir, config.getlist("VIGNETMAKER_RUNNER2", "ME_IMAGE_DIR"))
-            image_pattern = config.getlist("VIGNETMAKER_RUNNER2", "ME_IMAGE_PATTERN")
-            f_wcs_path = config.getexpanded("VIGNETMAKER_RUNNER2", "ME_LOG_WCS")
+            image_dir = config.getlist("VIGNETMAKER_RUNNER2", "ME_IMAGE_DIR")
+            image_pattern = config.getlist("VIGNETMAKER_RUNNER2",
+                                           "ME_IMAGE_PATTERN")
+            f_wcs_path = config.getexpanded("VIGNETMAKER_RUNNER2",
+                                            "ME_LOG_WCS")
 
             inst = vignetmaker(galcat_path, pos_type, pos_params,
-                               output_dir, file_number_string)
+                               run_dirs['output'], file_number_string)
             inst.process_me(image_dir, image_pattern, f_wcs_path, rad)
 
     return None, None
