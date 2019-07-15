@@ -12,7 +12,8 @@ from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.mask_package.mask_script import mask
 
 
-@module_runner(input_module='split_exp_runner', version='1.0',
+#@module_runner(input_module='split_exp_runner', version='1.0',
+@module_runner(version='1.0',
                file_pattern=['image', 'weight', 'flag'],
                file_ext=['.fits', '.fits', '.fits'],
                depends=['numpy', 'astropy'], executes=['ww', 'findgsc2.2'],

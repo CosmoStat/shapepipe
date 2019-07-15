@@ -4,7 +4,7 @@
 
 #-------------------------------- PSF model ----------------------------------
 
-BASIS_TYPE      NONE           # NONE, PIXEL, GAUSS-LAGUERRE or FILE
+BASIS_TYPE      PIXEL           # NONE, PIXEL, GAUSS-LAGUERRE or FILE
 BASIS_NUMBER    20              # Basis number or parameter
 BASIS_NAME      basis.fits      # Basis filename (FITS data-cube)
 BASIS_SCALE     1.0             # Gauss-Laguerre beta parameter

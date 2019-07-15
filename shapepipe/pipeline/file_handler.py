@@ -552,12 +552,12 @@ class FileHandler(object):
         if (isinstance(self._module_dict[module]['input_module'], type(None))
                 or len(self._module_dict) == 1):
             input_dir = self._input_dir
-
+        
         else:
             input_dir = [self._module_dict[input_mod]['output_dir']
                          for input_mod in
                          self._module_dict[module]['input_module']]
-
+            
             if self._config.has_option(module.upper(), 'INPUT_DIR'):
                 input_dir = self._config.getlist(module.upper(), 'INPUT_DIR')
 
@@ -680,7 +680,7 @@ class FileHandler(object):
         # available input directories and identify the correct path
         true_file_list = None
         true_path = None
-
+        
         for path in dir_list:
 
             file_list = find_files(path, pattern, ext)
