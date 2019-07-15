@@ -67,7 +67,8 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     sexcat_file.close()
 
 
-def save_sm_data(final_cat_file, sexcat_sm_path, do_classif=True, star_thresh=0.003, gal_thresh=0.01):
+def save_sm_data(final_cat_file, sexcat_sm_path, do_classif=True,
+                 star_thresh=0.003, gal_thresh=0.01):
     """ Save spread-model data
 
     Save the spread-model data into the final catalog.
@@ -79,7 +80,8 @@ def save_sm_data(final_cat_file, sexcat_sm_path, do_classif=True, star_thresh=0.
     sexcat_sm_path : str
         Path to spread-model catalog to save.
     do_classif : bool
-        If True will make a star/galaxy classification. Based on : class = sm + 5/3 * sm_err
+        If True will make a star/galaxy classification. Based on :
+        class = sm + 5/3 * sm_err
     star_thresh : float
         Threshold for star selection. |class| < star_thresh
     gal_thresh : float
@@ -260,16 +262,19 @@ def save_psf_data(final_cat_file, galaxy_psf_path, w_log):
     galaxy_psf_cat.close()
 
 
-@module_runner(input_module=['sextractor_runner', 'spread_model_runner', 'psfexinterp_runner', 'ngmix_runner'],
-               version='1.0', file_pattern=['tile_sexcat', 'sexcat_sm', 'galaxy_psf', 'ngmix'],
+@module_runner(input_module=['sextractor_runner', 'spread_model_runner',
+                             'psfexinterp_runner', 'ngmix_runner'],
+               version='1.0', file_pattern=['tile_sexcat', 'sexcat_sm',
+                                            'galaxy_psf', 'ngmix'],
                file_ext=['.fits', '.fits', '.npy', '.fits'],
                depends=['numpy', 'sqlitedict'])
-def make_catalog_runner(input_file_list, output_dir, file_number_string,
+def make_catalog_runner(input_file_list, run_dirs, file_number_string,
                         config, w_log):
 
     tile_sexcat_path, sexcat_sm_path, galaxy_psf_path, ngmix_cat_path = input_file_list
 
-    do_classif = config.getboolean("MAKE_CATALOG_RUNNER", "SM_DO_CLASSIFICATION")
+    do_classif = config.getboolean("MAKE_CATALOG_RUNNER",
+                                   "SM_DO_CLASSIFICATION")
     if do_classif:
         star_thresh = config.getfloat("MAKE_CATALOG_RUNNER", "SM_STAR_STRESH")
         gal_thresh = config.getfloat("MAKE_CATALOG_RUNNER", "SM_GAL_THRESH")
@@ -281,14 +286,17 @@ def make_catalog_runner(input_file_list, output_dir, file_number_string,
     if shape_type.lower() not in ["ngmix", "galsim"]:
         raise ValueError("SHAPE_MEASUREMENT_TYPE must be in [ngmix, galsim]")
 
-    output_name = output_dir + '/final_cat' + file_number_string + '.fits'
-    final_cat_file = io.FITSCatalog(output_name, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+    output_name = (run_dirs['output'] + '/final_cat' +
+                   file_number_string + '.fits')
+    final_cat_file = (io.FITSCatalog(output_name,
+                      open_mode=io.BaseCatalog.OpenMode.ReadWrite))
 
     w_log.info('Save SExtractor data')
     save_sextractor_data(final_cat_file, tile_sexcat_path)
 
     w_log.info('Save spread-model data')
-    save_sm_data(final_cat_file, sexcat_sm_path, do_classif, star_thresh, gal_thresh)
+    save_sm_data(final_cat_file, sexcat_sm_path, do_classif, star_thresh,
+                 gal_thresh)
 
     w_log.info('Save ngmix data')
     if shape_type.lower() == "ngmix":

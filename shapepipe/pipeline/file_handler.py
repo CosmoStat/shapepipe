@@ -532,6 +532,9 @@ class FileHandler(object):
 
         # Set current output directory to module output directory
         self.output_dir = self._module_dict[module]['output_dir']
+        self.module_run_dirs = {'run': self.run_dir, 'log': self._log_dir,
+                                'tmp': self._tmp_dir,
+                                'output': self.output_dir}
 
     def _set_module_input_dir(self, module):
         """ Set Module Input Directory
