@@ -30,4 +30,5 @@ __module_list__ = ['combine_mexp_runner',
                    'swarp_runner',
                    'tileobj_as_exp_runner',
                    'vignetmaker_runner',
-                   'vignetmaker_runner2']
+                   'vignetmaker_runner2',
+                   'merge_star_cat_runner']
