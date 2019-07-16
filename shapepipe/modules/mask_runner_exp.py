@@ -17,7 +17,7 @@ from shapepipe.modules.mask_package.mask_script import mask
                file_ext=['.fits', '.fits', '.fits'],
                depends=['numpy', 'astropy'], executes=['ww', 'findgsc2.2'],
                numbering_scheme='_0')
-def mask_runner_exp(input_file_list, output_dir, file_number_string,
+def mask_runner_exp(input_file_list, run_dirs, file_number_string,
                     config, w_log):
 
     if len(input_file_list) == 2:
@@ -56,7 +56,7 @@ def mask_runner_exp(input_file_list, output_dir, file_number_string,
         outname_base = 'flag'
 
     inst = mask(*input_file_list[:2], suffix.replace(" ", ""),
-                file_number_string, config_file, output_dir,
+                file_number_string, config_file, run_dirs['output'],
                 path_external_flag=ext_flag_name, outname_base=outname_base,
                 star_cat_path=ext_star_cat)
     stdout, stderr = inst.make_mask()

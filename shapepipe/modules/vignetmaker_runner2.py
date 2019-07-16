@@ -403,6 +403,8 @@ def get_image_dir(output_dir, input_module_list):
     """
     """
 
+    # output_dir = '/Users/aguinot/Desktop/pipetest3/shapepipe_run_2019-07-15_13-22-37/vignetmaker_runner2/output'
+
     return ['/' + '/'.join(re.split('/', output_dir)[1:-2]) + '/' + input_module for input_module in input_module_list]
 
 
@@ -443,7 +445,9 @@ def vignetmaker_runner2(input_file_list, run_dirs, file_number_string,
                                run_dirs['output'], file_number_string)
             inst.process(input_file_list[1:], rad, suffix)
         elif mode == 'MULTI-EPOCH':
-            image_dir = config.getlist("VIGNETMAKER_RUNNER2", "ME_IMAGE_DIR")
+            image_dir = get_image_dir(run_dirs['output'],
+                                      config.getlist("VIGNETMAKER_RUNNER2",
+                                                     "ME_IMAGE_DIR"))
             image_pattern = config.getlist("VIGNETMAKER_RUNNER2",
                                            "ME_IMAGE_PATTERN")
             f_wcs_path = config.getexpanded("VIGNETMAKER_RUNNER2",

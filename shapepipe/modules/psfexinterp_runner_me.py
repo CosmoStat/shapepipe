@@ -25,7 +25,7 @@ def get_psfex_run_dir(output_dir):
                file_pattern=['star_selection', 'galaxy_selection'],
                file_ext=['.psf', '.fits'],
                depends=['numpy', 'astropy', 'galsim', 'sqlitedict'])
-def psfexinterp_runner_me(input_file_list, output_dir, file_number_string,
+def psfexinterp_runner_me(input_file_list, run_dirs, file_number_string,
                           config, w_log):
 
     mode = config.get('PSFEXINTERP_RUNNER_ME', 'MODE')
@@ -39,20 +39,20 @@ def psfexinterp_runner_me(input_file_list, output_dir, file_number_string,
         psfcat_path, galcat_path = input_file_list
 
         inst = interpolation_script.PSFExInterpolator(psfcat_path, galcat_path,
-                                                      output_dir, file_number_string, w_log,
+                                                      run_dirs['output'], file_number_string, w_log,
                                                       pos_params, get_shapes, star_thresh, chi2_thresh)
         inst.process()
 
     elif mode == 'MULTI-EPOCH':
         # dot_psf_dir = config.getexpanded('PSFEXINTERP_RUNNER_ME', 'ME_DOT_PSF_DIR')
-        dot_psf_dir = get_psfex_run_dir(output_dir)
+        dot_psf_dir = get_psfex_run_dir(run_dirs['output'])
         dot_psf_pattern = config.get('PSFEXINTERP_RUNNER_ME', 'ME_DOT_PSF_PATTERN')
         f_wcs_path = config.getexpanded('PSFEXINTERP_RUNNER_ME', 'ME_LOG_WCS')
 
         galcat_path = input_file_list[0]
 
         inst = interpolation_script.PSFExInterpolator(None, galcat_path,
-                                                      output_dir, file_number_string, w_log,
+                                                      run_dirs['output'], file_number_string, w_log,
                                                       pos_params, get_shapes, star_thresh, chi2_thresh)
 
         inst.process_me(dot_psf_dir, dot_psf_pattern, f_wcs_path)
@@ -61,7 +61,7 @@ def psfexinterp_runner_me(input_file_list, output_dir, file_number_string,
         psfcat_path, galcat_path, psfex_cat_path = input_file_list
 
         inst = interpolation_script.PSFExInterpolator(psfcat_path, galcat_path,
-                                                      output_dir, file_number_string, w_log,
+                                                      run_dirs['output'], file_number_string, w_log,
                                                       pos_params, get_shapes, star_thresh, chi2_thresh)
 
         inst.process_validation(psfex_cat_path)

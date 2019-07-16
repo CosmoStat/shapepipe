@@ -82,7 +82,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
                file_pattern=['image', 'weight', 'flag'],
                file_ext=['.fits', '.fits', '.fits'],
                executes=['sex'], depends=['numpy'])
-def sextractor_runner_exp(input_file_list, output_dir, file_number_string,
+def sextractor_runner_exp(input_file_list, run_dirs, file_number_string,
                           config, w_log):
 
     num = file_number_string
@@ -110,7 +110,7 @@ def sextractor_runner_exp(input_file_list, output_dir, file_number_string,
         suffix = ''
 
     output_file_name = suffix + 'sexcat{0}.fits'.format(num)
-    output_file_path = '{0}/{1}'.format(output_dir, output_file_name)
+    output_file_path = '{0}/{1}'.format(run_dirs['output'], output_file_name)
 
     command_line = ('{0} {1} -c {2} -PARAMETERS_NAME {3} -CATALOG_NAME {4}'
                     ''.format(exec_path, input_file_list[0], dot_sex,
@@ -140,7 +140,7 @@ def sextractor_runner_exp(input_file_list, output_dir, file_number_string,
         check_name = []
         for i in check_image:
             check_type.append(i.upper())
-            check_name.append(output_dir + '/' + suffix+i.lower()+num+'.fits')
+            check_name.append(run_dirs['output'] + '/' + suffix+i.lower()+num+'.fits')
 
     command_line += (' -CHECKIMAGE_TYPE {0} -CHECKIMAGE_NAME {1}'
                      ''.format(','.join(check_type), ','.join(check_name)))

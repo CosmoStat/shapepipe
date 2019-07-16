@@ -167,7 +167,7 @@ def save_results(sex_cat_path, output_path, sm, sm_err, mag, number,
         ValueError('Mode must be in [new, add].')
 
 
-@module_runner(input_module=['sextractor_runner', 'psfexinterp_runner',
+@module_runner(input_module=['sextractor_runner', 'psfexinterp_runner_me',
                              'vignetmaker_runner'], version='1.0',
                file_pattern=['sexcat', 'galaxy_psf', 'weight_vign'],
                file_ext=['.fits', '.sqlite', '.fits'],
