@@ -5,6 +5,7 @@
 1. [Introduction](#Introduction)
     1. [Numbering](#Numbering)
     1. [CFIS porcessing](#CFIS-processing)
+1. [ Field and image selection](#Selection)
 1. [ Single exposures processing](#Single-exposures-processing)
     1. [Spliting](#Spliting)
     1. [Masking single exposures](#Masking-single-exposures)
@@ -25,45 +26,75 @@
 
 ## Introduction
 
-The pipeline is able to process single exposures images and stacked images. The images has to be calibrated for astrometry and photometry.
+The `ShapePipe` pipeline can process single-exposures images, and stacked images. The input images have to be calibrated beforehand for astrometry and photometry.
 
 ***WARNING /!\ :*** All the paths on the examples are relatives. When running on clusters make sure they make sense. Prefer absolute paths to avoid problems. Some of them are dummy examples.
 
-### Numbering
+### File types, naming and numbering convention
 
-In order to keep track of the image informations we adopt a numerotation as follow for ingle exposures :
-  - type-exposures_name-CCD_number.fits  
-  Example : image-2079614-9.fits, weight-2079614-9.fits, ...
+The `ShapePipe` pipeline handles different image and file types, some of which
+are create by the pipeline during analysis. These types are listed below. Those
+files follow a naming and numbering convention, to facilitate bookkeeping for
+tracking relevant image information. We adopt a numbering schemes as follows.
 
-And for stacked images :
-  - type-number.fits  
-  Example : CFIS_image-51.fits, pipeline_flag-51.fits, ...
+- Single-exposure image.  
+  Multi-HDU FITS file containing a mosaic from multiple CCDs of a single exposure (one CCD per HDU).
+  These images are typically created by a telescope analysis software (e.g.~`pitcairn`), and used on input
+  by `ShapePipe`. The pixel data can contain the observed image, a weight map, or a flag map.
+
+- Single-exposure single-CCD image.  
+  FITS file containing a single CCD from an individual exposure. The pixel data can contain the observed image, a weight map, or a flag map.  
+  **<image_type>-<exposure_name>-<CCD_number>.fits**  
+  Examples: `image-2079614-9.fits`, `weight-2079614-3.fits`
+
+- Stacked images:  
+  FITS file containing a stack of different single exposures, or tile, for example created by `swarp`.
+  The pixel data can contain the observed image, a weight map, or a flag map.  
+  **<image_type>-<number>.fits**  
+  Examples: `CFIS_image-51.fits`, `pipeline_flag-2134.fits`
 
 ### CFIS processing
 
-At the moment the single exposures has to be split into individual CCDs images and there are process independently.
-To process CFIS images the steps are the following (details of each step can be found below) :
-* Single exposures :
+Processing of CFIS images can be separated into three categories: Field selection, analysis of single exposures,
+analysis of stacks.
+
+At the moment, single exposures first have to be split into single-CCDs images.
+The single-exposure single-CCD images are then processed independently.
+
+* Field and image selection.
+* Processing of single exposures.
   * Split each CCDs
-  * Create masks for bright stars, spikes, border, ...
-  * Detect sources of potential stars
+  * Create masks for bright stars, spikes, borders, Messier objects, ...
+  * Detect stars
   * PSF modeling
   * Validation of the PSF model (optional)
-* Stack images :
+* Stack images.
   * Create mask for bright stars, spikes, border, ...
   * Detect all sources
   * Interpolate the PSF model at the location of each sources for all epochs contributing
   * Create postage stamps necessary for the spread-model
-  * Get the spread-model for each sources
+  * Get the spread model for each source
   * Create postage stamps for the shape measurement
   * Shape measurement (NGMIX only at the moment)
   * Merge all results into on main catalog
 
-Flowchart presenting the process :
+Flowchart presenting the process:
 
 ![ShapePipe_FlowChart](./ShapePipe_v0.0.1.png)
 
-## Single exposures processing
+## Field and image selection
+
+The selection of images in input can be done in the config files of the relevant modules, by specifying input
+path(s) and input file name patterns. Thus, a sub-selection of images in a given input directory can be done.
+However, one might want to pre-select images before the pipeline is run. For example, to find all images (exposures
+and stacks) in a given sky area. These can then be copied to a dedicated directory (or linked using symbolic links),
+or downloaded to a local machine.
+
+### Selection of exposures.
+
+Option 1. Selection by area from log file.
+
+## Single-exposures processing
 
 ### Spliting
 
