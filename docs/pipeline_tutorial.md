@@ -98,8 +98,8 @@ Option 1. Selection by area from log file.
 
 ### Spliting
 
-**Module :** splip_exp_runner
-**Module inputs :** single_exp_image, single_exp_flag, single_exp_weight
+**Module :** splip_exp_runner   
+**Module inputs :** single_exp_image, single_exp_flag, single_exp_weight   
 **Script :** create_log_exp_headers.py
 
 Before the process start we have to split all the single exposures images to CCD images.
@@ -130,8 +130,8 @@ Remember the output, it will be required for later processing. The output file i
 
 ### Masking single exposures
 
-**Module :** mask_runner
-**Module inputs :** splited_single_exp_image, splited_single_exp_weight, splited_single_exp_flag, (star_cat)
+**Module :** mask_runner   
+**Module inputs :** splited_single_exp_image, splited_single_exp_weight, splited_single_exp_flag, (star_cat)   
 **Script :** create_star_cat.py
 
 Here we will create masks for bright stars, spikes and borders. We will also include the already existing masking for the cosmic rays and various artifacts.  
@@ -239,7 +239,7 @@ TEMP_DIRECTORY = ./.temp2
 
 ### Source identification single exposures
 
-**Module :** sextractor_runner
+**Module :** sextractor_runner   
 **Module inputs :** single_exp_image, single_exp_weight, single_exp_flag
 
 On the single exposures we focus the source identification on stars. Thats means we will use a higher detection threshold in order to avoid some artifacts and reduce the size of the catalog.
@@ -361,7 +361,7 @@ BACK_FILTTHRESH  0.0            # Threshold above which the background-map filte
 
 ### Star selection
 
-**Module :** setools_runner
+**Module :** setools_runner   
 **Module inputs :** sextractor_catalog
 
 For the star selection we use a simple size/magnitude plan. We first find the stellar locus (using the mode of the FWHM) and select object around this value in a range of magnitude. Here is a commented example config file for the pipeline :
@@ -469,7 +469,7 @@ YLABEL = "Y (pix)"
 
 ### PSF estimation
 
-**Module :** psfex_runner
+**Module :** psfex_runner   
 **Module inputs :** setools_star_selection
 
 The PSF estimation is done with PSFEx. Here is a commented example config file for the pipeline :
@@ -540,7 +540,7 @@ OUTCAT_TYPE        FITS_LDAC         # NONE, ASCII_HEAD, ASCII, FITS_LDAC
 
 ### Validation tests
 
-**Module :** psfinterp_runner
+**Module :** psfinterp_runner   
 **Module :** setools_star_selection, psfex_catalog
 
 The interpolation of the PSF is not done at this stage for the shape measurement. But, in order to make validation tests on the model we need the model at the position of the stars used. For that we run the module : `psfinterp_runner` on `VALIDATION` mode. Here is a commented example config file for the pipeline :
@@ -686,8 +686,8 @@ POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE
 
 ### Masking stacked images
 
-**Module :** mask_runner
-**Module inputs :** tile_image, tile_weight, (star_cat)
+**Module :** mask_runner   
+**Module inputs :** tile_image, tile_weight, (star_cat)   
 **Script :** create_star_cat.py
 
 Here we will create masks for bright stars, spikes and borders. Since computing nodes on clusters don't usually have an internet access we will have to first create a star catalog for each images with the script : `create_star_cat.py`. To use it :
@@ -795,7 +795,7 @@ TEMP_DIRECTORY = ./.temp2
 
 ### Source identification stacked images
 
-**Module :** sextractor_runner
+**Module :** sextractor_runner   
 **Module inputs :** tile_image, tile_weight, tile_flag
 
 On the tiles we want to detect all the sources. For that we set a low detection threshold.  
@@ -955,8 +955,8 @@ Those additionnal HDUs contain all the multi-epoch informations we need for the 
 
 ### PSF interpolation
 
-**Module :** psfexinterp_runner
-**Module :** sextractor_catalog
+**Module :** psfexinterp_runner   
+**Module inputs :** sextractor_catalog
 
 Now we need to interpolate the PSF at the position of all detected sources for all epochs where the object appears. Here is a commented example config file for the pipeline :
 
@@ -1004,7 +1004,7 @@ Example :
 
 ### Prepare spread-model
 
-**Module :** vignetmaker_runner
+**Module :** vignetmaker_runner   
 **Module inputs :** sextractor_catalog, tile_weight
 
 To select the galaxy sample we will use the spread-model. To compute it we need :
@@ -1053,7 +1053,7 @@ OUTPUT_MODE = new
 
 ### Prepare shape measurement
 
-**Module :** vignetmaker_runner2
+**Module :** vignetmaker_runner2   
 **Module inputs :** sextractor_catalog
 
 As for the previous step, the shape measurement need some preparation. Here is all the files required :
@@ -1101,7 +1101,7 @@ For those files the data structure is the same as the one use for the module `ps
 
 ### NGMIX : Shape measurement
 
-**Module :** ngmix_runner
+**Module :** ngmix_runner   
 **Module inputs :** sextractor_catalog, single_exp_image_vignet, single_exp_bkg_vignet, tile_psf, single_exp_weight_vignet, single_exp_flag_vignet
 
 Now we run the shape measurement. At the moment it's done with NGMIX. Most of the features are hard coded (will be more flexible in the future). Here is a commented example config file for the pipeline :
@@ -1115,7 +1115,7 @@ LOG_WCS = /path/to/file/containing/WCS/information/log_exp_headers.npy
 
 ### Make final catalog
 
-**Module :** make_catalog_runner
+**Module :** make_catalog_runner   
 **Module inputs :** sextractor_catalog, spread_model, tile_psf, ngmix_catalog
 
 We finally merge all the results into one catalog per tiles. Here is a commented example config file for the pipeline :
