@@ -339,7 +339,7 @@ def run_mpi(pipe, comm):
                 # Get JobHandler objects
                 timeout = jh.timeout
                 # Get file handler objects
-                output_dir = jh.filehd.output_dir
+                run_dirs = jh.filehd.module_run_dirs
                 module_runner = jh.filehd.module_runners[module]
                 worker_log = jh.filehd.get_worker_log_name
                 # Define process list
@@ -348,7 +348,7 @@ def run_mpi(pipe, comm):
                 jobs = split_mpi_jobs(process_list, comm.size)
                 del process_list
         else:
-            job_type, output_dir, module_runner, worker_log, timeout, jobs = \
+            job_type, run_dirs, module_runner, worker_log, timeout, jobs = \
              (None, None, None, None, None, None)
 
         job_type = comm.bcast(job_type, root=0)
@@ -356,7 +356,7 @@ def run_mpi(pipe, comm):
         if job_type == 'parallel':
 
             # Broadcast objects to all nodes
-            output_dir = comm.bcast(output_dir, root=0)
+            run_dirs = comm.bcast(run_dirs, root=0)
             module_runner = comm.bcast(module_runner, root=0)
             worker_log = comm.bcast(worker_log, root=0)
             timeout = comm.bcast(timeout, root=0)
@@ -364,10 +364,10 @@ def run_mpi(pipe, comm):
 
             # Submit the MPI jobs and gather results
             results = comm.gather(submit_mpi_jobs(jobs, config, timeout,
-                                  output_dir, module_runner, worker_log,
+                                  run_dirs, module_runner, worker_log,
                                   verbose), root=0)
 
-            del output_dir, module_runner, timeout, jobs
+            del run_dirs, module_runner, timeout, jobs
 
         if master:
             # Assign worker dictionaries
