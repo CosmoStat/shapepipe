@@ -159,24 +159,14 @@ def main(input_dir, output_dir, kind):
         if 'image' not in f:
             continue
 
-        img = fits.open(input_dir + '/' + f)
+        # img = fits.open(input_dir + '/' + f)
 
         if kind == 'exp':
-            list_ind = range(1, len(img))
+            list_ind = range(1, 41)
         else:
             list_ind = [0]
 
         for ind in list_ind:
-            h = img[ind].header
-
-            w = _get_wcs(h)
-
-            img_shape = img[ind].data.shape
-            img_center = np.array([img_shape[1]/2., img_shape[0]/2.])
-            wcs_center = w.all_pix2world([img_center], 1)[0]
-            astropy_center = SkyCoord(ra=wcs_center[0], dec=wcs_center[1], unit='deg')
-
-            rad = _get_image_radius(img_center, w)
 
             if kind == 'exp':
                 exp_suff = '-{}'.format(ind-1)
@@ -184,6 +174,21 @@ def main(input_dir, output_dir, kind):
                 exp_suff = ''
 
             output_name = output_dir + '/star_cat' + re.split('image', os.path.splitext(f)[0])[1] + exp_suff + '.cat'
+
+            if os.path.isfile(output_name):
+                continue
+
+            # h = img[ind].header
+            h = fits.getheader(input_dir + '/' + f, ind)
+
+            w = _get_wcs(h)
+
+            img_shape = (h['NAXIS2'], h['NAXIS1'])
+            img_center = np.array([img_shape[1]/2., img_shape[0]/2.])
+            wcs_center = w.all_pix2world([img_center], 1)[0]
+            astropy_center = SkyCoord(ra=wcs_center[0], dec=wcs_center[1], unit='deg')
+
+            rad = _get_image_radius(img_center, w)
 
             find_stars(np.array([astropy_center.ra.value, astropy_center.dec.value]), output_name, rad)
 
@@ -209,3 +214,4 @@ if __name__ == '__main__':
         kind = ''
 
     main(input_path, output_path, kind)
+
