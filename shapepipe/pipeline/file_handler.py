@@ -847,7 +847,7 @@ class FileHandler(object):
             os.remove(mmap)
 
     def _format_process_list(self, patterns, memory_map, re_pattern,
-                             run_method):
+                             num_scheme, run_method):
         """ Format Process List
 
         Format the list of files to be processed.
@@ -860,6 +860,8 @@ class FileHandler(object):
             Name of mempry map file
         re_pattern : str
             Regular expression for numbering scheme
+        num_scheme : str
+            Numbering scheme
         run_method : str
             Run method
 
@@ -931,7 +933,7 @@ class FileHandler(object):
         self._save_match_patterns(match_mmap, np_mmap_list)
 
         process_list = self._format_process_list(temp, match_mmap, re_pattern,
-                                                 run_method)
+                                                 num_scheme, run_method)
 
         np.save(self.process_mmap, np.array(process_list))
         del process_list
