@@ -218,7 +218,7 @@ class JobHandler(object):
 
         if (isinstance(value, type(None)) and
                 self.config.has_option('JOB', 'SMP_BACKEND')):
-            value = self.config.get('JOB', 'SMP_BACKEND')
+            value = self.config.get('JOB', 'SMP_BACKEND').lower()
         elif isinstance(value, type(None)):
             value = 'loky'
 

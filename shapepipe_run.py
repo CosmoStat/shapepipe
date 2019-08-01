@@ -40,7 +40,7 @@ class ShapePipe():
         self.config = create_config_parser(self._args.config)
         self._set_run_name()
         self.modules = self.config.getlist('EXECUTION', 'MODULE')
-        self.mode = self.config.get('EXECUTION', 'MODE')
+        self.mode = self.config.get('EXECUTION', 'MODE').lower()
         self.filehd = FileHandler(self._run_name, self.modules, self.config)
         self.verbose = self.config.getboolean('DEFAULT', 'VERBOSE')
         self.error_count = 0
