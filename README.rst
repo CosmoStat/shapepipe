@@ -11,6 +11,9 @@ ShapePipe
 
 .. |python36| image:: https://img.shields.io/badge/python-3.6-yellow.svg
   :target: https://www.python.org/
+  
+.. |python37| image:: https://img.shields.io/badge/python-3.7-yellow.svg
+  :target: https://www.python.org/
 
 :Version: 0.0.2
 
