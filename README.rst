@@ -1,7 +1,7 @@
 ShapePipe
 =========
 
-|gitlab-ci| |python35| |python36|
+|gitlab-ci| |python35| |python36| |python37|
 
 .. |gitlab-ci| image:: https://drf-gitlab.cea.fr/cosmostat/ShapePipe/badges/master/pipeline.svg
   :target: https://drf-gitlab.cea.fr/cosmostat/ShapePipe/tree/master
