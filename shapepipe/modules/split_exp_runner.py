@@ -13,6 +13,7 @@ files.
 import numpy as np
 import sip_tpv as stp
 from astropy.wcs import WCS
+from astropy.io import fits
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.pipeline import file_io as io
@@ -41,18 +42,15 @@ def create_hdus(exp_path, output_dir, output_name, output_sufix, n_hdu=40,
 
     """
 
-    exp_file = io.FITSCatalog(exp_path, hdu_no=1)
-    exp_file.open()
-
     header_file = np.zeros(n_hdu, dtype='O')
 
     for i in range(1, n_hdu+1):
 
-        h = exp_file._cat_data[i].header
+        h = fits.getheader(exp_path, i)
         if transf_coord:
             stp.pv_to_sip(h)
 
-        d = exp_file.get_data(i)
+        d = fits.getdata(exp_path, i)
         if transf_int:
             d = d.astype(np.int16)
 
