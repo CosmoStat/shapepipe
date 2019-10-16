@@ -1,6 +1,5 @@
 # Install dependencies
 before_script:
-    gfortran
   - pip install coverage nose pytest pytest-cov
   - pip install -r requirements.txt
   - pip install -r requirements_git.txt
