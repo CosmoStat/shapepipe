@@ -1,5 +1,6 @@
 # Install dependencies
 before_script:
+  - conda activate gitlab-ci
   - pip install coverage nose pytest pytest-cov
   - pip install -r requirements.txt
   - pip install -r requirements_git.txt
