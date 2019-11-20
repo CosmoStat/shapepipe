@@ -9,5 +9,5 @@ Install:
   script: python setup.py test
 
 # Remove conda env
-after_script:
-  - conda remove -n gitlab-ci --all -y
+# after_script:
+#   - conda remove -n gitlab-ci --all -y
