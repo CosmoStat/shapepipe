@@ -1,7 +1,7 @@
 # Install dependencies
 before_script:
   - conda env create -f environment.yml -n gitlab-ci
-  - conda activate shapepipe
+  - conda activate gitlab-ci
   - pip install coverage nose pytest pytest-cov
 
 # Install package
