@@ -386,7 +386,6 @@ case "$OSTYPE" in
   ;;
   linux*)
   SYSOS="LINUX"
-  if [ -z "$ATLAS_LIB" ]; then ATLAS_SEARCH=TRUE; fi
   ;;
   *)
   echo "unknown: $OSTYPE"
