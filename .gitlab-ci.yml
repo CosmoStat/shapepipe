@@ -1,6 +1,6 @@
 # Install dependencies
 before_script:
-  - conda env create -f environment.yml -n gitlab-ci
+  - {conda list -n gitlab-ci} || {conda env create -f environment.yml -n gitlab-ci}
   - conda activate gitlab-ci
   - pip install coverage nose pytest pytest-cov
 
