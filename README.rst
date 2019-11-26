@@ -11,7 +11,7 @@ ShapePipe
 
 .. |python36| image:: https://img.shields.io/badge/python-3.6-yellow.svg
   :target: https://www.python.org/
-  
+
 .. |python37| image:: https://img.shields.io/badge/python-3.7-yellow.svg
   :target: https://www.python.org/
 
@@ -372,3 +372,5 @@ the file pattern ``'process'`` with file extension ``'.cat'``.
       text_file.write(stdout)
 
       return stdout, stderr
+
+.
