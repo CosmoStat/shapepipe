@@ -33,4 +33,5 @@ __module_list__ = ['combine_mexp_runner',
                    'vignetmaker_runner2',
                    'merge_star_cat_runner',
                    'merge_headers_runner',
-                   'erase_output_runner']
+                   'erase_output_runner',
+                   'rca_runner']
