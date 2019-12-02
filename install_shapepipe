@@ -525,10 +525,8 @@ fi
 
 report_progress 'ShapePipe'
 cd $PIPE_DIR
-echo $PWD
 python setup.py install
-ln -s shapepipe_run.py shapepipe_run
-mv shapepipe_run $CONDA_PREFIX/bin
+ln -s $PWD/shapepipe_run.py $CONDA_PREFIX/bin/shapepipe_run
 finish
 
 ##############################################################################
