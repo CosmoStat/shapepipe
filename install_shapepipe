@@ -195,6 +195,8 @@ finish() {
   if [ "$INSTALL_WW" == TRUE ]; then check_binary2 $ww_bin "WeightWatcher"; fi
   if [ "$INSTALL_CDSCLIENT" == TRUE ]; then check_binary2 $cdsclient_bin "CDSclient"; fi
   if [ "$USE_MPI" == TRUE ]; then check_binary2 $mpi_bin "MPI"; fi
+  sp_ver=$(shapepipe_run -v)
+  echo 'Version:' $sp_ver
   echo $line
   echo ''
 }
@@ -458,7 +460,7 @@ then
   report_progress 'MPI'
   if [ -z "$MPI_ROOT" ]
   then
-    conda install -n shapepipe -c conda-forge mpi4py>=3.0.1 -y
+    conda install -n shapepipe -c conda-forge "mpi4py>=3.0.1" -y
   else
     download_package $mpi_url $mpi_tar
     build_mpi $mpi_dir
@@ -523,8 +525,8 @@ fi
 
 report_progress 'ShapePipe'
 cd $PIPE_DIR
-echo $PWD
 python setup.py install
+ln -s $PWD/shapepipe_run.py $CONDA_PREFIX/bin/shapepipe_run
 finish
 
 ##############################################################################
