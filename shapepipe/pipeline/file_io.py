@@ -6,7 +6,7 @@ This file contains methods for file I/O handling.
 
 :Author: Marc Gentile and Axel Guinot
 
-:Version: 1.0.1
+:Version: 1.0.2
 
 """
 
