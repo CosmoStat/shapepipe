@@ -1126,7 +1126,13 @@ class FITSCatalog(BaseCatalog):
       elif type(col_data[0]) in [str, np.str, np.str_, np.str0]:
          col_type = 'A'
       else:
-         col_type = 'D'
+         if type(col_data[0]) == np.ndarray:
+             if col_data[0].dtype.type in [np.float16, np.float32]:
+                 col_type = 'E'
+             elif col_data[0].dtype.type in [np.float64]:
+                 col_type = 'D'
+         else:
+             col_type = 'D'
 
       return col_type
 
@@ -1185,6 +1191,7 @@ class FITSCatalog(BaseCatalog):
           data_shape = data[i].shape[1:]
           dim = str(tuple(data_shape))
           name = names[it.index(i)]
+          print(type(data[i][0][0]))
           data_type = self._get_fits_col_type(data[i])
           mem_size = 1
           if len(data_shape) != 0:
