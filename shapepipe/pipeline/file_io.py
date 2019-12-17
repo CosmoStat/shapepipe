@@ -1191,7 +1191,6 @@ class FITSCatalog(BaseCatalog):
           data_shape = data[i].shape[1:]
           dim = str(tuple(data_shape))
           name = names[it.index(i)]
-          print(type(data[i][0][0]))
           data_type = self._get_fits_col_type(data[i])
           mem_size = 1
           if len(data_shape) != 0:
