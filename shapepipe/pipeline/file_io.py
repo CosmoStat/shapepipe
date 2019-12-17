@@ -558,9 +558,9 @@ class FITSCatalog(BaseCatalog):
                names = list(data.keys())
                it = list(range(len(names)))
                if len(names) == 1:
-                  data = np.array(data[names[0]])
+                  data = np.array(data[names[0]], dtype=data[names[0]].dtype)
                else:
-                  data = [np.array(data[i]) for i in names]
+                  data = [np.array(data[i], dtype=data[i].dtype) for i in names]
                self._save_to_fits(data, names, it, ext_name, sex_cat_path)
 
            elif type(data) is np.recarray:
@@ -1117,7 +1117,9 @@ class FITSCatalog(BaseCatalog):
          col_type = 'J'
       elif type(col_data[0]) in [int, np.int64]:
          col_type = 'K'
-      elif type(col_data[0]) in [float, np.float16, np.float32, np.float64]:
+      elif type(col_data[0]) in [np.float16, np.float32]:
+         col_type = 'E'
+      elif type(col_data[0]) in [float, np.float64]:
          col_type = 'D'
       elif type(col_data[0]) is bool:
          col_type = 'L'
