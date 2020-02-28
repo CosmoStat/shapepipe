@@ -1,4 +1,4 @@
-# ShapePipe usage tutorial
+# ShapePipe tutorial
 
 ## Index
 
@@ -61,14 +61,14 @@ tracking relevant image information. We adopt a numbering schemes as follows.
 
 ### CFIS processing
 
-`ShapePipe' splits the processing of CFIS images into three parts: 1.) Field and image selection; 2.) Processing of single exposures;
+`ShapePipe' splits the processing of CFIS images into three parts: 1.) Field and image selection; 2.) Processing of single exposure images;
 3.) Processing of stacked images. The single exposures are first split into single-CCD images, which are processed in turn and
 independently.
 
 Field and image selection is done before running the actual pipeline, by chosing the desired input images.
 
-Processing of single exposures contains the following steps:
-  * Split exposure into single-CCD images
+The processing of single exposure images contains the following steps:
+  * Split exposure into single-exposure single-CCD images
   * Create masks for bright stars, spikes, borders, Messier objects, ...
   * Detect stars
   * Model the PSF
@@ -88,21 +88,23 @@ The following flowchart visualised these processes:
 
 ![ShapePipe_FlowChart](./ShapePipe_v0.0.1.png)
 
-## Field and image selection
+In the following, the individual processing steps are described in detail.
 
-The selection of images in input can be done in the config files of the relevant modules, by specifying input
-path(s) and input file name patterns. Thus, a sub-selection of images in a given input directory can be done.
-However, one might want to pre-select images before the pipeline is run. For example, to find all images (exposures
-and stacks) in a given sky area. These can then be copied to a dedicated directory (or linked using symbolic links),
-or downloaded to a local machine.
+## 1.) Field and image selection
 
-### Selection of exposures.
+The selection of images on input can be done in the config files of the relevant modules, by specifying input
+path(s) and input file name patterns. Thus, a sub-selection of images in a given input directory can be made.
+However, one might want to pre-select specific images before the pipeline is run, for example to find all available images (exposures
+and stacks) in a given sky area. The resulting files can then be copied to a new, dedicated directory (or alternatively linked
+using symbolic links), or downloaded to a local machine.
+
+### Selection of exposures
 
 Option 1. Selection by area from log file.
 
-## Single-exposures processing
+## 2.) Processing of single exposure images
 
-### Spliting
+### Split single exposure into single-exposure single-CCD images
 
 **Module :** splip_exp_runner   
 **Module inputs :** single_exp_image, single_exp_flag, single_exp_weight   
