@@ -28,7 +28,7 @@
 
 The `ShapePipe` pipeline can process single-exposures images, and stacked images. The input images have to be calibrated beforehand for astrometry and photometry.
 
-***WARNING /!\:*** All file paths for the following examples are relative. When running on a cluster, you need to make sure that these paths are accessible on all computing nodes.
+***WARNING /!\ :*** All file paths for the following examples are relative. When running on a cluster, you need to make sure that these paths are accessible on all computing nodes.
 Absolute paths are recommended to avoid problems.
 
 ### File types, naming and numbering convention
@@ -39,7 +39,8 @@ files follow a (configurable) naming and numbering convention, to facilitate boo
 tracking relevant image information. We adopt a numbering schemes as follows.
 
 - Single-exposure mosaic image.  
-  Multi-HDU FITS file containing a mosaic from multiple CCDs of a single exposure (one CCD per HDU).
+  Multi-HDU FITS file containing a mosaic from multiple CCDs of a single exposure (an exposure is also called epoch).
+  Each CCD is stored in a different HDU.
   These files are used on input by `ShapePipe`. The pixel data can contain the observed image, a weight map, or a flag map.
   These images are typically created by a telescope analysis software (e.g.~`pitcairn`).  
   Convention: None. The file names are in general determined by this software, e.g.~they contain the run ID. and do not
@@ -51,38 +52,39 @@ tracking relevant image information. We adopt a numbering schemes as follows.
   Convention: **<image_type>-<exposure_name>-<CCD_number>.fits**  
   Examples: `image-2079614-9.fits`, `weight-2079614-3.fits`
 
-- Stacked images.  
-  FITS file containing a stack of different single exposures, or tile, for example created by `swarp`.
+- Stacked images  
+  FITS file containing a stack by co-adding different single exposures, created by software such as `swarp`.
+  A stacked image is also called *tile*. 
   The pixel data can contain the observed image, a weight map, or a flag map.  
   Convention: **<image_type>-<number>.fits**  
   Examples: `CFIS_image-51.fits`, `pipeline_flag-2134.fits`
 
 ### CFIS processing
 
-Processing of CFIS images can be separated into three categories: Field selection, analysis of single exposures,
-analysis of stacks.
+`ShapePipe' splits the processing of CFIS images into three parts: 1.) Field and image selection; 2.) Processing of single exposures;
+3.) Processing of stacked images. The single exposures are first split into single-CCD images, which are processed in turn and
+independently.
 
-At the moment, single exposures first have to be split into single-CCDs images.
-The single-exposure single-CCD images are then processed independently.
+Field and image selection is done before running the actual pipeline, by chosing the desired input images.
 
-* Field and image selection.
-* Processing of single exposures.
-  * Split each CCDs
+Processing of single exposures contains the following steps:
+  * Split exposure into single-CCD images
   * Create masks for bright stars, spikes, borders, Messier objects, ...
   * Detect stars
-  * PSF modeling
-  * Validation of the PSF model (optional)
-* Stack images.
-  * Create mask for bright stars, spikes, border, ...
-  * Detect all sources
-  * Interpolate the PSF model at the location of each sources for all epochs contributing
-  * Create postage stamps necessary for the spread-model
-  * Get the spread model for each source
-  * Create postage stamps for the shape measurement
-  * Shape measurement (NGMIX only at the moment)
-  * Merge all results into on main catalog
+  * Model the PSF
+  * Validate the PSF model (optional)
 
-Flowchart presenting the process:
+The processing of stacked images has the following tasks:
+  * Create mask for bright stars, spikes, border, Messier objects, ...
+  * Detect all sources
+  * Interpolate the PSF model at the location of each source for all contributing exposures
+  * Create postage stamps necessary for the *spread model*, for galaxy selection
+  * Compute the spread model for each source
+  * Create postage stamps, for the shape measurement
+  * Measure galaxy shapes
+  * Merge all results into one parent catalog
+
+The following flowchart visualised these processes:
 
 ![ShapePipe_FlowChart](./ShapePipe_v0.0.1.png)
 
