@@ -42,18 +42,18 @@ tracking relevant image information. We adopt a numbering schemes as follows.
   Multi-HDU FITS file containing a mosaic from multiple CCDs of a single exposure (one CCD per HDU).
   These files are used on input by `ShapePipe`. The pixel data can contain the observed image, a weight map, or a flag map.
   These images are typically created by a telescope analysis software (e.g.~`pitcairn`).  The file names are thus in general
-  determined by this software, e.g.~they contain the run ID. and do not need to be changed to be read by `ShapePipe'.
-  Examples from CFIS: `2228303p.fits', `2214439p.flag.fits'.
+  determined by this software, e.g.~they contain the run ID. and do not need to be changed to be read by `ShapePipe`.
+  Examples from CFIS: `2228303p.fits`, `2214439p.flag.fits`.
 
 - Single-exposure single-CCD image.
   FITS file containing a single CCD from an individual exposure. The pixel data can contain the observed image, a weight map, or a flag map.  
-  **<image_type>-<exposure_name>-<CCD_number>.fits**
+  Convention: **<image_type>-<exposure_name>-<CCD_number>.fits**
   Examples: `image-2079614-9.fits`, `weight-2079614-3.fits`
 
 - Stacked images:
   FITS file containing a stack of different single exposures, or tile, for example created by `swarp`.
   The pixel data can contain the observed image, a weight map, or a flag map.  
-  **<image_type>-<number>.fits**  
+  Convention: **<image_type>-<number>.fits**  
   Examples: `CFIS_image-51.fits`, `pipeline_flag-2134.fits`
 
 ### CFIS processing
