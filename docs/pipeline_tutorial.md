@@ -28,7 +28,8 @@
 
 The `ShapePipe` pipeline can process single-exposures images, and stacked images. The input images have to be calibrated beforehand for astrometry and photometry.
 
-***WARNING /!\ :*** All the paths on the examples are relatives. When running on clusters make sure they make sense. Prefer absolute paths to avoid problems. Some of them are dummy examples.
+***WARNING /!\ :*** All file paths for the following examples are relative. When running on a cluster, you need to make sure that these paths are accessible on all computing nodes.
+Absolute paths are recommended to avoid problems.
 
 ### File types, naming and numbering convention
 
