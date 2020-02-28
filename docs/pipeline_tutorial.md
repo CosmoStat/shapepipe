@@ -28,27 +28,29 @@
 
 The `ShapePipe` pipeline can process single-exposures images, and stacked images. The input images have to be calibrated beforehand for astrometry and photometry.
 
-***WARNING /!\ :*** All file paths for the following examples are relative. When running on a cluster, you need to make sure that these paths are accessible on all computing nodes.
+***WARNING /!\:*** All file paths for the following examples are relative. When running on a cluster, you need to make sure that these paths are accessible on all computing nodes.
 Absolute paths are recommended to avoid problems.
 
 ### File types, naming and numbering convention
 
 The `ShapePipe` pipeline handles different image and file types, some of which
-are create by the pipeline during analysis. These types are listed below. Those
-files follow a naming and numbering convention, to facilitate bookkeeping for
+are created by the pipeline during the analysis. These file types are listed below. All 
+files follow a (configurable) naming and numbering convention, to facilitate bookkeeping for
 tracking relevant image information. We adopt a numbering schemes as follows.
 
-- Single-exposure image.  
+- Single-exposure mosaic image.
   Multi-HDU FITS file containing a mosaic from multiple CCDs of a single exposure (one CCD per HDU).
-  These images are typically created by a telescope analysis software (e.g.~`pitcairn`), and used on input
-  by `ShapePipe`. The pixel data can contain the observed image, a weight map, or a flag map.
+  These files are used on input by `ShapePipe`. The pixel data can contain the observed image, a weight map, or a flag map.
+  These images are typically created by a telescope analysis software (e.g.~`pitcairn`).  The file names are thus in general
+  determined by this software, e.g.~they contain the run ID. and do not need to be changed to be read by `ShapePipe'.
+  Examples from CFIS: `2228303p.fits', `2214439p.flag.fits'.
 
-- Single-exposure single-CCD image.  
+- Single-exposure single-CCD image.
   FITS file containing a single CCD from an individual exposure. The pixel data can contain the observed image, a weight map, or a flag map.  
-  **<image_type>-<exposure_name>-<CCD_number>.fits**  
+  **<image_type>-<exposure_name>-<CCD_number>.fits**
   Examples: `image-2079614-9.fits`, `weight-2079614-3.fits`
 
-- Stacked images:  
+- Stacked images:
   FITS file containing a stack of different single exposures, or tile, for example created by `swarp`.
   The pixel data can contain the observed image, a weight map, or a flag map.  
   **<image_type>-<number>.fits**  
