@@ -98,6 +98,26 @@ However, one might want to pre-select specific images before the pipeline is run
 and stacks) in a given sky area. The resulting files can then be copied to a new, dedicated directory (or alternatively linked
 using symbolic links), or downloaded to a local machine.
 
+First, find the tile(s) covering a given coordinate or area. For example, the tile for a Planck cluster at R.A.=255.66 deg, dec= 34.05 deg
+can be found with the script `cfis_field_select.py` and the `--coord` option:
+```bash
+cfis_field_select.py -i ~/astro/data/CFIS/tiles+weights_DR2.txt --coord 255.66deg_34.05deg -v -t tile
+```
+The input text file (with `-i`) contains a list of CFIS tiles.
+
+We also need to get the weight files for the tile. 
+```bash
+cfis_field_select.py -i ~/astro/data/CFIS/tiles+weights_DR2.txt --coord 255.66deg_34.05deg -v -t weight
+```
+
+Once the resulting tiles and weight images are downloaded, we need to get the exposure images that where co-added to produce the tiles.
+These can be found from the tile header, with the `--tile` option. We need all three single-exposure types, data, weights, and flags:
+```bash
+cfis_field_select.py -i test_DR2 --tile -v -t exposure
+cfis_field_select.py -i test_DR2 --tile -v -t exposure_weight.fz
+cfis_field_select.py -i test_DR2 --tile -v -t exposure_flag.fz
+```
+
 ### Selection of exposures
 
 Option 1. Selection by area from log file.
