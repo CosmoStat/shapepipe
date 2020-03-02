@@ -32,7 +32,7 @@ from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
 import textwrap
 
 
-from cfis import CfisError, param, unitdef, size, my_string_split
+from cfis import CfisError, param, unitdef, size
 import cfis
 
 
@@ -122,13 +122,13 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, verbose=
         Found image(s), None if none found.
     """
 
-    ra, dec   = get_Angle(coord)
+    ra, dec = cfis.get_Angle(coord)
 
     if verbose == True:
         print('Looking for image at coordinates {}, {}'.format(ra, dec))
 
     if image_type == 'tile':
-        nix, niy  = get_tile_number_from_coord(ra, dec, return_type=int)
+        nix, niy  = cfis.get_tile_number_from_coord(ra, dec, return_type=int)
         tile_name = cfis.get_tile_name(nix, niy, band)
 
         img_found = []
@@ -269,7 +269,7 @@ def get_coord_at_image(number, band, image_type, images, no_cuts=False, verbose=
     img_found = None
 
     if image_type == 'tile':
-        nix, niy = my_string_split(number, num=2, stop=True)
+        nix, niy = cfis.my_string_split(number, num=2, stop=True)
         tile_name = cfis.get_tile_name(nix, niy, band)
 
         if verbose == True:
@@ -544,16 +544,6 @@ def check_options(options):
         Result of option check. False if invalid option value.
     """
 
-    if options.mode is None:
-        raise CfisError('Run mode not given (option \'-m\')')
-
-    if options.mode == 'n' and options.coord == None:
-        raise CfisError('No input coordinates given (option \'--coord\')')
-    if options.mode == 'c' and options.number == None:
-        raise CfisError('No input image number given (option \'--number\')')
-    if options.mode == 'a' and options.area == None:
-        raise CfisError('No input area given (option \'--area\')')
-
     if int(options.number != None) + int(options.coord != None) + int(options.area != None) > 1:
         raise CfisError('Only one option out of \'--number\', \'--coord\', \'--area\' can be given')
 
@@ -626,7 +616,7 @@ def run_mode(images, param):
     # Default value
     ex = 1
 
-    if param.mode == 'n':
+    if param.coord:
 
         # Image number search: Return name of image(s) covering input coordinate
         images_found = find_image_at_coord(images, param.coord, param.band, param.image_type, no_cuts=param.no_cuts, verbose=param.verbose)
@@ -636,7 +626,7 @@ def run_mode(images, param):
                 img.print(file=param.fout)
             ex =  0
 
-    elif param.mode == 'c':
+    elif param.number:
 
         # Coordinate search: Return coordinate covered by image with input number/file name
         img_found = get_coord_at_image(param.number, param.band, param.image_type, images, no_cuts=param.no_cuts, verbose=param.verbose)
@@ -648,7 +638,7 @@ def run_mode(images, param):
             if param.verbose:
                 print('No image found, try with --no_cuts', file=sys.stderr)
 
-    elif param.mode == 'a':
+    elif param.area:
 
         # Area search: Return images within input area
         angles = cfis.get_Angle_arr(param.area, num=4, verbose=param.verbose)
@@ -668,7 +658,7 @@ def run_mode(images, param):
 
     else:
 
-        raise CfisError('Unknown run mode \'{}\''.format(param.mode))
+        raise CfisError('One of \'--coord\', \'--number\', \'--area\' needs to be specified')
 
 
     return ex
@@ -708,12 +698,12 @@ def main(argv=None):
     images = cfis.get_image_list(param.input, param.band, param.image_type, col=param.col, verbose=param.verbose)
 
 
-    # Check wether images have been found, if necessary for run mode
-    if param.mode != 'c':
+    # Check wether images have been found, if necessary
+    if param.number:
         if images is None:
-            raise CfisError('Input {} not found, neither existing file nor directory'.format(param.input))
+            raise CfisError('Input list file \'{}\' not found, neither existing file nor directory'.format(param.input))
         if len(images) == 0:
-            raise CfisError('No image files found in input \'{}\''.format(param.input))
+            raise CfisError('No corresponding image files found in input \'{}\''.format(param.input))
 
 
     # Run
