@@ -165,7 +165,6 @@ On input, we need to specify the three input types (exposures, weights, flags),
 and their extensions. This happens in the `[FILE]` section:
 
 ```ini
-Thii
 [FILE]
 FILE_PATTERN = image,weight,flag
 FILE_EXT = .fz,.fz,.fz
