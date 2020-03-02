@@ -90,6 +90,25 @@ The following flowchart visualised these processes:
 
 In the following, the individual processing steps are described in detail.
 
+### Running the pipeline
+
+See the main `ShapePipe` redme for more details.
+
+In the following, to have consistent paths, we assume that the pipeline is installed
+in `~/ShapePipe`. In addition, a directory (or symbolic link) `~/ShapePipeRun` exists
+where the pipeline is run. This directory contains a sub-directory `~/input` with input
+CFIS images, and a directory `~/output`, where all output files will be written.
+
+In general, a call to the pipeline is done as follows:
+
+```bash
+cd ~/ShapePipeRun
+~/ShapePipe/shapepipe_run.py -c ~/ShapePipe/example/GOLD/config_<module[s]>.ini
+```
+
+The config file `config_<module[s]>.ini` contains the configuration for one or more modules.
+
+
 ## 1.) Field and image selection
 
 The selection of images on input can be done in the config files of the relevant modules, by specifying input
@@ -132,36 +151,41 @@ With the pipeline module `select_data.py`.
 
 ## 2.) Processing of single exposure images
 
-### Split single exposure into single-exposure single-CCD images
+### Split single-exposure images into single-exposure single-CCD images
 
-**Module :** splip_exp_runner   
+**Module :** split_exp_runner   
 **Module inputs :** single_exp_image, single_exp_flag, single_exp_weight   
 **Script :** create_log_exp_headers.py
 
-Before the process start we have to split all the single exposures images to CCD images.
+The first step of single-exposure processing is to split the single-exposures images into
+files that contain one CCD each.
 
-Here is a commented example for the pipeline config file :
+The example config file is `~/ShapePipe/example/GOLD/config_split_exp.ini`.
+On input, we need to specify the three input types (exposures, weights, flags),
+and their extensions. This happens in the `[FILE]` section:
+
+```ini
+[FILE]
+FILE_PATTERN = image,weight,flag
+FILE_EXT = .fz,.fz,.fz
+```
+On output, the same three file types are required. The number of MegaCAM CCDs is 40:
 
 ```ini
 [SPLIT_EXP_RUNNER]
-
-# Need to be of the same size as FILE_PATTERN and follow
-# the same order of files.
-# Keyword "flag" will lead to a behavior where the data are save as int.
-# The code also expect the image data to use the "image" suffix (to handle WCS)
-# (default value in the pipeline).
 OUTPUT_SUFFIX = image,weight,flag
-
-# Number of CCDs in the mosaic
 N_HDU = 40
 ```
 
-During the process of this module we save the WCS information for each CCDs. Now we have to merge all of them into one file. This automatically done by the scipt `create_log_exp_headers.py`. To use it :
+This pipeline module saves the WCS information (image
+transformation and distortions, computed during astrometrical calibration)
+for each CCD. At the end, this information has to be merged into a single file.
+This is automatically done by the script `create_log_exp_headers.py`:
 
 ```bash
-python create_log_exp_headers.py path/to/split_exp_runner/output path/to/srcipt/output_dir
+create_log_exp_headers.py path/to/split_exp_runner/output path/to/srcipt/output_dir
 ```
-Remember the output, it will be required for later processing. The output file is named : `log_exp_headers.npy`.
+The output file, `log_exp_headers.npy`, will be needed later.
 
 
 ### Masking single exposures
