@@ -9,8 +9,9 @@
     1. [Field and image selection](#Selection)
     1. [](#)
 1. [Single exposures processing](#Single-exposures-processing)
-    1. [Spliting](#Spliting)
-    1. [Masking single exposures](#Masking-single-exposures)
+    1. [Split images into single CCDs](#Spliting)
+    1. [Merge headers](#Merge_headers)
+    1. [Mask images](#Masking-single-exposures)
     1. [Source identification single exposures](#Source-identificationg-single-exposures)
     1. [Star selection](#Star-selection)
     1. [PSF estimation](#PSF-estimation)
@@ -132,21 +133,21 @@ With the script `cfis_field_select.py`.
 First, find the tile(s) covering a given coordinate or area. For example, the tile for a Planck cluster at R.A.=255.66 deg, dec= 34.05 deg
 can be found with the `--coord` option:
 ```bash
-cfis_field_select.py -i ~/astro/data/CFIS/tiles+weights_DR2.txt --coord 255.66deg_34.05deg -v -t tile
+~/ShapePipe/scripts/python/cfis_field_select.py -i ~/CFIS/tiles+weights_DR2.txt --coord 255.66deg_34.05deg -v -t tile
 ```
 The input text file (with `-i`) contains a list of CFIS tiles.
 
 We also need to get the weight files for the tile. 
 ```bash
-cfis_field_select.py -i ~/astro/data/CFIS/tiles+weights_DR2.txt --coord 255.66deg_34.05deg -v -t weight
+cfis_field_select.py -i ~/CFIS/tiles+weights_DR2.txt --coord 255.66deg_34.05deg -v -t weight
 ```
 
 Once the resulting tiles and weight images are downloaded, we need to get the exposure images that where co-added to produce the tiles.
 These can be found from the tile header, with the `--tile` option. We need all three single-exposure types, data, weights, and flags:
 ```bash
-cfis_field_select.py -i test_DR2 --tile -v -t exposure
-cfis_field_select.py -i test_DR2 --tile -v -t exposure_weight.fz
-cfis_field_select.py -i test_DR2 --tile -v -t exposure_flag.fz
+~/ShapePipe/scripts/python/cfis_field_select.py -i ~/CFIS --tile -v -t exposure
+~/ShapePipe/scripts/python/cfis_field_select.py -i ~/CFIS --tile -v -t exposure_weight.fz
+~/ShapePipe/scripts/python/cfis_field_select.py -i ~/CFIS --tile -v -t exposure_flag.fz
 ```
 
 The resulting files need to be downloaded.
@@ -163,7 +164,7 @@ symbolic links with the appropriate names can be created as follows:
 ```bash
 mkdir input_tiles
 mkdir input_exposures
- ~/ShapePipe/scripts/python/cfis_create_image_links.py -i ~/CFIS -o input_tiles -v -t tile --image_base_new CFIS_image --weight_base_nw CFIS_weight
+~/ShapePipe/scripts/python/cfis_create_image_links.py -i ~/CFIS -o input_tiles -v -t tile --image_base_new CFIS_image --weight_base_nw CFIS_weight
 ~/ShapePipe/scripts/python/cfis_create_image_links.py -i ~/CFIS -o input_exposures -v -t exposure
 ```
 
@@ -179,6 +180,7 @@ These commands create links with the default naming convention (see above), and 
 **Module :** split_exp_runner   
 **Module inputs :** single_exp_image, single_exp_flag, single_exp_weight   
 **Script :** create_log_exp_headers.py
+**Output :** single_exposure single-CCD files for input images, weights, flags
 
 The first step of single-exposure processing is to split the single-exposures images into
 files that contain one CCD each.
@@ -190,7 +192,7 @@ and their extensions. This happens in the `[FILE]` section:
 ```ini
 [FILE]
 FILE_PATTERN = image,weight,flag
-FILE_EXT = .fz,.fz,.fz
+FILE_EXT = .fitsfz,.fitsfz,.fitsfz
 ```
 On output, the same three file types are required. The number of MegaCAM CCDs is 40:
 
@@ -200,28 +202,38 @@ OUTPUT_SUFFIX = image,weight,flag
 N_HDU = 40
 ```
 
+Run
+```bash
+~/ShapePipe/shapepipe_run.py -c ~/ShapePipe/example/GOLD/config_split_exp.ini
+```
+
+### Merge WCS headers
+
 This pipeline module saves the WCS information (image
 transformation and distortions, computed during astrometrical calibration)
-for each CCD. At the end, this information has to be merged into a single file.
-This is automatically done by the script `create_log_exp_headers.py`:
+for each CCD. At the end, this information has to be merged back into a single file
+for each exposure. Run
 
 ```bash
-create_log_exp_headers.py path/to/split_exp_runner/output path/to/srcipt/output_dir
+~/ShapePipe/shapepipe_run.py -c ~/ShapePipe/example/GOLD/config_merge_headers.ini
 ```
-The output file, `log_exp_headers.npy`, will be needed later.
+The output file, `output/log_exp_headers.npy`, will be needed later.
 
 
-### Masking single exposures
+### Mask single-exposure images
 
 **Module :** mask_runner   
-**Module inputs :** splited_single_exp_image, splited_single_exp_weight, splited_single_exp_flag, (star_cat)   
+**Module inputs :** single_exp_single_CCD_image, single_exp_single_CCD_weight, single_exp_single_CCD_flag (, star_cat)   
 **Script :** create_star_cat.py
 
-Here we will create masks for bright stars, spikes and borders. We will also include the already existing masking for the cosmic rays and various artifacts.  
-Since computing nodes on clusters don't usually have an internet access we will have to first create a star catalog for each images with the script : `create_star_cat.py`. To use it :
-
+This module creates masks for bright stars, diffraction spikes, and borders. It
+also includes the already existing masks for the cosmic rays and various artifacts.  
+On input this module can read a star catalogue containing position and magnitude
+of bright stars. Since in some cases computing nodes on clusters might not have
+internet access, such a catalog is created for each image, outside the pipeline
+as follows:
 ```bash
-python create_star_cat.py path/to/image_dir path/to/script/output_dir
+~/ShapePipe/scripts/python/create_star_cat.py input_exposures output exp
 ```
 
 Once the star catalogs are created we can run the module.
