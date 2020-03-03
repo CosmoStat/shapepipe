@@ -51,14 +51,14 @@ tracking relevant image information. We adopt a numbering schemes as follows.
 
 - Single-exposure single-CCD image.  
   FITS file containing a single CCD from an individual exposure. The pixel data can contain the observed image, a weight map, or a flag map.  
-  Convention: **<image_type>-<exposure_name>-<CCD_number>.fits**  
+  Default convention: **<image_type>-<exposure_name>-<CCD_number>.fits**  
   Examples: `image-2079614-9.fits`, `weight-2079614-3.fits`
 
 - Stacked images  
   FITS file containing a stack by co-adding different single exposures, created by software such as `swarp`.
   A stacked image is also called *tile*. 
   The pixel data can contain the observed image, a weight map, or a flag map.  
-  Convention: **<image_type>-<number>.fits**  
+  Default convention: **<image_type>-<number>.fits**  
   Examples: `CFIS_image-51.fits`, `pipeline_flag-2134.fits`
 
 ### CFIS processing
@@ -161,9 +161,16 @@ The original CFIS image names cannot be digested by the pipeline. To create comp
 symbolic links with the appropriate names can be created as follows:
 
 ```bash
+mkdir input_tiles
+mkdir input_exposures
  ~/ShapePipe/scripts/python/cfis_create_image_links.py -i ~/CFIS -o input_tiles -v -t tile --image_base_new CFIS_image --weight_base_nw CFIS_weight
 ~/ShapePipe/scripts/python/cfis_create_image_links.py -i ~/CFIS -o input_exposures -v -t exposure
 ```
+
+Note that existing links in the output directories (with option `-o`) will cause the script to abort with an error.
+
+These commands create links with the default naming convention (see above), and that remove dots in the file name that do not indicate the file extension.
+
 
 ## 2.) Processing of single exposure images
 
