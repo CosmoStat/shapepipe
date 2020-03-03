@@ -183,10 +183,9 @@ These commands create links with the default naming convention (see above), and 
 
 ### Split single-exposure images into single-exposure single-CCD images
 
-**Module :** split_exp_runner   
-**Module inputs :** single_exp_image, single_exp_flag, single_exp_weight   
-**Script :** create_log_exp_headers.py
-**Output :** single_exposure single-CCD files for input images, weights, flags
+**Module:** split_exp_runner   
+**Input:** single-exposure images, weights, flags
+**Output:** single_exposure single-CCD files for input images, weights, flags
 
 The first step of single-exposure processing is to split the single-exposures images into
 files that contain one CCD each.
@@ -214,11 +213,15 @@ mkdir -p output
 
 ### Merge WCS headers
 
+**Module:** merge_headers  
+**Input:** single-exposure single_CCD images, weights, flags (output of `split_exp`)  
+**Output:** Single SQL file with combined header information  
+
 This pipeline module saves the WCS information (image
 transformation and distortions, computed during astrometrical calibration)
 for each CCD. At the end, this information has to be merged back into a single file.  
 Specify the output path:
-```init
+```ini
 [MERGE_HEADER_RUNNER]
 OUTPUT_PATH = $HOME/ShapePipeRun/output_headers
 ```
@@ -232,35 +235,62 @@ Since this produces a single output file, `output_headers/log_exp_headers.sqlite
 instead of a file per input image, it is more convenient to have this file in
 a separated directory for later use.
 
+**Script:** create_star_cat.py
 
 ### Mask single-exposure images
 
-**Module :** mask_runner   
-**Module inputs :** single_exp_single_CCD_image, single_exp_single_CCD_weight, single_exp_single_CCD_flag (, star_cat)   
-**Script :** create_star_cat.py
+**Module:** mask_runner   
+**Input:** single-exposure single-CCD images, weights, flags (, star_cat)   
+**Output**: single-exposure single-CCD flag files
 
-This module creates masks for bright stars, diffraction spikes, and borders. It
-also includes the already existing masks for the cosmic rays and various artifacts.  
-On input this module can read a star catalogue containing position and magnitude
-of bright stars. Since in some cases computing nodes on clusters might not have
-internet access, such a catalog is created for each image, outside the pipeline
-as follows:
+This module creates masks for bright stars, diffraction spikes, Messier objects,
+borders, and other artifacts. It joins the newly created mask with the already
+existing masks (from the input flag files) of  cosmic rays and various artifacts.  
+
+Those mask parameters are read from a second config file, whose path
+needs to be specified:
+```ini
+[MASK_RUNNER]
+MASK_CONFIG_PATH = $HOME/ShapePipe/example/GOLD/config.mask
+```
+In this mask config file the default parameters can be kept in the most part.
+It points to various default parameter files for the different mask types,
+make sure that that paths are correct, in our case
+`$HOME/ShapePipe/example/GOLD/mask_default/` in front of each file name.
+
+To distinguish the newly created output flag files from the input ones,
+a suffix is added:
+```ini
+SUFFIX = pipeline
+```
+
+Next, this module requires a star catalogue containing position and magnitude
+of bright stars. By default this is automatically created by accessing online
+star catalogues. Since in some cases computing nodes on clusters might not have
+internet access, such a catalog can also be created for each image, before running 
+this module as follows:
 ```bash
 ~/ShapePipe/scripts/python/create_star_cat.py input_exposures output exp
 ```
-
-Once the star catalogs are created we can run the module.
-Here is a commented example config file for the pipeline :
+Then, the star catalogue needs to be specified as input in the config file,
+and a flag has to be set::
 ```ini
+[FILE]
+INPUT_DIR = last:split_exp_runner,${HOME}/ShapePipeRun/output_star_cat
 [MASK_RUNNER]
-
-MASK_CONFIG_PATH = ./example/test_all_exp/config.mask
-
-# If true will expect an external mask file
-USE_EXT_FLAG = True
-
-# If true will expect an external star catalog
 USE_EXT_STAR = True
+```
+
+If instad the star catalogues can be accessed during the pipeline running,
+the config files looks as follows:
+```ini
+[FILE]
+INPUT_DIR = last:split_exp_runner
+[MASK_RUNNER]
+USE_EXT_STAR = False
+```
+
+Finally, run the module:
 
 # Suffix for the output file. (OPTIONAL)
 # ex : SUFFIX_flag_NUMBERING.fits or flag_NUMBERING.fits if not provided
