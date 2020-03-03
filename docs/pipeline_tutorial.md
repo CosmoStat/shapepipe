@@ -5,8 +5,10 @@
 1. [Introduction](#Introduction)
     1. [Numbering](#Numbering)
     1. [CFIS porcessing](#CFIS-processing)
-1. [ Field and image selection](#Selection)
-1. [ Single exposures processing](#Single-exposures-processing)
+1. [Preparation of input images](#Preparation)
+    1. [Field and image selection](#Selection)
+    1. [](#)
+1. [Single exposures processing](#Single-exposures-processing)
     1. [Spliting](#Spliting)
     1. [Masking single exposures](#Masking-single-exposures)
     1. [Source identification single exposures](#Source-identificationg-single-exposures)
@@ -61,11 +63,11 @@ tracking relevant image information. We adopt a numbering schemes as follows.
 
 ### CFIS processing
 
-`ShapePipe' splits the processing of CFIS images into three parts: 1.) Field and image selection; 2.) Processing of single exposure images;
+`ShapePipe' splits the processing of CFIS images into three parts: 1.) Preparation of the input images; 2.) Processing of single exposure images;
 3.) Processing of stacked images. The single exposures are first split into single-CCD images, which are processed in turn and
 independently.
 
-Field and image selection is done before running the actual pipeline, by chosing the desired input images.
+The preparation of input images is done before running the actual pipeline, using auxilliary scripts.
 
 The processing of single exposure images contains the following steps:
   * Split exposure into single-exposure single-CCD images
@@ -92,12 +94,14 @@ In the following, the individual processing steps are described in detail.
 
 ### Running the pipeline
 
-See the main `ShapePipe` redme for more details.
+See the main `ShapePipe` readme for more details.
 
-In the following, to have consistent paths, we assume that the pipeline is installed
-in `~/ShapePipe`. In addition, a directory (or symbolic link) `~/ShapePipeRun` exists
-where the pipeline is run. This directory contains a sub-directory `~/input` with input
-CFIS images, and a directory `~/output`, where all output files will be written.
+In the following, to have consistent paths, we assume the existence of the following directories or links:
+
+- `~/ShapePipe`: Installation path of the pipeline. E.g. point to the directory cloned from `github`.  
+- `~/ShapePipeRun`: Run path of the pipeline. Go here to run the pipeline modules.
+  - `~/ShapePipeRun/output`: Output directory, to be created by the user before running the pipeline.   
+- `CFIS`: Path of downloaded CFIS images.  
 
 In general, a call to the pipeline is done as follows:
 
@@ -109,7 +113,9 @@ cd ~/ShapePipeRun
 The config file `config_<module[s]>.ini` contains the configuration for one or more modules.
 
 
-## 1.) Field and image selection
+## 1.) Preparation of input images
+
+### Field and image selection
 
 The selection of images on input can be done in the config files of the relevant modules, by specifying input
 path(s) and input file name patterns. Thus, a sub-selection of images in a given input directory can be made.
@@ -119,7 +125,7 @@ using symbolic links), or downloaded to a local machine.
 
 There are two options to find images. 
 
-### Option a.
+#### Option a.
 
 With the script `cfis_field_select.py`.
 
@@ -145,9 +151,19 @@ cfis_field_select.py -i test_DR2 --tile -v -t exposure_flag.fz
 
 The resulting files need to be downloaded.
 
-### Option b.
+#### Option b.
 
 With the pipeline module `select_data.py`.
+
+### Creating pipeline-compatible file names
+
+The original CFIS image names cannot be digested by the pipeline. To create compatible names, and unique tile numbers,
+symbolic links with the appropriate names can be created as follows:
+
+```bash
+ ~/ShapePipe/scripts/python/cfis_create_image_links.py -i ~/CFIS -o input_tiles -v -t tile --image_base_new CFIS_image --weight_base_nw CFIS_weight
+~/ShapePipe/scripts/python/cfis_create_image_links.py -i ~/CFIS -o input_exposures -v -t exposure
+```
 
 ## 2.) Processing of single exposure images
 
