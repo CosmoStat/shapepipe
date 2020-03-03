@@ -146,8 +146,12 @@ class image():
         None
         """
 
-        print('{} {:10.2f} {:10.2f} {:5d} {:8s}'.format(self.name, getattr(self.ra, unitdef), getattr(self.dec, unitdef), \
-              self.exp_time, self.valid), file=file)
+        print(self.name, end='', file=file)
+        if self.ra:
+            print(' {:10.2f}'.format(getattr(self.ra, unitdef)), end='', file=file)
+        if self.dec:
+            print(' {:10.2f}'.format(getattr(self.dec, unitdef)), end='', file=file)
+        print(' {:5d} {:8s}'.format(self.exp_time, self.valid), file=file)
 
 
     def print_header(self, file=sys.stdout):
@@ -608,7 +612,7 @@ def get_tile_coord_from_nixy(nix, niy):
 
 
 
-def get_tile_name(nix, niy, band):
+def get_tile_name(nix, niy, band, image_type='tile'):
     """Return tile name for given tile numbers.
 
    Parameters
@@ -619,6 +623,7 @@ def get_tile_name(nix, niy, band):
         tile number for y
     band: string
         band, one in 'r' or 'u'
+    image_type: string, optional, default='tile'
 
     Returns
     -------
@@ -627,17 +632,24 @@ def get_tile_name(nix, niy, band):
     """
 
     if type(nix) is int and type(niy) is int:
-    	tile_name = 'CFIS.{:03d}.{:03d}.{}.fits'.format(nix, niy, band)
+    	tile_base = 'CFIS.{:03d}.{:03d}.{}'.format(nix, niy, band)
 
     elif type(nix) is str and type(niy) is str:
-    	tile_name = 'CFIS.{}.{}.{}.fits'.format(nix, niy, band)
+    	tile_base = 'CFIS.{}.{}.{}'.format(nix, niy, band)
 
     else:
         raise CfisError('Invalid type for input tile numbers {}, {}'.format(nix, niy))
 
+    if image_type == 'tile':
+        tile_name = '{}.fits'.format(tile_base)
+    elif image_type == 'weight':
+        tile_name = '{}.weight.fits'.format(tile_base)
+    elif image_type == 'weight.fz':
+        tile_name = '{}.weight.fits.fz'.format(tile_base)
+    else:
+        raise CfisError('Invalid image type {}'.format(image_type))
 
     return tile_name
-
 
 
 def get_tile_number(tile_name):
