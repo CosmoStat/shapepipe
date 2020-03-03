@@ -1,4 +1,18 @@
+#!/usr/bin/env python3
+
 # -*- coding: utf-8 -*-
+
+"""Script create_star_cat.py
+
+Create star catalogue
+
+:Authors: Axel Guinot, Martin Kilbinger
+
+:Date: 2019, 2020
+
+:Package: ShapePipe
+"""
+
 
 from shapepipe.pipeline.execute import execute
 
@@ -22,13 +36,12 @@ def _get_wcs(header):
     Parameters
     ----------
     header : astropy.header
-        Image header.
+        Image header
 
     Returns
     -------
     final_wcs : astropy.wcs.WCS
-        WCS object.
-
+        WCS object
     """
 
     final_wcs = WCS(naxis=2)
@@ -59,7 +72,6 @@ def _get_image_radius(center, wcs):
     -------
     float
         The diagonal distance of the image in arcmin.
-
     """
 
     if center is None:
@@ -87,7 +99,6 @@ def SphereDist(position1, position2, wcs):
     -------
     float
         The distance in degree.
-
     """
 
     if (type(position1) is not np.ndarray) & (type(position2) is not np.ndarray):
@@ -121,7 +132,6 @@ def find_stars(position, output_name, radius=None):
     -------
     dict
         Stars dicotionnary for GSC objects in the field.
-
     """
 
     ra = position[0]

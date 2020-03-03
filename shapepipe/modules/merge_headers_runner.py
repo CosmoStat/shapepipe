@@ -33,7 +33,7 @@ def merge_headers_runner(input_file_list, run_dirs, file_number_string,
     final_file = SqliteDict(output_dir + '/log_exp_headers.sqlite')
     for file_path in input_file_list:
         key = re.split('headers-', os.path.splitext(os.path.split(file_path[0])[1])[0])[1]
-        final_file[key] = np.load(file_path[0])
+        final_file[key] = np.load(file_path[0], allow_pickle=True)
 
     final_file.commit()
     final_file.close()

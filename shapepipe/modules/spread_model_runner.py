@@ -202,7 +202,7 @@ def spread_model_runner(input_file_list, run_dirs, file_number_string,
         obj_mag = np.copy(sex_cat.get_data()['MAG_AUTO'])
     sex_cat.close()
 
-    # psf_cat = np.load(psf_cat_path).item()
+    # psf_cat = np.load(psf_cat_path, allow_pickle=True).item()
     psf_cat = SqliteDict(psf_cat_path)
 
     weight_cat = io.FITSCatalog(weight_cat_path, SEx_catalog=True)

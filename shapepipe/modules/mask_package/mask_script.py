@@ -360,7 +360,7 @@ class mask(object):
         if cat_path is None:
             raise ValueError('cat_path has to be provided')
 
-        m_cat = np.load(cat_path)
+        m_cat = np.load(cat_path, allow_pickle=True)
         m_sc = SkyCoord(ra=m_cat['ra'] * u.degree, dec=m_cat['dec'] * u.degree)
 
         nx = self._fieldcenter['pix'][0] * 2

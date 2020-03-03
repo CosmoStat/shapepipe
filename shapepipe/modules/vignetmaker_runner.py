@@ -280,7 +280,7 @@ class vignetmaker(object):
 
         """
 
-        self._f_wcs_file = np.load(f_wcs_path).item()
+        self._f_wcs_file = np.load(f_wcs_path, allow_pickle=True).item()
         self._rad = rad
 
         for i in range(len(image_pattern)):

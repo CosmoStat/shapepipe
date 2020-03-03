@@ -66,7 +66,6 @@ class CfisError(Exception):
    pass
 
 
-
 class image():
 
     def __init__(self, name, ra, dec, exp_time=-1, valid='Unknown'):
@@ -394,6 +393,25 @@ def log_command(argv, name=None, close_no_return=True):
         f.close()
 
 
+def symlink(src, dst, verbose=False):
+    """Creates a pointing to src with name dst.
+
+    Parameters
+    ----------
+    src: string
+        source file name
+    dst: string
+        destination link name
+    verbose: bool, optional, default=False
+        verbose output if True
+    """
+
+    if verbose:
+        print(' {} <- {}'.format(src, dst))
+    os.symlink(src, dst)
+
+
+
 def print_color(color, txt, file=sys.stdout, end='\n'):
     """Print text with color. If not supported, print standard text.
 
@@ -487,7 +505,6 @@ def my_string_split(string, num=-1, verbose=False, stop=False):
         raise CfisError('String \'{}\' has length {}, required is {}'.format(string, len(res), num))
 
     return res
-
 
 
 def get_file_pattern(pattern, band, image_type, want_re=True):
@@ -965,7 +982,7 @@ def get_image_list(inp, band, image_type, col=None, verbose=False):
 
         # Read file names from directory listing
         inp_type  = 'dir'
-        file_list = glob.glob('{}/*'.format(inp))
+        file_list = glob.glob('{}/*'.format(os.path.abspath(inp)))
 
     elif os.path.isfile(inp):
         if image_type in ('tile', 'weight', 'weight.fz'):
