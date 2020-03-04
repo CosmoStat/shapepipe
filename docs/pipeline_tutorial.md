@@ -2,7 +2,8 @@
 
 ## Index
 
-1. [Introduction](#Introduction)
+1. [Introduction](#introduction)
+    1. [File types, naming and numbering convention](#file-types,-naming-and-numbering-convention)
     1. [Numbering](#Numbering)
     1. [CFIS porcessing](#CFIS-processing)
 1. [Preparation of input images](#Preparation)
@@ -301,7 +302,7 @@ Finally, run the module:
 
 On success, pipeline-flag files are created.
 
-**Diagnostics:**Open a single-exposure single-CCD image and the corresponding pipeline flag
+**Diagnostics:** Open a single-exposure single-CCD image and the corresponding pipeline flag
 in `ds9`, and display both frames next to each other. Example
 ```bash
 ds9 output/shapepipe_run_2020-03-03_15-31-00/split_exp_runner/output/image-2113737-10.fits output/shapepipe_run_2020-03-03_17-29-34/mask_runner/output/pipeline_flag-2113737-10.fits
