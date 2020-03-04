@@ -6,14 +6,14 @@
     1. [File types and names](#file-types-and-names)
     1. [CFIS processing](#cfis-processing)
     1. [Running the pipeline](#running-the-pipeline)
-1. [Preparation of input images](#preparation-of-input-images)
-    1. [Field and image selection](#field-and-image-selection)
+1. [Prepare input images](#prepare-input-images)
+    1. [Select Field and images](#select-field-and-images)
     1. [Create pipeline-compatible file names](#create-pipeline-compatible-file-names)
-1. [Processing of single exposure images](#processing-of-single-exposure-images)
-    1. [Split single-exposure images into single-exposure single-CCD images](#split-single-exposure-images-into-single-exposure-single-CCD-images)
+1. [Process single exposure images](#process-single-exposure-images)
+    1. [Split images](#split-images)
     1. [Merge WCS headers](#merge-wcs-headers)
-    1. [Mask images](#masking-images)
-    1. [Source identification](#source-identificationg)
+    1. [Mask images](#mask-images)
+    1. [Extract sources](#extract-sources)
     1. [Star selection](#Star-selection)
     1. [PSF estimation](#PSF-estimation)
     1. [Validation tests](#Validation tests)
@@ -123,9 +123,9 @@ cd ~/ShapePipeRun
 The config file `config_<module[s]>.ini` contains the configuration for one or more modules.
 
 
-## 1.) Preparation of input images
+## Prepare input images
 
-### Field and image selection
+### Select field and images
 
 The selection of images on input can be done in the config files of the relevant modules, by specifying input
 path(s) and input file name patterns. Thus, a sub-selection of images in a given input directory can be made.
@@ -180,9 +180,9 @@ Note that existing links in the output directories (with option `-o`) will cause
 These commands create links with the default naming convention (see above), and that remove dots in the file name that do not indicate the file extension.
 
 
-## 2.) Processing of single exposure images
+## 2.) Process single exposure images
 
-### Split single-exposure images into single-exposure single-CCD images
+### Split images
 
 **Module:** split_exp_runner   
 **Input:** single-exposure images, weights, flags  
@@ -234,11 +234,11 @@ Create the output directory, and run the pipeline:
 mkdir -p output_headers
 ~/ShapePipe/shapepipe_run.py -c ~/ShapePipe/example/GOLD/config_merge_headers.ini
 ```
-Since this produces a single output file, `output_headers/log_exp_headers.sqlite`,
+Since this produces a single output file
 instead of a file per input image, it is more convenient to have this file in
 a separated directory for later use.
 
-On success, a single `'.sqlite` file is created.
+On success, a single `.sqlite` file is created.
 
 ### Mask images
 
@@ -316,7 +316,7 @@ seen. Note that the two frames might not match perfectly, since (a) WCS
 information is not available in the flag file FITS headers; (b) the image can
 have a zero-padded pixel border, which is not accounted for by `ds9`.
 
-### Source identification
+### Extract sources
 
 **Module:** sextractor_runner   
 **Input:** single-exp_single-CCD image, weights, flags
