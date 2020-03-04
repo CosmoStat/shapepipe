@@ -3,17 +3,17 @@
 ## Index
 
 1. [Introduction](#introduction)
-    1. [File types, naming and numbering convention](#file-types,-naming-and-numbering-convention)
-    1. [Numbering](#Numbering)
-    1. [CFIS porcessing](#CFIS-processing)
-1. [Preparation of input images](#Preparation)
-    1. [Field and image selection](#Selection)
-    1. [Create pipeline-compatible file names](#FileNames)
-1. [Single exposures processing](#Single-exposures-processing)
-    1. [Split images into single CCDs](#Spliting)
-    1. [Merge headers](#Merge_headers)
-    1. [Mask images](#Masking-single-exposures)
-    1. [Source identification single exposures](#Source-identificationg-single-exposures)
+    1. [File types and names](#file-types-and-names)
+    1. [CFIS processing](#cfis-processing)
+    1. [Running the pipeline](#running-the-pipeline)
+1. [Preparation of input images](#preparation-of-input-images)
+    1. [Field and image selection](#field-and-image-selection)
+    1. [Create pipeline-compatible file names](#create-pipeline-compatible-file-names)
+1. [Processing of single exposure images](#processing-of-single-exposure-images)
+    1. [Split single-exposure images into single-exposure single-CCD images](#split-single-exposure-images-into-single-exposure-single-CCD-images)
+    1. [Merge WCS headers](#merge-wcs-headers)
+    1. [Mask images](#masking-images)
+    1. [Source identification](#source-identificationg)
     1. [Star selection](#Star-selection)
     1. [PSF estimation](#PSF-estimation)
     1. [Validation tests](#Validation tests)
@@ -35,7 +35,7 @@ The `ShapePipe` pipeline can process single-exposures images, and stacked images
 ***WARNING /!\ :*** All file paths for the following examples are relative. When running on a cluster, you need to make sure that these paths are accessible on all computing nodes.
 Absolute paths are recommended to avoid problems.
 
-### File types, naming and numbering convention
+### File types and names
 
 The `ShapePipe` pipeline handles different image and file types, some of which
 are created by the pipeline during the analysis. These file types are listed below. All 
@@ -240,7 +240,7 @@ a separated directory for later use.
 
 On success, a single `'.sqlite` file is created.
 
-### Mask single-exposure images
+### Mask images
 
 **Module:** mask_runner   
 **Input:** single-exposure single-CCD images, weights, flags [, star_cat]  
@@ -316,40 +316,21 @@ seen. Note that the two frames might not match perfectly, since (a) WCS
 information is not available in the flag file FITS headers; (b) the image can
 have a zero-padded pixel border, which is not accounted for by `ds9`.
 
-### Source identification single exposures
+### Source identification
 
-**Module :** sextractor_runner   
-**Module inputs :** single_exp_image, single_exp_weight, single_exp_flag
+**Module:** sextractor_runner   
+**Input:** single-exp_single-CCD image, weights, flags
+**Output:** sextractor catalogue
 
-On the single exposures we focus the source identification on stars. Thats means we will use a higher detection threshold in order to avoid some artifacts and reduce the size of the catalog.
-Here is a commented example config file for the pipeline :
-
+The purpose of source extraction/source identification on single exposures is
+to select stars in the next step. Therefore, a relatively high 
+detection threshold is chosen to avoid to detect too many low-SNR
+artifacts, and to reduce the output catalogue size. The following config entry
+is
 ```ini
-[SEXTRACTOR_RUNNER]
-
-EXEC_PATH = sex
-
-DOT_SEX_FILE = ./example/test_all_exp/default.sex
-DOT_PARAM_FILE = ./example/test_sex/default.param
-
-WEIGHT_IMAGE = True
-FLAG_IMAGE = True
-PSF_FILE = False
-
-#CHECKIMAGE can be a list of BACKGROUND, BACKGROUND_RMS,
-#INIBACKGROUND, MINIBACK_RMS, -BACKGROUND,
-#FILTERED, OBJECTS, -OBJECTS, SEGMENTATION, APERTURES
-# NOTE : here we request the background because we will need it later for the shape measurement.
-CHECKIMAGE = BACKGROUND
-
-# Suffix for the output file. (OPTIONAL)
-# ex : SUFFIX_sexcat_NUMBERING.fits or sexcat_NUMBERING.fits if not provided
-# NOTE : this avoid confusion with the catalog produce for the stacked images.
-SUFFIX = exp
-
-# Only done on the tiles
-MAKE_POST_PROCESS = False
+DETECT_THRESH    2.             # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 ```
+in the file `$HOME/ShapePipe/example/GOLD/sextractor_default/default.sex`.
 
 Here is a commented example config file for the module :
 
