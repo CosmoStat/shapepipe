@@ -184,7 +184,7 @@ These commands create links with the default naming convention (see above), and 
 ### Split single-exposure images into single-exposure single-CCD images
 
 **Module:** split_exp_runner   
-**Input:** single-exposure images, weights, flags
+**Input:** single-exposure images, weights, flags  
 **Output:** single_exposure single-CCD files for input images, weights, flags
 
 The first step of single-exposure processing is to split the single-exposures images into
@@ -211,6 +211,8 @@ mkdir -p output
 ~/ShapePipe/shapepipe_run.py -c ~/ShapePipe/example/GOLD/config_split_exp.ini
 ```
 
+On success, files accordingt to the three output types are created.
+
 ### Merge WCS headers
 
 **Module:** merge_headers  
@@ -235,12 +237,12 @@ Since this produces a single output file, `output_headers/log_exp_headers.sqlite
 instead of a file per input image, it is more convenient to have this file in
 a separated directory for later use.
 
-**Script:** create_star_cat.py
+On success, a single `'.sqlite` file is created.
 
 ### Mask single-exposure images
 
 **Module:** mask_runner   
-**Input:** single-exposure single-CCD images, weights, flags (, star_cat)   
+**Input:** single-exposure single-CCD images, weights, flags [, star_cat]  
 **Output**: single-exposure single-CCD flag files
 
 This module creates masks for bright stars, diffraction spikes, Messier objects,
@@ -254,6 +256,9 @@ needs to be specified:
 MASK_CONFIG_PATH = $HOME/ShapePipe/example/GOLD/config.mask
 ```
 In this mask config file the default parameters can be kept in the most part.
+These parameters specify the mask properties for border, halos, spikes, Messier
+objects, and external flag input (in our case provided from CFIS pre-processing).
+
 It points to various default parameter files for the different mask types,
 make sure that that paths are correct, in our case
 `$HOME/ShapePipe/example/GOLD/mask_default/` in front of each file name.
@@ -263,7 +268,6 @@ a suffix is added:
 ```ini
 SUFFIX = pipeline
 ```
-
 Next, this module requires a star catalogue containing position and magnitude
 of bright stars. By default this is automatically created by accessing online
 star catalogues. Since in some cases computing nodes on clusters might not have
@@ -291,89 +295,25 @@ USE_EXT_STAR = False
 ```
 
 Finally, run the module:
-
-# Suffix for the output file. (OPTIONAL)
-# ex : SUFFIX_flag_NUMBERING.fits or flag_NUMBERING.fits if not provided
-SUFFIX = pipeline
+```bash
+~/ShapePipe/shapepipe_run.py -c ~/ShapePipe/example/GOLD/config_mask.ini
 ```
 
-Here is a commented example config file for the module :
+On success, pipeline-flag files are created.
 
-```ini
-[PROGRAM_PATH]
-
-WW_PATH = ww
-WW_CONFIG_FILE = ./example/test_mask/mask_default/default.ww
-
-# If external star catalogs are provided comment the parameter bellow
-#CDSCLIENT_PATH = findgsc2.2
-
-
-[BORDER_PARAMETERS]
-
-# NOTE : there is already a border on the individual exposure flag images of 50 pixels but you can enlarge it.
-BORDER_MAKE = True
-
-BORDER_WIDTH = 50
-BORDER_FLAG_VALUE = 4
-
-
-[HALO_PARAMETERS]
-
-HALO_MAKE = True
-
-HALO_MASKMODEL_PATH = ./example/test_mask/mask_default/halo_mask.reg
-HALO_MAG_LIM = 13.
-HALO_SCALE_FACTOR = 0.05
-HALO_MAG_PIVOT = 13.8
-HALO_FLAG_VALUE = 2
-HALO_REG_FILE = halo.reg
-
-
-[SPIKE_PARAMETERS]
-
-SPIKE_MAKE = True
-
-SPIKE_MASKMODEL_PATH = ./example/test_mask/mask_default/MEGAPRIME_star_i_13.8.reg
-SPIKE_MAG_LIM = 18.
-SPIKE_SCALE_FACTOR = 0.3
-SPIKE_MAG_PIVOT = 13.8
-SPIKE_FLAG_VALUE = 128
-SPIKE_REG_FILE = spike.reg
-
-
-[MESSIER_PARAMETERS]
-
-MESSIER_MAKE = True
-
-MESSIER_CAT_PATH = ./example/test_mask/mask_default/Messier_catalog_updated.npy
-MESSIER_PIXEL_SCALE = 0.186
-MESSIER_SIZE_PLUS = 0.
-MESSIER_FLAG_VALUE = 16
-
-
-[EXTERNAL_FLAG]
-
-EF_MAKE = True
-
-
-[MD_PARAMETERS]
-
-MD_MAKE = False
-
-MD_THRESH_FLAG = 0.3
-MD_THRESH_REMOVE = 0.75
-MD_REMOVE = False
-
-
-[OTHER]
-
-KEEP_REG_FILE = False
-KEEP_INDIVIDUAL_MASK = False
-
-# WARNING : at the end the directory is cleared entirely make sure there is no other important files in it.
-TEMP_DIRECTORY = ./.temp2
+**Diagnostics:**Open a single-exposure single-CCD image and the corresponding pipeline flag
+in `ds9`, and display both frames next to each other. Example
+```bash
+ds9 output/shapepipe_run_2020-03-03_15-31-00/split_exp_runner/output/image-2113737-10.fits output/shapepipe_run_2020-03-03_17-29-34/mask_runner/output/pipeline_flag-2113737-10.fits
 ```
+Choose `zoom fit` for both frames, click `scale zscale` for the image, and `color aips0` for the flag, to display something like this:
+
+<img width="250" src="diag_mask.png">
+
+By eye the correspondence between the different flag types and the image can be
+seen. Note that the two frames might not match perfectly, since (a) WCS
+information is not available in the flag file FITS headers; (b) the image can
+have a zero-padded pixel border, which is not accounted for by `ds9`.
 
 ### Source identification single exposures
 
