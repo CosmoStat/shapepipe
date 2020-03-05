@@ -100,6 +100,7 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
     exec_path = config.getexpanded("SEXTRACTOR_RUNNER", "EXEC_PATH")
     dot_sex = config.getexpanded("SEXTRACTOR_RUNNER", "DOT_SEX_FILE")
     dot_param = config.getexpanded("SEXTRACTOR_RUNNER", "DOT_PARAM_FILE")
+    dot_conv = config.getexpanded("SEXTRACTOR_RUNNER", "DOT_CONV_FILE")
 
     weight_file = config.getboolean("SEXTRACTOR_RUNNER", "WEIGHT_IMAGE")
     flag_file = config.getboolean("SEXTRACTOR_RUNNER", "FLAG_IMAGE")
@@ -122,9 +123,10 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
     output_file_name = suffix + 'sexcat{0}.fits'.format(num)
     output_file_path = '{0}/{1}'.format(run_dirs['output'], output_file_name)
 
-    command_line = ('{0} {1} -c {2} -PARAMETERS_NAME {3} -CATALOG_NAME {4}'
-                    ''.format(exec_path, input_file_list[0], dot_sex,
-                              dot_param, output_file_path))
+    command_line = ('{0} {1} -c {2} -PARAMETERS_NAME {3} -FILTER_NAME {4} '
+                    '-CATALOG_NAME {5}'.format(exec_path, input_file_list[0],
+                                              dot_sex, dot_param, dot_conv,
+                                              output_file_path))
 
     extra = 1
     if weight_file:

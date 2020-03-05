@@ -14,7 +14,7 @@
     1. [Merge WCS headers](#merge-wcs-headers)
     1. [Mask images](#mask-images)
     1. [Extract sources](#extract-sources)
-    1. [Star selection](#Star-selection)
+    1. [Select stars](#select-stars)
     1. [PSF estimation](#PSF-estimation)
     1. [Validation tests](#Validation tests)
     1. [Full run config file](#Full-run-config-file)
@@ -332,110 +332,28 @@ DETECT_THRESH    2.             # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 ```
 in the file `$HOME/ShapePipe/example/GOLD/sextractor_default/default.sex`.
 
-Here is a commented example config file for the module :
+On success, SEXtractor catalogue FITS files are produced.
 
-```text
-#-------------------------------- Catalog ------------------------------------
+### Select stars
 
-CATALOG_TYPE     FITS_LDAC
+**Module:** setools_runner   
+**Input:** sextractor catalog
+**Output:** masked sextractor catalogue
 
-PARAMETERS_NAME  ./example/test_sex/default.param
+For the star selection we use the size-magnitude plane. We first find the
+stellar locus, by computing the FWHM mode of all objects. Objects are selected
+within some range in FWHM around the mode, and within a magnitude range.
 
-#------------------------------- Extraction ----------------------------------
-
-DETECT_TYPE      CCD            # CCD (linear) or PHOTO (with gamma correction)
-DETECT_MINAREA   10              # min. # of pixels above threshold
-DETECT_MAXAREA   0              # max. # of pixels above threshold (0=unlimited)
-THRESH_TYPE      RELATIVE       # threshold type: RELATIVE (in sigmas)
-                                # or ABSOLUTE (in ADUs)
-# NOTE : could work with an higher value.
-DETECT_THRESH    2.             # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
-ANALYSIS_THRESH  1.5             # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
-
-FILTER           Y              # apply filter for detection (Y or N)?
-FILTER_NAME      ./example/test_sex/default.conv
-FILTER_THRESH                   # Threshold[s] for retina filtering
-
-# NOTE : we really want to avoid blended objects for the PSF estimation. We could push that even more to be very conservative
-DEBLEND_NTHRESH  32             # Number of deblending sub-thresholds
-DEBLEND_MINCONT  0.001          # Minimum contrast parameter for deblending
-
-CLEAN            Y              # Clean spurious detections? (Y or N)?
-CLEAN_PARAM      1.0            # Cleaning efficiency
-
-MASK_TYPE        CORRECT        # type of detection MASKing: can be one of
-                                # NONE, BLANK or CORRECT
-
-#-------------------------------- WEIGHTing ----------------------------------
-
-WEIGHT_TYPE      MAP_WEIGHT     # type of WEIGHTing: NONE, BACKGROUND,
-                                # MAP_RMS, MAP_VAR or MAP_WEIGHT
-RESCALE_WEIGHTS  Y              # Rescale input weights/variances (Y/N)?
-WEIGHT_IMAGE     weight.fits    # weight-map filename
-WEIGHT_GAIN      Y              # modulate gain (E/ADU) with weights? (Y/N)
-WEIGHT_THRESH                   # weight threshold[s] for bad pixels
-
-#-------------------------------- FLAGging -----------------------------------
-
-FLAG_IMAGE       flag.fits      # filename for an input FLAG-image
-FLAG_TYPE        OR             # flag pixel combination: OR, AND, MIN, MAX
-                                # or MOST
-
-#------------------------------ Photometry -----------------------------------
-
-PHOT_APERTURES   5              # MAG_APER aperture diameter(s) in pixels
-PHOT_AUTOPARAMS  2.5, 3.5       # MAG_AUTO parameters: <Kron_fact>,<min_radius>
-PHOT_PETROPARAMS 2.0, 3.5       # MAG_PETRO parameters: <Petrosian_fact>,
-                                # <min_radius>
-PHOT_AUTOAPERS   0.0,0.0        # <estimation>,<measurement> minimum apertures
-                                # for MAG_AUTO and MAG_PETRO
-PHOT_FLUXFRAC    0.5            # flux fraction[s] used for FLUX_RADIUS
-
-SATUR_KEY        SATURATE       # keyword for saturation level (in ADUs)
-
-# NOTE : 30 is probably not the good value but the photometry is done on the stack. We just need an approximation here.
-MAG_ZEROPOINT    30.0           # magnitude zero-point
-MAG_GAMMA        4.0            # gamma of emulsion (for photographic scans)
-
-GAIN_KEY         GAIN           # keyword for detector gain in e-/ADU
-PIXEL_SCALE      0.            # size of pixel in arcsec (0=use FITS WCS info)
-
-#------------------------- Star/Galaxy Separation ----------------------------
-
-# NOTE : Only necessary if CLASS_STAR parameter is required. (0.6 optimist value, 0.7 more realistic)
-SEEING_FWHM      0.6            # stellar FWHM in arcsec
-STARNNW_NAME     ./example/test_sex/default.nnw
-
-#------------------------------ Background -----------------------------------
-
-# NOTE : Important for the single exposures since the background is not substarcted
-BACK_TYPE        AUTO           # AUTO or MANUAL
-BACK_VALUE       0.0            # Default background value in MANUAL mode
-BACK_SIZE        64 # or 16       Background mesh: <size> or <width>,<height>
-BACK_FILTERSIZE  3  # or 5        Background filter: <size> or <width>,<height>
-
-BACKPHOTO_TYPE   GLOBAL         # can be GLOBAL or LOCAL
-BACKPHOTO_THICK  24             # thickness of the background LOCAL annulus
-BACK_FILTTHRESH  0.0            # Threshold above which the background-map filter operates
-```
-
-### Star selection
-
-**Module :** setools_runner   
-**Module inputs :** sextractor_catalog
-
-For the star selection we use a simple size/magnitude plan. We first find the stellar locus (using the mode of the FWHM) and select object around this value in a range of magnitude. Here is a commented example config file for the pipeline :
-
+The selection criteria are given in a selection configuration file, whose name is specified
+in the `setools` section:
 ```ini
 [SETOOLS_RUNNER]
-
-SETOOLS_CONFIG_PATH = /home/guinot/pipeline/ShapePipe/example/test_all_exp/star_selection.setools
+SETOOLS_CONFIG_PATH = $HOME/ShapePipe/example/GOLD/star_selection.setools
 ```
-
-Here is a commented example config file for the module :
+The selection config file `star_selection.setools` first defined a pre-selectione (or filter, or mask),
+such that the subsequent computation of the mode is more stable:
 ```text
 [MASK:preselect]
-# NOTE : This mask is only use to preselect the region where the we expect to have the stellar locus. This avoid weird behavior
 MAG_AUTO > 0
 MAG_AUTO < 20
 FWHM_IMAGE > 0.3 / 0.186
@@ -443,7 +361,11 @@ FWHM_IMAGE < 1.5 / 0.186
 FLAGS == 0
 IMAFLAGS_ISO == 0
 NO_SAVE
+```
+> Note the normalisation by the pixel scale to express **FWHM_IMAGE** in arc seconds.
 
+The star sample is then selected as follows:
+```text
 [MASK:star_selection]
 MAG_AUTO > 17.
 MAG_AUTO < 21.5
@@ -452,80 +374,35 @@ FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
 FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2
 FLAGS == 0
 IMAFLAGS_ISO == 0
-#CLASS_STAR != 0
+```
+In addition, the selection config file can contain instructions to create plots and
+statistics of the selected population(s). The former can be scatter plots and histograms,
+the former can include mean, mode, extrema, and standard deviation
+of any quantity from the SExtractor input catalogue, the number of selected objects, etc.. 
 
-[MASK:fwhm_mag_cut]
-# NOTE : Only use for plotting
-FWHM_IMAGE > 0
-FWHM_IMAGE < 40
-MAG_AUTO < 35
-FLAGS == 0
-IMAFLAGS_ISO == 0
-NO_SAVE
+On success, masked SEXtractor catalogues are created in `mask`, plots are put in `plots`,
+and text files with the computed statistics in `stats`.
 
-###
+The following plots correspond to one CCD for a given exposure.
 
-[PLOT:size_mag]
-TYPE = plot
-FORMAT = png
-X_1 = FWHM_IMAGE{fwhm_mag_cut}
-Y_1 = MAG_AUTO{fwhm_mag_cut}
-X_2 = FWHM_IMAGE{star_selection}
-Y_2 = MAG_AUTO{star_selection}
-MARKER_1 = +
-MARKER_2 = .
-MARKERSIZE_1 = 3
-MARKERSIZE_2 = 3
-LABEL_1 = All
-LABEL_2 = "Star selection, mean : @mean(FWHM_IMAGE{star_selection})@"
-TITLE = "Star selection"
-XLABEL = "FWHM (pix)"
-YLABEL = Mag
 
-[PLOT:hist_mag_stars]
-TYPE = hist
-FORMAT = png
-Y = MAG_AUTO{star_selection}
-BIN = 20
-LABEL = "Mag of stars selected"
-XLABEL = "Mag"
-YLABEL = "Nb"
-TITLE = "Mag of stars selected"
+<img width="250" src="size_mag-2113737-10.png" title="Size-magnitude plot with star selection">
+<img width="250" src="hist_mag_stars-2113737-10.png" title="Magnitude histogram of selected stars">
 
-[PLOT:fwhm_field]
-TYPE = scatter
-FORMAT = png
-X = X_IMAGE{star_selection}
-Y = Y_IMAGE{star_selection}
-SCATTER = FWHM_IMAGE{star_selection}*0.186
-MARKER = .
-LABEL = "FWHM (arcsec)"
-TITLE = "Stars FWHM in field"
-XLABEL = "X (pix)"
-YLABEL = "Y (pix)"
 
-[PLOT:mag_star_field]
-TYPE = scatter
-FORMAT = png
-X = X_IMAGE{star_selection}
-Y = Y_IMAGE{star_selection}
-SCATTER = MAG_AUTO{star_selection}
-MARKER = .
-LABEL = "Mag (arcsec)"
-TITLE = "Stars Mag in field"
-XLABEL = "X (pix)"
-YLABEL = "Y (pix)"
-
-[STAT:star_stat]
-"Nb objects full cat" = len(FWHM_IMAGE)
-"Nb stars" = len(FWHM_IMAGE{star_selection})
-"stars/deg^2" = len(FWHM_IMAGE{star_selection})/4612./0.186*3600.*1./2048./0.186*3600.
-"Mean star fwhm selected (arcsec)" = mean(FWHM_IMAGE{star_selection})*0.186
-"Standard deviation fwhm star selected (arcsec)" = std(FWHM_IMAGE{star_selection})*0.186
-"Mode fwhm used (arcsec)" = mode(FWHM_IMAGE{preselect})*0.186
-"Min fwhm cut (arcesec)" = mode(FWHM_IMAGE{preselect})*0.186-0.1*0.186
-"Max fwhm cut (arcsec)" = mode(FWHM_IMAGE{preselect})*0.186+0.1*0.186
-```  
+Here is a statistic example:
+```bash
+(shapepipe)  dap ~/ShapePipeRun $ cat output/shapepipe_run_2020-03-05_10-00-26/setools_runner/output/stat/star_stat-2159358-27.txt
+# Statistics
+Nb objects full cat = 1433
+Nb stars = 208
+stars/deg^2 = 8249.415856747946
+Mean star fwhm selected (arcsec) = 0.5995482530593872
+Standard deviation fwhm star selected (arcsec) = 0.016425703570246697
+Mode fwhm used (arcsec) = 0.5924358873367309
+Min fwhm cut (arcesec) = 0.573835887336731
+Max fwhm cut (arcsec) = 0.6110358873367309
+```
 
 ### PSF estimation
 
