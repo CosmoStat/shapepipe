@@ -383,11 +383,13 @@ of any quantity from the SExtractor input catalogue, the number of selected obje
 On success, masked SEXtractor catalogues are created in `mask`, plots are put in `plots`,
 and text files with the computed statistics in `stats`.
 
-The following plots correspond to one CCD for a given exposure.
+The following plots show an example, CCD #10 of exposure 2113737.
 
 
-<img width="250" src="size_mag-2113737-10.png" title="Size-magnitude plot with star selection">
-<img width="250" src="hist_mag_stars-2113737-10.png" title="Magnitude histogram of selected stars">
+| Size-magnitude plot | Star magnitude histogram | Stars in CCD (mag) | Stars in CCD (size) |
+| --- | --- | --- | --- |
+| <img width="250" src="size_mag-2113737-10.png" title="Size-magnitude plot with star selection"> | <img width="250" src="hist_mag_stars-2113737-10.png" title="Magnitude histogram of selected stars"> | <img width="250" src="mag_star_field-2113737-10.png" title="Magnitude distribution in CCD"> | <img width="250" src="fwhm_field-2113737-10.png" title="Size distribution in CCD"> |" 
+| The stellar locus is well-defined | Magnitude distribution looks reasonable | Stars are relatively homogeneously distributed over the CCD | The uniform and small seeing of CFHT is evident |
 
 
 Here is a statistic example:
