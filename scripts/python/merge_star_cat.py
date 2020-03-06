@@ -4,7 +4,7 @@ from astropy.io import fits
 import re
 from shapepipe.pipeline import file_io as sc
 
-starcats_path = '/home/guinot/ShapePipe_dir/output_singles2/shapepipe_run_2019-03-29_15-46-39/psfexinterp_runner/output/'
+starcats_path = '/home/mkilbing/ShapePipeRun/output/shapepipe_run_2020-03-06_16-10-28/psfexinterp_runner/output/'
 stub = 'validation_psf'
 save_fullcat = True
 

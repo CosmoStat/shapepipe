@@ -15,7 +15,7 @@
     1. [Mask images](#mask-images)
     1. [Extract sources](#extract-sources)
     1. [Select stars](#select-stars)
-    1. [PSF estimation](#PSF-estimation)
+    1. [Model the PSF](#model-the-psf)
     1. [Validation tests](#Validation tests)
     1. [Full run config file](#Full-run-config-file)
 1. [Stacks processing](#Stack-processing)
@@ -290,7 +290,7 @@ If instad the star catalogues can be accessed during the pipeline running,
 the config files looks as follows:
 ```ini
 [FILE]
-INPUT_DIR = last:split_exp_runner
+INPUT_DIR = last:split_exp
 [MASK_RUNNER]
 USE_EXT_STAR = False
 ```
@@ -318,7 +318,7 @@ have a zero-padded pixel border, which is not accounted for by `ds9`.
 
 ### Extract sources
 
-**Module:** sextractor_runner   
+**Module:** sextractor
 **Input:** single-exp_single-CCD image, weights, flags
 **Output:** sextractor catalogue
 
@@ -336,7 +336,7 @@ On success, SEXtractor catalogue FITS files are produced.
 
 ### Select stars
 
-**Module:** setools_runner   
+**Module:** setools
 **Input:** sextractor catalog
 **Output:** masked sextractor catalogue
 
@@ -352,7 +352,7 @@ SETOOLS_CONFIG_PATH = $HOME/ShapePipe/example/GOLD/star_selection.setools
 ```
 The selection config file `star_selection.setools` first defined a pre-selectione (or filter, or mask),
 such that the subsequent computation of the mode is more stable:
-```text
+```ini
 [MASK:preselect]
 MAG_AUTO > 0
 MAG_AUTO < 20
@@ -365,7 +365,7 @@ NO_SAVE
 > Note the normalisation by the pixel scale to express **FWHM_IMAGE** in arc seconds.
 
 The star sample is then selected as follows:
-```text
+```ini
 [MASK:star_selection]
 MAG_AUTO > 17.
 MAG_AUTO < 21.5
@@ -391,99 +391,49 @@ The following plots show an example, CCD #10 of exposure 2113737.
 | <img width="250" src="size_mag-2113737-10.png" title="Size-magnitude plot with star selection"> | <img width="250" src="hist_mag_stars-2113737-10.png" title="Magnitude histogram of selected stars"> | <img width="250" src="mag_star_field-2113737-10.png" title="Magnitude distribution in CCD"> | <img width="250" src="fwhm_field-2113737-10.png" title="Size distribution in CCD"> | 
 | The stellar locus is well-defined | Magnitude distribution looks reasonable | Stars are relatively homogeneously distributed over the CCD | The uniform and small seeing of CFHT is evident |
 
-To contrast the last plot, here is the case of CCD #35 (lower right corner), which shows known but unexplained lack of stars in some areas:
+To contrast the last plot, here is the case of CCD #35 (lower right corner), which shows a known (but yet unexplained) lack of stars
+in the lower parts:
 
 <img width="250" src="fwhm_field-2113737-35.png" title="Size distribution in CCD">
 
-Here is a statistic example:
+The statistics output file, also for CCD #10 is:
 ```bash
-(shapepipe)  dap ~/ShapePipeRun $ cat output/shapepipe_run_2020-03-05_10-00-26/setools_runner/output/stat/star_stat-2159358-27.txt
+(shapepipe)  dap ~/ShapePipeRun $ cat output/shapepipe_run_2020-03-05_10-00-26/setools_runner/output/stat/star_stat-2113737-10.txt 
 # Statistics
-Nb objects full cat = 1433
-Nb stars = 208
-stars/deg^2 = 8249.415856747946
-Mean star fwhm selected (arcsec) = 0.5995482530593872
-Standard deviation fwhm star selected (arcsec) = 0.016425703570246697
-Mode fwhm used (arcsec) = 0.5924358873367309
-Min fwhm cut (arcesec) = 0.573835887336731
-Max fwhm cut (arcsec) = 0.6110358873367309
+Nb objects full cat = 1267
+Nb stars = 160
+stars/deg^2 = 6345.70450519073
+Mean star fwhm selected (arcsec) = 0.7441293125152588
+Standard deviation fwhm star selected (arcsec) = 0.014217643037438393
+Mode fwhm used (arcsec) = 0.7345179691314697
+Min fwhm cut (arcesec) = 0.7159179691314698
+Max fwhm cut (arcsec) = 0.7531179691314697
 ```
 
-### PSF estimation
+### Model the PSF
 
-**Module :** psfex_runner   
-**Module inputs :** setools_star_selection
+**Module:** psfex
+**Input:** setools_star_selection
+**Output:** star catalogue, psf file 
 
-The PSF estimation is done with PSFEx. Here is a commented example config file for the pipeline :
-
+The PSF modeling is done with `PSFEx`. The psfex module configuration section
+has to point to the executable and the default psfex config file, which does not
+need to be changed.
 ```ini
 [PSFEX_RUNNER]
 EXEC_PATH = psfex
-
 DOT_PSFEX_FILE = ./example/test_psfex/default.psfex
 ```
 
-Here is a commented example config file for the module :
-
-```text
-#-------------------------------- PSF model ----------------------------------
-
-BASIS_TYPE      PIXEL      # NONE, PIXEL, GAUSS-LAGUERRE or FILE
-BASIS_NUMBER    20              # Basis number or parameter
-BASIS_NAME      basis.fits      # Basis filename (FITS data-cube)
-BASIS_SCALE     1.0             # Gauss-Laguerre beta parameter
-NEWBASIS_TYPE   NONE            # Create new basis: NONE, PCA_INDEPENDENT
-                                # or PCA_COMMON
-NEWBASIS_NUMBER 8               # Number of new basis vectors
-PSF_SAMPLING    1.              # Sampling step in pixel units (0.0 = auto)
-PSF_PIXELSIZE   1.0             # Effective pixel size in pixel step units
-PSF_ACCURACY    0.01            # Accuracy to expect from PSF "pixel" values
-PSF_SIZE        51,51           # Image size of the PSF model
-PSF_RECENTER    N               # Allow recentering of PSF-candidates Y/N ?
-MEF_TYPE        INDEPENDENT     # INDEPENDENT or COMMON
-
-#------------------------- Point source measurements -------------------------
-
-CENTER_KEYS     XWIN_IMAGE,YWIN_IMAGE # Catalogue parameters for source pre-centering
-PHOTFLUX_KEY    FLUX_AUTO    # Catalogue parameter for photometric norm.
-PHOTFLUXERR_KEY FLUXERR_AUTO # Catalogue parameter for photometric error
-
-#----------------------------- PSF variability -------------------------------
-
-PSFVAR_KEYS     XWIN_IMAGE,YWIN_IMAGE # Catalogue or FITS (preceded by :) params
-PSFVAR_GROUPS   1,1             # Group tag for each context key
-PSFVAR_DEGREES  2               # Polynom degree for each group
-PSFVAR_NSNAP    9               # Number of PSF snapshots per axis
-HIDDENMEF_TYPE  COMMON          # INDEPENDENT or COMMON
-STABILITY_TYPE  EXPOSURE        # EXPOSURE or SEQUENCE
-
-#----------------------------- Sample selection ------------------------------
-
-# NOTE : since the stars are selected independently we don't use this part
-SAMPLE_AUTOSELECT  N            # Automatically select the FWHM (Y/N) ?
-
-BADPIXEL_FILTER    N            # Filter bad-pixels in samples (Y/N) ?
-BADPIXEL_NMAX      0            # Maximum number of bad pixels allowed
-
-#----------------------- PSF homogeneisation kernel --------------------------
-
-HOMOBASIS_TYPE     NONE         # NONE or GAUSS-LAGUERRE
-HOMOBASIS_NUMBER   10           # Kernel basis number or parameter
-HOMOBASIS_SCALE    1.0          # GAUSS-LAGUERRE beta parameter
-HOMOPSF_PARAMS     2.0, 3.0     # Moffat parameters of the idealised PSF
-HOMOKERNEL_DIR                  # Where to write kernels (empty=same as input)
-HOMOKERNEL_SUFFIX  .homo.fits   # Filename extension for homogenisation kernels
-
-#----------------------------- Output catalogs -------------------------------
-
-# NOTE : This catalog is required for the interpolation
-OUTCAT_TYPE        FITS_LDAC         # NONE, ASCII_HEAD, ASCII, FITS_LDAC
-```
+On success, FITS files containing the star catalalogue (`psfex_cat-*.cat`) and the PSF at
+the stars' positions (`star_selection-2159358-9.psf`) are created.
 
 ### Validation tests
 
-**Module :** psfinterp_runner   
-**Module :** setools_star_selection, psfex_catalog
+**Module:** psfinterp
+**Parent**: psfex, setools
+**Input:** star catalogue, psfex_catalog
+**Output:** star catalogue
 
 The interpolation of the PSF is not done at this stage for the shape measurement. But, in order to make validation tests on the model we need the model at the position of the stars used. For that we run the module : `psfinterp_runner` on `VALIDATION` mode. Here is a commented example config file for the pipeline :
 
@@ -493,17 +443,17 @@ The interpolation of the PSF is not done at this stage for the shape measurement
 # MULTI-EPOCH for multi epoch.
 # VALIDATION for output allowing validation (only on single epoch !)
 MODE = VALIDATION
-
+# Column names of position parameters
+POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE
+# If True, measure and store ellipticity of the PSF
 GET_SHAPES = True
-
 # Number minimal of stars require to interpolate the PSF on the CCD
 STAR_THRESH = 20
 # Maximum value allowed for the global chi2 of the model for the CCD
 CHI2_THRESH = 2
-
-# When running in multi-epoch those position has to be WCS !
-POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE
 ```
+
+On success, validation catalogues are created.
 
 ### Full run config file
 
