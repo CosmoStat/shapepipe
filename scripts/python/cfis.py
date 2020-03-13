@@ -132,13 +132,17 @@ class image():
         return False
 
 
-    def print(self, file=sys.stdout, base_name=False):
+    def print(self, file=sys.stdout, base_name=False, name_only=True):
         """Print image information as ascii Table column
 
         Parameters
         ----------
         file: file handle, optional, default=sys.stdout
             output file handle
+        base_name: bool, optional, default=False
+            if True (False) print image base name (full path)
+        name_only: bool, optional, default=False
+            if False, do not print metainfo
 
         Returns
         -------
@@ -150,11 +154,13 @@ class image():
         else:
             name = self.name
         print(name, end='', file=file)
-        if self.ra:
-            print(' {:10.2f}'.format(getattr(self.ra, unitdef)), end='', file=file)
-        if self.dec:
-            print(' {:10.2f}'.format(getattr(self.dec, unitdef)), end='', file=file)
-        print(' {:5d} {:8s}'.format(self.exp_time, self.valid), file=file)
+        if not name_only:
+            if self.ra:
+                print(' {:10.2f}'.format(getattr(self.ra, unitdef)), end='', file=file)
+            if self.dec:
+                print(' {:10.2f}'.format(getattr(self.dec, unitdef)), end='', file=file)
+            print(' {:5d} {:8s}'.format(self.exp_time, self.valid), end='', file=file)
+        print(file=file)
 
 
     def print_header(self, file=sys.stdout):

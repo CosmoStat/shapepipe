@@ -544,6 +544,8 @@ def parse_options(p_def):
          help='create plots')
     parser.add_option('', '--out_base_name', dest='out_base_name', action='store_true',
          help='output base names, not entire path if input is directory')
+    parser.add_option('', '--out_name_only', dest='out_name_only', action='store_true',
+         help='output only file names, not coordinates and metainfo')
     parser.add_option('', '--interactive', dest='interactive', action='store_true',
          help='interactive mode (showing plots, recommended for call from jupyer notebook)')
 
@@ -670,7 +672,7 @@ def run_mode(images, param):
         if len(images_found) > 0:
             images_found[0].print_header(file=param.fout)
             for img in images_found:
-                img.print(file=param.fout, base_name=param.out_base_name)
+                img.print(file=param.fout, base_name=param.out_base_name, name_only=param.out_name_only)
             ex =  0
 
     elif param.number:
@@ -679,7 +681,7 @@ def run_mode(images, param):
         img_found = get_coord_at_image(param.number, param.band, param.image_type, images, no_cuts=param.no_cuts, verbose=param.verbose)
         if img_found != None:
             img_found.print_header(file=param.fout)
-            img_found.print(file=param.fout, base_name=param.out_base_name)
+            img_found.print(file=param.fout, base_name=param.out_base_name, name_only=param.out_name_only)
             ex = 0
         else:
             if param.verbose:
@@ -693,7 +695,7 @@ def run_mode(images, param):
         if len(images_found) > 0:
             images_found[0].print_header(file=param.fout)
             for img in images_found:
-                img.print(file=param.fout, base_name=param.out_base_name)
+                img.print(file=param.fout, base_name=param.out_base_name, name_only=param.out_name_only)
             if param.plot == True:
                 if param.verbose == True:
                     print('Creating plots')
