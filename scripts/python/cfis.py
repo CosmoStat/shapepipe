@@ -853,7 +853,7 @@ def read_list(fname, col=None):
     """
 
     if col is None:
-        f = open(fname, 'rU')
+        f = open(fname, 'rU', encoding='latin1')
         file_list = [x.strip() for x in f.readlines()]
         f.close()
     else:
@@ -1036,7 +1036,14 @@ def get_image_list(inp, band, image_type, col=None, verbose=False):
 
     for img in image_list:
 
-        m = re.findall(pattern, img.name)
+        # Get link source name if symbolic link
+        try:
+            link_src = os.readlink(img.name)
+            name = link_src
+        except:
+            # No link, continue
+            name = img.name
+        m = re.findall(pattern, name)
         if len(m) != 0:
             img_list.append(img)
 

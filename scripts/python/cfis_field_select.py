@@ -280,12 +280,13 @@ def get_images_used_in_tiles(images, band, image_type):
 
         exp_list_uniq = list(set(exp_list))
 
-        img_list = []
+    exp_list = []
+    for img in images:
         for exp in exp_list_uniq:
-            img = cfis.get_file_pattern(exp, band, image_type, want_re=False)
-            img_list.append(img)
+            match = cfis.get_file_pattern(exp, band, image_type, want_re=False)
+            exp_list.append(match)
 
-    return img_list
+    return exp_list
 
 
 def get_coord_at_image(number, band, image_type, images, no_cuts=False, verbose=False):
@@ -566,7 +567,7 @@ def parse_options(p_def):
         help='input image number')
     parser.add_option('', '--area', dest='area', type='string', default=None,
         help='area corner coordinates ra0_dec0_ra1_dec1')
-    parser.add_option('', '--tile', dest='tile', type='string', default=None,
+    parser.add_option('', '--tile', dest='tile', action='store_true',
         help='return exposures used in input tile(s)')
 
     # Monitoring
@@ -711,8 +712,8 @@ def run_mode(images, param):
         images_found = get_images_used_in_tiles(images, param.band, param.image_type)
         if len(images_found) > 0:
             for img in images_found:
-                print(img, base_name=param.out_base_name)
-            ex =0
+                print(img, file=param.fout)
+            ex = 0
 
 
     else:
