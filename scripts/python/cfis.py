@@ -762,7 +762,7 @@ def get_Angle(str_coord):
     a_ra  = Angle(ra)
     a_dec = Angle(dec)
 
-    return r_ra, a_dec
+    return a_ra, a_dec
 
 
 

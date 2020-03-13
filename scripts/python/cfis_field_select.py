@@ -122,13 +122,13 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, verbose=
         Found image(s), None if none found.
     """
 
-    ra, dec   = get_Angle(coord)
+    ra, dec   = cfis.get_Angle(coord)
 
     if verbose == True:
         print('Looking for image at coordinates {}, {}'.format(ra, dec))
 
     if image_type == 'tile':
-        nix, niy  = get_tile_number_from_coord(ra, dec, return_type=int)
+        nix, niy  = cfis.get_tile_number_from_coord(ra, dec, return_type=int)
         tile_name = cfis.get_tile_name(nix, niy, band)
 
         img_found = []
