@@ -135,13 +135,13 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, verbose=
 
         img_found = []
         for img in images:
-            if img.name == tile_name:
+            if os.path.basename(img.name) == tile_name:
                 # Update coordinate in image for tiles with central coordinates
                 ra_c, dec_c = cfis.get_tile_coord_from_nixy(nix, niy)
                 if img.ra is not None or img.dec is not None:
                     raise CfisError('Coordinates in image are already set to {}, {}, cannot update to {}, {}'.\
                                 format(img.ra, img.dec, ra_c, dec_c))
-                img.ra  = ra_c
+                img.ra = ra_c
                 img.dec = dec_c
                 img_found.append(img)
 
@@ -542,6 +542,8 @@ def parse_options(p_def):
          help='output file name base (\'.txt\' is added), default=stdout')
     parser.add_option('', '--plot', dest='plot', action='store_true',
          help='create plots')
+    parser.add_option('', '--out_base_name', dest='out_base_name', action='store_true',
+         help='output base names, not entire path if input is directory')
     parser.add_option('', '--interactive', dest='interactive', action='store_true',
          help='interactive mode (showing plots, recommended for call from jupyer notebook)')
 
@@ -668,7 +670,7 @@ def run_mode(images, param):
         if len(images_found) > 0:
             images_found[0].print_header(file=param.fout)
             for img in images_found:
-                img.print(file=param.fout)
+                img.print(file=param.fout, base_name=param.out_base_name)
             ex =  0
 
     elif param.number:
@@ -677,7 +679,7 @@ def run_mode(images, param):
         img_found = get_coord_at_image(param.number, param.band, param.image_type, images, no_cuts=param.no_cuts, verbose=param.verbose)
         if img_found != None:
             img_found.print_header(file=param.fout)
-            img_found.print(file=param.fout)
+            img_found.print(file=param.fout, base_name=param.out_base_name)
             ex = 0
         else:
             if param.verbose:
@@ -691,7 +693,7 @@ def run_mode(images, param):
         if len(images_found) > 0:
             images_found[0].print_header(file=param.fout)
             for img in images_found:
-                img.print(file=param.fout)
+                img.print(file=param.fout, base_name=param.out_base_name)
             if param.plot == True:
                 if param.verbose == True:
                     print('Creating plots')
@@ -707,7 +709,7 @@ def run_mode(images, param):
         images_found = get_images_used_in_tiles(images, param.band, param.image_type)
         if len(images_found) > 0:
             for img in images_found:
-                print(img)
+                print(img, base_name=param.out_base_name)
             ex =0
 
 

@@ -132,7 +132,7 @@ class image():
         return False
 
 
-    def print(self, file=sys.stdout):
+    def print(self, file=sys.stdout, base_name=False):
         """Print image information as ascii Table column
 
         Parameters
@@ -145,7 +145,11 @@ class image():
         None
         """
 
-        print(self.name, end='', file=file)
+        if base_name:
+            name = os.path.basename(self.name)
+        else:
+            name = self.name
+        print(name, end='', file=file)
         if self.ra:
             print(' {:10.2f}'.format(getattr(self.ra, unitdef)), end='', file=file)
         if self.dec:
