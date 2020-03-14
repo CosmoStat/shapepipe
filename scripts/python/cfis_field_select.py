@@ -258,6 +258,7 @@ def get_images_used_in_tiles(images, band, image_type):
         'exposure_flag', 'exposure_flag.fz', 'cat')
     """
 
+    exp_list = []
     for img in images:
 
         try:
@@ -266,11 +267,10 @@ def get_images_used_in_tiles(images, band, image_type):
         except:
             raise CfisError('Error while reading tile FITS file {}'.format(img.name))
 
-        exp_list = []
         for h in hist:
             temp = h.split(' ')
 
-            pattern = r'(.*)\.{1}.*'
+            pattern = r'(.*)p\.{1}.*'
             m = re.search(pattern, temp[3])
             if not m:
                 raise CfisError('re match \'{}\' failed for filename \'{}\''.format(pattern, temp[3]))
@@ -278,15 +278,9 @@ def get_images_used_in_tiles(images, band, image_type):
             exp_name = m.group(1)
             exp_list.append(exp_name)
 
-        exp_list_uniq = list(set(exp_list))
+    exp_list_uniq = list(set(exp_list))
 
-    exp_list = []
-    for img in images:
-        for exp in exp_list_uniq:
-            match = cfis.get_file_pattern(exp, band, image_type, want_re=False)
-            exp_list.append(match)
-
-    return exp_list
+    return exp_list_uniq
 
 
 def get_coord_at_image(number, band, image_type, images, no_cuts=False, verbose=False):
