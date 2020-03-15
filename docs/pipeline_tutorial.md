@@ -240,6 +240,9 @@ a separated directory for later use.
 
 On success, a single `.sqlite` file is created.
 
+> Note: On cc this module failed to run alone. It should be run together with
+the previous one, `split_exp_runner`.
+
 ### Mask images
 
 **Module:** mask_runner   
@@ -275,7 +278,8 @@ star catalogues. Since in some cases computing nodes on clusters might not have
 internet access, such a catalog can also be created for each image, before running 
 this module as follows:
 ```bash
-~/ShapePipe/scripts/python/create_star_cat.py input_exposures output exp
+mkdir -o output_star_cat
+~/ShapePipe/scripts/python/create_star_cat.py input_exposures output_star_cat exp
 ```
 Then, the star catalogue needs to be specified as input in the config file,
 and a flag has to be set::
