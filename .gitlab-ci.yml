@@ -13,7 +13,7 @@ before_script:
   ## Install build dependencies and glibc for Miniconda3 (alpine doesn't use glibc)
   - apk add --update --no-cache bash ca-certificates curl git glib libstdc++ make sed wget
   - ls -al ./*
-  - cp alpine/sgerrand.rsa.pub /etc/apk/keys/sgerrand.rsa.pub
+  # - cp alpine/sgerrand.rsa.pub /etc/apk/keys/sgerrand.rsa.pub
   - apk add ./alpine/glibc-2.30-r0.apk
   - apk add ./alpine/glibc-bin-2.30-r0.apk
   - apk add --allow-untrusted ./alpine/glibc-i18n-2.30-r0.apk
