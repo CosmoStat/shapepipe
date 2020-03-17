@@ -14,8 +14,8 @@ before_script:
   # - pip install coverage nose pytest pytest-cov
 
 # Install package
-Install:
-  # script: python setup.py test
+# Install:
+# script: python setup.py test
 
 # Remove conda env
 # after_script:
