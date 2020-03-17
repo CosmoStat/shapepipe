@@ -1,10 +1,11 @@
 # Install dependencies
 before_script:
-  - apk --update add glib libstdc++ bash ca-certificates
+  - CONDA_DIR="/opt/conda"
+  - mkdir -p "$CONDA_DIR"
+  - apk add --no-cache --virtual  .build-dependencies glib libstdc++ bash ca-certificates wget
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-  - chmod +x miniconda.sh
-  - ./miniconda.sh -b -p $PWD/miniconda
-  - export PATH=$HOME/miniconda/bin:$PATH
+  - bash miniconda.sh -f -b -p "$CONDA_DIR"
+  - export PATH=$CONDA_DIR/bin:$PATH
   - conda list -n gitlab-ci || conda env create -f environment.yml -n gitlab-ci
   - conda activate gitlab-ci
   - pip install coverage nose pytest pytest-cov
