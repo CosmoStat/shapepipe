@@ -1,7 +1,7 @@
 # Install dependencies
 before_script:
   - docker pull drtools/alpine-miniconda
-  - docker run -i -t drtools/alpine-miniconda /bin/bash
+  - docker run drtools/alpine-miniconda /bin/bash
   # - CONDA_DIR="/opt/conda"
   # - mkdir -p "$CONDA_DIR"
   # - apk add --no-cache --virtual  .build-dependencies glib libstdc++ bash ca-certificates wget
