@@ -3,6 +3,9 @@ before_script:
   - CONDA_DIR="/opt/conda"
   - mkdir -p "$CONDA_DIR"
   - apk add --no-cache --virtual  .build-dependencies glib libstdc++ bash ca-certificates wget
+  - apk add ./alpine/glibc-2.30-r0.apk
+  - apk add ./alpine/glibc-bin-2.30-r0.apk
+  - apk add --allow-untrusted ./alpine/glibc-i18n-2.30-r0.apk
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -f -b -p "$CONDA_DIR"
   - export PATH=$CONDA_DIR/bin:$PATH
