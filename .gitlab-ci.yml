@@ -8,14 +8,14 @@ before_script:
   # - apk add --no-cache --virtual  .build-dependencies glib libstdc++ bash ca-certificates wget
   # - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
   # - bash miniconda.sh -f -b -p "$CONDA_DIR"
-  - export PATH=$CONDA_DIR/bin:$PATH
-  - conda list -n gitlab-ci || conda env create -f environment.yml -n gitlab-ci
-  - conda activate gitlab-ci
-  - pip install coverage nose pytest pytest-cov
+  # - export PATH=$CONDA_DIR/bin:$PATH
+  # - conda list -n gitlab-ci || conda env create -f environment.yml -n gitlab-ci
+  # - conda activate gitlab-ci
+  # - pip install coverage nose pytest pytest-cov
 
 # Install package
 Install:
-  script: python setup.py test
+  # script: python setup.py test
 
 # Remove conda env
 # after_script:
