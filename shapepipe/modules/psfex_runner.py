@@ -17,16 +17,17 @@ from shapepipe.modules.module_decorator import module_runner
 @module_runner(input_module='setools_runner', version='1.0',
                file_pattern=['star_selection'], file_ext=['.fits'],
                executes='psfex')
-def psfex_runner(input_file_list, output_dir, file_number_string,
+def psfex_runner(input_file_list, run_dirs, file_number_string,
                  config, w_log):
 
     exec_path = config.getexpanded("PSFEX_RUNNER", "EXEC_PATH")
     dot_sex = config.getexpanded("PSFEX_RUNNER", "DOT_PSFEX_FILE")
-    outcat_name = '{0}/psfex_cat{1}.cat'.format(output_dir, file_number_string)
+    outcat_name = '{0}/psfex_cat{1}.cat'.format(run_dirs['output'],
+                                                file_number_string)
 
     command_line = ('{0} {1} -c {2} -PSF_DIR {3} -OUTCAT_NAME {4}'
                     ''.format(exec_path, input_file_list[0], dot_sex,
-                              output_dir, outcat_name))
+                              run_dirs['output'], outcat_name))
 
     if config.has_option('PSFEX_RUNNER', "CHECKIMAGE"):
         check_image = config.getlist("PSFEX_RUNNER", "CHECKIMAGE")
@@ -42,8 +43,8 @@ def psfex_runner(input_file_list, output_dir, file_number_string,
         check_name = []
         for i in check_image:
             check_type.append(i.upper())
-            check_name.append(output_dir + '/' + suffix + '_' + i.lower()
-                              + file_number_string+'.fits')
+            check_name.append(run_dirs['output'] + '/' + suffix + '_' +
+                              i.lower() + file_number_string+'.fits')
 
     command_line += (' -CHECKIMAGE_TYPE {0} -CHECKIMAGE_NAME {1}'
                      ''.format(','.join(check_type), ','.join(check_name)))

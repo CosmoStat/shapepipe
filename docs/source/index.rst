@@ -6,9 +6,9 @@
 ShapePipe Documentation
 =======================
 
-:Version: 0.0.1
+:Version: 0.0.2
 
-:Date: 25/01/2019
+:Date: 19/06/2019
 
 ShapePipe is a galaxy shape measurement pipeline developed within the
 CosmoStat lab at CEA Paris-Saclay.

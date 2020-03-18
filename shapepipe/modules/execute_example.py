@@ -13,11 +13,12 @@ from shapepipe.modules.module_decorator import module_runner
 
 
 @module_runner(input_module='python_example', version='1.0',
-               file_pattern='pyex_output', file_ext='.cat', executes='head')
-def execute_example(input_file_list, output_dir, file_number_string, *args):
+               file_pattern='pyex_output', file_ext='.cat', executes='head',
+               run_method='parallel')
+def execute_example(input_file_list, run_dirs, file_number_string, *args):
 
     command_line = 'head {}'.format(input_file_list[0])
-    output_file_name = '{}/head_output{}.txt'.format(output_dir,
+    output_file_name = '{}/head_output{}.txt'.format(run_dirs['output'],
                                                      file_number_string)
 
     stdout, stderr = execute(command_line)

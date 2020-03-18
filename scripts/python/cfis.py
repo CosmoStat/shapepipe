@@ -66,7 +66,6 @@ class CfisError(Exception):
    pass
 
 
-
 class image():
 
     def __init__(self, name, ra, dec, exp_time=-1, valid='Unknown'):
@@ -133,21 +132,35 @@ class image():
         return False
 
 
-    def print(self, file=sys.stdout):
+    def print(self, file=sys.stdout, base_name=False, name_only=True):
         """Print image information as ascii Table column
 
         Parameters
         ----------
         file: file handle, optional, default=sys.stdout
             output file handle
+        base_name: bool, optional, default=False
+            if True (False) print image base name (full path)
+        name_only: bool, optional, default=False
+            if False, do not print metainfo
 
         Returns
         -------
         None
         """
 
-        print('{} {:10.2f} {:10.2f} {:5d} {:8s}'.format(self.name, getattr(self.ra, unitdef), getattr(self.dec, unitdef), \
-              self.exp_time, self.valid), file=file)
+        if base_name:
+            name = os.path.basename(self.name)
+        else:
+            name = self.name
+        print(name, end='', file=file)
+        if not name_only:
+            if self.ra:
+                print(' {:10.2f}'.format(getattr(self.ra, unitdef)), end='', file=file)
+            if self.dec:
+                print(' {:10.2f}'.format(getattr(self.dec, unitdef)), end='', file=file)
+            print(' {:5d} {:8s}'.format(self.exp_time, self.valid), end='', file=file)
+        print(file=file)
 
 
     def print_header(self, file=sys.stdout):
@@ -390,6 +403,25 @@ def log_command(argv, name=None, close_no_return=True):
         f.close()
 
 
+def symlink(src, dst, verbose=False):
+    """Creates a pointing to src with name dst.
+
+    Parameters
+    ----------
+    src: string
+        source file name
+    dst: string
+        destination link name
+    verbose: bool, optional, default=False
+        verbose output if True
+    """
+
+    if verbose:
+        print(' {} <- {}'.format(src, dst))
+    os.symlink(src, dst)
+
+
+
 def print_color(color, txt, file=sys.stdout, end='\n'):
     """Print text with color. If not supported, print standard text.
 
@@ -483,7 +515,6 @@ def my_string_split(string, num=-1, verbose=False, stop=False):
         raise CfisError('String \'{}\' has length {}, required is {}'.format(string, len(res), num))
 
     return res
-
 
 
 def get_file_pattern(pattern, band, image_type, want_re=True):
@@ -608,7 +639,7 @@ def get_tile_coord_from_nixy(nix, niy):
 
 
 
-def get_tile_name(nix, niy, band):
+def get_tile_name(nix, niy, band, image_type='tile'):
     """Return tile name for given tile numbers.
 
    Parameters
@@ -619,6 +650,7 @@ def get_tile_name(nix, niy, band):
         tile number for y
     band: string
         band, one in 'r' or 'u'
+    image_type: string, optional, default='tile'
 
     Returns
     -------
@@ -627,17 +659,24 @@ def get_tile_name(nix, niy, band):
     """
 
     if type(nix) is int and type(niy) is int:
-    	tile_name = 'CFIS.{:03d}.{:03d}.{}.fits'.format(nix, niy, band)
+    	tile_base = 'CFIS.{:03d}.{:03d}.{}'.format(nix, niy, band)
 
     elif type(nix) is str and type(niy) is str:
-    	tile_name = 'CFIS.{}.{}.{}.fits'.format(nix, niy, band)
+    	tile_base = 'CFIS.{}.{}.{}'.format(nix, niy, band)
 
     else:
         raise CfisError('Invalid type for input tile numbers {}, {}'.format(nix, niy))
 
+    if image_type == 'tile':
+        tile_name = '{}.fits'.format(tile_base)
+    elif image_type == 'weight':
+        tile_name = '{}.weight.fits'.format(tile_base)
+    elif image_type == 'weight.fz':
+        tile_name = '{}.weight.fits.fz'.format(tile_base)
+    else:
+        raise CfisError('Invalid image type {}'.format(image_type))
 
     return tile_name
-
 
 
 def get_tile_number(tile_name):
@@ -762,7 +801,7 @@ def get_Angle(str_coord):
     a_ra  = Angle(ra)
     a_dec = Angle(dec)
 
-    return r_ra, a_dec
+    return a_ra, a_dec
 
 
 
@@ -814,7 +853,7 @@ def read_list(fname, col=None):
     """
 
     if col is None:
-        f = open(fname, 'rU')
+        f = open(fname, 'rU', encoding='latin1')
         file_list = [x.strip() for x in f.readlines()]
         f.close()
     else:
@@ -953,7 +992,7 @@ def get_image_list(inp, band, image_type, col=None, verbose=False):
 
         # Read file names from directory listing
         inp_type  = 'dir'
-        file_list = glob.glob('{}/*'.format(inp))
+        file_list = glob.glob('{}/*'.format(os.path.abspath(inp)))
 
     elif os.path.isfile(inp):
         if image_type in ('tile', 'weight', 'weight.fz'):
@@ -997,7 +1036,14 @@ def get_image_list(inp, band, image_type, col=None, verbose=False):
 
     for img in image_list:
 
-        m = re.findall(pattern, img.name)
+        # Get link source name if symbolic link
+        try:
+            link_src = os.readlink(img.name)
+            name = link_src
+        except:
+            # No link, continue
+            name = img.name
+        m = re.findall(pattern, name)
         if len(m) != 0:
             img_list.append(img)
 

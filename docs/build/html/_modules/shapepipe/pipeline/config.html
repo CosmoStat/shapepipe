@@ -17,32 +17,34 @@
   
 
   
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
-
-  
-  <script src="../../../_static/js/modernizr.min.js"></script>
-
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -165,7 +167,6 @@
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">configparser</span> <span class="k">import</span> <span class="n">ConfigParser</span>
-<span class="c1"># from shapepipe.modules import module_runners</span>
 
 
 <div class="viewcode-block" id="CustomParser"><a class="viewcode-back" href="../../../shapepipe.pipeline.config.html#shapepipe.pipeline.config.CustomParser">[docs]</a><span class="k">class</span> <span class="nc">CustomParser</span><span class="p">(</span><span class="n">ConfigParser</span><span class="p">):</span>
@@ -295,12 +296,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s1">&#39;EXECUTION&#39;</span><span class="p">,</span> <span class="s1">&#39;MODULE&#39;</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;No module(s) specified&#39;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;No module(s) specified&#39;</span><span class="p">)</span>
 
-        <span class="c1"># for module in self.config.getlist(&#39;EXECUTION&#39;, &#39;MODULE&#39;):</span>
-        <span class="c1">#     if not hasattr(module_runners, module):</span>
-        <span class="c1">#         raise ImportError(&#39;Module runner {} not found in {}.&#39;.format(</span>
-        <span class="c1">#                           module, module_runners.__name__))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s1">&#39;EXECUTION&#39;</span><span class="p">,</span> <span class="s1">&#39;MODE&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;EXECUTION&#39;</span><span class="p">,</span> <span class="s1">&#39;MODE&#39;</span><span class="p">,</span> <span class="s1">&#39;smp&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SetUpParser._set_file_options"><a class="viewcode-back" href="../../../shapepipe.pipeline.config.html#shapepipe.pipeline.config.SetUpParser._set_file_options">[docs]</a>    <span class="k">def</span> <span class="nf">_set_file_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Set File Options</span>
@@ -403,26 +402,16 @@
   
 
 
-  
-
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
-    
-
-  
-
-  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

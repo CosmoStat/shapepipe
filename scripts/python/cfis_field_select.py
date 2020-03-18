@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 
 """Script cfis_field_select.py
@@ -24,6 +24,7 @@ import glob
 import numpy as np
 import pylab as plt
 
+from astropy.io import fits
 from astropy.table import Table, Column
 from astropy import units
 from astropy.coordinates import Angle, SkyCoord
@@ -32,7 +33,7 @@ from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
 import textwrap
 
 
-from cfis import CfisError, param, unitdef, size, my_string_split
+from cfis import CfisError, param, unitdef, size
 import cfis
 
 
@@ -110,7 +111,8 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, verbose=
     band: string
         optical band
     image_type: string
-        image type ('tile', 'exposure', 'cat', 'weight', 'weight.fz')
+        image type ('tile', 'weight', 'weight.fz', 'exposure', 'exposure_weight', \
+        'exposure_weight.fz', 'exposure_flag', 'exposure_flag.fz', 'cat')
     no_cuts: bool, optional, default=False
         no cuts (of short exposure, validation flag) if True
     verbose: bool, optional
@@ -122,24 +124,24 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, verbose=
         Found image(s), None if none found.
     """
 
-    ra, dec   = get_Angle(coord)
+    ra, dec = cfis.get_Angle(coord)
 
     if verbose == True:
         print('Looking for image at coordinates {}, {}'.format(ra, dec))
 
-    if image_type == 'tile':
-        nix, niy  = get_tile_number_from_coord(ra, dec, return_type=int)
-        tile_name = cfis.get_tile_name(nix, niy, band)
+    if image_type in ('tile', 'weight', 'weight.fz'):
+        nix, niy  = cfis.get_tile_number_from_coord(ra, dec, return_type=int)
+        tile_name = cfis.get_tile_name(nix, niy, band, image_type)
 
         img_found = []
         for img in images:
-            if img.name == tile_name:
+            if os.path.basename(img.name) == tile_name:
                 # Update coordinate in image for tiles with central coordinates
                 ra_c, dec_c = cfis.get_tile_coord_from_nixy(nix, niy)
                 if img.ra is not None or img.dec is not None:
                     raise CfisError('Coordinates in image are already set to {}, {}, cannot update to {}, {}'.\
                                 format(img.ra, img.dec, ra_c, dec_c))
-                img.ra  = ra_c
+                img.ra = ra_c
                 img.dec = dec_c
                 img_found.append(img)
 
@@ -242,6 +244,45 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
     return found
 
 
+def get_images_used_in_tiles(images, band, image_type):
+    """Return exposures used in tiles.
+
+    Parameters
+    ----------
+    images: list of class cfis.image
+        list of images
+    band: string
+        optical band
+    image_type: string
+        image type ('exposure', 'exposure_weight.fz', \
+        'exposure_flag', 'exposure_flag.fz', 'cat')
+    """
+
+    exp_list = []
+    for img in images:
+
+        try:
+            hdu = fits.open(img.name)
+            hist = hdu[0].header['HISTORY']
+        except:
+            raise CfisError('Error while reading tile FITS file {}'.format(img.name))
+
+        for h in hist:
+            temp = h.split(' ')
+
+            pattern = r'(.*)p\.{1}.*'
+            m = re.search(pattern, temp[3])
+            if not m:
+                raise CfisError('re match \'{}\' failed for filename \'{}\''.format(pattern, temp[3]))
+
+            exp_name = m.group(1)
+            exp_list.append(exp_name)
+
+    exp_list_uniq = list(set(exp_list))
+
+    return exp_list_uniq
+
+
 def get_coord_at_image(number, band, image_type, images, no_cuts=False, verbose=False):
     """Return coordinate of image with given number.
 
@@ -269,7 +310,7 @@ def get_coord_at_image(number, band, image_type, images, no_cuts=False, verbose=
     img_found = None
 
     if image_type == 'tile':
-        nix, niy = my_string_split(number, num=2, stop=True)
+        nix, niy = cfis.my_string_split(number, num=2, stop=True)
         tile_name = cfis.get_tile_name(nix, niy, band)
 
         if verbose == True:
@@ -496,15 +537,14 @@ def parse_options(p_def):
          help='output file name base (\'.txt\' is added), default=stdout')
     parser.add_option('', '--plot', dest='plot', action='store_true',
          help='create plots')
+    parser.add_option('', '--out_base_name', dest='out_base_name', action='store_true',
+         help='output base names, not entire path if input is directory')
+    parser.add_option('', '--out_name_only', dest='out_name_only', action='store_true',
+         help='output only file names, not coordinates and metainfo')
     parser.add_option('', '--interactive', dest='interactive', action='store_true',
          help='interactive mode (showing plots, recommended for call from jupyer notebook)')
 
     # Job control
-    parser.add_option('-m', '--mode', dest='mode', type='string', default=None,
-         help='run mode, one of [n|c|a]:\n'
-	      ' n: search image number given a coordinate (--coord)\n'
-	      ' c: search for image coord. given a number (--number)\n'
-	      ' a: area search, search images within area (--area)\n')
     parser.add_option('', '--no_cuts', dest='no_cuts', action='store_true',
         help='output all exposures, no cuts (default: cut short and invalid exposures)')
 
@@ -512,7 +552,8 @@ def parse_options(p_def):
     parser.add_option('-b', '--band', dest='band', type='string', default=p_def.band,
         help='band, one of \'r\' (default)|\'u\'')
     parser.add_option('-t', '--type', dest='image_type', type='string', default=p_def.image_type,
-        help='image type, one of \'tile\' (default)| \'cat\'|\'weight\'|\'exposure\'')
+        help='image type, one of \'tile\' (default)|\'weight\'|\'weight.fz\'|\'exposure\'|\'exposure_weight\''
+             '|\'exposure_weight.fz\'|\'exposure_flag\'|\'exposure_flag.fz\'|\'cat\'')
 
     parser.add_option('', '--coord', dest='coord', type='string', default=None,
         help='(white-space or \'_\' separated) string of input coordinates, as astropy.coordinates.Angle')
@@ -520,6 +561,8 @@ def parse_options(p_def):
         help='input image number')
     parser.add_option('', '--area', dest='area', type='string', default=None,
         help='area corner coordinates ra0_dec0_ra1_dec1')
+    parser.add_option('', '--tile', dest='tile', action='store_true',
+        help='return exposures used in input tile(s)')
 
     # Monitoring
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
@@ -544,18 +587,9 @@ def check_options(options):
         Result of option check. False if invalid option value.
     """
 
-    if options.mode is None:
-        raise CfisError('Run mode not given (option \'-m\')')
-
-    if options.mode == 'n' and options.coord == None:
-        raise CfisError('No input coordinates given (option \'--coord\')')
-    if options.mode == 'c' and options.number == None:
-        raise CfisError('No input image number given (option \'--number\')')
-    if options.mode == 'a' and options.area == None:
-        raise CfisError('No input area given (option \'--area\')')
-
-    if int(options.number != None) + int(options.coord != None) + int(options.area != None) > 1:
-        raise CfisError('Only one option out of \'--number\', \'--coord\', \'--area\' can be given')
+    if int(options.number != None) + int(options.coord != None) \
+        + int(options.area != None) + int(options.tile != None) > 1:
+        raise CfisError('Only one option out of \'--number\', \'--coord\', \'--area\', \'--tile\' can be given')
 
     if options.image_type != 'exposure' and options.no_cuts == True:
         raise CfisError('option \'--no_cuts\' only possible for image_type=exposure')
@@ -626,29 +660,29 @@ def run_mode(images, param):
     # Default value
     ex = 1
 
-    if param.mode == 'n':
+    if param.coord:
 
         # Image number search: Return name of image(s) covering input coordinate
         images_found = find_image_at_coord(images, param.coord, param.band, param.image_type, no_cuts=param.no_cuts, verbose=param.verbose)
         if len(images_found) > 0:
             images_found[0].print_header(file=param.fout)
             for img in images_found:
-                img.print(file=param.fout)
+                img.print(file=param.fout, base_name=param.out_base_name, name_only=param.out_name_only)
             ex =  0
 
-    elif param.mode == 'c':
+    elif param.number:
 
         # Coordinate search: Return coordinate covered by image with input number/file name
         img_found = get_coord_at_image(param.number, param.band, param.image_type, images, no_cuts=param.no_cuts, verbose=param.verbose)
         if img_found != None:
             img_found.print_header(file=param.fout)
-            img_found.print(file=param.fout)
+            img_found.print(file=param.fout, base_name=param.out_base_name, name_only=param.out_name_only)
             ex = 0
         else:
             if param.verbose:
                 print('No image found, try with --no_cuts', file=sys.stderr)
 
-    elif param.mode == 'a':
+    elif param.area:
 
         # Area search: Return images within input area
         angles = cfis.get_Angle_arr(param.area, num=4, verbose=param.verbose)
@@ -656,7 +690,7 @@ def run_mode(images, param):
         if len(images_found) > 0:
             images_found[0].print_header(file=param.fout)
             for img in images_found:
-                img.print(file=param.fout)
+                img.print(file=param.fout, base_name=param.out_base_name, name_only=param.out_name_only)
             if param.plot == True:
                 if param.verbose == True:
                     print('Creating plots')
@@ -666,10 +700,18 @@ def run_mode(images, param):
                     print('RA_c[deg] DEC_c[deg] radius[argmin] = {:.2f} {:.2f} {:.2f}'.format(ra_c.deg, dec_c.deg, radius*60))
             ex = 0
 
+    elif param.tile:
+
+        # Search exposures used in input tile(s)
+        images_found = get_images_used_in_tiles(images, param.band, param.image_type)
+        if len(images_found) > 0:
+            for img in images_found:
+                print(img, file=param.fout)
+            ex = 0
+
+
     else:
-
-        raise CfisError('Unknown run mode \'{}\''.format(param.mode))
-
+        raise CfisError('One of \'--coord\', \'--number\', \'--area\', \'--tile\' needs to be specified')
 
     return ex
 
@@ -705,15 +747,20 @@ def main(argv=None):
 
     ### Start main program ###
 
-    images = cfis.get_image_list(param.input, param.band, param.image_type, col=param.col, verbose=param.verbose)
+    if param.tile:
+        # For search of exposures in tiles, image list from directory needs to be tiles
+        image_type = 'tile'
+    else:
+        image_type = param.image_type
+    images = cfis.get_image_list(param.input, param.band, image_type, col=param.col, verbose=param.verbose)
 
 
-    # Check wether images have been found, if necessary for run mode
-    if param.mode != 'c':
+    # Check wether images have been found, if necessary
+    if param.number:
         if images is None:
-            raise CfisError('Input {} not found, neither existing file nor directory'.format(param.input))
+            raise CfisError('Input list file \'{}\' not found, neither existing file nor directory'.format(param.input))
         if len(images) == 0:
-            raise CfisError('No image files found in input \'{}\''.format(param.input))
+            raise CfisError('No corresponding image files found in input \'{}\''.format(param.input))
 
 
     # Run

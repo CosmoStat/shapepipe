@@ -8,7 +8,7 @@ This module contain a class to create star mask for an image.
 
 :Date: 20/12/2017
 
-:Version: 1.0
+:Version: 1.1
 
 """
 
@@ -52,9 +52,13 @@ class mask(object):
         mask object
     """
 
+<<<<<<< HEAD
     def __init__(self, image_path, weight_path, image_suffix, image_num,
                  config_filepath, output_dir, w_log, path_external_flag=None,
                  outname_base='flag'):
+=======
+    def __init__(self, image_path, weight_path, image_suffix, image_num, config_filepath, output_dir, path_external_flag=None, outname_base='flag', star_cat_path=None):
+>>>>>>> 7b7bd77901feb3729ebabef810a524203a4061c8
 
         self._image_fullpath = image_path                                       # Path to the image to mask
         self._weight_fullpath = weight_path                                     # Path to the weight associated to the image
@@ -69,6 +73,10 @@ class mask(object):
             self._img_suffix = image_suffix + '_'
         else:
             self._img_suffix = ''
+
+        self._star_cat_path = None
+        if star_cat_path is not None:
+            self._star_cat_path = star_cat_path
 
         self._get_config(self._config_filepath)                                 # Get parameters from config file
 
@@ -98,11 +106,19 @@ class mask(object):
 
         self._config['PATH']['WW'] = conf.getexpanded('PROGRAM_PATH', 'WW_PATH')
         self._config['PATH']['WW_configfile'] = conf.getexpanded('PROGRAM_PATH', 'WW_CONFIG_FILE')
+<<<<<<< HEAD
 
         if conf.has_option('PROGRAM_PATH', 'CDSCLIENT_PATH'):
             self._config['PATH']['CDSclient'] = conf.getexpanded('PROGRAM_PATH', 'CDSCLIENT_PATH')
         elif conf.has_option('PROGRAM_PATH', 'STAR_CAT'):
             self._config['PATH']['star_cat'] = conf.getexpanded('PROGRAM_PATH', 'STAR_CAT')
+=======
+        # self._config['PATH']['CDSclient'] = conf.getexpanded('PROGRAM_PATH', 'CDSCLIENT_PATH')
+        if conf.has_option('PROGRAM_PATH', 'CDSCLIENT_PATH'):
+            self._config['PATH']['CDSclient'] = conf.getexpanded('PROGRAM_PATH', 'CDSCLIENT_PATH')
+        elif self._star_cat_path is not None:
+            self._config['PATH']['star_cat'] = self._star_cat_path
+>>>>>>> 7b7bd77901feb3729ebabef810a524203a4061c8
         else:
             raise ValueError('Either CDSCLIENT_PATH or STAR_CAT needs to be given in the [PROGRAM_PATH] section of the mask config file')
 
@@ -267,18 +283,19 @@ class mask(object):
         Parameters
         ----------
         position : numpy.ndarray
-            Position of the center of the field
+          Position of the center of the field
         radius : float
-            Radius in which the query is done (in arcmin)
+          Radius in which the query is done (in arcmin)
 
         Returns
         -------
         dict
-            Stars dicotionnary for GSC objects in the field.
+          Stars dicotionnary for GSC objects in the field.
 
         """
 
         if 'CDSclient' in self._config['PATH']:
+<<<<<<< HEAD
 
             ra = position[0]
             dec = position[1]
@@ -301,10 +318,34 @@ class mask(object):
         else:
 
             raise ValueError('Either CDSCLIENT_PATH or STAR_CAT needs to be given in the [PROGRAM_PATH] section of the mask config file')
+=======
+
+          ra = position[0]
+          dec = position[1]
+          if dec > 0.:
+              sign = '+'
+          else:
+              sign = ''
+          cmd_line = '{0} {1} {2}{3} -r {4} -n 1000000'.format(self._config['PATH']['CDSclient'], ra, sign, dec, radius)
+          # self._w_log.info('Calling command \'{}\''.format(cmd_line))
+          self._CDS_stdout, self._CDS_stderr = execute(cmd_line)
+
+        elif 'star_cat' in self._config['PATH']:
+
+          # self._w_log.info('Reading star catalogue file \'{}\''.format(self._config['PATH']['star_cat']))
+          f = open(self._config['PATH']['star_cat'], 'r')
+          self._CDS_stdout = f.read()
+          self._CDS_stderr = ''
+          f.close()
+
+        else:
+
+          raise ValueError('Either CDSCLIENT_PATH or STAR_CAT needs to be given in the [PROGRAM_PATH] section of the mask config file')
+>>>>>>> 7b7bd77901feb3729ebabef810a524203a4061c8
 
         if self._CDS_stderr != '':
-            self._err = True
-            return None
+          self._err = True
+          return None
 
         return self._make_star_cat(self._CDS_stdout)
 
@@ -367,7 +408,7 @@ class mask(object):
         if cat_path is None:
             raise ValueError('cat_path has to be provided')
 
-        m_cat = np.load(cat_path)
+        m_cat = np.load(cat_path, allow_pickle=True)
         m_sc = SkyCoord(ra=m_cat['ra'] * u.degree, dec=m_cat['dec'] * u.degree)
 
         nx = self._fieldcenter['pix'][0] * 2

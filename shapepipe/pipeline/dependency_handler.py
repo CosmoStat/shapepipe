@@ -334,10 +334,21 @@ class DependencyHandler(object):
                 raise ImportError('Could not import pipeline dependency '
                                   '{}'.format(dependency))
 
+            if hasattr(package, '__version__'):
+                version = package.__version__
+            else:
+                version = 'N/A'
+
+            if hasattr(package, '__path__'):
+                path = package.__path__[0]
+            elif hasattr(package, '__file__'):
+                path = package.__file__
+            else:
+                path = 'N/A'
+
             dependency_status_list.append(' - {} {} {}'.format(
                                           package.__name__,
-                                          package.__version__,
-                                          package.__path__[0]))
+                                          version, path))
 
         return dependency_status_list
 

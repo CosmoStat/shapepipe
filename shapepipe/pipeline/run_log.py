@@ -75,7 +75,8 @@ class RunLog(object):
 
         """
 
-        last_run = [run for run in self._runs if module in run][::-1][0]
+        last_run = [run for run in self._runs if module in
+                    run.split()[1].split(',')][::-1][0]
 
         return last_run.split(' ')[0]
 

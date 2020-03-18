@@ -12,9 +12,9 @@ ShapePipe
 .. |python36| image:: https://img.shields.io/badge/python-3.6-yellow.svg
   :target: https://www.python.org/
 
-:Version: 0.0.1
+:Version: 0.0.2
 
-:Date: 25/01/2019
+:Date: 19/06/2019
 
 ShapePipe is a galaxy shape measurement pipeline developed within the
 CosmoStat lab at CEA Paris-Saclay.
@@ -61,8 +61,8 @@ Module Dependencies
 - matplotlib>=3.0.2
 - numbda==0.40.0
 - ngmix>=1.2
-- pybind11>=2.2
 - sf-tools>=2.0.0
+- sqlitedict>=1.6.0
 
 **Executable Dependencies**
 
