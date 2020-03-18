@@ -1,10 +1,13 @@
 # Install dependencies
 before_script:
-  - docker info
+  - pwd
+  - ls
+  # - docker info
   # - apk add --no-cache --virtual .build-dependencies glib libstdc++ bash ca-certificates wget
-  - docker pull continuumio/miniconda3
-  - docker run continuumio/miniconda3 /bin/bash
-  - export CONDA_DIR=/opt/conda
+  # - docker pull continuumio/miniconda3
+  # - docker run continuumio/miniconda3 /bin/bash
+  # - ls /var/lib/docker/aufs
+  # - export CONDA_DIR=/opt/conda
   # - mkdir -p "$CONDA_DIR"
   # - apk add --no-cache --virtual  .build-dependencies glib libstdc++ bash ca-certificates wget
   # - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
