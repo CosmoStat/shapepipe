@@ -1,7 +1,7 @@
 # Install dependencies
 before_script:
-  - pwd
-  - ls
+  - which python
+  - python --version
   # - docker info
   # - apk add --no-cache --virtual .build-dependencies glib libstdc++ bash ca-certificates wget
   # - docker pull continuumio/miniconda3
