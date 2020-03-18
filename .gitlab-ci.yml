@@ -1,28 +1,9 @@
 # Install dependencies
 before_script:
-  - which python
-  - python --version
-  # - docker info
-  # - apk add --no-cache --virtual .build-dependencies glib libstdc++ bash ca-certificates wget
-  # - docker pull continuumio/miniconda3
-  # - docker run continuumio/miniconda3 /bin/bash
-  # - ls /var/lib/docker/aufs
-  # - export CONDA_DIR=/opt/conda
-  # - mkdir -p "$CONDA_DIR"
-  # - apk add --no-cache --virtual  .build-dependencies glib libstdc++ bash ca-certificates wget
-  # - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-  # - bash miniconda.sh -f -b -p "$CONDA_DIR"
-  # - export PATH=$CONDA_DIR/bin:$PATH
-  # - conda list -n gitlab-ci || conda env create -f environment.yml -n gitlab-ci
-  # - conda activate gitlab-ci
-  # - pip install coverage nose pytest pytest-cov
+  - pip install -r requirements.txt
+  - pip install -r requirements_git.txt
+  - pip install coverage nose pytest pytest-cov
 
 # Install package
 Install:
-  script: pwd
-  # script: python setup.py test
-
-
-# Remove conda env
-# after_script:
-#   - conda remove -n gitlab-ci --all -y
+  script: python setup.py test
