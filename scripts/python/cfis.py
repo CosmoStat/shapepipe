@@ -19,6 +19,7 @@ import sys
 import os
 import glob
 import shlex
+import errno
 
 import numpy as np
 
@@ -309,6 +310,33 @@ def run_cmd_old(cmd_list, run=True, verbose=True, stop=False, parallel=True, fil
 
     #return s
     return s, out_list, err_list
+
+def mkdir_p(path, verbose=False):
+    """Create diretorcy by calling os.makedirs. Emulate shell function 'mkdir -p':
+       If path already exists, returns without raising an error.
+
+    Parameters
+    ----------
+    path: string
+        Directory name
+    verbose: boolean
+        Verbose mode, default False
+
+    Returns
+    -------
+    None
+    
+    """
+
+    if verbose is True:
+        print('Creating directory \'{}\''.format('{}'.format(path)))
+
+    try:
+        os.makedirs(str(path))
+    except OSError as exc:
+        if exc.errno == errno.EEXIST:
+            pass
+        else: raise
 
 
 def check_error_stop(ex_list, verbose=True, stop=False):

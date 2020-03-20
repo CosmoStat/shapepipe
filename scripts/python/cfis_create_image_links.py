@@ -181,11 +181,13 @@ def create_links(inp, output_dir, image_type, image_base_new, weight_base_new, f
     if image_type == 'exposure':
         ext = 'fitsfz'
         weight_type = 'exposure_weight.fz'
+        ext_weight = ext
         flag_type = 'exposure_flag.fz'
         num_form = ''
     elif image_type == 'tile':
         ext = 'fits'
         weight_type = 'weight.fz'
+        ext_weight = 'fits.fz'
         flag_type = None
         num_form = ':04d'
 
@@ -221,7 +223,7 @@ def create_links(inp, output_dir, image_type, image_base_new, weight_base_new, f
         link_name_image = form.format(output_dir, image_base_new, num_str, ext)
         cfis.symlink(img, link_name_image, verbose=verbose)
 
-        link_name_weight = form.format(output_dir, weight_base_new, num_str, ext)
+        link_name_weight = form.format(output_dir, weight_base_new, num_str, ext_weight)
         cfis.symlink(weight_path, link_name_weight, verbose=verbose)
 
         # Create link for flag if it exists
