@@ -18,7 +18,7 @@
     1. [Model the PSF](#model-the-psf)
     1. [Validation tests](#Validation tests)
     1. [Full run config file](#Full-run-config-file)
-1. [Stacks processing](#Stack-processing)
+1. [Process stacks](#process-stacks)
     1. [Masking stacked images](#Masking-stacked-images)
     1. [Source identification stacked images](#Source-identification-stacked-images)
     1. [PSF interpolation](#PSF-interpolation)
@@ -179,6 +179,22 @@ Note that existing links in the output directories (with option `-o`) will cause
 
 These commands create links with the default naming convention (see above), and that remove dots in the file name that do not indicate the file extension.
 
+### Uncompress stack weight images
+
+The weights of the stacks are compressed .fits.fz files, they need to be uncompressed before the pipeline is run.
+This can be done with the executable `imcopy`, a CFITSIO tool. To uncompress all input weights:
+ 
+```bash
+cd input_tiles
+foreach i (CFIS_weight-*.fits.fz)
+	set new = `basename $i .fz`
+	echo "imcopy $i\[1\] $new"
+	imcopy $i\[1\] $new
+end
+cd ..
+```
+The additiona `[1]` indicates the HDU number that contains the weight information.
+
 
 ## 2.) Process single exposure images
 
@@ -246,12 +262,12 @@ the previous one, `split_exp_runner`.
 ### Mask images
 
 **Module:** mask_runner   
-**Input:** single-exposure single-CCD images, weights, flags [, star_cat]  
+**Input:** single-exposure single-CCD images, weights, flags [, star catalogue]  
 **Output**: single-exposure single-CCD flag files
 
 This module creates masks for bright stars, diffraction spikes, Messier objects,
 borders, and other artifacts. It joins the newly created mask with the already
-existing masks (from the input flag files) of  cosmic rays and various artifacts.  
+existing masks (from the input flag files) of cosmic rays and various artifacts.  
 
 Those mask parameters are read from a second config file, whose path
 needs to be specified:
@@ -459,235 +475,42 @@ CHI2_THRESH = 2
 
 On success, validation catalogues are created.
 
-### Full run config file
 
-Except for the spliting step, all the process can be done automatically. Here is an example config for the pipeline :
-
-```ini
-# ShapePipe Configuration File Example
-
-## Default ShapePipe options
-[DEFAULT]
-# VERBOSE (optional) default is True, i.e. print everything
-; VERBOSE = False
-# RUN_NAME (optional) default is shapepipe_run
-; RUN_NAME = my_shapepipe_run
-# RUN_DATETIME (optional) default is True, i.e. add DATE and TIME to RUN_NAME
-; RUN_DATETIME = False
-
-## ShapePipe execution options
-[EXECUTION]
-# MODULE (required) must be a valid module runner name (or a comma separated list of names)
-MODULE = mask_runner, sextractor_runner, setools_runner, psfex_runner, psfexinterp_runner
-MODE = SMP
-
-## ShapePipe file handling options
-[FILE]
-# LOG_NAME (optional) default is shapepipe
-; LOG_NAME = my_shapepipe_log
-# RUN_LOG_NAME (optional) default is shapepipe_runs
-; RUN_LOG_NAME = my_shapepipe_run_log
-# INPUT_DIR (required) must be a valid directory containing input files for the first module
-INPUT_DIR = last:split_exp_runner,/path/to/external/star/catalos/directory
-# OUTPUT_DIR (required) must be a valid directory to write the pipeline output files
-# NOTE : In order to use the 'last' keyword point to the same directory as the one use for the spliting step
-OUTPUT_DIR = /same/as/spliting/runner
-# FILE_PATTERN (opional) list of string patterns to identify input files
-FILE_PATTERN = image,weight,flag,star_cat
-# FILE_EXT (opional) list of string extensions to identify input files
-FILE_EXT = .fits,.fits,.fits,.cat
-# NUMBERING_SCHEME (optional) string with numbering pattern for input files
-NUMBERING_SCHEME = -0000000-0
-
-## ShapePipe job handling options
-[JOB]
-# BATCH_SIZE (optional) default is 1, i.e. run all jobs in serial
-SMP_BATCH_SIZE = 48
-# TIMEOUT (optional) default is None, i.e. no timeout limit applied
-# NOTE : the longest step is the PSF estimation (around 5 minutes)
-TIMEOUT = 10:00:00
-
-## Module options
-[MASK_RUNNER]
-
-MASK_CONFIG_PATH = ./example/test_all_exp/config.mask
-
-USE_EXT_FLAG = True
-USE_EXT_STAR = True
-
-# Suffix for the output file. (OPTIONAL)
-# ex : SUFFIX_flag_NUMBERING.fits or flag_NUMBERING.fits if not provided
-SUFFIX = pipeline
-
-[SEXTRACTOR_RUNNER]
-
-ADD_INPUT_DIR = /path/to/spliting/run/shapepipe_date_hour/split_exp_runner/output
-FILE_PATTERN = image,weight,pipeline_flag
-
-EXEC_PATH = sex
-
-DOT_SEX_FILE = ./example/test_all_exp/default.sex
-DOT_PARAM_FILE = ./example/test_sex/default.param
-
-WEIGHT_IMAGE = True
-FLAG_IMAGE = True
-PSF_FILE = False
-
-#CHECKIMAGE can be a list of BACKGROUND, BACKGROUND_RMS,
-#INIBACKGROUND, MINIBACK_RMS, -BACKGROUND,
-#FILTERED, OBJECTS, -OBJECTS, SEGMENTATION, APERTURES
-CHECKIMAGE = BACKGROUND
-
-# Suffix for the output file. (OPTIONAL)
-# ex : SUFFIX_sexcat_NUMBERING.fits or sexcat_NUMBERING.fits if not provided
-SUFFIX = exp
-
-MAKE_POST_PROCESS = False
-
-[SETOOLS_RUNNER]
-
-SETOOLS_CONFIG_PATH = ./example/test_all_exp/star_selection.setools
-
-[PSFEX_RUNNER]
-
-EXEC_PATH = psfex
-
-DOT_PSFEX_FILE = ./example/test_psfex/default.psfex
-
-#CHECKIMAGE can be a list of CHI,PROTOTYPES,SAMPLES,
-#RESIDUALS,SNAPSHOTS, MOFFAT,-MOFFAT,-SYMMETRICAL or NONE
-; CHECKIMAGE = RESIDUALS
-
-[PSFEXINTERP_RUNNER]
-
-FILE_PATTERN = star_selection,star_selection,psfex_cat
-FILE_EXT = .psf,.fits,.cat
-
-# Define the way psfexinter will run.
-# CLASSIC for classical run.
-# MULTI-EPOCH for multi epoch.
-# VALIDATION for output allowing validation (only on single epoch !)
-MODE = VALIDATION
-
-GET_SHAPES = True
-
-STAR_THRESH = 20
-CHI2_THRESH = 2
-
-# When running in multi-epoch those position has to be WCS !
-POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE
-```
-
-## Stacks processing
+## Process stacks
 
 ### Masking stacked images
 
-**Module :** mask_runner   
-**Module inputs :** tile_image, tile_weight, (star_cat)   
-**Script :** create_star_cat.py
+**Module:** mask_runner   
+**Parent:** none
+**Input:** stack image, stack weight [, star catatlogue)   
+**Output:** stack flag
 
-Here we will create masks for bright stars, spikes and borders. Since computing nodes on clusters don't usually have an internet access we will have to first create a star catalog for each images with the script : `create_star_cat.py`. To use it :
-
-```bash
-python create_star_cat.py path/to/image_dir path/to/script/output_dir
-```
-
-Once the star catalogs are created we can run the module.
-Here is a commented example config file for the pipeline :
+This is the analogue of the single-exposure mask module(#mask-images), but for stacks.
+The mask configuration file needs to be the tile-specific one:
 ```ini
 [MASK_RUNNER]
-
-MASK_CONFIG_PATH = ./example/test_all_tile/config.mask
-
-# If true will expect an external mask file
-USE_EXT_FLAG = True
-
-# If true will expect an external star catalog
-USE_EXT_STAR = True
-
-# Suffix for the output file. (OPTIONAL)
-# ex : SUFFIX_flag_NUMBERING.fits or flag_NUMBERING.fits if not provided
-SUFFIX = pipeline
+MASK_CONFIG_PATH = $HOME/ShapePipe/example/GOLD/config.mask
 ```
-
-Here is a commented example config file for the module :
-
+This configuration file has a few differences compared to the single-exposure one.
+First, the border region can be much smaller. Second, no external flag files exist,
+and third the temporary directory should be different:
 ```ini
-[PROGRAM_PATH]
-
-WW_PATH = ww
-WW_CONFIG_FILE = ./example/test_mask/mask_default/default.ww
-
-# If external star catalogs are provided comment the parameter bellow
-#CDSCLIENT_PATH = findgsc2.2
-
-
 [BORDER_PARAMETERS]
-
-# NOTE : On the tiles it is not necessary to mask the borders
-BORDER_MAKE = False
-
-BORDER_WIDTH = 50
-BORDER_FLAG_VALUE = 4
-
-
-[HALO_PARAMETERS]
-
-HALO_MAKE = True
-
-HALO_MASKMODEL_PATH = ./example/test_mask/mask_default/halo_mask.reg
-HALO_MAG_LIM = 13.
-HALO_SCALE_FACTOR = 0.05
-HALO_MAG_PIVOT = 13.8
-HALO_FLAG_VALUE = 2
-HALO_REG_FILE = halo.reg
-
-
-[SPIKE_PARAMETERS]
-
-SPIKE_MAKE = True
-
-SPIKE_MASKMODEL_PATH = ./example/test_mask/mask_default/MEGAPRIME_star_i_13.8.reg
-SPIKE_MAG_LIM = 18.
-SPIKE_SCALE_FACTOR = 0.3
-SPIKE_MAG_PIVOT = 13.8
-SPIKE_FLAG_VALUE = 128
-SPIKE_REG_FILE = spike.reg
-
-
-[MESSIER_PARAMETERS]
-
-MESSIER_MAKE = True
-
-MESSIER_CAT_PATH = ./example/test_mask/mask_default/Messier_catalog_updated.npy
-MESSIER_PIXEL_SCALE = 0.186
-MESSIER_SIZE_PLUS = 0.
-MESSIER_FLAG_VALUE = 16
-
-
+BORDER_WIDTH = 5
 [EXTERNAL_FLAG]
-
-# We don't have any mask for the stacked images. Most artifacts are time dependent and remove during stacking (not entirely true..)
-EF_MAKE = False
-
-
-[MD_PARAMETERS]
-
-MD_MAKE = False
-
-MD_THRESH_FLAG = 0.3
-MD_THRESH_REMOVE = 0.75
-MD_REMOVE = False
-
-
+F_MAKE = False
 [OTHER]
-
-KEEP_REG_FILE = False
-KEEP_INDIVIDUAL_MASK = False
-
-# WARNING : at the end the directory is cleared entirely make sure there is no other important files in it.
-TEMP_DIRECTORY = ./.temp2
+TEMP_DIRECTORY = .temp_tiles
 ```
+
+Run the package:
+```bash
+~/ShapePipe/shapepipe_run.py -c ~/ShapePipe/example/GOLD/config_mask_tile.ini
+```
+
+> Note: On the cc the star catalogues created by `create_star_cat.py` did not
+work with the pipeline. Thus for the moment, the mask package needs to be run
+on the login node.
 
 ### Source identification stacked images
 
