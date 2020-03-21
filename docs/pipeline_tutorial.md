@@ -516,9 +516,11 @@ on the login node.
 **Module:** sextractor_runner   
 **Parent:** mask_runner  
 **Input:** tile_image, tile_weight, tile_flag
+**Output:** SExtractor catalogue
 
-On the tiles we want to detect all the sources. For that we set a low detection threshold.  
-Also, we run a post-processing step on each tiles to find all epochs contributing to each objects. Here is a commented example config file for the pipeline :
+To detect a maximum of sources on the tiles, we set a low detection threshold.
+In addition, a a post-processing step is run to find all epochs that contributed
+to a given detected object.
 
 ```ini
 [SEXTRACTOR_RUNNER]
