@@ -16,12 +16,11 @@
     1. [Extract sources](#extract-sources)
     1. [Select stars](#select-stars)
     1. [Model the PSF](#model-the-psf)
-    1. [Validation tests](#Validation tests)
-    1. [Full run config file](#Full-run-config-file)
-1. [Process stacks](#process-stacks)
-    1. [Masking stacked images](#Masking-stacked-images)
-    1. [Source identification stacked images](#Source-identification-stacked-images)
-    1. [PSF interpolation](#PSF-interpolation)
+    1. [Validation tests](#validation tests)
+1. [Process stacked images](#process-stacked-images)
+    1. [Mask stacks](#mask-stacks)
+    1. [Extract sources on stacks](#extract-sources-on-stacks)
+    1. [Interpolate multi-epoch PSF](#interpolate-multi-epoch-psf)
     1. [Prepare spread-model](#Prepare-spread-model)
     1. [Spread-Model](#Spread-Model)
     1. [Prepare shape measurement](#Prepare-shape-measurement)
@@ -476,13 +475,13 @@ CHI2_THRESH = 2
 On success, validation catalogues are created.
 
 
-## Process stacks
+## Process stacked images
 
-### Masking stacked images
+### Mask stacks
 
 **Module:** mask_runner   
 **Parent:** none
-**Input:** stack image, stack weight [, star catatlogue)   
+**Input:** stack image, stack weight [, star catalogue)   
 **Output:** stack flag
 
 This is the analogue of the single-exposure mask module(#mask-images), but for stacks.
@@ -512,10 +511,11 @@ Run the package:
 work with the pipeline. Thus for the moment, the mask package needs to be run
 on the login node.
 
-### Source identification stacked images
+### Extract sources on stacks
 
-**Module :** sextractor_runner   
-**Module inputs :** tile_image, tile_weight, tile_flag
+**Module:** sextractor_runner   
+**Parent:** mask_runner  
+**Input:** tile_image, tile_weight, tile_flag
 
 On the tiles we want to detect all the sources. For that we set a low detection threshold.  
 Also, we run a post-processing step on each tiles to find all epochs contributing to each objects. Here is a commented example config file for the pipeline :
@@ -672,7 +672,7 @@ The first 3 HDUs correspond to the usual SExtractor output. Then, the HDUs `EPOC
 
 Those additionnal HDUs contain all the multi-epoch informations we need for the rest of the processing.
 
-### PSF interpolation
+### Interpolate multi-epoch PSF
 
 **Module :** psfexinterp_runner   
 **Module inputs :** sextractor_catalog
