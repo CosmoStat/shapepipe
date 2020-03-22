@@ -520,10 +520,19 @@ on the login node.
 
 To detect a maximum of sources on the tiles, we set a low detection threshold.
 In addition, a a post-processing step is run to find all epochs that contributed
-to a given detected object.
-
+to a given detected object. The first difference to the single-exposure source
+extraction (#extract-sources) is thus the pointer to a tile-specific SExtractor
+parameter file:
 ```ini
 [SEXTRACTOR_RUNNER]
+
+```
+thus the detection threshold, together with
+a few other differences:
+
+```ini
+DETECT_THRESH    1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
+> ANALYSIS_THRESH  1.5
 
 EXEC_PATH = sex
 
