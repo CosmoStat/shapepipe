@@ -651,8 +651,10 @@ and an error estimate is produced.
 
 ### Prepare shape measurement
 
-**Module :** vignetmaker_runner2   
-**Module inputs :** sextractor_catalog
+**Module:** vignetmaker_runner
+**Parent:**  
+**Input:** sextractor_catalog  
+**Output:**  
 
 As for the previous step, the shape measurement need some preparation. Here is all the files required :
 * The SExtractor catalogs from the tiles
