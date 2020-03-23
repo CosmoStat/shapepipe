@@ -575,7 +575,7 @@ following processing steps.
 **Module:** psfexinterp_runner   
 **Parent:** SExtractor (in multi-epoch postprocessing mode)  
 **Input:** SExtractor catalog with multi-epoch information
-**Output:** PSF sqlite files
+**Output:** tile PSF dictionary
 
 This step interpolates the PSF to the position of all detected sources on the
 tiles for all epochs where the object appears.
@@ -634,30 +634,20 @@ On success, FITS tables with vignets containing the weight for each object.
 ### Compute spread model
 
 **Module:** spread_model_runner  
-**Parent:** psfex_runner (single-exposure), psfexinterp_runner (tile),
+**Parent:** psfex_runner (single-exposure), psfexinterp_runner (tile),  
 vignetmaker_runner  
-**Inputs:** psfex catalog, tile psf, weight vignet
-**Output:**  
-As mentioned above, to classify objects we use the spread-model. Now we have all the informations we need to compute it. Here is a commented example config file for the pipeline :
+**Inputs:** psfex catalogue, tile psf dictionary, weight vignet  
+**Output:**  SExtractor catalogue
 
+The spread model for each object is computed, which serves to classify a
+sub-set of detected objects on the tiles as galaxies.
 
-This is needed to compute the weighted average of the PSF, which will
-be compared to the object image for the spread model computation.
+> Note: The effective PSF on the tiles is approximated by a weighted sum
+of the single-exposure PSFs. The weight for each epoch is the average over
+the postage stamp.
 
-> Note: This is an approximation of the effective PSF on the stack.
-```ini
-[SPREAD_MODEL_RUNNER]
-
-# Suffix for the output file. (OPTIONAL)
-# ex : SUFFIX_sexcat_sm_NUMBERING.fits or sexcat_sm_NUMBERING.fits if not provided
-;SUFFIX =
-PIXEL_SCALE = 0.186
-
-; Must be in [new, add].
-; 'new' will create a new catalog with : [number, mag, sm, sm_err]
-; 'add' will output a copy of the input SExtractor with the column sm and sm_err.
-OUTPUT_MODE = new
-```
+On success, SExtractor catalogues with galaxy number, magnitude, spread model,
+and an error estimate is produced.
 
 ### Prepare shape measurement
 
