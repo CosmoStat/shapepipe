@@ -21,8 +21,8 @@
     1. [Mask stacks](#mask-stacks)
     1. [Extract sources on stacks](#extract-sources-on-stacks)
     1. [Interpolate multi-epoch PSF](#interpolate-multi-epoch-psf)
-    1. [Prepare spread-model](#Prepare-spread-model)
-    1. [Spread-Model](#Spread-Model)
+    1. [Create weight postage stamps](#create-weight-postage-stamps)
+    1. [Compute spread model](#compute-spread-model)
     1. [Prepare shape measurement](#Prepare-shape-measurement)
     1. [NGMIX : Shape measurement](#NGMIX-:-Shape measurement)
     1. [Make final catalog](#Make-final-catalog)
@@ -611,7 +611,7 @@ For example:
 ```
 
 
-### Create galaxy postage stamps
+### Create weight postage stamps
 
 **Module:** vignetmaker_runner   
 **Parent:** sextractor_runner (in multi-epoch mode)  
@@ -631,11 +631,13 @@ classification.
 
 On success, FITS tables with vignets containing the weight for each object.
 
-### Spread-Model
+### Compute spread model
 
-**Module :** spread_model_runner
-**Module inputs :** sextractor_catalog, tile_psf, tile_weight_vignet
-
+**Module:** spread_model_runner  
+**Parent:** psfex_runner (single-exposure), psfexinterp_runner (tile),
+vignetmaker_runner  
+**Inputs:** psfex catalog, tile psf, weight vignet
+**Output:**  
 As mentioned above, to classify objects we use the spread-model. Now we have all the informations we need to compute it. Here is a commented example config file for the pipeline :
 
 
