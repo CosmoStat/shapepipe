@@ -480,7 +480,7 @@ On success, validation catalogues are created.
 ### Mask stacks
 
 **Module:** mask_runner   
-**Parent:** none
+**Parent:** none  
 **Input:** stack image, stack weight [, star catalogue)   
 **Output:** stack flag
 
@@ -513,10 +513,10 @@ on the login node.
 
 ### Extract sources on stacks
 
-**Module:** sextractor_runner   
+**Module:** sextractor_runner (in multi-epoch mode)  
 **Parent:** mask_runner  
 **Input:** tile_image, tile_weight, tile_flag
-**Output:** SExtractor catalogue
+**Output:** SExtractor catalogue with multi-epoch information
 
 To detect a maximum of sources on the tiles, we set a low detection threshold.
 In addition, a a post-processing step is run to find all epochs that contributed
@@ -548,72 +548,58 @@ ANALYSIS_THRESH  1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 DEBLEND_MINCONT  0.0005         # Minimum contrast parameter for deblending
 BACK_TYPE        MANUAL         # AUTO or MANUAL
 ```
-
-
-
-After the post-processing step the fits format is the following :
+On success, output FITS SEXtractor files are created. They have the following format:
 ```python
-Filename: tile_sexcat-0.fits
-No.    Name      Ver    Type      Cards   Dimensions   Format
+
+HDU  Name        Ver Type         Cards   Dimensions    Format
   0  PRIMARY       1 PrimaryHDU       4   ()      
-  1  LDAC_IMHEAD    1 BinTableHDU     12   1R x 1C   [8560A]   
-  2  LDAC_OBJECTS    1 BinTableHDU    180   25133R x 45C   [1J, 1I, 1E, 1E, ...]   
+  1  LDAC_IMHEAD   1 BinTableHDU     12   1R x 1C       [8560A]   
+  2  LDAC_OBJECTS  1 BinTableHDU    180   25133R x 45C  [1J, 1I, 1E, 1E, ...]   
   3  EPOCH_0       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
   4  EPOCH_1       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
-  5  EPOCH_2       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
-  6  EPOCH_3       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
-  7  EPOCH_4       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
-  8  EPOCH_5       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
-  9  EPOCH_6       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
- 10  EPOCH_7       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
- 11  EPOCH_8       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]
+ ...
 ```
 
-The first 3 HDUs correspond to the usual SExtractor output. Then, the HDUs `EPOCH_X` correspond to one single exposures (on the example 9 single exposures contribute to the stack). On those HDUs the columns are :
+The first 3 HDUs correspond to the usual SExtractor output. The following HDUs
+`EPOCH_X` contain the single-exposure information contributing to the objects
+on the stack, one HDU for each epoch. For those HDUs the columns are:
 * **NUMBER** : object id atributed by SExtractor
 * **EXP_NAME** : name of the single exposure (same for all objects of one HDU)
 * **CCD_N** : CCD number in which the object is following the MegaCam numbering (set to -1 if the object is not on the single exposure)
 
-Those additionnal HDUs contain all the multi-epoch informations we need for the rest of the processing.
+Those additionnal HDUs contain all the multi-epoch informations we need for the
+following processing steps.
 
 ### Interpolate multi-epoch PSF
 
-**Module :** psfexinterp_runner   
-**Module inputs :** sextractor_catalog
+**Module:** psfexinterp_runner   
+**Parent:** SExtractor (in multi-epoch postprocessing mode)  
+**Input:** SExtractor catalog with multi-epoch information
+**Output:** PSF sqlite files
 
-Now we need to interpolate the PSF at the position of all detected sources for all epochs where the object appears. Here is a commented example config file for the pipeline :
-
+This step interpolates the PSF to the position of all detected sources on the
+tiles for all epochs where the object appears.
+The run mode has to be set to multi-epoch. In addition, the single-exposure
+PSF information needs to be read. Unfortunately, at present, this cannot be
+provided automatically pointing to the corresponding run. The simplest way
+is to set a symbolic link to the corresponding run output directory:
+```bash
+ln -s output/shapepipe_run_2020-03-19_18-28-03/psfex_runner/output input_psf
+```
+and to indicate the link name in the config file:
 ```ini
 [PSFEXINTERP_RUNNER]
-
-# Define the way psfexinter will run.
-# CLASSIC for classical run.
-# MULTI-EPOCH for multi epoch.
-# VALIDATION for output allowing validation (only on single epoch !)
 MODE = MULTI-EPOCH
-
-STAR_THRESH = 20
-CHI2_THRESH = 2
-# When running in multi-epoch those position has to be WCS !
-POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD
-GET_SHAPES = True
-
-# Directory where all the .psf files are for the CCD images (output of the PSFEx run)
-ME_DOT_PSF_DIR = /single/epoch/run/shapepipe_run_date_hour/psfex_runner/output/
-# Common part of the .psf files.
-# Example : for "star_single-0123456-34.psf" set "star_single"
-ME_DOT_PSF_PATTERN = star_selection_psfex
-# Create with the split_exp_hdu module
-ME_LOG_WCS = /path/to/file/containing/WCS/information/log_exp_headers.npy
+ME_DOT_PSF_DIR = input_psfex
 ```
 
-The output format is `sqlite`. The structure is similar to a dictionary with the following format :
+On success, `sqlite` output catalogues are created containing the PSF on
+vignets (postage stamps). The structure is similar
+to a dictionary with the following format:
 ```python
 {'object_id': {'exp_name-CCD_number' : {'VIGNET': numpy.ndarray, 'SHAPES': {}}}
 ```
-
-Example :
-
+For example:
 ```python
 {'1': {'2104127-35': {'VIGNET': numpy.ndarray, 'SHAPES': {}},
        '2105224-13': {'VIGNET': numpy.ndarray, 'SHAPES': {}},
@@ -625,33 +611,25 @@ Example :
 ```
 
 
-### Prepare spread-model
+### Create galaxy postage stamps
 
-**Module :** vignetmaker_runner   
-**Module inputs :** sextractor_catalog, tile_weight
+**Module:** vignetmaker_runner   
+**Parent:** sextractor_runner (in multi-epoch mode)  
+**Input:** SExtractor catalog with multi-epoch information, tile weight  
+**Output:**  vignet FITS table
 
-To select the galaxy sample we will use the spread-model. To compute it we need :
+This modules is a pre-processing step to compute the spread model. This
+requires
 * The vignet of the object on the stack
 * The PSF information at the object location
 * The vignet of the weight image at the object location
 
-We already have the first two. In order to get the weight information we use the module : `vignetmaker_runner` to get postage stamps at the location of all objects detected by SExtractor. The weight we use here is the stacked weight since the detection is done on the stacks. Here is a commented example config file for the pipeline :
+The first two have already been obtained, thus we only need to extract the
+weights. These are needed to weigh the object images for corresponding
+comparison to the weighted single-exposure PSFs for the spread model
+classification.
 
-```ini
-[VIGNETMAKER_RUNNER]
-
-MASKING = False
-MASK_VALUE = 0
-
-MODE = CLASSIC
-
-# Set type of coordinates to use in : PIX (pixel), SPHE (spherical).
-COORD = PIX
-POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE
-STAMP_SIZE = 51
-# The name will be : SUFFIX_vignet.fits
-SUFFIX = weight
-```
+On success, FITS tables with vignets containing the weight for each object.
 
 ### Spread-Model
 
@@ -660,6 +638,11 @@ SUFFIX = weight
 
 As mentioned above, to classify objects we use the spread-model. Now we have all the informations we need to compute it. Here is a commented example config file for the pipeline :
 
+
+This is needed to compute the weighted average of the PSF, which will
+be compared to the object image for the spread model computation.
+
+> Note: This is an approximation of the effective PSF on the stack.
 ```ini
 [SPREAD_MODEL_RUNNER]
 
