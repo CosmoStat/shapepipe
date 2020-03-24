@@ -16,14 +16,13 @@
     1. [Extract sources](#extract-sources)
     1. [Select stars](#select-stars)
     1. [Model the PSF](#model-the-psf)
-    1. [Validation tests](#Validation tests)
-    1. [Full run config file](#Full-run-config-file)
-1. [Process stacks](#process-stacks)
-    1. [Masking stacked images](#Masking-stacked-images)
-    1. [Source identification stacked images](#Source-identification-stacked-images)
-    1. [PSF interpolation](#PSF-interpolation)
-    1. [Prepare spread-model](#Prepare-spread-model)
-    1. [Spread-Model](#Spread-Model)
+    1. [Validation tests](#validation tests)
+1. [Process stacked images](#process-stacked-images)
+    1. [Mask stacks](#mask-stacks)
+    1. [Extract sources on stacks](#extract-sources-on-stacks)
+    1. [Interpolate multi-epoch PSF](#interpolate-multi-epoch-psf)
+    1. [Create weight postage stamps](#create-weight-postage-stamps)
+    1. [Compute spread model](#compute-spread-model)
     1. [Prepare shape measurement](#Prepare-shape-measurement)
     1. [NGMIX : Shape measurement](#NGMIX-:-Shape measurement)
     1. [Make final catalog](#Make-final-catalog)
@@ -476,13 +475,13 @@ CHI2_THRESH = 2
 On success, validation catalogues are created.
 
 
-## Process stacks
+## Process stacked images
 
-### Masking stacked images
+### Mask stacks
 
 **Module:** mask_runner   
-**Parent:** none
-**Input:** stack image, stack weight [, star catatlogue)   
+**Parent:** none  
+**Input:** stack image, stack weight [, star catalogue)   
 **Output:** stack flag
 
 This is the analogue of the single-exposure mask module(#mask-images), but for stacks.
@@ -512,204 +511,95 @@ Run the package:
 work with the pipeline. Thus for the moment, the mask package needs to be run
 on the login node.
 
-### Source identification stacked images
+### Extract sources on stacks
 
-**Module :** sextractor_runner   
-**Module inputs :** tile_image, tile_weight, tile_flag
+**Module:** sextractor_runner (in multi-epoch mode)  
+**Parent:** mask_runner  
+**Input:** tile_image, tile_weight, tile_flag
+**Output:** SExtractor catalogue with multi-epoch information
 
-On the tiles we want to detect all the sources. For that we set a low detection threshold.  
-Also, we run a post-processing step on each tiles to find all epochs contributing to each objects. Here is a commented example config file for the pipeline :
-
+To detect a maximum of sources on the tiles, we set a low detection threshold.
+In addition, a a post-processing step is run to find all epochs that contributed
+to a given detected object. The different entries compared to the
+single-exposure case (#extract-sources) are thus:
+parameter file.
 ```ini
 [SEXTRACTOR_RUNNER]
+# Point to the tile-specific SExtractor parameter file
+DOT_SEX_FILE = $HOME/ShapePipe/example/GOLD/default_tile.sex
 
-EXEC_PATH = sex
+# Necessary for tiles, to enable multi-exposure processing
+MAKE_POST_PROCESS = TRUE
 
-DOT_SEX_FILE = ./example/test_all_tile/default.sex
-DOT_PARAM_FILE = ./example/test_sex/default.param
+# Multi-epoch mode: Path to file with single-exposure WCS header information
+LOG_WCS = ${HOME}/ShapePipeRun/output_headers/log_exp_headers.sqlite
 
-WEIGHT_IMAGE = True
-FLAG_IMAGE = True
-PSF_FILE = False
-
-#CHECKIMAGE can be a list of BACKGROUND, BACKGROUND_RMS,
-#INIBACKGROUND, MINIBACK_RMS, -BACKGROUND,
-#FILTERED, OBJECTS, -OBJECTS, SEGMENTATION, APERTURES
-; CHECKIMAGE = BACKGROUND
-
-# Suffix for the output file. (OPTIONAL)
-# ex : SUFFIX_sexcat_NUMBERING.fits or sexcat_NUMBERING.fits if not provided
-SUFFIX = tile
-
-#####################
-# POST-PROCESS PART #
-#####################
-# This part only concern tiles. It will make the management of multi-epoch possible.
-
-MAKE_POST_PROCESS = True
-
-# Create with the split_exp_hdu module
-LOG_WCS = /path/to/file/containing/WCS/information/log_exp_headers.npy
-
-# World coordinate to use (those parameters has to be required as output of SExtractor)
+# World coordinate keywords, SExtractor output. Format: KEY_X,KEY_Y
 WORLD_POSITION = XWIN_WORLD,YWIN_WORLD
 
-# Size of one CCD in pixel
-# x_min,x_max,y_min,y_max
-# NOTE : For CFIS images the header keyword is 'DATASEC'
+# Number of pixels in x,y of a CCD. Format: Nx,Ny
 CCD_SIZE = 33,2080,1,4612
+
 ```
-
-Here is a commented example config file for the module :
-
-```text
-#-------------------------------- Catalog ------------------------------------
-
-CATALOG_TYPE     FITS_LDAC
-
-PARAMETERS_NAME  /home/guinot/pipeline/ShapePipe/example/test_sex/default.param
-
-#------------------------------- Extraction ----------------------------------
-
-DETECT_TYPE      CCD            # CCD (linear) or PHOTO (with gamma correction)
-DETECT_MINAREA   10              # min. # of pixels above threshold
-DETECT_MAXAREA   0              # max. # of pixels above threshold (0=unlimited)
-THRESH_TYPE      RELATIVE       # threshold type: RELATIVE (in sigmas)
-                                # or ABSOLUTE (in ADUs)
-# NOTE : On noisy images a lower value will mostly add false detections
-DETECT_THRESH    1.5             # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
-ANALYSIS_THRESH  1.5             # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
-
-FILTER           Y              # apply filter for detection (Y or N)?
-FILTER_NAME      ./example/test_sex/default.conv
-FILTER_THRESH                   # Threshold[s] for retina filtering
-
-# NOTE : Not really use at the moment. Objects flaggeg are removes
-DEBLEND_NTHRESH  32             # Number of deblending sub-thresholds
+The different entries in the SExtractor parameter file are
+```ini
+DETECT_THRESH    1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
+ANALYSIS_THRESH  1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 DEBLEND_MINCONT  0.0005         # Minimum contrast parameter for deblending
-
-CLEAN            Y              # Clean spurious detections? (Y or N)?
-CLEAN_PARAM      1.0            # Cleaning efficiency
-
-MASK_TYPE        CORRECT        # type of detection MASKing: can be one of
-                                # NONE, BLANK or CORRECT
-
-#-------------------------------- WEIGHTing ----------------------------------
-
-WEIGHT_TYPE      MAP_WEIGHT     # type of WEIGHTing: NONE, BACKGROUND,
-                                # MAP_RMS, MAP_VAR or MAP_WEIGHT
-RESCALE_WEIGHTS  Y              # Rescale input weights/variances (Y/N)?
-WEIGHT_IMAGE     weight.fits    # weight-map filename
-WEIGHT_GAIN      Y              # modulate gain (E/ADU) with weights? (Y/N)
-WEIGHT_THRESH                   # weight threshold[s] for bad pixels
-
-#-------------------------------- FLAGging -----------------------------------
-
-FLAG_IMAGE       flag.fits      # filename for an input FLAG-image
-FLAG_TYPE        OR             # flag pixel combination: OR, AND, MIN, MAX
-                                # or MOST
-
-#------------------------------ Photometry -----------------------------------
-
-PHOT_APERTURES   5              # MAG_APER aperture diameter(s) in pixels
-PHOT_AUTOPARAMS  2.5, 3.5       # MAG_AUTO parameters: <Kron_fact>,<min_radius>
-PHOT_PETROPARAMS 2.0, 3.5       # MAG_PETRO parameters: <Petrosian_fact>,
-                                # <min_radius>
-PHOT_AUTOAPERS   0.0,0.0        # <estimation>,<measurement> minimum apertures
-                                # for MAG_AUTO and MAG_PETRO
-PHOT_FLUXFRAC    0.5            # flux fraction[s] used for FLUX_RADIUS
-
-SATUR_KEY        SATURATE       # keyword for saturation level (in ADUs)
-
-# NOTE : Value set by the photometry
-# NOTE : For CFIS images it is set to 30
-MAG_ZEROPOINT    30.0            # magnitude zero-point
-MAG_GAMMA        4.0            # gamma of emulsion (for photographic scans)
-
-GAIN_KEY         GAIN           # keyword for detector gain in e-/ADU
-PIXEL_SCALE      0.            # size of pixel in arcsec (0=use FITS WCS info)
-
-#------------------------- Star/Galaxy Separation ----------------------------
-
-SEEING_FWHM      0.6            # stellar FWHM in arcsec
-STARNNW_NAME     /home/guinot/pipeline/ShapePipe/example/test_sex/default.nnw
-
-#------------------------------ Background -----------------------------------
-
 BACK_TYPE        MANUAL         # AUTO or MANUAL
-BACK_VALUE       0.0            # Default background value in MANUAL mode
-BACK_SIZE        64             # Background mesh: <size> or <width>,<height>
-BACK_FILTERSIZE  3              # Background filter: <size> or <width>,<height>
-
-BACKPHOTO_TYPE   GLOBAL         # can be GLOBAL or LOCAL
-BACKPHOTO_THICK  24             # thickness of the background LOCAL annulus
-BACK_FILTTHRESH  0.0            # Threshold above which the background-
-                                # map filter operates
 ```
-
-After the post-processing step the fits format is the following :
+On success, output FITS SEXtractor files are created. They have the following format:
 ```python
-Filename: tile_sexcat-0.fits
-No.    Name      Ver    Type      Cards   Dimensions   Format
+
+HDU  Name        Ver Type         Cards   Dimensions    Format
   0  PRIMARY       1 PrimaryHDU       4   ()      
-  1  LDAC_IMHEAD    1 BinTableHDU     12   1R x 1C   [8560A]   
-  2  LDAC_OBJECTS    1 BinTableHDU    180   25133R x 45C   [1J, 1I, 1E, 1E, ...]   
+  1  LDAC_IMHEAD   1 BinTableHDU     12   1R x 1C       [8560A]   
+  2  LDAC_OBJECTS  1 BinTableHDU    180   25133R x 45C  [1J, 1I, 1E, 1E, ...]   
   3  EPOCH_0       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
   4  EPOCH_1       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
-  5  EPOCH_2       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
-  6  EPOCH_3       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
-  7  EPOCH_4       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
-  8  EPOCH_5       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
-  9  EPOCH_6       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
- 10  EPOCH_7       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
- 11  EPOCH_8       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]
+ ...
 ```
 
-The first 3 HDUs correspond to the usual SExtractor output. Then, the HDUs `EPOCH_X` correspond to one single exposures (on the example 9 single exposures contribute to the stack). On those HDUs the columns are :
+The first 3 HDUs correspond to the usual SExtractor output. The following HDUs
+`EPOCH_X` contain the single-exposure information contributing to the objects
+on the stack, one HDU for each epoch. For those HDUs the columns are:
 * **NUMBER** : object id atributed by SExtractor
 * **EXP_NAME** : name of the single exposure (same for all objects of one HDU)
 * **CCD_N** : CCD number in which the object is following the MegaCam numbering (set to -1 if the object is not on the single exposure)
 
-Those additionnal HDUs contain all the multi-epoch informations we need for the rest of the processing.
+Those additionnal HDUs contain all the multi-epoch informations we need for the
+following processing steps.
 
-### PSF interpolation
+### Interpolate multi-epoch PSF
 
-**Module :** psfexinterp_runner   
-**Module inputs :** sextractor_catalog
+**Module:** psfexinterp_runner   
+**Parent:** SExtractor (in multi-epoch postprocessing mode)  
+**Input:** SExtractor catalog with multi-epoch information
+**Output:** tile PSF dictionary
 
-Now we need to interpolate the PSF at the position of all detected sources for all epochs where the object appears. Here is a commented example config file for the pipeline :
-
+This step interpolates the PSF to the position of all detected sources on the
+tiles for all epochs where the object appears.
+The run mode has to be set to multi-epoch. In addition, the single-exposure
+PSF information needs to be read. Unfortunately, at present, this cannot be
+provided automatically pointing to the corresponding run. The simplest way
+is to set a symbolic link to the corresponding run output directory:
+```bash
+ln -s output/shapepipe_run_2020-03-19_18-28-03/psfex_runner/output input_psf
+```
+and to indicate the link name in the config file:
 ```ini
 [PSFEXINTERP_RUNNER]
-
-# Define the way psfexinter will run.
-# CLASSIC for classical run.
-# MULTI-EPOCH for multi epoch.
-# VALIDATION for output allowing validation (only on single epoch !)
 MODE = MULTI-EPOCH
-
-STAR_THRESH = 20
-CHI2_THRESH = 2
-# When running in multi-epoch those position has to be WCS !
-POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD
-GET_SHAPES = True
-
-# Directory where all the .psf files are for the CCD images (output of the PSFEx run)
-ME_DOT_PSF_DIR = /single/epoch/run/shapepipe_run_date_hour/psfex_runner/output/
-# Common part of the .psf files.
-# Example : for "star_single-0123456-34.psf" set "star_single"
-ME_DOT_PSF_PATTERN = star_selection_psfex
-# Create with the split_exp_hdu module
-ME_LOG_WCS = /path/to/file/containing/WCS/information/log_exp_headers.npy
+ME_DOT_PSF_DIR = input_psfex
 ```
 
-The output format is `sqlite`. The structure is similar to a dictionary with the following format :
+On success, `sqlite` output catalogues are created containing the PSF on
+vignets (postage stamps). The structure is similar
+to a dictionary with the following format:
 ```python
 {'object_id': {'exp_name-CCD_number' : {'VIGNET': numpy.ndarray, 'SHAPES': {}}}
 ```
-
-Example :
-
+For example:
 ```python
 {'1': {'2104127-35': {'VIGNET': numpy.ndarray, 'SHAPES': {}},
        '2105224-13': {'VIGNET': numpy.ndarray, 'SHAPES': {}},
@@ -721,59 +611,50 @@ Example :
 ```
 
 
-### Prepare spread-model
+### Create weight postage stamps
 
-**Module :** vignetmaker_runner   
-**Module inputs :** sextractor_catalog, tile_weight
+**Module:** vignetmaker_runner   
+**Parent:** sextractor_runner (in multi-epoch mode)  
+**Input:** SExtractor catalog with multi-epoch information, tile weight  
+**Output:**  vignet FITS table
 
-To select the galaxy sample we will use the spread-model. To compute it we need :
+This modules is a pre-processing step to compute the spread model. This
+requires
 * The vignet of the object on the stack
 * The PSF information at the object location
 * The vignet of the weight image at the object location
 
-We already have the first two. In order to get the weight information we use the module : `vignetmaker_runner` to get postage stamps at the location of all objects detected by SExtractor. The weight we use here is the stacked weight since the detection is done on the stacks. Here is a commented example config file for the pipeline :
+The first two have already been obtained, thus we only need to extract the
+weights. These are needed to weigh the object images for corresponding
+comparison to the weighted single-exposure PSFs for the spread model
+classification.
 
-```ini
-[VIGNETMAKER_RUNNER]
+On success, FITS tables with vignets containing the weight for each object.
 
-MASKING = False
-MASK_VALUE = 0
+### Compute spread model
 
-MODE = CLASSIC
+**Module:** spread_model_runner  
+**Parent:** psfex_runner (single-exposure), psfexinterp_runner (tile),  
+vignetmaker_runner  
+**Inputs:** psfex catalogue, tile psf dictionary, weight vignet  
+**Output:**  SExtractor catalogue
 
-# Set type of coordinates to use in : PIX (pixel), SPHE (spherical).
-COORD = PIX
-POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE
-STAMP_SIZE = 51
-# The name will be : SUFFIX_vignet.fits
-SUFFIX = weight
-```
+The spread model for each object is computed, which serves to classify a
+sub-set of detected objects on the tiles as galaxies.
 
-### Spread-Model
+> Note: The effective PSF on the tiles is approximated by a weighted sum
+of the single-exposure PSFs. The weight for each epoch is the average over
+the postage stamp.
 
-**Module :** spread_model_runner
-**Module inputs :** sextractor_catalog, tile_psf, tile_weight_vignet
-
-As mentioned above, to classify objects we use the spread-model. Now we have all the informations we need to compute it. Here is a commented example config file for the pipeline :
-
-```ini
-[SPREAD_MODEL_RUNNER]
-
-# Suffix for the output file. (OPTIONAL)
-# ex : SUFFIX_sexcat_sm_NUMBERING.fits or sexcat_sm_NUMBERING.fits if not provided
-;SUFFIX =
-PIXEL_SCALE = 0.186
-
-; Must be in [new, add].
-; 'new' will create a new catalog with : [number, mag, sm, sm_err]
-; 'add' will output a copy of the input SExtractor with the column sm and sm_err.
-OUTPUT_MODE = new
-```
+On success, SExtractor catalogues with galaxy number, magnitude, spread model,
+and an error estimate is produced.
 
 ### Prepare shape measurement
 
-**Module :** vignetmaker_runner2   
-**Module inputs :** sextractor_catalog
+**Module:** vignetmaker_runner
+**Parent:**  
+**Input:** sextractor_catalog  
+**Output:**  
 
 As for the previous step, the shape measurement need some preparation. Here is all the files required :
 * The SExtractor catalogs from the tiles
