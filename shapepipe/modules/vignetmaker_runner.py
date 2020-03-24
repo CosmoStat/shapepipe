@@ -435,5 +435,7 @@ def vignetmaker_runner(input_file_list, run_dirs, file_number_string,
             inst = vignetmaker(galcat_path, pos_type, pos_params,
                                run_dirs['output'], file_number_string)
             inst.process_me(image_dir, image_pattern, f_wcs_path, rad)
+        else:
+            raise ValueError('Invalid MODE=\'{}\''.format(mode))
 
     return None, None
