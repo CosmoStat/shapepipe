@@ -22,6 +22,7 @@ from optparse import OptionParser
 from astropy.io import fits
 
 import cfis
+from shapepipe.pipeline import file_io as io
 
 
 def params_default():
@@ -147,8 +148,8 @@ def transform(input_fname, output_fname, verbose=False):
 
     data = fits.getdata(input_fname, 1)
     header = fits.getheader(input_fname, 1)
-    new_weight = IO.FITSCatalog(output_fname, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
-    new_weight.save_as_fits(data=data, image_header=header, image=True) 
+    new_weight = io.FITSCatalog(output_fname, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+    new_weight.save_as_fits(data=data, image=True, image_header=header) 
 
 
 def main(argv=None):
