@@ -618,11 +618,11 @@ For example:
 **Input:** SExtractor catalog with multi-epoch information, tile weight  
 **Output:**  vignet FITS table
 
-This modules is a pre-processing step to compute the spread model. This
-requires
-* The vignet of the object on the stack
-* The PSF information at the object location
-* The vignet of the weight image at the object location
+This modules is a pre-processing step to compute the spread model. This galaxy
+classification computation, performed in the nex step, requires
+* The vignets of the objects on the stack
+* The PSF information at the objects' location
+* The vignets of the weight image at the objects' location
 
 The first two have already been obtained, thus we only need to extract the
 weights. These are needed to weigh the object images for corresponding
@@ -634,10 +634,9 @@ On success, FITS tables with vignets containing the weight for each object.
 ### Compute spread model
 
 **Module:** spread_model_runner  
-**Parent:** psfex_runner (single-exposure), psfexinterp_runner (tile),  
-vignetmaker_runner  
+**Parent:** psfex_runner (single-exposure), psfexinterp_runner (tile), vignetmaker_runner  
 **Inputs:** psfex catalogue, tile psf dictionary, weight vignet  
-**Output:**  SExtractor catalogue
+**Output:** SExtractor catalogue
 
 The spread model for each object is computed, which serves to classify a
 sub-set of detected objects on the tiles as galaxies.
@@ -649,55 +648,52 @@ the postage stamp.
 On success, SExtractor catalogues with galaxy number, magnitude, spread model,
 and an error estimate is produced.
 
-### Prepare shape measurement
+### Create single-exposure postage stamps
 
-**Module:** vignetmaker_runner
-**Parent:**  
-**Input:** sextractor_catalog  
-**Output:**  
+**Module:** vignetmaker_runner2  
+**Parent:**  sextractor_runner  
+**Input:** sextractor_catalog   
+**Output:** single-exposure vignet dictionary
 
-As for the previous step, the shape measurement need some preparation. Here is all the files required :
-* The SExtractor catalogs from the tiles
-* The vignets of all objects for all single epochs
-* The vignets of the weights for all single epochs
-* The vignets of the flags for all single epochs
-* The vignets of the backgrounds for all single epochs
-* The vignets of the PSFs for all single epochs
+This second iteration of the vignet creation module is the last step in
+preparation for galaxy shape measurement. Multi-epoch shape measurement equires
+* The SExtractor tile catalog with spread-model information
+* The vignets of single-exposure images for tile-detected objects
+* The vignets of single-exposure weights at the position of tile-detected objects
+* The vignets of single-exposure flags at the position of tile-detected objects
+* The vignets of the single-exposure background images at the position of tile-
+  detected objects
+* The vignets of the single-exposure PSFs
 
-
- We will use the `vignetmaker_runner2` to get all the informations we need with the `MULTI-EPOCH` mode.
-This time the postage stamps are done from the single epoch files. Here is a commented example config file for the pipeline :
-
+The first and last items of the list were obtained in (#compute-spread-model)
+and (#interpolate-multi-epoch-psf), respectively. The missing middle three are
+thus to be extracted here. For technical reasons, we have to use for the
+moment the module `vignetmaker_runner2`, run in `MULTI-EPOCH` mode. To work
+in tile coordinates, we need spherical WORLD coordinates instead of Cartesian IMAGE (pixel)
+units:
 ```ini
 [VIGNETMAKER_RUNNER2]
 
-MASKING = False
-MASK_VALUE = 0
-
 MODE = MULTI-EPOCH
 
-# Set type of coordinates to use in : PIX (pixel), SPHE (spherical).
+# Coordinate frame type, one in PIX (pixel frame), SPHE (spherical coordinates)
+COORD = SPHE
+
+# Coordinate frame type, one in PIX (pixel frame), SPHE (spherical coordinates)
 COORD = SPHE
 POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD
-STAMP_SIZE = 51
-# The name will be : SUFFIX_vignet.fits
-SUFFIX =
 
-# List of the directories where the images are
-# NOTE : one directory per image type
-ME_IMAGE_DIR = /directory/of/flags/split_exp_runner/output,
-               /directory/of/images/split_exp_runner/output,
-               /directory/of/weights/split_exp_runner/output,
-               /directory/of/backgrounds/sextractor_runner/output
-# Common part of the different file types.
-# Example : for "image-0123456-34.fits" set "image"           
-ME_IMAGE_PATTERN = flag,image,weight,exp_background
-
-# Create with the split_exp_hdu module
-ME_LOG_WCS = /path/to/file/containing/WCS/information/log_exp_headers.npy
+# Additional parameters for path and file pattern corresponding to single-exposure
+# run outputs
+ME_IMAGE_DIR = input_split_exp,input_split_exp,input_split_exp,input_sextractor
+ME_IMAGE_PATTERN = flag,image,weight,sexcat_background
 ```
+The last entries indicate four input paths and corresponding file patterns, for:
+single_exposure single-CCD images, weights, flags, created in (#split-images), and
+for single-exposure background vignet file, created in (#extract-sources).
 
-For those files the data structure is the same as the one use for the module `psfexinterp_runner` in multi-epoch mode.
+On success, `sqlite` dictionaries with vignets for the image, weight, flag, and
+background are created.
 
 ### NGMIX : Shape measurement
 
