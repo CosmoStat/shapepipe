@@ -201,7 +201,7 @@ def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False, quic
             else:
                 # No information about size given: do not overwrite
                 # existing file
-                print('No size info')
+                print('File {} exists, information whether complete is missing, no download'.format(dest))
                 do_download = False
 
         else:
