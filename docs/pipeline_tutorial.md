@@ -431,8 +431,9 @@ Max fwhm cut (arcsec) = 0.7531179691314697
 
 ### Model the PSF
 
-**Module:** psfex
-**Input:** setools_star_selection
+**Module:** psfex  
+**Parent:** setools_runner  
+**Input:** setools_star_selection  
 **Output:** star catalogue, psf file 
 
 The PSF modeling is done with `PSFEx`. The psfex module configuration section
@@ -449,13 +450,17 @@ the stars' positions (`star_selection-2159358-9.psf`) are created.
 
 ### Validation tests
 
-**Module:** psfinterp
-**Parent**: psfex, setools
-**Input:** star catalogue, psfex_catalog
+#### Interpolate PSF to star positions
+
+**Module:** psfinterp  
+**Parent**: psfex, setools  
+**Input:** star catalogue, psfex_catalog  
 **Output:** star catalogue
 
-The interpolation of the PSF is not done at this stage for the shape measurement. But, in order to make validation tests on the model we need the model at the position of the stars used. For that we run the module : `psfinterp_runner` on `VALIDATION` mode. Here is a commented example config file for the pipeline :
-
+The interpolation of the PSF on single exposures alone is not required for shape
+measurement. But to carry out validation tests on the model we need the
+know the PSF at the position of the stars used. For that we run the module
+`psfinterp_runner` in `VALIDATION` mode. The following options are required:
 ```ini
 # Define the way psfexinter will run.
 # CLASSIC for classical run.
@@ -472,8 +477,17 @@ STAR_THRESH = 20
 CHI2_THRESH = 2
 ```
 
-On success, validation catalogues are created.
+On success, validation PSF catalogues are created.
 
+#### Merge PSF catalogues
+
+Outside the pipeline (for the moment), those catalogues need to be merged
+into a single FITS file, encoding the CCD number:
+```bash
+~/ShapePipe/scripts/python/merge_star_cat.py -i <psfinter-output-dir> -v
+```
+The string `<psfinter-output-dir>` is the output directory of the last
+psfexinterp run.
 
 ## Process stacked images
 
