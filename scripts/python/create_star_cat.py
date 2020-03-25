@@ -4,7 +4,8 @@
 
 """Script create_star_cat.py
 
-Create star catalogue
+Create reference star catalogue for masking of
+bright stars and diffraction spikes
 
 :Authors: Axel Guinot, Martin Kilbinger
 
