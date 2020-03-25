@@ -1,10 +1,141 @@
+#!/usr/bin/env python3
+
+"""Script MeanShapes.py
+
+Unzips and removes first (empty) HDU of CFIS tile weight
+such that they can be read by SExtractor,
+
+:Authors: Axel Guinot, Morgan Schmitz, Martin Kilbinger
+
+:Date: 2019, 2020
+
+:Package: ShapePipe
+"""
+
+# Compability with python2.x for x>6
+from __future__ import print_function
+
+import os
+import sys
+import copy
+
 import numpy as np
 import matplotlib.pyplot as plt
-import os
 from astropy.io import fits
-import sys
+from optparse import OptionParser
 
 import galsim
+import cfis
+
+
+def params_default():
+    """Set default parameter values.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    p_def: class tuff.param
+        parameter values
+    """
+
+    p_def = cfis.param(
+        nx = 20,
+        ny = 46,
+        input_path = './psf_cat_full.fits',
+        output_dir = './psf_validation'
+    )
+
+    return p_def
+
+
+def parse_options(p_def):
+    """Parse command line options.
+
+    Parameters
+    ----------
+    p_def: class cfis.param
+        parameter values
+
+    Returns
+    -------
+    options: tuple
+        Command line options
+    args: string
+        Command line string
+    """
+
+    usage  = "%prog [OPTIONS]"
+    parser = OptionParser(usage=usage)
+
+    parser.add_option('-i', '--input', dest='input_path', type='string', default=p_def.input_path,
+         help='input file name, default=\'{}\''.format(p_def.input_path))
+    parser.add_option('-o', '--output_dir', dest='output_dir', type='string', default=p_def.output_dir,
+         help='output_directory, default=\'{}\''.format(p_def.output_dir))
+    parser.add_option('-x', '--npix_x', dest='nx', type='int', default=p_def.nx,
+         help='number of pixels per CCD in the x-direction, default=\'{}\''.format(p_def.nx))
+    parser.add_option('-y', '--npix_y', dest='ny', type='int', default=p_def.ny,
+         help='number of pixels per CCD in the y-direction, default=\'{}\''.format(p_def.ny))
+    parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
+
+    options, args = parser.parse_args()
+
+    return options, args
+
+
+def check_options(options):
+    """Check command line options.
+
+    Parameters
+    ----------
+    options: tuple
+        Command line options
+
+    Returns
+    -------
+    erg: bool
+        Result of option check. False if invalid option value.
+    """
+
+    if not os.path.isdir(options.output_dir):
+        print('Output directory \'{}\' does not exist'.format(options.output_dir))
+        return False
+
+    return True
+
+
+def update_param(p_def, options):
+    """Return default parameter, updated and complemented according to options.
+
+    Parameters
+    ----------
+    p_def:  class cfis.param
+        parameter values
+    optiosn: tuple
+        command line options
+
+    Returns
+    -------
+    param: class cfis.param
+        updated paramter values
+    """
+
+    param = copy.copy(p_def)
+
+    # Update keys in param according to options values
+    for key in vars(param):
+        if key in vars(options):
+            setattr(param, key, getattr(options, key))
+
+    # Add remaining keys from options to param
+    for key in vars(options):
+        if not key in vars(param):
+            setattr(param, key, getattr(options, key))
+
+    return param
+
 
 # MegaCam -> plt.subplot correspondance, as given by:
 '''        'COMMENT Unique detector IDs for MegaCam (North on top, East to the left)',
@@ -116,7 +247,7 @@ def MeanWhiskerPlot(ccd_maps_e1, ccd_maps_e2, filename, title='', wind=None):
     plt.close()
 
 
-def main():
+def main(argv=None):
     """ Compute and plot average shapes (e1, e2, R^2) on both stars and PSF model, and
     plot them on the MegaCam mosaic. Syntax:
 
@@ -125,8 +256,32 @@ def main():
     and vertical directions, and path/to/starcat is the path to the full validation star
     catalog.
     """
-    nb_pixel = int(sys.argv[1]),int(sys.argv[2])
-    starcat_path = sys.argv[3]
+
+    # Set default parameters
+    p_def = params_default()
+
+    # Command line options
+    options, args = parse_options(p_def)
+
+    if check_options(options) is False:
+        return 1
+
+    param = update_param(p_def, options)
+
+    # Save calling command
+    cfis.log_command(argv)
+    if param.verbose:
+        cfis.log_command(argv, name='sys.stderr')
+
+
+
+    #nb_pixel = int(sys.argv[1]),int(sys.argv[2])
+    #starcat_path = sys.argv[3]
+
+    nb_pixel = param.nx, param.ny
+    starcat_path = param.input_path
+
+
     # MegaCam: each CCD is 2048x4612
     grid = np.linspace(0, 2048, nb_pixel[0]+1), np.linspace(0, 4612, nb_pixel[1]+1)
 
@@ -199,4 +354,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main(sys.argv))
+
