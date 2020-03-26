@@ -9,7 +9,7 @@ fi
 #$ -N ShapePipe
 
 # Project name
-#$ -P P_euclid_sci
+#$ -P P_euclid_ext
 
 # Environment
 #$ -pe multicores 16
