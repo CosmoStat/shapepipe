@@ -6,8 +6,7 @@ WW_CONFIG_FILE = $HOME/ShapePipe/example/GOLD/mask_default/default.ww
 
 # Indicate cds client executable if no external star catalogue is available
 # (e.g. no internet access on run nodes)
-#CDSCLIENT_PATH = findgsc2.2
-#STAR_CAT = ./example/test_mask/star.cat
+CDSCLIENT_PATH = findgsc2.2
 
 # ----------------------------- Border parameters ----------------------------------
 [BORDER_PARAMETERS]
