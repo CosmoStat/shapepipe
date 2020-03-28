@@ -691,6 +691,8 @@ def ngmix_runner(input_file_list, run_dirs, file_number_string,
 
     f_wcs_path = config.getexpanded('NGMIX_RUNNER', 'LOG_WCS')
 
+    w_log.info('MKDEBUG: Running new version of ngmix with additive-bias fix')
+
     metacal_res = process(*input_file_list, f_wcs_path, w_log)
     res_dict = compile_results(metacal_res)
     save_results(res_dict, output_name)

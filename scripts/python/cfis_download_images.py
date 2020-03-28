@@ -133,7 +133,7 @@ def remove_exclude(dst_list, exclude_list, verbose=False):
 
 
 
-def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False, quick=False, out_list=None):
+def download(dst_list, size_list, out_dir, t, vcp, dry_run=False, verbose=False, quick=False, out_list=None):
     """Download files using vos command.
     Parameters
     ----------
@@ -145,7 +145,9 @@ def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False, quic
         output destination directory
     t: string
         file type, one in 'tile', 'weight', 'weight.fz', 'exposure',
-	'exposure_flag', 'exposure_flag.fz', 'exposure_weight', or 'exposure_weight.fz'
+     'exposure_flag', 'exposure_flag.fz', 'exposure_weight', or 'exposure_weight.fz'
+    vcp: string
+        vcp command
     dry_run: bool, optional
         if True do not download but perform dry run; default=False
     verbose: bool, optional, default=False
@@ -216,7 +218,7 @@ def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False, quic
                     print(size_list[i], end=' ', file=f_list)
                 print(dst_list[i], file=f_list)
 
-            cfis.run_cmd('vcp{} vos:cfis/{}/{} {}'.format(f_quick, subdir, dst_list[i], out_dir),
+            cfis.run_cmd('{}{} vos:cfis/{}/{} {}'.format(vcp, f_quick, subdir, dst_list[i], out_dir),
                             verbose=True, run=not dry_run)
             n_dl += 1
 
@@ -248,6 +250,7 @@ def params_default():
         type         = 'tile',
         pattern      = '',
         scolumns     = '0',
+        vcp          = 'vcp',
     )
 
     return p_def
@@ -297,6 +300,8 @@ def parse_options(p_def):
         help='input file columns: name [size], default={}'.format(p_def.scolumns))
     parser.add_option('', '--in_number_only', dest='in_number_only', action='store_true',
         help='input file names are image number only')
+    parser.add_option('', '--vcp', dest='vcp', type='string', default=p_def.vcp,
+        help='vcp command, default=\'{}\''.format(p_def.vcp))
 
     # Misc options
     parser.add_option('-n', '--dry-run', dest='dry_run', action='store_true', default=False,
@@ -415,7 +420,8 @@ def main(argv=None):
 
     cfis.mkdir_p(param.out_dir)
 
-    download(dst_list, size_list, param.out_dir, param.type, dry_run=param.dry_run, verbose=param.verbose, quick=param.quick, out_list=param.out_list)
+    download(dst_list, size_list, param.out_dir, param.type, param.vcp,
+             dry_run=param.dry_run, verbose=param.verbose, quick=param.quick, out_list=param.out_list)
 
 
     ### End main program
