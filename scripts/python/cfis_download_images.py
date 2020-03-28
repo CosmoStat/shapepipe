@@ -216,7 +216,7 @@ def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False, quic
                     print(size_list[i], end=' ', file=f_list)
                 print(dst_list[i], file=f_list)
 
-            cfis.run_cmd('vcp{} vos:cfis/{}/{} {}'.format(f_quick, subdir, dst_list[i], out_dir),
+            cfis.run_cmd('vcp{} vos:cfis/{}/{} {}'.format(f_quick, subdir, dst_list[i], dest),
                             verbose=True, run=not dry_run)
             n_dl += 1
 
