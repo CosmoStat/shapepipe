@@ -312,7 +312,7 @@ def run_mpi(pipe, comm):
     # Get ShapePipe objects
     if master:
         config = pipe.config
-        verbose = pipe.config
+        verbose = pipe.verbose
     else:
         config = verbose = None
     config = comm.bcast(config, root=0)
@@ -349,8 +349,8 @@ def run_mpi(pipe, comm):
                 jobs = split_mpi_jobs(process_list, comm.size)
                 del process_list
         else:
-            job_type = output_dir = module_runner = worker_log = timeout = \
-             jobs = None
+            job_type = module_runner = worker_log = timeout = \
+                jobs = run_dirs = None
 
         # Broadcast job type to all nodes
         job_type = comm.bcast(job_type, root=0)
@@ -359,6 +359,7 @@ def run_mpi(pipe, comm):
 
             # Broadcast objects to all nodes
             run_dirs = comm.bcast(run_dirs, root=0)
+
             module_runner = comm.bcast(module_runner, root=0)
             worker_log = comm.bcast(worker_log, root=0)
             timeout = comm.bcast(timeout, root=0)
@@ -370,7 +371,7 @@ def run_mpi(pipe, comm):
                                   verbose), root=0)
 
             # Delete broadcast objects
-            del output_dir, module_runner, worker_log, timeout, jobs
+            del module_runner, worker_log, timeout, jobs
 
             # Finish up parallel jobs
             if master:
