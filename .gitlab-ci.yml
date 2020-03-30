@@ -8,6 +8,8 @@ before_script:
 Install:
   script: python setup.py test
 
+allow_failure: true
+
 # Remove conda env
 # after_script:
 #   - conda remove -n gitlab-ci --all -y
