@@ -1,9 +1,13 @@
 # Install dependencies
 before_script:
-  - pip install -r requirements.txt
-  - pip install -r requirements_git.txt
+  - conda list -n gitlab-ci || conda env create -f environment.yml -n gitlab-ci
+  - conda activate gitlab-ci
   - pip install coverage nose pytest pytest-cov
 
 # Install package
 Install:
   script: python setup.py test
+
+# Remove conda env
+# after_script:
+#   - conda remove -n gitlab-ci --all -y
