@@ -340,8 +340,9 @@ have a zero-padded pixel border, which is not accounted for by `ds9`.
 
 ### Extract sources
 
-**Module:** sextractor
-**Input:** single-exp_single-CCD image, weights, flags
+**Module:** sextractor_runner  
+**Parent:** split_exp_runner, mask_runner  
+**Input:** single-exp_single-CCD image, weights, flags  
 **Output:** sextractor catalogue
 
 The purpose of source extraction/source identification on single exposures is
