@@ -738,7 +738,7 @@ def main(argv=None):
     # Save calling command
     cfis.log_command(argv)
     if param.verbose:
-        cfis.log_command(argv, name='sys.stderr')
+        cfis.log_command(argv, name='sys.stdout')
 
 
     if param.verbose is True:
