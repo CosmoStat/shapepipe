@@ -200,6 +200,7 @@ The additiona `[1]` indicates the HDU number that contains the weight informatio
 ### Split images
 
 **Module:** split_exp_runner   
+**Parent:**  none  
 **Input:** single-exposure images, weights, flags  
 **Output:** single_exposure single-CCD files for input images, weights, flags
 
@@ -232,7 +233,8 @@ On success, files accordingt to the three output types are created.
 ### Merge WCS headers
 
 **Module:** merge_headers  
-**Input:** single-exposure single_CCD images, weights, flags (output of `split_exp`)  
+**Parent:** split_exp_runner  
+**Input:** single-exposure single_CCD images, weights, flags  
 **Output:** Single SQL file with combined header information  
 
 This pipeline module saves the WCS information (image
@@ -261,6 +263,7 @@ the previous one, `split_exp_runner`.
 ### Mask images
 
 **Module:** mask_runner   
+**Parent:** split_exp_runner  
 **Input:** single-exposure single-CCD images, weights, flags [, star catalogue]  
 **Output**: single-exposure single-CCD flag files
 
