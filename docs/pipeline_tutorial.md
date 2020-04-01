@@ -359,8 +359,9 @@ On success, SEXtractor catalogue FITS files are produced.
 
 ### Select stars
 
-**Module:** setools
-**Input:** sextractor catalog
+**Module:** setools  
+**Parent:** sextractor_runner  
+**Input:** sextractor catalog  
 **Output:** masked sextractor catalogue
 
 For the star selection we use the size-magnitude plane. We first find the
@@ -456,7 +457,7 @@ the stars' positions (`star_selection-2159358-9.psf`) are created.
 
 #### Interpolate PSF to star positions
 
-**Module:** psfinterp  
+**Module:** psfinterp_runner  
 **Parent**: psfex, setools  
 **Input:** star catalogue, psfex_catalog  
 **Output:** star catalogue
@@ -485,13 +486,28 @@ On success, validation PSF catalogues are created.
 
 #### Merge PSF catalogues
 
-Outside the pipeline (for the moment), those catalogues need to be merged
-into a single FITS file, encoding the CCD number:
-```bash
-~/ShapePipe/scripts/python/merge_star_cat.py -i <psfinter-output-dir> -v
+**Module:** merge_star_cat_runner  
+**Parent**: psfexinterp  
+**Input:** psfex cataloguefex  
+**Output:** merged SExtractor catalogue
+
+The star and PSF catalogues from the previous module are now merged
+into a single FITS file, encoding the CCD number, with output directory given
+in the module section:
+```ini
+OUTPUT_PATH = $SP_RUN/psf_validation
 ```
-The string `<psfinter-output-dir>` is the output directory of the last
-psfexinterp run.
+The (single) output file is then `SP_RUN/psf_validation/full_starcat.fits`.
+
+
+#### Plot focal-plane ellipticity, size and residuals
+
+Outside the pipeline, create plots of PSF, model, and residual
+ellipticity and shape:
+```bash
+~/ShapePipe/scripts/python/MeanShapes.py -o psf_validation -x 10 -y 20 -i psf_validation/full_starcat.fits -v
+```
+
 
 ## Process stacked images
 
@@ -533,7 +549,7 @@ on the login node.
 
 **Module:** sextractor_runner (in multi-epoch mode)  
 **Parent:** mask_runner  
-**Input:** tile_image, tile_weight, tile_flag
+**Input:** tile_image, tile_weight, tile_flag  
 **Output:** SExtractor catalogue with multi-epoch information
 
 To detect a maximum of sources on the tiles, we set a low detection threshold.
@@ -592,7 +608,7 @@ following processing steps.
 
 **Module:** psfexinterp_runner   
 **Parent:** SExtractor (in multi-epoch postprocessing mode)  
-**Input:** SExtractor catalog with multi-epoch information
+**Input:** SExtractor catalog with multi-epoch information   
 **Output:** tile PSF dictionary
 
 This step interpolates the PSF to the position of all detected sources on the
@@ -653,7 +669,7 @@ On success, FITS tables with vignets containing the weight for each object.
 
 **Module:** spread_model_runner  
 **Parent:** psfex_runner (single-exposure), psfexinterp_runner (tile), vignetmaker_runner  
-**Inputs:** psfex catalogue, tile psf dictionary, weight vignet  
+**Input:** psfex catalogue, tile psf dictionary, weight vignet  
 **Output:** SExtractor catalogue
 
 The spread model for each object is computed, which serves to classify a
@@ -713,10 +729,13 @@ for single-exposure background vignet file, created in (#extract-sources).
 On success, `sqlite` dictionaries with vignets for the image, weight, flag, and
 background are created.
 
-### NGMIX : Shape measurement
+### Multi-epoch shape measurement with `ngmix`
 
-**Module :** ngmix_runner   
-**Module inputs :** sextractor_catalog, single_exp_image_vignet, single_exp_bkg_vignet, tile_psf, single_exp_weight_vignet, single_exp_flag_vignet
+**Module:** ngmix_runner   
+**Parent:**
+**Input:** sextractor_catalog, single_exp_image_vignet, single_exp_bkg_vignet,
+tile_psf, single_exp_weight_vignet, single_exp_flag_vignet  
+**Output:** SExtractor catalogue
 
 Now we run the shape measurement. At the moment it's done with NGMIX. Most of the features are hard coded (will be more flexible in the future). Here is a commented example config file for the pipeline :
 
