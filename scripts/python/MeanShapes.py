@@ -289,7 +289,7 @@ def main(argv=None):
     grid = np.linspace(0, 2048, nb_pixel[0]+1), np.linspace(0, 4612, nb_pixel[1]+1)
 
     # Read full star catalogue
-    starcat = fits.open(starcat_path)[2].data
+    starcat = fits.open(starcat_path)[1].data
 
     # Flag mask
     star_flags = starcat['FLAG_STAR_HSM']
