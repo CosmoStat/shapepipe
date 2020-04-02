@@ -43,7 +43,6 @@ def params_default():
 
     p_def = cfis.param(
         nx = 20,
-        ny = 46,
         input_path = './psf_cat_full.fits',
         output_dir = './psf_validation'
     )
@@ -76,8 +75,8 @@ def parse_options(p_def):
          help='output_directory, default=\'{}\''.format(p_def.output_dir))
     parser.add_option('-x', '--npix_x', dest='nx', type='int', default=p_def.nx,
          help='number of pixels per CCD in the x-direction, default=\'{}\''.format(p_def.nx))
-    parser.add_option('-y', '--npix_y', dest='ny', type='int', default=p_def.ny,
-         help='number of pixels per CCD in the y-direction, default=\'{}\''.format(p_def.ny))
+    parser.add_option('-y', '--npix_y', dest='ny', type='int',
+         help='number of pixels per CCD in the y-direction, default to provide square pixels given nx')
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
 
     options, args = parser.parse_args()
@@ -134,7 +133,27 @@ def update_param(p_def, options):
         if not key in vars(param):
             setattr(param, key, getattr(options, key))
 
+    if not param.ny:
+        npix_x, npix_y = MegaCamNpix()
+        param.ny = param.nx * npix_y / npix_x
+
     return param
+
+
+def MegaCamNpix():
+    """Return number of pixels of a MegaCam CCD.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    nx, ny: int
+        number of pixels along x, y
+    """
+
+    return 2048, 4612
 
 
 # MegaCam -> plt.subplot correspondance, as given by:
@@ -286,7 +305,8 @@ def main(argv=None):
 
 
     # MegaCam: each CCD is 2048x4612
-    grid = np.linspace(0, 2048, nb_pixel[0]+1), np.linspace(0, 4612, nb_pixel[1]+1)
+    npix_x, npix_y = MegaCamNpix()
+    grid = np.linspace(0, npix_x, nb_pixel[0]+1), np.linspace(0, npix_y, nb_pixel[1]+1)
 
     # Read full star catalogue
     starcat = fits.open(starcat_path)[1].data
