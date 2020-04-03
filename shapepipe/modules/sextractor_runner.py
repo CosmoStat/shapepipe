@@ -14,6 +14,7 @@ from shapepipe.modules.module_decorator import module_runner
 from shapepipe.pipeline import file_io as io
 
 import numpy as np
+from sqlitedict import SqliteDict
 
 
 def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
@@ -42,7 +43,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
                          open_mode=io.BaseCatalog.OpenMode.ReadWrite)
     cat.open()
 
-    f_wcs = np.load(f_wcs_path).item()
+    f_wcs = SqliteDict(f_wcs_path)
     n_hdu = len(f_wcs[list(f_wcs.keys())[0]])
 
     hist = []
@@ -51,7 +52,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
             hist.append(i)
 
     exp_list = []
-    pattern = r'([0-9]*)\.(.*)'
+    pattern = r'([0-9]*)p\.(.*)'
     for i in hist:
         m = re.search(pattern, i)
         exp_list.append(m.group(1))
@@ -80,6 +81,8 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
         cat.save_as_fits(data=a, ext_name='EPOCH_{}'.format(i))
         cat.open()
 
+    f_wcs.close()
+
     cat.add_col('N_EPOCH', n_epoch)
 
     cat.close()
@@ -97,6 +100,7 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
     exec_path = config.getexpanded("SEXTRACTOR_RUNNER", "EXEC_PATH")
     dot_sex = config.getexpanded("SEXTRACTOR_RUNNER", "DOT_SEX_FILE")
     dot_param = config.getexpanded("SEXTRACTOR_RUNNER", "DOT_PARAM_FILE")
+    dot_conv = config.getexpanded("SEXTRACTOR_RUNNER", "DOT_CONV_FILE")
 
     weight_file = config.getboolean("SEXTRACTOR_RUNNER", "WEIGHT_IMAGE")
     flag_file = config.getboolean("SEXTRACTOR_RUNNER", "FLAG_IMAGE")
@@ -119,9 +123,10 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
     output_file_name = suffix + 'sexcat{0}.fits'.format(num)
     output_file_path = '{0}/{1}'.format(run_dirs['output'], output_file_name)
 
-    command_line = ('{0} {1} -c {2} -PARAMETERS_NAME {3} -CATALOG_NAME {4}'
-                    ''.format(exec_path, input_file_list[0], dot_sex,
-                              dot_param, output_file_path))
+    command_line = ('{0} {1} -c {2} -PARAMETERS_NAME {3} -FILTER_NAME {4} '
+                    '-CATALOG_NAME {5}'.format(exec_path, input_file_list[0],
+                                              dot_sex, dot_param, dot_conv,
+                                              output_file_path))
 
     extra = 1
     if weight_file:
