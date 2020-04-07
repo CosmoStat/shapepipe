@@ -11,8 +11,20 @@
 ## Variables
 
 # Tile numbers
-#TILE_ARR=(244.252 231.250)
-TILE_ARR=(619.241)
+
+if [ $# == 0 ]; then
+  echo "Usage: sp_tile.bash TILE_ID_1 [TILE_ID_2 [...]]"
+  echo "  TILE_ID = xxx.yyy"
+  echo "  Example: sp_tile.bash 244.252"
+  exit 1
+
+  # Or default (test) tile
+  #TILE_ARR=(619.241)
+fi
+
+# Copy command line arguments
+TILE_ARR=($@)
+
 
 # For testing only use one exposure
 ONE_EXP=0
@@ -57,7 +69,8 @@ else
 fi
 
 # Command shortcuts
-VCP="vcp $vflag --quick --certfile=$VM_HOME/.ssl/cadcproxy.pem"
+# VCP without "vflag" to avoid to output to stderr
+VCP="vcp --quick --certfile=$VM_HOME/.ssl/cadcproxy.pem"
 
 
 ## Functions
@@ -68,9 +81,13 @@ function command () {
    cmd=$1
    str=$2
 
-   RED='\033[0;31m'
-   GREEN='\033[0;32m'
-   NC='\033[0m' # No Color
+   #RED='\033[0;31m'
+   #GREEN='\033[0;32m'
+   #NC='\033[0m' # No Color
+   # Escape characters show up in log files
+   RED=''
+   GREEN=''
+   NC=''
 
 
    if [ $# == 2 ]; then
@@ -95,7 +112,7 @@ function command () {
 function print_env() {
    echo "*** Setting ***"
    echo "Data:"
-   echo " TILE_AR = $TILE_ARR"
+   echo " TILE_ARR = ${TILE_ARR[@]}"
    echo " ONE_EXP = $ONE_EXP"
    echo "Paths:"
    echo " VM_HOME = $VM_HOME"
@@ -203,15 +220,21 @@ for i in `cat $SP_RUN/exp.txt`; do
    src=$DOWNLOAD_EXP/${i}p.fits.fz
    echo $src
    trg=$INPUT_EXP/image-$i.fitsfz
-   command "ln -sf $src $trg" "symlink $src <- $trg"
+   cmd="ln -sf $src $trg"
+   #command "$cmd" "symlink $src <- $trg"
+   $cmd
 
    src=$DOWNLOAD_EXP/${i}p.weight.fits.fz
    trg=$INPUT_EXP/weight-$i.fitsfz
-   command "ln -sf $src $trg" "symlink $src <- $trg"
+   cmd="ln -sf $src $trg"
+   #command "$cmd" "symlink $src <- $trg"
+   $cmd
 
    src=$DOWNLOAD_EXP/${i}p.flag.fits.fz
    trg=$INPUT_EXP/flag-$i.fitsfz
-   command "ln -sf $src $trg" "$symlink $src <- $trg"
+   cmd="ln -sf $src $trg"
+   #command "$cmd" "$symlink $src <- $trg"
+   $cmd
 done
 
 # Download config files
@@ -223,10 +246,6 @@ $VCP vos:cfis/cosmostat/kilbinger/GOLD .
 ## Exposures
 
 $SP_ROOT/shapepipe_run.py -c $SP_CONFIG/config_exp.ini
-
-# Create validation plots
-#command "$SP_ROOT/scripts/python/MeanShapes.py -o $PSF_VALIDATION -x 10 -i $PSF_VALIDATION/full_starcat.fits $vflag" \
-        #"Plot mean PSF shapes"
 
 
 ## Upload results
@@ -241,4 +260,12 @@ upl=$OUTPUT/*/psfexinterp_runner/output/validation_psf*
 n_upl=(`ls -l $upl | wc`)
 command "$VCP $upl vos:cfis/cosmostat/kilbinger/psfexinterp" "Upload psfexinterp results, $n_up files"
 
+# module log files
+upl=$OUTPUT/*/*/logs
+n_upl=(`ls -l $upl | wc`)
+command "$VCP $upl vos:cfis/cosmostat/kilbinger/logs" "Upload module logs, $n_up files"
+
+upl=$OUTPUT/*/logs
+n_upl=(`ls -l $upl | wc`)
+command "$VCP $upl vos:cfis/cosmostat/kilbinger/logs" "Upload shapepipe logs, $n_up files"
 echo "End"
