@@ -125,8 +125,8 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
 
     command_line = ('{0} {1} -c {2} -PARAMETERS_NAME {3} -FILTER_NAME {4} '
                     '-CATALOG_NAME {5}'.format(exec_path, input_file_list[0],
-                                              dot_sex, dot_param, dot_conv,
-                                              output_file_path))
+                                               dot_sex, dot_param, dot_conv,
+                                               output_file_path))
 
     extra = 1
     if weight_file:
