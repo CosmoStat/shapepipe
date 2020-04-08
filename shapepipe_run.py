@@ -40,7 +40,7 @@ class ShapePipe():
         self.config = create_config_parser(self._args.config)
         self._set_run_name()
         self.modules = self.config.getlist('EXECUTION', 'MODULE')
-        self.mode = self.config.get('EXECUTION', 'MODE')
+        self.mode = self.config.get('EXECUTION', 'MODE').lower()
         self.filehd = FileHandler(self._run_name, self.modules, self.config)
         self.verbose = self.config.getboolean('DEFAULT', 'VERBOSE')
         self.error_count = 0
@@ -312,15 +312,16 @@ def run_mpi(pipe, comm):
     # Get ShapePipe objects
     if master:
         config = pipe.config
-        verbose = pipe.config
+        verbose = pipe.verbose
     else:
-        config, verbose, worker_log = None, None, None
+        config = verbose = None
     config = comm.bcast(config, root=0)
     verbose = comm.bcast(verbose, root=0)
 
     # Loop through modules to be run
     for module in modules:
 
+        # Run set up on master
         if master:
             # Create a job handler for the current module
             jh = JobHandler(module, filehd=pipe.filehd, config=config,
@@ -330,11 +331,11 @@ def run_mpi(pipe, comm):
             # Get job type
             job_type = jh.job_type
 
-            # handle serial jobs
+            # Handle serial jobs
             if job_type == 'serial':
-                jh.submit_serial_job()
+                jh.submit_jobs()
 
-            # handle parallel jobs
+            # Handle parallel jobs
             else:
                 # Get JobHandler objects
                 timeout = jh.timeout
@@ -348,15 +349,17 @@ def run_mpi(pipe, comm):
                 jobs = split_mpi_jobs(process_list, comm.size)
                 del process_list
         else:
-            job_type, run_dirs, module_runner, worker_log, timeout, jobs = \
-             (None, None, None, None, None, None)
+            job_type = module_runner = worker_log = timeout = \
+                jobs = run_dirs = None
 
+        # Broadcast job type to all nodes
         job_type = comm.bcast(job_type, root=0)
 
         if job_type == 'parallel':
 
             # Broadcast objects to all nodes
             run_dirs = comm.bcast(run_dirs, root=0)
+
             module_runner = comm.bcast(module_runner, root=0)
             worker_log = comm.bcast(worker_log, root=0)
             timeout = comm.bcast(timeout, root=0)
@@ -367,13 +370,19 @@ def run_mpi(pipe, comm):
                                   run_dirs, module_runner, worker_log,
                                   verbose), root=0)
 
-            del run_dirs, module_runner, timeout, jobs
+            # Delete broadcast objects
+            del module_runner, worker_log, timeout, jobs
+
+            # Finish up parallel jobs
+            if master:
+                # Assign worker dictionaries
+                jh.worker_dicts = jh.filehd.flatten_list(results)
+                # Finish up job handler session
+                jh.finish_up()
+                # Delete results
+                del results
 
         if master:
-            # Assign worker dictionaries
-            jh.worker_dicts = jh.filehd.flatten_list(results)
-            # Finish up job handler session
-            jh.finish_up()
             # Update error count
             pipe.error_count += jh.error_count
             # Delete job handler

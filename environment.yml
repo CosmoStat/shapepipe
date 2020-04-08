@@ -3,11 +3,12 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.6
+  - python=3.7
   - astropy>=3.0
   - galsim>=2.1.4
   - joblib>=0.13
   - matplotlib>=3.0.2
+  - pip>=19.3
   - pip:
     - modopt>=1.2
     - numba==0.40.0
