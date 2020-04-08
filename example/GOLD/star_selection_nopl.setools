@@ -1,0 +1,47 @@
+## SETools configuration file for star/galaxy separation based on size/mag properties
+
+# Selection criteria
+
+# Pre-selection to make subsequent computation of the mode better behaved
+[MASK:preselect]
+MAG_AUTO > 0
+MAG_AUTO < 20
+FWHM_IMAGE > 0.3 / 0.186
+FWHM_IMAGE < 1.5 / 0.186
+FLAGS == 0
+IMAFLAGS_ISO == 0
+NO_SAVE
+
+# Star selection using the FWHM mode
+[MASK:star_selection]
+MAG_AUTO > 17.
+MAG_AUTO < 21.5
+FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
+FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2
+FLAGS == 0
+IMAFLAGS_ISO == 0
+#CLASS_STAR != 0
+
+# The following selection is only used for plotting
+[MASK:fwhm_mag_cut]
+FWHM_IMAGE > 0
+FWHM_IMAGE < 40
+MAG_AUTO < 35
+FLAGS == 0
+IMAFLAGS_ISO == 0
+NO_SAVE
+
+
+# Plots
+
+# Statistics
+
+[STAT:star_stat]
+"Nb objects full cat" = len(FWHM_IMAGE)
+"Nb stars" = len(FWHM_IMAGE{star_selection})
+"stars/deg^2" = len(FWHM_IMAGE{star_selection})/4612./0.186*3600.*1./2048./0.186*3600.
+"Mean star fwhm selected (arcsec)" = mean(FWHM_IMAGE{star_selection})*0.186
+"Standard deviation fwhm star selected (arcsec)" = std(FWHM_IMAGE{star_selection})*0.186
+"Mode fwhm used (arcsec)" = mode(FWHM_IMAGE{preselect})*0.186
+"Min fwhm cut (arcesec)" = mode(FWHM_IMAGE{preselect})*0.186-0.1*0.186
+"Max fwhm cut (arcsec)" = mode(FWHM_IMAGE{preselect})*1.186+0.1*0.186
