@@ -167,7 +167,7 @@ def save_results(sex_cat_path, output_path, sm, sm_err, mag, number,
         ValueError('Mode must be in [new, add].')
 
 
-@module_runner(input_module=['sextractor_runner', 'psfexinterp_runner',
+@module_runner(input_module=['sextractor_runner', 'psfexinterp_runner_me',
                              'vignetmaker_runner'], version='1.0',
                file_pattern=['sexcat', 'galaxy_psf', 'weight_vign'],
                file_ext=['.fits', '.sqlite', '.fits'],
@@ -202,7 +202,7 @@ def spread_model_runner(input_file_list, run_dirs, file_number_string,
         obj_mag = np.copy(sex_cat.get_data()['MAG_AUTO'])
     sex_cat.close()
 
-    # psf_cat = np.load(psf_cat_path).item()
+    # psf_cat = np.load(psf_cat_path, allow_pickle=True).item()
     psf_cat = SqliteDict(psf_cat_path)
 
     weight_cat = io.FITSCatalog(weight_cat_path, SEx_catalog=True)
