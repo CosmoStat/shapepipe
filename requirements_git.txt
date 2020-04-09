@@ -1,2 +1,3 @@
-git+https://github.com/esheldon/ngmix
+#git+https://github.com/esheldon/ngmix
+git+https://github.com:aguinot/ngmix@modif_observation
 git+https://github.com/GalSim-developers/GalSim.git
