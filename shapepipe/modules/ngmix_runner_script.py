@@ -323,7 +323,14 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
 
     final_res = []
     prior = get_prior()
+    import pdb
+    pdb.set_trace()
     for i_tile, id_tmp in enumerate(obj_id):
+
+	print('MKDEBUG {}'.format(id_tmp))
+        if id_tmp == 34:
+		import pdb
+		pdb.set_trace()
         # Preselection step
         # if (tile_flag[i_tile] > 1) or (tile_imaflag[i_tile] > 0):
         #     continue
