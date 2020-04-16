@@ -317,6 +317,9 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
         T_guess_psf.append(psf_T)
         gal_guess_flag = True
 
+    if wsum == 0:
+        raise ZeroDivisionError('Sum of weights = 0, division by zero')
+
     # Normalize PSF fit output
     for key in psf_res_gT.keys():
         psf_res_gT[key] /= wsum
@@ -605,9 +608,6 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
     prior = get_prior()
     for i_tile, id_tmp in enumerate(obj_id):
 
-    if id_tmp != 34:
-        continue
-	w_log.info('id_tmp = {}'.format(id_tmp))
         # Preselection step
         # if (tile_flag[i_tile] > 1) or (tile_imaflag[i_tile] > 0):
         #     continue
@@ -692,8 +692,6 @@ def ngmix_runner(input_file_list, run_dirs, file_number_string,
                    file_number_string + '.fits')
 
     f_wcs_path = config.getexpanded('NGMIX_RUNNER', 'LOG_WCS')
-
-    w_log.info('MKDEBUG 16/04 debug: Running new version of ngmix with additive-bias fix')
 
     metacal_res = process(*input_file_list, f_wcs_path, w_log)
     res_dict = compile_results(metacal_res)
