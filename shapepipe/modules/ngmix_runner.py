@@ -72,7 +72,7 @@ def get_prior():
     return prior
 
 
-def get_guess(img, pixel_scale=0.187, 
+def get_guess(img, pixel_scale=0.187,
               guess_flux_unit='img',
               guess_size_type='T', guess_size_unit='sky',
               guess_centroid=True, guess_centroid_unit='sky'):
@@ -99,7 +99,7 @@ def get_guess(img, pixel_scale=0.187,
         if 'sky' return the size in arcsec
     guess_centroid : bool
         If True, will return a guess on the object centroid
-        if False, will return the image center 
+        if False, will return the image center
     guess_centroid_unit : string
         If 'img' return the centroid in pixel unit
         if 'sky' return the centroid in arcsec
@@ -110,16 +110,15 @@ def get_guess(img, pixel_scale=0.187,
         Return the guess array : [center_x, center_y, g1, g2, size_T, flux]
     """
 
-
     galsim_img = galsim.Image(img, scale=pixel_scale)
 
     hsm_shape = galsim.hsm.FindAdaptiveMom(galsim_img, strict=False)
 
     error_msg = hsm_shape.error_message
-    
+ 
     if error_msg != '':
         raise galsim.hsm.GalSimHSMError('Error in adaptive moments :\n{}'.format(error_msg))
-    
+ 
     if guess_flux_unit == 'img':
         guess_flux = hsm_shape.moments_amp
     elif guess_flux_unit == 'sky':
@@ -138,7 +137,7 @@ def get_guess(img, pixel_scale=0.187,
         guess_size = hsm_shape.moments_sigma*size_unit
     elif guess_size_type == 'T':
         guess_size = 2.*(hsm_shape.moments_sigma*size_unit)**2.
-    
+ 
     if guess_centroid_unit == 'img':
         centroid_unit = 1.
     elif guess_centroid_unit == 'sky':
@@ -171,8 +170,8 @@ def make_galsimfit(obs, model, guess0, prior=None, lm_pars=None, ntry=5):
         guess[5:] *= (1. + urand(low=-0.1, high=0.1))
         fres['flags'] = 1
         try:
-            fitter = ngmix.galsimfit.GalsimSimple(obs, 
-                                                  model, 
+            fitter = ngmix.galsimfit.GalsimSimple(obs,
+                                                  model,
                                                   prior=prior,
                                                   lm_pars=lm_pars)
             fitter.go(guess)
@@ -261,7 +260,7 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
     # Make observation
     gal_obs_list = ObsList()
     T_guess_psf = []
-    psf_res_gT = {'g_PSFo': np.array([0., 0.]), 
+    psf_res_gT = {'g_PSFo': np.array([0., 0.]),
                   'g_err_PSFo': np.array([0., 0.]),
                   'T_PSFo': 0.,
                   'T_err_PSFo': 0.}
@@ -290,7 +289,7 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
 
         # Original PSF fit
         w_tmp = np.sum(weights[n_e])
-        psf_res_gT['g_PSFo'] += psf_res['g']*w_tmp 
+        psf_res_gT['g_PSFo'] += psf_res['g']*w_tmp
         psf_res_gT['g_err_PSFo'] += np.array([psf_res['pars_err'][2], psf_res['pars_err'][3]])*w_tmp
         psf_res_gT['T_PSFo'] += psf_res['T']*w_tmp
         psf_res_gT['T_err_PSFo'] += psf_res['T_err']*w_tmp
@@ -368,12 +367,12 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
 
     obs_dict_mcal = ngmix.metacal.get_all_metacal(gal_obs_list, **metacal_pars)
     res = {'mcal_flags': 0}
-    ntry=5
+    ntry = 5
 
     for key in sorted(obs_dict_mcal):
 
-        fres = make_galsimfit(obs_dict_mcal[key], 
-                              gal_model, gal_pars, 
+        fres = make_galsimfit(obs_dict_mcal[key],
+                              gal_model, gal_pars,
                               prior=prior)
 
         res['mcal_flags'] |= fres['flags']
@@ -383,19 +382,18 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
             tres[name] = fres[name]
         tres['flags'] = fres['flags']
 
-        wsum     = 0.0
+        wsum = 0.0
         Tpsf_sum = 0.0
         gpsf_sum = np.zeros(2)
-        npsf=0
+        npsf = 0
         for obs in obs_dict_mcal[key]:
-            if hasattr(obs,'psf_nopix'):
-                #print("    summing nopix")
+            if hasattr(obs, 'psf_nopix'):
                 try:
-                    psf_res = make_galsimfit(obs.psf_nopix, 
-                                            psf_model,
-                                            np.array([0., 0., 0., 0., Tguess, 1.]), 
-                                            prior=None,
-                                            ntry=ntry)
+                    psf_res = make_galsimfit(obs.psf_nopix,
+                                             psf_model,
+                                             np.array([0., 0., 0., 0., Tguess, 1.]),
+                                             prior=None,
+                                             ntry=ntry)
                 except:
                     continue
                 g1, g2 = psf_res['g']

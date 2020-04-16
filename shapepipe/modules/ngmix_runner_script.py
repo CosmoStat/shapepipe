@@ -413,6 +413,7 @@ def ngmix_runner(input_file_list, output_name, file_number_string,
 
     return None, None
 
+
 if __name__ == '__main__':
 
     argv = sys.argv
@@ -431,10 +432,9 @@ if __name__ == '__main__':
     output_dir = argv[4]
     # print("output_dir : {}\n{}".format(type(output_dir), output_dir))
     output_name = (output_dir + '/' + 'ngmix' +
-                   f[list_id][0]+ '.fits')
+                   f[list_id][0] + '.fits')
 
     if not os.path.isfile(output_name):
         ngmix_runner(f[list_id][1:], output_name, f[list_id][0], f_wcs_path)
     else:
         print("File already exist : {}".format(output_name))
-
