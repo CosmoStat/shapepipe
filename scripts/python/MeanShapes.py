@@ -73,10 +73,16 @@ def parse_options(p_def):
          help='input file name, default=\'{}\''.format(p_def.input_path))
     parser.add_option('-o', '--output_dir', dest='output_dir', type='string', default=p_def.output_dir,
          help='output_directory, default=\'{}\''.format(p_def.output_dir))
+
     parser.add_option('-x', '--npix_x', dest='nx', type='int', default=p_def.nx,
          help='number of pixels per CCD in the x-direction, default=\'{}\''.format(p_def.nx))
     parser.add_option('-y', '--npix_y', dest='ny', type='int',
          help='number of pixels per CCD in the y-direction, default to provide square pixels given nx')
+    parser.add_option('', '--max_e', dest='max_e', type='float',
+         help='max value for ellipticity plots (model, star)')
+    parser.add_option('', '--max_d', dest='max_d', type='float',
+         help='max value for ellipticity residuals plots (model, star)')
+
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
 
     options, args = parser.parse_args()
@@ -229,7 +235,7 @@ def MeanShapesPlot(ccd_maps, filename, title='', colorbar_ampl=1., wind=None, cm
     plt.close()
 
 
-def MeanWhiskerPlot(ccd_maps_e1, ccd_maps_e2, filename, title='', wind=None):
+def MeanWhiskerPlot(ccd_maps_e1, ccd_maps_e2, filename, title=''):
     """
     """
 
@@ -341,35 +347,56 @@ def main(argv=None):
                 ccd_map[0,:,xb,yb] = np.mean(bin_star_shapes,axis=1)
                 ccd_map[1,:,xb,yb] = np.mean(bin_psf_shapes,axis=1)
 
-    # e_1
-    vmax = max(np.nanmax(ccd_maps[:,:,0]), np.abs(np.nanmin(ccd_maps[:,:,0])))
-    vmin = -vmax
-    wind = [vmin, vmax]
+    # Create plots
     colorbar_ampl = 1
-    MeanShapesPlot(ccd_maps[:,0,0], '{}/e1s'.format(param.output_dir), r'$e_1$ (stars)', wind=wind)
-    MeanShapesPlot(ccd_maps[:,1,0], '{}/e1m'.format(param.output_dir), r'$e_1$ (model)', wind=wind)
-    MeanShapesPlot(ccd_maps[:,0,0]-ccd_maps[:,1,0], '{}/e1res'.format(param.output_dir), r'$e_1$ residual', wind=wind,
+
+    # e_1
+    if not param.max_e:
+        vmax = max(np.nanmax(ccd_maps[:,:,0]), np.abs(np.nanmin(ccd_maps[:,:,0])))
+    else:
+        vmax = param.max_e
+    vmin = -vmax
+    wind_e = [vmin, vmax]
+    MeanShapesPlot(ccd_maps[:,0,0], '{}/e1s'.format(param.output_dir), r'$e_1$ (stars)', wind=wind_e)
+    MeanShapesPlot(ccd_maps[:,1,0], '{}/e1m'.format(param.output_dir), r'$e_1$ (model)', wind=wind_e)
+
+    if param.max_d:
+        vmax = param.max_d
+        vmin = -vmax
+        wind_d = [vmin, vmax]
+    else:
+        wind_d = wind_e
+    MeanShapesPlot(ccd_maps[:,0,0]-ccd_maps[:,1,0], '{}/e1res'.format(param.output_dir), r'$e_1$ residual', wind=wind_d,
             colorbar_ampl=colorbar_ampl)
 
     # e_2
-    vmax = max(np.nanmax(ccd_maps[:,:,1]), np.abs(np.nanmin(ccd_maps[:,:,0])))
-    colorbar_ampl = 1
+    if not param.max_e:
+        vmax = max(np.nanmax(ccd_maps[:,:,1]), np.abs(np.nanmin(ccd_maps[:,:,0])))
+    else:
+        vmax = param.max_e
     vmin = -vmax
-    wind = [vmin, vmax]
-    MeanShapesPlot(ccd_maps[:,0,1], '{}/e2s'.format(param.output_dir), r'$e_2$ (stars)', wind=wind)
-    MeanShapesPlot(ccd_maps[:,1,1], '{}/e2m'.format(param.output_dir), r'$e_2$ (model)', wind=wind)
-    MeanShapesPlot(ccd_maps[:,0,1]-ccd_maps[:,1,1], '{}/e2res'.format(param.output_dir), r'$e_2$ residual', wind=wind,
+    wind_e = [vmin, vmax]
+    MeanShapesPlot(ccd_maps[:,0,1], '{}/e2s'.format(param.output_dir), r'$e_2$ (stars)', wind=wind_e)
+    MeanShapesPlot(ccd_maps[:,1,1], '{}/e2m'.format(param.output_dir), r'$e_2$ (model)', wind=wind_e)
+
+    if param.max_d:
+        vmax = param.max_d
+        vmin = -vmax
+        wind_d = [vmin, vmax]
+    else:
+        wind_d = wind_e
+    MeanShapesPlot(ccd_maps[:,0,1]-ccd_maps[:,1,1], '{}/e2res'.format(param.output_dir), r'$e_2$ residual', wind=wind_d,
             colorbar_ampl=colorbar_ampl)
 
     # Whisker
-    MeanWhiskerPlot(ccd_maps[:,0,0], ccd_maps[:,0,1], '{}/whisker_star'.format(param.output_dir), 'Whisker plot star', wind=wind)
-    MeanWhiskerPlot(ccd_maps[:,1,0], ccd_maps[:,1,1], '{}/whisker_model'.format(param.output_dir), 'Whisker plot model', wind=wind)
+    MeanWhiskerPlot(ccd_maps[:,0,0], ccd_maps[:,0,1], '{}/whisker_star'.format(param.output_dir), 'Whisker plot star')
+    MeanWhiskerPlot(ccd_maps[:,1,0], ccd_maps[:,1,1], '{}/whisker_model'.format(param.output_dir), 'Whisker plot model')
     MeanWhiskerPlot(ccd_maps[:,0,0]-ccd_maps[:,1,0], ccd_maps[:,0,1]-ccd_maps[:,1,1],
-                    '{}/whisker_resi'.format(param.output_dir), 'Whisker plot resi', wind=wind)
+                    '{}/whisker_resi'.format(param.output_dir), 'Whisker plot resi')
 
     # R^2
     wind = [0,np.nanmax(ccd_maps[:,:,2])]
-    colorbar_ampl = 1
+
     MeanShapesPlot(ccd_maps[:,0,2], '{}/R2s'.format(param.output_dir), r'$R^2$ (stars)', wind=wind, cmap='Reds')
     MeanShapesPlot(ccd_maps[:,1,2], '{}/R2m'.format(param.output_dir), r'$R^2$ (model)', wind=wind, cmap='Reds')
     wind = [-np.nanmax(ccd_maps[:,:,2]), np.nanmax(ccd_maps[:,:,2])]
