@@ -218,8 +218,11 @@ def download(dst_list, size_list, out_dir, t, vcp, dry_run=False, verbose=False,
                     print(size_list[i], end=' ', file=f_list)
                 print(dst_list[i], file=f_list)
 
-            cfis.run_cmd('{}{} vos:cfis/{}/{} {}'.format(vcp, f_quick, subdir, dst_list[i], out_dir),
-                            verbose=True, run=not dry_run)
+            out, err = cfis.run_cmd('{}{} vos:cfis/{}/{} {}'.format(vcp, f_quick, subdir, dst_list[i], out_dir),
+                                    verbose=True, run=not dry_run)
+            print('MKDEBUG vcp out, err:')
+            print(out)
+            print(err)
             n_dl += 1
 
     if verbose == True:
