@@ -12,6 +12,7 @@ from shapepipe.modules.module_decorator import module_runner
 
 from astropy.io import fits
 
+
 @module_runner(version='1.0',
                file_pattern=['image'],
                file_ext=['.fits'],

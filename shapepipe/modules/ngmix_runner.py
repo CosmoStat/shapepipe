@@ -115,10 +115,10 @@ def get_guess(img, pixel_scale=0.187,
     hsm_shape = galsim.hsm.FindAdaptiveMom(galsim_img, strict=False)
 
     error_msg = hsm_shape.error_message
- 
+
     if error_msg != '':
         raise galsim.hsm.GalSimHSMError('Error in adaptive moments :\n{}'.format(error_msg))
- 
+
     if guess_flux_unit == 'img':
         guess_flux = hsm_shape.moments_amp
     elif guess_flux_unit == 'sky':
@@ -403,10 +403,10 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
                 T = psf_res['T']
             else:
                 try:
-                    psf_res = make_galsimfit(obs.psf, 
-                                            psf_model,
-                                            np.array([0., 0., 0., 0., Tguess, 1.]), 
-                                            prior=None)
+                    psf_res = make_galsimfit(obs.psf,
+                                             psf_model,
+                                             np.array([0., 0., 0., 0., Tguess, 1.]),
+                                             prior=None)
                 except:
                     continue
                 g1, g2 = psf_res['g']
@@ -419,7 +419,7 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
             gpsf_sum[0] += g1*twsum
             gpsf_sum[1] += g2*twsum
             Tpsf_sum += T*twsum
-            npsf+=1
+            npsf += 1
 
         tres['gpsf'] = gpsf_sum/wsum
         tres['Tpsf'] = Tpsf_sum/wsum
@@ -495,9 +495,9 @@ def compile_results(results):
     names2 = ['id', 'n_epoch_model', 'moments_fail', 'ntry_fit',
               'g1_psfo_ngmix', 'g2_psfo_ngmix', 'T_psfo_ngmix',
               'g1_err_psfo_ngmix', 'g2_err_psfo_ngmix', 'T_err_psfo_ngmix',
-              'g1', 'g1_err', 'g2', 'g2_err', 
-              'T', 'T_err', 'Tpsf', 'g1_psf', 'g2_psf', 
-              's2n', 
+              'g1', 'g1_err', 'g2', 'g2_err',
+              'T', 'T_err', 'Tpsf', 'g1_psf', 'g2_psf',
+              's2n',
               'flags', 'mcal_flags']
     output_dict = {k: {kk: [] for kk in names2} for k in names}
     for i in range(len(results)):
@@ -640,8 +640,8 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
 
             exp_name, ccd_n = re.split('-', expccd_name_tmp)
             jacob_tmp = get_jacob(f_wcs_file[exp_name][int(ccd_n)],
-                                        tile_ra[i_tile],
-                                        tile_dec[i_tile])
+                                  tile_ra[i_tile],
+                                  tile_dec[i_tile])
 
             gal_vign.append(gal_vign_sub_bkg)
             psf_vign.append(psf_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET'])
@@ -654,12 +654,12 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             continue
         try:
             res = do_ngmix_metacal(gal_vign,
-                                    psf_vign,
-                                    sigma_psf,
-                                    weight_vign,
-                                    flag_vign,
-                                    jacob_list,
-                                    prior)
+                                   psf_vign,
+                                   sigma_psf,
+                                   weight_vign,
+                                   flag_vign,
+                                   jacob_list,
+                                   prior)
         except Exception as ee:
             w_log.info('ngmix fail on object {}\nMessage : {}'.format(id_tmp, ee))
             continue
