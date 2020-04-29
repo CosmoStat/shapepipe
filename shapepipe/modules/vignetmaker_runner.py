@@ -280,7 +280,7 @@ class vignetmaker(object):
 
         """
 
-        self._f_wcs_file = np.load(f_wcs_path).item()
+        self._f_wcs_file = np.load(f_wcs_path, allow_pickle=True).item()
         self._rad = rad
 
         for i in range(len(image_pattern)):
@@ -390,7 +390,7 @@ def save_vignet(vign, sexcat_path, output_dir, suffix, image_num):
     f.save_as_fits(vign, names=['VIGNET'], sex_cat_path=sexcat_path)
 
 
-@module_runner(input_module='setools_runner',
+@module_runner(input_module='sextractor_runner',
                file_pattern=['galaxy_selection', 'image'],
                file_ext=['.fits', '.fits'],
                depends=['numpy', 'astropy', 'sf_tools'])
@@ -435,5 +435,7 @@ def vignetmaker_runner(input_file_list, run_dirs, file_number_string,
             inst = vignetmaker(galcat_path, pos_type, pos_params,
                                run_dirs['output'], file_number_string)
             inst.process_me(image_dir, image_pattern, f_wcs_path, rad)
+        else:
+            raise ValueError('Invalid MODE=\'{}\''.format(mode))
 
     return None, None
