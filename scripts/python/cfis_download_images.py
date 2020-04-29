@@ -180,11 +180,6 @@ def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False, quic
         if out_list:
             f_list = open(out_list, 'w')
 
-    if quick == True:
-        f_quick = '--quick'
-    else:
-        f_quick = ''
-
     n_dl = 0
     n_ex = 0
     for i, dst in enumerate(dst_list):
@@ -226,7 +221,8 @@ def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False, quic
 
             sys.argv = []
             sys.argv.append(cmd)
-            sys.argv.append(f_quick)
+            if quick == True:
+                sys.argv.append('--quick')
             if certfile:
                 sys.argv.append('--certfile={}'.format(certfile))
             sys.argv.append(src)
