@@ -137,7 +137,7 @@ def get_guess(img, pixel_scale=0.187,
         guess_size = hsm_shape.moments_sigma*size_unit
     elif guess_size_type == 'T':
         guess_size = 2.*(hsm_shape.moments_sigma*size_unit)**2.
- 
+
     if guess_centroid_unit == 'img':
         centroid_unit = 1.
     elif guess_centroid_unit == 'sky':
@@ -692,6 +692,8 @@ def ngmix_runner(input_file_list, run_dirs, file_number_string,
                    file_number_string + '.fits')
 
     f_wcs_path = config.getexpanded('NGMIX_RUNNER', 'LOG_WCS')
+
+    w_log.info('MKDEBUG: Running new version of ngmix with additive-bias fix')
 
     metacal_res = process(*input_file_list, f_wcs_path, w_log)
     res_dict = compile_results(metacal_res)

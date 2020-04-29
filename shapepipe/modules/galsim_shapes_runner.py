@@ -265,7 +265,7 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
     sm = np.copy(sm_cat.get_data()['SPREAD_MODEL'])
     sm_err = np.copy(sm_cat.get_data()['SPREADERR_MODEL'])
     sm_cat.close()
-    # f_wcs_file = np.load(f_wcs_path).item()
+    # f_wcs_file = np.load(f_wcs_path, allow_pickle=True).item()
     bkg_vign_cat = SqliteDict(bkg_vignet_path)
     psf_vign_cat = SqliteDict(psf_vignet_path)
     weight_vign_cat = SqliteDict(weight_vignet_path)
