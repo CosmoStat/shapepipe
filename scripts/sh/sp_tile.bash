@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Description: Process one tile and all contributing exposures
+#              on canfar
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 # Date: 03/2020
 # Package: ShapePipe
@@ -13,141 +14,227 @@
 # Tile numbers
 
 if [ $# == 0 ]; then
-  echo "Usage: sp_tile.bash TILE_ID_1 [TILE_ID_2 [...]]"
-  echo "  TILE_ID = xxx.yyy"
-  echo "  Example: sp_tile.bash 244.252"
+  echo "Usages:"
+  echo "  bash sp_tile.bash TILE_ID_1 [TILE_ID_2 [...]]"
+  echo "    TILE_ID = xxx.yyy"
+  echo "    Example: sp_tile.bash 244.252"
+  echo "  . sp_tile.bash -e"
+  echo "    Assign environment variables"
   exit 1
-
-  # Or default (test) tile
-  #TILE_ARR=(619.241)
 fi
 
 # Copy command line arguments
 TILE_ARR=($@)
 
+# For tar archives. Should be unique to each job
+#ID=${TILE_ARR[0]}
+ID=`echo ${TILE_ARR[@]} | tr ' ' '_'`
 
 # For testing only use one exposure
 ONE_EXP=0
 
-## VM-specific paths, do not modify
-# VM home
+## Paths
+
+# VM home (do not modify)
 export VM_HOME=/home/ubuntu
 
-# VM path to ShapePipe installation, used in config files
+# Path to ShapePipe installation
 export SP_ROOT=$VM_HOME/ShapePipe
-## End VM-specific paths
 
-# Processing paths (used in the pipeline config files)
+## Path variables used in ShapePipe config files
 
-# Run path, used in config files.
+# Run path and location of input image directories
 export SP_RUN=`pwd`
-
-# Input
-export INPUT_TILES=$SP_RUN/input_tiles
-export INPUT_EXP=$SP_RUN/input_exposures
-
-# Output
-export OUTPUT=$SP_RUN/output
-export OUTPUT_HEADERS=$SP_RUN/output_headers
-#export PSF_VALIDATION=$SP_RUN/psf_validation
-
-# Temporary processing paths (e.g. for downloading images)
-DOWNLOAD_EXP=$SP_RUN/download_exposures
 
 # Config file path
 export SP_CONFIG=$SP_RUN/GOLD
 
+## Input and output paths used in config file
+
+# Input
+INPUT_TILES=$SP_RUN/input_tiles
+INPUT_EXP=$SP_RUN/input_exposures
+
+# Output
+OUTPUT=$SP_RUN/output
+OUTPUT_HEADERS=$SP_RUN/output_headers
+
+# For tar archives
+output_rel=`realpath --relative-to=. $OUTPUT`
+
+# Temporary processing paths (e.g. for downloading images)
+DOWNLOAD_EXP=$SP_RUN/download_exposures
+
+
 ## Other variables
 
-# Verbose mode (1: verbose, 0: quiet)
-verbose=1
+# Stop on error
+STOP=1
 
-if [ $verbose == 1 ]; then
+# Verbose mode (1: verbose, 0: quiet)
+VERBOSE=1
+
+if [ $VERBOSE == 1 ]; then
    vflag="-v"
 else
    vflag=""
 fi
 
-# Command shortcuts
-# VCP without "vflag" to avoid to output to stderr
-VCP="vcp --quick --certfile=$VM_HOME/.ssl/cadcproxy.pem"
+# VCP options
+# VCP without "vflag" to avoid output to stderr
+export VCP_QUICK=1
+
+if [ $VCP_QUICK == 1 ]; then
+   qflag="--quick"
+else
+  qflag=""
+fi
+export CERTFILE=$VM_HOME/.ssl/cadcproxy.pem
+export VCP="vcp $qflag --certfile=$CERTFILE"
 
 
 ## Functions
 
 # Print string, executes command, and prints return value.
-# Printing if verbose=1
 function command () {
    cmd=$1
    str=$2
+   verbose=$3
 
    #RED='\033[0;31m'
    #GREEN='\033[0;32m'
    #NC='\033[0m' # No Color
-   # Escape characters show up in log files
+   # Color escape characters show up in log files
    RED=''
    GREEN=''
    NC=''
 
 
-   if [ $# == 2 ]; then
-   	[ $verbose ] &&  echo "$str: running '$cmd'"
-   	$cmd
+   if [ $# == 3 ]; then
+      if [ $verbose == 1 ]; then
+           echo "$str: running '$cmd'"
+      fi
+      $cmd
    else
-   	[ $verbose ] &&  echo "$str: running '$cmd $3 \"$4 $5\"'"
-	$cmd $3 "$4 $5"
+      if [ $verbose == 1 ]; then
+         echo "$str: running '$cmd $4 \"$5 $6\"'"
+      fi
+      $cmd $4 "$5 $6"
    fi	
    res=$?
 
-   if [ $verbose ]; then
+   if [ $verbose == 1 ]; then
       if [ $res == 0 ]; then
          echo -e "${GREEN}success, return value = $res${NC}"
       else
          echo -e "${RED}error, return value = $res${NC}"
+         if [ $STOP == 1 ]; then
+            echo "${RED}exiting 'sp_tile.bash', error in command '$cmd'${NC}"
+            exit $res
+	 else
+            echo "${RED}continuing 'sp_tile.bash', error in command '$cmd'${NC}"
+         fi
       fi
    fi
+
+   return $res
+}
+
+
+# Run command. If error occurs, upload sp log files before stopping script.
+command_sp() {
+   cmd=$1
+   str=$2
+   verbose=$3
+   id=$4
+
+   STOP=0
+   command "$1" "$2" "$3"
+   res=$?
+   if [ $res != 0 ]; then
+      upload_logs $id $verbose
+      echo "exiting 'sp_tile.bash', error in command '$cmd', log files for id=$id uploaded"
+      exit $res
+   fi
+
+}
+
+# Tar and upload files to vos
+function upload() {
+   base=$1
+   shift
+   ID=$1
+   shift
+   verbose=$1
+   shift
+   upl=("$@")
+
+   n_upl=(`ls -l ${upl[@]} | wc`)
+   if [ $n_upl == 0 ]; then
+      if [ $STOP == 1 ]; then
+         echo "Exiting script, no file found for '$base' tar ball"
+         exit 3
+      fi
+   fi
+   tar czf ${base}_${ID}.tgz ${upl[@]}
+   command "$VCP ${base}_${ID}.tgz vos:cfis/cosmostat/kilbinger/results" "Upload $base results, $n_upl files in tar ball" "$verbose"
+}
+
+# Upload log files
+function upload_logs() {
+   id=$1
+   verbose=$2
+
+   upl="$output_rel/*/*/logs $output_rel/*/logs"
+   upload "logs" "$id" "$verbose" "${upl[@]}"
 }
 
 # Print script variables
 function print_env() {
    echo "*** Setting ***"
    echo "Data:"
-   echo " TILE_ARR = ${TILE_ARR[@]}"
-   echo " ONE_EXP = $ONE_EXP"
+   echo " TILE_ARR=${TILE_ARR[@]}"
+   echo " ONE_EXP=$ONE_EXP"
    echo "Paths:"
-   echo " VM_HOME = $VM_HOME"
-   echo " SP_ROOT = $SP_ROOT"
-   echo " SP_RUN = $SP_RUN"
-   echo " INPUT_TILES = $INPUT_TILES"
-   echo " INPUT_EXP = $INPUT_EXP"
-   echo " OUTPUT = $OUTPUT"
-   echo " OUTPUT_HEADERS = $OUTPUT_HEADERS"
-   #echo " PSF_VALIDATION = $PSF_VALIDATION"
-   echo " DOWNLOAD_EXP = $DOWNLOAD_EXP"
-   echo " SP_CONFIG = $SP_CONFIG"
+   echo " VM_HOME=$VM_HOME"
+   echo " SP_ROOT=$SP_ROOT"
+   echo " SP_RUN=$SP_RUN"
+   echo " INPUT_TILES=$INPUT_TILES"
+   echo " INPUT_EXP=$INPUT_EXP"
+   echo " OUTPUT=$OUTPUT"
+   echo " OUTPUT_HEADERS=$OUTPUT_HEADERS"
+   echo " DOWNLOAD_EXP=$DOWNLOAD_EXP"
+   echo " SP_CONFIG=$SP_CONFIG"
    echo "Other variables:"
-   echo " VCP = $VCP"
-   echo " verbose = $verbose"
-   echo " LD_LIBRARY_PATH = $LD_LIBRARY_PATH"
+   echo " VCP=$VCP"
+   echo " CERTFILE=$CERTFILE"
+   echo " STOP=$STOP"
+   echo " verbose=$VERBOSE"
+   echo " LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
    echo "***"
 }
 
 
 ### Start ###
 
-echo "Start"
-
-
-echo "Processing ${#TILE_ARR[@]} tile(s)"
-
 # Activate conda environment
 echo "Activate conda 'shapepipe' environment"
 source $VM_HOME/miniconda3/bin/activate shapepipe
 
+print_env
+
 # Extra stuff for canfar
 export LD_LIBRARY_PATH=$VM_HOME/miniconda3/envs/shapepipe/lib
 
-print_env
+if [ "$1" == "-e" ]; then
+   echo "Exiting"
+   return 0
+fi
+
+echo "Start"
+
+n_tile=${#TILE_ARR[@]}
+echo "Processing $n_tile tile(s)"
 
 ## Create input and output directories
 
@@ -159,7 +246,6 @@ mkdir -p $INPUT_EXP
 mkdir -p $INPUT_TILES
 mkdir -p $OUTPUT
 mkdir -p $OUTPUT_HEADERS
-#mkdir -p $PSF_VALIDATION
 
 
 ## Download and prepare input images
@@ -174,18 +260,18 @@ for TILE in ${TILE_ARR[@]}; do
 
    # Get input tile and weight
    command "$VCP vos:cfis/tiles_DR2/CFIS.${TILE}.r.fits $INPUT_TILES/CFIS.${TILE}.r.fits" \
-	   "Download tile image"
+	   "Download tile image" "$VERBOSE"
    command "$VCP vos:cfis/tiles_DR2/CFIS.${TILE}.r.weight.fits.fz $INPUT_TILES/CFIS_weight-$SP_TILE.fits.fz" \
-	   "Copy weight image from vos"
+	   "Copy weight image from vos" "$VERBOSE"
    command "$SP_ROOT/scripts/python/cfis_weight_format.py -i $INPUT_TILES/CFIS_weight-$SP_TILE.fits.fz -o $INPUT_TILES/CFIS_weight-$SP_TILE.fits" \
-	   "Transform weight"
+	   "Transform weight" "$VERBOSE"
 
 done
 
 
 # Select exposures
-command "$SP_ROOT/scripts/python/cfis_field_select.py -i input_tiles --tile -v -t exposure -o exp" \
-	"Select exposures"
+command "$SP_ROOT/scripts/python/cfis_field_select.py -i $INPUT_TILES --tile -v -t exposure -o exp" \
+	"Select exposures" "$VERBOSE"
 
 
 ### Only leave one line in exposure list
@@ -203,37 +289,44 @@ echo "$n_exp exposures to be processed"
 # Rename tile, needs to be done after previous 'cfis_field_select.py' call
 mv $INPUT_TILES/CFIS.${TILE}.r.fits $INPUT_TILES/CFIS_image-$SP_TILE.fits
 
-# Download single exposure images, weights, flags
-command "$SP_ROOT/scripts/python/cfis_download_images.py -i exp.txt -o $DOWNLOAD_EXP $vflag -t exposure --in_number_only" \
-	"Download exposure images" "--vcp" "$VCP"
-command "$SP_ROOT/scripts/python/cfis_download_images.py -i exp.txt -o $DOWNLOAD_EXP $vflag -t exposure_weight.fz --in_number_only" \
-	"Download exposure weights" "--vcp" "$VCP"
-command "$SP_ROOT/scripts/python/cfis_download_images.py -i exp.txt -o $DOWNLOAD_EXP $vflag -t exposure_flag.fz --in_number_only" \
-	"Download flags" "--vcp" "$VCP"
+### Debug: list tile files
+ls -rtl $INPUT_TILES
 
+# Download single exposure images, weights, flags
+command "$SP_ROOT/scripts/python/cfis_download_images.py -i exp.txt -o $DOWNLOAD_EXP $vflag -t exposure --in_number_only -q --certfile $CERTFILE" \
+	"Download exposure images" "$VERBOSE"
+command "$SP_ROOT/scripts/python/cfis_download_images.py -i exp.txt -o $DOWNLOAD_EXP $vflag -t exposure_weight.fz --in_number_only --certfile $CERTFILE" \
+	"Download exposure weights" "$VERBOSE"
+command "$SP_ROOT/scripts/python/cfis_download_images.py -i exp.txt -o $DOWNLOAD_EXP $vflag -t exposure_flag.fz --in_number_only --certfile $CERTFILE" \
+	"Download flags" "$VERBOSE"
+
+### Debug: Check why sometimes files are missing even though cfis_download_images.py exists without error
+ls -rtl $DOWNLOAD_EXP/*.fits.fz
 n_downl=(`ls -l $DOWNLOAD_EXP/*.fits.fz | wc`)
 n_downl_X=`perl -e 'print '$n_exp' * 3'`
 echo "$n_downl images downloaded, expected $n_downl_X"
+if [ $n_downl != $n_downl_X ]; then
+   if [ $STOP == 1 ]; then
+      echo "Exiting script, number of downloaded files does not match"
+      exit 98
+   fi
+fi
 
 # Set links to exposures, weights, and flags
 for i in `cat $SP_RUN/exp.txt`; do
    src=$DOWNLOAD_EXP/${i}p.fits.fz
-   echo $src
    trg=$INPUT_EXP/image-$i.fitsfz
    cmd="ln -sf $src $trg"
-   #command "$cmd" "symlink $src <- $trg"
    $cmd
 
    src=$DOWNLOAD_EXP/${i}p.weight.fits.fz
    trg=$INPUT_EXP/weight-$i.fitsfz
    cmd="ln -sf $src $trg"
-   #command "$cmd" "symlink $src <- $trg"
    $cmd
 
    src=$DOWNLOAD_EXP/${i}p.flag.fits.fz
    trg=$INPUT_EXP/flag-$i.fitsfz
    cmd="ln -sf $src $trg"
-   #command "$cmd" "$symlink $src <- $trg"
    $cmd
 done
 
@@ -245,27 +338,77 @@ $VCP vos:cfis/cosmostat/kilbinger/GOLD .
 
 ## Exposures
 
-$SP_ROOT/shapepipe_run.py -c $SP_CONFIG/config_exp.ini
+# Run all modules: Leads to unresolved thread error
+#$SP_ROOT/shapepipe_run.py -c $SP_CONFIG/config_exp.ini
+
+# Split up, merge headers, and mask
+command_sp "$SP_ROOT/shapepipe_run.py -c $SP_CONFIG/config_exp_SpMeMa.ini" "Run ShapePipe 1/5 (exp: split, merge headers, mask)" "$VERBOSE" "$ID"
+
+# Source-extract and select stars
+command_sp "$SP_ROOT/shapepipe_run.py -c $SP_CONFIG/config_exp_SxSt.ini" "Run ShapePipe 2/5 (exp: extract, select)" "$VERBOSE" "$ID"
+
+# Create PSF model
+command_sp "$SP_ROOT/shapepipe_run.py -c $SP_CONFIG/config_exp_Ps.ini" "Run ShapePipe 3/5 (exp: create PSF)" "$VERBOSE" "$ID"
+
+# Interpolate PSF model for validation
+command_sp "$SP_ROOT/shapepipe_run.py -c $SP_CONFIG/config_exp_Pi.ini" "Run ShapePipe 4/5 (exp: interpolate PSF)" "$VERBOSE" "$ID"
+
+
+# The following are very a bad hacks to get additional input files
+input_psfex=`find . -name star_selection-*.psf | head -n 1`
+command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output" "$VERBOSE" "$ID"
+
+input_split_exp=`find output -name flag-*.fits | head -n 1`
+command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output" "$VERBOSE" "$ID"
+
+input_sextractor=`find . -name sexcat_sexcat-*.fits | head -n 1`
+command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor output" "$VERBOSE" "$ID"
+
+## Tiles
+command_sp "$SP_ROOT/shapepipe_run.py -c $SP_CONFIG/config_tile.ini" "Run ShapePipe 5/5 (tile: everything)" "$VERBOSE" "$ID"
+
+
+# module and pipeline log files
+upload_logs "$ID" "$VERBOSE"
 
 
 ## Upload results
 
-# psfex
-upl=$OUTPUT/*/psfex_runner/output/star_selection-*
-n_upl=(`ls -l $upl | wc`)
-command "$VCP $upl vos:cfis/cosmostat/kilbinger/psfex" "Upload psfex results, $n_up files"
+# psfex for diagnostics, validation with leakage
+upl=$output_rel/*/psfex_runner/output/star_selection-*
+upload "psfex" "$ID" "$VERBOSE" "${upl[@]}"
 
-# psefxinterp for validation
-upl=$OUTPUT/*/psfexinterp_runner/output/validation_psf*
-n_upl=(`ls -l $upl | wc`)
-command "$VCP $upl vos:cfis/cosmostat/kilbinger/psfexinterp" "Upload psfexinterp results, $n_up files"
+# psefxinterp for validation with residuals, rho stats
+upl=$output_rel/*/psfexinterp_runner/output/validation_psf*
+upload "psfexinterp" "$ID" "$VERBOSE" "${upl[@]}"
 
-# module log files
-upl=$OUTPUT/*/*/logs
-n_upl=(`ls -l $upl | wc`)
-command "$VCP $upl vos:cfis/cosmostat/kilbinger/logs" "Upload module logs, $n_up files"
+# SETools stats and plots
+upl=$output_rel/*/setools_runner/output/stat/*
+upload "setools_stat" "$ID" "$VERBOSE" "${upl[@]}"
+upl=$output_rel/*/setools_runner/output/plot/*
+upload "setools_plot" "$ID" "$VERBOSE" "${upl[@]}"
 
-upl=$OUTPUT/*/logs
-n_upl=(`ls -l $upl | wc`)
-command "$VCP $upl vos:cfis/cosmostat/kilbinger/logs" "Upload shapepipe logs, $n_up files"
+# shapes
+if [ -e $output_rel/*/ngmix_runner/output ]; then
+   n_file=(`ls -l $output_rel/*/ngmix_runner/output | wc`)
+   if [ "$n_file" == 1 ]; then
+      if [ $STOP == 1 ]; then
+         echo "Existing script, no ngmix FITS file found in ngmix output dir"
+         exit 97
+      fi
+   else
+      upl=$output_rel/*/ngmix_runner/output/ngmix-*
+      n_upl=(`ls -l ${upl[@]} | wc`)
+      if [ $n_upl != $n_tile ]; then
+         echo  "Warning: number of ngmix files found ($n_upl) does not match expectation ($n_tile)"
+      fi
+      upload "ngmix" "$ID" "$VERBOSE" "${upl[@]}"
+   fi
+else
+   if [ $STOP == 1 ]; then
+      echo "Existing script, no ngmix output dir found"
+      exit 98
+   fi
+fi
+
 echo "End"
