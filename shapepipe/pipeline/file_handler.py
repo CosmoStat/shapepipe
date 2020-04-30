@@ -419,7 +419,7 @@ class FileHandler(object):
         ----------
         module: str
             Module name
-        property: str
+        property : str
             Property name
 
         Returns
