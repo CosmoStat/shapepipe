@@ -417,7 +417,7 @@ class FileHandler(object):
 
         Parameters
         ----------
-        module: str
+        module : str
             Module name
         property : str
             Property name
