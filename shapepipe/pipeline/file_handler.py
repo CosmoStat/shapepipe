@@ -424,7 +424,7 @@ class FileHandler(object):
 
         Returns
         -------
-        list:
+        list
             Additional module property values
 
         """
