@@ -10,6 +10,7 @@ This module defines a class for handling pipeline wokers.
 
 import platform
 from os import getpid
+from threading import active_count
 from modopt.interface.errors import catch_error, warn
 from modopt.interface.log import set_up_log, close_log
 from shapepipe.pipeline.timeout import with_timeout
@@ -108,6 +109,7 @@ class WorkerHandler(object):
         """
 
         self.worker_dict['pid'] = getpid()
+        self.worker_dict['threads'] = active_count()
         self.worker_dict['node'] = platform.node()
         self.worker_dict['system'] = platform.system()
         self.worker_dict['machine'] = platform.machine()
@@ -133,7 +135,7 @@ class WorkerHandler(object):
 
             print(' - {} PID: {} '.format(
                   self.worker_dict['job_name'],
-                  self.worker_dict['pid'],), end='')
+                  self.worker_dict['pid']), end='')
 
             if (process_size <
                     self._config.getint('WORKER', 'PROCESS_PRINT_LIMIT')):
@@ -149,6 +151,7 @@ class WorkerHandler(object):
         self.w_log.info(' - Job Name: {}'.format(
                         self.worker_dict['job_name']))
         self.w_log.info(' - PID: {}'.format(self.worker_dict['pid']))
+        self.w_log.info(' - Threads: {}'.format(self.worker_dict['threads']))
         self.w_log.info(' - Node: {}'.format(self.worker_dict['node']))
         self.w_log.info(' - System: {}'.format(self.worker_dict['system']))
         self.w_log.info(' - Machine: {}'.format(self.worker_dict['machine']))
