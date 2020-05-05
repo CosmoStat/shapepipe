@@ -1,4 +1,19 @@
+#!/usr/bin/env python3
+
 # -*- coding: utf-8 -*-
+
+"""Script create_star_cat.py
+
+Create reference star catalogue for masking of
+bright stars and diffraction spikes
+
+:Authors: Axel Guinot, Martin Kilbinger
+
+:Date: 2019, 2020
+
+:Package: ShapePipe
+"""
+
 
 from shapepipe.pipeline.execute import execute
 
@@ -10,6 +25,38 @@ from astropy import units as u
 import re
 import os
 import sys
+
+
+def _get_wcs(header):
+    """Get WCS
+
+    Compute the astropy WCS from header manually.
+    (The purpose of this is to avoid possible incompatibility on distortion
+    convention)
+
+    Parameters
+    ----------
+    header : astropy.header
+        Image header
+
+    Returns
+    -------
+    final_wcs : astropy.wcs.WCS
+        WCS object
+    """
+
+    final_wcs = WCS(naxis=2)
+    final_wcs.wcs.ctype = [header['CTYPE1'], header['CTYPE2']]
+    try:
+        final_wcs.wcs.cunit = [header['CUNIT1'], header['CUNIT2']]
+    except:
+        final_wcs.wcs.cunit = ['deg', 'deg']
+    final_wcs.wcs.crpix = [header['CRPIX1'], header['CRPIX2']]
+    final_wcs.wcs.crval = [header['CRVAL1'], header['CRVAL2']]
+    final_wcs.wcs.cd = [[header['CD1_1'], header['CD1_2']],
+                        [header['CD2_1'], header['CD2_2']]]
+
+    return final_wcs
 
 
 def _get_image_radius(center, wcs):
@@ -26,7 +73,6 @@ def _get_image_radius(center, wcs):
     -------
     float
         The diagonal distance of the image in arcmin.
-
     """
 
     if center is None:
@@ -54,7 +100,6 @@ def SphereDist(position1, position2, wcs):
     -------
     float
         The distance in degree.
-
     """
 
     if (type(position1) is not np.ndarray) & (type(position2) is not np.ndarray):
@@ -88,7 +133,6 @@ def find_stars(position, output_name, radius=None):
     -------
     dict
         Stars dicotionnary for GSC objects in the field.
-
     """
 
     ra = position[0]
@@ -118,7 +162,7 @@ def find_stars(position, output_name, radius=None):
     # return CDS_stdout
 
 
-def main(input_dir, output_dir):
+def main(input_dir, output_dir, kind):
 
     file_list = os.listdir(input_dir)
 
@@ -126,21 +170,38 @@ def main(input_dir, output_dir):
         if 'image' not in f:
             continue
 
-        img = fits.open(input_dir + '/' + f)
-        h = img[0].header
+        # img = fits.open(input_dir + '/' + f)
 
-        w = WCS(h)
+        if kind == 'exp':
+            list_ind = range(1, 41)
+        else:
+            list_ind = [0]
 
-        img_shape = img[0].data.shape
-        img_center = np.array([img_shape[1]/2., img_shape[0]/2.])
-        wcs_center = w.all_pix2world([img_center], 1)[0]
-        astropy_center = SkyCoord(ra=wcs_center[0], dec=wcs_center[1], unit='deg')
+        for ind in list_ind:
 
-        rad = _get_image_radius(img_center, w)
+            if kind == 'exp':
+                exp_suff = '-{}'.format(ind-1)
+            else:
+                exp_suff = ''
 
-        output_name = output_dir + '/star_cat' + re.split('image', os.path.splitext(f)[0])[1] + '.cat'
+            output_name = output_dir + '/star_cat' + re.split('image', os.path.splitext(f)[0])[1] + exp_suff + '.cat'
 
-        find_stars(np.array([astropy_center.ra.value, astropy_center.dec.value]), output_name, rad)
+            if os.path.isfile(output_name):
+                continue
+
+            # h = img[ind].header
+            h = fits.getheader(input_dir + '/' + f, ind)
+
+            w = _get_wcs(h)
+
+            img_shape = (h['NAXIS2'], h['NAXIS1'])
+            img_center = np.array([img_shape[1]/2., img_shape[0]/2.])
+            wcs_center = w.all_pix2world([img_center], 1)[0]
+            astropy_center = SkyCoord(ra=wcs_center[0], dec=wcs_center[1], unit='deg')
+
+            rad = _get_image_radius(img_center, w)
+
+            find_stars(np.array([astropy_center.ra.value, astropy_center.dec.value]), output_name, rad)
 
 
 if __name__ == '__main__':
@@ -157,4 +218,11 @@ if __name__ == '__main__':
     except:
         output_path = '.'
 
-    main(input_path, output_path)
+    # Temporary fix
+    try:
+        kind = argv[3]
+    except:
+        kind = ''
+
+    main(input_path, output_path, kind)
+

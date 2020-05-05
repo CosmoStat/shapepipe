@@ -417,14 +417,14 @@ class FileHandler(object):
 
         Parameters
         ----------
-        module : str
+        module: str
             Module name
-        property : str
+        property: str
             Property name
 
         Returns
         -------
-        list
+        list:
             Additional module property values
 
         """
