@@ -1,0 +1,532 @@
+#!/usr/bin/env bash
+LC_CTYPE=en_US.utf8
+
+##############################################################################
+# Install ShapePipe Executables
+#
+# This script can only be run after the ShapePipe environment has been
+# installed.
+#
+##############################################################################
+
+version="1.1"
+
+##############################################################################
+# EXTERNAL PACKAGE VERSIONS
+##############################################################################
+
+# SExtractor Package
+sex_url="https://github.com/astromatic/sextractor/archive/2.25.0.tar.gz"
+sex_tar="2.25.0.tar.gz"
+sex_dir="sextractor-2.25.0"
+sex_bin="sex"
+
+# PSFEx Package
+psfex_url="https://github.com/astromatic/psfex/archive/3.21.1.tar.gz"
+psfex_tar="3.21.1.tar.gz"
+psfex_dir="psfex-3.21.1"
+psfex_bin="psfex"
+
+# WeightWatcher Package
+ww_url="https://www.astromatic.net/download/weightwatcher/weightwatcher-1.12.tar.gz"
+ww_tar="weightwatcher-1.12.tar.gz"
+ww_dir="weightwatcher-1.12"
+ww_bin="ww"
+
+# CDSclient Package (need Findgsc2.2)
+cdsclient_url="http://cdsarc.u-strasbg.fr/ftp/pub/sw/cdsclient.tar.gz"
+cdscleint_tar="cdsclient.tar.gz"
+cdsclient_dir="cdsclient-3.84"
+cdsclient_bin="findgsc2.2"
+
+# mpi4py Package
+mpi_url="https://github.com/mpi4py/mpi4py/archive/3.0.2.tar.gz"
+mpi_tar="3.0.2.tar.gz"
+mpi_dir="mpi4py-3.0.2"
+mpi_bin="mpiexec"
+
+# Divider line
+line="########################################################################"
+
+##############################################################################
+# SCRIPT FUNCTIONS
+##############################################################################
+
+# Function to download, and unzip and untar a package
+download_package() {
+  cd $BUILD_DIR
+  wget $1
+  tar -xzf $2
+  rm $2
+}
+
+# Function to build SExtractor with OpenBLAS
+build_sex_blas() {
+  astromatic_setup
+  cd $BUILD_DIR/$1
+  ./autogen.sh
+  ./configure --prefix=$CONDA_PREFIX --enable-openblas --with-fftw-libdir=$FFTW_LIB \
+  --with-fftw-incdir=$FFTW_INC --with-openblas-libdir=$BLAS_LIB \
+  --with-openblas-incdir=$BLAS_INC --quiet
+  make -j --quiet
+  make install
+}
+
+# Function to build SExtractor with ATLAS
+build_sex_atlas() {
+  astromatic_setup
+  cd $BUILD_DIR/$1
+  ./autogen.sh
+  if [ "$ATLAS_SEARCH" == TRUE ]
+  then
+    ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$FFTW_LIB \
+    --with-fftw-incdir=$FFTW_INC --quiet
+  else
+    ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$FFTW_LIB \
+    --with-fftw-incdir=$FFTW_INC --with-atlas-libdir=$ATLAS_LIB \
+    --with-atlas-incdir=$ATLAS_INC --quiet
+  fi
+  make -j --quiet
+  make install
+}
+
+# Function to build PSFEx with OpenBLAS
+build_psfex_blas() {
+  astromatic_setup
+  cd $BUILD_DIR/$1
+  ./autogen.sh
+  ./configure --prefix=$CONDA_PREFIX --enable-openblas --enable-plplot=no \
+  --with-fftw-libdir=$FFTW_LIB --with-fftw-incdir=$FFTW_INC \
+  --with-openblas-libdir=$BLAS_LIB --with-openblas-incdir=$BLAS_INC --quiet
+  make -j --quiet
+  make install
+}
+
+# Function to build PSFEx with ATLAS
+build_psfex_atlas() {
+  astromatic_setup
+  cd $BUILD_DIR/$1
+  ./autogen.sh
+  if [ "$ATLAS_SEARCH" == TRUE ]
+  then
+    ./configure --prefix=$CONDA_PREFIX --enable-plplot=no \
+    --with-fftw-libdir=$FFTW_LIB --with-fftw-incdir=$FFTW_INC --quiet
+  else
+    ./configure --prefix=$CONDA_PREFIX --enable-plplot=no \
+    --with-fftw-libdir=$FFTW_LIB --with-fftw-incdir=$FFTW_INC \
+    --with-atlas-libdir=$ATLAS_LIB --with-atlas-incdir=$ATLAS_INC --quiet
+  fi
+  make -j --quiet
+  make install
+}
+
+# Function to build a standard package
+build_standard() {
+  cd $BUILD_DIR/$1
+  ./configure --prefix=$CONDA_PREFIX --quiet
+  make --quiet
+  make install
+}
+
+build_mpi(){
+  cd $BUILD_DIR/$1
+  python setup.py build --mpicc=$MPI_ROOT
+  python setup.py install
+}
+
+# Check if a binary executable is already installed in the conda environment
+check_conda() {
+  if ! type -t "conda" > /dev/null
+  then
+    echo "Conda command not found, make sure it is installed before proceding."
+    exit
+  fi
+}
+
+# Check if a binary executable is already installed in the conda environment
+check_binary() {
+  if ! type -t "$CONDA_PREFIX/bin/$1" > /dev/null
+  then
+    return 0
+  else
+    echo "Executable '$1' is already installed, skipping."
+    echo ""
+    return 1
+  fi
+}
+
+# Check if a binary executable is already installed in the conda environment
+check_binary2() {
+  if type -t $1 > /dev/null
+  then
+    echo -ne "$2:\t SUCCESS\n"
+  else
+    echo -ne "$2:\t FAIL\n"
+  fi
+}
+
+# Function to report progress
+report_progress() {
+  echo ''
+  echo $line
+  echo 'Installing' $1
+  echo $line
+  echo ''
+}
+
+start() {
+  echo ''
+  echo $line
+  echo 'ShapePipe Installation Script'
+  echo ''
+  echo 'Author: Samuel Farrens'
+  echo 'Year: 2019'
+  echo 'Version:' $version
+  echo $line
+  echo ''
+}
+
+finish() {
+  echo ''
+  echo $line
+  echo 'Installation Complete!'
+  if [ "$INSTALL_SEX" == TRUE ]; then check_binary2 $sex_bin "SExtractor"; fi
+  if [ "$INSTALL_PSFEX" == TRUE ]; then check_binary2 $psfex_bin "PSFEx"; fi
+  if [ "$INSTALL_WW" == TRUE ]; then check_binary2 $ww_bin "WeightWatcher"; fi
+  if [ "$INSTALL_CDSCLIENT" == TRUE ]; then check_binary2 $cdsclient_bin "CDSclient"; fi
+  if [ "$USE_MPI" == TRUE ]; then check_binary2 $mpi_bin "MPI"; fi
+  sp_ver=$(shapepipe_run -v)
+  echo 'Version:' $sp_ver
+  echo $line
+  echo ''
+}
+
+setup() {
+  echo 'Operating System:' $SYSOS
+  echo 'Build Conda Environment:' $BUILD_ENV
+  echo 'Install SExtractor:' $INSTALL_SEX
+  echo 'Install PSFEx:' $INSTALL_PSFEX
+  echo 'Install WeightWatcher:' $INSTALL_WW
+  echo 'Install CDSclient:' $INSTALL_CDSCLIENT
+  echo 'Use MPI:' $USE_MPI
+  echo 'ShapePipe Directory:' $PIPE_DIR
+  echo 'Build Directory:' $BUILD_DIR
+  echo ''
+}
+
+astromatic_setup() {
+  echo 'FFTW Library Path:' $FFTW_LIB
+  echo 'FFTW Include Path:' $FFTW_INC
+  if [ "$use_atlas" == TRUE ]
+  then
+    echo 'ATLAS Library Path:' $ATLAS_LIB
+    echo 'ATLAS Include Path:' $ATLAS_INC
+  else
+    echo 'OpenBLAS Library Path:' $BLAS_LIB
+    echo 'OpenBLAS Include Path:' $BLAS_INC
+  fi
+  echo ''
+}
+
+##############################################################################
+# SCRIPT OPTIONS
+##############################################################################
+
+# Set variable defaults
+PIPE_DIR=$PWD
+BUILD_DIR=$PIPE_DIR/build
+BUILD_ENV=TRUE
+DEVELOP=FALSE
+INSTALL_SEX=TRUE
+INSTALL_PSFEX=TRUE
+INSTALL_WW=TRUE
+INSTALL_CDSCLIENT=TRUE
+ATLAS_SEARCH=FALSE
+use_atlas=FALSE
+USE_MPI=TRUE
+
+help="$(basename "$0") [OPTIONS]\n\n
+Options:\n
+\t-h,--help\t show this help message and exit\n
+\t-v,--version\t print script version and exit\n
+\t--pipe-dir\t set the path to the ShapePipe base directory (default is PWD)\n
+\t--build-dir\t set the path to the ShapePipe build (default is PWD/build)\n
+\t--develop\t option to install additional development packages\n
+\t--no-env\t do not build Conda environment\n
+\t--no-sex\t do not build SExtractor\n
+\t--no-psfex\t do not build PSFEx\n
+\t--no-ww\t\t do not build WeightWatcher\n
+\t--no-cds\t do not build CDSclient\n
+\t--no-exe\t do not build any system executables\n\n
+
+Executable Build Options:\n
+\t--fftw-lib\t path to FFTW library directory\n
+\t--fftw-inc\t path to FFTW include directory\n
+\t--blas-lib\t path to OpenBLAS library directory\n
+\t--blas-inc\t path to OpenBLAS include directory\n
+\t--atlas-lib\t path to ATLAS library directory\n
+\t--atlas-inc\t path to ATLAS include directory\n
+\t--atlas-search\t search system path for ATLAS directories\n
+
+MPI Build Options:\n
+\t--no_mpi\t do not use MPI\n
+\t--mpi_root\t path to MPI installation\n\n
+
+"
+
+# Parse command line options
+for i in "$@"
+do
+case $i in
+    -h|--help)
+    start
+    echo -ne $help
+    shift
+    exit
+    ;;
+    -v|--version)
+    echo $(basename "$0") $version
+    shift
+    exit
+    ;;
+    --pipe-dir=*)
+    PIPE_DIR="${i#*=}"
+    shift
+    ;;
+    --build-dir=*)
+    BUILD_DIR="${i#*=}"
+    shift
+    ;;
+    --develop)
+    DEVELOP=TRUE
+    shift
+    ;;
+    --no-env)
+    BUILD_ENV=FALSE
+    shift
+    ;;
+    --no-sex)
+    INSTALL_SEX=FALSE
+    shift
+    ;;
+    --no-psfex)
+    INSTALL_PSFEX=FALSE
+    shift
+    ;;
+    --no-ww)
+    INSTALL_WW=FALSE
+    shift
+    ;;
+    --no-cds)
+    INSTALL_CDSCLIENT=FALSE
+    shift
+    ;;
+    --fftw-lib=*)
+    FFTW_LIB="${i#*=}"
+    shift
+    ;;
+    --fftw-inc=*)
+    FFTW_INC="${i#*=}"
+    shift
+    ;;
+    --blas-lib=*)
+    BLAS_LIB="${i#*=}"
+    shift
+    ;;
+    --blas-inc=*)
+    BLAS_INC="${i#*=}"
+    shift
+    ;;
+    --atlas-lib=*)
+    ATLAS_LIB="${i#*=}"
+    shift
+    ;;
+    --atlas-inc=*)
+    ATLAS_INC="${i#*=}"
+    shift
+    ;;
+    --atlas-search)
+    ATLAS_SEARCH=TRUE
+    shift
+    ;;
+    --no-mpi)
+    USE_MPI=FALSE
+    shift
+    ;;
+    --mpi-root=*)
+    MPI_ROOT="${i#*=}"
+    shift
+    ;;
+    --no-exe)
+    INSTALL_SEX=FALSE
+    INSTALL_PSFEX=FALSE
+    INSTALL_WW=FALSE
+    INSTALL_CDSCLIENT=FALSE
+    shift
+    ;;
+    *)
+    echo "Invalid option, see help!"
+    exit 1
+    ;;
+esac
+done
+
+##############################################################################
+# CREATE CONDA ENVIRONMENT
+##############################################################################
+
+# Start script
+start
+
+# Check if conda is installed
+check_conda
+
+# Find the operating system
+case "$OSTYPE" in
+  darwin*)
+  SYSOS="macOS"
+  ;;
+  linux*)
+  SYSOS="LINUX"
+  ;;
+  *)
+  echo "unknown: $OSTYPE"
+  exit 1
+  ;;
+esac
+
+if [ ! -z "$ATLAS_LIB" ] || [ "$ATLAS_SEARCH" == TRUE ]
+then
+  use_atlas=TRUE
+fi
+
+# Create build directory if it does not already exist
+if [ ! -d "$BUILD_DIR" ]
+then
+  mkdir $BUILD_DIR
+fi
+
+# Print script set-up
+setup
+
+# Build conda environment
+if [ "$BUILD_ENV" == TRUE ]
+then
+  report_progress 'ShapePipe Environment'
+  conda env create -f environment.yml
+fi
+
+# Activate conda environment
+source activate shapepipe
+echo "Activating Conda environment" $CONDA_PREFIX
+
+if [ -z "$FFTW_LIB" ]; then FFTW_LIB=$CONDA_PREFIX/lib; fi
+if [ -z "$FFTW_INC" ]; then FFTW_INC=$CONDA_PREFIX/include; fi
+if [ -z "$BLAS_LIB" ]; then BLAS_LIB=$CONDA_PREFIX/lib; fi
+if [ -z "$BLAS_INC" ]; then BLAS_INC=$CONDA_PREFIX/include; fi
+
+##############################################################################
+# INSTALL DEVELOPER PACKAGES
+##############################################################################
+
+# Install development packages
+if [ "$DEVELOP" == TRUE ]
+then
+  report_progress 'Developer Packages'
+  pip install numpydoc pytest pytest-cov pytest-codestyle sphinx sphinx-rtd-theme
+fi
+
+##############################################################################
+# INSTALL MACOS REQUIRMENTS
+##############################################################################
+
+# Set up macOS environment
+if [ "$SYSOS" == "macOS" ]
+then
+  report_progress 'macOS Requirements'
+  conda install -n shapepipe wget -y
+  conda install -n shapepipe automake autoconf libtool -y
+  export C_INCLUDE_PATH=$CONDA_PREFIX/include
+  export CFLAGS="-Wl,-rpath,$CONDA_PREFIX/lib"
+fi
+
+##############################################################################
+# INSTALL MPI REQUIRMENTS
+##############################################################################
+
+# Install mpi4py
+if [ "$USE_MPI" == TRUE ]
+then
+  report_progress 'MPI'
+  if [ -z "$MPI_ROOT" ]
+  then
+    conda install -n shapepipe -c conda-forge "mpi4py>=3.0.1" -y
+  else
+    download_package $mpi_url $mpi_tar
+    build_mpi $mpi_dir
+  fi
+fi
+
+##############################################################################
+# BUILD EXTERNAL EXECUTABLES
+##############################################################################
+
+# Build SExtractor
+if [ "$INSTALL_SEX" == TRUE ] && check_binary $sex_bin
+then
+  report_progress 'SExtractor'
+  conda install -n shapepipe -c conda-forge fftw -y
+  download_package $sex_url $sex_tar
+  if [ "$use_atlas" == TRUE ]
+  then
+    build_sex_atlas $sex_dir
+  else
+    conda install -n shapepipe -c conda-forge openblas -y
+    build_sex_blas $sex_dir
+  fi
+fi
+
+# Build PSFEx
+if [ "$INSTALL_PSFEX" == TRUE ] && check_binary $psfex_bin
+then
+  report_progress 'PSFEx'
+  conda install cmake -y
+  conda install libpng -y
+  conda install -n shapepipe -c conda-forge fftw -y
+  download_package $psfex_url $psfex_tar
+  if [ "$use_atlas" == TRUE ]
+  then
+    build_psfex_atlas $psfex_dir
+  else
+    conda install -n shapepipe -c conda-forge openblas -y
+    build_psfex_blas $psfex_dir
+  fi
+fi
+
+# Build WeightWatcher
+if [ "$INSTALL_WW" == TRUE ] && check_binary $ww_bin
+then
+  report_progress 'WeightWatcher'
+  download_package $ww_url $ww_tar
+  build_standard $ww_dir
+fi
+
+# Build CDSclient
+if [ "$INSTALL_CDSCLIENT" == TRUE ] && check_binary $cdsclient_bin
+then
+  report_progress 'CDSclient'
+  download_package $cdsclient_url $cdscleint_tar
+  build_standard $cdsclient_dir
+fi
+
+##############################################################################
+# INSTALL SHAPEPIPE LIBRARY
+##############################################################################
+
+report_progress 'ShapePipe'
+cd $PIPE_DIR
+python setup.py install
+ln -s $PWD/shapepipe_run.py $CONDA_PREFIX/bin/shapepipe_run
+finish
+
+##############################################################################

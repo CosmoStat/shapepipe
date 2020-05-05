@@ -1,0 +1,305 @@
+/var/spool/torque/mom_priv/jobs/16274.cmaster.SC: line 23: cd: /home/guinot/ShapePipe: No such file or directory
+
+-------------------------------------------------------------------------------
+[1m[36m
+ _______  __   __  _______  _______  _______  _______  ___   _______  _______
+|       ||  | |  ||   _   ||       ||       ||       ||   | |       ||       |
+|  _____||  |_|  ||  |_|  ||    _  ||    ___||    _  ||   | |    _  ||    ___|
+| |_____ |       ||       ||   |_| ||   |___ |   |_| ||   | |   |_| ||   |___
+|_____  ||       ||       ||    ___||    ___||    ___||   | |    ___||    ___|
+ _____| ||   _   ||   _   ||   |    |   |___ |   |    |   | |   |    |   |___
+|_______||__| |__||__| |__||___|    |_______||___|    |___| |___|    |_______|
+    [0m
+
+
+    Shape measurement pipeline developed at CosmoStat.
+
+    Authors: Samuel Farrens   <samuel.farrens@cea.fr>
+             Martin Kilbinger <martin.kilbinger@cea.fr>
+             Axel Guinot
+             Morgan Schmitz
+
+    Version: 0.0.1
+
+-------------------------------------------------------------------------------
+    
+Starting ShapePipe Run: shapepipe_run_2019-03-27_17-50-35
+
+Checking Python Dependencies:
+ - numpy 1.15.4 /home/guinot/.conda/envs/shapepipe/lib/python3.6/site-packages/numpy
+ - joblib 0.13.2 /home/guinot/.conda/envs/shapepipe/lib/python3.6/site-packages/joblib
+ - astropy 3.1.2 /home/guinot/.conda/envs/shapepipe/lib/python3.6/site-packages/astropy
+ - modopt 1.2.0 /home/guinot/.conda/envs/shapepipe/lib/python3.6/site-packages/modopt
+ - sip_tpv 1.1 /home/guinot/.conda/envs/shapepipe/lib/python3.6/site-packages/sip_tpv
+
+Checking System Executables:
+
+Checking Module Versions:
+ - split_exp_runner 1.0
+
+Running ShapePipe using smp
+
+Starting job handler with:
+ - Number of available CPUs: 48
+ - Total number of jobs: 242
+ - Batch size: 48
+ - Timeout Limit: 3600s
+ - Module: split_exp_runner
+ - process-2086582 PID: 283871 processing ['-2086582', '/home/guinot/ShapePipe_dir/singles2/image-2086582.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086582.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086582.fits']
+ - process-2086754 PID: 283871 processing ['-2086754', '/home/guinot/ShapePipe_dir/singles2/image-2086754.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086754.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086754.fits']
+ - process-2086590 PID: 283897 processing ['-2086590', '/home/guinot/ShapePipe_dir/singles2/image-2086590.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086590.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086590.fits']
+ - process-2086604 PID: 283897 processing ['-2086604', '/home/guinot/ShapePipe_dir/singles2/image-2086604.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086604.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086604.fits']
+ - process-2086584 PID: 283877 processing ['-2086584', '/home/guinot/ShapePipe_dir/singles2/image-2086584.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086584.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086584.fits']
+ - process-2086597 PID: 283877 processing ['-2086597', '/home/guinot/ShapePipe_dir/singles2/image-2086597.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086597.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086597.fits']
+ - process-2086579 PID: 283867 processing ['-2086579', '/home/guinot/ShapePipe_dir/singles2/image-2086579.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086579.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086579.fits']
+ - process-2086600 PID: 283867 processing ['-2086600', '/home/guinot/ShapePipe_dir/singles2/image-2086600.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086600.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086600.fits']
+ - process-2086575 PID: 283864 processing ['-2086575', '/home/guinot/ShapePipe_dir/singles2/image-2086575.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086575.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086575.fits']
+ - process-2086592 PID: 283864 processing ['-2086592', '/home/guinot/ShapePipe_dir/singles2/image-2086592.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086592.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086592.fits']
+ - process-2086283 PID: 283851 processing ['-2086283', '/home/guinot/ShapePipe_dir/singles2/image-2086283.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086283.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086283.fits']
+ - process-2086603 PID: 283851 processing ['-2086603', '/home/guinot/ShapePipe_dir/singles2/image-2086603.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086603.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086603.fits']
+ - process-2086576 PID: 283863 processing ['-2086576', '/home/guinot/ShapePipe_dir/singles2/image-2086576.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086576.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086576.fits']
+ - process-2086606 PID: 283863 processing ['-2086606', '/home/guinot/ShapePipe_dir/singles2/image-2086606.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086606.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086606.fits']
+ - process-2079623 PID: 283843 processing ['-2079623', '/home/guinot/ShapePipe_dir/singles2/image-2079623.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2079623.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2079623.fits']
+ - process-2086593 PID: 283843 processing ['-2086593', '/home/guinot/ShapePipe_dir/singles2/image-2086593.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086593.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086593.fits']
+ - process-2086585 PID: 283885 processing ['-2086585', '/home/guinot/ShapePipe_dir/singles2/image-2086585.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086585.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086585.fits']
+ - process-2086598 PID: 283885 processing ['-2086598', '/home/guinot/ShapePipe_dir/singles2/image-2086598.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086598.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086598.fits']
+ - process-2086275 PID: 283852 processing ['-2086275', '/home/guinot/ShapePipe_dir/singles2/image-2086275.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086275.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086275.fits']
+ - process-2086599 PID: 283852 processing ['-2086599', '/home/guinot/ShapePipe_dir/singles2/image-2086599.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086599.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086599.fits']
+ - process-2086269 PID: 283845 processing ['-2086269', '/home/guinot/ShapePipe_dir/singles2/image-2086269.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086269.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086269.fits']
+ - process-2086595 PID: 283845 processing ['-2086595', '/home/guinot/ShapePipe_dir/singles2/image-2086595.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086595.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086595.fits']
+ - process-2079616 PID: 283838 processing ['-2079616', '/home/guinot/ShapePipe_dir/singles2/image-2079616.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2079616.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2079616.fits']
+ - process-2086602 PID: 283838 processing ['-2086602', '/home/guinot/ShapePipe_dir/singles2/image-2086602.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086602.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086602.fits']
+ - process-2086286 PID: 283853 processing ['-2086286', '/home/guinot/ShapePipe_dir/singles2/image-2086286.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086286.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086286.fits']
+ - process-2086763 PID: 283853 processing ['-2086763', '/home/guinot/ShapePipe_dir/singles2/image-2086763.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086763.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086763.fits']
+ - process-2079617 PID: 283834 processing ['-2079617', '/home/guinot/ShapePipe_dir/singles2/image-2079617.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2079617.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2079617.fits']
+ - process-2086762 PID: 283834 processing ['-2086762', '/home/guinot/ShapePipe_dir/singles2/image-2086762.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086762.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086762.fits']
+ - process-2079621 PID: 283839 processing ['-2079621', '/home/guinot/ShapePipe_dir/singles2/image-2079621.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2079621.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2079621.fits']
+ - process-2086745 PID: 283839 processing ['-2086745', '/home/guinot/ShapePipe_dir/singles2/image-2086745.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086745.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086745.fits']
+ - process-2086577 PID: 283866 processing ['-2086577', '/home/guinot/ShapePipe_dir/singles2/image-2086577.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086577.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086577.fits']
+ - process-2086610 PID: 283866 processing ['-2086610', '/home/guinot/ShapePipe_dir/singles2/image-2086610.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086610.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086610.fits']
+ - process-2079619 PID: 283836 processing ['-2079619', '/home/guinot/ShapePipe_dir/singles2/image-2079619.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2079619.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2079619.fits']
+ - process-2086607 PID: 283836 processing ['-2086607', '/home/guinot/ShapePipe_dir/singles2/image-2086607.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086607.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086607.fits']
+ - process-2086268 PID: 283842 processing ['-2086268', '/home/guinot/ShapePipe_dir/singles2/image-2086268.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086268.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086268.fits']
+ - process-2086747 PID: 283842 processing ['-2086747', '/home/guinot/ShapePipe_dir/singles2/image-2086747.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086747.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086747.fits']
+ - process-2086322 PID: 283859 processing ['-2086322', '/home/guinot/ShapePipe_dir/singles2/image-2086322.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086322.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086322.fits']
+ - process-2086757 PID: 283859 processing ['-2086757', '/home/guinot/ShapePipe_dir/singles2/image-2086757.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086757.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086757.fits']
+ - process-2086587 PID: 283894 processing ['-2086587', '/home/guinot/ShapePipe_dir/singles2/image-2086587.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086587.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086587.fits']
+ - process-2086779 PID: 283894 processing ['-2086779', '/home/guinot/ShapePipe_dir/singles2/image-2086779.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086779.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086779.fits']
+ - process-2086289 PID: 283857 processing ['-2086289', '/home/guinot/ShapePipe_dir/singles2/image-2086289.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086289.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086289.fits']
+ - process-2086772 PID: 283857 processing ['-2086772', '/home/guinot/ShapePipe_dir/singles2/image-2086772.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086772.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086772.fits']
+ - process-2086589 PID: 283892 processing ['-2086589', '/home/guinot/ShapePipe_dir/singles2/image-2086589.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086589.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086589.fits']
+ - process-2086746 PID: 283892 processing ['-2086746', '/home/guinot/ShapePipe_dir/singles2/image-2086746.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086746.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086746.fits']
+ - process-2079618 PID: 283837 processing ['-2079618', '/home/guinot/ShapePipe_dir/singles2/image-2079618.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2079618.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2079618.fits']
+ - process-2086780 PID: 283837 processing ['-2086780', '/home/guinot/ShapePipe_dir/singles2/image-2086780.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086780.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086780.fits']
+ - process-2086272 PID: 283847 processing ['-2086272', '/home/guinot/ShapePipe_dir/singles2/image-2086272.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086272.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086272.fits']
+ - process-2086594 PID: 283847 processing ['-2086594', '/home/guinot/ShapePipe_dir/singles2/image-2086594.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086594.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086594.fits']
+ - process-2079624 PID: 283844 processing ['-2079624', '/home/guinot/ShapePipe_dir/singles2/image-2079624.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2079624.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2079624.fits']
+ - process-2086601 PID: 283844 processing ['-2086601', '/home/guinot/ShapePipe_dir/singles2/image-2086601.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086601.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086601.fits']
+ - process-2079622 PID: 283841 processing ['-2079622', '/home/guinot/ShapePipe_dir/singles2/image-2079622.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2079622.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2079622.fits']
+ - process-2086768 PID: 283841 processing ['-2086768', '/home/guinot/ShapePipe_dir/singles2/image-2086768.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086768.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086768.fits']
+ - process-2086583 PID: 283878 processing ['-2086583', '/home/guinot/ShapePipe_dir/singles2/image-2086583.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086583.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086583.fits']
+ - process-2086605 PID: 283878 processing ['-2086605', '/home/guinot/ShapePipe_dir/singles2/image-2086605.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086605.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086605.fits']
+ - process-2079613 PID: 283833 processing ['-2079613', '/home/guinot/ShapePipe_dir/singles2/image-2079613.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2079613.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2079613.fits']
+ - process-2086761 PID: 283833 processing ['-2086761', '/home/guinot/ShapePipe_dir/singles2/image-2086761.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086761.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086761.fits']
+ - process-2086591 PID: 283899 processing ['-2086591', '/home/guinot/ShapePipe_dir/singles2/image-2086591.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086591.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086591.fits']
+ - process-2086748 PID: 283899 processing ['-2086748', '/home/guinot/ShapePipe_dir/singles2/image-2086748.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086748.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086748.fits']
+ - process-2086581 PID: 283870 processing ['-2086581', '/home/guinot/ShapePipe_dir/singles2/image-2086581.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086581.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086581.fits']
+ - process-2086769 PID: 283870 processing ['-2086769', '/home/guinot/ShapePipe_dir/singles2/image-2086769.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086769.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086769.fits']
+ - process-2086586 PID: 283887 processing ['-2086586', '/home/guinot/ShapePipe_dir/singles2/image-2086586.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086586.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086586.fits']
+ - process-2086770 PID: 283887 processing ['-2086770', '/home/guinot/ShapePipe_dir/singles2/image-2086770.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086770.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086770.fits']
+ - process-2086574 PID: 283862 processing ['-2086574', '/home/guinot/ShapePipe_dir/singles2/image-2086574.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086574.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086574.fits']
+ - process-2086765 PID: 283862 processing ['-2086765', '/home/guinot/ShapePipe_dir/singles2/image-2086765.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086765.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086765.fits']
+ - process-2086270 PID: 283846 processing ['-2086270', '/home/guinot/ShapePipe_dir/singles2/image-2086270.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086270.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086270.fits']
+ - process-2086608 PID: 283846 processing ['-2086608', '/home/guinot/ShapePipe_dir/singles2/image-2086608.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086608.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086608.fits']
+ - process-2079620 PID: 283840 processing ['-2079620', '/home/guinot/ShapePipe_dir/singles2/image-2079620.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2079620.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2079620.fits']
+ - process-2086758 PID: 283840 processing ['-2086758', '/home/guinot/ShapePipe_dir/singles2/image-2086758.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086758.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086758.fits']
+ - process-2079615 PID: 283832 processing ['-2079615', '/home/guinot/ShapePipe_dir/singles2/image-2079615.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2079615.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2079615.fits']
+ - process-2086771 PID: 283832 processing ['-2086771', '/home/guinot/ShapePipe_dir/singles2/image-2086771.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086771.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086771.fits']
+ - process-2086578 PID: 283868 processing ['-2086578', '/home/guinot/ShapePipe_dir/singles2/image-2086578.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086578.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086578.fits']
+ - process-2086767 PID: 283868 processing ['-2086767', '/home/guinot/ShapePipe_dir/singles2/image-2086767.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086767.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086767.fits']
+ - process-2086296 PID: 283858 processing ['-2086296', '/home/guinot/ShapePipe_dir/singles2/image-2086296.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086296.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086296.fits']
+ - process-2086755 PID: 283858 processing ['-2086755', '/home/guinot/ShapePipe_dir/singles2/image-2086755.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086755.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086755.fits']
+ - process-2086285 PID: 283856 processing ['-2086285', '/home/guinot/ShapePipe_dir/singles2/image-2086285.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086285.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086285.fits']
+ - process-2086764 PID: 283856 processing ['-2086764', '/home/guinot/ShapePipe_dir/singles2/image-2086764.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086764.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086764.fits']
+ - process-2086580 PID: 283869 processing ['-2086580', '/home/guinot/ShapePipe_dir/singles2/image-2086580.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086580.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086580.fits']
+ - process-2086744 PID: 283869 processing ['-2086744', '/home/guinot/ShapePipe_dir/singles2/image-2086744.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086744.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086744.fits']
+ - process-2086284 PID: 283854 processing ['-2086284', '/home/guinot/ShapePipe_dir/singles2/image-2086284.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086284.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086284.fits']
+ - process-2086781 PID: 283854 processing ['-2086781', '/home/guinot/ShapePipe_dir/singles2/image-2086781.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086781.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086781.fits']
+ - process-2086274 PID: 283848 processing ['-2086274', '/home/guinot/ShapePipe_dir/singles2/image-2086274.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086274.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086274.fits']
+ - process-2086743 PID: 283848 processing ['-2086743', '/home/guinot/ShapePipe_dir/singles2/image-2086743.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086743.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086743.fits']
+ - process-2086588 PID: 283889 processing ['-2086588', '/home/guinot/ShapePipe_dir/singles2/image-2086588.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086588.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086588.fits']
+ - process-2086778 PID: 283889 processing ['-2086778', '/home/guinot/ShapePipe_dir/singles2/image-2086778.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086778.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086778.fits']
+ - process-2086573 PID: 283861 processing ['-2086573', '/home/guinot/ShapePipe_dir/singles2/image-2086573.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086573.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086573.fits']
+ - process-2086777 PID: 283861 processing ['-2086777', '/home/guinot/ShapePipe_dir/singles2/image-2086777.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086777.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086777.fits']
+ - process-2086273 PID: 283850 processing ['-2086273', '/home/guinot/ShapePipe_dir/singles2/image-2086273.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086273.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086273.fits']
+ - process-2086776 PID: 283850 processing ['-2086776', '/home/guinot/ShapePipe_dir/singles2/image-2086776.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086776.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086776.fits']
+ - process-2099936 PID: 283850 processing ['-2099936', '/home/guinot/ShapePipe_dir/singles2/image-2099936.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2099936.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2099936.fits']
+ - process-2086323 PID: 283860 processing ['-2086323', '/home/guinot/ShapePipe_dir/singles2/image-2086323.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086323.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086323.fits']
+ - process-2086766 PID: 283860 processing ['-2086766', '/home/guinot/ShapePipe_dir/singles2/image-2086766.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086766.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086766.fits']
+ - process-2104126 PID: 283860 processing ['-2104126', '/home/guinot/ShapePipe_dir/singles2/image-2104126.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104126.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104126.fits']
+ - process-2086271 PID: 283849 processing ['-2086271', '/home/guinot/ShapePipe_dir/singles2/image-2086271.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086271.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086271.fits']
+ - process-2086760 PID: 283849 processing ['-2086760', '/home/guinot/ShapePipe_dir/singles2/image-2086760.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086760.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086760.fits']
+ - process-2099945 PID: 283849 processing ['-2099945', '/home/guinot/ShapePipe_dir/singles2/image-2099945.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2099945.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2099945.fits']
+ - process-2086287 PID: 283855 processing ['-2086287', '/home/guinot/ShapePipe_dir/singles2/image-2086287.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086287.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086287.fits']
+ - process-2086759 PID: 283855 processing ['-2086759', '/home/guinot/ShapePipe_dir/singles2/image-2086759.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086759.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086759.fits']
+ - process-2104123 PID: 283855 processing ['-2104123', '/home/guinot/ShapePipe_dir/singles2/image-2104123.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104123.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104123.fits']
+ - process-2086796 PID: 284749 processing ['-2086796', '/home/guinot/ShapePipe_dir/singles2/image-2086796.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086796.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086796.fits']
+ - process-2104269 PID: 284749 processing ['-2104269', '/home/guinot/ShapePipe_dir/singles2/image-2104269.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104269.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104269.fits']
+ - process-2086797 PID: 284766 processing ['-2086797', '/home/guinot/ShapePipe_dir/singles2/image-2086797.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086797.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086797.fits']
+ - process-2104272 PID: 284766 processing ['-2104272', '/home/guinot/ShapePipe_dir/singles2/image-2104272.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104272.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104272.fits']
+ - process-2086783 PID: 284719 processing ['-2086783', '/home/guinot/ShapePipe_dir/singles2/image-2086783.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086783.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086783.fits']
+ - process-2104273 PID: 284719 processing ['-2104273', '/home/guinot/ShapePipe_dir/singles2/image-2104273.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104273.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104273.fits']
+ - process-2099933 PID: 284799 processing ['-2099933', '/home/guinot/ShapePipe_dir/singles2/image-2099933.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2099933.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2099933.fits']
+ - process-2104297 PID: 284799 processing ['-2104297', '/home/guinot/ShapePipe_dir/singles2/image-2104297.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104297.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104297.fits']
+ - process-2091325 PID: 284783 processing ['-2091325', '/home/guinot/ShapePipe_dir/singles2/image-2091325.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2091325.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2091325.fits']
+ - process-2104308 PID: 284783 processing ['-2104308', '/home/guinot/ShapePipe_dir/singles2/image-2104308.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104308.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104308.fits']
+ - process-2099947 PID: 284900 processing ['-2099947', '/home/guinot/ShapePipe_dir/singles2/image-2099947.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2099947.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2099947.fits']
+ - process-2105224 PID: 284900 processing ['-2105224', '/home/guinot/ShapePipe_dir/singles2/image-2105224.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105224.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105224.fits']
+ - process-2104132 PID: 285007 processing ['-2104132', '/home/guinot/ShapePipe_dir/singles2/image-2104132.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104132.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104132.fits']
+ - process-2105223 PID: 285007 processing ['-2105223', '/home/guinot/ShapePipe_dir/singles2/image-2105223.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105223.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105223.fits']
+ - process-2099931 PID: 284793 processing ['-2099931', '/home/guinot/ShapePipe_dir/singles2/image-2099931.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2099931.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2099931.fits']
+ - process-2104531 PID: 284793 processing ['-2104531', '/home/guinot/ShapePipe_dir/singles2/image-2104531.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104531.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104531.fits']
+ - process-2099942 PID: 284862 processing ['-2099942', '/home/guinot/ShapePipe_dir/singles2/image-2099942.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2099942.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2099942.fits']
+ - process-2105217 PID: 284862 processing ['-2105217', '/home/guinot/ShapePipe_dir/singles2/image-2105217.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105217.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105217.fits']
+ - process-2099939 PID: 284835 processing ['-2099939', '/home/guinot/ShapePipe_dir/singles2/image-2099939.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2099939.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2099939.fits']
+ - process-2104307 PID: 284835 processing ['-2104307', '/home/guinot/ShapePipe_dir/singles2/image-2104307.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104307.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104307.fits']
+ - process-2104147 PID: 285086 processing ['-2104147', '/home/guinot/ShapePipe_dir/singles2/image-2104147.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104147.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104147.fits']
+ - process-2105405 PID: 285086 processing ['-2105405', '/home/guinot/ShapePipe_dir/singles2/image-2105405.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105405.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105405.fits']
+ - process-2086793 PID: 284730 processing ['-2086793', '/home/guinot/ShapePipe_dir/singles2/image-2086793.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086793.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086793.fits']
+ - process-2105218 PID: 284730 processing ['-2105218', '/home/guinot/ShapePipe_dir/singles2/image-2105218.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105218.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105218.fits']
+ - process-2099946 PID: 284897 processing ['-2099946', '/home/guinot/ShapePipe_dir/singles2/image-2099946.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2099946.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2099946.fits']
+ - process-2105230 PID: 284897 processing ['-2105230', '/home/guinot/ShapePipe_dir/singles2/image-2105230.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105230.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105230.fits']
+ - process-2099932 PID: 284796 processing ['-2099932', '/home/guinot/ShapePipe_dir/singles2/image-2099932.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2099932.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2099932.fits']
+ - process-2105220 PID: 284796 processing ['-2105220', '/home/guinot/ShapePipe_dir/singles2/image-2105220.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105220.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105220.fits']
+ - process-2104148 PID: 285099 processing ['-2104148', '/home/guinot/ShapePipe_dir/singles2/image-2104148.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104148.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104148.fits']
+ - process-2105399 PID: 285099 processing ['-2105399', '/home/guinot/ShapePipe_dir/singles2/image-2105399.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105399.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105399.fits']
+ - process-2099935 PID: 284829 processing ['-2099935', '/home/guinot/ShapePipe_dir/singles2/image-2099935.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2099935.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2099935.fits']
+ - process-2105227 PID: 284829 processing ['-2105227', '/home/guinot/ShapePipe_dir/singles2/image-2105227.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105227.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105227.fits']
+ - process-2104134 PID: 285029 processing ['-2104134', '/home/guinot/ShapePipe_dir/singles2/image-2104134.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104134.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104134.fits']
+ - process-2105382 PID: 285029 processing ['-2105382', '/home/guinot/ShapePipe_dir/singles2/image-2105382.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105382.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105382.fits']
+ - process-2104135 PID: 285038 processing ['-2104135', '/home/guinot/ShapePipe_dir/singles2/image-2104135.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104135.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104135.fits']
+ - process-2105231 PID: 285038 processing ['-2105231', '/home/guinot/ShapePipe_dir/singles2/image-2105231.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105231.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105231.fits']
+ - process-2104140 PID: 285056 processing ['-2104140', '/home/guinot/ShapePipe_dir/singles2/image-2104140.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104140.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104140.fits']
+ - process-2105396 PID: 285056 processing ['-2105396', '/home/guinot/ShapePipe_dir/singles2/image-2105396.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105396.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105396.fits']
+ - process-2086782 PID: 284709 processing ['-2086782', '/home/guinot/ShapePipe_dir/singles2/image-2086782.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086782.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086782.fits']
+ - process-2105219 PID: 284709 processing ['-2105219', '/home/guinot/ShapePipe_dir/singles2/image-2105219.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105219.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105219.fits']
+ - process-2086794 PID: 284733 processing ['-2086794', '/home/guinot/ShapePipe_dir/singles2/image-2086794.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086794.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086794.fits']
+ - process-2105225 PID: 284733 processing ['-2105225', '/home/guinot/ShapePipe_dir/singles2/image-2105225.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105225.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105225.fits']
+ - process-2104131 PID: 285000 processing ['-2104131', '/home/guinot/ShapePipe_dir/singles2/image-2104131.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104131.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104131.fits']
+ - process-2105392 PID: 285000 processing ['-2105392', '/home/guinot/ShapePipe_dir/singles2/image-2105392.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105392.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105392.fits']
+ - process-2104146 PID: 285081 processing ['-2104146', '/home/guinot/ShapePipe_dir/singles2/image-2104146.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104146.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104146.fits']
+ - process-2105232 PID: 285081 processing ['-2105232', '/home/guinot/ShapePipe_dir/singles2/image-2105232.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105232.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105232.fits']
+ - process-2104139 PID: 285047 processing ['-2104139', '/home/guinot/ShapePipe_dir/singles2/image-2104139.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104139.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104139.fits']
+ - process-2105226 PID: 285047 processing ['-2105226', '/home/guinot/ShapePipe_dir/singles2/image-2105226.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105226.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105226.fits']
+ - process-2104128 PID: 284977 processing ['-2104128', '/home/guinot/ShapePipe_dir/singles2/image-2104128.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104128.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104128.fits']
+ - process-2105385 PID: 284977 processing ['-2105385', '/home/guinot/ShapePipe_dir/singles2/image-2105385.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105385.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105385.fits']
+ - process-2099952 PID: 284906 processing ['-2099952', '/home/guinot/ShapePipe_dir/singles2/image-2099952.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2099952.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2099952.fits']
+ - process-2105394 PID: 284906 processing ['-2105394', '/home/guinot/ShapePipe_dir/singles2/image-2105394.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105394.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105394.fits']
+ - process-2099934 PID: 284818 processing ['-2099934', '/home/guinot/ShapePipe_dir/singles2/image-2099934.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2099934.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2099934.fits']
+ - process-2105233 PID: 284818 processing ['-2105233', '/home/guinot/ShapePipe_dir/singles2/image-2105233.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105233.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105233.fits']
+ - process-2104122 PID: 284943 processing ['-2104122', '/home/guinot/ShapePipe_dir/singles2/image-2104122.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104122.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104122.fits']
+ - process-2105395 PID: 284943 processing ['-2105395', '/home/guinot/ShapePipe_dir/singles2/image-2105395.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105395.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105395.fits']
+ - process-2099940 PID: 284838 processing ['-2099940', '/home/guinot/ShapePipe_dir/singles2/image-2099940.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2099940.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2099940.fits']
+ - process-2105234 PID: 284838 processing ['-2105234', '/home/guinot/ShapePipe_dir/singles2/image-2105234.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105234.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105234.fits']
+ - process-2099953 PID: 284909 processing ['-2099953', '/home/guinot/ShapePipe_dir/singles2/image-2099953.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2099953.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2099953.fits']
+ - process-2105401 PID: 284909 processing ['-2105401', '/home/guinot/ShapePipe_dir/singles2/image-2105401.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105401.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105401.fits']
+ - process-2104133 PID: 285019 processing ['-2104133', '/home/guinot/ShapePipe_dir/singles2/image-2104133.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104133.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104133.fits']
+ - process-2105589 PID: 285019 processing ['-2105589', '/home/guinot/ShapePipe_dir/singles2/image-2105589.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105589.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105589.fits']
+ - process-2099954 PID: 284918 processing ['-2099954', '/home/guinot/ShapePipe_dir/singles2/image-2099954.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2099954.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2099954.fits']
+ - process-2105400 PID: 284918 processing ['-2105400', '/home/guinot/ShapePipe_dir/singles2/image-2105400.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105400.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105400.fits']
+ - process-2104129 PID: 284982 processing ['-2104129', '/home/guinot/ShapePipe_dir/singles2/image-2104129.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104129.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104129.fits']
+ - process-2105404 PID: 284982 processing ['-2105404', '/home/guinot/ShapePipe_dir/singles2/image-2105404.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105404.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105404.fits']
+ - process-2104120 PID: 284925 processing ['-2104120', '/home/guinot/ShapePipe_dir/singles2/image-2104120.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104120.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104120.fits']
+ - process-2105393 PID: 284925 processing ['-2105393', '/home/guinot/ShapePipe_dir/singles2/image-2105393.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105393.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105393.fits']
+ - process-2104141 PID: 285065 processing ['-2104141', '/home/guinot/ShapePipe_dir/singles2/image-2104141.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104141.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104141.fits']
+ - process-2105403 PID: 285065 processing ['-2105403', '/home/guinot/ShapePipe_dir/singles2/image-2105403.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105403.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105403.fits']
+ - process-2104121 PID: 284932 processing ['-2104121', '/home/guinot/ShapePipe_dir/singles2/image-2104121.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104121.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104121.fits']
+ - process-2105409 PID: 284932 processing ['-2105409', '/home/guinot/ShapePipe_dir/singles2/image-2105409.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105409.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105409.fits']
+ - process-2086792 PID: 284727 processing ['-2086792', '/home/guinot/ShapePipe_dir/singles2/image-2086792.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086792.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086792.fits']
+ - process-2104270 PID: 284727 processing ['-2104270', '/home/guinot/ShapePipe_dir/singles2/image-2104270.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104270.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104270.fits']
+ - process-2105603 PID: 284727 processing ['-2105603', '/home/guinot/ShapePipe_dir/singles2/image-2105603.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105603.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105603.fits']
+ - process-2099941 PID: 284859 processing ['-2099941', '/home/guinot/ShapePipe_dir/singles2/image-2099941.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2099941.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2099941.fits']
+ - process-2104532 PID: 284859 processing ['-2104532', '/home/guinot/ShapePipe_dir/singles2/image-2104532.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104532.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104532.fits']
+ - process-2105607 PID: 284859 processing ['-2105607', '/home/guinot/ShapePipe_dir/singles2/image-2105607.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105607.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105607.fits']
+ - process-2105604 PID: 285461 processing ['-2105604', '/home/guinot/ShapePipe_dir/singles2/image-2105604.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105604.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105604.fits']
+ - process-2105605 PID: 285471 processing ['-2105605', '/home/guinot/ShapePipe_dir/singles2/image-2105605.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105605.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105605.fits']
+ - process-2104306 PID: 285231 processing ['-2104306', '/home/guinot/ShapePipe_dir/singles2/image-2104306.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104306.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104306.fits']
+ - process-2105833 PID: 285231 processing ['-2105833', '/home/guinot/ShapePipe_dir/singles2/image-2105833.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105833.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105833.fits']
+ - process-2105407 PID: 285393 processing ['-2105407', '/home/guinot/ShapePipe_dir/singles2/image-2105407.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105407.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105407.fits']
+ - process-2113880 PID: 285393 processing ['-2113880', '/home/guinot/ShapePipe_dir/singles2/image-2113880.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2113880.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2113880.fits']
+ - process-2099938 PID: 284832 processing ['-2099938', '/home/guinot/ShapePipe_dir/singles2/image-2099938.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2099938.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2099938.fits']
+ - process-2105383 PID: 284832 processing ['-2105383', '/home/guinot/ShapePipe_dir/singles2/image-2105383.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105383.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105383.fits']
+ - process-2113832 PID: 284832 processing ['-2113832', '/home/guinot/ShapePipe_dir/singles2/image-2113832.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2113832.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2113832.fits']
+ - process-2105384 PID: 285320 processing ['-2105384', '/home/guinot/ShapePipe_dir/singles2/image-2105384.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105384.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105384.fits']
+ - process-2114067 PID: 285320 processing ['-2114067', '/home/guinot/ShapePipe_dir/singles2/image-2114067.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2114067.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2114067.fits']
+ - process-2105406 PID: 285389 processing ['-2105406', '/home/guinot/ShapePipe_dir/singles2/image-2105406.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105406.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105406.fits']
+ - process-2120994 PID: 285389 processing ['-2120994', '/home/guinot/ShapePipe_dir/singles2/image-2120994.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2120994.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2120994.fits']
+ - process-2099948 PID: 284903 processing ['-2099948', '/home/guinot/ShapePipe_dir/singles2/image-2099948.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2099948.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2099948.fits']
+ - process-2105402 PID: 284903 processing ['-2105402', '/home/guinot/ShapePipe_dir/singles2/image-2105402.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105402.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105402.fits']
+ - process-2159302 PID: 284903 processing ['-2159302', '/home/guinot/ShapePipe_dir/singles2/image-2159302.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2159302.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2159302.fits']
+ - process-2104127 PID: 284968 processing ['-2104127', '/home/guinot/ShapePipe_dir/singles2/image-2104127.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104127.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104127.fits']
+ - process-2105398 PID: 284968 processing ['-2105398', '/home/guinot/ShapePipe_dir/singles2/image-2105398.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105398.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105398.fits']
+ - process-2159709 PID: 284968 processing ['-2159709', '/home/guinot/ShapePipe_dir/singles2/image-2159709.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2159709.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2159709.fits']
+All processes complete
+
+A total of 0 errors were recorded.
+Finishing ShapePipe Run
+
+-------------------------------------------------------------------------------
+    
+ - process-2105830 PID: 285558 processing ['-2105830', '/home/guinot/ShapePipe_dir/singles2/image-2105830.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105830.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105830.fits']
+ - process-2105829 PID: 285546 processing ['-2105829', '/home/guinot/ShapePipe_dir/singles2/image-2105829.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105829.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105829.fits']
+ - process-2079614 PID: 283835 processing ['-2079614', '/home/guinot/ShapePipe_dir/singles2/image-2079614.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2079614.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2079614.fits']
+ - process-2086596 PID: 283835 processing ['-2086596', '/home/guinot/ShapePipe_dir/singles2/image-2086596.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086596.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086596.fits']
+ - process-2086795 PID: 283835 processing ['-2086795', '/home/guinot/ShapePipe_dir/singles2/image-2086795.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086795.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086795.fits']
+ - process-2104296 PID: 283835 processing ['-2104296', '/home/guinot/ShapePipe_dir/singles2/image-2104296.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104296.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104296.fits']
+ - process-2105608 PID: 283835 processing ['-2105608', '/home/guinot/ShapePipe_dir/singles2/image-2105608.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105608.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105608.fits']
+ - process-2105606 PID: 285529 processing ['-2105606', '/home/guinot/ShapePipe_dir/singles2/image-2105606.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105606.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105606.fits']
+ - process-2105832 PID: 285576 processing ['-2105832', '/home/guinot/ShapePipe_dir/singles2/image-2105832.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105832.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105832.fits']
+ - process-2105831 PID: 285567 processing ['-2105831', '/home/guinot/ShapePipe_dir/singles2/image-2105831.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105831.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105831.fits']
+ - process-2106094 PID: 285614 processing ['-2106094', '/home/guinot/ShapePipe_dir/singles2/image-2106094.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2106094.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2106094.fits']
+ - process-2106087 PID: 285589 processing ['-2106087', '/home/guinot/ShapePipe_dir/singles2/image-2106087.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2106087.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2106087.fits']
+ - process-2106088 PID: 285592 processing ['-2106088', '/home/guinot/ShapePipe_dir/singles2/image-2106088.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2106088.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2106088.fits']
+ - process-2106090 PID: 285609 processing ['-2106090', '/home/guinot/ShapePipe_dir/singles2/image-2106090.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2106090.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2106090.fits']
+ - process-2113606 PID: 285661 processing ['-2113606', '/home/guinot/ShapePipe_dir/singles2/image-2113606.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2113606.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2113606.fits']
+ - process-2106097 PID: 285658 processing ['-2106097', '/home/guinot/ShapePipe_dir/singles2/image-2106097.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2106097.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2106097.fits']
+ - process-2113873 PID: 285695 processing ['-2113873', '/home/guinot/ShapePipe_dir/singles2/image-2113873.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2113873.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2113873.fits']
+ - process-2106095 PID: 285628 processing ['-2106095', '/home/guinot/ShapePipe_dir/singles2/image-2106095.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2106095.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2106095.fits']
+ - process-2106089 PID: 285607 processing ['-2106089', '/home/guinot/ShapePipe_dir/singles2/image-2106089.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2106089.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2106089.fits']
+ - process-2113828 PID: 285679 processing ['-2113828', '/home/guinot/ShapePipe_dir/singles2/image-2113828.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2113828.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2113828.fits']
+ - process-2113874 PID: 285698 processing ['-2113874', '/home/guinot/ShapePipe_dir/singles2/image-2113874.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2113874.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2113874.fits']
+ - process-2120993 PID: 285761 processing ['-2120993', '/home/guinot/ShapePipe_dir/singles2/image-2120993.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2120993.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2120993.fits']
+ - process-2106096 PID: 285635 processing ['-2106096', '/home/guinot/ShapePipe_dir/singles2/image-2106096.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2106096.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2106096.fits']
+ - process-2116300 PID: 285752 processing ['-2116300', '/home/guinot/ShapePipe_dir/singles2/image-2116300.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2116300.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2116300.fits']
+ - process-2116298 PID: 285740 processing ['-2116298', '/home/guinot/ShapePipe_dir/singles2/image-2116298.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2116298.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2116298.fits']
+ - process-2159301 PID: 285813 processing ['-2159301', '/home/guinot/ShapePipe_dir/singles2/image-2159301.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2159301.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2159301.fits']
+ - process-2113619 PID: 285676 processing ['-2113619', '/home/guinot/ShapePipe_dir/singles2/image-2113619.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2113619.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2113619.fits']
+ - process-2159297 PID: 285792 processing ['-2159297', '/home/guinot/ShapePipe_dir/singles2/image-2159297.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2159297.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2159297.fits']
+ - process-2159707 PID: 285849 processing ['-2159707', '/home/guinot/ShapePipe_dir/singles2/image-2159707.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2159707.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2159707.fits']
+ - process-2114073 PID: 285737 processing ['-2114073', '/home/guinot/ShapePipe_dir/singles2/image-2114073.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2114073.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2114073.fits']
+ - process-2104130 PID: 284995 processing ['-2104130', '/home/guinot/ShapePipe_dir/singles2/image-2104130.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104130.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104130.fits']
+ - process-2105408 PID: 284995 processing ['-2105408', '/home/guinot/ShapePipe_dir/singles2/image-2105408.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105408.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105408.fits']
+ - process-2113887 PID: 284995 processing ['-2113887', '/home/guinot/ShapePipe_dir/singles2/image-2113887.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2113887.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2113887.fits']
+ - process-2113881 PID: 285709 processing ['-2113881', '/home/guinot/ShapePipe_dir/singles2/image-2113881.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2113881.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2113881.fits']
+ - process-2159708 PID: 285856 processing ['-2159708', '/home/guinot/ShapePipe_dir/singles2/image-2159708.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2159708.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2159708.fits']
+ - process-2086791 PID: 284723 processing ['-2086791', '/home/guinot/ShapePipe_dir/singles2/image-2086791.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2086791.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2086791.fits']
+ - process-2104271 PID: 284723 processing ['-2104271', '/home/guinot/ShapePipe_dir/singles2/image-2104271.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2104271.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2104271.fits']
+ - process-2105591 PID: 284723 processing ['-2105591', '/home/guinot/ShapePipe_dir/singles2/image-2105591.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105591.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105591.fits']
+ - process-2159711 PID: 284723 processing ['-2159711', '/home/guinot/ShapePipe_dir/singles2/image-2159711.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2159711.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2159711.fits']
+ - process-2159298 PID: 285797 processing ['-2159298', '/home/guinot/ShapePipe_dir/singles2/image-2159298.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2159298.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2159298.fits']
+ - process-2116299 PID: 285747 processing ['-2116299', '/home/guinot/ShapePipe_dir/singles2/image-2116299.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2116299.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2116299.fits']
+ - process-2159706 PID: 285844 processing ['-2159706', '/home/guinot/ShapePipe_dir/singles2/image-2159706.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2159706.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2159706.fits']
+ - process-2114066 PID: 285734 processing ['-2114066', '/home/guinot/ShapePipe_dir/singles2/image-2114066.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2114066.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2114066.fits']
+ - process-2159176 PID: 285769 processing ['-2159176', '/home/guinot/ShapePipe_dir/singles2/image-2159176.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2159176.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2159176.fits']
+ - process-2159296 PID: 285784 processing ['-2159296', '/home/guinot/ShapePipe_dir/singles2/image-2159296.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2159296.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2159296.fits']
+ - process-2105590 PID: 285423 processing ['-2105590', '/home/guinot/ShapePipe_dir/singles2/image-2105590.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2105590.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2105590.fits']
+ - process-2159710 PID: 285423 processing ['-2159710', '/home/guinot/ShapePipe_dir/singles2/image-2159710.fits', '/home/guinot/ShapePipe_dir/singles2/weight-2159710.fits', '/home/guinot/ShapePipe_dir/singles2/flag-2159710.fits']
+* JOBID: 16274.cmaster
+* USER: guinot
+* GROUP: guinot
+* JOBNAME: shapepipe_smp_split_exp
+* SESSIONID: 283716
+* RESOURCESLIST: neednodes=n01:ppn=48,nodes=n01:ppn=48,walltime=10:00:00
+* RESOURCESUSED: cput=07:43:19,mem=80934408kb,vmem=118863044kb,walltime=00:52:05
+* QUEUE: batch
+* JOB EXIT STATUS: 0
