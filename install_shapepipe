@@ -176,12 +176,12 @@ check_binary2() {
   if type -t "$CONDA_PREFIX/bin/$1" > /dev/null
   then
     echo -ne "$2: ${GREEN}INSTALLED${NC}\n"
-    if $3
+    if [ "$3" == TRUE ]
     then
       "$CONDA_PREFIX/bin/$1" --version | head -n 1
     fi
   else
-    if $4
+    if [ "$4" == TRUE ]
     then
       echo -ne "$2: ${RED}NOT INSTALLED${NC}\n"
       ERROR=TRUE
@@ -226,7 +226,7 @@ packages() {
 
 # Function to return exit code
 exit_code() {
-  if $ERROR
+  if [ "$ERROR" == TRUE ]
   then
     exit 1
   else
