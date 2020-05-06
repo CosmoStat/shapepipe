@@ -60,7 +60,19 @@ CYAN='\033[0;36m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# Error check
+# Set variable defaults
+PIPE_DIR=$PWD
+BUILD_DIR=$PIPE_DIR/build
+BUILD_ENV=TRUE
+DEVELOP=FALSE
+VOS=FALSE
+INSTALL_SEX=TRUE
+INSTALL_PSFEX=TRUE
+INSTALL_WW=TRUE
+INSTALL_CDSCLIENT=TRUE
+ATLAS_SEARCH=FALSE
+use_atlas=FALSE
+USE_MPI=TRUE
 ERROR=FALSE
 
 ##############################################################################
@@ -183,7 +195,7 @@ check_binary2() {
   else
     if [ "$4" == TRUE ]
     then
-      echo -ne "$2: ${RED}NOT INSTALLED${NC}\n"
+      echo -ne "$2: ${RED}INSTALLATION FAILED${NC}\n"
       ERROR=TRUE
     else
       echo -ne "$2: ${YELLOW}NOT INSTALLED${NC}\n"
@@ -217,7 +229,7 @@ start() {
 # Function to report package versions
 packages() {
   check_binary2 $sex_bin "SExtractor" $sex_version $INSTALL_SEX
-  check_binary2 $psfex_bin "PSFEx" $psf_version $INSTALL_PSFEX
+  check_binary2 $psfex_bin "PSFEx" $psfex_version $INSTALL_PSFEX
   check_binary2 $ww_bin "WeightWatcher" $ww_version $INSTALL_WW
   check_binary2 $cdsclient_bin "CDSclient" $cdsclient_version $INSTALL_CDSCLIENT
   check_binary2 $mpi_bin "MPI" $mpi_version $USE_MPI
@@ -228,6 +240,7 @@ packages() {
 exit_code() {
   if [ "$ERROR" == TRUE ]
   then
+    echo "Installation failed as some packages were not properly installed."
     exit 1
   else
     exit 0
@@ -289,20 +302,6 @@ astromatic_setup() {
 ##############################################################################
 # SCRIPT OPTIONS
 ##############################################################################
-
-# Set variable defaults
-PIPE_DIR=$PWD
-BUILD_DIR=$PIPE_DIR/build
-BUILD_ENV=TRUE
-DEVELOP=FALSE
-VOS=FALSE
-INSTALL_SEX=TRUE
-INSTALL_PSFEX=TRUE
-INSTALL_WW=TRUE
-INSTALL_CDSCLIENT=TRUE
-ATLAS_SEARCH=FALSE
-use_atlas=FALSE
-USE_MPI=TRUE
 
 help="$(basename "$0") [OPTIONS]\n\n
 Options:\n

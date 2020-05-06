@@ -60,7 +60,6 @@ install:
 
 script:
     - python setup.py test
-    - ./install_shapepipe -p
 
 after_success:
     - coveralls
