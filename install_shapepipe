@@ -224,6 +224,16 @@ packages() {
   check_binary2 "shapepipe_run" "ShapePipe" TRUE TRUE
 }
 
+# Function to return exit code
+exit_code() {
+  if $ERROR
+  then
+    exit 1
+  else
+    exit 0
+  fi
+}
+
 # Function to report package versions
 package_report() {
   start
@@ -232,6 +242,7 @@ package_report() {
   packages
   pip list
   echo ''
+  exit_code
 }
 
 # Function to end the script
@@ -243,12 +254,7 @@ finish() {
   packages
   echo $line
   echo ''
-  if $ERROR
-  then
-    exit 1
-  else
-    exit 0
-  fi
+  exit_code
 }
 
 # Function to show the installation setup
