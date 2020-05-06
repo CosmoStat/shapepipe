@@ -60,6 +60,9 @@ CYAN='\033[0;36m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+# Error check
+ERROR=FALSE
+
 ##############################################################################
 # SCRIPT FUNCTIONS
 ##############################################################################
@@ -181,6 +184,7 @@ check_binary2() {
     if $4
     then
       echo -ne "$2: ${RED}NOT INSTALLED${NC}\n"
+      ERROR=TRUE
     else
       echo -ne "$2: ${YELLOW}NOT INSTALLED${NC}\n"
     fi
@@ -230,7 +234,6 @@ package_report() {
   echo ''
 }
 
-
 # Function to end the script
 finish() {
   echo ''
@@ -240,6 +243,12 @@ finish() {
   packages
   echo $line
   echo ''
+  if $ERROR
+  then
+    exit 1
+  else
+    exit 0
+  fi
 }
 
 # Function to show the installation setup
@@ -468,6 +477,7 @@ setup
 if [ "$BUILD_ENV" == TRUE ]
 then
   report_progress 'ShapePipe Environment'
+  source activate base
   conda env create -f environment.yml
 fi
 
