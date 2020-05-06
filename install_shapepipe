@@ -9,7 +9,7 @@ LC_CTYPE=en_US.utf8
 #
 ##############################################################################
 
-version="1.1"
+version="1.2"
 
 ##############################################################################
 # EXTERNAL PACKAGE VERSIONS
@@ -20,33 +20,45 @@ sex_url="https://github.com/astromatic/sextractor/archive/2.25.0.tar.gz"
 sex_tar="2.25.0.tar.gz"
 sex_dir="sextractor-2.25.0"
 sex_bin="sex"
+sex_version=TRUE
 
 # PSFEx Package
 psfex_url="https://github.com/astromatic/psfex/archive/3.21.1.tar.gz"
 psfex_tar="3.21.1.tar.gz"
 psfex_dir="psfex-3.21.1"
 psfex_bin="psfex"
+psfex_version=TRUE
 
 # WeightWatcher Package
 ww_url="https://www.astromatic.net/download/weightwatcher/weightwatcher-1.12.tar.gz"
 ww_tar="weightwatcher-1.12.tar.gz"
 ww_dir="weightwatcher-1.12"
 ww_bin="ww"
+ww_version=TRUE
 
 # CDSclient Package (need Findgsc2.2)
 cdsclient_url="http://cdsarc.u-strasbg.fr/ftp/pub/sw/cdsclient.tar.gz"
 cdscleint_tar="cdsclient.tar.gz"
 cdsclient_dir="cdsclient-3.84"
 cdsclient_bin="findgsc2.2"
+cdsclient_version=FALSE
 
 # mpi4py Package
 mpi_url="https://github.com/mpi4py/mpi4py/archive/3.0.2.tar.gz"
 mpi_tar="3.0.2.tar.gz"
 mpi_dir="mpi4py-3.0.2"
 mpi_bin="mpiexec"
+mpi_version=TRUE
 
 # Divider line
 line="########################################################################"
+
+# Text colours
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
 
 ##############################################################################
 # SCRIPT FUNCTIONS
@@ -128,13 +140,14 @@ build_standard() {
   make install
 }
 
+# Function to build mpi4pi using preinstalled MPI libraries
 build_mpi(){
   cd $BUILD_DIR/$1
   python setup.py build --mpicc=$MPI_ROOT
   python setup.py install
 }
 
-# Check if a binary executable is already installed in the conda environment
+# Check the conda executable is available
 check_conda() {
   if ! type -t "conda" > /dev/null
   then
@@ -157,23 +170,34 @@ check_binary() {
 
 # Check if a binary executable is already installed in the conda environment
 check_binary2() {
-  if type -t $1 > /dev/null
+  if type -t "$CONDA_PREFIX/bin/$1" > /dev/null
   then
-    echo -ne "$2:\t SUCCESS\n"
+    echo -ne "$2: ${GREEN}INSTALLED${NC}\n"
+    if $3
+    then
+      "$CONDA_PREFIX/bin/$1" --version | head -n 1
+    fi
   else
-    echo -ne "$2:\t FAIL\n"
+    if $4
+    then
+      echo -ne "$2: ${RED}NOT INSTALLED${NC}\n"
+    else
+      echo -ne "$2: ${YELLOW}NOT INSTALLED${NC}\n"
+    fi
   fi
+  echo ""
 }
 
 # Function to report progress
 report_progress() {
   echo ''
   echo $line
-  echo 'Installing' $1
+  echo -e "${CYAN}Installing $1${NC}"
   echo $line
   echo ''
 }
 
+# Function to start the script
 start() {
   echo ''
   echo $line
@@ -186,21 +210,39 @@ start() {
   echo ''
 }
 
+# Function to report package versions
+packages() {
+  check_binary2 $sex_bin "SExtractor" $sex_version $INSTALL_SEX
+  check_binary2 $psfex_bin "PSFEx" $psf_version $INSTALL_PSFEX
+  check_binary2 $ww_bin "WeightWatcher" $ww_version $INSTALL_WW
+  check_binary2 $cdsclient_bin "CDSclient" $cdsclient_version $INSTALL_CDSCLIENT
+  check_binary2 $mpi_bin "MPI" $mpi_version $USE_MPI
+  check_binary2 "shapepipe_run" "ShapePipe" TRUE TRUE
+}
+
+# Function to report package versions
+package_report() {
+  start
+  echo 'Package Report'
+  echo ''
+  packages
+  pip list
+  echo ''
+}
+
+
+# Function to end the script
 finish() {
   echo ''
   echo $line
   echo 'Installation Complete!'
-  if [ "$INSTALL_SEX" == TRUE ]; then check_binary2 $sex_bin "SExtractor"; fi
-  if [ "$INSTALL_PSFEX" == TRUE ]; then check_binary2 $psfex_bin "PSFEx"; fi
-  if [ "$INSTALL_WW" == TRUE ]; then check_binary2 $ww_bin "WeightWatcher"; fi
-  if [ "$INSTALL_CDSCLIENT" == TRUE ]; then check_binary2 $cdsclient_bin "CDSclient"; fi
-  if [ "$USE_MPI" == TRUE ]; then check_binary2 $mpi_bin "MPI"; fi
-  sp_ver=$(shapepipe_run -v)
-  echo 'Version:' $sp_ver
+  echo ''
+  packages
   echo $line
   echo ''
 }
 
+# Function to show the installation setup
 setup() {
   echo 'Operating System:' $SYSOS
   echo 'Build Conda Environment:' $BUILD_ENV
@@ -214,6 +256,7 @@ setup() {
   echo ''
 }
 
+# Function to show the astromatic setup
 astromatic_setup() {
   echo 'FFTW Library Path:' $FFTW_LIB
   echo 'FFTW Include Path:' $FFTW_INC
@@ -223,9 +266,7 @@ astromatic_setup() {
     echo 'ATLAS Include Path:' $ATLAS_INC
   else
     echo 'OpenBLAS Library Path:' $BLAS_LIB
-    ls $BLAS_LIB
     echo 'OpenBLAS Include Path:' $BLAS_INC
-    ls $BLAS_INC
   fi
   echo ''
 }
@@ -239,6 +280,7 @@ PIPE_DIR=$PWD
 BUILD_DIR=$PIPE_DIR/build
 BUILD_ENV=TRUE
 DEVELOP=FALSE
+VOS=FALSE
 INSTALL_SEX=TRUE
 INSTALL_PSFEX=TRUE
 INSTALL_WW=TRUE
@@ -251,9 +293,11 @@ help="$(basename "$0") [OPTIONS]\n\n
 Options:\n
 \t-h,--help\t show this help message and exit\n
 \t-v,--version\t print script version and exit\n
+\t-p,--packages\t print status of installed packages\n
 \t--pipe-dir\t set the path to the ShapePipe base directory (default is PWD)\n
 \t--build-dir\t set the path to the ShapePipe build (default is PWD/build)\n
 \t--develop\t option to install additional development packages\n
+\t--vos\t\t option to install virtual observatory software\n
 \t--no-env\t do not build Conda environment\n
 \t--no-sex\t do not build SExtractor\n
 \t--no-psfex\t do not build PSFEx\n
@@ -271,8 +315,8 @@ Executable Build Options:\n
 \t--atlas-search\t search system path for ATLAS directories\n
 
 MPI Build Options:\n
-\t--no_mpi\t do not use MPI\n
-\t--mpi_root\t path to MPI installation\n\n
+\t--no-mpi\t do not use MPI\n
+\t--mpi-root\t path to MPI installation\n\n
 
 "
 
@@ -291,6 +335,11 @@ case $i in
     shift
     exit
     ;;
+    -p|--packages)
+    package_report
+    shift
+    exit
+    ;;
     --pipe-dir=*)
     PIPE_DIR="${i#*=}"
     shift
@@ -301,6 +350,10 @@ case $i in
     ;;
     --develop)
     DEVELOP=TRUE
+    shift
+    ;;
+    --vos)
+    VOS=TRUE
     shift
     ;;
     --no-env)
@@ -439,6 +492,17 @@ then
 fi
 
 ##############################################################################
+# INSTALL THE VOS LIBRARY
+##############################################################################
+
+# Install the vos library
+if [ "$VOS" == TRUE ]
+then
+  report_progress 'vos'
+  pip install vos
+fi
+
+##############################################################################
 # INSTALL MACOS REQUIRMENTS
 ##############################################################################
 
@@ -450,6 +514,7 @@ then
   conda install -n shapepipe automake autoconf libtool -y
   export C_INCLUDE_PATH=$CONDA_PREFIX/include
   export CFLAGS="-Wl,-rpath,$CONDA_PREFIX/lib"
+  export CPPFLAGS="-Wno-everything"
 fi
 
 ##############################################################################
