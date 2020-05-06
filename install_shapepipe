@@ -223,7 +223,9 @@ astromatic_setup() {
     echo 'ATLAS Include Path:' $ATLAS_INC
   else
     echo 'OpenBLAS Library Path:' $BLAS_LIB
+    ls $BLAS_LIB
     echo 'OpenBLAS Include Path:' $BLAS_INC
+    ls $BLAS_INC
   fi
   echo ''
 }

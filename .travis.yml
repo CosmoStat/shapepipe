@@ -2,9 +2,6 @@ language: python
 sudo: required
 
 addons:
-  apt:
-    packages: $linux_packages
-      - libopenblas-dev
   homebrew:
     packages: &macos_packages
       - cmake
@@ -19,10 +16,6 @@ matrix:
       dist: xenial
       python: 3.6
       name: "Linux Xenial Python 3.6"
-      addons:
-        apt:
-          packages:
-            - *linux_packages
     - os: linux
       dist: xenial
       python: 3.7
