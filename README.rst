@@ -1,17 +1,20 @@
 ShapePipe
 =========
 
-|gitlab-ci| |python35| |python36| |python37|
+|travis| |python35| |python36| |python37|
 
 .. |gitlab-ci| image:: https://drf-gitlab.cea.fr/cosmostat/ShapePipe/badges/master/pipeline.svg
   :target: https://drf-gitlab.cea.fr/cosmostat/ShapePipe/tree/master
+
+.. |travis| image:: https://travis-ci.org/CosmoStat/shapepipe.svg?branch=master
+  :target: https://travis-ci.org/CosmoStat/shapepipe
 
 .. |python35| image:: https://img.shields.io/badge/python-3.5-yellow.svg
   :target: https://www.python.org/
 
 .. |python36| image:: https://img.shields.io/badge/python-3.6-yellow.svg
   :target: https://www.python.org/
-  
+
 .. |python37| image:: https://img.shields.io/badge/python-3.7-yellow.svg
   :target: https://www.python.org/
 
