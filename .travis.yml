@@ -2,8 +2,12 @@ language: python
 sudo: required
 
 addons:
+  apt:
+    update: true
+    packages:
+      - libopenblas-dev
   homebrew:
-    packages: &macos_packages
+    packages:
       - cmake
       - pkgconfig
       - cfitsio
@@ -20,27 +24,15 @@ matrix:
       dist: xenial
       python: 3.7
       name: "Linux Xenial Python 3.7"
-      addons:
-        apt:
-          packages:
-            - *linux_packages
     - os: linux
       dist: xenial
       python: 3.8
       name: "Linux Xenial Python 3.8"
-      addons:
-        apt:
-          packages:
-            - *linux_packages
     - os: osx
       osx_image: xcode11.3
       language: shell
       env: PYTHON_VERSION=3.8
       name: "macOS 10.14 Python 3.8"
-      addons:
-        homebrew:
-          packages:
-            - *macos_packages
 
 before_install:
     - if [ $TRAVIS_OS_NAME = 'linux' ]; then sudo apt-get update; fi
@@ -55,7 +47,10 @@ before_install:
     - conda info -a
 
 install:
-    - ./install_shapepipe --develop
+    - if [ $TRAVIS_OS_NAME = 'linux' ];
+      then ./install_shapepipe --develop --blas-lib=/usr/lib --blas-inc=/usr/include;
+      else ./install_shapepipe --develop;
+      fi
     - source activate shapepipe
 
 script:
