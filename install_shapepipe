@@ -60,6 +60,21 @@ CYAN='\033[0;36m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+# Set variable defaults
+PIPE_DIR=$PWD
+BUILD_DIR=$PIPE_DIR/build
+BUILD_ENV=TRUE
+DEVELOP=FALSE
+VOS=FALSE
+INSTALL_SEX=TRUE
+INSTALL_PSFEX=TRUE
+INSTALL_WW=TRUE
+INSTALL_CDSCLIENT=TRUE
+ATLAS_SEARCH=FALSE
+use_atlas=FALSE
+USE_MPI=TRUE
+ERROR=FALSE
+
 ##############################################################################
 # SCRIPT FUNCTIONS
 ##############################################################################
@@ -173,14 +188,15 @@ check_binary2() {
   if type -t "$CONDA_PREFIX/bin/$1" > /dev/null
   then
     echo -ne "$2: ${GREEN}INSTALLED${NC}\n"
-    if $3
+    if [ "$3" == TRUE ]
     then
       "$CONDA_PREFIX/bin/$1" --version | head -n 1
     fi
   else
-    if $4
+    if [ "$4" == TRUE ]
     then
-      echo -ne "$2: ${RED}NOT INSTALLED${NC}\n"
+      echo -ne "$2: ${RED}INSTALLATION FAILED${NC}\n"
+      ERROR=TRUE
     else
       echo -ne "$2: ${YELLOW}NOT INSTALLED${NC}\n"
     fi
@@ -213,23 +229,39 @@ start() {
 # Function to report package versions
 packages() {
   check_binary2 $sex_bin "SExtractor" $sex_version $INSTALL_SEX
-  check_binary2 $psfex_bin "PSFEx" $psf_version $INSTALL_PSFEX
+  check_binary2 $psfex_bin "PSFEx" $psfex_version $INSTALL_PSFEX
   check_binary2 $ww_bin "WeightWatcher" $ww_version $INSTALL_WW
   check_binary2 $cdsclient_bin "CDSclient" $cdsclient_version $INSTALL_CDSCLIENT
   check_binary2 $mpi_bin "MPI" $mpi_version $USE_MPI
   check_binary2 "shapepipe_run" "ShapePipe" TRUE TRUE
 }
 
+# Function to return exit code
+exit_code() {
+  if [ "$ERROR" == TRUE ]
+  then
+    echo "ShapePipe installation failed as some packages were not properly installed."
+    exit 1
+  else
+    exit 0
+  fi
+}
+
 # Function to report package versions
 package_report() {
+  INSTALL_SEX=FALSE
+  INSTALL_PSFEX=FALSE
+  INSTALL_WW=FALSE
+  INSTALL_CDSCLIENT=FALSE
+  USE_MPI=FALSE
   start
   echo 'Package Report'
   echo ''
   packages
   pip list
   echo ''
+  exit_code
 }
-
 
 # Function to end the script
 finish() {
@@ -240,6 +272,7 @@ finish() {
   packages
   echo $line
   echo ''
+  exit_code
 }
 
 # Function to show the installation setup
@@ -271,29 +304,22 @@ astromatic_setup() {
   echo ''
 }
 
+uninstall() {
+  rm -r build dist shapepipe.egg-info .eggs
+  source deactivate
+  conda remove -n shapepipe --all -y
+}
+
 ##############################################################################
 # SCRIPT OPTIONS
 ##############################################################################
-
-# Set variable defaults
-PIPE_DIR=$PWD
-BUILD_DIR=$PIPE_DIR/build
-BUILD_ENV=TRUE
-DEVELOP=FALSE
-VOS=FALSE
-INSTALL_SEX=TRUE
-INSTALL_PSFEX=TRUE
-INSTALL_WW=TRUE
-INSTALL_CDSCLIENT=TRUE
-ATLAS_SEARCH=FALSE
-use_atlas=FALSE
-USE_MPI=TRUE
 
 help="$(basename "$0") [OPTIONS]\n\n
 Options:\n
 \t-h,--help\t show this help message and exit\n
 \t-v,--version\t print script version and exit\n
 \t-p,--packages\t print status of installed packages\n
+\t--uninstall\t uninstall ShapePipe\n
 \t--pipe-dir\t set the path to the ShapePipe base directory (default is PWD)\n
 \t--build-dir\t set the path to the ShapePipe build (default is PWD/build)\n
 \t--develop\t option to install additional development packages\n
@@ -312,7 +338,7 @@ Executable Build Options:\n
 \t--blas-inc\t path to OpenBLAS include directory\n
 \t--atlas-lib\t path to ATLAS library directory\n
 \t--atlas-inc\t path to ATLAS include directory\n
-\t--atlas-search\t search system path for ATLAS directories\n
+\t--atlas-search\t search system path for ATLAS directories\n\n
 
 MPI Build Options:\n
 \t--no-mpi\t do not use MPI\n
@@ -337,6 +363,11 @@ case $i in
     ;;
     -p|--packages)
     package_report
+    shift
+    exit
+    ;;
+    --uninstall)
+    uninstall
     shift
     exit
     ;;
@@ -468,6 +499,7 @@ setup
 if [ "$BUILD_ENV" == TRUE ]
 then
   report_progress 'ShapePipe Environment'
+  source activate base
   conda env create -f environment.yml
 fi
 
