@@ -8,7 +8,7 @@ This module defines a function for handling job timeout limits.
 
 """
 
-import multiprocessing as mp
+import signal
 from functools import wraps
 
 
@@ -26,24 +26,24 @@ def with_timeout(timeout, log_file):
 
     Raises
     ------
-    multiprocessing.TimeoutError
+    TimeoutError
         For process exceeding timeout limit
 
-    Notes
-    -----
-    Thise method was taken from: https://github.com/joblib/joblib/pull/366
-
     """
+
+    def handler(signum, frame):
+        raise TimeoutError('The process time exceeded {}s in '
+                           '{}'.format(timeout, log_file))
 
     def decorator(decorated):
 
         @wraps(decorated)
         def inner(*args, **kwargs):
-            pool = mp.pool.ThreadPool(1)
-            async_result = pool.apply_async(decorated, args, kwargs)
+            signal.signal(signal.SIGALRM, handler)
+            signal.alarm(timeout)
             try:
-                return async_result.get(timeout)
-            except mp.TimeoutError:
+                return decorated(*args, **kwargs)
+            except Exception:
                 raise TimeoutError('The process time exceeded {}s in '
                                    '{}'.format(timeout, log_file))
         return inner

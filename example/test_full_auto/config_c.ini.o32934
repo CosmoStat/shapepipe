@@ -1,0 +1,9 @@
+* JOBID: 32934.cmaster
+* USER: guinot
+* GROUP: guinot
+* JOBNAME: config_c.ini
+* SESSIONID: 134087
+* RESOURCESLIST: neednodes=1,nodes=1,walltime=08:00:00
+* RESOURCESUSED: cput=00:00:01,mem=0kb,vmem=0kb,walltime=00:00:01
+* QUEUE: batch
+* JOB EXIT STATUS: 2

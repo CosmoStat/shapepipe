@@ -1,0 +1,90 @@
+# Exemple of usage for a star/galaxy separation based on size/mag properties
+
+[MASK:preselect]
+MAG_AUTO > 0
+MAG_AUTO < 20
+FWHM_IMAGE > 0.3 / 0.186
+FWHM_IMAGE < 1.5 / 0.186
+FLAGS == 0
+IMAFLAGS_ISO == 0
+NO_SAVE
+
+[MASK:star_selection]
+MAG_AUTO > 17.
+MAG_AUTO < 21.5
+FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
+FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2
+FLAGS == 0
+IMAFLAGS_ISO == 0
+#CLASS_STAR != 0
+
+[MASK:fwhm_mag_cut]
+FWHM_IMAGE > 0
+FWHM_IMAGE < 40
+MAG_AUTO < 35
+FLAGS == 0
+IMAFLAGS_ISO == 0
+NO_SAVE
+
+###
+
+[PLOT:size_mag]
+TYPE = plot
+FORMAT = png
+X_1 = FWHM_IMAGE{fwhm_mag_cut}
+Y_1 = MAG_AUTO{fwhm_mag_cut}
+X_2 = FWHM_IMAGE{star_selection}
+Y_2 = MAG_AUTO{star_selection}
+MARKER_1 = +
+MARKER_2 = .
+MARKERSIZE_1 = 3
+MARKERSIZE_2 = 3
+LABEL_1 = All
+LABEL_2 = "Star selection, mean : @mean(FWHM_IMAGE{star_selection})@"
+TITLE = "Star selection"
+XLABEL = "FWHM (pix)"
+YLABEL = Mag
+
+[PLOT:hist_mag_stars]
+TYPE = hist
+FORMAT = png
+Y = MAG_AUTO{star_selection}
+BIN = 20
+LABEL = "Mag of stars selected"
+XLABEL = "Mag"
+YLABEL = "Nb"
+TITLE = "Mag of stars selected"
+
+[PLOT:fwhm_field]
+TYPE = scatter
+FORMAT = png
+X = X_IMAGE{star_selection}
+Y = Y_IMAGE{star_selection}
+SCATTER = FWHM_IMAGE{star_selection}*0.186
+MARKER = .
+LABEL = "FWHM (arcsec)"
+TITLE = "Stars FWHM in field"
+XLABEL = "X (pix)"
+YLABEL = "Y (pix)"
+
+[PLOT:mag_star_field]
+TYPE = scatter
+FORMAT = png
+X = X_IMAGE{star_selection}
+Y = Y_IMAGE{star_selection}
+SCATTER = MAG_AUTO{star_selection}
+MARKER = .
+LABEL = "Mag (arcsec)"
+TITLE = "Stars Mag in field"
+XLABEL = "X (pix)"
+YLABEL = "Y (pix)"
+
+[STAT:star_stat]
+"Nb objects full cat" = len(FWHM_IMAGE)
+"Nb stars" = len(FWHM_IMAGE{star_selection})
+"stars/deg^2" = len(FWHM_IMAGE{star_selection})/4612./0.186*3600.*1./2048./0.186*3600.
+"Mean star fwhm selected (arcsec)" = mean(FWHM_IMAGE{star_selection})*0.186
+"Standard deviation fwhm star selected (arcsec)" = std(FWHM_IMAGE{star_selection})*0.186
+"Mode fwhm used (arcsec)" = mode(FWHM_IMAGE{preselect})*0.186
+"Min fwhm cut (arcesec)" = mode(FWHM_IMAGE{preselect})*0.186-0.1*0.186
+"Max fwhm cut (arcsec)" = mode(FWHM_IMAGE{preselect})*0.186+0.1*0.186
