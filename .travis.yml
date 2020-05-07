@@ -48,7 +48,7 @@ before_install:
 
 install:
     - if [ $TRAVIS_OS_NAME = 'linux' ];
-      then ./install_shapepipe --develop --atlas-lib=/usr/lib --atlas-inc=/usr/include;
+      then ./install_shapepipe --develop --atlas-search;
       else ./install_shapepipe --develop;
       fi
     - source activate shapepipe
