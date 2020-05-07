@@ -548,6 +548,8 @@ then
   export C_INCLUDE_PATH=$CONDA_PREFIX/include
   export CFLAGS="-Wl,-rpath,$CONDA_PREFIX/lib"
   export CPPFLAGS="-Wno-everything"
+else
+  export CPPFLAGS="-w"
 fi
 
 ##############################################################################
