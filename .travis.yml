@@ -5,7 +5,7 @@ addons:
   apt:
     update: true
     packages:
-      - libatlas-dev
+      - libopenblas-dev
   homebrew:
     packages:
       - cmake
@@ -47,10 +47,7 @@ before_install:
     - conda info -a
 
 install:
-    - if [ $TRAVIS_OS_NAME = 'linux' ];
-      then ./install_shapepipe --develop --atlas-search;
-      else ./install_shapepipe --develop;
-      fi
+    - ./install_shapepipe --develop;
     - source activate shapepipe
 
 script:
