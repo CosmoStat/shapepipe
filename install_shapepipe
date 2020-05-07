@@ -338,7 +338,7 @@ Executable Build Options:\n
 \t--blas-inc\t path to OpenBLAS include directory\n
 \t--atlas-lib\t path to ATLAS library directory\n
 \t--atlas-inc\t path to ATLAS include directory\n
-\t--atlas-search\t search system path for ATLAS directories\n
+\t--atlas-search\t search system path for ATLAS directories\n\n
 
 MPI Build Options:\n
 \t--no-mpi\t do not use MPI\n
