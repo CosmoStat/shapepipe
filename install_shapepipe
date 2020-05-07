@@ -240,7 +240,7 @@ packages() {
 exit_code() {
   if [ "$ERROR" == TRUE ]
   then
-    echo "Installation failed as some packages were not properly installed."
+    echo "ShapePipe installation failed as some packages were not properly installed."
     exit 1
   else
     exit 0
@@ -249,6 +249,11 @@ exit_code() {
 
 # Function to report package versions
 package_report() {
+  INSTALL_SEX=FALSE
+  INSTALL_PSFEX=FALSE
+  INSTALL_WW=FALSE
+  INSTALL_CDSCLIENT=FALSE
+  USE_MPI=FALSE
   start
   echo 'Package Report'
   echo ''
@@ -299,6 +304,12 @@ astromatic_setup() {
   echo ''
 }
 
+uninstall() {
+  rm -r build dist shapepipe.egg-info .eggs
+  source deactivate
+  conda remove -n shapepipe --all -y
+}
+
 ##############################################################################
 # SCRIPT OPTIONS
 ##############################################################################
@@ -308,6 +319,7 @@ Options:\n
 \t-h,--help\t show this help message and exit\n
 \t-v,--version\t print script version and exit\n
 \t-p,--packages\t print status of installed packages\n
+\t--uninstall\t uninstall ShapePipe\n
 \t--pipe-dir\t set the path to the ShapePipe base directory (default is PWD)\n
 \t--build-dir\t set the path to the ShapePipe build (default is PWD/build)\n
 \t--develop\t option to install additional development packages\n
@@ -351,6 +363,11 @@ case $i in
     ;;
     -p|--packages)
     package_report
+    shift
+    exit
+    ;;
+    --uninstall)
+    uninstall
     shift
     exit
     ;;
