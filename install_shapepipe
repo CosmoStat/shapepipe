@@ -506,6 +506,7 @@ fi
 # Activate conda environment
 source activate shapepipe
 echo "Activating Conda environment" $CONDA_PREFIX
+export LD_LIBRARY_PATH=$CONDA_PREFIX/lib
 
 if [ -z "$FFTW_LIB" ]; then FFTW_LIB=$CONDA_PREFIX/lib; fi
 if [ -z "$FFTW_INC" ]; then FFTW_INC=$CONDA_PREFIX/include; fi
