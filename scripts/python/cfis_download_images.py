@@ -32,6 +32,8 @@ from astropy.table import Table, Column
 from optparse import OptionParser
 from optparse import OptionGroup
 
+from vos.commands.vcp import vcp
+
 import cfis
 
 
@@ -64,7 +66,7 @@ def filter_file_list(in_file_list, pattern, band, type, columns, in_number_only=
         list of file sizes for files in *dst_list*
     """
 
-    f = open(in_file_list, 'rU')
+    f = open(in_file_list, 'r')
     lines = f.readlines()
     f.close()
 
@@ -133,7 +135,8 @@ def remove_exclude(dst_list, exclude_list, verbose=False):
 
 
 
-def download(dst_list, size_list, out_dir, t, vcp, dry_run=False, verbose=False, quick=False, out_list=None):
+def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False, quick=False,
+             certfile=None, out_list=None):
     """Download files using vos command.
     Parameters
     ----------
@@ -146,14 +149,14 @@ def download(dst_list, size_list, out_dir, t, vcp, dry_run=False, verbose=False,
     t: string
         file type, one in 'tile', 'weight', 'weight.fz', 'exposure',
      'exposure_flag', 'exposure_flag.fz', 'exposure_weight', or 'exposure_weight.fz'
-    vcp: string
-        vcp command
     dry_run: bool, optional
         if True do not download but perform dry run; default=False
     verbose: bool, optional, default=False
         verbose mode if True
     quick: bool, optional, default=False
         quick copy mode if True
+    certfile: string, optional, default=None
+        certificate file for vos identification
     out_list: string, optional, default=None
         output file name for files to download (if dry_run is True)
     """
@@ -176,11 +179,6 @@ def download(dst_list, size_list, out_dir, t, vcp, dry_run=False, verbose=False,
         sdry = ' (dry run)'
         if out_list:
             f_list = open(out_list, 'w')
-
-    if quick == True:
-        f_quick = ' --quick'
-    else:
-        f_quick = ''
 
     n_dl = 0
     n_ex = 0
@@ -218,11 +216,22 @@ def download(dst_list, size_list, out_dir, t, vcp, dry_run=False, verbose=False,
                     print(size_list[i], end=' ', file=f_list)
                 print(dst_list[i], file=f_list)
 
-            out, err = cfis.run_cmd('{}{} vos:cfis/{}/{} {}'.format(vcp, f_quick, subdir, dst_list[i], out_dir),
-                                    verbose=True, run=not dry_run)
-            print('MKDEBUG vcp out, err:')
-            print(out)
-            print(err)
+            cmd = 'vcp'
+            src = 'vos:cfis/{}/{}'.format(subdir, dst_list[i])
+
+            sys.argv = []
+            sys.argv.append(cmd)
+            if quick == True:
+                sys.argv.append('--quick')
+            if certfile:
+                sys.argv.append('--certfile={}'.format(certfile))
+            sys.argv.append(src)
+            sys.argv.append(out_dir)
+            if not dry_run:
+                try:
+                    vcp()
+                except:
+                    raise cfis.CfisError('Error in \'vcp\' command, exiting')
             n_dl += 1
 
     if verbose == True:
@@ -253,7 +262,6 @@ def params_default():
         type         = 'tile',
         pattern      = '',
         scolumns     = '0',
-        vcp          = 'vcp',
     )
 
     return p_def
@@ -303,14 +311,16 @@ def parse_options(p_def):
         help='input file columns: name [size], default={}'.format(p_def.scolumns))
     parser.add_option('', '--in_number_only', dest='in_number_only', action='store_true',
         help='input file names are image number only')
-    parser.add_option('', '--vcp', dest='vcp', type='string', default=p_def.vcp,
-        help='vcp command, default=\'{}\''.format(p_def.vcp))
+
+    # vcp options
+    parser.add_option('', '--certfile', dest='certfile', type='string',
+        help='certificate file')
+    parser.add_option('-q', '--quick', dest='quick', action='store_true', default=False, help='quick copy mode')
 
     # Misc options
     parser.add_option('-n', '--dry-run', dest='dry_run', action='store_true', default=False,
         help='dry run, only print commands')
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', default=False, help='verbose')
-    parser.add_option('-q', '--quick', dest='quick', action='store_true', default=False, help='quick copy mode')
 
     options, args = parser.parse_args()
 
@@ -423,8 +433,8 @@ def main(argv=None):
 
     cfis.mkdir_p(param.out_dir)
 
-    download(dst_list, size_list, param.out_dir, param.type, param.vcp,
-             dry_run=param.dry_run, verbose=param.verbose, quick=param.quick, out_list=param.out_list)
+    download(dst_list, size_list, param.out_dir, param.type, dry_run=param.dry_run,
+             verbose=param.verbose, quick=param.quick, certfile=param.certfile, out_list=param.out_list)
 
 
     ### End main program

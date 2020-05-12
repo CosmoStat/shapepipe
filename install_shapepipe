@@ -252,6 +252,7 @@ Options:\n
 \t--pipe-dir\t set the path to the ShapePipe base directory (default is PWD)\n
 \t--build-dir\t set the path to the ShapePipe build (default is PWD/build)\n
 \t--develop\t option to install additional development packages\n
+\t--vos\t\t option to install virtual observatory software\n
 \t--no-env\t do not build Conda environment\n
 \t--no-sex\t do not build SExtractor\n
 \t--no-psfex\t do not build PSFEx\n
@@ -299,6 +300,10 @@ case $i in
     ;;
     --develop)
     DEVELOP=TRUE
+    shift
+    ;;
+    --vos)
+    VOS=TRUE
     shift
     ;;
     --no-env)
@@ -434,6 +439,17 @@ if [ "$DEVELOP" == TRUE ]
 then
   report_progress 'Developer Packages'
   pip install numpydoc pytest pytest-cov pytest-codestyle sphinx sphinx-rtd-theme
+fi
+
+##############################################################################
+# INSTALL THE VOS LIBRARY
+##############################################################################
+
+# Install the vos library
+if [ "$VOS" == TRUE ]
+then
+  report_progress 'vos'
+  pip install vos
 fi
 
 ##############################################################################

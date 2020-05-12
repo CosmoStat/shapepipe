@@ -2,8 +2,8 @@
 
 """CREATE LOG EXP HEADER
 
-This script merge the "headers" file output of the split_exp_runner.py module.
-It create a binnary file that contain the wcs of each CCDs for each exposures.
+This script merges the "headers" file output of the split_exp_runner.py module.
+It creates a binnary file that contain the WCS of each CCD for each exposure.
 
 :Author: Axel Guinot
 
