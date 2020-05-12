@@ -271,7 +271,7 @@ def save_results(output_dict, output_name):
 
 def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             psf_vignet_path, weight_vignet_path, flag_vignet_path,
-            f_wcs_path):
+            f_wcs_path, n_obj_max=-1, run_metacal=False):
     """ Process
 
     Process function.
@@ -323,7 +323,12 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
 
     final_res = []
     prior = get_prior()
+    # MKDEBUG
+    count = 0
     for i_tile, id_tmp in enumerate(obj_id):
+
+        if n_obj_max > 0 and count > n_obj_max:
+            continue
 
         # Preselection step
         # if (tile_flag[i_tile] > 1) or (tile_imaflag[i_tile] > 0):
@@ -369,13 +374,14 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
         if len(gal_vign) == 0:
             continue
         try:
-            res = do_ngmix_metacal(gal_vign,
-                                   psf_vign,
-                                   sigma_psf,
-                                   weight_vign,
-                                   flag_vign,
-                                   jacob_list,
-                                   prior)
+            if run_metacal:
+                res = do_ngmix_metacal(gal_vign,
+                                       psf_vign,
+                                       sigma_psf,
+                                       weight_vign,
+                                       flag_vign,
+                                       jacob_list,
+                                       prior)
         except Exception:
             print('ngmix fail on object {}'.format(id_tmp))
             continue
@@ -383,12 +389,18 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
         res['n_epoch_model'] = len(gal_vign)
         final_res.append(res)
 
+        # MKDEBUG
+        count = count + 1
+    print('MKDEBUG ngmix loop over objects finished')
+
     f_wcs_file.close()
     gal_vign_cat.close()
     bkg_vign_cat.close()
     flag_vign_cat.close()
     weight_vign_cat.close()
     psf_vign_cat.close()
+
+    print('MKDEBUG ngmix process finished')
 
     return final_res
 
