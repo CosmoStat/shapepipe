@@ -364,14 +364,17 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
     #            'ftol': 5.0e-6}
 
     # Tguess = np.mean(T_guess_psf)*0.186**2  # size guess in arcsec
+
     Tguess = np.mean(T_guess_psf)
+
     # Tguess = 4.0*0.186**2
     # MKDEBUG ?? Overwritten below
-    #ntry = 2       # retry the fit twice
+    # ntry = 2       # retry the fit twice
 
     obs_dict_mcal = ngmix.metacal.get_all_metacal(gal_obs_list, **metacal_pars)
     res = {'mcal_flags': 0}
-    #ntry = 5
+
+    # ntry = 5
 
     for key in sorted(obs_dict_mcal):
 
@@ -563,7 +566,8 @@ def save_results(output_dict, output_name):
 
 def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             psf_vignet_path, weight_vignet_path, flag_vignet_path,
-            f_wcs_path, w_log, n_obj_max=-1, run_metacal=True, do_galsimfit=True, do_galsimfit0=True, ntry=5):
+            f_wcs_path, w_log, n_obj_max=-1, id_obj_min=-1, id_obj_max=-1,
+            run_metacal=True, do_galsimfit=True, do_galsimfit0=True, ntry=5):
     """ Process
 
     Process function.
@@ -617,23 +621,29 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
     prior = get_prior()
     # MKDEBUG
     count = 0
+    id_first = -1
+    id_last = -1
     w_log.info('MKDEBUG ngmix process with debug variables n_obj_max={}, '
-	       'run_metacal={}, do_galsimfit={}, do_galsimfit0={}, ntry={}'
-	       .format(n_obj_max, run_metacal, do_galsimfit, do_galsimfit0, ntry))
+               'id_obj_min={}, id_obj_max={}, '
+               'run_metacal={}, do_galsimfit={}, do_galsimfit0={}, ntry={}'
+               .format(n_obj_max, id_obj_min, id_obj_max, run_metacal,
+                       do_galsimfit, do_galsimfit0, ntry))
 
     for i_tile, id_tmp in enumerate(obj_id):
 
         if n_obj_max > 0 and count > n_obj_max:
             continue
-        else:
-            count = count + 1
+        if id_obj_min > 0 and id_tmp < id_obj_min:
+            continue
+        if id_obj_max > 0 and id_tmp > id_obj_max:
+            continue
 
-	# Preselection step
-        # if (tile_flag[i_tile] > 1) or (tile_imaflag[i_tile] > 0):
-        #     continue
-        # if (sm[i_tile] + (5. / 3.) * sm_err[i_tile] < 0.01) and
-        # (np.abs(sm[i_tile] + (5. / 3.) * sm_err[i_tile]) > 0.003):
-        #     continue
+        if id_first == -1:
+            id_first = id_tmp
+        id_last = id_tmp
+
+        count = count + 1
+
         gal_vign = []
         psf_vign = []
         sigma_psf = []
@@ -688,7 +698,7 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             w_log.info('ngmix failed for object ID={}.\nMessage: {}'.format(id_tmp, ee))
             continue
 
-    w_log.info('MKDEBUG ngmix loop over objects finished, processed {} objects'.format(count))
+    w_log.info('MKDEBUG ngmix loop over objects finished, processed {} objects, id first/last={}/{}'.format(count, id_first, id_last))
 
     f_wcs_file.close()
     gal_vign_cat.close()
@@ -720,14 +730,17 @@ def ngmix_runner(input_file_list, run_dirs, file_number_string,
 
     # MKDEBUG tracing seg fault (139)
     n_obj_max = config.getint('NGMIX_RUNNER', 'N_OBJ_MAX')
+    id_obj_min = config.getint('NGMIX_RUNNER', 'ID_OBJ_MIN')
+    id_obj_max = config.getint('NGMIX_RUNNER', 'ID_OBJ_MAX')
     run_metacal = config.getboolean('NGMIX_RUNNER', 'RUN_METACAL')
     do_galsimfit = config.getboolean('NGMIX_RUNNER', 'DO_GALSIMFIT')
     do_galsimfit0 = config.getboolean('NGMIX_RUNNER', 'DO_GALSIMFIT0')
     ntry = config.getint('NGMIX_RUNNER', 'NTRY')
 
-
     metacal_res = process(*input_file_list, f_wcs_path, w_log, n_obj_max=n_obj_max,
-			  run_metacal=run_metacal, do_galsimfit=do_galsimfit, do_galsimfit0=do_galsimfit0, ntry=ntry)
+                          id_obj_min=id_obj_min, id_obj_max=id_obj_max,
+                          run_metacal=run_metacal, do_galsimfit=do_galsimfit,
+                          do_galsimfit0=do_galsimfit0, ntry=ntry)
     res_dict = compile_results(metacal_res)
     save_results(res_dict, output_name)
 
