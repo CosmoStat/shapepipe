@@ -5,6 +5,18 @@ remote="vos:cfis/cosmostat/kilbinger/results"
 local="."
 
 output=(ngmix psfex psfexinterp setools_plot setools_stat logs)
+NAMES=(
+        "psfex"
+        "psfexinterp_exp"
+        "setools_mask"
+        "setools_stat"
+        "setools_plot"
+        "sextractor"
+        "spread_model"
+        "psfexinterp_tile"
+     )
+NAMES=( "${NAMES[@]}" "ngmix" "logs")
+
 
 # VCP options
 # VCP without "vflag" to avoid output to stderr
@@ -27,14 +39,14 @@ export VCP="vcp $qflag $vflag"
 ### Start ###
 
 # Download files
-for out in ${output[@]}; do
-    cmd="$VCP $remote/$out*.tgz $local"
+for name in ${NAMES[@]}; do
+    cmd="$VCP $remote/$name*.tgz $local"
     echo $cmd
     $cmd
 done
 
 # Check number of files
-for out in ${output[@]}; do
-    n_downl=(`ls -l $local/$out*.tgz | wc`)
-    echo "$n_downl '$out' result files downloaded"
+for name in ${NAMES[@]}; do
+    n_downl=(`ls -l $local/$name*.tgz | wc`)
+    echo "$n_downl '$name' result files downloaded"
 done
