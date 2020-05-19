@@ -33,13 +33,12 @@ def get_status(tile_num):
                     if m:
                         ngmix_found = True
                         if m[1] == '0':
-                            stauts = res_noout, '0 ngmix output files'
+                            status = res_noout, '0 ngmix output files'
                         else:
                             status = res_ok, 'success, {} ngmix output files'.format(m[1])
                         break
             if ngmix_found == False:
                 status = res_unk, 'Failed before ngmix'
-
         else:
             status = res_wait, 'job not finised'
 
@@ -69,6 +68,8 @@ def main(argv=None):
             if m:
                 tile_num = m[0]
 
+                if len(argv) == 2 and argv[1] != tile_num:
+                    continue
                 status[tile_num] = get_status(tile_num)
 
     output(status)
