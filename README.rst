@@ -3,9 +3,6 @@ ShapePipe
 
 |travis| |python35| |python36| |python37|
 
-.. |gitlab-ci| image:: https://drf-gitlab.cea.fr/cosmostat/ShapePipe/badges/master/pipeline.svg
-  :target: https://drf-gitlab.cea.fr/cosmostat/ShapePipe/tree/master
-
 .. |travis| image:: https://travis-ci.org/CosmoStat/shapepipe.svg?branch=master
   :target: https://travis-ci.org/CosmoStat/shapepipe
 
@@ -18,9 +15,9 @@ ShapePipe
 .. |python37| image:: https://img.shields.io/badge/python-3.7-yellow.svg
   :target: https://www.python.org/
 
-:Version: 0.0.2
+:Version: 0.0.3
 
-:Date: 19/06/2019
+:Date: 19/05/2020
 
 ShapePipe is a galaxy shape measurement pipeline developed within the
 CosmoStat lab at CEA Paris-Saclay.
@@ -87,7 +84,7 @@ The entire ShapePipe package, include dependencies, can be built as follows:
 
 .. code-block:: bash
 
-  $ git clone https://drf-gitlab.cea.fr/cosmostat/ShapePipe
+  $ git clone https://github.com/CosmoStat/shapepipe
   $ cd ShapePipe
   $ ./install_shapepipe
 
@@ -114,8 +111,8 @@ and built as follows:
 
 .. code-block:: bash
 
-  $ git clone https://drf-gitlab.cea.fr/cosmostat/ShapePipe
-  $ cd ShapePipe
+  $ git clone https://github.com/CosmoStat/shapepipe
+  $ cd shapepipe
   $ python setup.py install
 
 This method is recommend for development.
@@ -127,7 +124,7 @@ repository as follows:
 
 .. code-block:: bash
 
-  $ pip install git+ssh://git@drf-gitlab.cea.fr/cosmostat/ShapePipe.git
+  $ pip install git+https://github.com/CosmoStat/shapepipe
 
 Note, this method will not include any executable scripts or examples.
 
