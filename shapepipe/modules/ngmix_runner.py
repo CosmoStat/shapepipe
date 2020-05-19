@@ -220,7 +220,7 @@ def get_jacob(wcs, ra, dec):
 
 
 def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
-                     prior, do_galsimfit=True, do_galsimfit0=True, ntry=5):
+                     prior):
     """ Do ngmix metacal
 
     Do the metacalibration on a multi-epoch object and return the join shape
@@ -368,18 +368,14 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
     Tguess = np.mean(T_guess_psf)
 
     # Tguess = 4.0*0.186**2
-    # MKDEBUG ?? Overwritten below
-    # ntry = 2       # retry the fit twice
+    ntry = 2       # retry the fit twice
 
     obs_dict_mcal = ngmix.metacal.get_all_metacal(gal_obs_list, **metacal_pars)
     res = {'mcal_flags': 0}
 
-    # ntry = 5
+    ntry = 5
 
     for key in sorted(obs_dict_mcal):
-
-        if not do_galsimfit0:
-            continue
 
         fres = make_galsimfit(obs_dict_mcal[key],
                               gal_model, gal_pars,
@@ -397,10 +393,6 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
         gpsf_sum = np.zeros(2)
         npsf = 0
         for obs in obs_dict_mcal[key]:
-
-            # MKDEBUG
-            if not do_galsimfit:
-               continue
 
             if hasattr(obs, 'psf_nopix'):
                 try:
@@ -566,32 +558,37 @@ def save_results(output_dict, output_name):
 
 def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             psf_vignet_path, weight_vignet_path, flag_vignet_path,
-            f_wcs_path, w_log, n_obj_max=-1, id_obj_min=-1, id_obj_max=-1,
-            run_metacal=True, do_galsimfit=True, do_galsimfit0=True, ntry=5):
+            f_wcs_path, w_log, id_obj_min=-1, id_obj_max=-1:
     """ Process
 
     Process function.
 
     Parameters
     ----------
-    tile_cat_path : str
+    tile_cat_path: str
         Path to the tile SExtractor catalog.
-    gal_vignet_path : str
+    gal_vignet_path: str
         Path to the galaxy vignets catalog.
-    bkg_vignet_path : str
+    bkg_vignet_path: str
         Path to the background vignets catalog.
-    psf_vignet_path : str
+    psf_vignet_path: str
         Path to the PSF vignets catalog.
-    weight_vignet_path : str
+    weight_vignet_path: str
         Path to the weight vignets catalog.
-    flag_vignet_path : str
+    flag_vignet_path: str
         Path to the flag vignets catalog.
-    f_wcs_path : str
+    f_wcs_path: str
         Path to the log file containing the WCS for each CCDs.
+    w_log: log file object
+        log file
+    id_obj_min: int, optional, default=-1
+        minimum object ID to be processed if > 0
+    id_obj_max: int, optional, default=-1
+        maximum object ID to be processed if > 0
 
     Returns
     -------
-    final_res : dict
+    final_res: dict
         Dictionary containing the ngmix metacal results.
 
     """
@@ -623,16 +620,9 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
     count = 0
     id_first = -1
     id_last = -1
-    w_log.info('MKDEBUG ngmix process with debug variables n_obj_max={}, '
-               'id_obj_min={}, id_obj_max={}, '
-               'run_metacal={}, do_galsimfit={}, do_galsimfit0={}, ntry={}'
-               .format(n_obj_max, id_obj_min, id_obj_max, run_metacal,
-                       do_galsimfit, do_galsimfit0, ntry))
 
     for i_tile, id_tmp in enumerate(obj_id):
 
-        if n_obj_max > 0 and count > n_obj_max:
-            continue
         if id_obj_min > 0 and id_tmp < id_obj_min:
             continue
         if id_obj_max > 0 and id_tmp > id_obj_max:
@@ -683,14 +673,13 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
         if len(gal_vign) == 0:
             continue
         try:
-            if run_metacal:
-                res = do_ngmix_metacal(gal_vign,
-                                       psf_vign,
-                                       sigma_psf,
-                                       weight_vign,
-                                       flag_vign,
-                                       jacob_list,
-                                       prior, do_galsimfit=do_galsimfit, do_galsimfit0=do_galsimfit0, ntry=ntry)
+            res = do_ngmix_metacal(gal_vign,
+                                   psf_vign,
+                                   sigma_psf,
+                                   weight_vign,
+                                   flag_vign,
+                                   jacob_list,
+                                   prior)
                 res['obj_id'] = id_tmp
                 res['n_epoch_model'] = len(gal_vign)
                 final_res.append(res)
@@ -698,7 +687,7 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             w_log.info('ngmix failed for object ID={}.\nMessage: {}'.format(id_tmp, ee))
             continue
 
-    w_log.info('MKDEBUG ngmix loop over objects finished, processed {} objects, id first/last={}/{}'.format(count, id_first, id_last))
+    w_log.info('ngmix loop over objects finished, processed {} objects, id first/last={}/{}'.format(count, id_first, id_last))
 
     f_wcs_file.close()
     gal_vign_cat.close()
@@ -706,8 +695,6 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
     flag_vign_cat.close()
     weight_vign_cat.close()
     psf_vign_cat.close()
-
-    w_log.info('MKDEBUG ngmix process finished')
 
     return final_res
 
@@ -729,18 +716,11 @@ def ngmix_runner(input_file_list, run_dirs, file_number_string,
     f_wcs_path = config.getexpanded('NGMIX_RUNNER', 'LOG_WCS')
 
     # MKDEBUG tracing seg fault (139)
-    n_obj_max = config.getint('NGMIX_RUNNER', 'N_OBJ_MAX')
     id_obj_min = config.getint('NGMIX_RUNNER', 'ID_OBJ_MIN')
     id_obj_max = config.getint('NGMIX_RUNNER', 'ID_OBJ_MAX')
-    run_metacal = config.getboolean('NGMIX_RUNNER', 'RUN_METACAL')
-    do_galsimfit = config.getboolean('NGMIX_RUNNER', 'DO_GALSIMFIT')
-    do_galsimfit0 = config.getboolean('NGMIX_RUNNER', 'DO_GALSIMFIT0')
-    ntry = config.getint('NGMIX_RUNNER', 'NTRY')
 
-    metacal_res = process(*input_file_list, f_wcs_path, w_log, n_obj_max=n_obj_max,
-                          id_obj_min=id_obj_min, id_obj_max=id_obj_max,
-                          run_metacal=run_metacal, do_galsimfit=do_galsimfit,
-                          do_galsimfit0=do_galsimfit0, ntry=ntry)
+    metacal_res = process(*input_file_list, f_wcs_path, w_log,
+                          id_obj_min=id_obj_min, id_obj_max=id_obj_max)
     res_dict = compile_results(metacal_res)
     save_results(res_dict, output_name)
 
