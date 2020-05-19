@@ -16,7 +16,8 @@ fi
 ## #$ -pe openmpi 4
 
 # Queue
-#$ -q pa_longlasting
+### #$ -q pa_longlasting
+#$ -q pa_long
 
 #$ -l os=cl7
 
