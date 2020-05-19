@@ -425,7 +425,8 @@ class FITSCatalog(BaseCatalog):
       if self._file_exists(self.fullpath):
 
          # --- Open catalog file
-         self._cat_data = fits.open(self.fullpath, mode=self.open_mode, memmap=self.use_memmap)
+         self._cat_data = fits.open(self.fullpath, mode=self.open_mode, memmap=self.use_memmap,
+                                    ignore_missing_end=True)
       else:
          raise BaseCatalog.CatalogFileNotFound(self.fullpath)
 

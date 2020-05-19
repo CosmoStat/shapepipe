@@ -615,7 +615,7 @@ class SETools(object):
     #         raise ValueError('An extra numpy file containing the flags has to provide for the flag split.')
 
     #     try:
-    #         flags = np.load(self._extra_file)
+    #         flags = np.load(self._extra_file, allow_pickle=True)
     #     except:
     #         raise ValueError("Can't open extra file : {}".format(self._extra_file))
 

@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+ 
+# Ignore example output
+*shapepipe_run_*
+*shapepipe_runs*
+
+=3.0.1

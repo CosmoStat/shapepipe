@@ -1,6 +1,7 @@
 CFIS example configuration
 ==========================
 
+***Note:*** This documentation is obsolete. Please consult docs/pipeline_tutorial.md instead.
 
 Set up
 ------
