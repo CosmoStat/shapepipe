@@ -392,7 +392,7 @@ class PSFExInterpolator(object):
         """
         self._dot_psf_dir = dot_psf_dir
         self._dot_psf_pattern = dot_psf_pattern
-        self._f_wcs_file = np.load(f_wcs_path).item()
+        self._f_wcs_file = SqliteDict(f_wcs_path)
 
         if self.gal_pos is None:
             self._get_galaxy_positions()
@@ -475,6 +475,7 @@ class PSFExInterpolator(object):
 
             final_list.append([array_id, array_psf, array_shape, array_exp_name])
 
+        self._f_wcs_file.close()
         cat.close()
 
         output_dict = {}

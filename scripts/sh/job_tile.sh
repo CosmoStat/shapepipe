@@ -1,13 +1,14 @@
-executable     = sp_tile.bash
+executable     = ../sp_tile.bash
 
-output         = log_sp_tile.out
-error          = log_sp_tile.err
-#error	       = log_sp_tile.out
-log            = log_sp_tile.log
+output         = log_sp_tile_$(arguments).out
+error          = log_sp_tile_$(arguments).err
+log            = log_sp_tile_$(arguments).log
 
-request_cpus   = 1
-# Cannot be larger than VM available RAM
-request_memory = 3G
-request_disk   = 3G
+request_cpus   = 8
+request_memory = 19G
+request_disk   = 100G
 
-queue
+
+queue arguments from (
+239.293
+)
