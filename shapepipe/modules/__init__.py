@@ -8,9 +8,13 @@ This module contains sub-modules that can be run with ShapePipe.
 
 """
 
-__all__ = ['module_decorator', 'module_runners', 'combine_mexp_package',
-           'find_exposures_package', 'mask_package',
-           'PSFExInterpolation_package', 'SETools_package',
+__all__ = ['module_decorator',
+           'module_runners',
+           'combine_mexp_package',
+           'find_exposures_package',
+           'mask_package',
+           'PSFExInterpolation_package',
+           'SETools_package',
            'tileobj_as_exp_package']
 __module_list__ = ['combine_mexp_runner',
                    'execute_example',
