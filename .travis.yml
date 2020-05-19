@@ -1,0 +1,57 @@
+language: python
+sudo: required
+
+addons:
+  apt:
+    update: true
+    packages:
+      - libopenblas-dev
+  homebrew:
+    packages:
+      - cmake
+      - pkgconfig
+      - cfitsio
+      - libomp
+    update: true
+
+matrix:
+  include:
+    - os: linux
+      dist: xenial
+      python: 3.6
+      name: "Linux Xenial Python 3.6"
+    - os: linux
+      dist: xenial
+      python: 3.7
+      name: "Linux Xenial Python 3.7"
+    - os: linux
+      dist: xenial
+      python: 3.8
+      name: "Linux Xenial Python 3.8"
+    - os: osx
+      osx_image: xcode11.3
+      language: shell
+      env: PYTHON_VERSION=3.8
+      name: "macOS 10.14 Python 3.8"
+
+before_install:
+    - if [ $TRAVIS_OS_NAME = 'linux' ]; then sudo apt-get update; fi
+    - if [ $TRAVIS_OS_NAME = 'osx' ];
+      then curl https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -o miniconda.sh;
+      else wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+      fi
+    - chmod +x miniconda.sh
+    - ./miniconda.sh -b -p $HOME/miniconda
+    - export PATH=$HOME/miniconda/bin:$PATH
+    - conda update --all -y;
+    - conda info -a
+
+install:
+    - ./install_shapepipe --develop;
+    - source activate shapepipe
+
+script:
+    - python setup.py test
+
+after_success:
+    - coveralls
