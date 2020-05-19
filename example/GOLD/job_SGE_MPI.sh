@@ -39,9 +39,13 @@ source ~/miniconda3/bin/activate shapepipe
 
 source /pbs/software/centos-7-x86_64/mpich2/ccenv.sh 3.2
 
+# Paths
+export SP_RUN=`pwd`
+export SP_ROOT=$HOME/astro/repositories/gitlab.cea/ShapePipe
+export SP_CONFIG=$SP_ROOT/example/GOLD
+
 # Run ShapePipe
-#cmd="$HOME/.conda/envs/shapepipe/bin/python $HOME/ShapePipe/shapepipe_run.py -c $1"
-cmd="mpiexec -iface ib0 -np $NSLOTS $HOME/miniconda3/envs/shapepipe/bin/python $SP_ROOT/shapepipe_run.py -c $1"
+cmd="mpiexec -iface ib0 -np $NSLOTS $CONDA_PREFIX/bin/python $SP_ROOT/shapepipe_run.py -c $1"
 echo "Running command $cmd"
 $cmd
 
