@@ -558,7 +558,7 @@ def save_results(output_dict, output_name):
 
 def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             psf_vignet_path, weight_vignet_path, flag_vignet_path,
-            f_wcs_path, w_log, id_obj_min=-1, id_obj_max=-1:
+            f_wcs_path, w_log, id_obj_min=-1, id_obj_max=-1):
     """ Process
 
     Process function.
@@ -680,9 +680,9 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
                                    flag_vign,
                                    jacob_list,
                                    prior)
-                res['obj_id'] = id_tmp
-                res['n_epoch_model'] = len(gal_vign)
-                final_res.append(res)
+            res['obj_id'] = id_tmp
+            res['n_epoch_model'] = len(gal_vign)
+            final_res.append(res)
         except Exception as ee:
             w_log.info('ngmix failed for object ID={}.\nMessage: {}'.format(id_tmp, ee))
             continue
