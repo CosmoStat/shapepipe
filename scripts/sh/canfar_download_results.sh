@@ -45,8 +45,12 @@ for name in ${NAMES[@]}; do
     $cmd
 done
 
+# TODO: Save IDs in text file, check that
+# all files are downloaded correctly for
+# each ID.
+
 # Check number of files
 for name in ${NAMES[@]}; do
-    n_downl=(`ls -l $local/$name*.tgz | wc`)
+    n_downl=(`ls -l $local/$name_*.tgz | wc`)
     echo "$n_downl '$name' result files downloaded"
 done

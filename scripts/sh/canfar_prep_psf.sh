@@ -2,7 +2,7 @@
 
 
 ## Paths
-export SP_ROOT=$HOME/astro/repositories/gitlab.cea/ShapePipe
+export SP_ROOT=$HOME/astro/repositories/gitlab.cea/shapepipe
 
 psfval_file_base="validation_psf"
 export dir_individual="psf_validation_ind"
@@ -17,7 +17,7 @@ function link_s () {
     src=$2
  
     if [ -e "$src" ]; then
-        #echo "link $src already exists, skipping..."
+        echo "link $src already exists, skipping..."
     else
         #echo "create link $dst <- $src"
         ln -s $dst $src
@@ -40,7 +40,7 @@ for ng in $NGMIX; do
     ID=`echo $ng | perl -ane 's/ngmix_//; s/\.tgz//; print'`
     echo $ID
 
-    valpsf=psfexinterp_$ID.tgz
+    valpsf=psfexinterp_exp_$ID.tgz
     tar xf $valpsf
     FILES=output/*/psfexinterp_runner/output/${psfval_file_base}*
     for val in $FILES; do
