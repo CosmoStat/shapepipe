@@ -8,19 +8,18 @@ psfval_file_base="validation_psf"
 export dir_individual="psf_validation_ind"
 export dir_merged="psf_validation_merged"
 export fname_merged="psf_cat_full.fits"
-pwd=`pwd`
 
 
 ## Functions
 function link_s () {
-    dst=$1
-    src=$2
+    target=$1
+    link_name=$2
  
-    if [ -e "$src" ]; then
-        echo "link $src already exists, skipping..."
+    if [ -e "$link_name" ]; then
+        echo "link with name $link_name already exists, skipping..."
     else
-        #echo "create link $dst <- $src"
-        ln -s $dst $src
+        #echo "create link $target <- $link_name"
+        ln -s $target $link_name
     fi
 }
 
