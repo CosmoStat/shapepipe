@@ -1,4 +1,4 @@
-[Home](./shapepipe.md) | [Environments](./environments.md)
+[Home](./shapepipe.md) | [Environments](./environment.md)
 
 # CANFAR Set Up
 

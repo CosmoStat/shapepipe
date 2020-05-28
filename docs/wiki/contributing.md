@@ -7,20 +7,20 @@ Please read the following guidelines if you would like to contribute to the deve
 ## Contents
 
 1. [ShapePipe Development Plan](#ShapePipe-Development-Plan)
-  1. [Issues](#Issues)
-  1. [Milestones](#Milestones)
-  1. [Branching](#Branching)
-  1. [Merging](#Merging)
-  1. [Documenting](#Documenting)
+   1. [Issues](#Issues)
+   1. [Milestones](#Milestones)
+   1. [Branching](#Branching)
+   1. [Merging](#Merging)
+   1. [Documenting](#Documenting)
 1. [Git Help](#Git-Help)
-  1. [Cloning](#Cloning)
-  1. [Remote vs Local](#Remote-vs-Local)
-  1. [Pulling Updates](#Pulling-Updates)
-  1. [Branching](#Branching)
-  1. [Staging](#Staging)
-  1. [Committing](#Committing)
-  1. [Pushing to the Remote Repository](#Pushing-to-the-Remote-Repository)
-  1. [Merging](#Merging)
+   1. [Cloning](#Cloning)
+   1. [Remote vs Local](#Remote-vs-Local)
+   1. [Pulling Updates](#Pulling-Updates)
+   1. [Branching](#Branching)
+   1. [Staging](#Staging)
+   1. [Committing](#Committing)
+   1. [Pushing to the Remote Repository](#Pushing-to-the-Remote-Repository)
+   1. [Merging](#Merging)
 
 ## ShapePipe Development Plan
 

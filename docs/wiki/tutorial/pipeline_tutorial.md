@@ -1,3 +1,5 @@
+[Home](./shapepipe.md)
+
 # ShapePipe tutorial
 
 ## Index
@@ -37,7 +39,7 @@ Absolute paths are recommended to avoid problems.
 ### File types and names
 
 The `ShapePipe` pipeline handles different image and file types, some of which
-are created by the pipeline during the analysis. These file types are listed below. All 
+are created by the pipeline during the analysis. These file types are listed below. All
 files follow a (configurable) naming and numbering convention, to facilitate bookkeeping for
 tracking relevant image information. We adopt a numbering schemes as follows.
 
@@ -57,7 +59,7 @@ tracking relevant image information. We adopt a numbering schemes as follows.
 
 - Stacked images  
   FITS file containing a stack by co-adding different single exposures, created by software such as `swarp`.
-  A stacked image is also called *tile*. 
+  A stacked image is also called *tile*.
   The pixel data can contain the observed image, a weight map, or a flag map.  
   Default convention: **<image_type>-<number>.fits**  
   Examples: `CFIS_image-51.fits`, `pipeline_flag-2134.fits`
@@ -132,7 +134,7 @@ However, one might want to pre-select specific images before the pipeline is run
 and stacks) in a given sky area. The resulting files can then be copied to a new, dedicated directory (or alternatively linked
 using symbolic links), or downloaded to a local machine.
 
-There are two options to find images. 
+There are two options to find images.
 
 #### Option a.
 
@@ -145,7 +147,7 @@ can be found with the `--coord` option:
 ```
 The input text file (with `-i`) contains a list of CFIS tiles.
 
-We also need to get the weight files for the tile. 
+We also need to get the weight files for the tile.
 ```bash
 cfis_field_select.py -i ~/CFIS/tiles+weights_DR2.txt --coord 255.66deg_34.05deg -v -t weight
 ```
@@ -182,7 +184,7 @@ These commands create links with the default naming convention (see above), and 
 
 The weights of the stacks are compressed .fits.fz files, they need to be uncompressed before the pipeline is run.
 This can be done with the executable `imcopy`, a CFITSIO tool. To uncompress all input weights:
- 
+
 ```bash
 cd input_tiles
 foreach i (CFIS_weight-*.fits.fz)
@@ -293,7 +295,7 @@ SUFFIX = pipeline
 Next, this module requires a star catalogue containing position and magnitude
 of bright stars. By default this is automatically created by accessing online
 star catalogues. Since in some cases computing nodes on clusters might not have
-internet access, such a catalog can also be created for each image, before running 
+internet access, such a catalog can also be created for each image, before running
 this module as follows:
 ```bash
 mkdir -o output_star_cat
@@ -346,7 +348,7 @@ have a zero-padded pixel border, which is not accounted for by `ds9`.
 **Output:** sextractor catalogue
 
 The purpose of source extraction/source identification on single exposures is
-to select stars in the next step. Therefore, a relatively high 
+to select stars in the next step. Therefore, a relatively high
 detection threshold is chosen to avoid to detect too many low-SNR
 artifacts, and to reduce the output catalogue size. The following config entry
 is
@@ -402,7 +404,7 @@ IMAFLAGS_ISO == 0
 In addition, the selection config file can contain instructions to create plots and
 statistics of the selected population(s). The former can be scatter plots and histograms,
 the former can include mean, mode, extrema, and standard deviation
-of any quantity from the SExtractor input catalogue, the number of selected objects, etc.. 
+of any quantity from the SExtractor input catalogue, the number of selected objects, etc..
 
 On success, masked SEXtractor catalogues are created in `mask`, plots are put in `plots`,
 and text files with the computed statistics in `stats`.
@@ -412,7 +414,7 @@ The following plots show an example, CCD #10 of exposure 2113737.
 
 | Size-magnitude plot | Star magnitude histogram | Stars in CCD (mag) | Stars in CCD (size) |
 | --- | --- | --- | --- |
-| <img width="250" src="size_mag-2113737-10.png" title="Size-magnitude plot with star selection"> | <img width="250" src="hist_mag_stars-2113737-10.png" title="Magnitude histogram of selected stars"> | <img width="250" src="mag_star_field-2113737-10.png" title="Magnitude distribution in CCD"> | <img width="250" src="fwhm_field-2113737-10.png" title="Size distribution in CCD"> | 
+| <img width="250" src="size_mag-2113737-10.png" title="Size-magnitude plot with star selection"> | <img width="250" src="hist_mag_stars-2113737-10.png" title="Magnitude histogram of selected stars"> | <img width="250" src="mag_star_field-2113737-10.png" title="Magnitude distribution in CCD"> | <img width="250" src="fwhm_field-2113737-10.png" title="Size distribution in CCD"> |
 | The stellar locus is well-defined | Magnitude distribution looks reasonable | Stars are relatively homogeneously distributed over the CCD | The uniform and small seeing of CFHT is evident |
 
 To contrast the last plot, here is the case of CCD #35 (lower right corner), which shows a known (but yet unexplained) lack of stars
@@ -422,7 +424,7 @@ in the lower parts:
 
 The statistics output file, also for CCD #10 is:
 ```bash
-(shapepipe)  dap ~/ShapePipeRun $ cat output/shapepipe_run_2020-03-05_10-00-26/setools_runner/output/stat/star_stat-2113737-10.txt 
+(shapepipe)  dap ~/ShapePipeRun $ cat output/shapepipe_run_2020-03-05_10-00-26/setools_runner/output/stat/star_stat-2113737-10.txt
 # Statistics
 Nb objects full cat = 1267
 Nb stars = 160
@@ -439,7 +441,7 @@ Max fwhm cut (arcsec) = 0.7531179691314697
 **Module:** psfex  
 **Parent:** setools_runner  
 **Input:** setools_star_selection  
-**Output:** star catalogue, psf file 
+**Output:** star catalogue, psf file
 
 The PSF modeling is done with `PSFEx`. The psfex module configuration section
 has to point to the executable and the default psfex config file, which does not
