@@ -628,7 +628,23 @@ fi
 report_progress 'ShapePipe'
 cd $PIPE_DIR
 python setup.py install
+
+# Create symbolic link to main program
 ln -s $PWD/shapepipe_run.py $CONDA_PREFIX/bin/shapepipe_run
+
+# Create symbolic link to auxiliary scripts
+PY_SCRIPTS=(cfis_weight_format.py
+         cfis_field_select.py
+         cfis_download_images.py
+         create_star_cat.py
+         merge_star_cat.py
+         MeanShapes.py
+)
+for script in ${PY_SCRIPTS[@]}; do
+  link_name=`basename $script .py`
+  ln -s $PWD/scripts/python/$script $CONDA_PREFIX/bin/$link_name
+done
+
 finish
 
 ##############################################################################
