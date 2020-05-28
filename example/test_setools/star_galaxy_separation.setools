@@ -1,21 +1,21 @@
 # Exemple of usage for a star/galaxy separation based on size/mag properties
-                                                                                                                                                                                                            
-[MASK:preselect]                                                                                                                                                                                            
-MAG_AUTO > 0                                                                                                                                                                                                
-MAG_AUTO < 20                                                                                                                                                                                               
-FWHM_IMAGE > 0.3 / 0.186                                                                                                                                                                                    
-FWHM_IMAGE < 1.5 / 0.186                                                                                                                                                                                    
-FLAGS == 0                                                                                                                                                                                                  
-#IMAFLAGS_ISO == 0                                                                                                                                                                                           
-NO_SAVE                                                                                                                                                                                                     
-                                                                                                                                                                                                            
-[MASK:star_selection]                                                                                                                                                                                       
-MAG_AUTO > 17.                                                                                                                                                                                              
-MAG_AUTO < 21.5                                                                                                                                                                                              
-FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2                                                                                                                                                            
-FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2                                                                                                                                                            
-FLAGS == 0                                                                                                                                                                                                  
-#IMAFLAGS_ISO == 0                                                                                                                                                                                           
+
+[MASK:preselect]
+MAG_AUTO > 0
+MAG_AUTO < 20
+FWHM_IMAGE > 0.3 / 0.186
+FWHM_IMAGE < 1.5 / 0.186
+FLAGS == 0
+#IMAFLAGS_ISO == 0
+NO_SAVE
+
+[MASK:star_selection]
+MAG_AUTO > 17.
+MAG_AUTO < 21.5
+FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
+FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2
+FLAGS == 0
+#IMAFLAGS_ISO == 0
 #CLASS_STAR != 0
 
 [MASK:galaxy_selection]
@@ -26,7 +26,7 @@ FLAGS == 0
 #IMAFLAGS_ISO == 0
 #CLASS_STAR != 1
 ELONGATION < 10.
-                                                                                                                                                                                                            
+
 [MASK:fwhm_mag_cut]
 FWHM_IMAGE > 0
 FWHM_IMAGE < 40
@@ -37,9 +37,9 @@ NO_SAVE
 
 ###
 
-#[RAND_SPLIT:star_split]
-#RATIO = 10
-#MASK = star_selection
+[RAND_SPLIT:star_split]
+RATIO = 20
+MASK = star_selection
 
 ###
 
@@ -105,7 +105,7 @@ Y = Y_IMAGE{star_selection}
 SCATTER = MAG_AUTO{star_selection}
 MARKER = .
 LABEL = "Mag (arcsec)"
-TITLE = "Stars Mag in field"                                                                                                
+TITLE = "Stars Mag in field"
 XLABEL = "X (pix)"
 YLABEL = "Y (pix)"
 
@@ -117,7 +117,7 @@ Y = Y_IMAGE{galaxy_selection}
 SCATTER = MAG_AUTO{galaxy_selection}
 MARKER = .
 LABEL = "Mag (arcsec)"
-TITLE = "Galaxies Mag in field"                                                                                                
+TITLE = "Galaxies Mag in field"
 XLABEL = "X (pix)"
 YLABEL = "Y (pix)"
 
@@ -134,5 +134,3 @@ YLABEL = "Y (pix)"
 "Max fwhm cut (arcsec)" = mode(FWHM_IMAGE{preselect})*0.185+0.1*0.185
 #"Inhomogen factor (4 cells)" = homogen(X_WORLD{star_selection}, Y_WORLD{star_selection}, 4)
 #"Inhomogen factor (9 cells)" = homogen(X_WORLD{star_selection}, Y_WORLD{star_selection}, 9)
-
-

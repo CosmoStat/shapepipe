@@ -1,0 +1,136 @@
+# Exemple of usage for a star/galaxy separation based on size/mag properties
+
+# [MASK:preselect]
+# MAG_AUTO > 0
+# MAG_AUTO < 20
+# FWHM_IMAGE > 0.3 / 0.186
+# FWHM_IMAGE < 1.5 / 0.186
+# FLAGS == 0
+# #IMAFLAGS_ISO == 0
+# NO_SAVE
+#
+# [MASK:star_selection]
+# MAG_AUTO > 17.
+# MAG_AUTO < 21.5
+# FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
+# FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2
+# FLAGS == 0
+# #IMAFLAGS_ISO == 0
+# #CLASS_STAR != 0
+#
+# [MASK:galaxy_selection]
+# MAG_AUTO > 18
+# MAG_AUTO < 30
+# FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) + 0.25 / 0.186
+# FLAGS == 0
+# #IMAFLAGS_ISO == 0
+# #CLASS_STAR != 1
+# ELONGATION < 10.
+#
+# [MASK:fwhm_mag_cut]
+# FWHM_IMAGE > 0
+# FWHM_IMAGE < 40
+# MAG_AUTO < 35
+# FLAGS == 0
+# #IMAFLAGS_ISO == 0
+# NO_SAVE
+
+###
+
+[RAND_SPLIT:star_split]
+RATIO = 20
+# MASK = star_selection
+
+###
+
+# [PLOT:size_mag]
+# TYPE = plot
+# FORMAT = png
+# X_1 = FWHM_IMAGE{fwhm_mag_cut}
+# Y_1 = MAG_AUTO{fwhm_mag_cut}
+# X_2 = FWHM_IMAGE{star_selection}
+# Y_2 = MAG_AUTO{star_selection}
+# X_3 = FWHM_IMAGE{galaxy_selection}
+# Y_3 = MAG_AUTO{galaxy_selection}
+# MARKER_1 = +
+# MARKER_2 = .
+# MARKER_3 = *
+# MARKERSIZE_1 = 3
+# MARKERSIZE_2 = 3
+# MARKERSIZE_3 = 3
+# LABEL_1 = All
+# LABEL_2 = "Star selection, mean : @mean(FWHM_IMAGE{star_selection})@"
+# LABEL_3 = "Galaxy selection"
+# TITLE = "Star/galaxy separation"
+# XLABEL = "FWHM (pix)"
+# YLABEL = Mag
+#
+# [PLOT:hist_mag_stars]
+# TYPE = hist
+# FORMAT = png
+# Y = MAG_AUTO{star_selection}
+# BIN = 20
+# LABEL = "Mag of stars selected"
+# XLABEL = "Mag"
+# YLABEL = "Nb"
+# TITLE = "Mag of stars selected"
+#
+# [PLOT:hist_mag_galaxys]
+# TYPE = hist
+# FORMAT = png
+# Y = MAG_AUTO{galaxy_selection}
+# BIN = 20
+# LABEL = "Mag of galaxies selected"
+# XLABEL = "Mag"
+# YLABEL = "Nb"
+# TITLE = "Mag of galaxies selected"
+#
+# [PLOT:fwhm_field]
+# TYPE = scatter
+# FORMAT = png
+# X = X_IMAGE{star_selection}
+# Y = Y_IMAGE{star_selection}
+# SCATTER = FWHM_IMAGE{star_selection}*0.185
+# MARKER = .
+# LABEL = "FWHM (arcsec)"
+# TITLE = "Stars FWHM in field"
+# XLABEL = "X (pix)"
+# YLABEL = "Y (pix)"
+#
+# [PLOT:mag_star_field]
+# TYPE = scatter
+# FORMAT = png
+# X = X_IMAGE{star_selection}
+# Y = Y_IMAGE{star_selection}
+# SCATTER = MAG_AUTO{star_selection}
+# MARKER = .
+# LABEL = "Mag (arcsec)"
+# TITLE = "Stars Mag in field"
+# XLABEL = "X (pix)"
+# YLABEL = "Y (pix)"
+#
+# [PLOT:mag_galaxy_field]
+# TYPE = scatter
+# FORMAT = png
+# X = X_IMAGE{galaxy_selection}
+# Y = Y_IMAGE{galaxy_selection}
+# SCATTER = MAG_AUTO{galaxy_selection}
+# MARKER = .
+# LABEL = "Mag (arcsec)"
+# TITLE = "Galaxies Mag in field"
+# XLABEL = "X (pix)"
+# YLABEL = "Y (pix)"
+#
+# [STAT:star_galaxy_stat]
+# "Nb objects full cat" = len(FWHM_IMAGE)
+# "Nb stars" = len(FWHM_IMAGE{star_selection})
+# "Nb galaxies" = len(FWHM_IMAGE{galaxy_selection})
+# "stars/deg^2" = len(FWHM_IMAGE{star_selection})/4612./0.187*3600.*1./2048./0.187*3600.
+# "galaxies/deg^2" = len(FWHM_IMAGE{galaxy_selection})/4612./0.187*3600.*1./2048./0.187*3600.
+# "Mean star fwhm selected (arcsec)" = mean(FWHM_IMAGE{star_selection})*0.185
+# "Standard deviation fwhm star selected (arcsec)" = std(FWHM_IMAGE{star_selection})*0.185
+# "Mode fwhm used (arcsec)" = mode(FWHM_IMAGE{preselect})*0.185
+# "Min fwhm cut (arcesec)" = mode(FWHM_IMAGE{preselect})*0.185-0.1*0.185
+# "Max fwhm cut (arcsec)" = mode(FWHM_IMAGE{preselect})*0.185+0.1*0.185
+# #"Inhomogen factor (4 cells)" = homogen(X_WORLD{star_selection}, Y_WORLD{star_selection}, 4)
+# #"Inhomogen factor (9 cells)" = homogen(X_WORLD{star_selection}, Y_WORLD{star_selection}, 9)
