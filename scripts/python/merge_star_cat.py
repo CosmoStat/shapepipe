@@ -4,7 +4,8 @@ from astropy.io import fits
 import re
 from shapepipe.pipeline import file_io as sc
 
-starcats_path = '/home/guinot/ShapePipe_dir/output_singles2/shapepipe_run_2019-03-29_15-46-39/psfexinterp_runner/output/'
+#starcats_path = '/home/guinot/ShapePipe_dir/output_singles2/shapepipe_run_2019-03-29_15-46-39/psfexinterp_runner/output/'
+starcats_path = '/Users/tliaudat/Documents/PhD/codes/venv_p3/cfis-tests/output-val/cfis-test-2/shapepipe_run_2019-12-04_17-30-56/rca_runner/output/'
 stub = 'validation_psf'
 save_fullcat = True
 
@@ -44,7 +45,7 @@ for name in starcat_names:
     # misc
     mag += list(starcat_j[2].data['MAG'])
     snr += list(starcat_j[2].data['SNR'])
-    psfex_acc += list(starcat_j[2].data['ACCEPTED'])
+    #psfex_acc += list(starcat_j[2].data['ACCEPTED']) [TL]
 
     # CCD number
     ccd_nb += [re.split(r"\-([0-9]*)\-([0-9]+)\.", name)[-2]]*len(starcat_j[2].data['RA'])

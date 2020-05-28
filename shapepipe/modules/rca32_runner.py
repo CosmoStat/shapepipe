@@ -12,7 +12,7 @@ from shapepipe.modules.module_decorator import module_runner
 from shapepipe.pipeline import file_io as sc
 from astropy.io import fits
 import numpy as np
-import rca
+import rca32.rca32 as rca
 try:
     import galsim.hsm as hsm
     from galsim import Image
@@ -47,11 +47,6 @@ def PolynomialA(starcat, pos_params):
     weight_norms = np.sqrt(np.sum(VT**2,axis=1))
     VT /= weight_norms.reshape(-1,1)
 
-    # np.save('/Users/tliaudat/Documents/PhD/codes/venv_p3/Data_preprocessing/rca_debug_proxl2/random/VT_PSFEx.npy',VT)
-    # np.save('/Users/tliaudat/Documents/PhD/codes/venv_p3/Data_preprocessing/rca_debug_proxl2/random/xs_PSFEx.npy',xs)
-    # np.save('/Users/tliaudat/Documents/PhD/codes/venv_p3/Data_preprocessing/rca_debug_proxl2/random/ys_PSFEx.npy',ys)
-    # np.save('/Users/tliaudat/Documents/PhD/codes/venv_p3/Data_preprocessing/rca_debug_proxl2/random/xxs_PSFEx.npy',xxs)
-    # np.save('/Users/tliaudat/Documents/PhD/codes/venv_p3/Data_preprocessing/rca_debug_proxl2/random/yys_PSFEx.npy',yys)
     return alpha,VT
 
 
@@ -112,9 +107,9 @@ def rca_validation(star_cat, PSFs, pos_params, star_cat_path, output_dir, file_n
         #star_dict['MAG'] = np.copy(star_cat[2].data['MAG_AUTO']) # [JB] to comment when in validation mode
         #star_dict['SNR'] = np.copy(star_cat[2].data['SNR_WIN']) # [JB] to comment when in validation mode
 
-    raw_path_PSFs = '/Users/tliaudat/Documents/PhD/codes/venv_p3/all-W3-tests/raw-data/test-RCA_hybrid_NOPSFEx/PSFs/'
-    raw_path_stars = '/Users/tliaudat/Documents/PhD/codes/venv_p3/all-W3-tests/raw-data/test-RCA_hybrid_NOPSFEx/stars/'
-    raw_path_badpix = '/Users/tliaudat/Documents/PhD/codes/venv_p3/all-W3-tests/raw-data/test-RCA_hybrid_NOPSFEx/badpixs/'
+    # raw_path_PSFs = '/Users/tliaudat/Documents/PhD/codes/venv_p3/all-W3-tests/raw-data/test-RCA_hybrid_NOPSFEx/PSFs/'
+    # raw_path_stars = '/Users/tliaudat/Documents/PhD/codes/venv_p3/all-W3-tests/raw-data/test-RCA_hybrid_NOPSFEx/stars/'
+    # raw_path_badpix = '/Users/tliaudat/Documents/PhD/codes/venv_p3/all-W3-tests/raw-data/test-RCA_hybrid_NOPSFEx/badpixs/'
     #np.save(raw_path_PSFs + file_number_string + 'PSFs.npy',PSFs)
     #np.save(raw_path_stars + file_number_string +'stars.npy',stars)
 
@@ -125,7 +120,7 @@ def rca_validation(star_cat, PSFs, pos_params, star_cat_path, output_dir, file_n
 
     # Pixel MSE saving [TL]
     # raw_path_pixel_MSE = '/Users/tliaudat/Documents/PhD/codes/venv_p3/tests/MSE_pixel/test-27/'
-    raw_path_pixel_MSE = '/Users/tliaudat/Documents/PhD/codes/venv_p3/sandbox_RCAv3/output/val/test-9/'
+    raw_path_pixel_MSE = '/Users/tliaudat/Documents/PhD/codes/venv_p3/sandbox_RCAv3/output/val/test-32/'
     doc_name = 'results.txt'
     try:
         f = open(raw_path_pixel_MSE + doc_name)
@@ -176,8 +171,8 @@ def rca_validation(star_cat, PSFs, pos_params, star_cat_path, output_dir, file_n
 @module_runner(input_module=['setools_runner'], version='1.0',
                file_pattern=['star_selection'],
                file_ext=['.fits'],
-               depends=['numpy', 'rca', 'galsim'])
-def rca_runner(input_file_list, run_dirs, file_number_string,
+               depends=['numpy', 'rca31', 'galsim'])
+def rca32_runner(input_file_list, run_dirs, file_number_string,
                        config, w_log):
     mode = config.get('RCA_RUNNER', 'MODE')
     sex_thresh = config.getfloat('RCA_RUNNER', 'SEXMASK_THRESH')
@@ -193,11 +188,16 @@ def rca_runner(input_file_list, run_dirs, file_number_string,
         n_iter_rca = config.getint('RCA_RUNNER', 'N_ITER_RCA') # [TL] modif
         nb_subiter_S = config.getint('RCA_RUNNER', 'NB_SUBITER_S') # [TL] modif
         nb_subiter_weights = config.getint('RCA_RUNNER', 'NB_SUBITER_A') # [TL] modif
-        prox_option = config.getint('RCA_RUNNER', 'PROX_OPTION') # [TL] modif
+        # prox_option = config.getint('RCA_RUNNER', 'PROX_OPTION') # [TL] modif
         tobi_debug = config.getboolean('RCA_RUNNER', 'TOBI_DEBUG') # [TL] modif
+        beta_graph = config.getfloat('RCA_RUNNER', 'BETA_GRAPH') # [TL] modif
+        beta_graph_min = config.getfloat('RCA_RUNNER', 'BETA_GRAPH_MIN') # [TL] modif
+        graph_decay = config.getfloat('RCA_RUNNER', 'GRAPH_DECAY') # [TL] modif
+        mom_gamma = config.getfloat('RCA_RUNNER', 'MOM_GAMMA') # [TL] modif
+        norm_type = config.get('RCA_RUNNER', 'NORM_TYPE')
         filt_path = config.get('RCA_RUNNER', 'FILTER_PATH')
         filters = None if (filt_path == 'None') else np.load(filt_path)
-        alphapath = config.get('RCA_RUNNER', 'ALPHA')
+        # alphapath = config.get('RCA_RUNNER', 'ALPHA')
 
     if mode == 'FIT':
         starcat_path = input_file_list[0]
@@ -205,23 +205,13 @@ def rca_runner(input_file_list, run_dirs, file_number_string,
         if len(starcat[2].data) < star_thresh:
             w_log.info('Star catalog {} rejected because it contains too few stars.'.format(starcat_path))
             return None, None
-        if alphapath == 'PSFEx':
-            alpha, VT = PolynomialA(starcat, pos_params)
-            n_comp = 6
-            hybrid_mode = 0
-        elif alphapath == 'None':
-            alpha, VT = None, None
-            hybrid_mode = 0
-        elif alphapath == 'hybrid_1':
-            alpha, VT = PolynomialA(starcat, pos_params)
-            hybrid_mode = 1
-        elif alphapath == 'hybrid_2':
-            alpha, VT = PolynomialA(starcat, pos_params)
-            hybrid_mode = 2
 
-        rcainst_kw = {'n_comp': n_comp, 'filters': filters, 'ksig': ksig, 'tobi_debug':tobi_debug}
-        rcafit_kw = {'alpha': alpha, 'hybrid_mode':hybrid_mode, 'VT': VT, 'psf_size': psf_size,
-        'n_eigenvects': n_eigenvects, 'nb_iter':n_iter_rca, 'prox_option':prox_option,
+
+        rcainst_kw = {'n_comp': n_comp, 'beta_graph': beta_graph, 'beta_graph_min':beta_graph_min
+        ,'norm_type':norm_type,'graph_decay':graph_decay,'mom_gamma':mom_gamma,
+        'filters': filters, 'ksig': ksig,'tobi_debug':tobi_debug}
+        rcafit_kw = {'psf_size': psf_size,
+        'n_eigenvects': n_eigenvects, 'nb_iter':n_iter_rca,
         'nb_subiter_S':nb_subiter_S, 'nb_subiter_weights':nb_subiter_weights} # [TL] modif
         rca_fit(starcat, pos_params, rcainst_kw, rcafit_kw, run_dirs['output'], file_number_string, sex_thresh)
 

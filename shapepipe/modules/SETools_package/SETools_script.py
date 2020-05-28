@@ -407,6 +407,7 @@ class SETools(object):
         for i in rand_split.keys():
             rand_split_file = sc.FITSCatalog(output_path + i + file_number + '.fits', open_mode=sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog=(self._cat_filepath is not None))
             rand_split_file.save_as_fits(data=data[rand_split[i]], ext_name=ext_name, sex_cat_path=self._cat_filepath)
+            # np.save(output_path + i + file_number,rand_split[i]) # [TL] ADDED
 
     # def save_flag_split(self, flag_split, output_path, ext_name='LDAC_OBJECTS'):
     #     """Save flag splitted catalogs

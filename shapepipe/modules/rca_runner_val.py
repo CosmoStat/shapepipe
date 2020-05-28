@@ -47,11 +47,6 @@ def PolynomialA(starcat, pos_params):
     weight_norms = np.sqrt(np.sum(VT**2,axis=1))
     VT /= weight_norms.reshape(-1,1)
 
-    # np.save('/Users/tliaudat/Documents/PhD/codes/venv_p3/Data_preprocessing/rca_debug_proxl2/random/VT_PSFEx.npy',VT)
-    # np.save('/Users/tliaudat/Documents/PhD/codes/venv_p3/Data_preprocessing/rca_debug_proxl2/random/xs_PSFEx.npy',xs)
-    # np.save('/Users/tliaudat/Documents/PhD/codes/venv_p3/Data_preprocessing/rca_debug_proxl2/random/ys_PSFEx.npy',ys)
-    # np.save('/Users/tliaudat/Documents/PhD/codes/venv_p3/Data_preprocessing/rca_debug_proxl2/random/xxs_PSFEx.npy',xxs)
-    # np.save('/Users/tliaudat/Documents/PhD/codes/venv_p3/Data_preprocessing/rca_debug_proxl2/random/yys_PSFEx.npy',yys)
     return alpha,VT
 
 
@@ -95,51 +90,16 @@ def rca_validation(star_cat, PSFs, pos_params, star_cat_path, output_dir, file_n
 
     # and some SExtractor parameters
     star_dict = {}
-    try:
-        star_dict['NUMBER'] = np.copy(star_cat[2].data['NUMBER']) # [JB] to comment when in validation mode
-        star_dict['X'] = np.copy(star_cat[2].data[pos_params[0]])
-        star_dict['Y'] = np.copy(star_cat[2].data[pos_params[1]])
-        star_dict['RA'] = np.copy(star_cat[2].data['XWIN_WORLD']) # [JB] to comment when in validation mode
-        star_dict['DEC'] = np.copy(star_cat[2].data['YWIN_WORLD']) # [JB] to comment when in validation mode
-        star_dict['MAG'] = np.copy(star_cat[2].data['MAG_AUTO']) # [JB] to comment when in validation mode
-        star_dict['SNR'] = np.copy(star_cat[2].data['SNR_WIN']) # [JB] to comment when in validation mode
-    except:
-        #star_dict['NUMBER'] = np.copy(star_cat[2].data['NUMBER']) # [JB] to comment when in validation mode
-        star_dict['X'] = np.copy(star_cat[2].data[pos_params[0]])
-        star_dict['Y'] = np.copy(star_cat[2].data[pos_params[1]])
-        #star_dict['RA'] = np.copy(star_cat[2].data['XWIN_WORLD']) # [JB] to comment when in validation mode
-        #star_dict['DEC'] = np.copy(star_cat[2].data['YWIN_WORLD']) # [JB] to comment when in validation mode
-        #star_dict['MAG'] = np.copy(star_cat[2].data['MAG_AUTO']) # [JB] to comment when in validation mode
-        #star_dict['SNR'] = np.copy(star_cat[2].data['SNR_WIN']) # [JB] to comment when in validation mode
-
-    raw_path_PSFs = '/Users/tliaudat/Documents/PhD/codes/venv_p3/all-W3-tests/raw-data/test-RCA_hybrid_NOPSFEx/PSFs/'
-    raw_path_stars = '/Users/tliaudat/Documents/PhD/codes/venv_p3/all-W3-tests/raw-data/test-RCA_hybrid_NOPSFEx/stars/'
-    raw_path_badpix = '/Users/tliaudat/Documents/PhD/codes/venv_p3/all-W3-tests/raw-data/test-RCA_hybrid_NOPSFEx/badpixs/'
-    #np.save(raw_path_PSFs + file_number_string + 'PSFs.npy',PSFs)
-    #np.save(raw_path_stars + file_number_string +'stars.npy',stars)
+    #star_dict['NUMBER'] = np.copy(star_cat[2].data['NUMBER']) # [JB] to comment when in validation mode
+    star_dict['X'] = np.copy(star_cat[2].data[pos_params[0]])
+    star_dict['Y'] = np.copy(star_cat[2].data[pos_params[1]])
+    #star_dict['RA'] = np.copy(star_cat[2].data['XWIN_WORLD']) # [JB] to comment when in validation mode
+    #star_dict['DEC'] = np.copy(star_cat[2].data['YWIN_WORLD']) # [JB] to comment when in validation mode
+    #star_dict['MAG'] = np.copy(star_cat[2].data['MAG_AUTO']) # [JB] to comment when in validation mode
+    #star_dict['SNR'] = np.copy(star_cat[2].data['SNR_WIN']) # [JB] to comment when in validation mode
 
     # compute star shapes with HSM
     badpix_mask = np.abs(mask-1) # hsm thinks 0 means good
-
-    #np.save(raw_path_badpix + file_number_string + 'badpix.npy',badpix_mask)
-
-    # Pixel MSE saving [TL]
-    # raw_path_pixel_MSE = '/Users/tliaudat/Documents/PhD/codes/venv_p3/tests/MSE_pixel/test-27/'
-    raw_path_pixel_MSE = '/Users/tliaudat/Documents/PhD/codes/venv_p3/sandbox_RCAv3/output/val/test-9/'
-    doc_name = 'results.txt'
-    try:
-        f = open(raw_path_pixel_MSE + doc_name)
-    except IOError:
-        # If it does not exist we write the first line
-        f = open(raw_path_pixel_MSE + doc_name,'a')
-        f.write('catalogId\tMSE\tnStars\tDx\tDy\n')
-        f.close()
-
-    f = open(raw_path_pixel_MSE + doc_name,'a')
-    myMSE = np.sum(((PSFs-stars)**2)/(PSFs.shape[0]*PSFs.shape[1]*PSFs.shape[2]))
-    f.write('%s\t%.18f\t%d\t%d\t%d\n'%(file_number_string,myMSE,PSFs.shape[0],PSFs.shape[1],PSFs.shape[2]))
-    f.close()
-
     star_moms = [hsm.FindAdaptiveMom(Image(star), badpix=Image(bp), strict=False)
                  for star,bp in zip(stars,badpix_mask)]
     star_shapes = np.array([[moms.observed_shape.g1,
@@ -187,14 +147,7 @@ def rca_runner(input_file_list, run_dirs, file_number_string,
         n_comp = config.getint('RCA_RUNNER', 'N_COMP')
         psf_size = config.getfloat('RCA_RUNNER', 'PSF_SIZE')
         n_eigenvects = config.getint('RCA_RUNNER', 'N_EIGENVECTS')
-        if n_eigenvects == 0:
-            n_eigenvects = None
         ksig = config.getfloat('RCA_RUNNER', 'KSIG')
-        n_iter_rca = config.getint('RCA_RUNNER', 'N_ITER_RCA') # [TL] modif
-        nb_subiter_S = config.getint('RCA_RUNNER', 'NB_SUBITER_S') # [TL] modif
-        nb_subiter_weights = config.getint('RCA_RUNNER', 'NB_SUBITER_A') # [TL] modif
-        prox_option = config.getint('RCA_RUNNER', 'PROX_OPTION') # [TL] modif
-        tobi_debug = config.getboolean('RCA_RUNNER', 'TOBI_DEBUG') # [TL] modif
         filt_path = config.get('RCA_RUNNER', 'FILTER_PATH')
         filters = None if (filt_path == 'None') else np.load(filt_path)
         alphapath = config.get('RCA_RUNNER', 'ALPHA')
@@ -208,21 +161,10 @@ def rca_runner(input_file_list, run_dirs, file_number_string,
         if alphapath == 'PSFEx':
             alpha, VT = PolynomialA(starcat, pos_params)
             n_comp = 6
-            hybrid_mode = 0
-        elif alphapath == 'None':
+        else:
             alpha, VT = None, None
-            hybrid_mode = 0
-        elif alphapath == 'hybrid_1':
-            alpha, VT = PolynomialA(starcat, pos_params)
-            hybrid_mode = 1
-        elif alphapath == 'hybrid_2':
-            alpha, VT = PolynomialA(starcat, pos_params)
-            hybrid_mode = 2
-
-        rcainst_kw = {'n_comp': n_comp, 'filters': filters, 'ksig': ksig, 'tobi_debug':tobi_debug}
-        rcafit_kw = {'alpha': alpha, 'hybrid_mode':hybrid_mode, 'VT': VT, 'psf_size': psf_size,
-        'n_eigenvects': n_eigenvects, 'nb_iter':n_iter_rca, 'prox_option':prox_option,
-        'nb_subiter_S':nb_subiter_S, 'nb_subiter_weights':nb_subiter_weights} # [TL] modif
+        rcainst_kw = {'n_comp': n_comp, 'filters': filters, 'ksig': ksig}
+        rcafit_kw = {'alpha': alpha, 'VT': VT, 'psf_size': psf_size, 'n_eigenvects': n_eigenvects}
         rca_fit(starcat, pos_params, rcainst_kw, rcafit_kw, run_dirs['output'], file_number_string, sex_thresh)
 
     elif mode == 'TRANSFORM':

@@ -12,7 +12,7 @@ from shapepipe.modules.module_decorator import module_runner
 from shapepipe.pipeline import file_io as sc
 from astropy.io import fits
 import numpy as np
-import rca
+import rca_or.my_rca_or as rca
 try:
     import galsim.hsm as hsm
     from galsim import Image
@@ -47,14 +47,7 @@ def PolynomialA(starcat, pos_params):
     weight_norms = np.sqrt(np.sum(VT**2,axis=1))
     VT /= weight_norms.reshape(-1,1)
 
-    # np.save('/Users/tliaudat/Documents/PhD/codes/venv_p3/Data_preprocessing/rca_debug_proxl2/random/VT_PSFEx.npy',VT)
-    # np.save('/Users/tliaudat/Documents/PhD/codes/venv_p3/Data_preprocessing/rca_debug_proxl2/random/xs_PSFEx.npy',xs)
-    # np.save('/Users/tliaudat/Documents/PhD/codes/venv_p3/Data_preprocessing/rca_debug_proxl2/random/ys_PSFEx.npy',ys)
-    # np.save('/Users/tliaudat/Documents/PhD/codes/venv_p3/Data_preprocessing/rca_debug_proxl2/random/xxs_PSFEx.npy',xxs)
-    # np.save('/Users/tliaudat/Documents/PhD/codes/venv_p3/Data_preprocessing/rca_debug_proxl2/random/yys_PSFEx.npy',yys)
     return alpha,VT
-
-
 
 def rca_fit(starcat, pos_params, rcainst_kw, rcafit_kw, output_dir, file_number_string, sex_thresh=-1e5):
     train_stars = rca.utils.rca_format(starcat[2].data['VIGNET'])
@@ -78,12 +71,17 @@ def rca_transform(rca_instance, testcat, pos_params, output_dir, file_number_str
     return PSFs
 
 def rca_degrade(rca_instance, starcat, pos_params, sex_thresh=-1e5):
-    test_stars = rca.utils.rca_format(starcat[2].data['VIGNET'])
-    handle_SExtractor_mask(test_stars, thresh=sex_thresh)
-    test_pos = np.array([[x, y] for x, y in
-                          zip(starcat[2].data[pos_params[0]],
-                              starcat[2].data[pos_params[1]])])
-    return rca_instance.validation_stars(test_stars, test_pos)
+    if starcat is None:
+        # In this case pos_params should be the position list directly
+        return rca_instance.validation_stars(None, pos_params, response_flag = True)
+
+    else:
+        test_stars = rca.utils.rca_format(starcat[2].data['VIGNET'])
+        handle_SExtractor_mask(test_stars, thresh=sex_thresh)
+        test_pos = np.array([[x, y] for x, y in
+                              zip(starcat[2].data[pos_params[0]],
+                                  starcat[2].data[pos_params[1]])])
+        return rca_instance.validation_stars(test_stars, test_pos)
 
 def rca_validation(star_cat, PSFs, pos_params, star_cat_path, output_dir, file_number_string,
                    sex_thresh=-1e5):
@@ -112,11 +110,9 @@ def rca_validation(star_cat, PSFs, pos_params, star_cat_path, output_dir, file_n
         #star_dict['MAG'] = np.copy(star_cat[2].data['MAG_AUTO']) # [JB] to comment when in validation mode
         #star_dict['SNR'] = np.copy(star_cat[2].data['SNR_WIN']) # [JB] to comment when in validation mode
 
-    raw_path_PSFs = '/Users/tliaudat/Documents/PhD/codes/venv_p3/all-W3-tests/raw-data/test-RCA_hybrid_NOPSFEx/PSFs/'
-    raw_path_stars = '/Users/tliaudat/Documents/PhD/codes/venv_p3/all-W3-tests/raw-data/test-RCA_hybrid_NOPSFEx/stars/'
-    raw_path_badpix = '/Users/tliaudat/Documents/PhD/codes/venv_p3/all-W3-tests/raw-data/test-RCA_hybrid_NOPSFEx/badpixs/'
-    #np.save(raw_path_PSFs + file_number_string + 'PSFs.npy',PSFs)
-    #np.save(raw_path_stars + file_number_string +'stars.npy',stars)
+    star_dict['PSF_VIGNET'] = np.copy(PSFs)
+    star_dict['STAR_VIGNET'] = np.copy(star_cat[2].data['VIGNET'])
+
 
     # compute star shapes with HSM
     badpix_mask = np.abs(mask-1) # hsm thinks 0 means good
@@ -125,7 +121,7 @@ def rca_validation(star_cat, PSFs, pos_params, star_cat_path, output_dir, file_n
 
     # Pixel MSE saving [TL]
     # raw_path_pixel_MSE = '/Users/tliaudat/Documents/PhD/codes/venv_p3/tests/MSE_pixel/test-27/'
-    raw_path_pixel_MSE = '/Users/tliaudat/Documents/PhD/codes/venv_p3/sandbox_RCAv3/output/val/test-9/'
+    raw_path_pixel_MSE = '/Users/tliaudat/Documents/PhD/codes/venv_p3/sandbox_RCAv3/output/val/test-33/'
     doc_name = 'results.txt'
     try:
         f = open(raw_path_pixel_MSE + doc_name)
@@ -172,13 +168,51 @@ def rca_validation(star_cat, PSFs, pos_params, star_cat_path, output_dir, file_n
                             SEx_catalog=True)
     output.save_as_fits(star_dict, sex_cat_path=star_cat_path)
 
+def rca_response(rca_path, grid_xy):
+
+    # Response for the mccd models
+    rca_instance = rca.quickload(rca_path)
+
+    im_dim = rca_instance.S.shape[1]
+    x_npix = 2048
+    y_npix = 4612
+
+    # Generate local generic grid
+    x_lin = np.linspace(start = im_dim, stop = x_npix - im_dim, num=grid_xy[0])
+    y_lin = np.linspace(start = im_dim, stop = y_npix - im_dim, num=grid_xy[1])
+    xv, yv = np.meshgrid(x_lin, y_lin)
+    x_coor = xv.flatten()
+    y_coor = yv.flatten()
+    positions = np.array([x_coor,y_coor]).T
+
+    star_dict = {}
+
+    PSFs = rca_degrade(rca_instance, None, positions)
+
+    # and PSF shapes
+    psf_moms = [hsm.FindAdaptiveMom(Image(psf), strict=False) for psf in PSFs]
+    psf_shapes = np.array([[moms.observed_shape.g1,
+                             moms.observed_shape.g2,
+                             moms.moments_sigma,
+                             int(bool(moms.error_message))]
+                        for moms in psf_moms])
+
+    star_dict['E1_PSF_HSM'] = psf_shapes[:,0]
+    star_dict['E2_PSF_HSM'] = psf_shapes[:,1]
+    star_dict['SIGMA_PSF_HSM'] = psf_shapes[:,2]
+    star_dict['FLAG_PSF_HSM'] = psf_shapes[:,3]
+    star_dict['POSITIONS'] = np.copy(positions)
+
+    return star_dict
+
 
 @module_runner(input_module=['setools_runner'], version='1.0',
                file_pattern=['star_selection'],
                file_ext=['.fits'],
-               depends=['numpy', 'rca', 'galsim'])
-def rca_runner(input_file_list, run_dirs, file_number_string,
+               depends=['numpy', 'rca_or', 'galsim'])
+def rca_or_runner(input_file_list, run_dirs, file_number_string,
                        config, w_log):
+
     mode = config.get('RCA_RUNNER', 'MODE')
     sex_thresh = config.getfloat('RCA_RUNNER', 'SEXMASK_THRESH')
     pos_params = config.getlist('RCA_RUNNER', 'POSITION_PARAMS')
@@ -195,6 +229,7 @@ def rca_runner(input_file_list, run_dirs, file_number_string,
         nb_subiter_weights = config.getint('RCA_RUNNER', 'NB_SUBITER_A') # [TL] modif
         prox_option = config.getint('RCA_RUNNER', 'PROX_OPTION') # [TL] modif
         tobi_debug = config.getboolean('RCA_RUNNER', 'TOBI_DEBUG') # [TL] modif
+        # norm_type = config.get('RCA_RUNNER', 'NORM_TYPE')
         filt_path = config.get('RCA_RUNNER', 'FILTER_PATH')
         filters = None if (filt_path == 'None') else np.load(filt_path)
         alphapath = config.get('RCA_RUNNER', 'ALPHA')
@@ -219,10 +254,29 @@ def rca_runner(input_file_list, run_dirs, file_number_string,
             alpha, VT = PolynomialA(starcat, pos_params)
             hybrid_mode = 2
 
-        rcainst_kw = {'n_comp': n_comp, 'filters': filters, 'ksig': ksig, 'tobi_debug':tobi_debug}
+        # Manage SNR weights
+        SNR_stars = starcat[2].data['SNR_WIN']
+        # SNR_weights =  sextractor_snr/np.sum(sextractor_snr) # Strategy N1
+
+        # SNR_weights =  SNR_stars/np.median(SNR_stars) # Strategy N2
+
+        # SNR_weights =  SNR_stars/np.median(SNR_stars) # Strategy N3
+        # SNR_weights[SNR_stars<50] = 0               #
+
+        # SNR_weights =  SNR_stars/np.median(SNR_stars)             # Strategy N4
+        # SNR_weights[SNR_stars<50] = SNR_weights[SNR_stars<50]/10. #
+
+        SNR_weights =  SNR_stars/np.median(SNR_stars)             # Strategy N4
+        SNR_weights[SNR_stars<50] = SNR_weights[SNR_stars<50]/10. #
+        SNR_weights[SNR_weights>2] = 2.
+        SNR_weights[SNR_weights<0.05] = 0.05
+
+        rcainst_kw = {'n_comp': n_comp,\
+        'filters': filters, 'ksig': ksig, 'tobi_debug':tobi_debug}
         rcafit_kw = {'alpha': alpha, 'hybrid_mode':hybrid_mode, 'VT': VT, 'psf_size': psf_size,
         'n_eigenvects': n_eigenvects, 'nb_iter':n_iter_rca, 'prox_option':prox_option,
-        'nb_subiter_S':nb_subiter_S, 'nb_subiter_weights':nb_subiter_weights} # [TL] modif
+        'nb_subiter_S':nb_subiter_S, 'nb_subiter_weights':nb_subiter_weights,
+        'SNR_weights':SNR_weights} # [TL] modif
         rca_fit(starcat, pos_params, rcainst_kw, rcafit_kw, run_dirs['output'], file_number_string, sex_thresh)
 
     elif mode == 'TRANSFORM':
@@ -247,6 +301,29 @@ def rca_runner(input_file_list, run_dirs, file_number_string,
         rca_instance = rca_fit(starcat, pos_params, rcainst_kw, rcafit_kw,
                                run_dirs['output'], file_number_string, sex_thresh)
         rca_transform(rca_instance, testcat, pos_params, run_dirs['output'], file_number_string)
+
+    elif mode == 'RESPONSE':
+        if len(input_file_list) < 2 or '.npy' not in input_file_list[0]:
+            raise ValueError('In RESPONSE mode, both RCA outputs (as .npy) and catalogs (as .fits) are expected.')
+
+        apply_degradation = config.getboolean('RCA_RUNNER', 'APPLY_DEGRADATION')
+        response_debug = config.getboolean('RCA_RUNNER', 'RESPONSE_DEBUG')
+        x_grid = config.getint('RCA_RUNNER', 'X_GRID')
+        y_grid = config.getint('RCA_RUNNER', 'Y_GRID')
+
+        rca_path = input_file_list[0]
+        test_path = input_file_list[1]
+
+        grid_xy = np.array([x_grid, y_grid])
+
+        star_dict = rca_response(rca_path, grid_xy)
+
+        # save in catalog format
+        filename = run_dirs['output'] + '/response_psf'+file_number_string+'.fits'
+        output = sc.FITSCatalog(filename, open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
+                                SEx_catalog=True)
+        output.save_as_fits(star_dict, sex_cat_path=test_path)
+
 
     elif mode == 'VALIDATION':
         if len(input_file_list) < 2 or '.npy' not in input_file_list[0]:

@@ -34,4 +34,5 @@ __module_list__ = ['combine_mexp_runner',
                    'merge_star_cat_runner',
                    'merge_headers_runner',
                    'erase_output_runner',
-                   'rca_runner']
+                   'rca_runner',
+                   'rca_runner_val']
