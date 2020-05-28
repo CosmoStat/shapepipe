@@ -18,6 +18,6 @@ The ShapePipe package has been developed at the CosmoStat lab in CEA Paris-Sacla
 - Arnau Pujol : Validation
 - Austin Peel : Validation
 - Marc Gentile : File IO, initial architecture
-- Jean-Luc Starck : Ideas
-- Florent Sureau : Ideas
-- François Lanusse : Ideas
+- Jean-Luc Starck : Further contributors
+- Florent Sureau : Further contributors
+- François Lanusse : Further contributors
