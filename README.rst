@@ -3,8 +3,8 @@ ShapePipe
 
 |travis| |python35| |python36| |python37|
 
-.. |travis| image:: https://travis-ci.org/CosmoStat/shapepipe.svg?branch=master
-  :target: https://travis-ci.org/CosmoStat/shapepipe
+.. |travis| image:: https://travis-ci.com/CosmoStat/shapepipe.svg?branch=master
+  :target: https://travis-ci.com/CosmoStat/shapepipe
 
 .. |python35| image:: https://img.shields.io/badge/python-3.5-yellow.svg
   :target: https://www.python.org/
@@ -27,18 +27,20 @@ Contents
 
 1. `Dependencies`_
 
-   a. `Pipeline Dependencies`_
+   a. `Core Dependencies`_
    b. `Module Dependencies`_
 
 2. `Installation`_
 
    a. `Installing ShapePipe`_
-   b. `Installing Module Dependencies`_
+   b. `Installing the ShapePipe Library Only`_
+   c. `Installing the Module Python Dependencies`_
 
 3. `Execution`_
 
-   a. `Running the Pipeline`_
-   b. `Configuration`_
+   a. `Running the Pipeline with SMP`_
+   b. `Running the Pipeline with MPI`_
+   c. `Configuration`_
 
 4. `Development`_
 
@@ -114,6 +116,7 @@ and built as follows:
   $ git clone https://github.com/CosmoStat/shapepipe
   $ cd shapepipe
   $ python setup.py install
+
 
 This method is recommend for development.
 
@@ -245,16 +248,16 @@ Additional module options can be added using the following structure:
 
 .. code-block:: bash
 
-   [MODULE_NAME]
-    PARAMETER = PARAMETER VALUE
+  [MODULE_NAME]
+  PARAMETER = PARAMETER VALUE
 
 This mechanism can also be used to modify module decorator properties or append
 additional values to list properties as follows:
 
 .. code-block:: bash
 
-   [MODULE_NAME]
-    ADD_PARAMETER = PARAMETER VALUE
+  [MODULE_NAME]
+  ADD_PARAMETER = PARAMETER VALUE
 
 Development
 ===========
