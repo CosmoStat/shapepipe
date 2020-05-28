@@ -2,7 +2,7 @@
 
 # Contributors
 
-The ShapePipe package has been developed
+The ShapePipe package has been developed at the CosmoStat lab in CEA Paris-Saclay by the following people:
 
 ## Current Contributors
 
