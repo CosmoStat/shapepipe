@@ -276,12 +276,12 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
         psf_obs = Observation(psfs[n_e], jacobian=psf_jacob)
 
         # psf_T = 2. * psfs_sigma[n_e]**2.
-        psf_T = psfs_sigma[n_e]*1.17741
+        psf_T = psfs_sigma[n_e]*1.17741*pixel_scale
 
         w = np.copy(weights[n_e])
         w[np.where(flags[n_e] != 0)] = 0.
 
-        psf_guess = np.array([0., 0., 0., 0., psfs_sigma[n_e]*1.17741, 1.])
+        psf_guess = np.array([0., 0., 0., 0., psf_T, 1.])
         try:
             psf_res = make_galsimfit(psf_obs, 'gauss', psf_guess, None)
         except:
@@ -501,7 +501,7 @@ def compile_results(results):
               'g1_err_psfo_ngmix', 'g2_err_psfo_ngmix', 'T_err_psfo_ngmix',
               'g1', 'g1_err', 'g2', 'g2_err',
               'T', 'T_err', 'Tpsf', 'g1_psf', 'g2_psf',
-              's2n',
+              'flux', 'flux_err', 's2n',
               'flags', 'mcal_flags']
     output_dict = {k: {kk: [] for kk in names2} for k in names}
     for i in range(len(results)):
@@ -525,6 +525,9 @@ def compile_results(results):
             output_dict[name]['Tpsf'].append(results[i][name]['Tpsf'])
             output_dict[name]['g1_psf'].append(results[i][name]['gpsf'][0])
             output_dict[name]['g2_psf'].append(results[i][name]['gpsf'][1])
+            output_dict[name]['flux'].append(results[i][name]['flux'])
+            output_dict[name]['flux_err'].append(results[i][name]['flux_err'])
+
             try:
                 output_dict[name]['s2n'].append(results[i][name]['s2n'])
             except:
@@ -680,14 +683,18 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
                                    flag_vign,
                                    jacob_list,
                                    prior)
-            res['obj_id'] = id_tmp
-            res['n_epoch_model'] = len(gal_vign)
-            final_res.append(res)
         except Exception as ee:
             w_log.info('ngmix failed for object ID={}.\nMessage: {}'.format(id_tmp, ee))
             continue
 
-    w_log.info('ngmix loop over objects finished, processed {} objects, id first/last={}/{}'.format(count, id_first, id_last))
+        res['obj_id'] = id_tmp
+        res['n_epoch_model'] = len(gal_vign)
+        final_res.append(res)
+
+    w_log.info('ngmix loop over objects finished, processed {} '
+               'objects, id first/last={}/{}'.format(count,
+                                                     id_first,
+                                                     id_last))
 
     f_wcs_file.close()
     gal_vign_cat.close()
@@ -715,7 +722,6 @@ def ngmix_runner(input_file_list, run_dirs, file_number_string,
 
     f_wcs_path = config.getexpanded('NGMIX_RUNNER', 'LOG_WCS')
 
-    # MKDEBUG tracing seg fault (139)
     id_obj_min = config.getint('NGMIX_RUNNER', 'ID_OBJ_MIN')
     id_obj_max = config.getint('NGMIX_RUNNER', 'ID_OBJ_MAX')
 
