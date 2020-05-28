@@ -61,21 +61,19 @@ This page contains some tips and tricks for interacting with a Git repository.
 To clone a repository (*i.e.* make a local copy of the remote repository) use the `git clone` command. For example to clone the pipeline:
 
 ```bash
-   $ git clone https://drf-gitlab.cea.fr/cosmostat/ShapePipe
+   $ git@github.com:CosmoStat/shapepipe.git
 ```
 
 This will copy the contents of the `master` branch to your computer.
 
-**Note:** Before cloning you should set up an SSH key for the GitLab repository ([see instructions](https://docs.gitlab.com/ce/ssh/README.html)).
-
 ### Remote vs Local
 
-After cloning the repository you will be able to make modifications on your local copy and track updates on the "remote" (*i.e.* the online GitLab repository). You can display the current remote settings using the `git remote` command. For the pipeline you should see the following output:
+After cloning the repository you will be able to make modifications on your local copy and track updates on the "remote" (*i.e.* the online githab repository). You can display the current remote settings using the `git remote` command. For the pipeline you should see the following output:
 
 ```bash
    $ git remote -v
-   origin	https://drf-gitlab.cea.fr/cosmostat/ShapePipe (fetch)
-   origin	https://drf-gitlab.cea.fr/cosmostat/ShapePipe (push)
+   origin	git@github.com:CosmoStat/shapepipe.git (fetch)
+   origin	git@github.com:CosmoStat/shapepipe.git (push)
 ```
 
 `origin` is the remote repository name and has the same address for both `fetch` and `push` commands.
@@ -160,7 +158,7 @@ where `origin` is the name of the remote repository and `BRANCH_NAME` is the nam
 
 ### Merging
 
-Once all of the changes related to a given issue have been pushed to the remote repository a merge request can be made. To do this simply select your branch on GitLab and press the merge request button. You will need to submit a short description of the changes that will be made to `master` and assign an individual and milestone to the request. After this, the merge request will be reviewed by one of the repository administrators. If accepted, your changed will be merged into `master` and your remote branch will be deleted. You should also delete your local branch as follows:
+Once all of the changes related to a given issue have been pushed to the remote repository a merge request can be made. To do this simply select your branch on gitlab and press the merge request button. You will need to submit a short description of the changes that will be made to `master` and assign an individual and milestone to the request. After this, the merge request will be reviewed by one of the repository administrators. If accepted, your changed will be merged into `master` and your remote branch will be deleted. You should also delete your local branch as follows:
 
 ```bash
    $ git branch -d BRANCH_NAME
