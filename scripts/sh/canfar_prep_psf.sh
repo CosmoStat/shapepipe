@@ -2,12 +2,11 @@
 
 
 ## Paths
-export SP_ROOT=$HOME/astro/repositories/gitlab.cea/shapepipe
-
 psfval_file_base="validation_psf"
-export dir_individual="psf_validation_ind"
-export dir_merged="psf_validation_merged"
-export fname_merged="psf_cat_full.fits"
+dir_individual="psf_validation_ind"
+dir_merged="psf_validation_merged"
+fname_merged="psf_cat_full.fits"
+pwd=`pwd`
 
 
 ## Functions
@@ -15,12 +14,16 @@ function link_s () {
     target=$1
     link_name=$2
  
-    if [ -e "$link_name" ]; then
-        echo "link with name $link_name already exists, skipping..."
+    if [ -L "$link_name" ]; then
+        #echo "link with name $link_name already exists, skipping..."
+	let "n_skipped+=1"
     else
         #echo "create link $target <- $link_name"
         ln -s $target $link_name
+	let "n_created+=1"
     fi
+
+    return $n
 }
 
 
@@ -33,25 +36,23 @@ for dir in $dir_individual $dir_merged; do
     fi
 done
 
-# Go through all ngmix output files and extract psf validation files
-NGMIX=ngmix*.tgz
-for ng in $NGMIX; do
-    ID=`echo $ng | perl -ane 's/ngmix_//; s/\.tgz//; print'`
-    echo $ID
-
-    valpsf=psfexinterp_exp_$ID.tgz
-    tar xf $valpsf
-    FILES=output/*/psfexinterp_runner/output/${psfval_file_base}*
-    for val in $FILES; do
-        base=`basename $val`
-        link_s "$pwd/$val" "$dir_individual/$base"
-    done
+# Find all psf validation files and create links.
+# Assumes untar_results.sh has been run before.
+n_skipped=0
+n_created=0
+FILES=output/*/psfexinterp_runner/output/${psfval_file_base}*
+for val in $FILES; do
+    base=`basename $val`
+    link_s "$pwd/$val" "$dir_individual/$base"
 done
+echo " Created $n_created links, skipped $n_skipped files"
 
 # Create merged PSF validation catalog
-#$SP_ROOT/scripts/python/merge_star_cat.py -i $dir_individual -o $dir_merged/$fname_merged -v
+merge_star_cat -i $dir_individual -o $dir_merged/$fname_merged -v
 
 # Create plots
-#$SP_ROOT/scripts/python/MeanShapes.py -o $dir_merged -i $dir_merged/$fname_merged -v -x 20 --max_e=0.05 --max_d=0.005
+MeanShapes -o $dir_merged -i $dir_merged/$fname_merged -v -x 20 --max_e=0.05 --max_d=0.005
 
 #tar czf p.tgz psf_validation_merged/*.png
+
+### End ###
