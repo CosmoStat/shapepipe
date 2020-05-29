@@ -50,10 +50,10 @@ Naming and numbering of the input files can closely follow the original image na
   Each CCD is stored in a different HDU.
   These files are used on input by `ShapePipe`. The pixel data can contain the observed image, a weight map, or a flag map.
   These images are typically created by a telescope analysis software (e.g.~`pitcairn`). Examples from CFIS are
-  `2228303p.fits`, `2214439p.flag.fits`. These names need to be modified to be correctly identified by `ShapePipe`:
-  The `p` needs to be removed, and the image type needs to precede the ID.  
-  Default convention: **<image_type>-<exposure_number>.fits**.  
-  Examples: `image-2228303.fits`, `flag-2214439.fits`
+  `2228303p.fits.fz`, `2214439p.flag.fits.fz`. These names need to be modified to be correctly identified by `ShapePipe`:
+  The `p` needs to be removed, the image type needs to precede the ID, and the file name can only contain a single dot (`.`) delimiting the file extension. We create the extension `fitsfz` for compressed FITS file.  
+  Default convention: **<image_type>-<exposure_number>.fitsfz**.  
+  Examples: `image-2228303.fitsfz`, `flag-2214439.fitsfz`
   
 - Single-exposure single-CCD image.  
   FITS file containing a single CCD from an individual exposure. The pixel data can contain the observed image, a weight
@@ -67,12 +67,17 @@ Naming and numbering of the input files can closely follow the original image na
   The pixel data can contain the observed image, a weight map, or a flag map. Tile images and weights are created in the
   case of CFIS by Stephen Gwyn using a combination of `swarp` and his own software. Examples of file names are
   `CFIS.316.246.r.fits`, `CFIS.205.267.r.weight.fits.fz`, the latter is a compressed FITS file, see below. Tile flag files
-  are created the mask module of `ShapePipe`, see (#mask-images). The tile ID needs to be modified such that the `.`
-  between the two tile numbers (RA and DEC indicator) is not mistaken for a file extension delimiter. In addition, for
+  are created the mask module of `ShapePipe`, see [Mask images](#mask-images). The tile ID needs to be modified such that the `.` between the two tile numbers (RA and DEC indicator) is not mistaken for a file extension delimiter. In addition, for
   clarity, we include the string `image` for a tile image type.  
   Default convention: **<image_type>-<number>.fits**  
   Examples: `CFIS_image-277_282.fits`, `CFIS_weight-274-282.fits.fz`, `pipeline_flag-239_293.fits`
-
+    
+- Database catalogue files  
+  For very large files that combine information from multiple tiles or single exposures, `ShapePipe` creates `sqlite`
+  data base catalogues.  
+  Convention: None  
+  Examples: `log_exp_headers.sqlite`, exposure header information
+  
 ### CFIS processing
 
 `ShapePipe' splits the processing of CFIS images into three parts: 1.) Preparation of the input images; 2.) Processing of single exposure images;
@@ -137,28 +142,30 @@ The config file `<config>.ini` contains the configuration for one or more module
 
 ## Prepare input images
 
+Before running `ShapePipe` we need to select and identify tiles and single exposures, and perform a few minor mofidication to file names and formats.
+
 ### Select tiles
 
 The selection of images on input can be done in the config files of the relevant modules, by specifying input
-path(s) and input file name patterns. Thus, a sub-selection of images in a given input directory can be made.
-However, one might want to pre-select specific images before the pipeline is run, for example to find all available images (exposures and stacks) in a given sky area. The resulting files can then be copied to a new, dedicated directory (or alternatively linked using symbolic links), or downloaded to a local machine.
+path(s) and input file name patterns. Either all, or a sub-selection of images in a given input directory can be selected in that way. One might want to pre-select a specific set of images, for example all available images in a given sky area. The resulting files can then be copied to a new, dedicated directory (or alternatively linked using symbolic links), or downloaded to a local machine.
 
-Images can also be selected to cover a given sky area, with the script `cfis_field_select`.
+Images can be selected to cover a given sky area, with the script `cfis_field_select`.
+Once we have selected the tiles, we can identify the single exposure images that were used to create those tiles, see [Fine exposures](#find-exposures).
 
-First, find the tile(s) covering a given coordinate or area. For example, the tile for a Planck cluster at R.A.=255.66 deg, dec= 34.05 deg can be found with the `--coord` option:
+For example, find the tile for a Planck cluster at R.A.=255.66 deg, dec= 34.05 deg can be found with the `--coord` option:
 ```bash
-cfis_field_select -i ~/CFIS/tiles+weights_DR2.txt --coord 255.66deg_34.05deg -v -t tile
+cfis_field_select -i tiles+weights_DR2.txt --coord 255.66deg_34.05deg -v -t tile
 ```
 The input text file (with `-i`) contains a list of CFIS tiles.
 
 We also need to get the weight files for the tile.
 ```bash
-cfis_field_select.py -i ~/CFIS/tiles+weights_DR2.txt --coord 255.66deg_34.05deg -v -t weight
+cfis_field_select.py -i tiles+weights_DR2.txt --coord 255.66deg_34.05deg -v -t weight
 ```
 
 ### Download tiles and modify names
 
-The tile images and weights selected in the previous section need to be findable by `ShapePipe` in the tiles input directory `input_tiles`. Either download the images and weights to, or, if they are already stored locally on a hard disk, create symbolic links in `input_tiles`. Now is a good time to make a necessary small change to the file names. Any dot (`.`) that does not indicate a file extension needs to be replaced. In addition, file type specifiers need to appear before the tile number. Therefore, images and weights need to be renamed, for example according to the following scheme:
+The tile images and weights selected in the previous section need to be findable by `ShapePipe` in the tiles input directory `input_tiles`. Either download the images and weights there, or, if they are already stored locally on a hard disk, create symbolic links in `input_tiles`. Now is a good time to make a necessary small change to the file names. As mentioned above, any dot (`.`) that does not indicate a file extension needs to be replaced. In addition, file type specifiers need to appear before the tile number. Therefore, images and weights need to be renamed, for example according to the following scheme:
 ```bash
 mv CFIS.424.248.r.fits CFIS_image_424_248.r.fits
 mv CFIS.424.248.r.weight.fits.fz CFIS_weight_424_248.r.weight.fits.fz
@@ -194,6 +201,12 @@ The resulting files need to be downloaded.
 
 ## Process single exposure images
 
+Single exposures can be processed in a single call of `ShapePipe`, with consecutive call to all required modules. The corresponding example config file is `$SP_CONFIG/config_exp.ini`, and the command is simply
+```bash
+shapepipe_run -c $SP_CONFIG/config_exp.ini
+```
+Alternatively each module can be executed by a separate `ShapePipe` call. The corresponding single-module example config files are indicated in the sections below.
+
 ### Split images
 
 **Module:** split_exp_runner   
@@ -204,52 +217,40 @@ The resulting files need to be downloaded.
 The first step of single-exposure processing is to split the single-exposures images into
 files that contain one CCD each.
 
-The example config file is `~/ShapePipe/example/GOLD/config_split_exp.ini`.
+The example config file is `$SP_CONFIG/config_split_exp.ini`.
 On input, we need to specify the three input types (exposures, weights, flags),
 and their extensions. This happens in the `[FILE]` section:
 ```ini
 [FILE]
-FILE_PATTERN = image,weight,flag
-FILE_EXT = .fitsfz,.fitsfz,.fitsfz
+FILE_PATTERN = image, weight, flag
+FILE_EXT = .fitsfz, .fitsfz, .fitsfz
 ```
 On output, the same three file types are required. The number of MegaCAM CCDs is 40:
 ```ini
 [SPLIT_EXP_RUNNER]
-OUTPUT_SUFFIX = image,weight,flag
+OUTPUT_SUFFIX = image, weight, flag
 N_HDU = 40
 ```
-
-Run
-```bash
-mkdir -p output
-~/ShapePipe/shapepipe_run.py -c ~/ShapePipe/example/GOLD/config_split_exp.ini
-```
-
-On success, files accordingt to the three output types are created.
+On success, files according to the three output types are created.
 
 ### Merge WCS headers
 
 **Module:** merge_headers  
 **Parent:** split_exp_runner  
 **Input:** single-exposure single_CCD images, weights, flags  
-**Output:** Single SQL file with combined header information  
+**Output:** single SQL file with combined header information  
 
 This pipeline module saves the WCS information (image
 transformation and distortions, computed during astrometrical calibration)
-for each CCD. At the end, this information has to be merged back into a single file.  
+for each CCD. At the end, this information has to be merged back into a single file.
+
+The example config file is `$SP_CONFIG/config_merge_headers.ini`.
 Specify the output path:
 ```ini
 [MERGE_HEADER_RUNNER]
-OUTPUT_PATH = $HOME/ShapePipeRun/output_headers
+OUTPUT_PATH = $SP_RUN/output_headers
 ```
-Create the output directory, and run the pipeline:
-
-```bash
-mkdir -p output_headers
-~/ShapePipe/shapepipe_run.py -c ~/ShapePipe/example/GOLD/config_merge_headers.ini
-```
-Since this produces a single output file
-instead of a file per input image, it is more convenient to have this file in
+Since this produces a single output file instead of a file per input image, it is more convenient to have this file in
 a separated directory for later use.
 
 On success, a single `.sqlite` file is created.
@@ -268,11 +269,12 @@ This module creates masks for bright stars, diffraction spikes, Messier objects,
 borders, and other artifacts. It joins the newly created mask with the already
 existing masks (from the input flag files) of cosmic rays and various artifacts.  
 
-Those mask parameters are read from a second config file, whose path
+The example config file is `$SP_CONFIG/config_mask.ini`.
+The mask parameters are read from a secondary config file, whose path
 needs to be specified:
 ```ini
 [MASK_RUNNER]
-MASK_CONFIG_PATH = $HOME/ShapePipe/example/GOLD/config.mask
+MASK_CONFIG_PATH = $SP_CONFIG/config.mask
 ```
 In this mask config file the default parameters can be kept in the most part.
 These parameters specify the mask properties for border, halos, spikes, Messier
@@ -280,7 +282,7 @@ objects, and external flag input (in our case provided from CFIS pre-processing)
 
 It points to various default parameter files for the different mask types,
 make sure that that paths are correct, in our case
-`$HOME/ShapePipe/example/GOLD/mask_default/` in front of each file name.
+`$SP_CONFIG/mask_default/` in front of each file name.
 
 To distinguish the newly created output flag files from the input ones,
 a suffix is added:
@@ -300,7 +302,7 @@ Then, the star catalogue needs to be specified as input in the config file,
 and a flag has to be set::
 ```ini
 [FILE]
-INPUT_DIR = last:split_exp_runner,${HOME}/ShapePipeRun/output_star_cat
+INPUT_DIR = last:split_exp_runner, $SP_RUN/output_star_cat
 [MASK_RUNNER]
 USE_EXT_STAR = True
 ```
@@ -312,11 +314,6 @@ the config files looks as follows:
 INPUT_DIR = last:split_exp
 [MASK_RUNNER]
 USE_EXT_STAR = False
-```
-
-Finally, run the module:
-```bash
-~/ShapePipe/shapepipe_run.py -c ~/ShapePipe/example/GOLD/config_mask.ini
 ```
 
 On success, pipeline-flag files are created.
