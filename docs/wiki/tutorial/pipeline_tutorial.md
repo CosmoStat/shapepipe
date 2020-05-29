@@ -49,9 +49,10 @@ Naming and numbering of the input files can closely follow the original image na
   Each CCD is stored in a different HDU.
   These files are used on input by `ShapePipe`. The pixel data can contain the observed image, a weight map, or a flag map.
   These images are typically created by a telescope analysis software (e.g.~`pitcairn`). Examples from CFIS are
-  `2228303p.fits`, `2214439p.flag.fits`. These names need to be slightly modified to be correctly identified by `ShapePipe`.  
+  `2228303p.fits`, `2214439p.flag.fits`. These names need to be modified to be correctly identified by `ShapePipe`:
+  The `p` needs to be removed, and the image type needs to precede the ID.  
   Default convention: **<image_type>-<exposure_number>.fits**.  
-  Examples: `image-2079614.fits`, `weight-2079614.fits`
+  Examples: `image-2228303.fits`, `flag-2214439.fits`
   
 - Single-exposure single-CCD image.  
   FITS file containing a single CCD from an individual exposure. The pixel data can contain the observed image, a weight
@@ -61,10 +62,15 @@ Naming and numbering of the input files can closely follow the original image na
 
 - Stacked images  
   FITS file containing a stack by co-adding different single exposures, created by software such as `swarp`.
-  A stacked image is also called *tile*.
-  The pixel data can contain the observed image, a weight map, or a flag map.  
+  A stacked image is also called *tile*. These files are used on input by `ShapePipe`.
+  The pixel data can contain the observed image, a weight map, or a flag map. Tile images and weights are created in the
+  case of CFIS by Stephen Gwyn using a combination of `swarp` and his own software. Examples of file names are
+  `CFIS.316.246.r.fits`, `CFIS.205.267.r.weight.fits.fz`, the latter is a compressed FITS file, see below. Tile flag files
+  are created the mask module of `ShapePipe`, see (#mask-images). The tile ID needs to be modified such that the `.`
+  between the two tile numbers (RA and DEC indicator) is not mistaken for a file extension delimiter. In addition, for
+  clarity, we include the string `image` for a tile image type.  
   Default convention: **<image_type>-<number>.fits**  
-  Examples: `CFIS_image-277_282.fits`, `pipeline_flag-239_293.fits`
+  Examples: `CFIS_image-277_282.fits`, `CFIS_weight-274-282.fits.fz`, `pipeline_flag-239_293.fits`
 
 ### CFIS processing
 
