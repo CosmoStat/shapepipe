@@ -89,6 +89,12 @@ Naming and numbering of the input files can closely follow the original image na
   The `SETools` module that creates samples of objects according to some user-defined selection criteria (see [Select stars](#select-stars)) also outputs ASCII files with user-defined summary statistics for each CCD, for example the number of selected stars, or mean and standard deviation of their FWHM.  
   Example: `star_stat-2366993-18.txt`
   
+- Plots
+  The `SETools` module can also produce plots of the objects properties that were selected for a given CCD.
+  The type of plot (histogram, scatter plot, ...) and quantities to plot as well as plot decorations can be specified in the
+  selection criteria config file (see [Select stars](#select-stars)).
+  Example: `hist_mag_stars-2104133-5.png`
+  
 - Log files
   The pipeline core and all called modules write ASCII log files to disk.  
   Examples: `process-2366993-6.log`, `log_sp_exp.log`. 
@@ -97,7 +103,7 @@ Naming and numbering of the input files can closely follow the original image na
 
 `ShapePipe` splits the processing of CFIS images into three parts:  
 1.) [Prepare input images](#prepare-input-images)  
-2.) [Process single exposure images](#prepare-single-exposure-images)  
+2.) [Process single exposure images](#process-single-exposure-images)  
 3.) [Process stacked images](#process-stacked-images)    
 The single exposures are first split into single-exposure single-CCD images, which are processed in turn and independent from one another.
 
@@ -132,12 +138,10 @@ In `$SP_RUN` the following subdirectories need to be created by the user:
 - `output_headers`: Single-exposure headers with WCS information`.
 - *Optional*: `output_star_cat`: Star catalogues, only necessary if the pipeline is run on a cluster without internet connection to access star catalogues. In that case, the star catalogues need to be retrieved outside the pipeline, for example on a login node, and copied to `output_star_cat`.
 
-In general, a call to the pipeline is done as follows:
-
+In general, a call to the pipeline is done as follows, after activating the `shapepipe` conda environment.
 ```bash
-shapepipe_run -c $SP_CONFIG/<config>.ini
+(shapepipe) shapepipe_run -c $SP_CONFIG/<config>.ini
 ```
-
 The config file `<config>.ini` contains the configuration for one or more modules.
 
 
@@ -188,17 +192,19 @@ done
 
 ### Find exposures
 
-Once the resulting tiles and weight images are downloaded, we need to get the exposure images that where co-added to produce the tiles.
-These can be found from the tile header, with the `--tile` option. We need all three single-exposure types, data, weights, and flags:
+Once the resulting tiles and weight images are downloaded, we need to get the exposure images that where co-added to produce the tiles. These can be found from the tile header, with the `--tile` option. We need all three single-exposure types, data, weights, and flags:
 ```bash
 ~/ShapePipe/scripts/python/cfis_field_select.py -i ~/CFIS --tile -v -t exposure
 ~/ShapePipe/scripts/python/cfis_field_select.py -i ~/CFIS --tile -v -t exposure_weight.fz
 ~/ShapePipe/scripts/python/cfis_field_select.py -i ~/CFIS --tile -v -t exposure_flag.fz
 ```
 
-The resulting files need to be downloaded.
+The resulting files need to be downloaded. Next, file names need to be modified as described above.
 
-
+At the end of the preparation part, the following files or symbolic links need to exist:
+- in `input_tiles` all tile images and uncompressed tile weights (extension `.fits`) to be processed
+- in `input_exposures` all single-exposure images, weights, and flags that were used to create the tiles in `input_tiles`,
+  as compressed FITS filts (extension `.fitsfz`)
 
 ## Process single exposure images
 
@@ -297,7 +303,7 @@ internet access, such a catalog can also be created for each image, before runni
 this module as follows:
 ```bash
 mkdir -o output_star_cat
-~/ShapePipe/scripts/python/create_star_cat.py input_exposures output_star_cat exp
+create_star_cat.py input_exposures output_star_cat exp
 ```
 Then, the star catalogue needs to be specified as input in the config file,
 and a flag has to be set::
@@ -307,7 +313,6 @@ INPUT_DIR = last:split_exp_runner, $SP_RUN/output_star_cat
 [MASK_RUNNER]
 USE_EXT_STAR = True
 ```
-
 If instad the star catalogues can be accessed during the pipeline running,
 the config files looks as follows:
 ```ini
@@ -348,7 +353,7 @@ is
 ```ini
 DETECT_THRESH    2.             # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 ```
-in the file `$HOME/ShapePipe/example/GOLD/sextractor_default/default.sex`.
+in the file `$SP_CONFIG/sextractor_default/default.sex`.
 
 On success, SEXtractor catalogue FITS files are produced.
 
@@ -367,7 +372,7 @@ The selection criteria are given in a selection configuration file, whose name i
 in the `setools` section:
 ```ini
 [SETOOLS_RUNNER]
-SETOOLS_CONFIG_PATH = $HOME/ShapePipe/example/GOLD/star_selection.setools
+SETOOLS_CONFIG_PATH = $SP_CONFIG/star_selection.setools
 ```
 The selection config file `star_selection.setools` first defined a pre-selectione (or filter, or mask),
 such that the subsequent computation of the mode is more stable:
@@ -442,7 +447,7 @@ need to be changed.
 ```ini
 [PSFEX_RUNNER]
 EXEC_PATH = psfex
-DOT_PSFEX_FILE = ./example/test_psfex/default.psfex
+DOT_PSFEX_FILE = $SP_CONFIG/default.psfex
 ```
 
 On success, FITS files containing the star catalalogue (`psfex_cat-*.cat`) and the PSF at
@@ -500,9 +505,8 @@ The (single) output file is then `SP_RUN/psf_validation/full_starcat.fits`.
 Outside the pipeline, create plots of PSF, model, and residual
 ellipticity and shape:
 ```bash
-~/ShapePipe/scripts/python/MeanShapes.py -o psf_validation -x 10 -y 20 -i psf_validation/full_starcat.fits -v
+MeanShapes.py -o psf_validation -x 20 --max_e=0.05 --max_d=0.005 -i psf_validation/full_starcat.fits -v
 ```
-
 
 ## Process stacked images
 
