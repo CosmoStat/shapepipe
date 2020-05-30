@@ -521,7 +521,7 @@ This is the analogue of the single-exposure mask module(#mask-images), but for s
 The mask configuration file needs to be the tile-specific one:
 ```ini
 [MASK_RUNNER]
-MASK_CONFIG_PATH = $HOME/ShapePipe/example/GOLD/config.mask
+MASK_CONFIG_PATH = $SP_CONFIG/config.mask
 ```
 This configuration file has a few differences compared to the single-exposure one.
 First, the border region can be much smaller. Second, no external flag files exist,
