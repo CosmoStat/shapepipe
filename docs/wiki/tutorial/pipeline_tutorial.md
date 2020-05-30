@@ -69,7 +69,7 @@ Naming and numbering of the input files can closely follow the original image na
   `CFIS.316.246.r.fits`, `CFIS.205.267.r.weight.fits.fz`, the latter is a compressed FITS file, see below. Tile flag files
   are created the mask module of `ShapePipe` (see [Mask images](#mask-images)). The tile ID needs to be modified such that the `.` between the two tile numbers (RA and DEC indicator) is not mistaken for a file extension delimiter. In addition, for
   clarity, we include the string `image` for a tile image type.  
-  Default convention: **<image_type>-<number>.fits**  
+  Default convention: **<image_type>-<tile_number>.fits**  
   Examples: `CFIS_image-277_282.fits`, `CFIS_weight-274-282.fits.fz`, `pipeline_flag-239_293.fits`
     
 - Database catalogue files  
@@ -95,33 +95,19 @@ Naming and numbering of the input files can closely follow the original image na
   
 ### CFIS processing
 
-`ShapePipe' splits the processing of CFIS images into three parts: 1.) Preparation of the input images; 2.) Processing of single exposure images;
-3.) Processing of stacked images. The single exposures are first split into single-exposure single-CCD images, which are processed in turn and independent from one another.
+`ShapePipe` splits the processing of CFIS images into three parts:  
+1.) [Prepare input images](#prepare-input-images)  
+2.) [Process single exposure images](#prepare-single-exposure-images)  
+3.) [Process stacked images](#process-stacked-images)    
+The single exposures are first split into single-exposure single-CCD images, which are processed in turn and independent from one another.
 
 The preparation of input images is done before running the actual pipeline, using auxilliary scripts.
 
-The processing of single exposure images contains the following steps:
-  * Split exposure into single-exposure single-CCD images
-  * Create masks for bright stars, spikes, borders, Messier objects, ...
-  * Detect stars
-  * Model the PSF
-  * Validate the PSF model (optional)
-
-The processing of stacked images has the following tasks:
-  * Create mask for bright stars, spikes, border, Messier objects, ...
-  * Detect all sources
-  * Interpolate the PSF model at the location of each source for all contributing exposures
-  * Create postage stamps necessary for the *spread model*, for galaxy selection
-  * Compute the spread model for each source
-  * Create postage stamps, for the shape measurement
-  * Measure galaxy shapes
-  * Merge all results into one parent catalog
-
-The following flowchart visualised these processes:
+The following flowchart visualised the processing parts and steps.
 
 ![ShapePipe_FlowChart](./ShapePipe_v0.0.1.png)
 
-In the following, the individual processing steps are described in detail.
+Below, the individual processing steps are described in detail.
 
 
 ### Path variables
