@@ -20,16 +20,16 @@
     1. [Extract sources](#extract-sources)
     1. [Select stars](#select-stars)
     1. [Model the PSF](#model-the-psf)
-    1. [Validation tests](#validation tests)
+    1. [Validation tests](#validation-tests)
 1. [Process stacked images](#process-stacked-images)
     1. [Mask stacks](#mask-stacks)
     1. [Extract sources on stacks](#extract-sources-on-stacks)
     1. [Interpolate multi-epoch PSF](#interpolate-multi-epoch-psf)
     1. [Create weight postage stamps](#create-weight-postage-stamps)
     1. [Compute spread model](#compute-spread-model)
-    1. [Prepare shape measurement](#Prepare-shape-measurement)
-    1. [NGMIX : Shape measurement](#NGMIX-:-Shape measurement)
-    1. [Make final catalog](#Make-final-catalog)
+    1. [Create single-exposure postage stamps](#create-single-exposure-postage-stamps)
+    1. [Multi-epoch shape measurement with ngmix](#multi-epoch-shape-measurement-with-ngmix)
+    1. [Create final catalog](#create-final-catalog)
 
 ## Introduction
 
@@ -67,7 +67,7 @@ Naming and numbering of the input files can closely follow the original image na
   The pixel data can contain the observed image, a weight map, or a flag map. Tile images and weights are created in the
   case of CFIS by Stephen Gwyn using a combination of `swarp` and his own software. Examples of file names are
   `CFIS.316.246.r.fits`, `CFIS.205.267.r.weight.fits.fz`, the latter is a compressed FITS file, see below. Tile flag files
-  are created the mask module of `ShapePipe`, see [Mask images](#mask-images). The tile ID needs to be modified such that the `.` between the two tile numbers (RA and DEC indicator) is not mistaken for a file extension delimiter. In addition, for
+  are created the mask module of `ShapePipe` (see [Mask images](#mask-images)). The tile ID needs to be modified such that the `.` between the two tile numbers (RA and DEC indicator) is not mistaken for a file extension delimiter. In addition, for
   clarity, we include the string `image` for a tile image type.  
   Default convention: **<image_type>-<number>.fits**  
   Examples: `CFIS_image-277_282.fits`, `CFIS_weight-274-282.fits.fz`, `pipeline_flag-239_293.fits`
@@ -75,8 +75,23 @@ Naming and numbering of the input files can closely follow the original image na
 - Database catalogue files  
   For very large files that combine information from multiple tiles or single exposures, `ShapePipe` creates `sqlite`
   data base catalogues.  
-  Convention: None  
   Examples: `log_exp_headers.sqlite`, exposure header information
+  
+- Numpy array binary files  
+  Some large files are stored as numpy arrays.  
+  Example: `headers-2366993.npy`
+  
+- PSF files  
+  `PSFEx` and `SExtractor` produce FITS files with file exentions other than `.fits`: `.psf` for files containing PSF
+  model information for a single CCD, and `.cat` for a PSF catalogue.
+  
+- Summary statistic files  
+  The `SETools` module that creates samples of objects according to some user-defined selection criteria (see [Select stars](#select-stars)) also outputs ASCII files with user-defined summary statistics for each CCD, for example the number of selected stars, or mean and standard deviation of their FWHM.  
+  Example: `star_stat-2366993-18.txt`
+  
+- Log files
+  The pipeline core and all called modules write ASCII log files to disk.  
+  Examples: `process-2366993-6.log`, `log_sp_exp.log`. 
   
 ### CFIS processing
 
@@ -740,10 +755,10 @@ Now we run the shape measurement. At the moment it's done with NGMIX. Most of th
 LOG_WCS = /path/to/file/containing/WCS/information/log_exp_headers.npy
 ```
 
-### Make final catalog
+### Create final catalog
 
-**Module :** make_catalog_runner   
-**Module inputs :** sextractor_catalog, spread_model, tile_psf, ngmix_catalog
+**Module:** make_catalog_runner   
+**Inputs:** sextractor_catalog, spread_model, tile_psf, ngmix_catalog
 
 We finally merge all the results into one catalog per tiles. Here is a commented example config file for the pipeline :
 
