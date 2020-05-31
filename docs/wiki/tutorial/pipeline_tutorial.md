@@ -508,6 +508,8 @@ ellipticity and shape:
 MeanShapes -o $SP_RUN/psf_validation -x 20 --max_e=0.05 --max_d=0.005 -i $SP_RUN/psf_validation/full_starcat.fits -v
 ```
 
+On success, `png` files with plot of the focal plane are created in `$SP_RUN/psf_validation`.
+
 ## Process stacked images
 
 We leave the successfully processed single exposures for the moment, and turn our attention to the stacks. The first objective is to detect sources on the stacks, which provide a higher signal-to-noise ratio compared to detecting on the single exposures. For all further processing step, the information from the single exposures at the detected positions is used, for example the PSF model, and the object postage stamps.
@@ -543,6 +545,8 @@ TEMP_DIRECTORY = .temp_tiles
 work with the pipeline. Thus for the moment, the mask package needs to be run
 on the login node.
 
+On success, flag files containing the mask information are created.
+
 ### Extract sources on stacks
 
 **Module:** sextractor_runner (in multi-epoch mode)  
@@ -553,7 +557,7 @@ on the login node.
 To detect a maximum of sources on the tiles, we set a low detection threshold.
 In addition, a post-processing step is run to find all epochs that contributed
 to a given detected object. The different entries compared to the
-single-exposure case (see [#Extract sources](#extract-sources)) are thus:
+single-exposure case (see [Extract sources](#extract-sources)) are thus:
 ```ini
 [SEXTRACTOR_RUNNER]
 # Point to the tile-specific SExtractor parameter file
@@ -600,6 +604,8 @@ on the stack, one HDU for each epoch. For those HDUs the columns are:
 These additionnal HDUs contain all the multi-epoch informations we need for the
 following processing steps.
 
+On success, multi-epoch SExtractor catalogues are created.
+
 ### Interpolate multi-epoch PSF
 
 **Module:** psfexinterp_runner   
@@ -607,23 +613,24 @@ following processing steps.
 **Input:** SExtractor catalog with multi-epoch information   
 **Output:** tile PSF dictionary
 
-This step interpolates the PSF to the position of all detected sources on the
-tiles for all epochs where the object appears.
+This step interpolates the PSF to the positions of all detected sources on the
+tiles for all epochs on which the object is imaged.
 The run mode has to be set to multi-epoch. In addition, the single-exposure
 PSF information needs to be read. Unfortunately, at present, this cannot be
-provided automatically pointing to the corresponding run. The simplest way
-is to set a symbolic link to the corresponding run output directory:
+set in the config file as general pointer to the corresponding files from the single-exposure run.
+The simplest way is to find the output directory of the star PSF files, and create a symbolic link:
 ```bash
-ln -s output/shapepipe_run_2020-03-19_18-28-03/psfex_runner/output input_psf
+input_psfex=`find . -name star_selection-*.psf | head -n 1`
+ln -s `dirname $input_psfex` input_psfex
 ```
-and to indicate the link name in the config file:
+and to provide the link name in the config file:
 ```ini
 [PSFEXINTERP_RUNNER]
 MODE = MULTI-EPOCH
 ME_DOT_PSF_DIR = input_psfex
 ```
 
-On success, `sqlite` output catalogues are created containing the PSF on
+On success, `sqlite` output data bases are created containing the PSF on
 vignets (postage stamps). The structure is similar
 to a dictionary with the following format:
 ```python
@@ -640,7 +647,6 @@ For example:
  ...}
 ```
 
-
 ### Create weight postage stamps
 
 **Module:** vignetmaker_runner   
@@ -654,12 +660,11 @@ classification computation, performed in the nex step, requires
 * The PSF information at the objects' location
 * The vignets of the weight image at the objects' location
 
-The first two have already been obtained, thus we only need to extract the
-weights. These are needed to weigh the object images for corresponding
-comparison to the weighted single-exposure PSFs for the spread model
-classification.
+The first two outputs have already been obtained (see [Extract sources on stacks](#extract-sources-on-stacks) and []Interpolate multi-epoch PSF(#interpolate-multi-epoch-psf)), thus we only need to extract the
+weights. These are needed to weigh the object images for the comparison to the weighted single-exposure PSFs
+in the spread model classification.
 
-On success, FITS tables with vignets containing the weight for each object.
+On success, FITS tables with vignets containing the weight for each object are created.
 
 ### Compute spread model
 
@@ -686,7 +691,7 @@ and an error estimate is produced.
 **Output:** single-exposure vignet dictionary
 
 This second iteration of the vignet creation module is the last step in
-preparation for galaxy shape measurement. Multi-epoch shape measurement equires
+preparation for galaxy shape measurement. Multi-epoch shape measurement requires
 * The SExtractor tile catalog with spread-model information
 * The vignets of single-exposure images for tile-detected objects
 * The vignets of single-exposure weights at the position of tile-detected objects
@@ -695,8 +700,8 @@ preparation for galaxy shape measurement. Multi-epoch shape measurement equires
   detected objects
 * The vignets of the single-exposure PSFs
 
-The first and last items of the list were obtained in (#compute-spread-model)
-and (#interpolate-multi-epoch-psf), respectively. The missing middle three are
+The first and last items of the list were already obtained (see [Compute spread model](#compute-spread-model)
+and [Interpolate multi-epoch PSF](#interpolate-multi-epoch-psf)). The missing middle three products are
 thus to be extracted here. For technical reasons, we have to use for the
 moment the module `vignetmaker_runner2`, run in `MULTI-EPOCH` mode. To work
 in tile coordinates, we need spherical WORLD coordinates instead of Cartesian IMAGE (pixel)
@@ -711,16 +716,16 @@ COORD = SPHE
 
 # Coordinate frame type, one in PIX (pixel frame), SPHE (spherical coordinates)
 COORD = SPHE
-POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD
+POSITION_PARAMS = XWIN_WORLD, YWIN_WORLD
 
 # Additional parameters for path and file pattern corresponding to single-exposure
 # run outputs
-ME_IMAGE_DIR = input_split_exp,input_split_exp,input_split_exp,input_sextractor
-ME_IMAGE_PATTERN = flag,image,weight,sexcat_background
+ME_IMAGE_DIR = input_split_exp, input_split_exp, input_split_exp, input_sextractor
+ME_IMAGE_PATTERN = flag, image, weight,s excat_background
 ```
 The last entries indicate four input paths and corresponding file patterns, for:
-single_exposure single-CCD images, weights, flags, created in (#split-images), and
-for single-exposure background vignet file, created in (#extract-sources).
+single_exposure single-CCD images, weights, flags (created in [Split images](#split-images)), and
+single-exposure background vignet file (created in [Extract sources](#extract-sources)).
 
 On success, `sqlite` dictionaries with vignets for the image, weight, flag, and
 background are created.
@@ -733,13 +738,14 @@ background are created.
 tile_psf, single_exp_weight_vignet, single_exp_flag_vignet  
 **Output:** SExtractor catalogue
 
-Now we run the shape measurement. At the moment it's done with NGMIX. Most of the features are hard coded (will be more flexible in the future). Here is a commented example config file for the pipeline :
+Now we are finally ready to run the shape measurement. At the moment this is done with algorithms largely based on NGMIX, and extensively using `galsim` classes.
+Here is a commented example config file for the pipeline:
 
 ```ini
 [NGMIX_RUNNER]
 
 # Create with the split_exp_hdu module
-LOG_WCS = /path/to/file/containing/WCS/information/log_exp_headers.npy
+LOG_WCS = $SP_CONFIG/output_headers/log_exp_headers.npy
 ```
 
 ### Create final catalog
