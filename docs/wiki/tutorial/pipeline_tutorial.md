@@ -138,9 +138,9 @@ In `$SP_RUN` the following subdirectories need to be created by the user:
 - `output_headers`: Single-exposure headers with WCS information`.
 - *Optional*: `output_star_cat`: Star catalogues, only necessary if the pipeline is run on a cluster without internet connection to access star catalogues. In that case, the star catalogues need to be retrieved outside the pipeline, for example on a login node, and copied to `output_star_cat`.
 
-In general, a call to the pipeline is done as follows, after activating the `shapepipe` conda environment.
+In general, a call to the pipeline is done as follows, after activating the `shapepipe` conda environment (indicated by `(shapepipe)` at the beginning of the shell prompt.
 ```bash
-(shapepipe) shapepipe_run -c $SP_CONFIG/<config>.ini
+shapepipe_run -c $SP_CONFIG/<config>.ini
 ```
 The config file `<config>.ini` contains the configuration for one or more modules.
 
@@ -194,9 +194,9 @@ done
 
 Once the resulting tiles and weight images are downloaded, we need to get the exposure images that where co-added to produce the tiles. These can be found from the tile header, with the `--tile` option. We need all three single-exposure types, data, weights, and flags:
 ```bash
-~/ShapePipe/scripts/python/cfis_field_select.py -i ~/CFIS --tile -v -t exposure
-~/ShapePipe/scripts/python/cfis_field_select.py -i ~/CFIS --tile -v -t exposure_weight.fz
-~/ShapePipe/scripts/python/cfis_field_select.py -i ~/CFIS --tile -v -t exposure_flag.fz
+cfis_field_select -i ~/CFIS --tile -v -t exposure
+cfis_field_select -i ~/CFIS --tile -v -t exposure_weight.fz
+cfis_field_select -i ~/CFIS --tile -v -t exposure_flag.fz
 ```
 
 The resulting files need to be downloaded. Next, file names need to be modified as described above.
@@ -303,7 +303,7 @@ internet access, such a catalog can also be created for each image, before runni
 this module as follows:
 ```bash
 mkdir -o output_star_cat
-create_star_cat.py input_exposures output_star_cat exp
+create_star_cat input_exposures output_star_cat exp
 ```
 Then, the star catalogue needs to be specified as input in the config file,
 and a flag has to be set::
@@ -391,7 +391,7 @@ NO_SAVE
 The star sample is then selected as follows:
 ```ini
 [MASK:star_selection]
-MAG_AUTO > 17.
+MAG_AUTO > 17.0
 MAG_AUTO < 21.5
 # NOTE : unit is pixel
 FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
@@ -505,10 +505,12 @@ The (single) output file is then `SP_RUN/psf_validation/full_starcat.fits`.
 Outside the pipeline, create plots of PSF, model, and residual
 ellipticity and shape:
 ```bash
-MeanShapes.py -o psf_validation -x 20 --max_e=0.05 --max_d=0.005 -i psf_validation/full_starcat.fits -v
+MeanShapes -o $SP_RUN/psf_validation -x 20 --max_e=0.05 --max_d=0.005 -i $SP_RUN/psf_validation/full_starcat.fits -v
 ```
 
 ## Process stacked images
+
+We leave the successfully processed single exposures for the moment, and turn our attention to the stacks. The first objective is to detect sources on the stacks, which provide a higher signal-to-noise ratio compared to detecting on the single exposures. For all further processing step, the information from the single exposures at the detected positions is used, for example the PSF model, and the object postage stamps.
 
 ### Mask stacks
 
@@ -517,30 +519,27 @@ MeanShapes.py -o psf_validation -x 20 --max_e=0.05 --max_d=0.005 -i psf_validati
 **Input:** stack image, stack weight [, star catalogue)   
 **Output:** stack flag
 
-This is the analogue of the single-exposure mask module(#mask-images), but for stacks.
-The mask configuration file needs to be the tile-specific one:
+This is the analogue of the single-exposure mask module (see [Mask images](#mask-images)) for the stacks.
+The example module config file is `$SP_CONFIG/config_mask_tile.ini`, pointing to the tile-specific
+mask configuration file:
 ```ini
 [MASK_RUNNER]
 MASK_CONFIG_PATH = $SP_CONFIG/config.mask
 ```
-This configuration file has a few differences compared to the single-exposure one.
-First, the border region can be much smaller. Second, no external flag files exist,
-and third the temporary directory should be different:
+The mask configuration file has a few differences compared to the single-exposure one.
+First, no border region needs to be flagged. Second, no external flag files exist,
+and third, the temporary directory should be different:
 ```ini
 [BORDER_PARAMETERS]
-BORDER_WIDTH = 5
+BORDER_MAKE = False
+BORDER_WIDTH = 0
 [EXTERNAL_FLAG]
-F_MAKE = False
+EF_MAKE = False
 [OTHER]
 TEMP_DIRECTORY = .temp_tiles
 ```
 
-Run the package:
-```bash
-~/ShapePipe/shapepipe_run.py -c ~/ShapePipe/example/GOLD/config_mask_tile.ini
-```
-
-> Note: On the cc the star catalogues created by `create_star_cat.py` did not
+> Note: On the cc the star catalogues created by `create_star_cat` did not
 work with the pipeline. Thus for the moment, the mask package needs to be run
 on the login node.
 
@@ -552,26 +551,25 @@ on the login node.
 **Output:** SExtractor catalogue with multi-epoch information
 
 To detect a maximum of sources on the tiles, we set a low detection threshold.
-In addition, a a post-processing step is run to find all epochs that contributed
+In addition, a post-processing step is run to find all epochs that contributed
 to a given detected object. The different entries compared to the
-single-exposure case (#extract-sources) are thus:
-parameter file.
+single-exposure case (see [#Extract sources](#extract-sources)) are thus:
 ```ini
 [SEXTRACTOR_RUNNER]
 # Point to the tile-specific SExtractor parameter file
-DOT_SEX_FILE = $HOME/ShapePipe/example/GOLD/default_tile.sex
+DOT_SEX_FILE = $SP_CONFIG/default_tile.sex
 
 # Necessary for tiles, to enable multi-exposure processing
 MAKE_POST_PROCESS = TRUE
 
 # Multi-epoch mode: Path to file with single-exposure WCS header information
-LOG_WCS = ${HOME}/ShapePipeRun/output_headers/log_exp_headers.sqlite
+LOG_WCS = $SP_Run/output_headers/log_exp_headers.sqlite
 
 # World coordinate keywords, SExtractor output. Format: KEY_X,KEY_Y
-WORLD_POSITION = XWIN_WORLD,YWIN_WORLD
+WORLD_POSITION = XWIN_WORLD, YWIN_WORLD
 
 # Number of pixels in x,y of a CCD. Format: Nx,Ny
-CCD_SIZE = 33,2080,1,4612
+CCD_SIZE = 33, 2080, 1, 4612
 
 ```
 The different entries in the SExtractor parameter file are
@@ -581,9 +579,8 @@ ANALYSIS_THRESH  1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 DEBLEND_MINCONT  0.0005         # Minimum contrast parameter for deblending
 BACK_TYPE        MANUAL         # AUTO or MANUAL
 ```
-On success, output FITS SEXtractor files are created. They have the following format:
+On success, output FITS SExtractor files are created. They have the following format:
 ```python
-
 HDU  Name        Ver Type         Cards   Dimensions    Format
   0  PRIMARY       1 PrimaryHDU       4   ()      
   1  LDAC_IMHEAD   1 BinTableHDU     12   1R x 1C       [8560A]   
@@ -592,15 +589,15 @@ HDU  Name        Ver Type         Cards   Dimensions    Format
   4  EPOCH_1       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
  ...
 ```
-
 The first 3 HDUs correspond to the usual SExtractor output. The following HDUs
-`EPOCH_X` contain the single-exposure information contributing to the objects
+`EPOCH_<N>` contain the single-exposure information contributing to the objects
 on the stack, one HDU for each epoch. For those HDUs the columns are:
-* **NUMBER** : object id atributed by SExtractor
-* **EXP_NAME** : name of the single exposure (same for all objects of one HDU)
-* **CCD_N** : CCD number in which the object is following the MegaCam numbering (set to -1 if the object is not on the single exposure)
+* **NUMBER**: object id atributed by SExtractor
+* **EXP_NAME**: name of the single exposure (same for all objects of one HDU)
+* **CCD_N**: CCD number in which the object is following the MegaCam numbering (set to -1 if the object is not
+  on the single exposure)
 
-Those additionnal HDUs contain all the multi-epoch informations we need for the
+These additionnal HDUs contain all the multi-epoch informations we need for the
 following processing steps.
 
 ### Interpolate multi-epoch PSF
