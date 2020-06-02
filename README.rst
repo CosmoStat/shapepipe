@@ -46,6 +46,8 @@ Contents
 
    a. `Modules`_
    b. `Examples`_
+   
+5. `Additional Documentation <docs/wiki/shapepipe.md>`_
 
 Dependencies
 ============
