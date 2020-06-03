@@ -118,6 +118,7 @@ class GetImages(object):
                 sys.argv.append(opt)
             sys.argv.append(in_path)
             sys.argv.append(out_path)
+            from vos.commands.vcp import vcp
             try:
                 vcp()
             except:
