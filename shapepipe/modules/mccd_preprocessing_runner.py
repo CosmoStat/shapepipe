@@ -135,7 +135,7 @@ def mccd_preprocessing_runner(input_file_list, run_dirs, file_number_string,
                 train_dic = {'VIGNET_LIST': mccd_stars, 'GLOB_POSITION_IMG_LIST': mccd_poss,
                              'MASK_LIST': mccd_masks, 'CCD_ID_LIST': mccd_ccds, 'SNR_WIN_LIST': mccd_SNRs}
 
-                mccd_utils.save_fits(train_dic, train_bool, catalog_id, output_mccd_path)
+                mccd_utils.save_fits(train_dic, train_bool, catalog_id, output_mccd_path,input_file_list[0][0])
 
         if it_tr_te == 0:
             print('Finished the training dataset processing.')
