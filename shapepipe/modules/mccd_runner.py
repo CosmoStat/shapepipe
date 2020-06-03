@@ -64,7 +64,7 @@ def mccd_rca_fit(starcat, rcainst_kw, rcafit_kw, output_dir, file_number_string,
     masks = starcat[2].data['MASK_LIST']
 
     # If masks are not provided they have to be calculated
-    if masks[0] == False:
+    if np.sum(masks) == 0:
         masks = handle_SExtractor_mask(stars, sex_thresh)
 
     # SNR treatment
