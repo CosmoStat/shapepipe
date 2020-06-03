@@ -52,7 +52,6 @@ def get_status(tile_num):
         else:
             status = res_wait, 'job not finished'
 
-
     return status
 
 

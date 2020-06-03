@@ -39,4 +39,5 @@ __module_list__ = ['combine_mexp_runner',
                    'merge_headers_runner',
                    'merge_star_cat_runner',
                    'uncompress_fits_image_runner',
-                   'erase_output_runner']
+                   'erase_output_runner',
+                   'merge_sep_cats_runner']
