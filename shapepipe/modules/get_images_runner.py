@@ -98,12 +98,6 @@ class GetImages(object):
         None
         """
 
-        if self._copy == 'vos':
-            try:
-                from vos.commands.vcp import vcp
-            except:
-                raise ImportError('vos modules not found, re-install ShapePipe with \'install_pipeline --vos\'')
-
         for in_per_type, out_per_type in zip(all_inputs, all_outputs):
             for i in range(len(in_per_type)):
                 self.copy_one(in_per_type[i], out_per_type[i])
@@ -118,7 +112,10 @@ class GetImages(object):
                 sys.argv.append(opt)
             sys.argv.append(in_path)
             sys.argv.append(out_path)
-            from vos.commands.vcp import vcp
+            try:
+                from vos.commands.vcp import vcp
+            except:
+                raise ImportError('vos modules not found, re-install ShapePipe with \'install_pipeline --vos\'')
             try:
                 vcp()
             except:
