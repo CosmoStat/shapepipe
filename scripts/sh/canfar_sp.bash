@@ -1,10 +1,15 @@
 #!/bin/bash
 
-# Description: Process one tile and all contributing exposures
-#              on canfar
+# Name: canfar_sp.bash
+# Description: Process one or more tiles with all
+#              contributing exposures on canfar.
+#              This is the job submission script for
+#              the canfar batch system. Can also be
+#              called in interactive mode on a virtual
+#              machine.
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 # Date: 03/2020
-# Package: ShapePipe
+# Package: shapepipe
 
 
 ### Set-up ###
@@ -15,10 +20,12 @@
 
 if [ $# == 0 ]; then
   echo "Usages:"
-  echo "  bash sp_tile.bash TILE_ID_1 [TILE_ID_2 [...]]"
+  echo "  bash canfar_spe.bash TILE_ID_1 [TILE_ID_2 [...]]"
   echo "    TILE_ID = xxx.yyy"
-  echo "    Example: sp_tile.bash 244.252"
-  echo "  . sp_tile.bash -e"
+  echo "    Examples:"
+  echo "      canfar_sp.bash 244.252"
+  echo "      canfar_sp.bash 244.252 239.293"
+  echo "  . canfar_sp.bash -e"
   echo "    Assign environment variables"
   exit 1
 fi
@@ -27,8 +34,7 @@ fi
 TILE_ARR=($@)
 
 # For tar archives. Should be unique to each job
-#ID=${TILE_ARR[0]}
-ID=`echo ${TILE_ARR[@]} | tr ' ' '_'`
+export ID=`echo ${TILE_ARR[@]} | tr ' ' '_'`
 
 # For testing only use one exposure
 ONE_EXP=0
@@ -38,10 +44,7 @@ ONE_EXP=0
 # VM home (do not modify)
 export VM_HOME=/home/ubuntu
 
-# Path to ShapePipe installation
-export SP_ROOT=$VM_HOME/ShapePipe
-
-## Path variables used in ShapePipe config files
+## Path variables used in shapepipe config files
 
 # Run path and location of input image directories
 export SP_RUN=`pwd`
@@ -87,7 +90,7 @@ export VCP_QUICK=1
 if [ $VCP_QUICK == 1 ]; then
    qflag="--quick"
 else
-  qflag=""
+   qflag=""
 fi
 export CERTFILE=$VM_HOME/.ssl/cadcproxy.pem
 export VCP="vcp $qflag --certfile=$CERTFILE"
@@ -129,17 +132,16 @@ function command () {
       else
          echo -e "${RED}error, return value = $res${NC}"
          if [ $STOP == 1 ]; then
-            echo "${RED}exiting 'sp_tile.bash', error in command '$cmd'${NC}"
+            echo "${RED}exiting 'canfar_sp.bash', error in command '$cmd'${NC}"
             exit $res
 	 else
-            echo "${RED}continuing 'sp_tile.bash', error in command '$cmd'${NC}"
+            echo "${RED}continuing 'canfar_sp.bash', error in command '$cmd'${NC}"
          fi
       fi
    fi
 
    return $res
 }
-
 
 # Run command. If error occurs, upload sp log files before stopping script.
 command_sp() {
@@ -153,7 +155,7 @@ command_sp() {
    res=$?
    if [ $res != 0 ]; then
       upload_logs $id $verbose
-      echo "exiting 'sp_tile.bash', error in command '$cmd', log files for id=$id uploaded"
+      echo "exiting 'canfar_sp.bash', error in command '$cmd', log files for id=$id uploaded"
       exit $res
    fi
 
@@ -197,7 +199,6 @@ function print_env() {
    echo " ONE_EXP=$ONE_EXP"
    echo "Paths:"
    echo " VM_HOME=$VM_HOME"
-   echo " SP_ROOT=$SP_ROOT"
    echo " SP_RUN=$SP_RUN"
    echo " INPUT_TILES=$INPUT_TILES"
    echo " INPUT_EXP=$INPUT_EXP"
@@ -208,6 +209,7 @@ function print_env() {
    echo "Other variables:"
    echo " VCP=$VCP"
    echo " CERTFILE=$CERTFILE"
+   echo " qflag=$qflag"
    echo " STOP=$STOP"
    echo " verbose=$VERBOSE"
    echo " LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
@@ -263,14 +265,14 @@ for TILE in ${TILE_ARR[@]}; do
 	   "Download tile image" "$VERBOSE"
    command "$VCP vos:cfis/tiles_DR2/CFIS.${TILE}.r.weight.fits.fz $INPUT_TILES/CFIS_weight-$SP_TILE.fits.fz" \
 	   "Copy weight image from vos" "$VERBOSE"
-   command "$SP_ROOT/scripts/python/cfis_weight_format.py -i $INPUT_TILES/CFIS_weight-$SP_TILE.fits.fz -o $INPUT_TILES/CFIS_weight-$SP_TILE.fits" \
+   command "cfis_weight_format -i $INPUT_TILES/CFIS_weight-$SP_TILE.fits.fz -o $INPUT_TILES/CFIS_weight-$SP_TILE.fits" \
 	   "Transform weight" "$VERBOSE"
 
 done
 
 
 # Select exposures
-command "$SP_ROOT/scripts/python/cfis_field_select.py -i $INPUT_TILES --tile -v -t exposure -o exp" \
+command "cfis_field_select -i $INPUT_TILES --tile -v -t exposure -o exp" \
 	"Select exposures" "$VERBOSE"
 
 
@@ -293,11 +295,11 @@ mv $INPUT_TILES/CFIS.${TILE}.r.fits $INPUT_TILES/CFIS_image-$SP_TILE.fits
 ls -rtl $INPUT_TILES
 
 # Download single exposure images, weights, flags
-command "$SP_ROOT/scripts/python/cfis_download_images.py -i exp.txt -o $DOWNLOAD_EXP $vflag -t exposure --in_number_only -q --certfile $CERTFILE" \
+command "cfis_download_images -i exp.txt -o $DOWNLOAD_EXP $vflag -t exposure --in_number_only $qflag --certfile $CERTFILE" \
 	"Download exposure images" "$VERBOSE"
-command "$SP_ROOT/scripts/python/cfis_download_images.py -i exp.txt -o $DOWNLOAD_EXP $vflag -t exposure_weight.fz --in_number_only --certfile $CERTFILE" \
+command "cfis_download_images -i exp.txt -o $DOWNLOAD_EXP $vflag -t exposure_weight.fz --in_number_only $qflag  --certfile $CERTFILE" \
 	"Download exposure weights" "$VERBOSE"
-command "$SP_ROOT/scripts/python/cfis_download_images.py -i exp.txt -o $DOWNLOAD_EXP $vflag -t exposure_flag.fz --in_number_only --certfile $CERTFILE" \
+command "cfis_download_images -i exp.txt -o $DOWNLOAD_EXP $vflag -t exposure_flag.fz --in_number_only $qflag --certfile $CERTFILE" \
 	"Download flags" "$VERBOSE"
 
 ### Debug: Check why sometimes files are missing even though cfis_download_images.py exists without error
@@ -338,20 +340,20 @@ $VCP vos:cfis/cosmostat/kilbinger/GOLD .
 
 ## Exposures
 
-# Run all modules: Leads to unresolved thread error
-#$SP_ROOT/shapepipe_run.py -c $SP_CONFIG/config_exp.ini
+# Run all modules
+command_sp "shapepipe_run -c $SP_CONFIG/config_exp.ini" "Run shapepipe 1/5 (exp)" "$VERBOSE" "$ID"
 
 # Split up, merge headers, and mask
-command_sp "$SP_ROOT/shapepipe_run.py -c $SP_CONFIG/config_exp_SpMeMa.ini" "Run ShapePipe 1/5 (exp: split, merge headers, mask)" "$VERBOSE" "$ID"
+#command_sp "shapepipe_run -c $SP_CONFIG/config_exp_SpMeMa.ini" "Run shapepipe 1/5 (exp: split, merge headers, mask)" "$VERBOSE" "$ID"
 
 # Source-extract and select stars
-command_sp "$SP_ROOT/shapepipe_run.py -c $SP_CONFIG/config_exp_SxSt.ini" "Run ShapePipe 2/5 (exp: extract, select)" "$VERBOSE" "$ID"
+#command_sp "shapepipe_run -c $SP_CONFIG/config_exp_SxSt.ini" "Run shapepipe 2/5 (exp: extract, select)" "$VERBOSE" "$ID"
 
 # Create PSF model
-command_sp "$SP_ROOT/shapepipe_run.py -c $SP_CONFIG/config_exp_Ps.ini" "Run ShapePipe 3/5 (exp: create PSF)" "$VERBOSE" "$ID"
+#command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Ps.ini" "Run shapepipe 3/5 (exp: create PSF)" "$VERBOSE" "$ID"
 
 # Interpolate PSF model for validation
-command_sp "$SP_ROOT/shapepipe_run.py -c $SP_CONFIG/config_exp_Pi.ini" "Run ShapePipe 4/5 (exp: interpolate PSF)" "$VERBOSE" "$ID"
+#command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Pi.ini" "Run shapepipe 4/5 (exp: interpolate PSF)" "$VERBOSE" "$ID"
 
 
 # The following are very a bad hacks to get additional input files
@@ -365,42 +367,84 @@ input_sextractor=`find . -name sexcat_sexcat-*.fits | head -n 1`
 command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor output" "$VERBOSE" "$ID"
 
 ## Tiles
-command_sp "$SP_ROOT/shapepipe_run.py -c $SP_CONFIG/config_tile.ini" "Run ShapePipe 5/5 (tile: everything)" "$VERBOSE" "$ID"
 
+# Everything up to shapes
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSxPsViSmVi.ini" "Run shapepipe 5-0/5 (tile: up to ngmix)" "$VERBOSE" "$ID"
 
-# module and pipeline log files
-upload_logs "$ID" "$VERBOSE"
+# Shapes
+for k in $(seq 1 8); do
+    command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Ng${k}u.ini" "Run shapepipe 5-$k/5 (tile: ngmix $k)" "$VERBOSE" "$ID" &
+done
+wait
 
 
 ## Upload results
 
+# module and pipeline log files
+upload_logs "$ID" "$VERBOSE"
+
 # psfex for diagnostics, validation with leakage
-upl=$output_rel/*/psfex_runner/output/star_selection-*
-upload "psfex" "$ID" "$VERBOSE" "${upl[@]}"
-
 # psefxinterp for validation with residuals, rho stats
-upl=$output_rel/*/psfexinterp_runner/output/validation_psf*
-upload "psfexinterp" "$ID" "$VERBOSE" "${upl[@]}"
+# SETools masks (selection), stats and plots
+# SExtractor tile catalogues
+# spread model
+# PSFs at galaxy positions
 
-# SETools stats and plots
-upl=$output_rel/*/setools_runner/output/stat/*
-upload "setools_stat" "$ID" "$VERBOSE" "${upl[@]}"
-upl=$output_rel/*/setools_runner/output/plot/*
-upload "setools_plot" "$ID" "$VERBOSE" "${upl[@]}"
+NAMES=(
+        "psfex"
+        "psfexinterp_exp"
+        "setools_mask"
+        "setools_stat"
+        "setools_plot"
+        "sextractor"
+        "spread_model"
+        "psfexinterp_tile"
+     )
+DIRS=(
+        "*/psfex_runner/output"
+        "*/psfexinterp_runner/output"
+        "*/setools_runner/output/mask"
+        "*/setools_runner/output/stat"
+        "*/setools_runner/output/plot"
+        "*_tile_*/sextractor_runner/output"
+        "*/spread_model_runner/output"
+        "*/psfexinterp_runner/output"
+     )
+PATTERNS=(
+        "star_selection-*"
+        "validation_psf*"
+        "*"
+        "*"
+        "*"
+        "sexcat_sexcat-*"
+        "*"
+        "galaxy_psf-*"
+        )
+
+for n in "${!NAMES[@]}"; do
+    name=${NAMES[$n]}
+    dir=${DIRS[$n]}
+    pattern=${PATTERNS[$n]}
+    upl=$output_rel/$dir/$pattern
+    upload "$name" "$ID" "$VERBOSE" "${upl[@]}"
+done
 
 # shapes
-if [ -e $output_rel/*/ngmix_runner/output ]; then
-   n_file=(`ls -l $output_rel/*/ngmix_runner/output | wc`)
+if ls $output_rel/*/ngmix_runner/output 1> /dev/null 2>&1; then
+  n_file=(`ls -l $output_rel/*/ngmix_runner/output | wc`)
    if [ "$n_file" == 1 ]; then
       if [ $STOP == 1 ]; then
-         echo "Existing script, no ngmix FITS file found in ngmix output dir"
+         echo "Existing script, no ngmix FITS file found in ngmix output dir (1)"
          exit 97
       fi
    else
       upl=$output_rel/*/ngmix_runner/output/ngmix-*
       n_upl=(`ls -l ${upl[@]} | wc`)
-      if [ $n_upl != $n_tile ]; then
-         echo  "Warning: number of ngmix files found ($n_upl) does not match expectation ($n_tile)"
+      if [ $n_upl == 0 ]; then
+         if [ $STOP == 1 ]; then
+            echo "Existing script, no ngmix FITS file found in ngmix output dir (2)"
+            exit 97
+         fi
       fi
       upload "ngmix" "$ID" "$VERBOSE" "${upl[@]}"
    fi
