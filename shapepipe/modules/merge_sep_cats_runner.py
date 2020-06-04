@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""CREATE LOG EXP HEADER
+"""MERGE SEP CATS RUNNER
 
 This module merges output catalogues that have been created by separate (parallel)
 calls to ShapePipe with the respective modules. Example: ngmix.

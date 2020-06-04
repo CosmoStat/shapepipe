@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
 
+"""Script canfar_run_analyse.py
+
+Analyse a run (directory) on canfar using the job log files.
+
+:Author: Martin Kilbinger
+
+:Date: 05/2020
+"""
+
 import re, os, sys
 from collections import Counter
 
@@ -14,6 +23,7 @@ res_noout = 1
 
 def get_status(tile_num):
 
+    #base_name = 'log_canfar_sp_'
     base_name = 'log_sp_tile_'
 
     log_name = '{}{}.log'.format(base_name, tile_num)
@@ -40,8 +50,7 @@ def get_status(tile_num):
             if ngmix_found == False:
                 status = res_unk, 'Failed before ngmix'
         else:
-            status = res_wait, 'job not finised'
-
+            status = res_wait, 'job not finished'
 
     return status
 
@@ -53,7 +62,8 @@ def output(status):
 
     hist = Counter(status.values())
     for s in hist:
-        print('{:2d}, {}: {}'.format(int(s[0]), s[1], hist[s]))
+        #print('{:2d}, {}: {}'.format(int(s[0]), s[1], hist[s]))
+        print('{}: {} ({})'.format(hist[s], s[1], int(s[0])))
         #print(hist[s], s)
 
 
