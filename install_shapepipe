@@ -240,7 +240,7 @@ packages() {
   check_binary2 $psfex_bin "PSFEx" $psfex_version $INSTALL_PSFEX
   check_binary2 $ww_bin "WeightWatcher" $ww_version $INSTALL_WW
   check_binary2 $cdsclient_bin "CDSclient" $cdsclient_version $INSTALL_CDSCLIENT
-  check_binary2 $mpi_bin "MPI" $mpi_version $USE_MPI
+  check_binary2 $mpi_bin "MPI" $mpi_version $USE_MPI $MPI_ROOT
   check_binary2 "shapepipe_run" "ShapePipe" TRUE TRUE
 }
 
