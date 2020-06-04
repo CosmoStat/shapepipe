@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+# Description: Compute and plot PSF residuals from
+#	       results processed on canfar
+# Author: Martin Kilbinger <martin.kilbinger@cea.fr>
+# Date: 05/2020
+# Package: shapepipe
+
+
 
 ## Paths
 psfval_file_base="validation_psf"
