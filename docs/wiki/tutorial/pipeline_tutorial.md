@@ -89,6 +89,9 @@ Naming and numbering of the input files can closely follow the original image na
   The `SETools` module that creates samples of objects according to some user-defined selection criteria (see [Select stars](#select-stars)) also outputs ASCII files with user-defined summary statistics for each CCD, for example the number of selected stars, or mean and standard deviation of their FWHM.  
   Example: `star_stat-2366993-18.txt`
   
+- tile numbers list
+  ASCII file with a tile number on each line. Used for the `get_image_runner` module to download CFIS images (see [Download tiles](#download-tiles)).
+  
 - Plots
   The `SETools` module can also produce plots of the objects properties that were selected for a given CCD.
   The type of plot (histogram, scatter plot, ...) and quantities to plot as well as plot decorations can be specified in the
@@ -161,14 +164,14 @@ For example, find the tile number for a Planck cluster at R.A.=255.66 deg, dec= 
 ```bash
 cfis_field_select -i tiles+weights_DR2.txt --coord 255.66deg_34.05deg -t tile --out_name_only --out_number_only -s -o tile_numbers
 ```
-The input text file (with `-i`) contains a list of CFIS tiles. The tile number(s) are written in the ASCII file `tile_numbers.txt`.
+The input text file (with `-i`) contains a list of CFIS tiles. The tile number(s) are written as a simple list in the ASCII file `tile_numbers.txt`.
 
 
-### Download tile images and weights
+### Download tiles
 
 **Module:** get_image_runner  
 **Parent:**  none  
-**Input:** single-exposure images, weights, flags  
+**Input:** tile numbers list  
 **Output:** single_exposure single-CCD files for input images, weights, flags
 
 The tile images and weights selected in the previous section need to be findable by `ShapePipe` in the tiles input directory `input_tiles`. Either download the images and weights there, or, if they are already stored locally on a hard disk, create symbolic links in `input_tiles`. Now is a good time to make a necessary small change to the file names. As mentioned above, any dot (`.`) that does not indicate a file extension needs to be replaced. In addition, file type specifiers need to appear before the tile number. Therefore, images and weights need to be renamed, for example according to the following scheme:
