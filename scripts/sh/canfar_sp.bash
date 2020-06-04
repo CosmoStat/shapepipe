@@ -20,7 +20,7 @@
 
 if [ $# == 0 ]; then
   echo "Usages:"
-  echo "  bash canfar_spe.bash TILE_ID_1 [TILE_ID_2 [...]]"
+  echo "  bash canfar_sp.bash TILE_ID_1 [TILE_ID_2 [...]]"
   echo "    TILE_ID = xxx.yyy"
   echo "    Examples:"
   echo "      canfar_sp.bash 244.252"
