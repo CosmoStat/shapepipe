@@ -67,10 +67,10 @@ Naming and numbering of the input files can closely follow the original image na
   The pixel data can contain the observed image, a weight map, or a flag map. Tile images and weights are created in the
   case of CFIS by Stephen Gwyn using a combination of `swarp` and his own software. Examples of file names are
   `CFIS.316.246.r.fits`, `CFIS.205.267.r.weight.fits.fz`, the latter is a compressed FITS file, see below. Tile flag files
-  are created the mask module of `ShapePipe` (see [Mask images](#mask-images)). The tile ID needs to be modified such that the `.` between the two tile numbers (RA and DEC indicator) is not mistaken for a file extension delimiter. In addition, for
+  are created the mask module of `ShapePipe` (see [Mask images](#mask-images)). The tile ID needs to be modified such that the `.` between the two tile numbers (RA and DEC indicator) is not mistaken for a file extension delimiter. For the same reason, the extension `.fits.fz` is changed to `.fitzfz`. In addition, for
   clarity, we include the string `image` for a tile image type.  
   Default convention: **<image_type>-<tile_number>.fits**  
-  Examples: `CFIS_image-277_282.fits`, `CFIS_weight-274-282.fits.fz`, `pipeline_flag-239_293.fits`
+  Examples: `CFIS_image-277-282.fits`, `CFIS_weight-274-282.fitsfz`, `pipeline_flag-239-293.fits`
     
 - Database catalogue files  
   For very large files that combine information from multiple tiles or single exposures, `ShapePipe` creates `sqlite`
@@ -172,9 +172,9 @@ The input text file (with `-i`) contains a list of CFIS tiles. The tile number(s
 **Module:** get_image_runner  
 **Parent:**  none  
 **Input:** tile numbers list  
-**Output:** single_exposure single-CCD files for input images, weights, flags
+**Output:** tile image, compressed tile weight
 
-The tile images and weights selected in the previous section need to be findable by `ShapePipe` in the tiles input directory `input_tiles`. Either download the images and weights there, or, if they are already stored locally on a hard disk, create symbolic links in `input_tiles`. Now is a good time to make a necessary small change to the file names. As mentioned above, any dot (`.`) that does not indicate a file extension needs to be replaced. In addition, file type specifiers need to appear before the tile number. Therefore, images and weights need to be renamed, for example according to the following scheme:
+The tile images and weights selected in the previous section are now made available for `ShapePipe` in the tiles input directory `input_tiles`. Either download the images and weights there, or, if they are already stored locally on a hard disk, create symbolic links in `input_tiles`. Now is a good time to make a necessary small change to the file names. As mentioned above, any dot (`.`) that does not indicate a file extension needs to be replaced. In addition, file type specifiers need to appear before the tile number. Therefore, images and weights need to be renamed, for example according to the following scheme:
 ```bash
 mv CFIS.424.248.r.fits CFIS_image_424_248.r.fits
 mv CFIS.424.248.r.weight.fits.fz CFIS_weight_424_248.r.weight.fits.fz
