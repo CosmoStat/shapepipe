@@ -30,6 +30,7 @@ else:
 
 from shapepipe.pipeline import file_io as sc
 from sqlitedict import SqliteDict
+import mccd_rca.utils as utils
 
 
 NOT_ENOUGH_STARS = 'Fail_stars'
@@ -60,7 +61,7 @@ def interpsfex(dotpsfpath, pos, thresh_star, thresh_chi2):
     PSF_model = fits.open(dotpsfpath)[1]
 
     # Check number of stars used to compute the PSF
-    print('PSF_model.header[ACCEPTED] = %d' %(PSF_model.header['ACCEPTED']))
+    # print('PSF_model.header[ACCEPTED] = %d' %(PSF_model.header['ACCEPTED']))
     if PSF_model.header['ACCEPTED'] < thresh_star:
         return NOT_ENOUGH_STARS
     if PSF_model.header['CHI2'] > thresh_chi2:
@@ -122,7 +123,8 @@ class PSFExInterpolator(object):
     """
 
     def __init__(self, dotpsf_path, galcat_path, output_path, img_number, w_log,
-                 pos_params=None, get_shapes=True, star_thresh=20, chi2_thresh=2):
+                 pos_params=None, get_shapes=True, star_thresh=20, chi2_thresh=2,
+                 save_vignets=False, match_psfs=False):
 
         # Path to PSFEx output file
         self._dotpsf_path = dotpsf_path
@@ -138,6 +140,10 @@ class PSFExInterpolator(object):
         self._star_thresh = star_thresh
 
         self._chi2_thresh = chi2_thresh
+        # Save the PSF and star vignets for further posprocessing or validation
+        self._save_vignets = save_vignets
+        # Match the PSF and the star vignets
+        self._match_psfs = match_psfs
 
         # Logging
         self._w_log = w_log
@@ -219,10 +225,6 @@ class PSFExInterpolator(object):
         positions.)
 
         """
-        # pex = psfex.PSFEx(self._dotpsf_path)
-        # self.interp_PSFs = np.array([pex.get_rec(x,y) for x,y in
-        # zip(self.gal_pos[:,0],
-        #                              self.gal_pos[:,1])])
 
         self.interp_PSFs = interpsfex(self._dotpsf_path, self.gal_pos, self._star_thresh, self._chi2_thresh)
 
@@ -280,7 +282,14 @@ class PSFExInterpolator(object):
             star_cat.open()
             star_dict = {}
             star_vign = np.copy(star_cat.get_data()['VIGNET'])
-            star_dict['STAR_VIGNET'] = np.copy(star_cat.get_data()['VIGNET']) # [TL]
+
+            if self._match_psfs == True:
+                deg_PSFs = utils.match_psfs(test_stars = np.copy(star_vign),
+                                            PSFs = np.copy(self.interp_PSFs))
+                self.interp_PSFs = deg_PSFs
+
+            if self._save_vignets == True:
+                star_dict['STAR_VIGNET'] = np.copy(star_cat.get_data()['VIGNET']) # [TL]
             star_dict['NUMBER'] = np.copy(star_cat.get_data()['NUMBER'])
             star_dict['X'] = np.copy(star_cat.get_data()['XWIN_IMAGE'])
             star_dict['Y'] = np.copy(star_cat.get_data()['YWIN_IMAGE'])
@@ -293,8 +302,9 @@ class PSFExInterpolator(object):
                 aa=1
             star_cat.close()
 
-            self._get_psfshapes()
-            self._get_starshapes(star_vign)
+            if self._compute_shape == True:
+                self._get_psfshapes()
+                self._get_starshapes(star_vign)
             psfex_cat_dict = self._get_psfexcatdict(psfex_cat_path)
 
             self._write_output_validation(star_dict, psfex_cat_dict)
@@ -311,8 +321,14 @@ class PSFExInterpolator(object):
         if import_fail:
             raise ImportError('Galsim is required to get shapes information')
 
-        masks = np.zeros_like(star_vign)
-        masks[np.where(star_vign == -1e30)] = 1
+        # masks = np.zeros_like(star_vign)
+        # masks[np.where(star_vign == -1e30)] = 1
+
+        thresh = -1e6
+        masks = np.ones(star_vign.shape)
+        masks[star_vign < thresh] = 0
+        star_vign[star_vign < thresh] = 0
+        masks = np.rint(np.abs(masks-1))
 
         star_moms = [hsm.FindAdaptiveMom(Image(star), badpix=Image(mask), strict=False)
                      for star, mask in zip(star_vign, masks)]
@@ -362,16 +378,21 @@ class PSFExInterpolator(object):
         output = sc.FITSCatalog(self._output_path_validation+self._img_number+'.fits',
                                 open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
                                 SEx_catalog=True)
+        data = {}
+        if self._compute_shape == True:
+            data_shapes = {'E1_PSF_HSM': self.psf_shapes[:, 0],
+                    'E2_PSF_HSM': self.psf_shapes[:, 1],
+                    'SIGMA_PSF_HSM': self.psf_shapes[:, 2],
+                    'FLAG_PSF_HSM': self.psf_shapes[:, 3].astype(int),
+                    'E1_STAR_HSM': self.star_shapes[:, 0],
+                    'E2_STAR_HSM': self.star_shapes[:, 1],
+                    'SIGMA_STAR_HSM': self.star_shapes[:, 2],
+                    'FLAG_STAR_HSM': self.star_shapes[:, 3].astype(int)}
+            data = {**data,**data_shapes}
+        if self._save_vignets == True:
+            vignet_dic = {'PSF_VIGNET': self.interp_PSFs} # [TL]
+            data = {**data,**vignet_dic}
 
-        data = {'PSF_VIGNET': self.interp_PSFs, # [TL]
-                'E1_PSF_HSM': self.psf_shapes[:, 0],
-                'E2_PSF_HSM': self.psf_shapes[:, 1],
-                'SIGMA_PSF_HSM': self.psf_shapes[:, 2],
-                'FLAG_PSF_HSM': self.psf_shapes[:, 3].astype(int),
-                'E1_STAR_HSM': self.star_shapes[:, 0],
-                'E2_STAR_HSM': self.star_shapes[:, 1],
-                'SIGMA_STAR_HSM': self.star_shapes[:, 2],
-                'FLAG_STAR_HSM': self.star_shapes[:, 3].astype(int)}
         data = {**data, **star_dict}
 
         data['ACCEPTED'] = np.ones_like(data['NUMBER'], dtype='int16')
