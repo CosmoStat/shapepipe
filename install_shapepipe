@@ -185,12 +185,19 @@ check_binary() {
 
 # Check if a binary executable is already installed in the conda environment
 check_binary2() {
-  if type -t "$CONDA_PREFIX/bin/$1" > /dev/null
+  if [ -z "$5" ]
+  then
+    bin_prefix="$CONDA_PREFIX/bin"
+  else
+    bin_prefix="$5/bin"
+  fi
+
+  if type -t "$bin_prefix/$1" > /dev/null
   then
     echo -ne "$2: ${GREEN}INSTALLED${NC}\n"
     if [ "$3" == TRUE ]
     then
-      "$CONDA_PREFIX/bin/$1" --version | head -n 1
+      "$bin_prefix/$1" --version | head -n 1
     fi
   else
     if [ "$4" == TRUE ]
@@ -201,6 +208,7 @@ check_binary2() {
       echo -ne "$2: ${YELLOW}NOT INSTALLED${NC}\n"
     fi
   fi
+
   echo ""
 }
 
@@ -283,7 +291,7 @@ setup() {
   echo 'Install PSFEx:' $INSTALL_PSFEX
   echo 'Install WeightWatcher:' $INSTALL_WW
   echo 'Install CDSclient:' $INSTALL_CDSCLIENT
-  echo 'Use MPI:' $USE_MPI
+  echo 'Use MPI:' $USE_MPI $MPI_ROOT
   echo 'ShapePipe Directory:' $PIPE_DIR
   echo 'Build Directory:' $BUILD_DIR
   echo ''
@@ -304,6 +312,7 @@ astromatic_setup() {
   echo ''
 }
 
+# Function to uninstall ShapePipe and dependencies
 uninstall() {
   rm -r build dist shapepipe.egg-info .eggs
   source deactivate
