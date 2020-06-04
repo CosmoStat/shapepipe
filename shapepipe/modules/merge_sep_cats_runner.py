@@ -33,7 +33,7 @@ def merge_sep_cats_runner(input_file_list, run_dirs, file_number_string,
     input_path_n = []
     input_path_n.append(input_file_list[0])
     for n in range(2, n_split_max + 1):
-        res = re.sub('1', str(n), input_file_list[0])
+        res = re.sub('1', str(n), input_file_list[0], 1)
         input_path_n.append(res)
 
     # Open first catalogue, read number of extensions and columns
