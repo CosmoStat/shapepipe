@@ -11,7 +11,7 @@
     1. [Path variables](#path-variables)
 1. [Prepare input images](#prepare-input-images)
     1. [Select tiles](#select-tiles)
-    1. [Download tiles and modify names](#download-tiles-and-modify-names)
+    1. [Download tiles](#download-tiles)
     1. [Uncompress tile weights](#uncompress-tile-weights)
 1. [Process single exposure images](#process-single-exposure-images)
     1. [Split images](#split-images)
@@ -154,21 +154,22 @@ Before running `ShapePipe` we need to select and identify tiles and single expos
 The selection of images on input can be done in the config files of the relevant modules, by specifying input
 path(s) and input file name patterns. Either all, or a sub-selection of images in a given input directory can be selected in that way. One might want to pre-select a specific set of images, for example all available images in a given sky area. The resulting files can then be copied to a new, dedicated directory (or alternatively linked using symbolic links), or downloaded to a local machine.
 
-Images can be selected to cover a given sky area, with the script `cfis_field_select`.
+Images can be selected to cover a given sky area, with the script `cfis_field_select`. The tile numbers is all we need here.
 Once we have selected the tiles, we can identify the single exposure images that were used to create those tiles, see [Fine exposures](#find-exposures).
 
-For example, find the tile for a Planck cluster at R.A.=255.66 deg, dec= 34.05 deg can be found with the `--coord` option:
+For example, find the tile number for a Planck cluster at R.A.=255.66 deg, dec= 34.05 deg can be found with the `--coord` option:
 ```bash
-cfis_field_select -i tiles+weights_DR2.txt --coord 255.66deg_34.05deg -v -t tile
+cfis_field_select -i tiles+weights_DR2.txt --coord 255.66deg_34.05deg -t tile --out_name_only --out_number_only -s -o tile_numbers
 ```
-The input text file (with `-i`) contains a list of CFIS tiles.
+The input text file (with `-i`) contains a list of CFIS tiles. The tile number(s) are written in the ASCII file `tile_numbers.txt`.
 
-We also need to get the weight files for the tile.
-```bash
-cfis_field_select.py -i tiles+weights_DR2.txt --coord 255.66deg_34.05deg -v -t weight
-```
 
-### Download tiles and modify names
+### Download tile images and weights
+
+**Module:** get_image_runner  
+**Parent:**  none  
+**Input:** single-exposure images, weights, flags  
+**Output:** single_exposure single-CCD files for input images, weights, flags
 
 The tile images and weights selected in the previous section need to be findable by `ShapePipe` in the tiles input directory `input_tiles`. Either download the images and weights there, or, if they are already stored locally on a hard disk, create symbolic links in `input_tiles`. Now is a good time to make a necessary small change to the file names. As mentioned above, any dot (`.`) that does not indicate a file extension needs to be replaced. In addition, file type specifiers need to appear before the tile number. Therefore, images and weights need to be renamed, for example according to the following scheme:
 ```bash
