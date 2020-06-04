@@ -315,7 +315,7 @@ astromatic_setup() {
 # Function to uninstall ShapePipe and dependencies
 uninstall() {
   rm -r build dist shapepipe.egg-info .eggs
-  source deactivate
+  source deactivate || conda deactivate
   conda remove -n shapepipe --all -y
 }
 
