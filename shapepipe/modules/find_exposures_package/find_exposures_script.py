@@ -70,6 +70,12 @@ class find_exposures():
 
         exp_list_uniq = self.get_exposure_list()
 
+        if len(exp_list_uniq) > 0:
+            for exp in exp_list_uniq:
+                print(exp)
+
+        return
+
         input_dir_exp = self._config.getlist('FIND_EXPOSURES_RUNNER',
                                              'INPUT_DIR_EXP')
         num = []
