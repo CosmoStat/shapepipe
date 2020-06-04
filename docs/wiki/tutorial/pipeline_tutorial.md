@@ -174,7 +174,7 @@ The input text file (with `-i`) contains a list of CFIS tiles. The tile number(s
 **Input:** tile numbers list  
 **Output:** tile image, compressed tile weight
 
-The tile images and weights selected in the previous section are now made available for `ShapePipe` in the tiles input directory `input_tiles`. Either download the images and weights there, or, if they are already stored locally on a hard disk, create symbolic links in `input_tiles`. Now is a good time to make a necessary small change to the file names. As mentioned above, any dot (`.`) that does not indicate a file extension needs to be replaced. In addition, file type specifiers need to appear before the tile number. Therefore, images and weights need to be renamed, for example according to the following scheme:
+The tile images and weights selected in the previous section are made available for `ShapePipe` now, by running the module `get_image_runner`. This module either downloads the images or, if they already exist on a local hard disk, creates symbolic links. Downloading uses the Virtual Observatory VOSpace (vos) software.   in the tiles input directory `input_tiles`. Either download the images and weights there, or, if they are already stored locally on a hard disk, create symbolic links in `input_tiles`. Now is a good time to make a necessary small change to the file names. As mentioned above, any dot (`.`) that does not indicate a file extension needs to be replaced. In addition, file type specifiers need to appear before the tile number. Therefore, images and weights need to be renamed, for example according to the following scheme:
 ```bash
 mv CFIS.424.248.r.fits CFIS_image_424_248.r.fits
 mv CFIS.424.248.r.weight.fits.fz CFIS_weight_424_248.r.weight.fits.fz
