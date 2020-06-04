@@ -176,7 +176,21 @@ The input text file (with `-i`) contains a list of CFIS tiles. The tile number(s
 
 The tile images and weights selected in the previous section are made available for `ShapePipe` now, by running the module `get_image_runner`. This module either downloads the images or, if they already exist on a local hard disk, creates symbolic links. Downloading uses the Virtual Observatory VOSpace (vos) software (http://www.ivoa.net/documents/VOSpace). The downloaded files (or link names) are automatically modified to be parsable by the pipeline.
 
-An example config file is `SP_CONFIG/config_get_image.ini`.
+An example config file is `SP_CONFIG/config_get_image.ini`. In the module section, we need to specify
+input path (for example a VOS url), input file pattern and their extension. The input file pattern includes the number(s) as  dummy template, similarly to the `NUMBERING_SCHEME` in the `[FILE]` section (see `File options` in the [general pipeline readme](README.rst)). In addition, the input numbering scheme as python `regexp` needs to be specified, which matches the tile number in the tile number list. 
+
+Next, the output file pattern without the tile number is given.
+
+After that we indicate the copy or download method, for example `vos`. Additional command options can be indicated with the key `COPY_OPTIONS`. Here is the example:
+```ini
+INPUT_PATH = vos:cfis/tiles_DR2, vos:cfis/tiles_DR2
+INPUT_FILE_PATTERN = CFIS.000.000.r, CFIS.000.000.r.weight
+INPUT_FILE_EXT = .fits, .fits.fz
+INPUT_NUMBERING = \d{3}\.\d{3}
+OUTPUT_FILE_PATTERN = CFIS_image-, CFIS_weight-
+COPY = vos
+COPY_OPTIONS = --quick
+```
 
 On success, tile images and compressed tile weights are created, either as physical files or symbolic links.
 
