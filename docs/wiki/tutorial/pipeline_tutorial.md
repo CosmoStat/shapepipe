@@ -174,25 +174,30 @@ The input text file (with `-i`) contains a list of CFIS tiles. The tile number(s
 **Input:** tile numbers list  
 **Output:** tile image, compressed tile weight
 
-The tile images and weights selected in the previous section are made available for `ShapePipe` now, by running the module `get_image_runner`. This module either downloads the images or, if they already exist on a local hard disk, creates symbolic links. Downloading uses the Virtual Observatory VOSpace (vos) software.   in the tiles input directory `input_tiles`. Either download the images and weights there, or, if they are already stored locally on a hard disk, create symbolic links in `input_tiles`. Now is a good time to make a necessary small change to the file names. As mentioned above, any dot (`.`) that does not indicate a file extension needs to be replaced. In addition, file type specifiers need to appear before the tile number. Therefore, images and weights need to be renamed, for example according to the following scheme:
-```bash
-mv CFIS.424.248.r.fits CFIS_image_424_248.r.fits
-mv CFIS.424.248.r.weight.fits.fz CFIS_weight_424_248.r.weight.fits.fz
-```
-Of course the above renaming can be done at the same time as copying/creating links.
+The tile images and weights selected in the previous section are made available for `ShapePipe` now, by running the module `get_image_runner`. This module either downloads the images or, if they already exist on a local hard disk, creates symbolic links. Downloading uses the Virtual Observatory VOSpace (vos) software (http://www.ivoa.net/documents/VOSpace). The downloaded files (or link names) are automatically modified to be parsable by the pipeline.
+
+An example config file is `SP_CONFIG/config_get_image.ini`.
+
+On success, tile images and compressed tile weights are created, either as physical files or symbolic links.
 
 ### Uncompress tile weights
 
-The weights of the stacks are compressed .fits.fz files, they need to be uncompressed before the pipeline is run.
-This can be done with the script `cfis_weight_format`. For example:
+**Module:** uncompress_fits_images_runner  
+**Parent:**  get_image_runner    
+**Input:** compressed tile weight  
+**Output:** tile weight
 
-```bash
-for fzweight in input_tiles/CFIS_weight-*.fits.fz; do
-  weight=`basename $fzweight .fz`
-  cfis_weight_format -i $fzweight -o input_tiles/$weight
-done
+The compressed stack weights (.fits.fz/.fitsfz files) need to be uncompressed before further processing. An example config file is `$SP_CONFIG/config_unfz_w.ini`. Except from the input file pattern and extension (see `File Options` in the [general pipeline readme](README.rst)), we need to specify the output file patern (can be the same as the input), and the HDU number of the weight image data:
+```ini
+[UNCOMPRESS_FITS_IMAGE_RUNNER]
+
+FILE_PATTERN = CFIS_weight
+FILE_EXT = .fitsfz
+OUTPUT_PATTERN = CFIS_weight
+HDU_DATA = 1
 ```
 
+On success, the uncompressed weight image with the correct (only) HDU is written.
 
 ### Find exposures
 
