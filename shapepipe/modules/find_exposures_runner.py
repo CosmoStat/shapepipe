@@ -47,10 +47,11 @@ class find_exposures():
 
         exp_list_uniq = self.get_exposure_list()
 
-        f_out = open(self._out_path, 'w')
+        f_out = open(self._output_path, 'w')
         if len(exp_list_uniq) > 0:
             for exp in exp_list_uniq:
-                print(exp, file=f)
+                print(exp, file=f_out)
+        f_out.close()
 
         return
 
@@ -107,11 +108,11 @@ def find_exposures_runner(input_file_list, run_dirs, file_number_string,
 
     input_file_name = input_file_list[0]
 
-    out_path = '{}/exp_numbers{}.txt'.format(run_dirs['output'], file_number_string)
+    output_path = '{}/exp_numbers{}.txt'.format(run_dirs['output'], file_number_string)
 
-    inst = find_exposures_script.find_exposures(input_file_name,
-                                                out_path,
-                                                w_log)
+    inst = find_exposures(input_file_name,
+                          output_path,
+                          w_log)
     inst.process()
 
     return None, None
