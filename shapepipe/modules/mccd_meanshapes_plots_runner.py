@@ -5,7 +5,7 @@
 This module is used to generate a series of plots from the merged validation
 catalogs.
 
-:Author: Tobias Liaudat from code
+:Author: Tobias Liaudat from Axel Guinot's code
 
 """
 import sys
@@ -316,8 +316,10 @@ def mccd_meanshapes_plots_runner(input_file_list, run_dirs, file_number_string,
     plt.close()
 
     plt.figure(figsize=(12,6), dpi = 300)
-    plt.hist(all_star_shapes[2,:], bins=hist_bins, range=[0, 15], label='stars', alpha=0.5)
-    plt.hist(all_psf_shapes[2,:], bins=hist_bins, range=[0, 15], label='PSFs', alpha=0.5)
+    mean_R2 = np.mean(all_star_shapes[2,:])
+    wind = [mean_R2 - 4, mean_R2 + 4]
+    plt.hist(all_star_shapes[2,:], bins = hist_bins, range = wind, label='stars', alpha=0.5)
+    plt.hist(all_psf_shapes[2,:], bins = hist_bins, range = wind, label='PSFs', alpha=0.5)
     plt.legend(loc='best',fontsize=16)
     plt.title('R2',fontsize=24)
     plt.savefig(output_path+'R2_hist.png')

@@ -24,7 +24,6 @@ from shapepipe.modules.module_decorator import module_runner
 def mccd_merge_starcat_runner(input_file_list, run_dirs, file_number_string,
                        config, w_log):
     print('Merging validation results..')
-    save_fullcat = True
 
     output_dir = run_dirs['output']
 
