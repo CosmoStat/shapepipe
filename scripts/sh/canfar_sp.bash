@@ -50,14 +50,8 @@ export SP_RUN=`pwd`
 # Config file path
 export SP_CONFIG=$SP_RUN/GOLD
 
-# Tile numbers ASCII file
+# Input tile numbers ASCII file
 export TILE_NUMBERS_PATH=tile_numbers.txt
-
-## Input and output paths used in config file
-
-# Input
-INPUT_TILES=$SP_RUN/input_tiles
-INPUT_EXP=$SP_RUN/input_exposures
 
 # Output
 OUTPUT=$SP_RUN/output
@@ -65,9 +59,6 @@ OUTPUT_HEADERS=$SP_RUN/output_headers
 
 # For tar archives
 output_rel=`realpath --relative-to=. $OUTPUT`
-
-# Temporary processing paths (e.g. for downloading images)
-DOWNLOAD_EXP=$SP_RUN/download_exposures
 
 
 ## Other variables
@@ -201,11 +192,8 @@ function print_env() {
    echo " VM_HOME=$VM_HOME"
    echo " SP_RUN=$SP_RUN"
    echo " TILE_NUMBERS_PATH=$TILE_NUMBERS_PATH"
-   echo " INPUT_TILES=$INPUT_TILES"
-   echo " INPUT_EXP=$INPUT_EXP"
    echo " OUTPUT=$OUTPUT"
    echo " OUTPUT_HEADERS=$OUTPUT_HEADERS"
-   echo " DOWNLOAD_EXP=$DOWNLOAD_EXP"
    echo " SP_CONFIG=$SP_CONFIG"
    echo "Other variables:"
    echo " VCP=$VCP"
@@ -243,9 +231,6 @@ echo "Processing $n_tile tile(s)"
 echo "Create directories for processing"
 mkdir -p $SP_RUN
 cd $SP_RUN
-#mkdir -p $DOWNLOAD_EXP
-#mkdir -p $INPUT_EXP
-#mkdir -p $INPUT_TILES
 mkdir -p $OUTPUT
 mkdir -p $OUTPUT_HEADERS
 
