@@ -126,7 +126,7 @@ function command () {
          if [ $STOP == 1 ]; then
             echo "${RED}exiting 'canfar_sp.bash', error in command '$cmd'${NC}"
             exit $res
-	 else
+         else
             echo "${RED}continuing 'canfar_sp.bash', error in command '$cmd'${NC}"
          fi
       fi
@@ -135,7 +135,7 @@ function command () {
    return $res
 }
 
-# Run command. If error occurs, upload sp log files before stopping script.
+# Run shapepipe command. If error occurs, upload sp log files before stopping script.
 command_sp() {
    cmd=$1
    str=$2
@@ -234,14 +234,15 @@ cd $SP_RUN
 mkdir -p $OUTPUT
 mkdir -p $OUTPUT_HEADERS
 
-# Download config files
-$VCP vos:cfis/cosmostat/kilbinger/GOLD .
-
 # Write tile numbers to ASCII input file
 rm -rf $TILE_NUMBERS_PATH
+#for TILE in ${TILE_ARR[@]}; do
 for TILE in ${TILE_ARR[@]}; do
    echo $TILE >> $TILE_NUMBERS_PATH
+done
 
+# Download config files
+$VCP vos:cfis/cosmostat/kilbinger/GOLD .
 
 ### Run pipeline
 

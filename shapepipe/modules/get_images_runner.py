@@ -134,7 +134,6 @@ class GetImages(object):
                 raise ImportError('vos modules not found, re-install ShapePipe with \'install_pipeline --vos\'')
 
             try:
-                print(sys.argv)
                 vcp()
             except:
                 raise ValueError('Error in \'vcp\' command: \'{}\''.format(' '.join(sys.argv)))
@@ -175,11 +174,11 @@ def get_images_runner(input_file_list, run_dirs, file_number_string,
         numbers_from_tile = read_image_numbers(input_file[0])
         all_image_numbers.append(numbers_from_tile)
     flat_list = [item for sublist in all_image_numbers for item in sublist]
-    print('{} exposures numbers read in total'.format(len(flat_list)))
+    w_log.info('{} exposures numbers read in total'.format(len(flat_list)))
 
     # Get unique number list
     image_number_list = list(set(flat_list))
-    print('{} unique exposures numbers'.format(len(image_number_list)))
+    w_log.info('{} unique exposures numbers'.format(len(image_number_list)))
 
    # Read config file section
 
