@@ -63,8 +63,11 @@ def shapepipe_logo(colour=False):
     Shape measurement pipeline developed at CosmoStat.
 
     Authors: Samuel Farrens   <samuel.farrens@cea.fr>
-             Martin Kilbinger <martin.kilbinger@cea.fr>
-             Axel Guinot
+             Axel Guinot      <axel.guinot@cea.fr>
+
+    Main Contributors:
+             Martin Kilbinger
+             Tobias Liaudat
              Morgan Schmitz
 
     Version: {}

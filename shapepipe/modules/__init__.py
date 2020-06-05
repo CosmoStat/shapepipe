@@ -10,7 +10,6 @@ This module contains sub-modules that can be run with ShapePipe.
 
 __all__ = ['module_decorator',
            'module_runners',
-           'find_exposures_package',
            'mask_package',
            'PSFExInterpolation_package',
            'SETools_package'
