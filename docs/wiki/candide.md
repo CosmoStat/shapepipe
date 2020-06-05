@@ -17,7 +17,7 @@ The [CANDIDE cluster](https://candideusers.calet.org/) is hosted and maintained 
 
 ### CANDIDE Account
 
-To request and account on CANDIDE send an email to [Henry Joy McCracken](hjmcc@iap.fr) at IAP.
+To request and account on CANDIDE send an email to [Henry Joy McCracken](mailto:hjmcc@iap.fr) at IAP.
 
 ### SSH
 
@@ -84,7 +84,7 @@ $ pip uninstall mpi4py
 $ ./install_shapepipe --no-env --no-exe --mpi-root=/softs/openmpi/<VERSION>-torque-CentOS7
 ```
 
-### Without MPI
+### Without MPI
 
 To install ShapePipe without MPI enabled simply pass the `no-mpi` option to the installation script as follows:
 
