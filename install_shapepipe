@@ -9,7 +9,7 @@ LC_CTYPE=en_US.utf8
 #
 ##############################################################################
 
-version="1.2"
+version="1.3"
 
 ##############################################################################
 # EXTERNAL PACKAGE VERSIONS
@@ -185,12 +185,19 @@ check_binary() {
 
 # Check if a binary executable is already installed in the conda environment
 check_binary2() {
-  if type -t "$CONDA_PREFIX/bin/$1" > /dev/null
+  if [ -z "$5" ]
+  then
+    bin_prefix="$CONDA_PREFIX/bin"
+  else
+    bin_prefix="$5/bin"
+  fi
+
+  if type -t "$bin_prefix/$1" > /dev/null
   then
     echo -ne "$2: ${GREEN}INSTALLED${NC}\n"
     if [ "$3" == TRUE ]
     then
-      "$CONDA_PREFIX/bin/$1" --version | head -n 1
+      "$bin_prefix/$1" --version | head -n 1
     fi
   else
     if [ "$4" == TRUE ]
@@ -201,6 +208,7 @@ check_binary2() {
       echo -ne "$2: ${YELLOW}NOT INSTALLED${NC}\n"
     fi
   fi
+
   echo ""
 }
 
@@ -232,7 +240,7 @@ packages() {
   check_binary2 $psfex_bin "PSFEx" $psfex_version $INSTALL_PSFEX
   check_binary2 $ww_bin "WeightWatcher" $ww_version $INSTALL_WW
   check_binary2 $cdsclient_bin "CDSclient" $cdsclient_version $INSTALL_CDSCLIENT
-  check_binary2 $mpi_bin "MPI" $mpi_version $USE_MPI
+  check_binary2 $mpi_bin "MPI" $mpi_version $USE_MPI $MPI_ROOT
   check_binary2 "shapepipe_run" "ShapePipe" TRUE TRUE
 }
 
@@ -249,6 +257,10 @@ exit_code() {
 
 # Function to report package versions
 package_report() {
+  if [ "$CONDA_DEFAULT_ENV" != "shapepipe" ]
+  then
+    activate_shapepipe
+  fi
   INSTALL_SEX=FALSE
   INSTALL_PSFEX=FALSE
   INSTALL_WW=FALSE
@@ -275,17 +287,30 @@ finish() {
   exit_code
 }
 
+check_status () {
+  if [ "$2" == FALSE ]
+  then
+    echo -ne "$1 ${YELLOW}$2${NC}"
+  elif [ "$2" == TRUE ]
+  then
+    echo -ne "$1 ${GREEN}$2${NC}"
+  else
+    echo -ne "$1 ${CYAN}$2${NC}"
+  fi
+  echo -ne " ${CYAN}$3${NC}\n"
+}
+
 # Function to show the installation setup
 setup() {
-  echo 'Operating System:' $SYSOS
-  echo 'Build Conda Environment:' $BUILD_ENV
-  echo 'Install SExtractor:' $INSTALL_SEX
-  echo 'Install PSFEx:' $INSTALL_PSFEX
-  echo 'Install WeightWatcher:' $INSTALL_WW
-  echo 'Install CDSclient:' $INSTALL_CDSCLIENT
-  echo 'Use MPI:' $USE_MPI
-  echo 'ShapePipe Directory:' $PIPE_DIR
-  echo 'Build Directory:' $BUILD_DIR
+  check_status 'Operating System:' $SYSOS
+  check_status 'Build Conda Environment:' $BUILD_ENV
+  check_status 'Install SExtractor:' $INSTALL_SEX
+  check_status 'Install PSFEx:' $INSTALL_PSFEX
+  check_status 'Install WeightWatcher:' $INSTALL_WW
+  check_status 'Install CDSclient:' $INSTALL_CDSCLIENT
+  check_status 'Use MPI:' $USE_MPI $MPI_ROOT
+  check_status 'ShapePipe Directory:' $PIPE_DIR
+  check_status 'Build Directory:' $BUILD_DIR
   echo ''
 }
 
@@ -304,10 +329,24 @@ astromatic_setup() {
   echo ''
 }
 
+# Function to uninstall ShapePipe and dependencies
 uninstall() {
   rm -r build dist shapepipe.egg-info .eggs
-  source deactivate
+  source deactivate || conda deactivate
   conda remove -n shapepipe --all -y
+}
+
+# Function to activate ShapePipe environment
+activate_shapepipe() {
+  source activate shapepipe
+  if [ "$?" -eq 0 ]
+  then
+    echo -ne "Activating Conda environment ${CYAN}$CONDA_PREFIX${NC}\n"
+    export LD_LIBRARY_PATH=$CONDA_PREFIX/lib
+  else
+    echo -ne "${RED}ERROR: Could not activate ShapePipe environment.${NC}\n"
+    exit 1
+  fi
 }
 
 ##############################################################################
@@ -504,9 +543,7 @@ then
 fi
 
 # Activate conda environment
-source activate shapepipe
-echo "Activating Conda environment" $CONDA_PREFIX
-export LD_LIBRARY_PATH=$CONDA_PREFIX/lib
+activate_shapepipe
 
 if [ -z "$FFTW_LIB" ]; then FFTW_LIB=$CONDA_PREFIX/lib; fi
 if [ -z "$FFTW_INC" ]; then FFTW_INC=$CONDA_PREFIX/include; fi
