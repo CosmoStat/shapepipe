@@ -14,35 +14,48 @@ import re, sys
 
 class GetImages(object):
 
-    def __init__(self, copy, options):
+    def __init__(self, copy, options, image_number_list,
+                 input_numbering, input_file_pattern,
+                 input_file_ext, w_log):
+        """GetImages initiatliation.
+
+        Parameters
+        ----------
+        copy: string
+            copy/download method
+        option: string
+            copy options
+        image_number_list: list of string self._copy = copy
+            image numbers self._options = options
+        input_numbering: string self._image_number_list = image_number_list
+            numbering scheme, python regexp self._input_numbering = input_numbering
+        input_file_pattern: list of strings self._input_file_ext = input_file_ext
+            file pattern including input number template of input files self._w_log = w_log
+        input_file_ext: list of strings
+            input file extensions
+        w_log:
+            log file
+
+        Returns
+        --------
+        self: GetImages class instance
+        """
 
         self._copy = copy
         self._options = options
+        self._image_number_list = image_number_list
+        self._input_numbering = input_numbering
+        self._input_file_pattern = input_file_pattern
+        self._input_file_ext = input_file_ext
+        self._w_log = w_log
 
-    def _read_file(self, file_name):
-
-        with open(file_name) as data_file:
-            content = data_file.read().replace('\n', '')
-
-        return content
-
-    def get_file_list(self, image_number_list, input_numbering,
-                            input_dir, input_file_pattern,
-                            input_file_ext, output_file_pattern=None):
+    def get_file_list(self, dest_dir, output_file_pattern=None):
         """Return list of file paths to copy.
 
         Parameters
         ----------
-        image_number_list: list of string
-            image numbers
-        input_numbering: string
-            numbering scheme, python regexp
-        input_dir: list of strings
+        dest_dir: list of stringsr
             input directory or url
-        input_file_pattern: list of strings
-            file pattern including input number template  of input files
-        input_file_ext: list of strings
-            input file extensions
         output_file_pattern: list of strings, optional, default=None
             output file base patterns excluding numbering scheme,
             if None use input file patterns
@@ -54,27 +67,30 @@ class GetImages(object):
         """
 
         list_all_files = []
-        for i in range(len(input_dir)):
-            in_path = input_dir[i]
-            in_pattern = input_file_pattern[i]
-            in_ext = input_file_ext[i]
+        for i in range(len(dest_dir)):
+            in_path = dest_dir[i]
+            in_pattern = self._input_file_pattern[i]
+            in_ext = self._input_file_ext[i]
 
             list_files_per_type = []
-            for number in image_number_list:
+            for number in self._image_number_list:
 
                 if output_file_pattern:
-                    # For output, replace dots ('.') to avoid confusion
-                    # with file extension delimiters
+                    # For output:
+                    # - replace dots ('.') with dashes ('-') to avoid confusion
+                    #   with file extension delimiters
+                    # - remove letters in number
 
                     number_final = re.sub('\.', '-', number)
+                    number_final = re.sub('[a-zA-Z]', '', number_final)
 
-                    # Keep initial dot
+                    # Keep initial dot in extension
                     x = in_ext[1:]
                     x2 = re.sub('\.', '', x)
                     ext_final = in_ext[0] + x2
                     fbase = '{}{}'.format(output_file_pattern[i], number_final)
                 else:
-                    fbase = re.sub(input_numbering, number, in_pattern)
+                    fbase = re.sub(self._input_numbering, number, in_pattern)
                     ext_final = in_ext
 
                 fpath = '{}/{}{}'.format(in_path, fbase, ext_final)
@@ -101,7 +117,6 @@ class GetImages(object):
         for in_per_type, out_per_type in zip(all_inputs, all_outputs):
             for i in range(len(in_per_type)):
                 self.copy_one(in_per_type[i], out_per_type[i])
-        
 
     def copy_one(self, in_path, out_path):
 
@@ -112,29 +127,17 @@ class GetImages(object):
                 sys.argv.append(opt)
             sys.argv.append(in_path)
             sys.argv.append(out_path)
+
             try:
                 from vos.commands.vcp import vcp
             except:
                 raise ImportError('vos modules not found, re-install ShapePipe with \'install_pipeline --vos\'')
+
             try:
+                print(sys.argv)
                 vcp()
             except:
-                raise ValueError('Error in \'vcp\' command')
-
-
-    def read_files(self, input_file_list):
-
-        self.content = ''
-
-        for file_list in input_file_list:
-            for file_name in file_list:
-                self.content += self._read_file(file_name)
-
-    def write_file(self, file_name):
-
-        text_file = open(file_name, 'w')
-        text_file.write(self.content)
-        text_file.close()
+                raise ValueError('Error in \'vcp\' command: \'{}\''.format(' '.join(sys.argv)))
 
 
 def read_image_numbers(path):
@@ -166,11 +169,19 @@ def get_images_runner(input_file_list, run_dirs, file_number_string,
                       config, w_log):
 
 
-    # Input image numbers
-    image_number_list_path = input_file_list[0][0]
-    image_number_list = read_image_numbers(image_number_list_path)
+    # Input image numbers from all input tile fils
+    all_image_numbers = []
+    for input_file in input_file_list:
+        numbers_from_tile = read_image_numbers(input_file[0])
+        all_image_numbers.append(numbers_from_tile)
+    flat_list = [item for sublist in all_image_numbers for item in sublist]
+    print('{} exposures numbers read in total'.format(len(flat_list)))
 
-    # Read config file section
+    # Get unique number list
+    image_number_list = list(set(flat_list))
+    print('{} unique exposures numbers'.format(len(image_number_list)))
+
+   # Read config file section
 
     # Copying/download method
     copy = config.get('GET_IMAGES_RUNNER', 'COPY')
@@ -210,15 +221,12 @@ def get_images_runner(input_file_list, run_dirs, file_number_string,
 
 
 
-    inst = GetImages(copy, options)
+    inst = GetImages(copy, options, image_number_list, input_numbering,
+                     input_file_pattern, input_file_ext, w_log)
 
     # Assemble input and output file lists
-    all_inputs = inst.get_file_list(image_number_list, input_numbering,
-                                    input_dir, input_file_pattern, input_file_ext)
-    all_outputs = inst.get_file_list(image_number_list, input_numbering,
-                                     output_dir, input_file_pattern, input_file_ext,
-                                     output_file_pattern=output_file_pattern)
-
+    all_inputs = inst.get_file_list(input_dir)
+    all_outputs = inst.get_file_list(output_dir, output_file_pattern=output_file_pattern)
     inst.copy(all_inputs, all_outputs)
 
     return None, None
