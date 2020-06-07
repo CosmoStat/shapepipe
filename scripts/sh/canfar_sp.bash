@@ -55,7 +55,6 @@ export TILE_NUMBERS_PATH=tile_numbers.txt
 
 # Output
 OUTPUT=$SP_RUN/output
-OUTPUT_HEADERS=$SP_RUN/output_headers
 
 # For tar archives
 output_rel=`realpath --relative-to=. $OUTPUT`
@@ -193,7 +192,6 @@ function print_env() {
    echo " SP_RUN=$SP_RUN"
    echo " TILE_NUMBERS_PATH=$TILE_NUMBERS_PATH"
    echo " OUTPUT=$OUTPUT"
-   echo " OUTPUT_HEADERS=$OUTPUT_HEADERS"
    echo " SP_CONFIG=$SP_CONFIG"
    echo "Other variables:"
    echo " VCP=$VCP"
@@ -232,11 +230,9 @@ echo "Create directories for processing"
 mkdir -p $SP_RUN
 cd $SP_RUN
 mkdir -p $OUTPUT
-mkdir -p $OUTPUT_HEADERS
 
 # Write tile numbers to ASCII input file
 rm -rf $TILE_NUMBERS_PATH
-#for TILE in ${TILE_ARR[@]}; do
 for TILE in ${TILE_ARR[@]}; do
    echo $TILE >> $TILE_NUMBERS_PATH
 done
@@ -275,6 +271,7 @@ command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp ou
 
 input_sextractor=`find . -name sexcat_sexcat-*.fits | head -n 1`
 command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor output" "$VERBOSE" "$ID"
+
 
 ## Tiles
 

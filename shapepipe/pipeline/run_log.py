@@ -75,8 +75,12 @@ class RunLog(object):
 
         """
 
-        last_run = [run for run in self._runs if module in
-                    run.split()[1].split(',')][::-1][0]
+        all_runs = [run for run in self._runs if module in
+                    run.split()[1].split(',')]
+        if len(all_runs) == 0:
+            raise RuntimeError('Last-run module \'{}\' not '
+                               'found'.format(module))
+        last_run = all_runs[::-1][0]
 
         return last_run.split(' ')[0]
 
