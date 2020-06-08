@@ -18,13 +18,14 @@
 
 # Full path to environment
 export SPENV="$HOME/.conda/envs/shapepipe"
+export SPDIR="$HOME/shapepipe"
 
 # Activate conda environment
 module load intelpython/3
 source activate $SPENV
 
 # Run ShapePipe using full paths to executables
-$SPENV/bin/shapepipe_run -c $HOME/shapepipe/example/pbs/config_smp.ini
+$SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_smp.ini
 
 # Return exit code
 exit 0

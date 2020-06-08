@@ -20,6 +20,7 @@ NSLOTS=`cat $PBS_NODEFILE | wc -l`
 
 # Full path to environment
 export SPENV="$HOME/.conda/envs/shapepipe"
+export SPDIR="$HOME/shapepipe"
 
 # Load moudules and activate conda environment
 module load intelpython/3
@@ -27,7 +28,7 @@ module load openmpi/4.0.2
 source activate $SPENV
 
 # Run ShapePipe using full paths to executables
-$SPENV/bin/mpiexec -n $NSLOTS $SPENV/bin/shapepipe_run -c $HOME/shapepipe/example/pbs/config_mpi.ini
+$SPENV/bin/mpiexec -n $NSLOTS $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
 
 # Return exit code
 exit 0
