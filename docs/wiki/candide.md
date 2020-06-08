@@ -198,3 +198,19 @@ exit 0
 ```
 
 ## Troubleshooting
+
+### OpenBLAS
+
+If you get the following error
+
+```bash
+error while loading shared libraries: libopenblas.so.0: cannot open shared object file: No such file or directory
+```
+
+simply run
+
+```bash
+export LD_LIBRARY_PATH=$CONDA_PREFIX/lib
+```
+
+> You can add the command to your .bash_profile.
