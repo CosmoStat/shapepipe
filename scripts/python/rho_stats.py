@@ -22,8 +22,8 @@ def NegDash(x_in, y_in, yerr_in, plot_name='', vertical_lines=True,
     safekwargs = dict(kwargs)
     errbkwargs = dict()
     if 'linestyle' in kwargs.keys():
-        print """Warning: linestyle was provided but that would kind of defeat the purpose, 
-         so I'll just ignore it. Sorry."""
+        print("""Warning: linestyle was provided but that would kind of defeat the purpose, 
+         so I'll just ignore it. Sorry.""")
         del safekwargs['linestyle']
     for errorbar_kword in ['fmt', 'ecolor', 'elinewidth', 'capsize', 'barsabove', 'errorevery']:
         if errorbar_kword in kwargs.keys():

@@ -17,22 +17,23 @@ from astropy.io import fits
                file_pattern=['image'],
                file_ext=['.fits'],
                numbering_scheme='_0')
-def uncompress_fits_image_runner(input_file_list, output_dir, file_number_string,
+def uncompress_fits_image_runner(input_file_list, run_dirs, file_number_string,
                                  config, w_log):
 
-    output_pattern = config.get("UNCOMPRESS_FITS_IMAGE_RUNNER", "OUTPUT_PATTERN")
+    output_pattern = config.get('UNCOMPRESS_FITS_IMAGE_RUNNER', 'OUTPUT_PATTERN')
 
-    try:
+    if config.has_option('UNCOMPRESS_FITS_IMAGE_RUNNER', 'HDU_DATA'):
         data_hdu = config.getint("UNCOMPRESS_FITS_IMAGE_RUNNER", "HDU_DATA")
-    except:
+    else:
         data_hdu = 0
 
+    # Read data for desired HDU
     data = fits.getdata(input_file_list[0], data_hdu)
     header = fits.getheader(input_file_list[0], data_hdu)
 
+    # Create and write new FITS file with that HDU only
     hdu = fits.PrimaryHDU(data, header)
     hdul = fits.HDUList([hdu])
-
-    hdul.writeto(output_dir + '/' + output_pattern + file_number_string + '.fits')
+    hdul.writeto(run_dirs['output'] + '/' + output_pattern + file_number_string + '.fits')
 
     return None, None

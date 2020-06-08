@@ -82,7 +82,7 @@ ERROR=FALSE
 # Function to download, and unzip and untar a package
 download_package() {
   cd $BUILD_DIR
-  wget $1
+  wget --no-check-certificate $1
   tar -xzf $2
   rm $2
 }

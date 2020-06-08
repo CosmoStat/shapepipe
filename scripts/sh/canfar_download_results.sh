@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+# Description: Download ShapePipe results (.tgz files)
+#              from canfar with vos
+# Author: Martin Kilbinger <martin.kilbinger@cea.fr>
+# Date: 05/2020
+# Package: shapepipe
+
+
 ## Paths
 remote="vos:cfis/cosmostat/kilbinger/results"
 local="."

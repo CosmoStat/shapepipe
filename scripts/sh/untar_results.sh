@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# Description: Untar .tgz files = results of ShapePipe runs
+# Author: Martin Kilbinger <martin.kilbinger@cea.fr>
+# Date: 05/2020
+# Package: shapepipe
+
+
 ## Paths
 local="."
 
