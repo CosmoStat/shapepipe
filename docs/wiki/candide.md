@@ -203,7 +203,7 @@ exit 0
 
 If you get the following error
 
-```bash
+```
 error while loading shared libraries: libopenblas.so.0: cannot open shared object file: No such file or directory
 ```
 
