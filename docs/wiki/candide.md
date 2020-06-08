@@ -137,13 +137,15 @@ In this script you can specify:
 # Request number of cores
 #PBS -l nodes=4
 
+# Full path to environment
+export SPENV="$HOME/.conda/envs/shapepipe"
+
 # Activate conda environment
 module load intelpython/3
-source activate $HOME/.conda/envs/shapepipe
+source activate $SPENV
 
-# Run ShapePipe
-cd $HOME/shapepipe
-$HOME/.conda/envs/shapepipe/bin/shapepipe_run -c example/pbs/config_smp.ini
+# Run ShapePipe using full paths to executables
+$SPENV/bin/shapepipe_run -c $HOME/shapepipe/example/pbs/config_smp.ini
 
 # Return exit code
 exit 0
@@ -176,14 +178,16 @@ exit 0
 # Allocate total number of cores to variable NSLOTS
 NSLOTS=`cat $PBS_NODEFILE | wc -l`
 
+# Full path to environment
+export SPENV="$HOME/.conda/envs/shapepipe"
+
 # Load moudules and activate conda environment
 module load intelpython/3
 module load openmpi/4.0.2
-source activate $HOME/.conda/envs/shapepipe
+source activate $SPENV
 
 # Run ShapePipe using full paths to executables
-cd $HOME/shapepipe
-/softs/openmpi/4.0.2-torque-CentOS7/bin/mpiexec -n $NSLOTS $HOME/.conda/envs/shapepipe/bin/shapepipe_run -c example/pbs/config_mpi.ini
+$SPENV/bin/mpiexec -n $NSLOTS $SPENV/bin/shapepipe_run -c $HOME/shapepipe/example/pbs/config_mpi.ini
 
 # Return exit code
 exit 0

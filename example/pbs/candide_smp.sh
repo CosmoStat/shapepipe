@@ -16,13 +16,15 @@
 # Request number of cores
 #PBS -l nodes=4
 
+# Full path to environment
+export SPENV="$HOME/.conda/envs/shapepipe"
+
 # Activate conda environment
 module load intelpython/3
-source activate $HOME/.conda/envs/shapepipe
+source activate $SPENV
 
-# Run ShapePipe
-cd $HOME/shapepipe
-$HOME/.conda/envs/shapepipe/bin/shapepipe_run -c example/pbs/config_smp.ini
+# Run ShapePipe using full paths to executables
+$SPENV/bin/shapepipe_run -c $HOME/shapepipe/example/pbs/config_smp.ini
 
 # Return exit code
 exit 0
