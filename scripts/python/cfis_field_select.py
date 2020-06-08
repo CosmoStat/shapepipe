@@ -541,8 +541,11 @@ def parse_options(p_def):
          help='output base names, not entire path if input is directory')
     parser.add_option('', '--out_name_only', dest='out_name_only', action='store_true',
          help='output only file names, not coordinates and metainfo')
+    parser.add_option('', '--out_ID_only', dest='out_ID_only', action='store_true',
+         help='output only file IDs, not full file names')
     parser.add_option('', '--interactive', dest='interactive', action='store_true',
          help='interactive mode (showing plots, recommended for call from jupyer notebook)')
+    parser.add_option('-s', '--short', dest='short', action='store_true', help='short output')
 
     # Job control
     parser.add_option('', '--no_cuts', dest='no_cuts', action='store_true',
@@ -665,18 +668,20 @@ def run_mode(images, param):
         # Image number search: Return name of image(s) covering input coordinate
         images_found = find_image_at_coord(images, param.coord, param.band, param.image_type, no_cuts=param.no_cuts, verbose=param.verbose)
         if len(images_found) > 0:
-            images_found[0].print_header(file=param.fout)
+            if not param.short:
+                images_found[0].print_header(file=param.fout)
             for img in images_found:
-                img.print(file=param.fout, base_name=param.out_base_name, name_only=param.out_name_only)
-            ex =  0
+                img.print(file=param.fout, base_name=param.out_base_name, name_only=param.out_name_only, ID_only=param.out_ID_only)
+            ex = 0
 
     elif param.number:
 
         # Coordinate search: Return coordinate covered by image with input number/file name
         img_found = get_coord_at_image(param.number, param.band, param.image_type, images, no_cuts=param.no_cuts, verbose=param.verbose)
         if img_found != None:
-            img_found.print_header(file=param.fout)
-            img_found.print(file=param.fout, base_name=param.out_base_name, name_only=param.out_name_only)
+            if not param.short:
+                img_found.print_header(file=param.fout)
+            img_found.print(file=param.fout, base_name=param.out_base_name, name_only=param.out_name_only, ID_only=param.out_ID_only)
             ex = 0
         else:
             if param.verbose:
@@ -688,9 +693,10 @@ def run_mode(images, param):
         angles = cfis.get_Angle_arr(param.area, num=4, verbose=param.verbose)
         images_found = find_images_in_area(images, angles, param.band, param.image_type, no_cuts=param.no_cuts, verbose=param.verbose)
         if len(images_found) > 0:
-            images_found[0].print_header(file=param.fout)
+            if not param.short:
+                images_found[0].print_header(file=param.fout)
             for img in images_found:
-                img.print(file=param.fout, base_name=param.out_base_name, name_only=param.out_name_only)
+                img.print(file=param.fout, base_name=param.out_base_name, name_only=param.out_name_only, ID_only=param.out_ID_only)
             if param.plot == True:
                 if param.verbose == True:
                     print('Creating plots')
@@ -741,7 +747,7 @@ def main(argv=None):
         cfis.log_command(argv, name='sys.stdout')
 
 
-    if param.verbose is True:
+    if param.verbose and not param.short:
         print('Start of program {}'.format(os.path.basename(argv[0])))
 
 
@@ -773,7 +779,7 @@ def main(argv=None):
 
     ### End main program
 
-    if param.verbose is True:
+    if param.verbose and not param.short:
         print('End of program {}'.format(os.path.basename(argv[0])))
 
     return ex
