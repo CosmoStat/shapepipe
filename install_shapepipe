@@ -160,6 +160,7 @@ build_mpi(){
   cd $BUILD_DIR/$1
   python setup.py build --mpicc=$MPI_ROOT
   python setup.py install
+  ln -s $MPI_ROOT/bin/$mpi_bin $CONDA_PREFIX/bin/$mpi_bin
 }
 
 # Check the conda executable is available
@@ -185,19 +186,12 @@ check_binary() {
 
 # Check if a binary executable is already installed in the conda environment
 check_binary2() {
-  if [ -z "$5" ]
-  then
-    bin_prefix="$CONDA_PREFIX/bin"
-  else
-    bin_prefix="$5/bin"
-  fi
-
-  if type -t "$bin_prefix/$1" > /dev/null
+  if type -t "$CONDA_PREFIX/bin/$1" > /dev/null
   then
     echo -ne "$2: ${GREEN}INSTALLED${NC}\n"
     if [ "$3" == TRUE ]
     then
-      "$bin_prefix/$1" --version | head -n 1
+      "$CONDA_PREFIX/bin/$1" --version | head -n 1
     fi
   else
     if [ "$4" == TRUE ]
