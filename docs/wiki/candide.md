@@ -17,7 +17,7 @@ The [CANDIDE cluster](https://candideusers.calet.org/) is hosted and maintained 
 
 ### CANDIDE Account
 
-To request and account on CANDIDE send an email to [Henry Joy McCracken](mailto:hjmcc@iap.fr) at IAP.
+To request and account on CANDIDE send an email to [Henry Joy McCracken](mailto:hjmcc@iap.fr) and [Stephane Rouberol](mailto:rouberol@iap.fr) at IAP with a short description of what you want to do and with whom you work.
 
 ### SSH
 
