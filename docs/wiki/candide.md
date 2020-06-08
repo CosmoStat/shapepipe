@@ -105,7 +105,7 @@ TORQUE uses standard [Portable Batch System (PBS) commands](https://www.cqu.edu.
 Jobs should be submitted as bash scripts. *e.g.*:
 
 ```bash
-qsub candide_smp.sh
+$ qsub candide_smp.sh
 ```
 
 In this script you can specify:
@@ -129,7 +129,7 @@ In this script you can specify:
 #PBS -M <name>@cea.fr
 #PBS -m ea
 # Set a name for the job
-#PBS -N shapepipe_mpi
+#PBS -N shapepipe_smp
 # Join output and errors in one file
 #PBS -j oe
 # Set maximum computing time (e.g. 5min)
