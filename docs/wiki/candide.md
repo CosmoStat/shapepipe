@@ -118,7 +118,7 @@ In this script you can specify:
 
 [`candide_smp.sh`](../../example/pbs/candide_smp.sh)
 
-```
+```bash
 #!/bin/bash
 
 ##########################
@@ -155,7 +155,7 @@ exit 0
 
 [`candide_mpi.sh`](../../example/pbs/candide_mpi.sh)
 
-```
+```bash
 #!/bin/bash
 
 ##########################
