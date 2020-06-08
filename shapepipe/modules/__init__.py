@@ -38,5 +38,6 @@ __module_list__ = ['execute_example',
                    'uncompress_fits_image_runner',
                    'erase_output_runner',
                    'merge_sep_cats_runner',
-                   'get_images_runner'
+                   'get_images_runner',
+                   'get_images_runner2'
                   ]
