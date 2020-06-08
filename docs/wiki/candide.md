@@ -213,4 +213,4 @@ simply run
 export LD_LIBRARY_PATH=$CONDA_PREFIX/lib
 ```
 
-> You can add the command to your .bash_profile.
+> You can add the command to your `.bash_profile`.
