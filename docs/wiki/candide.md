@@ -2,7 +2,9 @@
 
 # CANDIDE Set Up
 
-> Current stable OpenMPI version: `4.0.2`
+> Environment Status Notes
+> - No internet access on compute nodes, see [tutorial](https://github.com/CosmoStat/shapepipe/blob/master/docs/wiki/tutorial/pipeline_tutorial.md#mask-images) for how to mange `mask_runner`
+> - Current stable OpenMPI version: `4.0.2`
 
 ## Contents
 
