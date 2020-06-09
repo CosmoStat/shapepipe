@@ -63,6 +63,7 @@ NC='\033[0m'
 # Set variable defaults
 PIPE_DIR=$PWD
 BUILD_DIR=$PIPE_DIR/build
+ENV_NAME='shapepipe'
 BUILD_ENV=TRUE
 DEVELOP=FALSE
 VOS=FALSE
@@ -251,7 +252,7 @@ exit_code() {
 
 # Function to report package versions
 package_report() {
-  if [ "$CONDA_DEFAULT_ENV" != "shapepipe" ]
+  if [ "$CONDA_DEFAULT_ENV" != "$ENV_NAME" ]
   then
     activate_shapepipe
   fi
@@ -297,7 +298,7 @@ check_status () {
 # Function to show the installation setup
 setup() {
   check_status 'Operating System:' $SYSOS
-  check_status 'Build Conda Environment:' $BUILD_ENV
+  check_status 'Build Conda Environment:' $BUILD_ENV $ENV_NAME
   check_status 'Install SExtractor:' $INSTALL_SEX
   check_status 'Install PSFEx:' $INSTALL_PSFEX
   check_status 'Install WeightWatcher:' $INSTALL_WW
@@ -325,14 +326,20 @@ astromatic_setup() {
 
 # Function to uninstall ShapePipe and dependencies
 uninstall() {
-  rm -r build dist shapepipe.egg-info .eggs
-  source deactivate || conda deactivate
-  conda remove -n shapepipe --all -y
+  read -p "Uninstall $ENV_NAME environment [y/N]: " response
+  response=${response:-n}
+  if [ $response == "y" ]
+  then
+    rm -r build dist *.egg-info .eggs
+    deactivate_shapepipe
+    conda remove -n $ENV_NAME --all -y
+    echo "Finished uninstalling $ENV_NAME"
+  fi
 }
 
 # Function to activate ShapePipe environment
 activate_shapepipe() {
-  source activate shapepipe
+  source activate $ENV_NAME || source $CONDA_PREFIX_1/etc/profile.d/conda.sh && conda activate $ENV_NAME
   if [ "$?" -eq 0 ]
   then
     echo -ne "Activating Conda environment ${CYAN}$CONDA_PREFIX${NC}\n"
@@ -341,6 +348,11 @@ activate_shapepipe() {
     echo -ne "${RED}ERROR: Could not activate ShapePipe environment.${NC}\n"
     exit 1
   fi
+}
+
+# Function to deactivate ShapePipe environment
+deactivate_shapepipe() {
+  source deactivate || source $CONDA_PREFIX_1/etc/profile.d/conda.sh && conda deactivate
 }
 
 ##############################################################################
@@ -353,8 +365,9 @@ Options:\n
 \t-v,--version\t print script version and exit\n
 \t-p,--packages\t print status of installed packages\n
 \t--uninstall\t uninstall ShapePipe\n
-\t--pipe-dir\t set the path to the ShapePipe base directory (default is PWD)\n
-\t--build-dir\t set the path to the ShapePipe build (default is PWD/build)\n
+\t--pipe-dir\t set the path to the ShapePipe base directory (default is \$PWD)\n
+\t--build-dir\t set the path to the ShapePipe build (default is \$PWD/build)\n
+\t--env-name\t set the name of the conda environment (default is shapepipe)\n
 \t--develop\t option to install additional development packages\n
 \t--vos\t\t option to install virtual observatory software\n
 \t--no-env\t do not build Conda environment\n
@@ -410,6 +423,10 @@ case $i in
     ;;
     --build-dir=*)
     BUILD_DIR="${i#*=}"
+    shift
+    ;;
+    --env-name=*)
+    ENV_NAME="${i#*=}"
     shift
     ;;
     --develop)
@@ -532,8 +549,7 @@ setup
 if [ "$BUILD_ENV" == TRUE ]
 then
   report_progress 'ShapePipe Environment'
-  source activate base
-  conda env create -f environment.yml
+  conda env create -f environment.yml -n $ENV_NAME
 fi
 
 # Activate conda environment
@@ -574,8 +590,8 @@ fi
 if [ "$SYSOS" == "macOS" ]
 then
   report_progress 'macOS Requirements'
-  conda install -n shapepipe wget -y
-  conda install -n shapepipe automake autoconf libtool -y
+  conda install -n $ENV_NAME wget -y
+  conda install -n $ENV_NAME automake autoconf libtool -y
   export C_INCLUDE_PATH=$CONDA_PREFIX/include
   export CFLAGS="-Wl,-rpath,$CONDA_PREFIX/lib"
   export CPPFLAGS="-Wno-everything"
@@ -593,7 +609,7 @@ then
   report_progress 'MPI'
   if [ -z "$MPI_ROOT" ]
   then
-    conda install -n shapepipe -c conda-forge "mpi4py>=3.0.1" -y
+    conda install -n $ENV_NAME -c conda-forge "mpi4py>=3.0.1" -y
   else
     download_package $mpi_url $mpi_tar
     build_mpi $mpi_dir
@@ -608,13 +624,13 @@ fi
 if [ "$INSTALL_SEX" == TRUE ] && check_binary $sex_bin
 then
   report_progress 'SExtractor'
-  conda install -n shapepipe -c conda-forge fftw -y
+  conda install -n $ENV_NAME -c conda-forge fftw -y
   download_package $sex_url $sex_tar
   if [ "$use_atlas" == TRUE ]
   then
     build_sex_atlas $sex_dir
   else
-    conda install -n shapepipe -c conda-forge openblas -y
+    conda install -n $ENV_NAME -c conda-forge openblas -y
     build_sex_blas $sex_dir
   fi
 fi
@@ -625,13 +641,13 @@ then
   report_progress 'PSFEx'
   conda install cmake -y
   conda install libpng -y
-  conda install -n shapepipe -c conda-forge fftw -y
+  conda install -n $ENV_NAME -c conda-forge fftw -y
   download_package $psfex_url $psfex_tar
   if [ "$use_atlas" == TRUE ]
   then
     build_psfex_atlas $psfex_dir
   else
-    conda install -n shapepipe -c conda-forge openblas -y
+    conda install -n $ENV_NAME -c conda-forge openblas -y
     build_psfex_blas $psfex_dir
   fi
 fi
