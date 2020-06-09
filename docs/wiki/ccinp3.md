@@ -20,6 +20,7 @@ To get an account on CCIN2P3 you need to follow [their instructions](https://doc
 - Fill in the [application form](http://cctools.in2p3.fr/cclogon/) and print the resulting PDF
 - Get this document signed by your local "czar". For CEA this should be [Georgette Zoulikha](mailto:zou.georgette@cea.fr).
 - [Submit a ticket](https://cc-usersupport.in2p3.fr/otrs/customer.pl) with a scan of the signed document.
+- If required indicate `Euclid` as project.
 
 ### SSH
 
@@ -198,3 +199,5 @@ exit 0
 ```
 
 ## Troubleshooting
+
+The Euclid-SDC slack [channel](#euclid-sdc-france.slack.com) is very helpful in case of problems of job submission, environment set up, library and program versions etc. You can write a PM directly at some of the Euclid sys ads, Quentin Le Boulc'h and Gabriele Mainetti (in English or French). They are quick to help with any issue.
