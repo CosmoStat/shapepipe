@@ -2,7 +2,8 @@
 
 # CANDIDE Set Up
 
-> Environment Status Notes
+> Environment Status Notes  
+> - Website: https://candideusers.calet.org/
 > - No internet access on compute nodes, see [tutorial](https://github.com/CosmoStat/shapepipe/blob/master/docs/wiki/tutorial/pipeline_tutorial.md#mask-images) for how to mange `mask_runner`
 > - Current stable OpenMPI version: `4.0.2`
 
@@ -103,6 +104,12 @@ TORQUE uses standard [Portable Batch System (PBS) commands](https://www.cqu.edu.
 - `qsub` - To submit jobs to the queue.
 - `qstat` - To check on the status of jobs in the queue.
 - `qdel` - To kill jobs in the queue.
+
+Additionally, the availability of compute nodes can be seen using the command
+
+```bash
+$ cnodes
+```
 
 Jobs should be submitted as bash scripts. *e.g.*:
 
