@@ -2,6 +2,7 @@ NUMBER                   #Running object number
 EXT_NUMBER               #FITS extension number                                    
 
 FLUX_AUTO                #Flux within a Kron-like elliptical aperture               [count]
+FLUX_APER
 FLUXERR_AUTO             #RMS error for AUTO flux                                   [count]
 MAG_AUTO                 #Kron-like elliptical aperture magnitude                   [mag]
 MAGERR_AUTO              #RMS error for AUTO magnitude                              [mag]
