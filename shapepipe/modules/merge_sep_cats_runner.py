@@ -67,7 +67,6 @@ def merge_sep_cats_runner(input_file_list, run_dirs, file_number_string,
 
         cat.close()
 
-
     # Save combined catalogue
     output_name = '{}/ngmix{}.fits'.format(run_dirs['output'], file_number_string)
     output = io.FITSCatalog(output_name,

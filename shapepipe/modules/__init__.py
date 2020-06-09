@@ -39,5 +39,4 @@ __module_list__ = ['execute_example',
                    'erase_output_runner',
                    'merge_sep_cats_runner',
                    'get_images_runner',
-                   'get_images_runner2'
-                  ]
+                   'get_images_runner2']

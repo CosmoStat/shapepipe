@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Name: canfar_sp.bash
 # Description: Process one or more tiles with all

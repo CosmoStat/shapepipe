@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Name: submit_selection.sh
 # Author: Martin Kilbinger (2020), martin.kilbinger@cea.fr
