@@ -619,7 +619,7 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
 
     final_res = []
     prior = get_prior()
-    # MKDEBUG
+
     count = 0
     id_first = -1
     id_last = -1

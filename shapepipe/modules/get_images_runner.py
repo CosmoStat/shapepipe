@@ -35,10 +35,6 @@ class GetImages(object):
             input file extensions
         w_log:
             log file
-
-        Returns
-        --------
-        self: GetImages class instance
         """
 
         self._copy = copy
@@ -108,10 +104,6 @@ class GetImages(object):
             input file paths, one list for each input file type
         all_outputs: list of list of strings
             output file paths, one list for each input file type
-
-        Returns
-        -------
-        None
         """
 
         for in_per_type, out_per_type in zip(all_inputs, all_outputs):
