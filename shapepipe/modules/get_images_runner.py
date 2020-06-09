@@ -9,7 +9,8 @@ This module copies all images required for processing
 """
 
 from shapepipe.modules.module_decorator import module_runner
-import re, sys
+import re
+import sys
 
 
 class GetImages(object):
@@ -77,12 +78,12 @@ class GetImages(object):
                     #   with file extension delimiters
                     # - remove letters in number
 
-                    number_final = re.sub('\.', '-', number)
+                    number_final = re.sub(r'\.', '-', number)
                     number_final = re.sub('[a-zA-Z]', '', number_final)
 
                     # Keep initial dot in extension
                     x = in_ext[1:]
-                    x2 = re.sub('\.', '', x)
+                    x2 = re.sub(r'\.', '', x)
                     ext_final = in_ext[0] + x2
                     fbase = '{}{}'.format(output_file_pattern[i], number_final)
                 else:
@@ -159,7 +160,6 @@ def read_image_numbers(path):
 def get_images_runner(input_file_list, run_dirs, file_number_string,
                       config, w_log):
 
-
     # Input image numbers from all input tile fils
     all_image_numbers = []
     for input_file in input_file_list:
@@ -172,13 +172,13 @@ def get_images_runner(input_file_list, run_dirs, file_number_string,
     image_number_list = list(set(flat_list))
     w_log.info('{} unique exposures numbers'.format(len(image_number_list)))
 
-   # Read config file section
+    # Read config file section
 
     # Copying/download method
     copy = config.get('GET_IMAGES_RUNNER', 'COPY')
     copy_ok = ['vos', 'symlink']
     if copy not in copy_ok:
-        raise ValueError('key COPY={} is invalid, must be in {}'.format(copy, copy_ok)) 
+        raise ValueError('key COPY={} is invalid, must be in {}'.format(copy, copy_ok))
 
     # Paths
     input_dir = config.getlist('GET_IMAGES_RUNNER', 'INPUT_PATH')
@@ -205,12 +205,10 @@ def get_images_runner(input_file_list, run_dirs, file_number_string,
     copy = config.get('GET_IMAGES_RUNNER', 'COPY')
     copy_ok = ['vos', 'symlink']
     if copy not in copy_ok:
-        raise ValueError('key COPY={} is invalid, must be in {}'.format(copy, copy_ok)) 
+        raise ValueError('key COPY={} is invalid, must be in {}'.format(copy, copy_ok))
 
     if config.has_option('GET_IMAGES_RUNNER', 'COPY_OPTIONS'):
         options = config.get('GET_IMAGES_RUNNER', 'COPY_OPTIONS')
-
-
 
     inst = GetImages(copy, options, image_number_list, input_numbering,
                      input_file_pattern, input_file_ext, w_log)
