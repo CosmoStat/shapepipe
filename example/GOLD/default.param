@@ -2,7 +2,6 @@ NUMBER                   #Running object number
 EXT_NUMBER               #FITS extension number                                    
 
 FLUX_AUTO                #Flux within a Kron-like elliptical aperture               [count]
-FLUX_APER
 FLUXERR_AUTO             #RMS error for AUTO flux                                   [count]
 MAG_AUTO                 #Kron-like elliptical aperture magnitude                   [mag]
 MAGERR_AUTO              #RMS error for AUTO magnitude                              [mag]
@@ -10,6 +9,8 @@ FLUX_WIN                 #Gaussian-weighted flux                                
 FLUXERR_WIN              #RMS error for WIN flux                                    [count]
 MAG_WIN                  #Gaussian-weighted magnitude                               [mag]
 MAGERR_WIN               #RMS error for MAG_WIN                                     [mag]
+FLUX_APER(1)
+FLUXERR_APER(1)
 
 FLUX_RADIUS              #Fraction-of-light radii                                   [pixel]
 
