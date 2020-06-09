@@ -2,6 +2,6 @@
 
 # Environment Set Up
 
-- [Candide](./candide.md)
+- [CANDIDE](./candide.md)
 - [CANFAR](./canfar.md)
 - [CCINP3](./ccinp3.md)
