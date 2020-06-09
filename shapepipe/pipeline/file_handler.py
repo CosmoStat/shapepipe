@@ -350,8 +350,9 @@ class FileHandler(object):
 
             elif 'last' in dir.lower():
                 module = dir.lower().split(':')[1]
+                last_module = self._run_log.get_last(module)
                 input_dir.append(self.format(self.format(
-                                 self._run_log.get_last(module),
+                                 last_module,
                                  module), 'output'))
 
             elif ':' in dir.lower():

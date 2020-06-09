@@ -10,14 +10,11 @@ This module contains sub-modules that can be run with ShapePipe.
 
 __all__ = ['module_decorator',
            'module_runners',
-           'combine_mexp_package',
-           'find_exposures_package',
            'mask_package',
            'PSFExInterpolation_package',
-           'SETools_package',
-           'tileobj_as_exp_package']
-__module_list__ = ['combine_mexp_runner',
-                   'execute_example',
+           'SETools_package'
+           ]
+__module_list__ = ['execute_example',
                    'find_exposures_runner',
                    'galsim_shapes_runner',
                    'make_catalog_runner',
@@ -39,4 +36,7 @@ __module_list__ = ['combine_mexp_runner',
                    'merge_headers_runner',
                    'merge_star_cat_runner',
                    'uncompress_fits_image_runner',
-                   'erase_output_runner']
+                   'erase_output_runner',
+                   'merge_sep_cats_runner',
+                   'get_images_runner',
+                   'get_images_runner2']

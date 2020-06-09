@@ -276,12 +276,12 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
         psf_obs = Observation(psfs[n_e], jacobian=psf_jacob)
 
         # psf_T = 2. * psfs_sigma[n_e]**2.
-        psf_T = psfs_sigma[n_e]*1.17741
+        psf_T = psfs_sigma[n_e]*1.17741*pixel_scale
 
         w = np.copy(weights[n_e])
         w[np.where(flags[n_e] != 0)] = 0.
 
-        psf_guess = np.array([0., 0., 0., 0., psfs_sigma[n_e]*1.17741, 1.])
+        psf_guess = np.array([0., 0., 0., 0., psf_T, 1.])
         try:
             psf_res = make_galsimfit(psf_obs, 'gauss', psf_guess, None)
         except:
@@ -364,12 +364,15 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
     #            'ftol': 5.0e-6}
 
     # Tguess = np.mean(T_guess_psf)*0.186**2  # size guess in arcsec
+
     Tguess = np.mean(T_guess_psf)
+
     # Tguess = 4.0*0.186**2
     ntry = 2       # retry the fit twice
 
     obs_dict_mcal = ngmix.metacal.get_all_metacal(gal_obs_list, **metacal_pars)
     res = {'mcal_flags': 0}
+
     ntry = 5
 
     for key in sorted(obs_dict_mcal):
@@ -390,6 +393,7 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
         gpsf_sum = np.zeros(2)
         npsf = 0
         for obs in obs_dict_mcal[key]:
+
             if hasattr(obs, 'psf_nopix'):
                 try:
                     psf_res = make_galsimfit(obs.psf_nopix,
@@ -497,7 +501,7 @@ def compile_results(results):
               'g1_err_psfo_ngmix', 'g2_err_psfo_ngmix', 'T_err_psfo_ngmix',
               'g1', 'g1_err', 'g2', 'g2_err',
               'T', 'T_err', 'Tpsf', 'g1_psf', 'g2_psf',
-              's2n',
+              'flux', 'flux_err', 's2n',
               'flags', 'mcal_flags']
     output_dict = {k: {kk: [] for kk in names2} for k in names}
     for i in range(len(results)):
@@ -521,6 +525,9 @@ def compile_results(results):
             output_dict[name]['Tpsf'].append(results[i][name]['Tpsf'])
             output_dict[name]['g1_psf'].append(results[i][name]['gpsf'][0])
             output_dict[name]['g2_psf'].append(results[i][name]['gpsf'][1])
+            output_dict[name]['flux'].append(results[i][name]['flux'])
+            output_dict[name]['flux_err'].append(results[i][name]['flux_err'])
+
             try:
                 output_dict[name]['s2n'].append(results[i][name]['s2n'])
             except:
@@ -554,31 +561,37 @@ def save_results(output_dict, output_name):
 
 def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             psf_vignet_path, weight_vignet_path, flag_vignet_path,
-            f_wcs_path, w_log):
+            f_wcs_path, w_log, id_obj_min=-1, id_obj_max=-1):
     """ Process
 
     Process function.
 
     Parameters
     ----------
-    tile_cat_path : str
+    tile_cat_path: str
         Path to the tile SExtractor catalog.
-    gal_vignet_path : str
+    gal_vignet_path: str
         Path to the galaxy vignets catalog.
-    bkg_vignet_path : str
+    bkg_vignet_path: str
         Path to the background vignets catalog.
-    psf_vignet_path : str
+    psf_vignet_path: str
         Path to the PSF vignets catalog.
-    weight_vignet_path : str
+    weight_vignet_path: str
         Path to the weight vignets catalog.
-    flag_vignet_path : str
+    flag_vignet_path: str
         Path to the flag vignets catalog.
-    f_wcs_path : str
+    f_wcs_path: str
         Path to the log file containing the WCS for each CCDs.
+    w_log: log file object
+        log file
+    id_obj_min: int, optional, default=-1
+        minimum object ID to be processed if > 0
+    id_obj_max: int, optional, default=-1
+        maximum object ID to be processed if > 0
 
     Returns
     -------
-    final_res : dict
+    final_res: dict
         Dictionary containing the ngmix metacal results.
 
     """
@@ -606,14 +619,24 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
 
     final_res = []
     prior = get_prior()
+
+    count = 0
+    id_first = -1
+    id_last = -1
+
     for i_tile, id_tmp in enumerate(obj_id):
 
-        # Preselection step
-        # if (tile_flag[i_tile] > 1) or (tile_imaflag[i_tile] > 0):
-        #     continue
-        # if (sm[i_tile] + (5. / 3.) * sm_err[i_tile] < 0.01) and
-        # (np.abs(sm[i_tile] + (5. / 3.) * sm_err[i_tile]) > 0.003):
-        #     continue
+        if id_obj_min > 0 and id_tmp < id_obj_min:
+            continue
+        if id_obj_max > 0 and id_tmp > id_obj_max:
+            continue
+
+        if id_first == -1:
+            id_first = id_tmp
+        id_last = id_tmp
+
+        count = count + 1
+
         gal_vign = []
         psf_vign = []
         sigma_psf = []
@@ -661,11 +684,17 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
                                    jacob_list,
                                    prior)
         except Exception as ee:
-            w_log.info('ngmix fail on object {}\nMessage : {}'.format(id_tmp, ee))
+            w_log.info('ngmix failed for object ID={}.\nMessage: {}'.format(id_tmp, ee))
             continue
+
         res['obj_id'] = id_tmp
         res['n_epoch_model'] = len(gal_vign)
         final_res.append(res)
+
+    w_log.info('ngmix loop over objects finished, processed {} '
+               'objects, id first/last={}/{}'.format(count,
+                                                     id_first,
+                                                     id_last))
 
     f_wcs_file.close()
     gal_vign_cat.close()
@@ -693,9 +722,11 @@ def ngmix_runner(input_file_list, run_dirs, file_number_string,
 
     f_wcs_path = config.getexpanded('NGMIX_RUNNER', 'LOG_WCS')
 
-    w_log.info('MKDEBUG: Running new version of ngmix with additive-bias fix')
+    id_obj_min = config.getint('NGMIX_RUNNER', 'ID_OBJ_MIN')
+    id_obj_max = config.getint('NGMIX_RUNNER', 'ID_OBJ_MAX')
 
-    metacal_res = process(*input_file_list, f_wcs_path, w_log)
+    metacal_res = process(*input_file_list, f_wcs_path, w_log,
+                          id_obj_min=id_obj_min, id_obj_max=id_obj_max)
     res_dict = compile_results(metacal_res)
     save_results(res_dict, output_name)
 

@@ -11,9 +11,9 @@ CDSCLIENT_PATH = findgsc2.2
 # ----------------------------- Border parameters ----------------------------------
 [BORDER_PARAMETERS]
 
-BORDER_MAKE = True
+BORDER_MAKE = False
 
-BORDER_WIDTH = 5
+BORDER_WIDTH = 0
 BORDER_FLAG_VALUE = 4
 
 
@@ -51,7 +51,7 @@ MESSIER_MAKE = True
 MESSIER_CAT_PATH = $SP_CONFIG/mask_default/Messier_catalog_updated.npy
 MESSIER_PIXEL_SCALE = 0.187
 MESSIER_SIZE_PLUS = 0.
-MESSIER_FLAG_VALUE = 4
+MESSIER_FLAG_VALUE = 16
 
 
 # -------------------------------- External flag ----------------------------------

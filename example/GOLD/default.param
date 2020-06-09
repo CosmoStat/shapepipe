@@ -9,6 +9,8 @@ FLUX_WIN                 #Gaussian-weighted flux                                
 FLUXERR_WIN              #RMS error for WIN flux                                    [count]
 MAG_WIN                  #Gaussian-weighted magnitude                               [mag]
 MAGERR_WIN               #RMS error for MAG_WIN                                     [mag]
+FLUX_APER(1)
+FLUXERR_APER(1)
 
 FLUX_RADIUS              #Fraction-of-light radii                                   [pixel]
 

@@ -11,9 +11,9 @@ dependencies:
   - pip>=19.3
   - pip:
     - modopt>=1.2
-    - numba==0.40.0
+    - numba>=0.49.1
     - sip_tpv>=1.1
     - sf_tools>=2.0
     - sqlitedict>=1.6.0
     - termcolor>=1.1
-    - git+https://github.com/aguinot/ngmix@modif_observation
+    - git+https://github.com/aguinot/ngmix@stable_version

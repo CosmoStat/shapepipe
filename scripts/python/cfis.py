@@ -133,7 +133,7 @@ class image():
         return False
 
 
-    def print(self, file=sys.stdout, base_name=False, name_only=True):
+    def print(self, file=sys.stdout, base_name=False, name_only=True, ID_only=False):
         """Print image information as ascii Table column
 
         Parameters
@@ -141,9 +141,11 @@ class image():
         file: file handle, optional, default=sys.stdout
             output file handle
         base_name: bool, optional, default=False
-            if True (False) print image base name (full path)
+            if True (False), print image base name (full path)
         name_only: bool, optional, default=False
-            if False, do not print metainfo
+            if True, do not print metainfo
+        ID_only: bool, optional, default=False
+            if True, only print file ID instead of entire name
 
         Returns
         -------
@@ -154,7 +156,15 @@ class image():
             name = os.path.basename(self.name)
         else:
             name = self.name
+
+        if ID_only:
+            m = re.search('\d{3}.\d{3}', name)
+            if m is None:
+                raise NoneType('No ID match in file name {}'.format(name))
+            else:
+                name = m[0]
         print(name, end='', file=file)
+
         if not name_only:
             if self.ra:
                 print(' {:10.2f}'.format(getattr(self.ra, unitdef)), end='', file=file)
