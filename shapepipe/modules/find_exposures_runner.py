@@ -53,8 +53,6 @@ class find_exposures():
                 print(exp, file=f_out)
         f_out.close()
 
-        return
-
     def get_exposure_list(self):
         """Return list of exposure file used for the tile in process, from tiles FITS header
 
