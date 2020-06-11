@@ -456,21 +456,21 @@ def compile_results(results, do_metacal, w_log):
     for i in range(len(results)):
         for key in types:
             output_dict[key]['id'].append(results[i]['obj_id'])
-            shapes_check = check_galsim_shapes(results[i]['gal'][key],
+            shapes_check = check_galsim_shapes(results[i][key],
                                                results[i]['obj_id'],
                                                w_log)
             output_dict[key]['gal_g1'].append(shapes_check[0])
             output_dict[key]['gal_g2'].append(shapes_check[1])
-            output_dict[key]['gal_g1_err'].append(results[i]['gal'][key].corrected_shape_err)
-            output_dict[key]['gal_g2_err'].append(results[i]['gal'][key].corrected_shape_err)
-            output_dict[key]['gal_uncorr_g1'].append(results[i]['gal'][key].observed_shape.g1)
-            output_dict[key]['gal_uncorr_g2'].append(results[i]['gal'][key].observed_shape.g2)
-            output_dict[key]['gal_sigma'].append(results[i]['gal'][key].moments_sigma)
+            output_dict[key]['gal_g1_err'].append(results[i][key].corrected_shape_err)
+            output_dict[key]['gal_g2_err'].append(results[i][key].corrected_shape_err)
+            output_dict[key]['gal_uncorr_g1'].append(results[i][key].observed_shape.g1)
+            output_dict[key]['gal_uncorr_g2'].append(results[i][key].observed_shape.g2)
+            output_dict[key]['gal_sigma'].append(results[i][key].moments_sigma)
             output_dict[key]['gal_flag'].append(shapes_check[2])
-            output_dict[key]['gal_resolution'].append(results[i]['gal'][key].resolution_factor)
-            output_dict[key]['psf_g1'].append(results[i]['gal'][key].psf_shape.g1)
-            output_dict[key]['psf_g2'].append(results[i]['gal'][key].psf_shape.g2)
-            output_dict[key]['psf_sigma'].append(results[i]['gal'][key].psf_sigma)
+            output_dict[key]['gal_resolution'].append(results[i][key].resolution_factor)
+            output_dict[key]['psf_g1'].append(results[i][key].psf_shape.g1)
+            output_dict[key]['psf_g2'].append(results[i][key].psf_shape.g2)
+            output_dict[key]['psf_sigma'].append(results[i][key].psf_sigma)
             # output_dict[key]['psf_vignet'].append(results[i]['psf_vign'])
             # output_dict[key]['gal_vignet'].append(results[i]['gal_vign'])
 
