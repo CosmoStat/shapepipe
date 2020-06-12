@@ -48,7 +48,7 @@ export VM_HOME=/home/ubuntu
 export SP_RUN=`pwd`
 
 # Config file path
-export SP_CONFIG=$SP_RUN/GOLD
+export SP_CONFIG=$SP_RUN/cfis
 
 # Input tile numbers ASCII file
 export TILE_NUMBERS_PATH=tile_numbers.txt
@@ -238,7 +238,7 @@ for TILE in ${TILE_ARR[@]}; do
 done
 
 # Download config files
-$VCP vos:cfis/cosmostat/kilbinger/GOLD .
+$VCP vos:cfis/cosmostat/kilbinger/cfis .
 
 ### Run pipeline
 

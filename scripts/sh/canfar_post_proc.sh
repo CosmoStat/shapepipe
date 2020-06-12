@@ -12,7 +12,7 @@
 # be active to run this script.
 
 SP_BASE=$HOME/astro/repositories/github/shapepipe
-SP_CONFIG=$SP_BASE/example/GOLD
+SP_CONFIG=$SP_BASE/example/cfis
 
 # To download results from canfar, use
 #

@@ -11,19 +11,19 @@ PARAMETERS_NAME  default.param
 #------------------------------- Extraction ----------------------------------
  
 DETECT_TYPE      CCD            # CCD (linear) or PHOTO (with gamma correction)
-DETECT_MINAREA   3.141592*0.4/0.186/2.*0.4/0.186/2.              # min. # of pixels above threshold
+DETECT_MINAREA   10              # min. # of pixels above threshold
 DETECT_MAXAREA   0              # max. # of pixels above threshold (0=unlimited)
 THRESH_TYPE      RELATIVE       # threshold type: RELATIVE (in sigmas)
                                 # or ABSOLUTE (in ADUs)
-DETECT_THRESH    1.             # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
-ANALYSIS_THRESH  2.             # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
+DETECT_THRESH    1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
+ANALYSIS_THRESH  1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
  
 FILTER           Y              # apply filter for detection (Y or N)?
-FILTER_NAME      config_tiles/default.conv
+FILTER_NAME      default.conv
 FILTER_THRESH                   # Threshold[s] for retina filtering
  
 DEBLEND_NTHRESH  32             # Number of deblending sub-thresholds
-DEBLEND_MINCONT  0.0001          # Minimum contrast parameter for deblending
+DEBLEND_MINCONT  0.0005         # Minimum contrast parameter for deblending
  
 CLEAN            Y              # Clean spurious detections? (Y or N)?
 CLEAN_PARAM      1.0            # Cleaning efficiency
@@ -37,7 +37,7 @@ WEIGHT_TYPE      MAP_WEIGHT     # type of WEIGHTing: NONE, BACKGROUND,
                                 # MAP_RMS, MAP_VAR or MAP_WEIGHT
 RESCALE_WEIGHTS  Y              # Rescale input weights/variances (Y/N)?
 WEIGHT_IMAGE     weight.fits    # weight-map filename
-WEIGHT_GAIN      N              # modulate gain (E/ADU) with weights? (Y/N)
+WEIGHT_GAIN      Y              # modulate gain (E/ADU) with weights? (Y/N)
 WEIGHT_THRESH                   # weight threshold[s] for bad pixels
 
 #-------------------------------- FLAGging -----------------------------------
@@ -48,7 +48,7 @@ FLAG_TYPE        OR             # flag pixel combination: OR, AND, MIN, MAX
 
 #------------------------------ Photometry -----------------------------------
  
-PHOT_APERTURES   @max(IQFINAL,0.4)/0.186*2.              # MAG_APER aperture diameter(s) in pixels
+PHOT_APERTURES   5              # MAG_APER aperture diameter(s) in pixels
 PHOT_AUTOPARAMS  2.5, 3.5       # MAG_AUTO parameters: <Kron_fact>,<min_radius>
 PHOT_PETROPARAMS 2.0, 3.5       # MAG_PETRO parameters: <Petrosian_fact>,
                                 # <min_radius>
@@ -62,11 +62,11 @@ MAG_ZEROPOINT    30.0            # magnitude zero-point
 MAG_GAMMA        4.0            # gamma of emulsion (for photographic scans)
 
 GAIN_KEY         GAIN           # keyword for detector gain in e-/ADU
-PIXEL_SCALE      0.186          # size of pixel in arcsec (0=use FITS WCS info)
+PIXEL_SCALE      0.            # size of pixel in arcsec (0=use FITS WCS info)
  
 #------------------------- Star/Galaxy Separation ----------------------------
  
-SEEING_FWHM      @max(IQFINAL,0.4) #stellar FWHM in arcsec
+SEEING_FWHM      0.6            # stellar FWHM in arcsec
 STARNNW_NAME     default.nnw
  
 #------------------------------ Background -----------------------------------
@@ -74,7 +74,7 @@ STARNNW_NAME     default.nnw
 BACK_TYPE        MANUAL         # AUTO or MANUAL
 BACK_VALUE       0.0            # Default background value in MANUAL mode
 BACK_SIZE        64             # Background mesh: <size> or <width>,<height>
-BACK_FILTERSIZE  9              # Background filter: <size> or <width>,<height>
+BACK_FILTERSIZE  3              # Background filter: <size> or <width>,<height>
  
 BACKPHOTO_TYPE   GLOBAL         # can be GLOBAL or LOCAL
 BACKPHOTO_THICK  24             # thickness of the background LOCAL annulus
@@ -82,17 +82,22 @@ BACK_FILTTHRESH  0.0            # Threshold above which the background-
                                 # map filter operates
  
 #------------------------------ Check Image ----------------------------------
- 
-CHECKIMAGE_TYPE  NONE           # can be NONE, BACKGROUND, BACKGROUND_RMS,
+
+#######
+## AG : This parameter is set in pipeline config file.
+#######
+# CHECKIMAGE_TYPE  NONE #BACKGROUND_RMS,BACKGROUND           
+# can be NONE, BACKGROUND, BACKGROUND_RMS,
                                 # MINIBACKGROUND, MINIBACK_RMS, -BACKGROUND,
                                 # FILTERED, OBJECTS, -OBJECTS, SEGMENTATION,
                                 # or APERTURES
-CHECKIMAGE_NAME  check.fits     # Filename for the check-image
+# CHECKIMAGE_NAME  check.fits,back.fits
+# Filename for the check-image
  
 #--------------------- Memory (change with caution!) -------------------------
  
 MEMORY_OBJSTACK  3000           # number of objects in stack
-MEMORY_PIXSTACK  600000         # number of pixels in stack
+MEMORY_PIXSTACK  300000         # number of pixels in stack
 MEMORY_BUFSIZE   1024           # number of lines in buffer
  
 #------------------------------- ASSOCiation ---------------------------------
