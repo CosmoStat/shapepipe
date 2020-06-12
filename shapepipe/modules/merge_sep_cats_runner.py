@@ -29,51 +29,62 @@ def merge_sep_cats_runner(input_file_list, run_dirs, file_number_string,
 
     n_split_max = config.getint('MERGE_SEP_CATS_RUNNER', 'N_SPLIT_MAX')
 
-    # Get all input directories
-    input_path_n = []
-    input_path_n.append(input_file_list[0])
-    for n in range(2, n_split_max + 1):
-        res = re.sub('1', str(n), input_file_list[0], 1)
-        input_path_n.append(res)
+    file_pattern = config.getlist('FILE', 'FILE_PATTERN')
+    file_ext = config.getlist('FILE', 'FILE_EXT')
+    print('MKDEBUG')
+    print(input_file_list)
+    print(file_pattern)
+    print(file_ext)
 
-    # Open first catalogue, read number of extensions and columns
-    cat0 = io.FITSCatalog(input_file_list[0], SEx_catalog=True)
-    cat0.open()
-    list_ext_name = cat0.get_ext_name()
-    list_col_name = cat0.get_col_names()
-    cat0.close()
+    # Loop over input files = outputs from different modules
+    for idx in range(len(input_file_list)):
 
-    # Create empty dictionary
-    # data: n_extension x n_column x n_obj
-    data = {}
-    for hdu_ind, ext_name in enumerate(list_ext_name):
-        if ext_name == 'PRIMARY':
-            continue
-        data[ext_name] = {}
-        for col_name in list_col_name:
-            data[ext_name][col_name] = []
+        # Get all input directories
+        input_path_n = []
+        input_path_n.append(input_file_list[idx])
+        for n in range(2, n_split_max + 1):
+            res = re.sub('1', str(n), input_file_list[idx], 1)
+            input_path_n.append(res)
 
-    # Read and append all data, including first catalogue
-    for n in range(n_split_max):
-        cat_path = input_path_n[n]
-        cat = io.FITSCatalog(cat_path, SEx_catalog=True)
-        cat.open()
+        # Open first catalogue, read number of extensions and columns
+        cat0 = io.FITSCatalog(input_file_list[idx], SEx_catalog=True)
+        cat0.open()
+        list_ext_name = cat0.get_ext_name()
+        list_col_name = cat0.get_col_names()
+        cat0.close()
 
+        # Create empty dictionary
+        # data dimension = n_extension x n_column x n_obj
+        data = {}
         for hdu_ind, ext_name in enumerate(list_ext_name):
             if ext_name == 'PRIMARY':
                 continue
+            data[ext_name] = {}
             for col_name in list_col_name:
-                data[ext_name][col_name] += list(cat.get_data(hdu_ind)[col_name])
+                data[ext_name][col_name] = []
 
-        cat.close()
+        # Read and append all data, including first catalogue
+        for n in range(n_split_max):
+            cat_path = input_path_n[n]
+            cat = io.FITSCatalog(cat_path, SEx_catalog=True)
+            cat.open()
 
-    # Save combined catalogue
-    output_name = '{}/ngmix{}.fits'.format(run_dirs['output'], file_number_string)
-    output = io.FITSCatalog(output_name,
-                            open_mode=io.BaseCatalog.OpenMode.ReadWrite)
-    for hdu_ind, ext_name in enumerate(list_ext_name):
-        if ext_name == 'PRIMARY':
-            continue
-        output.save_as_fits(data[ext_name], names=list_col_name, ext_name=ext_name)
+            for hdu_ind, ext_name in enumerate(list_ext_name):
+                if ext_name == 'PRIMARY':
+                    continue
+                for col_name in list_col_name:
+                    data[ext_name][col_name] += list(cat.get_data(hdu_ind)[col_name])
+
+            cat.close()
+
+        # Save combined catalogue
+        output_name = '{}/{}{}.{}'.format(run_dirs['output'], file_pattern[idx],
+                                          file_number_string, file_ext[idx])
+        output = io.FITSCatalog(output_name,
+                                open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+        for hdu_ind, ext_name in enumerate(list_ext_name):
+            if ext_name == 'PRIMARY':
+                continue
+            output.save_as_fits(data[ext_name], names=list_col_name, ext_name=ext_name)
 
     return None, None
