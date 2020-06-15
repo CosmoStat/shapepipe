@@ -31,10 +31,6 @@ def merge_sep_cats_runner(input_file_list, run_dirs, file_number_string,
 
     file_pattern = config.getlist('FILE', 'FILE_PATTERN')
     file_ext = config.getlist('FILE', 'FILE_EXT')
-    print('MKDEBUG')
-    print(input_file_list)
-    print(file_pattern)
-    print(file_ext)
 
     # Loop over input files = outputs from different modules
     for idx in range(len(input_file_list)):
@@ -78,7 +74,7 @@ def merge_sep_cats_runner(input_file_list, run_dirs, file_number_string,
             cat.close()
 
         # Save combined catalogue
-        output_name = '{}/{}{}.{}'.format(run_dirs['output'], file_pattern[idx],
+        output_name = '{}/{}{}{}'.format(run_dirs['output'], file_pattern[idx],
                                           file_number_string, file_ext[idx])
         output = io.FITSCatalog(output_name,
                                 open_mode=io.BaseCatalog.OpenMode.ReadWrite)
