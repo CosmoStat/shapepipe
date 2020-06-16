@@ -27,9 +27,6 @@ $SP_BASE/scripts/sh/untar_results.sh
 # Merge all psfinterp results and compute PSF residuals
 $SP_BASE/scripts/sh/canfar_psf_residuals.sh
 
-# Merge seperated ngmix catalogs
-shapepipe_run -c $SP_CONFIG/config_merge_sep_cats.ini 
-
 # Create links to required tiles results
 $SP_BASE/scripts/sh/canfar_prep_tiles.sh
 
