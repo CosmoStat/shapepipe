@@ -9,6 +9,10 @@ FLUX_WIN                 #Gaussian-weighted flux                                
 FLUXERR_WIN              #RMS error for WIN flux                                    [count]
 MAG_WIN                  #Gaussian-weighted magnitude                               [mag]
 MAGERR_WIN               #RMS error for MAG_WIN                                     [mag]
+FLUX_APER(1)
+FLUXERR_APER(1)
+
+FLUX_RADIUS              #Fraction-of-light radii                                   [pixel]
 
 SNR_WIN                  #Gaussian-weighted SNR                                    
 
@@ -47,7 +51,7 @@ MU_MAX                   #Peak surface brightness above background              
 FLAGS                    #Extraction flags                            
 FLAGS_WIN                #Flags for WINdowed parameters                
 
-#!!! this requires FLAG_IMAGE !!!
+#!!! REQUIRE FLAG_IMAGE !!!
 IMAFLAGS_ISO             #FLAG-image flags OR'ed over the iso. profile  !!! REQUIRE FLAG_IMAGE !!!            
 
 FWHM_IMAGE               #FWHM assuming a gaussian core                             [pixel]
@@ -60,6 +64,6 @@ VIGNET(51,51)            #Pixel data around detection                           
 #VECTOR_ASSOC             #ASSOCiated parameter vector                              
 #NUMBER_ASSOC             #Number of ASSOCiated IDs                                 
 
-FLUX_RADIUS              #Fraction-of-light radii                                   [pixel]
-
 #SPREAD_MODEL
+#SPREADERR_MODEL
+#FWHMPSF_IMAGE
