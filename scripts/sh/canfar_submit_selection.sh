@@ -13,7 +13,7 @@ SP_ROOT=$HOME/shapepipe
 sp_job="$SP_ROOT/scripts/sh/canfar_sp.bash"
 
 # Image/VM ID
-image="ShapePipe2-mk-20200529"
+image="ShapePipe2-mk-20200609"
 
 
 if [ "$1" == "-h" ]; then

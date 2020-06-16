@@ -313,7 +313,7 @@ DIRS=(
         "*/setools_runner/output/mask"
         "*/setools_runner/output/stat"
         "*/setools_runner/output/plot"
-        "*_tile_*/sextractor_runner/output"
+        "*_MaSxPsViSmVi_*/sextractor_runner/output"
         "*/spread_model_runner/output"
         "*/psfexinterp_runner/output"
      )
