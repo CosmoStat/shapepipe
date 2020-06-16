@@ -58,7 +58,8 @@ def get_status(tile_num):
 def output(status):
 
     for tile_num in sorted(status.keys()):
-        print(tile_num, status[tile_num])
+        if status[tile_num][0] != res_wait and status[tile_num][0] != res_ok:
+            print(tile_num, status[tile_num], res_wait)
 
     hist = Counter(status.values())
     for s in hist:

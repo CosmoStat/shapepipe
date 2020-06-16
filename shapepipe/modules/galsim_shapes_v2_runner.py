@@ -443,7 +443,8 @@ def compile_results(results, do_metacal, w_log):
                 'gal_sigma',
                 'gal_resolution',
                 'gal_flag',
-                'psf_g1', 'psf_g2', 'psf_sigma', 'psf_vignet', 'gal_vignet']
+                'psf_g1', 'psf_g2', 'psf_sigma', 'psf_vignet', 'gal_vignet',
+                'mcal_flags']
 
     if do_metacal:
         types = ['noshear', '1p', '1m', '2p', '2m']
@@ -473,6 +474,9 @@ def compile_results(results, do_metacal, w_log):
             output_dict[key]['psf_sigma'].append(results[i][key].psf_sigma)
             # output_dict[key]['psf_vignet'].append(results[i]['psf_vign'])
             # output_dict[key]['gal_vignet'].append(results[i]['gal_vign'])
+            # MKDEBUG hack
+            output_dict[key]['mcal_flags'].append(0)
+
 
     return output_dict
 
