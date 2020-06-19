@@ -15,8 +15,8 @@ DETECT_MINAREA   10              # min. # of pixels above threshold
 DETECT_MAXAREA   0              # max. # of pixels above threshold (0=unlimited)
 THRESH_TYPE      RELATIVE       # threshold type: RELATIVE (in sigmas)
                                 # or ABSOLUTE (in ADUs)
-DETECT_THRESH    2.             # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
-ANALYSIS_THRESH  2.             # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
+DETECT_THRESH    1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
+ANALYSIS_THRESH  2.0            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
  
 FILTER           Y              # apply filter for detection (Y or N)?
 FILTER_NAME      default.conv
