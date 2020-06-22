@@ -420,65 +420,65 @@ def do_galsim_shapes(gal, gal_weight, gal_sig, psfs, tile_loc_wcs, tile_jacob, l
     return res_gal
 
 
-def compile_results(results, do_metacal, w_log):
-    """ Compile results
-
-    Prepare the results of ngmix before saving.
-
-    Parameters
-    ----------
-    results : dict
-        Dictionary containing the results of ngmix metacal.
-
-    Returns
-    -------
-    output_dict : dict
-        Dictionary containing ready to be saved.
-
-    """
-
-    cat_keys = ['id',
-                'gal_g1', 'gal_g2', 'gal_g1_err', 'gal_g2_err',
-                'gal_uncorr_g1', 'gal_uncorr_g2',
-                'gal_sigma',
-                'gal_resolution',
-                'gal_flag',
-                'psf_g1', 'psf_g2', 'psf_sigma', 'psf_vignet', 'gal_vignet',
-                'mcal_flags']
-
-    if do_metacal:
-        types = ['noshear', '1p', '1m', '2p', '2m']
-        types += ['original_psf']
-    else:
-        types = ['classic']
-
-    output_dict = {k: {kk: [] for kk in cat_keys} for k in types}
-
-    for i in range(len(results)):
-        for key in types:
-            output_dict[key]['id'].append(results[i]['obj_id'])
-            shapes_check = check_galsim_shapes(results[i][key],
-                                               results[i]['obj_id'],
-                                               w_log)
-            output_dict[key]['gal_g1'].append(shapes_check[0])
-            output_dict[key]['gal_g2'].append(shapes_check[1])
-            output_dict[key]['gal_g1_err'].append(results[i][key].corrected_shape_err)
-            output_dict[key]['gal_g2_err'].append(results[i][key].corrected_shape_err)
-            output_dict[key]['gal_uncorr_g1'].append(results[i][key].observed_shape.g1)
-            output_dict[key]['gal_uncorr_g2'].append(results[i][key].observed_shape.g2)
-            output_dict[key]['gal_sigma'].append(results[i][key].moments_sigma)
-            output_dict[key]['gal_flag'].append(shapes_check[2])
-            output_dict[key]['gal_resolution'].append(results[i][key].resolution_factor)
-            output_dict[key]['psf_g1'].append(results[i][key].psf_shape.g1)
-            output_dict[key]['psf_g2'].append(results[i][key].psf_shape.g2)
-            output_dict[key]['psf_sigma'].append(results[i][key].psf_sigma)
-            # output_dict[key]['psf_vignet'].append(results[i]['psf_vign'])
-            # output_dict[key]['gal_vignet'].append(results[i]['gal_vign'])
-            # MKDEBUG hack
-            output_dict[key]['mcal_flags'].append(0)
-
-
-    return output_dict
+#def compile_results(results, do_metacal, w_log):
+    #""" Compile results
+#
+    #Prepare the results of ngmix before saving.
+#
+    #Parameters
+    #----------
+    #results : dict
+        #Dictionary containing the results of ngmix metacal.
+#
+    #Returns
+    #-------
+    #output_dict : dict
+        #Dictionary containing ready to be saved.
+#
+    #"""
+#
+    #cat_keys = ['id',
+                #'gal_g1', 'gal_g2', 'gal_g1_err', 'gal_g2_err',
+                #'gal_uncorr_g1', 'gal_uncorr_g2',
+                #'gal_sigma',
+                #'gal_resolution',
+                #'gal_flag',
+                #'psf_g1', 'psf_g2', 'psf_sigma', 'psf_vignet', 'gal_vignet',
+                #'mcal_flags']
+#
+    #if do_metacal:
+        #types = ['noshear', '1p', '1m', '2p', '2m']
+        #types += ['original_psf']
+    #else:
+        #types = ['classic']
+#
+    #output_dict = {k: {kk: [] for kk in cat_keys} for k in types}
+#
+    #for i in range(len(results)):
+        #for key in types:
+            #output_dict[key]['id'].append(results[i]['obj_id'])
+            #shapes_check = check_galsim_shapes(results[i][key],
+                                               #results[i]['obj_id'],
+                                               #w_log)
+            #output_dict[key]['gal_g1'].append(shapes_check[0])
+            #output_dict[key]['gal_g2'].append(shapes_check[1])
+            #output_dict[key]['gal_g1_err'].append(results[i][key].corrected_shape_err)
+            #output_dict[key]['gal_g2_err'].append(results[i][key].corrected_shape_err)
+            #output_dict[key]['gal_uncorr_g1'].append(results[i][key].observed_shape.g1)
+            #output_dict[key]['gal_uncorr_g2'].append(results[i][key].observed_shape.g2)
+            #output_dict[key]['gal_sigma'].append(results[i][key].moments_sigma)
+            #output_dict[key]['gal_flag'].append(shapes_check[2])
+            #output_dict[key]['gal_resolution'].append(results[i][key].resolution_factor)
+            #output_dict[key]['psf_g1'].append(results[i][key].psf_shape.g1)
+            #output_dict[key]['psf_g2'].append(results[i][key].psf_shape.g2)
+            #output_dict[key]['psf_sigma'].append(results[i][key].psf_sigma)
+            ## output_dict[key]['psf_vignet'].append(results[i]['psf_vign'])
+            ## output_dict[key]['gal_vignet'].append(results[i]['gal_vign'])
+            ## MKDEBUG hack
+            #output_dict[key]['mcal_flags'].append(0)
+#
+#
+    #return output_dict
 
 
 # def compile_results(results, do_metacal, w_log):
@@ -538,6 +538,64 @@ def compile_results(results, do_metacal, w_log):
 #           output_dict[name]['mcal_flags'].append(results[i]['mcal_flags'])
 
 #   return output_dict
+
+
+def compile_results(results, do_metacal, w_log):
+    """ Compile results
+
+    Prepare the results of ngmix before saving.
+
+    Parameters
+    ----------
+    results : dict
+        Dictionary containing the results of ngmix metacal.
+
+    Returns
+    -------
+    output_dict : dict
+        Dictionary containing ready to be saved.
+
+    """
+
+    cat_keys = ['id',
+                'gal_g1', 'gal_g2', 'gal_g1_err', 'gal_g2_err',
+                'gal_uncorr_g1', 'gal_uncorr_g2',
+                'gal_sigma',
+                'gal_resolution',
+                'gal_flag',
+                'psf_g1', 'psf_g2', 'psf_sigma', 'psf_vignet', 'gal_vignet']
+
+    if do_metacal:
+        types = ['noshear','1p','1m','2p','2m']
+        types += ['original_psf']
+    else:
+        types = ['classic']
+
+    output_dict = {k: {kk: [] for kk in cat_keys} for k in types}
+
+    for i in range(len(results)):
+        for key in types:
+            output_dict[key]['id'].append(results[i]['obj_id'])
+            shapes_check = check_galsim_shapes(results[i]['gal'][key],
+                                               results[i]['obj_id'],
+                                               w_log)
+            output_dict[key]['gal_g1'].append(shapes_check[0])
+            output_dict[key]['gal_g2'].append(shapes_check[1])
+            output_dict[key]['gal_g1_err'].append(results[i]['gal'][key].corrected_shape_err)
+            output_dict[key]['gal_g2_err'].append(results[i]['gal'][key].corrected_shape_err)
+            output_dict[key]['gal_uncorr_g1'].append(results[i]['gal'][key].observed_shape.g1)
+            output_dict[key]['gal_uncorr_g2'].append(results[i]['gal'][key].observed_shape.g2)
+            output_dict[key]['gal_sigma'].append(results[i]['gal'][key].moments_sigma)
+            output_dict[key]['gal_flag'].append(shapes_check[2])
+            output_dict[key]['gal_resolution'].append(results[i]['gal'][key].resolution_factor)
+            output_dict[key]['psf_g1'].append(results[i]['gal'][key].psf_shape.g1)
+            output_dict[key]['psf_g2'].append(results[i]['gal'][key].psf_shape.g2)
+            output_dict[key]['psf_sigma'].append(results[i]['gal'][key].psf_sigma)
+            # output_dict[key]['psf_vignet'].append(results[i]['psf_vign'])
+            # output_dict[key]['gal_vignet'].append(results[i]['gal_vign'])
+
+    return output_dict
+
 
 
 def save_results(output_dict, output_name):

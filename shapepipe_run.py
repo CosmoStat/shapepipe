@@ -9,6 +9,8 @@ This script runs the shape measurement pipeline.
 
 """
 
+import sys
+
 from datetime import datetime
 from modopt.interface.errors import catch_error
 from modopt.interface.log import set_up_log, close_log
@@ -427,4 +429,4 @@ def main(args=None):
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

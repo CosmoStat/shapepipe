@@ -146,7 +146,7 @@ command_sp() {
    res=$?
    if [ $res != 0 ]; then
       upload_logs $id $verbose
-      echo "exiting 'canfar_sp.bash', error in command '$cmd', log files for id=$id uploaded"
+      echo "exiting 'canfar_sp.bash', '$cmd' returned $res, log files for id=$id uploaded"
       exit $res
    fi
 
