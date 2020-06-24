@@ -22,6 +22,12 @@ FLAGS == 0
 IMAFLAGS_ISO == 0
 #CLASS_STAR != 0
 
+# Split the 'star_selection' sample into
+# two random sub-samples with ratio 80/20
+[RAND_SPLIT:star_split]
+RATIO = 20
+MASK = star_selection
+
 # The following selection is only used for plotting
 [MASK:fwhm_mag_cut]
 FWHM_IMAGE > 0
