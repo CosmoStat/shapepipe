@@ -49,7 +49,7 @@ For the installation of `astromatic` software (`SExtractor`, `PSFEx`) the `BLAS`
 module load intel/19.0
 ```
 
-> You can add this command to your `.bash_profile` to ensure that this module is available when you log in.
+> You can add these commands to your `.bash_profile` to ensure that this module is available when you log in.
 
 You can list the modules already loaded by running:
 
