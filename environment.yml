@@ -17,4 +17,5 @@ dependencies:
     - sqlitedict>=1.6.0
     - termcolor>=1.1
     - reproject>=0.7.1
+    - tqdm>=4.46.1
     - git+https://github.com/aguinot/ngmix@stable_version

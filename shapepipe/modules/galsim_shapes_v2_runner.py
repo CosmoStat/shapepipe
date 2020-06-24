@@ -373,41 +373,6 @@ def do_galsim_shapes(gal, gal_weight, gal_sig, psfs, tile_loc_wcs, tile_jacob, l
                                                     strict=False)
         res_gal['original_psf'] = galsim.hsm.FindAdaptiveMom(g_psf,
                                                              strict=False)
-
-    # if do_metacal:
-    #   metacal_pars = {'types': ['noshear', '1p', '1m', '2p', '2m'],
-    #                   'step': 0.01,
-    #                   'psf': 'gauss',
-    #                   'fixnoise': True,
-    #                   'cheatnoise': False,
-    #                   'symmetrize_psf': False}
-    #
-    #   jacob = ngmix.Jacobian(row=(gal.shape[0]-1)/2.,
-    #                           col=(gal.shape[1]-1)/2.,
-    #                           wcs=tile_jacob)
-    #   psf_obs = ngmix.Observation(psf, jacobian=jacob)
-    #   obj_obs = ngmix.Observation(gal, psf=psf_obs, weight=weight, jacobian=jacob)
-    #
-    #   runner = ngmix.bootstrap.AdmomMetacalBootstrapper(obj_obs, metacal_pars=metacal_pars)
-    #   runner.fit_metacal(psf_Tguess=psf_sig**2.*2*0.187)
-    #
-    #   res_gal = runner.get_metacal_result()
-    #   # print(res_gal)
-    #
-    #   runner = ngmix.bootstrap.AdmomBootstrapper(obj_obs)
-    #   runner.fit_psfs(Tguess=psf_sig**2.*2*0.187)
-    #
-    #   g1_psfo, g2_psfo, T_psfo = runner.mb_obs_list[0][0].psf.gmix.get_g1g2T()
-    #
-    #   res_gal['g1_psfo'] = g1_psfo
-    #   res_gal['g2_psfo'] = g2_psfo
-    #   res_gal['T_psfo'] = T_psfo
-    #
-    #   # runner = ngmix.bootstrap.AdmomBootstrapper(psf_obs)
-    #   # runner.fit(Tguess=psf_sig**2.*2*0.187)
-    #
-    #   # runner.get_
-
     else:
         g_gal = galsim.Image(gal, scale=pixel_scale)
         res_gal['classic'] = galsim.hsm.EstimateShear(g_gal,
@@ -443,11 +408,10 @@ def compile_results(results, do_metacal, w_log):
                 'gal_sigma',
                 'gal_resolution',
                 'gal_flag',
-                'psf_g1', 'psf_g2', 'psf_sigma', 'psf_vignet', 'gal_vignet',
-                'mcal_flags']
+                'psf_g1', 'psf_g2', 'psf_sigma', 'psf_vignet', 'gal_vignet']
 
     if do_metacal:
-        types = ['noshear', '1p', '1m', '2p', '2m']
+        types = ['noshear','1p','1m','2p','2m']
         types += ['original_psf']
     else:
         types = ['classic']
@@ -457,87 +421,24 @@ def compile_results(results, do_metacal, w_log):
     for i in range(len(results)):
         for key in types:
             output_dict[key]['id'].append(results[i]['obj_id'])
-            shapes_check = check_galsim_shapes(results[i][key],
+            shapes_check = check_galsim_shapes(results[i]['gal'][key],
                                                results[i]['obj_id'],
                                                w_log)
             output_dict[key]['gal_g1'].append(shapes_check[0])
             output_dict[key]['gal_g2'].append(shapes_check[1])
-            output_dict[key]['gal_g1_err'].append(results[i][key].corrected_shape_err)
-            output_dict[key]['gal_g2_err'].append(results[i][key].corrected_shape_err)
-            output_dict[key]['gal_uncorr_g1'].append(results[i][key].observed_shape.g1)
-            output_dict[key]['gal_uncorr_g2'].append(results[i][key].observed_shape.g2)
-            output_dict[key]['gal_sigma'].append(results[i][key].moments_sigma)
+            output_dict[key]['gal_g1_err'].append(results[i]['gal'][key].corrected_shape_err)
+            output_dict[key]['gal_g2_err'].append(results[i]['gal'][key].corrected_shape_err)
+            output_dict[key]['gal_uncorr_g1'].append(results[i]['gal'][key].observed_shape.g1)
+            output_dict[key]['gal_uncorr_g2'].append(results[i]['gal'][key].observed_shape.g2)
+            output_dict[key]['gal_sigma'].append(results[i]['gal'][key].moments_sigma)
             output_dict[key]['gal_flag'].append(shapes_check[2])
-            output_dict[key]['gal_resolution'].append(results[i][key].resolution_factor)
-            output_dict[key]['psf_g1'].append(results[i][key].psf_shape.g1)
-            output_dict[key]['psf_g2'].append(results[i][key].psf_shape.g2)
-            output_dict[key]['psf_sigma'].append(results[i][key].psf_sigma)
-            # output_dict[key]['psf_vignet'].append(results[i]['psf_vign'])
-            # output_dict[key]['gal_vignet'].append(results[i]['gal_vign'])
-            # MKDEBUG hack
-            output_dict[key]['mcal_flags'].append(0)
-
+            output_dict[key]['gal_resolution'].append(results[i]['gal'][key].resolution_factor)
+            output_dict[key]['psf_g1'].append(results[i]['gal'][key].psf_shape.g1)
+            output_dict[key]['psf_g2'].append(results[i]['gal'][key].psf_shape.g2)
+            output_dict[key]['psf_sigma'].append(results[i]['gal'][key].psf_sigma)
 
     return output_dict
 
-
-# def compile_results(results, do_metacal, w_log):
-#   """ Compile results
-
-#   Prepare the results of ngmix before saving.
-
-#   Parameters
-#   ----------
-#   results : dict
-#       Dictionary containing the results of ngmix metacal.
-
-#   Returns
-#   -------
-#   output_dict : dict
-#       Dictionary containing ready to be saved.
-
-#   """
-
-#   cat_keys = ['id',
-#             'g1_psfo_ngmix', 'g2_psfo_ngmix', 'T_psfo_ngmix',
-#             'g1', 'g1_err', 'g2', 'g2_err',
-#             'T', 'T_err', 'Tpsf', 'g1_psf', 'g2_psf',
-#             'flux', 'flux_err', 's2n',
-#             'flags', 'mcal_flags']
-
-#   if do_metacal:
-#       types = ['noshear','1p','1m','2p','2m']
-#       # types += ['original_psf']
-#   else:
-#       types = ['classic']
-
-#   output_dict = {k: {kk: [] for kk in cat_keys} for k in types}
-
-#   for i in range(len(results)):
-#       for name in types:
-#           output_dict[name]['id'].append(results[i]['obj_id'])
-#           output_dict[name]['g1_psfo_ngmix'].append(results[i]['g1_psfo'])
-#           output_dict[name]['g2_psfo_ngmix'].append(results[i]['g2_psfo'])
-#           output_dict[name]['T_psfo_ngmix'].append(results[i]['T_psfo'])
-#           output_dict[name]['g1'].append(results[i][name]['g'][0])
-#           output_dict[name]['g1_err'].append(results[i][name]['g_cov'][0,0])
-#           output_dict[name]['g2'].append(results[i][name]['g'][1])
-#           output_dict[name]['g2_err'].append(results[i][name]['g_cov'][1,1])
-#           output_dict[name]['T'].append(results[i][name]['T'])
-#           output_dict[name]['T_err'].append(results[i][name]['T_err'])
-#           output_dict[name]['Tpsf'].append(results[i]['noshear']['Tpsf'])
-#           output_dict[name]['g1_psf'].append(results[i]['noshear']['gpsf'][0])
-#           output_dict[name]['g2_psf'].append(results[i]['noshear']['gpsf'][1])
-#           output_dict[name]['flux'].append(results[i][name]['flux'])
-#           output_dict[name]['flux_err'].append(results[i][name]['flux_err'])
-#           try:
-#               output_dict[name]['s2n'].append(results[i][name]['s2n'])
-#           except:
-#               output_dict[name]['s2n'].append(results[i][name]['s2n_r'])
-#           output_dict[name]['flags'].append(results[i][name]['flags'])
-#           output_dict[name]['mcal_flags'].append(results[i]['mcal_flags'])
-
-#   return output_dict
 
 
 def save_results(output_dict, output_name):
@@ -597,8 +498,6 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
 
     """
 
-    # tile_cat = io.FITSCatalog(tile_cat_path, SEx_catalog=True)
-    # tile_cat.open()
     obj_id = fits.getdata(tile_cat_path, 2, memmap=True)['NUMBER']
     tile_vign = fits.getdata(tile_cat_path, 2, memmap=True)['VIGNET']
     tile_ra = fits.getdata(tile_cat_path, 2, memmap=True)['XWIN_WORLD']
@@ -606,8 +505,7 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
     tile_n_epoch = fits.getdata(tile_cat_path, 2, memmap=True)['N_EPOCH']
     tile_fwhm = fits.getdata(tile_cat_path, 2, memmap=True)['FWHM_IMAGE']
     tile_wcs = get_wcs_from_sexcat(fits.getdata(tile_cat_path, 1, memmap=True)[0][0])
-    # tile_wcs = get_wcs_from_sexcat(tile_cat.get_data(1)[0][0])
-    # tile_cat.close()
+
     tile_weight = fits.getdata(tile_weight_path, 2, memmap=True)['VIGNET']
     bkg_vign_cat = SqliteDict(bkg_vignet_path)
     psf_vign_cat = SqliteDict(psf_vignet_path)
