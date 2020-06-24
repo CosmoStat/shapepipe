@@ -263,7 +263,7 @@ command_sp "shapepipe_run -c $SP_CONFIG/config_exp.ini" "Run shapepipe (exp)" "$
 
 
 # The following are very a bad hacks to get additional input files
-input_psfex=`find . -name star_selection-*.psf | head -n 1`
+input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
 command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output" "$VERBOSE" "$ID"
 
 input_split_exp=`find output -name flag-*.fits | head -n 1`
@@ -318,7 +318,7 @@ DIRS=(
         "*/make_catalog_runner/output"
      )
 PATTERNS=(
-        "star_selection-*"
+        "star_split_ratio_80-*"
         "validation_psf*"
         "*"
         "*"
