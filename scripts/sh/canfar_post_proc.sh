@@ -28,4 +28,5 @@ $SP_BASE/scripts/sh/untar_results.sh
 $SP_BASE/scripts/sh/canfar_psf_residuals.sh
 
 # Merge final output files to single mother catalog
-$SP_BASE/scripts/python/merge_final_cat.py
+input_final=`find output -name "final_cat-*.fits" | head -n 1`
+$SP_BASE/scripts/python/merge_final_cat.py $input_final
