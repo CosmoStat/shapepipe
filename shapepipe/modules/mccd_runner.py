@@ -92,7 +92,10 @@ def mccd_rca_fit(starcat, rcainst_kw, rcafit_kw, output_dir, file_number_string,
 
     filename = output_dir + '/fitted_model'+file_number_string
     rca_instance.quicksave(filename)
-    return rca_instance
+
+    
+
+    return None
 
 def mccd_validation(rca_path, test_path, apply_degradation = True, mccd_debug = False, sex_thresh=-1e5):
     # Principal validation for mccd catalogs
@@ -115,7 +118,9 @@ def mccd_validation(rca_path, test_path, apply_degradation = True, mccd_debug = 
     ccds = testcat[2].data['CCD_ID_LIST']
 
     # If masks are not provided they have to be calculated
-    if masks[0] == False:
+    # Mask convention: 1=good pixel / 0=bad pixel
+    # if masks[0] == False:
+    if ~np.any(masks):
         masks = handle_SExtractor_mask(stars, sex_thresh)
 
     # Save test stars
@@ -217,6 +222,8 @@ def mccd_validation(rca_path, test_path, apply_degradation = True, mccd_debug = 
     star_dict['VIGNET_LIST'] = np.copy(star_ordered)
     star_dict['MASK_LIST'] = np.copy(mask_ordered)
     star_dict['CCD_ID_LIST'] = np.copy(ccd_ordered)
+
+    testcat.close()
 
     return star_dict
 
@@ -329,6 +336,9 @@ def fit(input_file_list, run_dirs, file_number_string, config, w_log):
 
     mccd_rca_fit(starcat, rcainst_kw, rcafit_kw, run_dirs['output'],
                     file_number_string, sex_thresh)
+    starcat.close()
+
+    return None
 
 def validate(test_star_path, rca_path, run_dirs, file_number_string,config, w_log):
     sex_thresh = config.getfloat('MCCD', 'SEXMASK_THRESH')
