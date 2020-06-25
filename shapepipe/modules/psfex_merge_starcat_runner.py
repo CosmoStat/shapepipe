@@ -82,7 +82,7 @@ def psfex_merge_starcat_runner(input_file_list, run_dirs, file_number_string,
                 ra += list(starcat_j[2].data['RA'])
                 dec += list(starcat_j[2].data['DEC'])
             except:
-                continue
+                pass
 
             # shapes (convert sigmas to R^2)
             g1_psf += list(starcat_j[2].data['E1_PSF_HSM'])
@@ -101,7 +101,7 @@ def psfex_merge_starcat_runner(input_file_list, run_dirs, file_number_string,
                 mag += list(starcat_j[2].data['MAG'])
                 snr += list(starcat_j[2].data['SNR'])
             except:
-                continue
+                pass
 
             # CCD number
             try:
