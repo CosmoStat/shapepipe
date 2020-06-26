@@ -28,7 +28,7 @@ pwd=`pwd`
 out_base="output"
 run_dir="run_sp_combined"
 log_path="$pwd/$out_base/log_run_sp_tile.txt"
-INPUT="$pwd/$out_base/run_sp_*"
+INPUT="$pwd/$out_base/run_sp_Mc_*"
 OUTPUT="$pwd/$out_base/$run_dir"
 mkdir -p $OUTPUT
 
