@@ -49,9 +49,9 @@ for n in "${!PATTERNS[@]}"; do
     mkdir -p $dir
     FILES=(`find $INPUT -name "$pattern"`)
     for file in ${FILES[@]}; do
-	target=$file
-	link_name=$dir/`basename $file`
-	link_s $target $link_name
+	    target=$file
+	    link_name=$dir/`basename $file`
+	    link_s $target $link_name
     done
 done
 

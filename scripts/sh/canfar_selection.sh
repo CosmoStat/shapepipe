@@ -47,6 +47,8 @@ function link_s () {
 
 # Variables
 
+pwd=`pwd`
+
 # Tar archive base names
 NAMES=(
         "psfex"
@@ -59,12 +61,16 @@ NAMES=(
      )
 
 ## Start
+if [[ -d $OUT_DIR ]]; then
+    echo "Error: Output directory $OUT_DIR already exists, exiting..."
+    exit 2
+fi
 
 mkdir $OUT_DIR
 for i in `cat $LIST_PATH`; do
     for out in ${NAMES[@]}; do
-        target=$IN_DIR/$out_$i.tgz
-        link_name=$OUT_DIR/$out_$i.tgz
+        target=$pwd/$IN_DIR/${out}_$i.tgz
+        link_name=$OUT_DIR/${out}_$i.tgz
         link_s $target $link_name
     done
 done
