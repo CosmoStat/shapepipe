@@ -6,8 +6,6 @@
 # Date: 05/2020
 # Package: shapepipe
 
-## Paths
-local="."
 
 NAMES=(
         "psfex"
@@ -27,6 +25,5 @@ for out in ${NAMES[@]}; do
     for file in $FILES; do
         echo " $file"
 	tar xf $file
-	#rm $file
     done
 done
