@@ -15,6 +15,38 @@ from shapepipe.pipeline import file_io as io
 
 import numpy as np
 from sqlitedict import SqliteDict
+from astropy.io import fits
+
+
+def get_zero_point(image_path, key):
+    """Get mag zero point
+
+    This function read the magnitude zero-point from the header image.
+
+    Parameters
+    ----------
+    image_path : str
+        Path to the input image
+    key : str
+        Key to use in the header for the zero-point
+
+    Returns
+    -------
+    zp : float
+        Value associated to the key provided
+
+    """
+
+    h = fits.getheader(image_path)
+
+    zp = h[key]
+
+    try:
+        zp = float(zp)
+    except:
+        raise ValueError('{} is not a good value for zero-point')
+
+    return zp
 
 
 def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
@@ -106,6 +138,11 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
     flag_file = config.getboolean("SEXTRACTOR_RUNNER", "FLAG_IMAGE")
     psf_file = config.getboolean("SEXTRACTOR_RUNNER", "PSF_FILE")
 
+    zp_from_header = config.getboolean("SEXTRACTOR_RUNNER_EXP", "ZP_FROM_HEADER")
+    if zp_from_header:
+        zp_key = config.get("SEXTRACTOR_RUNNER_EXP", "ZP_KEY")
+        zp_value = get_zero_point(input_file_list[0], zp_key)
+
     if config.has_option('SEXTRACTOR_RUNNER', "CHECKIMAGE"):
         check_image = config.getlist("SEXTRACTOR_RUNNER", "CHECKIMAGE")
     else:
@@ -127,6 +164,9 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
                     '-CATALOG_NAME {5}'.format(exec_path, input_file_list[0],
                                                dot_sex, dot_param, dot_conv,
                                                output_file_path))
+
+    if zp_from_header:
+        command_line += ' -MAG_ZEROPOINT {0}'.format(zp_value)
 
     extra = 1
     if weight_file:
