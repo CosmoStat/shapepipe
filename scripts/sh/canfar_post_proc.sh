@@ -29,4 +29,4 @@ $SP_BASE/scripts/sh/canfar_psf_residuals.sh
 
 # Merge final output files to single mother catalog
 input_final=output/run_sp_combined/make_catalog_runner/output
-$SP_BASE/scripts/python/merge_final_cat.py $input_final
+$SP_BASE/scripts/python/merge_final_cat.py -i $input_final -p $SP_CONFIG/final_cat.param -v 
