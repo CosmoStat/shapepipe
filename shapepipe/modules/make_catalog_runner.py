@@ -329,7 +329,6 @@ def save_galsim_shapes(final_cat_file, galsim_cat_path):
     galsim_cat_file.close()
 
 
-
 def save_psf_data(final_cat_file, galaxy_psf_path, w_log):
     """ Save PSF data
 

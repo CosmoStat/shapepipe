@@ -411,7 +411,7 @@ def compile_results(results, do_metacal, w_log):
                 'psf_g1', 'psf_g2', 'psf_sigma', 'psf_vignet', 'gal_vignet']
 
     if do_metacal:
-        types = ['noshear','1p','1m','2p','2m']
+        types = ['noshear', '1p', '1m', '2p', '2m']
         types += ['original_psf']
     else:
         types = ['classic']
@@ -438,7 +438,6 @@ def compile_results(results, do_metacal, w_log):
             output_dict[key]['psf_sigma'].append(results[i][key].psf_sigma)
 
     return output_dict
-
 
 
 def save_results(output_dict, output_name):

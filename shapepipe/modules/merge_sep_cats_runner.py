@@ -75,7 +75,7 @@ def merge_sep_cats_runner(input_file_list, run_dirs, file_number_string,
 
         # Save combined catalogue
         output_name = '{}/{}{}{}'.format(run_dirs['output'], file_pattern[idx],
-                                          file_number_string, file_ext[idx])
+                                         file_number_string, file_ext[idx])
         output = io.FITSCatalog(output_name,
                                 open_mode=io.BaseCatalog.OpenMode.ReadWrite)
         for hdu_ind, ext_name in enumerate(list_ext_name):
