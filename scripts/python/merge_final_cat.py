@@ -23,7 +23,7 @@ import copy
 
 from optparse import OptionParser
 
-#from tqdm import tqdm
+from tqdm import tqdm
 
 
 class param:
@@ -82,6 +82,9 @@ def parse_options(p_def):
     parser.add_option('-i', '--input_path', dest='input_path', type='string',
                       default=p_def.input_path,
                       help='input path, default=\'{}\''.format(p_def.input_path))
+    parser.add_option('-p', '--param_path', dest='param_path', type='string',
+                      default=None,
+                      help='parameter file path, default=None')
 
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
 
@@ -140,17 +143,46 @@ def update_param(p_def, options):
     return param
 
 
+def read_param_file(path, verbose=False):
+
+    param_list = []
+
+    if path:
+
+        with open(path) as f:
+            for line in f:
+                if line.startswith('#'):
+                    continue 
+                entry = line.rstrip()
+                if not entry or entry == '':
+                    continue
+                param_list.append(entry)
+
+    if verbose:
+        if len(param_list) > 0: 
+            print('Copying {} columns'.format(len(param_list)), end='')
+        else:
+            print('Copying all columns', end='')
+        print(' into final catalogue')
+
+    return param_list
+                            
+
 def get_data(path, hdu_num, param_list):
 
-    d = fits.getdata(lpath, hdu_num)
+    #d = fits.getdata(path, hdu_num)
+    hdu_list = fits.open(path)
+    hdu = hdu_list[hdu_num]
 
     if param_list:
         cols = []
         for p in param_list:
-            cols.append(d_tmp.column[p]) 
+            cols.append(hdu.columns[p]) 
         coldefs = fits.ColDefs(cols)
         hdu_new = fits.BinTableHDU.from_columns(coldefs)
         d = hdu_new.data
+    else:
+        d = hdu.data
 
     return d
 
@@ -170,6 +202,8 @@ def main(argv=None):
 
     path = param.input_path
 
+    param.param_list = read_param_file(param.param_path, verbose=param.verbose)
+
     l = os.listdir(path=path)
     lpath = []
     for this_l in l:
@@ -185,11 +219,12 @@ def main(argv=None):
     #new_dt = np.dtype(d_tmp.dtype.descr + [('TILE_ID', '>i4')])
     #d = np.zeros(d_tmp.shape, dtype=new_dt)
 
-    d['TILE_ID'].fill(int(''.join(re.findall('\d+', l[0]))))
+    if 'TILE_ID' in d_tmp.dtype.names:
+        d['TILE_ID'].fill(int(''.join(re.findall('\d+', l[0]))))
 
     # Read all final catalogues and merge
-    #for i in tqdm(lpath[1:], total=len(lpath)-1):
-    for i in lpath[1:]:
+    for i in tqdm(lpath[1:], total=len(lpath)-1):
+    #for i in lpath[1:]:
         if ('final_cat' not in i) | ('.npy' in i):
             continue
 
@@ -202,8 +237,10 @@ def main(argv=None):
         dd = np.zeros(d_tmp.shape, dtype=d_tmp.dtype)
         for key in d_tmp.dtype.names:
             dd[key] = d_tmp[key]
-        dd['TILE_ID'].fill(int(''.join(re.findall('\d+', i))))
-        d = np.concatenate((d, dd))
+
+        if 'TILE_ID' in d_tmp.dtype.names:
+            dd['TILE_ID'].fill(int(''.join(re.findall('\d+', i))))
+            d = np.concatenate((d, dd))
 
     # Save merged catalogue as numpy binary file
     np.save('final_cat.npy', d)
