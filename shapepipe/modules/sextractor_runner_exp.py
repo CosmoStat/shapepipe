@@ -25,14 +25,14 @@ def get_zero_point(image_path, key):
 
     Parameters
     ----------
-    image_path : str
+    image_path: str
         Path to the input image
-    key : str
+    key: str
         Key to use in the header for the zero-point
 
     Returns
     -------
-    zp : float
+    zp: float
         Value associated to the key provided
 
     """
@@ -44,7 +44,7 @@ def get_zero_point(image_path, key):
     try:
         zp = float(zp)
     except:
-        raise ValueError('{} is not a good value for zero-point')
+        raise ValueError('{} is not a float value for zero-point'.format(zp))
 
     return zp
 
@@ -53,19 +53,19 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
     """Make post process
 
     This function will add one hdu by epoch to the SExtractor catalog. Only works for tiles.
-    The columns will be : NUMBER same as SExtractor NUMBER
-                          EXP_NAME name of the single exposure for this epoch
-                          CCD_N extansion where the object is
+    The columns will be: NUMBER same as SExtractor NUMBER
+                         EXP_NAME name of the single exposure for this epoch
+                         CCD_N extansion where the object is
 
     Parameters
     ----------
-    cat_path : str
+    cat_path: str
         Path to the outputed SExtractor catalog
-    f_wcs_path : str
+    f_wcs_path: str
         Path to the log file containing wcs for all single exp CCDs
-    pos_params : list
+    pos_params: list
         World coordinates to use to match the objects.
-    ccd_size : list
+    ccd_size: list
         Size of a ccd [nx, ny]
 
     """
