@@ -60,6 +60,7 @@ def MegaCamFlip(xbins, ybins, ccd_nb, nb_pixel):
         ybins = nb_pixel[1] - ybins + 1
     return xbins, ybins
 
+
 def MeanShapesPlot(ccd_maps, filename, title='', colorbar_ampl=1., wind=None, cmap='bwr'):
     # colorbar amplitude
     if wind is None:
@@ -167,23 +168,24 @@ def psfex_meanshapes_plots_runner(input_file_list, run_dirs, file_number_string,
         psf_shapes = all_psf_shapes[:,ccd_mask]
         xs, ys = all_X[ccd_mask], all_Y[ccd_mask]
 
-        if (ccd_nb >= 18 and ccd_nb not in [36, 37]) or ccd_nb in [38, 39]:
-            xs = 2048 - xs + 1
-        if ccd_nb >= 27 and ccd_nb <=35:
-            ys = 4612 - ys + 1
+        # if (ccd_nb >= 18 and ccd_nb not in [36, 37]) or ccd_nb in [38, 39]:
+        #     xs = 2048 - xs + 1
+        # if ccd_nb >= 27 and ccd_nb <=35:
+        #     ys = 4612 - ys + 1
+        #
+        # if ccd_nb >= 18 and ccd_nb <=26:
+        #     ys = 4612 - ys + 1
+        # elif ccd_nb in [38,39]:
+        #     ys = 4612 - ys + 1
 
-        if ccd_nb >= 18 and ccd_nb <=26:
-            ys = 4612 - ys + 1
-        elif ccd_nb in [38,39]:
-            ys = 4612 - ys + 1
-
-        # elif ccd_nb < 18 or ccd_nb in [36, 37]:
-        #     ys_loc = loc2glob.y_npix - ys_loc + 1
 
         xbins = np.digitize(xs, grid[0])
         ybins = np.digitize(ys, grid[1])
+
         # swap axes to match CCD orientation and origin convention
-        # xbins, ybins = MegaCamFlip(xbins, ybins, ccd_nb, nb_pixel)
+        xbins, ybins = MegaCamFlip(xbins, ybins, ccd_nb, nb_pixel)
+
+
         for xb in range(nb_pixel[0]):
             for yb in range(nb_pixel[1]):
                 bin_star_shapes = star_shapes[:,(xbins==xb+1) * (ybins==yb+1)]
@@ -194,6 +196,7 @@ def psfex_meanshapes_plots_runner(input_file_list, run_dirs, file_number_string,
 
     # e_1
     vmax = max(np.nanmax(ccd_maps[:,:,0]), np.abs(np.nanmin(ccd_maps[:,:,0])))
+    vmax = 0.125
     vmin = -vmax
     wind = [vmin, vmax]
     MeanShapesPlot(ccd_maps[:,0,0], output_path+'e1s', 'e_1 (stars), std=%.5e\nvmax=%.4e'%
@@ -214,6 +217,7 @@ def psfex_meanshapes_plots_runner(input_file_list, run_dirs, file_number_string,
 
     # e_2
     vmax = max(np.nanmax(ccd_maps[:,:,1]), np.abs(np.nanmin(ccd_maps[:,:,1])))
+    vmax = 0.152
     vmin = -vmax
     wind = [vmin, vmax]
     MeanShapesPlot(ccd_maps[:,0,1], output_path+'e2s', 'e_2 (stars), std=%.5e\nvmax=%.4e'%
