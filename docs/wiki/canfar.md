@@ -278,8 +278,8 @@ executable bash script is set up correctly and runs without errors.
    system that is not stored and updated with the VM, so the VM status is
    not changed:
    ```bash
-   scp USERNAME@batch.canfar.net:shapepipe.bash .
-   scp shapepipe.bash ubuntu@IP_ADDRESS:/mnt/scratch
+   scp USERNAME@batch.canfar.net:script.bash .
+   scp script.bash ubuntu@IP_ADDRESS:/mnt/scratch
    ```
 
 2.  SSH to VM:
@@ -295,7 +295,58 @@ executable bash script is set up correctly and runs without errors.
    Change to the directory outside the VM and run the script:
    ```bash
    cd /mnt/scratch
-   bash shapeipe.bash
+   bash script.bash
    ```
    In case the script needs to write to VM-directories in $VM_ROOT,
    you can create symbolic links to /mnt/scratch.
+   
+## Running a CFIS job
+
+CFIS tiles can be run with the bash script [canfar_sp.bash](https://github.com/CosmoStat/shapepipe/blob/master/scripts/sh/canfar_sp.bash). On the VM via a job script, for example:
+```bash
+executable     = ./canfar_sp.bash
+
+output         = log_sp_tile_$(arguments).out
+error          = log_sp_tile_$(arguments).err
+log            = log_sp_tile_$(arguments).log
+
+request_cpus   = 8
+request_memory = 19G
+request_disk   = 100G
+
+
+queue arguments from (
+277.282
+)
+```
+To launch a job with more tiles, simply add the corresponding tile IDs to the `queue arguments from (` list.
+See (#batch-system) point 5. how to submit a job.
+
+In interactive mode, type
+```bash
+bash canfar_sp.bash 277.282
+```
+To run the script on more than one tile, add the IDs as command line arguments.
+
+### Job preparation
+
+1. Make sure the virtual machine is active, the correct version/branch of `ShapePipe` is installed, and the `cadc` certificate is valid.
+
+2. Make sure the desired configuration files are uploaded to `vos`. The corresponding files are in the directory `example/cfis`, and can be copied to `vos` with:
+```bash
+cd /path/to/shapepipe/example
+vcp cfis vos:cfis/cosmostat/kilbinger
+```
+
+3. Make sure the `results` directory on `vos` exists:
+```bash
+vls vos:cfis/cosmostat/kilbinger
+```
+Results (log and catalogue FITS files) will be uploaded there for each tiles.
+
+It is recommended that this directory is empty, and does not have files from previous runs. The simplest way to clean up is
+```bash
+vrmdir vos:cfis/cosmostat/kilbinger/results
+vmkdir vos:cfis/cosmostat/kilbinger/results
+```
+

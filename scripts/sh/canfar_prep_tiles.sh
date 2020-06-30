@@ -28,7 +28,7 @@ pwd=`pwd`
 out_base="output"
 run_dir="run_sp_combined"
 log_path="$pwd/$out_base/log_run_sp_tile.txt"
-INPUT="$pwd/$out_base/run_sp_*"
+INPUT="$pwd/$out_base/run_sp_Mc_*"
 OUTPUT="$pwd/$out_base/$run_dir"
 mkdir -p $OUTPUT
 
@@ -49,9 +49,9 @@ for n in "${!PATTERNS[@]}"; do
     mkdir -p $dir
     FILES=(`find $INPUT -name "$pattern"`)
     for file in ${FILES[@]}; do
-	target=$file
-	link_name=$dir/`basename $file`
-	link_s $target $link_name
+	    target=$file
+	    link_name=$dir/`basename $file`
+	    link_s $target $link_name
     done
 done
 

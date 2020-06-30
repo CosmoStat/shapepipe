@@ -160,13 +160,13 @@ def read_image_numbers(path):
 def get_images_runner(input_file_list, run_dirs, file_number_string,
                       config, w_log):
 
-    # Input image numbers from all input tile fils
+    # Input image numbers from all input tile files
     all_image_numbers = []
     for input_file in input_file_list:
         numbers_from_tile = read_image_numbers(input_file[0])
         all_image_numbers.append(numbers_from_tile)
     flat_list = [item for sublist in all_image_numbers for item in sublist]
-    w_log.info('{} exposures numbers read in total'.format(len(flat_list)))
+    w_log.info('{} image numbers read in total'.format(len(flat_list)))
 
     # Get unique number list
     image_number_list = list(set(flat_list))

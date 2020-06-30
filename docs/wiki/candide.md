@@ -38,13 +38,18 @@ The CANDIDE system uses [Environment Modules](https://modules.readthedocs.io/en/
 $ module avail
 ```
 
-ShapePipe requires `conda`, which on CANDIDE is provided via `intelpython/3`. To load this package simply run:
+ShapePipe requires `conda`, which on CANDIDE is provided via `intelpython/3`. To load the newest version of this package simply run:
 
 ```bash
-$ module load intelpython/3
+$ module load intelpython/3-2020.1
 ```
 
-> You can add this command to your `.bash_profile` to ensure that this module is available when you log in.
+For the installation of `astromatic` software (`SExtractor`, `PSFEx`) the `BLAS` library is required. This is made available by loading the Intel MLK module,
+```bash
+module load intel/19.0
+```
+
+> You can add these commands to your `.bash_profile` to ensure that this module is available when you log in.
 
 You can list the modules already loaded by running:
 

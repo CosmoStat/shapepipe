@@ -899,16 +899,6 @@ def read_list(fname, col=None):
         dat = pd.read_csv(fname, sep='\s+')
         file_list = dat[col].values
 
-    # from sapastro1:toolbox/python/CFIS.py
-    #except IOError as exc:
-        #if exc.errno == errno.ENOENT:
-            #if verbose == True:
-                #print('Not using exclude file')
-            #out_list = []
-        #else:
-            #raise
-
-
     file_list.sort()
     return file_list
 
