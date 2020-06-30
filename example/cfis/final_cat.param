@@ -1,0 +1,71 @@
+# coordinates
+XWIN_WORLD
+YWIN_WORLD
+
+# tile ID, for plot of tile-dependent additive bias.
+# Can maybe be removed.
+TILE_ID
+
+# flags
+FLAGS
+IMAFLAGS_ISO
+NGMIX_MCAL_FLAGS
+
+# PSF ellipticity
+NGMIX_ELL_PSFo_NOSHEAR
+GALSIM_PSF_ELL_ORIGINAL_PSF
+
+# spread class
+SPREAD_CLASS
+
+# spread model flag and error
+SPREAD_MODEL
+SPREADERR_MODEL
+
+# Number of epochs (exposures)
+N_EPOCH
+NGMIX_N_EPOCH
+
+# galaxy ellipticity with different shear added for metacal
+NGMIX_ELL_1M
+NGMIX_ELL_1P
+NGMIX_ELL_2M
+NGMIX_ELL_2P
+NGMIX_ELL_NOSHEAR
+NGMIX_ELL_ERR_1M
+NGMIX_ELL_ERR_1P
+NGMIX_ELL_ERR_2M
+NGMIX_ELL_ERR_2P
+NGMIX_ELL_ERR_NOSHEAR
+
+GALSIM_GAL_ELL_1M
+GALSIM_GAL_ELL_1P
+GALSIM_GAL_ELL_2M
+GALSIM_GAL_ELL_2P
+GALSIM_GAL_ELL_NOSHEAR
+GALSIM_GAL_ELL_ERR_1M
+GALSIM_GAL_ELL_ERR_1P
+GALSIM_GAL_ELL_ERR_2M
+GALSIM_GAL_ELL_ERR_2P
+GALSIM_GAL_ELL_ERR_NOSHEAR
+
+# magnitude, mainly for plots
+MAG_AUTO
+
+# flux and error from shape measurement
+NGMIX_FLUX_NOSHEAR
+NGMIX_FLUX_ERR_NOSHEAR
+
+# galaxy size from shape measurement
+NGMIX_T_NOSHEAR
+GALSIM_GAL_SIGMA_NOSHEAR
+
+# PSF size measured on original image
+NGMIX_T_PSFo_NOSHEAR
+GALSIM_PSF_SIGMA_ORIGINAL_PSF
+
+# PSF size measured on reconvolved image
+NGMIX_Tpsf_NOSHEAR
+
+# ngmix moment failure flag
+NGMIX_MOM_FAIL

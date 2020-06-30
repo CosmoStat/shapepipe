@@ -23,7 +23,6 @@ res_noout = 1
 
 def get_status(tile_num):
 
-    #base_name = 'log_canfar_sp_'
     base_name = 'log_sp_tile_'
 
     log_name = '{}{}.log'.format(base_name, tile_num)
@@ -36,19 +35,19 @@ def get_status(tile_num):
         status = res_wait,  'not started yet'
     else:
         if os.path.exists(out_name):
-            ngmix_found = False
+            final_cat_found = False
             with open(out_name) as out_file:
                 for line in out_file:
-                    m = re.match('Upload ngmix results, (\d+) files', line)
+                    m = re.match('Upload final_cat results, (\d+) files', line)
                     if m:
-                        ngmix_found = True
+                        final_cat_found = True
                         if m[1] == '0':
-                            status = res_noout, '0 ngmix output files'
+                            status = res_noout, '0 final_cat output files'
                         else:
-                            status = res_ok, 'success, {} ngmix output files'.format(m[1])
+                            status = res_ok, 'success, {} final_cat output files'.format(m[1])
                         break
-            if ngmix_found == False:
-                status = res_unk, 'Failed before ngmix'
+            if final_cat_found == False:
+                status = res_unk, 'Failed before final_cat'
         else:
             status = res_wait, 'job not finished'
 
@@ -58,7 +57,8 @@ def get_status(tile_num):
 def output(status):
 
     for tile_num in sorted(status.keys()):
-        print(tile_num, status[tile_num])
+        if status[tile_num][0] != res_wait and status[tile_num][0] != res_ok:
+            print(tile_num, status[tile_num], res_wait)
 
     hist = Counter(status.values())
     for s in hist:

@@ -494,7 +494,7 @@ def params_default():
 
     Returns
     -------
-    p_def: class tuff.param
+    p_def: class cfis.param
         parameter values
     """
 
@@ -514,7 +514,7 @@ def parse_options(p_def):
 
     Parameters
     ----------
-    p_def: class tuff.param
+    p_def: class cfis.param
         parameter values
 
     Returns

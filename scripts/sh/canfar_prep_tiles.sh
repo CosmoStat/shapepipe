@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+# Name: canfar_prep_tiles.sh
+# Description: Create shapepipe run directory with
+#              links to all `final_cat` fits files
+# Author: Martin Kilbinger <martin.kilbinger@cea.fr
+# Package: ShapePipe
+# Date: 06/2020
+# Version: 0.1
+
 ## Functions
 function link_s () {
     target=$1
@@ -20,23 +28,17 @@ pwd=`pwd`
 out_base="output"
 run_dir="run_sp_combined"
 log_path="$pwd/$out_base/log_run_sp_tile.txt"
-INPUT="$pwd/$out_base/run_sp_*"
+INPUT="$pwd/$out_base/run_sp_Mc_*"
 OUTPUT="$pwd/$out_base/$run_dir"
 mkdir -p $OUTPUT
 
 # Directories and file patterns to create/link
 DIRS=(
-	"sextractor_runner"
-	"spread_model_runner"
-	"psfexinterp_runner"
-	"ngmix_runner"
+	"make_catalog_runner"
 )
 
 PATTERNS=(
-	"sexcat_sexcat-*"
-	"sexcat_sm-*"
-	"galaxy_psf-*"
-        "ngmix-*"
+	"final_cat-*"
 )
 
 # Create links
@@ -47,9 +49,9 @@ for n in "${!PATTERNS[@]}"; do
     mkdir -p $dir
     FILES=(`find $INPUT -name "$pattern"`)
     for file in ${FILES[@]}; do
-	target=$file
-	link_name=$dir/`basename $file`
-	link_s $target $link_name
+	    target=$file
+	    link_name=$dir/`basename $file`
+	    link_s $target $link_name
     done
 done
 
