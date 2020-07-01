@@ -13,7 +13,7 @@ SP_ROOT=$HOME/shapepipe
 sp_job="$SP_ROOT/scripts/sh/canfar_sp.bash"
 
 # Image/VM ID
-image="ShapePipe2-mk-20200619"
+image="ShapePipe2-mk-20200701"
 
 
 if [ "$1" == "-h" ]; then
@@ -88,13 +88,13 @@ fi
 
 
 # Input tile list file
-tile_list_file="../w3_tile.txt"
+#tile_list_file="../w3_tile.txt"
 
 # Output tile ID list file
 tile_ID_list="tile_id_list.txt"
 
 # Create tile ID list
-cat $tile_list_file | perl -ane '/CFIS\.(\d{3}\.\d{3})/; print "$1\n"' > $tile_ID_list
+#cat $tile_list_file | perl -ane '/CFIS\.(\d{3}\.\d{3})/; print "$1\n"' > $tile_ID_list
 
 
 # Create job file
