@@ -17,6 +17,10 @@ import re
 
 import numpy as np
 
+from astropy import units as u
+from astropy import coordinates as coords
+from astropy.wcs import WCS
+
 
 def remove_field_name(arr, name):
     """ Remove field name
@@ -120,6 +124,80 @@ def save_sm_data(final_cat_file, sexcat_sm_path, do_classif=True,
         obj_flag[np.where(classif > gal_thresh)] = 1
 
         final_cat_file.add_col('SPREAD_CLASS', obj_flag)
+
+    final_cat_file.close()
+
+
+def remove_common_elements(final_cat_file, tiles_id_file, pos_param=['XWIN_WORLD', 'YWIN_WORLD']):
+    """
+    """
+
+    key_id='TILE_ID'
+
+    def get_ra_dec(xxx, yyy):
+        """
+        """
+
+        return xxx/2/np.cos((yyy/2-90)*np.pi/180), yyy/2-90
+
+    def get_tile_wcs(xxx, yyy):
+        """
+        """
+        ra, dec = xxx/2/np.cos((yyy/2-90)*np.pi/180), yyy/2-90
+        
+        w = WCS(naxis=2)
+        w.wcs.crval = np.array([ra, dec])
+        w.wcs.crpix = np.array([5000, 5000])
+        w.wcs.cd = np.array([[0.187/3600, 0],
+                            [0, 0.187/3600]])
+        w.wcs.ctype = ['RA---TAN', 'DEC--TAN']
+        w.wcs.cunit = ['deg', 'deg']
+        w._naxis = [10000, 10000]
+        
+        return w
+
+    
+    final_cat_file.open()
+    ra_tile = final_cat_file.get_data()[pos_param[0]]
+    dec_tile = final_cat_file.get_data()[pos_param[1]]
+    tile_id = final_cat_file.get_data()[key_id][0]
+
+    all_id = np.loadtxt(tiles_id_file, unpack=True)*1000
+    
+    # look_around_x = [+1000, -1000, 0]
+    # look_around_y = [+1, -1, 0]
+
+    all_tile_ra, all_tile_dec = get_ra_dec((all_id/1000).astype(int), all_id - (all_id/1000).astype(int)*1000)
+    all_tile_coord = coords.SkyCoord(ra=all_tile_ra*u.deg, dec=all_tile_dec*u.deg)
+
+    ra_m_tile, dec_m_tile = get_ra_dec(int(tile_id/1000), tile_id - int(tile_id/1000)*1000)
+
+    mask_tile = np.ones_like(ra_tile, dtype=bool)
+
+    tile_main_coord = coords.SkyCoord(ra=ra_m_tile*u.deg, dec=dec_m_tile*u.deg)
+    catalog_coord = coords.SkyCoord(ra=ra_tile*u.deg, dec=dec_tile*u.deg)
+
+    sep_ref = tile_main_coord.separation(catalog_coord)
+
+    close_tiles = np.argsort(tile_main_coord.separation(all_tile_coord))[1:9]
+
+    for id_tile_check in all_id[close_tiles]:
+
+        # if id_tile_check not in all_id:
+        #     continue
+        
+        ra_m_check, dec_m_check = get_ra_dec(int(id_tile_check/1000), id_tile_check - int(id_tile_check/1000)*1000)
+
+        tile_check_coord = coords.SkyCoord(ra=ra_m_check*u.deg, dec=dec_m_check*u.deg)
+
+        sep_check = tile_check_coord.separation(catalog_coord)
+
+        w_tile_check = get_tile_wcs(int(id_tile_check/1000), id_tile_check - int(id_tile_check/1000)*1000)
+
+        mask_tile &= (np.less(sep_ref, sep_check) | np.invert(w_tile_check.footprint_contains(catalog_coord)))
+
+    
+    final_cat_file.add_col(['FLAG_TILING'], mask_tile)
 
     final_cat_file.close()
 
@@ -397,6 +475,8 @@ def make_catalog_runner(input_file_list, run_dirs, file_number_string,
         if shape_type.lower() not in ["ngmix", "galsim"]:
             raise ValueError("SHAPE_MEASUREMENT_TYPE must be in [ngmix, galsim]")
 
+    tile_list_path = config.getexpand("MAKE_CATALOG_RUNNER", "TILE_LIST")
+
     output_name = (run_dirs['output'] + '/final_cat' +
                    file_number_string + '.fits')
     final_cat_file = (io.FITSCatalog(output_name,
@@ -409,14 +489,16 @@ def make_catalog_runner(input_file_list, run_dirs, file_number_string,
     save_sm_data(final_cat_file, sexcat_sm_path, do_classif, star_thresh,
                  gal_thresh)
 
-    w_log.info('Save shape measurement data')
-    for shape_type in shape_type_list:
-        if shape_type.lower() == "ngmix":
-            w_log.info('Save ngmix data')
-            save_ngmix_data(final_cat_file, shape1_cat_path)
-        elif shape_type.lower() == "galsim":
-            w_log.info('Save galsim data')
-            save_galsim_shapes(final_cat_file, shape2_cat_path)
+    w_log.info('Flag overlapping objects')
+    remove_common_elements(final_cat_file, tile_list_path)
+
+    w_log.info('Save ngmix data')
+    if shape_type.lower() == "ngmix":
+        w_log.info('Save ngmix data')
+        save_ngmix_data(final_cat_file, ngmix_cat_path)
+    elif shape_type.lower() == "galsim":
+        w_log.info('Save galsim data')
+        save_ngmix_mom_shapes(final_cat_file, ngmix_cat_path)
 
     # PSF data from PSFExInterpol module: Very slow (sql -> numpy
     # transformation), and not required (ngmix has also PSF parameters)
