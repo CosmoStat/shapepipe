@@ -73,7 +73,8 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
 
     cat_size = len(data)
 
-    tile_id = int(re.split('-', os.path.splitext(os.path.split(sexcat_path)[1])[0])[1])
+    tile_id = float('.'.join(re.split('-', os.path.splitext(os.path.split(sexcat_path)[1])[0])[1:]))
+    print(tile_id)
     tile_id_array = np.ones(cat_size) * tile_id
 
     final_cat_file.open()
@@ -160,12 +161,9 @@ def remove_common_elements(final_cat_file, tiles_id_file, pos_param=['XWIN_WORLD
     final_cat_file.open()
     ra_tile = final_cat_file.get_data()[pos_param[0]]
     dec_tile = final_cat_file.get_data()[pos_param[1]]
-    tile_id = final_cat_file.get_data()[key_id][0]
+    tile_id = final_cat_file.get_data()[key_id][0]*1000
 
     all_id = np.loadtxt(tiles_id_file, unpack=True)*1000
-    
-    # look_around_x = [+1000, -1000, 0]
-    # look_around_y = [+1, -1, 0]
 
     all_tile_ra, all_tile_dec = get_ra_dec((all_id/1000).astype(int), all_id - (all_id/1000).astype(int)*1000)
     all_tile_coord = coords.SkyCoord(ra=all_tile_ra*u.deg, dec=all_tile_dec*u.deg)
@@ -182,9 +180,6 @@ def remove_common_elements(final_cat_file, tiles_id_file, pos_param=['XWIN_WORLD
     close_tiles = np.argsort(tile_main_coord.separation(all_tile_coord))[1:9]
 
     for id_tile_check in all_id[close_tiles]:
-
-        # if id_tile_check not in all_id:
-        #     continue
         
         ra_m_check, dec_m_check = get_ra_dec(int(id_tile_check/1000), id_tile_check - int(id_tile_check/1000)*1000)
 
@@ -197,7 +192,7 @@ def remove_common_elements(final_cat_file, tiles_id_file, pos_param=['XWIN_WORLD
         mask_tile &= (np.less(sep_ref, sep_check) | np.invert(w_tile_check.footprint_contains(catalog_coord)))
 
     
-    final_cat_file.add_col(['FLAG_TILING'], mask_tile)
+    final_cat_file.add_col('FLAG_TILING', mask_tile)
 
     final_cat_file.close()
 
@@ -475,7 +470,7 @@ def make_catalog_runner(input_file_list, run_dirs, file_number_string,
         if shape_type.lower() not in ["ngmix", "galsim"]:
             raise ValueError("SHAPE_MEASUREMENT_TYPE must be in [ngmix, galsim]")
 
-    tile_list_path = config.getexpand("MAKE_CATALOG_RUNNER", "TILE_LIST")
+    tile_list_path = config.getexpanded("MAKE_CATALOG_RUNNER", "TILE_LIST")
 
     output_name = (run_dirs['output'] + '/final_cat' +
                    file_number_string + '.fits')
