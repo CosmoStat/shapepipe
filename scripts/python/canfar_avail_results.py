@@ -128,6 +128,20 @@ def update_param(p_def, options):
 
 
 def read_input_files(input_path, verbose=False):
+    """Return list of ID files.
+
+    Parameters
+    ----------
+    input_path: string
+        list of files or directory name
+    verbose: bool, optional, default=False
+        verbose output if True
+
+    Returns
+    -------
+    ID_files: list of strings
+        file names with tile IDs
+    """
 
     if os.path.isdir(input_path):
         input_files = glob.glob('{}/*'.format(input_path))
@@ -149,6 +163,26 @@ def read_input_files(input_path, verbose=False):
     
 
 def check_results(ID_files, input_vos, result_base_names, verbose=False):
+    """Count the number of result files uploaded to vos for each input ID file.
+
+    Parameters
+    ----------
+    ID_files: list of strings
+        file name with tile IDs
+    input_vos: string
+        vos input directory
+    result_base_names: list of strings
+        result file base names
+    verbose: bool, optional, default=False
+        verbose output if True
+
+    Returns
+    -------
+    n_found: dictionary
+        number of files found for each input file and each ID
+    n_IDs: dictionary
+        number of ID for each input file
+    """
 
     cmd = 'vls'
     vos_dir = 'vos:cfis/{}'.format(input_vos)
@@ -191,6 +225,17 @@ def check_results(ID_files, input_vos, result_base_names, verbose=False):
 
 
 def output(n_found, n_IDs, n_complete):
+    """Create output with summary of result availability.
+
+    Parameters
+    ----------
+    n_found: dictionary
+        number of files found for each input file and each ID
+    n_IDs: dictionary
+        number of ID for each input file
+    n_complete: int
+        number of files of a complete set of results
+    """
 
     for ID_list in n_found.keys():
         nf = sum(value == n_complete  for value in n_found[ID_list].values())
