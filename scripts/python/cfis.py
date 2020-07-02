@@ -23,6 +23,8 @@ import errno
 
 import numpy as np
 
+import pylab as plt
+
 from astropy import units
 from astropy.io import ascii
 from astropy.coordinates import Angle
@@ -1231,4 +1233,139 @@ def log_get_exp_num(log, exp_name, k_img, k_weight, k_flag):
     # No matching entry found
     return None
 
+
+def plot_init():
+
+    fs = 12
+    fig, ax = plt.subplots()
+
+    ax = plt.gca()
+    ax.yaxis.label.set_size(fs)
+    ax.xaxis.label.set_size(fs)
+
+    plt.tick_params(axis='both', which='major', labelsize=fs)
+
+    plt.rcParams.update({'figure.autolayout': True})
+
+    return ax
+
+
+def plot_area(images, angles, image_type, outbase, interactive):
+    """Plot images within area.
+
+    Parameters
+    ----------
+    images: array of cfis.image
+        images
+    angles: array(SkyCoord, 2)
+        Corner coordinates of area rectangle
+    image_type: string
+        image type ('tile', 'exposure', 'cat', weight')
+    outbase: string
+        output file name base
+    interactive: bool
+        show plot if True
+    """
+
+    if outbase is None:
+        outname = 'plot.pdf'
+    else:
+        outname = '{}.pdf'.format(outbase)
+
+    lw = 0.25
+    color = {'tile': 'b', 'exposure': 'g', 'weight': 'r'}
+
+    ax = plot_init()
+
+    # Field center
+    n_ima = len(images)
+    if n_ima > 0:
+        ra_c  = sum([img.ra for img in images])/float(n_ima)
+        dec_c = sum([img.dec for img in images])/float(n_ima)
+        cos_dec_c = np.cos(dec_c)
+        plt.plot(ra_c, dec_c, 'or', mfc='none', ms=3)
+    else:
+        ra_c = 0
+        dec_c = 0
+        cos_dec_c = 1
+
+    # Circle around field
+    dx = abs(angles[0].ra - angles[1].ra)
+    dy = abs(angles[0].dec - angles[1].dec)
+    dx = getattr(dx, unitdef)
+    dy = getattr(dy, unitdef)
+    radius = max(dx, dy)/2 + (size['exposure'] + size['tile']) * np.sqrt(2)
+    circle = plt.Circle((ra_c.deg, dec_c.deg), radius, color='r', fill=False)
+    ax.add_artist(circle)
+
+    for img in images:
+        # Image center
+        x  = img.ra.degree
+        y  = img.dec.degree
+        #plt.plot(x, y, 'b.', markersize=1)
+        nix, niy = get_tile_number(img.name)
+        plt.text(x, y, '{}.{}'.format(nix, niy), fontsize=3,
+                 horizontalalignment='center',
+                 verticalalignment='center')
+
+        # Image boundary
+        dx = size[image_type] / 2 / cos_dec_c
+        dy = size[image_type] / 2
+        cx, cy = square_from_centre(x, y, dx, dy)
+        plt.plot(cx, cy, '{}-'.format(color[image_type]), linewidth=lw)
+
+    # Area border
+    cx, cy = square_from_corners(angles[0], angles[1])
+    plt.plot(cx, cy, 'r-.', linewidth=lw)
+
+    plt.xlabel('R.A. [degree]')
+    plt.ylabel('Declination [degree]')
+    if outbase is not None:
+        plt.title(outbase)
+
+    # Limits
+    border = 2
+    xm = (angles[1].ra.degree + angles[0].ra.degree) / 2
+    ym = (angles[1].dec.degree + angles[0].dec.degree) / 2
+    dx = angles[1].ra.degree - angles[0].ra.degree
+    dy = angles[1].dec.degree - angles[0].dec.degree
+    lim = max(dx, dy)
+    plt.xlim(xm - lim/2 - border, xm + lim/2 + border)
+    plt.ylim(ym - lim/2 - border, ym + lim/2 + border)
+
+    # Somehow this does not work (any more?)
+    #limits = plt.axis('equal')
+    #print(limits)
+
+    print('Saving plot to {}'.format(outname))
+    plt.savefig(outname)
+
+    if interactive == True:
+        plt.show()
+
+    return ra_c, dec_c, radius
+
+
+def square_from_centre(x, y, dx, dy):
+    """Return coordinate vectors of corners cx, cy that define a closed square for plotting.
+    """
+
+    cx = [x-dx, x+dx, x+dx, x-dx, x-dx]
+    cy = [y-dy, y-dy, y+dy, y+dy, y-dy]
+
+    return cx, cy
+
+
+
+def square_from_corners(ang0, ang1):
+    """Return coordinate vectors of corners cx, cy that define a closed square for plotting.
+    """
+
+    cx = [ang0.ra, ang1.ra, ang1.ra, ang0.ra, ang0.ra]
+    cy = [ang0.dec, ang0.dec, ang1.dec, ang1.dec, ang0.dec]
+
+    cxd = [getattr(i, unitdef) for i in cx]
+    cyd = [getattr(i, unitdef) for i in cy]
+
+    return cxd, cyd
 
