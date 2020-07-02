@@ -302,32 +302,6 @@ executable bash script is set up correctly and runs without errors.
    
 ## Running a CFIS job
 
-CFIS tiles can be run with the bash script [canfar_sp.bash](https://github.com/CosmoStat/shapepipe/blob/master/scripts/sh/canfar_sp.bash). On the VM via a job script, for example:
-```bash
-executable     = ./canfar_sp.bash
-
-output         = log_sp_tile_$(arguments).out
-error          = log_sp_tile_$(arguments).err
-log            = log_sp_tile_$(arguments).log
-
-request_cpus   = 8
-request_memory = 19G
-request_disk   = 100G
-
-
-queue arguments from (
-277.282
-)
-```
-To launch a job with more tiles, simply add the corresponding tile IDs to the `queue arguments from (` list.
-See (#batch-system) point 5. how to submit a job.
-
-In interactive mode, type
-```bash
-bash canfar_sp.bash 277.282
-```
-To run the script on more than one tile, add the IDs as command line arguments.
-
 ### Job preparation
 
 1. Make sure the virtual machine is active, the correct version/branch of `ShapePipe` is installed, and the `cadc` certificate is valid.
@@ -350,3 +324,53 @@ vrmdir vos:cfis/cosmostat/kilbinger/results
 vmkdir vos:cfis/cosmostat/kilbinger/results
 ```
 
+### Set up job file and submit job
+
+The two following alternative ways exist to set up and submit a job. For both it is recommended to `cd` into a new subdirectory on the batch system.
+
+1. Enter tile IDs by hand
+
+   CFIS tiles can be run with the bash script [canfar_sp.bash](https://github.com/CosmoStat/shapepipe/blob/master/scripts/sh/canfar_sp.bash). On the VM via a    job script, for example:
+   ```bash
+   executable     = ./canfar_sp.bash
+
+   output         = log_sp_tile_$(arguments).out
+   error          = log_sp_tile_$(arguments).err
+   log            = log_sp_tile_$(arguments).log
+
+   request_cpus   = 8
+   request_memory = 19G
+   request_disk   = 100G
+
+
+   queue arguments from (
+   277.282
+   )
+   ```
+   To launch a job with more tiles, simply add the corresponding tile IDs to the `queue arguments from (` list.
+   See (#batch-system) point 5. how to submit a job.
+
+   In interactive mode, type
+   ```bash
+   bash canfar_sp.bash 277.282
+   ```
+   To run the script on more than one tile, add the IDs as command line arguments.
+
+2. Using tile IDs from file
+
+   Use the bash script `canfar_submit_selection.sh` to automatically read tile IDs from an ASCII file, create the job file,
+   and submit the job.
+   ```bash
+   bash ~/shapepipe/scripts/sh/canfar_submit_selection.sh ~/shapepipe/aux/CFIS/tiles_202007/tiles_all_order.txt ShapePipe2-mk-20200701b [-n]
+   ```
+   Add the option `-n` (dry run) to test without submitting the job.
+
+### Analysis
+
+For a summary of the status of submitted jobs from the current directory, type
+```bash
+python3 ~/shapepipe/scripts/python/canfar_run_analyse.py
+```
+Results of jobs are uploaded to `vos`. These can be complete results from jobs that finished with success, or partial
+results (e.g. log files) from jobs that were stopped due to errors. Download and post-processing analysis of those results should
+to be performed on a different machine, e.g. [candide](https://github.com/CosmoStat/shapepipe/blob/master/docs/wiki/candide.md).
