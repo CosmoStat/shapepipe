@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""MCCD MEANSHAPES PLOT RUNNER
+"""PSFEx MEANSHAPES PLOT RUNNER
 
 This module is used to generate a series of plots from the merged validation
 catalogs.
@@ -60,15 +60,6 @@ def MegaCamFlip(xbins, ybins, ccd_nb, nb_pixel):
         ybins = nb_pixel[1] - ybins + 1
     return xbins, ybins
 
-def MegaCamFlip_2(xbins, ybins, ccd_nb, nb_pixel):
-    if ccd_nb < 18 or ccd_nb in [36,37]:
-        # swap x axis so origin is on top-right
-        # xbins = nb_pixel[0] - xbins + 1
-        a = 1
-    else:
-        # swap y axis so origin is on bottom-left
-        ybins = nb_pixel[1] - ybins + 1
-    return xbins, ybins
 
 def MeanShapesPlot(ccd_maps, filename, title='', colorbar_ampl=1., wind=None, cmap='bwr'):
     # colorbar amplitude
@@ -98,35 +89,35 @@ def MeanShapesPlot(ccd_maps, filename, title='', colorbar_ampl=1., wind=None, cm
 
 
 
-@module_runner(input_module=['mccd_merge_starcat_runner'], version='1.0',
+
+
+@module_runner(input_module=['psfex_merge_starcat_runner'], version='1.0',
                file_pattern=['full_starcat'],
                file_ext=['.fits'],numbering_scheme = '-0000000',
                depends=['numpy', 'mccd_rca','astropy', 'matplotlib'],
                run_method='serial')
-def mccd_meanshapes_plots_runner(input_file_list, run_dirs, file_number_string,
+def psfex_meanshapes_plots_runner(input_file_list, run_dirs, file_number_string,
                        config, w_log):
     # Define the backend for matplotlib
     mpl.use('agg')
 
-    # Get parameters
-    x_nb_bins = config.getint('MCCD_MEANSHAPES_PLOTS', 'X_GRID')
-    y_nb_bins = config.getint('MCCD_MEANSHAPES_PLOTS', 'Y_GRID')
-    remove_outliers = config.getboolean('MCCD_MEANSHAPES_PLOTS', 'REMOVE_OUTLIERS')
+    # Get user defined parameters
+    x_nb_bins = config.getint('PSFEX_MEANSHAPES_PLOTS', 'X_GRID')
+    y_nb_bins = config.getint('PSFEX_MEANSHAPES_PLOTS', 'Y_GRID')
+    remove_outliers = config.getboolean('PSFEX_MEANSHAPES_PLOTS', 'REMOVE_OUTLIERS')
 
+    # Define some other paramters
     nb_pixel = x_nb_bins, y_nb_bins
     starcat_path = input_file_list[0][0]
     output_path = run_dirs['output'] + '/'
+    auto_colorbar = False
+    colorbar_ampl = 1.
+
+    # MegaCam: each CCD is 2048x4612
+    grid = np.linspace(0, 2048, nb_pixel[0]+1), np.linspace(0, 4612, nb_pixel[1]+1)
 
     # READ FULL STARCAT
     starcat = fits.open(starcat_path)[2].data
-
-    auto_colorbar = False
-    colorbar_ampl = 1.
-    loc2glob = mccd_utils.Loc2Glob()
-
-    # MegaCam: each CCD is 2048x4612
-    grid = np.linspace(0, loc2glob.x_npix, nb_pixel[0]+1), np.linspace(0, loc2glob.y_npix, nb_pixel[1]+1)
-
 
     # Flag mask
     star_flags = starcat['FLAG_STAR_HSM']
@@ -138,6 +129,7 @@ def mccd_meanshapes_plots_runner(input_file_list, run_dirs, file_number_string,
                             2.*starcat['SIGMA_STAR_HSM']**2])
     all_psf_shapes = np.array([starcat['E1_PSF_HSM'],starcat['E2_PSF_HSM'],
                             2.*starcat['SIGMA_PSF_HSM']**2])
+
     all_CCDs = starcat['CCD_NB']
     all_X = starcat['X']
     all_Y = starcat['Y']
@@ -157,6 +149,9 @@ def mccd_meanshapes_plots_runner(input_file_list, run_dirs, file_number_string,
         all_Y = all_Y[~bad_stars]
         flagmask = flagmask[~bad_stars]
 
+    # Transform strings into int
+    all_CCDs = np.array([int(ccd) for ccd in all_CCDs])
+
     w_log.info('TOTAL e1 residual RMSE: %.6f\n'%(np.sqrt(np.mean((all_star_shapes[0,:] - all_psf_shapes[0,:])**2))))
     w_log.info('TOTAL e2 residual RMSE: %.6f\n'%(np.sqrt(np.mean((all_star_shapes[1,:] - all_psf_shapes[1,:])**2))))
     w_log.info('TOTAL R2 residual RMSE: %.6f\n'%(np.sqrt(np.mean((all_star_shapes[2,:] - all_psf_shapes[2,:])**2))))
@@ -165,31 +160,31 @@ def mccd_meanshapes_plots_runner(input_file_list, run_dirs, file_number_string,
     for ccd_nb,ccd_map in enumerate(ccd_maps):
         # handle different scatalog versions
         try:
-            ccd_mask = ((all_CCDs.astype(int)==ccd_nb) * flagmask).astype(bool)
+            ccd_mask = ((all_CCDs==ccd_nb) * flagmask).astype(bool)
         except TypeError:
             ccd_mask = ((all_CCDs==str(ccd_nb)) * flagmask).astype(bool)
 
         star_shapes = all_star_shapes[:,ccd_mask]
         psf_shapes = all_psf_shapes[:,ccd_mask]
+        xs, ys = all_X[ccd_mask], all_Y[ccd_mask]
 
-        # Claculate shift to go from global coordinates to local coordinates
-        x_shift, y_shift = loc2glob.shift_coord(ccd_nb)
-        xs_loc, ys_loc = all_X[ccd_mask] - x_shift, all_Y[ccd_mask] - y_shift
-        # xs_loc, ys_loc = loc2glob.flip_coord(ccd_nb, xs_loc, ys_loc)
-
+        # if (ccd_nb >= 18 and ccd_nb not in [36, 37]) or ccd_nb in [38, 39]:
+        #     xs = 2048 - xs + 1
         # if ccd_nb >= 27 and ccd_nb <=35:
-        #     ys_loc = loc2glob.y_npix - ys_loc + 1
-        # if ccd_nb < 18 or ccd_nb in [36, 37]:
-        #     ys_loc = loc2glob.y_npix - ys_loc + 1
-        ys_loc = loc2glob.y_npix - ys_loc + 1
+        #     ys = 4612 - ys + 1
+        #
+        # if ccd_nb >= 18 and ccd_nb <=26:
+        #     ys = 4612 - ys + 1
+        # elif ccd_nb in [38,39]:
+        #     ys = 4612 - ys + 1
 
-        # digitalize into bins
-        xbins = np.digitize(xs_loc, grid[0])
-        ybins = np.digitize(ys_loc, grid[1])
+
+        xbins = np.digitize(xs, grid[0])
+        ybins = np.digitize(ys, grid[1])
 
         # swap axes to match CCD orientation and origin convention
-        # Already done when going into global coordinates
-        # xbins, ybins = MegaCamFlip(xbins, ybins, ccd_nb, nb_pixel)
+        xbins, ybins = MegaCamFlip(xbins, ybins, ccd_nb, nb_pixel)
+
 
         for xb in range(nb_pixel[0]):
             for yb in range(nb_pixel[1]):
@@ -201,16 +196,13 @@ def mccd_meanshapes_plots_runner(input_file_list, run_dirs, file_number_string,
 
     # e_1
     vmax = max(np.nanmax(ccd_maps[:,:,0]), np.abs(np.nanmin(ccd_maps[:,:,0])))
+    vmax = 0.125
     vmin = -vmax
     wind = [vmin, vmax]
     MeanShapesPlot(ccd_maps[:,0,0], output_path+'e1s', 'e_1 (stars), std=%.5e\nvmax=%.4e'%
         (np.nanstd(ccd_maps[:,0,0]),np.nanmax(abs(ccd_maps[:,0,0]))), wind=wind)
     MeanShapesPlot(ccd_maps[:,1,0], output_path+'e1m', 'e_1 (model), std=%.5e\nvmax=%.4e'%
         (np.nanstd(ccd_maps[:,1,0]),np.nanmax(abs(ccd_maps[:,1,0]))), wind=wind)
-    MeanShapesPlot(ccd_maps[:,0,0]-np.nanmean(ccd_maps[:,0,0]), output_path+'e1s_std', 'e_1 (stars std), std=%.5e\nmean=%.5e , vmax=%.4e'%
-        (np.nanstd(ccd_maps[:,0,0]), np.nanmean(ccd_maps[:,0,0]), np.nanmax(abs(ccd_maps[:,0,0]-np.nanmean(ccd_maps[:,0,0])))))
-    MeanShapesPlot(ccd_maps[:,1,0]-np.nanmean(ccd_maps[:,1,0]), output_path+'e1m_std', 'e_1 (model std), std=%.5e\nmean=%.5e , vmax=%.4e'%
-        (np.nanstd(ccd_maps[:,1,0]), np.nanmean(ccd_maps[:,0,0]),np.nanmax(abs(ccd_maps[:,1,0]-np.nanmean(ccd_maps[:,1,0])))))
     if auto_colorbar:
         wind=None
     e1_res = ccd_maps[:,0,0]-ccd_maps[:,1,0]
@@ -225,16 +217,13 @@ def mccd_meanshapes_plots_runner(input_file_list, run_dirs, file_number_string,
 
     # e_2
     vmax = max(np.nanmax(ccd_maps[:,:,1]), np.abs(np.nanmin(ccd_maps[:,:,1])))
+    vmax = 0.152
     vmin = -vmax
     wind = [vmin, vmax]
     MeanShapesPlot(ccd_maps[:,0,1], output_path+'e2s', 'e_2 (stars), std=%.5e\nvmax=%.4e'%
         (np.nanstd(ccd_maps[:,0,1]),np.nanmax(abs(ccd_maps[:,0,1]))), wind=wind)
     MeanShapesPlot(ccd_maps[:,1,1], output_path+'e2m', 'e_2 (model), std=%.5e\nvmax=%.4e'%
         (np.nanstd(ccd_maps[:,1,1]),np.nanmax(abs(ccd_maps[:,1,1]))), wind=wind)
-    MeanShapesPlot(ccd_maps[:,0,1]-np.nanmean(ccd_maps[:,0,1]), output_path+'e2s_std', 'e_2 (stars std), std=%.5e\nmean=%.5e , vmax=%.4e'%
-        (np.nanstd(ccd_maps[:,0,1]), np.nanmean(ccd_maps[:,0,1]), np.nanmax(abs(ccd_maps[:,0,1]-np.nanmean(ccd_maps[:,0,1])))))
-    MeanShapesPlot(ccd_maps[:,1,1]-np.nanmean(ccd_maps[:,1,1]), output_path+'e2m_std', 'e_2 (model std), std=%.5e\nmean=%.5e , vmax=%.4e'%
-        (np.nanstd(ccd_maps[:,1,1]), np.nanmean(ccd_maps[:,0,1]),np.nanmax(abs(ccd_maps[:,1,1]-np.nanmean(ccd_maps[:,1,1])))))
     if auto_colorbar:
         wind=None
         colorbar_ampl = 1.
@@ -248,18 +237,14 @@ def mccd_meanshapes_plots_runner(input_file_list, run_dirs, file_number_string,
     MeanShapesPlot(ccd_maps[:,0,1]-ccd_maps[:,1,1], output_path+'e2res',
         'e_2 res, rmse=%.5e\nvmax=%.4e , std=%.5e'%(rmse_e2,vmax,np.nanstd(ccd_maps[:,0,1]-ccd_maps[:,1,1])), wind=wind, colorbar_ampl=colorbar_ampl)
 
-
     # R^2
-    wind = [0,np.nanmax(ccd_maps[:,:,2])]
+    vmax = np.nanmax(ccd_maps[:,:,2])
+    wind = [0,vmax]
     colorbar_ampl = 1
     MeanShapesPlot(ccd_maps[:,0,2], output_path+'R2s', 'R_2 (stars), std=%.5e\nvmax=%.4e'%
         (np.nanstd(ccd_maps[:,0,2]),np.nanmax(abs(ccd_maps[:,0,2]))), wind=wind, cmap='Reds')
     MeanShapesPlot(ccd_maps[:,1,2], output_path+'R2m', 'R_2 (model), std=%.5e\nvmax=%.4e'%
         (np.nanstd(ccd_maps[:,1,2]),np.nanmax(abs(ccd_maps[:,1,2]))), wind=wind, cmap='Reds')
-    MeanShapesPlot(ccd_maps[:,0,2]-np.nanmean(ccd_maps[:,0,2]), output_path+'R2s_std', 'R_2 (stars std), std=%.5e\nmean=%.5e , vmax=%.4e'%
-        (np.nanstd(ccd_maps[:,0,2]), np.nanmean(ccd_maps[:,0,2]), np.nanmax(abs(ccd_maps[:,0,2]-np.nanmean(ccd_maps[:,0,2])))))
-    MeanShapesPlot(ccd_maps[:,1,2]-np.nanmean(ccd_maps[:,1,2]), output_path+'R2m_std', 'R_2 (model std), std=%.5e\nmean=%.5e , vmax=%.4e'%
-        (np.nanstd(ccd_maps[:,1,2]), np.nanmean(ccd_maps[:,0,2]),np.nanmax(abs(ccd_maps[:,1,2]-np.nanmean(ccd_maps[:,1,2])))))
     if auto_colorbar:
         wind=[0,np.nanmax(np.abs((ccd_maps[:,0,2]-ccd_maps[:,1,2])/ccd_maps[:,0,2]))]
         colorbar_ampl = 1.
@@ -273,8 +258,9 @@ def mccd_meanshapes_plots_runner(input_file_list, run_dirs, file_number_string,
         plot_title = 'Outliers removed\n∆(R_2)/R_2 res, rmse=%.5e\nvmax=%.4e , std=%.5e'%(rmse_r2,vmax,np.nanstd((ccd_maps[:,0,2]-ccd_maps[:,1,2])/ccd_maps[:,0,2]))
     else:
         plot_title = '∆(R_2)/R_2 res, rmse=%.5e\nvmax=%.4e , std=%.5e'%(rmse_r2,vmax,np.nanstd((ccd_maps[:,0,2]-ccd_maps[:,1,2])/ccd_maps[:,0,2]))
-    MeanShapesPlot(np.abs((ccd_maps[:,0,2]-ccd_maps[:,1,2])/ccd_maps[:,0,2]), output_path+'R2res',
-        plot_title , wind=wind, colorbar_ampl=colorbar_ampl, cmap='Reds')
+
+    MeanShapesPlot(np.abs((ccd_maps[:,0,2]-ccd_maps[:,1,2])/ccd_maps[:,0,2]), output_path+'R2res',plot_title,
+        wind=wind, colorbar_ampl=colorbar_ampl, cmap='Reds')
 
     # nstars
     wind=(0,np.max(ccd_maps[:,0,3]))
@@ -293,7 +279,8 @@ def mccd_meanshapes_plots_runner(input_file_list, run_dirs, file_number_string,
 
     plt.figure(figsize=(12,6), dpi = 300)
     data_hist = all_star_shapes[0,:] - all_psf_shapes[0,:]
-    plt.hist(data_hist, bins=hist_bins, range=[np.min(data_hist), np.max(data_hist)], label='err(star - psf)', alpha=0.5)
+    wind = [np.min(data_hist), np.max(data_hist)]
+    plt.hist(data_hist, bins=hist_bins, range=wind, label='err(star - psf)', alpha=0.5)
     plt.legend(loc='best',fontsize=16)
     plt.title('e1 err',fontsize=24)
     plt.savefig(output_path+'err_e1_hist.png')
@@ -309,7 +296,8 @@ def mccd_meanshapes_plots_runner(input_file_list, run_dirs, file_number_string,
 
     plt.figure(figsize=(12,6), dpi = 300)
     data_hist = all_star_shapes[1,:] - all_psf_shapes[1,:]
-    plt.hist(data_hist, bins=hist_bins,range=[np.min(data_hist), np.max(data_hist)], label='err(star - psf)', alpha=0.5)
+    wind = [np.min(data_hist), np.max(data_hist)]
+    plt.hist(data_hist, bins=hist_bins,range=wind, label='err(star - psf)', alpha=0.5)
     plt.legend(loc='best',fontsize=16)
     plt.title('e2 err',fontsize=24)
     plt.savefig(output_path+'err_e2_hist.png')
@@ -318,8 +306,8 @@ def mccd_meanshapes_plots_runner(input_file_list, run_dirs, file_number_string,
     plt.figure(figsize=(12,6), dpi = 300)
     mean_R2 = np.mean(all_star_shapes[2,:])
     wind = [mean_R2 - 4, mean_R2 + 4]
-    plt.hist(all_star_shapes[2,:], bins = hist_bins, range = wind, label='stars', alpha=0.5)
-    plt.hist(all_psf_shapes[2,:], bins = hist_bins, range = wind, label='PSFs', alpha=0.5)
+    plt.hist(all_star_shapes[2,:], bins=hist_bins, range=wind, label='stars', alpha=0.5)
+    plt.hist(all_psf_shapes[2,:], bins=hist_bins, range=wind, label='PSFs', alpha=0.5)
     plt.legend(loc='best',fontsize=16)
     plt.title('R2',fontsize=24)
     plt.savefig(output_path+'R2_hist.png')
@@ -327,10 +315,12 @@ def mccd_meanshapes_plots_runner(input_file_list, run_dirs, file_number_string,
 
     plt.figure(figsize=(12,6), dpi = 300)
     data_hist = (all_star_shapes[2,:] - all_psf_shapes[2,:])/all_star_shapes[2,:]
-    plt.hist(data_hist, bins=hist_bins, range=[np.min(data_hist), np.max(data_hist)], label='err(star - psf)/star', alpha=0.5)
+    wind = [np.min(data_hist), np.max(data_hist)]
+    # wind = [-0.5,0.5]
+    plt.hist(data_hist, bins=hist_bins, range=wind, label='err(star - psf)/star', alpha=0.5)
     plt.legend(loc='best',fontsize=16)
     plt.title('R2 err',fontsize=24)
     plt.savefig(output_path+'err_R2_hist.png')
     plt.close()
 
-    return None, None
+    return None,None

@@ -73,17 +73,20 @@ def mccd_preprocessing_runner(input_file_list, run_dirs, file_number_string,
         for it in range(catalog_ids.shape[0]):
             # For each observation position
             catalog_id = catalog_ids[it]
-            star_list, pos_list, mask_list, ccd_list, SNR_list = mccd_inputs.get_inputs(catalog_id)
+            star_list, pos_list, mask_list, ccd_list, SNR_list, RA_list, DEC_list = mccd_inputs.get_inputs(catalog_id)
             print_fun = lambda x : w_log.info(x)
-            star_list, pos_list, mask_list, ccd_list, SNR_list, _ = mccd_inputs.outlier_rejection(star_list, pos_list,
+            star_list, pos_list, mask_list, ccd_list, SNR_list, RA_list, DEC_list, _ = mccd_inputs.outlier_rejection(star_list, pos_list,
                                                                                                 mask_list, ccd_list,
-                                                                                                SNR_list, shape_std_max=5., print_fun=print_fun)
+                                                                                                SNR_list, RA_list, DEC_list,
+                                                                                                shape_std_max=5., print_fun=print_fun)
 
             mccd_star_list = []
             mccd_pos_list = []
             mccd_mask_list = []
             mccd_ccd_list = []
             mccd_SNR_list = []
+            mccd_RA_list = []
+            mccd_DEC_list = []
 
             for j in range(len(star_list)):
                 # For each CCD
@@ -99,6 +102,9 @@ def mccd_preprocessing_runner(input_file_list, run_dirs, file_number_string,
                             mccd_ccd_list.append(ccd_list[j] * np.ones(n_stars))
                             if SNR_list is not None:
                                 mccd_SNR_list.append(SNR_list[j])
+                            if RA_list is not None:
+                                mccd_RA_list.append(RA_list[j])
+                                mccd_DEC_list.append(DEC_list[j])
                         else:
                             msg = 'Not enough stars in catalog_id %s ,ccd %d. Total stars = %d' % (catalog_id, ccd_list[j],
                                                                                                    n_stars)
@@ -129,11 +135,20 @@ def mccd_preprocessing_runner(input_file_list, run_dirs, file_number_string,
                     # Send an array of False (None cannot be used in .fits)
                     mccd_SNRs = np.zeros((mccd_poss.shape[0]), dtype=bool)
 
+                if RA_list is not None:
+                    mccd_RAs = np.concatenate(mccd_RA_list)
+                    mccd_DECs = np.concatenate(mccd_DEC_list)
+                else:
+                    mccd_RAs = np.zeros((mccd_poss.shape[0]), dtype=bool)
+                    mccd_DECs = np.zeros((mccd_poss.shape[0]), dtype=bool)
+
+
                 mccd_star_nb += mccd_stars.shape[0]
 
                 # Save the fits file
                 train_dic = {'VIGNET_LIST': mccd_stars, 'GLOB_POSITION_IMG_LIST': mccd_poss,
-                             'MASK_LIST': mccd_masks, 'CCD_ID_LIST': mccd_ccds, 'SNR_WIN_LIST': mccd_SNRs}
+                             'MASK_LIST': mccd_masks, 'CCD_ID_LIST': mccd_ccds, 'SNR_WIN_LIST': mccd_SNRs,
+                             'RA_LIST': mccd_RAs, 'DEC_LIST': mccd_DECs}
 
                 mccd_utils.save_fits(train_dic, train_bool, catalog_id, output_mccd_path,input_file_list[0][0])
 

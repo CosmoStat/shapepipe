@@ -56,14 +56,21 @@ def psfexinterp_runner(input_file_list, run_dirs, file_number_string,
         inst.process_me(dot_psf_dir, dot_psf_pattern, f_wcs_path)
 
     elif mode == 'VALIDATION':
+        save_vignets = config.getboolean('PSFEXINTERP_RUNNER', 'SAVE_VIGNETS')
+        match_psfs = config.getboolean('PSFEXINTERP_RUNNER', 'MATCH_PSFS')
         psfcat_path, galcat_path, psfex_cat_path = input_file_list
+
+        if save_vignets == False and get_shapes == False:
+            raise ValueError('In VALIDATION mode, GET_SHAPES or SAVE_VIGNETS should be True.')
 
         inst = interpolation_script.PSFExInterpolator(psfcat_path, galcat_path,
                                                       run_dirs['output'],
                                                       file_number_string,
                                                       w_log, pos_params,
                                                       get_shapes, star_thresh,
-                                                      chi2_thresh)
+                                                      chi2_thresh,
+                                                      save_vignets=save_vignets,
+                                                      match_psfs=match_psfs)
 
         inst.process_validation(psfex_cat_path)
 
