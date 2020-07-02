@@ -130,21 +130,63 @@ def save_sm_data(final_cat_file, sexcat_sm_path, do_classif=True,
 
 
 def remove_common_elements(final_cat_file, tiles_id_file, pos_param=['XWIN_WORLD', 'YWIN_WORLD']):
-    """
+    """ Remove common elements
+
+    This function create a mask for the overlapping region between 2 stack
+    images.
+
+    Parameters
+    ----------
+    final_cat_file : io.FITSCatalog
+        Final catalog.
+    tile_id_file : str
+        Path to the file containing all the tile IDs.
+    pos_param : list
+        List with the column name for ra and dec positions.
+
     """
 
-    key_id='TILE_ID'
+    key_id = 'TILE_ID'
 
     def get_ra_dec(xxx, yyy):
-        """
+        """ Get ra dec
+        Transform Stephen Gwyn naming into ra and dec position
+
+        Parameters
+        ----------
+        xxx : int
+            First 3 numbers in the tile name.
+        yyy : int
+            Last 3 numbers in the tile name.
+        
+        Returns
+        -------
+        ra, dec : float, float
+            Ra and dec positions for the center of tile.
+
         """
 
         return xxx/2/np.cos((yyy/2-90)*np.pi/180), yyy/2-90
 
     def get_tile_wcs(xxx, yyy):
+        """ Get tile WCS
+        Create an astropy.wcs.WCS object from the name of the tile.
+
+        Parameters
+        ----------
+        xxx : int
+            First 3 numbers in the tile name.
+        yyy : int
+            Last 3 numbers in the tile name.
+
+        Returns
+        -------
+        w : astropy.wcs.WCS
+            WCS for the tile.
+
         """
-        """
-        ra, dec = xxx/2/np.cos((yyy/2-90)*np.pi/180), yyy/2-90
+
+        ra, dec = get_ra_dec(xxx, yyy)
         
         w = WCS(naxis=2)
         w.wcs.crval = np.array([ra, dec])
@@ -157,7 +199,6 @@ def remove_common_elements(final_cat_file, tiles_id_file, pos_param=['XWIN_WORLD
         
         return w
 
-    
     final_cat_file.open()
     ra_tile = final_cat_file.get_data()[pos_param[0]]
     dec_tile = final_cat_file.get_data()[pos_param[1]]
@@ -180,7 +221,7 @@ def remove_common_elements(final_cat_file, tiles_id_file, pos_param=['XWIN_WORLD
     close_tiles = np.argsort(tile_main_coord.separation(all_tile_coord))[1:9]
 
     for id_tile_check in all_id[close_tiles]:
-        
+
         ra_m_check, dec_m_check = get_ra_dec(int(id_tile_check/1000), id_tile_check - int(id_tile_check/1000)*1000)
 
         tile_check_coord = coords.SkyCoord(ra=ra_m_check*u.deg, dec=dec_m_check*u.deg)
@@ -191,7 +232,6 @@ def remove_common_elements(final_cat_file, tiles_id_file, pos_param=['XWIN_WORLD
 
         mask_tile &= (np.less(sep_ref, sep_check) | np.invert(w_tile_check.footprint_contains(catalog_coord)))
 
-    
     final_cat_file.add_col('FLAG_TILING', mask_tile)
 
     final_cat_file.close()
