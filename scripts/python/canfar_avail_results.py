@@ -194,7 +194,7 @@ def output(n_found, n_IDs, n_complete):
 
     for ID_list in n_found.keys():
         nf = sum(value == n_complete  for value in n_found[ID_list].values())
-        print('{}: {}/{} complete'.format(ID_list, nf, n_IDs[ID_list]))
+        print('{}: {}/{} complete'.format(os.path.basename(ID_list), nf, n_IDs[ID_list]))
 
 
 
