@@ -28,6 +28,7 @@ def mccd_merge_starcat_runner(input_file_list, run_dirs, file_number_string,
     output_dir = run_dirs['output']
 
     x, y= [], []
+    ra, dec = [], []
     g1_psf, g2_psf, size_psf = [], [], []
     g1, g2, size = [], [], []
     flag_psf, flag_star = [], []
@@ -76,6 +77,14 @@ def mccd_merge_starcat_runner(input_file_list, run_dirs, file_number_string,
             x += list(starcat_j[2].data['GLOB_POSITION_IMG_LIST'][:,0])
             y += list(starcat_j[2].data['GLOB_POSITION_IMG_LIST'][:,1])
 
+            # RA and DEC positions
+            try:
+                ra += list(starcat_j[2].data['RA_LIST'][:])
+                dec += list(starcat_j[2].data['DEC_LIST'][:])
+            except Exception:
+                ra += [None]*len(starcat_j[2].data['GLOB_POSITION_IMG_LIST'][:,0])
+                dec += [None]*len(starcat_j[2].data['GLOB_POSITION_IMG_LIST'][:,0])
+
             # shapes (convert sigmas to R^2)
             g1_psf += list(starcat_j[2].data['PSF_MOM_LIST'][:,0])
             g2_psf += list(starcat_j[2].data['PSF_MOM_LIST'][:,1])
@@ -113,7 +122,7 @@ def mccd_merge_starcat_runner(input_file_list, run_dirs, file_number_string,
                             open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
                             SEx_catalog=True)
     # convert back to sigma for consistency
-    data = {'X': x, 'Y': y,
+    data = {'X': x, 'Y': y, 'RA': ra, 'DEC': dec,
             'E1_PSF_HSM': g1_psf, 'E2_PSF_HSM': g2_psf, 'SIGMA_PSF_HSM': np.sqrt(size_psf),
             'E1_STAR_HSM': g1, 'E2_STAR_HSM': g2, 'SIGMA_STAR_HSM': np.sqrt(size),
             'FLAG_PSF_HSM': flag_psf, 'FLAG_STAR_HSM': flag_star, 'CCD_NB': ccd_nb}
