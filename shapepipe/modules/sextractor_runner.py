@@ -142,7 +142,7 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
     if zp_from_header:
         zp_key = config.get("SEXTRACTOR_RUNNER", "ZP_KEY")
         zp_value = get_header_value(input_file_list[0], zp_key)
-    
+
     bkg_from_header = config.getboolean("SEXTRACTOR_RUNNER", "BKG_FROM_HEADER")
     if bkg_from_header:
         bkg_key = config.get("SEXTRACTOR_RUNNER", "BKG_KEY")
