@@ -36,26 +36,26 @@ on [canfar](./canfar.md).
    to automatically perform a number of post-processing steps. In detail, these are (and can also be done individually
    by hand):
    
-   a. Un-tar all result `.tgz` files in the current directory:
+   1. Un-tar all result `.tgz` files in the current directory:
       ```bash
       $SP_ROOT/scripts/sh/untar_results.sh 
       ``` 
       As a result, the directory `output` is created containing the `ShapePipe` outputs from all canfar runs,
       in uniquely named subdirectories.
       
-   b. Analyse psf validation files
+   2. Analyse psf validation files
       ```bash
       $SP_ROOT/scripts/sh/canfar_psf_residuals.sh
       ```
       This script identifies all psf validation files (from all processed tiles downloaded to `pwd`), creates symbolic links,
       merges the catalogues, and creates plots of PSF ellipticity, size, and residuals over the focal plane.
 
-   c. Prepare output directory with links to all 'final_cat' result files:
+   3. Prepare output directory with links to all 'final_cat' result files:
       ```bash
       $SP_ROOT/scripts/sh/canfar_prep_tiles.sh
       ```
 
-   d. Merge final output files to single mother catalog
+   4. Merge final output files to single mother catalog
       ```bash
       input_final=output/run_sp_combined/make_catalog_runner/output
       $SP_ROOT/scripts/python/merge_final_cat.py -i $input_final -p $SP_CONFIG/final_cat.param -v
