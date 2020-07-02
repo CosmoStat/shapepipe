@@ -487,13 +487,14 @@ def make_catalog_runner(input_file_list, run_dirs, file_number_string,
     w_log.info('Flag overlapping objects')
     remove_common_elements(final_cat_file, tile_list_path)
 
-    w_log.info('Save ngmix data')
-    if shape_type.lower() == "ngmix":
-        w_log.info('Save ngmix data')
-        save_ngmix_data(final_cat_file, ngmix_cat_path)
-    elif shape_type.lower() == "galsim":
-        w_log.info('Save galsim data')
-        save_ngmix_mom_shapes(final_cat_file, ngmix_cat_path)
+    w_log.info('Save shape measurement data')
+    for shape_type in shape_type_list:
+        if shape_type.lower() == "ngmix":
+            w_log.info('Save ngmix data')
+            save_ngmix_data(final_cat_file, shape1_cat_path)
+        elif shape_type.lower() == "galsim":
+            w_log.info('Save galsim data')
+            save_galsim_shapes(final_cat_file, shape2_cat_path)
 
     # PSF data from PSFExInterpol module: Very slow (sql -> numpy
     # transformation), and not required (ngmix has also PSF parameters)
