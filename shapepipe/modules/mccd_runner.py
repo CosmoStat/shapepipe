@@ -93,7 +93,7 @@ def mccd_rca_fit(starcat, rcainst_kw, rcafit_kw, output_dir, file_number_string,
     filename = output_dir + '/fitted_model'+file_number_string
     rca_instance.quicksave(filename)
 
-    
+
 
     return None
 
@@ -116,6 +116,12 @@ def mccd_validation(rca_path, test_path, apply_degradation = True, mccd_debug = 
     stars = testcat[2].data['VIGNET_LIST']
     masks = testcat[2].data['MASK_LIST']
     ccds = testcat[2].data['CCD_ID_LIST']
+    try:
+        RA_pos = testcat[2].data['RA_LIST']
+        DEC_pos  =testcat[2].data['DEC_LIST']
+    except Exception:
+        pass
+
 
     # If masks are not provided they have to be calculated
     # Mask convention: 1=good pixel / 0=bad pixel
@@ -135,6 +141,11 @@ def mccd_validation(rca_path, test_path, apply_degradation = True, mccd_debug = 
     val_ccd_list = [ccds[my_ccd_list==ccd].astype(int) for ccd in ccd_unique_list]
     val_ccd_list_to_save = np.copy(val_ccd_list)
     val_ccd_list= [np.unique(_list)[0].astype(int) for _list in val_ccd_list]
+    try:
+        val_RA_list = [RA_pos[my_ccd_list==ccd] for ccd in ccd_unique_list]
+        val_DEC_list = [DEC_pos[my_ccd_list==ccd] for ccd in ccd_unique_list]
+    except Exception:
+        pass
 
 
     if apply_degradation:
@@ -148,9 +159,12 @@ def mccd_validation(rca_path, test_path, apply_degradation = True, mccd_debug = 
                 deg_PSFs, deg_PSFs_glob, deg_PSFs_loc = rca_instance.validation_stars(
                     val_star_list[it], val_pos_list[it], val_mask_list[it],
                     val_ccd_list[it],mccd_debug)
-                PSF_list.append(utils.rca_format(deg_PSFs))
-                PSF_glob_list.append(deg_PSFs_glob)
-                PSF_loc_list.append(deg_PSFs_loc)
+
+                # PSF_list.append(utils.rca_format(deg_PSFs))
+                PSF_list.append(deg_PSFs)
+                if deg_PSFs_glob is not None:
+                    PSF_glob_list.append(deg_PSFs_glob)
+                    PSF_loc_list.append(deg_PSFs_loc)
 
             star_dict['PSF_GLOB_VIGNET_LIST'] = np.copy(np.concatenate(PSF_glob_list,axis=0))
             star_dict['PSF_LOC_VIGNET_LIST'] = np.copy(np.concatenate(PSF_loc_list,axis=0))
@@ -158,14 +172,34 @@ def mccd_validation(rca_path, test_path, apply_degradation = True, mccd_debug = 
             PSF_list = [rca_instance.validation_stars(_star, _pos, _mask, _ccd_id, mccd_debug)
                         for _star,_pos,_mask,_ccd_id in
                         zip(val_star_list,val_pos_list,val_mask_list,val_ccd_list)]
-            # Have the PSFs in rca format, to match the stars
-            PSF_list = [utils.rca_format(psfs) for psfs in PSF_list]
+
+
+    # Remove the CCDs not used for training from ALL the lists
+    # Identify the None elements on a boolean list
+    bad_ccds_bool = [psf is None  for psf in PSF_list]
+    # Get the True indexes
+    bad_ccds_indexes = [i for i, x in enumerate(bad_ccds_bool) if x]
+    # Delete the None elements from the lists from the last to the first one
+    # not to mess up with the order
+    for idx in sorted(bad_ccds_indexes, reverse=True):
+        del PSF_list[idx]
+        del val_pos_list[idx]
+        del val_star_list[idx]
+        del val_mask_list[idx]
+        del val_ccd_list[idx]
+        try:
+            del val_RA_list[idx]
+            del val_DEC_list[idx]
+        except Exception:
+            pass
+
+    # Have the PSFs in rca format, to match the stars
+    PSF_list = [utils.rca_format(psfs) for psfs in PSF_list]
 
     # Calculate pixel-MSE
     myMSE = [np.mean((psfs - stars)**2) for psfs,stars in zip(PSF_list,val_star_list)]
 
     # Calculate moments
-    n_ccds = len(val_star_list)
     star_shapes_list = []
     psf_shapes_list = []
     psf_vignet_list = []
@@ -173,8 +207,10 @@ def mccd_validation(rca_path, test_path, apply_degradation = True, mccd_debug = 
     star_list = []
     mask_list = []
     ccd_list = []
+    RA_list = []
+    DEC_list = []
 
-    for it in range(n_ccds):
+    for it in range(len(val_star_list)):
         # for each ccd
         test_stars = val_star_list[it]
         badpix_mask = np.rint(np.abs(val_mask_list[it]-1)) # hsm thinks 0 means good
@@ -203,16 +239,26 @@ def mccd_validation(rca_path, test_path, apply_degradation = True, mccd_debug = 
         star_list.append(utils.reg_format(val_star_list[it]))
         mask_list.append(utils.reg_format(val_mask_list[it]))
         ccd_list.append(val_ccd_list_to_save[it])
+        try:
+            RA_list.append(val_RA_list[it])
+            DEC_list.append(val_DEC_list[it])
+        except Exception:
+            pass
 
     # Prepare the PSF list and the moments in an array form
     # To be able to save them in the fits format
-    psf_shapes = np.concatenate(psf_shapes_list,axis=0)
-    star_shapes = np.concatenate(star_shapes_list,axis=0)
-    psf_vignets = np.concatenate(psf_vignet_list,axis=0)
-    pos_ordered = np.concatenate(pos_list ,axis=0)
-    star_ordered = np.concatenate(star_list ,axis=0)
-    mask_ordered = np.concatenate(mask_list ,axis=0)
-    ccd_ordered = np.concatenate(ccd_list ,axis=0)
+    psf_shapes = np.concatenate(psf_shapes_list, axis=0)
+    star_shapes = np.concatenate(star_shapes_list, axis=0)
+    psf_vignets = np.concatenate(psf_vignet_list, axis=0)
+    pos_ordered = np.concatenate(pos_list, axis=0)
+    star_ordered = np.concatenate(star_list, axis=0)
+    mask_ordered = np.concatenate(mask_list, axis=0)
+    ccd_ordered = np.concatenate(ccd_list, axis=0)
+    try:
+        RA_ordered = np.concatenate(RA_list, axis=0)
+        DEC_ordered = np.concatenate(DEC_list, axis=0)
+    except Exception:
+        pass
 
     # Save the results and the psfs
     star_dict['PSF_VIGNET_LIST'] = np.copy(psf_vignets)
@@ -222,6 +268,11 @@ def mccd_validation(rca_path, test_path, apply_degradation = True, mccd_debug = 
     star_dict['VIGNET_LIST'] = np.copy(star_ordered)
     star_dict['MASK_LIST'] = np.copy(mask_ordered)
     star_dict['CCD_ID_LIST'] = np.copy(ccd_ordered)
+    try:
+        star_dict['RA_LIST'] = np.copy(RA_ordered)
+        star_dict['DEC_LIST'] = np.copy(DEC_ordered)
+    except Exception:
+        pass
 
     testcat.close()
 
