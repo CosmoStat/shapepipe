@@ -138,9 +138,9 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
     flag_file = config.getboolean("SEXTRACTOR_RUNNER", "FLAG_IMAGE")
     psf_file = config.getboolean("SEXTRACTOR_RUNNER", "PSF_FILE")
 
-    zp_from_header = config.getboolean("SEXTRACTOR_RUNNER_EXP", "ZP_FROM_HEADER")
+    zp_from_header = config.getboolean("SEXTRACTOR_RUNNER", "ZP_FROM_HEADER")
     if zp_from_header:
-        zp_key = config.get("SEXTRACTOR_RUNNER_EXP", "ZP_KEY")
+        zp_key = config.get("SEXTRACTOR_RUNNER", "ZP_KEY")
         zp_value = get_zero_point(input_file_list[0], zp_key)
 
     if config.has_option('SEXTRACTOR_RUNNER', "CHECKIMAGE"):

@@ -27,6 +27,9 @@ $SP_BASE/scripts/sh/untar_results.sh
 # Merge all psfinterp results and compute PSF residuals
 $SP_BASE/scripts/sh/canfar_psf_residuals.sh
 
+# Prepare output directory with links to all 'final_cat' result files
+$SP_BASE/scripts/sh/canfar_prep_tiles.sh
+
 # Merge final output files to single mother catalog
 input_final=output/run_sp_combined/make_catalog_runner/output
 $SP_BASE/scripts/python/merge_final_cat.py -i $input_final -p $SP_CONFIG/final_cat.param -v 
