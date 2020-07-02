@@ -499,7 +499,7 @@ def print_color(color, txt, file=sys.stdout, end='\n'):
         print(txt, file=file, end=end)
 
 
-def my_string_split(string, num=-1, verbose=False, stop=False):
+def my_string_split(string, num=-1, verbose=False, stop=False, sep=None):
     """Split a *string* into a list of strings. Choose as separator
         the first in the list [space, underscore] that occurs in the string.
         (Thus, if both occur, use space.)
@@ -514,6 +514,8 @@ def my_string_split(string, num=-1, verbose=False, stop=False):
         Verbose output
     stop: bool
         Stop programs with error if True, return None and continues otherwise
+    SEP: bool
+        Separator, try ' ', '_', and '.' if None (default)
 
     Raises
     ------
@@ -529,24 +531,28 @@ def my_string_split(string, num=-1, verbose=False, stop=False):
     if string is None:
         return None
 
-    has_space      = string.find(' ')
-    has_underscore = string.find('_')
-    has_dot        = string.find('.')
+    if SEP is None:
+        has_space      = string.find(' ')
+        has_underscore = string.find('_')
+        has_dot        = string.find('.')
 
-    if has_space != -1:
-        sep = ' '
-    elif has_underscore != -1:
-        sep = '_'
-    elif has_dot != -1:
-        sep = '.'
-    else:
-        # no separator found, does string consist of only one element?
-        if num == -1 or num == 1:
-            sep = None
+        if has_space != -1:
+            sep = ' '
+        elif has_underscore != -1:
+            sep = '_'
+        elif has_dot != -1:
+            sep = '.'
         else:
-            error('No separator (\' \', \'_\', or \'.\') found in string \'{}\', cannot split'.format(string))
+            # no separator found, does string consist of only one element?
+            if num == -1 or num == 1:
+                sep = None
+            else:
+                error('No separator (\' \', \'_\', or \'.\') found in string \'{}\', cannot split'.format(string))
+    else:
+        if not string.find(SEP):
+            error('No separator \'{}\' found in string \'{}\', cannot split'.format(SEP))
+        sep = SEP
 
-    #res = string.split(sep=sep) # python v>=3?
     res = string.split(sep)
 
     if num != -1 and num != len(res) and stop==True:
