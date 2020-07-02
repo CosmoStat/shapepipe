@@ -23,12 +23,20 @@ on [canfar](./canfar.md).
       This command can be run in the same directory at subsequent times: Only newer files will be downloaded
       from the vos directory.
 
-
 2. Local post-processing steps.
 
    On [candide](./candide.md) it is advisable to perform the following steps not on the loging node, but
    to log interactively onto some other node. Internet access is not required.
 
+   An optional intermediate step is to create directories for sub-samples, for example one directory
+   for each patch on the sky. This will create symbolic links to the results `.tgz` files downloaded in
+   the previous step. For example, to create the subdir `tiles_W3` with links to result files to `all` for
+   those tiles contained in the list `tiles_W3.txt`, do:
+   ```bash
+    $SP_ROOT/scripts/python/create_sample_results.py --input_IDs tiles_W3.txt -i . all -o tiles_W3 -v
+    ```
+    The following steps will then be done in the directort `tiles_W3`.
+    
    Type
    ```bash
    $SP_ROOT/scripts/sh/canfar_post_proc.sh
