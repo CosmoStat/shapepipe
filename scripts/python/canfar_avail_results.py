@@ -134,8 +134,6 @@ def read_input_files(input_path, verbose=False):
     else:
         input_files =  cfis.my_string_split(input_path, stop=True, sep=' ')
 
-    print(input_files)
-
     ID_files = [] 
     for f in input_files:
         if os.path.isdir(f):
@@ -143,6 +141,9 @@ def read_input_files(input_path, verbose=False):
                 print('Skipping directory \'{}\''.format(f))
         else:
             ID_files.append(f)
+
+    if verbose:
+        print('{} input files found'.format(len(ID_files)))
 
     return ID_files
     

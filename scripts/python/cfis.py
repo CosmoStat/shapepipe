@@ -516,7 +516,7 @@ def my_string_split(string, num=-1, verbose=False, stop=False, sep=None):
         Verbose output
     stop: bool
         Stop programs with error if True, return None and continues otherwise
-    SEP: bool
+    sep: bool
         Separator, try ' ', '_', and '.' if None (default)
 
     Raises
@@ -533,29 +533,29 @@ def my_string_split(string, num=-1, verbose=False, stop=False, sep=None):
     if string is None:
         return None
 
-    if SEP is None:
+    if sep is None:
         has_space      = string.find(' ')
         has_underscore = string.find('_')
         has_dot        = string.find('.')
 
         if has_space != -1:
-            sep = ' '
+            my_sep = ' '
         elif has_underscore != -1:
-            sep = '_'
+            my_sep = '_'
         elif has_dot != -1:
-            sep = '.'
+            my_sep = '.'
         else:
             # no separator found, does string consist of only one element?
             if num == -1 or num == 1:
-                sep = None
+                my_sep = None
             else:
                 error('No separator (\' \', \'_\', or \'.\') found in string \'{}\', cannot split'.format(string))
     else:
-        if not string.find(SEP):
-            error('No separator \'{}\' found in string \'{}\', cannot split'.format(SEP))
-        sep = SEP
+        if not string.find(sep):
+            error('No separator \'{}\' found in string \'{}\', cannot split'.format(sep))
+        my_sep = sep
 
-    res = string.split(sep)
+    res = string.split(my_sep)
 
     if num != -1 and num != len(res) and stop==True:
         raise CfisError('String \'{}\' has length {}, required is {}'.format(string, len(res), num))
