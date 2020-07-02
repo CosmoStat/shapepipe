@@ -18,35 +18,35 @@ from sqlitedict import SqliteDict
 from astropy.io import fits
 
 
-def get_zero_point(image_path, key):
-    """Get mag zero point
+def get_header_value(image_path, key):
+    """Get header value
 
-    This function read the magnitude zero-point from the header image.
+    This function read a value from the header image.
 
     Parameters
     ----------
     image_path: str
         Path to the input image
     key: str
-        Key to use in the header for the zero-point
+        Key from which the value is requested (has to be float)
 
     Returns
     -------
-    zp: float
+    val: float
         Value associated to the key provided
 
     """
 
     h = fits.getheader(image_path)
 
-    zp = h[key]
+    val = h[key]
 
     try:
-        zp = float(zp)
+        val = float(val)
     except:
-        raise ValueError('{} is not a float value for zero-point'.format(zp))
+        raise ValueError('The key {} does not return a float value. Got '.format(key, val))
 
-    return zp
+    return val
 
 
 def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
@@ -130,7 +130,12 @@ def sextractor_runner_exp(input_file_list, run_dirs, file_number_string,
     zp_from_header = config.getboolean("SEXTRACTOR_RUNNER_EXP", "ZP_FROM_HEADER")
     if zp_from_header:
         zp_key = config.get("SEXTRACTOR_RUNNER_EXP", "ZP_KEY")
-        zp_value = get_zero_point(input_file_list[0], zp_key)
+        zp_value = get_header_value(input_file_list[0], zp_key)
+
+    bkg_from_header = config.getboolean("SEXTRACTOR_RUNNER_EXP", "BKG_FROM_HEADER")
+    if bkg_from_header:
+        bkg_key = config.get("SEXTRACTOR_RUNNER_EXP", "BKG_KEY")
+        bkg_value = get_header_value(input_file_list[0], bkg_key)
 
     if config.has_option('SEXTRACTOR_RUNNER_EXP', "CHECKIMAGE"):
         check_image = config.getlist("SEXTRACTOR_RUNNER_EXP", "CHECKIMAGE")
@@ -155,6 +160,9 @@ def sextractor_runner_exp(input_file_list, run_dirs, file_number_string,
 
     if zp_from_header:
         command_line += ' -MAG_ZEROPOINT {0}'.format(zp_value)
+
+    if bkg_from_header:
+        command_line += ' -BACK_TYPE MANUAL -BACK_VALUE {0}'.format(bkg_value)
 
     extra = 1
     if weight_file:
