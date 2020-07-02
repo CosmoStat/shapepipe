@@ -11,6 +11,7 @@ Here are some instructions on how to set up a VM on CANFAR to run the pipeline.
 1. [Batch System](#Batch-System)
 1. [Troubleshooting](#Troubleshooting)
 1. [Interactive Mode](#Interactive-Mode)
+1. [Running a CFIS job](#Running-A-CFIS-Job)
 
 ## Current Set Up
 
