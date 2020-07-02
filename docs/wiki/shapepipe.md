@@ -13,3 +13,4 @@ ShapePipe is a galaxy shape measurement pipeline developed within the CosmoStat 
    1. [Troubleshooting](./troubleshooting.md)
 5. [Tutorial](./tutorial/pipeline_tutorial.md)
 6. [Validation Checklist](./validation.md)
+7. [Post-processing](./post_processing.md)
