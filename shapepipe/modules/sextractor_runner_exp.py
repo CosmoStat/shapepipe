@@ -15,25 +15,57 @@ from shapepipe.pipeline import file_io as io
 
 import numpy as np
 from sqlitedict import SqliteDict
+from astropy.io import fits
+
+
+def get_header_value(image_path, key):
+    """Get header value
+
+    This function read a value from the header image.
+
+    Parameters
+    ----------
+    image_path: str
+        Path to the input image
+    key: str
+        Key from which the value is requested (has to be float)
+
+    Returns
+    -------
+    val: float
+        Value associated to the key provided
+
+    """
+
+    h = fits.getheader(image_path)
+
+    val = h[key]
+
+    try:
+        val = float(val)
+    except:
+        raise ValueError('The key {} does not return a float value. Got '.format(key, val))
+
+    return val
 
 
 def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
     """Make post process
 
     This function will add one hdu by epoch to the SExtractor catalog. Only works for tiles.
-    The columns will be : NUMBER same as SExtractor NUMBER
-                          EXP_NAME name of the single exposure for this epoch
-                          CCD_N extansion where the object is
+    The columns will be: NUMBER same as SExtractor NUMBER
+                         EXP_NAME name of the single exposure for this epoch
+                         CCD_N extansion where the object is
 
     Parameters
     ----------
-    cat_path : str
+    cat_path: str
         Path to the outputed SExtractor catalog
-    f_wcs_path : str
+    f_wcs_path: str
         Path to the log file containing wcs for all single exp CCDs
-    pos_params : list
+    pos_params: list
         World coordinates to use to match the objects.
-    ccd_size : list
+    ccd_size: list
         Size of a ccd [nx, ny]
 
     """
@@ -81,7 +113,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
 @module_runner(input_module=['split_exp_runner', 'mask_runner_exp'], version='1.0.1',
                file_pattern=['image', 'weight', 'flag'],
                file_ext=['.fits', '.fits', '.fits'],
-               executes=['sex'], depends=['numpy'])
+               executes=['sex'], depends=['numpy', 'sqlitedict', 'astropy'])
 def sextractor_runner_exp(input_file_list, run_dirs, file_number_string,
                           config, w_log):
 
@@ -94,6 +126,16 @@ def sextractor_runner_exp(input_file_list, run_dirs, file_number_string,
     weight_file = config.getboolean("SEXTRACTOR_RUNNER_EXP", "WEIGHT_IMAGE")
     flag_file = config.getboolean("SEXTRACTOR_RUNNER_EXP", "FLAG_IMAGE")
     psf_file = config.getboolean("SEXTRACTOR_RUNNER_EXP", "PSF_FILE")
+
+    zp_from_header = config.getboolean("SEXTRACTOR_RUNNER_EXP", "ZP_FROM_HEADER")
+    if zp_from_header:
+        zp_key = config.get("SEXTRACTOR_RUNNER_EXP", "ZP_KEY")
+        zp_value = get_header_value(input_file_list[0], zp_key)
+
+    bkg_from_header = config.getboolean("SEXTRACTOR_RUNNER_EXP", "BKG_FROM_HEADER")
+    if bkg_from_header:
+        bkg_key = config.get("SEXTRACTOR_RUNNER_EXP", "BKG_KEY")
+        bkg_value = get_header_value(input_file_list[0], bkg_key)
 
     if config.has_option('SEXTRACTOR_RUNNER_EXP', "CHECKIMAGE"):
         check_image = config.getlist("SEXTRACTOR_RUNNER_EXP", "CHECKIMAGE")
@@ -115,6 +157,12 @@ def sextractor_runner_exp(input_file_list, run_dirs, file_number_string,
     command_line = ('{0} {1} -c {2} -PARAMETERS_NAME {3} -CATALOG_NAME {4}'
                     ''.format(exec_path, input_file_list[0], dot_sex,
                               dot_param, output_file_path))
+
+    if zp_from_header:
+        command_line += ' -MAG_ZEROPOINT {0}'.format(zp_value)
+
+    if bkg_from_header:
+        command_line += ' -BACK_TYPE MANUAL -BACK_VALUE {0}'.format(bkg_value)
 
     extra = 1
     if weight_file:

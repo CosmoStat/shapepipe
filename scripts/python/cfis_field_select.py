@@ -351,140 +351,6 @@ def test_tile_number():
     print(ra, dec)
 
 
-def square_from_centre(x, y, dx, dy):
-    """Return coordinate vectors of corners cx, cy that define a closed square for plotting.
-    """
-
-    cx = [x-dx, x+dx, x+dx, x-dx, x-dx]
-    cy = [y-dy, y-dy, y+dy, y+dy, y-dy]
-
-    return cx, cy
-
-
-
-def square_from_corners(ang0, ang1):
-    """Return coordinate vectors of corners cx, cy that define a closed square for plotting.
-    """
-
-    cx = [ang0.ra, ang1.ra, ang1.ra, ang0.ra, ang0.ra]
-    cy = [ang0.dec, ang0.dec, ang1.dec, ang1.dec, ang0.dec]
-
-    cxd = [getattr(i, unitdef) for i in cx]
-    cyd = [getattr(i, unitdef) for i in cy]
-
-    return cxd, cyd
-
-
-
-def plot_area(images, angles, image_type, outbase, interactive):
-    """Plot images within area.
-
-    Parameters
-    ----------
-    images: array of cfis.image
-        images
-    angles: array(SkyCoord, 2)
-        Corner coordinates of area rectangle
-    image_type: string
-        image type ('tile', 'exposure', 'cat', weight')
-    outbase: string
-        output file name base
-    interactive: bool
-        show plot if True
-    """
-
-    if outbase is None:
-        outname = 'plot.pdf'
-    else:
-        outname = '{}.pdf'.format(outbase)
-
-    lw = 0.25
-    color = {'tile': 'b', 'exposure': 'g', 'weight': 'r'}
-
-    ax = plot_init()
-
-    # Field center
-    n_ima = len(images)
-    if n_ima > 0:
-        ra_c  = sum([img.ra for img in images])/float(n_ima)
-        dec_c = sum([img.dec for img in images])/float(n_ima)
-        plt.plot(ra_c, dec_c, 'or', mfc='none', ms=3)
-    else:
-        ra_c = 0
-        dec_c = 0
-
-    # Circle around field
-    dx = abs(angles[0].ra - angles[1].ra)
-    dy = abs(angles[0].dec - angles[1].dec)
-    dx = getattr(dx, unitdef)
-    dy = getattr(dy, unitdef)
-    radius = max(dx, dy)/2 + (cfis.size['exposure'] + cfis.size['tile']) * np.sqrt(2)
-    circle = plt.Circle((ra_c.deg, dec_c.deg), radius, color='r', fill=False)
-    ax.add_artist(circle)
-
-    for img in images:
-        # Image center
-        x  = img.ra.degree
-        y  = img.dec.degree
-        #plt.plot(x, y, 'b.', markersize=1)
-
-        # Image boundary
-        dx = size[image_type] / 2
-        dy = size[image_type] / 2
-        cx, cy = square_from_centre(x, y, dx, dy)
-        plt.plot(cx, cy, '{}-'.format(color[image_type]), linewidth=lw)
-
-    # Area border
-    cx, cy = square_from_corners(angles[0], angles[1])
-    plt.plot(cx, cy, 'r-.', linewidth=lw)
-
-    plt.xlabel('R.A. [degree]')
-    plt.ylabel('Declination [degree]')
-    if outbase is not None:
-        plt.title(outbase)
-
-    # Limits
-    border = 2
-    xm = (angles[1].ra.degree + angles[0].ra.degree) / 2
-    ym = (angles[1].dec.degree + angles[0].dec.degree) / 2
-    dx = angles[1].ra.degree - angles[0].ra.degree
-    dy = angles[1].dec.degree - angles[0].dec.degree
-    lim = max(dx, dy)
-    plt.xlim(xm - lim/2 - border, xm + lim/2 + border)
-    plt.ylim(ym - lim/2 - border, ym + lim/2 + border)
-
-    # Somehow this does not work (any more?)
-    #limits = plt.axis('equal')
-    #print(limits)
-
-    print('Saving plot to {}'.format(outname))
-    plt.savefig(outname)
-
-    if interactive == True:
-        plt.show()
-
-    return ra_c, dec_c, radius
-
-
-def plot_init():
-
-    fs = 12
-    fig, ax = plt.subplots()
-    #fig = plt.figure()
-
-    ax = plt.gca()
-    ax.yaxis.label.set_size(fs)
-    ax.xaxis.label.set_size(fs)
-
-    plt.tick_params(axis='both', which='major', labelsize=fs)
-
-    plt.rcParams.update({'figure.autolayout': True})
-
-    #return fig, ax
-    return ax
-
-
-
 def params_default():
     """Set default parameter values.
 
@@ -494,7 +360,7 @@ def params_default():
 
     Returns
     -------
-    p_def: class tuff.param
+    p_def: class cfis.param
         parameter values
     """
 
@@ -514,7 +380,7 @@ def parse_options(p_def):
 
     Parameters
     ----------
-    p_def: class tuff.param
+    p_def: class cfis.param
         parameter values
 
     Returns
@@ -700,7 +566,7 @@ def run_mode(images, param):
             if param.plot == True:
                 if param.verbose == True:
                     print('Creating plots')
-                ra_c, dec_c, radius = plot_area(images_found, angles, param.image_type, param.outbase, param.interactive)
+                ra_c, dec_c, radius = cfis.plot_area(images_found, angles, param.image_type, param.outbase, param.interactive)
 
                 if param.verbose:
                     print('RA_c[deg] DEC_c[deg] radius[argmin] = {:.2f} {:.2f} {:.2f}'.format(ra_c.deg, dec_c.deg, radius*60))

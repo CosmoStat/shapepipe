@@ -48,7 +48,7 @@ export VM_HOME=/home/ubuntu
 export SP_RUN=`pwd`
 
 # Config file path
-export SP_CONFIG=$SP_RUN/GOLD
+export SP_CONFIG=$SP_RUN/cfis
 
 # Input tile numbers ASCII file
 export TILE_NUMBERS_PATH=tile_numbers.txt
@@ -146,7 +146,7 @@ command_sp() {
    res=$?
    if [ $res != 0 ]; then
       upload_logs $id $verbose
-      echo "exiting 'canfar_sp.bash', error in command '$cmd', log files for id=$id uploaded"
+      echo "exiting 'canfar_sp.bash', '$cmd' returned $res, log files for id=$id uploaded"
       exit $res
    fi
 
@@ -238,7 +238,7 @@ for TILE in ${TILE_ARR[@]}; do
 done
 
 # Download config files
-$VCP vos:cfis/cosmostat/kilbinger/GOLD .
+$VCP vos:cfis/cosmostat/kilbinger/cfis .
 
 ### Run pipeline
 
@@ -263,7 +263,7 @@ command_sp "shapepipe_run -c $SP_CONFIG/config_exp.ini" "Run shapepipe (exp)" "$
 
 
 # The following are very a bad hacks to get additional input files
-input_psfex=`find . -name star_selection-*.psf | head -n 1`
+input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
 command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output" "$VERBOSE" "$ID"
 
 input_split_exp=`find output -name flag-*.fits | head -n 1`
@@ -278,11 +278,17 @@ command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor
 # Everything up to shapes
 command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSxPsViSmVi.ini" "Run shapepipe (tile: up to ngmix)" "$VERBOSE" "$ID"
 
-# Shapes
+# Shapes, run 8 parallel processes
 for k in $(seq 1 8); do
     command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Ng${k}u.ini" "Run shapepipe (tile: ngmix $k)" "$VERBOSE" "$ID" &
 done
 wait
+
+# Merge separated shapes catalogues
+command_sp "shapepipe_run -c $SP_CONFIG/config_merge_sep_cats.ini" "Run shapepipe (tile: merge sep cats)" "$VERBOSE" "$ID"
+
+# Create final shape catalogue by merging all tile information
+command_sp "shapepipe_run -c $SP_CONFIG/config_make_cat.ini" "Run shapepipe (tile: create final cat)" "$VERBOSE" "$ID"
 
 
 ## Upload results
@@ -293,9 +299,7 @@ upload_logs "$ID" "$VERBOSE"
 # psfex for diagnostics, validation with leakage
 # psefxinterp for validation with residuals, rho stats
 # SETools masks (selection), stats and plots
-# SExtractor tile catalogues
-# spread model
-# PSFs at galaxy positions
+# Final shape catalog
 
 NAMES=(
         "psfex"
@@ -303,9 +307,7 @@ NAMES=(
         "setools_mask"
         "setools_stat"
         "setools_plot"
-        "sextractor"
-        "spread_model"
-        "psfexinterp_tile"
+        "final_cat"
      )
 DIRS=(
         "*/psfex_runner/output"
@@ -313,19 +315,15 @@ DIRS=(
         "*/setools_runner/output/mask"
         "*/setools_runner/output/stat"
         "*/setools_runner/output/plot"
-        "*_tile_*/sextractor_runner/output"
-        "*/spread_model_runner/output"
-        "*/psfexinterp_runner/output"
+        "*/make_catalog_runner/output"
      )
 PATTERNS=(
-        "star_selection-*"
+        "star_split_ratio_80-*"
         "validation_psf*"
         "*"
         "*"
         "*"
-        "sexcat_sexcat-*"
-        "*"
-        "galaxy_psf-*"
+        "final_cat-*"
         )
 
 for n in "${!NAMES[@]}"; do
@@ -335,31 +333,5 @@ for n in "${!NAMES[@]}"; do
     upl=$output_rel/$dir/$pattern
     upload "$name" "$ID" "$VERBOSE" "${upl[@]}"
 done
-
-# shapes
-if ls $output_rel/*/ngmix_runner/output 1> /dev/null 2>&1; then
-  n_file=(`ls -l $output_rel/*/ngmix_runner/output | wc`)
-   if [ "$n_file" == 1 ]; then
-      if [ $STOP == 1 ]; then
-         echo "Existing script, no ngmix FITS file found in ngmix output dir (1)"
-         exit 97
-      fi
-   else
-      upl=$output_rel/*/ngmix_runner/output/ngmix-*
-      n_upl=(`ls -l ${upl[@]} | wc`)
-      if [ $n_upl == 0 ]; then
-         if [ $STOP == 1 ]; then
-            echo "Existing script, no ngmix FITS file found in ngmix output dir (2)"
-            exit 97
-         fi
-      fi
-      upload "ngmix" "$ID" "$VERBOSE" "${upl[@]}"
-   fi
-else
-   if [ $STOP == 1 ]; then
-      echo "Existing script, no ngmix output dir found"
-      exit 98
-   fi
-fi
 
 echo "End"

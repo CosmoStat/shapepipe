@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Script canfar_run_analyse.py
 
@@ -15,16 +15,18 @@ from collections import Counter
 # Results
 res_ok = 0
 
-res_wait = -1
-res_unk = -2
+res_unk = -1
+res_wait = -2
+res_subm = -3
+res_abort = -4
 
 res_noout = 1
 
 
 def get_status(tile_num):
 
-    #base_name = 'log_canfar_sp_'
-    base_name = 'log_sp_tile_'
+    base_name = 'log_canfar_sp_'
+    #base_name = 'log_sp_tile_'
 
     log_name = '{}{}.log'.format(base_name, tile_num)
     out_name = '{}{}.out'.format(base_name, tile_num)
@@ -33,37 +35,56 @@ def get_status(tile_num):
     status = res_unk, 'unknown status'
 
     if not os.path.exists(log_name):
-        status = res_wait,  'not started yet'
+        status = res_wait,  'waiting for submission'
     else:
         if os.path.exists(out_name):
-            ngmix_found = False
+            final_cat_found = False
             with open(out_name) as out_file:
                 for line in out_file:
-                    m = re.match('Upload ngmix results, (\d+) files', line)
+                    m = re.match('Upload final_cat results, (\d+) files', line)
                     if m:
-                        ngmix_found = True
+                        final_cat_found = True
                         if m[1] == '0':
-                            status = res_noout, '0 ngmix output files'
+                            status = res_noout, '0 final_cat output files'
                         else:
-                            status = res_ok, 'success, {} ngmix output files'.format(m[1])
+                            status = res_ok, 'success, {} final_cat output files'.format(m[1])
                         break
-            if ngmix_found == False:
-                status = res_unk, 'Failed before ngmix'
+            if final_cat_found == False:
+                status = res_unk, 'Failed before final_cat'
         else:
-            status = res_wait, 'job not finished'
+            log_file = open(log_name)
+            lines = log_file.readlines()
+            log_file.close()
+            for line in lines:
+                if re.match('.*aborted', line):
+                    status = res_abort, 'job aborted by user'
+                    return status
+            for line in lines:
+                if re.match('.*executing', line):
+                    status = res_wait, 'job running'
+                    return status
+            status = res_subm, 'job submitted, not started yet'
 
     return status
 
 
 def output(status):
 
+    print('## Issues')
+    n_issue = 0
     for tile_num in sorted(status.keys()):
-        print(tile_num, status[tile_num])
+        if status[tile_num][0] == res_noout or status[tile_num][0] == res_noout:
+            print('   ', tile_num, status[tile_num], res_wait)
+            n_issue = n_issue + 1
+    if n_issue == 0:
+        print('   none')
 
     hist = Counter(status.values())
+    print('## Summary')
+    print('# Nb: status (code)') 
     for s in hist:
         #print('{:2d}, {}: {}'.format(int(s[0]), s[1], hist[s]))
-        print('{}: {} ({})'.format(hist[s], s[1], int(s[0])))
+        print('{:4d}: {} ({})'.format(hist[s], s[1], int(s[0])))
         #print(hist[s], s)
 
 

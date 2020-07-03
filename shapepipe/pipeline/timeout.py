@@ -41,11 +41,8 @@ def with_timeout(timeout, log_file):
         def inner(*args, **kwargs):
             signal.signal(signal.SIGALRM, handler)
             signal.alarm(timeout)
-            try:
-                return decorated(*args, **kwargs)
-            except Exception:
-                raise TimeoutError('The process time exceeded {}s in '
-                                   '{}'.format(timeout, log_file))
+            return decorated(*args, **kwargs)
+
         return inner
 
     return decorator

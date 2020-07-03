@@ -11,18 +11,15 @@
 remote="vos:cfis/cosmostat/kilbinger/results"
 local="."
 
-output=(ngmix psfex psfexinterp setools_plot setools_stat logs)
 NAMES=(
         "psfex"
         "psfexinterp_exp"
         "setools_mask"
         "setools_stat"
         "setools_plot"
-        "sextractor"
-        "spread_model"
-        "psfexinterp_tile"
+        "final_cat"
+        "logs"
      )
-NAMES=( "${NAMES[@]}" "ngmix" "logs")
 
 
 # VCP options
