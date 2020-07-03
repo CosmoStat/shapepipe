@@ -62,7 +62,7 @@ def create_hdus(exp_path, output_dir, output_name, output_sufix, n_hdu=40,
 
         w = WCS(h)
 
-        header_file[i-1] = w
+        header_file[i-1] = {'WCS': w, 'header': h}
 
     if save_header:
         file_name = output_dir + '/' + 'headers' + output_name + '.npy'
