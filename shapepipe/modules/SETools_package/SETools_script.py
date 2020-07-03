@@ -84,7 +84,7 @@ class SETools(object):
 
         self._file_number_string = file_number_string
 
-    def process(self):
+    def process(self, w_log):
         """Process
         Main function called to process a SExtractor catalog.
         """
@@ -98,11 +98,8 @@ class SETools(object):
 
         # Processing: Create mask = filter input
         if len(self._mask) != 0:
-            # MKDEBUG new, prevent to create directory, somehow this causes error sometimes
-            # (in multi-process run?)
             direc = self._output_dir + '/mask'
             _mkdir(direc)
-            # direc = self._output_dir
             self._make_mask()
             for i in self.mask.keys():
                 if 'NO_SAVE' in self._mask[i]:
@@ -111,12 +108,6 @@ class SETools(object):
                 self.save_mask(self.mask[i], file_name)
 
         if len(self._plot) != 0:
-            # MKDEBUG new, prevent to create directory, somehow this causes error sometimes
-            # (in multi-process run?)
-            # if self._plot_output_dir:
-            #     direc = self._plot_output_dir
-            # else:
-            # Depreciated, should be removed, no mkdir here
             direc = self._output_dir + '/plot'
             _mkdir(direc)
             self._make_plot()
@@ -136,24 +127,22 @@ class SETools(object):
             direc = self._output_dir + '/rand_split'
             _mkdir(direc)
             self._make_rand_split()
-            for i in self.rand_split.keys():
-                output_dir = direc + '/' + i + '_'
-                self.save_rand_split(self.rand_split[i], output_dir, file_number)
 
-        # if len(self._flag_split) != 0:
-        #     direc = self._output_dir + '/flag_split'
-        #     _mkdir(direc)
-        #     self._make_flag_split()
-        #     for i in self.flag_mask_dict.keys():
-        #         output_path = direc + '/' + self._flag_split.keys()[0] + '_flag_' + i + file_number + '.fits'
-        #         self.save_flag_split(self.flag_mask_dict[i], output_path)
+            for sample_type in self.rand_split.keys():
+                empty_found = False
+                for ratio in self.rand_split[sample_type].keys():
+                    if not empty_found and len(self.rand_split[sample_type][ratio]) == 0:
+                        empty_found = True
+                if empty_found:
+                    w_log.info('At least one random-split catalogue is empty,'
+                               'no random sub-samples written for sample_type={}'.format(sample_type))
+                    continue
+
+                print('MKDEBUG process sample_type={}, #self.rand_split[sample_type]={}'.format(sample_type, len(self.rand_split[sample_type])))
+                output_dir = direc + '/' + sample_type + '_'
+                self.save_rand_split(self.rand_split[sample_type], output_dir, file_number)
 
         if len(self._stat) != 0:
-            # MKDEBUG new, prevent to create directory, somehow this causes error sometimes
-            # (in multi-process run?)
-            # if self._stat_output_dir:
-            #     direc = self._stat_output_dir
-            # else:
             direc = self._output_dir + '/stat'
             _mkdir(direc)
             self._make_stat()
@@ -408,32 +397,6 @@ class SETools(object):
             rand_split_file = sc.FITSCatalog(output_path + i + file_number + '.fits', open_mode=sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog=(self._cat_filepath is not None))
             rand_split_file.save_as_fits(data=data[rand_split[i]], ext_name=ext_name, sex_cat_path=self._cat_filepath)
 
-    # def save_flag_split(self, flag_split, output_path, ext_name='LDAC_OBJECTS'):
-    #     """Save flag splitted catalogs
-
-    #     Save catalogs following the flag split specified.
-
-    #     Parameters
-    #     ----------
-    #     flag_split : dict
-    #         Dictionary containing the indices for the split and mask to apply
-    #     output_path : str
-    #         Path of the output file
-    #     ext_name : str
-    #         Name of the extension where data are stored
-
-    #     """
-
-    #     if flag_split is None:
-    #         raise ValueError('flag_split not provided')
-
-    #     if output_path is None:
-    #         raise ValueError('output path not provided')
-
-    #     data = self._data[flag_split]
-    #     flag_split_file = sc.FITSCatalog(output_path, open_mode= sc.BaseCatalog.OpenMode.ReadWrite, SEx_catalog= (self._cat_filepath is not None))
-    #     flag_split_file.save_as_fits(data=data , ext_name=ext_name, sex_cat_path=self._cat_filepath)
-
     def save_stat(self, stat, output_path):
         """Save statistics
 
@@ -601,28 +564,6 @@ class SETools(object):
             self.rand_split[i]['ratio_{0}'.format(int(ratio * 100))] = mask_ratio
             self.rand_split[i]['ratio_{0}'.format(100 - int(ratio * 100))] = mask_left
 
-    # def _make_flag_split(self):
-    #     """Make flag split
-
-    #     This function create masks based on flags provided as a numpy extra file.
-
-    #     """
-
-    #     if len(self._flag_split) == 0:
-    #         return None
-
-    #     if self._extra_file is None:
-    #         raise ValueError('An extra numpy file containing the flags has to provide for the flag split.')
-
-    #     try:
-    #         flags = np.load(self._extra_file, allow_pickle=True)
-    #     except:
-    #         raise ValueError("Can't open extra file : {}".format(self._extra_file))
-
-    #     self.flag_mask_dict = {}
-    #     for j in set(flags):
-    #         self.flag_mask_dict[str(j)] = np.where(flags == j)
-
     def _make_stat(self):
         """Make statistics
 
@@ -685,19 +626,12 @@ class SEPlot(object):
 
         if self._plot['TYPE']['0'] in ['plot', 'PLOT']:
             self._check_key_for_plot(['X', 'Y'])
-            # MKDEBUG: Following lines have been replaced by subroutine
-            # if ('X' not in self._plot.keys()) | ('Y' not in self._plot.keys()):
-            # raise ValueError('X and/or Y not provided')
             self._make_plot()
         elif self._plot['TYPE']['0'] in ['scatter', 'SCATTER']:
             self._check_key_for_plot(['X', 'Y'])
-            # if ('X' not in self._plot.keys()) | ('Y' not in self._plot.keys()):
-            # raise ValueError('X and/or Y not provided')
             self._make_scatter()
         elif self._plot['TYPE']['0'] in ['histogram', 'hist', 'HISTOGRAM', 'HIST']:
             self._check_key_for_plot(['Y'])
-            # if 'Y' not in self._plot.keys():
-            # raise ValueError('Y not provided')
             self._make_hist()
         else:
             ValueError('Type : {} not available'.format(self._plot['TYPE']['0']))
