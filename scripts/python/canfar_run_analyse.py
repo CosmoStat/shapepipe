@@ -73,7 +73,7 @@ def output(status):
     print('## Issues')
     n_issue = 0
     for tile_num in sorted(status.keys()):
-        if status[tile_num][0] == res_noout or status[tile_num][0] == res_noout:
+        if status[tile_num][0] == res_noout or status[tile_num][0] == res_unk:
             print('   ', tile_num, status[tile_num], res_wait)
             n_issue = n_issue + 1
     if n_issue == 0:
@@ -84,7 +84,7 @@ def output(status):
     print('# Nb: status (code)') 
     for s in hist:
         #print('{:2d}, {}: {}'.format(int(s[0]), s[1], hist[s]))
-        print('{:4d}: {} ({})'.format(hist[s], s[1], int(s[0])))
+        print('{:6d}: {} ({})'.format(hist[s], s[1], int(s[0])))
         #print(hist[s], s)
 
 
