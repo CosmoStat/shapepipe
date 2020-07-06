@@ -60,7 +60,7 @@ def interpsfex(dotpsfpath, pos, thresh_star, thresh_chi2):
     """
 
 
-    if not os.path.exist(dotpsfpath):
+    if not os.path.exists(dotpsfpath):
         return FILE_NOT_FOUND
 
     # read PSF model and extract basis and polynomial degree and scale position
