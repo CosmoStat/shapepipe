@@ -16,8 +16,9 @@ https://github.com/esheldon/psfex
 """
 
 import numpy as np
-# import psfex
 import re
+import os
+
 from astropy.io import fits
 
 try:
@@ -34,6 +35,7 @@ from sqlitedict import SqliteDict
 
 NOT_ENOUGH_STARS = 'Fail_stars'
 BAD_CHI2 = 'Fail_chi2'
+FILE_NOT_FOUND = 'File_not_found'
 
 
 def interpsfex(dotpsfpath, pos, thresh_star, thresh_chi2):
@@ -56,6 +58,11 @@ def interpsfex(dotpsfpath, pos, thresh_star, thresh_chi2):
             Each row is the PSF imagette at the corresponding asked position.
 
     """
+
+
+    if not os.path.exist(dotpsfpath):
+        return FILE_NOT_FOUND
+
     # read PSF model and extract basis and polynomial degree and scale position
     PSF_model = fits.open(dotpsfpath)[1]
 
@@ -172,6 +179,8 @@ class PSFExInterpolator(object):
         elif isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
             self._w_log.info('Bad chi2 for the psf model'
                              ' in the file {}.'.format(self._dotpsf_path))
+        elif isinstance(self.interp_PSFs, str) and self.interp_PSFs == FILE_NOT_FOUND:
+            self._w_log.info('Psf model file {} not found.'.format(self._dotpsf_path))
         else:
             if self._compute_shape:
                 self._get_psfshapes()
@@ -274,6 +283,8 @@ class PSFExInterpolator(object):
         elif isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
             self._w_log.info('Bad chi2 for the psf model'
                              ' in the file {}.'.format(self._dotpsf_path))
+        elif isinstance(self.interp_PSFs, str) and self.interp_PSFs == FILE_NOT_FOUND:
+            self._w_log.info('Psf model file {} not found.'.format(self._dotpsf_path))
         else:
             star_cat = sc.FITSCatalog(self._galcat_path, SEx_catalog=True)
             star_cat.open()
@@ -447,6 +458,10 @@ class PSFExInterpolator(object):
                                      ' {} of the exposure {}. Object inside'
                                      ' this ccd will lose an epoch.'.format(ccd, exp_name))
                     continue
+                if isinstance(self.interp_PSFs, str) and self.interp_PSFs == FILE_NOT_FOUND:
+                    self._w_log.info('Psf model file {} not found.'
+                                     ' Object inside this ccd will lose an epoch'.
+                                     format(self._dotpsf_path))
 
                 if array_psf is None:
                     array_psf = np.copy(self.interp_PSFs)
