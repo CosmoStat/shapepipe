@@ -106,14 +106,6 @@ FLAG_TILING
 # magnitude, mainly for plots
 MAG_AUTO
 
-# flux and error from shape measurement
-NGMIX_FLUX_NOSHEAR
-NGMIX_FLUX_ERR_NOSHEAR
-
-# galaxy size from shape measurement
-NGMIX_T_NOSHEAR
-GALSIM_GAL_SIGMA_NOSHEAR
-
 # PSF size measured on original image
 NGMIX_T_PSFo_NOSHEAR
 GALSIM_PSF_SIGMA_ORIGINAL_PSF

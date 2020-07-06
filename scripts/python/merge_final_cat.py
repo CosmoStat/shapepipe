@@ -165,6 +165,20 @@ def read_param_file(path, verbose=False):
             print('Copying all columns', end='')
         print(' into final catalogue')
 
+    # Check for multiples
+    multiples = []
+    for param in param_list:
+        if param_list.count(param) > 1:
+            multiples.append(param)
+
+    if len(multiples) > 0:
+        print('The following parameters are more than one times '
+              'in the parameter file: ', end='')
+        for m in multiples:
+            print(m, end=' ')
+        print()
+        raise ValueError('Multiple identical keys found')
+
     return param_list
                             
 
