@@ -70,10 +70,20 @@ def mccd_rca_fit(starcat, rcainst_kw, rcafit_kw, output_dir, file_number_string,
     # SNR treatment
     try:
         SNRs = starcat[2].data['SNR_WIN_LIST']
-        SNR_weights =  SNRs/np.median(SNRs)             # Strategy N5
-        # SNR_weights[SNRs<50] = SNR_weights[SNRs<50]/10. #
-        SNR_weights[SNR_weights>2.] = 2.
-        SNR_weights[SNR_weights<0.1] = 0.1 # [TL] 0.01
+        # SNR strategy N6
+        max_snr_w = 2.0
+        min_snr_w = 0.25
+        SNR_weights = SNRs/(np.median(SNRs) + SNRs)
+        SNR_weights/=np.max(SNR_weights)
+        SNR_weights*=max_val
+        SNR_weights[SNR_weights<min_val] =min_val
+
+        # # Strategy N5
+        # SNR_weights =  SNRs/np.median(SNRs)
+        # # SNR_weights[SNRs<50] = SNR_weights[SNRs<50]/10. #
+        # SNR_weights[SNR_weights>2.] = 2.
+        # SNR_weights[SNR_weights<0.1] = 0.1 # [TL] 0.01
+
         SNR_weight_list = [SNR_weights[my_ccd_list==ccd] for ccd in ccd_unique_list]
     except:
         SNR_weight_list = None
