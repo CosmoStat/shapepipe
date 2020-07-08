@@ -75,8 +75,8 @@ def mccd_rca_fit(starcat, rcainst_kw, rcafit_kw, output_dir, file_number_string,
         min_snr_w = 0.25
         SNR_weights = SNRs/(np.median(SNRs) + SNRs)
         SNR_weights/=np.max(SNR_weights)
-        SNR_weights*=max_val
-        SNR_weights[SNR_weights<min_val] =min_val
+        SNR_weights*=max_snr_w
+        SNR_weights[SNR_weights<min_snr_w] =min_snr_w
 
         # # Strategy N5
         # SNR_weights =  SNRs/np.median(SNRs)
