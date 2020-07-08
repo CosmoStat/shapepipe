@@ -75,10 +75,12 @@ def mccd_preprocessing_runner(input_file_list, run_dirs, file_number_string,
             catalog_id = catalog_ids[it]
             star_list, pos_list, mask_list, ccd_list, SNR_list, RA_list, DEC_list = mccd_inputs.get_inputs(catalog_id)
             print_fun = lambda x : w_log.info(x)
+            # for ra_ in RA_list:
+            #     print_fun('mccd_preprocessing: ra_.shape');print_fun(ra_.shape) 
             star_list, pos_list, mask_list, ccd_list, SNR_list, RA_list, DEC_list, _ = mccd_inputs.outlier_rejection(star_list, pos_list,
                                                                                                 mask_list, ccd_list,
                                                                                                 SNR_list, RA_list, DEC_list,
-                                                                                                shape_std_max=5., print_fun=print_fun)
+                                                                                                shape_std_max=7., print_fun=print_fun)
 
             mccd_star_list = []
             mccd_pos_list = []
