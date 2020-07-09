@@ -38,17 +38,37 @@ def get_gauss_2D(sigma, center=(0, 0), shape=(51, 51)):
     return np.exp(-(((x-center[0])**2. + (y-center[1])**2.))/(2. * sigma**2.)) / (sigma**2. * 2. * np.pi)
 
 
-def get_flux_err(galsim_shape, gal_weight, shape=(51, 51)):
+def get_flux_err(galsim_shape, gal_weight, gain, shape=(51, 51)):
     """
     """
 
     sig = galsim_shape.moments_sigma
+    flux = galsim_shape.moments_amp
     g1 = galsim_shape.observed_shape.g1
     g2 = galsim_shape.observed_shape.g2
 
     win = galsim.Gaussian(sigma=sig).shear(g1=g1, g2=g2).drawImage(nx=shape[0], ny=shape[1]).array
 
-    return np.sum(win**2. / gal_weight)
+    err = np.sqrt(np.sum(win**2. / gal_weight) + flux/gain)
+    if not np.isfinite(err):
+        err = -1
+
+    return err
+
+
+def get_tile_gain(header_list):
+    """
+    """
+
+    for line in header_list:
+        tmp = re.split('=|/', line.replace(' ', ''))
+        if 'GAIN' in tmp[0]: 
+            tile_gain = float(tmp[1].replace("'", ""))
+            break
+    
+    return tile_gain
+
+
 
 
 def get_wcs_from_sexcat(header_list):
@@ -197,7 +217,7 @@ def stack_psfs(tile_loc_wcs, psfs, psfs_sigma, weights, loc_wcs, headers):
         gauss_img = get_gauss_2D(psfs_sigma[i], center=(cx, cy))
         # w = np.average(weights[i], weights=gauss_img)
         # w2 = np.sum(weights[i]*gauss_img)/
-        f = 1./headers['FSCALE']**2.
+        f = 1./headers[i]['FSCALE']**2.
         w = np.sum(weights[i]*f*gauss_img)/np.sum(gauss_img[np.where(weights[i] != 0)])
         # w_old = np.mean(weights[i][cx-3:cx+3, cy-3:cy+3])
         # print("old : {} | new : {} | new2 : {}".format(w_old, w, w2))
@@ -306,7 +326,7 @@ def make_metacal(gal_vign, psf_vign, weight_vign, tile_jacob, option_dict):
     return obs_out
 
 
-def do_galsim_shapes(gal, gal_weight, gal_sig, psfs, tile_loc_wcs, tile_jacob, loc_wcs, psfs_sigma, weights, flags, headers, pixel_scale, do_metacal):
+def do_galsim_shapes(gal, gal_weight, gal_sig, psfs, tile_loc_wcs, tile_jacob, loc_wcs, psfs_sigma, weights, flags, headers, pixel_scale, tile_gain, do_metacal):
     """ Do ngmix metacal
 
     Do the metacalibration on a multi-epoch object and return the join shape
@@ -390,9 +410,10 @@ def do_galsim_shapes(gal, gal_weight, gal_sig, psfs, tile_loc_wcs, tile_jacob, l
                                                     weight=g_weight,
                                                     badpix=g_flag,
                                                     strict=False)
-            res_gal[key].moments_amp_err = get_flux_err(res_gal[key], gal_weight)
+            res_gal[key].moments_amp_err = get_flux_err(res_gal[key], gal_weight, tile_gain)
         res_gal['original_psf'] = galsim.hsm.FindAdaptiveMom(g_psf,
                                                              strict=False)
+        res_gal['original_psf'].moments_amp_err = get_flux_err(res_gal[key], gal_weight, tile_gain)
     else:
         g_gal = galsim.Image(gal, scale=pixel_scale)
         res_gal['classic'] = galsim.hsm.EstimateShear(g_gal,
@@ -428,6 +449,8 @@ def compile_results(results, ZP, do_metacal, w_log):
                 'gal_sigma',
                 'gal_resolution',
                 'gal_flag',
+                'gal_flux', 'gal_flux_err',
+                'gal_mag', 'gal_mag_err',
                 'psf_g1', 'psf_g2', 'psf_sigma', 'psf_vignet', 'gal_vignet']
 
     if do_metacal:
@@ -446,7 +469,7 @@ def compile_results(results, ZP, do_metacal, w_log):
                                                w_log)
 
             mag = -2.5 * np.log10(results[i][key].moments_amp) + ZP
-            mag_err = np.abs(-2.5 * np.sqrt(results[i][key].moments_amp_err) / (results[i][key].moments_amp * np.log(10)))
+            mag_err = np.abs(-2.5 * results[i][key].moments_amp_err / (results[i][key].moments_amp * np.log(10)))
 
             output_dict[key]['gal_g1'].append(shapes_check[0])
             output_dict[key]['gal_g2'].append(shapes_check[1])
@@ -458,7 +481,7 @@ def compile_results(results, ZP, do_metacal, w_log):
             output_dict[key]['gal_flux'].append(results[i][key].moments_amp)
             output_dict[key]['gal_flux_err'].append(results[i][key].moments_amp_err)
             output_dict[key]['gal_mag'].append(mag)
-            output_dict[key]['gal_mag'].append(mag_err)
+            output_dict[key]['gal_mag_err'].append(mag_err)
             output_dict[key]['gal_flag'].append(shapes_check[2])
             output_dict[key]['gal_resolution'].append(results[i][key].resolution_factor)
             output_dict[key]['psf_g1'].append(results[i][key].psf_shape.g1)
@@ -532,6 +555,7 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
     tile_n_epoch = fits.getdata(tile_cat_path, 2, memmap=True)['N_EPOCH']
     tile_fwhm = fits.getdata(tile_cat_path, 2, memmap=True)['FWHM_IMAGE']
     tile_wcs = get_wcs_from_sexcat(fits.getdata(tile_cat_path, 1, memmap=True)[0][0])
+    tile_gain = get_tile_gain(fits.getdata(tile_cat_path, 1, memmap=True)[0][0])
 
     tile_weight = fits.getdata(tile_weight_path, 2, memmap=True)['VIGNET']
     bkg_vign_cat = SqliteDict(bkg_vignet_path)
@@ -595,7 +619,7 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
                                               tile_ra[i_tile],
                                               tile_dec[i_tile],
                                               tile_vign_tmp.shape))
-            headers.append(f_wcs_file[exp_name][int(ccd_n)]['header'])
+            headers.append(fits.Header.fromstring(f_wcs_file[exp_name][int(ccd_n)]['header']))
 
         if len(psf_vign) != tile_n_epoch[i_tile]:
             continue
@@ -618,9 +642,10 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
                                    flag_vign,
                                    headers,
                                    0.187,
+                                   tile_gain,
                                    do_metacal)
         except Exception as ee:
-            w_log.info('ngmix fail on object {}\nMessage : {}'.format(id_tmp, ee))
+            w_log.info('Galsim fail on object {}\nMessage : {}'.format(id_tmp, ee))
             continue
 
         if res == 'Error':
@@ -648,7 +673,7 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
                version='0.0.1',
                file_pattern=['tile_sexcat', 'weight', 'image', 'exp_background', 'galaxy_psf', 'weight', 'flag'],
                file_ext=['.fits', '.fits', '.sqlite', '.sqlite', '.sqlite', '.sqlite', '.sqlite'],
-               depends=['numpy', 'ngmix', 'galsim'])
+               depends=['numpy', 'ngmix', 'galsim', 'astropy'])
 def galsim_shapes_v2_runner(input_file_list, run_dirs, file_number_string,
                             config, w_log):
 

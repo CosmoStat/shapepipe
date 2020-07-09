@@ -21,6 +21,8 @@ import ngmix
 from ngmix.observation import Observation, ObsList, MultiBandObsList
 from ngmix.fitting import LMSimple
 
+from astropy.io import fits
+
 import galsim
 
 
@@ -478,7 +480,7 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
 #     return output_dict
 
 
-def compile_results(results):
+def compile_results(results, ZP):
     """ Compile results
 
     Prepare the results of ngmix before saving.
@@ -487,6 +489,8 @@ def compile_results(results):
     ----------
     results : dict
         Dictionary containing the results of ngmix metacal.
+    ZP : float
+        Magnitude zero point.
 
     Returns
     -------
@@ -502,10 +506,15 @@ def compile_results(results):
               'g1', 'g1_err', 'g2', 'g2_err',
               'T', 'T_err', 'Tpsf', 'g1_psf', 'g2_psf',
               'flux', 'flux_err', 's2n',
+              'mag', 'mag_err',
               'flags', 'mcal_flags']
     output_dict = {k: {kk: [] for kk in names2} for k in names}
     for i in range(len(results)):
         for name in names:
+
+            mag = -2.5 * np.log10(results[i][name]['flux']) + ZP
+            mag_err = np.abs(-2.5 * results[i][name]['flux_err'] / (results[i][name]['flux'] * np.log(10)))
+
             output_dict[name]['id'].append(results[i]['obj_id'])
             output_dict[name]['n_epoch_model'].append(results[i]['n_epoch_model'])
             output_dict[name]['moments_fail'].append(results[i]['moments_fail'])
@@ -527,6 +536,8 @@ def compile_results(results):
             output_dict[name]['g2_psf'].append(results[i][name]['gpsf'][1])
             output_dict[name]['flux'].append(results[i][name]['flux'])
             output_dict[name]['flux_err'].append(results[i][name]['flux_err'])
+            output_dict[name]['mag'].append(mag)
+            output_dict[name]['mag_err'].append(mag_err)
 
             try:
                 output_dict[name]['s2n'].append(results[i][name]['s2n'])
@@ -661,15 +672,23 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             if len(np.where(v_flag_tmp != 0)[0])/(51*51) > 1/3.:
                 continue
 
+            weight_vign_tmp = weight_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET']
+
             exp_name, ccd_n = re.split('-', expccd_name_tmp)
-            jacob_tmp = get_jacob(f_wcs_file[exp_name][int(ccd_n)],
+            jacob_tmp = get_jacob(f_wcs_file[exp_name][int(ccd_n)]['WCS'],
                                   tile_ra[i_tile],
                                   tile_dec[i_tile])
+            
+            header_tmp = fits.Header.fromstring(f_wcs_file[exp_name][int(ccd_n)]['header'])
+            Fscale = header_tmp['FSCALE']
 
-            gal_vign.append(gal_vign_sub_bkg)
+            gal_vign_scaled = gal_vign_sub_bkg*Fscale
+            weight_vign_scaled = weight_vign_tmp * 1/Fscale**2.
+
+            gal_vign.append(gal_vign_scaled)
             psf_vign.append(psf_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET'])
             sigma_psf.append(psf_vign_cat[str(id_tmp)][expccd_name_tmp]['SHAPES']['SIGMA_PSF_HSM'])
-            weight_vign.append(weight_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET'])
+            weight_vign.append(weight_vign_scaled)
             flag_vign.append(flag_vign_tmp)
             jacob_list.append(jacob_tmp)
 
@@ -713,12 +732,14 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
                              'galaxy_psf', 'weight', 'flag'],
                file_ext=['.fits', '.sqlite', '.sqlite', '.sqlite', '.sqlite',
                          '.sqlite'],
-               depends=['numpy', 'ngmix', 'galsim', 'sqlitedict'])
+               depends=['numpy', 'ngmix', 'galsim', 'sqlitedict', 'astropy'])
 def ngmix_runner(input_file_list, run_dirs, file_number_string,
                  config, w_log):
 
     output_name = (run_dirs['output'] + '/' + 'ngmix' +
                    file_number_string + '.fits')
+
+    ZP = config.getfloat('NGMIX_RUNNER', 'MAG_ZP')
 
     f_wcs_path = config.getexpanded('NGMIX_RUNNER', 'LOG_WCS')
 
@@ -727,7 +748,7 @@ def ngmix_runner(input_file_list, run_dirs, file_number_string,
 
     metacal_res = process(*input_file_list, f_wcs_path, w_log,
                           id_obj_min=id_obj_min, id_obj_max=id_obj_max)
-    res_dict = compile_results(metacal_res)
+    res_dict = compile_results(metacal_res, ZP)
     save_results(res_dict, output_name)
 
     return None, None
