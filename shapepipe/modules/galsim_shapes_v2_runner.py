@@ -24,14 +24,45 @@ import ngmix
 
 
 def mad(data, axis=None):
-    """
+    """ MAD
+    Compute the Median Absolute Deviation
+
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Data from which the MAD is requested
+    axis : int, None
+        On which axis the MAS has to be computed
+
+    Returns
+    -------
+    mad : float
+        Median Absolute Deviation
+
     """
 
     return np.median(np.abs(data - np.median(data, axis)), axis)*1.4826
 
 
 def get_gauss_2D(sigma, center=(0, 0), shape=(51, 51)):
-    """
+    """ Get gauss 2D
+
+    Draw a 2D gaussian normalized to unity.
+
+    Parameters
+    ----------
+    sigma : float
+        Sigma of the gaussian
+    center : tuple
+        Center of the gaussian (x0, y0)
+    shape : tuple
+        Shape of the outputed image (size_X, size_Y)
+
+    Returns
+    -------
+    gauss : numpy.ndarray
+        2D gaussian
+
     """
 
     x, y = np.meshgrid(np.linspace(0, shape[0]-1, shape[0]), np.linspace(0, shape[1]-1, shape[1]))
@@ -39,7 +70,37 @@ def get_gauss_2D(sigma, center=(0, 0), shape=(51, 51)):
 
 
 def get_flux_err(galsim_shape, gal_weight, gain, shape=(51, 51)):
-    """
+    r""" Get flux error
+
+    Compute the error on the flux estimation using the windowed moments.
+    Using the following formula:
+
+    ..math::
+        flux_{err} = \sum_{i}^{N} W_{i}^{2} \sigma_{i, B} +
+                     \sum_{i}^{N} W_{i} I_{i}
+
+        flux_{err} = \sum_{i}^{N} W_{i}^{2} \sigma_{i, B} +
+                     flux
+
+    With W the moments guassian window function, sigma_{B} the background
+    noise and I the image.
+
+    Parameters
+    ----------
+    galsim_shape : galsim.hsm.ShapeData
+        Output of galsim.hsm.FindAdaptiveMom
+    gal_weight : numpy.ndarray
+        Weigth of the image. Has to be in 1/sigma**2
+    gain : float
+        Gain of the image in e-/ADU
+    shape : tuple
+        Shape of the image (size_X, size_Y)
+
+    Returns
+    -------
+    err : float
+        Standard deviation of the flux
+
     """
 
     sig = galsim_shape.moments_sigma
@@ -57,18 +118,29 @@ def get_flux_err(galsim_shape, gal_weight, gain, shape=(51, 51)):
 
 
 def get_tile_gain(header_list):
-    """
+    """ Get tile gain
+
+    Read the image header from SExtractor catalog and return the gain value.
+
+    Parameters
+    ----------
+    header_list : list
+        List containing all the header parameters.
+
+    Returns
+    -------
+    tile_gain : float
+        Value of the gain for the image
+
     """
 
     for line in header_list:
         tmp = re.split('=|/', line.replace(' ', ''))
-        if 'GAIN' in tmp[0]: 
+        if 'GAIN' in tmp[0]:
             tile_gain = float(tmp[1].replace("'", ""))
             break
-    
+
     return tile_gain
-
-
 
 
 def get_wcs_from_sexcat(header_list):
@@ -85,6 +157,7 @@ def get_wcs_from_sexcat(header_list):
     -------
     new_wcs : astropy.wcs.WCS
         WCS object.
+
     """
 
     keys = ['CTYPE1', 'CUNIT1', 'CRVAL1', 'CRPIX1', 'CD1_1', 'CD1_2',

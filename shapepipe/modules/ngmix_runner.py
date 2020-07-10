@@ -678,7 +678,7 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             jacob_tmp = get_jacob(f_wcs_file[exp_name][int(ccd_n)]['WCS'],
                                   tile_ra[i_tile],
                                   tile_dec[i_tile])
-            
+
             header_tmp = fits.Header.fromstring(f_wcs_file[exp_name][int(ccd_n)]['header'])
             Fscale = header_tmp['FSCALE']
 
