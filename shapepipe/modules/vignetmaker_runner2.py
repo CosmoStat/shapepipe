@@ -218,7 +218,7 @@ class vignetmaker(object):
                             exp_name + '-' + str(ccd) + '.fits')
                 ind_obj = np.where(cat.get_data(hdu_index)['CCD_N'] == ccd)[0]
                 obj_id = all_id[ind_obj]
-                pos = np.array(self._f_wcs_file[exp_name][ccd].all_world2pix(self._pos[:, 1][ind_obj], self._pos[:, 0][ind_obj], 1)).T
+                pos = np.array(self._f_wcs_file[exp_name][ccd]['WCS'].all_world2pix(self._pos[:, 1][ind_obj], self._pos[:, 0][ind_obj], 1)).T
                 pos[:, [0, 1]] = pos[:, [1, 0]]
 
                 tmp_vign = self._get_stamp(img_path, pos-1, self._rad)

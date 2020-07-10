@@ -157,7 +157,7 @@ def remove_common_elements(final_cat_file, tiles_id_file, pos_param=['XWIN_WORLD
             First 3 numbers in the tile name.
         yyy : int
             Last 3 numbers in the tile name.
-        
+
         Returns
         -------
         ra, dec : float, float
@@ -186,7 +186,7 @@ def remove_common_elements(final_cat_file, tiles_id_file, pos_param=['XWIN_WORLD
         """
 
         ra, dec = get_ra_dec(xxx, yyy)
-        
+
         w = WCS(naxis=2)
         w.wcs.crval = np.array([ra, dec])
         w.wcs.crpix = np.array([5000, 5000])
@@ -195,7 +195,7 @@ def remove_common_elements(final_cat_file, tiles_id_file, pos_param=['XWIN_WORLD
         w.wcs.ctype = ['RA---TAN', 'DEC--TAN']
         w.wcs.cunit = ['deg', 'deg']
         w._naxis = [10000, 10000]
-        
+
         return w
 
     final_cat_file.open()
@@ -271,7 +271,9 @@ def save_ngmix_data(final_cat_file, ngmix_cat_path):
     output_dict = {**output_dict, **{'NGMIX_Tpsf_{}'.format(i): np.zeros(len(obj_id)) for i in keys}}
     output_dict = {**output_dict, **{'NGMIX_SNR_{}'.format(i): np.zeros(len(obj_id)) for i in keys}}
     output_dict = {**output_dict, **{'NGMIX_FLUX_{}'.format(i): np.zeros(len(obj_id)) for i in keys}}
-    output_dict = {**output_dict, **{'NGMIX_FLUX_ERR_{}'.format(i): np.zeros(len(obj_id)) for i in keys}}
+    output_dict = {**output_dict, **{'NGMIX_FLUX_ERR_{}'.format(i): np.ones(len(obj_id)) * -1 for i in keys}}
+    output_dict = {**output_dict, **{'NGMIX_MAG_{}'.format(i): np.zeros(len(obj_id)) for i in keys}}
+    output_dict = {**output_dict, **{'NGMIX_MAG_ERR_{}'.format(i): np.ones(len(obj_id)) * -1 for i in keys}}
     output_dict = {**output_dict, **{'NGMIX_FLAGS_{}'.format(i): np.ones(len(obj_id), dtype='int16') for i in keys}}
 
     output_dict = {**output_dict, **{'NGMIX_ELL_PSFo_{}'.format(i): np.ones((len(obj_id), 2)) * -10. for i in keys}}
@@ -296,6 +298,8 @@ def save_ngmix_data(final_cat_file, ngmix_cat_path):
                 output_dict['NGMIX_SNR_{}'.format(key)][i] = ngmix_cat_file.get_data(key)['s2n'][ind[0]]
                 output_dict['NGMIX_FLUX_{}'.format(key)][i] = ngmix_cat_file.get_data(key)['flux'][ind[0]]
                 output_dict['NGMIX_FLUX_ERR_{}'.format(key)][i] = ngmix_cat_file.get_data(key)['flux_err'][ind[0]]
+                output_dict['NGMIX_MAG_{}'.format(key)][i] = ngmix_cat_file.get_data(key)['mag'][ind[0]]
+                output_dict['NGMIX_MAG_ERR_{}'.format(key)][i] = ngmix_cat_file.get_data(key)['mag_err'][ind[0]]
                 output_dict['NGMIX_FLAGS_{}'.format(key)][i] = ngmix_cat_file.get_data(key)['flags'][ind[0]]
 
                 output_dict['NGMIX_ELL_PSFo_{}'.format(key)][i][0] = ngmix_cat_file.get_data(key)['g1_psfo_ngmix'][ind[0]]
@@ -344,7 +348,7 @@ def save_ngmix_mom_shapes(final_cat_file, ngmix_cat_path):
     output_dict = {**output_dict, **{'NGMIXM_Tpsf_{}'.format(i): np.zeros(len(obj_id)) for i in keys}}
     output_dict = {**output_dict, **{'NGMIXM_SNR_{}'.format(i): np.zeros(len(obj_id)) for i in keys}}
     output_dict = {**output_dict, **{'NGMIXM_FLUX_{}'.format(i): np.zeros(len(obj_id)) for i in keys}}
-    output_dict = {**output_dict, **{'NGMIXM_FLUX_ERR_{}'.format(i): np.zeros(len(obj_id)) for i in keys}}
+    output_dict = {**output_dict, **{'NGMIXM_FLUX_ERR_{}'.format(i): -1 * np.ones(len(obj_id)) for i in keys}}
     output_dict = {**output_dict, **{'NGMIXM_FLAGS_{}'.format(i): np.ones(len(obj_id), dtype='int16') for i in keys}}
 
     output_dict = {**output_dict, **{'NGMIXM_ELL_PSFo_{}'.format(i): np.ones((len(obj_id), 2)) * -10. for i in keys}}
@@ -410,6 +414,10 @@ def save_galsim_shapes(final_cat_file, galsim_cat_path):
     output_dict = {**output_dict, **{'GALSIM_GAL_SIGMA_{}'.format(i): np.zeros(len(obj_id)) for i in keys}}
     output_dict = {**output_dict, **{'GALSIM_PSF_ELL_{}'.format(i): np.ones((len(obj_id), 2)) * -10. for i in keys}}
     output_dict = {**output_dict, **{'GALSIM_PSF_SIGMA_{}'.format(i): np.zeros(len(obj_id)) for i in keys}}
+    output_dict = {**output_dict, **{'GALSIM_FLUX_{}'.format(i): np.zeros(len(obj_id)) for i in keys}}
+    output_dict = {**output_dict, **{'GALSIM_FLUX_ERR_{}'.format(i): np.ones(len(obj_id)) * -1 for i in keys}}
+    output_dict = {**output_dict, **{'GALSIM_MAG_{}'.format(i): np.zeros(len(obj_id)) for i in keys}}
+    output_dict = {**output_dict, **{'GALSIM_MAG_ERR_{}'.format(i): np.ones(len(obj_id)) * -1 for i in keys}}
     output_dict = {**output_dict, **{'GALSIM_FLAGS_{}'.format(i): np.ones(len(obj_id), dtype='int16') for i in keys}}
     output_dict = {**output_dict, **{'GALSIM_RES_{}'.format(i): np.ones(len(obj_id)) * -1. for i in keys}}
     for i, id_tmp in enumerate(obj_id):
@@ -431,6 +439,10 @@ def save_galsim_shapes(final_cat_file, galsim_cat_path):
                     output_dict['GALSIM_PSF_ELL_{}'.format(key)][i][0] = galsim_cat_file.get_data(key)['psf_g1'][ind[0]]
                     output_dict['GALSIM_PSF_ELL_{}'.format(key)][i][1] = galsim_cat_file.get_data(key)['psf_g2'][ind[0]]
                     output_dict['GALSIM_PSF_SIGMA_{}'.format(key)][i] = galsim_cat_file.get_data(key)['psf_sigma'][ind[0]]
+                    output_dict['GALSIM_FLUX_{}'.format(key)][i] = galsim_cat_file.get_data(key)['gal_flux'][ind[0]]
+                    output_dict['GALSIM_FLUX_ERR_{}'.format(key)][i] = galsim_cat_file.get_data(key)['gal_flux_err'][ind[0]]
+                    output_dict['GALSIM_MAG_{}'.format(key)][i] = galsim_cat_file.get_data(key)['gal_mag'][ind[0]]
+                    output_dict['GALSIM_MAG_ERR_{}'.format(key)][i] = galsim_cat_file.get_data(key)['gal_mag_err'][ind[0]]
                     output_dict['GALSIM_FLAGS_{}'.format(key)][i] = galsim_cat_file.get_data(key)['gal_flag'][ind[0]]
                     output_dict['GALSIM_RES_{}'.format(key)][i] = galsim_cat_file.get_data(key)['gal_resolution'][ind[0]]
 

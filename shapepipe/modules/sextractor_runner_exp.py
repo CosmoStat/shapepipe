@@ -93,7 +93,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
     for i, exp in enumerate(exp_list):
         pos_tmp = np.ones(len(obj_id), dtype='int32') * -1
         for j in range(n_hdu):
-            w = f_wcs[exp][j]
+            w = f_wcs[exp][j]['WCS']
             pix_tmp = w.all_world2pix(cat.get_data()[pos_params[0]], cat.get_data()[pos_params[1]], 0)
             ind = ((pix_tmp[0] > int(ccd_size[0])) & (pix_tmp[0] < int(ccd_size[1])) &
                    (pix_tmp[1] > int(ccd_size[2])) & (pix_tmp[1] < int(ccd_size[3])))
