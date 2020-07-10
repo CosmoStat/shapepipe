@@ -21,27 +21,7 @@ from astropy.io import fits
 from astropy.wcs import WCS
 import reproject
 import ngmix
-
-
-def mad(data, axis=None):
-    """ MAD
-    Compute the Median Absolute Deviation
-
-    Parameters
-    ----------
-    data : numpy.ndarray
-        Data from which the MAD is requested
-    axis : int, None
-        On which axis the MAS has to be computed
-
-    Returns
-    -------
-    mad : float
-        Median Absolute Deviation
-
-    """
-
-    return np.median(np.abs(data - np.median(data, axis)), axis)*1.4826
+from modopt.math.stats import sigma_mad
 
 
 def get_gauss_2D(sigma, center=(0, 0), shape=(51, 51)):
@@ -475,7 +455,7 @@ def do_galsim_shapes(gal, gal_weight, gal_sig, psfs, tile_loc_wcs, tile_jacob, l
             gal_tmp = res[key].image
             g_gal = galsim.Image(gal_tmp, scale=pixel_scale)
             g_psf_mc = galsim.Image(res[key].get_psf().image, scale=pixel_scale)
-            sky_var = mad(gal_tmp)**2.
+            sky_var = sigma_mad(gal_tmp)**2.
             res_gal[key] = galsim.hsm.EstimateShear(g_gal,
                                                     g_psf_mc,
                                                     shear_est='KSB',
