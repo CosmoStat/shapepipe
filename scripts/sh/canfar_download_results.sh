@@ -12,13 +12,13 @@ remote="vos:cfis/cosmostat/kilbinger/results"
 local="."
 
 NAMES=(
+        "final_cat"
+        "logs"
         "psfex"
         "psfexinterp_exp"
         "setools_mask"
         "setools_stat"
         "setools_plot"
-        "final_cat"
-        "logs"
      )
 
 
