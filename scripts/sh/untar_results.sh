@@ -8,12 +8,12 @@
 
 
 NAMES=(
+        "final_cat"
         "psfex"
         "psfexinterp_exp"
         "setools_mask"
         "setools_stat"
         "setools_plot"
-        "final_cat"
 	    "logs"
      )
 
@@ -22,8 +22,18 @@ NAMES=(
 for out in ${NAMES[@]}; do
     echo "$out"
     FILES=${out}_*.tgz
+    n_files=${#FILES[@]}
+    n_ok=0
+    n_fail=0
     for file in $FILES; do
-        echo " $file"
-	tar xf $file
+        #echo " $file"
+	    tar xf $file
+        res=$?
+        if [ $res == 0 ]; then
+            ((n_ok=n_ok+1))
+        else
+            ((n_fail=n_fail+1))
+        fi
     done
+    echo " $n_files tgz files, $n_ok successful untar commands, $n_fail failures"
 done

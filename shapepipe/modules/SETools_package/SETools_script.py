@@ -138,7 +138,6 @@ class SETools(object):
                                'no random sub-samples written for sample_type={}'.format(sample_type))
                     continue
 
-                print('MKDEBUG process sample_type={}, #self.rand_split[sample_type]={}'.format(sample_type, len(self.rand_split[sample_type])))
                 output_dir = direc + '/' + sample_type + '_'
                 self.save_rand_split(self.rand_split[sample_type], output_dir, file_number)
 
