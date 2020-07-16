@@ -271,8 +271,8 @@ def main(argv=None):
 
     # Read all final catalogues and merge
     count = 0
-    for i in tqdm(lpath[1:], total=len(lpath)-1):
-    #for i in lpath[1:]:
+    #for i in tqdm(lpath[1:], total=len(lpath)-1):
+    for i in lpath[1:]:
         if ('final_cat' not in i) | ('.npy' in i):
             continue
 
@@ -283,17 +283,21 @@ def main(argv=None):
             for key in d_tmp.dtype.names:
                 dd[key] = d_tmp[key]
 
-            count = count + 1
 
             #if 'TILE_ID' in d_tmp.dtype.names:
                 #dd['TILE_ID'].fill(int(''.join(re.findall('\d+', i))))
-                #d = np.concatenate((d, dd))
+
+            d = np.concatenate((d, dd))
+            count = count + 1
+            print('File \'{}\' copied'.format(i))
         except:
-            print('\nError while copying file \'{}\''.format(i))
+            print('Error while copying file \'{}\''.format(i))
             #raise
 
     # Save merged catalogue as numpy binary file
+    print('Saving final np cat')
     np.save('final_cat.npy', d)
+    print('Done')
 
     if param.verbose:
         print('{} catalog files merged with success'.format(count))
