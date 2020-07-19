@@ -48,11 +48,15 @@ for n in "${!PATTERNS[@]}"; do
     echo $n $pattern $dir
     mkdir -p $dir
     FILES=(`find $INPUT -name "$pattern"`)
+    n_files=${#FILES[@]}
+    i=0
     for file in ${FILES[@]}; do
 	    target=$file
 	    link_name=$dir/`basename $file`
 	    link_s $target $link_name
+        ((i=i+1))
     done
+    echo " $n_files target files, $i links created/skipped"
 done
 
 # Update log file

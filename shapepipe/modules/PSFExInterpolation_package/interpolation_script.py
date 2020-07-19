@@ -462,6 +462,7 @@ class PSFExInterpolator(object):
                     self._w_log.info('Psf model file {} not found.'
                                      ' Object inside this ccd will lose an epoch'.
                                      format(self._dotpsf_path))
+                    continue
 
                 if array_psf is None:
                     array_psf = np.copy(self.interp_PSFs)

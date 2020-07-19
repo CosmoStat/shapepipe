@@ -52,7 +52,7 @@ function finalize_job_file() {
    echo "request_cpus   = 8" >> $job_file
 
    # Cannot be larger than VM available RAM
-   echo "request_memory = 19G" >> $job_file
+   #echo "request_memory = 19G" >> $job_file
    echo "request_disk   = 100G" >> $job_file
 
    echo >> $job_file
@@ -92,13 +92,6 @@ fi
 tile_ID_list=$1
 image=$2
 
-if [ $dry_run == 0 ]; then
-   # TODO: Check whether the following directories exist
-   # (e.g. error msg of vmkdir), remove previous run
-   # results
-   vmkdir vos:cfis/cosmostat/kilbinger/results
-fi
-
 
 # Create job file
 job_file="job_tile.sh"
@@ -120,7 +113,7 @@ done < $tile_ID_list
  echo ")" >> $job_file
 
 # Submit
-cmd="canfar_submit $job_file $image c8-90gb-186"
+cmd="canfar_submit $job_file $image c8-30gb-186"
 echo "Running $cmd$dry_str"
 if [ $dry_run == 0 ]; then
    $cmd
