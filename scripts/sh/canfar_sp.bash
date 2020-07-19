@@ -76,7 +76,7 @@ fi
 
 # VCP options
 # VCP without "vflag" to avoid output to stderr
-export VCP_QUICK=1
+export VCP_QUICK=0
 
 if [ $VCP_QUICK == 1 ]; then
    qflag="--quick"
