@@ -46,9 +46,9 @@ cdsclient_bin="findgsc2.2"
 cdsclient_version=FALSE
 
 # mpi4py Package
-mpi_url="https://github.com/mpi4py/mpi4py/archive/3.0.2.tar.gz"
-mpi_tar="3.0.2.tar.gz"
-mpi_dir="mpi4py-3.0.2"
+mpi_url="https://github.com/mpi4py/mpi4py/archive/3.0.3.tar.gz"
+mpi_tar="3.0.3.tar.gz"
+mpi_dir="mpi4py-3.0.3"
 mpi_bin="mpiexec"
 mpi_version=TRUE
 
@@ -59,7 +59,7 @@ PY_SCRIPTS=(cfis_weight_format.py
          create_star_cat.py
          merge_star_cat.py
          MeanShapes.py
-)        
+)
 
 # Divider line
 line="########################################################################"
@@ -350,7 +350,7 @@ uninstall() {
 
 # Function to activate ShapePipe environment
 activate_shapepipe() {
-  source activate $ENV_NAME || source $CONDA_PREFIX_1/etc/profile.d/conda.sh && conda activate $ENV_NAME
+  source activate $ENV_NAME || ( source $CONDA_PREFIX_1/etc/profile.d/conda.sh && conda activate $ENV_NAME )
   if [ "$?" -eq 0 ]
   then
     echo -ne "Activating Conda environment ${CYAN}$CONDA_PREFIX${NC}\n"
