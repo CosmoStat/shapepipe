@@ -8,7 +8,7 @@
 
 
 ## Paths
-remote="vos:cfis/cosmostat/kilbinger/results"
+remote="vos:cfis/cosmostat/kilbinger/results_lsb"
 local="."
 
 NAMES=(
