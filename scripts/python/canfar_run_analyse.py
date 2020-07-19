@@ -141,11 +141,16 @@ res_unk = -1
 res_wait = -2
 res_subm = -3
 res_abort = -4
+res_err_mod = -5
 
 res_noout = 1
 
 # Failures
-fail_vos_not_found = -10
+fail_unknown = -10
+fail_vos_not_found = -11
+fail_corrupt_fits = -12
+fail_time_out = -13
+fail_res_err_mod = -14
 
 
 def get_status(tile_num):
@@ -178,13 +183,39 @@ def get_status(tile_num):
             if final_cat_found == False:
                 status = res_unk, 'Failed before final_cat'
 
-                # Look for detailed error source
+                # Look for known errors in error log file
                 with open(err_name) as err_file:
                     for line_err in err_file:
                         mm = re.search('NodeNotFound', line_err)
                         if mm:
                             status = status + (fail_vos_not_found, 'vos file not found')
                             break
+                        mm = re.search('Empty or corrupt FITS file', line_err)
+                        if mm:
+                            status = status + (fail_corrupt_fits, 'corrupt input FITS file')
+                            break
+                        mm = re.search('ERROR:: HTTPSConnectionPool.*Max retries', line_err)
+                        if mm:
+                            status = status + (fail_time_out, 'vos time out')
+                            break
+
+                if len(status) == 2:
+
+                    # Look for some errors in output file (pipeline error message)
+                    module_last = None
+                    with open(out_name) as out_file:
+                        for line in out_file:
+                            mmm = re.search('\- Module: (.*)', line)
+                            if mmm:
+                                module_last = mmm[1]
+                            mmm = re.search('A total of (\d+) errors were recorded.', line)
+                            if mmm and int(mmm[1]) != 0:
+                                status = status + (fail_res_err_mod, '{} errors recorded, last module was {}'.format(mmm[1], module_last))
+                                break
+
+                if len(status) == 2:
+                    status = status + (fail_unknown, 'unknown error')
+
 
         else:
             log_file = open(log_name)
@@ -209,7 +240,7 @@ def output(status):
     n_issue = 0
     for tile_num in sorted(status.keys()):
         if status[tile_num][0] == res_noout or status[tile_num][0] == res_unk:
-            print('   ', tile_num, status[tile_num], res_wait)
+            print('   ', tile_num, status[tile_num])
             n_issue = n_issue + 1
     if n_issue == 0:
         print('   none')
@@ -219,7 +250,10 @@ def output(status):
     print('# Nb: status (code)') 
     for s in hist:
         #print('{:2d}, {}: {}'.format(int(s[0]), s[1], hist[s]))
-        print('{:6d}: {} ({})'.format(hist[s], s[1], int(s[0])))
+        print('{:6d}: {} ({})'.format(hist[s], s[1], int(s[0])), end='')
+        if len(s) == 4:
+            print('; {} ({})'.format(s[3], int(s[2])), end='')
+        print()
         #print(hist[s], s)
 
 
