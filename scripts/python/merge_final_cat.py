@@ -144,6 +144,20 @@ def update_param(p_def, options):
 
 
 def read_param_file(path, verbose=False):
+    """Return parameter list read from file
+
+    Parameters
+    ----------
+    path: string
+        input file name
+    verbose: bool, optional, default=False
+        verbose output if True
+
+    Returns
+    -------
+    param_list: list of strings
+        parameter names
+    """
 
     param_list = []
 
@@ -165,12 +179,42 @@ def read_param_file(path, verbose=False):
             print('Copying all columns', end='')
         print(' into final catalogue')
 
+    # Check for multiples
+    multiples = []
+    for param in param_list:
+        if param_list.count(param) > 1:
+            multiples.append(param)
+
+    if len(multiples) > 0:
+        print('The following parameters are more than one times '
+              'in the parameter file: ', end='')
+        for m in multiples:
+            print(m, end=' ')
+        print()
+        raise ValueError('Multiple identical keys found')
+
     return param_list
                             
 
 def get_data(path, hdu_num, param_list):
+    """Return data of selected columns from FITS file.
 
-    #d = fits.getdata(path, hdu_num)
+    Parameters
+    ----------
+    path: string
+        input file name
+    hdu_num: int
+        HDU number
+    param_list: list of strings
+        parameters to be extracted. If none, copy
+        all columns
+
+    Returns
+    -------
+    data: numpy array
+        data columns
+    """
+
     hdu_list = fits.open(path)
     hdu = hdu_list[hdu_num]
 
@@ -209,6 +253,9 @@ def main(argv=None):
     for this_l in l:
         lpath.append(os.path.join(path, this_l))
 
+    if param.verbose:
+        print('{} final catalog files found'.format(len(lpath)))
+
     # Determine number of columns and keys
     d_tmp = get_data(lpath[0], 1, param.param_list)
 
@@ -219,31 +266,43 @@ def main(argv=None):
     #new_dt = np.dtype(d_tmp.dtype.descr + [('TILE_ID', '>i4')])
     #d = np.zeros(d_tmp.shape, dtype=new_dt)
 
-    if 'TILE_ID' in d_tmp.dtype.names:
-        d['TILE_ID'].fill(int(''.join(re.findall('\d+', l[0]))))
+    #if 'TILE_ID' in d_tmp.dtype.names:
+        #d['TILE_ID'].fill(int(''.join(re.findall('\d+', l[0]))))
 
     # Read all final catalogues and merge
-    for i in tqdm(lpath[1:], total=len(lpath)-1):
-    #for i in lpath[1:]:
+    count = 0
+    #for i in tqdm(lpath[1:], total=len(lpath)-1):
+    for i in lpath[1:]:
         if ('final_cat' not in i) | ('.npy' in i):
             continue
 
-        #new_dt = np.dtype(d_tmp.dtype.descr + [('TILE_ID', '>i4')])
-        #dd = np.zeros(d_tmp.shape, dtype=new_dt)
+        try:
+            d_tmp = get_data(i, 1, param.param_list)
 
-        #d_tmp = fits.getdata(i, 1)
-        d_tmp = get_data(i, 1, param.param_list)
+            dd = np.zeros(d_tmp.shape, dtype=d_tmp.dtype)
+            for key in d_tmp.dtype.names:
+                dd[key] = d_tmp[key]
 
-        dd = np.zeros(d_tmp.shape, dtype=d_tmp.dtype)
-        for key in d_tmp.dtype.names:
-            dd[key] = d_tmp[key]
 
-        if 'TILE_ID' in d_tmp.dtype.names:
-            dd['TILE_ID'].fill(int(''.join(re.findall('\d+', i))))
+            #if 'TILE_ID' in d_tmp.dtype.names:
+                #dd['TILE_ID'].fill(int(''.join(re.findall('\d+', i))))
+
             d = np.concatenate((d, dd))
+            count = count + 1
+            print('File \'{}\' copied'.format(i))
+        except:
+            print('Error while copying file \'{}\''.format(i))
+            #raise
 
     # Save merged catalogue as numpy binary file
+    print('Saving final np cat')
     np.save('final_cat.npy', d)
+    print('Done')
+
+    if param.verbose:
+        print('{} catalog files merged with success'.format(count))
+
+    return 0
 
 
 if __name__ == "__main__":

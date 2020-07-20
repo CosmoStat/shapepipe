@@ -124,8 +124,9 @@ class GetImages(object):
         if self._copy == 'vos':
             sys.argv = []
             sys.argv.append('vcp')
-            for opt in self._options.split(' '):
-                sys.argv.append(opt)
+            if self._options:
+                for opt in self._options.split(' '):
+                    sys.argv.append(opt)
             sys.argv.append(in_path)
             sys.argv.append(out_path)
 
@@ -217,6 +218,8 @@ def get_images_runner2(input_file_list, run_dirs, file_number_string,
 
     if config.has_option('GET_IMAGES_RUNNER2', 'COPY_OPTIONS'):
         options = config.get('GET_IMAGES_RUNNER2', 'COPY_OPTIONS')
+    else:
+        options = None
 
     inst = GetImages(copy, options, image_number_list, input_numbering,
                      input_file_pattern, input_file_ext, w_log)
