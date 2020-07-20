@@ -201,8 +201,9 @@ def create_links(input_dir, output_dir, input_IDs, result_base_names, verbose=Fa
                 #print('Creating link {} <- {}'.format(src, link_name))
 
             if not os.path.exists(src):
-                raise IOError('Source file \'{}\' does not exist'.format(src))
-            if not os.path.exists(link_name):
+                #raise IOError('Source file \'{}\' does not exist'.format(src))
+                print('Source file \'{}\' does not exist, skipping'.format(src))
+            elif not os.path.exists(link_name):
                 os.symlink(src, link_name)
                 n_created = n_created + 1
             else:
