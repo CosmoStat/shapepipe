@@ -8,7 +8,7 @@
 
 
 ## Paths
-remote="vos:cfis/cosmostat/kilbinger/results"
+remote="vos:cfis/cosmostat/kilbinger/results_lsb"
 local="."
 
 NAMES=(
@@ -24,7 +24,7 @@ NAMES=(
 
 # VCP options
 # VCP without "vflag" to avoid output to stderr
-export VCP_QUICK=1
+export VCP_QUICK=0
 export VERBOSE=1
 
 if [ $VCP_QUICK == 1 ]; then

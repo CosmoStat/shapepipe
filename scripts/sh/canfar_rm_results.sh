@@ -15,8 +15,8 @@ TILE_ARR=($@)
 list_path=ID_list.txt
 
 for TILE in ${TILE_ARR[@]}; do
-    vls vos:cfis/cosmostat/kilbinger/results/*$TILE* > $list_path
+    vls vos:cfis/cosmostat/kilbinger/results_lsb/*$TILE* > $list_path
     for i in `cat $list_path`; do
-        echo "vrm -v --quick vos:cfis/cosmostat/kilbinger/results/$i"
+        echo "vrm -v --quick vos:cfis/cosmostat/kilbinger/results_lsb/$i"
     done
 done

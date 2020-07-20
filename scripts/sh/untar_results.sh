@@ -14,7 +14,6 @@ NAMES=(
         "setools_mask"
         "setools_stat"
         "setools_plot"
-	    "logs"
      )
 
 
