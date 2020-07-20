@@ -22,6 +22,6 @@ def setools_runner(input_file_list, run_dirs, file_number_string,
 
     inst = setools.SETools(input_file_list[0], run_dirs['output'],
                            file_number_string, config_file)
-    inst.process()
+    inst.process(w_log)
 
     return None, None
