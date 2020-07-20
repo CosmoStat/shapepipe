@@ -103,7 +103,7 @@ def update_param(p_def, options):
     ----------
     p_def:  class param
         parameter values
-    optiosn: tuple
+    options: tuple
         command line options
     
     Returns
@@ -130,6 +130,18 @@ def update_param(p_def, options):
 
 
 def get_stats_file_list(param):
+    """Return list of files with statistics information
+
+    Parameters
+    ----------
+    param: class param
+        parameter values
+
+    Returns
+    -------
+    paths_unq: list of string
+        unique file name list
+    """
 
     # Full paths
     paths = glob.glob('{}/output/*/setools_runner/output/stat/{}*'.
