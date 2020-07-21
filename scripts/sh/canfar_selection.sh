@@ -57,6 +57,7 @@ NAMES=(
         "setools_stat"
         "setools_plot"
         "final_cat"
+        "pipeline_flag"
 	    "logs"
      )
 

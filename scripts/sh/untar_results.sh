@@ -14,6 +14,7 @@ NAMES=(
         "setools_mask"
         "setools_stat"
         "setools_plot"
+        "pipeline_flag"
      )
 
 

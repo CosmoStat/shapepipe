@@ -299,6 +299,7 @@ upload_logs "$ID" "$VERBOSE"
 # psfex for diagnostics, validation with leakage
 # psefxinterp for validation with residuals, rho stats
 # SETools masks (selection), stats and plots
+# pipeline_flags are the tile masks, for random cats
 # Final shape catalog
 
 NAMES=(
@@ -307,6 +308,7 @@ NAMES=(
         "setools_mask"
         "setools_stat"
         "setools_plot"
+        "pipeline_flag"
         "final_cat"
      )
 DIRS=(
@@ -315,6 +317,7 @@ DIRS=(
         "*/setools_runner/output/mask"
         "*/setools_runner/output/stat"
         "*/setools_runner/output/plot"
+        "*/mask_runner/output"
         "*/make_catalog_runner/output"
      )
 PATTERNS=(
@@ -323,6 +326,7 @@ PATTERNS=(
         "*"
         "*"
         "*"
+        "pipeline_flag-???-???*"
         "final_cat-*"
         )
 
