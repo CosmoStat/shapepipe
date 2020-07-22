@@ -250,12 +250,9 @@ def plot_histograms(hists, verbose=False):
         bins = hists[key][1][:-1]
         freq = hists[key][0]
 
-        if verbose:
-            print(i, key, bins, freq)
-
         fig = plt.figure()
         ax = plt.subplot(111)
-        width = bins[1] = bins[0]
+        width = bins[1] - bins[0]
         ax.bar(bins, freq, width=width)
 
         xmin = min(bins)
@@ -263,17 +260,13 @@ def plot_histograms(hists, verbose=False):
         plt.xlim(xmin, xmax)
         plt.xlabel(key)
 
-        ymin = min(bins)
-        ymax = max(bins)
+        ymin = min(freq)
+        ymax = max(freq)
         plt.ylim(ymin, ymax)
         plt.ylabel('frequency')
 
         plot_name = 'hist_{}.png'.format(i)
         plt.savefig(plot_name)
-
-        #ax = plt.gca()
-        #ax.plot(bins, freq, 'b.')
-        #plt.savefig('test_{}.png'.format(i))
 
         i = i + 1
 
