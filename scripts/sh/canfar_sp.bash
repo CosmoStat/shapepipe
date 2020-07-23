@@ -170,7 +170,7 @@ function upload() {
       fi
    fi
    tar czf ${base}_${ID}.tgz ${upl[@]}
-   command "$VCP ${base}_${ID}.tgz vos:cfis/cosmostat/kilbinger/results_lsb" "Upload $base results, $n_upl files in tar ball" "$verbose"
+   command "$VCP ${base}_${ID}.tgz vos:cfis/cosmostat/kilbinger/results" "Upload $base results, $n_upl files in tar ball" "$verbose"
 }
 
 # Upload log files
