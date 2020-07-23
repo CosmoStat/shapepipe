@@ -96,7 +96,7 @@ if [ $dry_run == 0 ]; then
    # TODO: Check whether the following directories exist
    # (e.g. error msg of vmkdir), remove previous run
    # results
-   vmkdir vos:cfis/cosmostat/kilbinger/results_lsb
+   vmkdir vos:cfis/cosmostat/kilbinger/results
 fi
 
 # Create job file
