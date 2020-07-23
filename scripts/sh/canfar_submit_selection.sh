@@ -92,6 +92,12 @@ fi
 tile_ID_list=$1
 image=$2
 
+if [ $dry_run == 0 ]; then
+   # TODO: Check whether the following directories exist
+   # (e.g. error msg of vmkdir), remove previous run
+   # results
+   vmkdir vos:cfis/cosmostat/kilbinger/results
+fi
 
 # Create job file
 job_file="job_tile.sh"
