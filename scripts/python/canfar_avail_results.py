@@ -39,7 +39,7 @@ def params_default():
 
     p_def = cfis.param(
         input_IDs  = '.',
-        input_vos = 'cosmostat/kilbinger/results_lsb',
+        input_vos = 'cosmostat/kilbinger/results',
     )
 
     return p_def
