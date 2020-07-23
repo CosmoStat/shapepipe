@@ -39,8 +39,15 @@ export ID=`echo ${TILE_ARR[@]} | tr ' ' '_'`
 
 ## Paths
 
-# VM home (do not modify)
+# VM home, required for canfar run.
+# On other machines set to $HOME
 export VM_HOME=/home/ubuntu
+if [ ! -d "$VM_HOME" ]; then
+    export VM_HOME=$HOME
+fi
+
+# Results upload subdirectory on vos
+RESULTS=results
 
 ## Path variables used in shapepipe config files
 
@@ -50,6 +57,8 @@ export SP_RUN=`pwd`
 # Config file path
 export SP_CONFIG=$SP_RUN/cfis
 
+## Other variables
+
 # Input tile numbers ASCII file
 export TILE_NUMBERS_PATH=tile_numbers.txt
 
@@ -58,9 +67,6 @@ OUTPUT=$SP_RUN/output
 
 # For tar archives
 output_rel=`realpath --relative-to=. $OUTPUT`
-
-
-## Other variables
 
 # Stop on error
 STOP=1
@@ -170,7 +176,7 @@ function upload() {
       fi
    fi
    tar czf ${base}_${ID}.tgz ${upl[@]}
-   command "$VCP ${base}_${ID}.tgz vos:cfis/cosmostat/kilbinger/results" "Upload $base results, $n_upl files in tar ball" "$verbose"
+   command "$VCP ${base}_${ID}.tgz vos:cfis/cosmostat/kilbinger/$RESULTS" "Upload $base to $RESULTS, $n_upl files in tar ball" "$verbose"
 }
 
 # Upload log files

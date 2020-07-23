@@ -22,8 +22,8 @@ else
 fi
 
 ## Paths
-#remote="vos:cfis/cosmostat/kilbinger/results_lsb"
-remote="vos:cfis/cosmostat/kilbinger/results"
+RESULTS=results
+remote="vos:cfis/cosmostat/kilbinger/RESULTS"
 local="."
 
 NAMES=(
@@ -79,5 +79,5 @@ done
 # Check number of files
 for name in ${NAMES[@]}; do
     n_downl=(`ls -l $local/$name_*.tgz | wc`)
-    echo "$n_downl '$name' result files downloaded"
+    echo "$n_downl '$name' result files downloaded from $RESULTS"
 done
