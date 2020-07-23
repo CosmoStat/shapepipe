@@ -89,6 +89,9 @@ class find_exposures():
 
             # LSB exposure names have 's', header still says 'p'
             #exp_name = re.sub(r'p', 's', exp_name)
+            # MKDEBUG TODO: check whether the following line matches
+            # the image pattern in config file, now including
+            # the letter 'p'
             exp_name = re.sub(r'p', '', exp_name)
 
             exp_list.append(exp_name)
