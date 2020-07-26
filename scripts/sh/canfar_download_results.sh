@@ -22,8 +22,8 @@ else
 fi
 
 ## Paths
-RESULTS=results
-remote="vos:cfis/cosmostat/kilbinger/RESULTS"
+RESULTS=results_check
+remote="vos:cfis/cosmostat/kilbinger/$RESULTS"
 local="."
 
 NAMES=(
