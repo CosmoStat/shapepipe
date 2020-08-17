@@ -69,7 +69,7 @@ $ which mpiexec
 which should reveal something like `/pbs/software/centos-7-x86_64/openmpi/<VERSION>`. Provide this path to the `mpi-root` option of the installation script as follows:
 
 ```bash
-$ ./shapepipe_install --mpi-root=/pbs/software/centos-7-x86_64/openmpi/<VERSION>
+$ ./install_shapepipe --mpi-root=/pbs/software/centos-7-x86_64/openmpi/<VERSION>
 ```
 
 > Be sure to check the output of the **Installing MPI** section, as the final check only tests if the `mpiexec` command is available on the system.
@@ -86,7 +86,7 @@ $ ./install_shapepipe --no-env --no-exe --mpi-root=/pbs/software/centos-7-x86_64
 To install ShapePipe without MPI enabled simply pass the `no-mpi` option to the installation script as follows:
 
 ```bash
-$ ./shapepipe_install --no-mpi
+$ ./install_shapepipe --no-mpi
 ```
 
 ## Execution

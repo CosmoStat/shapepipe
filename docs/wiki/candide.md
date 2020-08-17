@@ -80,7 +80,7 @@ $ module show openmpi
 which should reveal something like `/softs/openmpi/<VERSION>-torque-CentOS7`. Provide this path to the `mpi-root` option of the installation script as follows:
 
 ```bash
-$ ./shapepipe_install --mpi-root=/softs/openmpi/<VERSION>-torque-CentOS7
+$ ./install_shapepipe --mpi-root=/softs/openmpi/<VERSION>-torque-CentOS7
 ```
 
 > Be sure to check the output of the **Installing MPI** section, as the final check only tests if the `mpiexec` command is available on the system.
@@ -97,7 +97,7 @@ $ ./install_shapepipe --no-env --no-exe --mpi-root=/softs/openmpi/<VERSION>-torq
 To install ShapePipe without MPI enabled simply pass the `no-mpi` option to the installation script as follows:
 
 ```bash
-$ ./shapepipe_install --no-mpi
+$ ./install_shapepipe --no-mpi
 ```
 
 ## Execution
@@ -222,7 +222,7 @@ error while loading shared libraries: libopenblas.so.0: cannot open shared objec
 simply run
 
 ```bash
-export LD_LIBRARY_PATH=$CONDA_PREFIX/lib
+$ export LD_LIBRARY_PATH=$CONDA_PREFIX/lib
 ```
 
 > You can add the command to your `.bash_profile`.
