@@ -72,7 +72,7 @@ def parse_options(p_def):
     parser = OptionParser(usage=usage)
 
     # I/O
-    parser.add_option('-i', '--input_job', dest='input_IDs', type='string', default=p_def.input_job,
+    parser.add_option('-i', '--input_job', dest='input_job', type='string', default=p_def.input_job,
          help='input job file, default=\'{}\''.format(p_def.input_job))
     parser.add_option('-o', '--output_fail', dest='output_fail', type='string',
          help='output file for failed jobs, none if not given')
@@ -171,7 +171,7 @@ def get_status(tile_num):
             final_cat_found = False
             with open(out_name) as out_file:
                 for line in out_file:
-                    m = re.match('Upload final_cat results, (\d+) files', line)
+                    m = re.match('Upload final_cat to.*(\d+) files', line)
                     if m:
                         final_cat_found = True
                         if m[1] == '0':
