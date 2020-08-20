@@ -270,7 +270,7 @@ def main(argv=None):
         #d['TILE_ID'].fill(int(''.join(re.findall('\d+', l[0]))))
 
     # Read all final catalogues and merge
-    count = 0
+    count = 1
     #for i in tqdm(lpath[1:], total=len(lpath)-1):
     for i in lpath[1:]:
         if ('final_cat' not in i) | ('.npy' in i):
@@ -289,7 +289,7 @@ def main(argv=None):
 
             d = np.concatenate((d, dd))
             count = count + 1
-            print('File \'{}\' copied'.format(i))
+            print('File \'{}\' copied ({}/{})'.format(i, count, len(lpath)))
         except:
             print('Error while copying file \'{}\''.format(i))
             #raise
