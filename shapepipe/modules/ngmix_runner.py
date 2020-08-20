@@ -13,9 +13,14 @@ from shapepipe.pipeline import file_io as io
 from sqlitedict import SqliteDict
 
 import re
+import os
+
+import matplotlib.pyplot as plt
 
 import numpy as np
 from numpy.random import uniform as urand
+
+from modopt.math.stats import sigma_mad
 
 import ngmix
 from ngmix.observation import Observation, ObsList, MultiBandObsList
@@ -24,6 +29,33 @@ from ngmix.fitting import LMSimple
 from astropy.io import fits
 
 import galsim
+
+
+def MegaCamFlip(vign, ccd_nb):
+    """ MegaCam Flip
+    MegaCam has CCD that are upside down.
+    This function flip the CCDs accordingly.
+
+    Parameters
+    ----------
+    vign : numpy.ndarray
+        Array containing the postage stamp to flip.
+    ccd_nb : int
+        Id of the ccd containing the postage stamp.
+
+    Return
+    ------
+    vign : numpy.ndarray
+        The postage stamp flip accordingly.
+    
+    """
+
+    if ccd_nb < 18 or ccd_nb in [36,37]:
+        # swap x axis so origin is on top-right
+        return np.rot90(vign, k=2)
+    else:
+        # swap y axis so origin is on bottom-left
+        return vign
 
 
 def get_prior():
@@ -221,8 +253,52 @@ def get_jacob(wcs, ra, dec):
     return galsim_jacob
 
 
+def get_noise(gal, weight, guess, thresh=1.2, pixel_scale=0.187):
+    """ Get Noise
+    
+    Compute the sigma of the noise from an object postage stamp.
+    Use a guess on the object size, ellipticity and flux to create a window
+    function.
+
+    Parameters
+    ----------
+    gal : numpy.ndarray
+        Galaxy image.
+    weight : numpy.ndarray
+        Weight image.
+    guess : list
+        Gaussian parameters fot the window function: [x0, y0, g1, g2, T, flux]
+    thresh : float
+        Threshold to cut the window function. Cut = thresh * sig_noise
+    pixel_scale = float
+        Pixel scale of the galaxy image
+
+    Return
+    ------
+    sig_noise : float
+        Sigma of the noise on the galaxy image.
+    
+    """
+
+    img_shape = gal.shape
+
+    m_weight = weight != 0
+
+    sig_tmp = sigma_mad(gal[m_weight])
+
+    gauss_win = galsim.Gaussian(sigma=np.sqrt(guess[4]/2.), flux=guess[5])
+    gauss_win = gauss_win.shear(g1=guess[2], g2=guess[3])
+    gauss_win = gauss_win.drawImage(nx=img_shape[0], ny=img_shape[1], scale=pixel_scale).array
+
+    m_weight = weight[gauss_win < thresh*sig_tmp] != 0
+
+    sig_noise = sigma_mad(gal[gauss_win < thresh*sig_tmp][m_weight])
+
+    return sig_noise
+
+
 def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
-                     prior):
+                     prior, id_obj, plot_dir):
     """ Do ngmix metacal
 
     Do the metacalibration on a multi-epoch object and return the join shape
@@ -267,6 +343,7 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
                   'T_PSFo': 0.,
                   'T_err_PSFo': 0.}
     gal_guess = []
+    gal_masked = []
     gal_guess_flag = True
     wsum = 0.
     for n_e in range(n_epoch):
@@ -282,20 +359,13 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
 
         w = np.copy(weights[n_e])
         w[np.where(flags[n_e] != 0)] = 0.
+        w[w != 0] = 1
 
         psf_guess = np.array([0., 0., 0., 0., psf_T, 1.])
         try:
             psf_res = make_galsimfit(psf_obs, 'gauss', psf_guess, None)
         except:
             continue
-
-        # Original PSF fit
-        w_tmp = np.sum(weights[n_e])
-        psf_res_gT['g_PSFo'] += psf_res['g']*w_tmp
-        psf_res_gT['g_err_PSFo'] += np.array([psf_res['pars_err'][2], psf_res['pars_err'][3]])*w_tmp
-        psf_res_gT['T_PSFo'] += psf_res['T']*w_tmp
-        psf_res_gT['T_err_PSFo'] += psf_res['T_err']*w_tmp
-        wsum += w_tmp
 
         # Gal guess
         try:
@@ -308,8 +378,34 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
         gal_jacob = ngmix.Jacobian(row=(gals[0].shape[0]-1)/2. + gal_guess_tmp[0],
                                    col=(gals[0].shape[1]-1)/2. + gal_guess_tmp[1],
                                    wcs=jacob_list[n_e])
-        gal_obs = Observation(gals[n_e], weight=w, jacobian=gal_jacob,
-                              psf=psf_obs)
+
+        # Noise handling
+        if gal_guess_flag:
+            sig_noise = get_noise(gals[n_e], w, gal_guess_tmp, pixel_scale=pixel_scale)
+        else:
+            sig_noise = sigma_mad(gals[n_e])
+
+        noise_img = np.random.randn(*gals[n_e].shape)*sig_noise
+        noise_img_gal = np.random.randn(*gals[n_e].shape)*sig_noise
+
+        gal_masked = np.copy(gals[n_e])
+        if (len(np.where(w==0)[0]) != 0):
+            gal_masked[w==0] = noise_img_gal[w==0]
+
+        w *= 1/sig_noise**2.
+
+        # Original PSF fit
+        w_tmp = np.sum(w)
+        psf_res_gT['g_PSFo'] += psf_res['g']*w_tmp
+        psf_res_gT['g_err_PSFo'] += np.array([psf_res['pars_err'][2], psf_res['pars_err'][3]])*w_tmp
+        psf_res_gT['T_PSFo'] += psf_res['T']*w_tmp
+        psf_res_gT['T_err_PSFo'] += psf_res['T_err']*w_tmp
+        wsum += w_tmp
+        
+        # gal_obs = Observation(gals[n_e], weight=w, jacobian=gal_jacob,
+        #                       psf=psf_obs, noise=noise_img)
+        gal_obs = Observation(gal_masked, weight=w, jacobian=gal_jacob,
+                              psf=psf_obs, noise=noise_img)
 
         if gal_guess_flag:
             gal_guess_tmp[:2] = 0
@@ -341,11 +437,12 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
 
     # metacal specific parameters
     metacal_pars = {'types': ['noshear', '1p', '1m', '2p', '2m'],
-                    'step': 0.01,
+                    'step': 0.1,
                     'psf': 'gauss',
                     'fixnoise': True,
                     'cheatnoise': False,
-                    'symmetrize_psf': False}
+                    'symmetrize_psf': False,
+                    'use_noise_image': True}
 
     # maximum likelihood fitter parameters
     # parameters for the Levenberg-Marquardt fitter in scipy
@@ -366,6 +463,16 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
     #            'ftol': 5.0e-6}
 
     # Tguess = np.mean(T_guess_psf)*0.186**2  # size guess in arcsec
+
+    # plt.figure()
+    # plt.imshow(gals[-1])
+    # plt.title('Original')
+    # plt.savefig(plot_dir + '/' + 'original-{}.png'.format(id_obj))
+
+    # plt.figure()
+    # plt.imshow(gal_masked)
+    # plt.title('Original masked')
+    # plt.savefig(plot_dir + '/' + 'original_masked-{}.png'.format(id_obj))
 
     Tguess = np.mean(T_guess_psf)
 
@@ -572,7 +679,7 @@ def save_results(output_dict, output_name):
 
 def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             psf_vignet_path, weight_vignet_path, flag_vignet_path,
-            f_wcs_path, w_log, id_obj_min=-1, id_obj_max=-1):
+            f_wcs_path, w_log, plot_dir, id_obj_min=-1, id_obj_max=-1):
     """ Process
 
     Process function.
@@ -658,6 +765,8 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             continue
         psf_expccd_name = list(psf_vign_cat[str(id_tmp)].keys())
         for expccd_name_tmp in psf_expccd_name:
+            exp_name, ccd_n = re.split('-', expccd_name_tmp)
+
             gal_vign_tmp = gal_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET']
             if len(np.where(gal_vign_tmp.ravel() == 0)[0]) != 0:
                 continue
@@ -665,7 +774,8 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             bkg_vign_tmp = bkg_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET']
             gal_vign_sub_bkg = gal_vign_tmp - bkg_vign_tmp
 
-            tile_vign_tmp = np.copy(tile_vign[i_tile])
+            tile_vign_tmp = MegaCamFlip(np.copy(tile_vign[i_tile]), int(ccd_n))
+
             flag_vign_tmp = flag_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET']
             flag_vign_tmp[np.where(tile_vign_tmp == -1e30)] = 2**10
             v_flag_tmp = flag_vign_tmp.ravel()
@@ -674,7 +784,6 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
 
             weight_vign_tmp = weight_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET']
 
-            exp_name, ccd_n = re.split('-', expccd_name_tmp)
             jacob_tmp = get_jacob(f_wcs_file[exp_name][int(ccd_n)]['WCS'],
                                   tile_ra[i_tile],
                                   tile_dec[i_tile])
@@ -701,7 +810,9 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
                                    weight_vign,
                                    flag_vign,
                                    jacob_list,
-                                   prior)
+                                   prior,
+                                   i_tile,
+                                   plot_dir)
         except Exception as ee:
             w_log.info('ngmix failed for object ID={}.\nMessage: {}'.format(id_tmp, ee))
             continue
@@ -736,6 +847,10 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
 def ngmix_runner(input_file_list, run_dirs, file_number_string,
                  config, w_log):
 
+    # Init randoms
+    seed = int(''.join(re.findall('\d+', file_number_string)))
+    np.random.seed(seed)
+
     output_name = (run_dirs['output'] + '/' + 'ngmix' +
                    file_number_string + '.fits')
 
@@ -746,7 +861,7 @@ def ngmix_runner(input_file_list, run_dirs, file_number_string,
     id_obj_min = config.getint('NGMIX_RUNNER', 'ID_OBJ_MIN')
     id_obj_max = config.getint('NGMIX_RUNNER', 'ID_OBJ_MAX')
 
-    metacal_res = process(*input_file_list, f_wcs_path, w_log,
+    metacal_res = process(*input_file_list, f_wcs_path, w_log, plot_dir,
                           id_obj_min=id_obj_min, id_obj_max=id_obj_max)
     res_dict = compile_results(metacal_res, ZP)
     save_results(res_dict, output_name)
