@@ -13,9 +13,6 @@ from shapepipe.pipeline import file_io as io
 from sqlitedict import SqliteDict
 
 import re
-import os
-
-import matplotlib.pyplot as plt
 
 import numpy as np
 from numpy.random import uniform as urand
