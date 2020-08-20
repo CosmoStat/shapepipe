@@ -433,7 +433,7 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
 
     # metacal specific parameters
     metacal_pars = {'types': ['noshear', '1p', '1m', '2p', '2m'],
-                    'step': 0.1,
+                    'step': 0.01,
                     'psf': 'gauss',
                     'fixnoise': True,
                     'cheatnoise': False,
