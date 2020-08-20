@@ -295,7 +295,7 @@ def get_noise(gal, weight, guess, thresh=1.2, pixel_scale=0.187):
 
 
 def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
-                     prior, id_obj, plot_dir):
+                     prior):
     """ Do ngmix metacal
 
     Do the metacalibration on a multi-epoch object and return the join shape
@@ -460,16 +460,6 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
     #            'ftol': 5.0e-6}
 
     # Tguess = np.mean(T_guess_psf)*0.186**2  # size guess in arcsec
-
-    # plt.figure()
-    # plt.imshow(gals[-1])
-    # plt.title('Original')
-    # plt.savefig(plot_dir + '/' + 'original-{}.png'.format(id_obj))
-
-    # plt.figure()
-    # plt.imshow(gal_masked)
-    # plt.title('Original masked')
-    # plt.savefig(plot_dir + '/' + 'original_masked-{}.png'.format(id_obj))
 
     Tguess = np.mean(T_guess_psf)
 
@@ -676,7 +666,7 @@ def save_results(output_dict, output_name):
 
 def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
             psf_vignet_path, weight_vignet_path, flag_vignet_path,
-            f_wcs_path, w_log, plot_dir, id_obj_min=-1, id_obj_max=-1):
+            f_wcs_path, w_log, id_obj_min=-1, id_obj_max=-1):
     """ Process
 
     Process function.
@@ -807,9 +797,7 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
                                    weight_vign,
                                    flag_vign,
                                    jacob_list,
-                                   prior,
-                                   i_tile,
-                                   plot_dir)
+                                   prior)
         except Exception as ee:
             w_log.info('ngmix failed for object ID={}.\nMessage: {}'.format(id_tmp, ee))
             continue
@@ -858,7 +846,7 @@ def ngmix_runner(input_file_list, run_dirs, file_number_string,
     id_obj_min = config.getint('NGMIX_RUNNER', 'ID_OBJ_MIN')
     id_obj_max = config.getint('NGMIX_RUNNER', 'ID_OBJ_MAX')
 
-    metacal_res = process(*input_file_list, f_wcs_path, w_log, plot_dir,
+    metacal_res = process(*input_file_list, f_wcs_path, w_log,
                           id_obj_min=id_obj_min, id_obj_max=id_obj_max)
     res_dict = compile_results(metacal_res, ZP)
     save_results(res_dict, output_name)
