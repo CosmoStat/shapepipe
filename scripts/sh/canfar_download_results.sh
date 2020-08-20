@@ -22,7 +22,7 @@ else
 fi
 
 ## Paths
-RESULTS=results_check
+RESULTS=results
 remote="vos:cfis/cosmostat/kilbinger/$RESULTS"
 local="."
 
