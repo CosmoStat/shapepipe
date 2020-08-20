@@ -340,7 +340,6 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
                   'T_PSFo': 0.,
                   'T_err_PSFo': 0.}
     gal_guess = []
-    gal_masked = []
     gal_guess_flag = True
     wsum = 0.
     for n_e in range(n_epoch):
