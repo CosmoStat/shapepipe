@@ -15,11 +15,14 @@ import os
 import string
 import re
 import numpy as np
-from astropy.io import fits         # for FITS catalogs
+
+import operator
+import itertools
+
+from astropy.io import fits
 from astropy.table import Table
 
-import operator                 # for the interpreter
-import itertools
+from modopt.math.stats import mad
 
 
 # --------------------------------------------------------------------------------------------------
@@ -1659,7 +1662,8 @@ class interpreter(object):
         if len(input) == 0:
             return -1
         else:
-            return np.median(np.abs(input - np.median(input)))
+            return mad(input)
+            #return np.median(np.abs(input - np.median(input)))
 
     def _test_homogeneity(self, *args):
         """Test homogeneity

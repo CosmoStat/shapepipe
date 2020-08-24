@@ -199,7 +199,7 @@ def gather_values(paths, verbose=False):
                 key = m[1]
                 val = float(m[2])
                 if not np.isnan(val):
-                    if not key in values:
+                    if key not in values:
                         values[key] = []
                     values[key].append(val)
                 else:
