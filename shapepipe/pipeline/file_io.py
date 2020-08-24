@@ -1441,17 +1441,17 @@ class interpreter(object):
 
         Parameters
         ----------
-        str: string
+        str:  string
             string to interpret
-        make_compare: bool
+        make_compare : bool
             If true look for a comparison
-        make_func: bool
+        make_func : bool
             If true look for a function
-        make_operate: bool
+        make_operate : bool
             If true look for an operation
 
-        Return
-        ------
+        Returns
+        -------
         array or float
             Result of the current operation.
 
@@ -1511,25 +1511,23 @@ class interpreter(object):
 
         Returns
         -------
-        f: float
-            result of the function.
+        float
+            result of the function
 
         """
 
         s = re.split(r'\(|\)', string)
 
         if len(s) == 1:
-            f = self.interpret(s[0], self._make_compare, make_func=False, make_operate=False)
-            return f
+            return self.interpret(s[0], self._make_compare, make_func=False, make_operate=False)
         elif len(s) == 3:
             try:
                 ss = re.split(',', s[1])
                 if len(ss) > 1:
                     p = [self.interpret(i, self._make_compare, make_func=False, make_operate=True) for i in ss]
-                    f = self._stat_func[s[0]](*p)
+                    return self._stat_func[s[0]](*p)
                 else:
-                    f = self._stat_func[s[0]](self.interpret(s[1], self._make_compare, make_func=False, make_operate=True))
-                return f
+                    return self._stat_func[s[0]](self.interpret(s[1], self._make_compare, make_func=False, make_operate=True))
             except:
                 raise Exception('Unknown function: {0}'.format(s[0]))
         else:
