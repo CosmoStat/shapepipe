@@ -22,7 +22,7 @@ import itertools
 from astropy.io import fits
 from astropy.table import Table
 
-from modopt.math.stats import mad
+from modopt.math.stats import sigma_mad
 
 
 # --------------------------------------------------------------------------------------------------
@@ -1556,7 +1556,7 @@ class interpreter(object):
         self._stat_func['exp'] = np.exp
         self._stat_func['std'] = np.std
         self._stat_func['var'] = np.var
-        self._stat_func['mad'] = self._mad
+        self._stat_func['sigma_mad'] = self.sigma__mad
         self._stat_func['len'] = len
         self._stat_func['min'] = min
         self._stat_func['max'] = max
@@ -1641,7 +1641,7 @@ class interpreter(object):
             m = (b_min + b_max) / 2.
             return m
 
-    def _mad(self, input):
+    def _sigma_mad(self, input):
         """Mean absolute deviation
 
         Compute median absolute deviation (MAD).
@@ -1662,7 +1662,7 @@ class interpreter(object):
         if len(input) == 0:
             return -1
         else:
-            return mad(input)
+            return sigma_mad(input)
             #return np.median(np.abs(input - np.median(input)))
 
     def _test_homogeneity(self, *args):
