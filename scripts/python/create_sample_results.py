@@ -19,8 +19,6 @@ from contextlib import redirect_stdout
 
 from optparse import OptionParser
 
-from vos.commands.vls import vls
-
 import cfis
 
 

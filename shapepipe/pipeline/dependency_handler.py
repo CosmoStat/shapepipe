@@ -201,7 +201,7 @@ class DependencyHandler(object):
     def _check_executable(exe_name):
         """Check if Input is Executable
 
-        This methid checks if the input executable exists.
+        This method checks if the input executable exists.
 
         Parameters
         ----------
