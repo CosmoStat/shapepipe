@@ -1,0 +1,40 @@
+#--------------------------------- Weights ------------------------------------
+ 
+WEIGHT_NAMES    weightin.fits   # Filename(s) of the input WEIGHT map(s)
+ 
+WEIGHT_MIN      0.             # Pixel below those thresholds will be flagged
+WEIGHT_MAX      1000.           # Pixels above those thresholds will be flagged
+WEIGHT_OUTFLAGS 1               # FLAG values for thresholded pixels
+ 
+#---------------------------------- Flags -------------------------------------
+ 
+FLAG_NAMES      flagin.fits     # Filename(s) of the input FLAG map(s)
+ 
+FLAG_WMASKS     0xff            # Bits which will nullify the WEIGHT-map pixels
+FLAG_MASKS      0x01            # Bits which will be converted as output FLAGs
+FLAG_OUTFLAGS   2               # Translation of the FLAG_MASKS bits
+ 
+#---------------------------------- Polygons ----------------------------------
+ 
+POLY_NAMES      ""              # Filename(s) of input DS9 regions
+POLY_OUTFLAGS                   # FLAG values for polygon masks
+POLY_OUTWEIGHTS 0.0             # Weight values for polygon masks
+POLY_INTERSECT  Y               # Use inclusive OR for polygon intersects (Y/N)?
+ 
+#---------------------------------- Output ------------------------------------
+ 
+OUTWEIGHT_NAME	"w.fits"     # Output WEIGHT-map filename
+OUTFLAG_NAME    flag.fits       # Output FLAG-map filename
+ 
+#----------------------------- Miscellaneous ---------------------------------
+ 
+GETAREA         N               # Compute area for flags and weights (Y/N)?
+GETAREA_WEIGHT  0.0             # Weight threshold for area computation
+GETAREA_FLAGS   1               # Bit mask for flag pixels not counted in area
+MEMORY_BUFSIZE  256             # Buffer size in lines
+VERBOSE_TYPE    NORMAL          # can be QUIET, NORMAL or FULL
+WRITE_XML       N               # Write XML file (Y/N)?
+XML_NAME        ww.xml          # Filename for XML output
+XSL_URL         file:///usr/local/share/weightwatcher/ww.xsl
+                                # Filename for XSL style-sheet
+NTHREADS        1               # 1 single thread
