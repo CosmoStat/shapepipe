@@ -239,6 +239,22 @@ class BaseCatalog(object):
       def __str__(self):
          return "SCatalog *** ERROR ***: Catalog: {0} is not open".format(self._filepath)
 
+   class DataNotFound(Exception):
+      """ No data found (at given hdu) """
+
+      def __init__(self, filepath, hdu):
+         """!
+            Exception constructor
+            @param filepath file path of the catalog file
+         """
+         self._filepath = filepath
+         self._hdu = hdu
+
+      def __str__(self):
+         return "SCatalog *** ERROR ***: File \'{0}', hdu={1}: data not found".format(
+                 self._filepath, self._hdu)
+
+
    # ------------------------------------------------------------------------------
    class CatalogFileNotFound(Exception):
       """!
@@ -817,7 +833,10 @@ class FITSCatalog(BaseCatalog):
           if hdu_no is None:
               hdu_no = self.hdu_no
 
-          return self._cat_data[hdu_no].data
+          dat = self._cat_data[hdu_no].data
+          if dat is None:
+              raise BaseCatalog.DataNotFound(self.fullpath, self.hdu_no)
+          return dat
       else:
          raise BaseCatalog.CatalogNotOpen(self.fullpath)
 
