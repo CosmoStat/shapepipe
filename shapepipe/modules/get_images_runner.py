@@ -34,7 +34,7 @@ def in2out_pattern(number):
     # remove letters in number
     number_final = re.sub('[a-zA-Z]', '', number_final)
 
-    return number_finale
+    return number_final
 
  
 
@@ -231,7 +231,7 @@ def get_images_runner(input_file_list, run_dirs, file_number_string,
     if any(len(lst) != nitem for lst in [input_dir, input_file_pattern,
                                          input_file_ext, output_file_pattern]):
         raise ValueError('Lists INPUT_PATH ({}), INPUT_FILE_PATTERN ({}), '
-                         'INPUT_FILE_EXT ({}), OUTPUT_FILE_PATTENR ({})'
+                         'INPUT_FILE_EXT ({}), OUTPUT_FILE_PATTENR ({}) '
                          'need to have equal length'.format(
                          len(input_dir), len(input_file_pattern),
                          len(input_file_ext), len(output_file_pattern)

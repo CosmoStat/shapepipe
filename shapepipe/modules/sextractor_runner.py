@@ -137,6 +137,7 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
     weight_file = config.getboolean("SEXTRACTOR_RUNNER", "WEIGHT_IMAGE")
     flag_file = config.getboolean("SEXTRACTOR_RUNNER", "FLAG_IMAGE")
     psf_file = config.getboolean("SEXTRACTOR_RUNNER", "PSF_FILE")
+    detection_file = config.getboolean("SEXTRACTOR_RUNNER", "DETECTION_IMAGE")
 
     zp_from_header = config.getboolean("SEXTRACTOR_RUNNER", "ZP_FROM_HEADER")
     if zp_from_header:
@@ -165,27 +166,31 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
     output_file_name = suffix + 'sexcat{0}.fits'.format(num)
     output_file_path = '{0}/{1}'.format(run_dirs['output'], output_file_name)
 
-    command_line = ('{0} {1} -c {2} -PARAMETERS_NAME {3} -FILTER_NAME {4} '
-                    '-CATALOG_NAME {5}'.format(exec_path, input_file_list[0],
-                                               dot_sex, dot_param, dot_conv,
-                                               output_file_path))
+    measurement_image = input_file_list[0]
 
+    # Collect optional arguments for SExtractor
+    command_line_extra = ''
     if zp_from_header:
-        command_line += ' -MAG_ZEROPOINT {0}'.format(zp_value)
+        command_line_extra += ' -MAG_ZEROPOINT {0}'.format(zp_value)
 
     if bkg_from_header:
-        command_line += ' -BACK_TYPE MANUAL -BACK_VALUE {0}'.format(bkg_value)
+        command_line_extra += ' -BACK_TYPE MANUAL -BACK_VALUE {0}'.format(bkg_value)
 
     extra = 1
     if weight_file:
-        command_line += ' -WEIGHT_IMAGE {0}'.format(input_file_list[extra])
+        command_line_extra += ' -WEIGHT_IMAGE {0}'.format(input_file_list[extra])
         extra += 1
     if flag_file:
-        command_line += ' -FLAG_IMAGE {0}'.format(input_file_list[extra])
+        command_line_extra += ' -FLAG_IMAGE {0}'.format(input_file_list[extra])
         extra += 1
     if psf_file:
-        command_line += ' -PSF_NAME {0}'.format(input_file_list[extra])
+        command_line_extra += ' -PSF_NAME {0}'.format(input_file_list[extra])
         extra += 1
+    if detection_file:
+        detection_image = input_file_list[extra]
+        extra += 1
+    else:
+        detection_image = measurement_image
     if extra != len(input_file_list):
         raise ValueError("Incoherence between input files and keys related "
                          "to extra files: Found {} extra files, but input "
@@ -203,9 +208,17 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
             check_name.append(run_dirs['output'] + '/' + suffix + i.lower() +
                               num + '.fits')
 
-    command_line += (' -CHECKIMAGE_TYPE {0} -CHECKIMAGE_NAME {1}'
-                     ''.format(','.join(check_type), ','.join(check_name)))
+    command_line_extra += (' -CHECKIMAGE_TYPE {0} -CHECKIMAGE_NAME {1}'
+                           ''.format(','.join(check_type), ','.join(check_name)))
 
+    # Base arguments for SExtractor
+    command_line_base = ('{0} {1},{2} -c {3} -PARAMETERS_NAME {4} -FILTER_NAME {5} '
+                         '-CATALOG_NAME {6}'.format(exec_path, measurement_image,
+                                                    detection_image,
+                                                    dot_sex, dot_param, dot_conv,
+                                                    output_file_path))
+
+    command_line = '{} {}'.format(command_line_base, command_line_extra)
     w_log.info('Calling command \'{}\''.format(command_line))
 
     stderr, stdout = execute(command_line)
