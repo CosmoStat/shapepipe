@@ -32,6 +32,7 @@ from astropy import units
 from astropy.coordinates import Angle, SkyCoord
 
 from shapepipe.pipeline import file_io as io
+from shapepipe.modules.get_images_runner import in2out_pattern
 
 
 def main(argv=None):
@@ -44,18 +45,44 @@ def main(argv=None):
     ext = 'fits'
     hdu_no = 1
 
+    output_base = 'UNIONS_'
+    pattern_map = {
+        'unconv' : '_image-',
+        'wt' : '_weight-',
+        'mask' : '_flag-'
+    }
+
+
     # Get input file names
     last_Git = '{}/get_images_runner/output'.format(dirs_Git[-1])
+    print(last_Git)
 
-    ps_files = glob.glob('{}/{}*.{}'.format(last_Git, pattern, ext))
+    ps_fnames = glob.glob('{}/{}*.{}'.format(last_Git, pattern, ext))
 
-    # Read headers
-    for psf in ps_files:
-        header = fits.getheader(psf, hdu_no) 
+    for psfn in ps_fnames:
+
+        # Get filter name
+        header = fits.getheader(psfn, hdu_no) 
         filter_long = header['HIERARCH FPA.FILTERID']
         filter_letter = filter_long[0]
-        print(filter_letter)
 
+        # Get tile ID
+        input_name = os.path.basename(psfn)
+        m = re.match('.*(\d{3}\.\d{3}).*', input_name)
+        number = m[1]
+        number_final = in2out_pattern(number)
+
+        # Get image type
+        mm = re.match('.*\.(.*)\.fits', input_name)
+        output_type = pattern_map[mm[1]]
+
+        # Assemble output file name
+        output_name = '{}{}{}{}.{}'.format(output_base, filter_letter,
+                                           output_type, number_final, ext)
+
+        print(' {} -> {}'.format(input_name, output_name))
+        output_path = '{}/{}'.format(last_Git, output_name)
+        os.rename(psfn, output_path)
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
