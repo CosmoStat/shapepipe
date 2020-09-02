@@ -9,6 +9,12 @@ FLAGS == 0
 IMAFLAGS_ISO == 0
 NO_SAVE
 
+[MASK:flag]
+FLAGS == 0
+IMAFLAGS_ISO == 0
+NO_SAVE
+
+
 [MASK:star_selection]
 # Star selection using the FWHM mode
 MAG_AUTO > 18.
@@ -88,6 +94,7 @@ YLABEL = "Y (pix)"
 
 [STAT:star_stat]
 "Nb objects full cat" = len(FWHM_IMAGE)
+"Nb objects not masked" = len(FWHM_IMAGE{flag})
 "Nb stars" = len(FWHM_IMAGE{star_selection})
 "stars/deg^2" = len(FWHM_IMAGE{star_selection})/4612./0.187*3600.*1./2048./0.187*3600.
 "Mean star fwhm selected (arcsec)" = mean(FWHM_IMAGE{star_selection})*0.187

@@ -19,8 +19,6 @@ from contextlib import redirect_stdout
 
 from optparse import OptionParser
 
-from vos.commands.vls import vls
-
 import cfis
 
 
@@ -247,7 +245,8 @@ def main(argv=None):
 
     input_IDs = read_ID_list(param.input_IDs, verbose=param.verbose)
 
-    result_base_names = ['psfex', 'psfexinterp_exp', 'setools_mask', 'setools_stat', 'setools_plot', 'final_cat', 'logs']
+    result_base_names = ['psfex', 'psfexinterp_exp', 'setools_mask', 'setools_stat', 'setools_plot', 
+                         'pipeline_flag', 'final_cat', 'logs']
 
     if os.path.isdir(param.output_dir):
         if param.verbose:

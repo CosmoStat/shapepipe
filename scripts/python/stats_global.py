@@ -68,6 +68,8 @@ def parse_options(p_def):
     parser.add_option('-i', '--input_dir', dest='input_dir', type='string', \
          default=p_def.input_dir, \
          help='input directory, default=\'{}\''.format(p_def.input_dir))
+    parser.add_option('-c', '--config', dest='config', type='string', \
+         help='configuration file, default=none')
     parser.add_option('-p', '--pattern', dest='pattern', type='string', \
          default=p_def.pattern, \
          help='input file pattern, default=\'{}\''.format(p_def.pattern))
@@ -195,10 +197,15 @@ def gather_values(paths, verbose=False):
             m = re.search('(.*) = (\S*)', line)
             if m:
                 key = m[1]
-                val = m[2]
-                if not key in values:
-                    values[key] = []
-                values[key].append(float(val))
+                val = float(m[2])
+                if not np.isnan(val):
+                    if key not in values:
+                        values[key] = []
+                    values[key].append(val)
+                else:
+                    if verbose:
+                        print('NaN found in file \'{}\', key \'{}\''
+                              .format(path, key))
 
     if verbose:
         print('{} keys created'.format(len(values)))
@@ -208,13 +215,15 @@ def gather_values(paths, verbose=False):
     return values
 
 
-def compute_histograms(values, verbose=False):
+def compute_histograms(values, config=None, verbose=False):
     """Compute histograms from dictionary of value lists.
 
     Parameters
     ----------
     values: dictionary with lists of float
         values and their keys
+    config: class config
+        configuration values
     verbose: bool, optional, default=False
         verbose output if True
 
@@ -224,49 +233,142 @@ def compute_histograms(values, verbose=False):
         histograms for all keys
     """
 
+    if config and config.has_option('ALL', 'nbins'):
+        nbins_global = config.getint('ALL', 'nbins')
+    else:
+        nbins_global = 50
+
+    print('nbins_global = {}'.format(nbins_global))
+
     hists = {}
+    i = 0
     for key in values:
 
-        hists[key] = np.histogram(values[key], bins=50)
+        si = str(i)
+
+        if config and config.has_option(si, 'nbins'):
+            nbins = config.getint(si, 'nbins')
+        else:
+            nbins = nbins_global
+
+        try:
+            hists[key] = np.histogram(values[key], bins=nbins)
+        except ValueError as err:
+            print('Skipping histogram #{}: {}'.format(i, err))
+
+        i = i + 1
 
     return hists
 
 
-def plot_histograms(hists, verbose=False):
+def plot_histograms(hists, config=None, verbose=False):
     """Create histogram plots.
 
     Parameters
     ----------
     hists: dictionary of histograms
         histograms for all keys
+    config: class config
+        configuration values
     verbose: bool, optional, default=False
         verbose output if True
     """
 
     fig, (ax) = plt.subplots()
 
+    xlim_fac = 0.05
+
     i = 0
     for key in hists:
-        bins = hists[key][1][:-1]
-        freq = hists[key][0]
 
-        if verbose:
-            print(key, bins, freq)
+        si = str(i)
 
-        ax = plt.gca()
-        width = bins[1] = bins[0]
-        ax.bar(bins, freq, width=width)
+        if config and \
+            config.has_option(si, 'plot') and \
+            config.getboolean(si, 'plot') == False:
+            if verbose:
+                print('Skipping histogram #{} {}'.format(i, key))
 
-        xmin = min(bins)
-        xmax = max(bins)
-        plt.xlim(xmin, xmax)
-        plt.xlabel(key)
-        plt.ylabel('frequency')
+        else:
 
-        plot_name = 'hist_{}.png'.format(i)
-        plt.savefig(plot_name)
+            bins = hists[key][1][:-1]
+            freq = hists[key][0]
+
+            fig = plt.figure()
+            ax = plt.subplot(111)
+            width = bins[1] - bins[0]
+            ax.bar(bins, freq, width=width)
+
+            xmin = min(bins)
+            xmax = max(bins)
+            dx = xmax - xmin
+            xxmin = xmin - dx * xlim_fac
+            xxmax = xmax + dx * xlim_fac
+            plt.xlim(xxmin, xxmax)
+
+            if config and config.has_option(si, 'xlabel'):
+                xlabel = config.get(si, 'xlabel')
+            else:
+                xlabel = key
+            plt.xlabel(xlabel)
+
+            ymin = min(freq)
+            ymax = max(freq)
+            plt.ylim(ymin, ymax)
+            ylabel = 'frequency'
+            plt.ylabel(ylabel)
+
+            if config and config.has_option(si, 'title'):
+                plt.title(config.get(si, 'title'))
+
+            if config and config.has_option(si, 'fname'):
+                file_base = config.getexpanded(si, 'fname')
+            else:
+                file_base = 'hist_{}.png'.format(i)
+
+            if verbose:
+                print('Creating files \'{}.*\''.format(file_base))
+
+            plt.savefig('{}.png'.format(file_base))
+            np.savetxt('{}.txt'.format(file_base), np.transpose([bins, freq]),
+                       fmt='%10g', header='[{}] [{}]'.format(xlabel, ylabel)),
 
         i = i + 1
+
+
+
+def get_config(config_path, verbose=False):
+    """Return configuration file values.
+
+    Parameters
+    ----------
+    config_path: string
+        configuration file path
+    verbose: bool, optional, default=False
+        verbose output if True
+
+    Returns
+    -------
+    conf: class config
+        configuration values, if config_path does not exist,
+        None
+    """
+
+    if config_path is None:
+        return None
+
+    from shapepipe.pipeline.config import CustomParser
+
+    if verbose:
+        print('Reading configuration file \'{}\''.format(config_path))
+
+    if not os.path.exists(config_path):
+        raise OSError('Configuration file \'{}\' does not exist'.format(config_path))
+
+    conf = CustomParser()
+    conf.read(config_path)
+
+    return conf
 
 
 def main(argv=None):
@@ -298,9 +400,12 @@ def main(argv=None):
 
     values = gather_values(files, verbose=param.verbose)
 
-    hists = compute_histograms(values, verbose=param.verbose)
+    config = get_config(param.config, verbose=param.verbose)
 
-    plot_histograms(hists, verbose=param.verbose)
+    hists = compute_histograms(values, config=config, verbose=param.verbose)
+
+
+    plot_histograms(hists, config=config, verbose=param.verbose)
 
     ### End main program
 
