@@ -13,6 +13,32 @@ import re
 import sys
 
 
+def in2out_pattern(number):
+    """Transform input to output number pattern or image ID
+
+    Parameters
+    ----------
+    number : string
+        input number
+
+    Returns
+    -------
+    number_final : string
+        output number
+    """
+
+    # replace dots ('.') with dashes ('-') to avoid confusion
+    # with file extension delimiters
+    number_final = re.sub(r'\.', '-', number)
+
+    # remove letters in number
+    number_final = re.sub('[a-zA-Z]', '', number_final)
+
+    return number_finale
+
+ 
+
+
 class GetImages(object):
 
     def __init__(self, copy, options, image_number_list,
@@ -73,13 +99,9 @@ class GetImages(object):
             for number in self._image_number_list:
 
                 if output_file_pattern:
-                    # For output:
-                    # - replace dots ('.') with dashes ('-') to avoid confusion
-                    #   with file extension delimiters
-                    # - remove letters in number
+                    # Transform input to output number patterns
 
-                    number_final = re.sub(r'\.', '-', number)
-                    number_final = re.sub('[a-zA-Z]', '', number_final)
+                    number_final = in2out_pattern(number)
 
                     # Keep initial dot in extension
                     x = in_ext[1:]
