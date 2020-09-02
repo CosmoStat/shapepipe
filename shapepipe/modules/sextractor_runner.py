@@ -213,8 +213,8 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
 
     # Base arguments for SExtractor
     command_line_base = ('{0} {1},{2} -c {3} -PARAMETERS_NAME {4} -FILTER_NAME {5} '
-                         '-CATALOG_NAME {6}'.format(exec_path, measurement_image,
-                                                    detection_image,
+                         '-CATALOG_NAME {6}'.format(exec_path, detection_image,
+                                                    measurement_image,
                                                     dot_sex, dot_param, dot_conv,
                                                     output_file_path))
 
