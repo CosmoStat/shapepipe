@@ -142,13 +142,15 @@ The following steps show how to set up a VM.
     ./shapepipe_run.py -c example/config.ini
     ```
 
-    IF the test log returns the expected results the VM should be ready for a snapshot.
+    If the test log returns the expected results the VM should be ready for a snapshot.
 
-9. Create a snapshot of the VM status:
+8. Create a snapshot of the VM status:
 
     On 8OpenStack](https://arbutus-canfar.cloud.computecanada.ca/) under "Instances" click the "Create Snapshot" button for the corresponding VM. Be sure to follow the snapshot naming scheme defined for the VM above.
 
-10. Update VM and create a new snapshot:
+It will take a few to a few ten minutes until a snapshot is ready to be used.
+
+9. Update VM and create a new snapshot:
 
     The VM set-up only needs to be done once, afterwards the VM can simply be modified for new snapshots. *e.g.* pull the latest changes to the pipeline repository and install any new dependencies then repeat step 9.
 
@@ -225,6 +227,7 @@ The batch system is a server where jobs can be submitted to the CANFAR cluster u
     ```bash
     > canfar_submit JOB_FILE SNAP_SHOT FLAVOUR
     ```
+ Make sure that the snapshot is ready to be used, see below to check its status.
 
 6. Check queue:
 
@@ -264,7 +267,7 @@ Sometime an snap shot image is not (yet) active and shared, since its creation c
 ```bash
 openstack image show -c visibility -c status <SnapShotName>
 ```
-When `status = active`, the job can be started. The field `visibiltiy` has value `private` before first use, which afterwards changes to `shared`.
+When `status = active`, the job can be started. The field `visibiltiy` has the value `private` before first use, which afterwards changes to `shared`.
 
 In general, a job should be started within 5 - 10 minutes. This time will increase if the queue is full. If the job is launched before the snap shot status is `active`, it might be stuck in the queue for a long time (for ever?).
 
