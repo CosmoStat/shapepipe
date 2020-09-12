@@ -15,38 +15,51 @@ Here are some instructions on how to set up a VM on CANFAR to run the pipeline.
 
 ## Current Set Up
 
-### Available VMs
+### Instances, snapshots, and VMs
 
-1. `ShapePipe1`:
-   - 90 GB RAM
-   - 20 GB Disk
-   - 8 CPUs
-   - Snapshot Naming: `ShapePipe_snap_xx`
-   - Flavour: `c8-90gb-186`
-   - IP Address: 206.12.92.141
-> Note: ssh keys for more users can not be added to this VM at the moment.
+An `instance` contains the base setting, which is used to create VMs, where
+in turn jobs are submitted and run.
 
-2. - `ShapePipe2`:
-   - 90 GB RAM
-   - 20 GB Disk
-   - 8 CPUs
-   - Flavour: c8-90gb-186
-   - IP Address: 206.12.92.159
+A `snapshot` or `image` is created from an instance, and contains a frozen version of
+the instance. An instance can have a number of snapshots, e.g. to use
+different version of some code or library.
+
+A  `Virtual Machine` (VM) is a copy of a snapshot on which a job is run.
+
+
+### Available Instances
+
+Once logged in to computecanada, the user can see all instances
+for the project(s) they are registered on the page
+https://arbutus-canfar.cloud.computecanada.ca/project/instances.
+
+For `ShapePipe` we use the following instance:
+- `ShapePipe2`:
+- 90 GB RAM
+- 20 GB Disk
+- 8 CPUs
+- Flavour: c8-90gb-186
+- IP Address: 206.12.92.159
 
 ### Available Snapshots
 
-1. `ShapePipe_snap_01` (instance of `ShapePipe`)
-   - Date Created: 26/11/19 13:51
-2. `ShapePipe_snap_01` (instance of `ShapePipe2`)
-   - For testing
-3. `ShapePipe2-mk-20200324` (instance of `ShapePipe2`)
-   - Testing the pipeline in `GOLD` branch
+All snapshots are listed here:
+https://arbutus-canfar.cloud.computecanada.ca/project/images
+Snapshots created from the `ShapePipe2` instance are typically called
+`ShapePipe2-mk-<date>`.
+
+Note that if `vos` down- or up-loads to the `canfar` storage are performed by a job,
+this requires a `cadc` certificate, which is valid for 10 days. In that case, a snapshot
+will not function anymore later than 10 days after its creation.
 
 ## Virtual Machine
 
 The virtual machine (VM) is a space where we can install software under a given Linux distribution with given CPU, RAM and storage limits. Once we are happy with a given set-up we can freeze these conditions (*i.e.* all the software versions *etc.* currently installed) by creating a *snapshot* that acts like a container for the VM. Jobs can then be submitted through the batch system using a given snapshot.
 
-> Note: All processing (except very minor tests) should be done through the batch system and not run directly on the VM.
+In general the processing should be done through the batch system and not run directly on the VM.
+However, tests of the VM and the code to be submitted can be run in (interactive mode)[interactive(-mode] on the VM.
+
+The following steps show how to set up a VM.
 
 1. Create a VM:
 
@@ -58,7 +71,7 @@ The virtual machine (VM) is a space where we can install software under a given 
 
 2. SSH to VM:
 
-    Run the following to connect to a given VM:
+    Run the following command to connect to a given VM:
 
     ```bash
     ssh ubuntu@IP_ADDRESS
