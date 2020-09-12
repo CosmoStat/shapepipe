@@ -82,7 +82,7 @@ The following steps show how to set up a VM.
     > Note: You should only really be connecting to the VM with the intention of creating a new snapshot or running tests with the current set-up. Avoid making any software changes not intended for a new snapshot.
     > Note: The person who creates the VM will have to manually added the SSH keys of any other potential user.
 
-3. Install the following tools:
+3. For `ShapePipe`, install the following tools:
 
     ```bash
     sudo apt update
@@ -92,7 +92,7 @@ The following steps show how to set up a VM.
     sudo apt install libtool
     ```
 
-4. Install miniconda:
+4. For `ShapePipe`, install miniconda:
 
     ```bash
     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
@@ -100,43 +100,35 @@ The following steps show how to set up a VM.
     bash
     ```
 
-5. Install ShapePipe:
-    * Add VM SSH key to GitLab
+5. Install `ShapePipe`:
+    * Add VM SSH key to the `ShapePipe` GitHub repository
 
     ```bash
     ssh-keygen -t rsa -b 4096 -C “EMAIL_ADDRESS”
     cat .ssh/id_rsa.pub
     ```
-    On the gitllab, click on your thumbnail in the upper right corner, choose the Settings menu entry, and click on "SSH Keys" on the left. Create a new ssh key by copying the contents of `ssh/id_rsa.pub` to the corresponding field, and provide a name.
+    On github, click on your thumbnail in the upper right corner, choose the Settings menu entry, and click on "SSH Keys" on the left. Create a new ssh key by copying the contents of `ssh/id_rsa.pub` to the corresponding field, and provide a name.
 
     * Clone repository
 
     ```bash
-    git clone https://drf-gitlab.cea.fr/cosmostat/ShapePipe.git
+    git clone git@github.com:CosmoStat/shapepipe.git
     ```
 
-    * Run install script
+    * Run the install script
 
     ```bash
     cd ShapePipe
-    ./install_shapepipe
+    ./install_shapepipe --vos
     ```
 
-    * Activate shapepipe environment
+    * Activate the `SshapePipe` environment
 
     ```bash
     conda activate shapepipe
     ```
 
-6. Install VOSPACE client:
-
-    ```bash
-    pip install vos
-    ```
-
-    The VOSPACE client is needed to transfer data to/from the VOSPACE.
-
-7. Generate certificate to access VOSPACE:
+6. Generate certificate to access VOSPACE:
 
     ```bash
     cadc-get-cert -u USERNAME
@@ -144,7 +136,7 @@ The following steps show how to set up a VM.
     When asked, enter your CADC password.
     A CADC certificate is also needed to transfer data to/from the VOSPACE.
 
-8. Test that pipeline is working and can access multiple VM CPUs:
+7. Test that pipeline is working and can access multiple VM CPUs:
 
     ```bash
     ./shapepipe_run.py -c example/config.ini
@@ -154,7 +146,7 @@ The following steps show how to set up a VM.
 
 9. Create a snapshot of the VM status:
 
-    On [OpenStack](https://arbutus-canfar.cloud.computecanada.ca/) under "Instances" click the "Create Snapshot" button for the corresponding VM. Be sure to follow the snapshot naming scheme defined for the VM above.
+    On 8OpenStack](https://arbutus-canfar.cloud.computecanada.ca/) under "Instances" click the "Create Snapshot" button for the corresponding VM. Be sure to follow the snapshot naming scheme defined for the VM above.
 
 10. Update VM and create a new snapshot:
 
