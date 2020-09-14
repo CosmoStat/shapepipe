@@ -2,8 +2,10 @@
 
 Authors:
 
-Sam Farrens <samuel.farrens@cea.fr>,
+Sam Farrens <samuel.farrens@cea.fr>
+
 Martin Kilbinger <martin.kilbinger@cea.fr>
+
 Axel Guinot <axel.guinot@cea.fr>
 
 # CANFAR Set Up
