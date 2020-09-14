@@ -154,7 +154,7 @@ The following steps show how to set up a VM.
 
 8. Create a snapshot of the VM status:
 
-    On 8OpenStack](https://arbutus-canfar.cloud.computecanada.ca/) under "Instances" click the "Create Snapshot" button for the corresponding VM. Be sure to follow the snapshot naming scheme defined for the VM above.
+    On [OpenStack](https://arbutus-canfar.cloud.computecanada.ca/) under "Instances" click the "Create Snapshot" button for the corresponding VM. Be sure to follow the snapshot naming scheme defined for the VM above.
 
 It will take a few to a few ten minutes until a snapshot is ready to be used.
 
@@ -166,7 +166,7 @@ It will take a few to a few ten minutes until a snapshot is ready to be used.
 
 The batch system is a server where jobs can be submitted to the CANFAR cluster using a previously defined snapshot.
 
-> Note: You will have to request access to the batch system before you can connect.
+> Note: You will have to request access from [Sebastian Fabbro](sebfabbro@gmail.com) to the batch system before you can connect.
 
 1. SSH to batch system:
 
