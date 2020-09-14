@@ -1,5 +1,11 @@
 [Home](./shapepipe.md) | [Environments](./environment.md)
 
+Authors:
+
+Sam Farrens <samuel.farrens@cea.fr>,
+Martin Kilbinger <martin.kilbinger@cea.fr>
+Axel Guinot <axel.guinot@cea.fr>
+
 # CANFAR Set Up
 
 Here are some instructions on how to set up a VM on CANFAR to run the pipeline.
