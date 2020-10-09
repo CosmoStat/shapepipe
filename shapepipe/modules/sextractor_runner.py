@@ -196,7 +196,7 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
                          'related to extra files: 1 regular + {} extra '
                          'files not compatible with total file list '
                          'length of {}'
-                         ''.format(extra, len(input_file_list)))
+                         ''.format(extra-1, len(input_file_list)))
 
     if (len(check_image) == 1) & (check_image[0] == ''):
         check_type = ['NONE']
