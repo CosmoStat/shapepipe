@@ -1,7 +1,7 @@
-shapepipe.modules.vignetmaker\_runner module
+shapepipe.modules.get\_images\_runner module
 ============================================
 
-.. automodule:: shapepipe.modules.vignetmaker_runner
+.. automodule:: shapepipe.modules.get_images_runner
    :members:
    :undoc-members:
    :show-inheritance:

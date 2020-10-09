@@ -55,8 +55,8 @@ jobs:
           python-version: 3.8
           auto-activate-base: true
 
-      - name: Set conda path
-        run: export PATH=/usr/share/miniconda/bin:$PATH
+      - name: Check conda
+        run: which conda
 
       - name: Install package
         shell: bash -l {0}
