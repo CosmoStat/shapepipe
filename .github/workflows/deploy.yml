@@ -8,7 +8,7 @@ on:
 jobs:
 
   Ubuntu:
-  runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
@@ -33,7 +33,7 @@ jobs:
           python setup.py test
 
   macOS:
-  runs-on: macos-latest
+    runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v2
