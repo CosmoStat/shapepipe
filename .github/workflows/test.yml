@@ -21,6 +21,7 @@ jobs:
         with:
           auto-update-conda: true
           python-version: 3.8
+          auto-activate-base: true
 
       - name: Test conda
         run: |
@@ -49,7 +50,11 @@ jobs:
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 
       - name: Install dependencies
-        run: brew install cmake pkgconfig cfitsio libomp
+        run: |
+          brew install cmake
+          brew install pkgconfig
+          brew install cfitsio
+          brew install libomp
 
       - name: Set up conda
         uses: conda-incubator/setup-miniconda@v1
