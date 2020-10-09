@@ -26,7 +26,7 @@ jobs:
       - name: Set conda path
         run: |
           export PATH=/usr/share/miniconda/bin:$PATH
-          source activate -h
+          conda activate -h
 
       - name: Install package
         shell: bash -l {0}
@@ -40,35 +40,35 @@ jobs:
           conda activate shapepipe
           python setup.py test
 
-  macOS:
-    runs-on: macos-latest
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Install dependencies
-        run: |
-          brew install cmake
-          brew install pkgconfig
-          brew install cfitsio
-          brew install libomp
-
-      - name: Set up conda
-        uses: conda-incubator/setup-miniconda@v1
-        with:
-          auto-update-conda: true
-          python-version: 3.8
-          auto-activate-base: true
-
-      - name: Set conda path
-        run: export PATH=/usr/share/miniconda/bin:$PATH
-
-      - name: Install package
-        shell: bash -l {0}
-        run: ./install_shapepipe --develop
-
-      - name: Run tests
-        shell: bash -l {0}
-        run: |
-          conda activate shapepipe
-          python setup.py test
+  # macOS:
+  #   runs-on: macos-latest
+  #
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #
+  #     - name: Install dependencies
+  #       run: |
+  #         brew install cmake
+  #         brew install pkgconfig
+  #         brew install cfitsio
+  #         brew install libomp
+  #
+  #     - name: Set up conda
+  #       uses: conda-incubator/setup-miniconda@v1
+  #       with:
+  #         auto-update-conda: true
+  #         python-version: 3.8
+  #         auto-activate-base: true
+  #
+  #     - name: Set conda path
+  #       run: export PATH=/usr/share/miniconda/bin:$PATH
+  #
+  #     - name: Install package
+  #       shell: bash -l {0}
+  #       run: ./install_shapepipe --develop
+  #
+  #     - name: Run tests
+  #       shell: bash -l {0}
+  #       run: |
+  #         conda activate shapepipe
+  #         python setup.py test
