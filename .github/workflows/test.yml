@@ -23,12 +23,12 @@ jobs:
           python-version: 3.8
           auto-activate-base: true
 
-      - name: Set conda path
-        run: |
-          export PATH=/usr/share/miniconda/bin:$PATH
-          conda init bash
-          bash
-          conda activate -h
+      # - name: Set conda path
+      #   run: |
+      #     export PATH=/usr/share/miniconda/bin:$PATH
+      #     conda init bash
+      #     bash
+      #     conda activate -h
 
       - name: Install package
         shell: bash -l {0}
