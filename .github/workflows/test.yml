@@ -55,13 +55,10 @@ jobs:
           python-version: 3.8
           auto-activate-base: true
 
-      - name: Check conda
-        run: which conda
-
       - name: Install package
         shell: bash -l {0}
         run: |
-          export PATH=/usr/share/miniconda/bin:$PATH
+          export PATH=/usr/local/miniconda/bin:$PATH
           ./install_shapepipe --develop
 
       - name: Run tests
