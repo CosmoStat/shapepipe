@@ -26,11 +26,13 @@ jobs:
       - name: Set conda path
         run: |
           export PATH=/usr/share/miniconda/bin:$PATH
-          ls /usr/share/miniconda/bin
+          source activate -h
 
       - name: Install package
         shell: bash -l {0}
-        run: ./install_shapepipe --develop
+        run:
+          export PATH=/usr/share/miniconda/bin:$PATH
+          ./install_shapepipe --develop
 
       - name: Run tests
         shell: bash -l {0}
