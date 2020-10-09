@@ -1,9 +1,0 @@
-modopt>=1.2
-numba>=0.49.1
-sip_tpv>=1.1
-sf_tools>=2.0
-sqlitedict>=1.6.0
-termcolor>=1.1
-reproject>=0.7.1
-tqdm>=4.46.1
-git+https://github.com/aguinot/ngmix@stable_version
