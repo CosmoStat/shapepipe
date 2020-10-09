@@ -27,6 +27,7 @@ jobs:
         run: |
           which conda
           conda env list
+          echo "CONDA_PREFIX = $CONDA_PREFIX"
           ls $CONDA_PREFIX/bin
 
       - name: Install package
@@ -45,9 +46,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Set up Homebrew
-        run: |
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+      # - name: Set up Homebrew
+      #   run: |
+      #     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 
       - name: Install dependencies
         run: |
