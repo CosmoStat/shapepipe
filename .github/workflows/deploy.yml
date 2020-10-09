@@ -38,8 +38,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install dependencies
+      - name: Set up Homebrew
         uses: artemnovichkov/action-homebrew@master
+
+      - name: Install dependencies
         run: brew install cmake pkgconfig cfitsio libomp
 
       - name: Set up conda
