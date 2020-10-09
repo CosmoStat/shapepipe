@@ -1663,7 +1663,6 @@ class interpreter(object):
             return -1
         else:
             return mad(input)
-            #return np.median(np.abs(input - np.median(input)))
 
     def _test_homogeneity(self, *args):
         """Test homogeneity

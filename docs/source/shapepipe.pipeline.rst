@@ -5,6 +5,7 @@ Submodules
 ----------
 
 .. toctree::
+   :maxdepth: 4
 
    shapepipe.pipeline.args
    shapepipe.pipeline.config
@@ -22,6 +23,6 @@ Module contents
 ---------------
 
 .. automodule:: shapepipe.pipeline
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
