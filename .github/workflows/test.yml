@@ -23,12 +23,8 @@ jobs:
           python-version: 3.8
           auto-activate-base: true
 
-      - name: Test conda
-        run: |
-          which conda
-          conda env list
-          echo "CONDA_PREFIX = $CONDA_PREFIX"
-          ls $CONDA_PREFIX/bin
+      - name: Set conda path
+        run: export PATH=/usr/share/miniconda/bin:$PATH
 
       - name: Install package
         shell: bash -l {0}
@@ -46,10 +42,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      # - name: Set up Homebrew
-      #   run: |
-      #     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-
       - name: Install dependencies
         run: |
           brew install cmake
@@ -62,6 +54,10 @@ jobs:
         with:
           auto-update-conda: true
           python-version: 3.8
+          auto-activate-base: true
+
+      - name: Set conda path
+        run: export PATH=/usr/share/miniconda/bin:$PATH
 
       - name: Install package
         shell: bash -l {0}
