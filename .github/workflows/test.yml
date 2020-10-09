@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+     - master
+
+jobs:
+
+  Ubuntu:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: sudo apt-get install libopenblas-dev
+
+      - name: Set up conda
+        uses: conda-incubator/setup-miniconda@v1
+        with:
+          auto-update-conda: true
+          python-version: 3.8
+
+      - name: Install package
+        shell: bash -l {0}
+        run: ./install_shapepipe --develop
+
+      - name: Run tests
+        shell: bash -l {0}
+        run: |
+          conda activate shapepipe
+          python setup.py test
+
+  macOS:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Homebrew
+        uses: artemnovichkov/action-homebrew@master
+
+      - name: Install dependencies
+        run: brew install cmake pkgconfig cfitsio libomp
+
+      - name: Set up conda
+        uses: conda-incubator/setup-miniconda@v1
+        with:
+          auto-update-conda: true
+          python-version: 3.8
+
+      - name: Install package
+        shell: bash -l {0}
+        run: ./install_shapepipe --develop
+
+      - name: Run tests
+        shell: bash -l {0}
+        run: |
+          conda activate shapepipe
+          python setup.py test
