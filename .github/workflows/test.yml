@@ -27,6 +27,7 @@ jobs:
         run: |
           export PATH=/usr/share/miniconda/bin:$PATH
           conda init bash
+          bash
           conda activate -h
 
       - name: Install package
