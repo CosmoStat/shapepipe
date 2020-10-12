@@ -29,10 +29,11 @@ def uncompress_fits_image_runner(input_file_list, run_dirs, file_number_string,
 
     if len(input_file_list) != len(output_pattern_list):
         raise ValueError('Lists INPUT_PATH ({}) and OUTPUT_PATTERN ({}) '
-                         'need to be of equal length.'.format(
-                         len(input_file_list), len(output_pattern_list)))
+                         'need to be of equal length.'
+                         ''.format(len(input_file_list),
+                                   len(output_pattern_list)))
 
-    # Read data for desired HDU
+    # Read data from input list files
     for i in range(len(input_file_list)):
         data = fits.getdata(input_file_list[i], data_hdu)
         header = fits.getheader(input_file_list[i], data_hdu)
@@ -41,6 +42,5 @@ def uncompress_fits_image_runner(input_file_list, run_dirs, file_number_string,
         hdu = fits.PrimaryHDU(data, header)
         hdul = fits.HDUList([hdu])
         hdul.writeto('{}/{}{}.fits'.format(run_dirs['output'], output_pattern_list[i], file_number_string))
-        #hdul.writeto(run_dirs['output'] + '/' + output_pattern_list[i] + file_number_string + '.fits')
 
     return None, None

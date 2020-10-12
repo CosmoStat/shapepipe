@@ -36,8 +36,6 @@ def in2out_pattern(number):
 
     return number_final
 
- 
-
 
 class GetImages(object):
 

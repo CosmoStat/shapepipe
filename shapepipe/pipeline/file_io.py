@@ -251,9 +251,9 @@ class BaseCatalog(object):
          self._hdu = hdu
 
       def __str__(self):
-         return "SCatalog *** ERROR ***: File \'{0}', hdu={1}: data not found".format(
-                 self._filepath, self._hdu)
-
+         return 'SCatalog *** ERROR ***: File \'{0}\', hdu={1}: '\
+                'data not found'\
+                ''.format(self._filepath, self._hdu)
 
    # ------------------------------------------------------------------------------
    class CatalogFileNotFound(Exception):
@@ -1681,10 +1681,8 @@ class interpreter(object):
         if len(input) == 0:
             return -1
         else:
-
             return sigma_mad(input)
 
-          
     def _test_homogeneity(self, *args):
         """Test homogeneity
 
