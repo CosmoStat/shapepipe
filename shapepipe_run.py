@@ -396,6 +396,8 @@ def run_mpi(pipe, comm):
 
 def main(args=None):
 
+    pipe = None
+
     try:
 
         if import_mpi:
@@ -424,7 +426,11 @@ def main(args=None):
 
     except Exception as err:
         if master:
-            catch_error(err, pipe.log)
+            if pipe:
+                log = pipe.log
+            else:
+                log = None
+            catch_error(err, log=log)
             return 1
 
 
