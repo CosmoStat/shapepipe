@@ -188,14 +188,15 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
         command_line_extra += ' -PSF_NAME {0}'.format(input_file_list[extra])
         extra += 1
 
-    # Check for separate images for detection and measurement
+    # Check for separate files for detection and measurement
 
     # First, consistency checks
     if detection_weight and not detection_image:
-        raise ValueError('DETECTION_WEIGHT not valid if DETECTION_IMAGE is False')
+        raise ValueError('DETECTION_WEIGHT cannot be True if DETECTION_IMAGE is False')
     if detection_weight and not weight_file:
-        raise ValueError('DETECTION_WEIGHT not valid if WEIGHT_FILE is False')
+        raise ValueError('DETECTION_WEIGHT cannot be True if WEIGHT_FILE is False')
 
+    # Check for separate image file for detection and measurement
     if detection_image:
         detection_image_path = input_file_list[extra]
         extra += 1
@@ -206,15 +207,16 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
     # If False, use measurement weight image.
     # Note: This could be changed, and no weight image could be used, but
     # this might lead to more user errors.
-    if detection_weight:
-        detection_weight_path = input_file_list[extra]
-        extra += 1
-    else:
-        detection_weight_path = weight_image
-
-    if weight_image:
+    if weight_file:
+        if detection_weight:
+            detection_weight_path = input_file_list[extra]
+            extra += 1
+        else:
+            detection_weight_path = weight_image
         command_line_extra += ' -WEIGHT_IMAGE {0},{1}'\
                               ''.format(detection_weight_path, weight_image)
+    else:
+        command_line_extra += ' -WEIGHT_TYPE None'
 
     if extra != len(input_file_list):
         raise ValueError('Incoherence between input file number and keys '
