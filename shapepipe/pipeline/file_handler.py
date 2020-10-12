@@ -88,7 +88,11 @@ class FileHandler(object):
     def __init__(self, run_name, modules, config):
 
         self._run_name = run_name
+
         self._module_list = modules
+        if self._module_list[-1] == '':
+            raise ValueError('Invalid module list, check for a trailing comma')
+
         self._config = config
         self.module_runners = get_module_runners(self._module_list)
         self._input_list = config.getlist('FILE', 'INPUT_DIR')
