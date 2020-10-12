@@ -1,7 +1,7 @@
-shapepipe.modules.module\_decorator module
+shapepipe.modules.mask\_runner\_exp module
 ==========================================
 
-.. automodule:: shapepipe.modules.module_decorator
+.. automodule:: shapepipe.modules.mask_runner_exp
    :members:
    :undoc-members:
    :show-inheritance:

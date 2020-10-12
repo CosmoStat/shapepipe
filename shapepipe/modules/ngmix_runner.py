@@ -44,10 +44,10 @@ def MegaCamFlip(vign, ccd_nb):
     ------
     vign : numpy.ndarray
         The postage stamp flip accordingly.
-    
+
     """
 
-    if ccd_nb < 18 or ccd_nb in [36,37]:
+    if ccd_nb < 18 or ccd_nb in [36, 37]:
         # swap x axis so origin is on top-right
         return np.rot90(vign, k=2)
     else:
@@ -252,7 +252,7 @@ def get_jacob(wcs, ra, dec):
 
 def get_noise(gal, weight, guess, thresh=1.2, pixel_scale=0.187):
     """ Get Noise
-    
+
     Compute the sigma of the noise from an object postage stamp.
     Use a guess on the object size, ellipticity and flux to create a window
     function.
@@ -274,7 +274,7 @@ def get_noise(gal, weight, guess, thresh=1.2, pixel_scale=0.187):
     ------
     sig_noise : float
         Sigma of the noise on the galaxy image.
-    
+
     """
 
     img_shape = gal.shape
@@ -385,8 +385,8 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
         noise_img_gal = np.random.randn(*gals[n_e].shape)*sig_noise
 
         gal_masked = np.copy(gals[n_e])
-        if (len(np.where(w==0)[0]) != 0):
-            gal_masked[w==0] = noise_img_gal[w==0]
+        if (len(np.where(w == 0)[0]) != 0):
+            gal_masked[w == 0] = noise_img_gal[w == 0]
 
         w *= 1/sig_noise**2.
 
@@ -397,7 +397,7 @@ def do_ngmix_metacal(gals, psfs, psfs_sigma, weights, flags, jacob_list,
         psf_res_gT['T_PSFo'] += psf_res['T']*w_tmp
         psf_res_gT['T_err_PSFo'] += psf_res['T_err']*w_tmp
         wsum += w_tmp
-        
+
         # gal_obs = Observation(gals[n_e], weight=w, jacobian=gal_jacob,
         #                       psf=psf_obs, noise=noise_img)
         gal_obs = Observation(gal_masked, weight=w, jacobian=gal_jacob,
@@ -832,7 +832,7 @@ def ngmix_runner(input_file_list, run_dirs, file_number_string,
                  config, w_log):
 
     # Init randoms
-    seed = int(''.join(re.findall('\d+', file_number_string)))
+    seed = int(''.join(re.findall(r'\d+', file_number_string)))
     np.random.seed(seed)
 
     output_name = (run_dirs['output'] + '/' + 'ngmix' +

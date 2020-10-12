@@ -161,7 +161,7 @@ Once we have selected the tiles, we can identify the single exposure images that
 
 For example, find the tile number for a Planck cluster at R.A.=255.66 deg, dec= 34.05 deg can be found with the `--coord` option:
 ```bash
-cfis_field_select -i tiles+weights_DR2.txt --coord 255.66deg_34.05deg -t tile --out_name_only --out_number_only -s -o tile_numbers
+cfis_field_select -i tiles+weights_DR2.txt --coord 255.66deg_34.05deg -t tile --out_name_only --out_ID_only -s -o tile_numbers
 ```
 The input text file (with `-i`) contains a list of CFIS tiles. The tile number(s) are written as a simple list in the ASCII file `tile_numbers.txt`.
 

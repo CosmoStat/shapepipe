@@ -1,7 +1,7 @@
-shapepipe.modules.module\_runners module
+shapepipe.modules.serial\_example module
 ========================================
 
-.. automodule:: shapepipe.modules.module_runners
+.. automodule:: shapepipe.modules.serial_example
    :members:
    :undoc-members:
    :show-inheritance:

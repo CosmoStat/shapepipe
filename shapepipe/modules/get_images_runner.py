@@ -231,15 +231,13 @@ def get_images_runner(input_file_list, run_dirs, file_number_string,
     if any(len(lst) != nitem for lst in [input_dir, input_file_pattern,
                                          input_file_ext, output_file_pattern]):
         raise ValueError('Lists INPUT_PATH ({}), INPUT_FILE_PATTERN ({}), '
-                         'INPUT_FILE_EXT ({}), OUTPUT_FILE_PATTENR ({}) '
-                         'need to have equal length'.format(
-                         len(input_dir), len(input_file_pattern),
-                         len(input_file_ext), len(output_file_pattern)
-                         ))
-    if len(input_file_pattern) != len(output_file_pattern):
-        raise ValueError('Lists INPUT_PATH ({}) and OUTPUT_FILE_PATTERN ({}), '
-                         'need to have equal length'.format(
-                         len(input_dir), len(output_file_pattern)))
+
+                         'INPUT_FILE_EXT ({}), OUTPUT_FILE_PATTERN ({}) '
+                         'need to have equal length'
+                         ''.format(len(input_dir),
+                                   len(input_file_pattern),
+                                   len(input_file_ext),
+                                   len(output_file_pattern)))
 
     # Copying/download method
     copy = config.get('GET_IMAGES_RUNNER', 'COPY')
