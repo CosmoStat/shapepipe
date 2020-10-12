@@ -1,7 +1,7 @@
-shapepipe.modules.galsim\_shapes\_runner module
+shapepipe.modules.merge\_headers\_runner module
 ===============================================
 
-.. automodule:: shapepipe.modules.galsim_shapes_runner
+.. automodule:: shapepipe.modules.merge_headers_runner
    :members:
    :undoc-members:
    :show-inheritance:

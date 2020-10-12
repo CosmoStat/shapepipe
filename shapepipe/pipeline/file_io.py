@@ -1681,9 +1681,10 @@ class interpreter(object):
         if len(input) == 0:
             return -1
         else:
-            return sigma_mad(input)
-            #return np.median(np.abs(input - np.median(input)))
 
+            return sigma_mad(input)
+
+          
     def _test_homogeneity(self, *args):
         """Test homogeneity
 

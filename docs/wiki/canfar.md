@@ -1,5 +1,13 @@
 [Home](./shapepipe.md) | [Environments](./environment.md)
 
+Authors:
+
+Sam Farrens <samuel.farrens@cea.fr>
+
+Martin Kilbinger <martin.kilbinger@cea.fr>
+
+Axel Guinot <axel.guinot@cea.fr>
+
 # CANFAR Set Up
 
 Here are some instructions on how to set up a VM on CANFAR to run the pipeline.
@@ -15,38 +23,51 @@ Here are some instructions on how to set up a VM on CANFAR to run the pipeline.
 
 ## Current Set Up
 
-### Available VMs
+### Instances, snapshots, and VMs
 
-1. `ShapePipe1`:
-   - 90 GB RAM
-   - 20 GB Disk
-   - 8 CPUs
-   - Snapshot Naming: `ShapePipe_snap_xx`
-   - Flavour: `c8-90gb-186`
-   - IP Address: 206.12.92.141
-> Note: ssh keys for more users can not be added to this VM at the moment.
+An `instance` contains the base setting, which is used to create VMs, where
+in turn jobs are submitted and run.
 
-2. - `ShapePipe2`:
-   - 90 GB RAM
-   - 20 GB Disk
-   - 8 CPUs
-   - Flavour: c8-90gb-186
-   - IP Address: 206.12.92.159
+A `snapshot` or `image` is created from an instance, and contains a frozen version of
+the instance. An instance can have a number of snapshots, e.g. to use
+different version of some code or library.
+
+A  `Virtual Machine` (VM) is a copy of a snapshot on which a job is run.
+
+
+### Available Instances
+
+Once logged in to computecanada, the user can see all instances
+for the project(s) they are registered on the page
+https://arbutus-canfar.cloud.computecanada.ca/project/instances.
+
+For `ShapePipe` we use the following instance:
+- `ShapePipe2`:
+- 90 GB RAM
+- 20 GB Disk
+- 8 CPUs
+- Flavour: c8-90gb-186
+- IP Address: 206.12.92.159
 
 ### Available Snapshots
 
-1. `ShapePipe_snap_01` (instance of `ShapePipe`)
-   - Date Created: 26/11/19 13:51
-2. `ShapePipe_snap_01` (instance of `ShapePipe2`)
-   - For testing
-3. `ShapePipe2-mk-20200324` (instance of `ShapePipe2`)
-   - Testing the pipeline in `GOLD` branch
+All snapshots are listed here:
+https://arbutus-canfar.cloud.computecanada.ca/project/images
+Snapshots created from the `ShapePipe2` instance are typically called
+`ShapePipe2-mk-<date>`.
+
+Note that if `vos` down- or up-loads to the `canfar` storage are performed by a job,
+this requires a `cadc` certificate, which is valid for 10 days. In that case, a snapshot
+will not function anymore later than 10 days after its creation.
 
 ## Virtual Machine
 
 The virtual machine (VM) is a space where we can install software under a given Linux distribution with given CPU, RAM and storage limits. Once we are happy with a given set-up we can freeze these conditions (*i.e.* all the software versions *etc.* currently installed) by creating a *snapshot* that acts like a container for the VM. Jobs can then be submitted through the batch system using a given snapshot.
 
-> Note: All processing (except very minor tests) should be done through the batch system and not run directly on the VM.
+In general the processing should be done through the batch system and not run directly on the VM.
+However, tests of the VM and the code to be submitted can be run in (interactive mode)[interactive(-mode] on the VM.
+
+The following steps show how to set up a VM.
 
 1. Create a VM:
 
@@ -58,7 +79,7 @@ The virtual machine (VM) is a space where we can install software under a given 
 
 2. SSH to VM:
 
-    Run the following to connect to a given VM:
+    Run the following command to connect to a given VM:
 
     ```bash
     ssh ubuntu@IP_ADDRESS
@@ -69,7 +90,7 @@ The virtual machine (VM) is a space where we can install software under a given 
     > Note: You should only really be connecting to the VM with the intention of creating a new snapshot or running tests with the current set-up. Avoid making any software changes not intended for a new snapshot.
     > Note: The person who creates the VM will have to manually added the SSH keys of any other potential user.
 
-3. Install the following tools:
+3. For `ShapePipe`, install the following tools:
 
     ```bash
     sudo apt update
@@ -79,7 +100,7 @@ The virtual machine (VM) is a space where we can install software under a given 
     sudo apt install libtool
     ```
 
-4. Install miniconda:
+4. For `ShapePipe`, install miniconda:
 
     ```bash
     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
@@ -87,43 +108,35 @@ The virtual machine (VM) is a space where we can install software under a given 
     bash
     ```
 
-5. Install ShapePipe:
-    * Add VM SSH key to GitLab
+5. Install `ShapePipe`:
+    * Add VM SSH key to the `ShapePipe` GitHub repository
 
     ```bash
     ssh-keygen -t rsa -b 4096 -C “EMAIL_ADDRESS”
     cat .ssh/id_rsa.pub
     ```
-    On the gitllab, click on your thumbnail in the upper right corner, choose the Settings menu entry, and click on "SSH Keys" on the left. Create a new ssh key by copying the contents of `ssh/id_rsa.pub` to the corresponding field, and provide a name.
+    On github, click on your thumbnail in the upper right corner, choose the Settings menu entry, and click on "SSH Keys" on the left. Create a new ssh key by copying the contents of `ssh/id_rsa.pub` to the corresponding field, and provide a name.
 
     * Clone repository
 
     ```bash
-    git clone https://drf-gitlab.cea.fr/cosmostat/ShapePipe.git
+    git clone git@github.com:CosmoStat/shapepipe.git
     ```
 
-    * Run install script
+    * Run the install script
 
     ```bash
     cd ShapePipe
-    ./install_shapepipe
+    ./install_shapepipe --vos
     ```
 
-    * Activate shapepipe environment
+    * Activate the `SshapePipe` environment
 
     ```bash
     conda activate shapepipe
     ```
 
-6. Install VOSPACE client:
-
-    ```bash
-    pip install vos
-    ```
-
-    The VOSPACE client is needed to transfer data to/from the VOSPACE.
-
-7. Generate certificate to access VOSPACE:
+6. Generate certificate to access VOSPACE:
 
     ```bash
     cadc-get-cert -u USERNAME
@@ -131,19 +144,21 @@ The virtual machine (VM) is a space where we can install software under a given 
     When asked, enter your CADC password.
     A CADC certificate is also needed to transfer data to/from the VOSPACE.
 
-8. Test that pipeline is working and can access multiple VM CPUs:
+7. Test that pipeline is working and can access multiple VM CPUs:
 
     ```bash
     ./shapepipe_run.py -c example/config.ini
     ```
 
-    IF the test log returns the expected results the VM should be ready for a snapshot.
+    If the test log returns the expected results the VM should be ready for a snapshot.
 
-9. Create a snapshot of the VM status:
+8. Create a snapshot of the VM status:
 
     On [OpenStack](https://arbutus-canfar.cloud.computecanada.ca/) under "Instances" click the "Create Snapshot" button for the corresponding VM. Be sure to follow the snapshot naming scheme defined for the VM above.
 
-10. Update VM and create a new snapshot:
+It will take a few to a few ten minutes until a snapshot is ready to be used.
+
+9. Update VM and create a new snapshot:
 
     The VM set-up only needs to be done once, afterwards the VM can simply be modified for new snapshots. *e.g.* pull the latest changes to the pipeline repository and install any new dependencies then repeat step 9.
 
@@ -151,7 +166,7 @@ The virtual machine (VM) is a space where we can install software under a given 
 
 The batch system is a server where jobs can be submitted to the CANFAR cluster using a previously defined snapshot.
 
-> Note: You will have to request access to the batch system before you can connect.
+> Note: You will have to request access from [Sebastian Fabbro](sebfabbro@gmail.com) to the batch system before you can connect.
 
 1. SSH to batch system:
 
@@ -220,6 +235,7 @@ The batch system is a server where jobs can be submitted to the CANFAR cluster u
     ```bash
     > canfar_submit JOB_FILE SNAP_SHOT FLAVOUR
     ```
+ Make sure that the snapshot is ready to be used, see below to check its status.
 
 6. Check queue:
 
@@ -259,7 +275,7 @@ Sometime an snap shot image is not (yet) active and shared, since its creation c
 ```bash
 openstack image show -c visibility -c status <SnapShotName>
 ```
-When `status = active`, the job can be started. The field `visibiltiy` has value `private` before first use, which afterwards changes to `shared`.
+When `status = active`, the job can be started. The field `visibiltiy` has the value `private` before first use, which afterwards changes to `shared`.
 
 In general, a job should be started within 5 - 10 minutes. This time will increase if the queue is full. If the job is launched before the snap shot status is `active`, it might be stuck in the queue for a long time (for ever?).
 

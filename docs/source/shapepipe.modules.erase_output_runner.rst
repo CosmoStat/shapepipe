@@ -1,7 +1,7 @@
-shapepipe.modules.spread\_model\_runner module
+shapepipe.modules.erase\_output\_runner module
 ==============================================
 
-.. automodule:: shapepipe.modules.spread_model_runner
+.. automodule:: shapepipe.modules.erase_output_runner
    :members:
    :undoc-members:
    :show-inheritance:
