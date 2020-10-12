@@ -529,8 +529,10 @@ class FileHandler(object):
 
         if (len(self._module_dict[module]['file_ext']) !=
                 len(self._module_dict[module]['file_pattern'])):
-            raise ValueError('The number of file_ext values does not match '
-                             'the number of file_pattern values.')
+            raise ValueError('The number of file_ext values ({}) does not match '
+                             'the number of file_pattern values ({}).'
+                             ''.format(len(self._module_dict[module]['file_ext']),
+                                       len(self._module_dict[module]['file_pattern'])))
 
     def _create_module_run_dirs(self, module):
         """ Create Module Run Directories
