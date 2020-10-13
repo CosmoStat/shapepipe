@@ -153,7 +153,8 @@ class mask(object):
         del(img)
 
         self._wcs = wcs.WCS(self._header)
-        # MKDEBUG new 26/09: get_data() returns array in [y, x].
+
+        # Note: get_data().shape corresponds to (n_y, n_x)
         pix_center = [img_shape[1]/2., img_shape[0]/2.]
         wcs_center = self._wcs.all_pix2world([pix_center], 1)[0]
 
