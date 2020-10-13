@@ -39,10 +39,14 @@ class mask(object):
         Path to the *.mask config file
     output_dir : str
         Path to the output directory
+    hdu : int, optional, default = 0
+        HDU number
 
     """
 
-    def __init__(self, image_path, weight_path, image_suffix, image_num, config_filepath, output_dir, path_external_flag=None, outname_base='flag', star_cat_path=None):
+    def __init__(self, image_path, weight_path, image_suffix, image_num, config_filepath,
+                 output_dir, path_external_flag=None, outname_base='flag',
+                 star_cat_path=None, hdu=0):
 
         self._image_fullpath = image_path                                       # Path to the image to mask
         self._weight_fullpath = weight_path                                     # Path to the weight associated to the image
@@ -60,6 +64,8 @@ class mask(object):
         self._star_cat_path = None
         if star_cat_path is not None:
             self._star_cat_path = star_cat_path
+
+        self._hdu = hdu
 
         self._get_config(self._config_filepath)                                 # Get parameters from config file
 
@@ -216,7 +222,9 @@ class mask(object):
 
         if not self._err:
             if im_pass:
-                final_mask = self._build_final_mask(path_mask1=mask_name[0], path_mask2=mask_name[1], border=border_mask, messier=messier_mask, path_external_flag=path_external_flag)
+                final_mask = self._build_final_mask(path_mask1=mask_name[0], path_mask2=mask_name[1],
+                                                    border=border_mask, messier=messier_mask,
+                                                    path_external_flag=path_external_flag)
 
                 if not self._config['HALO']['individual']:
                     if mask_name[0] is not None:
@@ -731,12 +739,13 @@ class mask(object):
             raise ValueError('No path to a mask, border or messier provided')
 
         if path_mask1 is not None:
-            mask1 = sc.FITSCatalog(path_mask1, hdu_no=0)
+            mask1 = sc.FITSCatalog(path_mask1, hdu_no=self._hdu)
             mask1.open()
-            final_mask = mask1.get_data()[:, :]
+            dat = mask1.get_data()
+            final_mask = dat[:, :]
 
         if path_mask2 is not None:
-            mask2 = sc.FITSCatalog(path_mask2, hdu_no=0)
+            mask2 = sc.FITSCatalog(path_mask2, hdu_no=self._hdu)
             mask2.open()
             if final_mask is not None:
                 final_mask += mask2.get_data()[:, :]
@@ -762,7 +771,7 @@ class mask(object):
                 raise TypeError('messier has to be a numpy.ndarray')
 
         if path_external_flag is not None:
-            external_flag = sc.FITSCatalog(path_external_flag, hdu_no=0)
+            external_flag = sc.FITSCatalog(path_external_flag, hdu_no=self._hdu)
             external_flag.open()
             if final_mask is not None:
                 final_mask += external_flag.get_data()[:, :]
