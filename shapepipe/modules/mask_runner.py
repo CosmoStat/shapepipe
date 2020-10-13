@@ -49,6 +49,11 @@ def mask_runner(input_file_list, run_dirs, file_number_string,
 
     config_file = config.getexpanded('MASK_RUNNER', 'MASK_CONFIG_PATH')
 
+    if config.has_option('MASK_RUNNER', 'HDU'):
+        hdu = config.getint('MASK_RUNNER', 'HDU')
+    else:
+        hdu = 0
+
     if config.has_option('MASK_RUNNER', 'SUFFIX'):
         suffix = config.get('MASK_RUNNER', 'SUFFIX')
     else:
@@ -62,7 +67,7 @@ def mask_runner(input_file_list, run_dirs, file_number_string,
     inst = mask(*input_file_list[:2], suffix.replace(" ", ""),
                 file_number_string, config_file, run_dirs['output'],
                 path_external_flag=ext_flag_name, outname_base=outname_base,
-                star_cat_path=ext_star_cat)
+                star_cat_path=ext_star_cat, hdu=hdu)
     stdout, stderr = inst.make_mask()
 
     return stdout, stderr

@@ -278,8 +278,6 @@ def run_cmd_old(cmd_list, run=True, verbose=True, stop=False, parallel=True, fil
                         pipe = subprocess.Popen(cmds, stdout=subprocess.DEVNULL, env=env)
                     else:
                         pipe = subprocess.Popen(cmds, stdout=subprocess.PIPE, env=env)
-                        #out, err = pipe.communicate()
-                        #print(out)
                         # See https://www.endpoint.com/blog/2015/01/28/getting-realtime-output-using-python
                         while True:
                             output = pipe.stdout.readline()
@@ -295,8 +293,6 @@ def run_cmd_old(cmd_list, run=True, verbose=True, stop=False, parallel=True, fil
 
                     pipe_list.append(pipe)
 
-                    # If process has not terminated, ex will be None
-                    #ex = pipe.returncode
                 except OSError as e:
                     print_color('red', 'Error: {0}'.format(e.strerror))
                     ex = e.errno
@@ -320,7 +316,6 @@ def run_cmd_old(cmd_list, run=True, verbose=True, stop=False, parallel=True, fil
             ex_list[i] = pipe.returncode
     s = check_error_stop(ex_list, verbose=verbose, stop=stop)
 
-    #return s
     return s, out_list, err_list
 
 def mkdir_p(path, verbose=False):
@@ -563,8 +558,28 @@ def my_string_split(string, num=-1, verbose=False, stop=False, sep=None):
     return res
 
 
-def get_file_pattern(pattern, band, image_type, want_re=True):
+def get_file_pattern(pattern, band, image_type, want_re=True, ext=True):
     """Return file pattern of CFIS image file.
+
+    Parameters
+    ----------
+    pattern : string
+        input pattern, can be ''
+    band : string
+        band, one of 'r', 'u'
+    image_type : string
+        image type, one of 'exposure', 'exposure_flag', 'exposure_flag.fz',
+        'exposure_weight', 'exposure_weight.fz', 'tile', 'cat',
+        'weight', 'weight.fz'
+    want_re : bool, optional, default=True
+        return regular expression if True
+    ext : bool, optional, default=True
+        if True add file extention to pattern
+
+    Returns
+    -------
+    pattern_out : string
+        output pattern
     """
 
     if pattern == '':
@@ -577,40 +592,34 @@ def get_file_pattern(pattern, band, image_type, want_re=True):
         pattern_base = pattern
 
 
-    if image_type == 'exposure':
-        pattern  = '{}\.fits\.fz'.format(pattern_base)
-
-    elif image_type == 'exposure_flag':
-        pattern  = '{}\.flag\.fits'.format(pattern_base)
-
-    elif image_type == 'exposure_flag.fz':
-        pattern  = '{}\.flag\.fits\.fz'.format(pattern_base)
-
-    elif image_type == 'exposure_weight':
-        pattern  = '{}\.weight\.fits'.format(pattern_base)
-
-    elif image_type == 'exposure_weight.fz':
-        pattern  = '{}\.weight\.fits\.fz'.format(pattern_base)
-
-    elif image_type == 'tile':
-        pattern = '{}\.fits'.format(pattern_base)
-
-    elif image_type == 'cat':
-        pattern = '{}\.cat'.format(pattern_base)
-
-    elif image_type == 'weight':
-        pattern = '{}\.weight\.fits'.format(pattern_base)
-
-    elif image_type == 'weight.fz':
-        pattern = '{}\.weight\.fits\.fz'.format(pattern_base)
-
+    if ext:
+        if image_type == 'exposure':
+            pattern_out  = '{}\.fits\.fz'.format(pattern_base)
+        elif image_type == 'exposure_flag':
+            pattern_out  = '{}\.flag\.fits'.format(pattern_base)
+        elif image_type == 'exposure_flag.fz':
+            pattern_out  = '{}\.flag\.fits\.fz'.format(pattern_base)
+        elif image_type == 'exposure_weight':
+            pattern_out  = '{}\.weight\.fits'.format(pattern_base)
+        elif image_type == 'exposure_weight.fz':
+            pattern_out  = '{}\.weight\.fits\.fz'.format(pattern_base)
+        elif image_type == 'tile':
+            pattern_out = '{}\.fits'.format(pattern_base)
+        elif image_type == 'cat':
+            pattern_out = '{}\.cat'.format(pattern_base)
+        elif image_type == 'weight':
+            pattern_out = '{}\.weight\.fits'.format(pattern_base)
+        elif image_type == 'weight.fz':
+            pattern_out = '{}\.weight\.fits\.fz'.format(pattern_base)
+        else:
+            raise CfisError('Invalid type \'{}\''.format(image_type))
     else:
-        raise CfisError('Invalid type \'{}\''.format(image_type))
+        pattern_out = pattern_base
 
     if want_re == False:
-        pattern = pattern.replace('\\', '')
+        pattern_out = pattern_out.replace('\\', '')
 
-    return pattern
+    return pattern_out
 
 
 def get_tile_number_from_coord(ra, dec, return_type=str):
@@ -741,7 +750,8 @@ def get_tile_number(tile_name):
         tile number for y
     """
 
-    m = re.search('CFIS\.(\d{3})\.(\d{3})', tile_name)
+    #m = re.search('CFIS\.(\d{3})\.(\d{3})', tile_name)
+    m = re.search('(\d{3})\.(\d{3})', tile_name)
     if m == None or len(m.groups()) != 2:
         raise CfisError('Image name \'{}\' does not match tile name syntax'.format(tile_name))
 
@@ -904,8 +914,10 @@ def read_list(fname, col=None):
         f.close()
     else:
         import pandas as pd
-        dat = pd.read_csv(fname, sep='\s+')
-        file_list = dat[col].values
+        dat = pd.read_csv(fname, sep='\s+', dtype='string', header=None)
+        if col not in dat:
+            col = int(col)
+        file_list = dat[col]
 
     file_list.sort()
     return file_list
@@ -957,7 +969,7 @@ def create_image_list(fname, ra, dec, exp_time=[], valid=[]):
             v = valid[i]
         else:
             v = None
-        im = image(fname[i], r, d, exp_time=e, valid=v)
+        im = image(str(fname[i]), r, d, exp_time=e, valid=v)
         images.append(im)
 
     return images
@@ -993,21 +1005,22 @@ def get_exposure_info(logfile_name, verbose=False):
     return image
 
 
-
-def get_image_list(inp, band, image_type, col=None, verbose=False):
+def get_image_list(inp, band, image_type, col=None, input_format='full', verbose=False):
     """Return list of images.
 
     Parameters
     ----------
-    inp: string
+    inp : string
         file name or direcory path
-    band: string
+    band : string
         optical band
-    image_type: string
+    image_type : string
         image type ('tile', 'exposure', 'cat', 'weight', 'weight.fz')
-    col: string, optionalm default=None
+    col : string, optionalm default=None
         column name for file list input file
-    verbose: bool, optional, default=False
+    input_format : string, optional, default='full'
+        'full' (name) or 'ID_only' input format for image names
+    verbose : bool, optional, default=False
         verbose output if True
 
     Return
@@ -1024,7 +1037,7 @@ def get_image_list(inp, band, image_type, col=None, verbose=False):
 
     if os.path.isdir(inp):
         if col is not None:
-            raise CfisError('Column name only valid if input is file')
+            raise CfisError('Column name (-c option) only valid if input is file')
 
         # Read file names from directory listing
         inp_type  = 'dir'
@@ -1068,7 +1081,10 @@ def get_image_list(inp, band, image_type, col=None, verbose=False):
 
     # Filter file list to match CFIS image pattern
     img_list = []
-    pattern = get_file_pattern('', band, image_type)
+    if input_format == 'ID_only':
+        pattern = get_file_pattern('\d{3}.\d{3}', band, image_type, ext=False)
+    else:
+        pattern = get_file_pattern('CFIS.\d{{3}}.\d{{3}}\.{}'.format(band), band, image_type)
 
     for img in image_list:
 
@@ -1079,6 +1095,7 @@ def get_image_list(inp, band, image_type, col=None, verbose=False):
         except:
             # No link, continue
             name = img.name
+
         m = re.findall(pattern, name)
         if len(m) != 0:
             img_list.append(img)
