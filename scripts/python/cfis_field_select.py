@@ -14,7 +14,6 @@ Handling and selecting CFIS fields and pointings.
 # Compability with python2.x for x>6
 from __future__ import print_function
 
-
 import sys
 import os
 import re
@@ -24,79 +23,14 @@ import glob
 import numpy as np
 import pylab as plt
 
+from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
+
 from astropy.io import fits
 from astropy.table import Table, Column
 from astropy import units
 from astropy.coordinates import Angle, SkyCoord
 
-from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
-import textwrap
-
-
-from cfis import CfisError, param, unitdef, size
 import cfis
-
-
-
-class IndentedHelpFormatterWithNL(IndentedHelpFormatter):
-  """Allows newline to have effect in option help.
-     From https://groups.google.com/forum/#!msg/comp.lang.python/bfbmtUGhW8I/sZkGryaO8gkJ
-     Usage: parser = OptionParser(usage=usage, formatter=IndentedHelpFormatterWithNL())
-  """
-  def format_description(self, description):
-    if not description: return ""
-    desc_width = self.width - self.current_indent
-    indent = " "*self.current_indent
-# the above is still the same
-    bits = description.split('\n')
-    formatted_bits = [
-      textwrap.fill(bit,
-        desc_width,
-        initial_indent=indent,
-        subsequent_indent=indent)
-      for bit in bits]
-    result = "\n".join(formatted_bits) + "\n"
-    return result
-
-  def format_option(self, option):
-    # The help for each option consists of two parts:
-    #   * the opt strings and metavars
-    #   eg. ("-x", or "-fFILENAME, --file=FILENAME")
-    #   * the user-supplied help string
-    #   eg. ("turn on expert mode", "read data from FILENAME")
-    #
-    # If possible, we write both of these on the same line:
-    #   -x    turn on expert mode
-    #
-    # But if the opt string list is too long, we put the help
-    # string on a second line, indented to the same column it would
-    # start in if it fit on the first line.
-    #   -fFILENAME, --file=FILENAME
-    #       read data from FILENAME
-    result = []
-    opts = self.option_strings[option]
-    opt_width = self.help_position - self.current_indent - 2
-    if len(opts) > opt_width:
-      opts = "%*s%s\n" % (self.current_indent, "", opts)
-      indent_first = self.help_position
-    else: # start help on same line as opts
-      opts = "%*s%-*s  " % (self.current_indent, "", opt_width, opts)
-      indent_first = 0
-    result.append(opts)
-    if option.help:
-      help_text = self.expand_default(option)
-# Everything is the same up through here
-      help_lines = []
-      for para in help_text.split("\n"):
-        help_lines.extend(textwrap.wrap(para, self.help_width))
-# Everything is the same after here
-      result.append("%*s%s\n" % (
-        indent_first, "", help_lines[0]))
-      result.extend(["%*s%s\n" % (self.help_position, "", line)
-        for line in help_lines[1:]])
-    elif opts[-1] != "\n":
-      result.append("\n")
-    return "".join(result)
 
 
 def find_image_at_coord(images, coord, band, image_type, no_cuts=False, verbose=False):
@@ -139,8 +73,9 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, verbose=
                 # Update coordinate in image for tiles with central coordinates
                 ra_c, dec_c = cfis.get_tile_coord_from_nixy(nix, niy)
                 if img.ra is not None or img.dec is not None:
-                    raise CfisError('Coordinates in image are already set to {}, {}, cannot update to {}, {}'.\
-                                format(img.ra, img.dec, ra_c, dec_c))
+                    raise cfis.CfisError('Coordinates in image are already '
+                                         'set to {}, {}, cannot update to {}, {}'.\
+                                         format(img.ra, img.dec, ra_c, dec_c))
                 img.ra = ra_c
                 img.dec = dec_c
                 img_found.append(img)
@@ -152,7 +87,7 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, verbose=
                 print('Tile with numbers ({}, {}) not found'.format(nix, niy))
 
         if len(img_found) > 1:
-            raise CfisError('More than one tile ({}) found'.format(len(img_found)))
+            raise cfis.CfisError('More than one tile ({}) found'.format(len(img_found)))
 
     elif image_type == 'exposure':
         sc_input = SkyCoord(ra, dec)
@@ -164,7 +99,7 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, verbose=
             sc_img_same_dec = SkyCoord(img.ra, dec)
             distance_ra  = sc_input.separation(sc_img_same_dec)
             distance_dec = sc_input.separation(sc_img_same_ra)
-            if distance_ra.degree < size[image_type]/2 and distance_dec.degree < size[image_type]/2:
+            if distance_ra.degree < cfis.size[image_type]/2 and distance_dec.degree < cfis.size[image_type]/2:
                 if img.cut(no_cuts=no_cuts) == False:
                     img_found.append(img)
 
@@ -175,7 +110,7 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, verbose=
                 print('No exposure image found')
 
     else:
-        raise CfisError('Only implemented for image_type=tile')
+        raise cfis.CfisError('Only implemented for image_type=tile')
 
     return img_found
 
@@ -221,8 +156,9 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
                 # Update coordinate in image class. This could be done for all images,
                 # not just the found ones.
                 if img.ra is not None or img.dec is not None:
-                    raise CfisError('Coordinates in image are already set to {}, {}, cannot update to {}, {}'.\
-                                format(img.ra, img.dec, ra, dec))
+                    raise cfis.CfisError('Coordinates in image are already set '
+                                         'to {}, {}, cannot update to {}, {}'.\
+                                         format(img.ra, img.dec, ra, dec))
                 img.ra  = ra
                 img.dec = dec
                 found.append(img)
@@ -236,7 +172,7 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
                     found.append(img)
 
     else:
-        raise CfisError('Image type \'{}\' not implemented yet'.format(image_type))
+        raise cfis.CfisError('Image type \'{}\' not implemented yet'.format(image_type))
 
     if verbose == True:
         print('{} images found in area'.format(len(found)))
@@ -265,7 +201,7 @@ def get_images_used_in_tiles(images, band, image_type):
             hdu = fits.open(img.name)
             hist = hdu[0].header['HISTORY']
         except:
-            raise CfisError('Error while reading tile FITS file {}'.format(img.name))
+            raise cfis.CfisError('Error while reading tile FITS file {}'.format(img.name))
 
         for h in hist:
             temp = h.split(' ')
@@ -273,7 +209,7 @@ def get_images_used_in_tiles(images, band, image_type):
             pattern = r'(.*)p\.{1}.*'
             m = re.search(pattern, temp[3])
             if not m:
-                raise CfisError('re match \'{}\' failed for filename \'{}\''.format(pattern, temp[3]))
+                raise cfis.CfisError('re match \'{}\' failed for filename \'{}\''.format(pattern, temp[3]))
 
             exp_name = m.group(1)
             exp_list.append(exp_name)
@@ -329,7 +265,7 @@ def get_coord_at_image(number, band, image_type, images, no_cuts=False, verbose=
                     img_found = img
 
     else:
-        raise CfisError('Image type \'{}\' not implemented yet'.format(image_type))
+        raise cfis.CfisError('Image type \'{}\' not implemented yet'.format(image_type))
 
     return img_found
 
@@ -364,15 +300,15 @@ def params_default():
         parameter values
     """
 
-    p_def = param(
+    p_def = cfis.param(
         input  = '.',
+        input_format = 'full',
         mode  = 'c',
         band  = 'r',
         image_type  = 'tile',
     )
 
     return p_def
-
 
 
 def parse_options(p_def):
@@ -392,13 +328,16 @@ def parse_options(p_def):
     """
 
     usage  = "%prog [OPTIONS]"
-    parser = OptionParser(usage=usage, formatter=IndentedHelpFormatterWithNL())
+    parser = OptionParser(usage=usage)
 
     # I/O
     parser.add_option('-i', '--input', dest='input', type='string', default=p_def.input,
          help='input image list, can be ascii file or directory path')
     parser.add_option('-c', '--column', dest='col', type='string', default=None,
          help='column name if input is file, default=file has only one column)')
+    parser.add_option('', '--input_format', dest='input_format', type='string',
+         default=p_def.input_format,
+         help='input format, one of \'full\', \'ID_only\', default=\'{}\''.format(p_def.input_format))
     parser.add_option('-o', '--outbase', dest='outbase', type='string', default=None,
          help='output file name base (\'.txt\' is added), default=stdout')
     parser.add_option('', '--plot', dest='plot', action='store_true',
@@ -441,7 +380,6 @@ def parse_options(p_def):
     return options, args
 
 
-
 def check_options(options):
     """Check command line options.
 
@@ -458,18 +396,20 @@ def check_options(options):
 
     if int(options.number != None) + int(options.coord != None) \
         + int(options.area != None) + int(options.tile != None) > 1:
-        raise CfisError('Only one option out of \'--number\', \'--coord\', \'--area\', \'--tile\' can be given')
+        raise cfis.CfisError('Only one option out of \'--number\', \'--coord\', \'--area\', \'--tile\' can be given')
 
     if options.image_type != 'exposure' and options.no_cuts == True:
-        raise CfisError('option \'--no_cuts\' only possible for image_type=exposure')
+        raise cfis.CfisError('option \'--no_cuts\' only possible for image_type=exposure')
 
     if options.input in ['{}.txt'.format(options.outbase), '{}.pdf',format(options.outbase)]:
-        raise CfisError('Output base same as input, latter will be overwritten!')
+        raise cfis.CfisError('Output base same as input, latter will be overwritten!')
+
+    if options.input_format not in ['full', 'ID_only']:
+        raise cfis.CfisError('input_format needs to be one of \'fulll\', \'ID_only\'')
 
     see_help = 'See option \'-h\' for help.'
 
     return True
-
 
 
 def update_param(p_def, options):
@@ -507,7 +447,6 @@ def update_param(p_def, options):
         param.fout = sys.stdout
 
     return param
-
 
 
 def run_mode(images, param):
@@ -583,10 +522,10 @@ def run_mode(images, param):
 
 
     else:
-        raise CfisError('One of \'--coord\', \'--number\', \'--area\', \'--tile\' needs to be specified')
+        raise cfis.CfisError('One of \'--coord\', \'--number\', '
+                             '\'--area\', \'--tile\' needs to be specified')
 
     return ex
-
 
 
 def main(argv=None):
@@ -624,15 +563,17 @@ def main(argv=None):
         image_type = 'tile'
     else:
         image_type = param.image_type
-    images = cfis.get_image_list(param.input, param.band, image_type, col=param.col, verbose=param.verbose)
+    images = cfis.get_image_list(param.input, param.band, image_type, col=param.col,
+                                 input_format=param.input_format, verbose=param.verbose)
 
 
     # Check wether images have been found, if necessary
     if param.number:
         if images is None:
-            raise CfisError('Input list file \'{}\' not found, neither existing file nor directory'.format(param.input))
+            raise cfis.CfisError('Input list file \'{}\' not found, neither '
+                                 'existing file nor directory'.format(param.input))
         if len(images) == 0:
-            raise CfisError('No corresponding image files found in input \'{}\''.format(param.input))
+            raise cfis.CfisError('No corresponding image files found in input \'{}\''.format(param.input))
 
 
     # Run
