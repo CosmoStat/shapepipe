@@ -217,7 +217,7 @@ class vignetmaker(object):
                             exp_name + '-' + str(ccd) + '.fits')
                 ind_obj = np.where(cat.get_data(hdu_index)['CCD_N'] == ccd)[0]
                 obj_id = all_id[ind_obj]
-                pos = np.array(self._f_wcs_file[exp_name][ccd].all_world2pix(self._pos[:, 1][ind_obj], self._pos[:, 0][ind_obj], 1)).T
+                pos = np.array(self._f_wcs_file[exp_name][ccd]['WCS'].all_world2pix(self._pos[:, 1][ind_obj], self._pos[:, 0][ind_obj], 1)).T
                 pos[:, [0, 1]] = pos[:, [1, 0]]
 
                 tmp_vign = self._get_stamp(img_path, pos-1, self._rad)
@@ -420,8 +420,10 @@ def vignetmaker_runner(input_file_list, run_dirs, file_number_string,
         if mode == 'CLASSIC':
             suffix = config.getlist("VIGNETMAKER_RUNNER", "SUFFIX")
             if len(suffix) != len(input_file_list[1:]):
-                raise ValueError("You must provide a suffix for each image "
-                                 "from which you extract stamps.")
+                raise ValueError('Number of suffixes ({}) has to be equal to '
+                                 'the number of input file type ({})'
+                                 ''.format(len(suffix),
+                                           len(input_file_list[1:])))
 
             inst = vignetmaker(galcat_path, pos_type, pos_params,
                                run_dirs['output'], file_number_string)

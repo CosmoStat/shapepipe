@@ -15,11 +15,14 @@ import os
 import string
 import re
 import numpy as np
-from astropy.io import fits         # for FITS catalogs
+
+import operator
+import itertools
+
+from astropy.io import fits
 from astropy.table import Table
 
-import operator                 # for the interpreter
-import itertools
+from modopt.math.stats import mad
 
 
 # --------------------------------------------------------------------------------------------------
@@ -1441,8 +1444,8 @@ class interpreter(object):
 
         Parameters
         ----------
-        string : str
-            String to interpret
+        str:  string
+            string to interpret
         make_compare : bool
             If true look for a comparison
         make_func : bool
@@ -1450,8 +1453,8 @@ class interpreter(object):
         make_operate : bool
             If true look for an operation
 
-        Return
-        ------
+        Returns
+        -------
         array or float
             Result of the current operation.
 
@@ -1502,19 +1505,17 @@ class interpreter(object):
                 return self._comp_dict[i](first, second)
 
     def _apply_func(self, string):
-        """Apply function
-
-        Look for a function in a string and apply it.
+        """Parse input string for function name and apply function.
 
         Parameters
         ----------
-        string : str
-            String containing the function.
+        str: string
+            input string
 
         Returns
         -------
         float
-            Result of the function.
+            result of the function
 
         """
 
@@ -1531,7 +1532,7 @@ class interpreter(object):
                 else:
                     return self._stat_func[s[0]](self.interpret(s[1], self._make_compare, make_func=False, make_operate=True))
             except:
-                raise Exception('Unknown function : {0}'.format(s[0]))
+                raise Exception('Unknown function: {0}'.format(s[0]))
         else:
             raise Exception('Only one function can be applied.'
                             'Problem with the term: {0}'.format(string))
@@ -1561,10 +1562,33 @@ class interpreter(object):
         self._stat_func['max'] = max
         self._stat_func['homogen'] = self._test_homogeneity
 
-    def _mode(self, input, eps=0.001, iter_max=1000):
-        """Compute Mode
+    def _mean(self, input):
+        """Mean
 
-        Compute the most frequent value of a continuous distribution.
+        Compute the mean of a distribution.
+
+        Parameters
+        ----------
+        input : numpy.ndarray
+            Numpy array containing the data.
+
+        Returns
+        -------
+        m : float
+            mean, if input array has size > 0;
+            -1, else
+        """
+
+        cat_size = len(input)
+        if cat_size == 0:
+            return -1
+        else:
+            return np.mean()
+
+    def _mode(self, input, eps=0.001, iter_max=1000):
+        """Mode
+
+        Compute the mode, the most frequent value of a continuous distribution.
 
         Parameters
         ----------
@@ -1573,11 +1597,12 @@ class interpreter(object):
         eps : float, optional
             Accuracy to achieve (default is 0.001)
 
-        Note
-        ----
-
-        The input array must have 10 or more elements.
-
+        Returns
+        -------
+        m : float
+            mode, if input array has 10 or more elements;
+            median, if input array has >0 and <10 elements;
+            -1, if input array has 0 elements
         """
 
         cat_size = len(input)
@@ -1585,9 +1610,10 @@ class interpreter(object):
             bins = int(float(cat_size)/10.)
         elif cat_size >= 20:
             bins = int(float(cat_size)/5.)
-        else:
+        elif cat_size > 0:
             return np.median(input)
-            # raise ValueError("Can't compute with less than 10 elements in the input")
+        else:
+            return -1
 
         data = input
         diff = eps+1.
@@ -1612,26 +1638,31 @@ class interpreter(object):
         if k == iter_max:
             raise ValueError('Mode computation failed')
         else:
-            return (b_min + b_max) / 2.
+            m = (b_min + b_max) / 2.
+            return m
 
     def _mad(self, input):
-        """Median absolute deviation
+        """Mean absolute deviation
 
-        This function compute the median absolute deviation.
+        Compute median absolute deviation (MAD).
 
         Parameters
         ----------
         input : numpy.nparray
-            Numpy array containing the data
+            input data
 
-        Return
-        ------
-        float
-            The median absolute deviation of the input array.
+        Returns
+        -------
+        mad : float
+            MAD, if input size > 0;
+            -1 if input size is 0
 
         """
 
-        return np.median(np.abs(input - np.median(input)))
+        if len(input) == 0:
+            return -1
+        else:
+            return mad(input)
 
     def _test_homogeneity(self, *args):
         """Test homogeneity

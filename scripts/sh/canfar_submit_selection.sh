@@ -52,7 +52,6 @@ function finalize_job_file() {
    echo "request_cpus   = 8" >> $job_file
 
    # Cannot be larger than VM available RAM
-   echo "request_memory = 19G" >> $job_file
    echo "request_disk   = 100G" >> $job_file
 
    echo >> $job_file
@@ -64,7 +63,7 @@ function usage () {
   echo "Usage: canfar_submit_selection.sh ID_path image [-h] [-n]"
   echo "Options:"
   echo "  ID_path       ascii file with tile IDs"
-  echo "  image         VM image name, newest is ShapePipe2-mk-20200701b"
+  echo "  image         VM image name, newest is ShapePipe2-mk-20200820"
   echo "  -n            dry run"
   echo "  -h            this message"
 
@@ -92,14 +91,6 @@ fi
 tile_ID_list=$1
 image=$2
 
-if [ $dry_run == 0 ]; then
-   # TODO: Check whether the following directories exist
-   # (e.g. error msg of vmkdir), remove previous run
-   # results
-   vmkdir vos:cfis/cosmostat/kilbinger/results
-fi
-
-
 # Create job file
 job_file="job_tile.sh"
 echo "executable     = $sp_job" > $job_file
@@ -120,7 +111,7 @@ done < $tile_ID_list
  echo ")" >> $job_file
 
 # Submit
-cmd="canfar_submit $job_file $image c8-90gb-186"
+cmd="canfar_submit $job_file $image c8-30gb-186"
 echo "Running $cmd$dry_str"
 if [ $dry_run == 0 ]; then
    $cmd

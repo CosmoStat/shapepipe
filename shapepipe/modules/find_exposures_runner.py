@@ -87,6 +87,9 @@ class find_exposures():
 
             exp_name = m.group(1)
 
+            # LSB exposure names have 's', header still says 'p'
+            # exp_name = re.sub(r'p', 's', exp_name)
+
             exp_list.append(exp_name)
 
         exp_list_uniq = list(set(exp_list))

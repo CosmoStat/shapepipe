@@ -69,6 +69,8 @@ def parse_options(p_def):
          help='input tile ID file(s) or directory path, default=\'{}\''.format(p_def.input_IDs))
     parser.add_option('', '--input_vos', dest='input_vos', type='string', default=p_def.input_vos,
          help='input path on vos, default=\'{}\''.format(p_def.input_vos))
+    parser.add_option('-o', '--output_not_avail', dest='output_not_avail', type='string',
+         help='output file for not-available IDs, default no output')
 
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
 
@@ -162,7 +164,7 @@ def read_input_files(input_path, verbose=False):
     return ID_files
     
 
-def check_results(ID_files, input_vos, result_base_names, verbose=False):
+def check_results(ID_files, input_vos, result_base_names, n_complete, verbose=False):
     """Count the number of result files uploaded to vos for each input ID file.
 
     Parameters
@@ -173,6 +175,8 @@ def check_results(ID_files, input_vos, result_base_names, verbose=False):
         vos input directory
     result_base_names: list of strings
         result file base names
+    n_complete: int
+        number of files for complete result set
     verbose: bool, optional, default=False
         verbose output if True
 
@@ -182,6 +186,8 @@ def check_results(ID_files, input_vos, result_base_names, verbose=False):
         number of files found for each input file and each ID
     n_IDs: dictionary
         number of ID for each input file
+    IDs_not_avail: list
+        IDs that are not available on vos
     """
 
     cmd = 'vls'
@@ -206,25 +212,36 @@ def check_results(ID_files, input_vos, result_base_names, verbose=False):
 
     n_found = {}
     n_IDs = {}
+    IDs_not_avail = []
+
+    # Loop over all input files
     for ID_list in ID_files:
         with open(ID_list) as f:
             if verbose:
                 print('Checking ID list file {}...'.format(ID_list))
             n_found[ID_list] = {}
             n_IDs[ID_list] = 0
+
+            # Loop over all lines = IDs in file
             for line in f:
                 ID = line.rstrip()
                 n_found[ID_list][ID] = 0
+
+                # Count how many result files are available
                 for base in result_base_names:
                     name = '{}_{}.tgz'.format(base, ID)
                     if name in vls_out:
                         n_found[ID_list][ID] = n_found[ID_list][ID] + 1
                 n_IDs[ID_list] = n_IDs[ID_list] + 1
 
-    return n_found, n_IDs
+                # If not complete set found, add to not-avail list
+                if n_found[ID_list][ID] != n_complete:
+                    IDs_not_avail.append(ID)
+
+    return n_found, n_IDs, IDs_not_avail
 
 
-def output(n_found, n_IDs, n_complete):
+def output_summary(n_found, n_IDs, n_complete):
     """Create output with summary of result availability.
 
     Parameters
@@ -238,9 +255,25 @@ def output(n_found, n_IDs, n_complete):
     """
 
     for ID_list in n_found.keys():
-        nf = sum(value == n_complete  for value in n_found[ID_list].values())
-        print('{}: {}/{} complete'.format(os.path.basename(ID_list), nf, n_IDs[ID_list]))
+        nf = sum(value == n_complete for value in n_found[ID_list].values())
+        print('{}: {}/{} ({:.1f}%) complete'.format(os.path.basename(ID_list), nf, n_IDs[ID_list],  nf/n_IDs[ID_list]*100))
 
+
+def output_IDs(ID_list, output):
+    """Write IDs to file
+
+    Parameters
+    ----------
+    ID_list: list of string
+        IDs
+    output: string
+        output file name
+    """
+
+    f = open(output, 'w')
+    for ID in ID_list:
+        print(ID, file=f)
+    f.close()
 
 
 def main(argv=None):
@@ -270,11 +303,17 @@ def main(argv=None):
 
     ID_files = read_input_files(param.input_IDs, verbose=param.verbose)
 
-    result_base_names = ['psfex', 'psfexinterp_exp', 'setools_mask', 'setools_stat', 'setools_plot', 'final_cat', 'logs']
+    result_base_names = ['psfex', 'psfexinterp_exp', 'setools_mask', 'setools_stat', 'setools_plot',
+                         'final_cat', 'pipeline_flag', 'logs']
 
-    n_found, n_IDs = check_results(ID_files, param.input_vos, result_base_names, verbose=param.verbose)
+    n_complete = len(result_base_names)
 
-    output(n_found, n_IDs, len(result_base_names))
+    n_found, n_IDs, IDs_not_avail = check_results(ID_files, param.input_vos, result_base_names, n_complete, verbose=param.verbose)
+
+    output_summary(n_found, n_IDs, n_complete)
+
+    if param.output_not_avail:
+        output_IDs(IDs_not_avail, param.output_not_avail)
 
 
     ### End main program
