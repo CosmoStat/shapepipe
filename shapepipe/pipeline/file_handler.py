@@ -88,7 +88,11 @@ class FileHandler(object):
     def __init__(self, run_name, modules, config):
 
         self._run_name = run_name
+
         self._module_list = modules
+        if self._module_list[-1] == '':
+            raise ValueError('Invalid module list, check for a trailing comma')
+
         self._config = config
         self.module_runners = get_module_runners(self._module_list)
         self._input_list = config.getlist('FILE', 'INPUT_DIR')
@@ -525,8 +529,10 @@ class FileHandler(object):
 
         if (len(self._module_dict[module]['file_ext']) !=
                 len(self._module_dict[module]['file_pattern'])):
-            raise ValueError('The number of file_ext values does not match '
-                             'the number of file_pattern values.')
+            raise ValueError('The number of file_ext values ({}) does not match '
+                             'the number of file_pattern values ({}).'
+                             ''.format(len(self._module_dict[module]['file_ext']),
+                                       len(self._module_dict[module]['file_pattern'])))
 
     def _create_module_run_dirs(self, module):
         """ Create Module Run Directories
@@ -844,7 +850,7 @@ class FileHandler(object):
         if isinstance(mmap_list, str):
             mmap_list = [str]
 
-        for mmap in mmap_list:
+        for mmap in set(mmap_list):
             os.remove(mmap)
 
     def _format_process_list(self, patterns, memory_map, re_pattern,
@@ -858,7 +864,7 @@ class FileHandler(object):
         patterns : list
             List of file patterns
         memory_map : str
-            Name of mempry map file
+            Name of memory map file
         re_pattern : str
             Regular expression for numbering scheme
         num_scheme : str

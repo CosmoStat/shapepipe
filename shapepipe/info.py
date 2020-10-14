@@ -30,7 +30,7 @@ __installs__ = ['joblib>=0.13',
                 'numpy>=1.14']
 __tests__ = ['pytest',
              'pytest-cov',
-             'pytest-codestyle']
+             'pytest-pycodestyle']
 
 
 def shapepipe_logo(colour=False):

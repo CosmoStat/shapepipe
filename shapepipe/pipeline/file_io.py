@@ -22,7 +22,7 @@ import itertools
 from astropy.io import fits
 from astropy.table import Table
 
-from modopt.math.stats import mad
+from modopt.math.stats import sigma_mad
 
 
 # --------------------------------------------------------------------------------------------------
@@ -238,6 +238,22 @@ class BaseCatalog(object):
 
       def __str__(self):
          return "SCatalog *** ERROR ***: Catalog: {0} is not open".format(self._filepath)
+
+   class DataNotFound(Exception):
+      """ No data found (at given hdu) """
+
+      def __init__(self, filepath, hdu):
+         """!
+            Exception constructor
+            @param filepath file path of the catalog file
+         """
+         self._filepath = filepath
+         self._hdu = hdu
+
+      def __str__(self):
+         return 'SCatalog *** ERROR ***: File \'{0}\', hdu={1}: '\
+                'data not found'\
+                ''.format(self._filepath, self._hdu)
 
    # ------------------------------------------------------------------------------
    class CatalogFileNotFound(Exception):
@@ -817,7 +833,10 @@ class FITSCatalog(BaseCatalog):
           if hdu_no is None:
               hdu_no = self.hdu_no
 
-          return self._cat_data[hdu_no].data
+          dat = self._cat_data[hdu_no].data
+          if dat is None:
+              raise BaseCatalog.DataNotFound(self.fullpath, self.hdu_no)
+          return dat
       else:
          raise BaseCatalog.CatalogNotOpen(self.fullpath)
 
@@ -1556,7 +1575,7 @@ class interpreter(object):
         self._stat_func['exp'] = np.exp
         self._stat_func['std'] = np.std
         self._stat_func['var'] = np.var
-        self._stat_func['mad'] = self._mad
+        self._stat_func['sigma_mad'] = self.sigma__mad
         self._stat_func['len'] = len
         self._stat_func['min'] = min
         self._stat_func['max'] = max
@@ -1641,7 +1660,7 @@ class interpreter(object):
             m = (b_min + b_max) / 2.
             return m
 
-    def _mad(self, input):
+    def _sigma_mad(self, input):
         """Mean absolute deviation
 
         Compute median absolute deviation (MAD).
@@ -1662,8 +1681,7 @@ class interpreter(object):
         if len(input) == 0:
             return -1
         else:
-            return mad(input)
-            #return np.median(np.abs(input - np.median(input)))
+            return sigma_mad(input)
 
     def _test_homogeneity(self, *args):
         """Test homogeneity
