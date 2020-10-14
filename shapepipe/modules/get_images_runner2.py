@@ -94,6 +94,9 @@ class GetImages(object):
                     fbase = re.sub(self._input_numbering, number, in_pattern)
                     ext_final = in_ext
 
+                    # Remove 'p' for LSB images
+                    #fbase = re.sub('p', '', fbase)
+
                 fpath = '{}/{}{}'.format(in_path, fbase, ext_final)
                 list_files_per_type.append(fpath)
             list_all_files.append(list_files_per_type)
