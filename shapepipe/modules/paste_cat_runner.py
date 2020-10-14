@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
 
-"""MAKE CATALOG RUNNER
+"""PASTE CAT RUNNER
 
-This module merge different catalogs to create the final catalog product.
+This module pastes different (SExtractor) catalogs of objects with identical IDs.
 
-:Author: Axel Guinot
+:Author: Martin Kilbinger <martin.kilbinger@cea.fr>, Axel Guinot
+
+:Date: 10/2020
+
+:Package: ShapePipe
 
 """
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.pipeline import file_io as io
-from sqlitedict import SqliteDict
 
 import os
 import re
@@ -493,62 +496,94 @@ def save_psf_data(final_cat_file, galaxy_psf_path, w_log):
     galaxy_psf_cat.close()
 
 
-@module_runner(input_module=['sextractor_runner', 'spread_model_runner',
-                             'psfexinterp_runner_me', 'ngmix_runner'],
-               version='1.0', file_pattern=['tile_sexcat', 'sexcat_sm',
-                                            'galaxy_psf', 'ngmix'],
-               file_ext=['.fits', '.fits', '.sqlite', '.fits'],
-               depends=['numpy', 'sqlitedict'])
-def make_catalog_runner(input_file_list, run_dirs, file_number_string,
-                        config, w_log):
+class PasteCat(object):
 
-    tile_sexcat_path, sexcat_sm_path, galaxy_psf_path, shape1_cat_path = input_file_list[0:4]
-    if len(input_file_list) == 5:
-        shape2_cat_path = input_file_list[4]
+    def __init__(self, input_file_list, output_path, w_log,
+                 ext_name=None, check_col_name=None):
 
-    do_classif = config.getboolean("MAKE_CATALOG_RUNNER",
-                                   "SM_DO_CLASSIFICATION")
-    if do_classif:
-        star_thresh = config.getfloat("MAKE_CATALOG_RUNNER", "SM_STAR_STRESH")
-        gal_thresh = config.getfloat("MAKE_CATALOG_RUNNER", "SM_GAL_THRESH")
-    else:
-        star_thresh = None
-        gal_thresh = None
+        self._input_file_list = input_file_list
+        self._output_path = output_path
+        self._w_log = w_log
+        self._ext_name = ext_name
+        self._check_col_name = check_col_name
 
-    shape_type_list = config.getlist("MAKE_CATALOG_RUNNER", "SHAPE_MEASUREMENT_TYPE")
-    for shape_type in shape_type_list:
-        if shape_type.lower() not in ["ngmix", "galsim"]:
-            raise ValueError("SHAPE_MEASUREMENT_TYPE must be in [ngmix, galsim]")
+    def process(self):
 
-    tile_list_path = config.getexpanded("MAKE_CATALOG_RUNNER", "TILE_LIST")
-
-    output_name = (run_dirs['output'] + '/final_cat' +
-                   file_number_string + '.fits')
-    final_cat_file = (io.FITSCatalog(output_name,
+        # Create output catalog
+        pasted_cat = (io.FITSCatalog(self._output_path,
                       open_mode=io.BaseCatalog.OpenMode.ReadWrite))
 
-    w_log.info('Save SExtractor data')
-    save_sextractor_data(final_cat_file, tile_sexcat_path)
+        for i, input_file in enumerate(self._input_file_list):
+            self._w_log.info('Pasting catalog \'{}\''.format(input_file))
 
-    w_log.info('Save spread-model data')
-    save_sm_data(final_cat_file, sexcat_sm_path, do_classif, star_thresh,
-                 gal_thresh)
+            # Read input data
+            cat = io.FITSCatalog(input_file, SEx_catalog=True)
+            cat.open()
+            data = np.copy(cat.get_data())
+            col_names = cat.get_col_names()
+            cat.close()
 
-    w_log.info('Flag overlapping objects')
-    remove_common_elements(final_cat_file, tile_list_path)
+            # Check equality
+            if self._check_col_name:
+                if i > 0:
+                    if self._check_col_name not in col_names:
+                        raise KeyError('CHECK_COL_NAME key \'{}\' not found in '
+                                       'input catalog'
+                                       ''.format(self._check_col_name))
+                    if not (data[self._check_col_name] == data_prev[self._check_col_name]).all():
+                        raise Exception('Column check using key \'{}\' failed for input catalogs '
+                                        '#{} and #{}'
+                                        ''.format(self._check_col_name, i-1, i))
+                data_prev = data
+                
 
-    w_log.info('Save shape measurement data')
-    for shape_type in shape_type_list:
-        if shape_type.lower() == "ngmix":
-            w_log.info('Save ngmix data')
-            save_ngmix_data(final_cat_file, shape1_cat_path)
-        elif shape_type.lower() == "galsim":
-            w_log.info('Save galsim data')
-            save_galsim_shapes(final_cat_file, shape2_cat_path)
+            # Add to output cat
+            if self._ext_name:
+                ext_name = self._ext_name[i]
+            else:
+                ext_name = input_file
+            pasted_cat.save_as_fits(data, ext_name=ext_name)
 
-    # PSF data from PSFExInterpol module: Very slow (sql -> numpy
-    # transformation), and not required (ngmix has also PSF parameters)
-    # w_log.info('Save PSF data')
-    # save_psf_data(final_cat_file, galaxy_psf_path, w_log)
+
+@module_runner(version='1.0',
+               input_module='sextractor_runner',
+               file_pattern='tile_sexcat',
+               file_ext='.fits',
+               depends='numpy',
+               run_method='parallel')
+def paste_cat_runner(input_file_list, run_dirs, file_number_string,
+                     config, w_log):
+
+
+    if config.has_option('PASTE_CAT_RUNNER', 'CHECK_COL_NAME'):
+        check_col_name = config.get('PASTE_CAT_RUNNER', 'CHECK_COL_NAME')
+    else:
+        check_col_name = None
+
+    if config.has_option('PASTE_CAT_RUNNER', 'OUTPUT_FILE_PATTERN'):
+        output_file_pattern = config.get('PASTE_CAT_RUNNER', 'OUTPUT_FILE_PATTERN')
+    else:
+        output_file_pattern = 'cat_pasted'
+
+    if config.has_option('PASTE_CAT_RUNNER', 'EXT_NAME'):
+        ext_name_list = config.getlist('PASTE_CAT_RUNNER', 'EXT_NAME')
+        if len(ext_name_list) != len(input_file_list):
+            raise ValueError('Input file list length ({}) and EXT_NAME list ({}) '
+                             'need to be equal'
+                             ''.format(len(input_file_list), len(ext_name_list)))
+    else:
+        ext_name_list = None
+
+    file_ext = 'fits'
+
+    output_path = '{}/{}{}.{}'.format(run_dirs['output'],
+                                      output_file_pattern,
+                                      file_number_string,
+                                      file_ext)
+
+    inst = PasteCat(input_file_list, output_path, w_log, ext_name=ext_name_list,
+                    check_col_name=check_col_name)
+
+    inst.process()
 
     return None, None

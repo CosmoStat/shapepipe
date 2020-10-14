@@ -371,8 +371,6 @@ class FileHandler(object):
                                  'provided are valid directories or use the '
                                  'allowed special keys.')
 
-        print('MKDEBUG', input_dir)
-
         return input_dir
 
     def _get_input_dir(self):
