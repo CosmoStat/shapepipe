@@ -9,6 +9,7 @@ This module copies all images required for processing
 """
 
 from shapepipe.modules.module_decorator import module_runner
+from shapepipe.utilities.canfar import vosHandler
 import re
 import sys
 
@@ -148,17 +149,8 @@ class GetImages(object):
             sys.argv.append(in_path)
             sys.argv.append(out_path)
 
-            try:
-                from vos.commands.vcp import vcp
-            except:
-                raise ImportError('vos modules not found, re-install ShapePipe '
-                                  'with \'install_pipeline --vos\'')
-
-            try:
-                vcp()
-            except:
-                raise ValueError('Error in \'vcp\' command: \'{}\''.format(
-                                 ' '.join(sys.argv)))
+            vcp = vosHandler('vcp')
+            vcp()
 
 
 def read_image_numbers(path):
