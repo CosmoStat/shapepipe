@@ -9,6 +9,7 @@ This module selection the data to process.
 """
 
 from shapepipe.pipeline.config import CustomParser
+from shapepipe.utilities.file_system import mkdir
 
 from astropy import coordinates as c
 from astropy import units as u
@@ -195,11 +196,11 @@ class Selection(object):
 
         """
         if not os.path.isdir(self.config['COADD']['OUT_DIR']):
-            os.mkdir(self.config['COADD']['OUT_DIR'])
+            mkdir(self.config['COADD']['OUT_DIR'])
 
         output_dir = self.config['COADD']['OUT_DIR'] + '/tiles_config'
         if not os.path.isdir(output_dir):
-            os.mkdir(output_dir)
+            mkdir(output_dir)
         else:
             f_list = iglob(output_dir + '/tile_*')
             for f in f_list:
@@ -253,7 +254,7 @@ class Selection(object):
             raise ValueError("img_type has to be in ['images', 'weights', 'flags']")
 
         if not os.path.isdir(self.config['SINGLE']['OUT_DIR']):
-            os.mkdir(self.config['SINGLE']['OUT_DIR'])
+            mkdir(self.config['SINGLE']['OUT_DIR'])
 
         if self.config['SINGLE'][img_type.upper()]:
             f_select = open(self.config['SINGLE']['OUT_DIR'] + '/selected_{}.txt'.format(img_type), 'w')
@@ -291,7 +292,7 @@ class Selection(object):
 
         """
         if not os.path.isdir(self.config['SINGLE']['OUT_DIR']):
-            os.mkdir(self.config['SINGLE']['OUT_DIR'])
+            mkdir(self.config['SINGLE']['OUT_DIR'])
 
         ra_min, ra_max = self.config['SINGLE']['FIELD'][0]
         dec_min, dec_max = self.config['SINGLE']['FIELD'][1]
@@ -320,7 +321,7 @@ class Selection(object):
 
         """
         if not os.path.isdir(self.config['COADD']['OUT_DIR']):
-            os.mkdir(self.config['COADD']['OUT_DIR'])
+            mkdir(self.config['COADD']['OUT_DIR'])
 
         ra_min, ra_max = self.config['COADD']['FIELD'][0]
         dec_min, dec_max = self.config['COADD']['FIELD'][1]
@@ -356,4 +357,3 @@ if __name__ == '__main__':
         raise ValueError('No config file provided')
 
     Selection(config_path)
-

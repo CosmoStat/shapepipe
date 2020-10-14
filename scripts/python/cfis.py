@@ -30,6 +30,8 @@ from astropy.io import ascii
 from astropy.coordinates import Angle
 from astropy.coordinates import SkyCoord
 
+from shapepipe.utilities.file_system import mkdir
+
 
 unitdef = 'degree'
 
@@ -92,7 +94,7 @@ class image():
         self: class image
             image information
         """
-            
+
         self.name     = name
         self.ra       = ra
         self.dec      = dec
@@ -318,6 +320,7 @@ def run_cmd_old(cmd_list, run=True, verbose=True, stop=False, parallel=True, fil
 
     return s, out_list, err_list
 
+
 def mkdir_p(path, verbose=False):
     """Create diretorcy by calling os.makedirs. Emulate shell function 'mkdir -p':
        If path already exists, returns without raising an error.
@@ -332,18 +335,13 @@ def mkdir_p(path, verbose=False):
     Returns
     -------
     None
-    
+
     """
 
     if verbose is True:
         print('Creating directory \'{}\''.format('{}'.format(path)))
 
-    try:
-        os.makedirs(str(path))
-    except OSError as exc:
-        if exc.errno == errno.EEXIST:
-            pass
-        else: raise
+    mkdir(str(path))
 
 
 def check_error_stop(ex_list, verbose=True, stop=False):
@@ -975,7 +973,7 @@ def create_image_list(fname, ra, dec, exp_time=[], valid=[]):
     return images
 
 
-def get_exposure_info(logfile_name, verbose=False):  
+def get_exposure_info(logfile_name, verbose=False):
     """Return information on run (single exposure) from log file.
 
     Parameters
@@ -998,7 +996,7 @@ def get_exposure_info(logfile_name, verbose=False):
         ra   = Angle(' hours'.format(dat[8]))
         dec  = Angle(' degree'.format(dat[9]))
         valid = dat[21]
-    
+
         img = image(name, ra, dec, valid=valid)
         image.append(img)
 
@@ -1391,4 +1389,3 @@ def square_from_corners(ang0, ang1):
     cyd = [getattr(i, unitdef) for i in cy]
 
     return cxd, cyd
-
