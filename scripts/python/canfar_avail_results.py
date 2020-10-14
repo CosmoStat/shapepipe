@@ -19,9 +19,13 @@ from contextlib import redirect_stdout
 
 from optparse import OptionParser
 
-from vos.commands.vls import vls
+from shapepipe.utilities.canfar import vosHandler
 
 import cfis
+
+
+# Global VLS definition
+vls = vosHandler('vls')
 
 
 def params_default():
@@ -98,14 +102,14 @@ def check_options(options):
 
 def update_param(p_def, options):
     """Return default parameter, updated and complemented according to options.
-    
+
     Parameters
     ----------
     p_def:  class param
         parameter values
     optiosn: tuple
         command line options
-    
+
     Returns
     -------
     param: class param
@@ -150,7 +154,7 @@ def read_input_files(input_path, verbose=False):
     else:
         input_files =  cfis.my_string_split(input_path, stop=True, sep=' ')
 
-    ID_files = [] 
+    ID_files = []
     for f in input_files:
         if os.path.isdir(f):
             if verbose:
@@ -162,7 +166,7 @@ def read_input_files(input_path, verbose=False):
         print('{} input files found'.format(len(ID_files)))
 
     return ID_files
-    
+
 
 def check_results(ID_files, input_vos, result_base_names, n_complete, verbose=False):
     """Count the number of result files uploaded to vos for each input ID file.
@@ -204,10 +208,7 @@ def check_results(ID_files, input_vos, result_base_names, n_complete, verbose=Fa
         print('Getting vos directory content from vls...')
     f = io.StringIO()
     with redirect_stdout(f):
-        try:
-            vls()
-        except:
-            raise IOError('vls command failed: {}'.format(sys.argv))
+        vls()
     vls_out = f.getvalue()
 
     n_found = {}
@@ -326,4 +327,3 @@ def main(argv=None):
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
-
