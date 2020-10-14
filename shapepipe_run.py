@@ -428,9 +428,10 @@ def main(args=None):
         if master:
             if pipe:
                 log = pipe.log
+                catch_error(err, log=pipe.log)
             else:
-                log = None
-            catch_error(err, log=log)
+                catch_error(err)
+                raise
             return 1
 
 
