@@ -396,7 +396,7 @@ def run_mpi(pipe, comm):
 
 def main(args=None):
 
-    pipe = None
+    #pipe = None
 
     try:
 
