@@ -38,7 +38,6 @@ class GetImages(object):
             input file extensions
         check_existing_dir : string, optional, default=None
             if not None, only retrieve image if not existing at this directory
-        
         w_log:
             log file
 
@@ -237,7 +236,7 @@ def get_images_runner2(input_file_list, run_dirs, file_number_string,
 
     # Check for already retrieved files
     if config.has_option('GET_IMAGES_RUNNER2', 'CHECK_EXISTING_DIR'):
-        check_existing_dir  = config.getexpanded('GET_IMAGES_RUNNER2', 'CHECK_EXISTING_DIR')
+        check_existing_dir = config.getexpanded('GET_IMAGES_RUNNER2', 'CHECK_EXISTING_DIR')
     else:
         check_existing_dir = None
 
@@ -249,6 +248,5 @@ def get_images_runner2(input_file_list, run_dirs, file_number_string,
     all_inputs = inst.get_file_list(input_dir)
     all_outputs = inst.get_file_list(output_dir, output_file_pattern=output_file_pattern)
     inst.retrieve(all_inputs, all_outputs)
-
 
     return None, None

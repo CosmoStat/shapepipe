@@ -535,7 +535,6 @@ class PasteCat(object):
                                         '#{} and #{}'
                                         ''.format(self._check_col_name, i-1, i))
                 data_prev = data
-                
 
             # Add to output cat
             if self._ext_name:
@@ -553,7 +552,6 @@ class PasteCat(object):
                run_method='parallel')
 def paste_cat_runner(input_file_list, run_dirs, file_number_string,
                      config, w_log):
-
 
     if config.has_option('PASTE_CAT_RUNNER', 'CHECK_COL_NAME'):
         check_col_name = config.get('PASTE_CAT_RUNNER', 'CHECK_COL_NAME')
