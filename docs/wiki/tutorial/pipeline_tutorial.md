@@ -9,10 +9,12 @@
     1. [CFIS processing](#cfis-processing)
     1. [Running the pipeline](#running-the-pipeline)
     1. [Path variables](#path-variables)
-1. [Prepare input images](#prepare-input-images)
+1. [Retrieve input images](#retrieve-input-images)
     1. [Select tiles](#select-tiles)
-    1. [Download tiles](#download-tiles)
+    1. [Retrieve tiles](#retrieve-tiles)
     1. [Uncompress tile weights](#uncompress-tile-weights)
+    1. [Find single exposures](#find-single-exposures)
+    1. [Retrieve single exposure](#retrieve-single-exposures)
 1. [Process single exposure images](#process-single-exposure-images)
     1. [Split images](#split-images)
     1. [Merge WCS headers](#merge-wcs-headers)
@@ -144,7 +146,7 @@ shapepipe_run -c $SP_CONFIG/<config>.ini
 The config file `<config>.ini` contains the configuration for one or more modules.
 
 
-## Retrieve and prepare input images
+## Retrieve input images
 
 Before running `ShapePipe` we need to select the tiles to be processed.
 
@@ -169,7 +171,7 @@ cfis_field_select -i /path/to/shapepipe/aux/CFIS/tiles_202007/tiles_all_order.tx
 
 Now we are ready to run the first `ShapePipe` module.
 
-### Download tiles
+### Retrieve tiles
 
 **Module:** get_image_runner  
 **Parent:**  none  
@@ -215,7 +217,7 @@ HDU_DATA = 1
 
 On success, the uncompressed weight image with the correct (only) HDU is written.
 
-### Find exposures
+### Find single exposures
 
 **Module:** find_exposures_runner  
 **Parent:**  get_image_runner    
@@ -227,7 +229,7 @@ Once the resulting tiles and weight images are downloaded, we need to get the ex
 On success, the ascii files with the single-exposure names are produced.
 
 
-### Download single exposures
+### Retrieve single exposures
 
 **Module:** get_image_runner2  
 **Parent:**  find_exposure_runner  
