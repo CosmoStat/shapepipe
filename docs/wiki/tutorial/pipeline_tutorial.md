@@ -129,7 +129,7 @@ The following path variables need to be defined where `ShapePipe` is to be run. 
   export SP_RUN=`pwd`
   ```
   but on a cluster this directory might be different.
-- `$SP_CONFIG`: Path to configuration files. In our example this is `/path/to/shapepipe/example/cfis`.
+- `$SP_CONFIG`: Path to configuration files. In our example this is `/path/to/shapepipe/example/tutorial`.
 
 ### Running the pipeline
 
