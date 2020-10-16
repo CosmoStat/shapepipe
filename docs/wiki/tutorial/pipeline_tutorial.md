@@ -251,16 +251,16 @@ On sucess, Single-exposure images, weights, and flags are downloaded, or links t
 
 ## Process single exposure images
 
-Single exposures can be processed in a single call of `ShapePipe`, with consecutive call to all required modules. The corresponding example config file is `$SP_CONFIG/config_exp.ini`, and the command is simply
+Single exposures can be processed via a single run of `ShapePipe`, which calls all required modules one after another. The corresponding example config file is `$SP_CONFIG/config_exp.ini`, and the command is simply
 ```bash
 shapepipe_run -c $SP_CONFIG/config_exp.ini
 ```
-Alternatively each module can be executed by a separate `ShapePipe` call. The corresponding single-module example config files are indicated in the sections below.
+Alternatively each module can be executed by a separate `ShapePipe` call. The corresponding single-module example config files are detailed in the sections below.
 
 ### Split images
 
 **Module:** split_exp_runner   
-**Parent:**  none  
+**Parent:**  get_imagnere_runner2  
 **Input:** single-exposure images, weights, flags  
 **Output:** single_exposure single-CCD files for input images, weights, flags
 
