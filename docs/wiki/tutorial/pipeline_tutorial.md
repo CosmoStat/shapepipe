@@ -129,7 +129,8 @@ The following path variables need to be defined where `ShapePipe` is to be run. 
   export SP_RUN=`pwd`
   ```
   but on a cluster this directory might be different.
-- `$SP_CONFIG`: Path to configuration files. In our example this is `/path/to/shapepipe/example/tutorial`.
+- `SP_BASE`: Not required, but for convenience define this path to point at `/path/to/shapepipe/example/tutorial`.
+- `$SP_CONFIG`: Path to configuration files. In our example this is `$SP_BASE/example/tutorial`.
 
 ### Running the pipeline
 
@@ -158,9 +159,9 @@ echo 002.240 > tile_numbers.txt
 ```
 
 If this is not the case, tiles can be selected to by sky coordinates, with the script `cfis_field_select`.
-For example, to find the tile number for a Planck cluster at R.A.=255.66 deg, dec=34.05 deg, run:
+For example, to find the tile number for a Planck cluster at R.A.=213.68 deg, dec=57.79 deg, run:
 ```bash
-cfis_field_select -i /path/to/shapepipe/aux/CFIS/tiles_202007/tiles_all_order.txt --coord 216.12deg_54.8deg -t tile --input_format ID_only --out_name_only --out_ID_only -s -o tile_numbers
+cfis_field_select -i $SP_BASE/aux/CFIS/tiles_202007/tiles_all_order.txt --coord 213.68deg_54.79deg -t tile --input_format ID_only --out_name_only --out_ID_only -s -o tile_numbers
 ```
 The input text file (with `-i`) contains a list of CFIS tiles, this can also be directory containing the tile FITS files.
 
