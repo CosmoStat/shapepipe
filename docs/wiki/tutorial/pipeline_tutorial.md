@@ -88,15 +88,16 @@ Naming and numbering of the input files can closely follow the original image na
   model information for a single CCD, and `.cat` for a PSF catalogue.
   
 - Summary statistic files  
-  The `SETools` module that creates samples of objects according to some user-defined selection criteria (see [Select stars](#select-stars)) also outputs ASCII files with user-defined summary statistics for each CCD, for example the number of selected stars, or mean and standard deviation of their FWHM.  
+  The `SETools` module that creates samples of objects according to some user-defined selection criteria (see [Select stars](#select-stars)) also outputs ASCII   
+  files with user-defined summary statistics for each CCD, for example the number of selected stars, or mean and standard deviation of their FWHM.  
   Example: `star_stat-2366993-18.txt`
   
 - Tile ID list
   ASCII file with a tile number on each line. Used for the `get_image_runner` module to download CFIS images (see [Download tiles](#download-tiles)).
   
   - Single-exposure name list
-  ASCII file with a single-exposure name on each line. Produced by the `find_exposure_runner` module to identify single exposures that were used to create
-  a given tile. See [Find exposures](#find-exposures)).
+    ASCII file with a single-exposure name on each line. Produced by the `find_exposure_runner` module to identify single exposures that were used to create
+    a given tile. See [Find exposures](#find-exposures)).
   
 - Plots
   The `SETools` module can also produce plots of the objects properties that were selected for a given CCD.
@@ -181,7 +182,12 @@ Now we are ready to run the first `ShapePipe` module.
 
 The tile images and weights selected in the previous section will be retrieved now, by running the module `get_image_runner`. This module either downloads the images or, if they already exist on a local hard disk, creates symbolic links. Downloading uses the Virtual Observatory VOSpace (vos) software (http://www.ivoa.net/documents/VOSpace). The downloaded files (or link names) are automatically modified to be parsable by the pipeline.
 
-An example config file is `SP_CONFIG/config_get_tiles.ini`. In the module section, we need to specify
+An example config file is `SP_CONFIG/config_tile_Gie.ini`. Run the module with
+```bash
+shapepipe_run -c $SP_CONFIG/config_tile_Gie.ini
+```
+The `[RUN]` section needs to contain the input tile ID list path (default is `tile_numbers.txt`).
+In the module section, we need to specify
 input path (for example a VOS url), input file pattern and their extension. The input file pattern includes the number(s) as  dummy template, similarly to the `NUMBERING_SCHEME` in the `[FILE]` section (see `File options` in the [general pipeline readme](README.rst)). In addition, the input numbering scheme as python `regexp` needs to be specified, which matches the tile number in the tile number list. 
 
 Next, the output file pattern without the tile number is specified in the config file.
