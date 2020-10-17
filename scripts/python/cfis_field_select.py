@@ -33,7 +33,7 @@ from astropy.coordinates import Angle, SkyCoord
 import cfis
 
 
-def find_image_at_coord(images, coord, band, image_type, no_cuts=False, verbose=False):
+def find_image_at_coord(images, coord, band, image_type, no_cuts=False, input_format='full', verbose=False):
     """Return image covering given coordinate.
 
     Parameters
@@ -49,6 +49,8 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, verbose=
         'exposure_weight.fz', 'exposure_flag', 'exposure_flag.fz', 'cat')
     no_cuts: bool, optional, default=False
         no cuts (of short exposure, validation flag) if True
+    input_format : string, optional, default='full'
+        one of 'full', 'ID_only'
     verbose: bool, optional
         verbose output if True, default=False
 
@@ -65,10 +67,11 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, verbose=
 
     if image_type in ('tile', 'weight', 'weight.fz'):
         nix, niy  = cfis.get_tile_number_from_coord(ra, dec, return_type=int)
-        tile_name = cfis.get_tile_name(nix, niy, band, image_type)
+        tile_name = cfis.get_tile_name(nix, niy, band, image_type, input_format=input_format)
 
         img_found = []
         for img in images:
+            #print('MKDEBUG', img.name, os.path.basename(img.name))
             if os.path.basename(img.name) == tile_name:
                 # Update coordinate in image for tiles with central coordinates
                 ra_c, dec_c = cfis.get_tile_coord_from_nixy(nix, niy)
@@ -471,7 +474,9 @@ def run_mode(images, param):
     if param.coord:
 
         # Image number search: Return name of image(s) covering input coordinate
-        images_found = find_image_at_coord(images, param.coord, param.band, param.image_type, no_cuts=param.no_cuts, verbose=param.verbose)
+        images_found = find_image_at_coord(images, param.coord, param.band, param.image_type,
+                                           no_cuts=param.no_cuts, input_format=param.input_format,
+                                           verbose=param.verbose)
         if len(images_found) > 0:
             if not param.short:
                 images_found[0].print_header(file=param.fout)
