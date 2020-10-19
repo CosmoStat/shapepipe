@@ -182,18 +182,21 @@ Now we are ready to run the first `ShapePipe` module.
 
 The tile images and weights selected in the previous section will be retrieved now, by running the module `get_image_runner`. This module either downloads the images or, if they already exist on a local hard disk, creates symbolic links. Downloading uses the Virtual Observatory VOSpace (vos) software (http://www.ivoa.net/documents/VOSpace). The downloaded files (or link names) are automatically modified to be parsable by the pipeline.
 
-An example config file is `SP_CONFIG/config_tile_Gie.ini`. Run the module with
+An example config file is `SP_CONFIG/config_tile_Git.ini`. Run the module with
 ```bash
-shapepipe_run -c $SP_CONFIG/config_tile_Gie.ini
+shapepipe_run -c $SP_CONFIG/config_tile_Git.ini
 ```
-The `[RUN]` section needs to contain the input tile ID list path (default is `tile_numbers.txt`).
-In the module section, we need to specify
+The `[RUN]` section contains the input tile ID list file base name and extension (default is `tile_numbers.txt`).
+In the module section `[GET_IMAGES_RUNNER]`, we need to specify
 input path (for example a VOS url), input file pattern and their extension. The input file pattern includes the number(s) as  dummy template, similarly to the `NUMBERING_SCHEME` in the `[FILE]` section (see `File options` in the [general pipeline readme](README.rst)). In addition, the input numbering scheme as python `regexp` needs to be specified, which matches the tile number in the tile number list. 
 
 Next, the output file pattern without the tile number is specified in the config file.
 
 After that we name the copy or download method, for example `vos`. Additional command options can be indicated with the key `COPY_OPTIONS`. Here is the example:
 ```ini
+[RUN]
+FILE_PATTERN = tile_numbers
+FILE_EXT = .txt
 [GET_IMAGES_RUNNER]
 INPUT_PATH = vos:cfis/tiles_DR2, vos:cfis/tiles_DR2
 INPUT_FILE_PATTERN = CFIS.000.000.r, CFIS.000.000.r.weight
