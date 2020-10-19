@@ -2,7 +2,7 @@
 
 """SHAPEPIPE PIPELINE
 
-This module contains for handling the pipeline job management.
+This module contains sub-modules for handling the pipeline job management.
 
 :Author: Samuel Farrens <samuel.farrens@cea.fr>
 

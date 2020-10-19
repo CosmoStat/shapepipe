@@ -15,6 +15,7 @@ This module contain a class to create star mask for an image.
 import shapepipe.pipeline.file_io as sc
 from shapepipe.pipeline.config import CustomParser
 from shapepipe.pipeline.execute import execute
+from shapepipe.utilities.file_system import mkdir
 
 import numpy as np
 from astropy.coordinates import SkyCoord
@@ -847,6 +848,6 @@ class mask(object):
 
         path += '/'
         if not os.path.isdir(path):
-            os.system('mkdir ' + path)
+            mkdir(path)
 
         return path

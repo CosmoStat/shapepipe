@@ -16,6 +16,7 @@ from glob import glob
 from functools import reduce, partial
 from shapepipe.pipeline.run_log import RunLog
 from shapepipe.modules.module_runners import get_module_runners
+from shapepipe.utilities.file_system import mkdir
 
 
 def find_files(path, pattern='*', ext='*'):
@@ -235,13 +236,13 @@ class FileHandler(object):
 
         Parameters
         ----------
-        dir_name : str
+        dir_name : str`
             Directory name with full path
 
         """
 
         cls.check_dir(dir_name, check_exists=True)
-        os.mkdir(dir_name)
+        mkdir(dir_name)
 
     @staticmethod
     def format(path, name, ext=''):
