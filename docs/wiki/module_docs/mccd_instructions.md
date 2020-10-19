@@ -184,6 +184,33 @@ name ``full_starcat-0000000.fits``.
 > Parameter section: ``[MCCD_PLOTS]``  
 ---
 
+**WARNING!** For using this module  and compute the rho statistics 
+you need to install more dependencies.
+The python packages [treecorr](https://github.com/rmjarvis/TreeCorr),
+[Stile](https://github.com/msimet/Stile), and their dependencies
+should be installed. 
+
+**Stile bug:** There is a known bug on the Stile package.
+Fist install the treecorr package by ``pip install treecorr ``.
+Then to fix the bug what one need to do is to clone the package
+``git clone https://github.com/msimet/Stile.git``. Then, go to the file
+``treecorr_utils.py`` and add one line:
+
+```python
+102: DEPRECIATED_fields = f.readline().split() # [TL] BUG FIX
+103: fields = f.readline().split() 
+```
+
+Then just do:
+```bash
+cd Stile
+python setup.py install
+```
+
+Everything should be fine.
+
+---
+
 **Input:** The merged catalog ``full_starcat-0000000.fits`` from the merge
 runner.
 
