@@ -241,7 +241,7 @@ On success, the uncompressed weight image with the correct (only) HDU is written
 
 **Module:** find_exposures_runner  
 **Parent:**  get_image_runner    
-**Input:** tile image
+**Input:** tile image  
 **Output:** single-exposure name list
 
 Once the resulting tiles and weight images are downloaded, we need to get the exposure images that where co-added to produce the tiles. These can be found in the tile FITS header. The example config file `$SP_CONFIG/config_find_exp.ini` has no entry in the module section `[FIND_EXPOSURE_RUNNER]`.
