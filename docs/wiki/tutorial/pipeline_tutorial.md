@@ -244,7 +244,15 @@ On success, the uncompressed weight image with the correct (only) HDU is written
 **Input:** tile image  
 **Output:** single-exposure name list
 
-Once the resulting tiles and weight images are downloaded, we need to get the exposure images that where co-added to produce the tiles. These can be found in the tile FITS header. The example config file `$SP_CONFIG/config_find_exp.ini` has no entry in the module section `[FIND_EXPOSURE_RUNNER]`.
+Once the resulting tiles and weight images are downloaded, we need to identify the exposure images that where co-added to produce the tiles. These can be found in the tile FITS header. The example config file `$SP_CONFIG/config_tile_Fe.ini` has as entries the
+information for the input tiles, which are input directoy (last run of get_images) and file names:
+```
+[FIND_EXPOSURE_RUNNER]
+INPUT_DIR = last:get_images_runner
+FILE_PATTERN = CFIS_image
+FILE_EXT = .fits
+NUMBERING_SCHEME = -000-000
+```
 
 On success, the ascii files with the single-exposure names are produced.
 
