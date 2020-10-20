@@ -21,7 +21,7 @@ class GetImages(object):
     def __init__(self, retrieve, options, image_number_list,
                  input_numbering, input_file_pattern,
                  input_file_ext, w_log, check_existing_dir=None):
-        """GetImages initiatliation.
+        """GetImages initialisation.
 
         Parameters
         ----------

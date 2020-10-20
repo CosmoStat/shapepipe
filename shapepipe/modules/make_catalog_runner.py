@@ -29,7 +29,7 @@ def remove_field_name(arr, name):
 
     Parameters
     ----------
-    a : numpy.ndarray
+    arr : numpy.ndarray
         A numpy strucured array.
     name : str
         Name of the field to remove.

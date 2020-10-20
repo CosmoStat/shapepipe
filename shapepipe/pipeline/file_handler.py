@@ -744,8 +744,7 @@ class FileHandler(object):
                 break
 
         if not true_file_list:
-            raise RuntimeError('No files found matching FILE_PATTERN="{}"'
-                               ' and FILE_EXT="{}".'
+            raise RuntimeError('No files found matching "{}" and "{}".'
                                ''.format(pattern, ext))
 
         # Correct the extension if necessary

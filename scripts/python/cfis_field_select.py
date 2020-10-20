@@ -71,7 +71,6 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, input_fo
 
         img_found = []
         for img in images:
-            #print('MKDEBUG', img.name, os.path.basename(img.name))
             if os.path.basename(img.name) == tile_name:
                 # Update coordinate in image for tiles with central coordinates
                 ra_c, dec_c = cfis.get_tile_coord_from_nixy(nix, niy)
