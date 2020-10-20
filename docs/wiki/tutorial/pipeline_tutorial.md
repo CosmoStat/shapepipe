@@ -171,7 +171,7 @@ To select tiles covering an entire sky area, for example CFHTLS-W3, do:
 cfis_field_select -i /path/to/shapepipe/aux/CFIS/tiles_202007/tiles_all_order.txt --area 208deg_50.75deg_221.deg_58deg -v --input_format ID_only --out_name_only --out_ID_only -s -o tile_numbers --plot
 ```
 
-Now we are ready to run the first `ShapePipe` module.
+Now we are ready to run the first, pre-processing `ShapePipe` modules.
 
 ### Retrieve tiles
 
@@ -182,11 +182,7 @@ Now we are ready to run the first `ShapePipe` module.
 
 The tile images and weights selected in the previous section will be retrieved now, by running the module `get_image_runner`. This module either downloads the images or, if they already exist on a local hard disk, creates symbolic links. Downloading uses the Virtual Observatory VOSpace (vos) software (http://www.ivoa.net/documents/VOSpace). The downloaded files (or link names) are then modified to be parsable by the pipeline.
 
-An example config file is `SP_CONFIG/config_tile_Git.ini`. Run the module with
-```bash
-shapepipe_run -c $SP_CONFIG/config_tile_Git.ini
-```
-
+An example config file is `SP_CONFIG/config_tile_Git.ini`.
 The module section `[GET_IMAGES_RUNNER]` first contains the input tile ID list file path (default is `tile_numbers.txt`). This is assembled from `FILE_PATTERN`, `FILE_EXT`, and `NUMBERING_SCHEME`. Since there
 is only a single input text file with no number, the latter entry is empty. See see `File options` in the [general pipeline readme](README.rst)) for more details on the numbering scheme.
 
@@ -244,7 +240,15 @@ On success, the uncompressed weight image with the correct (only) HDU is written
 **Input:** tile image  
 **Output:** single-exposure name list
 
-Once the resulting tiles and weight images are downloaded, we need to get the exposure images that where co-added to produce the tiles. These can be found in the tile FITS header. The example config file `$SP_CONFIG/config_find_exp.ini` has no entry in the module section `[FIND_EXPOSURE_RUNNER]`.
+Once the resulting tiles and weight images are downloaded, we need to identify the exposure images that where co-added to produce the tiles. These can be found in the tile FITS header. The example config file `$SP_CONFIG/config_tile_Fe.ini` has as entries the
+information for the input tiles, which are input directoy (last run of get_images) and file names:
+```
+[FIND_EXPOSURE_RUNNER]
+INPUT_DIR = last:get_images_runner
+FILE_PATTERN = CFIS_image
+FILE_EXT = .fits
+NUMBERING_SCHEME = -000-000
+```
 
 On success, the ascii files with the single-exposure names are produced.
 
@@ -256,18 +260,35 @@ On success, the ascii files with the single-exposure names are produced.
 **Input:** single-exposure name list  
 **Output:** tile image, compressed tile weight
 
-This process works as the one to download tiles, see [Download tiles](#download-tiles). The single-exposure names are read from the output ascii file of the previous module. Single-exposure images, weights, and flags are retrieved. Here is the example `$SP_CONFIG/config_get_exp.ini` section:
+This process works as the one to download tiles, see [Download tiles](#download-tiles). The single-exposure names are read from the output ascii file of the previous module (`find-exposure-runner`). Single-exposure images, weights, and flags are retrieved. Here is the example `$SP_CONFIG/config_tile_Gie.ini` relevant section:
 ```ini
 [GET_IMAGES_RUNNER2]
+INPUT_DIR = last:find_exposures_runner
+FILE_PATTERN = exp_numbers
+FILE_EXT = .txt
+NUMBERING_SCHEME = -000-000 
 INPUT_PATH = vos:cfis/pitcairn, vos:cfis/weights, vos:cfis/flags
 INPUT_FILE_PATTERN = 000000, 000000.weight, 000000.flag
 INPUT_FILE_EXT = .fits.fz, .fits.fz, .fits.fz
 INPUT_NUMBERING = \d{6}
 OUTPUT_FILE_PATTERN = image-, weight-, flag-
-COPY = vos
+RETRIEVE = vos
 ```
 
-On sucess, Single-exposure images, weights, and flags are downloaded, or links to existing files are created.
+On sucess, single-exposure images, weights, and flags are downloaded, or links to existing files are created.
+
+To perform the pre-processing steps detailed above, we can either run them module by module:
+```bash
+shapepipe_run -c $SP_CONFIG/config_tile_Git.ini
+shapepipe_run -c $SP_CONFIG/config_tile_Uz.ini
+shapepipe_run -c $SP_CONFIG/config_tile_Fe.ini
+shapepipe_run -c $SP_CONFIG/config_tile_Gie.ini
+```
+or in one go:
+```bash
+shapepipe_run -c $SP_CONFIG/config_tile_GitUzFeGie.ini
+```
+This ends the pre-processing, now we can proceed to the actual (parallel) image processing.
 
 ## Process single exposure images
 
@@ -280,7 +301,7 @@ Alternatively each module can be executed by a separate `ShapePipe` call. The co
 ### Split images
 
 **Module:** split_exp_runner   
-**Parent:**  get_imagnere_runner2  
+**Parent:**  get_images_runner2  
 **Input:** single-exposure images, weights, flags  
 **Output:** single_exposure single-CCD files for input images, weights, flags
 
