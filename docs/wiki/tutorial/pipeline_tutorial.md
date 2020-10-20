@@ -80,7 +80,7 @@ Naming and numbering of the input files can closely follow the original image na
   Examples: `log_exp_headers.sqlite`, exposure header information
   
 - Numpy array binary files  
-  Some large files are stored as numpy arrays.  
+  Some large files are stored as numpy arrays. These contain FITS header information. 
   Example: `headers-2366993.npy`
   
 - PSF files  
@@ -303,43 +303,47 @@ Alternatively each module can be executed by a separate `ShapePipe` call. The co
 **Module:** split_exp_runner   
 **Parent:**  get_images_runner2  
 **Input:** single-exposure images, weights, flags  
-**Output:** single_exposure single-CCD files for input images, weights, flags
+**Output:** single_exposure single-CCD files for input images, weights, flags; SQL files with single-exposure header information
 
 The first step of single-exposure processing is to split the single-exposures images into
 files that contain one CCD each.
 
 The example config file is `$SP_CONFIG/config_split_exp.ini`.
-On input, we need to specify the three input types (exposures, weights, flags),
-and their extensions. This happens in the `[FILE]` section:
-```ini
-[FILE]
-FILE_PATTERN = image, weight, flag
-FILE_EXT = .fitsfz, .fitsfz, .fitsfz
-```
-On output, the same three file types are required. The number of MegaCAM CCDs is 40:
+On input, we need to specify the three input types (images, weights, flags),
+and their extensions. On output, the same three file types are required.
+And we specify the number of CCDs, which for MegaCAM CCDs is 40:
 ```ini
 [SPLIT_EXP_RUNNER]
+INPUT_DIR = last:get_images_runner2
+NUMBERING_SCHEME = -0000000
+FILE_PATTERN = image, weight, flag
+FILE_EXT = .fitsfz, .fitsfz, .fitsfz
 OUTPUT_SUFFIX = image, weight, flag
 N_HDU = 40
 ```
-On success, files according to the three output types are created.
+
+On success, files according to the three output types are created. In addition, the FITS headers of all input
+single-exposure images are written to the same output directory, as SQL numpy files. The main purpose
+is to save the image WCS information for quick access lateron.
 
 ### Merge WCS headers
 
-**Module:** merge_headers  
+**Module:** merge_headers_runner  
 **Parent:** split_exp_runner  
-**Input:** single-exposure single_CCD images, weights, flags  
+**Input:** SQL files with single-exposure header information   
 **Output:** single SQL file with combined header information  
 
-This pipeline module saves the WCS information (image
+This pipeline module merges the WCS information (image
 transformation and distortions, computed during astrometrical calibration)
 for each CCD. At the end, this information has to be merged back into a single file.
 
-The example config file is `$SP_CONFIG/config_merge_headers.ini`.
-Specify the output path:
+The example config file is `$SP_CONFIG/config_exp_Mh.ini`:
 ```ini
-[MERGE_HEADER_RUNNER]
-OUTPUT_PATH = $SP_RUN/output
+[MERGE_HEADERS_RUNNER]
+INPUT_DIR = last:split_exp_runner
+FILE_PATTERN = headers
+FILE_EXT = .npy
+NUMBERING_SCHEME = -0000000
 ```
 Since this produces a single output file instead of a file per input image, it is more convenient to have this file in
 a separated directory for later use.
@@ -360,7 +364,7 @@ This module creates masks for bright stars, diffraction spikes, Messier objects,
 borders, and other artifacts. It joins the newly created mask with the already
 existing masks (from the input flag files) of cosmic rays and various artifacts.  
 
-The example config file is `$SP_CONFIG/config_mask.ini`.
+The example config file is `$SP_CONFIG/config_exp_Ma.ini`.
 The mask parameters are read from a secondary config file, whose path
 needs to be specified:
 ```ini
