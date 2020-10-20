@@ -20,7 +20,7 @@ from shapepipe.modules.module_decorator import module_runner
 
 
 @module_runner(input_module='split_exp_runner', version='1.0',
-               file_pattern=['header'],
+               file_pattern=['headers'],
                file_ext=['.npy'], depends=['numpy', 'sqlitedict'],
                run_method='serial')
 def merge_headers_runner(input_file_list, run_dirs, file_number_string,
@@ -32,8 +32,16 @@ def merge_headers_runner(input_file_list, run_dirs, file_number_string,
 
     final_file = SqliteDict(output_dir + '/log_exp_headers.sqlite')
     for file_path in input_file_list:
-        key = re.split('headers-', os.path.splitext(os.path.split(file_path[0])[1])[0])[1]
-        final_file[key] = np.load(file_path[0], allow_pickle=True)
+        file_path_scalar = file_path[0]
+        file_name = os.path.split(file_path_scalar)[1]
+        file_base_name = os.path.splitext(file_name)[0]
+        pattern = 'headers-'
+        m = re.split(pattern, file_base_name)
+        if len(m) < 2:
+            raise IndexError('Regex \'{}\' not found in base name \'{}\''
+                             ''.format(pattern, file_base_name))
+        key = m[1]
+        final_file[key] = np.load(file_path_scalar, allow_pickle=True)
 
     final_file.commit()
     final_file.close()

@@ -678,6 +678,11 @@ class FileHandler(object):
         num_scheme : str
             Numbering scheme
 
+        Raises
+        ------
+        ValueError
+            if num_scheme is None
+
         Returns
         -------
         str
@@ -685,7 +690,13 @@ class FileHandler(object):
 
         """
 
-        if num_scheme.startswith('RE:'):
+        # Raise an error if num_scheme is None,
+        # but not if num_scheme==''
+        if not num_scheme and num_scheme != '':
+
+            raise ValueError('No numbering scheme adapted')
+
+        elif num_scheme.startswith('RE:'):
 
             re_pattern = num_scheme.replace('RE:', '')
 

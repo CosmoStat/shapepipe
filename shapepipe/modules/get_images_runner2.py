@@ -9,6 +9,7 @@ This module copies all images required for processing
 """
 
 from shapepipe.modules.module_decorator import module_runner
+from shapepipe.utilities.canfar import vosHandler
 
 import os
 import re
@@ -100,7 +101,7 @@ class GetImages(object):
                     ext_final = in_ext
 
                     # Remove 'p' for LSB images
-                    fbase = re.sub('p', '', fbase)
+                    #fbase = re.sub('p', '', fbase)
 
                 fpath = '{}/{}{}'.format(in_path, fbase, ext_final)
                 list_files_per_type.append(fpath)
@@ -158,6 +159,11 @@ class GetImages(object):
                 vcp()
             except:
                 raise ValueError('Error in \'vcp\' command: \'{}\''.format(' '.join(sys.argv)))
+
+        elif self._retrieve == 'symlink':
+            src = in_path
+            dst = out_path
+            os.symlink(src, dst)
 
 
 def read_image_numbers(path):
