@@ -80,7 +80,7 @@ Naming and numbering of the input files can closely follow the original image na
   Examples: `log_exp_headers.sqlite`, exposure header information
   
 - Numpy array binary files  
-  Some large files are stored as numpy arrays.  
+  Some large files are stored as numpy arrays. These contain FITS header information. 
   Example: `headers-2366993.npy`
   
 - PSF files  
@@ -328,7 +328,7 @@ is to save the image WCS information for quick access lateron.
 
 ### Merge WCS headers
 
-**Module:** merge_headers  
+**Module:** merge_headers_runner  
 **Parent:** split_exp_runner  
 **Input:** SQL files with single-exposure header information   
 **Output:** single SQL file with combined header information  
@@ -364,7 +364,7 @@ This module creates masks for bright stars, diffraction spikes, Messier objects,
 borders, and other artifacts. It joins the newly created mask with the already
 existing masks (from the input flag files) of cosmic rays and various artifacts.  
 
-The example config file is `$SP_CONFIG/config_mask.ini`.
+The example config file is `$SP_CONFIG/config_exp_Ma.ini`.
 The mask parameters are read from a secondary config file, whose path
 needs to be specified:
 ```ini
