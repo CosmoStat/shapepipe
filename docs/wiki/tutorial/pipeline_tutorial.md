@@ -366,12 +366,9 @@ existing masks (from the input flag files) of cosmic rays and various artifacts.
 
 The example config file is `$SP_CONFIG/config_exp_Ma.ini`.
 The mask parameters are read from a secondary config file, whose path
-needs to be specified:
-```ini
-[MASK_RUNNER]
-MASK_CONFIG_PATH = $SP_CONFIG/config.mask
-```
-In this mask config file the default parameters can be kept in the most part.
+needs to be specified with `MAS_CONFIG_PATH`.
+
+In this mask config file the default parameters can be kept.
 These parameters specify the mask properties for border, halos, spikes, Messier
 objects, and external flag input (in our case provided from CFIS pre-processing).
 
@@ -379,11 +376,14 @@ It points to various default parameter files for the different mask types,
 make sure that that paths are correct, in our case
 `$SP_CONFIG/mask_default/` in front of each file name.
 
-To distinguish the newly created output flag files from the input ones,
+Exposures, unlike tile images, come with external flag files on input. This is specified
+by the key `USE_EXT_FLAG`. To distinguish the newly created output flag file from the input ones,
 a suffix is added:
 ```ini
 SUFFIX = pipeline
 ```
+The output flag file combines input flags and flags created by `mask_runner`.
+
 Next, this module requires a star catalogue containing position and magnitude
 of bright stars. By default this is automatically created by accessing online
 star catalogues. Since in some cases computing nodes on clusters might not have
@@ -394,9 +394,8 @@ mkdir -o output_star_cat
 create_star_cat input_exposures output_star_cat exp
 ```
 Then, the star catalogue needs to be specified as input in the config file,
-and a flag has to be set::
+and a flag has to be set:
 ```ini
-[FILE]
 INPUT_DIR = last:split_exp_runner, $SP_RUN/output_star_cat
 [MASK_RUNNER]
 USE_EXT_STAR = True
@@ -404,8 +403,6 @@ USE_EXT_STAR = True
 If instad the star catalogues can be accessed during the pipeline running,
 the config files looks as follows:
 ```ini
-[FILE]
-INPUT_DIR = last:split_exp
 [MASK_RUNNER]
 USE_EXT_STAR = False
 ```
