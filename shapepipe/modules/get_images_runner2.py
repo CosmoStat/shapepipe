@@ -101,7 +101,7 @@ class GetImages(object):
                     ext_final = in_ext
 
                     # Remove 'p' for LSB images
-                    #fbase = re.sub('p', '', fbase)
+                    # fbase = re.sub('p', '', fbase)
 
                 fpath = '{}/{}{}'.format(in_path, fbase, ext_final)
                 list_files_per_type.append(fpath)
