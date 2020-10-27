@@ -38,6 +38,15 @@ class ShapePipe():
 
     def __init__(self):
 
+        self.log = None
+
+    def set_up(self):
+        """ Set Up
+
+        Set up ShapePipe properties.
+
+        """
+
         self._args = create_arg_parser()
         self.config = create_config_parser(self._args.config)
         self._set_run_name()
@@ -396,8 +405,6 @@ def run_mpi(pipe, comm):
 
 def main(args=None):
 
-    #pipe = None
-
     try:
 
         if import_mpi:
@@ -408,6 +415,7 @@ def main(args=None):
 
         if master:
             pipe = ShapePipe()
+            pipe.set_up()
             mode = pipe.mode
         else:
             pipe = None
@@ -426,12 +434,7 @@ def main(args=None):
 
     except Exception as err:
         if master:
-            if pipe:
-                log = pipe.log
-                catch_error(err, log=pipe.log)
-            else:
-                catch_error(err)
-                raise
+            catch_error(err, log=pipe.log)
             return 1
 
 
