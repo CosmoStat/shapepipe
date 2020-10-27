@@ -368,9 +368,10 @@ class FileHandler(object):
                                              'output'))
 
             else:
-                raise ValueError('Invalid INPUT_DIR. Make sure the paths '
+                raise ValueError('Invalid INPUT_DIR \'{}\'. Make sure the paths '
                                  'provided are valid directories or use the '
-                                 'allowed special keys.')
+                                 'allowed special keys.'
+                                 ''.format(dir))
 
         return input_dir
 
@@ -442,9 +443,9 @@ class FileHandler(object):
                                         property.upper()))
 
     def _set_module_property(self, module, property, file_property=True):
-        """ Get Module Property
+        """ Set Module Property
 
-        Get a module property from either the configuration file or the module
+        Set a module property from either the configuration file or the module
         runner.
 
         Parameters
@@ -469,9 +470,9 @@ class FileHandler(object):
         self._module_dict[module][property] = prop_val
 
     def _set_module_list_property(self, module, property):
-        """ Get Module List Property
+        """ Set Module List Property
 
-        Get a module list property from either the configuration file or the
+        Set a module list property from either the configuration file or the
         module runner.
 
         Parameters
@@ -486,7 +487,7 @@ class FileHandler(object):
         if self._config.has_option(module.upper(), property.upper()):
             prop_list = self._config.getlist(module.upper(), property.upper())
 
-        elif (property in ('file_pattern', 'file_ext') and not
+        elif (property in ('file_pattern', 'file_ext', 'numbering_scheme') and not
                 isinstance(getattr(self, '_{}'.format(property)), type(None))
                 and len(self._module_dict) == 1):
             prop_list = getattr(self, '_{}'.format(property))
@@ -515,7 +516,7 @@ class FileHandler(object):
         module_list_props = ('input_module', 'file_pattern', 'file_ext',
                              'depends', 'executes')
 
-        [self._set_module_property(module, property) for property in
+        [self._set_module_property(module, property, file_property=False) for property in
          module_props]
         [self._set_module_list_property(module, property) for property in
          module_list_props]
@@ -677,6 +678,11 @@ class FileHandler(object):
         num_scheme : str
             Numbering scheme
 
+        Raises
+        ------
+        ValueError
+            if num_scheme is None
+
         Returns
         -------
         str
@@ -684,7 +690,13 @@ class FileHandler(object):
 
         """
 
-        if num_scheme.startswith('RE:'):
+        # Raise an error if num_scheme is None,
+        # but not if num_scheme==''
+        if not num_scheme and num_scheme != '':
+
+            raise ValueError('No numbering scheme adapted')
+
+        elif num_scheme.startswith('RE:'):
 
             re_pattern = num_scheme.replace('RE:', '')
 
@@ -705,8 +717,8 @@ class FileHandler(object):
         ----------
         dir_list : list
             List of input directories
-        num_scheme : str
-            Numbering scheme
+        re_pattern : str
+            Regepx version of numbering scheme
         pattern : str
             File pattern
         ext : str
@@ -739,7 +751,7 @@ class FileHandler(object):
         new_ext = '.' + ext if not ext.startswith('.') else ext
 
         if new_ext != ext:
-            print('Updating extension from "{}" to "{}".'
+            print('Updating file extension from "{}" to "{}".'
                   ''.format(ext, new_ext))
             print()
 
@@ -775,9 +787,10 @@ class FileHandler(object):
                 correct_pattern = False
 
         if not found_match:
-            raise RuntimeError('Could not match numbering scheme to any of the'
-                               ' input files matching "{}" and "{}".'
-                               ''.format(pattern, ext))
+            raise RuntimeError('Could not match numbering scheme "{}" to'
+                               ' any of the input files matching'
+                               ' FILE_PATTERN="{}" and FILE_EXT="{}".'
+                               ''.format(re_pattern, pattern, ext))
 
         # Save file list
         np.save(output_file, np.array(final_file_list))

@@ -10,6 +10,8 @@ This module copies all images required for processing
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.utilities.canfar import vosHandler
+
+import os
 import re
 import sys
 
@@ -152,6 +154,11 @@ class GetImages(object):
             vcp = vosHandler('vcp')
             vcp()
 
+        elif self._copy == 'symlink':
+            src = in_path
+            dst = out_path
+            os.symlink(src, dst)
+
 
 def read_image_numbers(path):
     """Read image numbers from file.
@@ -177,7 +184,8 @@ def read_image_numbers(path):
 
 @module_runner(version='1.0',
                depends=['numpy', 'vos'],
-               run_method='serial')
+               run_method='serial',
+               numbering_scheme='_0')
 def get_images_runner(input_file_list, run_dirs, file_number_string,
                       config, w_log):
 
