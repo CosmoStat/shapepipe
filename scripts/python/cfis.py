@@ -692,7 +692,7 @@ def get_tile_coord_from_nixy(nix, niy):
 
 
 
-def get_tile_name(nix, niy, band, image_type='tile'):
+def get_tile_name(nix, niy, band, image_type='tile', input_format='full'):
     """Return tile name for given tile numbers.
 
    Parameters
@@ -704,6 +704,9 @@ def get_tile_name(nix, niy, band, image_type='tile'):
     band: string
         band, one in 'r' or 'u'
     image_type: string, optional, default='tile'
+        image type
+    input_format : string, optional, default='full'
+        'full' (name) or 'ID_only' input format for image names
 
     Returns
     -------
@@ -712,22 +715,29 @@ def get_tile_name(nix, niy, band, image_type='tile'):
     """
 
     if type(nix) is int and type(niy) is int:
-    	tile_base = 'CFIS.{:03d}.{:03d}.{}'.format(nix, niy, band)
-
+        if input_format == 'ID_only':
+            tile_base = '{:03d}.{:03d}'.format(nix, niy)
+        else:
+    	    tile_base = 'CFIS.{:03d}.{:03d}.{}'.format(nix, niy, band)
     elif type(nix) is str and type(niy) is str:
-    	tile_base = 'CFIS.{}.{}.{}'.format(nix, niy, band)
-
+        if input_format == 'ID_only':
+            tile_base = '{}.{}'.format(nix, niy)
+        else:
+    	    tile_base = 'CFIS.{}.{}.{}'.format(nix, niy, band)
     else:
         raise CfisError('Invalid type for input tile numbers {}, {}'.format(nix, niy))
 
-    if image_type == 'tile':
-        tile_name = '{}.fits'.format(tile_base)
-    elif image_type == 'weight':
-        tile_name = '{}.weight.fits'.format(tile_base)
-    elif image_type == 'weight.fz':
-        tile_name = '{}.weight.fits.fz'.format(tile_base)
+    if input_format == 'ID_only':
+        tile_name = tile_base
     else:
-        raise CfisError('Invalid image type {}'.format(image_type))
+        if image_type == 'tile':
+            tile_name = '{}.fits'.format(tile_base)
+        elif image_type == 'weight':
+            tile_name = '{}.weight.fits'.format(tile_base)
+        elif image_type == 'weight.fz':
+            tile_name = '{}.weight.fits.fz'.format(tile_base)
+        else:
+            raise CfisError('Invalid image type {}'.format(image_type))
 
     return tile_name
 
