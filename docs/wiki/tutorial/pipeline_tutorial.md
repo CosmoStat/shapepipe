@@ -566,6 +566,15 @@ Min fwhm cut (arcesec) = 0.7159179691314698
 Max fwhm cut (arcsec) = 0.7531179691314697
 ```
 
+### Global star candidate statistics
+
+The statistics on stars from all CCD can be combined to create histograms, with the non-pipeline script `stats_global.py`.
+Run
+```bash
+stats_global -o stats -v -c $SP_CONFIG/config_stats.ini
+```
+to create histograms (as `.txt` tables and `.png` plots) in the directory `stats`. Here is an example of the FWHM mode
+
 ### Create PSF model
 
 **Module:** psfex  
