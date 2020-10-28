@@ -576,9 +576,7 @@ to create histograms (as `.txt` tables and `.png` plots) in the directory `stats
 
 | Non-masked objects per CCD | Stars per CCD | FWHM mode |
 | --- | --- | --- |
-| <img width="250" src="1_nb_nonmasked.png" title="Number of non-masked objects per CCD"> |
-| <img width="250" src="2_nb_stars.png" title="Number stars per CCD"> |
-| <img width="250" src="5_mode_fhwm_star.png" title="FWHM mode"> |
+| <img width="250" src="1_nb_nonmasked.png" title="Number of non-masked objects per CCD"> | <img width="250" src="2_nb_stars.png" title="Number stars per CCD"> | <img width="250" src="5_mode_fhwm_star.png" title="FWHM mode"> |
 | No CCD with a very large masked area | No CCD with insufficient stars | Rather broad seeing distribution | 
 
 ### Create PSF model
