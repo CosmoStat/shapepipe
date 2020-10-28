@@ -541,7 +541,6 @@ and text files with the computed statistics in `stats`.
 
 The following plots show an example, CCD #10 of exposure 2113737.
 
-
 | Size-magnitude plot | Star magnitude histogram | Stars in CCD (mag) | Stars in CCD (size) |
 | --- | --- | --- | --- |
 | <img width="250" src="size_mag-2113737-10.png" title="Size-magnitude plot with star selection"> | <img width="250" src="hist_mag_stars-2113737-10.png" title="Magnitude histogram of selected stars"> | <img width="250" src="mag_star_field-2113737-10.png" title="Magnitude distribution in CCD"> | <img width="250" src="fwhm_field-2113737-10.png" title="Size distribution in CCD"> |
@@ -573,7 +572,14 @@ Run
 ```bash
 stats_global -o stats -v -c $SP_CONFIG/config_stats.ini
 ```
-to create histograms (as `.txt` tables and `.png` plots) in the directory `stats`. Here is an example of the FWHM mode
+to create histograms (as `.txt` tables and `.png` plots) in the directory `stats`. Here are some example plots :
+
+| Non-masked objects per CCD | Stars per CCD | FWHM mode |
+| --- | --- | --- |
+| <img width="250" src="1_nb_nonmasked.png" title="Number of non-masked objects per CCD"> |
+| <img width="250" src="2_nb_stars.png" title="Number stars per CCD"> |
+| <img width="250" src="5_mode_fhwm_star.png" title="FWHM mode"> |
+| No CCD with a very large masked area | No CCD with insufficient stars | Rather broad seeing distribution | 
 
 ### Create PSF model
 
