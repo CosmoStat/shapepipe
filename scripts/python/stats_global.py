@@ -39,6 +39,7 @@ def params_default():
 
     p_def = cfis.param(
         input_dir = '.',
+        output_dir = '.',
         pattern = 'star_stat-',
     )
 
@@ -68,6 +69,9 @@ def parse_options(p_def):
     parser.add_option('-i', '--input_dir', dest='input_dir', type='string', \
          default=p_def.input_dir, \
          help='input directory, default=\'{}\''.format(p_def.input_dir))
+    parser.add_option('-o', '--output_dir', dest='output_dir', type='string', \
+         default=p_def.output_dir, \
+         help='output directory, default=\'{}\''.format(p_def.output_dir))
     parser.add_option('-c', '--config', dest='config', type='string', \
          help='configuration file, default=none')
     parser.add_option('-p', '--pattern', dest='pattern', type='string', \
@@ -261,16 +265,18 @@ def compute_histograms(values, config=None, verbose=False):
     return hists
 
 
-def plot_histograms(hists, config=None, verbose=False):
+def plot_histograms(hists, config=None, output_dir='.', verbose=False):
     """Create histogram plots.
 
     Parameters
     ----------
-    hists: dictionary of histograms
+    hists : dictionary of histograms
         histograms for all keys
-    config: class config
+    config : class config
         configuration values
-    verbose: bool, optional, default=False
+    output_dir : string, optional, default='.'
+        output directory
+    verbose : bool, optional, default=False
         verbose output if True
     """
 
@@ -324,13 +330,13 @@ def plot_histograms(hists, config=None, verbose=False):
             if config and config.has_option(si, 'fname'):
                 file_base = config.getexpanded(si, 'fname')
             else:
-                file_base = 'hist_{}.png'.format(i)
+                file_base = 'hist_{}'.format(i)
 
             if verbose:
                 print('Creating files \'{}.*\''.format(file_base))
 
-            plt.savefig('{}.png'.format(file_base))
-            np.savetxt('{}.txt'.format(file_base), np.transpose([bins, freq]),
+            plt.savefig('{}/{}.png'.format(output_dir, file_base))
+            np.savetxt('{}/{}.txt'.format(output_dir, file_base), np.transpose([bins, freq]),
                        fmt='%10g', header='[{}] [{}]'.format(xlabel, ylabel)),
 
         i = i + 1
@@ -404,8 +410,14 @@ def main(argv=None):
 
     hists = compute_histograms(values, config=config, verbose=param.verbose)
 
+    if os.path.isfile(param.output_dir):
+        raise OSError('Output path \'{}\' is a regular file'
+                      ''.format(param.output_dir))
+    if not os.path.isdir(param.output_dir):
+        os.mkdir(param.output_dir)
 
-    plot_histograms(hists, config=config, verbose=param.verbose)
+    plot_histograms(hists, config=config, output_dir=param.output_dir,
+                    verbose=param.verbose)
 
     ### End main program
 
