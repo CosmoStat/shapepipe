@@ -7,6 +7,8 @@ Output global stats from a ShapePipe run.
 :Author: Martin Kilbinger
 
 :Date: 07/2020
+
+:Package: ShapePipe
 """
 
 import re
@@ -282,6 +284,10 @@ def plot_histograms(hists, config=None, output_dir='.', verbose=False):
 
     fig, (ax) = plt.subplots()
 
+    if config and config.has_option('ALL', 'fontsize'):
+        fontsize = config.getint('ALL', 'fontsize')
+        plt.rcParams.update({'font.size': fontsize})
+
     xlim_fac = 0.05
 
     i = 0
@@ -305,21 +311,30 @@ def plot_histograms(hists, config=None, output_dir='.', verbose=False):
             width = bins[1] - bins[0]
             ax.bar(bins, freq, width=width)
 
-            # Bin boundaries = default x-axis limits
-            xmin = min(bins)
-            xmax = max(bins)
-            dx = xmax - xmin
-
             # Overwrite limits if found in config file.
             # If not stretch bin boundaries
             if config and config.has_option(si, 'xmin'):
-                xxmin = config.getfloat(si, 'xmin')
+                xmin = config.getfloat(si, 'xmin')
+            else:
+                xmin = min(bins)
+            if config and config.has_option(si, 'xmax'):
+                xmax = config.getfloat(si, 'xmax')
+            else:
+                xmax = max(bins)
+
+            dx = xmax - xmin
+
+            # If limits from bin boundaries: extend by small
+            # amount
+            if config and config.has_option(si, 'xmin'):
+                xxmin = xmin
             else:
                 xxmin = xmin - dx * xlim_fac
             if config and config.has_option(si, 'xmax'):
-                xxmax = config.getfloat(si, 'xmax')
+                xxmax = xmax
             else:
                 xxmax = xmax + dx * xlim_fac
+
             plt.xlim(xxmin, xxmax)
 
             if config and config.has_option(si, 'xlabel'):
