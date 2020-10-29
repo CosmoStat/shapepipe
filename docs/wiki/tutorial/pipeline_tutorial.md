@@ -579,6 +579,9 @@ to create histograms (as `.txt` tables and `.png` plots) in the directory `stats
 | <img width="250" src="1_nb_nonmasked.png" title="Number of non-masked objects per CCD"> | <img width="250" src="2_nb_stars.png" title="Number stars per CCD"> | <img width="250" src="5_mode_fhwm_star.png" title="FWHM mode"> |
 | No CCD with a very large masked area | No CCD with insufficient stars | Rather broad seeing distribution | 
 
+Note that `stats_global` read all `SETool` output stats files found in a given input directory tree. It can thus produce histogram combining
+several runs.
+
 ### Create PSF model
 
 **Module:** psfex  
@@ -638,6 +641,8 @@ CHI2_THRESH = 2
 
 On success, validation PSF catalogues are created.
 
+
+
 #### Merge PSF catalogues
 
 **Module:** merge_star_cat_runner  
@@ -651,16 +656,15 @@ in the module section:
 ```ini
 OUTPUT_PATH = $SP_RUN/psf_validation
 ```
-The (single) output file is then `SP_RUN/psf_validation/full_starcat.fits`.
-
+The (single) output file is then `SP_RUN/psf_validation/full_starcat.fits`. (No output is produced in the actual
+module output directory.)
 
 #### Plot focal-plane ellipticity, size and residuals
 
 Outside the pipeline, create plots of PSF, model, and residual
 ellipticity and shape:
 ```bash
-MeanShapes -o $SP_RUN/psf_validation -x 20 --max_e=0.05 --max_d=0.005 -i $SP_RUN/psf_validation/full_starcat.fits -v
-```
+ ```
 
 On success, `png` files with plot of the focal plane are created in `$SP_RUN/psf_validation`.
 
