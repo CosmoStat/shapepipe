@@ -305,11 +305,21 @@ def plot_histograms(hists, config=None, output_dir='.', verbose=False):
             width = bins[1] - bins[0]
             ax.bar(bins, freq, width=width)
 
+            # Bin boundaries = default x-axis limits
             xmin = min(bins)
             xmax = max(bins)
             dx = xmax - xmin
-            xxmin = xmin - dx * xlim_fac
-            xxmax = xmax + dx * xlim_fac
+
+            # Overwrite limits if found in config file.
+            # If not stretch bin boundaries
+            if config and config.has_option(si, 'xmin'):
+                xxmin = config.getfloat(si, 'xmin')
+            else:
+                xxmin = xmin - dx * xlim_fac
+            if config and config.has_option(si, 'xmax'):
+                xxmax = config.getfloat(si, 'xmax')
+            else:
+                xxmax = xmax + dx * xlim_fac
             plt.xlim(xxmin, xxmax)
 
             if config and config.has_option(si, 'xlabel'):
