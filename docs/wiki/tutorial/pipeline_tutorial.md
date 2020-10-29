@@ -541,7 +541,6 @@ and text files with the computed statistics in `stats`.
 
 The following plots show an example, CCD #10 of exposure 2113737.
 
-
 | Size-magnitude plot | Star magnitude histogram | Stars in CCD (mag) | Stars in CCD (size) |
 | --- | --- | --- | --- |
 | <img width="250" src="size_mag-2113737-10.png" title="Size-magnitude plot with star selection"> | <img width="250" src="hist_mag_stars-2113737-10.png" title="Magnitude histogram of selected stars"> | <img width="250" src="mag_star_field-2113737-10.png" title="Magnitude distribution in CCD"> | <img width="250" src="fwhm_field-2113737-10.png" title="Size distribution in CCD"> |
@@ -566,6 +565,20 @@ Min fwhm cut (arcesec) = 0.7159179691314698
 Max fwhm cut (arcsec) = 0.7531179691314697
 ```
 
+### Global star sample statistics
+
+The statistics on stars from all CCD can be combined to create histograms, with the non-pipeline script `stats_global.py`.
+Run
+```bash
+stats_global -o stats -v -c $SP_CONFIG/config_stats.ini
+```
+to create histograms (as `.txt` tables and `.png` plots) in the directory `stats`. Here are some example plots :
+
+| Non-masked objects per CCD | Stars per CCD | FWHM mode |
+| --- | --- | --- |
+| <img width="250" src="1_nb_nonmasked.png" title="Number of non-masked objects per CCD"> | <img width="250" src="2_nb_stars.png" title="Number stars per CCD"> | <img width="250" src="5_mode_fhwm_star.png" title="FWHM mode"> |
+| No CCD with a very large masked area | No CCD with insufficient stars | Rather broad seeing distribution | 
+
 ### Create PSF model
 
 **Module:** psfex  
@@ -587,7 +600,7 @@ EXEC_PATH = psfex
 DOT_PSFEX_FILE = $SP_CONFIG/default.psfex
 ```
 On success, FITS files containing the star catalalogue (`psfex_cat-*.cat`) and the PSF at
-the stars' positions (`star_selection-2159358-9.psf`) are created.
+the positions of the 80% star sub-sample (`star_split_ratio_80-*.psf`) are created.
 
 ### Validation tests
 
@@ -599,22 +612,27 @@ the stars' positions (`star_selection-2159358-9.psf`) are created.
 **Output:** star catalogue
 
 The interpolation of the PSF on single exposures alone is not required for shape
-measurement. But to carry out validation tests on the model we need the
+measurement. But to carry validation tests on the PSF model we need the
 know the PSF at the position of the stars used. For that we run the module
-`psfinterp_runner` in `VALIDATION` mode. The following options are required:
+`psfinterp_runner`. Input files are the PSF, the positions of the 20% star sub-sample, and the PSF catalog.
+The key `MODE` is set to `VALIDATION`, column names for the position parameters (SExtractor output) are
+given next, and `GET_SHAPES` is True to output the PSF ellipticity using moments. And important
+parameter is `STAR_THRES`, the lower limit of the number of stars per CCD to be considered to have
+a valid PSF model. We set this to 22, corresponding to 20 for the 80% sub-sample used to construct the PSF.
+CCDs with less stars will be discarded later on for the shape measurement. An additional cut is performed
+on the chi^2 value of the PSF fit, the lower limit given by `CHI2_THRESH`.
+
 ```ini
-# Define the way psfexinter will run.
-# CLASSIC for classical run.
-# MULTI-EPOCH for multi epoch.
-# VALIDATION for output allowing validation (only on single epoch !)
+[PSFEXINTERP_RUNNER]
+INPUT_MODULE = psfex_runner, setools_runner  
+FILE_PATTERN = star_split_ratio_80, star_split_ratio_20, psfex_cat
+FILE_EXT = .psf, .fits, .cat
+NUMBERING_SCHEME = -0000000-0
+
 MODE = VALIDATION
-# Column names of position parameters
 POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE
-# If True, measure and store ellipticity of the PSF
 GET_SHAPES = True
-# Number minimal of stars require to interpolate the PSF on the CCD
-STAR_THRESH = 20
-# Maximum value allowed for the global chi2 of the model for the CCD
+STAR_THRESH = 22
 CHI2_THRESH = 2
 ```
 
