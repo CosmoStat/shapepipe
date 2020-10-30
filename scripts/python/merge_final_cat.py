@@ -7,7 +7,7 @@
 Merge all final catalogues, created by ShapePipe module 'make_catalogue_runner',
 into a joined numpy binary file.
 
-:Authors: Axel Guinot
+:Authors: Axel Guinot, Martin Kilbinge
 
 :Date: 2020
 

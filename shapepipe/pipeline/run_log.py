@@ -111,10 +111,12 @@ class RunLog(object):
         runs = [run for run in self._runs if search_string in run]
 
         if len(runs) < 1:
-            raise RuntimeError('No runs found matching search string.')
+            raise RuntimeError('No runs found matching search string \'{}\'.'
+                               ''.format(search_string))
 
         elif len(runs) > 1:
             raise RuntimeError('More than one run found matching search '
-                               'string')
+                               'string \'{}\''
+                               ''.format(search_string))
 
         return runs[0].split(' ')[0]

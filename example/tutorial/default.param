@@ -59,7 +59,7 @@ FWHM_WORLD               #FWHM assuming a gaussian core                         
 ELONGATION               #A_IMAGE/B_IMAGE                                          
 ELLIPTICITY              #1 - B_IMAGE/A_IMAGE                                      
 
-#VIGNET(51,51)            #Pixel data around detection                               [count]
+VIGNET(51,51)            #Pixel data around detection                               [count]
 
 #VECTOR_ASSOC             #ASSOCiated parameter vector                              
 #NUMBER_ASSOC             #Number of ASSOCiated IDs                                 
