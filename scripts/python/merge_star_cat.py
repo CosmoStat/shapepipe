@@ -204,8 +204,8 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
 
     # Prepare output FITS catalogue
     output = sc.FITSCatalog(output_path,
-                            open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
-                            SEx_catalog=True)
+                            open_mode=sc.BaseCatalog.OpenMode.ReadWrite) #,
+                            #SEx_catalog=True)
 
     # Collect columns
     # convert back to sigma for consistency
@@ -219,7 +219,7 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
     # Write file
     if verbose:
         print('Writing full PSF catalog file {}...'.format(output_path))
-    output.save_as_fits(data, sex_cat_path=starcat_names[0])
+    output.save_as_fits(data) #, sex_cat_path=starcat_names[0])
 
 
 def main(argv=None):
