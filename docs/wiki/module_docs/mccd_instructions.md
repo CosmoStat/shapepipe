@@ -88,7 +88,7 @@ the exposure id number.
 **Input:** takes as first input the ``fitted_model`` from ``mccd_fit_runner``
 and as second input the ``test_star_selection`` from the preprocessing runner.
 
-**Comment:** Naturally, this modelu validates the trained MCCD model with the
+**Comment:** Naturally, this model validates the trained MCCD model with the
 corresponding test stars.
 The parameter ``MODE`` on the ``[MCCD]`` must be set to ``VALIDATION``.
 
@@ -192,7 +192,18 @@ should be installed.
 
 **Stile bug:** There is a known bug on the Stile package.
 Fist install the treecorr package by ``pip install treecorr ``.
-Then to fix the bug what one need to do is to clone the package
+Then there are two options to fix the problem. You can a fork of the Stile
+package that includes the fix as follows:
+
+```bash
+git clone https://github.com/tobias-liaudat/Stile.git
+cd Stile
+python setup.py install
+```
+
+The other option is to download and fix the bug yourself and then install the
+package. 
+To fix the bug what one need to do is to clone the package
 ``git clone https://github.com/msimet/Stile.git``. Then, go to the file
 ``treecorr_utils.py`` and add one line:
 
