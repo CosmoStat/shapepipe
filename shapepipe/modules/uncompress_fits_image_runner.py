@@ -20,20 +20,27 @@ from astropy.io import fits
 def uncompress_fits_image_runner(input_file_list, run_dirs, file_number_string,
                                  config, w_log):
 
-    output_pattern = config.get('UNCOMPRESS_FITS_IMAGE_RUNNER', 'OUTPUT_PATTERN')
+    output_pattern_list = config.getlist('UNCOMPRESS_FITS_IMAGE_RUNNER', 'OUTPUT_PATTERN')
 
     if config.has_option('UNCOMPRESS_FITS_IMAGE_RUNNER', 'HDU_DATA'):
         data_hdu = config.getint("UNCOMPRESS_FITS_IMAGE_RUNNER", "HDU_DATA")
     else:
         data_hdu = 0
 
-    # Read data for desired HDU
-    data = fits.getdata(input_file_list[0], data_hdu)
-    header = fits.getheader(input_file_list[0], data_hdu)
+    if len(input_file_list) != len(output_pattern_list):
+        raise ValueError('Lists INPUT_PATH ({}) and OUTPUT_PATTERN ({}) '
+                         'need to be of equal length.'
+                         ''.format(len(input_file_list),
+                                   len(output_pattern_list)))
 
-    # Create and write new FITS file with that HDU only
-    hdu = fits.PrimaryHDU(data, header)
-    hdul = fits.HDUList([hdu])
-    hdul.writeto(run_dirs['output'] + '/' + output_pattern + file_number_string + '.fits')
+    # Read data from input list files
+    for i in range(len(input_file_list)):
+        data = fits.getdata(input_file_list[i], data_hdu)
+        header = fits.getheader(input_file_list[i], data_hdu)
+
+        # Create and write new FITS file with that HDU only
+        hdu = fits.PrimaryHDU(data, header)
+        hdul = fits.HDUList([hdu])
+        hdul.writeto('{}/{}{}.fits'.format(run_dirs['output'], output_pattern_list[i], file_number_string))
 
     return None, None

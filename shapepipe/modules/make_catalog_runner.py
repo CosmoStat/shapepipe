@@ -2,7 +2,7 @@
 
 """MAKE CATALOG RUNNER
 
-This module merge different catalog to make the final product.
+This module merge different catalogs to create the final catalog product.
 
 :Author: Axel Guinot
 
@@ -29,7 +29,7 @@ def remove_field_name(arr, name):
 
     Parameters
     ----------
-    a : numpy.ndarray
+    arr : numpy.ndarray
         A numpy strucured array.
     name : str
         Name of the field to remove.
@@ -502,7 +502,6 @@ def save_psf_data(final_cat_file, galaxy_psf_path, w_log):
 def make_catalog_runner(input_file_list, run_dirs, file_number_string,
                         config, w_log):
 
-    print(input_file_list)
     tile_sexcat_path, sexcat_sm_path, galaxy_psf_path, shape1_cat_path = input_file_list[0:4]
     if len(input_file_list) == 5:
         shape2_cat_path = input_file_list[4]

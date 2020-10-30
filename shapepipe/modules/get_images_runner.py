@@ -9,8 +9,35 @@ This module copies all images required for processing
 """
 
 from shapepipe.modules.module_decorator import module_runner
+from shapepipe.utilities.canfar import vosHandler
+
+import os
 import re
 import sys
+
+
+def in2out_pattern(number):
+    """Transform input to output number pattern or image ID
+
+    Parameters
+    ----------
+    number : string
+        input number
+
+    Returns
+    -------
+    number_final : string
+        output number
+    """
+
+    # replace dots ('.') with dashes ('-') to avoid confusion
+    # with file extension delimiters
+    number_final = re.sub(r'\.', '-', number)
+
+    # remove letters in number
+    number_final = re.sub('[a-zA-Z]', '', number_final)
+
+    return number_final
 
 
 class GetImages(object):
@@ -47,7 +74,7 @@ class GetImages(object):
         self._w_log = w_log
 
     def get_file_list(self, dest_dir, output_file_pattern=None):
-        """Return list of file paths to copy.
+        """Return lists of file paths to copy.
 
         Parameters
         ----------
@@ -73,13 +100,9 @@ class GetImages(object):
             for number in self._image_number_list:
 
                 if output_file_pattern:
-                    # For output:
-                    # - replace dots ('.') with dashes ('-') to avoid confusion
-                    #   with file extension delimiters
-                    # - remove letters in number
+                    # Transform input to output number patterns
 
-                    number_final = re.sub(r'\.', '-', number)
-                    number_final = re.sub('[a-zA-Z]', '', number_final)
+                    number_final = in2out_pattern(number)
 
                     # Keep initial dot in extension
                     x = in_ext[1:]
@@ -90,7 +113,13 @@ class GetImages(object):
                     fbase = re.sub(self._input_numbering, number, in_pattern)
                     ext_final = in_ext
 
-                fpath = '{}/{}{}'.format(in_path, fbase, ext_final)
+                if output_file_pattern and output_file_pattern[i] == '*':
+                    # copy all input files to output dir, do not append
+                    # extension
+                    fpath = '{}/.'.format(in_path)
+                else:
+                    fpath = '{}/{}{}'.format(in_path, fbase, ext_final)
+
                 list_files_per_type.append(fpath)
             list_all_files.append(list_files_per_type)
 
@@ -122,17 +151,13 @@ class GetImages(object):
             sys.argv.append(in_path)
             sys.argv.append(out_path)
 
-            try:
-                from vos.commands.vcp import vcp
-            except:
-                raise ImportError('vos modules not found, re-install ShapePipe '
-                                  'with \'install_pipeline --vos\'')
+            vcp = vosHandler('vcp')
+            vcp()
 
-            try:
-                vcp()
-            except:
-                raise ValueError('Error in \'vcp\' command: \'{}\''.format(
-                                 ' '.join(sys.argv)))
+        elif self._copy == 'symlink':
+            src = in_path
+            dst = out_path
+            os.symlink(src, dst)
 
 
 def read_image_numbers(path):
@@ -159,7 +184,8 @@ def read_image_numbers(path):
 
 @module_runner(version='1.0',
                depends=['numpy', 'vos'],
-               run_method='serial')
+               run_method='serial',
+               numbering_scheme='_0')
 def get_images_runner(input_file_list, run_dirs, file_number_string,
                       config, w_log):
 
@@ -203,6 +229,7 @@ def get_images_runner(input_file_list, run_dirs, file_number_string,
     if any(len(lst) != nitem for lst in [input_dir, input_file_pattern,
                                          input_file_ext, output_file_pattern]):
         raise ValueError('Lists INPUT_PATH ({}), INPUT_FILE_PATTERN ({}), '
+
                          'INPUT_FILE_EXT ({}), OUTPUT_FILE_PATTERN ({}) '
                          'need to have equal length'
                          ''.format(len(input_dir),

@@ -68,6 +68,7 @@ Module Dependencies
 - matplotlib>=3.0.2
 - numbda==0.40.0
 - ngmix>=1.2
+- pandas>=1.0
 - sf-tools>=2.0.0
 - sqlitedict>=1.6.0
 
