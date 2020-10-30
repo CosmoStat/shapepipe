@@ -54,15 +54,15 @@ except ImportError:
 def mccd_plots_runner(input_file_list, run_dirs, file_number_string,
                       config, w_log):
     # Get parameters for meanshapes plots
-    x_nb_bins = config.getint('MCCD_PLOTS', 'X_GRID')
-    y_nb_bins = config.getint('MCCD_PLOTS', 'Y_GRID')
-    remove_outliers = config.getboolean('MCCD_PLOTS', 'REMOVE_OUTLIERS')
-    plot_meanshapes = config.getboolean('MCCD_PLOTS', 'PLOT_MEANSHAPES')
-    plot_histograms = config.getboolean('MCCD_PLOTS', 'PLOT_HISTOGRAMS')
+    x_nb_bins = config.getint('MCCD_PLOTS_RUNNER', 'X_GRID')
+    y_nb_bins = config.getint('MCCD_PLOTS_RUNNER', 'Y_GRID')
+    remove_outliers = config.getboolean('MCCD_PLOTS_RUNNER', 'REMOVE_OUTLIERS')
+    plot_meanshapes = config.getboolean('MCCD_PLOTS_RUNNER', 'PLOT_MEANSHAPES')
+    plot_histograms = config.getboolean('MCCD_PLOTS_RUNNER', 'PLOT_HISTOGRAMS')
 
     # Get parameters for Rho stats plots
-    plot_rho_stats = config.getboolean('MCCD_PLOTS', 'PLOT_RHO_STATS')
-    rho_stat_plot_style = config.get('MCCD_PLOTS', 'RHO_STATS_STYLE')
+    plot_rho_stats = config.getboolean('MCCD_PLOTS_RUNNER', 'PLOT_RHO_STATS')
+    rho_stat_plot_style = config.get('MCCD_PLOTS_RUNNER', 'RHO_STATS_STYLE')
 
     nb_pixel = x_nb_bins, y_nb_bins
     starcat_path = input_file_list[0][0]
