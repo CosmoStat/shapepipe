@@ -428,10 +428,7 @@ def NegDash(x_in, y_in, yerr_in, plot_name='', vertical_lines=True,
             errbkwargs[errorbar_kword] = kwargs[errorbar_kword]
             del safekwargs[errorbar_kword]
     errbkwargs = dict(errbkwargs, **safekwargs)
-    """else:
-        posfmt = '-'
-        negfmt = '--'
-        safekwargs = kwargs"""
+
     # plot up to next change of sign
     current_sign = np.sign(y[0])
     first_change = np.argmax(current_sign * y < 0)
