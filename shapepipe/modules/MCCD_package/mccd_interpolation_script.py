@@ -138,33 +138,6 @@ class MCCDinterpolator(object):
 
         self._img_number = img_number
 
-    def process(self):
-        r""" Process the PSF interpolation single-epoch run.
-        """
-        if self.gal_pos is None:
-            self._get_galaxy_positions()
-
-        if self.interp_PSFs is None:
-            self._interpolate()
-
-        if isinstance(self.interp_PSFs,
-                      str) and self.interp_PSFs == NOT_ENOUGH_STARS:
-            self._w_log.info('Not enough stars to interpolate the psf'
-                             ' in the file {}.'.format(self._dotpsf_path))
-        elif isinstance(self.interp_PSFs,
-                        str) and self.interp_PSFs == BAD_CHI2:
-            self._w_log.info('Bad chi2 for the psf model'
-                             ' in the file {}.'.format(self._dotpsf_path))
-        elif isinstance(self.interp_PSFs,
-                        str) and self.interp_PSFs == FILE_NOT_FOUND:
-            self._w_log.info(
-                'Psf model file {} not found.'.format(self._dotpsf_path))
-        else:
-            if self._compute_shape:
-                self._get_psfshapes()
-
-            self._write_output()
-
     def _get_position_parameters(self):
         """ Read position parameters from .psf file.
         """
@@ -198,21 +171,6 @@ class MCCDinterpolator(object):
             raise KeyError(pos_param_err)
         galcat.close()
 
-    def _interpolate(self):
-        """
-        (Run Sheldon & Rykoff's PSFEx interpolator method at desired
-        positions.)
-        """
-
-        # self.interp_PSFs = interpsfex(self._dotpsf_path, self.gal_pos,
-        #                               self._star_thresh, self._chi2_thresh)
-
-        # mccd_model_path = self._dot_psf_dir + '/' + \
-        #                   self._dot_psf_pattern + '-' + exp_name + \
-        #                   '.npy'
-        #
-        # self.interp_PSFs = interp_MCCD(mccd_model_path, gal_pos, ccd)
-
     def _get_psfshapes(self):
         """ Compute shapes of PSF at galaxy positions using HSM.
         """
@@ -244,48 +202,6 @@ class MCCDinterpolator(object):
         else:
             data = {'VIGNET': self.interp_PSFs}
         output.save_as_fits(data, sex_cat_path=self._galcat_path)
-
-    def process_validation(self, psfex_cat_path):
-        """
-        """
-
-        if self.gal_pos is None:
-            self._get_galaxy_positions()
-
-        if self.interp_PSFs is None:
-            self._interpolate()
-
-        if isinstance(self.interp_PSFs,
-                      str) and self.interp_PSFs == NOT_ENOUGH_STARS:
-            self._w_log.info('Not enough stars to interpolate the psf'
-                             ' in the file {}.'.format(self._dotpsf_path))
-        elif isinstance(self.interp_PSFs,
-                        str) and self.interp_PSFs == BAD_CHI2:
-            self._w_log.info('Bad chi2 for the psf model'
-                             ' in the file {}.'.format(self._dotpsf_path))
-        elif isinstance(self.interp_PSFs,
-                        str) and self.interp_PSFs == FILE_NOT_FOUND:
-            self._w_log.info(
-                'Psf model file {} not found.'.format(self._dotpsf_path))
-        else:
-            star_cat = sc.FITSCatalog(self._galcat_path, SEx_catalog=True)
-            star_cat.open()
-            star_dict = {}
-            star_vign = np.copy(star_cat.get_data()['VIGNET'])
-            star_dict['NUMBER'] = np.copy(star_cat.get_data()['NUMBER'])
-            star_dict['X'] = np.copy(star_cat.get_data()['XWIN_IMAGE'])
-            star_dict['Y'] = np.copy(star_cat.get_data()['YWIN_IMAGE'])
-            star_dict['RA'] = np.copy(star_cat.get_data()['XWIN_WORLD'])
-            star_dict['DEC'] = np.copy(star_cat.get_data()['YWIN_WORLD'])
-            star_dict['MAG'] = np.copy(star_cat.get_data()['MAG_AUTO'])
-            star_dict['SNR'] = np.copy(star_cat.get_data()['SNR_WIN'])
-            star_cat.close()
-
-            self._get_psfshapes()
-            self._get_starshapes(star_vign)
-            psfex_cat_dict = self._get_psfexcatdict(psfex_cat_path)
-
-            self._write_output_validation(star_dict, psfex_cat_dict)
 
     def _get_starshapes(self, star_vign):
         """ Compute shapes of stars at stars positions using HSM.
