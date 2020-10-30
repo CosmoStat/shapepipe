@@ -64,23 +64,20 @@ def mccd_preprocessing_runner(input_file_list, run_dirs, file_number_string,
     # Output paths for both newly generates datasets
     output_mccd_path = run_dirs['output'] + '/'
 
-    def print_fun(print_msg):
-        w_log.info(print_msg)
-
-    _ = [aux_mccd.mccd_preprocessing_pipeline(
-        input_file_list=input_file_list,
-        output_path=output_mccd_path,
-        input_file_position=_input_pos,
-        min_n_stars=_min_stars,
-        separator=separator,
-        CCD_id_filter_list=None,
-        outlier_std_max=outlier_std_max,
-        save_masks=False,
-        save_name=_save_name,
-        save_extension='.fits',
-        verbose=verbose,
-        print_fun=print_fun)
-        for _input_pos, _save_name, _min_stars in
-        zip(input_file_pos_list, save_name_list, min_n_stars_list)]
+    [aux_mccd.mccd_preprocessing_pipeline(
+     input_file_list=input_file_list,
+     output_path=output_mccd_path,
+     input_file_position=_input_pos,
+     min_n_stars=_min_stars,
+     separator=separator,
+     CCD_id_filter_list=None,
+     outlier_std_max=outlier_std_max,
+     save_masks=False,
+     save_name=_save_name,
+     save_extension='.fits',
+     verbose=verbose,
+     print_fun=w_log.info)
+     for _input_pos, _save_name, _min_stars in
+     zip(input_file_pos_list, save_name_list, min_n_stars_list)]
 
     return None, None
