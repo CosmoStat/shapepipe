@@ -283,6 +283,7 @@ def plot_histograms(hists, config=None, output_dir='.', verbose=False):
     """
 
     fig, (ax) = plt.subplots()
+    plt.tight_layout()
 
     if config and config.has_option('ALL', 'fontsize'):
         fontsize = config.getint('ALL', 'fontsize')
@@ -360,7 +361,7 @@ def plot_histograms(hists, config=None, output_dir='.', verbose=False):
             if verbose:
                 print('Creating files \'{}.*\''.format(file_base))
 
-            plt.savefig('{}/{}.png'.format(output_dir, file_base))
+            plt.savefig('{}/{}.png'.format(output_dir, file_base), bbox_inches='tight')
             np.savetxt('{}/{}.txt'.format(output_dir, file_base), np.transpose([bins, freq]),
                        fmt='%10g', header='[{}] [{}]'.format(xlabel, ylabel)),
 
@@ -373,16 +374,15 @@ def get_config(config_path, verbose=False):
 
     Parameters
     ----------
-    config_path: string
+    config_path : string
         configuration file path
-    verbose: bool, optional, default=False
+    verbose : bool, optional, default=False
         verbose output if True
 
     Returns
     -------
-    conf: class config
-        configuration values, if config_path does not exist,
-        None
+    conf : CustomParser
+        configuration values, None if config_path does not exist
     """
 
     if config_path is None:
