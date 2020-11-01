@@ -360,6 +360,14 @@ class FileHandler(object):
                                  last_module,
                                  module), 'output'))
 
+            elif 'all' in dir.lower():
+                module = dir.lower().split(':')[1]
+                all_runs = self._run_log.get_all(module)
+                input_dir.extend([self.format(self.format(
+                                  run,
+                                  module), 'output')
+                                  for run in all_runs])
+
             elif ':' in dir.lower():
                 string, module = dir.lower().split(':')
                 input_dir.append(self.format(self.format(

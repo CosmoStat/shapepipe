@@ -30,13 +30,17 @@ class Combine(object):
 
     """
 
-    def __init__(self, w_log):
+    def __init__(self, input_file_list, w_log):
 
+        self._input_file_list = input_file_list
         self._w_log = w_log
 
-    def process():
+    def process(self):
 
         pass
+
+        for input_file in self._input_file_list:
+            print(input_file)
 
         # Create dir
         # Create links
@@ -49,9 +53,7 @@ def combine_runner(input_file_list, run_dirs, file_number_string,
                    config, w_log):
 
 
-    print('Combine runner')
-
-    combine = Combine(w_log)
+    combine = Combine(input_file_list, w_log)
 
     combine.process()
 
