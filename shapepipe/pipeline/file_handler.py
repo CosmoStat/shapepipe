@@ -364,7 +364,7 @@ class FileHandler(object):
                 module = dir.lower().split(':')[1]
                 all_runs = self._run_log.get_all(module)
                 input_dir.extend([self.format(self.format(
-                                  run,
+                                  run.split(' ')[0],
                                   module), 'output')
                                   for run in all_runs])
 
