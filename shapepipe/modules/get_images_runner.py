@@ -14,6 +14,7 @@ from shapepipe.utilities.canfar import vosHandler
 import os
 import re
 import sys
+import glob
 
 
 def in2out_pattern(number):
@@ -116,7 +117,8 @@ class GetImages(object):
                 if output_file_pattern and output_file_pattern[i] == '*':
                     # copy all input files to output dir, do not append
                     # extension
-                    fpath = '{}/.'.format(in_path)
+                    #fpath = '{}/.'.format(in_path)
+                    fpath = in_path
                 else:
                     fpath = '{}/{}{}'.format(in_path, fbase, ext_final)
 
@@ -156,8 +158,19 @@ class GetImages(object):
 
         elif self._copy == 'symlink':
             src = in_path
+
+            # Get all input file names if INPUT_FILE_PATTERN contains '*'
+            all_src = glob.glob(src)
             dst = out_path
-            os.symlink(src, dst)
+            for src in all_src:
+                if os.path.isdir(dst):
+                    # OUTPUT_FILE_PATTERN is '*', so dst is not regular file
+                    # but directory. Append input file name
+                    dst_name = '{}/{}'.format(dst, os.path.basename(src))
+                else:
+                    # dst is regular file
+                    dst_name = dst
+                os.symlink(src, dst_name)
 
 
 def read_image_numbers(path):
