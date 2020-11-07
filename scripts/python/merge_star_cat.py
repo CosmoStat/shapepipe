@@ -204,8 +204,7 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
 
     # Prepare output FITS catalogue
     output = sc.FITSCatalog(output_path,
-                            open_mode=sc.BaseCatalog.OpenMode.ReadWrite) #,
-                            #SEx_catalog=True)
+                            open_mode=sc.BaseCatalog.OpenMode.ReadWrite)
 
     # Collect columns
     # convert back to sigma for consistency
