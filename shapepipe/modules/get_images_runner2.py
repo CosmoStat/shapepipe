@@ -14,7 +14,7 @@ from shapepipe.utilities.canfar import vosHandler
 import os
 import re
 import sys
-from pathlib import Path
+import glob
 
 
 class GetImages(object):
@@ -125,12 +125,13 @@ class GetImages(object):
             for i in range(len(in_per_type)):
                 if self._check_existing_dir:
                     out_base = os.path.basename(in_per_type[i])
-                    if os.path.exists('{}/{}'
-                                      ''.format(self._check_existing_dir,
-                                                out_base)):
-                        self._w_log.info('{} exists in {}, skipping'
-                                         ''.format(out_base,
-                                                   self._check_existing_dir))
+                    path = glob.glob('{}/**/{}'
+                                     ''.format(self._check_existing_dir,
+                                               out_base),
+                                     recursive=True)
+                    if path:
+                        self._w_log.info('{} found, skipping'
+                                         ''.format(path[0]))
                         continue
                 self._w_log.info('Retrieving {}'.format(in_per_type[i]))
                 self.retrieve_one(in_per_type[i], out_per_type[i])
