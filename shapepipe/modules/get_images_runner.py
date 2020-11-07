@@ -45,25 +45,27 @@ class GetImages(object):
 
     def __init__(self, copy, options, image_number_list,
                  input_numbering, input_file_pattern,
-                 input_file_ext, w_log):
+                 input_file_ext, w_log, check_existing_dir=None):
         """GetImages initiatliation.
 
         Parameters
         ----------
-        copy: string
+        copy : string
             copy/download method
-        option: string
+        option : string
             copy options
-        image_number_list: list of string self._copy = copy
+        image_number_list : list of string self._copy = copy
             image numbers self._options = options
-        input_numbering: string self._image_number_list = image_number_list
+        input_numbering : string self._image_number_list = image_number_list
             numbering scheme, python regexp self._input_numbering = input_numbering
-        input_file_pattern: list of strings self._input_file_ext = input_file_ext
+        input_file_pattern : list of strings self._input_file_ext = input_file_ext
             file pattern including input number template of input files self._w_log = w_log
-        input_file_ext: list of strings
+        input_file_ext : list of strings
             input file extensions
-        w_log:
+        w_log :
             log file
+        check_existing_dir : string, optional, default=None
+            if not None, only retrieve image if not existing at this path (recursively)
         """
 
         self._copy = copy
@@ -73,6 +75,7 @@ class GetImages(object):
         self._input_file_pattern = input_file_pattern
         self._input_file_ext = input_file_ext
         self._w_log = w_log
+        self._check_existing_dir = check_existing_dir
 
     def get_file_list(self, dest_dir, output_file_pattern=None):
         """Return lists of file paths to copy.
@@ -140,6 +143,17 @@ class GetImages(object):
 
         for in_per_type, out_per_type in zip(all_inputs, all_outputs):
             for i in range(len(in_per_type)):
+                if self._check_existing_dir:
+                    out_base = os.path.basename(in_per_type[i])
+                    path = glob.glob('{}/**/{}'
+                                     ''.format(self._check_existing_dir,
+                                               out_base),
+                                     recursive=True)
+                    if path:
+                        self._w_log.info('{} found, skipping'
+                                         ''.format(path[0]))
+                        continue
+                #print('MKDEBUG to copy {} -> {}'.format(in_per_type[i], out_per_type[i]))
                 self.copy_one(in_per_type[i], out_per_type[i])
 
     def copy_one(self, in_path, out_path):
@@ -261,8 +275,15 @@ def get_images_runner(input_file_list, run_dirs, file_number_string,
     else:
         options = None
 
+   # Check for already retrieved files
+    if config.has_option('GET_IMAGES_RUNNER', 'CHECK_EXISTING_DIR'):
+        check_existing_dir = config.getexpanded('GET_IMAGES_RUNNER', 'CHECK_EXISTING_DIR')
+    else:
+        check_existing_dir = None
+
     inst = GetImages(copy, options, image_number_list, input_numbering,
-                     input_file_pattern, input_file_ext, w_log)
+                     input_file_pattern, input_file_ext, w_log,
+                     check_existing_dir=check_existing_dir)
 
     # Assemble input and output file lists
     all_inputs = inst.get_file_list(input_dir)

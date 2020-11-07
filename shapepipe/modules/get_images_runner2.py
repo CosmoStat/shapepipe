@@ -14,6 +14,7 @@ from shapepipe.utilities.canfar import vosHandler
 import os
 import re
 import sys
+from pathlib import Path
 
 
 class GetImages(object):
@@ -37,10 +38,10 @@ class GetImages(object):
             file pattern including input number template of input files
         input_file_ext : list of strings
             input file extensions
-        check_existing_dir : string, optional, default=None
-            if not None, only retrieve image if not existing at this directory
         w_log:
             log file
+        check_existing_dir : string, optional, default=None
+            if not None, only retrieve image if not existing at this directory
 
         Returns
         --------
@@ -123,9 +124,13 @@ class GetImages(object):
         for in_per_type, out_per_type in zip(all_inputs, all_outputs):
             for i in range(len(in_per_type)):
                 if self._check_existing_dir:
-                    out_base = os.path.basename(out_per_type[i])
-                    if os.path.exists('{}/{}'.format(self._check_existing_dir, out_base)):
-                        self._w_log.info('{} exists in {}, skipping'.format(out_base, self._check_existing_dir))
+                    out_base = os.path.basename(in_per_type[i])
+                    if os.path.exists('{}/{}'
+                                      ''.format(self._check_existing_dir,
+                                                out_base)):
+                        self._w_log.info('{} exists in {}, skipping'
+                                         ''.format(out_base,
+                                                   self._check_existing_dir))
                         continue
                 self._w_log.info('Retrieving {}'.format(in_per_type[i]))
                 self.retrieve_one(in_per_type[i], out_per_type[i])

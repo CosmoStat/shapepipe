@@ -66,13 +66,6 @@ class Combine(object):
 
                     input_base_name = os.path.basename(input_path)
                     output_path = '{}/{}'.format(self._output_dir, input_base_name)
-                    #if os.path.exists(output_path):
-                        #n_skipped = n_skipped + 1
-                    #else:
-                        #print('symlink {} <- {}'.format(input_path, output_path))
-                        #os.symlink(input_path, output_path)
-                        #n_created = n_created + 1
-
                     try:
                         os.symlink(input_path, output_path)
                         n_created = n_created + 1
