@@ -7,6 +7,8 @@ Output global stats from a ShapePipe run.
 :Author: Martin Kilbinger
 
 :Date: 07/2020
+
+:Package: ShapePipe
 """
 
 import re
@@ -39,6 +41,7 @@ def params_default():
 
     p_def = cfis.param(
         input_dir = '.',
+        output_dir = '.',
         pattern = 'star_stat-',
     )
 
@@ -68,6 +71,9 @@ def parse_options(p_def):
     parser.add_option('-i', '--input_dir', dest='input_dir', type='string', \
          default=p_def.input_dir, \
          help='input directory, default=\'{}\''.format(p_def.input_dir))
+    parser.add_option('-o', '--output_dir', dest='output_dir', type='string', \
+         default=p_def.output_dir, \
+         help='output directory, default=\'{}\''.format(p_def.output_dir))
     parser.add_option('-c', '--config', dest='config', type='string', \
          help='configuration file, default=none')
     parser.add_option('-p', '--pattern', dest='pattern', type='string', \
@@ -261,20 +267,27 @@ def compute_histograms(values, config=None, verbose=False):
     return hists
 
 
-def plot_histograms(hists, config=None, verbose=False):
+def plot_histograms(hists, config=None, output_dir='.', verbose=False):
     """Create histogram plots.
 
     Parameters
     ----------
-    hists: dictionary of histograms
+    hists : dictionary of histograms
         histograms for all keys
-    config: class config
+    config : class config
         configuration values
-    verbose: bool, optional, default=False
+    output_dir : string, optional, default='.'
+        output directory
+    verbose : bool, optional, default=False
         verbose output if True
     """
 
     fig, (ax) = plt.subplots()
+    plt.tight_layout()
+
+    if config and config.has_option('ALL', 'fontsize'):
+        fontsize = config.getint('ALL', 'fontsize')
+        plt.rcParams.update({'font.size': fontsize})
 
     xlim_fac = 0.05
 
@@ -299,11 +312,30 @@ def plot_histograms(hists, config=None, verbose=False):
             width = bins[1] - bins[0]
             ax.bar(bins, freq, width=width)
 
-            xmin = min(bins)
-            xmax = max(bins)
+            # Overwrite limits if found in config file.
+            # If not stretch bin boundaries
+            if config and config.has_option(si, 'xmin'):
+                xmin = config.getfloat(si, 'xmin')
+            else:
+                xmin = min(bins)
+            if config and config.has_option(si, 'xmax'):
+                xmax = config.getfloat(si, 'xmax')
+            else:
+                xmax = max(bins)
+
             dx = xmax - xmin
-            xxmin = xmin - dx * xlim_fac
-            xxmax = xmax + dx * xlim_fac
+
+            # If limits from bin boundaries: extend by small
+            # amount
+            if config and config.has_option(si, 'xmin'):
+                xxmin = xmin
+            else:
+                xxmin = xmin - dx * xlim_fac
+            if config and config.has_option(si, 'xmax'):
+                xxmax = xmax
+            else:
+                xxmax = xmax + dx * xlim_fac
+
             plt.xlim(xxmin, xxmax)
 
             if config and config.has_option(si, 'xlabel'):
@@ -324,13 +356,13 @@ def plot_histograms(hists, config=None, verbose=False):
             if config and config.has_option(si, 'fname'):
                 file_base = config.getexpanded(si, 'fname')
             else:
-                file_base = 'hist_{}.png'.format(i)
+                file_base = 'hist_{}'.format(i)
 
             if verbose:
                 print('Creating files \'{}.*\''.format(file_base))
 
-            plt.savefig('{}.png'.format(file_base))
-            np.savetxt('{}.txt'.format(file_base), np.transpose([bins, freq]),
+            plt.savefig('{}/{}.png'.format(output_dir, file_base), bbox_inches='tight')
+            np.savetxt('{}/{}.txt'.format(output_dir, file_base), np.transpose([bins, freq]),
                        fmt='%10g', header='[{}] [{}]'.format(xlabel, ylabel)),
 
         i = i + 1
@@ -342,16 +374,15 @@ def get_config(config_path, verbose=False):
 
     Parameters
     ----------
-    config_path: string
+    config_path : string
         configuration file path
-    verbose: bool, optional, default=False
+    verbose : bool, optional, default=False
         verbose output if True
 
     Returns
     -------
-    conf: class config
-        configuration values, if config_path does not exist,
-        None
+    conf : CustomParser
+        configuration values, None if config_path does not exist
     """
 
     if config_path is None:
@@ -404,8 +435,14 @@ def main(argv=None):
 
     hists = compute_histograms(values, config=config, verbose=param.verbose)
 
+    if os.path.isfile(param.output_dir):
+        raise OSError('Output path \'{}\' is a regular file'
+                      ''.format(param.output_dir))
+    if not os.path.isdir(param.output_dir):
+        os.mkdir(param.output_dir)
 
-    plot_histograms(hists, config=config, verbose=param.verbose)
+    plot_histograms(hists, config=config, output_dir=param.output_dir,
+                    verbose=param.verbose)
 
     ### End main program
 

@@ -53,36 +53,53 @@ def main(argv=None):
     }
 
 
-    # Get input file names
-    last_Git = '{}/get_images_runner/output'.format(dirs_Git[-1])
-    print(last_Git)
+    last_Git = False
 
-    ps_fnames = glob.glob('{}/{}*.{}'.format(last_Git, pattern, ext))
+    if last_Git:
+        print('Converting PS image names in last Git run dir')
+    else:
+        print('Converting PS image names in all Git run dirs')
 
-    for psfn in ps_fnames:
+    for dir_Git in dirs_Git:
 
-        # Get filter name
-        header = fits.getheader(psfn, hdu_no) 
-        filter_long = header['HIERARCH FPA.FILTERID']
-        filter_letter = filter_long[0]
+        if last_Git:
+            # Only process last Git run
+            if dir_Git != dirs_Git[-1]:
+                continue
 
-        # Get tile ID
-        input_name = os.path.basename(psfn)
-        m = re.match('.*(\d{3}\.\d{3}).*', input_name)
-        number = m[1]
-        number_final = in2out_pattern(number)
+        dir_Git_out = '{}/get_images_runner/output'.format(dir_Git)
+        print(dir_Git_out)
 
-        # Get image type
-        mm = re.match('.*\.(.*)\.fits', input_name)
-        output_type = pattern_map[mm[1]]
+        ps_fnames = glob.glob('{}/{}*.{}'
+                              ''.format(dir_Git_out, pattern, ext))
+        for psfn in ps_fnames:
 
-        # Assemble output file name
-        output_name = '{}{}{}{}.{}'.format(output_base, filter_letter,
-                                           output_type, number_final, ext)
+            # Get filter name
+            header = fits.getheader(psfn, hdu_no) 
+            filter_long = header['HIERARCH FPA.FILTERID']
+            filter_letter = filter_long[0]
 
-        print(' {} -> {}'.format(input_name, output_name))
-        output_path = '{}/{}'.format(last_Git, output_name)
-        os.rename(psfn, output_path)
+            # Get tile ID
+            input_name = os.path.basename(psfn)
+            m = re.match('.*(\d{3}\.\d{3}).*', input_name)
+            number = m[1]
+            number_final = in2out_pattern(number)
+
+            # Get image type
+            mm = re.match('.*\.(.*)\.fits', input_name)
+            output_type = pattern_map[mm[1]]
+
+            # Assemble output file name
+            output_name = '{}{}{}{}.{}'.format(output_base, filter_letter,
+                                               output_type, number_final, ext)
+
+            output_path = '{}/{}'.format(dir_Git_out, output_name)
+            #os.rename(psfn, output_path)
+            try:
+                print(' {} -> {}'.format(input_name, output_name))
+                os.symlink(psfn, output_path)
+            except FileExistsError:
+                print(' {} already exists, skipping'.format(output_name))
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
