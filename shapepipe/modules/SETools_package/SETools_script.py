@@ -20,27 +20,7 @@ import matplotlib.pylab as plt
 import os
 
 import shapepipe.pipeline.file_io as sc
-
-
-def _mkdir(direc):
-    """Create directory direc.
-      This function should probably go somewhere further up.
-
-    Parameters
-    ----------
-    direc: string
-      Directory name
-
-    Returns
-    -------
-    None
-    """
-
-    if not os.path.isdir(direc):
-        try:
-            os.mkdir(direc)
-        except Exception as detail:
-            raise Exception('SETools: Cannot create directory {}, error={}'.format(direc, detail))
+from shapepipe.utilities.file_system import mkdir
 
 
 class SETools(object):
@@ -99,7 +79,7 @@ class SETools(object):
         # Processing: Create mask = filter input
         if len(self._mask) != 0:
             direc = self._output_dir + '/mask'
-            _mkdir(direc)
+            mkdir(direc)
             self._make_mask()
             for i in self.mask.keys():
                 if 'NO_SAVE' in self._mask[i]:
@@ -109,7 +89,7 @@ class SETools(object):
 
         if len(self._plot) != 0:
             direc = self._output_dir + '/plot'
-            _mkdir(direc)
+            mkdir(direc)
             self._make_plot()
             for i in self.plot.keys():
                 output_path = direc + '/' + i + file_number
@@ -117,7 +97,7 @@ class SETools(object):
 
         if len(self._new_cat) != 0:
             direc = self._output_dir + '/new_cat'
-            _mkdir(direc)
+            mkdir(direc)
             self._make_new_cat()
             for i in self.new_cat.keys():
                 file_name = direc + '/' + i + file_number
@@ -125,7 +105,7 @@ class SETools(object):
 
         if len(self._rand_split) != 0:
             direc = self._output_dir + '/rand_split'
-            _mkdir(direc)
+            mkdir(direc)
             self._make_rand_split()
 
             for sample_type in self.rand_split.keys():
@@ -143,7 +123,7 @@ class SETools(object):
 
         if len(self._stat) != 0:
             direc = self._output_dir + '/stat'
-            _mkdir(direc)
+            mkdir(direc)
             self._make_stat()
             for i in self.stat.keys():
                 output_path = direc + '/' + i + file_number + '.txt'

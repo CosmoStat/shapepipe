@@ -14,11 +14,6 @@
 :Package:       ShapePipe
 """
 
-
-# Compability with python2.x for x>6
-from __future__ import print_function
-
-
 import sys
 import os
 import copy
@@ -32,9 +27,13 @@ from astropy.table import Table, Column
 from optparse import OptionParser
 from optparse import OptionGroup
 
-from vos.commands.vcp import vcp
+from shapepipe.utilities.canfar import vosHandler
 
 import cfis
+
+
+# Global VCP definition
+vcp = vosHandler('vcp')
 
 
 def filter_file_list(in_file_list, pattern, band, type, columns, in_number_only=False, verbose=False):
@@ -193,7 +192,7 @@ def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False, quic
                 size = os.path.getsize(dest)
                 if size != size_list[i]:
                     do_download = True
-                    print('File {} incomplete.'.format(dest), end=' ') 
+                    print('File {} incomplete.'.format(dest), end=' ')
                 else:
                     do_download = False
                     n_ex += 1
@@ -227,11 +226,9 @@ def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False, quic
                 sys.argv.append('--certfile={}'.format(certfile))
             sys.argv.append(src)
             sys.argv.append(out_dir)
-            if not dry_run:
-                try:
-                    vcp()
-                except:
-                    raise cfis.CfisError('Error in \'vcp\' command, exiting')
+
+            vcp()
+
             n_dl += 1
 
     if verbose == True:
@@ -358,14 +355,14 @@ def check_options(options):
 
 def update_param(p_def, options):
     """Return default parameter, updated according to options.
-    
+
     Parameters
     ----------
     p_def:  class param
         parameter values
     optiosn: tuple
         command line options
-    
+
     Returns
     -------
     param: class param
@@ -382,7 +379,7 @@ def update_param(p_def, options):
     # Add remaining keys from options to param
     for key in vars(options):
         if not key in vars(param):
-            setattr(param, key, getattr(options, key)) 
+            setattr(param, key, getattr(options, key))
 
     tmp = cfis.my_string_split(param.scolumns, stop=True)
     param.columns = [int(c) for c in tmp]
@@ -448,4 +445,3 @@ def main(argv=None):
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
-

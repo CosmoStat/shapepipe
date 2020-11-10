@@ -16,12 +16,9 @@ import glob
 import copy
 import io
 from contextlib import redirect_stdout
-
 from optparse import OptionParser
-
-from vos.commands.vls import vls
-
 import cfis
+from shapepipe.utilities.file_system import mkdir
 
 
 def params_default():
@@ -106,14 +103,14 @@ def check_options(options):
 
 def update_param(p_def, options):
     """Return default parameter, updated and complemented according to options.
-    
+
     Parameters
     ----------
     p_def:  class param
         parameter values
     optiosn: tuple
         command line options
-    
+
     Returns
     -------
     param: class param
@@ -247,14 +244,14 @@ def main(argv=None):
 
     input_IDs = read_ID_list(param.input_IDs, verbose=param.verbose)
 
-    result_base_names = ['psfex', 'psfexinterp_exp', 'setools_mask', 'setools_stat', 'setools_plot', 
+    result_base_names = ['psfex', 'psfexinterp_exp', 'setools_mask', 'setools_stat', 'setools_plot',
                          'pipeline_flag', 'final_cat', 'logs']
 
     if os.path.isdir(param.output_dir):
         if param.verbose:
             print('Directory {} already exists, continuing...'.format(param.output_dir))
     else:
-        os.mkdir(param.output_dir)
+        mkdir(param.output_dir)
 
     create_links(param.input_dir, param.output_dir, input_IDs, result_base_names, verbose=param.verbose)
 
@@ -269,4 +266,3 @@ def main(argv=None):
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
-

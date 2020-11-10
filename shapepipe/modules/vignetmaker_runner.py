@@ -420,8 +420,10 @@ def vignetmaker_runner(input_file_list, run_dirs, file_number_string,
         if mode == 'CLASSIC':
             suffix = config.getlist("VIGNETMAKER_RUNNER", "SUFFIX")
             if len(suffix) != len(input_file_list[1:]):
-                raise ValueError("You must provide a suffix for each image "
-                                 "from which you extract stamps.")
+                raise ValueError('Number of suffixes ({}) has to be equal to '
+                                 'the number of input file type ({})'
+                                 ''.format(len(suffix),
+                                           len(input_file_list[1:])))
 
             inst = vignetmaker(galcat_path, pos_type, pos_params,
                                run_dirs['output'], file_number_string)

@@ -15,6 +15,7 @@ This module contain a class to create star mask for an image.
 import shapepipe.pipeline.file_io as sc
 from shapepipe.pipeline.config import CustomParser
 from shapepipe.pipeline.execute import execute
+from shapepipe.utilities.file_system import mkdir
 
 import numpy as np
 from astropy.coordinates import SkyCoord
@@ -39,10 +40,14 @@ class mask(object):
         Path to the *.mask config file
     output_dir : str
         Path to the output directory
+    hdu : int, optional, default = 0
+        HDU number
 
     """
 
-    def __init__(self, image_path, weight_path, image_suffix, image_num, config_filepath, output_dir, path_external_flag=None, outname_base='flag', star_cat_path=None):
+    def __init__(self, image_path, weight_path, image_suffix, image_num, config_filepath,
+                 output_dir, path_external_flag=None, outname_base='flag',
+                 star_cat_path=None, hdu=0):
 
         self._image_fullpath = image_path                                       # Path to the image to mask
         self._weight_fullpath = weight_path                                     # Path to the weight associated to the image
@@ -60,6 +65,8 @@ class mask(object):
         self._star_cat_path = None
         if star_cat_path is not None:
             self._star_cat_path = star_cat_path
+
+        self._hdu = hdu
 
         self._get_config(self._config_filepath)                                 # Get parameters from config file
 
@@ -147,7 +154,8 @@ class mask(object):
         del(img)
 
         self._wcs = wcs.WCS(self._header)
-        # MKDEBUG new 26/09: get_data() returns array in [y, x].
+
+        # Note: get_data().shape corresponds to (n_y, n_x)
         pix_center = [img_shape[1]/2., img_shape[0]/2.]
         wcs_center = self._wcs.all_pix2world([pix_center], 1)[0]
 
@@ -216,7 +224,9 @@ class mask(object):
 
         if not self._err:
             if im_pass:
-                final_mask = self._build_final_mask(path_mask1=mask_name[0], path_mask2=mask_name[1], border=border_mask, messier=messier_mask, path_external_flag=path_external_flag)
+                final_mask = self._build_final_mask(path_mask1=mask_name[0], path_mask2=mask_name[1],
+                                                    border=border_mask, messier=messier_mask,
+                                                    path_external_flag=path_external_flag)
 
                 if not self._config['HALO']['individual']:
                     if mask_name[0] is not None:
@@ -323,7 +333,7 @@ class mask(object):
         if width is None:
             raise ValueError('Width not provided')
 
-        # MKDEBUG: Exchanged x and y in the following init call, since the python image is [y, x]
+        # Note that python image array is [y, x]
         flag = np.zeros((int(self._fieldcenter['pix'][1]*2), int(self._fieldcenter['pix'][0]*2)), dtype='uint16')
 
         flag[0:width, :] = flag_value
@@ -366,8 +376,6 @@ class mask(object):
         nx = self._fieldcenter['pix'][0] * 2
         ny = self._fieldcenter['pix'][1] * 2
 
-        # MKDEBUG new 21/09: Add mask also if center of Messier object is outside of image, but area has overlap
-
         # Get the four corners of the image
         corners = self._wcs.calc_footprint()
         corners_sc = SkyCoord(ra=corners[:, 0] * u.degree, dec=corners[:, 1] * u.degree)
@@ -381,35 +389,21 @@ class mask(object):
             if np.any(corners_sc.separation(m_sc[i]) < r_deg):
                 ind.append(i)
 
-        # Previous code: Only adds Messier mask if object center is in image ###
-
-        # ra_max = np.hstack(self._wcs.all_pix2world(0, self._fieldcenter['pix'][1], 1))[0]
-        # ra_min = np.hstack(self._wcs.all_pix2world(nx, self._fieldcenter['pix'][1], 1))[0]
-        # dec_min = np.hstack(self._wcs.all_pix2world(self._fieldcenter['pix'][0], 0, 1))[1]
-        # dec_max = np.hstack(self._wcs.all_pix2world(self._fieldcenter['pix'][0], ny, 1))[1]
-
-        # ind = np.where((m_cat['ra'] > ra_min) & (m_cat['ra'] < ra_max) & (m_cat['dec'] > dec_min) & (m_cat['dec'] < dec_max))[0]
-
         if len(ind) == 0:
-            # print('MKDEBUG no Messier objects found')
+            # No closeby Messier object found
             return None
-        # print('MKDEBUG Messier objects found: first=#{} {}/{}'.format(m_cat['No'][ind[0]], m_cat['ra'][ind[0]], m_cat['dec'][ind[0]]))
 
-        # MKDEBUG: Exchanged x and y in the following init call, since the python image is [y, x]
+        # Note: python image array is [y, x]
         flag = np.zeros((int(self._fieldcenter['pix'][1]*2), int(self._fieldcenter['pix'][0]*2)), dtype='uint16')
 
         for i in ind:
             m_center = np.hstack(self._wcs.all_world2pix(m_cat['ra'][i], m_cat['dec'][i], 0))
             r_pix = max(m_cat['size'][i])/60. * (1 + size_plus) / np.abs(self._wcs.pixel_scale_matrix[0][0])
 
-            # MKDEBUG new 26/9: The following modifications account for Messier centers outside of image, without
+            # The following accounts for Messier centers outside of image, without
             # creating masks for coordinates out of range
             y_c, x_c = np.ogrid[0:ny, 0:nx]
             mask_tmp = (x_c - m_center[0])**2 + (y_c - m_center[1])**2 <= r_pix**2
-
-            # Previous code
-            # y_c, x_c = np.ogrid[-int(m_center[1]):ny-int(m_center[1]), -int(m_center[0]):nx-int(m_center[0])]
-            # mask_tmp = x_c*x_c + y_c*y_c <= r_pix*r_pix
 
             flag[mask_tmp] = flag_value
 
@@ -731,12 +725,13 @@ class mask(object):
             raise ValueError('No path to a mask, border or messier provided')
 
         if path_mask1 is not None:
-            mask1 = sc.FITSCatalog(path_mask1, hdu_no=0)
+            mask1 = sc.FITSCatalog(path_mask1, hdu_no=self._hdu)
             mask1.open()
-            final_mask = mask1.get_data()[:, :]
+            dat = mask1.get_data()
+            final_mask = dat[:, :]
 
         if path_mask2 is not None:
-            mask2 = sc.FITSCatalog(path_mask2, hdu_no=0)
+            mask2 = sc.FITSCatalog(path_mask2, hdu_no=self._hdu)
             mask2.open()
             if final_mask is not None:
                 final_mask += mask2.get_data()[:, :]
@@ -762,7 +757,7 @@ class mask(object):
                 raise TypeError('messier has to be a numpy.ndarray')
 
         if path_external_flag is not None:
-            external_flag = sc.FITSCatalog(path_external_flag, hdu_no=0)
+            external_flag = sc.FITSCatalog(path_external_flag, hdu_no=self._hdu)
             external_flag.open()
             if final_mask is not None:
                 final_mask += external_flag.get_data()[:, :]
@@ -799,7 +794,7 @@ class mask(object):
             out.add_header_card('MRATIO', self._ratio, 'ratio missing_pixels/all_pixels')
             out.add_header_card('MFLAG', self._config['MD']['im_flagged'], 'threshold value {:.3}'.format(self._config['MD']['thresh_flag']))
 
-            # MKDEBUG 27/9/2018 new: Write WCS information to header
+            # Write WCS information to header
             if self._wcs:
                 header_wcs = self._wcs.to_header()
                 for card in header_wcs:
@@ -838,6 +833,6 @@ class mask(object):
 
         path += '/'
         if not os.path.isdir(path):
-            os.system('mkdir ' + path)
+            mkdir(path)
 
         return path

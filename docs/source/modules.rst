@@ -1,9 +1,7 @@
-ShapePipe
+shapepipe
 =========
 
 .. toctree::
    :maxdepth: 4
 
-   setup
    shapepipe
-   shapepipe_run
