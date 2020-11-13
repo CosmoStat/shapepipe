@@ -153,7 +153,7 @@ class GetImages(object):
                         self._w_log.info('{} found, skipping'
                                          ''.format(path[0]))
                         continue
-                #print('MKDEBUG to copy {} -> {}'.format(in_per_type[i], out_per_type[i]))
+                self._w_log.info('Retrieving {}'.format(in_per_type[i]))
                 self.copy_one(in_per_type[i], out_per_type[i])
 
     def copy_one(self, in_path, out_path):
