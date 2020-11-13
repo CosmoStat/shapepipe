@@ -21,7 +21,7 @@
     1. [Mask images](#mask-images)
     1. [Extract sources](#extract-sources)
     1. [Select stars](#select-stars)
-    1. [Model the PSF](#model-the-psf)
+    1. [Create PSF model](#create-psf-model)
     1. [Validation tests](#validation-tests)
 1. [Process stacked images](#process-stacked-images)
     1. [Mask stacks](#mask-stacks)
@@ -406,7 +406,6 @@ the config files looks as follows:
 [MASK_RUNNER]
 USE_EXT_STAR = False
 ```
-
 On success, pipeline-flag files are created.
 
 **Diagnostics:** Open a single-exposure single-CCD image and the corresponding pipeline flag
@@ -427,7 +426,7 @@ have a zero-padded pixel border, which is not accounted for by `ds9`.
 
 **Module:** sextractor_runner  
 **Parent:** split_exp_runner, mask_runner  
-**Input:** single-exp_single-CCD image, weights, flags  
+**Input:** single-exp_single-CCD image[, weights] [, flags] [, PSF file] [, detection image] [, detection weight] 
 **Output:** sextractor catalogue
 
 The purpose of source extraction/source identification on single exposures is
@@ -436,9 +435,43 @@ detection threshold is chosen to avoid to detect too many low-SNR
 artifacts, and to reduce the output catalogue size. The following config entry
 is
 ```ini
-DETECT_THRESH    2.             # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
+DETECT_THRESH    1.5             # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
+ANALYSIS_THRESH  1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 ```
-in the file `$SP_CONFIG/sextractor_default/default.sex`.
+in the file `$SP_CONFIG/default_exp.sex`.
+
+The module config file `$SP_CONFIG/config_exp_Sx.ini` specifies input modules, file pattern, and numbering scheme. Note that the flag files are the ones created by the [mask module](#mask-images), with name `pipeline_flag`. Next, the path to the `SExtractor` executable (installed in the `shapepipe` conda environment by default) is given, and the `SExtractor` configuration files, see below.
+
+Then, boolean flags indicate the presence or absence of the additional input images for the `FILE_PATTERN` line. These are a weight image, a flag image, a PSF file, a distinct image for detection (for `SExtractor` in dual-image mode) that is different from the measurement image, and a distinct detection weight. In our case, we don't have a PSF [yet](#create-psf-model), and we do measurement and detection on the same images.
+
+After that, two entries determine the FITS header key that contains the photometric zero-point (by default 30 if not given). Then, information about the background handling are indicated before the output file suffix. A post processing flag is set to `False` for single-exposures:
+```ini
+[SEXTRACTOR_RUNNER]
+INPUT_MODULE = split_exp_runner, mask_runner
+FILE_PATTERN = image, weight, pipeline_flag
+NUMBERING_SCHEME = -0000000-0
+
+EXEC_PATH = sex
+DOT_SEX_FILE = $SP_CONFIG/default_exp.sex
+DOT_PARAM_FILE = $SP_CONFIG//default.param
+DOT_CONV_FILE = $SP_CONFIG/default.conv
+
+WEIGHT_IMAGE = True
+FLAG_IMAGE = True
+PSF_FILE = False
+DETECTION_IMAGE = False
+DETECTION_WEIGHT = False
+
+ZP_FROM_HEADER = True
+ZP_KEY = PHOTZP
+
+BKG_FROM_HEADER = False
+CHECKIMAGE = BACKGROUND
+
+SUFFIX = sexcat
+
+MAKE_POST_PROCESS = FALSE
+```
 
 On success, SEXtractor catalogue FITS files are produced.
 
@@ -453,47 +486,60 @@ For the star selection we use the size-magnitude plane. We first find the
 stellar locus, by computing the FWHM mode of all objects. Objects are selected
 within some range in FWHM around the mode, and within a magnitude range.
 
-The selection criteria are given in a selection configuration file, whose name is specified
-in the `setools` section:
+Apart from the standard `INPUT_MODULE`, `FILE_PATTERN`, and `NUMBERING_SCHEME` entries, a file path for selection
+configuration file are given, containing the selection criteria for the star candidate sample:
 ```ini
 [SETOOLS_RUNNER]
+INPUT_MODULE = sextractor_runner
+
+# Note: Make sure this does not match the SExtractor background images
+# (sexcat_background*)
+FILE_PATTERN = sexcat_sexcat
+NUMBERING_SCHEME = -0000000-0
 SETOOLS_CONFIG_PATH = $SP_CONFIG/star_selection.setools
 ```
-The selection config file `star_selection.setools` first defined a pre-selectione (or filter, or mask),
+The selection config file `$SP_CONFIG/star_selection.setools` first defines a pre-selection (also "filter" or "mask"),
 such that the subsequent computation of the mode is more stable:
 ```ini
 [MASK:preselect]
 MAG_AUTO > 0
-MAG_AUTO < 20
-FWHM_IMAGE > 0.3 / 0.186
-FWHM_IMAGE < 1.5 / 0.186
+MAG_AUTO < 21
+FWHM_IMAGE > 0.3 / 0.187
+FWHM_IMAGE < 1.5 / 0.187
 FLAGS == 0
 IMAFLAGS_ISO == 0
 NO_SAVE
 ```
 > Note the normalisation by the pixel scale to express **FWHM_IMAGE** in arc seconds.
 
-The star sample is then selected as follows:
+The star sample is then selected in a smaller magnitude range, around the mode of the preselected sample, as follows:
 ```ini
 [MASK:star_selection]
-MAG_AUTO > 17.0
-MAG_AUTO < 21.5
+MAG_AUTO > 18
+MAG_AUTO < 22
 # NOTE : unit is pixel
 FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
 FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2
 FLAGS == 0
 IMAFLAGS_ISO == 0
 ```
+From this selection, two random sub-samples are created with a number ratio of 80:20.
+The first, larger sample is to [create the PSF model](#create-psf-model). The second, smaller
+sample serves to [validate the PSF model](#validation-tests):
+```ini
+[RAND_SPLIT:star_split]
+RATIO = 20
+MASK = star_selection
+```
 In addition, the selection config file can contain instructions to create plots and
 statistics of the selected population(s). The former can be scatter plots and histograms,
 the former can include mean, mode, extrema, and standard deviation
 of any quantity from the SExtractor input catalogue, the number of selected objects, etc..
 
-On success, masked SEXtractor catalogues are created in `mask`, plots are put in `plots`,
+On success, masked SExtractor catalogues are created in `mask`, plots are put in `plots`,
 and text files with the computed statistics in `stats`.
 
 The following plots show an example, CCD #10 of exposure 2113737.
-
 
 | Size-magnitude plot | Star magnitude histogram | Stars in CCD (mag) | Stars in CCD (size) |
 | --- | --- | --- | --- |
@@ -519,24 +565,45 @@ Min fwhm cut (arcesec) = 0.7159179691314698
 Max fwhm cut (arcsec) = 0.7531179691314697
 ```
 
-### Model the PSF
+### Global star sample statistics
+
+The statistics on stars from all CCD can be combined to create histograms, with the non-pipeline script `stats_global.py`.
+Run
+```bash
+stats_global -o stats -v -c $SP_CONFIG/config_stats.ini
+```
+to create histograms (as `.txt` tables and `.png` plots) in the directory `stats`. Here are some example plots :
+
+| Non-masked objects per CCD | Stars per CCD | FWHM mode |
+| --- | --- | --- |
+| <img width="250" src="1_nb_nonmasked.png" title="Number of non-masked objects per CCD"> | <img width="250" src="2_nb_stars.png" title="Number stars per CCD"> | <img width="250" src="5_mode_fhwm_star.png" title="FWHM mode"> |
+| No CCD with a very large masked area | No CCD with insufficient stars | Rather broad seeing distribution | 
+
+Note that `stats_global` read all `SETool` output stats files found in a given input directory tree. It can thus produce histogram combining
+several runs.
+
+### Create PSF model
 
 **Module:** psfex  
 **Parent:** setools_runner  
 **Input:** setools_star_selection  
 **Output:** star catalogue, psf file
 
-The PSF modeling is done with `PSFEx`. The psfex module configuration section
-has to point to the executable and the default psfex config file, which does not
-need to be changed.
+The PSF modeling is done with `PSFEx`. The corresponding config file `$SP_CONFIG/config_exp_Psm.ini` section is noteworthy
+in the specification of the input file pattern, which matches the first random sub-sample defined in the previous section.
+The number has to match the previously defined ratio.
+
+Then, a `PSFEx` configuration path is given:
 ```ini
 [PSFEX_RUNNER]
+INPUT_MODULE = setools_runner
+FILE_PATTERN = star_split_ratio_80
+NUMBERING_SCHEME = -0000000-0
 EXEC_PATH = psfex
 DOT_PSFEX_FILE = $SP_CONFIG/default.psfex
 ```
-
 On success, FITS files containing the star catalalogue (`psfex_cat-*.cat`) and the PSF at
-the stars' positions (`star_selection-2159358-9.psf`) are created.
+the positions of the 80% star sub-sample (`star_split_ratio_80-*.psf`) are created.
 
 ### Validation tests
 
@@ -548,26 +615,33 @@ the stars' positions (`star_selection-2159358-9.psf`) are created.
 **Output:** star catalogue
 
 The interpolation of the PSF on single exposures alone is not required for shape
-measurement. But to carry out validation tests on the model we need the
+measurement. But to carry validation tests on the PSF model we need the
 know the PSF at the position of the stars used. For that we run the module
-`psfinterp_runner` in `VALIDATION` mode. The following options are required:
+`psfinterp_runner`. Input files are the PSF, the positions of the 20% star sub-sample, and the PSF catalog.
+The key `MODE` is set to `VALIDATION`, column names for the position parameters (SExtractor output) are
+given next, and `GET_SHAPES` is True to output the PSF ellipticity using moments. And important
+parameter is `STAR_THRES`, the lower limit of the number of stars per CCD to be considered to have
+a valid PSF model. We set this to 22, corresponding to 20 for the 80% sub-sample used to construct the PSF.
+CCDs with less stars will be discarded later on for the shape measurement. An additional cut is performed
+on the chi^2 value of the PSF fit, the lower limit given by `CHI2_THRESH`.
+
 ```ini
-# Define the way psfexinter will run.
-# CLASSIC for classical run.
-# MULTI-EPOCH for multi epoch.
-# VALIDATION for output allowing validation (only on single epoch !)
+[PSFEXINTERP_RUNNER]
+INPUT_MODULE = psfex_runner, setools_runner  
+FILE_PATTERN = star_split_ratio_80, star_split_ratio_20, psfex_cat
+FILE_EXT = .psf, .fits, .cat
+NUMBERING_SCHEME = -0000000-0
+
 MODE = VALIDATION
-# Column names of position parameters
 POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE
-# If True, measure and store ellipticity of the PSF
 GET_SHAPES = True
-# Number minimal of stars require to interpolate the PSF on the CCD
-STAR_THRESH = 20
-# Maximum value allowed for the global chi2 of the model for the CCD
+STAR_THRESH = 22
 CHI2_THRESH = 2
 ```
 
 On success, validation PSF catalogues are created.
+
+
 
 #### Merge PSF catalogues
 
@@ -582,16 +656,15 @@ in the module section:
 ```ini
 OUTPUT_PATH = $SP_RUN/psf_validation
 ```
-The (single) output file is then `SP_RUN/psf_validation/full_starcat.fits`.
-
+The (single) output file is then `SP_RUN/psf_validation/full_starcat.fits`. (No output is produced in the actual
+module output directory.)
 
 #### Plot focal-plane ellipticity, size and residuals
 
 Outside the pipeline, create plots of PSF, model, and residual
 ellipticity and shape:
 ```bash
-MeanShapes -o $SP_RUN/psf_validation -x 20 --max_e=0.05 --max_d=0.005 -i $SP_RUN/psf_validation/full_starcat.fits -v
-```
+ ```
 
 On success, `png` files with plot of the focal plane are created in `$SP_RUN/psf_validation`.
 

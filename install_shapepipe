@@ -59,6 +59,7 @@ PY_SCRIPTS=(cfis_weight_format.py
          create_star_cat.py
          merge_star_cat.py
          MeanShapes.py
+         stats_global.py
 )
 
 # Divider line

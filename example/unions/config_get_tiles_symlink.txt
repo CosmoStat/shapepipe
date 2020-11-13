@@ -1,4 +1,5 @@
-# ShapePipe configuration file for: get images
+# ShapePipe configuration file for: get images,
+# CFIS + Pan-STARRS DR2 
 
 
 ## Default ShapePipe options
@@ -57,37 +58,33 @@ FILE_PATTERN = tile_numbers
 
 FILE_EXT = .txt
 
-
 # NUMBERING_SCHEME (optional) string with numbering pattern for input files
 NUMBERING_SCHEME = 
 
-
-
 # Paths
-
-# Output path (optional, default is [FILE]:OUTPUT_DIR
-# OUTPUT_PATH = input_images
 
 # Input path where original images are stored. Can be local path or vos url.
 # Single string or list of strings
-INPUT_PATH = vos:cfis/tiles_DR2, vos:cfis/tiles_DR2
-# LSB stacks
-#INPUT_PATH = vos:cfis/tiles_LSB_DR2, vos:cfis/tiles_LSB_DR2
+#INPUT_PATH = vos:cfis/panstarrs/DR2/skycell.002, vos:cfis/panstarrs/DR2/skycell.002, vos:cfis/panstarrs/DR2/skycell.002, vos:cfis/tiles_DR2, vos:cfis/tiles_DR2
+INPUT_PATH = /home/mkilbing/astro/data/CFIS/Pan-STARRS/output/run_sp_Git_2020-11-03_21-38-09/get_images_runner/output, /home/mkilbing/astro/data/CFIS/Pan-STARRS/output/run_sp_Git_2020-11-03_21-38-09/get_images_runner/output, /home/mkilbing/astro/data/CFIS/Pan-STARRS/output/run_sp_Git_2020-11-03_21-38-09/get_images_runner/output, /home/mkilbing/astro/data/CFIS/tiles_DR2, /home/mkilbing/astro/data/CFIS/tiles_DR2
 
 # Input file pattern including tile number as dummy template
-INPUT_FILE_PATTERN = CFIS.000.000.r, CFIS.000.000.r.weight
+INPUT_FILE_PATTERN =  CFIS.V0.skycell.000.000.stk.*.unconv, CFIS.V0.skycell.000.000.stk.*.unconv.wt, CFIS.V0.skycell.000.000.stk.*.unconv.mask, CFIS.000.000.r, CFIS.000.000.r.weight
 
 # Input file extensions
-INPUT_FILE_EXT = .fits, .fits.fz
+INPUT_FILE_EXT = .fits, .fits, .fits, .fits, .fits.fz
 
 # Input numbering scheme, python regexp
 INPUT_NUMBERING = \d{3}\.\d{3}
 
-# Output file pattern without number
-OUTPUT_FILE_PATTERN = CFIS_image-, CFIS_weight-
+# Output file pattern without number.
+# Use '*' to download several images matching the same pattern
+OUTPUT_FILE_PATTERN = *, *, *, UNIONS_r_image-, UNIONS_r_weight-
 
 # Copy/download method, one in 'vos', 'symlink'
-COPY = vos
+#COPY = vos
+COPY = symlink
 
 # Copy command options, optional
-COPY_OPTIONS = --certfile=/home/ubuntu/.ssl/cadcproxy.pem
+# -L: follow links, for Pan-STARRS images
+COPY_OPTIONS = -L -v

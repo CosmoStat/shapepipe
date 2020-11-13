@@ -69,6 +69,10 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
     ccd_size: list
         Size of a ccd [nx, ny]
 
+    Raises
+    ------
+    IOError
+
     """
 
     cat = io.FITSCatalog(cat_path, SEx_catalog=True,
@@ -76,7 +80,11 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
     cat.open()
 
     f_wcs = SqliteDict(f_wcs_path)
-    n_hdu = len(f_wcs[list(f_wcs.keys())[0]])
+    key_list = list(f_wcs.keys())
+    if len(key_list) == 0:
+        raise IOError('Could not read sql file \'{}\''
+                      ''.format(f_wcs_path))
+    n_hdu = len(f_wcs[key_list[0]])
 
     hist = []
     for i in cat.get_data(1)[0][0]:
