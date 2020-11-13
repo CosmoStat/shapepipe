@@ -133,12 +133,8 @@ def combine_runner(input_file_list, run_dirs, file_number_string,
                                   module), 'output')
                                   for run in all_runs])
 
-    print(input_dir)
-
-    print(input_file_list)
-
     combine = Combine(input_dir, file_pattern, file_ext, run_dirs['output'], w_log)
 
-    #combine.process()
+    combine.process()
 
     return None, None
