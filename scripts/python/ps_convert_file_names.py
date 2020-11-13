@@ -68,6 +68,7 @@ def main(argv=None):
                 continue
 
         dir_Git_out = '{}/get_images_runner/output'.format(dir_Git)
+        dir_Git_out = os.path.abspath(dir_Git_out)
         print(dir_Git_out)
 
         ps_fnames = glob.glob('{}/{}*.{}'
@@ -100,6 +101,9 @@ def main(argv=None):
                 os.symlink(psfn, output_path)
             except FileExistsError:
                 print(' {} already exists, skipping'.format(output_name))
+
+    return 0
+
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
