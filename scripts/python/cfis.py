@@ -1392,9 +1392,8 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
     elif image_type == 'exposure':
         for img in images:
             if img.ra.is_within_bounds(angles[0].ra, angles[1].ra) \
-                and img.dec.is_within_bounds(angles[0].dec, angles[1].dec):
-
-                if img.cut(no_cuts=no_cuts) == False:
+                and img.dec.is_within_bounds(angles[0].dec, angles[1].dec) \
+                and img.cut(no_cuts=no_cuts) == False:
                     found.append(img)
 
     else:
