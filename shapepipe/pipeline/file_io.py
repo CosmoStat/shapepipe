@@ -1575,7 +1575,7 @@ class interpreter(object):
         self._stat_func['exp'] = np.exp
         self._stat_func['std'] = np.std
         self._stat_func['var'] = np.var
-        self._stat_func['sigma_mad'] = self.sigma__mad
+        self._stat_func['sigma_mad'] = self._sigma_mad
         self._stat_func['len'] = len
         self._stat_func['min'] = min
         self._stat_func['max'] = max

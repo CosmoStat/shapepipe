@@ -949,7 +949,7 @@ def create_image_list(fname, ra, dec, exp_time=[], valid=[]):
 
     Returns
     -------
-    images: list of cfis.image
+    images: list of image
         list of image information
     """
 
@@ -1033,7 +1033,7 @@ def get_image_list(inp, band, image_type, col=None, input_format='full', verbose
 
     Return
     ------
-    img_list: list of class cfis.image
+    img_list: list of class image
         image list
     """
 
@@ -1143,7 +1143,6 @@ def log_append_to_tiles_exp(log, exp_path, tile_num, k_img, k_weight, k_flag, ex
     return log
 
 
-
 def log_line_get_entry(log_line, entry):
     """Return entry from log string line
     """
@@ -1166,7 +1165,6 @@ def log_line_get_entry(log_line, entry):
         raise CfisError('Entry \'{}\' not valid in tiles-expsure log string'.format(entry))
 
 
-
 def log_get_exp_nums_for_tiles_num(log, tile_num):
     """Return all exposure numbers for a given tile number
     """
@@ -1184,7 +1182,6 @@ def log_get_exp_nums_for_tiles_num(log, tile_num):
     return exp_num
 
 
-
 def log_get_exp_names_for_tiles_num(log, tile_num):
     """Return all exposure file names for a given tile number
     """
@@ -1200,7 +1197,6 @@ def log_get_exp_names_for_tiles_num(log, tile_num):
         raise CfisError('Tile number \'{}\' not found in log file'.format(tile_num))
 
     return exp_names
-
 
 
 def log_get_tile_nums(log):
@@ -1265,6 +1261,150 @@ def log_get_exp_num(log, exp_name, k_img, k_weight, k_flag):
     return None
 
 
+def find_image_at_coord(images, coord, band, image_type, no_cuts=False, input_format='full', verbose=False):
+    """Return image covering given coordinate.
+
+    Parameters
+    ----------
+    images: list of class image
+        list of images
+    coord: string
+        coordinate ra and dec with units
+    band: string
+        optical band
+    image_type: string
+        image type ('tile', 'weight', 'weight.fz', 'exposure', 'exposure_weight', \
+        'exposure_weight.fz', 'exposure_flag', 'exposure_flag.fz', 'cat')
+    no_cuts: bool, optional, default=False
+        no cuts (of short exposure, validation flag) if True
+    input_format : string, optional, default='full'
+        one of 'full', 'ID_only'
+    verbose: bool, optional
+        verbose output if True, default=False
+
+    Returns
+    -------
+    img_found: list of image
+        Found image(s), None if none found.
+    """
+
+    ra, dec = get_Angle(coord)
+
+    if verbose == True:
+        print('Looking for image at coordinates {}, {}'.format(ra, dec))
+
+    if image_type in ('tile', 'weight', 'weight.fz'):
+        nix, niy  = get_tile_number_from_coord(ra, dec, return_type=int)
+        tile_name = get_tile_name(nix, niy, band, image_type, input_format=input_format)
+
+        img_found = []
+        for img in images:
+            if os.path.basename(img.name) == tile_name:
+                # Update coordinate in image for tiles with central coordinates
+                ra_c, dec_c = get_tile_coord_from_nixy(nix, niy)
+                if img.ra is not None or img.dec is not None:
+                    raise CfisError('Coordinates in image are already '
+                                         'set to {}, {}, cannot update to {}, {}'.\
+                                         format(img.ra, img.dec, ra_c, dec_c))
+                img.ra = ra_c
+                img.dec = dec_c
+                img_found.append(img)
+
+        if len(img_found) != 0:
+                pass
+        else:
+            if verbose == True:
+                print('Tile with numbers ({}, {}) not found'.format(nix, niy))
+
+        if len(img_found) > 1:
+            raise CfisError('More than one tile ({}) found'.format(len(img_found)))
+
+    elif image_type == 'exposure':
+        sc_input = SkyCoord(ra, dec)
+
+        img_found = []
+        for img in images:
+            # Check distance along ra and dec from image center
+            sc_img_same_ra  = SkyCoord(ra, img.dec)
+            sc_img_same_dec = SkyCoord(img.ra, dec)
+            distance_ra  = sc_input.separation(sc_img_same_dec)
+            distance_dec = sc_input.separation(sc_img_same_ra)
+            if distance_ra.degree < size[image_type]/2 and distance_dec.degree < size[image_type]/2:
+                if img.cut(no_cuts=no_cuts) == False:
+                    img_found.append(img)
+
+        if len(img_found) != 0:
+                pass
+        else:
+            if verbose == True:
+                print('No exposure image found')
+
+    else:
+        raise CfisError('Only implemented for image_type=tile')
+
+    return img_found
+
+
+def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose=False):
+    """Return image list within coordinate area (rectangle)
+
+    Parameters
+    ----------
+    images: list of class image
+        list of images
+    angles: string
+        coordinates ra0_dec0_ra1_dec1 with units
+    band: string
+        optical band
+    image_type: string
+        image type ('tile', 'exposure', 'cat', 'weight', 'weight.fz')
+    no_cuts: bool, optional, default=False
+        no cuts (of short exposure, validation flag) if True
+    verbose: bool, optional, default=False
+        verbose output if True
+`
+    Returns
+    -------
+    found: list of image
+        found images
+    """
+
+    if verbose == True:
+        print('Looking for all images within rectangle, lower left=({},{}), upper right=({},{}) deg'.format(
+              angles[0].ra.deg, angles[0].dec.deg, angles[1].ra.deg, angles[1].dec.deg))
+
+    found = []
+
+    if image_type in ('tile', 'weight', 'weight.fz'):
+        for img in images:
+            nix, niy = get_tile_number(img.name)
+            ra, dec  = get_tile_coord_from_nixy(nix, niy)
+
+            if ra.is_within_bounds(angles[0].ra, angles[1].ra) \
+                and dec.is_within_bounds(angles[0].dec, angles[1].dec):
+
+                if img.ra is None or img.dec is None:
+                    img.ra  = ra
+                    img.dec = dec
+
+                found.append(img)
+
+    elif image_type == 'exposure':
+        for img in images:
+            if img.ra.is_within_bounds(angles[0].ra, angles[1].ra) \
+                and img.dec.is_within_bounds(angles[0].dec, angles[1].dec) \
+                and img.cut(no_cuts=no_cuts) == False:
+                    found.append(img)
+
+    else:
+        raise CfisError('Image type \'{}\' not implemented yet'.format(image_type))
+
+    if verbose == True:
+        print('{} images found in area'.format(len(found)))
+
+    return found
+
+
 def plot_init():
 
     fs = 12
@@ -1281,21 +1421,27 @@ def plot_init():
     return ax
 
 
-def plot_area(images, angles, image_type, outbase, interactive):
+def plot_area(images, angles, image_type, outbase, interactive, show_circle=True, ax=None, save=True):
     """Plot images within area.
 
     Parameters
     ----------
-    images: array of cfis.image
+    images : array of image
         images
-    angles: array(SkyCoord, 2)
+    angles : array(SkyCoord, 2)
         Corner coordinates of area rectangle
-    image_type: string
+    image_type : string
         image type ('tile', 'exposure', 'cat', weight')
-    outbase: string
+    outbase : string
         output file name base
-    interactive: bool
+    interactive : bool
         show plot if True
+    show_circle : bool, optional, default True
+        plot circle center and circumference around area if True
+    ax : axes, optional, default None
+        Init axes if None
+    save : bool, optional, default=True
+        save plot to pdf file if True
     """
 
     if outbase is None:
@@ -1306,7 +1452,8 @@ def plot_area(images, angles, image_type, outbase, interactive):
     lw = 0.25
     color = {'tile': 'b', 'exposure': 'g', 'weight': 'r'}
 
-    ax = plot_init()
+    if not ax:
+        ax = plot_init()
 
     # Field center
     n_ima = len(images)
@@ -1314,20 +1461,23 @@ def plot_area(images, angles, image_type, outbase, interactive):
         ra_c  = sum([img.ra for img in images])/float(n_ima)
         dec_c = sum([img.dec for img in images])/float(n_ima)
         cos_dec_c = np.cos(dec_c)
-        plt.plot(ra_c, dec_c, 'or', mfc='none', ms=3)
     else:
         ra_c = 0
         dec_c = 0
         cos_dec_c = 1
 
-    # Circle around field
-    dx = abs(angles[0].ra - angles[1].ra)
-    dy = abs(angles[0].dec - angles[1].dec)
-    dx = getattr(dx, unitdef)
-    dy = getattr(dy, unitdef)
-    radius = max(dx, dy)/2 + (size['exposure'] + size['tile']) * np.sqrt(2)
-    circle = plt.Circle((ra_c.deg, dec_c.deg), radius, color='r', fill=False)
-    ax.add_artist(circle)
+    if show_circle:
+        # Circle around field
+        dx = abs(angles[0].ra - angles[1].ra)
+        dy = abs(angles[0].dec - angles[1].dec)
+        dx = getattr(dx, unitdef)
+        dy = getattr(dy, unitdef)
+        radius = max(dx, dy)/2 + (size['exposure'] + size['tile']) * np.sqrt(2)
+        circle = plt.Circle((ra_c.deg, dec_c.deg), radius, color='r', fill=False)
+        plt.plot(ra_c, dec_c, 'or', mfc='none', ms=3)
+        ax.add_artist(circle)
+    else:
+        radius = 0
 
     for img in images:
         # Image center
@@ -1343,11 +1493,11 @@ def plot_area(images, angles, image_type, outbase, interactive):
         dx = size[image_type] / 2 / cos_dec_c
         dy = size[image_type] / 2
         cx, cy = square_from_centre(x, y, dx, dy)
-        plt.plot(cx, cy, '{}-'.format(color[image_type]), linewidth=lw)
+        ax.plot(cx, cy, '{}-'.format(color[image_type]), linewidth=lw)
 
     # Area border
     cx, cy = square_from_corners(angles[0], angles[1])
-    plt.plot(cx, cy, 'r-.', linewidth=lw)
+    ax.plot(cx, cy, 'r-.', linewidth=lw)
 
     plt.xlabel('R.A. [degree]')
     plt.ylabel('Declination [degree]')
@@ -1355,7 +1505,7 @@ def plot_area(images, angles, image_type, outbase, interactive):
         plt.title(outbase)
 
     # Limits
-    border = 2
+    border = 0.25
     xm = (angles[1].ra.degree + angles[0].ra.degree) / 2
     ym = (angles[1].dec.degree + angles[0].dec.degree) / 2
     dx = angles[1].ra.degree - angles[0].ra.degree
@@ -1368,8 +1518,9 @@ def plot_area(images, angles, image_type, outbase, interactive):
     #limits = plt.axis('equal')
     #print(limits)
 
-    print('Saving plot to {}'.format(outname))
-    plt.savefig(outname)
+    if save:
+        print('Saving plot to {}'.format(outname))
+        plt.savefig(outname)
 
     if interactive == True:
         plt.show()
