@@ -1384,9 +1384,6 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
                 and dec.is_within_bounds(angles[0].dec, angles[1].dec):
 
                 if img.ra is None or img.dec is None:
-                    #raise CfisError('Coordinates in image are already set '
-                                    #'to {}, {}, cannot update to {}, {}'
-                                    #''.format(img.ra, img.dec, ra, dec))
                     img.ra  = ra
                     img.dec = dec
 
