@@ -2,7 +2,7 @@
 
 """CREATE LOG EXP HEADER
 
-This module merge the PSF validation catalogs from the PSFExInterpolation module
+This module merges the PSF validation catalogs from the PSFExInterpolation module
 to run the statistics on them.
 
 :Author: Morgan Schmitz, Axel Guinot
