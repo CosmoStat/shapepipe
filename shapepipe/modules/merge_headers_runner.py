@@ -27,8 +27,9 @@ def merge_headers_runner(input_file_list, run_dirs, file_number_string,
                          config, w_log):
 
     output_dir = run_dirs['output']
-    if config.has_option('MERGE_HEADER_RUNNER', 'OUTPUT_PATH'):
-        output_dir = config.getexpanded('MERGE_HEADER_RUNNER', 'OUTPUT_PATH')
+    if config.has_option('MERGE_HEADERS_RUNNER', 'OUTPUT_PATH'):
+        output_dir = config.getexpanded('MERGE_HEADERS_RUNNER', 'OUTPUT_PATH')
+    w_log.info('output_dir = {}'.format(output_dir))
 
     final_file = SqliteDict(output_dir + '/log_exp_headers.sqlite')
     for file_path in input_file_list:

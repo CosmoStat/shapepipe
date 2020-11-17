@@ -86,5 +86,5 @@ class vosHandler:
             self._command()
 
         except:
-            raise vosError('Error in \'{}\' command: {}'
+            raise vosError('Error in VOs command: {}'
                            ''.format(self._command.__name__))
