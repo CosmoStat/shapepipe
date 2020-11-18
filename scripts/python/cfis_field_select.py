@@ -418,6 +418,8 @@ def main(argv=None):
         image_type = 'tile'
     else:
         image_type = param.image_type
+    import pdb
+    pdb.set_trace()
     images = cfis.get_image_list(param.input, param.band, image_type, col=param.col,
                                  input_format=param.input_format, verbose=param.verbose)
 
