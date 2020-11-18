@@ -108,12 +108,8 @@ class FileHandler(object):
 
         if config.has_option('FILE', 'FILE_PATTERN'):
             self._file_pattern = config.getlist('FILE', 'FILE_PATTERN')
-        else:
-            self._file_pattern = None
         if config.has_option('FILE', 'FILE_EXT'):
             self._file_ext = config.getlist('FILE', 'FILE_EXT')
-        else:
-            self._file_ext = None
         if config.has_option('FILE', 'NUMBERING_SCHEME'):
             self._numbering_scheme = config.get('FILE', 'NUMBERING_SCHEME')
         else:
@@ -450,7 +446,7 @@ class FileHandler(object):
             return self._config.getlist(module.upper(), 'ADD_{}'.format(
                                         property.upper()))
 
-    def _set_module_property(self, module, property, file_property=True):
+    def _set_module_property(self, module, property):
         """ Set Module Property
 
         Set a module property from either the configuration file or the module
@@ -468,45 +464,21 @@ class FileHandler(object):
         if self._config.has_option(module.upper(), property.upper()):
             prop_val = self._config.get(module.upper(), property.upper())
 
-        else:
-            prop_val = getattr(self.module_runners[module], property)
-
-        if (file_property and (len(self._module_dict) == 1 or
-                               isinstance(prop_val, type(None)))):
+        elif hasattr(self, '_{}'.format(property)):
             prop_val = getattr(self, '_{}'.format(property))
 
-        self._module_dict[module][property] = prop_val
-
-    def _set_module_list_property(self, module, property):
-        """ Set Module List Property
-
-        Set a module list property from either the configuration file or the
-        module runner.
-
-        Parameters
-        ----------
-        module : str
-            Module name
-        property : str
-            Property name
-
-        """
-
-        if self._config.has_option(module.upper(), property.upper()):
-            prop_list = self._config.getlist(module.upper(), property.upper())
-
-        elif (property in ('file_pattern', 'file_ext', 'numbering_scheme') and not
-                isinstance(getattr(self, '_{}'.format(property)), type(None))
-                and len(self._module_dict) == 1):
-            prop_list = getattr(self, '_{}'.format(property))
+        elif hasattr(self.module_runners[module], property):
+            prop_val = getattr(self.module_runners[module], property)
 
         else:
-            prop_list = getattr(self.module_runners[module], property)
+            raise ValueError('No value for {} in {} could be found.'
+                             ''.format(property, module))
 
-        if self.get_add_module_property(module, property):
-            prop_list += self.get_add_module_property(module, property)
+        if (isinstance(prop_val, list) and
+                self.get_add_module_property(module, property)):
+            prop_val += self.get_add_module_property(module, property)
 
-        self._module_dict[module][property] = prop_list
+        self._module_dict[module][property] = prop_val
 
     def _set_module_properties(self, module):
         """ Get Module Properties
@@ -520,15 +492,11 @@ class FileHandler(object):
 
         """
 
-        module_props = ('numbering_scheme',)
-        module_list_props = ('input_module', 'file_pattern', 'file_ext',
-                             'depends', 'executes')
+        module_props = ('numbering_scheme', 'run_method', 'input_module',
+                        'file_pattern', 'file_ext', 'depends', 'executes')
 
-        [self._set_module_property(module, property, file_property=False) for property in
+        [self._set_module_property(module, property) for property in
          module_props]
-        [self._set_module_list_property(module, property) for property in
-         module_list_props]
-        self._set_module_property(module, 'run_method', file_property=False)
 
         # Make sure the number of patterns and extensions match
         if ((len(self._module_dict[module]['file_ext']) == 1) and
