@@ -1383,12 +1383,13 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
             if ra.is_within_bounds(angles[0].ra, angles[1].ra) \
                 and dec.is_within_bounds(angles[0].dec, angles[1].dec):
 
-                if img.ra is not None or img.dec is not None:
-                    raise CfisError('Coordinates in image are already set '
-                                    'to {}, {}, cannot update to {}, {}'
-                                    ''.format(img.ra, img.dec, ra, dec))
-                img.ra  = ra
-                img.dec = dec
+                if img.ra is None or img.dec is None:
+                    #raise CfisError('Coordinates in image are already set '
+                                    #'to {}, {}, cannot update to {}, {}'
+                                    #''.format(img.ra, img.dec, ra, dec))
+                    img.ra  = ra
+                    img.dec = dec
+
                 found.append(img)
 
     elif image_type == 'exposure':
@@ -1424,25 +1425,27 @@ def plot_init():
     return ax
 
 
-def plot_area(images, angles, image_type, outbase, interactive, show_circle=True, ax=None):
+def plot_area(images, angles, image_type, outbase, interactive, show_circle=True, ax=None, save=True):
     """Plot images within area.
 
     Parameters
     ----------
-    images: array of image
+    images : array of image
         images
-    angles: array(SkyCoord, 2)
+    angles : array(SkyCoord, 2)
         Corner coordinates of area rectangle
-    image_type: string
+    image_type : string
         image type ('tile', 'exposure', 'cat', weight')
-    outbase: string
+    outbase : string
         output file name base
-    interactive: bool
+    interactive : bool
         show plot if True
     show_circle : bool, optional, default True
         plot circle center and circumference around area if True
-    ax: axes, optional, default None
+    ax : axes, optional, default None
         Init axes if None
+    save : bool, optional, default=True
+        save plot to pdf file if True
     """
 
     if outbase is None:
@@ -1498,7 +1501,6 @@ def plot_area(images, angles, image_type, outbase, interactive, show_circle=True
 
     # Area border
     cx, cy = square_from_corners(angles[0], angles[1])
-    print(cx, cy)
     ax.plot(cx, cy, 'r-.', linewidth=lw)
 
     plt.xlabel('R.A. [degree]')
@@ -1520,8 +1522,9 @@ def plot_area(images, angles, image_type, outbase, interactive, show_circle=True
     #limits = plt.axis('equal')
     #print(limits)
 
-    print('Saving plot to {}'.format(outname))
-    plt.savefig(outname)
+    if save:
+        print('Saving plot to {}'.format(outname))
+        plt.savefig(outname)
 
     if interactive == True:
         plt.show()
