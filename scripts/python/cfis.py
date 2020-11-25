@@ -170,12 +170,13 @@ class image():
         print(name, end='', file=file)
 
         if not name_only:
-            if self.ra:
+            if self.ra is not None:
                 print(' {:10.2f}'.format(getattr(self.ra, unitdef)), end='', file=file)
-            if self.dec:
+            if self.dec is not None:
                 print(' {:10.2f}'.format(getattr(self.dec, unitdef)), end='', file=file)
             print(' {:5d} {:8s}'.format(self.exp_time, self.valid), end='', file=file)
         print(file=file)
+        sys.exit(0)
 
 
     def print_header(self, file=sys.stdout):
@@ -1380,6 +1381,17 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
             nix, niy = get_tile_number(img.name)
             ra, dec  = get_tile_coord_from_nixy(nix, niy)
 
+            # Left-corner ra is larger than right-corner if wrapped around 360:
+            # subtract amount left of zero
+            if angles[0].ra.degree > angles[1].ra.degree:
+                dra = Angle('{} degree'.format(360 - angles[0].ra.degree))
+                angles_shift = [SkyCoord for i in [0, 1]]
+                angles_shift[0] = SkyCoord(Angle('0 degree'), angles[0].dec)
+                angles_shift[1] = SkyCoord(angles[1].ra + dra , angles[1].dec)
+                for i in [0, 1]:
+                    angles[i] = angles_shift[i]
+                ra = ra + dra
+
             if ra.is_within_bounds(angles[0].ra, angles[1].ra) \
                 and dec.is_within_bounds(angles[0].dec, angles[1].dec):
 
@@ -1425,7 +1437,7 @@ def plot_init():
     return ax
 
 
-def plot_area(images, angles, image_type, outbase, interactive, show_circle=True, ax=None, save=True):
+def plot_area(images, angles, image_type, outbase, interactive, col=None, show_circle=True, ax=None, save=True):
     """Plot images within area.
 
     Parameters
@@ -1440,6 +1452,8 @@ def plot_area(images, angles, image_type, outbase, interactive, show_circle=True
         output file name base
     interactive : bool
         show plot if True
+    col : string, optional, default=None
+        color
     show_circle : bool, optional, default True
         plot circle center and circumference around area if True
     ax : axes, optional, default None
@@ -1483,6 +1497,11 @@ def plot_area(images, angles, image_type, outbase, interactive, show_circle=True
     else:
         radius = 0
 
+    if col:
+        c  = col
+    else:
+        c = color[image_type]
+
     for img in images:
         # Image center
         x  = img.ra.degree
@@ -1497,7 +1516,7 @@ def plot_area(images, angles, image_type, outbase, interactive, show_circle=True
         dx = size[image_type] / 2 / cos_dec_c
         dy = size[image_type] / 2
         cx, cy = square_from_centre(x, y, dx, dy)
-        ax.plot(cx, cy, '{}-'.format(color[image_type]), linewidth=lw)
+        ax.plot(cx, cy, '{}-'.format(c), linewidth=lw)
 
     # Area border
     cx, cy = square_from_corners(angles[0], angles[1])
