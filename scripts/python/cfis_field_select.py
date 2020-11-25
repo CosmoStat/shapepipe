@@ -324,9 +324,9 @@ def run_mode(images, param):
     if param.coord:
 
         # Image number search: Return name of image(s) covering input coordinate
-        images_found = find_image_at_coord(images, param.coord, param.band, param.image_type,
-                                           no_cuts=param.no_cuts, input_format=param.input_format,
-                                           verbose=param.verbose)
+        images_found = cfis.find_image_at_coord(images, param.coord, param.band, param.image_type,
+                                                no_cuts=param.no_cuts, input_format=param.input_format,
+                                                verbose=param.verbose)
         if len(images_found) > 0:
             if not param.short:
                 images_found[0].print_header(file=param.fout)
@@ -418,8 +418,6 @@ def main(argv=None):
         image_type = 'tile'
     else:
         image_type = param.image_type
-    import pdb
-    pdb.set_trace()
     images = cfis.get_image_list(param.input, param.band, image_type, col=param.col,
                                  input_format=param.input_format, verbose=param.verbose)
 
