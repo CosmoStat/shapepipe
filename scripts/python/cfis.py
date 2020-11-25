@@ -1437,7 +1437,8 @@ def plot_init():
     return ax
 
 
-def plot_area(images, angles, image_type, outbase, interactive, col=None, show_circle=True, ax=None, save=True):
+def plot_area(images, angles, image_type, outbase, interactive, col=None, show_numbers=False,
+              show_circle=True, ax=None, save=True, dxy=0):
     """Plot images within area.
 
     Parameters
@@ -1460,6 +1461,8 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_c
         Init axes if None
     save : bool, optional, default=True
         save plot to pdf file if True
+    dxy : float, optional, default=0
+        shift
     """
 
     if outbase is None:
@@ -1503,24 +1506,23 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_c
         c = color[image_type]
 
     for img in images:
-        # Image center
         x  = img.ra.degree
         y  = img.dec.degree
-        #plt.plot(x, y, 'b.', markersize=1)
         nix, niy = get_tile_number(img.name)
-        plt.text(x, y, '{}.{}'.format(nix, niy), fontsize=3,
-                 horizontalalignment='center',
-                 verticalalignment='center')
+        if show_numbers:
+            plt.text(x, y, '{}.{}'.format(nix, niy), fontsize=3,
+                    horizontalalignment='center',
+                    verticalalignment='center')
 
         # Image boundary
         dx = size[image_type] / 2 / cos_dec_c
         dy = size[image_type] / 2
-        cx, cy = square_from_centre(x, y, dx, dy)
+        cx, cy = square_from_centre(x, y, dx, dy, dxy=dxy)
         ax.plot(cx, cy, '{}-'.format(c), linewidth=lw)
 
     # Area border
-    cx, cy = square_from_corners(angles[0], angles[1])
-    ax.plot(cx, cy, 'r-.', linewidth=lw)
+    #cx, cy = square_from_corners(angles[0], angles[1])
+    #ax.plot(cx, cy, 'r-.', linewidth=lw)
 
     plt.xlabel('R.A. [degree]')
     plt.ylabel('Declination [degree]')
@@ -1537,10 +1539,6 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_c
     plt.xlim(xm - lim/2 - border, xm + lim/2 + border)
     plt.ylim(ym - lim/2 - border, ym + lim/2 + border)
 
-    # Somehow this does not work (any more?)
-    #limits = plt.axis('equal')
-    #print(limits)
-
     if save:
         print('Saving plot to {}'.format(outname))
         plt.savefig(outname)
@@ -1551,12 +1549,13 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_c
     return ra_c, dec_c, radius
 
 
-def square_from_centre(x, y, dx, dy):
+def square_from_centre(x, y, dx, dy, dxy=0):
     """Return coordinate vectors of corners cx, cy that define a closed square for plotting.
     """
 
-    cx = [x-dx, x+dx, x+dx, x-dx, x-dx]
-    cy = [y-dy, y-dy, y+dy, y+dy, y-dy]
+    a = dxy
+    cx = [x-dx+a, x+dx+a, x+dx+a, x-dx+a, x-dx+a]
+    cy = [y-dy+a, y-dy+a, y+dy+a, y+dy+a, y-dy+a]
 
     return cx, cy
 
