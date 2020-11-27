@@ -80,6 +80,8 @@ def parse_options(p_def):
          help='output directory, if not given: create links in input dir(s)')
     parser.add_option('-O', '--original', dest='outdir_orig', type='string', default=None,
          help='output dir for original file names; no output if not given')
+    parser.add_option('-s', '--sp_format', dest='sp_format', action='store_true',
+         help='output number in ShapePipe format (000-000)')
 
     # Monitoring
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
@@ -249,7 +251,11 @@ def main(argv=None):
             input_name = os.path.basename(psfn)
             m = re.match('.*(\d{3}\.\d{3}).*', input_name)
             number = m[1]
-            number_final = in2out_pattern(number)
+            if param.sp_format:
+                # 000.000 -> 000-000
+                number_final = in2out_pattern(number)
+            else:
+                number_final = number
 
             # Get image type
             mm = re.match('.*\.(.*)\.fits', input_name)
