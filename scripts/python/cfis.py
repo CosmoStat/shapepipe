@@ -136,6 +136,27 @@ class image():
 
         return False
 
+    def get_ID(self):
+        """get_ID
+        Return image ID.
+
+        Returns
+        -------
+        ID : string
+            image iD
+
+        Raises
+        ------
+        NoneType : if name does not match to ID pattern
+        """
+
+        m = re.search('(\d{3}).{1}(\d{3})', self.name)
+        if m is None:
+            raise NoneType('No ID match in file name {}'.format(name))
+        else:
+            return '{}.{}'.format(m[1], m[2])
+
+
 
     def print(self, file=sys.stdout, base_name=False, name_only=True, ID_only=False):
         """Print image information as ascii Table column
@@ -176,7 +197,6 @@ class image():
                 print(' {:10.2f}'.format(getattr(self.dec, unitdef)), end='', file=file)
             print(' {:5d} {:8s}'.format(self.exp_time, self.valid), end='', file=file)
         print(file=file)
-        sys.exit(0)
 
 
     def print_header(self, file=sys.stdout):
@@ -759,8 +779,7 @@ def get_tile_number(tile_name):
         tile number for y
     """
 
-    #m = re.search('CFIS\.(\d{3})\.(\d{3})', tile_name)
-    m = re.search('(\d{3})\.(\d{3})', tile_name)
+    m = re.search('(\d{3})[\.-](\d{3})', tile_name)
     if m == None or len(m.groups()) != 2:
         raise CfisError('Image name \'{}\' does not match tile name syntax'.format(tile_name))
 
@@ -1438,7 +1457,7 @@ def plot_init():
 
 
 def plot_area(images, angles, image_type, outbase, interactive, col=None, show_numbers=False,
-              show_circle=True, ax=None, save=True, dxy=0):
+              show_circle=True, ax=None, lw=None, save=True, dxy=0):
     """Plot images within area.
 
     Parameters
@@ -1459,6 +1478,8 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_n
         plot circle center and circumference around area if True
     ax : axes, optional, default None
         Init axes if None
+    lw : float, optional, default None
+        line width
     save : bool, optional, default=True
         save plot to pdf file if True
     dxy : float, optional, default=0
@@ -1470,7 +1491,10 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_n
     else:
         outname = '{}.pdf'.format(outbase)
 
-    lw = 0.25
+    if not lw:
+        my_lw = 0.1
+    else:
+        my_lw = lw
     color = {'tile': 'b', 'exposure': 'g', 'weight': 'r'}
 
     if not ax:
@@ -1518,11 +1542,11 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_n
         dx = size[image_type] / 2 / cos_dec_c
         dy = size[image_type] / 2
         cx, cy = square_from_centre(x, y, dx, dy, dxy=dxy)
-        ax.plot(cx, cy, '{}-'.format(c), linewidth=lw)
+        ax.plot(cx, cy, '-', color=c, linewidth=my_lw)
 
     # Area border
     #cx, cy = square_from_corners(angles[0], angles[1])
-    #ax.plot(cx, cy, 'r-.', linewidth=lw)
+    #ax.plot(cx, cy, 'r-.', linewidth=my_lw)
 
     plt.xlabel('R.A. [degree]')
     plt.ylabel('Declination [degree]')
