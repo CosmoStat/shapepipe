@@ -16,6 +16,7 @@ from glob import glob
 from functools import reduce, partial
 from shapepipe.pipeline.run_log import RunLog
 from shapepipe.modules.module_runners import get_module_runners
+from shapepipe.utilities.file_system import mkdir
 
 
 def find_files(path, pattern='*', ext='*'):
@@ -235,13 +236,13 @@ class FileHandler(object):
 
         Parameters
         ----------
-        dir_name : str
+        dir_name : str`
             Directory name with full path
 
         """
 
         cls.check_dir(dir_name, check_exists=True)
-        os.mkdir(dir_name)
+        mkdir(dir_name)
 
     @staticmethod
     def format(path, name, ext=''):
@@ -359,6 +360,14 @@ class FileHandler(object):
                                  last_module,
                                  module), 'output'))
 
+            elif 'all' in dir.lower():
+                module = dir.lower().split(':')[1]
+                all_runs = self._run_log.get_all(module)
+                input_dir.extend([self.format(self.format(
+                                  run.split(' ')[0],
+                                  module), 'output')
+                                  for run in all_runs])
+
             elif ':' in dir.lower():
                 string, module = dir.lower().split(':')
                 input_dir.append(self.format(self.format(
@@ -370,7 +379,7 @@ class FileHandler(object):
                 raise ValueError('Invalid INPUT_DIR ({}). Make sure the paths '
                                  'provided are valid directories or use the '
                                  'allowed special keys.'.format(dir))
-
+                
         return input_dir
 
     def _get_input_dir(self):
@@ -441,9 +450,9 @@ class FileHandler(object):
                                         property.upper()))
 
     def _set_module_property(self, module, property, file_property=True):
-        """ Get Module Property
+        """ Set Module Property
 
-        Get a module property from either the configuration file or the module
+        Set a module property from either the configuration file or the module
         runner.
 
         Parameters
@@ -468,9 +477,9 @@ class FileHandler(object):
         self._module_dict[module][property] = prop_val
 
     def _set_module_list_property(self, module, property):
-        """ Get Module List Property
+        """ Set Module List Property
 
-        Get a module list property from either the configuration file or the
+        Set a module list property from either the configuration file or the
         module runner.
 
         Parameters
@@ -485,7 +494,7 @@ class FileHandler(object):
         if self._config.has_option(module.upper(), property.upper()):
             prop_list = self._config.getlist(module.upper(), property.upper())
 
-        elif (property in ('file_pattern', 'file_ext') and not
+        elif (property in ('file_pattern', 'file_ext', 'numbering_scheme') and not
                 isinstance(getattr(self, '_{}'.format(property)), type(None))
                 and len(self._module_dict) == 1):
             prop_list = getattr(self, '_{}'.format(property))
@@ -514,7 +523,7 @@ class FileHandler(object):
         module_list_props = ('input_module', 'file_pattern', 'file_ext',
                              'depends', 'executes')
 
-        [self._set_module_property(module, property) for property in
+        [self._set_module_property(module, property, file_property=False) for property in
          module_props]
         [self._set_module_list_property(module, property) for property in
          module_list_props]
@@ -676,6 +685,11 @@ class FileHandler(object):
         num_scheme : str
             Numbering scheme
 
+        Raises
+        ------
+        ValueError
+            if num_scheme is None
+
         Returns
         -------
         str
@@ -683,7 +697,13 @@ class FileHandler(object):
 
         """
 
-        if num_scheme.startswith('RE:'):
+        # Raise an error if num_scheme is None,
+        # but not if num_scheme==''
+        if not num_scheme and num_scheme != '':
+
+            raise ValueError('No numbering scheme adapted')
+
+        elif num_scheme.startswith('RE:'):
 
             re_pattern = num_scheme.replace('RE:', '')
 
@@ -739,7 +759,7 @@ class FileHandler(object):
         new_ext = '.' + ext if not ext.startswith('.') else ext
 
         if new_ext != ext:
-            print('Updating extension from "{}" to "{}".'
+            print('Updating file extension from "{}" to "{}".'
                   ''.format(ext, new_ext))
             print()
 

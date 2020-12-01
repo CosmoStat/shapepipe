@@ -9,17 +9,19 @@
     1. [CFIS processing](#cfis-processing)
     1. [Running the pipeline](#running-the-pipeline)
     1. [Path variables](#path-variables)
-1. [Prepare input images](#prepare-input-images)
+1. [Retrieve input images](#retrieve-input-images)
     1. [Select tiles](#select-tiles)
-    1. [Download tiles](#download-tiles)
+    1. [Retrieve tiles](#retrieve-tiles)
     1. [Uncompress tile weights](#uncompress-tile-weights)
+    1. [Find single exposures](#find-single-exposures)
+    1. [Retrieve single exposure](#retrieve-single-exposures)
 1. [Process single exposure images](#process-single-exposure-images)
     1. [Split images](#split-images)
     1. [Merge WCS headers](#merge-wcs-headers)
     1. [Mask images](#mask-images)
     1. [Extract sources](#extract-sources)
     1. [Select stars](#select-stars)
-    1. [Model the PSF](#model-the-psf)
+    1. [Create PSF model](#create-psf-model)
     1. [Validation tests](#validation-tests)
 1. [Process stacked images](#process-stacked-images)
     1. [Mask stacks](#mask-stacks)
@@ -33,7 +35,7 @@
 
 ## Introduction
 
-The `ShapePipe` pipeline can process single-exposures images and stacked images. Input images have to be calibrated beforehand for astrometry and photometry. This tutorial of an entire `ShapePipe` run, from covers specifically images from CFIS, the Canada-France Imaging Survey. CFIS stacks are so-called tiles, which are the co-adds of on average three exposures in the r-band.
+The `ShapePipe` pipeline processes single-exposure images and stacked images. Input images have to be calibrated beforehand for astrometry and photometry. This tutorial of an entire `ShapePipe` run covers specifically images from CFIS, the Canada-France Imaging Survey. CFIS stacks are so-called tiles, which are the co-adds of on average three exposures in the r-band.
 
 ### File types and names
 
@@ -78,7 +80,7 @@ Naming and numbering of the input files can closely follow the original image na
   Examples: `log_exp_headers.sqlite`, exposure header information
   
 - Numpy array binary files  
-  Some large files are stored as numpy arrays.  
+  Some large files are stored as numpy arrays. These contain FITS header information. 
   Example: `headers-2366993.npy`
   
 - PSF files  
@@ -86,11 +88,16 @@ Naming and numbering of the input files can closely follow the original image na
   model information for a single CCD, and `.cat` for a PSF catalogue.
   
 - Summary statistic files  
-  The `SETools` module that creates samples of objects according to some user-defined selection criteria (see [Select stars](#select-stars)) also outputs ASCII files with user-defined summary statistics for each CCD, for example the number of selected stars, or mean and standard deviation of their FWHM.  
+  The `SETools` module that creates samples of objects according to some user-defined selection criteria (see [Select stars](#select-stars)) also outputs ASCII   
+  files with user-defined summary statistics for each CCD, for example the number of selected stars, or mean and standard deviation of their FWHM.  
   Example: `star_stat-2366993-18.txt`
   
-- tile numbers list
+- Tile ID list
   ASCII file with a tile number on each line. Used for the `get_image_runner` module to download CFIS images (see [Download tiles](#download-tiles)).
+  
+  - Single-exposure name list
+    ASCII file with a single-exposure name on each line. Produced by the `find_exposure_runner` module to identify single exposures that were used to create
+    a given tile. See [Find exposures](#find-exposures)).
   
 - Plots
   The `SETools` module can also produce plots of the objects properties that were selected for a given CCD.
@@ -105,19 +112,15 @@ Naming and numbering of the input files can closely follow the original image na
 ### CFIS processing
 
 `ShapePipe` splits the processing of CFIS images into three parts:  
-1.) [Prepare input images](#prepare-input-images)  
+1.) [Retrieve and prepare input images](#retrieve-and-prepare-input-images)  
 2.) [Process single exposure images](#process-single-exposure-images)  
 3.) [Process stacked images](#process-stacked-images)    
-The single exposures are first split into single-exposure single-CCD images, which are processed in turn and independent from one another.
-
-The preparation of input images is done before running the actual pipeline, using auxilliary scripts.
 
 The following flowchart visualised the processing parts and steps.
 
 ![ShapePipe_FlowChart](./ShapePipe_v0.0.1.png)
 
 Below, the individual processing steps are described in detail.
-
 
 ### Path variables
 
@@ -127,18 +130,16 @@ The following path variables need to be defined where `ShapePipe` is to be run. 
   export SP_RUN=`pwd`
   ```
   but on a cluster this directory might be different.
-- `$SP_CONFIG`: Path to configuration files. In our example this is `/path/to/shapepipe/example/GOLD`.
+- `SP_BASE`: Not required, but for convenience define this path to point at `/path/to/shapepipe/example/tutorial`.
+- `$SP_CONFIG`: Path to configuration files. In our example this is `$SP_BASE/example/tutorial`.
 
 ### Running the pipeline
 
 See the main `ShapePipe` readme for more details.
 
-In `$SP_RUN` the following subdirectories need to be created by the user:
-- `input_tiles`: Downloaded (or symbolic links to) CFIS input tile images and weight files.
-- `input_exposures`: Symbolic links to CFIS single-exposure image, weight, and flag files.
-- `output`: General output generated by the pipeline (log files,
-  diagnostics, statistics, output images, catalogues, Ssingle-exposure headers with WCS information).
-- *Optional*: `output_star_cat`: Star catalogues, only necessary if the pipeline is run on a cluster without internet connection to access star catalogues. In that case, the star catalogues need to be retrieved outside the pipeline, for example on a login node, and copied to `output_star_cat`.
+In `$SP_RUN` the following subdirectory `output` needs to be created by the user, to store all pipeline output
+(log files, diagnostics, statistics, output images, catalogues, single-exposure headers with WCS information).
+Optionally, the subdir `output_star_cat` is created by the used to store the external star catalogues for masking. This is only necessary if the pipeline is run on a cluster without internet connection to access star catalogues. In that case, the star catalogues need to be retrieved outside the pipeline, for example on a login node, and copied to `output_star_cat`.
 
 In general, a call to the pipeline is done as follows, after activating the `shapepipe` conda environment (indicated by `(shapepipe)` at the beginning of the shell prompt.
 ```bash
@@ -147,48 +148,69 @@ shapepipe_run -c $SP_CONFIG/<config>.ini
 The config file `<config>.ini` contains the configuration for one or more modules.
 
 
-## Prepare input images
+## Retrieve input images
 
-Before running `ShapePipe` we need to select and identify tiles and single exposures, and perform a few minor mofidication to file names and formats.
+Before running `ShapePipe` we need to select the tiles to be processed.
 
 ### Select tiles
 
-The selection of images on input can be done in the config files of the relevant modules, by specifying input
-path(s) and input file name patterns. Either all, or a sub-selection of images in a given input directory can be selected in that way. One might want to pre-select a specific set of images, for example all available images in a given sky area. The resulting files can then be copied to a new, dedicated directory (or alternatively linked using symbolic links), or downloaded to a local machine.
-
-Images can be selected to cover a given sky area, with the script `cfis_field_select`. The tile numbers is all we need here.
-Once we have selected the tiles, we can identify the single exposure images that were used to create those tiles, see [Fine exposures](#find-exposures).
-
-For example, find the tile number for a Planck cluster at R.A.=255.66 deg, dec= 34.05 deg can be found with the `--coord` option:
+The result of this selection is a text file with a tile IDs on each line, in the form `XYZ.ABC`. If the ID(s) are known in advance, this can be done by hand, e.g.
 ```bash
-cfis_field_select -i tiles+weights_DR2.txt --coord 255.66deg_34.05deg -t tile --out_name_only --out_ID_only -s -o tile_numbers
+echo 002.240 > tile_numbers.txt
 ```
-The input text file (with `-i`) contains a list of CFIS tiles. The tile number(s) are written as a simple list in the ASCII file `tile_numbers.txt`.
 
+If this is not the case, tiles can be selected to by sky coordinates, with the script `cfis_field_select`.
+For example, to find the tile number for a Planck cluster at R.A.=213.68 deg, dec=57.79 deg, run:
+```bash
+cfis_field_select -i $SP_BASE/aux/CFIS/tiles_202007/tiles_all_order.txt --coord 213.68deg_54.79deg -t tile --input_format ID_only --out_name_only --out_ID_only -s -o tile_numbers
+```
+The input text file (with `-i`) contains a list of CFIS tiles, this can also be directory containing the tile FITS files.
 
-### Download tiles
+To select tiles covering an entire sky area, for example CFHTLS-W3, do:
+```bash
+cfis_field_select -i /path/to/shapepipe/aux/CFIS/tiles_202007/tiles_all_order.txt --area 208deg_50.75deg_221.deg_58deg -v --input_format ID_only --out_name_only --out_ID_only -s -o tile_numbers --plot
+```
+
+Now we are ready to run the first, pre-processing `ShapePipe` modules.
+
+### Retrieve tiles
 
 **Module:** get_image_runner  
 **Parent:**  none  
-**Input:** tile numbers list  
+**Input:** tile ID list  
 **Output:** tile image, compressed tile weight
 
-The tile images and weights selected in the previous section are made available for `ShapePipe` now, by running the module `get_image_runner`. This module either downloads the images or, if they already exist on a local hard disk, creates symbolic links. Downloading uses the Virtual Observatory VOSpace (vos) software (http://www.ivoa.net/documents/VOSpace). The downloaded files (or link names) are automatically modified to be parsable by the pipeline.
+The tile images and weights selected in the previous section will be retrieved now, by running the module `get_image_runner`. This module either downloads the images or, if they already exist on a local hard disk, creates symbolic links. Downloading uses the Virtual Observatory VOSpace (vos) software (http://www.ivoa.net/documents/VOSpace). The downloaded files (or link names) are then modified to be parsable by the pipeline.
 
-An example config file is `SP_CONFIG/config_get_image.ini`. In the module section, we need to specify
-input path (for example a VOS url), input file pattern and their extension. The input file pattern includes the number(s) as  dummy template, similarly to the `NUMBERING_SCHEME` in the `[FILE]` section (see `File options` in the [general pipeline readme](README.rst)). In addition, the input numbering scheme as python `regexp` needs to be specified, which matches the tile number in the tile number list. 
+An example config file is `SP_CONFIG/config_tile_Git.ini`.
+The module section `[GET_IMAGES_RUNNER]` first contains the input tile ID list file path (default is `tile_numbers.txt`). This is assembled from `FILE_PATTERN`, `FILE_EXT`, and `NUMBERING_SCHEME`. Since there
+is only a single input text file with no number, the latter entry is empty. See see `File options` in the [general pipeline readme](README.rst)) for more details on the numbering scheme.
 
-Next, the output file pattern without the tile number is given.
+Next, we need to specify for the images input path (for example a VOS url),
+input file pattern and their extension. The entry `INPUT_FILE_PATTERN` includes the
+tile ID(s) as  dummy template, similarly to the `NUMBERING_SCHEME`. In
+addition, the input numbering scheme as python `regexp` needs to be specified
+by `INPUT_NUMBERING`, which matches the tile number in the tile number list. To
+summarize, `INPUT_FILE_PATTERN` needs to match the file name to be
+downloaded/linked. `INPUT_NUMBERING` needs to match the ID numbers in the tile
+ID list text file `tile_numbers.txt`.
 
-After that we indicate the copy or download method, for example `vos`. Additional command options can be indicated with the key `COPY_OPTIONS`. Here is the example:
+Next, the output file pattern without the tile number is specified in the config file. Here this needs to
+be different from the original image names to be consistent with the `ShapePipe` naming conventions, e.g.~no
+dots other than for the file extension.
+
+After that we name the copy or download method, for example `vos`. Additional command options can be indicated with the key `COPY_OPTIONS`. Here is the example:
 ```ini
+[GET_IMAGES_RUNNER]
+FILE_PATTERN = tile_numbers
+FILE_EXT = .txt
+NUMBERING_SCHEME =
 INPUT_PATH = vos:cfis/tiles_DR2, vos:cfis/tiles_DR2
 INPUT_FILE_PATTERN = CFIS.000.000.r, CFIS.000.000.r.weight
 INPUT_FILE_EXT = .fits, .fits.fz
 INPUT_NUMBERING = \d{3}\.\d{3}
 OUTPUT_FILE_PATTERN = CFIS_image-, CFIS_weight-
 COPY = vos
-COPY_OPTIONS = --quick
 ```
 
 On success, tile images and compressed tile weights are created, either as physical files or symbolic links.
@@ -203,7 +225,6 @@ On success, tile images and compressed tile weights are created, either as physi
 The compressed stack weights (.fits.fz/.fitsfz files) need to be uncompressed before further processing. An example config file is `$SP_CONFIG/config_unfz_w.ini`. Except from the input file pattern and extension (see `File Options` in the [general pipeline readme](README.rst)), we need to specify the output file patern (can be the same as the input), and the HDU number of the weight image data:
 ```ini
 [UNCOMPRESS_FITS_IMAGE_RUNNER]
-
 FILE_PATTERN = CFIS_weight
 FILE_EXT = .fitsfz
 OUTPUT_PATTERN = CFIS_weight
@@ -212,72 +233,117 @@ HDU_DATA = 1
 
 On success, the uncompressed weight image with the correct (only) HDU is written.
 
-### Find exposures
+### Find single exposures
 
-Once the resulting tiles and weight images are downloaded, we need to get the exposure images that where co-added to produce the tiles. These can be found from the tile header, with the `--tile` option. We need all three single-exposure types, data, weights, and flags:
-```bash
-cfis_field_select -i ~/CFIS --tile -v -t exposure
-cfis_field_select -i ~/CFIS --tile -v -t exposure_weight.fz
-cfis_field_select -i ~/CFIS --tile -v -t exposure_flag.fz
+**Module:** find_exposures_runner  
+**Parent:**  get_image_runner    
+**Input:** tile image  
+**Output:** single-exposure name list
+
+Once the resulting tiles and weight images are downloaded, we need to identify the exposure images that where co-added to produce the tiles. These can be found in the tile FITS header. The example config file `$SP_CONFIG/config_tile_Fe.ini` has as entries the
+information for the input tiles, which are input directoy (last run of get_images) and file names:
+```
+[FIND_EXPOSURE_RUNNER]
+INPUT_DIR = last:get_images_runner
+FILE_PATTERN = CFIS_image
+FILE_EXT = .fits
+NUMBERING_SCHEME = -000-000
 ```
 
-The resulting files need to be downloaded. Next, file names need to be modified as described above.
+On success, the ascii files with the single-exposure names are produced.
 
-At the end of the preparation part, the following files or symbolic links need to exist:
-- in `input_tiles` all tile images and uncompressed tile weights (extension `.fits`) to be processed
-- in `input_exposures` all single-exposure images, weights, and flags that were used to create the tiles in `input_tiles`,
-  as compressed FITS filts (extension `.fitsfz`)
+
+### Retrieve single exposures
+
+**Module:** get_image_runner2  
+**Parent:**  find_exposure_runner  
+**Input:** single-exposure name list  
+**Output:** tile image, compressed tile weight
+
+This process works as the one to download tiles, see [Download tiles](#download-tiles). The single-exposure names are read from the output ascii file of the previous module (`find-exposure-runner`). Single-exposure images, weights, and flags are retrieved. Here is the example `$SP_CONFIG/config_tile_Gie.ini` relevant section:
+```ini
+[GET_IMAGES_RUNNER2]
+INPUT_DIR = last:find_exposures_runner
+FILE_PATTERN = exp_numbers
+FILE_EXT = .txt
+NUMBERING_SCHEME = -000-000 
+INPUT_PATH = vos:cfis/pitcairn, vos:cfis/weights, vos:cfis/flags
+INPUT_FILE_PATTERN = 000000, 000000.weight, 000000.flag
+INPUT_FILE_EXT = .fits.fz, .fits.fz, .fits.fz
+INPUT_NUMBERING = \d{6}
+OUTPUT_FILE_PATTERN = image-, weight-, flag-
+RETRIEVE = vos
+```
+
+On sucess, single-exposure images, weights, and flags are downloaded, or links to existing files are created.
+
+To perform the pre-processing steps detailed above, we can either run them module by module:
+```bash
+shapepipe_run -c $SP_CONFIG/config_tile_Git.ini
+shapepipe_run -c $SP_CONFIG/config_tile_Uz.ini
+shapepipe_run -c $SP_CONFIG/config_tile_Fe.ini
+shapepipe_run -c $SP_CONFIG/config_tile_Gie.ini
+```
+or in one go:
+```bash
+shapepipe_run -c $SP_CONFIG/config_tile_GitUzFeGie.ini
+```
+This ends the pre-processing, now we can proceed to the actual (parallel) image processing.
 
 ## Process single exposure images
 
-Single exposures can be processed in a single call of `ShapePipe`, with consecutive call to all required modules. The corresponding example config file is `$SP_CONFIG/config_exp.ini`, and the command is simply
+Single exposures can be processed via a single run of `ShapePipe`, which calls all required modules one after another. The corresponding example config file is `$SP_CONFIG/config_exp.ini`, and the command is simply
 ```bash
 shapepipe_run -c $SP_CONFIG/config_exp.ini
 ```
-Alternatively each module can be executed by a separate `ShapePipe` call. The corresponding single-module example config files are indicated in the sections below.
+Alternatively each module can be executed by a separate `ShapePipe` call. The corresponding single-module example config files are detailed in the sections below.
 
 ### Split images
 
 **Module:** split_exp_runner   
-**Parent:**  none  
+**Parent:**  get_images_runner2  
 **Input:** single-exposure images, weights, flags  
-**Output:** single_exposure single-CCD files for input images, weights, flags
+**Output:** single_exposure single-CCD files for input images, weights, flags; SQL files with single-exposure header information
 
 The first step of single-exposure processing is to split the single-exposures images into
 files that contain one CCD each.
 
 The example config file is `$SP_CONFIG/config_split_exp.ini`.
-On input, we need to specify the three input types (exposures, weights, flags),
-and their extensions. This happens in the `[FILE]` section:
-```ini
-[FILE]
-FILE_PATTERN = image, weight, flag
-FILE_EXT = .fitsfz, .fitsfz, .fitsfz
-```
-On output, the same three file types are required. The number of MegaCAM CCDs is 40:
+On input, we need to specify the three input types (images, weights, flags),
+and their extensions. On output, the same three file types are required.
+And we specify the number of CCDs, which for MegaCAM CCDs is 40:
 ```ini
 [SPLIT_EXP_RUNNER]
+INPUT_DIR = last:get_images_runner2
+NUMBERING_SCHEME = -0000000
+FILE_PATTERN = image, weight, flag
+FILE_EXT = .fitsfz, .fitsfz, .fitsfz
 OUTPUT_SUFFIX = image, weight, flag
 N_HDU = 40
 ```
-On success, files according to the three output types are created.
+
+On success, files according to the three output types are created. In addition, the FITS headers of all input
+single-exposure images are written to the same output directory, as SQL numpy files. The main purpose
+is to save the image WCS information for quick access lateron.
 
 ### Merge WCS headers
 
-**Module:** merge_headers  
+**Module:** merge_headers_runner  
 **Parent:** split_exp_runner  
-**Input:** single-exposure single_CCD images, weights, flags  
+**Input:** SQL files with single-exposure header information   
 **Output:** single SQL file with combined header information  
 
-This pipeline module saves the WCS information (image
+This pipeline module merges the WCS information (image
 transformation and distortions, computed during astrometrical calibration)
 for each CCD. At the end, this information has to be merged back into a single file.
 
-The example config file is `$SP_CONFIG/config_merge_headers.ini`.
-Specify the output path:
+The example config file is `$SP_CONFIG/config_exp_Mh.ini`:
 ```ini
-[MERGE_HEADER_RUNNER]
-OUTPUT_PATH = $SP_RUN/output
+[MERGE_HEADERS_RUNNER]
+INPUT_DIR = last:split_exp_runner
+FILE_PATTERN = headers
+FILE_EXT = .npy
+NUMBERING_SCHEME = -0000000
 ```
 Since this produces a single output file instead of a file per input image, it is more convenient to have this file in
 a separated directory for later use.
@@ -298,14 +364,11 @@ This module creates masks for bright stars, diffraction spikes, Messier objects,
 borders, and other artifacts. It joins the newly created mask with the already
 existing masks (from the input flag files) of cosmic rays and various artifacts.  
 
-The example config file is `$SP_CONFIG/config_mask.ini`.
+The example config file is `$SP_CONFIG/config_exp_Ma.ini`.
 The mask parameters are read from a secondary config file, whose path
-needs to be specified:
-```ini
-[MASK_RUNNER]
-MASK_CONFIG_PATH = $SP_CONFIG/config.mask
-```
-In this mask config file the default parameters can be kept in the most part.
+needs to be specified with `MAS_CONFIG_PATH`.
+
+In this mask config file the default parameters can be kept.
 These parameters specify the mask properties for border, halos, spikes, Messier
 objects, and external flag input (in our case provided from CFIS pre-processing).
 
@@ -313,11 +376,14 @@ It points to various default parameter files for the different mask types,
 make sure that that paths are correct, in our case
 `$SP_CONFIG/mask_default/` in front of each file name.
 
-To distinguish the newly created output flag files from the input ones,
+Exposures, unlike tile images, come with external flag files on input. This is specified
+by the key `USE_EXT_FLAG`. To distinguish the newly created output flag file from the input ones,
 a suffix is added:
 ```ini
 SUFFIX = pipeline
 ```
+The output flag file combines input flags and flags created by `mask_runner`.
+
 Next, this module requires a star catalogue containing position and magnitude
 of bright stars. By default this is automatically created by accessing online
 star catalogues. Since in some cases computing nodes on clusters might not have
@@ -328,9 +394,8 @@ mkdir -o output_star_cat
 create_star_cat input_exposures output_star_cat exp
 ```
 Then, the star catalogue needs to be specified as input in the config file,
-and a flag has to be set::
+and a flag has to be set:
 ```ini
-[FILE]
 INPUT_DIR = last:split_exp_runner, $SP_RUN/output_star_cat
 [MASK_RUNNER]
 USE_EXT_STAR = True
@@ -338,12 +403,9 @@ USE_EXT_STAR = True
 If instad the star catalogues can be accessed during the pipeline running,
 the config files looks as follows:
 ```ini
-[FILE]
-INPUT_DIR = last:split_exp
 [MASK_RUNNER]
 USE_EXT_STAR = False
 ```
-
 On success, pipeline-flag files are created.
 
 **Diagnostics:** Open a single-exposure single-CCD image and the corresponding pipeline flag
@@ -364,7 +426,7 @@ have a zero-padded pixel border, which is not accounted for by `ds9`.
 
 **Module:** sextractor_runner  
 **Parent:** split_exp_runner, mask_runner  
-**Input:** single-exp_single-CCD image, weights, flags  
+**Input:** single-exp_single-CCD image[, weights] [, flags] [, PSF file] [, detection image] [, detection weight] 
 **Output:** sextractor catalogue
 
 The purpose of source extraction/source identification on single exposures is
@@ -373,9 +435,43 @@ detection threshold is chosen to avoid to detect too many low-SNR
 artifacts, and to reduce the output catalogue size. The following config entry
 is
 ```ini
-DETECT_THRESH    2.             # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
+DETECT_THRESH    1.5             # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
+ANALYSIS_THRESH  1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 ```
-in the file `$SP_CONFIG/sextractor_default/default.sex`.
+in the file `$SP_CONFIG/default_exp.sex`.
+
+The module config file `$SP_CONFIG/config_exp_Sx.ini` specifies input modules, file pattern, and numbering scheme. Note that the flag files are the ones created by the [mask module](#mask-images), with name `pipeline_flag`. Next, the path to the `SExtractor` executable (installed in the `shapepipe` conda environment by default) is given, and the `SExtractor` configuration files, see below.
+
+Then, boolean flags indicate the presence or absence of the additional input images for the `FILE_PATTERN` line. These are a weight image, a flag image, a PSF file, a distinct image for detection (for `SExtractor` in dual-image mode) that is different from the measurement image, and a distinct detection weight. In our case, we don't have a PSF [yet](#create-psf-model), and we do measurement and detection on the same images.
+
+After that, two entries determine the FITS header key that contains the photometric zero-point (by default 30 if not given). Then, information about the background handling are indicated before the output file suffix. A post processing flag is set to `False` for single-exposures:
+```ini
+[SEXTRACTOR_RUNNER]
+INPUT_MODULE = split_exp_runner, mask_runner
+FILE_PATTERN = image, weight, pipeline_flag
+NUMBERING_SCHEME = -0000000-0
+
+EXEC_PATH = sex
+DOT_SEX_FILE = $SP_CONFIG/default_exp.sex
+DOT_PARAM_FILE = $SP_CONFIG//default.param
+DOT_CONV_FILE = $SP_CONFIG/default.conv
+
+WEIGHT_IMAGE = True
+FLAG_IMAGE = True
+PSF_FILE = False
+DETECTION_IMAGE = False
+DETECTION_WEIGHT = False
+
+ZP_FROM_HEADER = True
+ZP_KEY = PHOTZP
+
+BKG_FROM_HEADER = False
+CHECKIMAGE = BACKGROUND
+
+SUFFIX = sexcat
+
+MAKE_POST_PROCESS = FALSE
+```
 
 On success, SEXtractor catalogue FITS files are produced.
 
@@ -390,47 +486,60 @@ For the star selection we use the size-magnitude plane. We first find the
 stellar locus, by computing the FWHM mode of all objects. Objects are selected
 within some range in FWHM around the mode, and within a magnitude range.
 
-The selection criteria are given in a selection configuration file, whose name is specified
-in the `setools` section:
+Apart from the standard `INPUT_MODULE`, `FILE_PATTERN`, and `NUMBERING_SCHEME` entries, a file path for selection
+configuration file are given, containing the selection criteria for the star candidate sample:
 ```ini
 [SETOOLS_RUNNER]
+INPUT_MODULE = sextractor_runner
+
+# Note: Make sure this does not match the SExtractor background images
+# (sexcat_background*)
+FILE_PATTERN = sexcat_sexcat
+NUMBERING_SCHEME = -0000000-0
 SETOOLS_CONFIG_PATH = $SP_CONFIG/star_selection.setools
 ```
-The selection config file `star_selection.setools` first defined a pre-selectione (or filter, or mask),
+The selection config file `$SP_CONFIG/star_selection.setools` first defines a pre-selection (also "filter" or "mask"),
 such that the subsequent computation of the mode is more stable:
 ```ini
 [MASK:preselect]
 MAG_AUTO > 0
-MAG_AUTO < 20
-FWHM_IMAGE > 0.3 / 0.186
-FWHM_IMAGE < 1.5 / 0.186
+MAG_AUTO < 21
+FWHM_IMAGE > 0.3 / 0.187
+FWHM_IMAGE < 1.5 / 0.187
 FLAGS == 0
 IMAFLAGS_ISO == 0
 NO_SAVE
 ```
 > Note the normalisation by the pixel scale to express **FWHM_IMAGE** in arc seconds.
 
-The star sample is then selected as follows:
+The star sample is then selected in a smaller magnitude range, around the mode of the preselected sample, as follows:
 ```ini
 [MASK:star_selection]
-MAG_AUTO > 17.0
-MAG_AUTO < 21.5
+MAG_AUTO > 18
+MAG_AUTO < 22
 # NOTE : unit is pixel
 FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
 FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2
 FLAGS == 0
 IMAFLAGS_ISO == 0
 ```
+From this selection, two random sub-samples are created with a number ratio of 80:20.
+The first, larger sample is to [create the PSF model](#create-psf-model). The second, smaller
+sample serves to [validate the PSF model](#validation-tests):
+```ini
+[RAND_SPLIT:star_split]
+RATIO = 20
+MASK = star_selection
+```
 In addition, the selection config file can contain instructions to create plots and
 statistics of the selected population(s). The former can be scatter plots and histograms,
 the former can include mean, mode, extrema, and standard deviation
 of any quantity from the SExtractor input catalogue, the number of selected objects, etc..
 
-On success, masked SEXtractor catalogues are created in `mask`, plots are put in `plots`,
+On success, masked SExtractor catalogues are created in `mask`, plots are put in `plots`,
 and text files with the computed statistics in `stats`.
 
 The following plots show an example, CCD #10 of exposure 2113737.
-
 
 | Size-magnitude plot | Star magnitude histogram | Stars in CCD (mag) | Stars in CCD (size) |
 | --- | --- | --- | --- |
@@ -456,24 +565,45 @@ Min fwhm cut (arcesec) = 0.7159179691314698
 Max fwhm cut (arcsec) = 0.7531179691314697
 ```
 
-### Model the PSF
+### Global star sample statistics
+
+The statistics on stars from all CCD can be combined to create histograms, with the non-pipeline script `stats_global.py`.
+Run
+```bash
+stats_global -o stats -v -c $SP_CONFIG/config_stats.ini
+```
+to create histograms (as `.txt` tables and `.png` plots) in the directory `stats`. Here are some example plots :
+
+| Non-masked objects per CCD | Stars per CCD | FWHM mode |
+| --- | --- | --- |
+| <img width="250" src="1_nb_nonmasked.png" title="Number of non-masked objects per CCD"> | <img width="250" src="2_nb_stars.png" title="Number stars per CCD"> | <img width="250" src="5_mode_fhwm_star.png" title="FWHM mode"> |
+| No CCD with a very large masked area | No CCD with insufficient stars | Rather broad seeing distribution | 
+
+Note that `stats_global` read all `SETool` output stats files found in a given input directory tree. It can thus produce histogram combining
+several runs.
+
+### Create PSF model
 
 **Module:** psfex  
 **Parent:** setools_runner  
 **Input:** setools_star_selection  
 **Output:** star catalogue, psf file
 
-The PSF modeling is done with `PSFEx`. The psfex module configuration section
-has to point to the executable and the default psfex config file, which does not
-need to be changed.
+The PSF modeling is done with `PSFEx`. The corresponding config file `$SP_CONFIG/config_exp_Psm.ini` section is noteworthy
+in the specification of the input file pattern, which matches the first random sub-sample defined in the previous section.
+The number has to match the previously defined ratio.
+
+Then, a `PSFEx` configuration path is given:
 ```ini
 [PSFEX_RUNNER]
+INPUT_MODULE = setools_runner
+FILE_PATTERN = star_split_ratio_80
+NUMBERING_SCHEME = -0000000-0
 EXEC_PATH = psfex
 DOT_PSFEX_FILE = $SP_CONFIG/default.psfex
 ```
-
 On success, FITS files containing the star catalalogue (`psfex_cat-*.cat`) and the PSF at
-the stars' positions (`star_selection-2159358-9.psf`) are created.
+the positions of the 80% star sub-sample (`star_split_ratio_80-*.psf`) are created.
 
 ### Validation tests
 
@@ -485,26 +615,33 @@ the stars' positions (`star_selection-2159358-9.psf`) are created.
 **Output:** star catalogue
 
 The interpolation of the PSF on single exposures alone is not required for shape
-measurement. But to carry out validation tests on the model we need the
+measurement. But to carry validation tests on the PSF model we need the
 know the PSF at the position of the stars used. For that we run the module
-`psfinterp_runner` in `VALIDATION` mode. The following options are required:
+`psfinterp_runner`. Input files are the PSF, the positions of the 20% star sub-sample, and the PSF catalog.
+The key `MODE` is set to `VALIDATION`, column names for the position parameters (SExtractor output) are
+given next, and `GET_SHAPES` is True to output the PSF ellipticity using moments. And important
+parameter is `STAR_THRES`, the lower limit of the number of stars per CCD to be considered to have
+a valid PSF model. We set this to 22, corresponding to 20 for the 80% sub-sample used to construct the PSF.
+CCDs with less stars will be discarded later on for the shape measurement. An additional cut is performed
+on the chi^2 value of the PSF fit, the lower limit given by `CHI2_THRESH`.
+
 ```ini
-# Define the way psfexinter will run.
-# CLASSIC for classical run.
-# MULTI-EPOCH for multi epoch.
-# VALIDATION for output allowing validation (only on single epoch !)
+[PSFEXINTERP_RUNNER]
+INPUT_MODULE = psfex_runner, setools_runner  
+FILE_PATTERN = star_split_ratio_80, star_split_ratio_20, psfex_cat
+FILE_EXT = .psf, .fits, .cat
+NUMBERING_SCHEME = -0000000-0
+
 MODE = VALIDATION
-# Column names of position parameters
 POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE
-# If True, measure and store ellipticity of the PSF
 GET_SHAPES = True
-# Number minimal of stars require to interpolate the PSF on the CCD
-STAR_THRESH = 20
-# Maximum value allowed for the global chi2 of the model for the CCD
+STAR_THRESH = 22
 CHI2_THRESH = 2
 ```
 
 On success, validation PSF catalogues are created.
+
+
 
 #### Merge PSF catalogues
 
@@ -519,16 +656,15 @@ in the module section:
 ```ini
 OUTPUT_PATH = $SP_RUN/psf_validation
 ```
-The (single) output file is then `SP_RUN/psf_validation/full_starcat.fits`.
-
+The (single) output file is then `SP_RUN/psf_validation/full_starcat.fits`. (No output is produced in the actual
+module output directory.)
 
 #### Plot focal-plane ellipticity, size and residuals
 
 Outside the pipeline, create plots of PSF, model, and residual
 ellipticity and shape:
 ```bash
-MeanShapes -o $SP_RUN/psf_validation -x 20 --max_e=0.05 --max_d=0.005 -i $SP_RUN/psf_validation/full_starcat.fits -v
-```
+ ```
 
 On success, `png` files with plot of the focal plane are created in `$SP_RUN/psf_validation`.
 

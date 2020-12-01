@@ -58,6 +58,33 @@ class RunLog(object):
 
         self._runs = [line.rstrip() for line in lines]
 
+    def get_all(self, module):
+        """ Get All
+
+        Get all previous pipeline runs of a given model.
+
+        Parameters
+        ----------
+        module : str
+            Module name
+
+        Returns
+        -------
+        all_runs: list of str
+            All run paths for a given module
+
+        """
+
+        all_runs = [run for run in self._runs if module in
+                    run.split()[1].split(',')]
+        if len(all_runs) == 0:
+            raise RuntimeError('No previous run of module \'{}\' '
+                               'found'.format(module))
+
+        all_runs = all_runs[::-1]
+
+        return all_runs
+
     def get_last(self, module):
         """ Get Last
 
@@ -75,12 +102,8 @@ class RunLog(object):
 
         """
 
-        all_runs = [run for run in self._runs if module in
-                    run.split()[1].split(',')]
-        if len(all_runs) == 0:
-            raise RuntimeError('Last-run module \'{}\' not '
-                               'found'.format(module))
-        last_run = all_runs[::-1][0]
+        all_runs = self.get_all(module)
+        last_run = all_runs[0]
 
         return last_run.split(' ')[0]
 
@@ -111,10 +134,12 @@ class RunLog(object):
         runs = [run for run in self._runs if search_string in run]
 
         if len(runs) < 1:
-            raise RuntimeError('No runs found matching search string.')
+            raise RuntimeError('No runs found matching search string \'{}\'.'
+                               ''.format(search_string))
 
         elif len(runs) > 1:
             raise RuntimeError('More than one run found matching search '
-                               'string')
+                               'string \'{}\''
+                               ''.format(search_string))
 
         return runs[0].split(' ')[0]

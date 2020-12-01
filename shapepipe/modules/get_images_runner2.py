@@ -9,49 +9,56 @@ This module copies all images required for processing
 """
 
 from shapepipe.modules.module_decorator import module_runner
+from shapepipe.utilities.canfar import vosHandler
+
+import os
 import re
 import sys
+import glob
 
 
 class GetImages(object):
 
-    def __init__(self, copy, options, image_number_list,
+    def __init__(self, retrieve, options, image_number_list,
                  input_numbering, input_file_pattern,
-                 input_file_ext, w_log):
-        """GetImages initiatliation.
+                 input_file_ext, w_log, check_existing_dir=None):
+        """GetImages initialisation.
 
         Parameters
         ----------
-        copy: string
-            copy/download method
-        option: string
-            copy options
-        image_number_list: list of string self._copy = copy
+        retrieve : string
+            retrieve/download method
+        option : string
+            retrieve options
+        image_number_list : list of string
             image numbers self._options = options
-        input_numbering: string self._image_number_list = image_number_list
-            numbering scheme, python regexp self._input_numbering = input_numbering
-        input_file_pattern: list of strings self._input_file_ext = input_file_ext
-            file pattern including input number template of input files self._w_log = w_log
-        input_file_ext: list of strings
+        input_numbering : string
+            numbering scheme, python regexp
+        input_file_pattern : list of strings
+            file pattern including input number template of input files
+        input_file_ext : list of strings
             input file extensions
         w_log:
             log file
+        check_existing_dir : string, optional, default=None
+            if not None, only retrieve image if not existing at this directory
 
         Returns
         --------
         self: GetImages class instance
         """
 
-        self._copy = copy
+        self._retrieve = retrieve
         self._options = options
         self._image_number_list = image_number_list
         self._input_numbering = input_numbering
         self._input_file_pattern = input_file_pattern
         self._input_file_ext = input_file_ext
         self._w_log = w_log
+        self._check_existing_dir = check_existing_dir
 
     def get_file_list(self, dest_dir, output_file_pattern=None):
-        """Return list of file paths to copy.
+        """Return list of file paths to retrieve.
 
         Parameters
         ----------
@@ -94,14 +101,17 @@ class GetImages(object):
                     fbase = re.sub(self._input_numbering, number, in_pattern)
                     ext_final = in_ext
 
+                    # Remove 'p' for LSB images
+                    # fbase = re.sub('p', '', fbase)
+
                 fpath = '{}/{}{}'.format(in_path, fbase, ext_final)
                 list_files_per_type.append(fpath)
             list_all_files.append(list_files_per_type)
 
         return list_all_files
 
-    def copy(self, all_inputs, all_outputs):
-        """Copy all files.
+    def retrieve(self, all_inputs, all_outputs):
+        """Retreve all files.
 
         Parameters
         ----------
@@ -109,19 +119,35 @@ class GetImages(object):
             input file paths, one list for each input file type
         all_outputs: list of list of strings
             output file paths, one list for each input file type
-
-        Returns
-        -------
-        None
         """
 
         for in_per_type, out_per_type in zip(all_inputs, all_outputs):
             for i in range(len(in_per_type)):
-                self.copy_one(in_per_type[i], out_per_type[i])
+                if self._check_existing_dir:
+                    out_base = os.path.basename(in_per_type[i])
+                    path = glob.glob('{}/**/{}'
+                                     ''.format(self._check_existing_dir,
+                                               out_base),
+                                     recursive=True)
+                    if path:
+                        self._w_log.info('{} found, skipping'
+                                         ''.format(path[0]))
+                        continue
+                self._w_log.info('Retrieving {}'.format(in_per_type[i]))
+                self.retrieve_one(in_per_type[i], out_per_type[i])
 
-    def copy_one(self, in_path, out_path):
+    def retrieve_one(self, in_path, out_path):
+        """Retrieve one file.
 
-        if self._copy == 'vos':
+        Parameters
+        ----------
+        in_path : string
+            input file path
+        out_path : string
+            output file path
+        """
+
+        if self._retrieve == 'vos':
             sys.argv = []
             sys.argv.append('vcp')
             if self._options:
@@ -140,18 +166,23 @@ class GetImages(object):
             except:
                 raise ValueError('Error in \'vcp\' command: \'{}\''.format(' '.join(sys.argv)))
 
+        elif self._retrieve == 'symlink':
+            src = in_path
+            dst = out_path
+            os.symlink(src, dst)
+
 
 def read_image_numbers(path):
     """Read image numbers from file.
 
     Parameters
     ----------
-    path: string
+    path : string
         input file path
 
     Returns
     -------
-    image_number_list: list of string
+    image_number_list : list of string
         image numbers
     """
 
@@ -183,12 +214,6 @@ def get_images_runner2(input_file_list, run_dirs, file_number_string,
 
     # Read config file section
 
-    # Copying/download method
-    copy = config.get('GET_IMAGES_RUNNER2', 'COPY')
-    copy_ok = ['vos', 'symlink']
-    if copy not in copy_ok:
-        raise ValueError('key COPY={} is invalid, must be in {}'.format(copy, copy_ok))
-
     # Paths
     input_dir = config.getlist('GET_IMAGES_RUNNER2', 'INPUT_PATH')
     nitem = len(input_dir)
@@ -210,23 +235,30 @@ def get_images_runner2(input_file_list, run_dirs, file_number_string,
                          'OUTPUT_DIR, OUTPUT_FILE_PATTERN  need to '
                          'have equal length')
 
-    # Copying/download method
-    copy = config.get('GET_IMAGES_RUNNER2', 'COPY')
-    copy_ok = ['vos', 'symlink']
-    if copy not in copy_ok:
-        raise ValueError('key COPY={} is invalid, must be in {}'.format(copy, copy_ok))
+    # Method to retrieve images
+    retrieve = config.get('GET_IMAGES_RUNNER2', 'RETRIEVE')
+    retrieve_ok = ['vos', 'symlink']
+    if retrieve not in retrieve_ok:
+        raise ValueError('key RETRIEVE={} is invalid, must be in {}'.format(retrieve, retrieve_ok))
 
-    if config.has_option('GET_IMAGES_RUNNER2', 'COPY_OPTIONS'):
-        options = config.get('GET_IMAGES_RUNNER2', 'COPY_OPTIONS')
+    if config.has_option('GET_IMAGES_RUNNER2', 'RETRIEVE_OPTIONS'):
+        options = config.get('GET_IMAGES_RUNNER2', 'RETRIEVE_OPTIONS')
     else:
         options = None
 
-    inst = GetImages(copy, options, image_number_list, input_numbering,
-                     input_file_pattern, input_file_ext, w_log)
+    # Check for already retrieved files
+    if config.has_option('GET_IMAGES_RUNNER2', 'CHECK_EXISTING_DIR'):
+        check_existing_dir = config.getexpanded('GET_IMAGES_RUNNER2', 'CHECK_EXISTING_DIR')
+    else:
+        check_existing_dir = None
+
+    inst = GetImages(retrieve, options, image_number_list, input_numbering,
+                     input_file_pattern, input_file_ext, w_log,
+                     check_existing_dir=check_existing_dir)
 
     # Assemble input and output file lists
     all_inputs = inst.get_file_list(input_dir)
     all_outputs = inst.get_file_list(output_dir, output_file_pattern=output_file_pattern)
-    inst.copy(all_inputs, all_outputs)
+    inst.retrieve(all_inputs, all_outputs)
 
     return None, None
