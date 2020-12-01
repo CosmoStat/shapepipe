@@ -376,10 +376,11 @@ class FileHandler(object):
                                              'output'))
 
             else:
-                raise ValueError('Invalid INPUT_DIR \'{}\'. Make sure the paths '
-                                 'provided are valid directories or use the '
-                                 'allowed special keys.'
-                                 ''.format(dir))
+                raise ValueError(
+                    'Invalid INPUT_DIR \'{}\'. Make sure the paths '
+                    'provided are valid directories or use the '
+                    'allowed special keys'.format(dir)
+                )
 
         return input_dir
 
