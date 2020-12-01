@@ -376,11 +376,10 @@ class FileHandler(object):
                                              'output'))
 
             else:
-                raise ValueError('Invalid INPUT_DIR \'{}\'. Make sure the paths '
+                raise ValueError('Invalid INPUT_DIR ({}). Make sure the paths '
                                  'provided are valid directories or use the '
-                                 'allowed special keys.'
-                                 ''.format(dir))
-
+                                 'allowed special keys.'.format(dir))
+                
         return input_dir
 
     def _get_input_dir(self):
@@ -726,7 +725,7 @@ class FileHandler(object):
         dir_list : list
             List of input directories
         re_pattern : str
-            Regepx version of numbering scheme
+            Regular expression pattern
         pattern : str
             File pattern
         ext : str
@@ -752,8 +751,9 @@ class FileHandler(object):
                 break
 
         if not true_file_list:
-            raise RuntimeError('No files found matching "{}" and "{}".'
-                               ''.format(pattern, ext))
+            raise RuntimeError('No files found matching "{}" and "{}" in the '
+                               ' directories {}.'
+                               ''.format(pattern, ext, dir_list))
 
         # Correct the extension if necessary
         new_ext = '.' + ext if not ext.startswith('.') else ext
@@ -795,10 +795,11 @@ class FileHandler(object):
                 correct_pattern = False
 
         if not found_match:
-            raise RuntimeError('Could not match numbering scheme "{}" to'
-                               ' any of the input files matching'
-                               ' FILE_PATTERN="{}" and FILE_EXT="{}".'
-                               ''.format(re_pattern, pattern, ext))
+            raise RuntimeError('Could not match numbering scheme "{}" to any '
+                               'of the input files matching "{}" and "{}" in '
+                               'the directories {}.'
+                               ''.format(self._numbering_scheme, pattern, ext,
+                                         dir_list))
 
         # Save file list
         np.save(output_file, np.array(final_file_list))
