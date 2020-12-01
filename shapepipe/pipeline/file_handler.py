@@ -459,14 +459,32 @@ class FileHandler(object):
         property : str
             Property name
 
+        Notes
+        -----
+        Module properties are set with the following hierarchy:
+
+        1. Look for properties in module section of the config file,
+        2. look for default properties in the file handler, which sources the
+        ``[FILE]`` section of the config file,
+        3. look for default properties in the module runner definition.
+
+        In other words, module runner definitions will only be used if the
+        properties are not set in the confg file. File handler properties will
+        be used for all modules, overriding all module runner definitions.
+        Module specific properties from the config file will override all other
+        definitions, but only for the module in question.
+
         """
 
+        # 1) Check for parameter value in module section of config file
         if self._config.has_option(module.upper(), property.upper()):
             prop_val = self._config.get(module.upper(), property.upper())
 
+        # 2) Check for default parameter values in file handler
         elif hasattr(self, '_{}'.format(property)):
             prop_val = getattr(self, '_{}'.format(property))
 
+        # 3) Check for default parameter values in module runner
         elif hasattr(self.module_runners[module], property):
             prop_val = getattr(self.module_runners[module], property)
 
@@ -474,6 +492,7 @@ class FileHandler(object):
             raise ValueError('No value for {} in {} could be found.'
                              ''.format(property, module))
 
+        # Look for additional module properties for list objects
         if (isinstance(prop_val, list) and
                 self.get_add_module_property(module, property)):
             prop_val += self.get_add_module_property(module, property)
