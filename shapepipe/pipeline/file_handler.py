@@ -375,7 +375,7 @@ class FileHandler(object):
                 raise ValueError('Invalid INPUT_DIR ({}). Make sure the paths '
                                  'provided are valid directories or use the '
                                  'allowed special keys.'.format(dir))
-                
+
         return input_dir
 
     def _get_input_dir(self):
@@ -445,7 +445,7 @@ class FileHandler(object):
             return self._config.getlist(module.upper(), 'ADD_{}'.format(
                                         property.upper()))
 
-    def _set_module_property(self, module, property):
+    def _set_module_property(self, module, property, get_type):
         """ Set Module Property
 
         Set a module property from either the configuration file or the module
@@ -457,6 +457,8 @@ class FileHandler(object):
             Module name
         property : str
             Property name
+        get_type : str
+            Type of object to get from config file
 
         Notes
         -----
@@ -477,7 +479,13 @@ class FileHandler(object):
 
         # 1) Check for parameter value in module section of config file
         if self._config.has_option(module.upper(), property.upper()):
-            prop_val = self._config.get(module.upper(), property.upper())
+            if get_type == 'str':
+                prop_val = self._config.get(module.upper(), property.upper())
+            elif get_type == 'list':
+                prop_val = self._config.getlist(module.upper(),
+                                                property.upper())
+            else:
+                raise ValueError('{} is not a valid get type'.format(get_type))
 
         # 2) Check for default parameter values in file handler
         elif hasattr(self, '_{}'.format(property)):
@@ -510,11 +518,18 @@ class FileHandler(object):
 
         """
 
-        module_props = ('numbering_scheme', 'run_method', 'input_module',
-                        'file_pattern', 'file_ext', 'depends', 'executes')
+        module_props = {
+            'numbering_scheme': 'str',
+            'run_method': 'str',
+            'input_module': 'list',
+            'file_pattern': 'list',
+            'file_ext': 'list',
+            'depends': 'list',
+            'executes': 'list'
+        }
 
-        [self._set_module_property(module, property) for property in
-         module_props]
+        [self._set_module_property(module, property, get_type)
+         for property, get_type in module_props.items()]
 
         # Make sure the number of patterns and extensions match
         if ((len(self._module_dict[module]['file_ext']) == 1) and
