@@ -51,6 +51,7 @@ def params_default():
     """
 
     p_def = cfis.param(
+        indir = 'output/run_sp_Git_*', 
     )
 
     return p_def
@@ -76,6 +77,8 @@ def parse_options(p_def):
     parser = OptionParser(usage=usage)
 
     # I/O
+    parser.add_option('-i', '--indir', dest='indir', type='string', default=p_def.indir,,
+         help='input directory (pattern), default=\'{}\''.format(p_def.indir))
     parser.add_option('-o', '--outdir', dest='outdir', type='string', default=None,
          help='output directory, if not given: create links in input dir(s)')
     parser.add_option('-O', '--original', dest='outdir_orig', type='string', default=None,
@@ -192,7 +195,8 @@ def main(argv=None):
 
 
     # Parameters
-    dirs_Git = glob.glob('output/run_sp_Git_*')
+    #dirs_Git = glob.glob('output/run_sp_Git_*')
+    dirs_Git = glob.glob(indir)
     pattern = 'CFIS.V0.skycell.'
     ext = 'fits'
     hdu_no = 1
