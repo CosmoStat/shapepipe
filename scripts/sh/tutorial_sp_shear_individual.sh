@@ -63,6 +63,13 @@ export SP_CONFIG=$SP_BASE/example/tutorial
 # Create output path
 mkdir -p output
 
+# Write tile numbers to ASCII input file
+rm -rf tile_numbers.txt
+for id in ${ID[@]}; do
+   echo $id >> tile_numbers.txt
+done
+
+
 # Pre-processing
 
 ## Select tile IDs to process
@@ -94,7 +101,15 @@ shapepipe_run -c $SP_CONFIG/config_tile_Uz.ini
 shapepipe_run -c $SP_CONFIG/config_tile_Fe.ini
 
 ## Retrieve single exposures
-shapepipe_run -c $SP_CONFIG/config_tile_Gie.ini
+if [ "$retrieve" == "vos" ]; then
+
+  shapepipe_run -c $SP_CONFIG/config_tile_Gie.ini
+
+elif [ "$retrieve" == "symlink" ]; then
+
+  shapepipe_run -c $SP_CONFIG/config_tile_Gie_symlink.ini
+
+fi
 
 # Processing of single exposures
 
