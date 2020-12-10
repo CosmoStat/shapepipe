@@ -52,6 +52,7 @@ def params_default():
 
     p_def = cfis.param(
         indir = 'output/run_sp_Git_*', 
+        last_Git = False,
     )
 
     return p_def
@@ -85,6 +86,8 @@ def parse_options(p_def):
          help='output dir for original file names; no output if not given')
     parser.add_option('-s', '--sp_format', dest='sp_format', action='store_true',
          help='output number in ShapePipe format (000-000)')
+    parser.add_option('-l', '--last_Git', dest='last_Git', action='store_true',
+        help='use only last run of \'get_images_runner\'')
 
     # Monitoring
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
@@ -216,17 +219,15 @@ def main(argv=None):
             raise IOError('Output path \'{}\' not a valid directory'
                         ''.format(d))
 
-    last_Git = False
-
     if param.verbose:
-        if last_Git:
+        if param.last_Git:
             print('Converting PS image names in last Git run dir')
         else:
             print('Converting PS image names in all Git run dirs')
 
     for dir_Git in dirs_Git:
 
-        if last_Git:
+        if param.last_Git:
             # Only process last Git run
             if dir_Git != dirs_Git[-1]:
                 continue

@@ -288,6 +288,7 @@ def get_images_runner(input_file_list, run_dirs, file_number_string,
             n_expected = 1
     else:
         check_existing_dir = None
+        n_expected = None
 
     inst = GetImages(copy, options, image_number_list, input_numbering,
                      input_file_pattern, input_file_ext, w_log,
