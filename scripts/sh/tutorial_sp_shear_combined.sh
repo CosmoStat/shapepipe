@@ -1,3 +1,4 @@
+
 export SP_RUN=`pwd`
 export SP_BASE=$HOME/astro/repositories/github/shapepipe
 export SP_CONFIG=$SP_BASE/example/tutorial
