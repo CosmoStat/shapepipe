@@ -20,7 +20,7 @@ import mccd
 def mccd_fit_runner(input_file_list, run_dirs, file_number_string,
                     config, w_log):
     # Recover the MCCD config file and its params
-    config_file_path = config.get('MCCD', 'CONFIG_PATH')
+    config_file_path = config.getexpanded('MCCD', 'CONFIG_PATH')
     mccd_mode = config.get('MCCD', 'MODE')
     verbose = config.getboolean('MCCD', 'VERBOSE')
 

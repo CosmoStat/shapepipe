@@ -81,16 +81,8 @@ else
 fi
 
 # VCP options
-# VCP without "vflag" to avoid output to stderr
-export VCP_QUICK=0
-
-if [ $VCP_QUICK == 1 ]; then
-   qflag="--quick"
-else
-   qflag=""
-fi
 export CERTFILE=$VM_HOME/.ssl/cadcproxy.pem
-export VCP="vcp $qflag --certfile=$CERTFILE"
+export VCP="vcp --certfile=$CERTFILE"
 
 
 ## Functions
@@ -202,10 +194,8 @@ function print_env() {
    echo "Other variables:"
    echo " VCP=$VCP"
    echo " CERTFILE=$CERTFILE"
-   echo " qflag=$qflag"
    echo " STOP=$STOP"
    echo " verbose=$VERBOSE"
-   echo " LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
    echo "***"
 }
 
@@ -217,9 +207,6 @@ echo "Activate conda 'shapepipe' environment"
 source $VM_HOME/miniconda3/bin/activate shapepipe
 
 print_env
-
-# Extra stuff for canfar
-export LD_LIBRARY_PATH=$VM_HOME/miniconda3/envs/shapepipe/lib
 
 if [ "$1" == "-e" ]; then
    echo "Exiting"
