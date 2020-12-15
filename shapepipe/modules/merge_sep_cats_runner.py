@@ -29,8 +29,8 @@ def merge_sep_cats_runner(input_file_list, run_dirs, file_number_string,
 
     n_split_max = config.getint('MERGE_SEP_CATS_RUNNER', 'N_SPLIT_MAX')
 
-    file_pattern = config.getlist('FILE', 'FILE_PATTERN')
-    file_ext = config.getlist('FILE', 'FILE_EXT')
+    file_pattern = config.getlist('MERGE_SEP_CATS_RUNNER', 'FILE_PATTERN')
+    file_ext = config.getlist('MERGE_SEP_CATS_RUNNER', 'FILE_EXT')
 
     # Loop over input files = outputs from different modules
     for idx in range(len(input_file_list)):
