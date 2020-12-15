@@ -37,9 +37,9 @@
 ## Quick start
 
 Run the pipeline on a single example CFIS image:
-1. [Download](#https://drive.google.com/file/d/1u1ZxjRWOq3mTPRLpuh9cZLAT9bo3mG3Z/view?usp=sharing) and un-tar the example data.
+1. [Download](https://drive.google.com/file/d/1u1ZxjRWOq3mTPRLpuh9cZLAT9bo3mG3Z/view?usp=sharing) and un-tar the example data.
    (The file size is 4.1 Gb, this might take a while.)
-2. [Install](#https://github.com/cosmostat/shapepipe#installing-shapepipe) `ShapePipe` under the `photoz` branch, and activate the `shapepipe` conda environment.
+2. [Install](https://github.com/cosmostat/shapepipe#installing-shapepipe) `ShapePipe` under the `photoz` branch, and activate the `shapepipe` conda environment.
 3. Run the tutorial
 ```bash
 /path/to/shapepipe/scripts/sh/tutorial_sp_shear_individual.sh -r symlink 246.290
