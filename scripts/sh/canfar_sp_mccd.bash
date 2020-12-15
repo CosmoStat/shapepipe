@@ -256,8 +256,8 @@ command_sp "shapepipe_run -c $SP_CONFIG/config_exp_mccd.ini" "Run shapepipe (exp
 
 
 # The following are very a bad hacks to get additional input files
-input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
-command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output" "$VERBOSE" "$ID"
+#input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
+#command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output" "$VERBOSE" "$ID"
 
 input_split_exp=`find output -name flag-*.fits | head -n 1`
 command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output" "$VERBOSE" "$ID"
@@ -296,8 +296,6 @@ upload_logs "$ID" "$VERBOSE"
 # Final shape catalog
 
 NAMES=(
-        "psfex"
-        "psfexinterp_exp"
         "setools_mask"
         "setools_stat"
         "setools_plot"
@@ -305,8 +303,6 @@ NAMES=(
         "final_cat"
      )
 DIRS=(
-        "*/psfex_runner/output"
-        "*/psfexinterp_runner/output"
         "*/setools_runner/output/mask"
         "*/setools_runner/output/stat"
         "*/setools_runner/output/plot"
@@ -314,8 +310,6 @@ DIRS=(
         "*/make_catalog_runner/output"
      )
 PATTERNS=(
-        "star_split_ratio_80-*"
-        "validation_psf*"
         "*"
         "*"
         "*"
