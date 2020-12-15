@@ -46,6 +46,9 @@ if [ ! -d "$VM_HOME" ]; then
     export VM_HOME=$HOME
 fi
 
+# SExtractor library bug work-around
+export PATH="$PATH:$VM_HOME/bin"
+
 # Results upload subdirectory on vos
 RESULTS=results_mccd
 
