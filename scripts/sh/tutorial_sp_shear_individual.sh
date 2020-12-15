@@ -60,6 +60,9 @@ echo "Processing $n_ID tile(s)"
 export SP_RUN=`pwd`
 export SP_CONFIG=$SP_BASE/example/tutorial
 
+# Work-around of SExtractor&psfex lib bug
+export LD_LIBRARY_PATH=$CONDA_PREFIX/lib
+
 # Create output path
 mkdir -p output
 
