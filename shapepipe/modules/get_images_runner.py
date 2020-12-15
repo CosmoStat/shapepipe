@@ -124,7 +124,7 @@ class GetImages(object):
                 if output_file_pattern and output_file_pattern[i] == '*':
                     # copy all input files to output dir, do not append
                     # extension
-                    #fpath = '{}/.'.format(in_path)
+                    # fpath = '{}/.'.format(in_path)
                     fpath = in_path
                 else:
                     fpath = '{}/{}{}'.format(in_path, fbase, ext_final)

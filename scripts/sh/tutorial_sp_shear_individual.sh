@@ -60,6 +60,9 @@ echo "Processing $n_ID tile(s)"
 export SP_RUN=`pwd`
 export SP_CONFIG=$SP_BASE/example/tutorial
 
+# Work-around of SExtractor&psfex lib bug
+export LD_LIBRARY_PATH=$CONDA_PREFIX/lib
+
 # Create output path
 mkdir -p output
 
@@ -128,7 +131,7 @@ shapepipe_run -c $SP_CONFIG/config_exp_Sx.ini
 ## Select star candidates
 shapepipe_run -c $SP_CONFIG/config_exp_Se.ini
 
-## Validation: Create stats plots
+## Validation: Create histogram text files and plots
 stats_global -o stats -v -c $SP_CONFIG/config_stats.ini
 
 ## Create PSF model
@@ -138,7 +141,13 @@ shapepipe_run -c $SP_CONFIG/config_exp_Psm.ini
 shapepipe_run -c $SP_CONFIG/config_exp_Psi.ini
 
 ## Validation: PSF residuals
+
+### Combine PSF runs
 shapepipe_run -c $SP_CONFIG/config_exp_Cp.ini
 
+### Merge PSF files
 mkdir psf_validation
 shapepipe_run -c $SP_CONFIG/config_exp_Mst.ini
+
+### Create plots
+MeanShapes.py -o psf_validation -i psf_validation/full_starcat.fits -v -x 20
