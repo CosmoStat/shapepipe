@@ -37,7 +37,8 @@
 ## Quick start
 
 Run the pipeline on a single example CFIS image:
-1. Download and un-tar the [example data](https://drive.google.com/file/d/1u1ZxjRWOq3mTPRLpuh9cZLAT9bo3mG3Z/view?usp=sharing).
+1. Download and un-tar the
+   [example data](https://drive.google.com/file/d/1AowB2_XJtoOI8eB21cKeQhhh3_8mDEHw/view?usp=sharing).
    The file size is 4.1 Gb, this might take a while. This data consists of a single CFIS tile image and weight, and all contributing exposure
    images, weights, and flag FITS files.
    Note that these files represent unpublished, sensitive pixel data, which according to [CFIS rules](https://www.cfht.hawaii.edu/Science/CFIS/cfisaccess.html) should not be downloaded outside of France or Canada, and not be shared with non-CFIS members.
