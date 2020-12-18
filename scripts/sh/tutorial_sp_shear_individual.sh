@@ -125,10 +125,10 @@ shapepipe_run -c $SP_CONFIG/config_exp_Mh.ini
 ## Mask images
 shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini
 
-## Detect objects
+## Detect objects (star candidates)
 shapepipe_run -c $SP_CONFIG/config_exp_Sx.ini
 
-## Select star candidates
+## Select stars
 shapepipe_run -c $SP_CONFIG/config_exp_Se.ini
 
 ## Validation: Create histogram text files and plots
@@ -151,3 +151,16 @@ shapepipe_run -c $SP_CONFIG/config_exp_Mst.ini
 
 ### Create plots
 MeanShapes.py -o psf_validation -i psf_validation/full_starcat.fits -v -x 20
+
+# Some bad hacks to get additional input files...
+input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
+ln -s `dirname $input_psfex` input_psfex
+
+
+# Processing of tiles
+
+## Mask images
+shapepipe_run -c $SP_CONFIG/config_tile_Ma.ini
+
+## Detect objects (galaxy candidates)
+shapepipe_run -c $SP_CONFIG/config_tile_Sx.ini
