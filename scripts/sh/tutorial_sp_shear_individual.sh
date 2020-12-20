@@ -114,9 +114,6 @@ elif [ "$retrieve" == "symlink" ]; then
 
 fi
 
-echo "MKDEBUG exiting"
-exit 0
-
 # Processing of single exposures
 
 ## Split into single-exposure single-HDU files and write FITS headers
