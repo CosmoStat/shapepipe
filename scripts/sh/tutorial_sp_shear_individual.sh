@@ -81,7 +81,7 @@ done
 ## Retrieve tiles
 if [ "$retrieve" == "vos" ]; then
 
-  shapepipe_run -c $SP_CONFIG/config_tile_Git.ini
+  shapepipe_run -c $SP_CONFIG/config_tile_Gi.ini
 
 elif [ "$retrieve" == "symlink" ]; then
 
@@ -89,7 +89,7 @@ elif [ "$retrieve" == "symlink" ]; then
     echo "Input directory 'data' not found"
     exit 2
   fi
-  shapepipe_run -c $SP_CONFIG/config_tile_Git_symlink.ini
+  shapepipe_run -c $SP_CONFIG/config_tile_Gi_symlink.ini
 
 else
 
@@ -106,13 +106,16 @@ shapepipe_run -c $SP_CONFIG/config_tile_Fe.ini
 ## Retrieve single exposures
 if [ "$retrieve" == "vos" ]; then
 
-  shapepipe_run -c $SP_CONFIG/config_tile_Gie.ini
+  shapepipe_run -c $SP_CONFIG/config_exp_Gi.ini
 
 elif [ "$retrieve" == "symlink" ]; then
 
-  shapepipe_run -c $SP_CONFIG/config_tile_Gie_symlink.ini
+  shapepipe_run -c $SP_CONFIG/config_exp_Gi_symlink.ini
 
 fi
+
+echo "MKDEBUG exiting"
+exit 0
 
 # Processing of single exposures
 
