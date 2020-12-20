@@ -150,4 +150,4 @@ mkdir psf_validation
 shapepipe_run -c $SP_CONFIG/config_exp_Mst.ini
 
 ### Create plots
-MeanShapes.py -o psf_validation -i psf_validation/full_starcat.fits -v -x 20
+MeanShapes -o psf_validation -i psf_validation/full_starcat.fits -v -x 20
