@@ -46,11 +46,12 @@ Run the pipeline on a single example CFIS image:
 3. Run the tutorial
 ```bash
 /path/to/shapepipe/scripts/sh/tutorial_sp_shear_individual.sh -r symlink 246.290
-```wi
+```
 
-The tutorial is running with the following set-up:
-- interactive on the [canfar VM](https://github.com/CosmoStat/shapepipe/blob/master/docs/wiki/canfar.md#interactive-mode) (`-r vos`)
-- `PBS` with SMP on [candide](https://github.com/CosmoStat/shapepipe/blob/master/docs/wiki/candide.md#candide-set-up)
+At the moment the tutorial is implemented up to shape measurement.
+The script is running with the following set-up:
+- interactive on the [canfar VM](https://github.com/CosmoStat/shapepipe/blob/master/docs/wiki/canfar.md#interactive-mode) (use ShapePipe path `-b ~/shapepipe`)
+
 
 ## Introduction
 
