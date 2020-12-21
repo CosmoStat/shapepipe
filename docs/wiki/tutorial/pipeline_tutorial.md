@@ -4,6 +4,7 @@
 
 ## Index
 
+1. [Quick start](#quick-start)
 1. [Introduction](#introduction)
     1. [File types and names](#file-types-and-names)
     1. [CFIS processing](#cfis-processing)
@@ -32,6 +33,20 @@
     1. [Create single-exposure postage stamps](#create-single-exposure-postage-stamps)
     1. [Multi-epoch shape measurement with ngmix](#multi-epoch-shape-measurement-with-ngmix)
     1. [Create final catalog](#create-final-catalog)
+
+## Quick start
+
+Run the pipeline on a single example CFIS image:
+1. Download and un-tar the
+   [example data](https://drive.google.com/file/d/1AowB2_XJtoOI8eB21cKeQhhh3_8mDEHw/view?usp=sharing).
+   The file size is 4.1 Gb, this might take a while. This data consists of a single CFIS tile image and weight, and all contributing exposure
+   images, weights, and flag FITS files.
+   Note that these files represent unpublished, sensitive pixel data, which according to [CFIS rules](https://www.cfht.hawaii.edu/Science/CFIS/cfisaccess.html) should not be downloaded outside of France or Canada, and not be shared with non-CFIS members.
+2. [Install](https://github.com/cosmostat/shapepipe#installing-shapepipe) `ShapePipe` under the `photoz` branch, and activate the `shapepipe` conda environment.
+3. Run the tutorial
+```bash
+/path/to/shapepipe/scripts/sh/tutorial_sp_shear_individual.sh -r symlink 246.290
+```
 
 ## Introduction
 

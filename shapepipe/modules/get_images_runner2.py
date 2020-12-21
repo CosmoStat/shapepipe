@@ -156,15 +156,8 @@ class GetImages(object):
             sys.argv.append(in_path)
             sys.argv.append(out_path)
 
-            try:
-                from vos.commands.vcp import vcp
-            except:
-                raise ImportError('vos modules not found, re-install ShapePipe with \'install_pipeline --vos\'')
-
-            try:
-                vcp()
-            except:
-                raise ValueError('Error in \'vcp\' command: \'{}\''.format(' '.join(sys.argv)))
+            vcp = vosHandler('vcp')
+            vcp()
 
         elif self._retrieve == 'symlink':
             src = in_path

@@ -14,7 +14,8 @@ __all__ = ['module_decorator',
            'PSFExInterpolation_package',
            'SETools_package'
            ]
-__module_list__ = ['execute_example',
+__module_list__ = ['combine_runner',
+                   'execute_example',
                    'erase_output_runner',
                    'find_exposures_runner',
                    'galsim_shapes_runner',
