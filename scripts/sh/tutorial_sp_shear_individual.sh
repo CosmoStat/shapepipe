@@ -153,40 +153,54 @@ fi
 
 # Processing of single exposures
 
+## Until star selection
 command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Sp.ini" "Exp: split into single-HDU files"
-
 command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Mh.ini" "Exp: merge headersss"
-
 command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini" "Exp: mask"
-
 command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Sx.ini" "Exp: detect star candidates"
-
 command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Se.ini" "Exp: select stars"
 
+## Create global histogram plots and ascii files
 stats_global -o stats -v -c $SP_CONFIG/config_stats.ini
 
+## PSF
 command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Psm.ini" "Exp: Create PSF model"
 
+## PSF validation: residuals
 command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Psi.ini" "Exp: Interpolate PSF to star positions"
-
-## Validation: PSF residuals
-
 command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Cp.ini" "Exp: Combing PSF runs"
-
-### Merge PSF files
 mkdir psf_validation
 command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Mst.ini" "Exp: Merge PSF files"
 
 ### Create plots
-MeanShapes -o psf_validation -i psf_validation/full_starcat.fits -v -x 20
+MeanShapes -o psf_validation -i psf_validation/full_starcat.fits -v -x 20 --hdu 1
+
 
 # Some bad hacks to get additional input files...
+
 input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
 ln -s `dirname $input_psfex` input_psfex
+input_split_exp=`find output -name flag-*.fits | head -n 1`
+ln -s `dirname $input_split_exp` input_split_exp
+input_sextractor=`find . -name sexcat_sexcat-*.fits | head -n 1`
+ln -s `dirname $input_sextractor` input_sextractor
 
 
 # Processing of tiles
 
+## Until vignets
 command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Ma.ini" "Tile: mask"
-
 command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Sx.ini" "Tile: Detect galaxy candidates"
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Psi.ini" "Tile: Interpolate PSF to object positions"
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Viw.ini" "Tile: weight vignets"
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Sm.ini" "Tile: spread model"
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Vix.ini" "Tile: exposure vignets"
+
+# Shapes, run 8 parallel processes
+for k in $(seq 1 8); do
+    command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Sh${k}.ini" "Tile: shapes ($k/8)" &
+done
+wait
+
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Msc.ini" "Tile: merge separate cats"
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Fc.ini" "Tile: create final cat"
