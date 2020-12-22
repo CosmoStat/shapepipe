@@ -48,6 +48,11 @@ Run the pipeline on a single example CFIS image:
 /path/to/shapepipe/scripts/sh/tutorial_sp_shear_individual.sh -r symlink 246.290
 ```
 
+At the moment the tutorial is implemented up to shape measurement.
+The script is running with the following set-up:
+- interactive on the [canfar VM](https://github.com/CosmoStat/shapepipe/blob/master/docs/wiki/canfar.md#interactive-mode) (use ShapePipe path `-b ~/shapepipe`)
+
+
 ## Introduction
 
 The `ShapePipe` pipeline processes single-exposure images and stacked images. Input images have to be calibrated beforehand for astrometry and photometry. This tutorial of an entire `ShapePipe` run covers specifically images from CFIS, the Canada-France Imaging Survey. CFIS stacks are so-called tiles, which are the co-adds of on average three exposures in the r-band.
