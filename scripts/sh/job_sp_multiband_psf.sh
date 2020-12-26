@@ -110,12 +110,16 @@ fi
 (( do_job= $job & 4 ))
 if [[ $do_job != 0 ]]; then
 
+  # Note: Before activating shapepipe, the following modules need to be loaded:
+  #  intelpython/3
+  #  openmpi/4.0.5
+
   ### Create flags for CFIS r-band images: add star, halo, and Messier
   ### object masks.
-  shapepipe_run -c $SP_CONFIG/config_tile_mask_r.ini
+  $CONDA_PREFIX/bin/mpiexec -np 4 shapepipe_run -c $SP_CONFIG/config_tile_mask_r.ini
 
   ### Mask r-band exposures
-  shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini
+  $CONDA_PREFIX/bin/mpiexec -np 4 shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini
 
 fi
 
@@ -132,12 +136,35 @@ if [[ $do_job != 0 ]]; then
   ### Create  PSF model
   shapepipe_run -c $SP_CONFIG/config_exp_Psm.ini
 
+fi
+
+# Testing, to be merged with 8 (?)
+(( do_job= $job & 16 ))
+if [[ $do_job != 0 ]]; then
+
   ### Detect objects on r-band images, measure properties
   ### on u-, r-, i-, z-band images
-  shapepipe_run -c $SP_CONFIG/config_tile_detect_r.ini
+  shapepipe_run -c $SP_CONFIG/config_tile_detect_r_me.ini
   shapepipe_run -c $SP_CONFIG/config_tile_detect_u.ini
   shapepipe_run -c $SP_CONFIG/config_tile_detect_i.ini
   shapepipe_run -c $SP_CONFIG/config_tile_detect_z.ini
+
+  ### Vignets for weights
+  shapepipe_run -c $SP_CONFIG/config_tile_Viw.ini
+
+  # Bad hack to get PSF input dir
+  input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
+  ln -sf `dirname $input_psfex` input_psfex
+  input_split_exp=`find output -name flag-*.fits | head -n 1`
+  ln -sf `dirname $input_split_exp` input_split_exp
+  input_sextractor=`find . -name sexcat_sexcat-*.fits | head -n 1`
+  ln -sf `dirname $input_sextractor` input_sextractor
+
+  ### Interpolate exposure PSFs to tile objects
+  shapepipe_run -c $SP_CONFIG/config_tile_Psi.ini 
+
+  ### Vignets for exposures
+  shapepipe_run -c $SP_CONFIG/config_tile_Vix.ini
 
   # Merge catalogs
   ##shapepipe_run -c $SP_CONFIG/config_tile_paste_cat.ini
