@@ -365,7 +365,7 @@ activate_shapepipe() {
   if [ "$?" -eq 0 ]
   then
     echo -ne "Activating Conda environment ${CYAN}$CONDA_PREFIX${NC}\n"
-    export LD_LIBRARY_PATH=$CONDA_PREFIX/lib
+    export LD_RUN_PATH=$CONDA_PREFIX/lib
   else
     echo -ne "${RED}ERROR: Could not activate ShapePipe environment.${NC}\n"
     exit 1
