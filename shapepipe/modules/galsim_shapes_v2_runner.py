@@ -233,7 +233,7 @@ def stack_psfs(tile_loc_wcs, psfs, psfs_sigma, weights, loc_wcs, headers):
     ----------
     tile_loc_wcs : astropy.wcs.WCS
         Local WCS from the tile.
-    psfs : numpy.ndarray
+    psfs : list of numpy.ndarray
         Array containing the PSF for all epochs of one object.
     psfs_sigma : list
         List of the sigma PSFs.
@@ -255,9 +255,12 @@ def stack_psfs(tile_loc_wcs, psfs, psfs_sigma, weights, loc_wcs, headers):
 
     psf_list_stack = []
 
+    print('MKDEBUG stack')
+
     for psf, wcs in zip(psfs, loc_wcs):
         res = reproject.reproject_interp((psf, wcs), tile_loc_wcs, shape_out=psfs[0].shape)
         new_psf = res[0]
+        print('MKDEBUG ', new_psf)
         new_psf[np.isnan(new_psf)] = 0
         psf_list_stack.append(new_psf)
 
@@ -307,7 +310,7 @@ def check_galsim_shapes(galsim_shape, obj_id, w_log):
                 g2 = galsim_shape.corrected_e2
                 gal_err = 2
     else:
-        w_log.info('Object : {}    Error : {}'.format(obj_id, galsim_shape.error_message))
+        w_log.info('Object: {}, {}'.format(obj_id, galsim_shape.error_message))
         g1 = -10.
         g2 = -10.
         gal_err = 1
@@ -379,7 +382,8 @@ def make_metacal(gal_vign, psf_vign, weight_vign, tile_jacob, option_dict):
     return obs_out
 
 
-def do_galsim_shapes(gal, gal_weight, gal_sig, psfs, tile_loc_wcs, tile_jacob, loc_wcs, psfs_sigma, weights, flags, headers, pixel_scale, tile_gain, do_metacal):
+def do_galsim_shapes(gal, gal_weight, gal_sig, psfs, tile_loc_wcs, tile_jacob, loc_wcs, psfs_sigma,
+                     weights, flags, headers, pixel_scale, tile_gain, do_metacal):
     """ Do ngmix metacal
 
     Do the metacalibration on a multi-epoch object and return the join shape
@@ -417,6 +421,8 @@ def do_galsim_shapes(gal, gal_weight, gal_sig, psfs, tile_loc_wcs, tile_jacob, l
                               psfs, psfs_sigma,
                               weights,
                               loc_wcs, headers)
+    import sys
+    sys.exit(0)
     if psf == 'Error':
         return 'Error'
     g_psf = galsim.Image(psf, scale=pixel_scale)
@@ -469,17 +475,20 @@ def do_galsim_shapes(gal, gal_weight, gal_sig, psfs, tile_loc_wcs, tile_jacob, l
         res_gal['original_psf'].moments_amp_err = get_flux_err(res_gal[key], gal_weight, tile_gain)
     else:
         g_gal = galsim.Image(gal, scale=pixel_scale)
+
         res_gal['classic'] = galsim.hsm.EstimateShear(g_gal,
                                                       g_psf,
                                                       sky_var=sky_var,
                                                       weight=g_weight,
                                                       badpix=g_flag,
                                                       strict=False)
+        print('MKDEBUG, ', res_gal['classic'].error_message)
+        res_gal['classic'].moments_amp_err = get_flux_err(res_gal['classic'], gal_weight, tile_gain)
 
     return res_gal
 
 
-def compile_results(results, ZP, do_metacal, w_log):
+def compile_results(results, ZP, do_metacal, w_log, pixel_scale, do_morphology=False):
     """ Compile results
 
     Prepare the results of ngmix before saving.
@@ -488,6 +497,16 @@ def compile_results(results, ZP, do_metacal, w_log):
     ----------
     results : dict
         Dictionary containing the results of ngmix metacal.
+    ZP : float
+        magnitude zero-point
+    do_metacal : bool
+        performs metacalibration if True
+    w_log :
+        log file
+    pixel_scale : float
+        pixel size in arcsec
+    do_morphology : bool, optional, default=False
+        measure morphology parameters if True
 
     Returns
     -------
@@ -506,7 +525,10 @@ def compile_results(results, ZP, do_metacal, w_log):
                 'gal_mag', 'gal_mag_err',
                 'psf_g1', 'psf_g2', 'psf_sigma', 'psf_vignet', 'gal_vignet']
 
-    if do_metacal:
+    if do_morphology:
+        cat_keys.append('gal_sb')
+
+    if do_metacal == True:
         types = ['noshear', '1p', '1m', '2p', '2m']
         types += ['original_psf']
     else:
@@ -523,6 +545,10 @@ def compile_results(results, ZP, do_metacal, w_log):
 
             mag = -2.5 * np.log10(results[i][key].moments_amp) + ZP
             mag_err = np.abs(-2.5 * results[i][key].moments_amp_err / (results[i][key].moments_amp * np.log(10)))
+
+            if do_morphology == True:
+                gal_sb = mag + 5 * np.log10(results[i][key].moments_sigma * pixel_scale)
+                output_dict[key]['gal_sb'].append(gal_sb)
 
             output_dict[key]['gal_g1'].append(shapes_check[0])
             output_dict[key]['gal_g2'].append(shapes_check[1])
@@ -566,7 +592,7 @@ def save_results(output_dict, output_name):
 
 def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
             psf_vignet_path, weight_vignet_path, flag_vignet_path,
-            f_wcs_path, do_metacal, w_log, id_obj_min=-1, id_obj_max=-1):
+            f_wcs_path, do_metacal, do_morphology, w_log, pixel_scale, id_obj_min=-1, id_obj_max=-1):
     """ Process
 
     Process function.
@@ -587,8 +613,14 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
         Path to the flag vignets catalog.
     f_wcs_path : str
         Path to the log file containing the WCS for each CCDs.
+    do_metacal : bool
+        performs metacalibration if True
+    do_morphology : bool
+        measure morphology parameters if True
     w_log: log file object
         log file
+    pixel_scale : float
+        pixel size in arcsec
     id_obj_min: int, optional, default=-1
         minimum object ID to be processed if > 0
     id_obj_max: int, optional, default=-1
@@ -636,7 +668,7 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
         count = count + 1
 
         res = {}
-        w_log.info('{}'.format(i_tile))
+        #w_log.info('{}'.format(i_tile))
         psf_vign = []
         sigma_psf = []
         weight_vign = []
@@ -694,15 +726,15 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
                                    weight_vign,
                                    flag_vign,
                                    headers,
-                                   0.187,
+                                   pixel_scale,
                                    tile_gain,
                                    do_metacal)
         except Exception as ee:
-            w_log.info('Galsim fail on object {}\nMessage : {}'.format(id_tmp, ee))
+            w_log.info('Galsim failed for object {}. Error message: {}'.format(id_tmp, ee))
             continue
 
         if res == 'Error':
-            w_log.info('Something went wrong with the psf on object id : {}.'.format(id_tmp))
+            w_log.info('Something went wrong with the psf for object {}.'.format(id_tmp))
             continue
 
         res['obj_id'] = id_tmp
@@ -739,11 +771,25 @@ def galsim_shapes_v2_runner(input_file_list, run_dirs, file_number_string,
     id_obj_min = config.getint('GALSIM_SHAPES_V2_RUNNER', 'ID_OBJ_MIN')
     id_obj_max = config.getint('GALSIM_SHAPES_V2_RUNNER', 'ID_OBJ_MAX')
 
-    do_metacal = True
+    # Metacalibration. Default = True
+    if config.has_option('GALSIM_SHAPES_V2_RUNNER', 'DO_METACAL'):
+        do_metacal = config.getboolean('GALSIM_SHAPES_V2_RUNNER', 'DO_METACAL')
+    else:
+        do_metacal = True
+    w_log.info('Do metacalibration = {}'.format(do_metacal))
 
-    metacal_res = process(*input_file_list, f_wcs_path, do_metacal, w_log,
-                          id_obj_min=id_obj_min, id_obj_max=id_obj_max)
-    res_dict = compile_results(metacal_res, ZP, do_metacal, w_log)
+    # Morphology. Default = False
+    if config.has_option('GALSIM_SHAPES_V2_RUNNER', 'DO_MORPHOLOGY'):
+        do_morphology = config.getboolean('GALSIM_SHAPES_V2_RUNNER', 'DO_MORPHOLOGY')
+    else:
+        do_morphology = False
+    w_log.info('Do morphology = {}'.format(do_morphology))
+
+    pixel_scale = 0.187  # arcsec
+
+    metacal_res = process(*input_file_list, f_wcs_path, do_metacal, do_morphology,
+                          w_log, pixel_scale, id_obj_min=id_obj_min, id_obj_max=id_obj_max)
+    res_dict = compile_results(metacal_res, ZP, do_metacal, w_log, pixel_scale, do_morphology=do_morphology)
     save_results(res_dict, output_name)
 
     return None, None

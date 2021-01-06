@@ -136,12 +136,6 @@ if [[ $do_job != 0 ]]; then
   ### Create  PSF model
   shapepipe_run -c $SP_CONFIG/config_exp_Psm.ini
 
-fi
-
-# Testing, to be merged with 8 (?)
-(( do_job= $job & 16 ))
-if [[ $do_job != 0 ]]; then
-
   ### Detect objects on r-band images, measure properties
   ### on u-, r-, i-, z-band images
   shapepipe_run -c $SP_CONFIG/config_tile_detect_r_me.ini
@@ -152,7 +146,7 @@ if [[ $do_job != 0 ]]; then
   ### Vignets for weights
   shapepipe_run -c $SP_CONFIG/config_tile_Viw.ini
 
-  # Bad hack to get PSF input dir
+  ### Bad hack to get PSF input dir
   input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
   ln -sf `dirname $input_psfex` input_psfex
   input_split_exp=`find output -name flag-*.fits | head -n 1`
@@ -166,7 +160,21 @@ if [[ $do_job != 0 ]]; then
   ### Vignets for exposures
   shapepipe_run -c $SP_CONFIG/config_tile_Vix.ini
 
-  # Merge catalogs
-  ##shapepipe_run -c $SP_CONFIG/config_tile_paste_cat.ini
+fi
+
+(( do_job= $job & 16 ))
+if [[ $do_job != 0 ]]; then
+
+  ### Shapes and morphology
+  shapepipe_run -c $SP_CONFIG/config_tile_Sh.ini
 
 fi
+
+(( do_job= $job & 32 ))
+if [[ $do_job != 0 ]]; then
+
+  # Merge catalogs
+  shapepipe_run -c $SP_CONFIG/config_tile_paste_cat_morph.ini
+
+fi
+
