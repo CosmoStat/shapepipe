@@ -282,18 +282,9 @@ package_report() {
   exit_code
 }
 
-# Function to report troubleshooting options
-troubleshoot() {
-  echo 'If you encounter errors loading shared libraries try the following:'
-  echo ''
-  echo -ne "    ${CYAN}export LD_LIBRARY_PATH=\$CONDA_PREFIX/lib${NC}"
-  echo ''
-}
-
 # Function to end the script
 finish() {
   echo $line
-  troubleshoot
   echo ''
   echo $line
   echo 'Installation Complete!'
