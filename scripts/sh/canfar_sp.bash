@@ -9,7 +9,7 @@
 #              machine.
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 # Date: 03/2020
-# Package: shapepipe
+# Package: ShapePipe
 
 
 ### Set-up ###

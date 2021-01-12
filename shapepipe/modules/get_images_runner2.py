@@ -163,6 +163,10 @@ class GetImages(object):
             src = in_path
             dst = out_path
             os.symlink(src, dst)
+            if not os.path.exist(src):
+                w_log.info('Warning: Source of symlink \'{}\' '
+                           'does not exist'
+                           ''.format(src))
 
 
 def read_image_numbers(path):

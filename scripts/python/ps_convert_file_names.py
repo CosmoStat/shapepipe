@@ -198,7 +198,6 @@ def main(argv=None):
 
 
     # Parameters
-    #dirs_Git = glob.glob('output/run_sp_Git_*')
     dirs_Git = glob.glob(param.indir)
     pattern = 'CFIS.V0.skycell.'
     ext = 'fits'
@@ -264,6 +263,10 @@ def main(argv=None):
 
             # Get image type
             mm = re.match('.*\.(.*)\.fits', input_name)
+            if not mm[1] in pattern_map:
+                print('Pattern \'{}\' in file name \'{}\' not matched, continuing...'
+                      ''.format(mm[1], input_name))
+                continue
             output_type = pattern_map[mm[1]]
 
             # Assemble output file name
