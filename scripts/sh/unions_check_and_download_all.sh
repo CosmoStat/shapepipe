@@ -58,3 +58,21 @@ remote="$remote_base/panstarrs/DR2/skycell.???"
 pattern=("CFIS.V0.skycell.???.???.stk.*.unconv.fits" "CFIS.V0.skycell.???.???.stk.*.unconv.wt.fits" "CFIS.V0.skycell.???.???.stk.*.unconv.mask.fits")
 #pattern=("CFIS.V0.skycell.005.253.stk.*.unconv.fits" "CFIS.V0.skycell.005.253.stk.*.unconv.wt.fits" "CFIS.V0.skycell.005.253.stk.*.unconv.mask.fits")
 numbers $remote $dir $pattern
+
+basedir="pitcairn"
+dir="${basedir}_DR2"
+remote="$remote_base/$basedir"
+pattern=("2??????p.fits.fz")
+numbers $remote $dir $pattern
+
+basedir="weights"
+dir="${basedir}_DR2"
+remote="$remote_base/$basedir"
+pattern=("2??????p.weight.fits.fz")
+numbers $remote $dir $pattern
+
+basedir="flags"
+dir="${basedir}_DR2"
+remote="$remote_base/$basedir"
+pattern=("2??????p.flag.fits.fz")
+numbers $remote $dir $pattern
