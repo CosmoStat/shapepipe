@@ -15,10 +15,11 @@ from shapepipe.modules.PSFExInterpolation_package import interpolation_script
 @module_runner(input_module=['psfex_runner', 'setools_runner'], version='1.0',
                file_pattern=['star_selection', 'galaxy_selection'],
                file_ext=['.psf', '.fits'],
-               depends=['numpy', 'astropy', 'galsim', 'sqlitedict'])
+depends=['numpy', 'astropy', 'galsim', 'sqlitedict'])
 def psfexinterp_runner(input_file_list, run_dirs, file_number_string,
                        config, w_log):
 
+    print('MKDEBUG PSFI ME 0')
     mode = config.get('PSFEXINTERP_RUNNER', 'MODE')
 
     pos_params = config.getlist('PSFEXINTERP_RUNNER', 'POSITION_PARAMS')
@@ -46,6 +47,7 @@ def psfexinterp_runner(input_file_list, run_dirs, file_number_string,
 
         galcat_path = input_file_list[0]
 
+        print('MKDEBUG PSFI ME 1')
         inst = interpolation_script.PSFExInterpolator(None, galcat_path,
                                                       run_dirs['output'],
                                                       file_number_string,
@@ -53,7 +55,9 @@ def psfexinterp_runner(input_file_list, run_dirs, file_number_string,
                                                       get_shapes, star_thresh,
                                                       chi2_thresh)
 
+        print('MKDEBUG PSFI ME 2')
         inst.process_me(dot_psf_dir, dot_psf_pattern, f_wcs_path)
+        print('MKDEBUG PSFI ME 3')
 
     elif mode == 'VALIDATION':
         psfcat_path, galcat_path, psfex_cat_path = input_file_list
@@ -70,4 +74,5 @@ def psfexinterp_runner(input_file_list, run_dirs, file_number_string,
     else:
         ValueError('MODE has to be in : [C, ME]')
 
+    print('MKDEBUG PSFI ME 4')
     return None, None

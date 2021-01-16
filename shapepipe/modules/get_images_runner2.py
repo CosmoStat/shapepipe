@@ -163,7 +163,7 @@ class GetImages(object):
             src = in_path
             dst = out_path
             os.symlink(src, dst)
-            if not os.path.exist(src):
+            if not os.path.exists(src):
                 w_log.info('Warning: Source of symlink \'{}\' '
                            'does not exist'
                            ''.format(src))

@@ -147,7 +147,7 @@ if [[ $do_job != 0 ]]; then
   shapepipe_run -c $SP_CONFIG/config_tile_Viw.ini
 
   ### Bad hack to get PSF input dir
-  input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
+  input_psfex=`find . -name star_selection-*.psf | head -n 1`
   ln -sf `dirname $input_psfex` input_psfex
   input_split_exp=`find output -name flag-*.fits | head -n 1`
   ln -sf `dirname $input_split_exp` input_split_exp
