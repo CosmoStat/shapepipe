@@ -156,15 +156,8 @@ class GetImages(object):
             sys.argv.append(in_path)
             sys.argv.append(out_path)
 
-            try:
-                from vos.commands.vcp import vcp
-            except:
-                raise ImportError('vos modules not found, re-install ShapePipe with \'install_pipeline --vos\'')
-
-            try:
-                vcp()
-            except:
-                raise ValueError('Error in \'vcp\' command: \'{}\''.format(' '.join(sys.argv)))
+            vcp = vosHandler('vcp')
+            vcp()
 
         elif self._retrieve == 'symlink':
             src = in_path
@@ -195,7 +188,7 @@ def read_image_numbers(path):
 
 
 @module_runner(version='1.0',
-               depends=['numpy', 'vos'],
+               depends=['numpy'],
                run_method='serial')
 def get_images_runner2(input_file_list, run_dirs, file_number_string,
                        config, w_log):
