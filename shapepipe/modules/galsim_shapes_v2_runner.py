@@ -255,12 +255,9 @@ def stack_psfs(tile_loc_wcs, psfs, psfs_sigma, weights, loc_wcs, headers):
 
     psf_list_stack = []
 
-    print('MKDEBUG stack')
-
     for psf, wcs in zip(psfs, loc_wcs):
         res = reproject.reproject_interp((psf, wcs), tile_loc_wcs, shape_out=psfs[0].shape)
         new_psf = res[0]
-        print('MKDEBUG ', new_psf)
         new_psf[np.isnan(new_psf)] = 0
         psf_list_stack.append(new_psf)
 
@@ -318,34 +315,49 @@ def check_galsim_shapes(galsim_shape, obj_id, w_log):
     return g1, g2, gal_err
 
 
-#####################
-# Metacal functions #
-#####################
+## Morphology functions
 
-def psf_fitter(psf_vign):
-    """Psf fitter
 
-    Function used to create a gaussian fit of the PSF.
+def get_gini(g_gal, g_weight, g_flag):
+    """Get Gini
+    Return gini coefficient of galaxy.
 
     Parameters
     ----------
-    psf_vign : numpy.array
-        Array containg one vignet of psf
+    g_gal : np.ndarray
+        galaxy emission postage stamp
+    g_weight : np.ndarray
+        weight postage stamp
+    g_flag : np.ndarray
+        flag postage stamps, indicating bad pixels
 
+    Returns
+    -------
+    gini_coeff : gini coefficient
+
+    Notes
+    -----
+    Implements eq. (6) of Lotz, Primack & Madau (2004)
     """
 
-    psf_obs = ngmix.Observation(psf_vign)
-    pfitter = ngmix.fitting.LMSimple(psf_obs, 'gauss')
+    w = np.where(g_flag!=1)
+    flux_s = sort(np.flatten(g_gal[w]))
+    flux_s_abs = np.abs(flux_s)
 
-    shape = psf_vign.shape
-    psf_pars = np.array([0., 0., 0., 0., 4., 1.])
-    pfitter.go(psf_pars)
+    n_pix = len(flux_s)
+    i_pix = np.array(range(1, n_pix+1)) 
 
-    psf_gmix_fit = pfitter.get_gmix()
-    psf_obs.set_gmix(psf_gmix_fit)
+    s = sum((2 * i_pix - n_pix - 1) * flux_s_abs)
 
-    return psf_obs
+    gini_coeff = 1 / (flux_s_abs * n_pix * (n_pix - 1)) * s
 
+    print('MKDEBUG gini_coeff = {}'.format(gini_coeff))
+    return gini_coeff
+
+
+#####################
+# Metacal functions #
+#####################
 
 def make_metacal(gal_vign, psf_vign, weight_vign, tile_jacob, option_dict):
     """Make the metacalibration
@@ -367,7 +379,6 @@ def make_metacal(gal_vign, psf_vign, weight_vign, tile_jacob, option_dict):
                            col=(gal_vign.shape[1]-1)/2.,
                            wcs=tile_jacob)
 
-    # psf_obs = psf_fitter(psf_vign)
     psf_obs = ngmix.Observation(psf_vign, jacobian=jacob)
 
     obs = ngmix.Observation(gal_vign, psf=psf_obs, weight=weight_vign, jacobian=jacob)
@@ -383,7 +394,7 @@ def make_metacal(gal_vign, psf_vign, weight_vign, tile_jacob, option_dict):
 
 
 def do_galsim_shapes(gal, gal_weight, gal_sig, psfs, tile_loc_wcs, tile_jacob, loc_wcs, psfs_sigma,
-                     weights, flags, headers, pixel_scale, tile_gain, do_metacal):
+                     weights, flags, headers, pixel_scale, tile_gain, do_metacal, do_morphology):
     """ Do ngmix metacal
 
     Do the metacalibration on a multi-epoch object and return the join shape
@@ -421,8 +432,6 @@ def do_galsim_shapes(gal, gal_weight, gal_sig, psfs, tile_loc_wcs, tile_jacob, l
                               psfs, psfs_sigma,
                               weights,
                               loc_wcs, headers)
-    import sys
-    sys.exit(0)
     if psf == 'Error':
         return 'Error'
     g_psf = galsim.Image(psf, scale=pixel_scale)
@@ -482,8 +491,10 @@ def do_galsim_shapes(gal, gal_weight, gal_sig, psfs, tile_loc_wcs, tile_jacob, l
                                                       weight=g_weight,
                                                       badpix=g_flag,
                                                       strict=False)
-        print('MKDEBUG, ', res_gal['classic'].error_message)
         res_gal['classic'].moments_amp_err = get_flux_err(res_gal['classic'], gal_weight, tile_gain)
+
+        if do_morphology:
+            res_gal['classic'].gini = get_gini(g_gal, g_weight, g_flag)
 
     return res_gal
 
@@ -526,7 +537,7 @@ def compile_results(results, ZP, do_metacal, w_log, pixel_scale, do_morphology=F
                 'psf_g1', 'psf_g2', 'psf_sigma', 'psf_vignet', 'gal_vignet']
 
     if do_morphology:
-        cat_keys.append('gal_sb')
+        cat_keys.extend(('gal_sb', 'gal_gini', 'gal_rho4'))
 
     if do_metacal == True:
         types = ['noshear', '1p', '1m', '2p', '2m']
@@ -549,6 +560,8 @@ def compile_results(results, ZP, do_metacal, w_log, pixel_scale, do_morphology=F
             if do_morphology == True:
                 gal_sb = mag + 5 * np.log10(results[i][key].moments_sigma * pixel_scale)
                 output_dict[key]['gal_sb'].append(gal_sb)
+                output_dict[key]['gal_rho4'].append(results[i][key].moments_rho4)
+                output_dict[key]['gal_gini'].append(results[i][key].gini)
 
             output_dict[key]['gal_g1'].append(shapes_check[0])
             output_dict[key]['gal_g2'].append(shapes_check[1])
@@ -667,8 +680,9 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
 
         count = count + 1
 
+        w_log.info(' Tile, object = {}, {}'.format(i_tile, id_tmp))
+
         res = {}
-        #w_log.info('{}'.format(i_tile))
         psf_vign = []
         sigma_psf = []
         weight_vign = []
@@ -676,6 +690,7 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
         loc_wcs_list = []
         headers = []
         if (psf_vign_cat[str(id_tmp)] == 'empty'):
+            w_log.info('  PSF vignets empty, continuing...')
             continue
 
         skip = False
@@ -686,6 +701,7 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
             flag_vign_tmp[np.where(tile_vign_tmp == -1e30)] = 2**10
             v_flag_tmp = flag_vign_tmp.ravel()
             if len(np.where(v_flag_tmp != 0)[0])/(51*51) > 1/3.:
+                w_log.info('  Flag=0 for > 1/3 postage stamp, skipping exposure...')
                 skip = True
                 continue
 
@@ -707,14 +723,18 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
             headers.append(fits.Header.fromstring(f_wcs_file[exp_name][int(ccd_n)]['header']))
 
         if len(psf_vign) != tile_n_epoch[i_tile]:
+            w_log.info('  Exposure numbers inconsistent: #PSF={}, #tile_epoch={}, continuing...'
+                       ''.format(len(psf_vign), tile_n_epoch[i_tile]))
             continue
         if skip:
+            w_log.info('  All flags=0 for > 1/3 postage stamp, continuing...')
             skip = False
             continue
 
         tile_jacob = get_jacob(tile_loc_wcs, tile_ra[i_tile], tile_dec[i_tile])
 
         try:
+            w_log.info('MKDEBUG do_galsim_shapes')
             res = do_galsim_shapes(tile_vign[i_tile],
                                    tile_weight[i_tile],
                                    tile_fwhm[i_tile]/2.335,
@@ -728,7 +748,8 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
                                    headers,
                                    pixel_scale,
                                    tile_gain,
-                                   do_metacal)
+                                   do_metacal,
+                                   do_morphology)
         except Exception as ee:
             w_log.info('Galsim failed for object {}. Error message: {}'.format(id_tmp, ee))
             continue
@@ -742,9 +763,11 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
         final_res.append(res)
 
     w_log.info('galsim loop over objects finished, processed {} '
-               'objects, id first/last={}/{}'.format(count,
-                                                     id_first,
-                                                     id_last))
+               'objects, {} successfully, id first/last={}/{}'
+               ''.format(count,
+                         len(final_res),
+                         id_first,
+                         id_last))
 
     bkg_vign_cat.close()
     flag_vign_cat.close()
@@ -753,12 +776,13 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
 
     return final_res
 
+#depends=['numpy', 'ngmix', 'galsim', 'astropy'])
 
 @module_runner(input_module=['sextractor_runner', 'psfexinterp_runner', 'vignetmaker_runner'],
                version='0.0.1',
                file_pattern=['tile_sexcat', 'weight', 'image', 'exp_background', 'galaxy_psf', 'weight', 'flag'],
                file_ext=['.fits', '.fits', '.sqlite', '.sqlite', '.sqlite', '.sqlite', '.sqlite'],
-               depends=['numpy', 'ngmix', 'galsim', 'astropy'])
+               depends=['numpy', 'galsim', 'astropy'])
 def galsim_shapes_v2_runner(input_file_list, run_dirs, file_number_string,
                             config, w_log):
 
