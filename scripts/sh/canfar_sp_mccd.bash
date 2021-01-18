@@ -46,6 +46,9 @@ if [ ! -d "$VM_HOME" ]; then
     export VM_HOME=$HOME
 fi
 
+# SExtractor library bug work-around
+export PATH="$PATH:$VM_HOME/bin"
+
 # Results upload subdirectory on vos
 RESULTS=results_mccd
 
@@ -256,8 +259,8 @@ command_sp "shapepipe_run -c $SP_CONFIG/config_exp_mccd.ini" "Run shapepipe (exp
 
 
 # The following are very a bad hacks to get additional input files
-input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
-command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output" "$VERBOSE" "$ID"
+input_psf_mccd=`find . -name "fitted_model*.npy" | head -n 1`
+command_sp "ln -s `dirname $input_psf_mccd` input_psf_mccd" "Link MCCD interpol output" "$VERBOSE" "$ID"
 
 input_split_exp=`find output -name flag-*.fits | head -n 1`
 command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output" "$VERBOSE" "$ID"
@@ -269,7 +272,7 @@ command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor
 ## Tiles
 
 # Everything up to shapes
-command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSxPsViSmVi.ini" "Run shapepipe (tile: up to ngmix)" "$VERBOSE" "$ID"
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSxMiViSmVi.ini" "Run shapepipe (tile: up to ngmix)" "$VERBOSE" "$ID"
 
 # Shapes, run 8 parallel processes
 for k in $(seq 1 8); do
@@ -296,8 +299,6 @@ upload_logs "$ID" "$VERBOSE"
 # Final shape catalog
 
 NAMES=(
-        "psfex"
-        "psfexinterp_exp"
         "setools_mask"
         "setools_stat"
         "setools_plot"
@@ -305,8 +306,6 @@ NAMES=(
         "final_cat"
      )
 DIRS=(
-        "*/psfex_runner/output"
-        "*/psfexinterp_runner/output"
         "*/setools_runner/output/mask"
         "*/setools_runner/output/stat"
         "*/setools_runner/output/plot"
@@ -314,8 +313,6 @@ DIRS=(
         "*/make_catalog_runner/output"
      )
 PATTERNS=(
-        "star_split_ratio_80-*"
-        "validation_psf*"
         "*"
         "*"
         "*"

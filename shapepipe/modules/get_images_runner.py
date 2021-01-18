@@ -45,7 +45,8 @@ class GetImages(object):
 
     def __init__(self, copy, options, image_number_list,
                  input_numbering, input_file_pattern,
-                 input_file_ext, w_log, check_existing_dir=None):
+                 input_file_ext, w_log, check_existing_dir=None,
+                 n_expected=None):
         """GetImages initiatliation.
 
         Parameters
@@ -66,6 +67,8 @@ class GetImages(object):
             log file
         check_existing_dir : string, optional, default=None
             if not None, only retrieve image if not existing at this path (recursively)
+        n_expected : int, optional, default=None
+            number of expected files per tyep and ID to download/check for existance
         """
 
         self._copy = copy
@@ -76,6 +79,7 @@ class GetImages(object):
         self._input_file_ext = input_file_ext
         self._w_log = w_log
         self._check_existing_dir = check_existing_dir
+        self._n_expected = n_expected
 
     def get_file_list(self, dest_dir, output_file_pattern=None):
         """Return lists of file paths to copy.
@@ -149,7 +153,7 @@ class GetImages(object):
                                      ''.format(self._check_existing_dir,
                                                out_base),
                                      recursive=True)
-                    if path:
+                    if path and len(path) == self._n_expected:
                         self._w_log.info('{} found, skipping'
                                          ''.format(path[0]))
                         continue
@@ -210,7 +214,7 @@ def read_image_numbers(path):
 
 
 @module_runner(version='1.0',
-               depends=['numpy', 'vos'],
+               depends=['numpy'],
                run_method='serial',
                numbering_scheme='_0')
 def get_images_runner(input_file_list, run_dirs, file_number_string,
@@ -278,12 +282,17 @@ def get_images_runner(input_file_list, run_dirs, file_number_string,
    # Check for already retrieved files
     if config.has_option('GET_IMAGES_RUNNER', 'CHECK_EXISTING_DIR'):
         check_existing_dir = config.getexpanded('GET_IMAGES_RUNNER', 'CHECK_EXISTING_DIR')
+        if config.has_option('GET_IMAGES_RUNNER', 'N_EXPECTED'):
+            n_expected = config.getint('GET_IMAGES_RUNNER', 'N_EXPECTED')
+        else:
+            n_expected = 1
     else:
         check_existing_dir = None
+        n_expected = None
 
     inst = GetImages(copy, options, image_number_list, input_numbering,
                      input_file_pattern, input_file_ext, w_log,
-                     check_existing_dir=check_existing_dir)
+                     check_existing_dir=check_existing_dir, n_expected=n_expected)
 
     # Assemble input and output file lists
     all_inputs = inst.get_file_list(input_dir)
