@@ -340,8 +340,8 @@ def get_gini(g_gal, g_weight, g_flag):
     Implements eq. (6) of Lotz, Primack & Madau (2004)
     """
 
-    w = np.where(g_flag!=1)
-    flux_s = sort(np.flatten(g_gal[w]))
+    w = np.where(g_flag.array==0)
+    flux_s = np.sort(g_gal.array[w], axis=None)
     flux_s_abs = np.abs(flux_s)
 
     n_pix = len(flux_s)
@@ -349,9 +349,8 @@ def get_gini(g_gal, g_weight, g_flag):
 
     s = sum((2 * i_pix - n_pix - 1) * flux_s_abs)
 
-    gini_coeff = 1 / (flux_s_abs * n_pix * (n_pix - 1)) * s
+    gini_coeff = 1 / (np.mean(flux_s_abs) * n_pix * (n_pix - 1)) * s
 
-    print('MKDEBUG gini_coeff = {}'.format(gini_coeff))
     return gini_coeff
 
 
@@ -734,7 +733,6 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
         tile_jacob = get_jacob(tile_loc_wcs, tile_ra[i_tile], tile_dec[i_tile])
 
         try:
-            w_log.info('MKDEBUG do_galsim_shapes')
             res = do_galsim_shapes(tile_vign[i_tile],
                                    tile_weight[i_tile],
                                    tile_fwhm[i_tile]/2.335,
