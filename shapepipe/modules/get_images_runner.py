@@ -68,7 +68,7 @@ class GetImages(object):
         check_existing_dir : string, optional, default=None
             if not None, only retrieve image if not existing at this path (recursively)
         n_expected : int, optional, default=None
-            number of expected files per tyep and ID to download/check for existance
+            number of expected files per type and ID to download/check for existance
         """
 
         self._copy = copy
