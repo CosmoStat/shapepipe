@@ -259,8 +259,8 @@ command_sp "shapepipe_run -c $SP_CONFIG/config_exp_mccd.ini" "Run shapepipe (exp
 
 
 # The following are very a bad hacks to get additional input files
-#input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
-#command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output" "$VERBOSE" "$ID"
+input_psf_mccd=`find . -name "fitted_model*.npy" | head -n 1`
+command_sp "ln -s `dirname $input_psf_mccd` input_psf_mccd" "Link MCCD interpol output" "$VERBOSE" "$ID"
 
 input_split_exp=`find output -name flag-*.fits | head -n 1`
 command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output" "$VERBOSE" "$ID"
@@ -272,7 +272,7 @@ command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor
 ## Tiles
 
 # Everything up to shapes
-command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSxPsViSmVi.ini" "Run shapepipe (tile: up to ngmix)" "$VERBOSE" "$ID"
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSxMiViSmVi.ini" "Run shapepipe (tile: up to ngmix)" "$VERBOSE" "$ID"
 
 # Shapes, run 8 parallel processes
 for k in $(seq 1 8); do

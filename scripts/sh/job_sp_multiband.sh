@@ -46,11 +46,11 @@ done
 # Processing: run pipeline
 
 # Download
-#shapepipe_run -c $SP_CONFIG/config_get_tiles_symlink.ini
-shapepipe_run -c $SP_CONFIG/config_get_vcp.ini
+shapepipe_run -c $SP_CONFIG/config_get_tiles_symlink.ini
+#shapepipe_run -c $SP_CONFIG/config_get_vcp.ini
 
 # Convert Pan-STARRS image names
-$SP_HOME/scripts/python/ps_convert_file_names.py
+#$SP_HOME/scripts/python/ps_convert_file_names.py
 
 # Unzip FITS files and/or remove unused HDU:
 # CFIS weights; UNIONS images, weights, flags
@@ -61,8 +61,9 @@ shapepipe_run -c $SP_CONFIG/config_unfz.ini
 shapepipe_run -c $SP_CONFIG/config_tile_mask_r.ini
 
 # Detect objects on r-band images, measure properties
-# on r-, i-, z-band images
+# on u-, r-, i-, z-band images
 shapepipe_run -c $SP_CONFIG/config_tile_detect_r.ini
+shapepipe_run -c $SP_CONFIG/config_tile_detect_u.ini
 shapepipe_run -c $SP_CONFIG/config_tile_detect_i.ini
 shapepipe_run -c $SP_CONFIG/config_tile_detect_z.ini
 
