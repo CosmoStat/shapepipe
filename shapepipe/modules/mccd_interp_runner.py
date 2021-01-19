@@ -24,7 +24,7 @@ import os
 def mccd_interp_runner(input_file_list, run_dirs, file_number_string,
                        config, w_log):
 
-    mode = config.get('MCCD_INTERP_RUNNER', 'MODE')
+    mode = config.getexpanded('MCCD_INTERP_RUNNER', 'MODE')
     pos_params = config.getlist('MCCD_INTERP_RUNNER', 'POSITION_PARAMS')
     get_shapes = config.getboolean('MCCD_INTERP_RUNNER', 'GET_SHAPES')
     mccd_model_extension = '.npy'

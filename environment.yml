@@ -25,4 +25,5 @@ dependencies:
     - pyqtgraph>=0.11.0
     - python-pysap>=0.0.4
     - mccd>=0.0.3
-
+    - treecorr>=4.1.5
+    - git+https://github.com/tobias-liaudat/Stile

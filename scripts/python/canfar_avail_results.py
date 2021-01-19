@@ -207,8 +207,14 @@ def check_results(ID_files, input_vos, result_base_names, n_complete, verbose=Fa
     if verbose:
         print('Getting vos directory content from vls...')
     f = io.StringIO()
-    with redirect_stdout(f):
-        vls()
+
+    try:
+        with redirect_stdout(f):
+            vls()
+    except:
+        print('Error during vls command')
+        raise
+ 
     vls_out = f.getvalue()
 
     n_found = {}

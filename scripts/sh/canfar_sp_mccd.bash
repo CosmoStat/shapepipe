@@ -46,6 +46,9 @@ if [ ! -d "$VM_HOME" ]; then
     export VM_HOME=$HOME
 fi
 
+# SExtractor library bug work-around
+export PATH="$PATH:$VM_HOME/bin"
+
 # Results upload subdirectory on vos
 RESULTS=results_mccd
 
@@ -81,16 +84,8 @@ else
 fi
 
 # VCP options
-# VCP without "vflag" to avoid output to stderr
-export VCP_QUICK=0
-
-if [ $VCP_QUICK == 1 ]; then
-   qflag="--quick"
-else
-   qflag=""
-fi
 export CERTFILE=$VM_HOME/.ssl/cadcproxy.pem
-export VCP="vcp $qflag --certfile=$CERTFILE"
+export VCP="vcp --certfile=$CERTFILE"
 
 
 ## Functions
@@ -202,10 +197,8 @@ function print_env() {
    echo "Other variables:"
    echo " VCP=$VCP"
    echo " CERTFILE=$CERTFILE"
-   echo " qflag=$qflag"
    echo " STOP=$STOP"
    echo " verbose=$VERBOSE"
-   echo " LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
    echo "***"
 }
 
@@ -217,9 +210,6 @@ echo "Activate conda 'shapepipe' environment"
 source $VM_HOME/miniconda3/bin/activate shapepipe
 
 print_env
-
-# Extra stuff for canfar
-export LD_LIBRARY_PATH=$VM_HOME/miniconda3/envs/shapepipe/lib
 
 if [ "$1" == "-e" ]; then
    echo "Exiting"
@@ -269,8 +259,8 @@ command_sp "shapepipe_run -c $SP_CONFIG/config_exp_mccd.ini" "Run shapepipe (exp
 
 
 # The following are very a bad hacks to get additional input files
-input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
-command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output" "$VERBOSE" "$ID"
+#input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
+#command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output" "$VERBOSE" "$ID"
 
 input_split_exp=`find output -name flag-*.fits | head -n 1`
 command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output" "$VERBOSE" "$ID"
@@ -309,8 +299,6 @@ upload_logs "$ID" "$VERBOSE"
 # Final shape catalog
 
 NAMES=(
-        "psfex"
-        "psfexinterp_exp"
         "setools_mask"
         "setools_stat"
         "setools_plot"
@@ -318,8 +306,6 @@ NAMES=(
         "final_cat"
      )
 DIRS=(
-        "*/psfex_runner/output"
-        "*/psfexinterp_runner/output"
         "*/setools_runner/output/mask"
         "*/setools_runner/output/stat"
         "*/setools_runner/output/plot"
@@ -327,8 +313,6 @@ DIRS=(
         "*/make_catalog_runner/output"
      )
 PATTERNS=(
-        "star_split_ratio_80-*"
-        "validation_psf*"
         "*"
         "*"
         "*"

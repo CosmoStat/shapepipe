@@ -51,6 +51,8 @@ def params_default():
     """
 
     p_def = cfis.param(
+        indir = 'output/run_sp_Git_*', 
+        last_Git = False,
     )
 
     return p_def
@@ -76,12 +78,16 @@ def parse_options(p_def):
     parser = OptionParser(usage=usage)
 
     # I/O
+    parser.add_option('-i', '--indir', dest='indir', type='string', default=p_def.indir,
+         help='input directory (pattern), default=\'{}\''.format(p_def.indir))
     parser.add_option('-o', '--outdir', dest='outdir', type='string', default=None,
          help='output directory, if not given: create links in input dir(s)')
     parser.add_option('-O', '--original', dest='outdir_orig', type='string', default=None,
          help='output dir for original file names; no output if not given')
     parser.add_option('-s', '--sp_format', dest='sp_format', action='store_true',
          help='output number in ShapePipe format (000-000)')
+    parser.add_option('-l', '--last_Git', dest='last_Git', action='store_true',
+        help='use only last run of \'get_images_runner\'')
 
     # Monitoring
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
@@ -192,7 +198,7 @@ def main(argv=None):
 
 
     # Parameters
-    dirs_Git = glob.glob('output/run_sp_Git_*')
+    dirs_Git = glob.glob(param.indir)
     pattern = 'CFIS.V0.skycell.'
     ext = 'fits'
     hdu_no = 1
@@ -212,17 +218,15 @@ def main(argv=None):
             raise IOError('Output path \'{}\' not a valid directory'
                         ''.format(d))
 
-    last_Git = False
-
     if param.verbose:
-        if last_Git:
+        if param.last_Git:
             print('Converting PS image names in last Git run dir')
         else:
             print('Converting PS image names in all Git run dirs')
 
     for dir_Git in dirs_Git:
 
-        if last_Git:
+        if param.last_Git:
             # Only process last Git run
             if dir_Git != dirs_Git[-1]:
                 continue
@@ -259,6 +263,10 @@ def main(argv=None):
 
             # Get image type
             mm = re.match('.*\.(.*)\.fits', input_name)
+            if not mm[1] in pattern_map:
+                print('Pattern \'{}\' in file name \'{}\' not matched, continuing...'
+                      ''.format(mm[1], input_name))
+                continue
             output_type = pattern_map[mm[1]]
 
             # Assemble output file name

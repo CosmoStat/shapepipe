@@ -1394,39 +1394,50 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
               angles[0].ra.deg, angles[0].dec.deg, angles[1].ra.deg, angles[1].dec.deg))
 
     found = []
+    angles_new = [0, 0]
+
+    # Left-corner ra is larger than right-corner if wrapped around 360:
+    # subtract amount left of zero
+    if angles[0].ra.degree > angles[1].ra.degree:
+        dra = Angle('{} degree'.format(360 - angles[0].ra.degree))
+        angles_shift = [SkyCoord for i in [0, 1]]
+        angles_shift[0] = SkyCoord(Angle('0 degree'), angles[0].dec)
+        angles_shift[1] = SkyCoord(angles[1].ra + dra , angles[1].dec)
+        if verbose:
+            print('Shifting wrapped ra coords from ({}, {}) to ({}, {}) deg'
+                  ''.format(angles[0].ra.deg,
+                            angles[1].ra.deg,
+                            angles_shift[0].ra.deg,
+                            angles_shift[1].ra.deg))
+        for i in [0, 1]:
+            angles_new[i] = angles_shift[i]
+    else:
+        for i in [0, 1]:
+            angles_new[i] = angles[i]
+        dra = 0
 
     if image_type in ('tile', 'weight', 'weight.fz'):
         for img in images:
             nix, niy = get_tile_number(img.name)
             ra, dec  = get_tile_coord_from_nixy(nix, niy)
 
-            # Left-corner ra is larger than right-corner if wrapped around 360:
-            # subtract amount left of zero
-            if angles[0].ra.degree > angles[1].ra.degree:
-                dra = Angle('{} degree'.format(360 - angles[0].ra.degree))
-                angles_shift = [SkyCoord for i in [0, 1]]
-                angles_shift[0] = SkyCoord(Angle('0 degree'), angles[0].dec)
-                angles_shift[1] = SkyCoord(angles[1].ra + dra , angles[1].dec)
-                for i in [0, 1]:
-                    angles[i] = angles_shift[i]
-                ra = ra + dra
+            # TODO: ra, dec directly as SkyCoord
+            sc = SkyCoord(ra + dra, dec)
+            ra = sc.ra
 
-            if ra.is_within_bounds(angles[0].ra, angles[1].ra) \
-                and dec.is_within_bounds(angles[0].dec, angles[1].dec):
+            if ra.is_within_bounds(angles_new[0].ra, angles_new[1].ra) \
+                and dec.is_within_bounds(angles_new[0].dec, angles_new[1].dec):
 
                 if img.ra is None or img.dec is None:
-                    #raise CfisError('Coordinates in image are already set '
-                                    #'to {}, {}, cannot update to {}, {}'
-                                    #''.format(img.ra, img.dec, ra, dec))
-                    img.ra  = ra
+                    img.ra  = ra - dra
                     img.dec = dec
 
                 found.append(img)
 
     elif image_type == 'exposure':
         for img in images:
-            if img.ra.is_within_bounds(angles[0].ra, angles[1].ra) \
-                and img.dec.is_within_bounds(angles[0].dec, angles[1].dec):
+            if img.ra.is_within_bounds(angles_new[0].ra, angles_new[1].ra) \
+                and img.dec.is_within_bounds(angles_new[0].dec, angles_new[1].dec):
 
                 if img.cut(no_cuts=no_cuts) == False:
                     found.append(img)
@@ -1555,9 +1566,13 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_n
 
     # Limits
     border = 0.25
-    xm = (angles[1].ra.degree + angles[0].ra.degree) / 2
+    if angles[1].ra.degree > angles[0].ra.degree:
+        xm = (angles[1].ra.degree + angles[0].ra.degree) / 2
+        dx = angles[1].ra.degree - angles[0].ra.degree
+    else:
+        dx = max(360 - angles[0].ra.deg,  angles[1].ra.deg) * 2
+        xm = ( (angles[0].ra.deg - 360) + angles[1].ra.deg ) / 2
     ym = (angles[1].dec.degree + angles[0].dec.degree) / 2
-    dx = angles[1].ra.degree - angles[0].ra.degree
     dy = angles[1].dec.degree - angles[0].dec.degree
     lim = max(dx, dy)
     plt.xlim(xm - lim/2 - border, xm + lim/2 + border)
