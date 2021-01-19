@@ -33,12 +33,6 @@ FLAGS == 0
 IMAFLAGS_ISO == 0
 NO_SAVE
 
-# Split the 'star_selection' sample into
-# two random sub-samples with ratio 80/20
-[RAND_SPLIT:star_split]
-RATIO = 20
-MASK = star_selection
-
 # The following selection is only used for plotting
 
 [PLOT:size_mag]
