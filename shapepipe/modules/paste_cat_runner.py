@@ -116,7 +116,7 @@ def paste_cat_runner(input_file_list, run_dirs, file_number_string,
         if len(hdu_no) != len(input_file_list):
             raise IndexError('Different lengths for input file list ({}) and'
                              'HDU ({})'
-                             ''.format(len(input_file_list), len(hdu)))
+                             ''.format(len(input_file_list), len(hdu_no)))
     else:
         hdu_no = None
 
