@@ -57,7 +57,7 @@ export SP_HOME=$HOME/astro/repositories/github/shapepipe
 export SP_CONFIG=$SP_HOME/example/unions
 export SP_RUN=.
 
-export LD_LIBRARY_PATH=$HOME/.conda/envs/shapepipe/lib
+#export LD_LIBRARY_PATH=$HOME/.conda/envs/shapepipe/lib
 
 # Create output path
 mkdir -p output
