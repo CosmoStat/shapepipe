@@ -192,7 +192,7 @@ def read_image_numbers(path):
 
 
 @module_runner(version='1.0',
-               depends=['numpy', 'vos'],
+               depends=['numpy'],
                run_method='serial')
 def get_images_runner2(input_file_list, run_dirs, file_number_string,
                        config, w_log):
