@@ -284,7 +284,7 @@ wait
 command_sp "shapepipe_run -c $SP_CONFIG/config_merge_sep_cats.ini" "Run shapepipe (tile: merge sep cats)" "$VERBOSE" "$ID"
 
 # Create final shape catalogue by merging all tile information
-command_sp "shapepipe_run -c $SP_CONFIG/config_make_cat.ini" "Run shapepipe (tile: create final cat)" "$VERBOSE" "$ID"
+command_sp "shapepipe_run -c $SP_CONFIG/config_make_cat_mccd.ini" "Run shapepipe (tile: create final cat)" "$VERBOSE" "$ID"
 
 
 ## Upload results
