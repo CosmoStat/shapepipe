@@ -22,7 +22,7 @@ else
 fi
 
 ## Paths
-RESULTS=results
+RESULTS=results_mccd
 remote="vos:cfis/cosmostat/kilbinger/$RESULTS"
 local="."
 
@@ -40,20 +40,14 @@ NAMES=(
 
 # VCP options
 # VCP without "vflag" to avoid output to stderr
-export VCP_QUICK=0
 export VERBOSE=1
 
-if [ $VCP_QUICK == 1 ]; then
-   qflag="--quick"
-else
-   qflag=""
-fi
 if [ $VERBOSE == 1 ]; then
    vflag="-v"
 else
    vflag=""
 fi
-export VCP="vcp $qflag $vflag"
+export VCP="vcp $vflag"
 
 
 ### Start ###

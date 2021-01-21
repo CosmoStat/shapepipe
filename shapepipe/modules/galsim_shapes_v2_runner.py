@@ -636,7 +636,6 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
         count = count + 1
 
         res = {}
-        w_log.info('{}'.format(i_tile))
         psf_vign = []
         sigma_psf = []
         weight_vign = []
