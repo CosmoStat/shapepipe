@@ -92,7 +92,7 @@ def check_duplicate(input_list):
         if elem in input_set:
             return True
         else:
-            input_set.add(elem)         
+            input_set.add(elem)
 
     return False
 
