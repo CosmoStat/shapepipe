@@ -19,7 +19,7 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    -b, --base_dir_sp PATH\n
    \tShapePipe base directory, default='$SP_BASE'\n
    TILE_ID_i\n
-   \ttile ID, e.g. 282.247\n"
+   \ttile ID(s), e.g. 282.247 214.242\n"
 
 if [ -z $1 ]; then
         echo -ne $usage
