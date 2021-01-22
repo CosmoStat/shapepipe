@@ -15,7 +15,7 @@
 usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
 \n\nOptions:\n
    -h\tThis message\n
-   -e\tSet environment and exit\n
+   -e\tSet environment and exit (run as '. $(basename "$0")'\n
    --nsh_max N\n
    \tmax number of objects per parallel shape module call, \n
    \t default: unlimited\n
@@ -70,9 +70,6 @@ if [ ! -d "$VM_HOME" ]; then
     export VM_HOME=$HOME
 fi
 
-# SExtractor library bug work-around
-export PATH="$PATH:$VM_HOME/bin"
-
 # Results upload subdirectory on vos
 RESULTS=results_mccd
 
@@ -109,7 +106,7 @@ else
 fi
 
 # VCP options
-export CERTFILE=$VM_HOME/.ssl/cadcproxy.pem
+export CERTFILE=$HOME/.ssl/cadcproxy.pem
 export VCP="vcp --certfile=$CERTFILE"
 
 
@@ -175,6 +172,7 @@ command_sp() {
       echo "exiting 'canfar_sp.bash', '$cmd' returned $res, log files for id=$id uploaded"
       exit $res
    fi
+   echo "MKDBUG res=$res"
 
 }
 
@@ -238,7 +236,7 @@ print_env
 
 if [ $do_env == 1 ]; then
    echo "Exiting"
-   exit 0
+   return
 fi
 
 echo "Start"
