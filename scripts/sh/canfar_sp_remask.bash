@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 
-# Name: canfar_sp_mccd.bash
-# Description: Process one or more tiles with all
-#              contributing exposures on canfar.
+# Name: canfar_sp_remask.bash
+# Description: Create mask on one or more tiles
+#              on canfar.
 #              This is the job submission script for
 #              the canfar batch system. Can also be
 #              called in interactive mode on a virtual
 #              machine.
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
-# Date: 11/2020
+# Date: 01/2021
 # Package: shapepipe
 
 
@@ -20,12 +20,12 @@
 
 if [ $# == 0 ]; then
   echo "Usages:"
-  echo "  bash canfar_sp_mccd.bash TILE_ID_1 [TILE_ID_2 [...]]"
+  echo "  bash canfar_sp.bash TILE_ID_1 [TILE_ID_2 [...]]"
   echo "    TILE_ID = xxx.yyy"
   echo "    Examples:"
-  echo "      canfar_sp_mccd.bash 244.252"
-  echo "      canfar_sp_mccd.bash 244.252 239.293"
-  echo "  . canfar_sp_mccd.bash -e"
+  echo "      canfar_sp.bash 244.252"
+  echo "      canfar_sp.bash 244.252 239.293"
+  echo "  . canfar_sp.bash -e"
   echo "    Assign environment variables"
   exit 1
 fi
@@ -46,11 +46,8 @@ if [ ! -d "$VM_HOME" ]; then
     export VM_HOME=$HOME
 fi
 
-# SExtractor library bug work-around
-export PATH="$PATH:$VM_HOME/bin"
-
 # Results upload subdirectory on vos
-RESULTS=results_mccd
+RESULTS=results
 
 ## Path variables used in shapepipe config files
 
@@ -58,7 +55,7 @@ RESULTS=results_mccd
 export SP_RUN=`pwd`
 
 # Config file path
-export SP_CONFIG=$SP_RUN/cfis
+export SP_CONFIG=$HOME/astro/repositories/github/shapepipe/example/cfis
 
 ## Other variables
 
@@ -233,99 +230,19 @@ for TILE in ${TILE_ARR[@]}; do
    echo $TILE >> $TILE_NUMBERS_PATH
 done
 
-# Download config files
-$VCP vos:cfis/cosmostat/kilbinger/cfis .
-
 ### Run pipeline
 
 ## Prepare images
 
 # Get tiles
-command_sp "shapepipe_run -c $SP_CONFIG/config_get_tiles.ini" "Run shapepipe (prepare: get tiles)" "$VERBOSE" "$ID"
+command_sp "shapepipe_run -c $SP_CONFIG/config_get_tiles_remask.ini" "Run shapepipe (prepare: get tiles)" "$VERBOSE" "$ID"
 
 # Uncompress tile weights
 command_sp "shapepipe_run -c $SP_CONFIG/config_unfz_w.ini" "Run shapepipe (prepare: uncompress tile weights)" "$VERBOSE" "$ID"
 
-# Find exposures
-command_sp "shapepipe_run -c $SP_CONFIG/config_find_exp.ini" "Run shapepipe (prepare: find exposures)" "$VERBOSE" "$ID"
-
-# Get exposures
-command_sp "shapepipe_run -c $SP_CONFIG/config_get_exp.ini" "Run shapepipe (prepare: get exposures)" "$VERBOSE" "$ID"
-
-## Exposures
-
-# Run all modules
-command_sp "shapepipe_run -c $SP_CONFIG/config_exp_mccd.ini" "Run shapepipe (exp mccd)" "$VERBOSE" "$ID"
-
-
-# The following are very a bad hacks to get additional input files
-input_psf_mccd=`find . -name "fitted_model*.npy" | head -n 1`
-command_sp "ln -s `dirname $input_psf_mccd` input_psf_mccd" "Link MCCD interpol output" "$VERBOSE" "$ID"
-
-input_split_exp=`find output -name flag-*.fits | head -n 1`
-command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output" "$VERBOSE" "$ID"
-
-input_sextractor=`find . -name sexcat_sexcat-*.fits | head -n 1`
-command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor output" "$VERBOSE" "$ID"
-
-
 ## Tiles
 
 # Everything up to shapes
-command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSxMiViSmVi.ini" "Run shapepipe (tile: up to ngmix)" "$VERBOSE" "$ID"
-
-# Shapes, run 8 parallel processes
-for k in $(seq 1 8); do
-    command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Ng${k}u.ini" "Run shapepipe (tile: ngmix $k)" "$VERBOSE" "$ID" &
-done
-wait
-
-# Merge separated shapes catalogues
-command_sp "shapepipe_run -c $SP_CONFIG/config_merge_sep_cats.ini" "Run shapepipe (tile: merge sep cats)" "$VERBOSE" "$ID"
-
-# Create final shape catalogue by merging all tile information
-command_sp "shapepipe_run -c $SP_CONFIG/config_make_cat_mccd.ini" "Run shapepipe (tile: create final cat)" "$VERBOSE" "$ID"
-
-
-## Upload results
-
-# module and pipeline log files
-upload_logs "$ID" "$VERBOSE"
-
-# psfex for diagnostics, validation with leakage
-# psefxinterp for validation with residuals, rho stats
-# SETools masks (selection), stats and plots
-# pipeline_flags are the tile masks, for random cats
-# Final shape catalog
-
-NAMES=(
-        "setools_mask"
-        "setools_stat"
-        "setools_plot"
-        "pipeline_flag"
-        "final_cat"
-     )
-DIRS=(
-        "*/setools_runner/output/mask"
-        "*/setools_runner/output/stat"
-        "*/setools_runner/output/plot"
-        "*/mask_runner/output"
-        "*/make_catalog_runner/output"
-     )
-PATTERNS=(
-        "*"
-        "*"
-        "*"
-        "pipeline_flag-???-???*"
-        "final_cat-*"
-        )
-
-for n in "${!NAMES[@]}"; do
-    name=${NAMES[$n]}
-    dir=${DIRS[$n]}
-    pattern=${PATTERNS[$n]}
-    upl=$output_rel/$dir/$pattern
-    upload "$name" "$ID" "$VERBOSE" "${upl[@]}"
-done
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Ma.ini" "Run shapepipe (tile: up to ngmix)" "$VERBOSE" "$ID"
 
 echo "End"
