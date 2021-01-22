@@ -172,7 +172,6 @@ command_sp() {
       echo "exiting 'canfar_sp.bash', '$cmd' returned $res, log files for id=$id uploaded"
       exit $res
    fi
-   echo "MKDBUG res=$res"
 
 }
 
