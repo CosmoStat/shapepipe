@@ -106,7 +106,7 @@ else
 fi
 
 # VCP options
-export CERTFILE=$HOME/.ssl/cadcproxy.pem
+export CERTFILE=$VM_HOME/.ssl/cadcproxy.pem
 export VCP="vcp --certfile=$CERTFILE"
 
 
