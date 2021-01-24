@@ -70,6 +70,33 @@ def find_files(path, pattern='*', ext='*'):
     return glob(search_string, recursive=True)
 
 
+def check_duplicate(input_list):
+    """ Check Duplicate.
+
+    Check whether input list contains at least one duplicate.
+
+    Parameters
+    ----------
+    input_list : list
+        input list
+
+    Returns
+    -------
+    ok : bool
+        True (False) if does (does not) contain at least one duplicate
+    """
+
+    input_set = set()
+
+    for elem in input_list:
+        if elem in input_set:
+            return True
+        else:
+            input_set.add(elem)
+
+    return False
+
+
 class FileHandler(object):
     """ File Handler
 
@@ -802,6 +829,12 @@ class FileHandler(object):
                                'the directories {}.'
                                ''.format(self._numbering_scheme, pattern, ext,
                                          dir_list))
+
+        if check_duplicate(final_file_list):
+            raise RuntimeError('Input file list contains at least two elements that match '
+                               'file pattern and numbering scheme, leading to identical '
+                               'input files.  Make sure that the correct input '
+                               'directory is used.')
 
         # Save file list
         np.save(output_file, np.array(final_file_list))

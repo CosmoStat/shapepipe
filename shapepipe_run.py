@@ -96,8 +96,12 @@ class ShapePipe():
 
         """
 
-        final_error_count = ('A total of {} errors were recorded.'.format(
-                             self.error_count))
+        if self.error_count == 1:
+            plur = 's'
+        else:
+            plur = ''
+        final_error_count = ('A total of {} error{} were recorded.'.format(
+                             self.error_count, plur))
         end_text = 'Finishing ShapePipe Run'
 
         self.log.info(final_error_count)
@@ -276,6 +280,10 @@ def run_smp(pipe):
     pipe : ShapePipe
         ShapePipe instance
 
+    Returns
+    -------
+    pipe.error_count : int
+        Number of errors recorder by run
     """
 
     # Loop through modules to be run
@@ -298,6 +306,8 @@ def run_smp(pipe):
     # Finish and close the pipeline log
     pipe.close_pipeline_log()
 
+    return pipe.error_count
+
 
 def run_mpi(pipe, comm):
     """ Run MPI
@@ -310,6 +320,11 @@ def run_mpi(pipe, comm):
         ShapePipe instance
     comm : MPI.COMM_WORLD
         MPI common world instance
+
+    Returns
+    -------
+    pipe.error_count : int
+        Number of errors recorder by run
 
     """
 
@@ -402,6 +417,8 @@ def run_mpi(pipe, comm):
     # Finish and close the pipeline log
     pipe.close_pipeline_log() if master else None
 
+    return pipe.error_count
+
 
 def main(args=None):
 
@@ -428,15 +445,16 @@ def main(args=None):
             pipe.record_mode()
 
         if mode == 'mpi':
-            run_mpi(pipe, comm)
+            n_err = run_mpi(pipe, comm)
         else:
-            run_smp(pipe)
+            n_err = run_smp(pipe)
 
     except Exception as err:
         if master:
             catch_error(err, log=pipe.log)
             return 1
 
+    return n_err
 
 if __name__ == "__main__":
     sys.exit(main())
