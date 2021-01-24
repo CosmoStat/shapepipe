@@ -313,7 +313,7 @@ command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor
 ## Tiles
 
 # Everything up to shapes
-command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSxPsViSmVi.ini" "Run shapepipe (tile: up to ngmix+galsim)" "$VERBOSE" "$ID"
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSxMiViSmVi.ini" "Run shapepipe (tile: up to ngmix+galsim)" "$VERBOSE" "$ID"
 
 # Shapes, run $nsh_jobs parallel processes
 for k in $(seq 1 $nsh_jobs); do
