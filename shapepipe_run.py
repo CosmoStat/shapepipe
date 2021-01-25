@@ -449,12 +449,14 @@ def main(args=None):
         else:
             n_err = run_smp(pipe)
 
+        if n_err > 0:
+            raise
+
     except Exception as err:
         if master:
             catch_error(err, log=pipe.log)
             return 1
 
-    return n_err
 
 if __name__ == "__main__":
     sys.exit(main())
