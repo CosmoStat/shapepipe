@@ -171,6 +171,9 @@ class GetImages(object):
             sys.argv.append(in_path)
             sys.argv.append(out_path)
 
+            self._w_log.info('Command \'{}\''
+                             ''.format(' '.join(sys.argv)))
+
             vcp = vosHandler('vcp')
             vcp()
 
@@ -275,7 +278,7 @@ def get_images_runner(input_file_list, run_dirs, file_number_string,
         raise ValueError('key COPY={} is invalid, must be in {}'.format(copy, copy_ok))
 
     if config.has_option('GET_IMAGES_RUNNER', 'COPY_OPTIONS'):
-        options = config.get('GET_IMAGES_RUNNER', 'COPY_OPTIONS')
+        options = config.getexpanded('GET_IMAGES_RUNNER', 'COPY_OPTIONS')
     else:
         options = None
 
