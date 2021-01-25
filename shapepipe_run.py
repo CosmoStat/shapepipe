@@ -102,10 +102,10 @@ class ShapePipe():
         """
 
         if self.error_count == 1:
-            plur = 's'
+            plur = ' was'
         else:
-            plur = ''
-        final_error_count = ('A total of {} error{} were recorded.'.format(
+            plur = 's were'
+        final_error_count = ('A total of {} error{} recorded.'.format(
                              self.error_count, plur))
         end_text = 'Finishing ShapePipe Run'
 
