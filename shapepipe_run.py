@@ -94,6 +94,11 @@ class ShapePipe():
 
         Close general logging instance for the pipeline run.
 
+        Raises
+        ------
+        RunTimeError
+            if error occurs during pipeline run
+
         """
 
         if self.error_count == 1:
@@ -113,6 +118,9 @@ class ShapePipe():
             print(final_error_count)
             print(end_text)
             print(line())
+
+        if self.error_count > 0:
+            raise RuntimeError(final_error_count)
 
     def _get_module_depends(self, property):
         """ Get Module Dependencies
@@ -279,11 +287,6 @@ def run_smp(pipe):
     ----------
     pipe : ShapePipe
         ShapePipe instance
-
-    Returns
-    -------
-    pipe.error_count : int
-        Number of errors recorded by run
     """
 
     # Loop through modules to be run
@@ -306,8 +309,6 @@ def run_smp(pipe):
     # Finish and close the pipeline log
     pipe.close_pipeline_log()
 
-    return pipe.error_count
-
 
 def run_mpi(pipe, comm):
     """ Run MPI
@@ -320,12 +321,6 @@ def run_mpi(pipe, comm):
         ShapePipe instance
     comm : MPI.COMM_WORLD
         MPI common world instance
-
-    Returns
-    -------
-    pipe.error_count : int
-        Number of errors recorded by run
-
     """
 
     # Assign master node
@@ -417,8 +412,6 @@ def run_mpi(pipe, comm):
     # Finish and close the pipeline log
     pipe.close_pipeline_log() if master else None
 
-    return pipe.error_count
-
 
 def main(args=None):
 
@@ -445,12 +438,9 @@ def main(args=None):
             pipe.record_mode()
 
         if mode == 'mpi':
-            n_err = run_mpi(pipe, comm)
+            run_mpi(pipe, comm)
         else:
-            n_err = run_smp(pipe)
-
-        if n_err > 0:
-            raise
+            run_smp(pipe)
 
     except Exception as err:
         if master:
