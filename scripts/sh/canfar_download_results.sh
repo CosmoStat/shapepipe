@@ -4,26 +4,27 @@
 # Description: Download ShapePipe results (.tgz files)
 #              from canfar with vos
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
-# Date: 05/2020, 01/2021
+# Date: v1.0 05/2020
+#       v1.1 01/2021
 # Package: shapepipe
 
+# Command line
 
-# Command line arguments
+## Default parameters
+INPUT_VOS="cosmostat/kilbinger/results"
+VERBOSE=0
 
-## Default values
-INPUT_VOS="cfis/cosmostat/kilbinger/results"
-INPUT_IDs=""
-
-## Help message
-usage="Usage: $(basename "$0") [OPTIONS]\n\n
-Options:\n
-   -h\tThis message\n
-   -i, --input_IDs INPUT_IDs\n
-\tASCII file with tile IDs to download,\n
-\t default: download all available IDs\n
-   --input_vos\n
-\tinput path on vos, default=$INPUT_VOS"
-
+usage="Usage: $(basename "$0") [OPTIONS]
+\n\nOptions:\n
+    -h\tthis message\n
+    -i, --input_IDs ID_FILE\n
+    \tASCII file with tile IDs to download, default:\n
+    \t download all available IDs\n
+    --input_vos PATH\n
+    \tinput path on vos:cfis, default='$INPUT_VOS'\n
+    -v\tverbose output\n
+"
+  
 ## Parse command line
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -32,51 +33,15 @@ while [ $# -gt 0 ]; do
       exit 0
       ;;
     -i|--input_IDs)
-      INPUT_IDs="$2"
+      IDs=(`cat $2`)
+      echo "Downloading ${#IDs[@]} ID(s)"
       shift
       ;;
     --input_vos)
       INPUT_VOS="$2"
       shift
       ;;
-    *)
-      echo "Invalid option or argument \"$1\""
-      exit 2
-      ;;
-  esac
-  shift
-done
-
-
-if [ "$INPUT_IDs" != "" ]; then
-    IDs=(`cat $INPUT_IDs`)
-    echo "Downloading ${#IDs[@]} IDs"
-else
-    echo "Downloading all remote IDs"
-fi
-
-echo "Remote source = \"$INPUT_VOS\""
-
-# Paths
-remote="vos:$INPUT_VOS"
-local="."
-
-NAMES=(
-        "final_cat"
-        "logs"
-        "psfex"
-        "psfexinterp_exp"
-        "setools_mask"
-        "setools_stat"
-        "setools_plot"
-        "pipeline_flag"
-     )
-
-
-# VCP options
-# VCP without "vflag" to avoid output to stderr
-export VERBOSE=1
-
+    -v)
 if [ $VERBOSE == 1 ]; then
    vflag="-v"
 else

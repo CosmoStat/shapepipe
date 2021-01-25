@@ -26,7 +26,6 @@ if [ -z $1 ]; then
         exit 1
 fi
 
-
 # Functions
 
 ## Print string, executes command, and prints return value.
