@@ -8,43 +8,70 @@
 #              called in interactive mode on a virtual
 #              machine.
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
-# Date: 11/2020
+# Date: v1.0 11/2020
+#       v1.1 01/2021
 # Package: shapepipe
 
 
-### Set-up ###
+# Command line
 
-## Variables
+## Help string
+usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
+\n\nOptions:\n
+   -h\tThis message\n
+   -e\tSet environment and exit (run as '. $(basename "$0")'\n
+   --nsh_max N\n
+   \tmax number of objects per parallel shape module call, \n
+   \t default: unlimited\n
+   TILE_ID_i\n
+   \ttile ID(s), e.g. 282.247 214.242\n
+"
 
-# Tile numbers
-
-if [ $# == 0 ]; then
-  echo "Usages:"
-  echo "  bash canfar_sp_mccd.bash TILE_ID_1 [TILE_ID_2 [...]]"
-  echo "    TILE_ID = xxx.yyy"
-  echo "    Examples:"
-  echo "      canfar_sp_mccd.bash 244.252"
-  echo "      canfar_sp_mccd.bash 244.252 239.293"
-  echo "  . canfar_sp_mccd.bash -e"
-  echo "    Assign environment variables"
-  exit 1
+## Help if no arguments
+if [ -z $1 ]; then
+        echo -ne $usage
+        exit 1
 fi
 
-# Copy command line arguments
-TILE_ARR=($@)
+## Default values
+do_env=0
+nsh_max=-1
+nsh_jobs=8
+
+## Parse command line
+TILE_ARR=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h)
+      echo -ne $usage
+      exit 0
+      ;;
+    -e)
+      do_env=1
+      ;;
+    --nsh_max)
+      nsh_max="$2"
+      shift
+      ;;
+    *)
+      TILE_ARR+=("$1")
+      ;;
+  esac
+  shift
+done
+
 
 # For tar archives. Should be unique to each job
 export ID=`echo ${TILE_ARR[@]} | tr ' ' '_'`
-
 
 ## Paths
 
 # VM home, required for canfar run.
 # On other machines set to $HOME
 export VM_HOME=/home/ubuntu
-if [ ! -d "$VM_HOME" ]; then
-    export VM_HOME=$HOME
-fi
+#if [ ! -d "$VM_HOME" ]; then
+    #export VM_HOME=$HOME
+#fi
 
 # Results upload subdirectory on vos
 RESULTS=results_mccd
@@ -56,6 +83,7 @@ export SP_RUN=`pwd`
 
 # Config file path
 export SP_CONFIG=$SP_RUN/cfis
+export SP_CONFIG_MOD=$SP_RUN/cfis_mod
 
 ## Other variables
 
@@ -208,9 +236,9 @@ source $VM_HOME/miniconda3/bin/activate shapepipe
 
 print_env
 
-if [ "$1" == "-e" ]; then
+if [ $do_env == 1 ]; then
    echo "Exiting"
-   return 0
+   return
 fi
 
 echo "Start"
@@ -223,6 +251,7 @@ echo "Create directories for processing"
 mkdir -p $SP_RUN
 cd $SP_RUN
 mkdir -p $OUTPUT
+mkdir -p $SP_CONFIG_MOD
 
 # Write tile numbers to ASCII input file
 rm -rf $TILE_NUMBERS_PATH
@@ -232,6 +261,24 @@ done
 
 # Download config files
 $VCP vos:cfis/cosmostat/kilbinger/cfis .
+
+# Shape measurement config files
+if [ "$nsh_max" != "-1" ]; then
+  n_min=0
+  n_max=$((nsh_max - 1))
+  for k in $(seq 1 $nsh_jobs); do
+    cat $SP_CONFIG/config_tile_Ng_template.ini | \
+      perl -ane 's/(ID_OBJ_MIN =) X/$1 '$n_min'/; s/(ID_OBJ_MAX =) X/$1 '$n_max'/; s/NgXu/Ng'$k'u/; print' \
+       > $SP_CONFIG_MOD/config_tile_Ng${k}u.ini
+    n_min=$((n_max + 1))
+    n_max=$((n_min + nsh_max - 1))
+  done
+else
+  for k in $(seq 1 $nsh_jobs); do
+    cp $SP_CONFIG/config_tile_Ng${k}u.ini $SP_CONFIG_MOD
+  done
+fi
+
 
 ### Run pipeline
 
@@ -256,8 +303,8 @@ command_sp "shapepipe_run -c $SP_CONFIG/config_exp_mccd.ini" "Run shapepipe (exp
 
 
 # The following are very a bad hacks to get additional input files
-input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
-command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output" "$VERBOSE" "$ID"
+#input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
+#command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output" "$VERBOSE" "$ID"
 
 input_split_exp=`find output -name flag-*.fits | head -n 1`
 command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output" "$VERBOSE" "$ID"
@@ -269,11 +316,11 @@ command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor
 ## Tiles
 
 # Everything up to shapes
-command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSxPsViSmVi.ini" "Run shapepipe (tile: up to ngmix)" "$VERBOSE" "$ID"
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSxMiViSmVi.ini" "Run shapepipe (tile: up to ngmix+galsim)" "$VERBOSE" "$ID"
 
-# Shapes, run 8 parallel processes
-for k in $(seq 1 8); do
-    command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Ng${k}u.ini" "Run shapepipe (tile: ngmix $k)" "$VERBOSE" "$ID" &
+# Shapes, run $nsh_jobs parallel processes
+for k in $(seq 1 $nsh_jobs); do
+    command_sp "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" "Run shapepipe (tile: ngmix+galsim $k)" "$VERBOSE" "$ID" &
 done
 wait
 
@@ -281,7 +328,7 @@ wait
 command_sp "shapepipe_run -c $SP_CONFIG/config_merge_sep_cats.ini" "Run shapepipe (tile: merge sep cats)" "$VERBOSE" "$ID"
 
 # Create final shape catalogue by merging all tile information
-command_sp "shapepipe_run -c $SP_CONFIG/config_make_cat.ini" "Run shapepipe (tile: create final cat)" "$VERBOSE" "$ID"
+command_sp "shapepipe_run -c $SP_CONFIG/config_make_cat_mccd.ini" "Run shapepipe (tile: create final cat)" "$VERBOSE" "$ID"
 
 
 ## Upload results
@@ -296,8 +343,6 @@ upload_logs "$ID" "$VERBOSE"
 # Final shape catalog
 
 NAMES=(
-        "psfex"
-        "psfexinterp_exp"
         "setools_mask"
         "setools_stat"
         "setools_plot"
@@ -305,8 +350,6 @@ NAMES=(
         "final_cat"
      )
 DIRS=(
-        "*/psfex_runner/output"
-        "*/psfexinterp_runner/output"
         "*/setools_runner/output/mask"
         "*/setools_runner/output/stat"
         "*/setools_runner/output/plot"
@@ -314,8 +357,6 @@ DIRS=(
         "*/make_catalog_runner/output"
      )
 PATTERNS=(
-        "star_split_ratio_80-*"
-        "validation_psf*"
         "*"
         "*"
         "*"
