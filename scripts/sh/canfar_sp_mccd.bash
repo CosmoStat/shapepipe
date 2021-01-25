@@ -69,9 +69,9 @@ export ID=`echo ${TILE_ARR[@]} | tr ' ' '_'`
 # VM home, required for canfar run.
 # On other machines set to $HOME
 export VM_HOME=/home/ubuntu
-if [ ! -d "$VM_HOME" ]; then
-    export VM_HOME=$HOME
-fi
+#if [ ! -d "$VM_HOME" ]; then
+    #export VM_HOME=$HOME
+#fi
 
 # Results upload subdirectory on vos
 RESULTS=results_mccd
@@ -109,7 +109,7 @@ else
 fi
 
 # VCP options
-export CERTFILE=$HOME/.ssl/cadcproxy.pem
+export CERTFILE=$VM_HOME/.ssl/cadcproxy.pem
 export VCP="vcp --certfile=$CERTFILE"
 
 
@@ -316,7 +316,7 @@ command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor
 ## Tiles
 
 # Everything up to shapes
-command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSxPsViSmVi.ini" "Run shapepipe (tile: up to ngmix+galsim)" "$VERBOSE" "$ID"
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSxMiViSmVi.ini" "Run shapepipe (tile: up to ngmix+galsim)" "$VERBOSE" "$ID"
 
 # Shapes, run $nsh_jobs parallel processes
 for k in $(seq 1 $nsh_jobs); do
