@@ -283,7 +283,7 @@ def run_smp(pipe):
     Returns
     -------
     pipe.error_count : int
-        Number of errors recorder by run
+        Number of errors recorded by run
     """
 
     # Loop through modules to be run
@@ -324,7 +324,7 @@ def run_mpi(pipe, comm):
     Returns
     -------
     pipe.error_count : int
-        Number of errors recorder by run
+        Number of errors recorded by run
 
     """
 
