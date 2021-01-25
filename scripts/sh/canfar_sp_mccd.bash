@@ -12,6 +12,10 @@
 #       v1.1 01/2021
 # Package: shapepipe
 
+
+# Command line
+
+## Help string
 usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
 \n\nOptions:\n
    -h\tThis message\n
@@ -23,12 +27,11 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    \ttile ID(s), e.g. 282.247 214.242\n
 "
 
+## Help if no arguments
 if [ -z $1 ]; then
         echo -ne $usage
         exit 1
 fi
-
-# Command line arguments
 
 ## Default values
 do_env=0
