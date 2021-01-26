@@ -4,44 +4,44 @@
 # Description: Download ShapePipe results (.tgz files)
 #              from canfar with vos
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
-# Date: 05/2020
+# Date: v1.0 05/2020
+#       v1.1 01/2021
 # Package: shapepipe
 
-if [ "$1" == "-h" ]; then
-    echo "Usage:"
-    echo "  canfar_download_all.sh [-h] [ID_FILE]"
-    echo "     ID_FILE     ASCII file with tile IDs to download,"
-    echo "                  default: download all available IDs"
-    echo "     -h          This message"
-    exit 0
-else
-    if [ "$#" == "1" ]; then
-        IDs=(`cat $1`)
-        echo "Downloading ${#IDs[@]} IDs"
-    fi
-fi
+# Command line
 
-## Paths
-RESULTS=results_mccd
-remote="vos:cfis/cosmostat/kilbinger/$RESULTS"
-local="."
+## Default parameters
+INPUT_VOS="cosmostat/kilbinger/results"
+VERBOSE=0
 
-NAMES=(
-        "final_cat"
-        "logs"
-        "psfex"
-        "psfexinterp_exp"
-        "setools_mask"
-        "setools_stat"
-        "setools_plot"
-        "pipeline_flag"
-     )
-
-
-# VCP options
-# VCP without "vflag" to avoid output to stderr
-export VERBOSE=1
-
+usage="Usage: $(basename "$0") [OPTIONS]
+\n\nOptions:\n
+    -h\tthis message\n
+    -i, --input_IDs ID_FILE\n
+    \tASCII file with tile IDs to download, default:\n
+    \t download all available IDs\n
+    --input_vos PATH\n
+    \tinput path on vos:cfis, default='$INPUT_VOS'\n
+    -v\tverbose output\n
+"
+  
+## Parse command line
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h)
+      echo -ne $usage
+      exit 0
+      ;;
+    -i|--input_IDs)
+      IDs=(`cat $2`)
+      echo "Downloading ${#IDs[@]} ID(s)"
+      shift
+      ;;
+    --input_vos)
+      INPUT_VOS="$2"
+      shift
+      ;;
+    -v)
 if [ $VERBOSE == 1 ]; then
    vflag="-v"
 else
@@ -72,6 +72,8 @@ done
 
 # Check number of files
 for name in ${NAMES[@]}; do
-    n_downl=(`ls -l $local/$name_*.tgz | wc`)
-    echo "$n_downl '$name' result files downloaded from $RESULTS"
+    #n_downl=(`ls -l $local/${name}_*.tgz | wc`)
+    set -- `ls $local/${name}_*.tgz 2> /dev/null`
+    n_downl="$#"
+    echo "$n_downl '$name' result files downloaded"
 done

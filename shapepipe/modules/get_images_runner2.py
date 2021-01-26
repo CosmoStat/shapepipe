@@ -163,6 +163,10 @@ class GetImages(object):
             src = in_path
             dst = out_path
             os.symlink(src, dst)
+            if not os.path.exists(src):
+                w_log.info('Warning: Source of symlink \'{}\' '
+                           'does not exist'
+                           ''.format(src))
 
 
 def read_image_numbers(path):
@@ -235,7 +239,7 @@ def get_images_runner2(input_file_list, run_dirs, file_number_string,
         raise ValueError('key RETRIEVE={} is invalid, must be in {}'.format(retrieve, retrieve_ok))
 
     if config.has_option('GET_IMAGES_RUNNER2', 'RETRIEVE_OPTIONS'):
-        options = config.get('GET_IMAGES_RUNNER2', 'RETRIEVE_OPTIONS')
+        options = config.getexpanded('GET_IMAGES_RUNNER2', 'RETRIEVE_OPTIONS')
     else:
         options = None
 

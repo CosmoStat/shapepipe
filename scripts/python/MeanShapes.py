@@ -44,8 +44,13 @@ def params_default():
     p_def = cfis.param(
         nx = 20,
         input_path = './psf_cat_full.fits',
+<<<<<<< HEAD
+        output_dir = './psf_validation',
+        hdu = 2
+=======
         output_dir = './psf_validation'
         hdu = 2,
+>>>>>>> master
     )
 
     return p_def
@@ -84,7 +89,11 @@ def parse_options(p_def):
     parser.add_option('', '--max_d', dest='max_d', type='float',
          help='max value for ellipticity residuals plots (model, star)')
 
+<<<<<<< HEAD
+    parser.add_option('', '--hdu', dest='hdu', type='int', default=p_def.hdu,
+=======
     parser.add_option('', '--hdu', dest='hdu', type='int', default=p_def.hdu
+>>>>>>> master
          help='HDU number on input, default={}'.format(p_def.hdu))
 
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
