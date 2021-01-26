@@ -13,13 +13,21 @@
 # Package: shapepipe
 
 
-# Command line
+# Command line arguments
+
+## Default values
+do_env=0
+nsh_max=-1
+nsh_jobs=8
+psf='mccd'
 
 ## Help string
 usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
 \n\nOptions:\n
-   -h\tThis message\n
-   -e\tSet environment and exit (run as '. $(basename "$0")'\n
+   -h\tthis message\n
+   -e\tset environment and exit (run as '. $(basename "$0")'\n
+   -p, --psf MODEL\n
+    \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    --nsh_max N\n
    \tmax number of objects per parallel shape module call, \n
    \t default: unlimited\n
@@ -33,11 +41,6 @@ if [ -z $1 ]; then
         exit 1
 fi
 
-## Default values
-do_env=0
-nsh_max=-1
-nsh_jobs=8
-
 ## Parse command line
 TILE_ARR=()
 while [ $# -gt 0 ]; do
@@ -48,6 +51,10 @@ while [ $# -gt 0 ]; do
       ;;
     -e)
       do_env=1
+      ;;
+    -p|--psf)
+      psf="$2"
+      shift
       ;;
     --nsh_max)
       nsh_max="$2"
@@ -60,6 +67,16 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+## Check options
+if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
+  echo "PSF (option -p) needs to be 'psf' or 'mccd'"
+  exit 2
+fi
+n_tile=${#TILE_ARR[@]}
+if [ "$n_tile" == "0" ]; then
+  echo "No tile ID given"
+  exit 3
+fi
 
 # For tar archives. Should be unique to each job
 export ID=`echo ${TILE_ARR[@]} | tr ' ' '_'`
@@ -69,9 +86,9 @@ export ID=`echo ${TILE_ARR[@]} | tr ' ' '_'`
 # VM home, required for canfar run.
 # On other machines set to $HOME
 export VM_HOME=/home/ubuntu
-#if [ ! -d "$VM_HOME" ]; then
-    #export VM_HOME=$HOME
-#fi
+if [ ! -d "$VM_HOME" ]; then
+    export VM_HOME=$HOME
+fi
 
 # SExtractor library bug work-around
 export PATH="$PATH:$VM_HOME/bin"
@@ -246,7 +263,6 @@ fi
 
 echo "Start"
 
-n_tile=${#TILE_ARR[@]}
 echo "Processing $n_tile tile(s)"
 
 # Create input and output directories
@@ -271,7 +287,7 @@ if [ "$nsh_max" != "-1" ]; then
   n_max=$((nsh_max - 1))
   for k in $(seq 1 $nsh_jobs); do
     cat $SP_CONFIG/config_tile_Ng_template.ini | \
-      perl -ane 's/(ID_OBJ_MIN =) X/$1 '$n_min'/; s/(ID_OBJ_MAX =) X/$1 '$n_max'/; s/NgXu/Ng'$k'u/; print' \
+      perl -ane 's/(ID_OBJ_MIN =) X/$1 '$n_min'/; s/(ID_OBJ_MAX =) X/$1 '$n_max'/; s/NgXu/Ng'$k'u/; s/Xinterp/'$psf'interp/g; print' \
        > $SP_CONFIG_MOD/config_tile_Ng${k}u.ini
     n_min=$((n_max + 1))
     n_max=$((n_min + nsh_max - 1))
@@ -282,6 +298,7 @@ else
   done
 fi
 
+exit 0
 
 ### Run pipeline
 
@@ -302,12 +319,14 @@ command_sp "shapepipe_run -c $SP_CONFIG/config_get_exp.ini" "Run shapepipe (prep
 ## Exposures
 
 # Run all modules
-command_sp "shapepipe_run -c $SP_CONFIG/config_exp_mccd.ini" "Run shapepipe (exp mccd)" "$VERBOSE" "$ID"
+command_sp "shapepipe_run -c $SP_CONFIG/config_exp_$psf.ini" "Run shapepipe (exp $psf)" "$VERBOSE" "$ID"
 
 
-# The following are very a bad hacks to get additional input files
-#input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
-#command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output" "$VERBOSE" "$ID"
+# The following are very a bad hacks to get additional input file paths
+if [ "$psf" == "psfex" ]; then
+  input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
+  command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output" "$VERBOSE" "$ID"
+fi
 
 input_split_exp=`find output -name flag-*.fits | head -n 1`
 command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output" "$VERBOSE" "$ID"
@@ -319,7 +338,11 @@ command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor
 ## Tiles
 
 # Everything up to shapes
-command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSxMiViSmVi.ini" "Run shapepipe (tile: up to ngmix+galsim)" "$VERBOSE" "$ID"
+
+## PSF model letter: 'P' (psfex) or 'M' (mccd)
+letter=${psf:0:1}
+Letter=${l^}
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSx${Letter}iViSmVi.ini" "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)" "$VERBOSE" "$ID"
 
 # Shapes, run $nsh_jobs parallel processes
 for k in $(seq 1 $nsh_jobs); do
