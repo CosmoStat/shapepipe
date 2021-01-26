@@ -87,7 +87,6 @@ fi
 if [ $nsh_max != -1 ]; then
   nsh_step=$nsh_max
 fi
->>>>>>> c739dcfc63db1c3983e8bde282fd173021a4da3d
 
 # For tar archives. Should be unique to each job
 export ID=`echo ${TILE_ARR[@]} | tr ' ' '_'`
