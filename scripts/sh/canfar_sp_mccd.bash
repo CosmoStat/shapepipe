@@ -18,6 +18,7 @@
 ## Default values
 do_env=0
 nsh_max=-1
+nsh_step=4000
 nsh_jobs=8
 psf='mccd'
 
@@ -28,9 +29,12 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    -e\tset environment and exit (run as '. $(basename "$0")'\n
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
-   --nsh_max N\n
+   --nsh_step NSTEP\n
+   \tnumber of objects per parallel shape module call, \n
+   \t default: $nsh_step\n
+   --nsh_max NMAX\n
    \tmax number of objects per parallel shape module call, \n
-   \t default: unlimited\n
+   \t default: unlimited; has precedent over --nsh_step\n
    TILE_ID_i\n
    \ttile ID(s), e.g. 282.247 214.242\n
 "
@@ -60,6 +64,10 @@ while [ $# -gt 0 ]; do
       nsh_max="$2"
       shift
       ;;
+    --nsh_step)
+      nsh_step="$2"
+      shift
+      ;;
     *)
       TILE_ARR+=("$1")
       ;;
@@ -76,6 +84,9 @@ n_tile=${#TILE_ARR[@]}
 if [ "$n_tile" == "0" ]; then
   echo "No tile ID given"
   exit 3
+fi
+if [ $nsh_max != -1 ]; then
+  nsh_step=$nsh_max
 fi
 
 # For tar archives. Should be unique to each job
@@ -282,25 +293,22 @@ done
 $VCP vos:cfis/cosmostat/kilbinger/cfis .
 
 # Shape measurement config files
-if [ "$nsh_max" != "-1" ]; then
-  n_min=0
-  n_max=$((nsh_max - 1))
-  for k in $(seq 1 $nsh_jobs); do
-    cat $SP_CONFIG/config_tile_Ng_template.ini | \
-      perl -ane 's/(ID_OBJ_MIN =) X/$1 '$n_min'/; s/(ID_OBJ_MAX =) X/$1 '$n_max'/; s/NgXu/Ng'$k'u/; s/Xinterp/'$psf'interp/g; print' \
-       > $SP_CONFIG_MOD/config_tile_Ng${k}u.ini
-    n_min=$((n_max + 1))
-    n_max=$((n_min + nsh_max - 1))
-  done
-else
-  for k in $(seq 1 $nsh_jobs); do
-    cp $SP_CONFIG/config_tile_Ng${k}u.ini $SP_CONFIG_MOD
-  done
-fi
+n_min=0
+n_max=$((nsh_step - 1))
+for k in $(seq 1 $nsh_jobs); do
+  cat $SP_CONFIG/config_tile_Ng_template.ini | \
+    perl -ane 's/(ID_OBJ_MIN =) X/$1 '$n_min'/; s/(ID_OBJ_MAX =) X/$1 '$n_max'/; s/NgXu/Ng'$k'u/; s/X_interp/'$psf'_interp/g; print' \
+     > $SP_CONFIG_MOD/config_tile_Ng${k}u.ini
+  echo $k $n_min $n_max
+  n_min=$((n_min + nsh_step))
+  if [ "$k" == $((nsh_jobs - 1)) ] && [ $nsh_max == -1 ]; then
+    n_max=-1
+  else
+    n_max=$((n_min + nsh_step - 1))
+  fi
+done
 
-exit 0
-
-### Run pipeline
+# Run pipeline
 
 ## Prepare images
 
@@ -354,7 +362,7 @@ wait
 command_sp "shapepipe_run -c $SP_CONFIG/config_merge_sep_cats.ini" "Run shapepipe (tile: merge sep cats)" "$VERBOSE" "$ID"
 
 # Create final shape catalogue by merging all tile information
-command_sp "shapepipe_run -c $SP_CONFIG/config_make_cat_mccd.ini" "Run shapepipe (tile: create final cat)" "$VERBOSE" "$ID"
+command_sp "shapepipe_run -c $SP_CONFIG/config_make_cat_$psf" "Run shapepipe (tile: create final cat $psf)" "$VERBOSE" "$ID"
 
 
 ## Upload results
@@ -369,6 +377,7 @@ upload_logs "$ID" "$VERBOSE"
 # Final shape catalog
 
 NAMES=(
+        "${psf}_interp_exp"
         "setools_mask"
         "setools_stat"
         "setools_plot"
@@ -376,6 +385,7 @@ NAMES=(
         "final_cat"
      )
 DIRS=(
+        "*/${psf}_interp_runner/output"
         "*/setools_runner/output/mask"
         "*/setools_runner/output/stat"
         "*/setools_runner/output/plot"
@@ -383,6 +393,7 @@ DIRS=(
         "*/make_catalog_runner/output"
      )
 PATTERNS=(
+        "validation_psf-*"
         "*"
         "*"
         "*"
