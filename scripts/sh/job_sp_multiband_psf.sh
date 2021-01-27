@@ -10,12 +10,14 @@
 
 usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
 \n\nOptions:\n
-   -h\tThis message\n
+   -h\tthis message\n
    -j, --job JOB\tRunning JOB, bit-coded\n
    \t  1: Retrieve images (online if method=vos)\n
    \t  2: Prepare images (offline)\n
    \t  4: Mask (online)\n
    \t  8: Remaining processing (offline)\n
+   -s, --survey NAME\n
+   \t survey name, one in ['unions'|'ps3pi_cfis']\n
    TILE_ID_i\n
    \ttile ID, e.g. 282.247\n"
 
@@ -28,7 +30,8 @@ fi
 # Command line arguments
 
 ## Default values
-job=7
+job=31
+survey='unions'
 
 ## Parse command line
 ID=()
@@ -40,6 +43,10 @@ while [ $# -gt 0 ]; do
       ;;
     -j|--job)
       job="$2"
+      shift
+      ;;
+    -s|--survey)
+      survey="$2"
       shift
       ;;
     *)
@@ -54,7 +61,7 @@ echo "Processing $n_ID tile(s)"
 
 # Path variables
 export SP_HOME=$HOME/astro/repositories/github/shapepipe
-export SP_CONFIG=$SP_HOME/example/unions
+export SP_CONFIG=$SP_HOME/example/$survey
 export SP_RUN=.
 
 #export LD_LIBRARY_PATH=$HOME/.conda/envs/shapepipe/lib
@@ -92,7 +99,9 @@ if [[ $do_job != 0 ]]; then
 
   ### Convert Pan-STARRS image names, necessary for UNIONS
   ### but not PS3PI tiles
-  $SP_HOME/scripts/python/ps_convert_file_names.py
+  if [ "$survey" == "unions" ]; then
+    $SP_HOME/scripts/python/ps_convert_file_names.py
+  fi
 
   ### Unzip FITS files and/or remove unused HDU:
   ### CFIS weights; UNIONS images, weights, flags
@@ -142,6 +151,10 @@ if [[ $do_job != 0 ]]; then
   shapepipe_run -c $SP_CONFIG/config_tile_detect_u.ini
   shapepipe_run -c $SP_CONFIG/config_tile_detect_i.ini
   shapepipe_run -c $SP_CONFIG/config_tile_detect_z.ini
+
+  ### Match with external spectroscopic catalogue
+  shapepipe_run -c $SP_CONFIG/config_tile_match_ext_r_me.ini
+  shapepipe_run -c $SP_CONFIG/config_tile_match_ext_i.ini
 
   ### Vignets for weights
   shapepipe_run -c $SP_CONFIG/config_tile_Viw.ini

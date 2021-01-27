@@ -5,8 +5,6 @@ FLUX_AUTO                #Flux within a Kron-like elliptical aperture           
 FLUXERR_AUTO             #RMS error for AUTO flux                                   [count]
 MAG_AUTO                 #Kron-like elliptical aperture magnitude                   [mag]
 MAGERR_AUTO              #RMS error for AUTO magnitude                              [mag]
-MAG_APER(1)              #Circular aperture magnitude                               [mag]
-MAGERR_APER(1)           #RMS error estimate(s) for circular aperture mag           [mag]
 FLUX_WIN                 #Gaussian-weighted flux                                    [count]
 FLUXERR_WIN              #RMS error for WIN flux                                    [count]
 MAG_WIN                  #Gaussian-weighted magnitude                               [mag]

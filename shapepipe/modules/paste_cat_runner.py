@@ -62,8 +62,8 @@ class PasteCat(object):
     def process(self):
 
         # Create output catalog
-        pasted_cat = (io.FITSCatalog(self._output_path,
-                      open_mode=io.BaseCatalog.OpenMode.ReadWrite))
+        pasted_cat = io.FITSCatalog(self._output_path,
+                                    open_mode=io.BaseCatalog.OpenMode.ReadWrite)
 
         for i, input_file in enumerate(self._input_file_list):
             self._w_log.info('Pasting catalog \'{}\''.format(input_file))
