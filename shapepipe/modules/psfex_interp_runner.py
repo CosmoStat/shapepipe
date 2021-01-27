@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""PSFEXINTERP RUNNER
+"""PSFEX_INTERP RUNNER
 
 This file is the pipeline runner for the PSFExInterpolation package.
 
@@ -16,15 +16,15 @@ from shapepipe.modules.PSFExInterpolation_package import interpolation_script
                file_pattern=['star_selection', 'galaxy_selection'],
                file_ext=['.psf', '.fits'],
                depends=['numpy', 'astropy', 'galsim', 'sqlitedict'])
-def psfexinterp_runner(input_file_list, run_dirs, file_number_string,
-                       config, w_log):
+def psfex_interp_runner(input_file_list, run_dirs, file_number_string,
+                        config, w_log):
 
-    mode = config.get('PSFEXINTERP_RUNNER', 'MODE')
+    mode = config.get('PSFEX_INTERP_RUNNER', 'MODE')
 
-    pos_params = config.getlist('PSFEXINTERP_RUNNER', 'POSITION_PARAMS')
-    get_shapes = config.getboolean('PSFEXINTERP_RUNNER', 'GET_SHAPES')
-    star_thresh = config.getint('PSFEXINTERP_RUNNER', 'STAR_THRESH')
-    chi2_thresh = config.getint('PSFEXINTERP_RUNNER', 'CHI2_THRESH')
+    pos_params = config.getlist('PSFEX_INTERP_RUNNER', 'POSITION_PARAMS')
+    get_shapes = config.getboolean('PSFEX_INTERP_RUNNER', 'GET_SHAPES')
+    star_thresh = config.getint('PSFEX_INTERP_RUNNER', 'STAR_THRESH')
+    chi2_thresh = config.getint('PSFEX_INTERP_RUNNER', 'CHI2_THRESH')
 
     if mode == 'CLASSIC':
         psfcat_path, galcat_path = input_file_list
@@ -38,11 +38,11 @@ def psfexinterp_runner(input_file_list, run_dirs, file_number_string,
         inst.process()
 
     elif mode == 'MULTI-EPOCH':
-        dot_psf_dir = config.getexpanded('PSFEXINTERP_RUNNER',
+        dot_psf_dir = config.getexpanded('PSFEX_INTERP_RUNNER',
                                          'ME_DOT_PSF_DIR')
-        dot_psf_pattern = config.get('PSFEXINTERP_RUNNER',
+        dot_psf_pattern = config.get('PSFEX_INTERP_RUNNER',
                                      'ME_DOT_PSF_PATTERN')
-        f_wcs_path = config.getexpanded('PSFEXINTERP_RUNNER', 'ME_LOG_WCS')
+        f_wcs_path = config.getexpanded('PSFEX_INTERP_RUNNER', 'ME_LOG_WCS')
 
         galcat_path = input_file_list[0]
 

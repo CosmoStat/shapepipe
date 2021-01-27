@@ -18,7 +18,7 @@ import os
 @module_runner(input_module=['setools_runner'],
                version='1.0',
                file_pattern=['galaxy_selection'],
-               file_ext=['.psf', '.fits'],
+               file_ext=['.npy'],
                depends=['numpy', 'astropy', 'galsim', 'sqlitedict', 'mccd'],
                run_method='parallel')
 def mccd_interp_runner(input_file_list, run_dirs, file_number_string,

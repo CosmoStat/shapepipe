@@ -68,7 +68,7 @@ class GetImages(object):
         check_existing_dir : string, optional, default=None
             if not None, only retrieve image if not existing at this path (recursively)
         n_expected : int, optional, default=None
-            number of expected files per tyep and ID to download/check for existance
+            number of expected files per tyep and ID to download/check for existence
         """
 
         self._copy = copy
@@ -170,6 +170,9 @@ class GetImages(object):
                     sys.argv.append(opt)
             sys.argv.append(in_path)
             sys.argv.append(out_path)
+
+            self._w_log.info('Command \'{}\''
+                             ''.format(' '.join(sys.argv)))
 
             vcp = vosHandler('vcp')
             vcp()
@@ -275,7 +278,7 @@ def get_images_runner(input_file_list, run_dirs, file_number_string,
         raise ValueError('key COPY={} is invalid, must be in {}'.format(copy, copy_ok))
 
     if config.has_option('GET_IMAGES_RUNNER', 'COPY_OPTIONS'):
-        options = config.get('GET_IMAGES_RUNNER', 'COPY_OPTIONS')
+        options = config.getexpanded('GET_IMAGES_RUNNER', 'COPY_OPTIONS')
     else:
         options = None
 

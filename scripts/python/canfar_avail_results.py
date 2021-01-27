@@ -310,7 +310,7 @@ def main(argv=None):
 
     ID_files = read_input_files(param.input_IDs, verbose=param.verbose)
 
-    result_base_names = ['psfex', 'psfexinterp_exp', 'setools_mask', 'setools_stat', 'setools_plot',
+    result_base_names = ['psfex', 'psfex_interp_exp', 'setools_mask', 'setools_stat', 'setools_plot',
                          'final_cat', 'pipeline_flag', 'logs']
 
     n_complete = len(result_base_names)

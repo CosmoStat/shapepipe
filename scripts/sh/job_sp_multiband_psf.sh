@@ -57,7 +57,7 @@ export SP_HOME=$HOME/astro/repositories/github/shapepipe
 export SP_CONFIG=$SP_HOME/example/unions
 export SP_RUN=.
 
-export LD_LIBRARY_PATH=$HOME/.conda/envs/shapepipe/lib
+#export LD_LIBRARY_PATH=$HOME/.conda/envs/shapepipe/lib
 
 # Create output path
 mkdir -p output
@@ -76,7 +76,6 @@ if [[ $do_job != 0 ]]; then
 
   ### Retrieve tiles
   shapepipe_run -c $SP_CONFIG/config_get_tiles_symlink.ini
-  #shapepipe_run -c $SP_CONFIG/config_get_vcp.ini
 
   ### Find exposures that were used to create tile (stack)
   shapepipe_run -c $SP_CONFIG/config_tile_Fe.ini

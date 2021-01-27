@@ -8,34 +8,88 @@
 #              called in interactive mode on a virtual
 #              machine.
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
-# Date: 11/2020
+# Date: v1.0 11/2020
+#       v1.1 01/2021
 # Package: shapepipe
 
+# Command line arguments
 
-### Set-up ###
+## Default values
+do_env=0
+nsh_max=-1
+nsh_step=4000
+nsh_jobs=8
+psf='mccd'
 
-## Variables
+## Help string
+usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
+\n\nOptions:\n
+   -h\tthis message\n
+   -e\tset environment and exit (run as '. $(basename "$0")'\n
+   -p, --psf MODEL\n
+    \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
+   --nsh_step NSTEP\n
+   \tnumber of objects per parallel shape module call, \n
+   \t default: $nsh_step\n
+   --nsh_max NMAX\n
+   \tmax number of objects per parallel shape module call, \n
+   \t default: unlimited; has precedent over --nsh_step\n
+   TILE_ID_i\n
+   \ttile ID(s), e.g. 282.247 214.242\n
+"
 
-# Tile numbers
-
-if [ $# == 0 ]; then
-  echo "Usages:"
-  echo "  bash canfar_sp_mccd.bash TILE_ID_1 [TILE_ID_2 [...]]"
-  echo "    TILE_ID = xxx.yyy"
-  echo "    Examples:"
-  echo "      canfar_sp_mccd.bash 244.252"
-  echo "      canfar_sp_mccd.bash 244.252 239.293"
-  echo "  . canfar_sp_mccd.bash -e"
-  echo "    Assign environment variables"
-  exit 1
+## Help if no arguments
+if [ -z $1 ]; then
+        echo -ne $usage
+        exit 1
 fi
 
-# Copy command line arguments
-TILE_ARR=($@)
+## Parse command line
+TILE_ARR=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h)
+      echo -ne $usage
+      exit 0
+      ;;
+    -e)
+      do_env=1
+      ;;
+    -p|--psf)
+      psf="$2"
+      shift
+      ;;
+    --nsh_max)
+      nsh_max="$2"
+      shift
+      ;;
+    --nsh_step)
+      nsh_step="$2"
+      shift
+      ;;
+    *)
+      TILE_ARR+=("$1")
+      ;;
+  esac
+  shift
+done
+
+## Check options
+if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
+  echo "PSF (option -p) needs to be 'psf' or 'mccd'"
+  exit 2
+fi
+n_tile=${#TILE_ARR[@]}
+if [ "$n_tile" == "0" ]; then
+  echo "No tile ID given"
+  exit 3
+fi
+if [ $nsh_max != -1 ]; then
+  nsh_step=$nsh_max
+fi
 
 # For tar archives. Should be unique to each job
 export ID=`echo ${TILE_ARR[@]} | tr ' ' '_'`
-
 
 ## Paths
 
@@ -59,6 +113,7 @@ export SP_RUN=`pwd`
 
 # Config file path
 export SP_CONFIG=$SP_RUN/cfis
+export SP_CONFIG_MOD=$SP_RUN/cfis_mod
 
 ## Other variables
 
@@ -211,14 +266,13 @@ source $VM_HOME/miniconda3/bin/activate shapepipe
 
 print_env
 
-if [ "$1" == "-e" ]; then
+if [ $do_env == 1 ]; then
    echo "Exiting"
-   return 0
+   return
 fi
 
 echo "Start"
 
-n_tile=${#TILE_ARR[@]}
 echo "Processing $n_tile tile(s)"
 
 # Create input and output directories
@@ -226,6 +280,7 @@ echo "Create directories for processing"
 mkdir -p $SP_RUN
 cd $SP_RUN
 mkdir -p $OUTPUT
+mkdir -p $SP_CONFIG_MOD
 
 # Write tile numbers to ASCII input file
 rm -rf $TILE_NUMBERS_PATH
@@ -236,7 +291,23 @@ done
 # Download config files
 $VCP vos:cfis/cosmostat/kilbinger/cfis .
 
-### Run pipeline
+# Shape measurement config files
+n_min=0
+n_max=$((nsh_step - 1))
+for k in $(seq 1 $nsh_jobs); do
+  cat $SP_CONFIG/config_tile_Ng_template.ini | \
+    perl -ane 's/(ID_OBJ_MIN =) X/$1 '$n_min'/; s/(ID_OBJ_MAX =) X/$1 '$n_max'/; s/NgXu/Ng'$k'u/; s/X_interp/'$psf'_interp/g; print' \
+     > $SP_CONFIG_MOD/config_tile_Ng${k}u.ini
+  echo $k $n_min $n_max
+  n_min=$((n_min + nsh_step))
+  if [ "$k" == $((nsh_jobs - 1)) ] && [ $nsh_max == -1 ]; then
+    n_max=-1
+  else
+    n_max=$((n_min + nsh_step - 1))
+  fi
+done
+
+# Run pipeline
 
 ## Prepare images
 
@@ -255,12 +326,14 @@ command_sp "shapepipe_run -c $SP_CONFIG/config_get_exp.ini" "Run shapepipe (prep
 ## Exposures
 
 # Run all modules
-command_sp "shapepipe_run -c $SP_CONFIG/config_exp_mccd.ini" "Run shapepipe (exp mccd)" "$VERBOSE" "$ID"
+command_sp "shapepipe_run -c $SP_CONFIG/config_exp_$psf.ini" "Run shapepipe (exp $psf)" "$VERBOSE" "$ID"
 
 
-# The following are very a bad hacks to get additional input files
-#input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
-#command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output" "$VERBOSE" "$ID"
+# The following are very a bad hacks to get additional input file paths
+if [ "$psf" == "psfex" ]; then
+  input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
+  command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output" "$VERBOSE" "$ID"
+fi
 
 input_split_exp=`find output -name flag-*.fits | head -n 1`
 command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output" "$VERBOSE" "$ID"
@@ -272,19 +345,22 @@ command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor
 ## Tiles
 
 # Everything up to shapes
-command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSxPsViSmVi.ini" "Run shapepipe (tile: up to ngmix)" "$VERBOSE" "$ID"
 
-# Shapes, run 8 parallel processes
-for k in $(seq 1 8); do
-    command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Ng${k}u.ini" "Run shapepipe (tile: ngmix $k)" "$VERBOSE" "$ID" &
+## PSF model letter: 'P' (psfex) or 'M' (mccd)
+letter=${psf:0:1}
+Letter=${l^}
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSx${Letter}iViSmVi.ini" "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)" "$VERBOSE" "$ID"
+
+# Shapes, run $nsh_jobs parallel processes
+for k in $(seq 1 $nsh_jobs); do
+    command_sp "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" "Run shapepipe (tile: ngmix+galsim $k)" "$VERBOSE" "$ID" &
 done
 wait
 
 # Merge separated shapes catalogues
 command_sp "shapepipe_run -c $SP_CONFIG/config_merge_sep_cats.ini" "Run shapepipe (tile: merge sep cats)" "$VERBOSE" "$ID"
 
-# Create final shape catalogue by merging all tile information
-command_sp "shapepipe_run -c $SP_CONFIG/config_make_cat.ini" "Run shapepipe (tile: create final cat)" "$VERBOSE" "$ID"
+command_sp "shapepipe_run -c $SP_CONFIG/config_make_cat_$psf" "Run shapepipe (tile: create final cat $psf)" "$VERBOSE" "$ID"
 
 
 ## Upload results
@@ -299,6 +375,7 @@ upload_logs "$ID" "$VERBOSE"
 # Final shape catalog
 
 NAMES=(
+        "${psf}_interp_exp"
         "setools_mask"
         "setools_stat"
         "setools_plot"
@@ -306,6 +383,7 @@ NAMES=(
         "final_cat"
      )
 DIRS=(
+        "*/${psf}_interp_runner/output"
         "*/setools_runner/output/mask"
         "*/setools_runner/output/stat"
         "*/setools_runner/output/plot"
@@ -313,6 +391,7 @@ DIRS=(
         "*/make_catalog_runner/output"
      )
 PATTERNS=(
+        "validation_psf-*"
         "*"
         "*"
         "*"

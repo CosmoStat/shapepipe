@@ -10,7 +10,7 @@
 NAMES=(
         "final_cat"
         "psfex"
-        "psfexinterp_exp"
+        "psfex_interp_exp"
         "setools_mask"
         "setools_stat"
         "setools_plot"

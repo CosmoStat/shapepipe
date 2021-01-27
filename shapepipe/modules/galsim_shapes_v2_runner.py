@@ -776,7 +776,7 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
 
 #depends=['numpy', 'ngmix', 'galsim', 'astropy'])
 
-@module_runner(input_module=['sextractor_runner', 'psfexinterp_runner', 'vignetmaker_runner'],
+@module_runner(input_module=['sextractor_runner', 'psfex_interp_runner', 'vignetmaker_runner'],
                version='0.0.1',
                file_pattern=['tile_sexcat', 'weight', 'image', 'exp_background', 'galaxy_psf', 'weight', 'flag'],
                file_ext=['.fits', '.fits', '.sqlite', '.sqlite', '.sqlite', '.sqlite', '.sqlite'],
