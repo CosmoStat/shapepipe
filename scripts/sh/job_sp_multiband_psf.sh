@@ -76,7 +76,6 @@ if [[ $do_job != 0 ]]; then
 
   ### Retrieve tiles
   shapepipe_run -c $SP_CONFIG/config_get_tiles_symlink.ini
-  #shapepipe_run -c $SP_CONFIG/config_get_vcp.ini
 
   ### Find exposures that were used to create tile (stack)
   shapepipe_run -c $SP_CONFIG/config_tile_Fe.ini
