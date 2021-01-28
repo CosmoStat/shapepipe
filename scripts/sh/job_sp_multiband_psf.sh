@@ -133,7 +133,8 @@ if [[ $do_job != 0 ]]; then
   $CONDA_PREFIX/bin/mpiexec -np 4 shapepipe_run -c $SP_CONFIG/config_tile_mask_r.ini
 
   ### Mask r-band exposures
-  $CONDA_PREFIX/bin/mpiexec -np 4 shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini
+  #$CONDA_PREFIX/bin/mpiexec -np 4 shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini
+  shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini
 
 fi
 
