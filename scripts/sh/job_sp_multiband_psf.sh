@@ -7,7 +7,14 @@
 # Date: 13/11/2020
 # Package: ShapePipe
 
+# Command line arguments
 
+## Default values
+job=31
+survey='unions'
+retrieve='vos'
+
+## Help string
 usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
 \n\nOptions:\n
    -h\tthis message\n
@@ -18,6 +25,8 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    \t  8: Remaining processing (offline)\n
    -s, --survey NAME\n
    \t survey name, one in ['unions'|'ps3pi_cfis']\n
+   -r, --retrieve METHOD\n
+   \tmethod to retrieve images, one in 'vos|symlink', default='$retrieve'\n
    TILE_ID_i\n
    \ttile ID, e.g. 282.247\n"
 
@@ -25,13 +34,6 @@ if [ -z $1 ]; then
         echo -ne $usage
         exit 1
 fi
-
-
-# Command line arguments
-
-## Default values
-job=31
-survey='unions'
 
 ## Parse command line
 ID=()
@@ -47,6 +49,10 @@ while [ $# -gt 0 ]; do
       ;;
     -s|--survey)
       survey="$2"
+      shift
+      ;;
+    -r|--retrieve)
+      retrieve="$2"
       shift
       ;;
     *)
@@ -82,14 +88,13 @@ done
 if [[ $do_job != 0 ]]; then
 
   ### Retrieve tiles
-  shapepipe_run -c $SP_CONFIG/config_get_tiles_symlink.ini
-  #shapepipe_run -c $SP_CONFIG/config_get_vcp.ini
+  shapepipe_run -c $SP_CONFIG/config_get_tiles_$retrieve.ini
 
   ### Find exposures that were used to create tile (stack)
   shapepipe_run -c $SP_CONFIG/config_tile_Fe.ini
 
   ### Retrieve exposures
-  shapepipe_run -c $SP_CONFIG/config_exp_Gi_symlink.ini
+  shapepipe_run -c $SP_CONFIG/config_exp_Gi_$retrieve.ini
 
 fi
 
@@ -146,15 +151,23 @@ if [[ $do_job != 0 ]]; then
   shapepipe_run -c $SP_CONFIG/config_exp_Psm.ini
 
   ### Detect objects on r-band images, measure properties
-  ### on u-, r-, i-, z-band images
+  ### on other bands
   shapepipe_run -c $SP_CONFIG/config_tile_detect_r_me.ini
-  shapepipe_run -c $SP_CONFIG/config_tile_detect_u.ini
-  shapepipe_run -c $SP_CONFIG/config_tile_detect_i.ini
+  shapepipe_run -c $SP_CONFIG/config_tile_detect_r.ini
+  shapepipe_run -c $SP_CONFIG/config_tile_detect_g.ini
   shapepipe_run -c $SP_CONFIG/config_tile_detect_z.ini
 
   ### Match with external spectroscopic catalogue
   shapepipe_run -c $SP_CONFIG/config_tile_match_ext_r_me.ini
+  shapepipe_run -c $SP_CONFIG/config_tile_match_ext_r.ini
+  shapepipe_run -c $SP_CONFIG/config_tile_match_ext_g.ini
   shapepipe_run -c $SP_CONFIG/config_tile_match_ext_i.ini
+  shapepipe_run -c $SP_CONFIG/config_tile_match_ext_z.ini
+
+  if [ "$survey" == "unions" ]; then
+    shapepipe_run -c $SP_CONFIG/config_tile_detect_u.ini
+    shapepipe_run -c $SP_CONFIG/config_tile_match_ext_u.ini
+  fi
 
   ### Vignets for weights
   shapepipe_run -c $SP_CONFIG/config_tile_Viw.ini

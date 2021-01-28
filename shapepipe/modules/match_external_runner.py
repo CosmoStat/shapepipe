@@ -136,9 +136,9 @@ class MatchCats(object):
             matched[self._external_col_copy] = external_data[self._external_col_copy][idx_sub]
 
             # Write FITS file
-            out_cat = io.FITSCatalog(self._output_path,
+            out_cat = io.FITSCatalog(self._output_path, SEx_catalog=True,
                                      open_mode=io.BaseCatalog.OpenMode.ReadWrite)
-            out_cat.save_as_fits(data=matched, ext_name='MATCHED')
+            out_cat.save_as_fits(data=matched, ext_name='MATCHED', sex_cat_path=self._input_file_list[0])
 
             # Write all extensions if in multi-epoch mode
             if self._mode == 'MULTI-EPOCH':
@@ -176,6 +176,9 @@ def match_external_runner(input_file_list, run_dirs, file_number_string,
         hdu_no = 2
 
     mode = config.get('MATCH_EXTERNAL_RUNNER', 'MODE')
+    valid_modes = ['CLASSIC', 'MULTI-EPOCH']
+    if mode not in valid_modes:
+        raise ValueError('mode \'{}\' is invalid, must be one of {}'.format(mode, valid_modes))        
 
     # External data
     external_cat_path = config.getexpanded('MATCH_EXTERNAL_RUNNER', 'EXTERNAL_CAT_PATH')
