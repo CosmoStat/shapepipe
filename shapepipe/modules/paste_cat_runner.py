@@ -69,7 +69,7 @@ class PasteCat(object):
             self._w_log.info('Pasting catalog \'{}\''.format(input_file))
 
             # Read input data
-            cat = io.FITSCatalog(input_file) #, SEx_catalog=True)
+            cat = io.FITSCatalog(input_file)
             cat.open()
             data = np.copy(cat.get_data(hdu_no=self._hdu_no[i]))
             col_names = cat.get_col_names()
