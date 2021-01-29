@@ -62,14 +62,14 @@ class PasteCat(object):
     def process(self):
 
         # Create output catalog
-        pasted_cat = (io.FITSCatalog(self._output_path,
-                      open_mode=io.BaseCatalog.OpenMode.ReadWrite))
+        pasted_cat = io.FITSCatalog(self._output_path,
+                                    open_mode=io.BaseCatalog.OpenMode.ReadWrite)
 
         for i, input_file in enumerate(self._input_file_list):
             self._w_log.info('Pasting catalog \'{}\''.format(input_file))
 
             # Read input data
-            cat = io.FITSCatalog(input_file) #, SEx_catalog=True)
+            cat = io.FITSCatalog(input_file)
             cat.open()
             data = np.copy(cat.get_data(hdu_no=self._hdu_no[i]))
             col_names = cat.get_col_names()

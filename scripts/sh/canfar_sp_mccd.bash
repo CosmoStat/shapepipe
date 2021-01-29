@@ -240,7 +240,7 @@ function upload_logs() {
 
 # Print script variables
 function print_env() {
-   echo "*** Setting ***"
+   echo "*** Environment ***"
    echo "Data:"
    echo " TILE_ARR=${TILE_ARR[@]}"
    echo "Paths:"
