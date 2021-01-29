@@ -123,13 +123,13 @@ class MatchCats(object):
         # Find close neighbours
         isdup = d2d < self._tolerance
 
-        if not any(isdup is True):
+        if not any(isdup):
             self._w_log.info('No match for {} with distance < {} arcsec found, no output created'
                              ''.format(self._input_file_list[i], self._tolerance))
         else:
 
             # Copy matched objects to output data
-            idx_sub = np.array([(i, ide) for (i, ide) in enumerate(idx) if isdup[i] is True])[:, 1]
+            idx_sub = np.array([(i, ide) for (i, ide) in enumerate(idx) if isdup[i]])[:, 1]
             matched = {}
             for col in col_names:
                 matched[col] = data[col][idx_sub]
