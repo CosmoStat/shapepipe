@@ -190,6 +190,7 @@ if [[ $do_job != 0 ]]; then
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_i.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_g.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_z.ini"
+  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_y.ini"
 
   ### Match with external spectroscopic catalogue
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_r_me.ini"
@@ -197,6 +198,7 @@ if [[ $do_job != 0 ]]; then
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_g.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_i.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_z.ini"
+  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_y.ini"
 
   if [ "$survey" == "unions" ]; then
     command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_u.ini"
