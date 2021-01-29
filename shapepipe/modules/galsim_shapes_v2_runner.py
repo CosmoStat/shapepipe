@@ -317,7 +317,6 @@ def check_galsim_shapes(galsim_shape, obj_id, w_log):
 
 ## Morphology functions
 
-
 def get_gini(g_gal, g_weight, g_flag):
     """Get Gini
     Return gini coefficient of galaxy.
@@ -340,12 +339,12 @@ def get_gini(g_gal, g_weight, g_flag):
     Implements eq. (6) of Lotz, Primack & Madau (2004)
     """
 
-    w = np.where(g_flag.array==0)
+    w = np.where(g_flag.array == 0)
     flux_s = np.sort(g_gal.array[w], axis=None)
     flux_s_abs = np.abs(flux_s)
 
     n_pix = len(flux_s)
-    i_pix = np.array(range(1, n_pix+1)) 
+    i_pix = np.array(range(1, n_pix+1))
 
     s = sum((2 * i_pix - n_pix - 1) * flux_s_abs)
 
@@ -538,7 +537,7 @@ def compile_results(results, ZP, do_metacal, w_log, pixel_scale, do_morphology=F
     if do_morphology:
         cat_keys.extend(('gal_sb', 'gal_gini', 'gal_rho4'))
 
-    if do_metacal == True:
+    if do_metacal:
         types = ['noshear', '1p', '1m', '2p', '2m']
         types += ['original_psf']
     else:
@@ -556,7 +555,7 @@ def compile_results(results, ZP, do_metacal, w_log, pixel_scale, do_morphology=F
             mag = -2.5 * np.log10(results[i][key].moments_amp) + ZP
             mag_err = np.abs(-2.5 * results[i][key].moments_amp_err / (results[i][key].moments_amp * np.log(10)))
 
-            if do_morphology == True:
+            if do_morphology:
                 gal_sb = mag + 5 * np.log10(results[i][key].moments_sigma * pixel_scale)
                 output_dict[key]['gal_sb'].append(gal_sb)
                 output_dict[key]['gal_rho4'].append(results[i][key].moments_rho4)
@@ -774,13 +773,12 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
 
     return final_res
 
-#depends=['numpy', 'ngmix', 'galsim', 'astropy'])
 
 @module_runner(input_module=['sextractor_runner', 'psfex_interp_runner', 'vignetmaker_runner'],
                version='0.0.1',
                file_pattern=['tile_sexcat', 'weight', 'image', 'exp_background', 'galaxy_psf', 'weight', 'flag'],
                file_ext=['.fits', '.fits', '.sqlite', '.sqlite', '.sqlite', '.sqlite', '.sqlite'],
-               depends=['numpy', 'galsim', 'astropy'])
+               depends=['numpy', 'ngmix', 'galsim', 'astropy'])
 def galsim_shapes_v2_runner(input_file_list, run_dirs, file_number_string,
                             config, w_log):
 

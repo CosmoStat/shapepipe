@@ -2,11 +2,11 @@
 
 """MATCH EXTERNAL RUNNER
 
-This module pastes different (SExtractor) catalogs of objects with identical IDs.
+This module matches an external catalogue to a ShapePipe (SExtractor) catalog
 
-:Author: Martin Kilbinger <martin.kilbinger@cea.fr>, Axel Guinot
+:Author: Martin Kilbinger <martin.kilbinger@cea.fr>, Xavier Jimenez
 
-:Date: 10/2020
+:Date: 01/2021
 
 :Package: ShapePipe
 
@@ -123,13 +123,13 @@ class MatchCats(object):
         # Find close neighbours
         isdup = d2d < self._tolerance
 
-        if not any(isdup==True):
+        if not any(isdup is True):
             self._w_log.info('No match for {} with distance < {} arcsec found, no output created'
                              ''.format(self._input_file_list[i], self._tolerance))
         else:
 
             # Copy matched objects to output data
-            idx_sub = np.array([(i,ide) for (i,ide) in enumerate(idx) if isdup[i] == True])[:,1]
+            idx_sub = np.array([(i,ide) for (i,ide) in enumerate(idx) if isdup[i] is True])[:, 1]
             matched = {}
             for col in col_names:
                 matched[col] = data[col][idx_sub]
@@ -163,7 +163,6 @@ class MatchCats(object):
 def match_external_runner(input_file_list, run_dirs, file_number_string,
                           config, w_log):
 
-
     # Processing
     tmp = config.getfloat('MATCH_EXTERNAL_RUNNER', 'TOLERANCE')
     tolerance = tmp * u.arcsec
@@ -178,7 +177,7 @@ def match_external_runner(input_file_list, run_dirs, file_number_string,
     mode = config.get('MATCH_EXTERNAL_RUNNER', 'MODE')
     valid_modes = ['CLASSIC', 'MULTI-EPOCH']
     if mode not in valid_modes:
-        raise ValueError('mode \'{}\' is invalid, must be one of {}'.format(mode, valid_modes))        
+        raise ValueError('mode \'{}\' is invalid, must be one of {}'.format(mode, valid_modes))
 
     # External data
     external_cat_path = config.getexpanded('MATCH_EXTERNAL_RUNNER', 'EXTERNAL_CAT_PATH')
