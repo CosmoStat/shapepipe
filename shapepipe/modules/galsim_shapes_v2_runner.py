@@ -357,6 +357,31 @@ def get_gini(g_gal, g_weight, g_flag):
 # Metacal functions #
 #####################
 
+def psf_fitter(psf_vign):
+    """Psf fitter
+
+    Function used to create a gaussian fit of the PSF.
+
+    Parameters
+    ----------
+    psf_vign : numpy.array
+        Array containg one vignet of psf
+
+    """
+
+    psf_obs = ngmix.Observation(psf_vign)
+    pfitter = ngmix.fitting.LMSimple(psf_obs, 'gauss')
+
+    shape = psf_vign.shape
+    psf_pars = np.array([0., 0., 0., 0., 4., 1.])
+    pfitter.go(psf_pars)
+
+    psf_gmix_fit = pfitter.get_gmix()
+    psf_obs.set_gmix(psf_gmix_fit)
+
+    return psf_obs
+
+
 def make_metacal(gal_vign, psf_vign, weight_vign, tile_jacob, option_dict):
     """Make the metacalibration
 
