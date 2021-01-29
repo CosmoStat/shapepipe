@@ -42,10 +42,12 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    -h\tthis message\n
    -e\tset environment and exit (run as '. $(basename "$0")'\n
    -j, --job JOB\tRunning JOB, bit-coded\n
-   \t  1: Retrieve images (online if method=vos)\n
-   \t  2: Prepare images (offline)\n
-   \t  4: Mask (online)\n
-   \t  8: Remaining processing (offline)\n
+   \t  1: retrieve images (online if method=vos)\n
+   \t  2: prepare images (offline)\n
+   \t  4: mask (online)\n
+   \t  8: processing until shapes (offline)\n
+   \t 16: shapes and morphology (offline)\n
+   \t 32: paste catalogues (offline)\n
    -s, --survey NAME\n
    \t survey name, one in ['unions'|'ps3pi_cfis']\n
    -r, --retrieve METHOD\n
@@ -160,16 +162,15 @@ if [[ $do_job != 0 ]]; then
 
   ### Create flags for CFIS r-band images: add star, halo, and Messier
   ### object masks.
-  #command_sp "$CONDA_PREFIX/bin/mpiexec -np 4 shapepipe_run -c $SP_CONFIG/config_tile_mask_r.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_mask_r.ini"
 
   ### Mask r-band exposures
-  #command_sp "$CONDA_PREFIX/bin/mpiexec -np 4 shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini"
 
 fi
 
-## Remaining processing
+## PSF, object detection, and matching, everything up to shape
+## measurement
 (( do_job= $job & 8 ))
 if [[ $do_job != 0 ]]; then
 
@@ -205,7 +206,7 @@ if [[ $do_job != 0 ]]; then
   ### Vignets for weights
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Viw.ini"
 
-  ### Bad hack to get PSF input dir
+  ### Bad hacks to get PSF input dir
   input_psfex=`find . -name star_selection-*.psf | head -n 1`
   command_sp "ln -sf `dirname $input_psfex` input_psfex"
   input_split_exp=`find output -name flag-*.fits | head -n 1`
