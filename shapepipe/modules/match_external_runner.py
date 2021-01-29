@@ -123,8 +123,6 @@ class MatchCats(object):
         # Find close neighbours
         isdup = d2d < self._tolerance
 
-        import pdb
-        pdb.set_trace()
         if not any(isdup):
             self._w_log.info('No match for {} with distance < {} arcsec found, no output created'
                              ''.format(self._input_file_list[i], self._tolerance))
