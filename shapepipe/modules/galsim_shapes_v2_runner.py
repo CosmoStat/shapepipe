@@ -315,7 +315,7 @@ def check_galsim_shapes(galsim_shape, obj_id, w_log):
     return g1, g2, gal_err
 
 
-## Morphology functions
+# Morphology functions
 
 def get_gini(g_gal, g_weight, g_flag):
     """Get Gini
