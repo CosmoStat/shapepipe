@@ -6,6 +6,38 @@
 # Date: 05/2020
 # Package: shapepipe
 
+# Command line arguments
+
+## Default values
+psf='mccd'
+
+## Help string
+usage="Usage: $(basename "$0") [OPTIONS]
+\n\nOptions:\n
+   -h\tthis message\n
+   -p, --psf MODEL\n
+    \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
+"
+
+## Parse command line
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h)
+      echo -ne $usage
+      exit 0
+      ;;
+    -p|--psf)
+      psf="$2"
+      shift
+      ;;
+    *)
+      echo -ne usage
+      exit 1
+      ;;
+  esac
+  shift
+done
+
 
 NAMES=(
         "final_cat"
@@ -16,7 +48,6 @@ NAMES=(
         "setools_plot"
         "pipeline_flag"
      )
-
 
 # Check number of files
 for out in ${NAMES[@]}; do
