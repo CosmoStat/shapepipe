@@ -125,7 +125,7 @@ class MatchCats(object):
 
         if not any(isdup):
             self._w_log.info('No match for {} with distance < {} arcsec found, no output created'
-                             ''.format(self._input_file_list[i], self._tolerance))
+                             ''.format(self._input_file_list[0], self._tolerance))
         else:
 
             # Copy matched objects to output data
