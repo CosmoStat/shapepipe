@@ -44,7 +44,7 @@ def params_default():
     p_def = cfis.param(
         nx = 20,
         input_path = './psf_cat_full.fits',
-        output_dir = './psf_validation'
+        output_dir = './psf_validation',
         hdu = 2,
     )
 

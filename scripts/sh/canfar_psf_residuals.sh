@@ -6,6 +6,37 @@
 # Date: 05/2020
 # Package: shapepipe
 
+# Command line arguments
+
+## Default values
+psf='mccd'
+
+## Help string
+usage="Usage: $(basename "$0") [OPTIONS]
+\n\nOptions:\n
+   -h\tthis message\n
+   -p, --psf MODEL\n
+    \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
+"
+
+## Parse command line
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h)
+      echo -ne $usage
+      exit 0
+      ;;
+    -p|--psf)
+      psf="$2"
+      shift
+      ;;
+    *)
+      echo -ne usage
+      exit 1
+      ;;
+  esac
+  shift
+done
 
 
 ## Paths
@@ -43,11 +74,17 @@ for dir in $dir_individual $dir_merged; do
     fi
 done
 
+if [ "$psf" == "psfex" ]; then
+  runner="psf_interp_runner"
+else
+  runner="mccd_fit_val_runner"
+fi
+
 # Find all psf validation files and create links.
 # Assumes untar_results.sh has been run before.
 n_skipped=0
 n_created=0
-FILES=output/*/psfex_interp_runner/output/${psfval_file_base}*
+FILES=output/*/${runner}/output/${psfval_file_base}*
 for val in $FILES; do
     base=`basename $val`
     link_s "$pwd/$val" "$dir_individual/$base"

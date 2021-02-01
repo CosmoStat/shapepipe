@@ -41,13 +41,16 @@ done
 
 NAMES=(
         "final_cat"
-        "psfex"
-        "psfex_interp_exp"
+        "${psf}_interp_exp"
         "setools_mask"
         "setools_stat"
         "setools_plot"
         "pipeline_flag"
      )
+
+if [ "$psf" == "psfex" ]; then
+  NAMES+=(psfex)
+fi
 
 # Check number of files
 for out in ${NAMES[@]}; do
