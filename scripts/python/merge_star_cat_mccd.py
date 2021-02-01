@@ -163,12 +163,11 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
         print('Found {} files'.format(len(starcat_names)))
 
     # Initialise columns to be saved
-    x, y, ra, dec = [], [], [], []
+    ra, dec = [], []
     g1_psf, g2_psf, size_psf = [], [], []
     g1, g2, size = [], [], []
     flag_psf, flag_star = [], []
-    mag, snr, psfex_acc = [], [], []
-    ccd_nb = []
+    snr  = []
 
     if verbose:
         print('Reading input FITS PSF catalogues...')
@@ -177,30 +176,23 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
         starcat_j = fits.open(name)
 
         # positions
-        x += list(starcat_j[2].data['X'])
-        y += list(starcat_j[2].data['Y'])
-        ra += list(starcat_j[2].data['RA'])
-        dec += list(starcat_j[2].data['DEC'])
+        ra += list(starcat_j[1].data['RA_LIST'])
+        dec += list(starcat_j[1].data['DEC_LIST'])
 
         # shapes (convert sigmas to R^2)
-        g1_psf += list(starcat_j[2].data['E1_PSF_HSM'])
-        g2_psf += list(starcat_j[2].data['E2_PSF_HSM'])
-        size_psf += list(starcat_j[2].data['SIGMA_PSF_HSM']**2)
-        g1 += list(starcat_j[2].data['E1_STAR_HSM'])
-        g2 += list(starcat_j[2].data['E2_STAR_HSM'])
-        size += list(starcat_j[2].data['SIGMA_STAR_HSM']**2)
+        g1_psf += list(starcat_j[1].data['PSF_MOM_LIST'][0])
+        g2_psf += list(starcat_j[1].data['PSF_MOM_LIST'][1])
+        size_psf += list(starcat_j[1].data['PSF_MOM_LIST'][2]**2)
+        g1 += list(starcat_j[1].data['STAR_MOM_LIST'][0])
+        g2 += list(starcat_j[1].data['STAR_MOM_LIST'][1])
+        size += list(starcat_j[1].data['STAR_MOM_LIST'][2]**2)
 
         # flags
-        flag_psf += list(starcat_j[2].data['FLAG_PSF_HSM'])
-        flag_star += list(starcat_j[2].data['FLAG_STAR_HSM'])
-
-        # misc
-        mag += list(starcat_j[2].data['MAG'])
-        snr += list(starcat_j[2].data['SNR'])
-        psfex_acc += list(starcat_j[2].data['ACCEPTED'])
+        flag_psf += list(starcat_j[1].data['PSF_MOM_LIST'][3])
+        flag_star += list(starcat_j[1].data['STAR_MOM_LIST'][3])
 
         # CCD number
-        ccd_nb += [re.split(r"\-([0-9]*)\-([0-9]+)\.", name)[-2]]*len(starcat_j[2].data['RA'])
+        ccd_nb = list(starcat_j[1].data['CCD_ID_LIST'])
 
     # Prepare output FITS catalogue
     output = sc.FITSCatalog(output_path,
@@ -208,11 +200,11 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
 
     # Collect columns
     # convert back to sigma for consistency
-    data = {'X': x, 'Y': y, 'RA': ra, 'DEC': dec,
+    data = {'RA': ra, 'DEC': dec,
             'E1_PSF_HSM': g1_psf, 'E2_PSF_HSM': g2_psf, 'SIGMA_PSF_HSM': np.sqrt(size_psf),
             'E1_STAR_HSM': g1, 'E2_STAR_HSM': g2, 'SIGMA_STAR_HSM': np.sqrt(size),
             'FLAG_PSF_HSM': flag_psf, 'FLAG_STAR_HSM': flag_star,
-            'MAG': mag, 'SNR': snr, 'ACCEPTED': psfex_acc,
+            'SNR': snr,
             'CCD_NB': ccd_nb}
 
     # Write file

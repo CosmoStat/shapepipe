@@ -333,6 +333,9 @@ command_sp "shapepipe_run -c $SP_CONFIG/config_exp_$psf.ini" "Run shapepipe (exp
 if [ "$psf" == "psfex" ]; then
   input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
   command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output" "$VERBOSE" "$ID"
+else
+  input_psf_mccd=`find . -name "fitted_model*.npy" | head -n 1`
+  command_sp "ln -s `dirname $input_psf_mccd` input_psf_mccd" "Link MCCD output" "$VERBOSE" "$ID"
 fi
 
 input_split_exp=`find output -name flag-*.fits | head -n 1`
@@ -348,7 +351,7 @@ command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor
 
 ## PSF model letter: 'P' (psfex) or 'M' (mccd)
 letter=${psf:0:1}
-Letter=${l^}
+Letter=${letter^}
 command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSx${Letter}iViSmVi.ini" "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)" "$VERBOSE" "$ID"
 
 # Shapes, run $nsh_jobs parallel processes
@@ -360,7 +363,7 @@ wait
 # Merge separated shapes catalogues
 command_sp "shapepipe_run -c $SP_CONFIG/config_merge_sep_cats.ini" "Run shapepipe (tile: merge sep cats)" "$VERBOSE" "$ID"
 
-command_sp "shapepipe_run -c $SP_CONFIG/config_make_cat_$psf" "Run shapepipe (tile: create final cat $psf)" "$VERBOSE" "$ID"
+command_sp "shapepipe_run -c $SP_CONFIG/config_make_cat_$psf.ini" "Run shapepipe (tile: create final cat $psf)" "$VERBOSE" "$ID"
 
 
 ## Upload results
