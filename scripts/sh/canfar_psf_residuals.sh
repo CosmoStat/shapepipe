@@ -120,7 +120,7 @@ done
 echo " Created $n_created links, skipped $n_skipped files"
 
 # Create merged PSF validation catalog
-merge_star_cat -i $dir_individual -o $dir_merged/$fname_merged -v
+merge_star_cat_${psf} -i $dir_individual -o $dir_merged/$fname_merged -v
 
 # Create plots
 MeanShapes -o $dir_merged -i $dir_merged/$fname_merged -v -x 20 --max_e=0.05 --max_d=0.005
