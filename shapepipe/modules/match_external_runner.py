@@ -130,6 +130,10 @@ class MatchCats(object):
 
             # Copy matched objects to output data
             idx_sub = np.array([(i, ide) for (i, ide) in enumerate(idx) if isdup[i]])[:, 1]
+            self._w_log.info('{} objects matched out of {}'
+                             ''.format(len(idx_sub), len(idx)))
+            print('{} objects matched out of {}'
+                             ''.format(len(idx_sub), len(idx)))
             matched = {}
             for col in col_names:
                 matched[col] = data[col][idx_sub]
