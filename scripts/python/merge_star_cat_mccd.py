@@ -26,8 +26,21 @@ import numpy as np
 from optparse import OptionParser
 from astropy.io import fits
 
-import cfis
 from shapepipe.pipeline import file_io as sc
+
+
+class param:
+    """General class to store (default) variables
+    """
+
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)
+
+    def print(self, **kwds):
+        print(self.__dict__)
+
+    def var_list(self, **kwds):
+        return vars(self)
 
 
 def params_default():
@@ -43,7 +56,7 @@ def params_default():
         parameter values
     """
 
-    p_def = cfis.param(
+    p_def = param(
         input_file_pattern = 'validation_psf',
         output_path = './psf_cat_full.fits'
     )
@@ -56,7 +69,7 @@ def parse_options(p_def):
 
     Parameters
     ----------
-    p_def: class cfis.param
+    p_def: class param
         parameter values
 
     Returns
@@ -109,14 +122,14 @@ def update_param(p_def, options):
 
     Parameters
     ----------
-    p_def:  class cfis.param
+    p_def:  class param
         parameter values
     optiosn: tuple
         command line options
 
     Returns
     -------
-    param: class cfis.param
+    param: class param
         updated paramter values
     """
 
@@ -213,6 +226,54 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
     output.save_as_fits(data)
 
 
+def log_command(argv, name=None, close_no_return=True):
+    """Write command with arguments to a file or stdout.
+       Choose name = 'sys.stdout' or 'sys.stderr' for output on sceen.
+
+    Parameters
+    ----------
+    argv: array of strings
+        Command line arguments
+    name: string
+        Output file name (default: 'log_<command>')
+    close_no_return: bool
+        If True (default), close log file. If False, keep log file open
+        and return file handler
+
+    Returns
+    -------
+    log: filehandler
+        log file handler (if close_no_return is False)
+    """
+
+    if name is None:
+        name = 'log_' + os.path.basename(argv[0])
+
+    if name == 'sys.stdout':
+        f = sys.stdout
+    elif name == 'sys.stderr':
+        f = sys.stderr
+    else:
+        f = open(name, 'w')
+
+    for a in argv:
+
+        # Quote argument if special characters
+        if ']' in a or ']' in a:
+            a = '\"{}\"'.format(a)
+
+        print(a, end='', file=f)
+        print(' ', end='', file=f)
+
+    print('', file=f)
+
+    if close_no_return == False:
+        return f
+
+    if name != 'sys.stdout' and name != 'sys.stderr':
+        f.close()
+
+
 def main(argv=None):
     """Main program.
     """
@@ -229,9 +290,9 @@ def main(argv=None):
     param = update_param(p_def, options)
 
     # Save calling command
-    cfis.log_command(argv)
+    log_command(argv)
     if param.verbose:
-        cfis.log_command(argv, name='sys.stdout')
+        log_command(argv, name='sys.stdout')
 
     create_full_cat(param.input_dir, param.input_file_pattern, param.output_path, verbose=param.verbose)
 
