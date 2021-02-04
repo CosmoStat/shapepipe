@@ -77,7 +77,7 @@ class MatchCats(object):
         external data column name(s) for matching
     external_col_copy : list of strings
         column name(s) to copy into matched output catalog
-    hdu_no : int, optional, default=1
+    external_hdu_no : int, optional, default=1
         external catalog hdu number
     """
 
