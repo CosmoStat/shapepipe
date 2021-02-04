@@ -75,7 +75,7 @@ class MatchCats(object):
         external catalog path
     external_col_match : list of strings
         external data column name(s) for matching
-    external_col_match : list of strings, optional, default=None
+    external_col_copy : list of strings
         column name(s) to copy into matched output catalog
     hdu_no : int, optional, default=1
         external catalog hdu number
@@ -117,27 +117,38 @@ class MatchCats(object):
 
         # Todo: cut duplicates
 
-        # Match objects in external cat to cat
+        # Match objects in external cat to internal cat. idx=indices to external object
+        # for each object in internal cat e.g. external_coord[idx[0]] is the match for
+        # coord[0].
         idx, d2d, d3d = match_coordinates_sky(coord, external_coord, nthneighbor=1)
 
-        # Find close neighbours
-        isdup = d2d < self._tolerance
+        # Find close neighbours, idx_close is True for all close matches
+        idx_close = d2d < self._tolerance
 
-        if not any(isdup):
+        if not any(idx_close):
             self._w_log.info('No match for {} with distance < {} arcsec found, no output created'
                              ''.format(self._input_file_list[0], self._tolerance))
         else:
 
-            # Copy matched objects to output data
-            idx_sub = np.array([(i, ide) for (i, ide) in enumerate(idx) if isdup[i]])[:, 1]
+            # Get indices in external catalogues that are matches
+            #idx_sub = np.array([(i, ide) for (i, ide) in enumerate(idx) if idx_close[i]])[:, 1]
+
+            # Get indices in internal and external catalogues of pair-wise matches
+            w = np.array([(i, ide) for (i, ide) in enumerate(idx) if idx_close[i]])
+            id_sub = w[:, 0]
+            id_ext_sub = w[:, 1]
+
             self._w_log.info('{} objects matched out of {}'
-                             ''.format(len(idx_sub), len(idx)))
-            print('{} objects matched out of {}'
-                             ''.format(len(idx_sub), len(idx)))
+                             ''.format(len(id_sub), len(idx)))
+
+            # Copy matched objects from internal catalogue to output data
             matched = {}
             for col in col_names:
-                matched[col] = data[col][idx_sub]
-            matched[self._external_col_copy] = external_data[self._external_col_copy][idx_sub]
+                matched[col] = data[col][id_sub]
+
+            # Copy columns from external catalogue to output data
+            for col in self._external_col_copy:
+                matched[col] = external_data[col][id_ext_sub]
 
             # Write FITS file
             out_cat = io.FITSCatalog(self._output_path, SEx_catalog=True,
@@ -152,7 +163,7 @@ class MatchCats(object):
                     data_me, col_names_me, dummy = get_data(self._input_file_list[0], hdu_me)
                     matched_me = {}
                     for col_me in col_names_me:
-                        matched_me[col_me] = data_me[col_me][idx_sub]
+                        matched_me[col_me] = data_me[col_me][id_sub]
                     out_cat.save_as_fits(data=matched_me, ext_name=ext_names[hdu_me])
 
             # TODO: Compute stats
@@ -187,8 +198,9 @@ def match_external_runner(input_file_list, run_dirs, file_number_string,
     external_cat_path = config.getexpanded('MATCH_EXTERNAL_RUNNER', 'EXTERNAL_CAT_PATH')
     external_col_match = config.getlist('MATCH_EXTERNAL_RUNNER', 'EXTERNAL_COL_MATCH')
 
-    # TODO: optional, list, 'all'
-    external_col_copy = config.get('MATCH_EXTERNAL_RUNNER', 'EXTERNAL_COL_COPY')
+    # TODO: optional or 'none', 'all'
+    # Also TODO: change column name if already present in internal cat
+    external_col_copy = config.getlist('MATCH_EXTERNAL_RUNNER', 'EXTERNAL_COL_COPY')
 
     if config.has_option('MATCH_EXTERNAL_RUNNER', 'EXTERNAL_HDU'):
         external_hdu_no = config.getint('MATCH_EXTERNAL_RUNNER', 'EXTERNAL_HDU')
