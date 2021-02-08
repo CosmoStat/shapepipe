@@ -71,8 +71,8 @@ class PasteCat(object):
             # Read input data
             cat = io.FITSCatalog(input_file)
             cat.open()
-            data = np.copy(cat.get_data(hdu_no=self._hdu_no[i]))
-            col_names = cat.get_col_names()
+            data = np.copy(cat.get_data(self._hdu_no[i]))
+            col_names = cat.get_col_names(self._hdu_no[i])
             cat.close()
 
             # Check equality
