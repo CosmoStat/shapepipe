@@ -180,7 +180,6 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
     g1_psf, g2_psf, size_psf = [], [], []
     g1, g2, size = [], [], []
     flag_psf, flag_star = [], []
-    snr  = []
 
     if verbose:
         print('Reading input FITS PSF catalogues...')
@@ -217,7 +216,6 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
             'E1_PSF_HSM': g1_psf, 'E2_PSF_HSM': g2_psf, 'SIGMA_PSF_HSM': np.sqrt(size_psf),
             'E1_STAR_HSM': g1, 'E2_STAR_HSM': g2, 'SIGMA_STAR_HSM': np.sqrt(size),
             'FLAG_PSF_HSM': flag_psf, 'FLAG_STAR_HSM': flag_star,
-            'SNR': snr,
             'CCD_NB': ccd_nb}
 
     # Write file
