@@ -209,6 +209,8 @@ class PSFExInterpolator(object):
             self.gal_pos = np.array([[x, y] for x, y in
                                     zip(galcat.get_data()[self._pos_params[0]],
                                     galcat.get_data()[self._pos_params[1]])])
+            self._w_log.info('Read {} positions from galaxy catalog'
+                             ''.format(self.gal_pos.shape[0]))
         except KeyError as detail:
             # extract erroneous position parameter from original exception
             err_pos_param = detail.args[0][4:-15]
@@ -494,6 +496,7 @@ class PSFExInterpolator(object):
         cat.close()
 
         output_dict = {}
+        n_empty = 0
         for id_tmp in all_id:
             output_dict[id_tmp] = {}
             counter = 0
@@ -512,6 +515,10 @@ class PSFExInterpolator(object):
                     counter += 1
             if counter == 0:
                 output_dict[id_tmp] = 'empty'
+                n_empty += 1
+
+        self._w_log.info('{}/{} PSFs are empty'
+                         ''.format(n_empty, len(all_id)))
 
         return output_dict
 

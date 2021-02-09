@@ -183,6 +183,19 @@ if [[ $do_job != 0 ]]; then
   ### Create  PSF model
   command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Psm.ini"
 
+  ### Bad hacks to get PSF input dir
+  input_psfex=`find . -name star_selection-*.psf | head -n 1`
+  command_sp "ln -sf `dirname $input_psfex` input_psfex"
+  input_split_exp=`find output -name flag-*.fits | head -n 1`
+  command_sp "ln -sf `dirname $input_split_exp` input_split_exp"
+  input_sextractor=`find . -name sexcat_sexcat-*.fits | head -n 1`
+  command_sp "ln -sf `dirname $input_sextractor` input_sextractor"
+
+fi
+
+(( do_job= $job & 16 ))
+if [[ $do_job != 0 ]]; then
+
   ### Detect objects on r-band images, measure properties
   ### on other bands
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_r_me.ini"
@@ -192,6 +205,11 @@ if [[ $do_job != 0 ]]; then
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_z.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_y.ini"
 
+  if [ "$survey" == "unions" ]; then
+    command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_u.ini"
+    command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_u.ini"
+  fi
+
   ### Match with external spectroscopic catalogue
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_r_me.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_r.ini"
@@ -200,31 +218,20 @@ if [[ $do_job != 0 ]]; then
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_z.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_y.ini"
 
-  if [ "$survey" == "unions" ]; then
-    command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_u.ini"
-    command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_u.ini"
-  fi
+  ## TODO: match_ext_u for unions
 
   ### Vignets for weights
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Viw.ini"
 
-  ### Bad hacks to get PSF input dir
-  input_psfex=`find . -name star_selection-*.psf | head -n 1`
-  command_sp "ln -sf `dirname $input_psfex` input_psfex"
-  input_split_exp=`find output -name flag-*.fits | head -n 1`
-  command_sp "ln -sf `dirname $input_split_exp` input_split_exp"
-  input_sextractor=`find . -name sexcat_sexcat-*.fits | head -n 1`
-  command_sp "ln -sf `dirname $input_sextractor` input_sextractor"
-
   ### Interpolate exposure PSFs to tile objects
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Psi.ini "
+  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Psi.ini"
 
   ### Vignets for exposures
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Vix.ini"
 
 fi
 
-(( do_job= $job & 16 ))
+(( do_job= $job & 32 ))
 if [[ $do_job != 0 ]]; then
 
   ### Shapes and morphology
@@ -232,7 +239,7 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
-(( do_job= $job & 32 ))
+(( do_job= $job & 64 ))
 if [[ $do_job != 0 ]]; then
 
   # Merge catalogs

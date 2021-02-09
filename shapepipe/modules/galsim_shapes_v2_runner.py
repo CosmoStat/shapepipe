@@ -455,6 +455,7 @@ def do_galsim_shapes(gal, gal_weight, gal_sig, psfs, tile_loc_wcs, tile_jacob, l
                               psfs, psfs_sigma,
                               weights,
                               loc_wcs, headers)
+
     if psf == 'Error':
         return 'Error'
     g_psf = galsim.Image(psf, scale=pixel_scale)
@@ -463,17 +464,17 @@ def do_galsim_shapes(gal, gal_weight, gal_sig, psfs, tile_loc_wcs, tile_jacob, l
 
     flag = np.sum(flags, 0)
     flag[flag != 0] = 1
-    flag[gal == -1e30] = 1
+    flag[gal < -1e30] = 1
     g_flag = galsim.ImageI(flag, scale=pixel_scale)
 
     weight[np.where(flag != 0)] = 0
-    weight[gal == -1e30] = 0
+    weight[gal < -1e30] = 0
 
     inv_flag = np.ones_like(flag)
     inv_flag[flag != 0] = 0
     g_weight = galsim.Image(weight, scale=pixel_scale)
 
-    gal[gal == -1e30] = 0
+    gal[gal < -1e30] = 0
 
     s = np.shape(weight)
     cx, cy = int(s[0]/2.), int(s[1]/2.)
@@ -685,6 +686,9 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
     flag_vign_cat = SqliteDict(flag_vignet_path)
     f_wcs_file = SqliteDict(f_wcs_path)
 
+    # MKDEBUG
+    Z = fits.getdata(tile_cat_path, 2, memmap=True)['Z']
+
     count = 0
     id_first = -1
     id_last = -1
@@ -695,6 +699,9 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
         if id_obj_min > 0 and id_tmp < id_obj_min:
             continue
         if id_obj_max > 0 and id_tmp > id_obj_max:
+            continue
+
+        if Z[i_tile] < 0:
             continue
 
         if id_first == -1:
@@ -721,7 +728,7 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
         for expccd_name_tmp in psf_expccd_name:
             tile_vign_tmp = np.copy(tile_vign[i_tile])
             flag_vign_tmp = flag_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET']
-            flag_vign_tmp[np.where(tile_vign_tmp == -1e30)] = 2**10
+            flag_vign_tmp[np.where(tile_vign_tmp < -1e29)] = 2**10
             v_flag_tmp = flag_vign_tmp.ravel()
             if len(np.where(v_flag_tmp != 0)[0])/(51*51) > 1/3.:
                 w_log.info('  Flag=0 for > 1/3 postage stamp, skipping exposure...')
