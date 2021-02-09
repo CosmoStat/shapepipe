@@ -145,9 +145,9 @@ class MatchCats(object):
             matched = {}
             for col in col_names:
                 # Copy only matched objects
-                #matched[col] = data[col][id_sub]
+                matched[col] = data[col][id_sub]
                 # Copy all objects
-                matched[col] = data[col]
+                #matched[col] = data[col]
 
             # Copy columns from external catalogue to output data
 
@@ -155,12 +155,12 @@ class MatchCats(object):
                 # Copy only matched objects
                 matched[col] = external_data[col][id_ext_sub]
                 # Copy all objects
-                matched[col] = np.zeros(len(idx))
-                for i, i_ext in enumerate(idx):
-                    if idx_close[i]:
-                        matched[col][i] = external_data[col][i_ext]
-                    else:
-                        matched[col][i] = -1
+                #matched[col] = np.zeros(len(idx))
+                #for i, i_ext in enumerate(idx):
+                    #if idx_close[i]:
+                        #matched[col][i] = external_data[col][i_ext]
+                    #else:
+                        #matched[col][i] = -1
 
 
             # Write FITS file
@@ -176,8 +176,10 @@ class MatchCats(object):
                     data_me, col_names_me, dummy = get_data(self._input_file_list[0], hdu_me)
                     matched_me = {}
                     for col_me in col_names_me:
-                        #matched_me[col_me] = data_me[col_me][id_sub]
-                        matched_me[col_me] = data_me[col_me]
+                        # Copy only matched objects
+                        matched_me[col_me] = data_me[col_me][id_sub]
+                        # Copy all objects
+                        #matched_me[col_me] = data_me[col_me]
                     out_cat.save_as_fits(data=matched_me, ext_name=ext_names[hdu_me])
 
             # TODO: Compute stats

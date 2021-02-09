@@ -686,9 +686,6 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
     flag_vign_cat = SqliteDict(flag_vignet_path)
     f_wcs_file = SqliteDict(f_wcs_path)
 
-    # MKDEBUG
-    Z = fits.getdata(tile_cat_path, 2, memmap=True)['Z']
-
     count = 0
     id_first = -1
     id_last = -1
@@ -699,9 +696,6 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
         if id_obj_min > 0 and id_tmp < id_obj_min:
             continue
         if id_obj_max > 0 and id_tmp > id_obj_max:
-            continue
-
-        if Z[i_tile] < 0:
             continue
 
         if id_first == -1:

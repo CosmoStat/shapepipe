@@ -198,12 +198,12 @@ if [[ $do_job != 0 ]]; then
 
   ### Detect objects on r-band images, measure properties
   ### on other bands
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_r_me.ini"
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_r.ini"
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_i.ini"
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_g.ini"
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_z.ini"
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_y.ini"
+  #command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_r_me.ini"
+  #command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_r.ini"
+  #command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_i.ini"
+  #command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_g.ini"
+  #command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_z.ini"
+  #command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_y.ini"
 
   if [ "$survey" == "unions" ]; then
     command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_u.ini"
