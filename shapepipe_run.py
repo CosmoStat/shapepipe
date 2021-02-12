@@ -349,11 +349,6 @@ def run_mpi(pipe, comm):
                             log=pipe.log, job_type=pipe.run_method[module],
                             parallel_mode='mpi', verbose=verbose)
 
-            if comm.Get_size() != jh.batch_size:
-                pipe.log.info('Warning: MPI job number ({}) differs from '
-                              'config file batch size ({})'
-                              ''.format(comm.Get_size(), jh.batch_size))
-
             # Get job type
             job_type = jh.job_type
 
