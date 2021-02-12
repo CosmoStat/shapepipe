@@ -2,11 +2,11 @@
 
 """MATCH EXTERNAL RUNNER
 
-This module pastes different (SExtractor) catalogs of objects with identical IDs.
+This module matches an external catalogue to a ShapePipe (SExtractor) catalog
 
-:Author: Martin Kilbinger <martin.kilbinger@cea.fr>, Axel Guinot
+:Author: Martin Kilbinger <martin.kilbinger@cea.fr>, Xavier Jimenez
 
-:Date: 10/2020
+:Date: 01/2021
 
 :Package: ShapePipe
 
@@ -75,17 +75,21 @@ class MatchCats(object):
         external catalog path
     external_col_match : list of strings
         external data column name(s) for matching
-    external_col_match : list of strings, optional, default=None
+    external_col_copy : list of strings
         column name(s) to copy into matched output catalog
-    hdu_no : int, optional, default=1
+    external_hdu_no : int, optional, default=1
         external catalog hdu number
+    mark_non_matched : float, optional, None
+        if not None, output not only matched but all objects, and mark
+        non-matched objects with this value
     """
 
     def __init__(self, input_file_list, output_path, w_log,
                  tolerance, col_match, hdu_no, mode,
                  external_cat_path, external_col_match,
                  external_col_copy,
-                 external_hdu_no=1):
+                 external_hdu_no=1,
+                 mark_non_matched=None):
 
         self._input_file_list = input_file_list
         self._output_path = output_path
@@ -102,6 +106,8 @@ class MatchCats(object):
         self._external_col_copy = external_col_copy
         self._external_hdu_no = external_hdu_no
 
+        self._mark_non_matched = mark_non_matched
+
     def process(self):
 
         # Load external and internal data
@@ -117,28 +123,57 @@ class MatchCats(object):
 
         # Todo: cut duplicates
 
-        # Match objects in external cat to cat
+        # Match objects in external cat to internal cat. idx=indices to external object
+        # for each object in internal cat e.g. external_coord[idx[0]] is the match for
+        # coord[0].
         idx, d2d, d3d = match_coordinates_sky(coord, external_coord, nthneighbor=1)
 
-        # Find close neighbours
-        isdup = d2d < self._tolerance
+        # Find close neighbours, idx_close is True for all close matches
+        idx_close = d2d < self._tolerance
 
-        if not any(isdup==True):
+        if not any(idx_close):
             self._w_log.info('No match for {} with distance < {} arcsec found, no output created'
-                             ''.format(self._input_file_list[i], self._tolerance))
+                             ''.format(self._input_file_list[0], self._tolerance))
         else:
 
-            # Copy matched objects to output data
-            idx_sub = np.array([(i,ide) for (i,ide) in enumerate(idx) if isdup[i] == True])[:,1]
+            # Get indices in external catalogues that are matches
+            #idx_sub = np.array([(i, ide) for (i, ide) in enumerate(idx) if idx_close[i]])[:, 1]
+
+            # Get indices in internal and external catalogues of pair-wise matches
+            w = np.array([(i, ide) for (i, ide) in enumerate(idx) if idx_close[i]])
+            id_sub = w[:, 0]
+            id_ext_sub = w[:, 1]
+            id_all = np.arange(len(idx))
+
+            if self._mark_non_matched:
+                # Output all objects
+                id_data = id_all
+                id_ext = idx
+            else:
+                # Output only matched objects
+                id_data = id_sub
+                id_ext = id_ext_sub
+
+            self._w_log.info('{} objects matched out of {}'
+                             ''.format(len(id_sub), len(idx)))
+
+            # Copy matched objects from internal catalogue to output data
             matched = {}
             for col in col_names:
-                matched[col] = data[col][idx_sub]
-            matched[self._external_col_copy] = external_data[self._external_col_copy][idx_sub]
+                matched[col] = data[col][id_data]
+
+            # Copy columns from external catalogue to output data
+            for col in self._external_col_copy:
+                matched[col] = external_data[col][id_ext]
+                if self._mark_non_matched:
+                    for i, i_ext in enumerate(idx):
+                        if not idx_close[i]:
+                            matched[col][i] = self._mark_non_matched
 
             # Write FITS file
-            out_cat = io.FITSCatalog(self._output_path,
+            out_cat = io.FITSCatalog(self._output_path, SEx_catalog=True,
                                      open_mode=io.BaseCatalog.OpenMode.ReadWrite)
-            out_cat.save_as_fits(data=matched, ext_name='MATCHED')
+            out_cat.save_as_fits(data=matched, ext_name='MATCHED', sex_cat_path=self._input_file_list[0])
 
             # Write all extensions if in multi-epoch mode
             if self._mode == 'MULTI-EPOCH':
@@ -148,7 +183,7 @@ class MatchCats(object):
                     data_me, col_names_me, dummy = get_data(self._input_file_list[0], hdu_me)
                     matched_me = {}
                     for col_me in col_names_me:
-                        matched_me[col_me] = data_me[col_me][idx_sub]
+                        matched_me[col_me] = data_me[col_me][id_data]
                     out_cat.save_as_fits(data=matched_me, ext_name=ext_names[hdu_me])
 
             # TODO: Compute stats
@@ -163,7 +198,6 @@ class MatchCats(object):
 def match_external_runner(input_file_list, run_dirs, file_number_string,
                           config, w_log):
 
-
     # Processing
     tmp = config.getfloat('MATCH_EXTERNAL_RUNNER', 'TOLERANCE')
     tolerance = tmp * u.arcsec
@@ -176,13 +210,17 @@ def match_external_runner(input_file_list, run_dirs, file_number_string,
         hdu_no = 2
 
     mode = config.get('MATCH_EXTERNAL_RUNNER', 'MODE')
+    valid_modes = ['CLASSIC', 'MULTI-EPOCH']
+    if mode not in valid_modes:
+        raise ValueError('mode \'{}\' is invalid, must be one of {}'.format(mode, valid_modes))
 
     # External data
     external_cat_path = config.getexpanded('MATCH_EXTERNAL_RUNNER', 'EXTERNAL_CAT_PATH')
     external_col_match = config.getlist('MATCH_EXTERNAL_RUNNER', 'EXTERNAL_COL_MATCH')
 
-    # TODO: optional, list, 'all'
-    external_col_copy = config.get('MATCH_EXTERNAL_RUNNER', 'EXTERNAL_COL_COPY')
+    # TODO: optional or 'none', 'all'
+    # Also TODO: change column name if already present in internal cat
+    external_col_copy = config.getlist('MATCH_EXTERNAL_RUNNER', 'EXTERNAL_COL_COPY')
 
     if config.has_option('MATCH_EXTERNAL_RUNNER', 'EXTERNAL_HDU'):
         external_hdu_no = config.getint('MATCH_EXTERNAL_RUNNER', 'EXTERNAL_HDU')
@@ -195,6 +233,11 @@ def match_external_runner(input_file_list, run_dirs, file_number_string,
     else:
         output_file_pattern = 'cat_matched'
 
+    if config.has_option('MATCH_EXTERNAL_RUNNER', 'MARK_NON_MATCHED'):
+        mark_non_matched = config.getfloat('MATCH_EXTERNAL_RUNNER', 'MARK_NON_MATCHED')
+    else:
+        mark_non_matched = None
+
     file_ext = 'fits'
 
     output_path = '{}/{}{}.{}'.format(run_dirs['output'],
@@ -206,7 +249,8 @@ def match_external_runner(input_file_list, run_dirs, file_number_string,
                      tolerance, col_match, hdu_no, mode,
                      external_cat_path, external_col_match,
                      external_col_copy,
-                     external_hdu_no=external_hdu_no)
+                     external_hdu_no=external_hdu_no,
+                     mark_non_matched=mark_non_matched)
 
     inst.process()
 
