@@ -35,6 +35,7 @@ job=31
 survey='unions'
 retrieve='vos'
 do_env=0
+match=1
 
 ## Help string
 usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
@@ -45,13 +46,16 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    \t  1: retrieve images (online if method=vos)\n
    \t  2: prepare images (offline)\n
    \t  4: mask (online)\n
-   \t  8: processing until shapes (offline)\n
-   \t 16: shapes and morphology (offline)\n
-   \t 32: paste catalogues (offline)\n
+   \t  8: processing of stars on exposures (offline)\n
+   \t 16: detection and matching (offline)\n
+   \t 32: shapes and morphology (offline)\n
+   \t 64: paste catalogues (offline)\n
    -s, --survey NAME\n
    \t survey name, one in ['unions'|'ps3pi_cfis']\n
    -r, --retrieve METHOD\n
    \tmethod to retrieve images, one in 'vos|symlink', default='$retrieve'\n
+   --no_match\n
+   \tdo not match with spectroscopic catalog\n
    TILE_ID_i\n
    \ttile ID, e.g. 282.247\n"
 
@@ -83,6 +87,9 @@ while [ $# -gt 0 ]; do
       retrieve="$2"
       shift
       ;;
+    --no_match)
+      match=0
+      ;;
     *)
       ID+=("$1")
       ;;
@@ -94,6 +101,12 @@ if [ $do_env == 1 ]; then
    echo "environment set, exiting"
    return
    exit 0
+fi
+
+if [ $match == 0 ]; then
+  match_str="_nomatch"
+else
+  match_str=""
 fi
 
 n_ID=${#ID[@]}
@@ -169,8 +182,7 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
-## PSF, object detection, and matching, everything up to shape
-## measurement
+## processing of stars on exposures (detection, and matching, PSF model)
 (( do_job= $job & 8 ))
 if [[ $do_job != 0 ]]; then
 
@@ -183,6 +195,20 @@ if [[ $do_job != 0 ]]; then
   ### Create  PSF model
   command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Psm.ini"
 
+  ### Bad hacks to get PSF input dir
+  input_psfex=`find . -name star_selection-*.psf | head -n 1`
+  command_sp "ln -sf `dirname $input_psfex` input_psfex"
+  input_split_exp=`find output -name flag-*.fits | head -n 1`
+  command_sp "ln -sf `dirname $input_split_exp` input_split_exp"
+  input_sextractor=`find . -name sexcat_sexcat-*.fits | head -n 1`
+  command_sp "ln -sf `dirname $input_sextractor` input_sextractor"
+
+fi
+
+## Detectino and matching
+(( do_job= $job & 16 ))
+if [[ $do_job != 0 ]]; then
+
   ### Detect objects on r-band images, measure properties
   ### on other bands
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_r_me.ini"
@@ -192,6 +218,11 @@ if [[ $do_job != 0 ]]; then
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_z.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_y.ini"
 
+  if [ "$survey" == "unions" ]; then
+    command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_u.ini"
+    command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_u.ini"
+  fi
+
   ### Match with external spectroscopic catalogue
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_r_me.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_r.ini"
@@ -200,42 +231,31 @@ if [[ $do_job != 0 ]]; then
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_z.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_y.ini"
 
-  if [ "$survey" == "unions" ]; then
-    command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_u.ini"
-    command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_u.ini"
-  fi
+  ## TODO: match_ext_u for unions
 
   ### Vignets for weights
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Viw.ini"
 
-  ### Bad hacks to get PSF input dir
-  input_psfex=`find . -name star_selection-*.psf | head -n 1`
-  command_sp "ln -sf `dirname $input_psfex` input_psfex"
-  input_split_exp=`find output -name flag-*.fits | head -n 1`
-  command_sp "ln -sf `dirname $input_split_exp` input_split_exp"
-  input_sextractor=`find . -name sexcat_sexcat-*.fits | head -n 1`
-  command_sp "ln -sf `dirname $input_sextractor` input_sextractor"
-
   ### Interpolate exposure PSFs to tile objects
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Psi.ini "
+  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Psi.ini"
 
   ### Vignets for exposures
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Vix.ini"
 
 fi
 
-(( do_job= $job & 16 ))
-if [[ $do_job != 0 ]]; then
-
-  ### Shapes and morphology
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Sh.ini"
-
-fi
-
+## Shapes and morphology
 (( do_job= $job & 32 ))
 if [[ $do_job != 0 ]]; then
 
-  # Merge catalogs
+  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Sh${match_str}.ini"
+
+fi
+
+## Paste catalogs
+(( do_job= $job & 64 ))
+if [[ $do_job != 0 ]]; then
+
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_paste_cat_morph.ini"
 
 fi
