@@ -455,6 +455,7 @@ def do_galsim_shapes(gal, gal_weight, gal_sig, psfs, tile_loc_wcs, tile_jacob, l
                               psfs, psfs_sigma,
                               weights,
                               loc_wcs, headers)
+
     if psf == 'Error':
         return 'Error'
     g_psf = galsim.Image(psf, scale=pixel_scale)
@@ -463,17 +464,17 @@ def do_galsim_shapes(gal, gal_weight, gal_sig, psfs, tile_loc_wcs, tile_jacob, l
 
     flag = np.sum(flags, 0)
     flag[flag != 0] = 1
-    flag[gal == -1e30] = 1
+    flag[gal < -1e30] = 1
     g_flag = galsim.ImageI(flag, scale=pixel_scale)
 
     weight[np.where(flag != 0)] = 0
-    weight[gal == -1e30] = 0
+    weight[gal < -1e30] = 0
 
     inv_flag = np.ones_like(flag)
     inv_flag[flag != 0] = 0
     g_weight = galsim.Image(weight, scale=pixel_scale)
 
-    gal[gal == -1e30] = 0
+    gal[gal < -1e30] = 0
 
     s = np.shape(weight)
     cx, cy = int(s[0]/2.), int(s[1]/2.)
@@ -628,7 +629,8 @@ def save_results(output_dict, output_name):
 
 def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
             psf_vignet_path, weight_vignet_path, flag_vignet_path,
-            f_wcs_path, do_metacal, do_morphology, w_log, pixel_scale, id_obj_min=-1, id_obj_max=-1):
+            f_wcs_path, do_metacal, do_morphology, w_log, pixel_scale, id_obj_min=-1, id_obj_max=-1,
+            skip_col=None, skip_val=None):
     """ Process
 
     Process function.
@@ -657,10 +659,14 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
         log file
     pixel_scale : float
         pixel size in arcsec
-    id_obj_min: int, optional, default=-1
+    id_obj_min : int, optional, default=-1
         minimum object ID to be processed if > 0
-    id_obj_max: int, optional, default=-1
+    id_obj_max : int, optional, default=-1
         maximum object ID to be processed if > 0
+    skip_col : str, optional, default=None
+        if not None, column name to indicate objects to skip
+    skip_val : str, optional, default=None
+        if skip_col is not None, value to indicate objects to skip
 
     Returns
     -------
@@ -677,6 +683,9 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
     tile_fwhm = fits.getdata(tile_cat_path, 2, memmap=True)['FWHM_IMAGE']
     tile_wcs = get_wcs_from_sexcat(fits.getdata(tile_cat_path, 1, memmap=True)[0][0])
     tile_gain = get_tile_gain(fits.getdata(tile_cat_path, 1, memmap=True)[0][0])
+
+    if skip_col:
+        tile_skip = fits.getdata(tile_cat_path, 2, memmap=True)[skip_col]
 
     tile_weight = fits.getdata(tile_weight_path, 2, memmap=True)['VIGNET']
     bkg_vign_cat = SqliteDict(bkg_vignet_path)
@@ -701,6 +710,12 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
             id_first = id_tmp
         id_last = id_tmp
 
+        if skip_col:
+            # Skip this object if marked, also if mark is nan
+            if tile_skip[i_tile] == skip_val \
+                or (np.isnan(tile_skip[i_tile]) and np.isnan(skip_val)):
+                continue
+
         count = count + 1
 
         w_log.info(' Tile, object = {}, {}'.format(i_tile, id_tmp))
@@ -721,7 +736,7 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
         for expccd_name_tmp in psf_expccd_name:
             tile_vign_tmp = np.copy(tile_vign[i_tile])
             flag_vign_tmp = flag_vign_cat[str(id_tmp)][expccd_name_tmp]['VIGNET']
-            flag_vign_tmp[np.where(tile_vign_tmp == -1e30)] = 2**10
+            flag_vign_tmp[np.where(tile_vign_tmp < -1e29)] = 2**10
             v_flag_tmp = flag_vign_tmp.ravel()
             if len(np.where(v_flag_tmp != 0)[0])/(51*51) > 1/3.:
                 w_log.info('  Flag=0 for > 1/3 postage stamp, skipping exposure...')
@@ -832,8 +847,17 @@ def galsim_shapes_v2_runner(input_file_list, run_dirs, file_number_string,
 
     pixel_scale = 0.187  # arcsec
 
+    # Marks to skip object
+    if config.has_option('GALSIM_SHAPES_V2_RUNNER', 'SKIP_COL'):
+        skip_col = config.get('GALSIM_SHAPES_V2_RUNNER', 'SKIP_COL')
+        skip_val = config.getfloat('GALSIM_SHAPES_V2_RUNNER', 'SKIP_VAL')
+    else:
+        skip_col = None
+        skip_val = None
+
     metacal_res = process(*input_file_list, f_wcs_path, do_metacal, do_morphology,
-                          w_log, pixel_scale, id_obj_min=id_obj_min, id_obj_max=id_obj_max)
+                          w_log, pixel_scale, id_obj_min=id_obj_min, id_obj_max=id_obj_max,
+                          skip_col=skip_col, skip_val=skip_val)
     res_dict = compile_results(metacal_res, ZP, do_metacal, w_log, pixel_scale, do_morphology=do_morphology)
     save_results(res_dict, output_name)
 
