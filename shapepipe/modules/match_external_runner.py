@@ -77,15 +77,19 @@ class MatchCats(object):
         external data column name(s) for matching
     external_col_copy : list of strings
         column name(s) to copy into matched output catalog
-    hdu_no : int, optional, default=1
+    external_hdu_no : int, optional, default=1
         external catalog hdu number
+    mark_non_matched : float, optional, None
+        if not None, output not only matched but all objects, and mark
+        non-matched objects with this value
     """
 
     def __init__(self, input_file_list, output_path, w_log,
                  tolerance, col_match, hdu_no, mode,
                  external_cat_path, external_col_match,
                  external_col_copy,
-                 external_hdu_no=1):
+                 external_hdu_no=1,
+                 mark_non_matched=None):
 
         self._input_file_list = input_file_list
         self._output_path = output_path
@@ -101,6 +105,8 @@ class MatchCats(object):
         self._external_col_match = external_col_match
         self._external_col_copy = external_col_copy
         self._external_hdu_no = external_hdu_no
+
+        self._mark_non_matched = mark_non_matched
 
     def process(self):
 
@@ -137,6 +143,16 @@ class MatchCats(object):
             w = np.array([(i, ide) for (i, ide) in enumerate(idx) if idx_close[i]])
             id_sub = w[:, 0]
             id_ext_sub = w[:, 1]
+            id_all = np.arange(len(idx))
+
+            if self._mark_non_matched:
+                # Output all objects
+                id_data = id_all
+                id_ext = idx
+            else:
+                # Output only matched objects
+                id_data = id_sub
+                id_ext = id_ext_sub
 
             self._w_log.info('{} objects matched out of {}'
                              ''.format(len(id_sub), len(idx)))
@@ -144,24 +160,15 @@ class MatchCats(object):
             # Copy matched objects from internal catalogue to output data
             matched = {}
             for col in col_names:
-                # Copy only matched objects
-                matched[col] = data[col][id_sub]
-                # Copy all objects
-                #matched[col] = data[col]
+                matched[col] = data[col][id_data]
 
             # Copy columns from external catalogue to output data
-
             for col in self._external_col_copy:
-                # Copy only matched objects
-                matched[col] = external_data[col][id_ext_sub]
-                # Copy all objects
-                #matched[col] = np.zeros(len(idx))
-                #for i, i_ext in enumerate(idx):
-                    #if idx_close[i]:
-                        #matched[col][i] = external_data[col][i_ext]
-                    #else:
-                        #matched[col][i] = -1
-
+                matched[col] = external_data[col][id_ext]
+                if self._mark_non_matched:
+                    for i, i_ext in enumerate(idx):
+                        if not idx_close[i]:
+                            matched[col][i] = self._mark_non_matched
 
             # Write FITS file
             out_cat = io.FITSCatalog(self._output_path, SEx_catalog=True,
@@ -176,10 +183,7 @@ class MatchCats(object):
                     data_me, col_names_me, dummy = get_data(self._input_file_list[0], hdu_me)
                     matched_me = {}
                     for col_me in col_names_me:
-                        # Copy only matched objects
-                        matched_me[col_me] = data_me[col_me][id_sub]
-                        # Copy all objects
-                        #matched_me[col_me] = data_me[col_me]
+                        matched_me[col_me] = data_me[col_me][id_data]
                     out_cat.save_as_fits(data=matched_me, ext_name=ext_names[hdu_me])
 
             # TODO: Compute stats
@@ -229,6 +233,11 @@ def match_external_runner(input_file_list, run_dirs, file_number_string,
     else:
         output_file_pattern = 'cat_matched'
 
+    if config.has_option('MATCH_EXTERNAL_RUNNER', 'MARK_NON_MATCHED'):
+        mark_non_matched = config.getfloat('MATCH_EXTERNAL_RUNNER', 'MARK_NON_MATCHED')
+    else:
+        mark_non_matched = None
+
     file_ext = 'fits'
 
     output_path = '{}/{}{}.{}'.format(run_dirs['output'],
@@ -240,7 +249,8 @@ def match_external_runner(input_file_list, run_dirs, file_number_string,
                      tolerance, col_match, hdu_no, mode,
                      external_cat_path, external_col_match,
                      external_col_copy,
-                     external_hdu_no=external_hdu_no)
+                     external_hdu_no=external_hdu_no,
+                     mark_non_matched=mark_non_matched)
 
     inst.process()
 
