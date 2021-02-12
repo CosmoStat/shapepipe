@@ -136,9 +136,6 @@ class MatchCats(object):
                              ''.format(self._input_file_list[0], self._tolerance))
         else:
 
-            # Get indices in external catalogues that are matches
-            #idx_sub = np.array([(i, ide) for (i, ide) in enumerate(idx) if idx_close[i]])[:, 1]
-
             # Get indices in internal and external catalogues of pair-wise matches
             w = np.array([(i, ide) for (i, ide) in enumerate(idx) if idx_close[i]])
             id_sub = w[:, 0]
