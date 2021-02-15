@@ -236,9 +236,17 @@ if [[ $do_job != 0 ]]; then
 
   ### Match with external spectroscopic catalogue
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_r_me.ini"
+
+  matches=`find . -name "cat_r_me_matched*" | wc -l`
+  if [ "$matches" == "0" ]; then
+    echo "No match with external catalogue found, exiting $(basename "$0")"
+    exit 0
+  fi
+
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_r.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_i.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_z.ini"
+
 
   ### Vignets for weights
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Viw.ini"
