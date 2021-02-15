@@ -41,7 +41,7 @@ match=1
 usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
 \n\nOptions:\n
    -h\tthis message\n
-   -e\tset environment and exit (run as '. $(basename "$0")'\n
+   -e\tset environment and exit (run as '. $(basename "$0") -e'\n
    -j, --job JOB\tRunning JOB, bit-coded\n
    \t  1: retrieve images (online if method=vos)\n
    \t  2: prepare images (offline)\n
@@ -51,9 +51,9 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    \t 32: shapes and morphology (offline)\n
    \t 64: paste catalogues (offline)\n
    -s, --survey NAME\n
-   \t survey name, one in ['unions'|'ps3pi_cfis']\n
+   \t survey name, one in ['unions'|'ps3pi_cfis'], default='$survey'\n
    -r, --retrieve METHOD\n
-   \tmethod to retrieve images, one in 'vos|symlink', default='$retrieve'\n
+   \tmethod to retrieve images, one in ['vos'|'symlink]', default='$retrieve'\n
    --no_match\n
    \tdo not match with spectroscopic catalog\n
    TILE_ID_i\n
@@ -96,6 +96,12 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
+
+## Check options
+if [ "$survey" == "unions" ] && [ "$retrieve" == "vos" ]; then
+  echo "For survey='unions' method retrieve='vos' is not possible, use '-r symlink'"
+  exit 1
+fi
 
 if [ $do_env == 1 ]; then
    echo "environment set, exiting"
@@ -214,24 +220,25 @@ if [[ $do_job != 0 ]]; then
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_r_me.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_r.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_i.ini"
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_g.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_z.ini"
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_y.ini"
 
   if [ "$survey" == "unions" ]; then
     command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_u.ini"
     command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_u.ini"
   fi
 
+  if [ "$survey" == "ps3pi_cfis" ]; then
+    command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_g.ini"
+    command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_y.ini"
+    command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_g.ini"
+    command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_y.ini"
+  fi
+
   ### Match with external spectroscopic catalogue
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_r_me.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_r.ini"
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_g.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_i.ini"
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_z.ini"
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_y.ini"
-
-  ## TODO: match_ext_u for unions
 
   ### Vignets for weights
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Viw.ini"
