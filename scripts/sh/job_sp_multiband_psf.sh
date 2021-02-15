@@ -202,16 +202,16 @@ if [[ $do_job != 0 ]]; then
   command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Psm.ini"
 
   ### Bad hacks to get PSF input dir
-  input_psfex=`find . -name star_selection-*.psf | head -n 1`
+  input_psfex=`find . -name star_selection-*.psf 2>/dev/null | head -n 1`
   command_sp "ln -sf `dirname $input_psfex` input_psfex"
-  input_split_exp=`find output -name flag-*.fits | head -n 1`
+  input_split_exp=`find output -name flag-*.fits 2>/dev/null | head -n 1`
   command_sp "ln -sf `dirname $input_split_exp` input_split_exp"
-  input_sextractor=`find . -name sexcat_sexcat-*.fits | head -n 1`
+  input_sextractor=`find . -name sexcat_sexcat-*.fits 2>/dev/null | head -n 1`
   command_sp "ln -sf `dirname $input_sextractor` input_sextractor"
 
 fi
 
-## Detectino and matching
+## Detection and matching
 (( do_job= $job & 16 ))
 if [[ $do_job != 0 ]]; then
 
