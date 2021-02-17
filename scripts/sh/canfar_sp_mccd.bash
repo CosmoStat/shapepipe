@@ -187,7 +187,7 @@ function command () {
       fi
    fi
 
-   return $res
+   #return $res
 }
 
 # Run shapepipe command. If error occurs, upload sp log files before stopping script.
@@ -197,15 +197,14 @@ command_sp() {
    verbose=$3
    id=$4
 
-   STOP=0
+   #STOP=0
    command "$1" "$2" "$3"
-   res=$?
-   if [ $res != 0 ]; then
-      upload_logs $id $verbose
-      echo "exiting 'canfar_sp.bash', '$cmd' returned $res, log files for id=$id uploaded"
-      exit $res
-   fi
-
+   #res=$?
+   #if [ $res != 0 ]; then
+      #upload_logs $id $verbose
+      #echo "exiting 'canfar_sp.bash', '$cmd' returned $res, log files for id=$id uploaded"
+      #exit $res
+   #fi
 }
 
 # Tar and upload files to vos
@@ -289,7 +288,7 @@ for TILE in ${TILE_ARR[@]}; do
 done
 
 # Download config files
-$VCP vos:cfis/cosmostat/kilbinger/cfis .
+command_sp "$VCP vos:cfis/cosmostat/kilbinger/cfis ." "Get shapepipe config files" "$VERBOSE" ""
 
 # Shape measurement config files
 n_min=0
