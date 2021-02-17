@@ -196,7 +196,7 @@ if [[ $do_job != 0 ]]; then
   command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Sx.ini"
 
   ### Select stars
-  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Se.ini"
+  shapepipe_run -c $SP_CONFIG/config_exp_Se.ini
 
   ### Create  PSF model
   command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Psm.ini"
