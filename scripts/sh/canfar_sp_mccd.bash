@@ -13,21 +13,32 @@
 # Package: shapepipe
 
 # Command line arguments
-
 ## Default values
 do_env=0
-nsh_max=-1
-nsh_step=4000
-nsh_jobs=8
+job=127
 psf='mccd'
+retrieve='vos'
+nsh_step=4000
+nsh_max=-1
+nsh_jobs=8
 
 ## Help string
 usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
 \n\nOptions:\n
    -h\tthis message\n
    -e\tset environment and exit (run as '. $(basename "$0")'\n
+   -j, --job JOB\tRunning JOB, bit-coded\n
+   \t  1: retrieve images (online if method=vos)\n
+   \t  2: prepare images (offline)\n
+   \t  4: mask (online)\n
+   \t  8: processing of stars on exposures (offline)\n
+   \t 16: detection and matching (offline)\n
+   \t 32: shapes and morphology (offline)\n
+   \t 64: paste catalogues (offline)\n
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
+   -r, --retrieve METHOD\n
+   \tmethod to retrieve images, one in ['vos'|'symlink]', default='$retrieve'\n
    --nsh_step NSTEP\n
    \tnumber of objects per parallel shape module call, \n
    \t default: $nsh_step\n
@@ -55,8 +66,16 @@ while [ $# -gt 0 ]; do
     -e)
       do_env=1
       ;;
+    -j|--job)
+      job="$2"
+      shift
+      ;;
     -p|--psf)
       psf="$2"
+      ehift
+      ;;
+    -r|--retrieve)
+      retrieve="$2"
       shift
       ;;
     --nsh_max)
@@ -287,41 +306,86 @@ for TILE in ${TILE_ARR[@]}; do
    echo $TILE >> $TILE_NUMBERS_PATH
 done
 
-# Download config files
-command_sp "$VCP vos:cfis/cosmostat/kilbinger/cfis ." "Get shapepipe config files" "$VERBOSE" ""
+# Processing
 
-# Shape measurement config files
-n_min=0
-n_max=$((nsh_step - 1))
-for k in $(seq 1 $nsh_jobs); do
-  cat $SP_CONFIG/config_tile_Ng_template.ini | \
-    perl -ane 's/(ID_OBJ_MIN =) X/$1 '$n_min'/; s/(ID_OBJ_MAX =) X/$1 '$n_max'/; s/NgXu/Ng'$k'u/; s/X_interp/'$psf'_interp/g; print' \
-     > $SP_CONFIG_MOD/config_tile_Ng${k}u.ini
-  echo $k $n_min $n_max
-  n_min=$((n_min + nsh_step))
-  if [ "$k" == $((nsh_jobs - 1)) ] && [ $nsh_max == -1 ]; then
-    n_max=-1
-  else
-    n_max=$((n_min + nsh_step - 1))
-  fi
-done
+## Retrieve and prepare config files and images
+(( do_job= $job & 1 ))
+if [[ $do_job != 0 ]]; then
 
-# Run pipeline
+  ### Download config files
+  command_sp "$VCP vos:cfis/cosmostat/kilbinger/cfis ." "Get shapepipe config files" "$VERBOSE" ""
 
-## Prepare images
+  ### Shape measurement config files
+  n_min=0
+  n_max=$((nsh_step - 1))
+  for k in $(seq 1 $nsh_jobs); do
+    cat $SP_CONFIG/config_tile_Ng_template.ini | \
+      perl -ane \
+        's/(ID_OBJ_MIN =) X/$1 '$n_min'/; s/(ID_OBJ_MAX =) X/$1 '$n_max'/; s/NgXu/Ng'$k'u/; s/X_interp/'$psf'_interp/g; print' \
+        > $SP_CONFIG_MOD/config_tile_Ng${k}u.ini
+    n_min=$((n_min + nsh_step))
+    if [ "$k" == $((nsh_jobs - 1)) ] && [ $nsh_max == -1 ]; then
+      n_max=-1
+    else
+      n_max=$((n_min + nsh_step - 1))
+    fi
+  done
 
-# Get tiles
-command_sp "shapepipe_run -c $SP_CONFIG/config_get_tiles.ini" "Run shapepipe (prepare: get tiles)" "$VERBOSE" "$ID"
+  ### Get tiles
+  command_sp "shapepipe_run -c $SP_CONFIG/config_get_tiles.ini" "Run shapepipe (prepare: get tiles)" "$VERBOSE" "$ID"
 
-# Uncompress tile weights
-command_sp "shapepipe_run -c $SP_CONFIG/config_unfz_w.ini" "Run shapepipe (prepare: uncompress tile weights)" "$VERBOSE" "$ID"
+  ### Uncompress tile weights
+  command_sp "shapepipe_run -c $SP_CONFIG/config_unfz_w.ini" "Run shapepipe (prepare: uncompress tile weights)" "$VERBOSE" "$ID"
 
-# Find exposures
-command_sp "shapepipe_run -c $SP_CONFIG/config_find_exp.ini" "Run shapepipe (prepare: find exposures)" "$VERBOSE" "$ID"
+  ### Find exposures
+  command_sp "shapepipe_run -c $SP_CONFIG/config_find_exp.ini" "Run shapepipe (prepare: find exposures)" "$VERBOSE" "$ID"
 
-# Get exposures
-command_sp "shapepipe_run -c $SP_CONFIG/config_get_exp.ini" "Run shapepipe (prepare: get exposures)" "$VERBOSE" "$ID"
+  ### Retrieve exposures
+  command_sp "shapepipe_run -c $SP_CONFIG/config_get_exp.ini" "Run shapepipe (prepare: get exposures)" "$VERBOSE" "$ID"
 
+=======
+
+# Processing
+
+## Retrieve and prepare config files and images
+(( do_job= $job & 1 ))
+if [[ $do_job != 0 ]]; then
+
+  ### Download config files
+  $VCP vos:cfis/cosmostat/kilbinger/cfis .
+
+  ### Shape measurement config files
+  n_min=0
+  n_max=$((nsh_step - 1))
+  for k in $(seq 1 $nsh_jobs); do
+    cat $SP_CONFIG/config_tile_Ng_template.ini | \
+      perl -ane \
+        's/(ID_OBJ_MIN =) X/$1 '$n_min'/; s/(ID_OBJ_MAX =) X/$1 '$n_max'/; s/NgXu/Ng'$k'u/; s/X_interp/'$psf'_interp/g; print' \
+        > $SP_CONFIG_MOD/config_tile_Ng${k}u.ini
+    n_min=$((n_min + nsh_step))
+    if [ "$k" == $((nsh_jobs - 1)) ] && [ $nsh_max == -1 ]; then
+      n_max=-1
+    else
+      n_max=$((n_min + nsh_step - 1))
+    fi
+  done
+
+  ### Get tiles
+  command_sp "shapepipe_run -c $SP_CONFIG/config_get_tiles.ini" "Run shapepipe (prepare: get tiles)" "$VERBOSE" "$ID"
+
+  ### Uncompress tile weights
+  command_sp "shapepipe_run -c $SP_CONFIG/config_unfz_w.ini" "Run shapepipe (prepare: uncompress tile weights)" "$VERBOSE" "$ID"
+
+  ### Find exposures
+  command_sp "shapepipe_run -c $SP_CONFIG/config_find_exp.ini" "Run shapepipe (prepare: find exposures)" "$VERBOSE" "$ID"
+
+  ### Retrieve exposures
+  command_sp "shapepipe_run -c $SP_CONFIG/config_get_exp.ini" "Run shapepipe (prepare: get exposures)" "$VERBOSE" "$ID"
+
+>>>>>>> Stashed changes
+fi
+
+exit 0
 ## Exposures
 
 # Run all modules
