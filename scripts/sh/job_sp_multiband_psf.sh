@@ -31,10 +31,10 @@ command_sp() {
 # Command line arguments
 
 ## Default values
-job=31
+do_env=0
+job=127
 survey='unions'
 retrieve='vos'
-do_env=0
 match=1
 
 ## Help string
@@ -175,10 +175,6 @@ fi
 (( do_job= $job & 4 ))
 if [[ $do_job != 0 ]]; then
 
-  # Note: Before activating shapepipe, the following modules need to be loaded:
-  #  intelpython/3
-  #  openmpi/4.0.5
-
   ### Create flags for CFIS r-band images: add star, halo, and Messier
   ### object masks.
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_mask_r.ini"
@@ -196,7 +192,7 @@ if [[ $do_job != 0 ]]; then
   command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Sx.ini"
 
   ### Select stars
-  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Se.ini"
+  shapepipe_run -c $SP_CONFIG/config_exp_Se.ini
 
   ### Create  PSF model
   command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Psm.ini"
