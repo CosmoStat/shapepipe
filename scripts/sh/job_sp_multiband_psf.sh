@@ -31,10 +31,10 @@ command_sp() {
 # Command line arguments
 
 ## Default values
-job=31
+do_env=0
+job=127
 survey='unions'
 retrieve='vos'
-do_env=0
 match=1
 
 ## Help string
