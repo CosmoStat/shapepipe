@@ -41,31 +41,38 @@ class PasteCat(object):
     check_col_name : string, optional, default=None:
         if not None, use column with this key to check equal number
         of rows in each input catalog
+    hdu_no : array of int, optional, default=None
+        hdu numbers of input catalog; by default set to 2 for all
+        input files
     """
 
     def __init__(self, input_file_list, output_path, w_log,
-                 ext_name=None, check_col_name=None):
+                 ext_name=None, check_col_name=None, hdu_no=None):
 
         self._input_file_list = input_file_list
         self._output_path = output_path
         self._w_log = w_log
         self._ext_name = ext_name
         self._check_col_name = check_col_name
+        if hdu_no is None:
+            self._hdu_no = [2] * len(input_file_list)
+        else:
+            self._hdu_no = hdu_no
 
     def process(self):
 
         # Create output catalog
-        pasted_cat = (io.FITSCatalog(self._output_path,
-                      open_mode=io.BaseCatalog.OpenMode.ReadWrite))
+        pasted_cat = io.FITSCatalog(self._output_path,
+                                    open_mode=io.BaseCatalog.OpenMode.ReadWrite)
 
         for i, input_file in enumerate(self._input_file_list):
             self._w_log.info('Pasting catalog \'{}\''.format(input_file))
 
             # Read input data
-            cat = io.FITSCatalog(input_file, SEx_catalog=True)
+            cat = io.FITSCatalog(input_file)
             cat.open()
-            data = np.copy(cat.get_data())
-            col_names = cat.get_col_names()
+            data = np.copy(cat.get_data(self._hdu_no[i]))
+            col_names = cat.get_col_names(self._hdu_no[i])
             cat.close()
 
             # Check equality
@@ -103,6 +110,16 @@ def paste_cat_runner(input_file_list, run_dirs, file_number_string,
     else:
         check_col_name = None
 
+    if config.has_option('PASTE_CAT_RUNNER', 'HDU'):
+        tmp = config.getlist('PASTE_CAT_RUNNER', 'HDU')
+        hdu_no = [int(i) for i in tmp]
+        if len(hdu_no) != len(input_file_list):
+            raise IndexError('Different lengths for input file list ({}) and'
+                             'HDU ({})'
+                             ''.format(len(input_file_list), len(hdu_no)))
+    else:
+        hdu_no = None
+
     if config.has_option('PASTE_CAT_RUNNER', 'OUTPUT_FILE_PATTERN'):
         output_file_pattern = config.get('PASTE_CAT_RUNNER', 'OUTPUT_FILE_PATTERN')
     else:
@@ -125,7 +142,7 @@ def paste_cat_runner(input_file_list, run_dirs, file_number_string,
                                       file_ext)
 
     inst = PasteCat(input_file_list, output_path, w_log, ext_name=ext_name_list,
-                    check_col_name=check_col_name)
+                    check_col_name=check_col_name, hdu_no=hdu_no)
 
     inst.process()
 

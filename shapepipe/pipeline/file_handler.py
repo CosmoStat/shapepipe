@@ -392,7 +392,8 @@ class FileHandler(object):
                                   for run in all_runs])
 
             elif ':' in dir.lower():
-                string, module = dir.lower().split(':')
+                string, module = dir.split(':')
+                module = module.lower()
                 input_dir.append(self.format(self.format(
                                              self._run_log.get_run(string),
                                              module),

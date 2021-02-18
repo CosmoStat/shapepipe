@@ -207,8 +207,14 @@ def check_results(ID_files, input_vos, result_base_names, n_complete, verbose=Fa
     if verbose:
         print('Getting vos directory content from vls...')
     f = io.StringIO()
-    with redirect_stdout(f):
-        vls()
+
+    try:
+        with redirect_stdout(f):
+            vls()
+    except:
+        print('Error during vls command')
+        raise
+ 
     vls_out = f.getvalue()
 
     n_found = {}
@@ -304,7 +310,7 @@ def main(argv=None):
 
     ID_files = read_input_files(param.input_IDs, verbose=param.verbose)
 
-    result_base_names = ['psfex', 'psfexinterp_exp', 'setools_mask', 'setools_stat', 'setools_plot',
+    result_base_names = ['psfex', 'psfex_interp_exp', 'setools_mask', 'setools_stat', 'setools_plot',
                          'final_cat', 'pipeline_flag', 'logs']
 
     n_complete = len(result_base_names)

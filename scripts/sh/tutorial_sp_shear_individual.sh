@@ -19,17 +19,55 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    -b, --base_dir_sp PATH\n
    \tShapePipe base directory, default='$SP_BASE'\n
    TILE_ID_i\n
-   \ttile ID, e.g. 282.247\n"
+   \ttile ID(s), e.g. 282.247 214.242\n"
 
 if [ -z $1 ]; then
         echo -ne $usage
         exit 1
 fi
 
+# Functions
+
+## Print string, executes command, and prints return value.
+function command () {
+   cmd=$1
+   str=$2
+
+   echo "$str: running '$cmd'"
+   $cmd
+   res=$?
+   if [ $res != 0 ]; then
+     echo -e "error, return value = $res"
+     if [ $STOP == 1 ]; then
+       echo "exiting $(basename "$0"), error in command '$cmd'"
+       exit $res
+     else
+       echo "continuing $(basename "$0"), error in command '$cmd'"
+     fi
+   fi
+
+   return $res
+}
+
+## Run shapepipe command
+command_sp() {
+   cmd=$1
+   str=$2
+
+   STOP=0
+   command "$1" "$2"
+   res=$?
+   if [ $res != 0 ]; then
+      echo "exiting $(basename "$0"), '$cmd' returned $res"
+      exit $res
+   fi
+
+}
+
+
 # Command line arguments
 
-
-# Parse command line
+## Parse command line
 ID=()
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -81,7 +119,7 @@ done
 ## Retrieve tiles
 if [ "$retrieve" == "vos" ]; then
 
-  shapepipe_run -c $SP_CONFIG/config_tile_Git.ini
+  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Gi.ini" "Get tiles ($retrieve)"
 
 elif [ "$retrieve" == "symlink" ]; then
 
@@ -89,7 +127,7 @@ elif [ "$retrieve" == "symlink" ]; then
     echo "Input directory 'data' not found"
     exit 2
   fi
-  shapepipe_run -c $SP_CONFIG/config_tile_Git_symlink.ini
+  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Gi_symlink.ini" "Get tiles ($retrieve)"
 
 else
 
@@ -97,57 +135,71 @@ else
 
 fi
 
-## Uncompress tile weights
-shapepipe_run -c $SP_CONFIG/config_tile_Uz.ini
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Uz.ini" "Uncompress tile weights"
 
-## Find single exposures
-shapepipe_run -c $SP_CONFIG/config_tile_Fe.ini
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Fe.ini" "Find exposures"
 
 ## Retrieve single exposures
 if [ "$retrieve" == "vos" ]; then
 
-  shapepipe_run -c $SP_CONFIG/config_tile_Gie.ini
+  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Gi.ini" "Get exposures ($retrieve)"
 
 elif [ "$retrieve" == "symlink" ]; then
 
-  shapepipe_run -c $SP_CONFIG/config_tile_Gie_symlink.ini
+  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Gi_symlink.ini" "Get exposures ($retrieve)"
 
 fi
 
 # Processing of single exposures
 
-## Split into single-exposure single-HDU files and write FITS headers
-shapepipe_run -c $SP_CONFIG/config_exp_Sp.ini
+## Until star selection
+command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Sp.ini" "Exp: split into single-HDU files"
+command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Mh.ini" "Exp: merge headersss"
+command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini" "Exp: mask"
+command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Sx.ini" "Exp: detect star candidates"
+command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Se.ini" "Exp: select stars"
 
-## Merge FITS headers
-shapepipe_run -c $SP_CONFIG/config_exp_Mh.ini
-
-## Mask images
-shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini
-
-## Detect objects
-shapepipe_run -c $SP_CONFIG/config_exp_Sx.ini
-
-## Select star candidates
-shapepipe_run -c $SP_CONFIG/config_exp_Se.ini
-
-## Validation: Create histogram text files and plots
+## Create global histogram plots and ascii files
 stats_global -o stats -v -c $SP_CONFIG/config_stats.ini
 
-## Create PSF model
-shapepipe_run -c $SP_CONFIG/config_exp_Psm.ini
+## PSF
+command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Psm.ini" "Exp: Create PSF model"
 
-## Interpolate PSF model to star positions (for validation)
-shapepipe_run -c $SP_CONFIG/config_exp_Psi.ini
-
-## Validation: PSF residuals
-
-### Combine PSF runs
-shapepipe_run -c $SP_CONFIG/config_exp_Cp.ini
-
-### Merge PSF files
+## PSF validation: residuals
+command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Psi.ini" "Exp: Interpolate PSF to star positions"
+command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Cp.ini" "Exp: Combing PSF runs"
 mkdir psf_validation
-shapepipe_run -c $SP_CONFIG/config_exp_Mst.ini
+command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Mst.ini" "Exp: Merge PSF files"
 
 ### Create plots
-MeanShapes.py -o psf_validation -i psf_validation/full_starcat.fits -v -x 20
+MeanShapes -o psf_validation -i psf_validation/full_starcat.fits -v -x 20 --hdu 1
+
+
+# Some bad hacks to get additional input files...
+
+input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
+ln -s `dirname $input_psfex` input_psfex
+input_split_exp=`find output -name flag-*.fits | head -n 1`
+ln -s `dirname $input_split_exp` input_split_exp
+input_sextractor=`find . -name sexcat_sexcat-*.fits | head -n 1`
+ln -s `dirname $input_sextractor` input_sextractor
+
+
+# Processing of tiles
+
+## Until vignets
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Ma.ini" "Tile: mask"
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Sx.ini" "Tile: Detect galaxy candidates"
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Psi.ini" "Tile: Interpolate PSF to object positions"
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Viw.ini" "Tile: weight vignets"
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Sm.ini" "Tile: spread model"
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Vix.ini" "Tile: exposure vignets"
+
+# Shapes, run 8 parallel processes
+for k in $(seq 1 8); do
+    command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Sh${k}.ini" "Tile: shapes ($k/8)" &
+done
+wait
+
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Msc.ini" "Tile: merge separate cats"
+command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Fc.ini" "Tile: create final cat"

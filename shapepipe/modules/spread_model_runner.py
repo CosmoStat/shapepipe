@@ -41,7 +41,7 @@ def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
 
     """
 
-    m = (obj_vign != -1e30) & (weight_vign > 0.)
+    m = (obj_vign < -1e29) & (weight_vign > 0.)
     w = m.astype(float)
 
     t_v = model_vign.ravel()
@@ -167,7 +167,7 @@ def save_results(sex_cat_path, output_path, sm, sm_err, mag, number,
         ValueError('Mode must be in [new, add].')
 
 
-@module_runner(input_module=['sextractor_runner', 'psfexinterp_runner_me',
+@module_runner(input_module=['sextractor_runner', 'psfex_interp_runner_me',
                              'vignetmaker_runner'], version='1.0',
                file_pattern=['sexcat', 'galaxy_psf', 'weight_vign'],
                file_ext=['.fits', '.sqlite', '.fits'],

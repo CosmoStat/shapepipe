@@ -369,7 +369,7 @@ def make_mask(galcat_path, mask_value):
 
     vign = get_original_vignet(galcat_path)
 
-    vign[np.where(vign == -1e30)] = mask_value
+    vign[np.where(vign < -1e29)] = mask_value
 
     return vign
 

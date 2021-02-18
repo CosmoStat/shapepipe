@@ -9,7 +9,7 @@
 #              machine.
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 # Date: 03/2020
-# Package: shapepipe
+# Package: ShapePipe
 
 
 ### Set-up ###
@@ -20,12 +20,12 @@
 
 if [ $# == 0 ]; then
   echo "Usages:"
-  echo "  bash canfar_sp.bash TILE_ID_1 [TILE_ID_2 [...]]"
+  echo "  bash $(basename "$0") TILE_ID_1 [TILE_ID_2 [...]]"
   echo "    TILE_ID = xxx.yyy"
   echo "    Examples:"
-  echo "      canfar_sp.bash 244.252"
-  echo "      canfar_sp.bash 244.252 239.293"
-  echo "  . canfar_sp.bash -e"
+  echo "      $(basename "$0") 244.252"
+  echo "      $(basename "$0") 244.252 239.293"
+  echo "  . $(basename "$0") -e"
   echo "    Assign environment variables"
   exit 1
 fi
@@ -121,10 +121,10 @@ function command () {
       else
          echo -e "${RED}error, return value = $res${NC}"
          if [ $STOP == 1 ]; then
-            echo "${RED}exiting 'canfar_sp.bash', error in command '$cmd'${NC}"
+            echo "${RED}exiting $(basename "$0"), error in command '$cmd'${NC}"
             exit $res
          else
-            echo "${RED}continuing 'canfar_sp.bash', error in command '$cmd'${NC}"
+            echo "${RED}continuing $(basename "$0"), error in command '$cmd'${NC}"
          fi
       fi
    fi
@@ -144,7 +144,7 @@ command_sp() {
    res=$?
    if [ $res != 0 ]; then
       upload_logs $id $verbose
-      echo "exiting 'canfar_sp.bash', '$cmd' returned $res, log files for id=$id uploaded"
+      echo "exiting '$(basename "$0"), '$cmd' returned $res, log files for id=$id uploaded"
       exit $res
    fi
 

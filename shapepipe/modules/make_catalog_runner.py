@@ -494,7 +494,7 @@ def save_psf_data(final_cat_file, galaxy_psf_path, w_log):
 
 
 @module_runner(input_module=['sextractor_runner', 'spread_model_runner',
-                             'psfexinterp_runner_me', 'ngmix_runner'],
+                             'psfex_interp_runner_me', 'ngmix_runner'],
                version='1.0', file_pattern=['tile_sexcat', 'sexcat_sm',
                                             'galaxy_psf', 'ngmix'],
                file_ext=['.fits', '.fits', '.sqlite', '.fits'],
@@ -520,7 +520,10 @@ def make_catalog_runner(input_file_list, run_dirs, file_number_string,
         if shape_type.lower() not in ["ngmix", "galsim"]:
             raise ValueError("SHAPE_MEASUREMENT_TYPE must be in [ngmix, galsim]")
 
-    tile_list_path = config.getexpanded("MAKE_CATALOG_RUNNER", "TILE_LIST")
+    if config.hasoption('MAKE_CATALOG_RUNNER', 'TILE_LIST'):
+        tile_list_path = config.getexpanded("MAKE_CATALOG_RUNNER", "TILE_LIST")
+    else:
+        tile_list_path = None
 
     output_name = (run_dirs['output'] + '/final_cat' +
                    file_number_string + '.fits')
@@ -534,8 +537,9 @@ def make_catalog_runner(input_file_list, run_dirs, file_number_string,
     save_sm_data(final_cat_file, sexcat_sm_path, do_classif, star_thresh,
                  gal_thresh)
 
-    w_log.info('Flag overlapping objects')
-    remove_common_elements(final_cat_file, tile_list_path)
+    if tile_list_path:
+        w_log.info('Flag overlapping objects')
+        remove_common_elements(final_cat_file, tile_list_path)
 
     w_log.info('Save shape measurement data')
     for shape_type in shape_type_list:

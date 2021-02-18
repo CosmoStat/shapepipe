@@ -10,7 +10,7 @@
 NAMES=(
         "final_cat"
         "psfex"
-        "psfexinterp_exp"
+        "psfex_interp_exp"
         "setools_mask"
         "setools_stat"
         "setools_plot"
@@ -26,7 +26,6 @@ for out in ${NAMES[@]}; do
     n_ok=0
     n_fail=0
     for file in $FILES; do
-        #echo " $file"
 	    tar xf $file
         res=$?
         if [ $res == 0 ]; then

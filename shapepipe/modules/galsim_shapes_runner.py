@@ -348,7 +348,7 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
     return final_res
 
 
-@module_runner(input_module=['sextractor_runner', 'psfexinterp_runner',
+@module_runner(input_module=['sextractor_runner', 'psfex_interp_runner',
                              'vignetmaker_runner'],
                version='0.0.1',
                file_pattern=['tile_sexcat', 'image', 'exp_background',

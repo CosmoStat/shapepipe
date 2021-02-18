@@ -47,7 +47,7 @@ done
 # Assumes untar_results.sh has been run before.
 n_skipped=0
 n_created=0
-FILES=output/*/psfexinterp_runner/output/${psfval_file_base}*
+FILES=output/*/psfex_interp_runner/output/${psfval_file_base}*
 for val in $FILES; do
     base=`basename $val`
     link_s "$pwd/$val" "$dir_individual/$base"
