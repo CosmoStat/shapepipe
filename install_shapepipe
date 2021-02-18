@@ -62,6 +62,8 @@ PY_SCRIPTS=(cfis_weight_format.py
          MeanShapes.py
          stats_global.py
 )
+BASH_SCRIPTS=(job_sp.bash
+)
 
 # Divider line
 line="########################################################################"
@@ -697,6 +699,10 @@ ln -s $PWD/shapepipe_run.py $CONDA_PREFIX/bin/shapepipe_run
 for script in ${PY_SCRIPTS[@]}; do
   link_name=`basename $script .py`
   ln -s $PWD/scripts/python/$script $CONDA_PREFIX/bin/$link_name
+done
+for script in ${BASH_SCRIPTS[@]}; do
+  link_name=`basename $script .bash`
+  ln -s $PWD/scripts/sh/$script $CONDA_PREFIX/bin/$link_name
 done
 
 finish

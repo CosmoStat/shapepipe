@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-# Name: canfar_sp_mccd.bash
-# Description: Process one or more tiles with all
-#              contributing exposures on canfar.
-#              This is the job submission script for
-#              the canfar batch system. Can also be
+# Name: job_sp.bash
+# Description: General script to process one or more tiles
+#              with all contributing exposures.
+#              This works as job submission script for
+#              the canfar batch system.
 #              called in interactive mode on a virtual
 #              machine.
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
@@ -72,7 +72,7 @@ while [ $# -gt 0 ]; do
       ;;
     -p|--psf)
       psf="$2"
-      ehift
+      shift
       ;;
     -r|--retrieve)
       retrieve="$2"
@@ -168,7 +168,6 @@ export VCP="vcp --certfile=$CERTFILE"
 function command () {
    cmd=$1
    str=$2
-   verbose=$3
 
    #RED='\033[0;31m'
    #GREEN='\033[0;32m'
@@ -179,20 +178,20 @@ function command () {
    NC=''
 
 
-   if [ $# == 3 ]; then
-      if [ $verbose == 1 ]; then
+   if [ $# == 2 ]; then
+      if [ $VERBOSE == 1 ]; then
            echo "$str: running '$cmd'"
       fi
       $cmd
    else
-      if [ $verbose == 1 ]; then
+      if [ $VERBOSE == 1 ]; then
          echo "$str: running '$cmd $4 \"$5 $6\"'"
       fi
       $cmd $4 "$5 $6"
    fi	
    res=$?
 
-   if [ $verbose == 1 ]; then
+   if [ $VERBOSE == 1 ]; then
       if [ $res == 0 ]; then
          echo -e "${GREEN}success, return value = $res${NC}"
       else
@@ -213,15 +212,13 @@ function command () {
 command_sp() {
    cmd=$1
    str=$2
-   verbose=$3
-   id=$4
 
    #STOP=0
-   command "$1" "$2" "$3"
+   command "$1" "$2"
    #res=$?
    #if [ $res != 0 ]; then
-      #upload_logs $id $verbose
-      #echo "exiting 'canfar_sp.bash', '$cmd' returned $res, log files for id=$id uploaded"
+      #upload_logs $ID $VERBOSE
+      #echo "exiting 'canfar_sp.bash', '$cmd' returned $res, log files for id=$ID uploaded"
       #exit $res
    #fi
 }
@@ -279,8 +276,10 @@ function print_env() {
 ### Start ###
 
 # Activate conda environment
-echo "Activate conda 'shapepipe' environment"
-source $VM_HOME/miniconda3/bin/activate shapepipe
+if [ "$CONDA_DEFAULT_ENV" != "shapepipe" ]; then
+  echo "Activate conda 'shapepipe' environment"
+  source $VM_HOME/miniconda3/bin/activate shapepipe
+fi
 
 print_env
 
@@ -308,12 +307,12 @@ done
 
 # Processing
 
-## Retrieve and prepare config files and images
+## Retrieve config files and images (online if retrieve=vos)
 (( do_job= $job & 1 ))
 if [[ $do_job != 0 ]]; then
 
   ### Download config files
-  command_sp "$VCP vos:cfis/cosmostat/kilbinger/cfis ." "Get shapepipe config files" "$VERBOSE" ""
+  command_sp "$VCP vos:cfis/cosmostat/kilbinger/cfis ." "Get shapepipe config files"
 
   ### Shape measurement config files
   n_min=0
@@ -332,90 +331,90 @@ if [[ $do_job != 0 ]]; then
   done
 
   ### Get tiles
-  command_sp "shapepipe_run -c $SP_CONFIG/config_get_tiles.ini" "Run shapepipe (prepare: get tiles)" "$VERBOSE" "$ID"
-
-  ### Uncompress tile weights
-  command_sp "shapepipe_run -c $SP_CONFIG/config_unfz_w.ini" "Run shapepipe (prepare: uncompress tile weights)" "$VERBOSE" "$ID"
+  command_sp "shapepipe_run -c $SP_CONFIG/config_get_tiles.ini" "Run shapepipe (get tiles)"
 
   ### Find exposures
-  command_sp "shapepipe_run -c $SP_CONFIG/config_find_exp.ini" "Run shapepipe (prepare: find exposures)" "$VERBOSE" "$ID"
+  command_sp "shapepipe_run -c $SP_CONFIG/config_find_exp.ini" "Run shapepipe (find exposures)" 
 
   ### Retrieve exposures
-  command_sp "shapepipe_run -c $SP_CONFIG/config_get_exp.ini" "Run shapepipe (prepare: get exposures)" "$VERBOSE" "$ID"
+  command_sp "shapepipe_run -c $SP_CONFIG/config_get_exp.ini" "Run shapepipe (get exposures)"
 
-=======
+fi
 
-# Processing
-
-## Retrieve and prepare config files and images
-(( do_job= $job & 1 ))
+## Prepare images (offline)
+(( do_job= $job & 2 ))
 if [[ $do_job != 0 ]]; then
 
-  ### Download config files
-  $VCP vos:cfis/cosmostat/kilbinger/cfis .
-
-  ### Shape measurement config files
-  n_min=0
-  n_max=$((nsh_step - 1))
-  for k in $(seq 1 $nsh_jobs); do
-    cat $SP_CONFIG/config_tile_Ng_template.ini | \
-      perl -ane \
-        's/(ID_OBJ_MIN =) X/$1 '$n_min'/; s/(ID_OBJ_MAX =) X/$1 '$n_max'/; s/NgXu/Ng'$k'u/; s/X_interp/'$psf'_interp/g; print' \
-        > $SP_CONFIG_MOD/config_tile_Ng${k}u.ini
-    n_min=$((n_min + nsh_step))
-    if [ "$k" == $((nsh_jobs - 1)) ] && [ $nsh_max == -1 ]; then
-      n_max=-1
-    else
-      n_max=$((n_min + nsh_step - 1))
-    fi
-  done
-
-  ### Get tiles
-  command_sp "shapepipe_run -c $SP_CONFIG/config_get_tiles.ini" "Run shapepipe (prepare: get tiles)" "$VERBOSE" "$ID"
-
   ### Uncompress tile weights
-  command_sp "shapepipe_run -c $SP_CONFIG/config_unfz_w.ini" "Run shapepipe (prepare: uncompress tile weights)" "$VERBOSE" "$ID"
+  command_sp "shapepipe_run -c $SP_CONFIG/config_unfz_w.ini" "Run shapepipe (uncompress tile weights)"
 
-  ### Find exposures
-  command_sp "shapepipe_run -c $SP_CONFIG/config_find_exp.ini" "Run shapepipe (prepare: find exposures)" "$VERBOSE" "$ID"
+  ### Split images into single-HDU files, merge headers for WCS info
+  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_SpMh.ini" "Run shapepipe (split images, merge headers)"
 
-  ### Retrieve exposures
-  command_sp "shapepipe_run -c $SP_CONFIG/config_get_exp.ini" "Run shapepipe (prepare: get exposures)" "$VERBOSE" "$ID"
+fi
 
->>>>>>> Stashed changes
+## Mask tiles and exposures: add star, halo, and Messier object masks (online)
+(( do_job= $job & 4 ))
+if [[ $do_job != 0 ]]; then
+
+  ### Mask tiles
+  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Ma.ini" "Run shapepipe (mask tiles)"
+
+  ### Mask exposures
+  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini" "Run shapepipe (mask exposures)"
+
+fi
+
+
+## Remaining exposure processing (offline)
+(( do_job= $job & 8 ))
+if [[ $do_job != 0 ]]; then
+
+  ### Star detection, selection, PSF model. setools can exit with an error for CCD with insufficient stars,
+  ### the script should continue
+  STOP=0
+  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_$psf.ini" "Run shapepipe (exp $psf)"
+  STOP=1
+
+  ### The following are very a bad hacks to get additional input file paths
+  if [ "$psf" == "psfex" ]; then
+    input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
+    command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output"
+  else
+    input_psf_mccd=`find . -name "fitted_model*.npy" | head -n 1`
+    command_sp "ln -s `dirname $input_psf_mccd` input_psf_mccd" "Link MCCD output"
+  fi
+
+  input_split_exp=`find output -name flag-*.fits | head -n 1`
+  command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output"
+
+  input_sextractor=`find . -name sexcat_sexcat-*.fits | head -n 1`
+  command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor output"
+
+fi
+
+## Process tiles up to shape measurement
+(( do_job= $job & 16 ))
+if [[ $do_job != 0 ]]; then
+
+  ### PSF model letter: 'P' (psfex) or 'M' (mccd)
+  letter=${psf:0:1}
+  Letter=${letter^}
+  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Sx${Letter}iViSmVi.ini" "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)"
+
 fi
 
 exit 0
-## Exposures
 
+
+
+## process exposures
 # Run all modules
-command_sp "shapepipe_run -c $SP_CONFIG/config_exp_$psf.ini" "Run shapepipe (exp $psf)" "$VERBOSE" "$ID"
 
 
-# The following are very a bad hacks to get additional input file paths
-if [ "$psf" == "psfex" ]; then
-  input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
-  command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output" "$VERBOSE" "$ID"
-else
-  input_psf_mccd=`find . -name "fitted_model*.npy" | head -n 1`
-  command_sp "ln -s `dirname $input_psf_mccd` input_psf_mccd" "Link MCCD output" "$VERBOSE" "$ID"
-fi
 
-input_split_exp=`find output -name flag-*.fits | head -n 1`
-command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output" "$VERBOSE" "$ID"
-
-input_sextractor=`find . -name sexcat_sexcat-*.fits | head -n 1`
-command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor output" "$VERBOSE" "$ID"
-
-
-## Tiles
 
 # Everything up to shapes
-
-## PSF model letter: 'P' (psfex) or 'M' (mccd)
-letter=${psf:0:1}
-Letter=${letter^}
-command_sp "shapepipe_run -c $SP_CONFIG/config_tile_MaSx${Letter}iViSmVi.ini" "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)" "$VERBOSE" "$ID"
 
 # Shapes, run $nsh_jobs parallel processes
 for k in $(seq 1 $nsh_jobs); do
