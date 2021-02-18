@@ -175,10 +175,6 @@ fi
 (( do_job= $job & 4 ))
 if [[ $do_job != 0 ]]; then
 
-  # Note: Before activating shapepipe, the following modules need to be loaded:
-  #  intelpython/3
-  #  openmpi/4.0.5
-
   ### Create flags for CFIS r-band images: add star, halo, and Messier
   ### object masks.
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_mask_r.ini"
