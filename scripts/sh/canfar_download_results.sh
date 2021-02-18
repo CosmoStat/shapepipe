@@ -42,6 +42,33 @@ while [ $# -gt 0 ]; do
       shift
       ;;
     -v)
+      VERBOSE=1
+      ;;
+    *)
+      echo "Invalid command line argument '$1'"
+      echo -ne $usage
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+
+## Paths
+remote="vos:cfis/$INPUT_VOS"
+local="."
+
+NAMES=(
+        "final_cat"
+        "logs"
+        "psfex"
+        "psfexinterp_exp"
+        "setools_mask"
+        "setools_stat"
+        "setools_plot"
+        "pipeline_flag"
+     )
+
 if [ $VERBOSE == 1 ]; then
    vflag="-v"
 else
@@ -72,8 +99,6 @@ done
 
 # Check number of files
 for name in ${NAMES[@]}; do
-    #n_downl=(`ls -l $local/${name}_*.tgz | wc`)
-    set -- `ls $local/${name}_*.tgz 2> /dev/null`
-    n_downl="$#"
-    echo "$n_downl '$name' result files downloaded"
+    n_downl=(`ls -l $local/$name_*.tgz | wc`)
+    echo "$n_downl '$name' result files downloaded from $RESULTS"
 done
