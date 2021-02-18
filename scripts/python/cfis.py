@@ -1609,7 +1609,6 @@ def square_from_centre(x, y, dx, dy, dxy=0):
     return cx, cy
 
 
-
 def square_from_corners(ang0, ang1):
     """Return coordinate vectors of corners cx, cy that define a closed square for plotting.
     """
