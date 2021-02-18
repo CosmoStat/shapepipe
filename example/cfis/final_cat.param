@@ -4,7 +4,7 @@ YWIN_WORLD
 
 # tile ID, for plot of tile-dependent additive bias.
 # Can maybe be removed.
-#TILE_ID
+TILE_ID
 
 # flags
 FLAGS
