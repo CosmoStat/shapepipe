@@ -39,6 +39,8 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    -r, --retrieve METHOD\n
    \tmethod to retrieve images, one in ['vos'|'symlink]', default='$retrieve'\n
+   --nsh_jobs NJOB\n
+   \tnumber of shape measurement parallel jobs, default=$nsh_jobs\n
    --nsh_step NSTEP\n
    \tnumber of objects per parallel shape module call, \n
    \t default: $nsh_step\n
@@ -46,7 +48,7 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    \tmax number of objects per parallel shape module call, \n
    \t default: unlimited; has precedent over --nsh_step\n
    TILE_ID_i\n
-   \ttile ID(s), e.g. 282.247 214.242\n
+   \ttile ID(s), e.g. 283.247 214.242\n
 "
 
 ## Help if no arguments
@@ -84,6 +86,10 @@ while [ $# -gt 0 ]; do
       ;;
     --nsh_step)
       nsh_step="$2"
+      shift
+      ;;
+    --nsh_jobs)
+      nsh_jobs="$2"
       shift
       ;;
     *)
@@ -150,12 +156,6 @@ STOP=1
 
 # Verbose mode (1: verbose, 0: quiet)
 VERBOSE=1
-
-if [ $VERBOSE == 1 ]; then
-   vflag="-v"
-else
-   vflag=""
-fi
 
 # VCP options
 export CERTFILE=$VM_HOME/.ssl/cadcproxy.pem
@@ -314,22 +314,6 @@ if [[ $do_job != 0 ]]; then
   ### Download config files
   command_sp "$VCP vos:cfis/cosmostat/kilbinger/cfis ." "Get shapepipe config files"
 
-  ### Shape measurement config files
-  n_min=0
-  n_max=$((nsh_step - 1))
-  for k in $(seq 1 $nsh_jobs); do
-    cat $SP_CONFIG/config_tile_Ng_template.ini | \
-      perl -ane \
-        's/(ID_OBJ_MIN =) X/$1 '$n_min'/; s/(ID_OBJ_MAX =) X/$1 '$n_max'/; s/NgXu/Ng'$k'u/; s/X_interp/'$psf'_interp/g; print' \
-        > $SP_CONFIG_MOD/config_tile_Ng${k}u.ini
-    n_min=$((n_min + nsh_step))
-    if [ "$k" == $((nsh_jobs - 1)) ] && [ $nsh_max == -1 ]; then
-      n_max=-1
-    else
-      n_max=$((n_min + nsh_step - 1))
-    fi
-  done
-
   ### Get tiles
   command_sp "shapepipe_run -c $SP_CONFIG/config_get_tiles.ini" "Run shapepipe (get tiles)"
 
@@ -404,72 +388,92 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
-exit 0
+## Shape measurement (offline)
+(( do_job= $job & 32 ))
+if [[ $do_job != 0 ]]; then
 
+  ### Prepare config files
+  n_min=0
+  n_max=$((nsh_step - 1))
+  for k in $(seq 1 $nsh_jobs); do
+    cat $SP_CONFIG/config_tile_Ng_template.ini | \
+      perl -ane \
+        's/(ID_OBJ_MIN =) X/$1 '$n_min'/; s/(ID_OBJ_MAX =) X/$1 '$n_max'/; s/NgXu/Ng'$k'u/; s/X_interp/'$psf'_interp/g; print' \
+        > $SP_CONFIG_MOD/config_tile_Ng${k}u.ini
+    n_min=$((n_min + nsh_step))
+    if [ "$k" == $((nsh_jobs - 1)) ] && [ $nsh_max == -1 ]; then
+      n_max=-1
+    else
+      n_max=$((n_min + nsh_step - 1))
+    fi
+  done
 
+  ### Shapes, run $nsh_jobs parallel processes
+  VERBOSE=0
+  for k in $(seq 1 $nsh_jobs); do
+      command_sp "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" "Run shapepipe (tile: ngmix+galsim $k)" &
+  done
+  wait
+  VERBOSE=1
 
-## process exposures
-# Run all modules
+fi
 
+## Create final catalogues (offline)
+(( do_job= $job & 64 ))
+if [[ $do_job != 0 ]]; then
 
+  ### Merge separated shapes catalogues
+  command_sp "shapepipe_run -c $SP_CONFIG/config_merge_sep_cats.ini" "Run shapepipe (tile: merge sep cats)" "$VERBOSE" "$ID"
 
+  ### Merge all relevant information into final catalogue
+  command_sp "shapepipe_run -c $SP_CONFIG/config_make_cat_$psf.ini" "Run shapepipe (tile: create final cat $psf)" "$VERBOSE" "$ID"
 
-# Everything up to shapes
+fi
 
-# Shapes, run $nsh_jobs parallel processes
-for k in $(seq 1 $nsh_jobs); do
-    command_sp "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" "Run shapepipe (tile: ngmix+galsim $k)" "$VERBOSE" "$ID" &
-done
-wait
+## Upload results (online)
+(( do_job= $job & 128 ))
+if [[ $do_job != 0 ]]; then
 
-# Merge separated shapes catalogues
-command_sp "shapepipe_run -c $SP_CONFIG/config_merge_sep_cats.ini" "Run shapepipe (tile: merge sep cats)" "$VERBOSE" "$ID"
+  ### module and pipeline log files
+  upload_logs "$ID" "$VERBOSE"
 
-command_sp "shapepipe_run -c $SP_CONFIG/config_make_cat_$psf.ini" "Run shapepipe (tile: create final cat $psf)" "$VERBOSE" "$ID"
+  ### psfex for diagnostics, validation with leakage
+  ### psefxinterp for validation with residuals, rho stats
+  ### SETools masks (selection), stats and plots
+  ### pipeline_flags are the tile masks, for random cats
+  ### Final shape catalog
 
+  NAMES=(
+          "${psf}_interp_exp"
+          "setools_mask"
+          "setools_stat"
+          "setools_plot"
+          "pipeline_flag"
+          "final_cat"
+      )
+  DIRS=(
+          "*/${psf}_interp_runner/output"
+          "*/setools_runner/output/mask"
+          "*/setools_runner/output/stat"
+          "*/setools_runner/output/plot"
+          "*/mask_runner/output"
+          "*/make_catalog_runner/output"
+      )
+  PATTERNS=(
+          "validation_psf-*"
+          "*"
+          "*"
+          "*"
+          "pipeline_flag-???-???*"
+          "final_cat-*"
+          )
 
-## Upload results
+  for n in "${!NAMES[@]}"; do
+      name=${NAMES[$n]}
+      dir=${DIRS[$n]}
+      pattern=${PATTERNS[$n]}
+      upl=$output_rel/$dir/$pattern
+      upload "$name" "$ID" "$VERBOSE" "${upl[@]}"
+  done
 
-# module and pipeline log files
-upload_logs "$ID" "$VERBOSE"
-
-# psfex for diagnostics, validation with leakage
-# psefxinterp for validation with residuals, rho stats
-# SETools masks (selection), stats and plots
-# pipeline_flags are the tile masks, for random cats
-# Final shape catalog
-
-NAMES=(
-        "${psf}_interp_exp"
-        "setools_mask"
-        "setools_stat"
-        "setools_plot"
-        "pipeline_flag"
-        "final_cat"
-     )
-DIRS=(
-        "*/${psf}_interp_runner/output"
-        "*/setools_runner/output/mask"
-        "*/setools_runner/output/stat"
-        "*/setools_runner/output/plot"
-        "*/mask_runner/output"
-        "*/make_catalog_runner/output"
-     )
-PATTERNS=(
-        "validation_psf-*"
-        "*"
-        "*"
-        "*"
-        "pipeline_flag-???-???*"
-        "final_cat-*"
-        )
-
-for n in "${!NAMES[@]}"; do
-    name=${NAMES[$n]}
-    dir=${DIRS[$n]}
-    pattern=${PATTERNS[$n]}
-    upl=$output_rel/$dir/$pattern
-    upload "$name" "$ID" "$VERBOSE" "${upl[@]}"
-done
-
-echo "End"
+fi

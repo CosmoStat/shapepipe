@@ -125,7 +125,7 @@ echo " Created $n_created links, skipped $n_skipped files"
 merge_star_cat_${psf} -i $dir_individual -o $dir_merged/$fname_merged -v
 
 # Create plots
-if [ "$psf" == "psfex"]; then
+if [ "$psf" == "psfex" ]; then
   MeanShapes -o $dir_merged -i $dir_merged/$fname_merged -v -x 20 --max_e=0.05 --max_d=0.005 --hdu=$hdu
 else
   echo "Plots of mean shapes are create elsewhere for MCCD"
