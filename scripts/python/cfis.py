@@ -1398,7 +1398,8 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
 
     # Left-corner ra is larger than right-corner if wrapped around 360:
     # subtract amount left of zero
-    if angles[0].ra.degree > angles[1].ra.degree:
+    print('MKDEBUG', angles[0].ra.degree, angles[1].ra.degree)
+    if 0 and angles[0].ra.degree > angles[1].ra.degree:
         dra = Angle('{} degree'.format(360 - angles[0].ra.degree))
         angles_shift = [SkyCoord for i in [0, 1]]
         angles_shift[0] = SkyCoord(Angle('0 degree'), angles[0].dec)
@@ -1416,6 +1417,9 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
             angles_new[i] = angles[i]
         dra = 0
 
+    print(angles)
+    print(angles_new)
+
     if image_type in ('tile', 'weight', 'weight.fz'):
         for img in images:
             nix, niy = get_tile_number(img.name)
@@ -1424,17 +1428,18 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
             # Left-corner ra is larger than right-corner if wrapped around 360:
             # subtract amount left of zero
             if angles[0].ra.degree > angles[1].ra.degree:
-                dra = Angle('{} degree'.format(360 - angles[0].ra.degree))
+                dra = Angle('{} degree'.format(360 - angles_new[0].ra.degree))
                 angles_shift = [SkyCoord for i in [0, 1]]
-                angles_shift[0] = SkyCoord(Angle('0 degree'), angles[0].dec)
-                angles_shift[1] = SkyCoord(angles[1].ra + dra , angles[1].dec)
+                angles_shift[0] = SkyCoord(Angle('0 degree'), angles_new[0].dec)
+                angles_shift[1] = SkyCoord(angles_new[1].ra + dra , angles_new[1].dec)
                 for i in [0, 1]:
                     angles[i] = angles_shift[i]
                 ra = ra + dra
 
-            if ra.is_within_bounds(angles[0].ra, angles[1].ra) \
-                and dec.is_within_bounds(angles[0].dec, angles[1].dec):
+            if ra.is_within_bounds(angles_new[0].ra, angles_new[1].ra) \
+                and dec.is_within_bounds(angles_new[0].dec, angles_new[1].dec):
 
+                print('MKDEBUG ', ra.degree)
                 if img.ra is None or img.dec is None:
                     #raise CfisError('Coordinates in image are already set '
                                     #'to {}, {}, cannot update to {}, {}'
