@@ -293,23 +293,21 @@ echo "Start"
 echo "Processing $n_tile tile(s)"
 
 # Create input and output directories
-echo "Create directories for processing"
 mkdir -p $SP_RUN
 cd $SP_RUN
 mkdir -p $OUTPUT
-mkdir -p $SP_CONFIG_MOD
-
-# Write tile numbers to ASCII input file
-rm -rf $TILE_NUMBERS_PATH
-for TILE in ${TILE_ARR[@]}; do
-   echo $TILE >> $TILE_NUMBERS_PATH
-done
 
 # Processing
 
 ## Retrieve config files and images (online if retrieve=vos)
 (( do_job= $job & 1 ))
 if [[ $do_job != 0 ]]; then
+
+  # Write tile numbers to ASCII input file
+  rm -rf $TILE_NUMBERS_PATH
+  for TILE in ${TILE_ARR[@]}; do
+    echo $TILE >> $TILE_NUMBERS_PATH
+  done
 
   ### Download config files
   command_sp "$VCP vos:cfis/cosmostat/kilbinger/cfis ." "Get shapepipe config files"
@@ -393,6 +391,7 @@ fi
 if [[ $do_job != 0 ]]; then
 
   ### Prepare config files
+  mkdir -p $SP_CONFIG_MOD
   n_min=0
   n_max=$((nsh_step - 1))
   for k in $(seq 1 $nsh_jobs); do
@@ -422,8 +421,13 @@ fi
 (( do_job= $job & 64 ))
 if [[ $do_job != 0 ]]; then
 
+  cat $SP_CONFIG/config_merge_sep_cats_template.ini | \
+    perl -ane \
+      's/(N_SPLIT_MAX =) X/$1 '$nsh_jobs'/; print' \
+      > $SP_CONFIG_MOD/config_merge_sep_cats.ini
+ 
   ### Merge separated shapes catalogues
-  command_sp "shapepipe_run -c $SP_CONFIG/config_merge_sep_cats.ini" "Run shapepipe (tile: merge sep cats)" "$VERBOSE" "$ID"
+  command_sp "shapepipe_run -c $SP_CONFIG_MOD/config_merge_sep_cats.ini" "Run shapepipe (tile: merge sep cats)" "$VERBOSE" "$ID"
 
   ### Merge all relevant information into final catalogue
   command_sp "shapepipe_run -c $SP_CONFIG/config_make_cat_$psf.ini" "Run shapepipe (tile: create final cat $psf)" "$VERBOSE" "$ID"
