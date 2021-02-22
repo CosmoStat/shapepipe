@@ -96,7 +96,7 @@ class PasteCat(object):
             pasted_cat.save_as_fits(data, ext_name=ext_name)
 
 
-@module_runner(version='1.0',
+@module_runner(version='1.1',
                input_module='sextractor_runner',
                file_pattern='tile_sexcat',
                file_ext='.fits',
