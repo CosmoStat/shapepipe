@@ -32,7 +32,7 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    \t  2: prepare images (offline)\n
    \t  4: mask (online)\n
    \t  8: processing of stars on exposures (offline)\n
-   \t 16: detection and matching (offline)\n
+   \t 16: detection and vignets (offline)\n
    \t 32: shapes and morphology (offline)\n
    \t 64: paste catalogues (offline)\n
    -p, --psf MODEL\n
@@ -313,13 +313,13 @@ if [[ $do_job != 0 ]]; then
   command_sp "$VCP vos:cfis/cosmostat/kilbinger/cfis ." "Get shapepipe config files"
 
   ### Get tiles
-  command_sp "shapepipe_run -c $SP_CONFIG/config_get_tiles.ini" "Run shapepipe (get tiles)"
+  command_sp "shapepipe_run -c $SP_CONFIG/config_get_tiles_$retrieve.ini" "Run shapepipe (get tiles)"
 
   ### Find exposures
   command_sp "shapepipe_run -c $SP_CONFIG/config_find_exp.ini" "Run shapepipe (find exposures)" 
 
   ### Retrieve exposures
-  command_sp "shapepipe_run -c $SP_CONFIG/config_get_exp.ini" "Run shapepipe (get exposures)"
+  command_sp "shapepipe_run -c $SP_CONFIG/config_get_exp_$retrieve.ini" "Run shapepipe (get exposures)"
 
 fi
 
