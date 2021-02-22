@@ -134,8 +134,8 @@ def remove_exclude(dst_list, exclude_list, verbose=False):
 
 
 
-def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False,
-             certfile=None, out_list=None):
+def download(dst_list, size_list, out_dir, t, dry_run=False, no_size_check=False,
+              verbose=False, certfile=None, out_list=None):
     """Download files using vos command.
     Parameters
     ----------
@@ -152,6 +152,8 @@ def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False,
         if True do not download but perform dry run; default=False
     verbose: bool, optional, default=False
         verbose mode if True
+    no_size_check : bool, optional, default=False
+        if True do not check file size for incompleteness of downloaded files
     certfile: string, optional, default=None
         certificate file for vos identification
     out_list: string, optional, default=None
@@ -188,17 +190,23 @@ def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False,
         if os.path.isfile(dest):
             if len(size_list) > 0:
                 size = os.path.getsize(dest)
-                if size != size_list[i]:
-                    do_download = True
-                    print('File {} incomplete.'.format(dest), end=' ')
+                if not no_size_check:
+                    if size < size_list[i]:
+                        do_download = True
+                        print('File {} incomplete.'.format(dest), end=' ')
+                    else:
+                        do_download = False
+                        n_ex += 1
+                        print('File {} exists and is complete'.format(dest))
                 else:
                     do_download = False
                     n_ex += 1
-                    print('File {} exists and is complete'.format(dest))
+                    print('File {} exists, ignoring size.'.format(dest))
             else:
                 # No information about size given: do not overwrite
                 # existing file
-                print('File {} exists, information whether complete is missing, no download'.format(dest))
+                n_ex += 1
+                print('File {} exists, no size information, no download'.format(dest))
                 do_download = False
 
         else:
@@ -303,6 +311,8 @@ def parse_options(p_def):
         help='file pattern to match, e.g.~\'^21\d{5}p\', default=none (=all match)')
     parser.add_option('-c', '--in_file_columns', dest='scolumns', type='string', default=p_def.scolumns,
         help='input file columns: name [size], default={}'.format(p_def.scolumns))
+    parser.add_option('', '--no_size_check', dest='no_size_check', default=False,
+        help='do not check file size for incompleteness')
     parser.add_option('', '--in_number_only', dest='in_number_only', action='store_true',
         help='input file names are image number only')
 
@@ -427,6 +437,7 @@ def main(argv=None):
     cfis.mkdir_p(param.out_dir)
 
     download(dst_list, size_list, param.out_dir, param.type, dry_run=param.dry_run,
+             no_size_check=param.no_size_check,
              verbose=param.verbose, certfile=param.certfile, out_list=param.out_list)
 
 
