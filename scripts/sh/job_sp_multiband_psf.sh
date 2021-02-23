@@ -223,6 +223,10 @@ if [[ $do_job != 0 ]]; then
     command_sp "shapepipe_run -c $SP_CONFIG/config_tile_match_ext_u.ini"
   fi
 
+  ### Paste detected catalogues
+  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_paste_cat_detect.ini"
+
+
   if [ "$survey" == "ps3pi_cfis" ]; then
     command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_g.ini"
     command_sp "shapepipe_run -c $SP_CONFIG/config_tile_detect_y.ini"
