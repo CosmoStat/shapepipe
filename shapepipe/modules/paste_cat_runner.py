@@ -16,12 +16,14 @@ from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.PastCat_package import PastCat_script as paste
 
 
-@module_runner(version='1.1',
-               input_module='sextractor_runner',
-               file_pattern='tile_sexcat',
-               file_ext='.fits',
-               depends=['numpy', 'astrpy'],
-               run_method='parallel')
+@module_runner(
+    version='1.1',
+    input_module='sextractor_runner',
+    file_pattern='tile_sexcat',
+    file_ext='.fits',
+    depends=['numpy', 'astropy'],
+    run_method='parallel'
+)
 def paste_cat_runner(input_file_list, run_dirs, file_number_string,
                      config, w_log):
 
