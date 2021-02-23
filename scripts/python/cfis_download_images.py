@@ -311,7 +311,7 @@ def parse_options(p_def):
         help='file pattern to match, e.g.~\'^21\d{5}p\', default=none (=all match)')
     parser.add_option('-c', '--in_file_columns', dest='scolumns', type='string', default=p_def.scolumns,
         help='input file columns: name [size], default={}'.format(p_def.scolumns))
-    parser.add_option('', '--no_size_check', dest='no_size_check', default=False,
+    parser.add_option('', '--no_size_check', dest='no_size_check', action='store_true',
         help='do not check file size for incompleteness')
     parser.add_option('', '--in_number_only', dest='in_number_only', action='store_true',
         help='input file names are image number only')
