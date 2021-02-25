@@ -15,7 +15,7 @@
 # Command line arguments
 ## Default values
 do_env=0
-job=127
+job=255
 psf='mccd'
 retrieve='vos'
 nsh_step=4000
@@ -28,13 +28,14 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    -h\tthis message\n
    -e\tset environment and exit (run as '. $(basename "$0")'\n
    -j, --job JOB\tRunning JOB, bit-coded\n
-   \t  1: retrieve images (online if method=vos)\n
-   \t  2: prepare images (offline)\n
-   \t  4: mask (online)\n
-   \t  8: processing of stars on exposures (offline)\n
-   \t 16: detection and vignets (offline)\n
-   \t 32: shapes and morphology (offline)\n
-   \t 64: paste catalogues (offline)\n
+   \t   1: retrieve images (online if method=vos)\n
+   \t   2: prepare images (offline)\n
+   \t   4: mask (online)\n
+   \t   8: processing of stars on exposures (offline)\n
+   \t  16: detection and vignets (offline)\n
+   \t  32: shapes and morphology (offline)\n
+   \t  64: paste catalogues (offline)\n
+   \t 128: upload results (online)\n
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    -r, --retrieve METHOD\n
@@ -241,7 +242,7 @@ function upload() {
       fi
    fi
    tar czf ${base}_${ID}.tgz ${upl[@]}
-   command "$VCP ${base}_${ID}.tgz vos:cfis/cosmostat/kilbinger/$RESULTS" "Upload $base to $RESULTS, $n_upl files in tar ball" "$verbose"
+   command "$VCP ${base}_${ID}.tgz vos:cfis/cosmostat/kilbinger/$RESULTS"
 }
 
 # Upload log files
@@ -441,36 +442,45 @@ if [[ $do_job != 0 ]]; then
   ### module and pipeline log files
   upload_logs "$ID" "$VERBOSE"
 
-  ### psfex for diagnostics, validation with leakage
-  ### psefxinterp for validation with residuals, rho stats
+  ### ${psf}_interp_exp for diagnostics, validation with leakage,
+  ### validation with residuals, rho stats
   ### SETools masks (selection), stats and plots
   ### pipeline_flags are the tile masks, for random cats
   ### Final shape catalog
 
   NAMES=(
-          "${psf}_interp_exp"
-          "setools_mask"
-          "setools_stat"
-          "setools_plot"
-          "pipeline_flag"
-          "final_cat"
-      )
+    "setools_mask"
+    "setools_stat"
+    "setools_plot"
+    "pipeline_flag"
+    "final_cat"
+  )
   DIRS=(
-          "*/${psf}_interp_runner/output"
-          "*/setools_runner/output/mask"
-          "*/setools_runner/output/stat"
-          "*/setools_runner/output/plot"
-          "*/mask_runner/output"
-          "*/make_catalog_runner/output"
-      )
+    "*/setools_runner/output/mask"
+    "*/setools_runner/output/stat"
+    "*/setools_runner/output/plot"
+    "*/mask_runner/output"
+    "*/make_catalog_runner/output"
+  )
   PATTERNS=(
-          "validation_psf-*"
-          "*"
-          "*"
-          "*"
-          "pipeline_flag-???-???*"
-          "final_cat-*"
-          )
+    "*"
+    "*"
+    "*"
+    "pipeline_flag-???-???*"
+    "final_cat-*"
+  )
+
+  # PSF validation
+  pattern="validation_psf-*"
+  if [ "$psf" == "psfex" ]; then
+    name="psfex_interp_exp"
+    dir="*/psfex_interp_runner/output"
+  else
+    name="mccd_fit_val_runner"
+    dir="*/mccd_fit_val_runner/output"
+  fi
+  upl=$output_rel/$dir/$pattern
+  upload "$name" "$ID" "$VERBOSE" "${upl[@]}"
 
   for n in "${!NAMES[@]}"; do
       name=${NAMES[$n]}
