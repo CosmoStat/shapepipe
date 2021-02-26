@@ -242,7 +242,7 @@ function upload() {
       fi
    fi
    tar czf ${base}_${ID}.tgz ${upl[@]}
-   command "$VCP ${base}_${ID}.tgz vos:cfis/cosmostat/kilbinger/$RESULTS"
+   command "$VCP ${base}_${ID}.tgz vos:cfis/cosmostat/kilbinger/$RESULTS" "Upload log tar ball"
 }
 
 # Upload log files
