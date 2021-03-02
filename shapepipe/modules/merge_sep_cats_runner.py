@@ -15,6 +15,7 @@ from astropy.io import fits
 
 import os
 import re
+import warnings
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.pipeline import file_io as sc
@@ -31,6 +32,12 @@ def merge_sep_cats_runner(input_file_list, run_dirs, file_number_string,
 
     file_pattern = config.getlist('MERGE_SEP_CATS_RUNNER', 'FILE_PATTERN')
     file_ext = config.getlist('MERGE_SEP_CATS_RUNNER', 'FILE_EXT')
+
+    if config.has_option('MERGE_SEP_CATS_RUNNER', 'WARNING'):
+        warning = config.get('MERGE_SEP_CATS_RUNNER', 'WARNING')
+    else:
+        warning = 'error'
+    warnings.simplefilter(warning, UserWarning)
 
     # Loop over input files = outputs from different modules
     for idx in range(len(input_file_list)):
@@ -62,16 +69,24 @@ def merge_sep_cats_runner(input_file_list, run_dirs, file_number_string,
         # Read and append all data, including first catalogue
         for n in range(n_split_max):
             cat_path = input_path_n[n]
-            cat = io.FITSCatalog(cat_path, SEx_catalog=True)
-            cat.open()
+            if os.path.exists(cat_path):
+                cat = io.FITSCatalog(cat_path, SEx_catalog=True)
+                cat.open()
 
-            for hdu_ind, ext_name in enumerate(list_ext_name):
-                if ext_name == 'PRIMARY':
-                    continue
-                for col_name in list_col_name:
-                    data[ext_name][col_name] += list(cat.get_data(hdu_ind)[col_name])
+                for hdu_ind, ext_name in enumerate(list_ext_name):
+                    if ext_name == 'PRIMARY':
+                        continue
+                    for col_name in list_col_name:
+                        data[ext_name][col_name] += list(cat.get_data(hdu_ind)[col_name])
 
-            cat.close()
+                cat.close()
+            else:
+                msg = 'Input catalogue \'{}\' not found'.format(cat_path)
+                warnings.warn(msg)
+                wmsg = 'Warning: {}'.format(msg)
+                w_log.info(wmsg)
+                print(wmsg)
+        
 
         # Save combined catalogue
         output_name = '{}/{}{}{}'.format(run_dirs['output'], file_pattern[idx],

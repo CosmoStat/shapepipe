@@ -191,8 +191,9 @@ def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False, quic
             if len(size_list) > 0:
                 size = os.path.getsize(dest)
                 if size != size_list[i]:
-                    do_download = True
                     print('File {} incomplete.'.format(dest), end=' ')
+                    if dry_run:
+                        print('')
                 else:
                     do_download = False
                     n_ex += 1
@@ -215,17 +216,18 @@ def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False, quic
                     print(size_list[i], end=' ', file=f_list)
                 print(dst_list[i], file=f_list)
 
-            cmd = 'vcp'
-            src = 'vos:cfis/{}/{}'.format(subdir, dst_list[i])
+            if not dry_run:
+                cmd = 'vcp'
+                src = 'vos:cfis/{}/{}'.format(subdir, dst_list[i])
 
-            sys.argv = []
-            sys.argv.append(cmd)
-            if quick == True:
-                sys.argv.append('--quick')
-            if certfile:
-                sys.argv.append('--certfile={}'.format(certfile))
-            sys.argv.append(src)
-            sys.argv.append(out_dir)
+                sys.argv = []
+                sys.argv.append(cmd)
+                if quick == True:
+                    sys.argv.append('--quick')
+                if certfile:
+                    sys.argv.append('--certfile={}'.format(certfile))
+                sys.argv.append(src)
+                sys.argv.append(out_dir)
 
             vcp()
 
