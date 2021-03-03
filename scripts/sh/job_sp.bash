@@ -16,6 +16,7 @@
 ## Default values
 do_env=0
 job=255
+RESULTS=results
 psf='mccd'
 retrieve='vos'
 nsh_step=4000
@@ -36,6 +37,8 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    \t  32: shapes and morphology (offline)\n
    \t  64: paste catalogues (offline)\n
    \t 128: upload results (online)\n
+   -o, --output OUTPUT\n
+    \toutput subdirectory in vos:cfis/cosmostat/kilbinger for result files, default=$RESULTS
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    -r, --retrieve METHOD\n
@@ -71,6 +74,10 @@ while [ $# -gt 0 ]; do
       ;;
     -j|--job)
       job="$2"
+      shift
+      ;;
+    -o|--output)
+      RESULTS="$2"
       shift
       ;;
     -p|--psf)
@@ -128,9 +135,6 @@ fi
 
 # SExtractor library bug work-around
 export PATH="$PATH:$VM_HOME/bin"
-
-# Results upload subdirectory on vos
-RESULTS=results_mccd
 
 ## Path variables used in shapepipe config files
 
@@ -297,6 +301,10 @@ echo "Processing $n_tile tile(s)"
 mkdir -p $SP_RUN
 cd $SP_RUN
 mkdir -p $OUTPUT
+
+# The following call will result in an VOS error if the directory already exists.
+# This can be ignored.
+vmkdir vos:cfis/cosmostat/kilbinger/$RESULTS
 
 # Processing
 

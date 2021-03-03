@@ -11,7 +11,7 @@
 
 # Job file for one tile
 SP_ROOT=$HOME/shapepipe
-sp_job="$SP_ROOT/scripts/sh/canfar_sp.bash"
+sp_job="$SP_ROOT/scripts/sh/job_sp.bash"
 
 
 # Functions
@@ -63,7 +63,7 @@ function usage () {
   echo "Usage: canfar_submit_selection.sh ID_path image [-h] [-n]"
   echo "Options:"
   echo "  ID_path       ascii file with tile IDs"
-  echo "  image         VM image name, newest is ShapePipe2-mk-20200820"
+  echo "  image         snapshot name, e.g. ShapePipe2-20210207"
   echo "  -n            dry run"
   echo "  -h            this message"
 
@@ -111,7 +111,7 @@ done < $tile_ID_list
  echo ")" >> $job_file
 
 # Submit
-cmd="canfar_submit $job_file $image c8-30gb-186"
+cmd="canfar_submit $job_file $image c8-60gb-186"
 echo "Running $cmd$dry_str"
 if [ $dry_run == 0 ]; then
    $cmd
