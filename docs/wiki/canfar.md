@@ -89,12 +89,11 @@ the VM is available for further use.
 
     This will connect you to a generic *ubuntu* user space, shared between all users. Once connected software *etc.* can be installed and tested.
 
-    > Note: You should only really be connecting to the VM with the intention of
+    You should only really be connecting to the VM with the intention of
     - creating a new snapshot
     - running tests with the current set-up in interactive mode (see below)
     - implementing specific `ShapePipe` software changes to be run an tested, e.g. on a new shapshot.
     Changes to `ShapePipe` can be done by e.g. pulling and compiling a new branch.
-
     Avoid making any software changes not intended for a new snapshot.
 
     > Note: The person who creates the VM will have to manually add the SSH keys of any other potential user and local computer from
@@ -146,40 +145,50 @@ the VM is available for further use.
 1. SSH to VM:
 
    As before, run the following command to connect to the VM:
-    ```bash
-    ssh ubuntu@IP_ADDRESS
-    ```
+   ```bash
+   ssh ubuntu@IP_ADDRESS
+   ```
 
-    * Activate the `ShapePipe` environment
-      ```bash
-      conda activate shapepipe
-      ```
+   > Note: The person who creates the VM will have to manually add the SSH keys of any other potential user and local computer from
+   where the `ssh` connection is established.
 
-6. Generate certificate to access VOSPACE:
+2. Activate the `ShapePipe` environment:
 
+   ```bash
+   conda activate shapepipe
+   ```
+
+3. Update `ShapePipe` software:
+
+   For example, checkout out and pull a new branch from the repository. Or create a new branch on the VM, and implement changes to the
+   code directly. In that case, don't forget to commit and push to the repository.
+
+   Then, install the software in the `ShapePipe` root directory:
+   ```bash
+   python setup.py install
+   ```
+
+4. Generate certificate to access VOSPACE:
     ```bash
     cadc-get-cert -u USERNAME
     ```
     When asked, enter your CADC password.
     A CADC certificate is also needed to transfer data to/from the VOSPACE.
 
-7. Test that pipeline is working and can access multiple VM CPUs:
-
+5. Optional: Test that the pipeline is working, and is able to access multiple VM CPUs. For example, using the example module
+   and config file that comes with the package:
     ```bash
     ./shapepipe_run.py -c example/config.ini
     ```
 
     If the test log returns the expected results the VM should be ready for a snapshot.
 
-8. Create a snapshot of the VM status:
+6. Create a snapshot of the VM status:
 
-    On [OpenStack](https://arbutus-canfar.cloud.computecanada.ca/) under "Instances" click the "Create Snapshot" button for the corresponding VM. Be sure to follow the snapshot naming scheme defined for the VM above.
+    On [OpenStack](https://arbutus-canfar.cloud.computecanada.ca/project/instances), under the tab "Instances", click the "Create Snapshot" button for the corresponding VM. Be sure to follow the snapshot naming scheme defined for the VM above.
 
-It will take a few to a few ten minutes until a snapshot is ready to be used.
-
-9. Update VM and create a new snapshot:
-
-    The VM set-up only needs to be done once, afterwards the VM can simply be modified for new snapshots. *e.g.* pull the latest changes to the pipeline repository and install any new dependencies then repeat step 9.
+   It will take a few to a few ten minutes until a snapshot is ready to be used. See below how to monitor the progress on the batch
+   system.
 
 ## Batch System
 
