@@ -112,31 +112,27 @@ the VM is available for further use.
 
 5. Install `ShapePipe`:
     * Add VM SSH key to the `ShapePipe` GitHub repository
-
-    ```bash
-    ssh-keygen -t rsa -b 4096 -C “EMAIL_ADDRESS”
-    cat .ssh/id_rsa.pub
-    ```
-    On github, click on your thumbnail in the upper right corner, choose the Settings menu entry, and click on "SSH Keys" on the left. Create a new ssh key by copying the contents of `ssh/id_rsa.pub` to the corresponding field, and provide a name.
+      ```bash
+      ssh-keygen -t rsa -b 4096 -C “EMAIL_ADDRESS”
+      cat .ssh/id_rsa.pub
+      ```
+      On github, click on your thumbnail in the upper right corner, choose the Settings menu entry, and click on "SSH Keys" on the left. Create a new ssh key by copying the contents of `ssh/id_rsa.pub` to the corresponding field, and provide a name.
 
     * Clone repository
-
-    ```bash
-    git clone git@github.com:CosmoStat/shapepipe.git
-    ```
+      ```bash
+      git clone git@github.com:CosmoStat/shapepipe.git
+      ```
 
     * Run the install script
-
-    ```bash
-    cd ShapePipe
-    ./install_shapepipe --vos
+      ```bash
+      cd ShapePipe
+      ./install_shapepipe --vos
     ```
 
-    * Activate the `SshapePipe` environment
-
-    ```bash
-    conda activate shapepipe
-    ```
+    * Activate the `ShapePipe` environment
+      ```bash
+      conda activate shapepipe
+      ```
 
 6. Generate certificate to access VOSPACE:
 
