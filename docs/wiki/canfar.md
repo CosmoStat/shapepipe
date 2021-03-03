@@ -343,15 +343,16 @@ For the job submission script we have the option to create it by hand, or automa
    ```
    Add the option `-n` (dry run) to test without submitting the job.
 
-### Analysis
+3. Analysis
 
-For a summary of the status of submitted jobs from the current directory, type
-```bash
-python3 ~/shapepipe/scripts/python/canfar_run_analyse.py
-```
-Results of jobs are uploaded to `vos`. These can be complete results from jobs that finished with success, or partial
-results (e.g. log files) from jobs that were stopped due to errors. Download and post-processing analysis of those results should
-to be performed on a different machine, e.g. [candide](https://github.com/CosmoStat/shapepipe/blob/master/docs/wiki/candide.md).
+   For a summary of the status of submitted jobs from the current directory, type
+   ```bash
+   python3 ~/shapepipe/scripts/python/canfar_run_analyse.py
+   ```
+   Results of jobs are uploaded to `vos`. These can be complete results from jobs that finished with success, or partial
+   results (e.g. log files) from jobs that were stopped due to errors. Download and post-processing analysis of those results should
+   to be performed on a different machine, e.g. [candide](https://github.com/CosmoStat/shapepipe/blob/master/docs/wiki/candide.md).
+
 ### Check job progress
 
 1. Check queue:
