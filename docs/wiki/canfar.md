@@ -43,6 +43,16 @@ The following steps need to be done to get access to all CANFAR and VOS services
    Send a mail to [Sebastian Fabbro](sebfabbro@gmail.com) with you ssh public key to ask access to the batch system
    and the `shapepipe2` virtual machine (see below).
 
+4. Access to the UNIONS/CFIS VOSPACE
+
+   If you want to use UNIONS/CFIS data, read the [data access rules](https://www.cfht.hawaii.edu/Science/CFIS/cfisaccess.html).
+   Then, write an email to the UNIONS [Steering Group](unions-sg@cfht.hawaii.edu) and include:
+   * brief introduction of your academic status and affiliation; if you are a PhD or master student, please say so, and include
+     your supervisor's name;
+   * brief description of what your plan is within UNIONS/CFIS;
+   * state that you have read the UNIONS/CFIS rules and that you agree with them:
+   * your CADC user name
+
 
 ## Current Set Up
 
