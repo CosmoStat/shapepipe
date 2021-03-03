@@ -14,12 +14,35 @@ Here are some instructions on how to set up a VM on CANFAR to run the pipeline.
 
 ## Contents
 
+1. [Getting access](#getting-access)
 1. [Current Set Up](#Current-Set-Up)
-1. [Virtual Machine](#Virtual-Machine)
+1. [Virtual Machines](#Virtual-Machines)
 1. [Batch System](#Batch-System)
 1. [Troubleshooting](#Troubleshooting)
 1. [Interactive Mode](#Interactive-Mode)
 1. [Running a CFIS job](#Running-A-CFIS-Job)
+
+
+## Getting access
+
+The following steps need to be done to get access to all CANFAR and VOS services:
+
+1. Demand access to CADC (Canadian Astronomy Data Center) 
+
+   Go to https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/auth/request.html and fill out the form.
+
+2. Demand access to CANFAR
+
+   Send an email to [CANFAR support](support@canfar.net) and include:
+   * your CADC account name;
+   * a rough amount of required resources (storage capacity and processing capabilities), and if you need batch processing;
+   * a few sentences describing what you want to do.
+
+3. Access to the VM system
+
+   Send a mail to [Sebastian Fabbro](sebfabbro@gmail.com) with you ssh public key to ask access to the batch system
+   and the `shapepipe2` virtual machine (see below).
+
 
 ## Current Set Up
 
