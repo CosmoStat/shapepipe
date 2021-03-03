@@ -25,14 +25,14 @@ Here are some instructions on how to set up a VM on CANFAR to run the pipeline.
 
 ### Instances, snapshots, and VMs
 
-An `instance` contains the base setting, which is used to create VMs, where
+An `instance` contains the base setting, which is used to create VMs where
 in turn jobs are submitted and run.
 
 A `snapshot` or `image` is created from an instance, and contains a frozen version of
 the instance. An instance can have a number of snapshots, e.g. to use
 different version of some code or library.
 
-A  `Virtual Machine` (VM) is a copy of a snapshot on which a job is run.
+A  `Virtual Machine` (VM) is an identical copy of a snapshot on which a job is run.
 
 
 ### Available Instances
@@ -42,32 +42,35 @@ for the project(s) they are registered on the page
 https://arbutus-canfar.cloud.computecanada.ca/project/instances.
 
 For `ShapePipe` we use the following instance:
-- `ShapePipe2`:
+- `shapepipe2`:
 - 90 GB RAM
 - 20 GB Disk
 - 8 CPUs
-- Flavour: c8-90gb-186
+- Flavour: c8-60gb-186
 - IP Address: 206.12.92.159
 
 ### Available Snapshots
 
 All snapshots are listed here:
 https://arbutus-canfar.cloud.computecanada.ca/project/images
-Snapshots created from the `ShapePipe2` instance are typically called
-`ShapePipe2-mk-<date>`.
+Snapshots created from the `ShapePipe2` instance are conveniently called
+`ShapePipe2-<date>`, but other names can be chosen.
 
-Note that if `vos` down- or up-loads to the `canfar` storage are performed by a job,
+Note that if `vos` down- or up-loads to the `canfar` VOSPACE storage are performed by a job,
 this requires a `cadc` certificate, which is valid for 10 days. In that case, a snapshot
-will not function anymore later than 10 days after its creation.
+will be essentially useless after that period, and should be deleted.
 
-## Virtual Machine
+## Virtual Machines
 
-The virtual machine (VM) is a space where we can install software under a given Linux distribution with given CPU, RAM and storage limits. Once we are happy with a given set-up we can freeze these conditions (*i.e.* all the software versions *etc.* currently installed) by creating a *snapshot* that acts like a container for the VM. Jobs can then be submitted through the batch system using a given snapshot.
+A virtual machine (VM) is a space where we can install software under a given Linux distribution with given CPU, RAM and storage limits. Once we are happy with a given set-up we can freeze these conditions (*i.e.* all the software versions *etc.* currently installed) by creating a *snapshot* that acts like a container for the VM. Jobs can then be submitted through the batch system using a given snapshot.
 
 In general the processing should be done through the batch system and not run directly on the VM.
 However, tests of the VM and the code to be submitted can be run in (interactive mode)[interactive(-mode] on the VM.
 
-The following steps show how to set up a VM.
+### Set up
+
+The following steps show how to set up a VM that can run `ShapePipe` jobs. In general, this only needs to be done once, after that
+the VM is available for further use.
 
 1. Create a VM:
 
@@ -80,7 +83,6 @@ The following steps show how to set up a VM.
 2. SSH to VM:
 
     Run the following command to connect to a given VM:
-
     ```bash
     ssh ubuntu@IP_ADDRESS
     ```
@@ -90,7 +92,7 @@ The following steps show how to set up a VM.
     > Note: You should only really be connecting to the VM with the intention of creating a new snapshot or running tests with the current set-up. Avoid making any software changes not intended for a new snapshot.
     > Note: The person who creates the VM will have to manually added the SSH keys of any other potential user.
 
-3. For `ShapePipe`, install the following tools:
+3. For `ShapePipe` install the following tools:
 
     ```bash
     sudo apt update
@@ -100,7 +102,7 @@ The following steps show how to set up a VM.
     sudo apt install libtool
     ```
 
-4. For `ShapePipe`, install miniconda:
+4. For `ShapePipe` install miniconda:
 
     ```bash
     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
