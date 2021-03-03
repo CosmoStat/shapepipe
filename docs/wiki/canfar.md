@@ -67,7 +67,7 @@ A virtual machine (VM) is a space where we can install software under a given Li
 In general the processing should be done through the batch system and not run directly on the VM.
 However, tests of the VM and the code to be submitted can be run in (interactive mode)[interactive(-mode] on the VM.
 
-### Set up
+### Set up a VM
 
 The following steps show how to set up a VM that can run `ShapePipe` jobs. In general, this only needs to be done once, after that
 the VM is available for further use.
@@ -89,26 +89,36 @@ the VM is available for further use.
 
     This will connect you to a generic *ubuntu* user space, shared between all users. Once connected software *etc.* can be installed and tested.
 
-    > Note: You should only really be connecting to the VM with the intention of creating a new snapshot or running tests with the current set-up. Avoid making any software changes not intended for a new snapshot.
-    > Note: The person who creates the VM will have to manually added the SSH keys of any other potential user.
+    > Note: You should only really be connecting to the VM with the intention of
+    - creating a new snapshot
+    - running tests with the current set-up in interactive mode (see below)
+    - implementing specific `ShapePipe` software changes to be run an tested, e.g. on a new shapshot.
+    Changes to `ShapePipe` can be done by e.g. pulling and compiling a new branch.
 
-3. For `ShapePipe` install the following tools:
+    Avoid making any software changes not intended for a new snapshot.
 
-    ```bash
-    sudo apt update
-    sudo apt install git
-    sudo apt install make
-    sudo apt install autoconf
-    sudo apt install libtool
-    ```
+    > Note: The person who creates the VM will have to manually add the SSH keys of any other potential user and local computer from
+    where the `ssh` connection is established.
 
-4. For `ShapePipe` install miniconda:
+3. For `ShapePipe` install the following packages:
 
-    ```bash
-    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-    bash Miniconda3-latest-Linux-x86_64.sh
-    bash
-    ```
+   * Install tools
+
+       ```bash
+       sudo apt update
+       sudo apt install git
+       sudo apt install make
+       sudo apt install autoconf
+       sudo apt install libtool
+       ```
+
+   * Download and install miniconda:
+
+       ```bash
+       wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+       bash Miniconda3-latest-Linux-x86_64.sh
+       bash
+       ```
 
 5. Install `ShapePipe`:
     * Add VM SSH key to the `ShapePipe` GitHub repository
@@ -127,6 +137,17 @@ the VM is available for further use.
       ```bash
       cd ShapePipe
       ./install_shapepipe --vos
+      ```
+
+      To test whether `ShapePipe` runs on this VM, go to the next section.
+
+### Use the VM
+
+1. SSH to VM:
+
+   As before, run the following command to connect to the VM:
+    ```bash
+    ssh ubuntu@IP_ADDRESS
     ```
 
     * Activate the `ShapePipe` environment
