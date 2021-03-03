@@ -49,6 +49,10 @@ class mask(object):
                  output_dir, path_external_flag=None, outname_base='flag',
                  star_cat_path=None, hdu=0):
 
+        # Temporary fix, should be changed later
+        self._CDS_stdout = ''
+        self._CDS_stderr = ''
+
         self._image_fullpath = image_path                                       # Path to the image to mask
         self._weight_fullpath = weight_path                                     # Path to the weight associated to the image
         self._config_filepath = config_filepath

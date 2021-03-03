@@ -86,6 +86,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
                       ''.format(f_wcs_path))
     n_hdu = len(f_wcs[key_list[0]])
 
+    # Single-exposure image names from 'HISTORY' key word
     hist = []
     for i in cat.get_data(1)[0][0]:
         if re.split('HISTORY', i)[0] == '':
@@ -95,7 +96,8 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
     pattern = r'([0-9]*)p\.(.*)'
     for i in hist:
         m = re.search(pattern, i)
-        exp_list.append(m.group(1))
+        if m:
+            exp_list.append(m.group(1))
 
     obj_id = np.copy(cat.get_data()['NUMBER'])
 

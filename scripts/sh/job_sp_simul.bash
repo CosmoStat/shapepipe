@@ -337,22 +337,23 @@ fi
 if [[ $do_job != 0 ]]; then
 
   ### Uncompress tile weights
-  command_sp "shapepipe_run -c $SP_CONFIG/config_unfz_w.ini" "Run shapepipe (uncompress tile weights)"
+  #command_sp "shapepipe_run -c $SP_CONFIG/config_unfz_w.ini" "Run shapepipe (uncompress tile weights)"
 
   ### Split images into single-HDU files, merge headers for WCS info
-  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_SpMh.ini" "Run shapepipe (split images, merge headers)"
+  #command_sp "shapepipe_run -c $SP_CONFIG/config_exp_SpMh.ini" "Run shapepipe (split images, merge headers)"
 
+  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_unfz_w.ini" "Run shapepipe (uncompress exposure weights)"
 fi
 
 ## Mask tiles and exposures: add star, halo, and Messier object masks (online)
 (( do_job= $job & 4 ))
 if [[ $do_job != 0 ]]; then
 
-  ### Mask exposures
-  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini" "Run shapepipe (mask exposures)"
-
   ### Mask tiles
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Ma.ini" "Run shapepipe (mask tiles)"
+
+  ### Mask exposures
+  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini" "Run shapepipe (mask exposures)"
 
 fi
 
@@ -376,7 +377,8 @@ if [[ $do_job != 0 ]]; then
     command_sp "ln -s `dirname $input_psf_mccd` input_psf_mccd" "Link MCCD output"
   fi
 
-  input_split_exp=`find output -name flag-*.fits | head -n 1`
+  #input_split_exp=`find output -name flag-*.fits | head -n 1`
+  input_split_exp=`find /cfis/ShapePipe/output/singles -name weight-*.fits | head -n 1`
   command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output"
 
   input_sextractor=`find . -name sexcat_sexcat-*.fits | head -n 1`

@@ -15,6 +15,8 @@ import re
 import operator
 import string
 
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pylab as plt
 
 import os
