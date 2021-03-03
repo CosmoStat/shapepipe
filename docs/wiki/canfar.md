@@ -181,20 +181,23 @@ the VM is available for further use, and you can skip [ahead](#use-the-vm).
     ./shapepipe_run.py -c example/config.ini
     ```
 
-    If the test log returns the expected results the VM should be ready for a snapshot.
+    If the test log returns the expected results the VM should be ready for a snapshot. You can now log out of the VM.
 
 6. Create a snapshot of the VM status:
 
     On [OpenStack](https://arbutus-canfar.cloud.computecanada.ca/project/instances), under the tab "Instances", click the "Create Snapshot" button for the corresponding VM. Be sure to follow the snapshot naming scheme defined for the VM above.
 
-   It will take a few to a few ten minutes until a snapshot is ready to be used. See below how to monitor the progress on the batch
-   system.
+   It will take a few to a few ten minutes until a snapshot is ready to be used. See below under [Troubleshooting](#troubleshooting)
+   how to monitor the progress on the batch system.
 
 ## Batch System
 
-The batch system is a server where jobs can be submitted to the CANFAR cluster using a previously defined snapshot.
+The batch system is a server where jobs can be submitted to the CANFAR cluster using a previously defined snapshot. It also serves
+to manage and monitor jobs.
 
 > Note: You will have to request access from [Sebastian Fabbro](sebfabbro@gmail.com) to the batch system before you can connect.
+
+### Connect and initialise
 
 1. SSH to batch system:
 
@@ -209,19 +212,21 @@ The batch system is a server where jobs can be submitted to the CANFAR cluster u
 2. Source OpenStack environment variables:
 
     ```bash
-    source lensing-openrc.sh
+    source ~/lensing-openrc.sh
     ```
     When asked, enter your CADC password.
     This is a necessary step before submitting jobs.
 
-3. Create a bash script, for example:
+### Submit a general example job
+
+1. Create a bash script.
 
     The bash script defines the command lines to be run on the snapshot. The following example script demonstrates how to:
      - activate the ShapePipe environment,
      - create an output directory,
      - copy a configuration file to the snapshot from the VOSPACE,
      - run ShapePipe,
-     - and copy the output back to the VOSPACE
+     - copy the output back to the VOSPACE
 
     ```bash
     #!/bin/bash
@@ -236,9 +241,9 @@ The batch system is a server where jobs can be submitted to the CANFAR cluster u
 
     > Note: The default path for a snapshot is not the `/home/ubuntu` directory, hence the definition of the `VM_HOME` environment variable.
 
-4. Create a job file, for example:
+2. Create a job file:
 
-    The job file defines the script to be run (*i.e.* the bash script previously defined), the corresponding outputs and the computational requirements for the job.
+    The job file defines the bash script to be run (*i.e.* the bash script created above), the corresponding outputs and the computational requirements for the job.
 
     ```txt
     executable     = shapepipe.bash
@@ -256,40 +261,42 @@ The batch system is a server where jobs can be submitted to the CANFAR cluster u
     queue
     ```
 
-5. Submit a job:
+3. Submit the job:
 
-    Jobs are submitted using the `canfar_submit` command followed by the previously defined job file, the name of the desired snapshot and the *flavour* of the corresponding VM.
+   Jobs are submitted using the `canfar_submit` command followed by the previously defined job file, the name of the desired snapshot and the *flavour* of the corresponding VM.
 
-    ```bash
-    > canfar_submit JOB_FILE SNAP_SHOT FLAVOUR
-    ```
- Make sure that the snapshot is ready to be used, see below to check its status.
+   ```bash
+   canfar_submit JOB_FILE SNAP_SHOT FLAVOUR
+   ```
+   Make sure that the snapshot is ready to be used, see below to check its status.
 
-6. Check queue:
+### Check job progress
 
-    ```bash
-    condor_status -submitter
-    ```
-  This command tells you running, idle, and held jobs for you and other users.
+1. Check queue:
 
-  Information for your own jobs only:
-  ```bash
-  condor_q [-nobatch]
-  ```
-  From there you can get the job ID, which lets you examine your job more closely:
-  ```bash
-  condor_q -better-analyse <ID>
-  ```
+   ```bash
+   condor_status -submitter
+   ```
+   This command tells you running, idle, and held jobs for you and other users.
 
-  You can do an `ssh` to the VM that is (or will be) running your job for checking:
-  ```bash
-  condor_ssh_to_job -auto-retry <ID>
-  ```
-  For multi-job submissions, the JOB_IDS has subnumbers, e.g. `1883.0-9`.
-  You can `ssh` to each of those VMs, with e.g.
-  ```bash
-  condor_ssh_to_job -auto-retry 1883.6
-  ```
+   Information for your own jobs only:
+   ```bash
+   condor_q [-nobatch]
+   ```
+   From there you can get the job ID, which lets you examine your job more closely:
+   ```bash
+   condor_q -better-analyse <ID>
+   ```
+
+   You can do an `ssh` to the VM that is (or will be) running your job for checking:
+   ```bash
+   condor_ssh_to_job -auto-retry <ID>
+   ```
+   For multi-job submissions, the JOB_IDS has subnumbers, e.g. `1883.0-9`.
+   You can `ssh` to each of those VMs, with e.g.
+   ```bash
+   condor_ssh_to_job -auto-retry 1883.6
+   ```
 
 ## Troubleshooting
 
