@@ -70,7 +70,7 @@ However, tests of the VM and the code to be submitted can be run in (interactive
 ### Set up a VM
 
 The following steps show how to set up a VM that can run `ShapePipe` jobs. In general, this only needs to be done once, after that
-the VM is available for further use.
+the VM is available for further use, and you can skip [ahead](#use-the-vm).
 
 1. Create a VM:
 
