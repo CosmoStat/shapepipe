@@ -303,9 +303,6 @@ mkdir -p $SP_RUN
 cd $SP_RUN
 mkdir -p $OUTPUT
 
-# The following call will result in an VOS error if the directory already exists.
-# This can be ignored.
-vmkdir vos:cfis/cosmostat/kilbinger/$RESULTS
 
 # Processing
 
@@ -336,6 +333,13 @@ fi
 ## Prepare images (offline)
 (( do_job= $job & 2 ))
 if [[ $do_job != 0 ]]; then
+
+  # The following call will result in an VOS error if the directory already exists.
+  # This can be ignored.
+  vmkdir vos:cfis/cosmostat/kilbinger/$RESULTS
+
+  ### Download config files
+  command_sp "$VCP vos:cfis/cosmostat/kilbinger/$CONFIG_BASE ." "Get shapepipe config files from $CONFIG_BASE"
 
   ### Uncompress tile weights
   #command_sp "shapepipe_run -c $SP_CONFIG/config_unfz_w.ini" "Run shapepipe (uncompress tile weights)"
