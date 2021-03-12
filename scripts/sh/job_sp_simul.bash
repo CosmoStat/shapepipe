@@ -143,7 +143,7 @@ export SP_RUN=`pwd`
 
 # Config file path
 CONFIG_BASE=cfis_simul
-export SP_CONFIG=~/shapepipe/example/$CONFIG_BASE
+export SP_CONFIG=$SP_RUN/$CONFIG_BASE
 export SP_CONFIG_MOD=$SP_RUN/${CONFIG_BASE}_mod
 
 ## Other variables
