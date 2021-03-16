@@ -1,32 +1,46 @@
 # Post-processing
 
-This page specifically deals with the post-processing step of results obtained
-on [canfar](./canfar.md).
+This page shows all required steps of post-processing a `ShapePipe` run. Some details pertain specifically to
+runs carried out on [canfar](./canfar.md), but most are general.
 
-1. Canfar-access steps.
+1. Retrieve files with `ShapePipe` results
 
-   1. Check availability of results
+   For a local run on the same machine as for post-processing, nothing needs to be done.
+   In some cases, the run was carried out on a remote machine or cluster, and the resulting `ShapePipe`
+   output files need to be retrieved.
+   
+   In the specific case of canfar_avail_results.py, this is done as follows.
+   
+   A. Check availability of results
 
-      A `canfar` job can submit a large number of tiles, and many but not all might be processed
-      simultaneously. To check which tiles are finished, and whose results have been uploaded, use
+      A `canfar` job can submit a large number of tiles, whose processing time can vary a lot.
+      We assume that the submitted tile ID list is available locally via the ascii file `tile_numbers.txt`. 
+      To check which tiles have finished running, and whose results have been uploaded, use
       ```bash
-      $SP_ROOT/scripts/python/canfar_avail_results.py -i <ID_files> -v
+      canfar_avail_results -i tile_numbers.txt -v
       ```
-      E.g  with `-i $SP_ROOT/aux/CFIS/tiles_202007/tiles_W3.txt` as input ID file.
+      See `-h` for options.
 
-   2. Download results
+   B. Download results
 
       All results files will be downloaded with
       ```bash
-      $SP_ROOT/scripts/sh/canfar_download_results.sh
+      canfar_download_results
       ```
-      This command can be run in the same directory at subsequent times: Only newer files will be downloaded
-      from the vos directory.
+      Use the same options as for same as for `canfar_avail_results`.
+      
+      This command can be run in the same directory at subsequent times, to complete an ongoing run: Only newer files will be downloaded
+      from the `vos` directory.
+      
+   C. Un-tar results
+     ```bash
+      untar
+      ```
+      On success, `ShapePipe` output `fits` and `log` files will be now in various subdirs of the `output` directory.
 
-2. Local post-processing steps.
+At this step all required `ShapePipe` resulting output files are available in `.`.
 
-   On [candide](./candide.md) it is advisable to perform the following steps not on the loging node, but
-   to log interactively onto some other node. Internet access is not required.
+2. Optional: Split output in sub-samples
 
    An optional intermediate step is to create directories for sub-samples, for example one directory
    for each patch on the sky. This will create symbolic links to the results `.tgz` files downloaded in
@@ -35,37 +49,36 @@ on [canfar](./canfar.md).
    ```bash
     $SP_ROOT/scripts/python/create_sample_results.py --input_IDs tiles_W3.txt -i . all -o tiles_W3 -v
     ```
-    The following steps will then be done in the directort `tiles_W3`.
-    
+    The following steps will then be done in the directory `tiles_W3`.
+
+3. Run PSF diagnostics, create merged catalogue
+
    Type
    ```bash
-   $SP_ROOT/scripts/sh/canfar_post_proc.sh
+   post_proc_sp
    ```
-   to automatically perform a number of post-processing steps. In detail, these are (and can also be done individually
+   to automatically perform a number of post-processing steps. Chose the PSF model with the option `-p psfex|mccd`. In detail, these are (and can also be
+   done individually
    by hand):
    
-   1. Un-tar all result `.tgz` files in the current directory:
+   A. Analyse psf validation files
       ```bash
-      $SP_ROOT/scripts/sh/untar_results.sh 
-      ``` 
-      As a result, the directory `output` is created containing the `ShapePipe` outputs from all canfar runs,
-      in uniquely named subdirectories.
-      
-   2. Analyse psf validation files
-      ```bash
-      $SP_ROOT/scripts/sh/canfar_psf_residuals.sh
+      psf_residuals
       ```
+      with options as for `post_proc_sp`.
       This script identifies all psf validation files (from all processed tiles downloaded to `pwd`), creates symbolic links,
       merges the catalogues, and creates plots of PSF ellipticity, size, and residuals over the focal plane.
 
-   3. Prepare output directory with links to all 'final_cat' result files:
+   B. Prepare output directory with links to all 'final_cat' result files:
       ```bash
-      $SP_ROOT/scripts/sh/canfar_prep_tiles.sh
+      prepare_tiles_for_final.sh
       ```
+      The corresponding output directory that is created is `output/run_sp_combined/make_catalog_runner/output`.
+      On success, it contains links to all `final_cat` output catalogues
 
-   4. Merge final output files to single mother catalog
+   C. Merge final output files into single main catalog
       ```bash
-      input_final=output/run_sp_combined/make_catalog_runner/output
-      $SP_ROOT/scripts/python/merge_final_cat.py -i $input_final -p $SP_CONFIG/final_cat.param -v
+      merge_final_cat -i <input_dir> -p <param_file> -v
       ```
-  
+      Chose as input directory `input_dir` the output of step B. A default parameter file <param_file> is `/path/to/shapepipe/example/cfis/final_cat.param`. 
+      On success, the file `./final_cat.npy` is created. Depending on the number of input tiles, this file can be several tens of Gb large. 
