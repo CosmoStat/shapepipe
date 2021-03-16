@@ -16,7 +16,7 @@
 ## Default values
 do_env=0
 job=255
-psf='mccd'
+psf='psfex'
 retrieve='vos'
 nsh_step=4000
 nsh_max=-1
@@ -130,7 +130,7 @@ fi
 export PATH="$PATH:$VM_HOME/bin"
 
 # Results upload subdirectory on vos
-RESULTS=results_mccd
+RESULTS=results_$psf
 
 ## Path variables used in shapepipe config files
 
