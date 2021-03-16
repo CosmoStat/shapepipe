@@ -71,7 +71,7 @@ At this step all required `ShapePipe` resulting output files are available in `.
 
    B. Prepare output directory with links to all 'final_cat' result files:
       ```bash
-      prepare_tiles_for_final.sh
+      prepare_tiles_for_final
       ```
       The corresponding output directory that is created is `output/run_sp_combined/make_catalog_runner/output`.
       On success, it contains links to all `final_cat` output catalogues
