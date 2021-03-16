@@ -58,7 +58,7 @@ PY_SCRIPTS=(
   cfis_field_select.py
   cfis_download_images.py
   create_star_cat.py
-  merge_star_cat.py
+  merge_star_cat_psfex.py
   merge_star_cat_mccd.py
   MeanShapes.py
   stats_global.py
