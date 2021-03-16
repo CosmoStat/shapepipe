@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# Name: psf_residuals.bash
 # Description: Compute and plot PSF residuals from
 #	       results processed on canfar
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
@@ -103,7 +104,7 @@ for dir in $dir_individual $dir_merged; do
 done
 
 if [ "$psf" == "psfex" ]; then
-  runner="psf_interp_runner"
+  runner="psfex_interp_runner"
   hdu=2
 else
   runner="mccd_fit_val_runner"
@@ -115,11 +116,12 @@ fi
 n_skipped=0
 n_created=0
 FILES=output/*/${runner}/output/${psfval_file_base}*
-for val in $FILES; do
+for val in ${FILES[@]}; do
     base=`basename $val`
     link_s "$pwd/$val" "$dir_individual/$base"
 done
 echo " Created $n_created links, skipped $n_skipped files"
+exit 0
 
 # Create merged PSF validation catalog
 merge_star_cat_${psf} -i $dir_individual -o $dir_merged/$fname_merged -v
@@ -130,7 +132,5 @@ if [ "$psf" == "psfex" ]; then
 else
   echo "Plots of mean shapes are create elsewhere for MCCD"
 fi
-
-#tar czf p.tgz psf_validation_merged/*.png
 
 ### End ###

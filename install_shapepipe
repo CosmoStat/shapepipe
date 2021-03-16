@@ -63,12 +63,15 @@ PY_SCRIPTS=(
   MeanShapes.py
   stats_global.py
   merge_final_cat.py
+  canfar_avail_results.py
 )
 BASH_SCRIPTS=(
   job_sp.bash
   post_proc_sp.bash
   psf_residuals.bash
   prepare_tiles_for_final.bash
+  canfar_download_results.bash 
+  untar_results.bash
 )
 
 # Divider line
