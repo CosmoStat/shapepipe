@@ -105,10 +105,8 @@ done
 
 if [ "$psf" == "psfex" ]; then
   runner="psfex_interp_runner"
-  hdu=2
 else
   runner="mccd_fit_val_runner"
-  hdu=1
 fi
 
 # Find all psf validation files and create links.
@@ -121,14 +119,13 @@ for val in ${FILES[@]}; do
     link_s "$pwd/$val" "$dir_individual/$base"
 done
 echo " Created $n_created links, skipped $n_skipped files"
-exit 0
 
 # Create merged PSF validation catalog
 merge_star_cat_${psf} -i $dir_individual -o $dir_merged/$fname_merged -v
 
 # Create plots
 if [ "$psf" == "psfex" ]; then
-  MeanShapes -o $dir_merged -i $dir_merged/$fname_merged -v -x 20 --max_e=0.05 --max_d=0.005 --hdu=$hdu
+  MeanShapes -o $dir_merged -i $dir_merged/$fname_merged -v -x 20 --max_e=0.05 --max_d=0.005 --hdu=1
 else
   echo "Plots of mean shapes are create elsewhere for MCCD"
 fi
