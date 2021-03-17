@@ -16,7 +16,7 @@
 ## Default values
 do_env=0
 job=255
-RESULTS=results
+os:cfis/cosmostat/kilbingerRESULTS=results
 psf='mccd'
 retrieve='vos'
 nsh_step=4000
@@ -135,6 +135,9 @@ fi
 
 # SExtractor library bug work-around
 export PATH="$PATH:$VM_HOME/bin"
+
+# Results upload subdirectory on vos
+RESULTS=results_$psf
 
 ## Path variables used in shapepipe config files
 
