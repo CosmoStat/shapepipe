@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Name: canfar_download_results.sh
+# Name: canfar_download_results.bash
 # Description: Download ShapePipe results (.tgz files)
 #              from canfar with vos
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>

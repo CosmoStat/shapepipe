@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Name: untar_results.ch
+# Name: untar_results.bash
 # Description: Untar .tgz files = results of ShapePipe runs
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 # Date: 05/2020
@@ -48,9 +48,9 @@ NAMES=(
         "pipeline_flag"
      )
 
-if [ "$psf" == "psfex" ]; then
-  NAMES+=(psfex)
-fi
+#if [ "$psf" == "psfex" ]; then
+  #NAMES+=(psfex)
+#fi
 
 # Check number of files
 for out in ${NAMES[@]}; do
