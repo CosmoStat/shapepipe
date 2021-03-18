@@ -34,7 +34,7 @@ runs carried out on [canfar](./canfar.md), but most are general.
       
    C. Un-tar results
      ```bash
-      untar
+      untar_results
       ```
       On success, `ShapePipe` output `fits` and `log` files will be now in various subdirs of the `output` directory.
 
