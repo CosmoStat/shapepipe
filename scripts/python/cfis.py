@@ -889,7 +889,7 @@ def get_Angle(str_coord):
 
 
 
-def get_Angle_arr(str_coord, num=-1, verbose=False):
+def get_Angle_arr(str_coord, num=-1, wrap=True, verbose=False):
     """Return array of Angles from coordinate string
 
     Parameters
@@ -898,6 +898,8 @@ def get_Angle_arr(str_coord, num=-1, verbose=False):
         string of input coordinates
     num: int, optional, default=-1
         expected number of coordinates (even number)
+    wrap: bool, optional, default=True
+        if True, wrap ra to [0; 360)
     verbose: bool, optional, default=False
         verbose output
 
@@ -913,7 +915,12 @@ def get_Angle_arr(str_coord, num=-1, verbose=False):
 
     angles = []
     for i in range(n):
-        c = SkyCoord(angles_mixed[2*i], angles_mixed[2*i+1])
+        ra = angles_mixed[2*i]
+        dec = angles_mixed[2*i+1]
+        if wrap:
+            c = SkyCoord(ra, dec)
+        else:
+            c = param(ra = Angle(ra), dec = Angle(dec))
         angles.append(c)
 
     return angles
@@ -1372,8 +1379,8 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
     ----------
     images: list of class image
         list of images
-    angles: string
-        coordinates ra0_dec0_ra1_dec1 with units
+    angles: array(2) of SkyCoord
+        coordinates [(ra0, dec0), (ra1, dec1)]
     band: string
         optical band
     image_type: string
@@ -1389,73 +1396,60 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
         found images
     """
 
-    if verbose == True:
-        print('Looking for all images within rectangle, lower left=({},{}), upper right=({},{}) deg'.format(
-              angles[0].ra.deg, angles[0].dec.deg, angles[1].ra.deg, angles[1].dec.deg))
-
     found = []
-    angles_new = [0, 0]
 
-    # Left-corner ra is larger than right-corner if wrapped around 360:
-    # subtract amount left of zero
-    #print('MKDEBUG', angles[0].ra.degree, angles[1].ra.degree)
-    if 0 and angles[0].ra.degree > angles[1].ra.degree:
-        dra = Angle('{} degree'.format(360 - angles[0].ra.degree))
-        angles_shift = [SkyCoord for i in [0, 1]]
-        angles_shift[0] = SkyCoord(Angle('0 degree'), angles[0].dec)
-        angles_shift[1] = SkyCoord(angles[1].ra + dra , angles[1].dec)
-        if verbose:
-            print('Shifting wrapped ra coords from ({}, {}) to ({}, {}) deg'
-                  ''.format(angles[0].ra.deg,
-                            angles[1].ra.deg,
-                            angles_shift[0].ra.deg,
-                            angles_shift[1].ra.deg))
-        for i in [0, 1]:
-            angles_new[i] = angles_shift[i]
+    # if coordinates extend over 360:
+    #  check ranges [ra_min, 360] and [0, ra_max-360]
+    # if not:
+    #  check range [ra_min, ra_max]
+    ra_bounds = []
+    threesixty = Angle(360, unitdef)
+    if angles[1].ra > threesixty:
+        ra_bounds = [[angles[0].ra, threesixty], [Angle(0, unitdef), angles[1].ra-threesixty]]
     else:
-        for i in [0, 1]:
-            angles_new[i] = angles[i]
-        dra = 0
+        ra_bounds = [[angles[0].ra, angles[1].ra]]
 
-    #print(angles)
-    #print(angles_new)
+    if verbose == True:
+        print('Looking for all images within rectangle, '
+              'dec=({}, {}), '
+              ''.format(angles[0].dec, angles[1].dec), end='')
+        for ra_min_max in ra_bounds:
+            print('ra=[({}, {}) '.format(ra_min_max[0], ra_min_max[1]), end='')
+        print()
 
     if image_type in ('tile', 'weight', 'weight.fz'):
         for img in images:
             nix, niy = get_tile_number(img.name)
             ra, dec  = get_tile_coord_from_nixy(nix, niy)
 
-            # Left-corner ra is larger than right-corner if wrapped around 360:
-            # subtract amount left of zero
-            if angles[0].ra.degree > angles[1].ra.degree:
-                dra = Angle('{} degree'.format(360 - angles_new[0].ra.degree))
-                angles_shift = [SkyCoord for i in [0, 1]]
-                angles_shift[0] = SkyCoord(Angle('0 degree'), angles_new[0].dec)
-                angles_shift[1] = SkyCoord(angles_new[1].ra + dra , angles_new[1].dec)
-                for i in [0, 1]:
-                    angles[i] = angles_shift[i]
-                ra = ra + dra
+            if  dec.is_within_bounds(angles[0].dec, angles[1].dec):
+                within = False
 
-            if ra.is_within_bounds(angles_new[0].ra, angles_new[1].ra) \
-                and dec.is_within_bounds(angles_new[0].dec, angles_new[1].dec):
+                # Check whether image is in any of the ra bound pairs
+                for (ra_min, ra_max) in ra_bounds:
+                    if ra.is_within_bounds(ra_min, ra_max):
+                        within = True
+                        break
+                if within:
+                    if img.ra is None or img.dec is None:
+                        img.ra  = ra
+                        img.dec = dec
 
-                #print('MKDEBUG ', ra.degree)
-                if img.ra is None or img.dec is None:
-                    #raise CfisError('Coordinates in image are already set '
-                                    #'to {}, {}, cannot update to {}, {}'
-                                    #''.format(img.ra, img.dec, ra, dec))
-                    img.ra  = ra
-                    img.dec = dec
-
-                found.append(img)
+                    found.append(img)
 
     elif image_type == 'exposure':
         for img in images:
-            if img.ra.is_within_bounds(angles[0].ra, angles[1].ra) \
-                and img.dec.is_within_bounds(angles[0].dec, angles[1].dec):
+            if  img.dec.is_within_bounds(angles[0].dec, angles[1].dec):
+                within = False
 
-                if img.cut(no_cuts=no_cuts) == False:
-                    found.append(img)
+                # Check whether image is in any of the ra bound pairs
+                for (ra_min, ra_max) in ra_bounds:
+                    if ra.is_within_bounds(ra_min, ra_max):
+                        within = True
+                        break
+                if within:
+                    if img.cut(no_cuts=no_cuts) == False:
+                        found.append(img)
 
     else:
         raise CfisError('Image type \'{}\' not implemented yet'.format(image_type))
