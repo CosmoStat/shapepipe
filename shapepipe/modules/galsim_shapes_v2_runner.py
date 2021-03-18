@@ -629,7 +629,8 @@ def save_results(output_dict, output_name):
 
 def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
             psf_vignet_path, weight_vignet_path, flag_vignet_path,
-            f_wcs_path, do_metacal, do_morphology, w_log, pixel_scale, id_obj_min=-1, id_obj_max=-1):
+            f_wcs_path, do_metacal, do_morphology, w_log, pixel_scale, id_obj_min=-1, id_obj_max=-1,
+            skip_col=None, skip_val=None):
     """ Process
 
     Process function.
@@ -658,10 +659,14 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
         log file
     pixel_scale : float
         pixel size in arcsec
-    id_obj_min: int, optional, default=-1
+    id_obj_min : int, optional, default=-1
         minimum object ID to be processed if > 0
-    id_obj_max: int, optional, default=-1
+    id_obj_max : int, optional, default=-1
         maximum object ID to be processed if > 0
+    skip_col : str, optional, default=None
+        if not None, column name to indicate objects to skip
+    skip_val : str, optional, default=None
+        if skip_col is not None, value to indicate objects to skip
 
     Returns
     -------
@@ -678,6 +683,9 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
     tile_fwhm = fits.getdata(tile_cat_path, 2, memmap=True)['FWHM_IMAGE']
     tile_wcs = get_wcs_from_sexcat(fits.getdata(tile_cat_path, 1, memmap=True)[0][0])
     tile_gain = get_tile_gain(fits.getdata(tile_cat_path, 1, memmap=True)[0][0])
+
+    if skip_col:
+        tile_skip = fits.getdata(tile_cat_path, 2, memmap=True)[skip_col]
 
     tile_weight = fits.getdata(tile_weight_path, 2, memmap=True)['VIGNET']
     bkg_vign_cat = SqliteDict(bkg_vignet_path)
@@ -701,6 +709,12 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
         if id_first == -1:
             id_first = id_tmp
         id_last = id_tmp
+
+        if skip_col:
+            # Skip this object if marked, also if mark is nan
+            if tile_skip[i_tile] == skip_val \
+                or (np.isnan(tile_skip[i_tile]) and np.isnan(skip_val)):
+                continue
 
         count = count + 1
 
@@ -833,8 +847,17 @@ def galsim_shapes_v2_runner(input_file_list, run_dirs, file_number_string,
 
     pixel_scale = 0.187  # arcsec
 
+    # Marks to skip object
+    if config.has_option('GALSIM_SHAPES_V2_RUNNER', 'SKIP_COL'):
+        skip_col = config.get('GALSIM_SHAPES_V2_RUNNER', 'SKIP_COL')
+        skip_val = config.getfloat('GALSIM_SHAPES_V2_RUNNER', 'SKIP_VAL')
+    else:
+        skip_col = None
+        skip_val = None
+
     metacal_res = process(*input_file_list, f_wcs_path, do_metacal, do_morphology,
-                          w_log, pixel_scale, id_obj_min=id_obj_min, id_obj_max=id_obj_max)
+                          w_log, pixel_scale, id_obj_min=id_obj_min, id_obj_max=id_obj_max,
+                          skip_col=skip_col, skip_val=skip_val)
     res_dict = compile_results(metacal_res, ZP, do_metacal, w_log, pixel_scale, do_morphology=do_morphology)
     save_results(res_dict, output_name)
 

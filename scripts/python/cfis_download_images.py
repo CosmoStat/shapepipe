@@ -134,8 +134,8 @@ def remove_exclude(dst_list, exclude_list, verbose=False):
 
 
 
-def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False, quick=False,
-             certfile=None, out_list=None):
+def download(dst_list, size_list, out_dir, t, dry_run=False, no_size_check=False,
+              verbose=False, certfile=None, out_list=None):
     """Download files using vos command.
     Parameters
     ----------
@@ -152,8 +152,8 @@ def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False, quic
         if True do not download but perform dry run; default=False
     verbose: bool, optional, default=False
         verbose mode if True
-    quick: bool, optional, default=False
-        quick copy mode if True
+    no_size_check : bool, optional, default=False
+        if True do not check file size for incompleteness of downloaded files
     certfile: string, optional, default=None
         certificate file for vos identification
     out_list: string, optional, default=None
@@ -190,18 +190,23 @@ def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False, quic
         if os.path.isfile(dest):
             if len(size_list) > 0:
                 size = os.path.getsize(dest)
-                if size != size_list[i]:
-                    print('File {} incomplete.'.format(dest), end=' ')
-                    if dry_run:
-                        print('')
+                if not no_size_check:
+                    if size < size_list[i]:
+                        do_download = True
+                        print('File {} incomplete.'.format(dest), end=' ')
+                    else:
+                        do_download = False
+                        n_ex += 1
+                        print('File {} exists and is complete'.format(dest))
                 else:
                     do_download = False
                     n_ex += 1
-                    print('File {} exists and is complete'.format(dest))
+                    print('File {} exists, ignoring size.'.format(dest))
             else:
                 # No information about size given: do not overwrite
                 # existing file
-                print('File {} exists, information whether complete is missing, no download'.format(dest))
+                n_ex += 1
+                print('File {} exists, no size information, no download'.format(dest))
                 do_download = False
 
         else:
@@ -222,14 +227,12 @@ def download(dst_list, size_list, out_dir, t, dry_run=False, verbose=False, quic
 
                 sys.argv = []
                 sys.argv.append(cmd)
-                if quick == True:
-                    sys.argv.append('--quick')
                 if certfile:
                     sys.argv.append('--certfile={}'.format(certfile))
                 sys.argv.append(src)
                 sys.argv.append(out_dir)
 
-            vcp()
+                vcp()
 
             n_dl += 1
 
@@ -308,13 +311,14 @@ def parse_options(p_def):
         help='file pattern to match, e.g.~\'^21\d{5}p\', default=none (=all match)')
     parser.add_option('-c', '--in_file_columns', dest='scolumns', type='string', default=p_def.scolumns,
         help='input file columns: name [size], default={}'.format(p_def.scolumns))
+    parser.add_option('', '--no_size_check', dest='no_size_check', action='store_true',
+        help='do not check file size for incompleteness')
     parser.add_option('', '--in_number_only', dest='in_number_only', action='store_true',
         help='input file names are image number only')
 
     # vcp options
     parser.add_option('', '--certfile', dest='certfile', type='string',
         help='certificate file')
-    parser.add_option('-q', '--quick', dest='quick', action='store_true', default=False, help='quick copy mode')
 
     # Misc options
     parser.add_option('-n', '--dry-run', dest='dry_run', action='store_true', default=False,
@@ -433,7 +437,8 @@ def main(argv=None):
     cfis.mkdir_p(param.out_dir)
 
     download(dst_list, size_list, param.out_dir, param.type, dry_run=param.dry_run,
-             verbose=param.verbose, quick=param.quick, certfile=param.certfile, out_list=param.out_list)
+             no_size_check=param.no_size_check,
+             verbose=param.verbose, certfile=param.certfile, out_list=param.out_list)
 
 
     ### End main program
