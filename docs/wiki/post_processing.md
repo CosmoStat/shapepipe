@@ -34,7 +34,7 @@ runs carried out on [canfar](./canfar.md), but most are general.
       
    C. Un-tar results
      ```bash
-      untar
+      untar_results
       ```
       On success, `ShapePipe` output `fits` and `log` files will be now in various subdirs of the `output` directory.
 
@@ -62,6 +62,7 @@ At this step all required `ShapePipe` resulting output files are available in `.
    by hand):
    
    A. Analyse psf validation files
+   
       ```bash
       psf_residuals
       ```
@@ -69,14 +70,18 @@ At this step all required `ShapePipe` resulting output files are available in `.
       This script identifies all psf validation files (from all processed tiles downloaded to `pwd`), creates symbolic links,
       merges the catalogues, and creates plots of PSF ellipticity, size, and residuals over the focal plane.
 
-   B. Prepare output directory with links to all 'final_cat' result files:
+   B. Prepare output directory
+   
+      Create links to all 'final_cat' result files with 
       ```bash
       prepare_tiles_for_final
       ```
       The corresponding output directory that is created is `output/run_sp_combined/make_catalog_runner/output`.
       On success, it contains links to all `final_cat` output catalogues
 
-   C. Merge final output files into single main catalog
+   C. Merge final output files
+   
+      Create a single main catalog:
       ```bash
       merge_final_cat -i <input_dir> -p <param_file> -v
       ```
