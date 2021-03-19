@@ -82,19 +82,19 @@ def check_duplicate(input_list):
 
     Returns
     -------
-    ok : bool
-        True (False) if does (does not) contain at least one duplicate
+    elem : string
+        first duplicate in input_list, empty string if non found
     """
 
     input_set = set()
 
     for elem in input_list:
         if elem in input_set:
-            return True
+            return elem
         else:
             input_set.add(elem)
 
-    return False
+    return ''
 
 
 class FileHandler(object):
@@ -831,11 +831,13 @@ class FileHandler(object):
                                ''.format(self._numbering_scheme, pattern, ext,
                                          dir_list))
 
-        if check_duplicate(final_file_list):
-            raise RuntimeError('Input file list contains at least two elements that match '
+        duplicate = check_duplicate(final_file_list)
+        if duplicate!= '':
+            raise RuntimeError('Input file list contains at least two elements \'{}\' that match '
                                'file pattern and numbering scheme, leading to identical '
                                'input files.  Make sure that the correct input '
-                               'directory is used.')
+                               'directory is used.'
+                               ''.format(duplicate))
 
         # Save file list
         np.save(output_file, np.array(final_file_list))

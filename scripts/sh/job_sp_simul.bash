@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# Name: job_sp.bash
-# Description: General script to process one or more tiles
+# Name: job_sp_simul.bash
+# Description: Script to process one or more simulated tiles
 #              with all contributing exposures.
 #              This works as job submission script for
 #              the canfar batch system.
@@ -15,11 +15,11 @@
 # Command line arguments
 ## Default values
 do_env=0
-job=255
-RESULTS=results
-psf='mccd'
+job=254
+RESULTS=results_simul
+psf='psfex'
 retrieve='vos'
-nsh_step=4000
+nsh_step=4500
 nsh_max=-1
 nsh_jobs=8
 
@@ -142,8 +142,9 @@ export PATH="$PATH:$VM_HOME/bin"
 export SP_RUN=`pwd`
 
 # Config file path
-export SP_CONFIG=$SP_RUN/cfis
-export SP_CONFIG_MOD=$SP_RUN/cfis_mod
+CONFIG_BASE=cfis_simul
+export SP_CONFIG=$SP_RUN/$CONFIG_BASE
+export SP_CONFIG_MOD=$SP_RUN/${CONFIG_BASE}_mod
 
 ## Other variables
 
@@ -302,9 +303,6 @@ mkdir -p $SP_RUN
 cd $SP_RUN
 mkdir -p $OUTPUT
 
-# The following call will result in an VOS error if the directory already exists.
-# This can be ignored.
-vmkdir vos:cfis/cosmostat/kilbinger/$RESULTS
 
 # Processing
 
@@ -336,23 +334,31 @@ fi
 (( do_job= $job & 2 ))
 if [[ $do_job != 0 ]]; then
 
+  # The following call will result in an VOS error if the directory already exists.
+  # This can be ignored.
+  vmkdir vos:cfis/cosmostat/kilbinger/$RESULTS
+
+  ### Download config files
+  command_sp "$VCP vos:cfis/cosmostat/kilbinger/$CONFIG_BASE ." "Get shapepipe config files from $CONFIG_BASE"
+
   ### Uncompress tile weights
-  command_sp "shapepipe_run -c $SP_CONFIG/config_unfz_w.ini" "Run shapepipe (uncompress tile weights)"
+  #command_sp "shapepipe_run -c $SP_CONFIG/config_unfz_w.ini" "Run shapepipe (uncompress tile weights)"
 
   ### Split images into single-HDU files, merge headers for WCS info
-  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_SpMh.ini" "Run shapepipe (split images, merge headers)"
+  #command_sp "shapepipe_run -c $SP_CONFIG/config_exp_SpMh.ini" "Run shapepipe (split images, merge headers)"
 
+  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_unfz_w.ini" "Run shapepipe (uncompress exposure weights)"
 fi
 
 ## Mask tiles and exposures: add star, halo, and Messier object masks (online)
 (( do_job= $job & 4 ))
 if [[ $do_job != 0 ]]; then
 
-  ### Mask exposures
-  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini" "Run shapepipe (mask exposures)"
-
   ### Mask tiles
   command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Ma.ini" "Run shapepipe (mask tiles)"
+
+  ### Mask exposures
+  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini" "Run shapepipe (mask exposures)"
 
 fi
 
@@ -376,8 +382,11 @@ if [[ $do_job != 0 ]]; then
     command_sp "ln -s `dirname $input_psf_mccd` input_psf_mccd" "Link MCCD output"
   fi
 
-  input_split_exp=`find output -name flag-*.fits | head -n 1`
+  input_split_exp=`find /cfis/ShapePipe/output/singles -name weight-*.fits | head -n 1`
   command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output"
+
+  input_mask_exp=`find output/run_sp_exp_Ma_* -name pipeline_flag-*-*.fits | head -n 1`
+  command_sp "ln -s `dirname $input_mask_exp` input_mask_exp" "Link mask_exp output"
 
   input_sextractor=`find . -name sexcat_sexcat-*.fits | head -n 1`
   command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor output"

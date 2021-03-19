@@ -14,12 +14,45 @@ Here are some instructions on how to set up a VM on CANFAR to run the pipeline.
 
 ## Contents
 
+1. [Getting access](#getting-access)
 1. [Current Set Up](#Current-Set-Up)
-1. [Virtual Machine](#Virtual-Machine)
+1. [Virtual Machines](#Virtual-Machines)
 1. [Batch System](#Batch-System)
 1. [Troubleshooting](#Troubleshooting)
 1. [Interactive Mode](#Interactive-Mode)
 1. [Running a CFIS job](#Running-A-CFIS-Job)
+
+
+## Getting access
+
+The following steps need to be done to get access to all CANFAR and VOS services:
+
+1. Demand access to CADC (Canadian Astronomy Data Center) 
+
+   Go to https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/auth/request.html and fill out the form.
+
+2. Demand access to CANFAR
+
+   Send an email to [CANFAR support](support@canfar.net) and include:
+   * your CADC account name;
+   * a rough amount of required resources (storage capacity and processing capabilities), and if you need batch processing;
+   * a few sentences describing what you want to do.
+
+3. Access to the VM system
+
+   Send a mail to [Sebastian Fabbro](sebfabbro@gmail.com) with you ssh public key to ask access to the batch system
+   and the `shapepipe2` virtual machine (see below).
+
+4. Access to the UNIONS/CFIS VOSPACE
+
+   If you want to use UNIONS/CFIS data, read the [data access rules](https://www.cfht.hawaii.edu/Science/CFIS/cfisaccess.html).
+   Then, write an email to the UNIONS [Steering Group](unions-sg@cfht.hawaii.edu) and include:
+   * brief introduction of your academic status and affiliation; if you are a PhD or master student, please say so, and include
+     your supervisor's name;
+   * brief description of what your plan is within UNIONS/CFIS;
+   * state that you have read the UNIONS/CFIS rules and that you agree with them:
+   * your CADC user name
+
 
 ## Current Set Up
 
@@ -343,15 +376,16 @@ For the job submission script we have the option to create it by hand, or automa
    ```
    Add the option `-n` (dry run) to test without submitting the job.
 
-### Analysis
+3. Analysis
 
-For a summary of the status of submitted jobs from the current directory, type
-```bash
-python3 ~/shapepipe/scripts/python/canfar_run_analyse.py
-```
-Results of jobs are uploaded to `vos`. These can be complete results from jobs that finished with success, or partial
-results (e.g. log files) from jobs that were stopped due to errors. Download and post-processing analysis of those results should
-to be performed on a different machine, e.g. [candide](https://github.com/CosmoStat/shapepipe/blob/master/docs/wiki/candide.md).
+   For a summary of the status of submitted jobs from the current directory, type
+   ```bash
+   python3 ~/shapepipe/scripts/python/canfar_run_analyse.py
+   ```
+   Results of jobs are uploaded to `vos`. These can be complete results from jobs that finished with success, or partial
+   results (e.g. log files) from jobs that were stopped due to errors. Download and post-processing analysis of those results should
+   to be performed on a different machine, e.g. [candide](https://github.com/CosmoStat/shapepipe/blob/master/docs/wiki/candide.md).
+
 ### Check job progress
 
 1. Check queue:

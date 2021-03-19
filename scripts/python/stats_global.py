@@ -19,6 +19,9 @@ import io
 import glob
 
 import numpy as np
+
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pylab as plt
 
 from optparse import OptionParser
