@@ -380,7 +380,6 @@ def main(argv=None):
     grid = np.linspace(0, npix_x, nb_pixel[0]+1), np.linspace(0, npix_y, nb_pixel[1]+1)
 
     # Read full star catalogue
-    print('MKDEBUG', starcat_path, param.hdu)
     starcat = fits.open(starcat_path)[param.hdu].data
 
     # Flag mask

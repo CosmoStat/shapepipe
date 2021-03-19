@@ -43,6 +43,11 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+## Check options
+if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
+  echo "PSF (option -p) needs to be 'psfex' or 'mccd'"
+  exit 2
+fi
 
 # Paths
 SP_BASE=$HOME/astro/repositories/github/shapepipe
@@ -65,7 +70,7 @@ SP_CONFIG=$SP_BASE/example/cfis
 psf_residuals -p $psf
 
 # Prepare output directory with links to all 'final_cat' result files
-prepare_tiles_for_final.sh
+prepare_tiles_for_final
 
 # Merge final output files to single mother catalog
 input_final=output/run_sp_combined/make_catalog_runner/output

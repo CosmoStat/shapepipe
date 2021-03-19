@@ -265,7 +265,7 @@ def main(argv=None):
     for key in d_tmp.dtype.names:
         d[key] = d_tmp[key]
     count = count + 1
-    print('File \'{}\' copied ({}/{})'.format(i, count, len(lpath)))
+    print('File \'{}\' copied ({}/{})'.format(lpath[0], count, len(lpath)))
 
     #new_dt = np.dtype(d_tmp.dtype.descr + [('TILE_ID', '>i4')])
     #d = np.zeros(d_tmp.shape, dtype=new_dt)
@@ -297,9 +297,8 @@ def main(argv=None):
             print('Error while copying file \'{}\''.format(i))
 
     # Save merged catalogue as numpy binary file
-    print('Saving final np cat')
+    print('Saving final catalogue')
     np.save('final_cat.npy', d)
-    print('Done')
 
     if param.verbose:
         print('{} catalog files merged with success'.format(count))
