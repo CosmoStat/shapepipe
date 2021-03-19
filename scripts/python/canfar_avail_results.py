@@ -72,7 +72,7 @@ def parse_options(p_def):
     parser.add_option('-i', '--input_IDs', dest='input_IDs', type='string', default=p_def.input_IDs,
          help='input tile ID file(s) or directory path, default=\'{}\''.format(p_def.input_IDs))
     parser.add_option('', '--input_vos', dest='input_vos', type='string', default=p_def.input_vos,
-         help='input path on vos, default=\'{}\''.format(p_def.input_vos))
+         help='input path on vos:cfis, default=\'{}\''.format(p_def.input_vos))
     parser.add_option('-o', '--output_not_avail', dest='output_not_avail', type='string',
          help='output file for not-available IDs, default no output')
 
