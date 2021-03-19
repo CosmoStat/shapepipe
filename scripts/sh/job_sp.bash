@@ -449,25 +449,25 @@ if [[ $do_job != 0 ]]; then
   ### Final shape catalog
 
   NAMES=(
+    "final_cat"
+    "pipeline_flag"
     "setools_mask"
     "setools_stat"
     "setools_plot"
-    "pipeline_flag"
-    "final_cat"
   )
   DIRS=(
+    "*/make_catalog_runner/output"
+    "*/mask_runner/output"
     "*/setools_runner/output/mask"
     "*/setools_runner/output/stat"
     "*/setools_runner/output/plot"
-    "*/mask_runner/output"
-    "*/make_catalog_runner/output"
   )
   PATTERNS=(
-    "*"
-    "*"
-    "*"
-    "pipeline_flag-???-???*"
     "final_cat-*"
+    "pipeline_flag-???-???*"
+    "*"
+    "*"
+    "*"
   )
 
   # PSF validation
