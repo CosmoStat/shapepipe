@@ -17,15 +17,16 @@ runs carried out on [canfar](./canfar.md), but most are general.
       We assume that the submitted tile ID list is available locally via the ascii file `tile_numbers.txt`. 
       To check which tiles have finished running, and whose results have been uploaded, use
       ```bash
-      canfar_avail_results -i tile_numbers.txt -v
+      canfar_avail_results -i tile_numbers.txt -v -p PSF --input_vos INPUT_VOS
       ```
-      See `-h` for options.
+      where PSF is one in [`psfex`|`mccd`], and INPUT_VOS the input path on `vos:cfis`, by default `cosmostat/kilbinger/results`.
+      See `-h` for all options.
 
    B. Download results
 
       All results files will be downloaded with
       ```bash
-      canfar_download_results
+      canfar_download_results -i tile_numbers.txt -v -p PSF --input_vos INPUT_VOS
       ```
       Use the same options as for same as for `canfar_avail_results`.
       
@@ -34,7 +35,7 @@ runs carried out on [canfar](./canfar.md), but most are general.
       
    C. Un-tar results
      ```bash
-      untar_results
+      untar_results -p PSF
       ```
       On success, `ShapePipe` output `fits` and `log` files will be now in various subdirs of the `output` directory.
 
@@ -55,7 +56,7 @@ At this step all required `ShapePipe` resulting output files are available in `.
 
    Type
    ```bash
-   post_proc_sp
+   post_proc_sp -p PSF
    ```
    to automatically perform a number of post-processing steps. Chose the PSF model with the option `-p psfex|mccd`. In detail, these are (and can also be
    done individually
