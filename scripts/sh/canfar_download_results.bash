@@ -74,15 +74,20 @@ local="."
 NAMES=(
         "final_cat"
         "logs"
-        "${psf}_interp_exp"
         "setools_mask"
         "setools_stat"
         "setools_plot"
         "pipeline_flag"
-     )
+      )
 
 if [ $psf == "psfex" ]; then
-  NAMES+=("psfex")
+  NAMES+=(
+          "psfex_interp_exp"
+         )
+else
+  NAMES+=(
+          "mccd_fit_val_runner"
+         )
 fi
 
 if [ $VERBOSE == 1 ]; then

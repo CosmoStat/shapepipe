@@ -41,16 +41,21 @@ done
 
 NAMES=(
         "final_cat"
-        "${psf}_interp_exp"
         "setools_mask"
         "setools_stat"
         "setools_plot"
         "pipeline_flag"
      )
 
-#if [ "$psf" == "psfex" ]; then
-  #NAMES+=(psfex)
-#fi
+if [ "$psf" == "psfex" ]; then
+  NAMES+=(
+          "psfex_interp_exp"
+         )
+elif [ "$psf" == "mccd" ]; then
+  NAMES+=(
+          "mccd_fit_val_runner"
+         )
+fi
 
 # Check number of files
 for out in ${NAMES[@]}; do
