@@ -53,6 +53,10 @@ The following steps need to be done to get access to all CANFAR and VOS services
    * state that you have read the UNIONS/CFIS rules and that you agree with them:
    * your CADC user name
 
+   If you are already a UNIONS/CFIS member, but don't have access to the UNIONS/CFIS VOSPACE, write an email to
+   Stephen Gwyn (Stephen.Gwyn@nrc-cnrc.gc.ca) with you CADC user name, and ask for access.
+   
+
 
 ## Current Set Up
 
