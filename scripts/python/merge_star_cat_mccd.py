@@ -17,9 +17,6 @@ for testing and validating the PSF model.
 
 from shapepipe.pipeline.execute import execute
 
-import os
-import sys
-import re
 import copy
 
 import numpy as np
