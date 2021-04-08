@@ -1,4 +1,4 @@
-astropy>=3.1.1
+astropy=4.1
 joblib>=0.13.1
 matplotlib>=3.0.2
 modopt>=1.2.0
