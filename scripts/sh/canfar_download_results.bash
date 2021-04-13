@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Name: canfar_download_results.sh
+# Name: canfar_download_results.bash
 # Description: Download ShapePipe results (.tgz files)
 #              from canfar with vos
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
@@ -13,6 +13,8 @@
 ## Default parameters
 INPUT_VOS="cosmostat/kilbinger/results"
 VERBOSE=0
+psf="mccd"
+
 
 usage="Usage: $(basename "$0") [OPTIONS]
 \n\nOptions:\n
@@ -22,6 +24,8 @@ usage="Usage: $(basename "$0") [OPTIONS]
     \t download all available IDs\n
     --input_vos PATH\n
     \tinput path on vos:cfis, default='$INPUT_VOS'\n
+  -p, --psf MODEL\n
+    \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
     -v\tverbose output\n
 "
   
@@ -41,6 +45,10 @@ while [ $# -gt 0 ]; do
       INPUT_VOS="$2"
       shift
       ;;
+    -p|--psf)
+      psf="$2"
+      shift
+      ;;
     -v)
       VERBOSE=1
       ;;
@@ -53,6 +61,11 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+## Check options
+if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
+  echo "PSF (option -p) needs to be 'psf' or 'mccd'"
+  exit 2
+fi
 
 ## Paths
 remote="vos:cfis/$INPUT_VOS"
@@ -61,13 +74,21 @@ local="."
 NAMES=(
         "final_cat"
         "logs"
-        "psfex"
-        "psfexinterp_exp"
         "setools_mask"
         "setools_stat"
         "setools_plot"
         "pipeline_flag"
-     )
+      )
+
+if [ $psf == "psfex" ]; then
+  NAMES+=(
+          "psfex_interp_exp"
+         )
+else
+  NAMES+=(
+          "mccd_fit_val_runner"
+         )
+fi
 
 if [ $VERBOSE == 1 ]; then
    vflag="-v"
@@ -99,6 +120,6 @@ done
 
 # Check number of files
 for name in ${NAMES[@]}; do
-    n_downl=(`ls -l $local/$name_*.tgz | wc`)
-    echo "$n_downl '$name' result files downloaded from $RESULTS"
+    n_downl=(`ls -l $local/${name}_*.tgz | wc`)
+    echo "$n_downl '$name' result files downloaded from $remote"
 done

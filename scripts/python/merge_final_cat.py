@@ -256,12 +256,16 @@ def main(argv=None):
     if param.verbose:
         print('{} final catalog files found'.format(len(lpath)))
 
+    count = 0
+
     # Determine number of columns and keys
     d_tmp = get_data(lpath[0], 1, param.param_list)
 
     d = np.zeros(d_tmp.shape, dtype=d_tmp.dtype)
     for key in d_tmp.dtype.names:
         d[key] = d_tmp[key]
+    count = count + 1
+    print('File \'{}\' copied ({}/{})'.format(lpath[0], count, len(lpath)))
 
     #new_dt = np.dtype(d_tmp.dtype.descr + [('TILE_ID', '>i4')])
     #d = np.zeros(d_tmp.shape, dtype=new_dt)
@@ -270,8 +274,8 @@ def main(argv=None):
         #d['TILE_ID'].fill(int(''.join(re.findall('\d+', l[0]))))
 
     # Read all final catalogues and merge
-    count = 1
     #for i in tqdm(lpath[1:], total=len(lpath)-1):
+
     for i in lpath[1:]:
         if ('final_cat' not in i) | ('.npy' in i):
             continue
@@ -282,22 +286,19 @@ def main(argv=None):
             dd = np.zeros(d_tmp.shape, dtype=d_tmp.dtype)
             for key in d_tmp.dtype.names:
                 dd[key] = d_tmp[key]
-
+            count = count + 1
+            print('File \'{}\' copied ({}/{})'.format(i, count, len(lpath)))
 
             #if 'TILE_ID' in d_tmp.dtype.names:
                 #dd['TILE_ID'].fill(int(''.join(re.findall('\d+', i))))
 
             d = np.concatenate((d, dd))
-            count = count + 1
-            print('File \'{}\' copied ({}/{})'.format(i, count, len(lpath)))
         except:
             print('Error while copying file \'{}\''.format(i))
-            #raise
 
     # Save merged catalogue as numpy binary file
-    print('Saving final np cat')
+    print('Saving final catalogue')
     np.save('final_cat.npy', d)
-    print('Done')
 
     if param.verbose:
         print('{} catalog files merged with success'.format(count))

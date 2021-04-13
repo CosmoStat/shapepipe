@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Name: canfar_prep_tiles.sh
+# Name: prepare_tiles_for_final.bash
 # Description: Create shapepipe run directory with
 #              links to all `final_cat` fits files
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr
@@ -27,7 +27,7 @@ function link_s () {
 pwd=`pwd`
 out_base="output"
 run_dir="run_sp_combined"
-log_path="$pwd/$out_base/log_run_sp_tile.txt"
+log_path="$pwd/$out_base/log_run_sp.txt"
 INPUT="$pwd/$out_base/run_sp_Mc_*"
 OUTPUT="$pwd/$out_base/$run_dir"
 mkdir -p $OUTPUT
