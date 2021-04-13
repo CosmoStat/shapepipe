@@ -171,13 +171,13 @@ def get_status(tile_num):
             final_cat_found = False
             with open(out_name) as out_file:
                 for line in out_file:
-                    m = re.match('Upload final_cat to.*(\d+) files', line)
+                    m = re.match('Upload.*final_cat.*return value = (\.*)', line)
                     if m:
                         final_cat_found = True
                         if m[1] == '0':
-                            status = res_noout, '0 final_cat output files'
+                            status = res_ok, 'successful upload of final_cat'
                         else:
-                            status = res_ok, 'success, {} final_cat output files'.format(m[1])
+                            status = res_noout, 'failed upload of final_cat'
                         break
 
             if final_cat_found == False:
