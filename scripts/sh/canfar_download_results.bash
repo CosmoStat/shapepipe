@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Name: canfar_download_results.sh
+# Name: canfar_download_results.bash
 # Description: Download ShapePipe results (.tgz files)
 #              from canfar with vos
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
@@ -74,12 +74,21 @@ local="."
 NAMES=(
         "final_cat"
         "logs"
-        "${psf}_interp_exp"
         "setools_mask"
         "setools_stat"
         "setools_plot"
         "pipeline_flag"
-     )
+      )
+
+if [ $psf == "psfex" ]; then
+  NAMES+=(
+          "psfex_interp_exp"
+         )
+else
+  NAMES+=(
+          "mccd_fit_val_runner"
+         )
+fi
 
 if [ $psf == "psfex" ]; then
   NAMES+=("psfex")

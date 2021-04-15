@@ -41,7 +41,7 @@ def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
 
     """
 
-    m = (obj_vign < -1e29) & (weight_vign > 0.)
+    m = (obj_vign > -1e29) & (weight_vign > 0.)
     w = m.astype(float)
 
     t_v = model_vign.ravel()
