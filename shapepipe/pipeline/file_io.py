@@ -1543,15 +1543,22 @@ class interpreter(object):
         if len(s) == 1:
             return self.interpret(s[0], self._make_compare, make_func=False, make_operate=False)
         elif len(s) == 3:
-            try:
-                ss = re.split(',', s[1])
-                if len(ss) > 1:
-                    p = [self.interpret(i, self._make_compare, make_func=False, make_operate=True) for i in ss]
-                    return self._stat_func[s[0]](*p)
-                else:
-                    return self._stat_func[s[0]](self.interpret(s[1], self._make_compare, make_func=False, make_operate=True))
-            except:
-                raise Exception('Unknown function: {0}'.format(s[0]))
+            ss = re.split(',', s[1])
+            if len(ss) > 1:
+                p = [self.interpret(i, self._make_compare, make_func=False, make_operate=True) for i in ss]
+
+                # Evaluate statistical function, raise error if failure occurs during computation
+                try:
+                    res = self._stat_func[s[0]](*p)
+                except:
+                    raise
+                return res
+
+            else:
+                if s[0] not in self._stat_func:
+                    raise KeyError('Invalid function \'{}\' in expression \'{}\''
+                                   ''.format(s[0], string))
+                return self._stat_func[s[0]](self.interpret(s[1], self._make_compare, make_func=False, make_operate=True))
         else:
             raise Exception('Only one function can be applied.'
                             'Problem with the term: {0}'.format(string))
