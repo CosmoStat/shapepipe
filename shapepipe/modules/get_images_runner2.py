@@ -121,6 +121,7 @@ class GetImages(object):
             output file paths, one list for each input file type
         """
 
+        c = 0
         for in_per_type, out_per_type in zip(all_inputs, all_outputs):
             for i in range(len(in_per_type)):
                 if self._check_existing_dir:
@@ -133,7 +134,9 @@ class GetImages(object):
                         self._w_log.info('{} found, skipping'
                                          ''.format(path[0]))
                         continue
-                self._w_log.info('Retrieving {}'.format(in_per_type[i]))
+                msg = '{} Retrieving {}'.format(c, in_per_type[i])
+                self._w_log.info(msg)
+                c = c + 1
                 self.retrieve_one(in_per_type[i], out_per_type[i])
 
     def retrieve_one(self, in_path, out_path):
@@ -164,7 +167,7 @@ class GetImages(object):
             dst = out_path
             os.symlink(src, dst)
             if not os.path.exists(src):
-                w_log.info('Warning: Source of symlink \'{}\' '
+                self._w_log.info('Warning: Source of symlink \'{}\' '
                            'does not exist'
                            ''.format(src))
 
