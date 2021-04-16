@@ -86,7 +86,6 @@ def merge_sep_cats_runner(input_file_list, run_dirs, file_number_string,
                 wmsg = 'Warning: {}'.format(msg)
                 w_log.info(wmsg)
                 print(wmsg)
-        
 
         # Save combined catalogue
         output_name = '{}/{}{}{}'.format(run_dirs['output'], file_pattern[idx],

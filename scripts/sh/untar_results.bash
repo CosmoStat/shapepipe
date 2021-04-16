@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Name: untar_results.ch
+# Name: untar_results.bash
 # Description: Untar .tgz files = results of ShapePipe runs
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 # Date: 05/2020
@@ -41,7 +41,6 @@ done
 
 NAMES=(
         "final_cat"
-        "${psf}_interp_exp"
         "setools_mask"
         "setools_stat"
         "setools_plot"
@@ -49,7 +48,13 @@ NAMES=(
      )
 
 if [ "$psf" == "psfex" ]; then
-  NAMES+=(psfex)
+  NAMES+=(
+          "psfex_interp_exp"
+         )
+elif [ "$psf" == "mccd" ]; then
+  NAMES+=(
+          "mccd_fit_val_runner"
+         )
 fi
 
 # Check number of files
