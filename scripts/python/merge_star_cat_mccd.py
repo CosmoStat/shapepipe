@@ -4,8 +4,8 @@
 
 """Script merge_psf_validation.py
 
-Merge single-exposure single-CCD validation PSF files.
-for testing and validating the PSF model.
+Merge single-exposure validation PSF files from MCCD.
+For testing and validating the PSF model.
 
 :Authors: Axel Guinot, Martin Kilbinger
 
