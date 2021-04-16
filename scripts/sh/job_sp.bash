@@ -18,7 +18,7 @@ do_env=0
 job=255
 psf='mccd'
 retrieve='vos'
-nsh_step=4000
+nsh_step=3500
 nsh_max=-1
 nsh_jobs=8
 
@@ -102,7 +102,7 @@ done
 
 ## Check options
 if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
-  echo "PSF (option -p) needs to be 'psf' or 'mccd'"
+  echo "PSF (option -p) needs to be 'psfex' or 'mccd'"
   exit 2
 fi
 n_tile=${#TILE_ARR[@]}
@@ -130,7 +130,7 @@ fi
 export PATH="$PATH:$VM_HOME/bin"
 
 # Results upload subdirectory on vos
-RESULTS=results_mccd
+RESULTS=results_$psf
 
 ## Path variables used in shapepipe config files
 
@@ -449,25 +449,25 @@ if [[ $do_job != 0 ]]; then
   ### Final shape catalog
 
   NAMES=(
+    "final_cat"
+    "pipeline_flag"
     "setools_mask"
     "setools_stat"
     "setools_plot"
-    "pipeline_flag"
-    "final_cat"
   )
   DIRS=(
+    "*/make_catalog_runner/output"
+    "*/mask_runner/output"
     "*/setools_runner/output/mask"
     "*/setools_runner/output/stat"
     "*/setools_runner/output/plot"
-    "*/mask_runner/output"
-    "*/make_catalog_runner/output"
   )
   PATTERNS=(
-    "*"
-    "*"
-    "*"
-    "pipeline_flag-???-???*"
     "final_cat-*"
+    "pipeline_flag-???-???*"
+    "*"
+    "*"
+    "*"
   )
 
   # PSF validation

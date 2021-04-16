@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Name: canfar_prep_tiles.sh
+# Name: prepare_tiles_for_final.bash
 # Description: Create shapepipe run directory with
 #              links to all `final_cat` fits files
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr

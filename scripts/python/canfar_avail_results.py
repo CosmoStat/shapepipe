@@ -44,6 +44,7 @@ def params_default():
     p_def = cfis.param(
         input_IDs  = '.',
         input_vos = 'cosmostat/kilbinger/results',
+        psf = 'mccd',
     )
 
     return p_def
@@ -76,6 +77,9 @@ def parse_options(p_def):
     parser.add_option('-o', '--output_not_avail', dest='output_not_avail', type='string',
          help='output file for not-available IDs, default no output')
 
+    parser.add_option('-p', '--psf', dest='psf', type='string', default=p_def.psf,
+         help='PSF model, one in [\'psfex\'|\'mccd\'], default=\'{}\''.format(p_def.psf))
+
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
 
     options, args = parser.parse_args()
@@ -96,6 +100,10 @@ def check_options(options):
     erg: bool
         Result of option check. False if invalid option value.
     """
+
+    if options.psf not in ['psfex', 'mccd']:
+        print('Invalid PSF model \'{}\''.format(option.psf))
+        return False
 
     return True
 
@@ -310,8 +318,13 @@ def main(argv=None):
 
     ID_files = read_input_files(param.input_IDs, verbose=param.verbose)
 
-    result_base_names = ['psfex', 'psfex_interp_exp', 'setools_mask', 'setools_stat', 'setools_plot',
+    result_base_names = ['setools_mask', 'setools_stat', 'setools_plot',
                          'final_cat', 'pipeline_flag', 'logs']
+
+    if param.psf == 'psfex':
+        result_base_names.append('psfex_interp_exp')
+    elif param.psf == 'mccd':
+        result_base_names.append('mccd_fit_val_runner')
 
     n_complete = len(result_base_names)
 
