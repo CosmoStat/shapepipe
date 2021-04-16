@@ -109,7 +109,7 @@ done
 
 ## Check options
 if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
-  echo "PSF (option -p) needs to be 'psf' or 'mccd'"
+  echo "PSF (option -p) needs to be 'psfex' or 'mccd'"
   exit 2
 fi
 n_tile=${#TILE_ARR[@]}
