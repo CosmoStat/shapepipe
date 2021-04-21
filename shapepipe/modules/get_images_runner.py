@@ -182,6 +182,10 @@ class GetImages(object):
 
             # Get all input file names if INPUT_FILE_PATTERN contains '*'
             all_src = glob.glob(src)
+            if len(all_src) == 0:
+                raise IndexError('No input file found corresponding to \'{}\''
+                                 ''.format(src))
+
             dst = out_path
             for src in all_src:
                 if os.path.isdir(dst):

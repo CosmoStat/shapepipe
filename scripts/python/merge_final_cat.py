@@ -25,6 +25,8 @@ from optparse import OptionParser
 
 from tqdm import tqdm
 
+import cfis
+
 
 class param:
     """General class to store (default) variables
@@ -244,6 +246,9 @@ def main(argv=None):
 
     param = update_param(p_def, options)
 
+    # Save command line arguments to log file
+    f_log = cfis.log_command(argv, close_no_return=False)
+
     path = param.input_path
 
     param.param_list = read_param_file(param.param_path, verbose=param.verbose)
@@ -300,8 +305,12 @@ def main(argv=None):
     print('Saving final catalogue')
     np.save('final_cat.npy', d)
 
+    mgs = '{} catalog files merged with success'.format(count)
     if param.verbose:
-        print('{} catalog files merged with success'.format(count))
+        print(msg)
+    print(msg, file=f_log)
+
+    f_log.close()
 
     return 0
 
