@@ -9,7 +9,7 @@
 #              machine.
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 # Date: 03/2020
-# Package: shapepipe
+# Package: ShapePipe
 
 
 ### Set-up ###
@@ -20,12 +20,12 @@
 
 if [ $# == 0 ]; then
   echo "Usages:"
-  echo "  bash canfar_sp.bash TILE_ID_1 [TILE_ID_2 [...]]"
+  echo "  bash $(basename "$0") TILE_ID_1 [TILE_ID_2 [...]]"
   echo "    TILE_ID = xxx.yyy"
   echo "    Examples:"
-  echo "      canfar_sp.bash 244.252"
-  echo "      canfar_sp.bash 244.252 239.293"
-  echo "  . canfar_sp.bash -e"
+  echo "      $(basename "$0") 244.252"
+  echo "      $(basename "$0") 244.252 239.293"
+  echo "  . $(basename "$0") -e"
   echo "    Assign environment variables"
   exit 1
 fi
@@ -81,16 +81,8 @@ else
 fi
 
 # VCP options
-# VCP without "vflag" to avoid output to stderr
-export VCP_QUICK=0
-
-if [ $VCP_QUICK == 1 ]; then
-   qflag="--quick"
-else
-   qflag=""
-fi
 export CERTFILE=$VM_HOME/.ssl/cadcproxy.pem
-export VCP="vcp $qflag --certfile=$CERTFILE"
+export VCP="vcp --certfile=$CERTFILE"
 
 
 ## Functions
@@ -129,10 +121,10 @@ function command () {
       else
          echo -e "${RED}error, return value = $res${NC}"
          if [ $STOP == 1 ]; then
-            echo "${RED}exiting 'canfar_sp.bash', error in command '$cmd'${NC}"
+            echo "${RED}exiting $(basename "$0"), error in command '$cmd'${NC}"
             exit $res
          else
-            echo "${RED}continuing 'canfar_sp.bash', error in command '$cmd'${NC}"
+            echo "${RED}continuing $(basename "$0"), error in command '$cmd'${NC}"
          fi
       fi
    fi
@@ -152,7 +144,7 @@ command_sp() {
    res=$?
    if [ $res != 0 ]; then
       upload_logs $id $verbose
-      echo "exiting 'canfar_sp.bash', '$cmd' returned $res, log files for id=$id uploaded"
+      echo "exiting '$(basename "$0"), '$cmd' returned $res, log files for id=$id uploaded"
       exit $res
    fi
 
@@ -202,10 +194,8 @@ function print_env() {
    echo "Other variables:"
    echo " VCP=$VCP"
    echo " CERTFILE=$CERTFILE"
-   echo " qflag=$qflag"
    echo " STOP=$STOP"
    echo " verbose=$VERBOSE"
-   echo " LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
    echo "***"
 }
 
@@ -217,9 +207,6 @@ echo "Activate conda 'shapepipe' environment"
 source $VM_HOME/miniconda3/bin/activate shapepipe
 
 print_env
-
-# Extra stuff for canfar
-export LD_LIBRARY_PATH=$VM_HOME/miniconda3/envs/shapepipe/lib
 
 if [ "$1" == "-e" ]; then
    echo "Exiting"

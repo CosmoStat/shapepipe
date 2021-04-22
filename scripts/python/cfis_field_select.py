@@ -324,9 +324,9 @@ def run_mode(images, param):
     if param.coord:
 
         # Image number search: Return name of image(s) covering input coordinate
-        images_found = find_image_at_coord(images, param.coord, param.band, param.image_type,
-                                           no_cuts=param.no_cuts, input_format=param.input_format,
-                                           verbose=param.verbose)
+        images_found = cfis.find_image_at_coord(images, param.coord, param.band, param.image_type,
+                                                no_cuts=param.no_cuts, input_format=param.input_format,
+                                                verbose=param.verbose)
         if len(images_found) > 0:
             if not param.short:
                 images_found[0].print_header(file=param.fout)
@@ -360,7 +360,7 @@ def run_mode(images, param):
             if param.plot == True:
                 if param.verbose == True:
                     print('Creating plots')
-                ra_c, dec_c, radius = cfis.plot_area(images_found, angles, param.image_type, param.outbase, param.interactive)
+                ra_c, dec_c, radius = cfis.plot_area(images_found, angles, param.image_type, param.outbase, param.interactive, show_numbers=True)
 
                 if param.verbose:
                     print('RA_c[deg] DEC_c[deg] radius[argmin] = {:.2f} {:.2f} {:.2f}'.format(ra_c.deg, dec_c.deg, radius*60))

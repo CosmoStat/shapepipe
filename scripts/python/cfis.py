@@ -136,6 +136,27 @@ class image():
 
         return False
 
+    def get_ID(self):
+        """get_ID
+        Return image ID.
+
+        Returns
+        -------
+        ID : string
+            image iD
+
+        Raises
+        ------
+        NoneType : if name does not match to ID pattern
+        """
+
+        m = re.search('(\d{3}).{1}(\d{3})', self.name)
+        if m is None:
+            raise NoneType('No ID match in file name {}'.format(name))
+        else:
+            return '{}.{}'.format(m[1], m[2])
+
+
 
     def print(self, file=sys.stdout, base_name=False, name_only=True, ID_only=False):
         """Print image information as ascii Table column
@@ -170,9 +191,9 @@ class image():
         print(name, end='', file=file)
 
         if not name_only:
-            if self.ra:
+            if self.ra is not None:
                 print(' {:10.2f}'.format(getattr(self.ra, unitdef)), end='', file=file)
-            if self.dec:
+            if self.dec is not None:
                 print(' {:10.2f}'.format(getattr(self.dec, unitdef)), end='', file=file)
             print(' {:5d} {:8s}'.format(self.exp_time, self.valid), end='', file=file)
         print(file=file)
@@ -758,8 +779,7 @@ def get_tile_number(tile_name):
         tile number for y
     """
 
-    #m = re.search('CFIS\.(\d{3})\.(\d{3})', tile_name)
-    m = re.search('(\d{3})\.(\d{3})', tile_name)
+    m = re.search('(\d{3})[\.-](\d{3})', tile_name)
     if m == None or len(m.groups()) != 2:
         raise CfisError('Image name \'{}\' does not match tile name syntax'.format(tile_name))
 
@@ -869,7 +889,7 @@ def get_Angle(str_coord):
 
 
 
-def get_Angle_arr(str_coord, num=-1, verbose=False):
+def get_Angle_arr(str_coord, num=-1, wrap=True, verbose=False):
     """Return array of Angles from coordinate string
 
     Parameters
@@ -878,6 +898,8 @@ def get_Angle_arr(str_coord, num=-1, verbose=False):
         string of input coordinates
     num: int, optional, default=-1
         expected number of coordinates (even number)
+    wrap: bool, optional, default=True
+        if True, wrap ra to [0; 360)
     verbose: bool, optional, default=False
         verbose output
 
@@ -893,7 +915,12 @@ def get_Angle_arr(str_coord, num=-1, verbose=False):
 
     angles = []
     for i in range(n):
-        c = SkyCoord(angles_mixed[2*i], angles_mixed[2*i+1])
+        ra = angles_mixed[2*i]
+        dec = angles_mixed[2*i+1]
+        if wrap:
+            c = SkyCoord(ra, dec)
+        else:
+            c = param(ra = Angle(ra), dec = Angle(dec))
         angles.append(c)
 
     return angles
@@ -1352,8 +1379,8 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
     ----------
     images: list of class image
         list of images
-    angles: string
-        coordinates ra0_dec0_ra1_dec1 with units
+    angles: array(2) of SkyCoord
+        coordinates [(ra0, dec0), (ra1, dec1)]
     band: string
         optical band
     image_type: string
@@ -1369,32 +1396,60 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
         found images
     """
 
-    if verbose == True:
-        print('Looking for all images within rectangle, lower left=({},{}), upper right=({},{}) deg'.format(
-              angles[0].ra.deg, angles[0].dec.deg, angles[1].ra.deg, angles[1].dec.deg))
-
     found = []
+
+    # if coordinates extend over 360:
+    #  check ranges [ra_min, 360] and [0, ra_max-360]
+    # if not:
+    #  check range [ra_min, ra_max]
+    ra_bounds = []
+    threesixty = Angle(360, unitdef)
+    if angles[1].ra > threesixty:
+        ra_bounds = [[angles[0].ra, threesixty], [Angle(0, unitdef), angles[1].ra-threesixty]]
+    else:
+        ra_bounds = [[angles[0].ra, angles[1].ra]]
+
+    if verbose == True:
+        print('Looking for all images within rectangle, '
+              'dec=({}, {}), '
+              ''.format(angles[0].dec, angles[1].dec), end='')
+        for ra_min_max in ra_bounds:
+            print('ra=[({}, {}) '.format(ra_min_max[0], ra_min_max[1]), end='')
+        print()
 
     if image_type in ('tile', 'weight', 'weight.fz'):
         for img in images:
             nix, niy = get_tile_number(img.name)
             ra, dec  = get_tile_coord_from_nixy(nix, niy)
 
-            if ra.is_within_bounds(angles[0].ra, angles[1].ra) \
-                and dec.is_within_bounds(angles[0].dec, angles[1].dec):
+            if  dec.is_within_bounds(angles[0].dec, angles[1].dec):
+                within = False
 
-                if img.ra is None or img.dec is None:
-                    img.ra  = ra
-                    img.dec = dec
+                # Check whether image is in any of the ra bound pairs
+                for (ra_min, ra_max) in ra_bounds:
+                    if ra.is_within_bounds(ra_min, ra_max):
+                        within = True
+                        break
+                if within:
+                    if img.ra is None or img.dec is None:
+                        img.ra  = ra
+                        img.dec = dec
 
-                found.append(img)
+                    found.append(img)
 
     elif image_type == 'exposure':
         for img in images:
-            if img.ra.is_within_bounds(angles[0].ra, angles[1].ra) \
-                and img.dec.is_within_bounds(angles[0].dec, angles[1].dec) \
-                and img.cut(no_cuts=no_cuts) == False:
-                    found.append(img)
+            if  img.dec.is_within_bounds(angles[0].dec, angles[1].dec):
+                within = False
+
+                # Check whether image is in any of the ra bound pairs
+                for (ra_min, ra_max) in ra_bounds:
+                    if ra.is_within_bounds(ra_min, ra_max):
+                        within = True
+                        break
+                if within:
+                    if img.cut(no_cuts=no_cuts) == False:
+                        found.append(img)
 
     else:
         raise CfisError('Image type \'{}\' not implemented yet'.format(image_type))
@@ -1421,7 +1476,8 @@ def plot_init():
     return ax
 
 
-def plot_area(images, angles, image_type, outbase, interactive, show_circle=True, ax=None, save=True):
+def plot_area(images, angles, image_type, outbase, interactive, col=None, show_numbers=False,
+              show_circle=True, ax=None, lw=None, save=True, dxy=0):
     """Plot images within area.
 
     Parameters
@@ -1436,12 +1492,18 @@ def plot_area(images, angles, image_type, outbase, interactive, show_circle=True
         output file name base
     interactive : bool
         show plot if True
+    col : string, optional, default=None
+        color
     show_circle : bool, optional, default True
         plot circle center and circumference around area if True
     ax : axes, optional, default None
         Init axes if None
+    lw : float, optional, default None
+        line width
     save : bool, optional, default=True
         save plot to pdf file if True
+    dxy : float, optional, default=0
+        shift
     """
 
     if outbase is None:
@@ -1449,7 +1511,10 @@ def plot_area(images, angles, image_type, outbase, interactive, show_circle=True
     else:
         outname = '{}.pdf'.format(outbase)
 
-    lw = 0.25
+    if not lw:
+        my_lw = 0.1
+    else:
+        my_lw = lw
     color = {'tile': 'b', 'exposure': 'g', 'weight': 'r'}
 
     if not ax:
@@ -1479,25 +1544,29 @@ def plot_area(images, angles, image_type, outbase, interactive, show_circle=True
     else:
         radius = 0
 
+    if col:
+        c  = col
+    else:
+        c = color[image_type]
+
     for img in images:
-        # Image center
         x  = img.ra.degree
         y  = img.dec.degree
-        #plt.plot(x, y, 'b.', markersize=1)
         nix, niy = get_tile_number(img.name)
-        plt.text(x, y, '{}.{}'.format(nix, niy), fontsize=3,
-                 horizontalalignment='center',
-                 verticalalignment='center')
+        if show_numbers:
+            plt.text(x, y, '{}.{}'.format(nix, niy), fontsize=3,
+                    horizontalalignment='center',
+                    verticalalignment='center')
 
         # Image boundary
         dx = size[image_type] / 2 / cos_dec_c
         dy = size[image_type] / 2
-        cx, cy = square_from_centre(x, y, dx, dy)
-        ax.plot(cx, cy, '{}-'.format(color[image_type]), linewidth=lw)
+        cx, cy = square_from_centre(x, y, dx, dy, dxy=dxy)
+        ax.plot(cx, cy, '-', color=c, linewidth=my_lw)
 
     # Area border
-    cx, cy = square_from_corners(angles[0], angles[1])
-    ax.plot(cx, cy, 'r-.', linewidth=lw)
+    #cx, cy = square_from_corners(angles[0], angles[1])
+    #ax.plot(cx, cy, 'r-.', linewidth=my_lw)
 
     plt.xlabel('R.A. [degree]')
     plt.ylabel('Declination [degree]')
@@ -1506,17 +1575,17 @@ def plot_area(images, angles, image_type, outbase, interactive, show_circle=True
 
     # Limits
     border = 0.25
-    xm = (angles[1].ra.degree + angles[0].ra.degree) / 2
+    if angles[1].ra.degree > angles[0].ra.degree:
+        xm = (angles[1].ra.degree + angles[0].ra.degree) / 2
+        dx = angles[1].ra.degree - angles[0].ra.degree
+    else:
+        dx = max(360 - angles[0].ra.deg,  angles[1].ra.deg) * 2
+        xm = ( (angles[0].ra.deg - 360) + angles[1].ra.deg ) / 2
     ym = (angles[1].dec.degree + angles[0].dec.degree) / 2
-    dx = angles[1].ra.degree - angles[0].ra.degree
     dy = angles[1].dec.degree - angles[0].dec.degree
     lim = max(dx, dy)
     plt.xlim(xm - lim/2 - border, xm + lim/2 + border)
     plt.ylim(ym - lim/2 - border, ym + lim/2 + border)
-
-    # Somehow this does not work (any more?)
-    #limits = plt.axis('equal')
-    #print(limits)
 
     if save:
         print('Saving plot to {}'.format(outname))
@@ -1528,15 +1597,15 @@ def plot_area(images, angles, image_type, outbase, interactive, show_circle=True
     return ra_c, dec_c, radius
 
 
-def square_from_centre(x, y, dx, dy):
+def square_from_centre(x, y, dx, dy, dxy=0):
     """Return coordinate vectors of corners cx, cy that define a closed square for plotting.
     """
 
-    cx = [x-dx, x+dx, x+dx, x-dx, x-dx]
-    cy = [y-dy, y-dy, y+dy, y+dy, y-dy]
+    a = dxy
+    cx = [x-dx+a, x+dx+a, x+dx+a, x-dx+a, x-dx+a]
+    cy = [y-dy+a, y-dy+a, y+dy+a, y+dy+a, y-dy+a]
 
     return cx, cy
-
 
 
 def square_from_corners(ang0, ang1):

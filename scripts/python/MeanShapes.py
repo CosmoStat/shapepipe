@@ -25,7 +25,20 @@ from astropy.io import fits
 from optparse import OptionParser
 
 import galsim
-import cfis
+
+
+class param:
+    """General class to store (default) variables
+    """
+
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)
+
+    def print(self, **kwds):
+        print(self.__dict__)
+
+    def var_list(self, **kwds):
+        return vars(self)
 
 
 def params_default():
@@ -41,10 +54,11 @@ def params_default():
         parameter values
     """
 
-    p_def = cfis.param(
+    p_def = param(
         nx = 20,
         input_path = './psf_cat_full.fits',
-        output_dir = './psf_validation'
+        output_dir = './psf_validation',
+        hdu = 2,
     )
 
     return p_def
@@ -55,7 +69,7 @@ def parse_options(p_def):
 
     Parameters
     ----------
-    p_def: class cfis.param
+    p_def: class param
         parameter values
 
     Returns
@@ -82,6 +96,9 @@ def parse_options(p_def):
          help='max value for ellipticity plots (model, star)')
     parser.add_option('', '--max_d', dest='max_d', type='float',
          help='max value for ellipticity residuals plots (model, star)')
+
+    parser.add_option('', '--hdu', dest='hdu', type='int', default=p_def.hdu,
+         help='HDU number on input, default={}'.format(p_def.hdu))
 
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
 
@@ -116,14 +133,14 @@ def update_param(p_def, options):
 
     Parameters
     ----------
-    p_def:  class cfis.param
+    p_def:  class param
         parameter values
     optiosn: tuple
         command line options
 
     Returns
     -------
-    param: class cfis.param
+    param: class param
         updated paramter values
     """
 
@@ -279,6 +296,54 @@ def MeanWhiskerPlot(ccd_maps_e1, ccd_maps_e2, filename, title=''):
     plt.close()
 
 
+def log_command(argv, name=None, close_no_return=True):
+    """Write command with arguments to a file or stdout.
+       Choose name = 'sys.stdout' or 'sys.stderr' for output on sceen.
+
+    Parameters
+    ----------
+    argv: array of strings
+        Command line arguments
+    name: string
+        Output file name (default: 'log_<command>')
+    close_no_return: bool
+        If True (default), close log file. If False, keep log file open
+        and return file handler
+
+    Returns
+    -------
+    log: filehandler
+        log file handler (if close_no_return is False)
+    """
+
+    if name is None:
+        name = 'log_' + os.path.basename(argv[0])
+
+    if name == 'sys.stdout':
+        f = sys.stdout
+    elif name == 'sys.stderr':
+        f = sys.stderr
+    else:
+        f = open(name, 'w')
+
+    for a in argv:
+
+        # Quote argument if special characters
+        if ']' in a or ']' in a:
+            a = '\"{}\"'.format(a)
+
+        print(a, end='', file=f)
+        print(' ', end='', file=f)
+
+    print('', file=f)
+
+    if close_no_return == False:
+        return f
+
+    if name != 'sys.stdout' and name != 'sys.stderr':
+        f.close()
+
+
 def main(argv=None):
     """ Compute and plot average shapes (e1, e2, R^2) on both stars and PSF model, and
     plot them on the MegaCam mosaic. Syntax:
@@ -301,9 +366,9 @@ def main(argv=None):
     param = update_param(p_def, options)
 
     # Save calling command
-    cfis.log_command(argv)
+    log_command(argv)
     if param.verbose:
-        cfis.log_command(argv, name='sys.stderr')
+        log_command(argv, name='sys.stderr')
 
 
     nb_pixel = param.nx, param.ny
@@ -315,7 +380,7 @@ def main(argv=None):
     grid = np.linspace(0, npix_x, nb_pixel[0]+1), np.linspace(0, npix_y, nb_pixel[1]+1)
 
     # Read full star catalogue
-    starcat = fits.open(starcat_path)[2].data
+    starcat = fits.open(starcat_path)[param.hdu].data
 
     # Flag mask
     star_flags = starcat['FLAG_STAR_HSM']

@@ -18,13 +18,13 @@ import os
 @module_runner(input_module=['setools_runner'],
                version='1.0',
                file_pattern=['galaxy_selection'],
-               file_ext=['.psf', '.fits'],
+               file_ext=['.npy'],
                depends=['numpy', 'astropy', 'galsim', 'sqlitedict', 'mccd'],
                run_method='parallel')
 def mccd_interp_runner(input_file_list, run_dirs, file_number_string,
                        config, w_log):
 
-    mode = config.get('MCCD_INTERP_RUNNER', 'MODE')
+    mode = config.getexpanded('MCCD_INTERP_RUNNER', 'MODE')
     pos_params = config.getlist('MCCD_INTERP_RUNNER', 'POSITION_PARAMS')
     get_shapes = config.getboolean('MCCD_INTERP_RUNNER', 'GET_SHAPES')
     mccd_model_extension = '.npy'

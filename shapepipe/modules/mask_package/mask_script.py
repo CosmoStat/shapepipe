@@ -68,31 +68,41 @@ class mask(object):
 
         self._hdu = hdu
 
-        self._get_config(self._config_filepath)                                 # Get parameters from config file
+        self._get_config()
 
         self._set_parameters()                                       # Set parameters needed for the stars detection
 
         self._err = False
 
-    def _get_config(self, config_filepath):
+    def _get_config(self):
         """Get config value
 
         Read the config file and set parameters.
 
-        Parameters
-        ----------
-        config_filepath : str
-            Path to the *.mask config file
+        Raises
+        ------
+        ValueError : not config file name
+        IOError : no config file
 
         """
 
-        if config_filepath is None:
+        if self._config_filepath is None:
             raise ValueError('No path to config file')
 
-        conf = CustomParser()
-        conf.read(config_filepath)
+        if not os.path.exists(self._config_filepath):
+            raise IOError('Config file \'{}\' not found'
+                          ''.format(self._config_filepath))
 
-        self._config = {'PATH': {}, 'BORDER': {}, 'HALO': {}, 'SPIKE': {}, 'MESSIER': {}, 'MD': {}, 'EXTERNAL_FLAG': {}}
+        conf = CustomParser()
+        conf.read(self._config_filepath)
+
+        self._config = {'PATH': {},
+                        'BORDER': {},
+                        'HALO': {},
+                        'SPIKE': {},
+                        'MESSIER': {},
+                        'MD': {},
+                        'EXTERNAL_FLAG': {}}
 
         self._config['PATH']['WW'] = conf.getexpanded('PROGRAM_PATH', 'WW_PATH')
         self._config['PATH']['WW_configfile'] = conf.getexpanded('PROGRAM_PATH', 'WW_CONFIG_FILE')

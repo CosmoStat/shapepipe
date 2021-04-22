@@ -53,8 +53,8 @@ class vosHandler:
         """
 
         if import_fail:
-            raise ImportError('vos modules not found, re-install ShapePipe '
-                              'with \'install_pipeline --vos\'')
+            raise ImportError('vos package not found, re-install ShapePipe '
+                              'with \'./install_shapepipe --vos\'')
 
     @property
     def command(self):
