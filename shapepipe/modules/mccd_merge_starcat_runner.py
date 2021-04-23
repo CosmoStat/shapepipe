@@ -60,7 +60,7 @@ def mccd_merge_starcat_runner(input_file_list, run_dirs, file_number_string,
                 my_mask[i, j] = True
 
     for name in input_file_list:
-        starcat_j = fits.open(name[0])
+        starcat_j = fits.open(name[0], memmap=False)
 
         stars = np.copy(starcat_j[hdu_table].data['VIGNET_LIST'])
         stars[stars < -1e6] = 0
