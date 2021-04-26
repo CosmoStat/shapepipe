@@ -4,8 +4,8 @@
 
 """Script merge_psf_validation.py
 
-Merge single-exposure single-CCD validation PSF files.
-for testing and validating the PSF model.
+Merge single-exposure validation PSF files from MCCD.
+For testing and validating the PSF model.
 
 :Authors: Axel Guinot, Martin Kilbinger
 
@@ -19,15 +19,27 @@ from shapepipe.pipeline.execute import execute
 
 import os
 import sys
-import re
 import copy
 
 import numpy as np
 from optparse import OptionParser
 from astropy.io import fits
 
-import cfis
 from shapepipe.pipeline import file_io as sc
+
+
+class param:
+    """General class to store (default) variables
+    """
+
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)
+
+    def print(self, **kwds):
+        print(self.__dict__)
+
+    def var_list(self, **kwds):
+        return vars(self)
 
 
 def params_default():
@@ -43,7 +55,7 @@ def params_default():
         parameter values
     """
 
-    p_def = cfis.param(
+    p_def = param(
         input_file_pattern = 'validation_psf',
         output_path = './psf_cat_full.fits'
     )
@@ -56,7 +68,7 @@ def parse_options(p_def):
 
     Parameters
     ----------
-    p_def: class cfis.param
+    p_def: class param
         parameter values
 
     Returns
@@ -109,14 +121,14 @@ def update_param(p_def, options):
 
     Parameters
     ----------
-    p_def:  class cfis.param
+    p_def:  class param
         parameter values
     optiosn: tuple
         command line options
 
     Returns
     -------
-    param: class cfis.param
+    param: class param
         updated paramter values
     """
 
@@ -163,12 +175,10 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
         print('Found {} files'.format(len(starcat_names)))
 
     # Initialise columns to be saved
-    x, y, ra, dec = [], [], [], []
+    ra, dec = [], []
     g1_psf, g2_psf, size_psf = [], [], []
     g1, g2, size = [], [], []
     flag_psf, flag_star = [], []
-    mag, snr, psfex_acc = [], [], []
-    ccd_nb = []
 
     if verbose:
         print('Reading input FITS PSF catalogues...')
@@ -177,30 +187,23 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
         starcat_j = fits.open(name)
 
         # positions
-        x += list(starcat_j[2].data['X'])
-        y += list(starcat_j[2].data['Y'])
-        ra += list(starcat_j[2].data['RA'])
-        dec += list(starcat_j[2].data['DEC'])
+        ra += list(starcat_j[1].data['RA_LIST'])
+        dec += list(starcat_j[1].data['DEC_LIST'])
 
         # shapes (convert sigmas to R^2)
-        g1_psf += list(starcat_j[2].data['E1_PSF_HSM'])
-        g2_psf += list(starcat_j[2].data['E2_PSF_HSM'])
-        size_psf += list(starcat_j[2].data['SIGMA_PSF_HSM']**2)
-        g1 += list(starcat_j[2].data['E1_STAR_HSM'])
-        g2 += list(starcat_j[2].data['E2_STAR_HSM'])
-        size += list(starcat_j[2].data['SIGMA_STAR_HSM']**2)
+        g1_psf += list(starcat_j[1].data['PSF_MOM_LIST'][0])
+        g2_psf += list(starcat_j[1].data['PSF_MOM_LIST'][1])
+        size_psf += list(starcat_j[1].data['PSF_MOM_LIST'][2]**2)
+        g1 += list(starcat_j[1].data['STAR_MOM_LIST'][0])
+        g2 += list(starcat_j[1].data['STAR_MOM_LIST'][1])
+        size += list(starcat_j[1].data['STAR_MOM_LIST'][2]**2)
 
         # flags
-        flag_psf += list(starcat_j[2].data['FLAG_PSF_HSM'])
-        flag_star += list(starcat_j[2].data['FLAG_STAR_HSM'])
-
-        # misc
-        mag += list(starcat_j[2].data['MAG'])
-        snr += list(starcat_j[2].data['SNR'])
-        psfex_acc += list(starcat_j[2].data['ACCEPTED'])
+        flag_psf += list(starcat_j[1].data['PSF_MOM_LIST'][3])
+        flag_star += list(starcat_j[1].data['STAR_MOM_LIST'][3])
 
         # CCD number
-        ccd_nb += [re.split(r"\-([0-9]*)\-([0-9]+)\.", name)[-2]]*len(starcat_j[2].data['RA'])
+        ccd_nb = list(starcat_j[1].data['CCD_ID_LIST'])
 
     # Prepare output FITS catalogue
     output = sc.FITSCatalog(output_path,
@@ -208,17 +211,64 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
 
     # Collect columns
     # convert back to sigma for consistency
-    data = {'X': x, 'Y': y, 'RA': ra, 'DEC': dec,
+    data = {'RA': ra, 'DEC': dec,
             'E1_PSF_HSM': g1_psf, 'E2_PSF_HSM': g2_psf, 'SIGMA_PSF_HSM': np.sqrt(size_psf),
             'E1_STAR_HSM': g1, 'E2_STAR_HSM': g2, 'SIGMA_STAR_HSM': np.sqrt(size),
             'FLAG_PSF_HSM': flag_psf, 'FLAG_STAR_HSM': flag_star,
-            'MAG': mag, 'SNR': snr, 'ACCEPTED': psfex_acc,
             'CCD_NB': ccd_nb}
 
     # Write file
     if verbose:
         print('Writing full PSF catalog file {}...'.format(output_path))
     output.save_as_fits(data)
+
+
+def log_command(argv, name=None, close_no_return=True):
+    """Write command with arguments to a file or stdout.
+       Choose name = 'sys.stdout' or 'sys.stderr' for output on sceen.
+
+    Parameters
+    ----------
+    argv: array of strings
+        Command line arguments
+    name: string
+        Output file name (default: 'log_<command>')
+    close_no_return: bool
+        If True (default), close log file. If False, keep log file open
+        and return file handler
+
+    Returns
+    -------
+    log: filehandler
+        log file handler (if close_no_return is False)
+    """
+
+    if name is None:
+        name = 'log_' + os.path.basename(argv[0])
+
+    if name == 'sys.stdout':
+        f = sys.stdout
+    elif name == 'sys.stderr':
+        f = sys.stderr
+    else:
+        f = open(name, 'w')
+
+    for a in argv:
+
+        # Quote argument if special characters
+        if ']' in a or ']' in a:
+            a = '\"{}\"'.format(a)
+
+        print(a, end='', file=f)
+        print(' ', end='', file=f)
+
+    print('', file=f)
+
+    if close_no_return == False:
+        return f
+
+    if name != 'sys.stdout' and name != 'sys.stderr':
+        f.close()
 
 
 def main(argv=None):
@@ -237,9 +287,9 @@ def main(argv=None):
     param = update_param(p_def, options)
 
     # Save calling command
-    cfis.log_command(argv)
+    log_command(argv)
     if param.verbose:
-        cfis.log_command(argv, name='sys.stdout')
+        log_command(argv, name='sys.stdout')
 
     create_full_cat(param.input_dir, param.input_file_pattern, param.output_path, verbose=param.verbose)
 

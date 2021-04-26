@@ -149,9 +149,9 @@ def plot_meanshapes(starcat_path, output_path, nb_pixel, w_log,
     if remove_outliers:
         shape_std_max = 5.
         # Outlier rejection based on the size
-        R2_thresh = shape_std_max * np.std(all_psf_shapes[2, :]) + np.mean(
-            all_psf_shapes[2, :])
-        bad_stars = (abs(all_psf_shapes[2, :]) > R2_thresh)
+        R2_thresh = shape_std_max * np.std(all_star_shapes[2, :]) + np.mean(
+            all_star_shapes[2, :])
+        bad_stars = (abs(all_star_shapes[2, :]) > R2_thresh)
         bad_stars_idx = np.nonzero(bad_stars)[0]
         w_log.info('Nb of outlier stars: %d' % (np.sum(bad_stars)))
         # Remove outlier PSFs

@@ -399,19 +399,6 @@ def save_vignet(vign, sexcat_path, output_dir, suffix, image_num):
     f.save_as_fits(vign, names=['VIGNET'], sex_cat_path=sexcat_path)
 
 
-def get_image_dir(output_dir, input_module_list):
-    """
-    """
-
-    # output_dir = '/Users/aguinot/Desktop/pipetest3/shapepipe_run_2019-07-15_13-22-37/vignetmaker_runner2/output'
-
-    # return ['/' + '/'.join(re.split('/', output_dir)[1:-2]) + '/' + input_module for input_module in input_module_list]
-    return ['/s03data2/guinot/pipeline_output/shapepipe_run_2019-07-29_13-17-18/mask_runner_exp/output',
-            '/s03data2/guinot/pipeline_output/shapepipe_run_2019-07-25_16-24-06/split_exp_runner/output',
-            '/s03data2/guinot/pipeline_output/shapepipe_run_2019-07-25_16-24-06/split_exp_runner/output',
-            '/s03data2/guinot/pipeline_output/shapepipe_run_2019-07-30_17-28-27/sextractor_runner_exp/output']
-
-
 @module_runner(input_module='sextractor_runner',
                file_pattern=['galaxy_selection', 'image'],
                file_ext=['.fits', '.fits'],

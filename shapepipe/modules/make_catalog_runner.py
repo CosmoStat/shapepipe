@@ -520,7 +520,7 @@ def make_catalog_runner(input_file_list, run_dirs, file_number_string,
         if shape_type.lower() not in ["ngmix", "galsim"]:
             raise ValueError("SHAPE_MEASUREMENT_TYPE must be in [ngmix, galsim]")
 
-    if config.hasoption('MAKE_CATALOG_RUNNER', 'TILE_LIST'):
+    if config.has_option('MAKE_CATALOG_RUNNER', 'TILE_LIST'):
         tile_list_path = config.getexpanded("MAKE_CATALOG_RUNNER", "TILE_LIST")
     else:
         tile_list_path = None
