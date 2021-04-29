@@ -1,18 +1,12 @@
 ShapePipe
 =========
 
-|travis| |python35| |python36| |python37|
+|CI| |python38|
 
-.. |travis| image:: https://travis-ci.com/CosmoStat/shapepipe.svg?branch=master
-  :target: https://travis-ci.com/CosmoStat/shapepipe
+.. |CI| image:: https://github.com/CosmoStat/shapepipe/workflows/CI/badge.svg
+  :target: https://github.com/CosmoStat/shapepipe/actions?query=workflow%3ACI
 
-.. |python35| image:: https://img.shields.io/badge/python-3.5-yellow.svg
-  :target: https://www.python.org/
-
-.. |python36| image:: https://img.shields.io/badge/python-3.6-yellow.svg
-  :target: https://www.python.org/
-
-.. |python37| image:: https://img.shields.io/badge/python-3.7-yellow.svg
+.. |python38| image:: https://img.shields.io/badge/python-3.8-green.svg
   :target: https://www.python.org/
 
 :Version: 0.0.3
@@ -46,7 +40,7 @@ Contents
 
    a. `Modules`_
    b. `Examples`_
-   
+
 5. `Additional Documentation <docs/wiki/shapepipe.md>`_
 
 Dependencies
