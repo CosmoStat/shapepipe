@@ -233,6 +233,16 @@ check_binary2() {
   echo ""
 }
 
+# Check if a python site-package is installed correctly in the conda environment
+check_site_pkg() {
+  if compgen -G "$CONDA_PREFIX/lib/python3.8/site-packages/$1*" > /dev/null
+  then
+    echo -ne "   - $1:\t \xe2\x9c\x85\n"
+  else
+    echo -ne "   - $1:\t \xe2\x9d\x8c\n"
+  fi
+}
+
 # Function to report progress
 report_progress() {
   echo ''
@@ -262,7 +272,24 @@ packages() {
   check_binary2 $ww_bin "WeightWatcher" $ww_version $INSTALL_WW
   check_binary2 $cdsclient_bin "CDSclient" $cdsclient_version $INSTALL_CDSCLIENT
   check_binary2 $mpi_bin "MPI" $mpi_version $USE_MPI $MPI_ROOT
-  check_binary2 "shapepipe_run" "ShapePipe" TRUE TRUE
+  check_binary2 "shapepipe_run" "ShapePipe_Run" TRUE TRUE
+}
+
+site-packages() {
+  check_site_pkg "shapepipe"
+  check_site_pkg "astropy"
+  check_site_pkg "galsim"
+  check_site_pkg "joblib"
+  check_site_pkg "mccd"
+  check_site_pkg "ngmix"
+  check_site_pkg "numpy"
+  check_site_pkg "pandas"
+  check_site_pkg "pysap"
+  check_site_pkg "scipy"
+  check_site_pkg "sf_tools"
+  check_site_pkg "sip_tpv"
+  check_site_pkg "sqlitedict"
+  check_site_pkg "treecorr"
 }
 
 # Function to return exit code
@@ -304,6 +331,10 @@ finish() {
   echo 'Installation Complete!'
   echo ''
   packages
+  echo 'Python Package Check List:'
+  echo ''
+  site-packages
+  echo ''
   echo $line
   echo ''
   exit_code
