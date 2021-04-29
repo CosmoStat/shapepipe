@@ -32,8 +32,10 @@ psfex_bin="psfex"
 psfex_version=TRUE
 
 # WeightWatcher Package
-ww_url="https://www.astromatic.net/download/weightwatcher/weightwatcher-1.12.tar.gz"
-ww_tar="weightwatcher-1.12.tar.gz"
+# ww_url="https://www.astromatic.net/download/weightwatcher/weightwatcher-1.12.tar.gz"
+ww_url="http://snapshot.debian.org/archive/debian/20171211T160522Z/pool/main/w/weightwatcher/weightwatcher_1.12.orig.tar.gz"
+# ww_tar="weightwatcher-1.12.tar.gz"
+ww_tar="weightwatcher_1.12.orig.tar.gz"
 ww_dir="weightwatcher-1.12"
 ww_bin="ww"
 ww_version=TRUE
@@ -70,7 +72,7 @@ BASH_SCRIPTS=(
   post_proc_sp.bash
   psf_residuals.bash
   prepare_tiles_for_final.bash
-  canfar_download_results.bash 
+  canfar_download_results.bash
   untar_results.bash
 )
 
