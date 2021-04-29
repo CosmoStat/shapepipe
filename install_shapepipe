@@ -618,7 +618,6 @@ if [ "$SYSOS" == "macOS" ]
 then
   report_progress 'macOS Requirements'
   conda install -n $ENV_NAME wget -y
-  conda install -n $ENV_NAME automake autoconf libtool -y
   export C_INCLUDE_PATH=$CONDA_PREFIX/include
   export CFLAGS="-Wl,-rpath,$CONDA_PREFIX/lib"
   export CPPFLAGS="-Wno-everything"
@@ -666,7 +665,6 @@ fi
 if [ "$INSTALL_PSFEX" == TRUE ] && check_binary $psfex_bin
 then
   report_progress 'PSFEx'
-  conda install cmake -y
   conda install libpng -y
   conda install -n $ENV_NAME -c conda-forge fftw -y
   download_package $psfex_url $psfex_tar
