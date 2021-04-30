@@ -13,7 +13,7 @@ dependencies:
   - libtool==2.4.6
   - matplotlib==3.3.4
   - pip:
-    - mccd==0.0.3
+    - mccd==0.0.4
     - modopt==1.5.1
     - numba==0.53.1
     - pandas==1.2.4
