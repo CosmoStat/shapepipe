@@ -49,11 +49,6 @@ For the installation of `astromatic` software (`SExtractor`, `PSFEx`) the `BLAS`
 module load intel/19.0
 ```
 
-To install `pysap`, version 3 or higher of `cmake` needs to be loaded, the default is still 2.8,
-```bash
-module load cmake
-```
-
 > You can add these commands to your `.bash_profile` to ensure that this module is available when you log in.
 
 You can list the modules already loaded by running:
