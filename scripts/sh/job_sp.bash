@@ -362,7 +362,7 @@ if [[ $do_job != 0 ]]; then
   ### The following are very a bad hacks to get additional input file paths
   if [ "$psf" == "psfex" ]; then
     #input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
-    input_psfex=``ls -1 ./output/*/psfex_runner/output/star_split_ratio_80*.psf | head -n 1`
+    input_psfex=`ls -1 ./output/*/psfex_runner/output/star_split_ratio_80*.psf | head -n 1`
     command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output"
   else
     input_psf_mccd=`find . -name "fitted_model*.npy" | head -n 1`
