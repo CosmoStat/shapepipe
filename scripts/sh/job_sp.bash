@@ -16,7 +16,7 @@
 ## Default values
 do_env=0
 job=255
-psf='mccd'
+psf='psfex'
 retrieve='vos'
 nsh_step=3500
 nsh_max=-1
