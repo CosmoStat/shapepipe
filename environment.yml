@@ -1,10 +1,10 @@
-name: sptest
+name: shapepipe
 channels:
   - conda-forge
   - defaults
 dependencies:
   - python=3.7
-  - astropy=4.1
+  - astropy>=3.0
   - galsim>=2.1.4
   - joblib>=0.13
   - matplotlib>=3.0.2
@@ -24,5 +24,6 @@ dependencies:
     - PyQt5>=5.15.1
     - pyqtgraph>=0.11.0
     - python-pysap>=0.0.4
+    - mccd>=0.0.3
     - treecorr>=4.1.5
     - git+https://github.com/tobias-liaudat/Stile
