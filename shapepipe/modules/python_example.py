@@ -12,6 +12,20 @@ import time
 from numpy.random import randint
 from shapepipe.modules.module_decorator import module_runner
 
+# Test import of key dependencies
+import astropy
+import galsim
+import joblib
+import mccd
+import ngmix
+import pandas
+import pysap
+import scipy
+import sf_tools
+import sip_tpv
+import sqlitedict
+import treecorr
+
 
 class Dummy(object):
 
