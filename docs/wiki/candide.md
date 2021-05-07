@@ -24,7 +24,7 @@ To request and account on CANDIDE send an email to [Henry Joy McCracken](mailto:
 
 ### SSH
 
-Please refer to http://www.cosmostat.org/privates/computing-resources/candide how to ssh to the candide cluster.
+Please refer to  https://candideusers.calet.org how to ssh to the candide cluster.
 
 ## Installation
 
