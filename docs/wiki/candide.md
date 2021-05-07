@@ -24,11 +24,7 @@ To request and account on CANDIDE send an email to [Henry Joy McCracken](mailto:
 
 ### SSH
 
-Once you have an account on CANDIDE you can connect via SSH as follows:
-
-```bash
-$ ping -c 1 -s 999 candide.iap.fr; ssh <mylogin>@candide.iap.fr
-```
+Please refer to http://www.cosmostat.org/privates/computing-resources/candide how to ssh to the candide cluster.
 
 ## Installation
 
@@ -47,11 +43,6 @@ $ module load intelpython/3-2020.1
 For the installation of `astromatic` software (`SExtractor`, `PSFEx`) the `BLAS` library is required. This is made available by loading the Intel MLK module,
 ```bash
 module load intel/19.0
-```
-
-To install `pysap`, version 3 or higher of `cmake` needs to be loaded, the default is still 2.8,
-```bash
-module load cmake
 ```
 
 > You can add these commands to your `.bash_profile` to ensure that this module is available when you log in.
