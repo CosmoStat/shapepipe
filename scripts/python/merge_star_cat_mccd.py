@@ -175,6 +175,7 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
         print('Found {} files'.format(len(starcat_names)))
 
     # Initialise columns to be saved
+    x, y = [], []
     ra, dec = [], []
     g1_psf, g2_psf, size_psf = [], [], []
     g1, g2, size = [], [], []
@@ -187,6 +188,9 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
         starcat_j = fits.open(name)
 
         # positions
+        x += list(starcat_j[1].data['GLOB_POSITION_IMG_LIST'][:, 0])
+        y += list(starcat_j[1].data['GLOB_POSITION_IMG_LIST'][:, 1])
+
         ra += list(starcat_j[1].data['RA_LIST'])
         dec += list(starcat_j[1].data['DEC_LIST'])
 
@@ -211,7 +215,7 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
 
     # Collect columns
     # convert back to sigma for consistency
-    data = {'RA': ra, 'DEC': dec,
+    data = {'X': x, 'Y': y, 'RA': ra, 'DEC': dec,
             'E1_PSF_HSM': g1_psf, 'E2_PSF_HSM': g2_psf, 'SIGMA_PSF_HSM': np.sqrt(size_psf),
             'E1_STAR_HSM': g1, 'E2_STAR_HSM': g2, 'SIGMA_STAR_HSM': np.sqrt(size),
             'FLAG_PSF_HSM': flag_psf, 'FLAG_STAR_HSM': flag_star,
