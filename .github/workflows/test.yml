@@ -34,3 +34,4 @@ jobs:
         run: |
           conda activate shapepipe
           python setup.py test
+          shapepipe_run -c example/config.ini
