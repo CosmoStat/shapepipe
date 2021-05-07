@@ -12,20 +12,6 @@ import time
 from numpy.random import randint
 from shapepipe.modules.module_decorator import module_runner
 
-# Test import of key dependencies
-import astropy
-import galsim
-import joblib
-import mccd
-import ngmix
-import pandas
-import pysap
-import scipy
-import sf_tools
-import sip_tpv
-import sqlitedict
-import treecorr
-
 
 class Dummy(object):
 
@@ -65,8 +51,27 @@ class Dummy(object):
         text_file.close()
 
 
-@module_runner(version='1.0', file_pattern=['numbers', 'letters'],
-               file_ext='.txt', depends='numpy', run_method='parallel')
+@module_runner(
+    version='1.0',
+    file_pattern=['numbers', 'letters'],
+    file_ext='.txt',
+    depends=[
+        'numpy',
+        'astropy',
+        'galsim',
+        'joblib',
+        'mccd',
+        'ngmix',
+        'pandas',
+        'pysap',
+        'scipy',
+        'sf_tools',
+        'sip_tpv',
+        'sqlitedict',
+        'treecorr',
+    ],
+    run_method='parallel'
+)
 def python_example(input_file_list, run_dirs, file_number_string,
                    config, w_log):
 
