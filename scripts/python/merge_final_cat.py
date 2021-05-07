@@ -305,7 +305,7 @@ def main(argv=None):
     print('Saving final catalogue')
     np.save('final_cat.npy', d)
 
-    mgs = '{} catalog files merged with success'.format(count)
+    msg = '{} catalog files merged with success'.format(count)
     if param.verbose:
         print(msg)
     print(msg, file=f_log)
