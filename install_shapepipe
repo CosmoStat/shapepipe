@@ -9,7 +9,7 @@ LC_CTYPE=en_US.utf8
 #
 ##############################################################################
 
-version="1.3"
+version="1.4"
 
 ##############################################################################
 # EXTERNAL PACKAGES AND SCRIPTS
@@ -32,8 +32,10 @@ psfex_bin="psfex"
 psfex_version=TRUE
 
 # WeightWatcher Package
-ww_url="https://www.astromatic.net/download/weightwatcher/weightwatcher-1.12.tar.gz"
-ww_tar="weightwatcher-1.12.tar.gz"
+# ww_url="https://www.astromatic.net/download/weightwatcher/weightwatcher-1.12.tar.gz"
+ww_url="http://snapshot.debian.org/archive/debian/20171211T160522Z/pool/main/w/weightwatcher/weightwatcher_1.12.orig.tar.gz"
+# ww_tar="weightwatcher-1.12.tar.gz"
+ww_tar="weightwatcher_1.12.orig.tar.gz"
 ww_dir="weightwatcher-1.12"
 ww_bin="ww"
 ww_version=TRUE
@@ -70,7 +72,7 @@ BASH_SCRIPTS=(
   post_proc_sp.bash
   psf_residuals.bash
   prepare_tiles_for_final.bash
-  canfar_download_results.bash 
+  canfar_download_results.bash
   untar_results.bash
 )
 
@@ -231,6 +233,16 @@ check_binary2() {
   echo ""
 }
 
+# Check if a python site-package is installed correctly in the conda environment
+check_site_pkg() {
+  if compgen -G "$CONDA_PREFIX/lib/python3.8/site-packages/$1*" > /dev/null
+  then
+    echo -ne "   - $1:\t \xe2\x9c\x85\n"
+  else
+    echo -ne "   - $1:\t \xe2\x9d\x8c\n"
+  fi
+}
+
 # Function to report progress
 report_progress() {
   echo ''
@@ -260,7 +272,24 @@ packages() {
   check_binary2 $ww_bin "WeightWatcher" $ww_version $INSTALL_WW
   check_binary2 $cdsclient_bin "CDSclient" $cdsclient_version $INSTALL_CDSCLIENT
   check_binary2 $mpi_bin "MPI" $mpi_version $USE_MPI $MPI_ROOT
-  check_binary2 "shapepipe_run" "ShapePipe" TRUE TRUE
+  check_binary2 "shapepipe_run" "ShapePipe_Run" TRUE TRUE
+}
+
+site-packages() {
+  check_site_pkg "shapepipe"
+  check_site_pkg "astropy"
+  check_site_pkg "galsim"
+  check_site_pkg "joblib"
+  check_site_pkg "mccd"
+  check_site_pkg "ngmix"
+  check_site_pkg "numpy"
+  check_site_pkg "pandas"
+  check_site_pkg "pysap"
+  check_site_pkg "scipy"
+  check_site_pkg "sf_tools"
+  check_site_pkg "sip_tpv"
+  check_site_pkg "sqlitedict"
+  check_site_pkg "treecorr"
 }
 
 # Function to return exit code
@@ -302,6 +331,10 @@ finish() {
   echo 'Installation Complete!'
   echo ''
   packages
+  echo 'Python Package Check List:'
+  echo ''
+  site-packages
+  echo ''
   echo $line
   echo ''
   exit_code
@@ -616,7 +649,6 @@ if [ "$SYSOS" == "macOS" ]
 then
   report_progress 'macOS Requirements'
   conda install -n $ENV_NAME wget -y
-  conda install -n $ENV_NAME automake autoconf libtool -y
   export C_INCLUDE_PATH=$CONDA_PREFIX/include
   export CFLAGS="-Wl,-rpath,$CONDA_PREFIX/lib"
   export CPPFLAGS="-Wno-everything"
@@ -664,7 +696,6 @@ fi
 if [ "$INSTALL_PSFEX" == TRUE ] && check_binary $psfex_bin
 then
   report_progress 'PSFEx'
-  conda install cmake -y
   conda install libpng -y
   conda install -n $ENV_NAME -c conda-forge fftw -y
   download_package $psfex_url $psfex_tar
