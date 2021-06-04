@@ -244,7 +244,7 @@ def main(argv=None):
 
     input_IDs = read_ID_list(param.input_IDs, verbose=param.verbose)
 
-    result_base_names = ['psfex', 'psfex_interp_exp', 'setools_mask', 'setools_stat', 'setools_plot',
+    result_base_names = ['psfex_interp_exp', 'setools_mask', 'setools_stat', 'setools_plot',
                          'pipeline_flag', 'final_cat', 'logs']
 
     if os.path.isdir(param.output_dir):
