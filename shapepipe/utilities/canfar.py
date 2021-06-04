@@ -8,6 +8,9 @@ This module defines methods for managing CANFAR specific actions.
 
 """
 
+import os
+import sys  
+
 try:
     import vos.commands as vosc
 except ImportError:  # pragma: no cover
@@ -88,3 +91,33 @@ class vosHandler:
         except:
             raise vosError('Error in VOs command: {}'
                            ''.format(self._command.__name__))
+
+def download(source, target, verbose=False):
+    """Download file from vos.
+
+    Parameters
+    ----------
+    source : string
+        source path on vos
+    target : string
+        target path
+    verbose : bool, optional, default=False
+        verbose output if True
+
+    Returns
+    -------
+    status : bool
+        status, True/False or success/failure
+    """
+
+    if not os.path.exists(target):
+        sys.argv = ['vcp', source, target]
+        if verbose:
+            print('Downloading file {} to {}...'.format(source, target))
+        vcp = vosHandler('vcp')
+        vcp()
+        if verbose:
+            print('Download finished.')
+    else:
+        if verbose:
+            print('Target file {} exists, skipping download.'.format(target))
