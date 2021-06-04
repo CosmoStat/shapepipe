@@ -25,7 +25,7 @@ from optparse import OptionParser
 
 from tqdm import tqdm
 
-import cfis
+from shapepipe.utilities import cfis
 
 
 class param:
@@ -270,16 +270,8 @@ def main(argv=None):
     for key in d_tmp.dtype.names:
         d[key] = d_tmp[key]
     count = count + 1
-    print('File \'{}\' copied ({}/{})'.format(lpath[0], count, len(lpath)))
-
-    #new_dt = np.dtype(d_tmp.dtype.descr + [('TILE_ID', '>i4')])
-    #d = np.zeros(d_tmp.shape, dtype=new_dt)
-
-    #if 'TILE_ID' in d_tmp.dtype.names:
-        #d['TILE_ID'].fill(int(''.join(re.findall('\d+', l[0]))))
-
-    # Read all final catalogues and merge
-    #for i in tqdm(lpath[1:], total=len(lpath)-1):
+    if param.verbose:
+        print('File \'{}\' copied ({}/{})'.format(lpath[0], count, len(lpath)))
 
     for i in lpath[1:]:
         if ('final_cat' not in i) | ('.npy' in i):
@@ -292,17 +284,16 @@ def main(argv=None):
             for key in d_tmp.dtype.names:
                 dd[key] = d_tmp[key]
             count = count + 1
-            print('File \'{}\' copied ({}/{})'.format(i, count, len(lpath)))
-
-            #if 'TILE_ID' in d_tmp.dtype.names:
-                #dd['TILE_ID'].fill(int(''.join(re.findall('\d+', i))))
+            if param.verbose:
+                print('File \'{}\' copied ({}/{})'.format(i, count, len(lpath)))
 
             d = np.concatenate((d, dd))
         except:
             print('Error while copying file \'{}\''.format(i))
 
     # Save merged catalogue as numpy binary file
-    print('Saving final catalogue')
+    if param.verbose:
+        print('Saving final catalogue')
     np.save('final_cat.npy', d)
 
     msg = '{} catalog files merged with success'.format(count)

@@ -191,20 +191,20 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
         x += list(starcat_j[1].data['GLOB_POSITION_IMG_LIST'][:, 0])
         y += list(starcat_j[1].data['GLOB_POSITION_IMG_LIST'][:, 1])
 
-        ra += list(starcat_j[1].data['RA_LIST'])
-        dec += list(starcat_j[1].data['DEC_LIST'])
+        ra += list(starcat_j[1].data['RA_LIST'][:])
+        dec += list(starcat_j[1].data['DEC_LIST'][:])
 
         # shapes (convert sigmas to R^2)
-        g1_psf += list(starcat_j[1].data['PSF_MOM_LIST'][0])
-        g2_psf += list(starcat_j[1].data['PSF_MOM_LIST'][1])
-        size_psf += list(starcat_j[1].data['PSF_MOM_LIST'][2]**2)
-        g1 += list(starcat_j[1].data['STAR_MOM_LIST'][0])
-        g2 += list(starcat_j[1].data['STAR_MOM_LIST'][1])
-        size += list(starcat_j[1].data['STAR_MOM_LIST'][2]**2)
+        g1_psf += list(starcat_j[1].data['PSF_MOM_LIST'][:,0])
+        g2_psf += list(starcat_j[1].data['PSF_MOM_LIST'][:,1])
+        size_psf += list(starcat_j[1].data['PSF_MOM_LIST'][:,2]**2)
+        g1 += list(starcat_j[1].data['STAR_MOM_LIST'][:,0])
+        g2 += list(starcat_j[1].data['STAR_MOM_LIST'][:,1])
+        size += list(starcat_j[1].data['STAR_MOM_LIST'][:,2]**2)
 
         # flags
-        flag_psf += list(starcat_j[1].data['PSF_MOM_LIST'][3])
-        flag_star += list(starcat_j[1].data['STAR_MOM_LIST'][3])
+        flag_psf += list(starcat_j[1].data['PSF_MOM_LIST'][:,3])
+        flag_star += list(starcat_j[1].data['STAR_MOM_LIST'][:,3])
 
         # CCD number
         ccd_nb = list(starcat_j[1].data['CCD_ID_LIST'])

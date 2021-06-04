@@ -17,7 +17,7 @@ import copy
 import io
 from contextlib import redirect_stdout
 from optparse import OptionParser
-import cfis
+from shapepipe.utilities import cfis
 from shapepipe.utilities.file_system import mkdir
 
 
