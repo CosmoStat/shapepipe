@@ -8,11 +8,9 @@ CFIS module
 :Authors: Martin Kilbinger
 
 :Date: 19/01/2018
+
+:Package: ShapePipe
 """
-
-# Compability with python2.x for x>6
-from __future__ import print_function
-
 
 import re
 import sys
@@ -31,7 +29,6 @@ from astropy.coordinates import Angle
 from astropy.coordinates import SkyCoord
 
 from shapepipe.utilities.file_system import mkdir
-
 
 unitdef = 'degree'
 
@@ -58,7 +55,6 @@ class param:
 
     def var_list(self, **kwds):
         return vars(self)
-
 
 
 class CfisError(Exception):
@@ -106,7 +102,6 @@ class image():
             self.valid = 'Unknown'
         else:
             self.valid = valid
-
 
     def cut(self, no_cuts=False):
         """Return True (False) if image does (not) need to be cut from selection.
@@ -156,8 +151,6 @@ class image():
         else:
             return '{}.{}'.format(m[1], m[2])
 
-
-
     def print(self, file=sys.stdout, base_name=False, name_only=True, ID_only=False):
         """Print image information as ascii Table column
 
@@ -197,7 +190,6 @@ class image():
                 print(' {:10.2f}'.format(getattr(self.dec, unitdef)), end='', file=file)
             print(' {:5d} {:8s}'.format(self.exp_time, self.valid), end='', file=file)
         print(file=file)
-
 
     def print_header(self, file=sys.stdout):
         """Print header for ascii Table output
@@ -388,7 +380,6 @@ def check_error_stop(ex_list, verbose=True, stop=False):
     else:
         s = sum([abs(i) for i in ex_list])
 
-
     # Evaluate exit codes
     if s > 0:
         n_ex = sum([1 for i in ex_list if i != 0])
@@ -473,7 +464,6 @@ def symlink(src, dst, verbose=False):
     if verbose:
         print(' {} <- {}'.format(src, dst))
     os.symlink(src, dst)
-
 
 
 def print_color(color, txt, file=sys.stdout, end='\n'):
@@ -712,7 +702,6 @@ def get_tile_coord_from_nixy(nix, niy):
     return ra, dec
 
 
-
 def get_tile_name(nix, niy, band, image_type='tile', input_format='full'):
     """Return tile name for given tile numbers.
 
@@ -789,7 +778,6 @@ def get_tile_number(tile_name):
     return nix, niy
 
 
-
 def get_log_file(path, verbose=False):
     """Return log file content
 
@@ -818,7 +806,6 @@ def get_log_file(path, verbose=False):
     return log
 
 
-
 def check_ra(ra):
     """Range check of right ascension.
 
@@ -841,7 +828,6 @@ def check_ra(ra):
     return 0
 
 
-
 def check_dec(dec):
     """Range check of declination.
 
@@ -861,7 +847,6 @@ def check_dec(dec):
         return 1
 
     return 0
-
 
 
 def get_Angle(str_coord):
@@ -886,7 +871,6 @@ def get_Angle(str_coord):
     a_dec = Angle(dec)
 
     return a_ra, a_dec
-
 
 
 def get_Angle_arr(str_coord, num=-1, wrap=True, verbose=False):
@@ -926,7 +910,6 @@ def get_Angle_arr(str_coord, num=-1, wrap=True, verbose=False):
     return angles
 
 
-
 def read_list(fname, col=None):
     """Read list from ascii file.
 
@@ -955,6 +938,7 @@ def read_list(fname, col=None):
         file_list = dat[col]
 
     file_list.sort()
+
     return file_list
 
 
@@ -1141,7 +1125,6 @@ def get_image_list(inp, band, image_type, col=None, input_format='full', verbose
     return img_list
 
 
-
 def exclude(f, exclude_list):
     """Return True if f is on exclude_list
 
@@ -1248,7 +1231,6 @@ def log_get_tile_nums(log):
     return set(tile_nums)
 
 
-
 def log_get_exp_num(log, exp_name, k_img, k_weight, k_flag):
     """Return exposure number from log file for given exposure name and HDU numbers.
 
@@ -1270,7 +1252,6 @@ def log_get_exp_num(log, exp_name, k_img, k_weight, k_flag):
     exp_num: int
         exposure number, None if not found
     """
-
 
     for line in log:
         this_exp_name = log_line_get_entry(line, 'exp_name')
