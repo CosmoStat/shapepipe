@@ -34,13 +34,13 @@ unitdef = 'degree'
 
 # Maybe define class for these constants?
 size = {}
-size['tile']     = 0.5
-size['weight']   = 0.5
+size['tile'] = 0.5
+size['weight'] = 0.5
 size['exposure'] = 1.0
 
 # Cut criteria for exposures
-exp_time_min     = 95
-flag_valid       = 'V'
+exp_time_min = 95
+flag_valid = 'V'
 
 
 class param:
@@ -91,14 +91,14 @@ class image():
             image information
         """
 
-        self.name     = name
-        self.ra       = ra
-        self.dec      = dec
-        if exp_time == None:
+        self.name = name
+        self.ra = ra
+        self.dec = dec
+        if exp_time is None:
             self.exp_time = -1
         else:
             self.exp_time = exp_time
-        if valid == None:
+        if valid is None:
             self.valid = 'Unknown'
         else:
             self.valid = valid
@@ -118,7 +118,7 @@ class image():
         """
 
         # Do not cut if no_cuts flag is set
-        if no_cuts == True:
+        if no_cuts:
             return False
 
         # Cut if exposure time smaller than minimum (and not flagged as unknown or n/a)
@@ -145,7 +145,7 @@ class image():
         NoneType : if name does not match to ID pattern
         """
 
-        m = re.search('(\d{3}).{1}(\d{3})', self.name)
+        m = re.search(r'(\d{3}).{1}(\d{3})', self.name)
         if m is None:
             raise NoneType('No ID match in file name {}'.format(name))
         else:
@@ -176,7 +176,7 @@ class image():
             name = self.name
 
         if ID_only:
-            m = re.search('\d{3}.\d{3}', name)
+            m = re.search(r'\d{3}.\d{3}', name)
             if m is None:
                 raise NoneType('No ID match in file name {}'.format(name))
             else:
@@ -262,11 +262,10 @@ def run_cmd_old(cmd_list, run=True, verbose=True, stop=False, parallel=True, fil
     if verbose is True and len(cmd_list) > 1:
         print('Running {} commands, parallel = {}'.format(len(cmd_list), parallel))
 
-
-    ex_list   = []
+    ex_list = []
     pipe_list = []
-    out_list  = []
-    err_list  = []
+    out_list = []
+    err_list = []
 
     if env is None:
         env = os.environ.copy()
@@ -284,7 +283,7 @@ def run_cmd_old(cmd_list, run=True, verbose=True, stop=False, parallel=True, fil
                     print_color('blue', 'Skipping command \'{}\', file \'{}\' exists'.format(cmd, file_list[i]))
             else:
                 if verbose is True:
-                        print_color('green', 'Running command \'{0}\''.format(cmd))
+                    print_color('green', 'Running command \'{0}\''.format(cmd))
 
                 # Run command
                 try:
@@ -321,7 +320,6 @@ def run_cmd_old(cmd_list, run=True, verbose=True, stop=False, parallel=True, fil
         ex_list.append(ex)
         out_list.append(out)
         err_list.append(err)
-
 
     if parallel is True:
         for i, pipe in enumerate(pipe_list):
@@ -396,7 +394,6 @@ def check_error_stop(ex_list, verbose=True, stop=False):
         if stop is True:
             sys.exit(s)
 
-
     return s
 
 
@@ -441,7 +438,7 @@ def log_command(argv, name=None, close_no_return=True):
 
     print('', file=f)
 
-    if close_no_return == False:
+    if not close_no_return:
         return f
 
     if name != 'sys.stdout' and name != 'sys.stderr':
@@ -487,12 +484,11 @@ def print_color(color, txt, file=sys.stdout, end='\n'):
 
     try:
         import colorama
-        colors = {'red'    : colorama.Fore.RED,
-                  'green'  : colorama.Fore.GREEN,
-                  'blue'   : colorama.Fore.BLUE,
-                  'yellow' : colorama.Fore.YELLOW,
-                  'black'  : colorama.Fore.BLACK,
-                 }
+        colors = {'red': colorama.Fore.RED,
+                  'green': colorama.Fore.GREEN,
+                  'blue': colorama.Fore.BLUE,
+                  'yellow': colorama.Fore.YELLOW,
+                  'black': colorama.Fore.BLACK}
 
         if colors[color] is None:
             col = colorama.Fore.BLACK
@@ -538,9 +534,9 @@ def my_string_split(string, num=-1, verbose=False, stop=False, sep=None):
         return None
 
     if sep is None:
-        has_space      = string.find(' ')
+        has_space = string.find(' ')
         has_underscore = string.find('_')
-        has_dot        = string.find('.')
+        has_dot = string.find('.')
 
         if has_space != -1:
             my_sep = ' '
@@ -561,7 +557,7 @@ def my_string_split(string, num=-1, verbose=False, stop=False, sep=None):
 
     res = string.split(my_sep)
 
-    if num != -1 and num != len(res) and stop==True:
+    if num != -1 and num != len(res) and stop:
         raise CfisError('String \'{}\' has length {}, required is {}'.format(string, len(res), num))
 
     return res
@@ -592,40 +588,39 @@ def get_file_pattern(pattern, band, image_type, want_re=True, ext=True):
     """
 
     if pattern == '':
-        if image_type in ('exposure', 'exposure_flag', 'exposure_flag.fz', \
-		'exposure_weight', 'exposure_weight.fz'):
-            pattern_base = '\d{7}p'
+        if image_type in ('exposure', 'exposure_flag', 'exposure_flag.fz',
+                          'exposure_weight', 'exposure_weight.fz'):
+            pattern_base = r'\d{7}p'
         else:
-            pattern_base  = 'CFIS.*\.{}'.format(band)
+            pattern_base = r'CFIS.*\.{}'.format(band)
     else:
         pattern_base = pattern
 
-
     if ext:
         if image_type == 'exposure':
-            pattern_out  = '{}\.fits\.fz'.format(pattern_base)
+            pattern_out = r'{}\.fits\.fz'.format(pattern_base)
         elif image_type == 'exposure_flag':
-            pattern_out  = '{}\.flag\.fits'.format(pattern_base)
+            pattern_out = r'{}\.flag\.fits'.format(pattern_base)
         elif image_type == 'exposure_flag.fz':
-            pattern_out  = '{}\.flag\.fits\.fz'.format(pattern_base)
+            pattern_out = r'{}\.flag\.fits\.fz'.format(pattern_base)
         elif image_type == 'exposure_weight':
-            pattern_out  = '{}\.weight\.fits'.format(pattern_base)
+            pattern_out = r'{}\.weight\.fits'.format(pattern_base)
         elif image_type == 'exposure_weight.fz':
-            pattern_out  = '{}\.weight\.fits\.fz'.format(pattern_base)
+            pattern_out = r'{}\.weight\.fits\.fz'.format(pattern_base)
         elif image_type == 'tile':
-            pattern_out = '{}\.fits'.format(pattern_base)
+            pattern_out = r'{}\.fits'.format(pattern_base)
         elif image_type == 'cat':
-            pattern_out = '{}\.cat'.format(pattern_base)
+            pattern_out = r'{}\.cat'.format(pattern_base)
         elif image_type == 'weight':
-            pattern_out = '{}\.weight\.fits'.format(pattern_base)
+            pattern_out = r'{}\.weight\.fits'.format(pattern_base)
         elif image_type == 'weight.fz':
-            pattern_out = '{}\.weight\.fits\.fz'.format(pattern_base)
+            pattern_out = r'{}\.weight\.fits\.fz'.format(pattern_base)
         else:
             raise CfisError('Invalid type \'{}\''.format(image_type))
     else:
         pattern_out = pattern_base
 
-    if want_re == False:
+    if not want_re:
         pattern_out = pattern_out.replace('\\', '')
 
     return pattern_out
@@ -642,7 +637,7 @@ def get_tile_number_from_coord(ra, dec, return_type=str):
     dec: Angle
         declination
     return type: <type 'type'>
-	return type, int or str
+        return type, int or str
 
     Returns
     -------
@@ -656,7 +651,6 @@ def get_tile_number_from_coord(ra, dec, return_type=str):
     yi = int(np.rint(y))
 
     x = ra.degree * np.cos(dec.radian) * 2.0
-    #x = ra.degree * 2 * np.cos(y/2 / 180 * np.pi - np.pi/2)
     xi = int(np.rint(x))
     if xi == 720:
         xi = 0
@@ -728,12 +722,12 @@ def get_tile_name(nix, niy, band, image_type='tile', input_format='full'):
         if input_format == 'ID_only':
             tile_base = '{:03d}.{:03d}'.format(nix, niy)
         else:
-    	    tile_base = 'CFIS.{:03d}.{:03d}.{}'.format(nix, niy, band)
+            tile_base = 'CFIS.{:03d}.{:03d}.{}'.format(nix, niy, band)
     elif type(nix) is str and type(niy) is str:
         if input_format == 'ID_only':
             tile_base = '{}.{}'.format(nix, niy)
         else:
-    	    tile_base = 'CFIS.{}.{}.{}'.format(nix, niy, band)
+            tile_base = 'CFIS.{}.{}.{}'.format(nix, niy, band)
     else:
         raise CfisError('Invalid type for input tile numbers {}, {}'.format(nix, niy))
 
@@ -768,8 +762,8 @@ def get_tile_number(tile_name):
         tile number for y
     """
 
-    m = re.search('(\d{3})[\.-](\d{3})', tile_name)
-    if m == None or len(m.groups()) != 2:
+    m = re.search(r'(\d{3})[\.-](\d{3})', tile_name)
+    if m is None or len(m.groups()) != 2:
         raise CfisError('Image name \'{}\' does not match tile name syntax'.format(tile_name))
 
     nix = m.groups()[0]
@@ -798,7 +792,7 @@ def get_log_file(path, verbose=False):
         raise CfisError('Log file \'{}\' not found'.format(path))
 
     f_log = open(path, 'r')
-    log   = f_log.readlines()
+    log = f_log.readlines()
     if verbose:
         print('Reading log file, {} lines found'.format(len(log)))
     f_log.close()
@@ -867,7 +861,7 @@ def get_Angle(str_coord):
 
     ra, dec = my_string_split(str_coord, num=2, stop=True)
 
-    a_ra  = Angle(ra)
+    a_ra = Angle(ra)
     a_dec = Angle(dec)
 
     return a_ra, a_dec
@@ -904,7 +898,7 @@ def get_Angle_arr(str_coord, num=-1, wrap=True, verbose=False):
         if wrap:
             c = SkyCoord(ra, dec)
         else:
-            c = param(ra = Angle(ra), dec = Angle(dec))
+            c = param(ra=Angle(ra), dec=Angle(dec))
         angles.append(c)
 
     return angles
@@ -932,7 +926,7 @@ def read_list(fname, col=None):
         f.close()
     else:
         import pandas as pd
-        dat = pd.read_csv(fname, sep='\s+', dtype='string', header=None)
+        dat = pd.read_csv(fname, sep=r'\s+', dtype='string', header=None)
         if col not in dat:
             col = int(col)
         file_list = dat[col]
@@ -1014,8 +1008,8 @@ def get_exposure_info(logfile_name, verbose=False):
     for line in f:
         dat = re.split(' |', line)
         name = dat[0]
-        ra   = Angle(' hours'.format(dat[8]))
-        dec  = Angle(' degree'.format(dat[9]))
+        ra = Angle(' hours'.format(dat[8]))
+        dec = Angle(' degree'.format(dat[9]))
         valid = dat[21]
 
         img = image(name, ra, dec, valid=valid)
@@ -1048,47 +1042,47 @@ def get_image_list(inp, band, image_type, col=None, input_format='full', verbose
         image list
     """
 
-    file_list     = []
-    ra_list       = []
-    dec_list      = []
+    file_list = []
+    ra_list = []
+    dec_list = []
     exp_time_list = []
-    valid_list    = []
+    valid_list = []
 
     if os.path.isdir(inp):
         if col is not None:
             raise CfisError('Column name (-c option) only valid if input is file')
 
         # Read file names from directory listing
-        inp_type  = 'dir'
+        inp_type = 'dir'
         file_list = glob.glob('{}/*'.format(os.path.abspath(inp)))
 
     elif os.path.isfile(inp):
         if image_type in ('tile', 'weight', 'weight.fz'):
             # File names in single-column ascii file
-            inp_type  = 'file'
+            inp_type = 'file'
             file_list = read_list(inp, col=col)
         elif image_type == 'exposure':
             # File names and coordinates in ascii file
-            inp_type  = 'file'
+            inp_type = 'file'
             dat = ascii.read(inp)
 
             if len(dat.keys()) == 3:
                 # File is exposure + coord list (obtained from get_coord_CFIS_pointings.py)
                 file_list = dat['Pointing']
-                ra_list   = dat['R.A.[degree]']
-                dec_list  = dat['Declination[degree]']
+                ra_list = dat['R.A.[degree]']
+                dec_list = dat['Declination[degree]']
             elif len(dat.keys()) == 12:
                 # File is log file, e.g. from http://www.cfht.hawaii.edu/Science/CFIS-DATA/logs/MCLOG-CFIS.r.qso-elx.log
                 # Default file separator is '|'
                 for d in dat:
                     file_list.append('d{}p.fits.fz'.format(d['col1']))
-                    ra  = re.split('\s*', d['col4'])[0]
-                    dec = re.split('\s*', d['col4'])[1]
+                    ra = re.split(r'\s*', d['col4'])[0]
+                    dec = re.split(r'\s*', d['col4'])[1]
                     ra_list.append(Angle('{} hours'.format(ra)).degree)
                     dec_list.append(dec)
                     exp_time = int(d['col5'])
                     exp_time_list.append(exp_time)
-                    valid = re.split('\s*', d['col11'])[2]
+                    valid = re.split(r'\s*', d['col11'])[2]
                     valid_list.append(valid)
             else:
                 raise CfisError('Wrong file format, #columns={}, has to be 3 or 12'.format(len(dat.keys())))
@@ -1101,9 +1095,9 @@ def get_image_list(inp, band, image_type, col=None, input_format='full', verbose
     # Filter file list to match CFIS image pattern
     img_list = []
     if input_format == 'ID_only':
-        pattern = get_file_pattern('\d{3}.\d{3}', band, image_type, ext=False)
+        pattern = get_file_pattern(r'\d{3}.\d{3}', band, image_type, ext=False)
     else:
-        pattern = get_file_pattern('CFIS.\d{{3}}.\d{{3}}\.{}'.format(band), band, image_type)
+        pattern = get_file_pattern(r'CFIS.\d{{3}}.\d{{3}}\.{}'.format(band), band, image_type)
 
     for img in image_list:
 
@@ -1119,7 +1113,7 @@ def get_image_list(inp, band, image_type, col=None, input_format='full', verbose
         if len(m) != 0:
             img_list.append(img)
 
-    if verbose == True and len(img_list) > 0:
+    if verbose and len(img_list) > 0:
         print('{} image files found in input {} \'{}\''.format(len(img_list), inp_type, inp))
 
     return img_list
@@ -1255,14 +1249,14 @@ def log_get_exp_num(log, exp_name, k_img, k_weight, k_flag):
 
     for line in log:
         this_exp_name = log_line_get_entry(line, 'exp_name')
-        this_k_img    = log_line_get_entry(line, 'k_img')
+        this_k_img = log_line_get_entry(line, 'k_img')
         this_k_weight = log_line_get_entry(line, 'k_weight')
-        this_k_flag   = log_line_get_entry(line, 'k_flag')
+        this_k_flag = log_line_get_entry(line, 'k_flag')
 
-        if this_exp_name == exp_name  and \
-            int(this_k_img) == k_img and \
-            int(this_k_weight) == k_weight and \
-            int(this_k_flag) == k_flag:
+        if this_exp_name == exp_name \
+                and int(this_k_img) == k_img \
+                and int(this_k_weight) == k_weight \
+                and int(this_k_flag) == k_flag:
             return log_line_get_entry(line, 'exp_num')
 
     # No matching entry found
@@ -1298,11 +1292,11 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, input_fo
 
     ra, dec = get_Angle(coord)
 
-    if verbose == True:
+    if verbose:
         print('Looking for image at coordinates {}, {}'.format(ra, dec))
 
     if image_type in ('tile', 'weight', 'weight.fz'):
-        nix, niy  = get_tile_number_from_coord(ra, dec, return_type=int)
+        nix, niy = get_tile_number_from_coord(ra, dec, return_type=int)
         tile_name = get_tile_name(nix, niy, band, image_type, input_format=input_format)
 
         img_found = []
@@ -1312,16 +1306,16 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, input_fo
                 ra_c, dec_c = get_tile_coord_from_nixy(nix, niy)
                 if img.ra is not None or img.dec is not None:
                     raise CfisError('Coordinates in image are already '
-                                         'set to {}, {}, cannot update to {}, {}'.\
-                                         format(img.ra, img.dec, ra_c, dec_c))
+                                    'set to {}, {}, cannot update to {}, {}'
+                                    ''.format(img.ra, img.dec, ra_c, dec_c))
                 img.ra = ra_c
                 img.dec = dec_c
                 img_found.append(img)
 
         if len(img_found) != 0:
-                pass
+            pass
         else:
-            if verbose == True:
+            if verbose:
                 print('Tile with numbers ({}, {}) not found'.format(nix, niy))
 
         if len(img_found) > 1:
@@ -1333,18 +1327,18 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, input_fo
         img_found = []
         for img in images:
             # Check distance along ra and dec from image center
-            sc_img_same_ra  = SkyCoord(ra, img.dec)
+            sc_img_same_ra = SkyCoord(ra, img.dec)
             sc_img_same_dec = SkyCoord(img.ra, dec)
-            distance_ra  = sc_input.separation(sc_img_same_dec)
+            distance_ra = sc_input.separation(sc_img_same_dec)
             distance_dec = sc_input.separation(sc_img_same_ra)
             if distance_ra.degree < size[image_type]/2 and distance_dec.degree < size[image_type]/2:
-                if img.cut(no_cuts=no_cuts) == False:
+                if not img.cut(no_cuts=no_cuts):
                     img_found.append(img)
 
         if len(img_found) != 0:
-                pass
+            pass
         else:
-            if verbose == True:
+            if verbose:
                 print('No exposure image found')
 
     else:
@@ -1390,7 +1384,7 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
     else:
         ra_bounds = [[angles[0].ra, angles[1].ra]]
 
-    if verbose == True:
+    if verbose:
         print('Looking for all images within rectangle, '
               'dec=({}, {}), '
               ''.format(angles[0].dec, angles[1].dec), end='')
@@ -1401,9 +1395,9 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
     if image_type in ('tile', 'weight', 'weight.fz'):
         for img in images:
             nix, niy = get_tile_number(img.name)
-            ra, dec  = get_tile_coord_from_nixy(nix, niy)
+            ra, dec = get_tile_coord_from_nixy(nix, niy)
 
-            if  dec.is_within_bounds(angles[0].dec, angles[1].dec):
+            if dec.is_within_bounds(angles[0].dec, angles[1].dec):
                 within = False
 
                 # Check whether image is in any of the ra bound pairs
@@ -1413,14 +1407,14 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
                         break
                 if within:
                     if img.ra is None or img.dec is None:
-                        img.ra  = ra
+                        img.ra = ra
                         img.dec = dec
 
                     found.append(img)
 
     elif image_type == 'exposure':
         for img in images:
-            if  img.dec.is_within_bounds(angles[0].dec, angles[1].dec):
+            if img.dec.is_within_bounds(angles[0].dec, angles[1].dec):
                 within = False
 
                 # Check whether image is in any of the ra bound pairs
@@ -1429,13 +1423,13 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
                         within = True
                         break
                 if within:
-                    if img.cut(no_cuts=no_cuts) == False:
+                    if not img.cut(no_cuts=no_cuts):
                         found.append(img)
 
     else:
         raise CfisError('Image type \'{}\' not implemented yet'.format(image_type))
 
-    if verbose == True:
+    if verbose:
         print('{} images found in area'.format(len(found)))
 
     return found
@@ -1458,7 +1452,7 @@ def plot_init():
 
 
 def plot_area(images, angles, image_type, outbase, interactive, col=None, show_numbers=False,
-              show_circle=True, ax=None, lw=None, save=True, dxy=0):
+              show_circle=True, show_area_border=False, ax=None, lw=None, save=True, dxy=0):
     """Plot images within area.
 
     Parameters
@@ -1477,6 +1471,8 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_n
         color
     show_circle : bool, optional, default True
         plot circle center and circumference around area if True
+    show_area_border : bool, optional, default False
+        plot rectangle around area
     ax : axes, optional, default None
         Init axes if None
     lw : float, optional, default None
@@ -1504,7 +1500,7 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_n
     # Field center
     n_ima = len(images)
     if n_ima > 0:
-        ra_c  = sum([img.ra for img in images])/float(n_ima)
+        ra_c = sum([img.ra for img in images])/float(n_ima)
         dec_c = sum([img.dec for img in images])/float(n_ima)
         cos_dec_c = np.cos(dec_c)
     else:
@@ -1526,18 +1522,18 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_n
         radius = 0
 
     if col:
-        c  = col
+        c = col
     else:
         c = color[image_type]
 
     for img in images:
-        x  = img.ra.degree
-        y  = img.dec.degree
+        x = img.ra.degree
+        y = img.dec.degree
         nix, niy = get_tile_number(img.name)
         if show_numbers:
             plt.text(x, y, '{}.{}'.format(nix, niy), fontsize=3,
-                    horizontalalignment='center',
-                    verticalalignment='center')
+                     horizontalalignment='center',
+                     verticalalignment='center')
 
         # Image boundary
         dx = size[image_type] / 2 / cos_dec_c
@@ -1545,9 +1541,9 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_n
         cx, cy = square_from_centre(x, y, dx, dy, dxy=dxy)
         ax.plot(cx, cy, '-', color=c, linewidth=my_lw)
 
-    # Area border
-    #cx, cy = square_from_corners(angles[0], angles[1])
-    #ax.plot(cx, cy, 'r-.', linewidth=my_lw)
+    if show_area_border:
+        cx, cy = square_from_corners(angles[0], angles[1])
+        ax.plot(cx, cy, 'r-.', linewidth=my_lw)
 
     plt.xlabel('R.A. [degree]')
     plt.ylabel('Declination [degree]')
@@ -1560,8 +1556,8 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_n
         xm = (angles[1].ra.degree + angles[0].ra.degree) / 2
         dx = angles[1].ra.degree - angles[0].ra.degree
     else:
-        dx = max(360 - angles[0].ra.deg,  angles[1].ra.deg) * 2
-        xm = ( (angles[0].ra.deg - 360) + angles[1].ra.deg ) / 2
+        dx = max(360 - angles[0].ra.deg, angles[1].ra.deg) * 2
+        xm = ((angles[0].ra.deg - 360) + angles[1].ra.deg) / 2
     ym = (angles[1].dec.degree + angles[0].dec.degree) / 2
     dy = angles[1].dec.degree - angles[0].dec.degree
     lim = max(dx, dy)
@@ -1572,7 +1568,7 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_n
         print('Saving plot to {}'.format(outname))
         plt.savefig(outname)
 
-    if interactive == True:
+    if interactive:
         plt.show()
 
     return ra_c, dec_c, radius

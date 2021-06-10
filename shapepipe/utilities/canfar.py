@@ -9,7 +9,7 @@ This module defines methods for managing CANFAR specific actions.
 """
 
 import os
-import sys  
+import sys
 from io import StringIO
 from contextlib import redirect_stdout
 
@@ -93,6 +93,7 @@ class vosHandler:
         except:
             raise vosError('Error in VOs command: {}'
                            ''.format(self._command.__name__))
+
 
 def download(source, target, verbose=False):
     """Download file from vos.
