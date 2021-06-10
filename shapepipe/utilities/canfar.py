@@ -94,10 +94,6 @@ class vosHandler:
             raise vosError('Error in VOs command: {}'
                            ''.format(self._command.__name__))
 
-<<<<<<< HEAD
-=======
-
->>>>>>> upstream/master
 def download(source, target, verbose=False):
     """Download file from vos.
 
@@ -116,7 +112,6 @@ def download(source, target, verbose=False):
         status, True/False or success/failure
     """
 
-<<<<<<< HEAD
     cmd = 'vcp'
 
     if not os.path.exists(target):
@@ -124,20 +119,12 @@ def download(source, target, verbose=False):
         if verbose:
             print('Downloading file {} to {}...'.format(source, target))
         vcp = vosHandler(cmd)
-=======
-    if not os.path.exists(target):
-        sys.argv = ['vcp', source, target]
-        if verbose:
-            print('Downloading file {} to {}...'.format(source, target))
-        vcp = vosHandler('vcp')
->>>>>>> upstream/master
         vcp()
         if verbose:
             print('Download finished.')
     else:
         if verbose:
             print('Target file {} exists, skipping download.'.format(target))
-<<<<<<< HEAD
 
 
 def dir_list(path, verbose=False):
@@ -181,5 +168,3 @@ def dir_list(path, verbose=False):
     vls_out = f.getvalue()
     print(vls_out)
     return vls_out.split('\n')
-=======
->>>>>>> upstream/master
