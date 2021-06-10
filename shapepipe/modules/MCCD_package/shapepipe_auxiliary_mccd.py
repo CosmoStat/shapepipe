@@ -202,7 +202,7 @@ def mccd_fit_pipeline(trainstar_path, file_number_string, mccd_parser,
     use_SNR_weight = mccd_parser.get_extra_kw('use_SNR_weight')
 
     # Open fits file
-    starcat = fits.open(trainstar_path)
+    starcat = fits.open(trainstar_path, memmap=False)
 
     mccd.auxiliary_fun.mccd_fit(
         starcat=starcat[1],
@@ -227,7 +227,7 @@ def mccd_validation_pipeline(teststar_path, mccd_model_path, mccd_parser,
     # Get MCCD parameters
     save_extension = '.fits'
     mccd_val_kw = mccd_parser.get_val_kw()
-    testcat = fits.open(teststar_path)
+    testcat = fits.open(teststar_path, memmap=False)
 
     # Check if there is the fitted model
     if os.path.isfile(mccd_model_path):
@@ -259,7 +259,7 @@ def mccd_interpolation_pipeline(mccd_model_path, galcat_path, pos_params,
     # Import MCCD model
     mccd_model = mccd.mccd_quickload(mccd_model_path)
     # Open galaxy catalog
-    galcat = fits.open(galcat_path)
+    galcat = fits.open(galcat_path, memmap=False)
 
     # Extract positions
     x_pos = galcat[2].data[pos_params[0]]

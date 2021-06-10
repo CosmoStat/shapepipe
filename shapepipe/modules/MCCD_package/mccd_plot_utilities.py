@@ -120,7 +120,7 @@ def plot_meanshapes(starcat_path, output_path, nb_pixel, w_log,
                     plot_histograms=True):
     r"""Plot meanshapes and histograms."""
     # READ FULL STARCAT
-    starcat = fits.open(starcat_path)
+    starcat = fits.open(starcat_path, memmap=False)
 
     auto_colorbar = False
     colorbar_ampl = 1.
@@ -794,7 +794,7 @@ def rho_stats(starcat_path, output_path, rho_def='HSC',
     depending on the desired definition to use for tho statistics.
     """
     # Read starcat
-    starcat = fits.open(starcat_path)
+    starcat = fits.open(starcat_path, memmap=False)
 
     rho_stats_fun = None
 
