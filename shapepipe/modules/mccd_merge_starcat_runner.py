@@ -15,7 +15,7 @@ from shapepipe.pipeline import file_io as sc
 from shapepipe.modules.module_decorator import module_runner
 
 
-@module_runner(input_module=['mccd_fit_val_runner'], version='1.0',
+@module_runner(input_module=['mccd_fit_val_runner','mccd_val_runner'], version='1.0',
                file_pattern=['validation_psf'],
                file_ext=['.fits'], numbering_scheme='-0000000',
                depends=['numpy', 'astropy'],
