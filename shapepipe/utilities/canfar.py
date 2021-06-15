@@ -167,5 +167,5 @@ def dir_list(path, verbose=False):
         raise
 
     vls_out = f.getvalue()
-    print(vls_out)
+
     return vls_out.split('\n')
