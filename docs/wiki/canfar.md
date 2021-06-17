@@ -43,10 +43,10 @@ https://arbutus-canfar.cloud.computecanada.ca/project/instances.
 
 For `ShapePipe` we use the following instance:
 - `ShapePipe2`:
-- 90 GB RAM
+- 60 GB RAM
 - 20 GB Disk
 - 8 CPUs
-- Flavour: c8-90gb-186
+- Flavour: c8-60gb-186
 - IP Address: 206.12.92.159
 
 ### Available Snapshots
