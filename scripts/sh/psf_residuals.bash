@@ -114,7 +114,6 @@ fi
 n_skipped=0
 n_created=0
 FILES=output/*/${runner}/output/${psfval_file_base}*
-echo ${FILES[@]}
 for val in ${FILES[@]}; do
     base=`basename $val`
     link_s "$pwd/$val" "$dir_individual/$base"
