@@ -20,7 +20,7 @@ from astropy.io import fits
 from shapepipe.pipeline import file_io as io
 
 
-class SplitExposures(objec):
+class SplitExposures(object):
     """Split Exposures initialisation
 
     Parameters
@@ -37,8 +37,8 @@ class SplitExposures(objec):
         number of HDUs (= CCDs) of input files
     """
 
-    def ___init___(self, input_file_list, output_dir,
-                   file_number_string, output_suffix, n_hdu):
+    def __init__(self, input_file_list, output_dir,
+                 file_number_string, output_suffix, n_hdu):
 
         self._input_file_list = input_file_list
         self._output_dir = output_dir
@@ -52,15 +52,15 @@ class SplitExposures(objec):
         Process the splitting of single-exposure images
         """
 
-        for exp_path, output_suffix in zip(self.input_file_list, self.output_suffix):
+        for exp_path, output_suffix in zip(self._input_file_list, self._output_suffix):
 
-            transf_int = 'flag' in exp_suffix
-            transf_coord = 'image' in exp_suffix
-            save_header = 'image' in exp_suffix
+            transf_int = 'flag' in output_suffix
+            transf_coord = 'image' in output_suffix
+            save_header = 'image' in output_suffix
 
             self.create_hdus(exp_path, output_suffix, transf_coord, transf_int, save_header)
 
-    def create_hdus(exp_path, output_sufix, transf_coord, transf_int, save_header):
+    def create_hdus(self, exp_path, output_suffix, transf_coord, transf_int, save_header):
         """ Create HDUs
 
         Split a single exposures CCDs into separate files.
@@ -69,7 +69,7 @@ class SplitExposures(objec):
         ----------
         exp_path : str
             Path to the single exposure
-        output_sufix : str
+        output_suffix : str
             Suffix for the output file
         transf_coord : bool
             Transform the WCS (pv to sip) if True
@@ -79,9 +79,9 @@ class SplitExposures(objec):
             Save WCS information if True
         """
 
-        header_file = np.zeros(self.n_hdu, dtype='O')
+        header_file = np.zeros(self._n_hdu, dtype='O')
 
-        for i in range(1, self.n_hdu+1):
+        for i in range(1, self._n_hdu+1):
 
             h = fits.getheader(exp_path, i)
             if transf_coord:
@@ -91,7 +91,7 @@ class SplitExposures(objec):
             if transf_int:
                 d = d.astype(np.int16)
 
-            file_name = f'{self.output_dir}/{output_suffix}{self.file_number_string}-{str(i-1)}.fits'
+            file_name = f'{self._output_dir}/{output_suffix}{self._file_number_string}-{str(i-1)}.fits'
 
             new_file = io.FITSCatalog(file_name,
                                       open_mode=io.BaseCatalog.OpenMode.ReadWrite)
@@ -106,5 +106,5 @@ class SplitExposures(objec):
                 header_file[i-1] = {'WCS': w, 'header': h.tostring()}
 
         if save_header:
-            file_name = f'{self.output_dir}/headers{self.file_number_string}/npy'
+            file_name = f'{self._output_dir}/headers{self._file_number_string}.npy'
             np.save(file_name, header_file)

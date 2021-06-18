@@ -15,6 +15,7 @@ single exposure into separate files.
 
 
 from shapepipe.modules.module_decorator import module_runner
+from shapepipe.modules.SplitExp_package import SplitExp_script as split
 
 
 @module_runner(
