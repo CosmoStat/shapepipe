@@ -133,8 +133,6 @@ class SpreadModel(object):
         path to weight catalogue
     output_path : string
         output file path of pasted catalog
-    w_log :
-        log file
     pixel_scale : float
         pixel scale in arcsec
     output_mode : str
@@ -145,13 +143,12 @@ class SpreadModel(object):
     """
 
     def __init__(self, sex_cat_path, psf_cat_path, weight_cat_path,
-                 output_path, w_log, pixel_scale, output_mode):
+                 output_path, pixel_scale, output_mode):
 
         self._sex_cat_path = sex_cat_path
         self._psf_cat_path = psf_cat_path
         self._weight_cat_path = weight_cat_path
         self._output_path = output_path
-        self._w_log = w_log
         self._pixel_scale = pixel_scale
         self._output_mode = output_mode
 
@@ -161,18 +158,18 @@ class SpreadModel(object):
         """
 
         # Get data
-        sex_cat = io.FITSCatalog(sex_cat_path, SEx_catalog=True)
+        sex_cat = io.FITSCatalog(self._sex_cat_path, SEx_catalog=True)
         sex_cat.open()
         obj_id = np.copy(sex_cat.get_data()['NUMBER'])
         obj_vign = np.copy(sex_cat.get_data()['VIGNET'])
         obj_mag = None
-        if output_mode == 'new':
+        if self._output_mode == 'new':
             obj_mag = np.copy(sex_cat.get_data()['MAG_AUTO'])
         sex_cat.close()
 
-        psf_cat = SqliteDict(psf_cat_path)
+        psf_cat = SqliteDict(self._psf_cat_path)
 
-        weight_cat = io.FITSCatalog(weight_cat_path, SEx_catalog=True)
+        weight_cat = io.FITSCatalog(self._weight_cat_path, SEx_catalog=True)
         weight_cat.open()
         weigh_vign = weight_cat.get_data()['VIGNET']
         weight_cat.close()
@@ -201,7 +198,7 @@ class SpreadModel(object):
             obj_model_tmp, obj_psf_tmp = get_model(obj_sigma_tmp,
                                                    obj_flux_tmp,
                                                    obj_vign_tmp.shape,
-                                                   pixel_scale)
+                                                   self._pixel_scale)
 
             obj_sm, obj_sm_err = get_sm(obj_vign_tmp,
                                         obj_psf_tmp,
@@ -238,18 +235,18 @@ class SpreadModel(object):
             Id of all objects (only for new catalog).
         """
 
-        if self.output_mode == 'new':
-            new_cat = io.FITSCatalog(self.output_path, SEx_catalog=True,
+        if self._output_mode == 'new':
+            new_cat = io.FITSCatalog(self._output_path, SEx_catalog=True,
                                      open_mode=io.BaseCatalog.OpenMode.ReadWrite)
             dict_data = {'NUMBER': number,
                          'MAG': mag,
                          'SPREAD_MODEL': sm,
                          'SPREADERR_MODEL': sm_err}
-            new_cat.save_as_fits(data=dict_data, sex_cat_path=self.sex_cat_path)
-        elif self.output_mode == 'add':
-            ori_cat = io.FITSCatalog(self.sex_cat_path, SEx_catalog=True)
+            new_cat.save_as_fits(data=dict_data, sex_cat_path=self._sex_cat_path)
+        elif self._output_mode == 'add':
+            ori_cat = io.FITSCatalog(self._sex_cat_path, SEx_catalog=True)
             ori_cat.open()
-            new_cat = io.FITSCatalog(self.output_path, SEx_catalog=True,
+            new_cat = io.FITSCatalog(self._output_path, SEx_catalog=True,
                                      open_mode=io.BaseCatalog.OpenMode.ReadWrite)
             ori_cat.add_col('SPREAD_MODEL', sm, new_cat=True, new_cat_inst=new_cat)
             ori_cat.close()

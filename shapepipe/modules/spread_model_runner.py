@@ -11,6 +11,8 @@ This module computes the spread model.
 """
 
 from shapepipe.modules.module_decorator import module_runner
+from shapepipe.modules.SpreadModel_package import SpreadModel_script as sm
+
 
 
 @module_runner(
@@ -43,7 +45,7 @@ def spread_model_runner(input_file_list, run_dirs, file_number_string,
     output_path = f'{run_dirs["output"]}/{file_name}'
 
     inst = sm.SpreadModel(sex_cat_path, psf_cat_path, weight_cat_path,
-                          output_path, w_log, pixel_scale, output_mode)
+                          output_path, pixel_scale, output_mode)
 
     inst.process()
 
