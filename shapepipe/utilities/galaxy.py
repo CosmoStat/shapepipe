@@ -33,4 +33,7 @@ def sigma_to_fwhm(sigma, pixel_size=1):
         output fwhm(s)
     """
 
-    return sigma * 2.355 * pixel_size
+    # cst = 2 * sqrt(2 * ln(2))
+    cst = 2.35482004503
+
+    return sigma * cst * pixel_size
