@@ -12,7 +12,8 @@ __all__ = ['module_decorator',
            'module_runners',
            'mask_package',
            'PSFExInterpolation_package',
-           'SETools_package'
+           'SETools_package',
+           'SExtractor_runner'
            ]
 __module_list__ = ['execute_example',
                    'erase_output_runner',
