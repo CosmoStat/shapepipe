@@ -319,12 +319,14 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
 
     if config.has_option('SEXTRACTOR_RUNNER', 'SUFFIX'):
         suffix = config.get('SEXTRACTOR_RUNNER', 'SUFFIX')
-        if (suffix.lower() != 'none') & (suffix != ''):
-            suffix = suffix + '_'
-        else:
-            suffix = ''
+    #     if (suffix.lower() != 'none') & (suffix != ''):
+    #         suffix = suffix + '_'
+    #     else:
+    #         suffix = ''
+    # else:
+    #     suffix = ''
     else:
-        suffix = ''
+        suffix = None
 
 
     SE_caller = ss.sextractor_caller(input_file_list,
