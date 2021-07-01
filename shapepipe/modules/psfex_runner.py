@@ -57,7 +57,7 @@ def psfex_runner(input_file_list,
                      config,
                      w_log]
 
-    #extract psfex  run configurations
+    # extract psfex  run configurations
     psfex_executable_path = config.getexpanded("PSFEX_RUNNER",
                                 "EXEC_PATH")
     output_dir = run_dirs['output']
@@ -67,13 +67,13 @@ def psfex_runner(input_file_list,
                             "DOT_PSFEX_FILE")
     input_file_path = input_file_list[0]
 
-    #check image options
+    # check image options
     if config.has_option('PSFEX_RUNNER', "CHECKIMAGE"):
         check_image_list = config.getlist("PSFEX_RUNNER", "CHECKIMAGE")
     else:
         check_image_list = ['']
 
-    #prepare the psfex command line
+    # prepare the psfex command line
     PSFex_call  = PSFex_caller(psfex_executable_path,
             input_file_path,
             psfex_config_file,
@@ -81,13 +81,13 @@ def psfex_runner(input_file_list,
             outcatalog_name,
             check_image_list)
 
-    #generates the psfex command
+    # generates the psfex command
     command_line = PSFex_call.generate_command()
 
     w_log.info(f'Running command \'{command_line}\'')
     stderr, stdout = execute(command_line)
 
-    #move psfex errors reported as stdout to stderr
+    # move psfex errors reported as stdout to stderr
     check_error = re.findall('error', stdout.lower())
     check_error2 = re.findall('all done', stdout.lower())
 
