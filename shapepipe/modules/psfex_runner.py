@@ -33,12 +33,16 @@ def psfex_runner(input_file_list,
 
     Parameters:
     ----------
-    input_file_list:
-    
-    run_dirs:
-    file_number_string:
+    input_file_list: list
+        List with the full path to the input file
+    run_dirs: dict
+        Dictionary with directories
+    file_number_string: str
+        Specific number of the data file being processed
     config:
+        Config object
     w_log:
+        Log object
 
 
     Returns:
