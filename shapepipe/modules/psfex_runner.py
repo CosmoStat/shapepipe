@@ -12,48 +12,72 @@ import re
 import os
 from shapepipe.pipeline.execute import execute
 from shapepipe.modules.module_decorator import module_runner
+from shapepipe.modules.psfex_package.psfex import PSFex_caller
 
 
-@module_runner(input_module='setools_runner', version='1.0',
-               file_pattern=['star_selection'], file_ext=['.fits'],
-               executes='psfex')
-def psfex_runner(input_file_list, run_dirs, file_number_string,
-                 config, w_log):
+@module_runner(input_module='setools_runner',
+        version='1.0',
+        file_pattern=['star_selection'],
+        file_ext=['.fits'],
+        executes='psfex'
+)
 
-    exec_path = config.getexpanded("PSFEX_RUNNER", "EXEC_PATH")
-    dot_sex = config.getexpanded("PSFEX_RUNNER", "DOT_PSFEX_FILE")
-    outcat_name = '{0}/psfex_cat{1}.cat'.format(run_dirs['output'],
-                                                file_number_string)
+def psfex_runner(input_file_list,
+        run_dirs,
+        file_number_string,
+        config,
+        w_log
+    ):
+    """
+        Runs the psfex wrapper package.
 
-    command_line = ('{0} {1} -c {2} -PSF_DIR {3} -OUTCAT_NAME {4}'
-                    ''.format(exec_path, input_file_list[0], dot_sex,
-                              run_dirs['output'], outcat_name))
+    Args:
+    input_file_list, run_dirs, file_number_string,
+                     config, w_log
 
+
+    Returns:
+
+    stdout, stderr: str
+
+    """
+    inputs = [input_file_list,
+                     run_dirs,
+                     file_number_string,
+                     config,
+                     w_log]
+
+    #extract psfex  run configurations
+    psfex_executable_path = config.getexpanded("PSFEX_RUNNER",
+                                "EXEC_PATH")
+    output_dir = run_dirs['output']
+
+    outcatalog_name = f'psfex_cat{file_number_string}.cat'
+    psfex_config_file = config.getexpanded("PSFEX_RUNNER",
+                            "DOT_PSFEX_FILE")
+    input_file_path = input_file_list[0]
+
+    #check image options
     if config.has_option('PSFEX_RUNNER', "CHECKIMAGE"):
-        check_image = config.getlist("PSFEX_RUNNER", "CHECKIMAGE")
+        check_image_list = config.getlist("PSFEX_RUNNER", "CHECKIMAGE")
     else:
-        check_image = ['']
-    if (len(check_image) == 1) & (check_image[0] == ''):
-        check_type = ['NONE']
-        check_name = ['none']
-    else:
-        suffix = re.split(file_number_string, os.path.splitext(
-                          os.path.split(input_file_list[0])[-1])[0])[0]
-        check_type = []
-        check_name = []
-        for i in check_image:
-            check_type.append(i.upper())
-            check_name.append(run_dirs['output'] + '/' + suffix + '_' +
-                              i.lower() + file_number_string+'.fits')
+        check_image_list = ['']
 
-    command_line += (' -CHECKIMAGE_TYPE {0} -CHECKIMAGE_NAME {1}'
-                     ''.format(','.join(check_type), ','.join(check_name)))
+    #prepare the psfex command line
+    PSFex_call  = PSFex_caller(psfex_executable_path,
+            input_file_path,
+            psfex_config_file,
+            output_dir,
+            outcatalog_name,
+            check_image_list)
+            
+    #generates the psfex command
+    command_line = PSFex_call.generate_command()
 
-    w_log.info('Running command \'{}\''
-               ''.format(command_line))
-
+    w_log.info(f'Running command \'{command_line}\'')
     stderr, stdout = execute(command_line)
 
+    #move psfex errors reported as stdout to stderr
     check_error = re.findall('error', stdout.lower())
     check_error2 = re.findall('all done', stdout.lower())
 
@@ -61,6 +85,7 @@ def psfex_runner(input_file_list, run_dirs, file_number_string,
         stderr2 = ''
     else:
         stderr2 = stdout
+
     if check_error2 == []:
         stderr2 = stdout
 
