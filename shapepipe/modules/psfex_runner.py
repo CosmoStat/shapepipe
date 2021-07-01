@@ -29,16 +29,22 @@ def psfex_runner(input_file_list,
         w_log
     ):
     """
-        Runs the psfex wrapper package.
+    Runs the psfex wrapper package.
 
-    Args:
-    input_file_list, run_dirs, file_number_string,
-                     config, w_log
+    Parameters:
+    ----------
+    input_file_list:
+    
+    run_dirs:
+    file_number_string:
+    config:
+    w_log:
 
 
     Returns:
 
     stdout, stderr: str
+        Strings with the output and error output of execution.
 
     """
     inputs = [input_file_list,
@@ -70,7 +76,7 @@ def psfex_runner(input_file_list,
             output_dir,
             outcatalog_name,
             check_image_list)
-            
+
     #generates the psfex command
     command_line = PSFex_call.generate_command()
 
