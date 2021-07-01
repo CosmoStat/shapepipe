@@ -59,7 +59,7 @@ class PSFex_caller:
             check_type_list = ['NONE']
             check_name_list = ['none']
         else:
-            #get pattern for filenaming from first file in list
+            #get pattern for filenaming from file in list
             input_file_name = os.path.split(input_file_path)[-1]
             input_file_noext = os.path.splitext(input_file_name)[0]
             suffix = re.split(file_number_string,input_file_noext)[0]
