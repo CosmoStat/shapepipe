@@ -47,7 +47,7 @@ class PSFex_caller:
         """ Generates a command line for running PSFEx """
 
 
-        #prepare command line
+        # Prepare command line
         command_line = (f'{self.psfex_executable_path} '
                         + f'{self.input_file_path} '
                         + f'-c {self.psfex_config_file} '
@@ -59,7 +59,7 @@ class PSFex_caller:
             check_type_list = ['NONE']
             check_name_list = ['none']
         else:
-            #get pattern for filenaming from file in list
+            # Get pattern for filenaming from file in list
             input_file_name = os.path.split(input_file_path)[-1]
             input_file_noext = os.path.splitext(input_file_name)[0]
             suffix = re.split(file_number_string,input_file_noext)[0]
@@ -73,7 +73,7 @@ class PSFex_caller:
                                 + f'{check_image.lower()}'
                                 + f'{file_number_string}.fits')
 
-        #add checks to command line
+        # Add checks to command line
         command_line += (f' -CHECKIMAGE_TYPE {",".join(check_type_list)}'
                        + f' -CHECKIMAGE_NAME {",".join(check_name_list)}')
 
