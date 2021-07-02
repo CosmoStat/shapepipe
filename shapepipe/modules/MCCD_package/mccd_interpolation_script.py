@@ -63,7 +63,7 @@ def interp_MCCD(mccd_model_path, positions, ccd):
                          for _ccd, _pos in zip(ccd_list, positions)])
 
     # Interpolate the model
-    PSFs = mccd_instance.estimate_psf(glob_pos, ccd)
+    PSFs = mccd_instance.interpolate_psf_pipeline(glob_pos, ccd)
 
     del mccd_instance
 
