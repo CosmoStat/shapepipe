@@ -155,7 +155,7 @@ class VignetMaker(object):
     def _get_stamp(self, img_path, pos, rad):
         """Get Stamp
 
-        Extract stamp at given positions on the image.
+        Extract stamps at given positions in the image.
 
         Parameters
         ----------
@@ -301,7 +301,7 @@ class VignetMaker(object):
         Parameters
         ----------
         image_dir : list
-            List of directories where the image are.
+            List of directories where the image are.9
             If len(image_dir) == 1 -> all images in the same directory.
             Else len(image_dir) must match len(image_pattern).
         image_pattern : list
@@ -346,16 +346,11 @@ class VignetMaker(object):
             Suffix to use for the output file name.
 
         """
-        output_name = (
-            self._output_dir + '/' + suffix
-            + '_vignet{}'.format(self._image_num)
-        )
-        # np.save(output_name, output_dict)
-
+        output_name = f'{self._output_dir}/{suffix}_vignet{self._image_num}'
         output_file = SqliteDict(output_name + '.sqlite')
 
-        for i in output_dict.keys():
-            output_file[str(i)] = output_dict[i]
+        for _index in output_dict.keys():
+            output_file[str(_index)] = output_dict[_index]
 
         output_file.commit()
         output_file.close()
@@ -364,12 +359,12 @@ class VignetMaker(object):
 def get_original_vignet(galcat_path):
     """Get Original Vignet
 
-    Get the vignets from the SExtractor catalog.
+    Get the vignets from the SExtractor catalogue.
 
     Parameters
     ----------
     galcat_path : str
-        Path to the SExtractor catalog
+        Path to the SExtractor catalogue
 
     Returns
     -------
@@ -380,11 +375,11 @@ def get_original_vignet(galcat_path):
     file = io.FITSCatalog(galcat_path, SEx_catalog=True)
     file.open()
 
-    vign = file.get_data()['VIGNET']
+    vignet = file.get_data()['VIGNET']
 
     file.close()
 
-    return vign
+    return vignet
 
 
 def make_mask(galcat_path, mask_value):
@@ -395,7 +390,7 @@ def make_mask(galcat_path, mask_value):
     Parameters
     ----------
     galcat_path : str
-        Path to the SExtractor catalog
+        Path to the SExtractor catalogue
     mask_value : float
         New value of the mask
 
@@ -405,20 +400,22 @@ def make_mask(galcat_path, mask_value):
         Array of the vignets with the new mask value
 
     """
-    vign = get_original_vignet(galcat_path)
+    vignet = get_original_vignet(galcat_path)
 
-    vign[np.where(vign < -1e29)] = mask_value
+    vignet[np.where(vignet < -1e29)] = mask_value
 
-    return vign
+    return vignet
 
 
-def save_vignet(vign, sexcat_path, output_dir, suffix, image_num):
+def save_vignet(vignet, sexcat_path, output_dir, suffix, image_num):
     """Save Vignet
 
-    Save the vignet into a SExtractor format catalog
+    Save the vignet to a SExtractor format catalogue.
 
     Parameters
     ----------
+    vignet : numpy.ndarray
+        Array containing the vignets to be saved
     sexcat_path : str
         Path to the original SExtractor catalog
     output_dir : str
@@ -429,9 +426,7 @@ def save_vignet(vign, sexcat_path, output_dir, suffix, image_num):
         Image numbering.
 
     """
-    output_name = (
-        output_dir + '/' + suffix + '_vignet{}.fits'.format(image_num)
-    )
+    output_name = f'{output_dir}/{suffix}_vignet{image_num}.fits'
 
     file = io.FITSCatalog(
         output_name,
@@ -439,4 +434,4 @@ def save_vignet(vign, sexcat_path, output_dir, suffix, image_num):
         open_mode=io.BaseCatalog.OpenMode.ReadWrite,
     )
 
-    file.save_as_fits(vign, names=['VIGNET'], sex_cat_path=sexcat_path)
+    file.save_as_fits(vignet, names=['VIGNET'], sex_cat_path=sexcat_path)

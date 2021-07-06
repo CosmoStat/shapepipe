@@ -14,6 +14,7 @@ from shapepipe.modules.vignetmaker_package import vignetmaker as vm
 
 @module_runner(
     input_module='sextractor_runner',
+    version='0.1',
     file_pattern=['galaxy_selection', 'image'],
     file_ext=['.fits', '.fits'],
     depends=['numpy', 'astropy', 'sf_tools', 'sqlitedict']
@@ -35,14 +36,14 @@ def vignetmaker_runner(
         # Fetch the mask value
         mask_value = config.getfloat('VIGNETMAKER_RUNNER', 'MASK_VALUE')
         # Make a mask
-        vignet = vm.make_mask(galcat_path, mask_value)
+        vignet = vm.make_mask(galcat_path=galcat_path, mask_value=mask_value)
         # Save the vignet
         vm.save_vignet(
-            vignet,
-            galcat_path,
-            run_dirs['output'],
-            'cat',
-            file_number_string,
+            vignet=vignet,
+            sexcat_path=galcat_path,
+            output_dir=run_dirs['output'],
+            suffix='cat',
+            image_num=file_number_string,
         )
 
     # Without masking
@@ -54,7 +55,7 @@ def vignetmaker_runner(
         if stamp_size % 2 != 0:
             raise ValueError('The STAMP_SIZE must be odd')
         # Set radius
-        rad = int(stamp_size / 2)
+        radius = int(stamp_size / 2)
 
         # Fetch position type and values
         pos_type = config.get('VIGNETMAKER_RUNNER', 'COORD')
@@ -64,11 +65,11 @@ def vignetmaker_runner(
 
         # Create instance of VignetMaker
         vm_inst = vm.VignetMaker(
-            galcat_path,
-            pos_type,
-            pos_params,
-            run_dirs['output'],
-            file_number_string,
+            galcat_path=galcat_path,
+            pos_type=pos_type,
+            pos_params=pos_params,
+            output_dir=run_dirs['output'],
+            image_num=file_number_string,
         )
 
         # Run in CLASSIC mode
@@ -78,13 +79,13 @@ def vignetmaker_runner(
             # Check suffix
             if len(suffix) != len(input_file_list[1:]):
                 raise ValueError(
-                    'Number of suffixes ({0}) has to be equal to '
-                    + 'the number of input file type ({1})'
-                    + ''.format(len(suffix), len(input_file_list[1:]))
+                    f'The number of suffixes ({len(suffix)}) has to be '
+                    + 'equal to the number of input file types '
+                    + f'({len(input_file_list[1:])}).'
                 )
 
             # Process inputs
-            vm_inst.process(input_file_list[1:], rad, suffix)
+            vm_inst.process(input_file_list[1:], radius, suffix)
 
         # Run in MULTI-EPOCH mode
         elif mode == 'MULTI-EPOCH':
@@ -98,12 +99,12 @@ def vignetmaker_runner(
             f_wcs_path = config.getexpanded('VIGNETMAKER_RUNNER', 'ME_LOG_WCS')
 
             # Process inputs
-            vm_inst.process_me(image_dir, image_pattern, f_wcs_path, rad)
+            vm_inst.process_me(image_dir, image_pattern, f_wcs_path, radius)
 
         # Invalid mode
         else:
             # Raise error for invalid run mode
-            raise ValueError('Invalid MODE=\'{}\''.format(mode))
+            raise ValueError(f'Invalid MODE=\'{mode}\'')
 
     # No return objects
     return None, None
