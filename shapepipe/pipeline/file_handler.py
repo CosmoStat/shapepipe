@@ -505,13 +505,22 @@ class FileHandler(object):
 
         """
 
+        m_run_name = self._module_dict[module]['run_name']
+
+        print(f'M_RUN_NAME: {m_run_name}')
+
         # 1) Check for parameter value in module section of config file
-        if self._config.has_option(module.upper(), property.upper()):
+        if self._config.has_option(m_run_name.upper(), property.upper()):
             if get_type == 'str':
-                prop_val = self._config.get(module.upper(), property.upper())
+                prop_val = self._config.get(
+                    m_run_name.upper(),
+                    property.upper(),
+                )
             elif get_type == 'list':
-                prop_val = self._config.getlist(module.upper(),
-                                                property.upper())
+                prop_val = self._config.getlist(
+                    m_run_name.upper(),
+                    property.upper(),
+                )
             else:
                 raise ValueError('{} is not a valid get type'.format(get_type))
 
@@ -529,8 +538,8 @@ class FileHandler(object):
 
         # Look for additional module properties for list objects
         if (isinstance(prop_val, list) and
-                self.get_add_module_property(module, property)):
-            prop_val += self.get_add_module_property(module, property)
+                self.get_add_module_property(m_run_name, property)):
+            prop_val += self.get_add_module_property(m_run_name, property)
 
         self._module_dict[module][property] = prop_val
 
@@ -573,7 +582,7 @@ class FileHandler(object):
                              ''.format(len(self._module_dict[module]['file_ext']),
                                        len(self._module_dict[module]['file_pattern'])))
 
-    def _create_module_run_dirs(self, module):
+    def _create_module_run_dirs(self, module, call_num=None):
         """ Create Module Run Directories
 
         This method creates the module output directories for a given run.
@@ -585,8 +594,13 @@ class FileHandler(object):
 
         """
 
+        if not isinstance(call_num, type(None)):
+            run_name = f'{module}_run_{call_num}'
+        else:
+            run_name = module
+
         self._module_dict[module]['run_dir'] = \
-            (self.format(self._run_dir, module))
+            (self.format(self._run_dir, run_name))
         self._module_dict[module]['log_dir'] = \
             (self.format(self._module_dict[module]['run_dir'], 'logs'))
         self._module_dict[module]['output_dir'] = \
@@ -1052,9 +1066,18 @@ class FileHandler(object):
 
         """
 
-        self._module_dict[module] = {}
+        if module in self._module_dict.keys():
+            self._module_dict[module]['run_count'] += 1
+            call_num = self._module_dict[module]['run_count']
+            self._module_dict[module]['run_name'] = f'{module}/run_{call_num}'
+        else:
+            self._module_dict[module] = {}
+            self._module_dict[module]['run_count'] = 1
+            call_num = None
+            self._module_dict[module]['run_name'] = module
+
         self._set_module_properties(module)
-        self._create_module_run_dirs(module)
+        self._create_module_run_dirs(module, call_num)
         self._set_module_input_dir(module)
         self._get_module_input_files(module)
 
