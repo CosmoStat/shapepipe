@@ -448,6 +448,25 @@ class FileHandler(object):
         copyfile(self._config.file_name, '{}/{}'.format(self._log_dir,
                  config_file_name))
 
+    def get_module_config_sec(self, module):
+        """Set Module Configuration Section
+
+        Set the name of section name in the configuration file for the module.
+
+        Parameters
+        ----------
+        module : str
+            Module name
+
+        Returns
+        -------
+        str
+            Configuration file section name
+
+        """
+
+        return self._module_dict[module]['run_name'].upper()
+
     def get_add_module_property(self, module, property):
         """ Get Additional Module Properties
 
@@ -467,11 +486,17 @@ class FileHandler(object):
 
         """
 
-        if (self._config.has_option(module.upper(), 'ADD_{}'.format(
-                property.upper()))):
+        module_config_sec = self.get_module_config_sec(module)
 
-            return self._config.getlist(module.upper(), 'ADD_{}'.format(
-                                        property.upper()))
+        if (self._config.has_option(
+            module_config_sec,
+            f'ADD_{property.upper()}',
+        )):
+
+            return self._config.getlist(
+                module_config_sec,
+                f'ADD_{property.upper()}',
+            )
 
     def _set_module_property(self, module, property, get_type):
         """ Set Module Property
@@ -505,24 +530,22 @@ class FileHandler(object):
 
         """
 
-        m_run_name = self._module_dict[module]['run_name']
-
-        print(f'M_RUN_NAME: {m_run_name}')
+        module_config_sec = self.get_module_config_sec(module)
 
         # 1) Check for parameter value in module section of config file
-        if self._config.has_option(m_run_name.upper(), property.upper()):
+        if self._config.has_option(module_config_sec, property.upper()):
             if get_type == 'str':
                 prop_val = self._config.get(
-                    m_run_name.upper(),
+                    module_config_sec,
                     property.upper(),
                 )
             elif get_type == 'list':
                 prop_val = self._config.getlist(
-                    m_run_name.upper(),
+                    module_config_sec,
                     property.upper(),
                 )
             else:
-                raise ValueError('{} is not a valid get type'.format(get_type))
+                raise ValueError(f'{get_type} is not a valid get type')
 
         # 2) Check for default parameter values in file handler
         elif hasattr(self, '_{}'.format(property)):
@@ -533,13 +556,16 @@ class FileHandler(object):
             prop_val = getattr(self.module_runners[module], property)
 
         else:
-            raise ValueError('No value for {} in {} could be found.'
-                             ''.format(property, module))
+            raise ValueError(
+                f'No value for {property} in {module} could be found.'
+            )
 
         # Look for additional module properties for list objects
-        if (isinstance(prop_val, list) and
-                self.get_add_module_property(m_run_name, property)):
-            prop_val += self.get_add_module_property(m_run_name, property)
+        if (
+            isinstance(prop_val, list)
+            and self.get_add_module_property(module, property)
+        ):
+            prop_val += self.get_add_module_property(module, property)
 
         self._module_dict[module][property] = prop_val
 
@@ -788,6 +814,8 @@ class FileHandler(object):
 
             file_list = find_files(path, pattern, ext)
 
+            print('XXXX', file_list)
+
             if file_list:
                 true_file_list = file_list
                 true_path = path
@@ -795,16 +823,16 @@ class FileHandler(object):
                 break
 
         if not true_file_list:
-            raise RuntimeError('No files found matching "{}" and "{}" in the '
-                               ' directories {}.'
-                               ''.format(pattern, ext, dir_list))
+            raise RuntimeError(
+                f'No files found matching "{pattern}" and "{ext}" in the '
+                + f'directories {dir_list}.'
+            )
 
         # Correct the extension if necessary
         new_ext = '.' + ext if not ext.startswith('.') else ext
 
         if new_ext != ext:
-            print('Updating file extension from "{}" to "{}".'
-                  ''.format(ext, new_ext))
+            print(f'Updating file extension from "{ext}" to "{new_ext}".')
             print()
 
         # Select files matching the numbering scheme

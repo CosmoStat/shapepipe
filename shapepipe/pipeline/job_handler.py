@@ -359,14 +359,21 @@ class JobHandler(object):
 
         """
 
-        result = (Parallel(n_jobs=self.batch_size, backend=self.backend)
-                  (delayed(WorkerHandler(verbose=self._verbose).worker)
-                   (process[1:], process[0],
-                    self.filehd.get_worker_log_name(self._module,
-                                                    process[0]),
-                    self.filehd.module_run_dirs, self.config, self.timeout,
-                    self._module_runner)
-                   for process in self.filehd.process_list))
+        result = (
+            Parallel(n_jobs=self.batch_size, backend=self.backend)(
+                delayed(WorkerHandler(verbose=self._verbose).worker)(
+                    process[1:],
+                    process[0],
+                    self.filehd.get_worker_log_name(self._module, process[0]),
+                    self.filehd.module_run_dirs,
+                    self.config,
+                    self.filehd.get_module_config_sec(self._module),
+                    self.timeout,
+                    self._module_runner
+                )
+                for process in self.filehd.process_list
+            )
+        )
 
         self.worker_dicts = result
 
@@ -380,11 +387,15 @@ class JobHandler(object):
         wh = WorkerHandler(verbose=self._verbose)
         process = self.filehd.process_list
 
-        result = wh.worker(process, '',
-                           self.filehd.get_worker_log_name(self._module,
-                                                           '_serial'),
-                           self.filehd.module_run_dirs, self.config,
-                           self.timeout, self._module_runner)
+        result = wh.worker(
+            process,
+            '',
+            self.filehd.get_worker_log_name(self._module, '_serial'),
+            self.filehd.module_run_dirs, self.config,
+            self.filehd.get_module_config_sec(self._module),
+            self.timeout,
+            self._module_runner,
+        )
 
         self.worker_dicts = [result]
 

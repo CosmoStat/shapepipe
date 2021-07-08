@@ -30,8 +30,17 @@ class WorkerHandler(object):
         self._stderr = None
         self._verbose = verbose
 
-    def worker(self, process, job_name, w_log_name, run_dirs, config,
-               timeout, module_runner):
+    def worker(
+        self,
+        process,
+        job_name,
+        w_log_name,
+        run_dirs,
+        config,
+        module_config_sec,
+        timeout,
+        module_runner
+    ):
         """ Worker
 
         This method defines a worker.
@@ -48,6 +57,8 @@ class WorkerHandler(object):
             Run directories
         config : CustomParser
             Configuaration parser instance
+        module_config_sec : str
+            Configuration file section name
         timeout : int
             Timeout limit in seconds
 
@@ -61,6 +72,7 @@ class WorkerHandler(object):
         self._w_log_name = w_log_name
         self._run_dirs = run_dirs
         self._config = config
+        self._module_config_sec = module_config_sec
         self._module_runner = module_runner
         self._prepare_worker(process, job_name, timeout,
                              module_runner.__name__)
@@ -168,8 +180,9 @@ class WorkerHandler(object):
         """
 
         try:
-            with_timeout(self.worker_dict['timeout'],
-                         self.w_log.name)(self._worker_execution)()
+            with_timeout(self.worker_dict['timeout'], self.w_log.name)(
+                self._worker_execution
+            )()
 
         except Exception as err:
             catch_error(err, self.w_log)
@@ -197,17 +210,21 @@ class WorkerHandler(object):
 
         """
 
-        self.w_log.info(' - Running module: {}'.format(
-                        self.worker_dict['module']))
+        self.w_log.info(
+            f" - Running module: {self.worker_dict['module']}"
+        )
 
         file_number_string = self.worker_dict['file_number_string']
         input_file_list = self.worker_dict['process']
 
-        self._stdout, self._stderr = self._module_runner(input_file_list,
-                                                         self._run_dirs,
-                                                         file_number_string,
-                                                         self._config,
-                                                         self.w_log)
+        self._stdout, self._stderr = self._module_runner(
+            input_file_list,
+            self._run_dirs,
+            file_number_string,
+            self._config,
+            self._module_config_sec,
+            self.w_log,
+        )
 
     def _log_stdout(self):
         """ Log STDOUT
@@ -216,10 +233,12 @@ class WorkerHandler(object):
 
         """
 
-        self.w_log.info('Process produced the following output: {}'.format(
-                        self._stdout))
+        self.w_log.info(
+            f'Process produced the following output: {self._stdout}'
+        )
 
         if self._stderr:
-            self.w_log.info('Process produced the following error(s): {}'
-                            ''.format(self._stderr))
+            self.w_log.info(
+                f'Process produced the following error(s): {self._stderr}'
+            )
             self.worker_dict['stderr'] = True
