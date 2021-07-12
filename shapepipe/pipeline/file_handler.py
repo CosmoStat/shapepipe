@@ -20,7 +20,7 @@ from shapepipe.utilities.file_system import mkdir
 
 
 def find_files(path, pattern='*', ext='*'):
-    """ Find Files
+    """Find Files
 
     This method recursively retrieves file names from a given path that
     match a given pattern and/or have a given extension.
@@ -60,18 +60,18 @@ def find_files(path, pattern='*', ext='*'):
         raise ValueError('Do not include "*" in extension.')
 
     if (not ext.startswith(dot) and dot in ext) or (ext.count(dot) > 1):
-        raise ValueError('Invalid extension format: "{}".'.format(ext))
+        raise ValueError(f'Invalid extension format: "{ext}".')
 
     if ext != star and not ext.startswith(dot):
         ext = dot + ext
 
-    search_string = '{}/**/*{}*{}'.format(path, pattern, ext)
+    search_string = f'{path}/**/*{pattern}*{ext}'
 
     return glob(search_string, recursive=True)
 
 
 def check_duplicate(input_list):
-    """ Check Duplicate.
+    """Check Duplicate.
 
     Check whether input list contains at least one duplicate.
 
@@ -98,7 +98,7 @@ def check_duplicate(input_list):
 
 
 class FileHandler(object):
-    """ File Handler
+    """File Handler
 
     This class manages the files used and produced during a pipeline run.
 
@@ -126,11 +126,15 @@ class FileHandler(object):
         self._input_list = config.getlist('FILE', 'INPUT_DIR')
         self._output_dir = config.getexpanded('FILE', 'OUTPUT_DIR')
         self._log_name = config.get('FILE', 'LOG_NAME')
-        self._correct_pattern = config.getboolean('FILE',
-                                                  'CORRECT_FILE_PATTERN')
-        self._run_log_file = self.format(self._output_dir,
-                                         config.get('FILE', 'RUN_LOG_NAME'),
-                                         '.txt')
+        self._correct_pattern = config.getboolean(
+            'FILE',
+            'CORRECT_FILE_PATTERN',
+        )
+        self._run_log_file = self.format(
+            self._output_dir,
+            config.get('FILE', 'RUN_LOG_NAME'),
+            '.txt',
+        )
         self._module_dict = {}
 
         if config.has_option('FILE', 'FILE_PATTERN'):
@@ -143,8 +147,9 @@ class FileHandler(object):
             self._numbering_scheme = r'RE:\_\d+'
         if config.has_option('FILE', 'NUMBER_LIST'):
             if os.path.isfile(config.get('FILE', 'NUMBER_LIST')):
-                self._number_list = (self.read_number_list(config.get('FILE',
-                                     'NUMBER_LIST')))
+                self._number_list = (
+                    self.read_number_list(config.get('FILE', 'NUMBER_LIST'))
+                )
             else:
                 self._number_list = config.getlist('FILE', 'NUMBER_LIST')
         else:
@@ -152,7 +157,7 @@ class FileHandler(object):
 
     @property
     def run_dir(self):
-        """ Run Directory
+        """Run Directory
 
         This method defines the run directory.
 
@@ -167,7 +172,7 @@ class FileHandler(object):
 
     @property
     def _input_dir(self):
-        """ Input Directory
+        """Input Directory
 
         This method defines the input directories.
 
@@ -182,7 +187,7 @@ class FileHandler(object):
 
     @property
     def _output_dir(self):
-        """ Output Directory
+        """Output Directory
 
         This method defines the output directory.
 
@@ -197,7 +202,7 @@ class FileHandler(object):
 
     @staticmethod
     def read_number_list(file_name):
-        """ Read Number List
+        """Read Number List
 
         Extract number strings to be processed from a file.
 
@@ -215,7 +220,7 @@ class FileHandler(object):
 
     @classmethod
     def check_dir(cls, dir_name, check_exists=False):
-        """ Check Directory
+        """Check Directory
 
         Raise error if directory exists.
 
@@ -232,13 +237,13 @@ class FileHandler(object):
         """
 
         if check_exists and os.path.isdir(dir_name):
-            raise OSError('Directory {} already exists.'.format(dir_name))
+            raise OSError('Directory {dir_name} already exists.')
 
         return cls.strip_slash(dir_name)
 
     @classmethod
     def check_dirs(cls, dir_list):
-        """ Check Directories
+        """Check Directories
 
         Check directories in list
 
@@ -253,7 +258,7 @@ class FileHandler(object):
 
     @classmethod
     def mkdir(cls, dir_name):
-        """ Make Directory
+        """Make Directory
 
         This method creates a directory at the specified path.
 
@@ -269,7 +274,7 @@ class FileHandler(object):
 
     @staticmethod
     def format(path, name, ext=''):
-        """ Format Path Name
+        """Format Path Name
 
         This method appends the file/directory name to the input path.
 
@@ -289,11 +294,11 @@ class FileHandler(object):
 
         """
 
-        return '{}/{}{}'.format(path, name, ext)
+        return f'{path}/{name}{ext}'
 
     @staticmethod
     def strip_slash(path):
-        """ Strip Slash
+        """Strip Slash
 
         This method removes the trailing slash from a path.
 
@@ -313,7 +318,7 @@ class FileHandler(object):
 
     @classmethod
     def strip_slash_list(cls, path_list):
-        """ Strip Slash List
+        """Strip Slash List
 
         This method removes the trailing slash from a list of paths.
 
@@ -333,7 +338,7 @@ class FileHandler(object):
 
     @staticmethod
     def flatten_list(input_list):
-        """ Flatten List
+        """Flatten List
 
         Flatten a list of lists.
 
@@ -352,7 +357,7 @@ class FileHandler(object):
         return [item for sublist in input_list for item in sublist]
 
     def _check_input_dir_list(self, dir_list):
-        """ Check Input Directory List
+        """Check Input Directory List
 
         Check an input list to see if the directories exist or if the the run
         log should be serarched for an appropriate output directory.
@@ -379,35 +384,42 @@ class FileHandler(object):
             elif 'last' in dir.lower():
                 module = dir.lower().split(':')[1]
                 last_module = self._run_log.get_last(module)
-                input_dir.append(self.format(self.format(
-                                 last_module,
-                                 module), 'output'))
+                input_dir.append(
+                    self.format(self.format(last_module, module), 'output')
+                )
 
             elif 'all' in dir.lower():
                 module = dir.lower().split(':')[1]
                 all_runs = self._run_log.get_all(module)
-                input_dir.extend([self.format(self.format(
-                                  run.split(' ')[0],
-                                  module), 'output')
-                                  for run in all_runs])
+                input_dir.extend([
+                    self.format(
+                        self.format(run.split(' ')[0], module),
+                        'output'
+                    )
+                    for run in all_runs
+                ])
 
             elif ':' in dir.lower():
                 string, module = dir.split(':')
                 module = module.lower()
-                input_dir.append(self.format(self.format(
-                                             self._run_log.get_run(string),
-                                             module),
-                                             'output'))
+                input_dir.append(
+                    self.format(
+                        self.format(self._run_log.get_run(string), module),
+                        'output'
+                    )
+                )
 
             else:
-                raise ValueError('Invalid INPUT_DIR ({}). Make sure the paths '
-                                 'provided are valid directories or use the '
-                                 'allowed special keys.'.format(dir))
+                raise ValueError(
+                    f'Invalid INPUT_DIR ({dir}). Make sure the paths '
+                    + 'provided are valid directories or use the '
+                    + 'allowed special keys.'
+                )
 
         return input_dir
 
     def _get_input_dir(self):
-        """ Get Input Directory
+        """Get Input Directory
 
         This method sets the module input directory
 
@@ -416,7 +428,7 @@ class FileHandler(object):
         self._input_dir = self._check_input_dir_list(self._input_list)
 
     def create_global_run_dirs(self):
-        """ Create Global Run Directories
+        """Create Global Run Directories
 
         This method creates the pipeline output directories for a given run.
 
@@ -426,8 +438,11 @@ class FileHandler(object):
         self._log_dir = self.format(self.run_dir, 'logs')
         self._tmp_dir = self.format(self.run_dir, 'tmp')
         self.log_name = self.format(self._log_dir, self._log_name)
-        self._run_log = RunLog(self._run_log_file, self._module_list,
-                               self.run_dir)
+        self._run_log = RunLog(
+            self._run_log_file,
+            self._module_list,
+            self.run_dir,
+        )
 
         self.mkdir(self.run_dir)
         self.mkdir(self._log_dir)
@@ -437,7 +452,7 @@ class FileHandler(object):
         self._copy_config_to_log()
 
     def _copy_config_to_log(self):
-        """ Copy Config to Log
+        """Copy Config to Log
 
         Copy configuration file to run log directory.
 
@@ -445,8 +460,10 @@ class FileHandler(object):
 
         config_file_name = os.path.basename(self._config.file_name)
 
-        copyfile(self._config.file_name, '{}/{}'.format(self._log_dir,
-                 config_file_name))
+        copyfile(
+            self._config.file_name,
+            f'{self._log_dir}/{config_file_name}',
+        )
 
     def get_module_config_sec(self, module):
         """Set Module Configuration Section
@@ -465,10 +482,11 @@ class FileHandler(object):
 
         """
 
-        return self._module_dict[module]['run_name'].upper()
+        # return self._module_dict[module]['run_name'].upper()
+        return self._module_dict[module]['latest'].upper()
 
-    def get_add_module_property(self, module, property):
-        """ Get Additional Module Properties
+    def get_add_module_property(self, module, run_name, property):
+        """Get Additional Module Properties
 
         Get a list of additional module property values.
 
@@ -485,21 +503,18 @@ class FileHandler(object):
             Additional module property values
 
         """
-
-        module_config_sec = self.get_module_config_sec(module)
-
         if (self._config.has_option(
-            module_config_sec,
+            run_name.upper(),
             f'ADD_{property.upper()}',
         )):
 
             return self._config.getlist(
-                module_config_sec,
+                run_name.upper(),
                 f'ADD_{property.upper()}',
             )
 
-    def _set_module_property(self, module, property, get_type):
-        """ Set Module Property
+    def _set_module_property(self, module, run_name, property, get_type):
+        """Set Module Property
 
         Set a module property from either the configuration file or the module
         runner.
@@ -529,27 +544,24 @@ class FileHandler(object):
         definitions, but only for the module in question.
 
         """
-
-        module_config_sec = self.get_module_config_sec(module)
-
         # 1) Check for parameter value in module section of config file
-        if self._config.has_option(module_config_sec, property.upper()):
+        if self._config.has_option(run_name.upper(), property.upper()):
             if get_type == 'str':
                 prop_val = self._config.get(
-                    module_config_sec,
+                    run_name.upper(),
                     property.upper(),
                 )
             elif get_type == 'list':
                 prop_val = self._config.getlist(
-                    module_config_sec,
+                    run_name.upper(),
                     property.upper(),
                 )
             else:
                 raise ValueError(f'{get_type} is not a valid get type')
 
         # 2) Check for default parameter values in file handler
-        elif hasattr(self, '_{}'.format(property)):
-            prop_val = getattr(self, '_{}'.format(property))
+        elif hasattr(self, f'_{property}'):
+            prop_val = getattr(self, f'_{property}')
 
         # 3) Check for default parameter values in module runner
         elif hasattr(self.module_runners[module], property):
@@ -563,14 +575,18 @@ class FileHandler(object):
         # Look for additional module properties for list objects
         if (
             isinstance(prop_val, list)
-            and self.get_add_module_property(module, property)
+            and self.get_add_module_property(module, run_name, property)
         ):
-            prop_val += self.get_add_module_property(module, property)
+            prop_val += self.get_add_module_property(
+                module,
+                run_name,
+                property,
+            )
 
-        self._module_dict[module][property] = prop_val
+        self._module_dict[module][run_name][property] = prop_val
 
-    def _set_module_properties(self, module):
-        """ Get Module Properties
+    def _set_module_properties(self, module, run_name):
+        """Get Module Properties
 
         Get module properties defined in module runner wrapper.
 
@@ -591,25 +607,32 @@ class FileHandler(object):
             'executes': 'list'
         }
 
-        [self._set_module_property(module, property, get_type)
-         for property, get_type in module_props.items()]
+        for property, get_type in module_props.items():
+            self._set_module_property(module, run_name, property, get_type)
 
         # Make sure the number of patterns and extensions match
-        if ((len(self._module_dict[module]['file_ext']) == 1) and
-                (len(self._module_dict[module]['file_pattern']) > 1)):
-            self._module_dict[module]['file_ext'] = \
-                [self._module_dict[module]['file_ext'][0] for i in
-                 self._module_dict[module]['file_pattern']]
+        if (
+            (len(self._module_dict[module][run_name]['file_ext']) == 1)
+            and (len(self._module_dict[module][run_name]['file_pattern']) > 1)
+        ):
+            self._module_dict[module][run_name]['file_ext'] = [
+                self._module_dict[module][run_name]['file_ext'][0]
+                for i in self._module_dict[module][run_name]['file_pattern']
+            ]
 
-        if (len(self._module_dict[module]['file_ext']) !=
-                len(self._module_dict[module]['file_pattern'])):
-            raise ValueError('The number of file_ext values ({}) does not match '
-                             'the number of file_pattern values ({}).'
-                             ''.format(len(self._module_dict[module]['file_ext']),
-                                       len(self._module_dict[module]['file_pattern'])))
+        if (
+            len(self._module_dict[module][run_name]['file_ext'])
+            != len(self._module_dict[module][run_name]['file_pattern'])
+        ):
+            n_fext = len(self._module_dict[module][run_name]['file_ext'])
+            n_fpat = len(self._module_dict[module][run_name]['file_pattern'])
+            raise ValueError(
+                f'The number of file_ext values ({n_fext}) does not match the '
+                + f'number of file_pattern values ({n_fpat}).'
+            )
 
-    def _create_module_run_dirs(self, module, call_num=None):
-        """ Create Module Run Directories
+    def _create_module_run_dirs(self, module, run_name):
+        """Create Module Run Directories
 
         This method creates the module output directories for a given run.
 
@@ -620,30 +643,39 @@ class FileHandler(object):
 
         """
 
-        if not isinstance(call_num, type(None)):
-            run_name = f'{module}_run_{call_num}'
-        else:
-            run_name = module
+        # if not isinstance(call_num, type(None)):
+        #     run_name = f'{module}_run_{call_num}'
+        # else:
+        #     run_name = module
 
-        self._module_dict[module]['run_dir'] = \
-            (self.format(self._run_dir, run_name))
-        self._module_dict[module]['log_dir'] = \
-            (self.format(self._module_dict[module]['run_dir'], 'logs'))
-        self._module_dict[module]['output_dir'] = \
-            (self.format(self._module_dict[module]['run_dir'], 'output'))
+        self._module_dict[module][run_name]['run_dir'] = (
+            self.format(self._run_dir, run_name)
+        )
+        self._module_dict[module][run_name]['log_dir'] = (
+            self.format(self._module_dict[module][run_name]['run_dir'], 'logs')
+        )
+        self._module_dict[module][run_name]['output_dir'] = (
+            self.format(
+                self._module_dict[module][run_name]['run_dir'],
+                'output',
+            )
+        )
 
-        self.mkdir(self._module_dict[module]['run_dir'])
-        self.mkdir(self._module_dict[module]['log_dir'])
-        self.mkdir(self._module_dict[module]['output_dir'])
+        self.mkdir(self._module_dict[module][run_name]['run_dir'])
+        self.mkdir(self._module_dict[module][run_name]['log_dir'])
+        self.mkdir(self._module_dict[module][run_name]['output_dir'])
 
         # Set current output directory to module output directory
-        self.output_dir = self._module_dict[module]['output_dir']
-        self.module_run_dirs = {'run': self.run_dir, 'log': self._log_dir,
-                                'tmp': self._tmp_dir,
-                                'output': self.output_dir}
+        self.output_dir = self._module_dict[module][run_name]['output_dir']
+        self.module_run_dirs = {
+            'run': self.run_dir,
+            'log': self._log_dir,
+            'tmp': self._tmp_dir,
+            'output': self.output_dir
+        }
 
-    def _set_module_input_dir(self, module):
-        """ Set Module Input Directory
+    def _set_module_input_dir(self, module, run_name):
+        """Set Module Input Directory
 
         Set the module input directory. If the module specified is the
         first module in the pipeline or does not have any input modules then
@@ -660,34 +692,49 @@ class FileHandler(object):
 
         """
 
-        if (isinstance(self._module_dict[module]['input_module'], type(None))
-                or len(self._module_dict) == 1):
+        if (
+            isinstance(
+                self._module_dict[module][run_name]['input_module'],
+                type(None),
+            )
+            or len(self._module_dict) == 1
+        ):
             input_dir = self._input_dir
 
         else:
 
-            input_dir = [self._module_dict[input_mod]['output_dir']
-                         for input_mod in
-                         self._module_dict[module]['input_module']
-                         if input_mod in self._module_dict]
+            input_dir = [
+                self._module_dict[input_mod][run_name]['output_dir']
+                for input_mod in
+                self._module_dict[module][run_name]['input_module']
+                if input_mod in self._module_dict
+            ]
 
-        if self._config.has_option(module.upper(), 'INPUT_DIR'):
-            input_dir = (self._check_input_dir_list(
-                         self._config.getlist(module.upper(),
-                                              'INPUT_DIR')))
+        if self._config.has_option(run_name.upper(), 'INPUT_DIR'):
+            input_dir = self._check_input_dir_list(
+                self._config.getlist(run_name.upper(), 'INPUT_DIR')
+            )
 
-        if self.get_add_module_property(module, 'input_dir'):
-            input_dir += self.get_add_module_property(module, 'input_dir')
+        if self.get_add_module_property(module, run_name, 'input_dir'):
+            input_dir += self.get_add_module_property(
+                module,
+                run_name,
+                'input_dir',
+            )
 
         if not input_dir:
-            raise RuntimeError('Could not find appropriate input directory '
-                               'for module {}.'.format(module))
+            raise RuntimeError(
+                'Could not find appropriate input directory '
+                + f'for module {run_name}.'
+            )
 
-        self._module_dict[module]['input_dir'] = self.check_dirs(input_dir)
+        self._module_dict[module][run_name]['input_dir'] = (
+            self.check_dirs(input_dir)
+        )
 
     @staticmethod
     def _generate_re_pattern(match_pattern):
-        """ Generate Regular Expression Pattern
+        """Generate Regular Expression Pattern
 
         Generate a regular expression pattern from an input string.
 
@@ -713,17 +760,20 @@ class FileHandler(object):
 
         chars = [char for char in match_pattern if not char.isalnum()]
         split_pattern = '|'.join(chars).replace('.', r'\.')
-        chars = ['\\{}'.format(char) for char in chars] + ['']
-        num_length = ['\\d{{{}}}'.format(len(digits)) for digits in
-                      re.split(split_pattern, match_pattern)]
-        re_pattern = r''.join([a for b in zip(num_length, chars)
-                               for a in b]).replace('{1}', '+')
+        chars = [f'\\{char}' for char in chars] + ['']
+        num_length = [
+            f'\\d{{{len(digits)}}}'
+            for digits in re.split(split_pattern, match_pattern)
+        ]
+        re_pattern = r''.join(
+            [a for b in zip(num_length, chars) for a in b]
+        ).replace('{1}', '+')
 
         return re.compile(re_pattern)
 
     @staticmethod
     def _strip_dir_from_file(file_name, dir_list):
-        """ Strip Directory from File Name
+        """Strip Directory from File Name
 
         Remove the directory string from the file name.
 
@@ -741,12 +791,14 @@ class FileHandler(object):
 
         """
 
-        return [file_name.replace(_dir + '/', '') for _dir in dir_list
-                if _dir in file_name][0]
+        return [
+            file_name.replace(_dir + '/', '')
+            for _dir in dir_list if _dir in file_name
+        ][0]
 
     @classmethod
     def _get_re(cls, num_scheme):
-        """ Get Regular Expression
+        """Get Regular Expression
 
         Return the regular expression corresponding to the numbering scheme.
 
@@ -783,9 +835,15 @@ class FileHandler(object):
 
         return re_pattern
 
-    def _save_num_patterns(self, dir_list, re_pattern, pattern, ext,
-                           output_file):
-        """ Save Number Patterns
+    def _save_num_patterns(
+        self,
+        dir_list,
+        re_pattern,
+        pattern,
+        ext,
+        output_file
+    ):
+        """Save Number Patterns
 
         Save file number patterns to numpy binary, update file patterns and
         get correct file paths.
@@ -813,8 +871,6 @@ class FileHandler(object):
         for path in dir_list:
 
             file_list = find_files(path, pattern, ext)
-
-            print('XXXX', file_list)
 
             if file_list:
                 true_file_list = file_list
@@ -860,24 +916,28 @@ class FileHandler(object):
                     new_pattern = new_pattern.replace(substring, '')
 
                 if new_pattern != pattern:
-                    print('Updating pattern from "{}" to "{}".'
-                          ''.format(pattern, new_pattern))
+                    print(
+                        f'Updating pattern from "{pattern}" to '
+                        + f'"{new_pattern}".'
+                    )
                     print()
 
                 correct_pattern = False
 
         if not found_match:
-            raise RuntimeError('Could not match numbering scheme "{}" to any '
-                               'of the input files matching "{}" and "{}" in '
-                               'the directories {}.'
-                               ''.format(self._numbering_scheme, pattern, ext,
-                                         dir_list))
+            raise RuntimeError(
+                f'Could not match numbering scheme "{self._numbering_scheme}" '
+                + f'to any of the input files matching "{pattern}" and '
+                + f'"{ext}" in the directories {dir_list}.'
+            )
 
         if check_duplicate(final_file_list):
-            raise RuntimeError('Input file list contains at least two elements that match '
-                               'file pattern and numbering scheme, leading to identical '
-                               'input files.  Make sure that the correct input '
-                               'directory is used.')
+            raise RuntimeError(
+                'Input file list contains at least two elements that match '
+                + 'file pattern and numbering scheme, leading to identical '
+                + 'input files.  Make sure that the correct input '
+                + 'directory is used.'
+            )
 
         # Save file list
         np.save(output_file, np.array(final_file_list))
@@ -888,7 +948,7 @@ class FileHandler(object):
 
     @staticmethod
     def _save_match_patterns(output_file, mmap_list):
-        """ Save Match Patterns
+        """Save Match Patterns
 
         Save matching number patterns to numpy binary.
 
@@ -903,14 +963,19 @@ class FileHandler(object):
 
         num_pattern_list = [np.load(mmap, mmap_mode='r') for mmap in mmap_list]
 
-        np.save(output_file, reduce(partial(np.intersect1d,
-                assume_unique=True), num_pattern_list))
+        np.save(
+            output_file,
+            reduce(
+                partial(np.intersect1d, assume_unique=True),
+                num_pattern_list
+            )
+        )
 
         del num_pattern_list
 
     @staticmethod
     def _get_file_name(path, pattern, number, ext):
-        """ Get File Name
+        """Get File Name
 
         Get file name corresponding to the path, file pattern, number pattern
         and file extension.
@@ -933,11 +998,11 @@ class FileHandler(object):
 
         """
 
-        return '{}/{}{}{}'.format(path, pattern, number, ext)
+        return f'{path}/{pattern}{number}{ext}'
 
     @staticmethod
     def _remove_mmaps(mmap_list):
-        """ Remove Memory Maps
+        """Remove Memory Maps
 
         Remove memory map files in input list.
 
@@ -954,9 +1019,15 @@ class FileHandler(object):
         for mmap in set(mmap_list):
             os.remove(mmap)
 
-    def _format_process_list(self, patterns, memory_map, re_pattern,
-                             num_scheme, run_method):
-        """ Format Process List
+    def _format_process_list(
+        self,
+        patterns,
+        memory_map,
+        re_pattern,
+        num_scheme,
+        run_method,
+    ):
+        """Format Process List
 
         Format the list of files to be processed.
 
@@ -992,24 +1063,32 @@ class FileHandler(object):
         for number in number_list:
 
             if not re.search(re_pattern, number):
-                raise ValueError('The string "{}" does not match the '
-                                 'numbering scheme "{}"'
-                                 ''.format(number, num_scheme))
+                raise ValueError(
+                    f'The string "{number}" does not match the '
+                    + f'numbering scheme "{num_scheme}".'
+                )
 
             if run_method == 'serial':
                 process_items = []
             else:
                 process_items = [number]
-            process_items.extend([self._get_file_name(path, fp, number, ext)
-                                  for path, fp, ext in
-                                  zip(path_list, pattern_list, ext_list)])
+            process_items.extend([
+                self._get_file_name(path, fp, number, ext)
+                for path, fp, ext in zip(path_list, pattern_list, ext_list)
+            ])
             process_list.append(process_items)
 
         return process_list
 
-    def _save_process_list(self, dir_list, pattern_list, ext_list, num_scheme,
-                           run_method):
-        """ Save Process List
+    def _save_process_list(
+        self,
+        dir_list,
+        pattern_list,
+        ext_list,
+        num_scheme,
+        run_method,
+    ):
+        """Save Process List
 
         Save list of processes to a numpy binary.
 
@@ -1026,22 +1105,36 @@ class FileHandler(object):
 
         """
 
-        np_mmap_list = [self.format(self._tmp_dir,
-                        'nums_{}_{}.npy'.format(pattern, ext))
-                        for pattern, ext in zip(pattern_list, ext_list)]
+        np_mmap_list = [
+            self.format(self._tmp_dir, f'nums_{pattern}_{ext}.npy')
+            for pattern, ext in zip(pattern_list, ext_list)
+        ]
         match_mmap = self.format(self._tmp_dir, 'matching_num_patterns.npy')
         self.process_mmap = self.format(self._tmp_dir, 'process_list.npy')
 
         re_pattern = self._get_re(num_scheme)
 
-        temp = [self._save_num_patterns(dir_list, re_pattern, pattern, ext,
-                np_mmap) for pattern, ext, np_mmap in
-                zip(pattern_list, ext_list, np_mmap_list)]
+        temp = [
+            self._save_num_patterns(
+                dir_list,
+                re_pattern,
+                pattern,
+                ext,
+                np_mmap
+            )
+            for pattern, ext, np_mmap in
+            zip(pattern_list, ext_list, np_mmap_list)
+        ]
 
         self._save_match_patterns(match_mmap, np_mmap_list)
 
-        process_list = self._format_process_list(temp, match_mmap, re_pattern,
-                                                 num_scheme, run_method)
+        process_list = self._format_process_list(
+            temp,
+            match_mmap,
+            re_pattern,
+            num_scheme,
+            run_method,
+        )
 
         np.save(self.process_mmap, np.array(process_list))
         del process_list
@@ -1053,7 +1146,7 @@ class FileHandler(object):
         self._remove_mmaps(np_mmap_list + [match_mmap])
 
     def remove_process_mmap(self):
-        """ Remove Process MMAP
+        """Remove Process MMAP
 
         Remove process list memory map.
 
@@ -1061,8 +1154,8 @@ class FileHandler(object):
 
         self._remove_mmaps([self.process_mmap])
 
-    def _get_module_input_files(self, module):
-        """ Get Module Input Files
+    def _get_module_input_files(self, module, run_name):
+        """Get Module Input Files
 
         Retrieve the module input files names from the input directory.
 
@@ -1073,17 +1166,22 @@ class FileHandler(object):
 
         """
 
-        dir_list = self._module_dict[module]['input_dir']
-        pattern_list = self._module_dict[module]['file_pattern']
-        ext_list = self._module_dict[module]['file_ext']
-        num_scheme = self._module_dict[module]['numbering_scheme']
-        run_method = self._module_dict[module]['run_method']
+        dir_list = self._module_dict[module][run_name]['input_dir']
+        pattern_list = self._module_dict[module][run_name]['file_pattern']
+        ext_list = self._module_dict[module][run_name]['file_ext']
+        num_scheme = self._module_dict[module][run_name]['numbering_scheme']
+        run_method = self._module_dict[module][run_name]['run_method']
 
-        self._save_process_list(dir_list, pattern_list, ext_list, num_scheme,
-                                run_method)
+        self._save_process_list(
+            dir_list,
+            pattern_list,
+            ext_list,
+            num_scheme,
+            run_method,
+        )
 
     def set_up_module(self, module):
-        """ Set Up Module
+        """Set Up Module
 
         Set up module parameters for file handler.
 
@@ -1097,20 +1195,22 @@ class FileHandler(object):
         if module in self._module_dict.keys():
             self._module_dict[module]['run_count'] += 1
             call_num = self._module_dict[module]['run_count']
-            self._module_dict[module]['run_name'] = f'{module}/run_{call_num}'
+            run_name = f'{module}/run_{call_num}'
         else:
             self._module_dict[module] = {}
             self._module_dict[module]['run_count'] = 1
-            call_num = None
-            self._module_dict[module]['run_name'] = module
+            run_name = module
 
-        self._set_module_properties(module)
-        self._create_module_run_dirs(module, call_num)
-        self._set_module_input_dir(module)
-        self._get_module_input_files(module)
+        self._module_dict[module]['latest'] = run_name
+        self._module_dict[module][run_name] = {}
+
+        self._set_module_properties(module, run_name)
+        self._create_module_run_dirs(module, run_name)
+        self._set_module_input_dir(module, run_name)
+        self._get_module_input_files(module, run_name)
 
     def get_worker_log_name(self, module, file_number_string):
-        """ Get Worker Log Name
+        """Get Worker Log Name
 
         This method generates a worker log name.
 
@@ -1128,5 +1228,7 @@ class FileHandler(object):
 
         """
 
-        return '{}/process{}'.format(self._module_dict[module]['log_dir'],
-                                     file_number_string)
+        run_name = self._module_dict[module]['latest']
+        log_dir = self._module_dict[module][run_name]['log_dir']
+
+        return f'{log_dir}/process{file_number_string}'
