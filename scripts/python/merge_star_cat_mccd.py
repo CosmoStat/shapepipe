@@ -210,8 +210,10 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
         ccd_nb = list(starcat_j[1].data['CCD_ID_LIST'])
 
     # Prepare output FITS catalogue
-    output = sc.FITSCatalog(output_path,
-                            open_mode=sc.BaseCatalog.OpenMode.ReadWrite)
+    output = sc.FITSCatalog(
+        output_path,
+        open_mode=sc.BaseCatalog.OpenMode.ReadWrite
+    )
 
     # Collect columns
     # convert back to sigma for consistency
@@ -224,7 +226,7 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
     # Write file
     if verbose:
         print('Writing full PSF catalog file {}...'.format(output_path))
-    output.save_as_fits(data)
+    output.save_as_fits(data, overwrite=True)
 
 
 def log_command(argv, name=None, close_no_return=True):

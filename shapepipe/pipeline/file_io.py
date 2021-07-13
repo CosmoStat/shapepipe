@@ -581,12 +581,12 @@ class FITSCatalog(BaseCatalog):
                   data = np.array(data[names[0]])
                else:
                   data = [np.array(data[i]) for i in names]
-               self._save_to_fits(data, names, it, ext_name, sex_cat_path)
+               self._save_to_fits(data, names, it, ext_name, sex_cat_path, overwrite=overwrite)
 
            elif type(data) is np.recarray:
                names = list(data.dtype.names)
                it = names
-               self._save_to_fits(data, names, it, ext_name, sex_cat_path)
+               self._save_to_fits(data, names, it, ext_name, sex_cat_path, overwrite=overwrite)
 
            elif type(data) is fits.fitsrec.FITS_rec:
                self._save_from_recarray(data, ext_name, sex_cat_path)
@@ -600,20 +600,20 @@ class FITSCatalog(BaseCatalog):
                      raise ValueError('Names not provided')
                else:
                   it = range(len(names))
-               self._save_to_fits(data, names, it, ext_name, sex_cat_path)
+               self._save_to_fits(data, names, it, ext_name, sex_cat_path, overwrite=overwrite)
 
            elif type(data) is list:
                if names is None:
                    raise ValueError('Names not provided')
                it = range(len(names))
                data = np.asarray(data)
-               self._save_to_fits(data, names, it, ext_name, sex_cat_path)
+               self._save_to_fits(data, names, it, ext_name, sex_cat_path, overwrite=overwrite)
 
            elif type(data) is Table:
                if names is None:
                    raise ValueError('Names not provided')
                it = names
-               self._save_to_fits(data, names, it, ext_name, sex_cat_path)
+               self._save_to_fits(data, names, it, ext_name, sex_cat_path, overwrite=overwrite)
 
        else:
            if type(data) is np.ndarray:
@@ -1169,7 +1169,7 @@ class FITSCatalog(BaseCatalog):
 
    # ------------------------------------------------------------------------------------------------
    # ADDED
-   def _save_to_fits(self, data, names, it, ext_name=None, sex_cat_path=None):
+   def _save_to_fits(self, data, names, it, ext_name=None, sex_cat_path=None, overwrite=False):
       """!
             Save array of data as fits with their associated column names.
             @param data array withe the data
@@ -1182,7 +1182,8 @@ class FITSCatalog(BaseCatalog):
       if data is None:
          raise ValueError('Data not provided')
 
-      if self._file_exists(self.fullpath):
+      print('MKDEBUG ', overwrite, self.fullpath)
+      if self._file_exists(self.fullpath) and not overwrite:
           if self._cat_data is None:
               self.open()
           if ext_name is None:
@@ -1229,7 +1230,7 @@ class FITSCatalog(BaseCatalog):
 
    # ------------------------------------------------------------------------------------------------
    # ADDED
-   def _save_from_recarray(self, data=None, ext_name=None, sex_cat_path=None):
+   def _save_from_recarray(self, data=None, ext_name=None, sex_cat_path=None, overwrite=False):
        """!
             Save a numpy.recarray or astropy.io.fits.fitsrec.FITS_rec into a fits.
             @param data data to store
@@ -1241,7 +1242,7 @@ class FITSCatalog(BaseCatalog):
        if data is None:
            raise ValueError('Data not provided')
 
-       if self._file_exists(self.fullpath):
+       if self._file_exists(self.fullpath) and not overwrite:
            if self._cat_data is None:
                self.open()
            if ext_name is None:
