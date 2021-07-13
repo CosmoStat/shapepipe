@@ -105,10 +105,11 @@ def mccd_preprocessing_pipeline(input_file_list,
         star_list, pos_list, mask_list, ccd_list, SNR_list, RA_list, \
             DEC_list = mccd_inputs.get_inputs(catalog_id)
 
-        star_list, pos_list, mask_list, ccd_list, SNR_list, RA_list, \
-            DEC_list, _ = mccd_inputs.outlier_rejection(
-                star_list, pos_list, mask_list, ccd_list, SNR_list, RA_list,
-                DEC_list, shape_std_max=outlier_std_max, print_fun=print_fun)
+        if outlier_std_max < 99:
+            star_list, pos_list, mask_list, ccd_list, SNR_list, RA_list, \
+                DEC_list, _ = mccd_inputs.outlier_rejection(
+                    star_list, pos_list, mask_list, ccd_list, SNR_list, RA_list,
+                    DEC_list, shape_std_max=outlier_std_max, print_fun=print_fun)
 
         mccd_star_list = []
         mccd_pos_list = []
