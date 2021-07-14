@@ -324,17 +324,21 @@ class JobHandler(object):
 
         """
 
+        module_run_num = self.filehd.get_module_current_run(self._module)
+
         text = 'Starting job handler with:'
-        module_info = ' - Module: {}'.format(self._module)
-        cpu_info = ' - Number of available CPUs: {}'.format(cpu_count())
-        proc_info = ' - Total number of processes: {}'.format(self._n_procs)
-        job_type = ' - Job Type: {}'.format(self.job_type)
-        batch_info = ' - Batch size: {}'.format(self.batch_size)
-        time_info = ' - Timeout Limit: {}s'.format(self.timeout)
+        module_info = f' - Module: {self._module}'
+        module_run = f' -- Run: {module_run_num}'
+        cpu_info = f' - Number of available CPUs: {cpu_count()}'
+        proc_info = f' - Total number of processes: {self._n_procs}'
+        job_type = f' - Job Type: {self.job_type}'
+        batch_info = f' - Batch size: {self.batch_size}'
+        time_info = f' - Timeout Limit: {self.timeout}s'
 
         if self._verbose:
             print('Starting job handler with:')
             print(module_info)
+            print(module_run)
             print(cpu_info)
             print(proc_info)
             print(job_type)
@@ -345,6 +349,7 @@ class JobHandler(object):
         # Log process properties
         self.log.info(text)
         self.log.info(module_info)
+        self.log.info(module_run)
         self.log.info(cpu_info)
         self.log.info(proc_info)
         self.log.info(job_type)

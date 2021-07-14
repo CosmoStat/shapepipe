@@ -142,16 +142,20 @@ class ShapePipe():
         for module in module_runners.keys():
 
             if self.config.has_option(module.upper(), property.upper()):
-                prop_list += self.config.getlist(module.upper(),
-                                                 property.upper())
+                prop_list += self.config.getlist(
+                    module.upper(),
+                    property.upper(),
+                )
             else:
                 prop_list += getattr(module_runners[module], property)
 
-            # if self.filehd.get_add_module_property(module, property):
-            #     prop_list += self.filehd.get_add_module_property(
-            #         module,
-            #         property,
-            #     )
+            if self.filehd.get_add_module_property(module, property):
+                prop_list += self.filehd.get_add_module_property(
+                    module,
+                    property,
+                )
+
+        print(prop_list)
 
         return prop_list
 
@@ -215,7 +219,7 @@ class ShapePipe():
         if self.verbose:
             print(ver_text)
 
-        for module in self.modules:
+        for module in set(self.modules):
 
             module_txt = (
                 f' - {module} {self.filehd.module_runners[module].version}'

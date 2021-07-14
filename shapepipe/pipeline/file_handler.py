@@ -356,6 +356,30 @@ class FileHandler(object):
 
         return [item for sublist in input_list for item in sublist]
 
+    @staticmethod
+    def _get_module_run_name(dir):
+        """Get Module Run Name
+
+        Retrieve module run name, module name and search string from input
+        string.
+
+        Parameters
+        ----------
+        dir : str
+            Input directory string
+
+        Returns
+        -------
+        tuple
+            Module run name, module name, search string
+
+        """
+
+        string, module_run = dir.split(':')
+        module = module_run.split('/')[0]
+
+        return module_run.lower(), module.lower(), string
+
     def _check_input_dir_list(self, dir_list):
         """Check Input Directory List
 
@@ -373,7 +397,6 @@ class FileHandler(object):
             For invalid input directory value
 
         """
-
         input_dir = []
 
         for dir in dir_list:
@@ -382,29 +405,28 @@ class FileHandler(object):
                 input_dir.append(dir)
 
             elif 'last' in dir.lower():
-                module = dir.lower().split(':')[1]
+                module_run, module, _ = self._get_module_run_name(dir)
                 last_module = self._run_log.get_last(module)
                 input_dir.append(
-                    self.format(self.format(last_module, module), 'output')
+                    self.format(self.format(last_module, module_run), 'output')
                 )
 
             elif 'all' in dir.lower():
-                module = dir.lower().split(':')[1]
+                module_run, module, _ = self._get_module_run_name(dir)
                 all_runs = self._run_log.get_all(module)
                 input_dir.extend([
                     self.format(
-                        self.format(run.split(' ')[0], module),
+                        self.format(run.split(' ')[0], module_run),
                         'output'
                     )
                     for run in all_runs
                 ])
 
             elif ':' in dir.lower():
-                string, module = dir.split(':')
-                module = module.lower()
+                module_run, _, string = self._get_module_run_name(dir)
                 input_dir.append(
                     self.format(
-                        self.format(self._run_log.get_run(string), module),
+                        self.format(self._run_log.get_run(string), module_run),
                         'output'
                     )
                 )
@@ -465,10 +487,29 @@ class FileHandler(object):
             f'{self._log_dir}/{config_file_name}',
         )
 
-    def get_module_config_sec(self, module):
-        """Set Module Configuration Section
+    def get_module_current_run(self, module):
+        """Get Module Current Run
 
-        Set the name of section name in the configuration file for the module.
+        Get the run current run count for the module.
+
+        Parameters
+        ----------
+        module : str
+            Module name
+
+        Returns
+        -------
+        str
+            Module run count
+
+        """
+
+        return str(self._module_dict[module]['run_count'])
+
+    def get_module_config_sec(self, module):
+        """Get Module Configuration Section
+
+        Get the name of section name in the configuration file for the module.
 
         Parameters
         ----------
@@ -482,18 +523,17 @@ class FileHandler(object):
 
         """
 
-        # return self._module_dict[module]['run_name'].upper()
         return self._module_dict[module]['latest'].upper()
 
-    def get_add_module_property(self, module, run_name, property):
+    def get_add_module_property(self, run_name, property):
         """Get Additional Module Properties
 
         Get a list of additional module property values.
 
         Parameters
         ----------
-        module : str
-            Module name
+        run_name : str
+            Module run name
         property : str
             Property name
 
@@ -575,13 +615,9 @@ class FileHandler(object):
         # Look for additional module properties for list objects
         if (
             isinstance(prop_val, list)
-            and self.get_add_module_property(module, run_name, property)
+            and self.get_add_module_property(run_name, property)
         ):
-            prop_val += self.get_add_module_property(
-                module,
-                run_name,
-                property,
-            )
+            prop_val += self.get_add_module_property(run_name, property)
 
         self._module_dict[module][run_name][property] = prop_val
 
@@ -643,11 +679,6 @@ class FileHandler(object):
 
         """
 
-        # if not isinstance(call_num, type(None)):
-        #     run_name = f'{module}_run_{call_num}'
-        # else:
-        #     run_name = module
-
         self._module_dict[module][run_name]['run_dir'] = (
             self.format(self._run_dir, run_name)
         )
@@ -703,24 +734,23 @@ class FileHandler(object):
 
         else:
 
-            input_dir = [
-                self._module_dict[input_mod][run_name]['output_dir']
-                for input_mod in
+            input_dir = []
+            for in_mod_run in (
                 self._module_dict[module][run_name]['input_module']
-                if input_mod in self._module_dict
-            ]
+            ):
+                input_mod = in_mod_run.split('/')[0]
+                if input_mod in self._module_dict:
+                    input_dir.append(
+                        self._module_dict[input_mod][in_mod_run]['output_dir']
+                    )
 
         if self._config.has_option(run_name.upper(), 'INPUT_DIR'):
             input_dir = self._check_input_dir_list(
                 self._config.getlist(run_name.upper(), 'INPUT_DIR')
             )
 
-        if self.get_add_module_property(module, run_name, 'input_dir'):
-            input_dir += self.get_add_module_property(
-                module,
-                run_name,
-                'input_dir',
-            )
+        if self.get_add_module_property(run_name, 'input_dir'):
+            input_dir += self.get_add_module_property(run_name, 'input_dir')
 
         if not input_dir:
             raise RuntimeError(

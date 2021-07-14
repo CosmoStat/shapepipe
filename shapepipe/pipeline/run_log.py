@@ -43,8 +43,7 @@ class RunLog(object):
         """
 
         with open(self.run_log_file, 'a') as run_log:
-            run_log.write('{} {}\n'.format(self.current_run,
-                          self._module_list))
+            run_log.write(f'{self.current_run} {self._module_list}\n')
 
     def _get_list(self):
         """ Get List
@@ -75,11 +74,14 @@ class RunLog(object):
 
         """
 
-        all_runs = [run for run in self._runs if module in
-                    run.split()[1].split(',')]
+        all_runs = [
+            run for run in self._runs
+            if module in run.split()[1].split(',')
+        ]
         if len(all_runs) == 0:
-            raise RuntimeError('No previous run of module \'{}\' '
-                               'found'.format(module))
+            raise RuntimeError(
+                f'No previous run of module \'{module}\' found'
+            )
 
         all_runs = all_runs[::-1]
 
@@ -134,12 +136,14 @@ class RunLog(object):
         runs = [run for run in self._runs if search_string in run]
 
         if len(runs) < 1:
-            raise RuntimeError('No runs found matching search string \'{}\'.'
-                               ''.format(search_string))
+            raise RuntimeError(
+                f'No runs found matching search string \'{search_string}\'.'
+            )
 
         elif len(runs) > 1:
-            raise RuntimeError('More than one run found matching search '
-                               'string \'{}\''
-                               ''.format(search_string))
+            raise RuntimeError(
+                'More than one run found matching search string '
+                + f'\'{search_string}\''
+            )
 
         return runs[0].split(' ')[0]
