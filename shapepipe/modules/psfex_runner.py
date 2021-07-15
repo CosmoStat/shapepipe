@@ -28,7 +28,7 @@ def psfex_runner(
         file_number_string,
         config,
         w_log
-    ):
+):
     """
     Runs the psfex wrapper package.
 
@@ -71,7 +71,7 @@ def psfex_runner(
 
     # check image options
     if config.has_option('PSFEX_RUNNER', "CHECKIMAGE"):
-        check_image_list = config.getlist("PSFEX_RUNNER","CHECKIMAGE")
+        check_image_list = config.getlist("PSFEX_RUNNER", "CHECKIMAGE")
     else:
         check_image_list = ['']
 

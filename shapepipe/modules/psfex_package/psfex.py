@@ -60,14 +60,14 @@ class PSFex_caller:
         if (
             (len(self.check_image_list) == 1)
             & (self.check_image_list[0] == '')
-            ):
+        ):
             check_type_list = ['NONE']
             check_name_list = ['none']
         else:
             # Get pattern for filenaming from file in list
             input_file_name = os.path.split(input_file_path)[-1]
             input_file_noext = os.path.splitext(input_file_name)[0]
-            suffix = re.split(file_number_string,input_file_noext)[0]
+            suffix = re.split(file_number_string, input_file_noext)[0]
 
             check_type_list = []
             check_name_list = []
@@ -80,8 +80,10 @@ class PSFex_caller:
                     + f'{file_number_string}.fits')
 
         # Add checks to command line
-        command_line += (f' -CHECKIMAGE_TYPE {",".join(check_type_list)}'
-            + f' -CHECKIMAGE_NAME {",".join(check_name_list)}')
+        command_line += (
+            f' -CHECKIMAGE_TYPE {",".join(check_type_list)}'
+            + f' -CHECKIMAGE_NAME {",".join(check_name_list)}'
+        )
 
         self.command_line = command_line
         return command_line
