@@ -2,7 +2,7 @@
 
 """SPLIT EXP RUNNER
 
-This module split the different CCD's hdu of a single exposure into separate
+This module splits the different CCD's hdu of a single exposure into separate
 files.
 
 :Author: Axel Guinot
