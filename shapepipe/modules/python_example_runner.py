@@ -43,7 +43,7 @@ def python_example_runner(
 ):
 
     output_file_name = (
-        f"{run_dirs['output']}/pyex_output{file_number_string}.cat"
+        f'{run_dirs["output"]}/pyex_output{file_number_string}.cat'
     )
     message = config.get(module_config_sec, 'MESSAGE')
 

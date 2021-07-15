@@ -31,7 +31,7 @@ def execute_example_runner(
 
     command_line = f'head {input_file_list[0]}'
     output_file_name = (
-        f"{run_dirs['output']}/head_output{file_number_string}.txt"
+        f'{run_dirs["output"]}/head_output{file_number_string}.txt'
     )
 
     stdout, stderr = execute(command_line)

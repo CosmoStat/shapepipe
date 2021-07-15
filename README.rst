@@ -9,9 +9,9 @@ ShapePipe
 .. |python38| image:: https://img.shields.io/badge/python-3.8-green.svg
   :target: https://www.python.org/
 
-:Version: 0.0.3
+:Version: 0.0.4
 
-:Date: 19/05/2020
+:Date: 15/07/2021
 
 ShapePipe is a galaxy shape measurement pipeline developed within the
 CosmoStat lab at CEA Paris-Saclay.
@@ -161,14 +161,14 @@ The pipeline can be run with SMP as follows:
 
 .. code-block:: bash
 
-  $ ./shapepipe_run
+  $ shapepipe_run
 
 A list of command line arguments can be displayed using the ``--help``
 option:
 
 .. code-block:: bash
 
-  $ ./shapepipe_run --help
+  $ shapepipe_run --help
 
 Running the Pipeline with MPI
 -----------------------------
@@ -177,7 +177,7 @@ The pipeline can be run with MPI as follows:
 
 .. code-block:: bash
 
-  $ mpiexec -n <number_of_cores> ./shapepipe_run
+  $ mpiexec -n <number_of_cores> shapepipe_run
 
 where ``<number_of_cores>`` is the number of cores to allocate to the run.
 
@@ -213,12 +213,17 @@ The configuration parameters for the pipeline are:
    ``shapepipe_runs``.
 3. ``INPUT_DIR`` : (``str`` or ``list``) A valid directory containing input
    files for the first module or a comma separated list of directories. This
-   parameter also recognizes the following special strings:
+   parameter also recognises the following special strings:
 
    a. ``last:MODULE`` : This will point to the output directory of the last run
       of the specified module.
-   b. ``PATTERN:MODULE`` : This will point to the output directory of a
+   b. ``all:MODULE`` : This will point to all the output directories in which
+      the specified module was run.
+   c. ``PATTERN:MODULE`` : This will point to the output directory of a
       specified module from a run matching the specified pattern.
+
+   In all cases the module name can be succeded by the run number (*e.g.*
+   ``MODULE/run_2``)
 
 4. ``OUTPUT_DIR`` : (``str``) A valid directory to write the pipeline output
    files.
@@ -256,6 +261,17 @@ additional values to list properties as follows:
   [MODULE_NAME]
   ADD_PARAMETER = PARAMETER VALUE
 
+If a given module is run more than once, run specific parameter values can be
+specified as follows:
+
+.. code-block:: bash
+
+  [MODULE_NAME/RUN_X]
+  PARAMETER = PARAMETER VALUE
+
+Where ``X`` is an integer greater than ``1``.
+
+
 Development
 ===========
 
@@ -271,7 +287,7 @@ with the ``module_runner`` wrapper that outputs the module ``stdout`` and
 
 .. code-block:: python
 
-  @module_runner()
+  @module_runner(version=0.1)
   def example_module(*args)
 
     # DO SOMETHING
@@ -282,7 +298,9 @@ The module runner decorator takes the following keyword arguments:
 
 1. ``input_module`` :  (``str`` or ``list``) The name of a preceding module(s)
    whose output provide(s) the input to this module. Default value is ``None``.
-2. ``version`` : (``str``) The module version. Default value is ``'0.0'``.
+2. ``version`` : (``str``) The module version. Default value is ``'0.0'``. The
+   module version should always be explicitly declared and be greater than the
+   default value.
 3. ``file_pattern`` : (``str`` or ``list``) The input file pattern(s) to look
    for. Default value is ``''``.
 4. ``file_ext`` : (``str`` or ``list``) The input file extensions(s) to look
@@ -297,7 +315,8 @@ The module runner decorator takes the following keyword arguments:
 The arguments passed to the module runner are the following:
 
 1. ``input_file_list`` : The list of input files.
-2. ``output_dir`` : The directory for the module output files.
+2. ``run_dirs`` : The dictionary containing module run paths (*e.g.* the output
+   path for a given module run is ``run_dirs['output']``).
 3. ``file_number_string`` : The number pattern corresponding to the current
    process.
 4. ``config`` : The config parser instance, which provides access to the
@@ -308,7 +327,9 @@ The arguments passed to the module runner are the following:
 
      parameter_value = config.get('MODULE_NAME', 'PARAMETER')
 
-5. ``w_log`` : The worker log instance, which can be used to record additional
+5  ``module_config_sec`` : A string specifying the configuration file section
+   to be read.
+6. ``w_log`` : The worker log instance, which can be used to record additional
    messages in the module output logs using the following structure:
 
    .. code-block:: python
@@ -322,11 +343,10 @@ The following example module runners are provided in ``shapepipe.modules``.
 
 **Python Example**
 
-In this example a Python script using a ``Dummy()`` class is implemented. This
-module does not read inputs from any preceding module, but looks for files
+In this example a Python script using a ``PythonExample()`` class is implemented.
+This module does not read inputs from any preceding module, but looks for files
 in the ``INPUT_DIR`` that match the file patterns ``'numbers'`` and
-``'letters'`` with file extension ``'.txt'``. This module depends on
-``numpy``.
+``'letters'`` with file extension ``'.txt'``. This module depends on ``numpy``.
 
 As this module does not implement any system executable, it is not
 necessary to return a ``stderr``. Instead any output content that should be
@@ -335,20 +355,31 @@ return ``None, None``.
 
 .. code-block:: python
 
-  @module_runner(version='1.0', file_pattern=['numbers', 'letters'],
-                 file_ext='.txt', depends='numpy')
-  def python_example(input_file_list, output_dir, file_number_string,
-                     config, w_log):
+  @module_runner(
+    version='1.1',
+    file_pattern=['numbers', 'letters'],
+    file_ext='.txt',
+    depends='numpy',
+  )
+  def python_example_runner(
+    input_file_list,
+    run_dirs,
+    file_number_string,
+    config,
+    module_config_sec,
+    w_log,
+  ):
 
-      output_file_name = ('{}/pyex_output{}.cat'.format(output_dir,
-                          file_number_string))
-      message = config.get('PYTHON_EXAMPLE', 'MESSAGE')
+    output_file_name = (
+        f'{run_dirs["output"]}/pyex_output{file_number_string}.cat'
+    )
+    message = config.get(module_config_sec, 'MESSAGE')
 
-      inst = Dummy()
-      inst.read_files(*input_file_list)
-      inst.write_file(output_file_name, message)
+    inst = pe.PythonExample(0)
+    inst.read_files(*input_file_list)
+    inst.write_file(output_file_name, message)
 
-      return inst.content, None
+    return inst.content, None
 
 **Executable Example**
 
@@ -358,17 +389,30 @@ the file pattern ``'process'`` with file extension ``'.cat'``.
 
 .. code-block:: python
 
-  @module_runner(input_module='python_example', version='1.0',
-                 file_pattern='pyex_output', file_ext='.cat', executes='head')
-  def execute_example(input_file_list, output_dir, file_number_string, *args):
+  @module_runner(
+    input_module='python_example',
+    version='1.0',
+    file_pattern='pyex_output',
+    file_ext='.cat',
+    executes='head',
+  )
+  def execute_example_runner(
+    input_file_list,
+    run_dirs,
+    file_number_string,
+    config,
+    module_config_sec,
+    w_log,
+  ):
 
-      command_line = 'head {}'.format(input_file_list[0])
-      output_file_name = '{}/head_output{}.txt'.format(output_dir,
-                                                       file_number_string)
+    command_line = f'head {input_file_list[0]}'
+    output_file_name = (
+        f'{run_dirs["output"]}/head_output{file_number_string}.txt'
+    )
 
-      stdout, stderr = execute(command_line)
+    stdout, stderr = execute(command_line)
 
-      text_file = open(output_file_name, 'w')
-      text_file.write(stdout)
+    text_file = open(output_file_name, 'w')
+    text_file.write(stdout)
 
-      return stdout, stderr
+    return stdout, stderr
