@@ -37,8 +37,14 @@ class SplitExposures(object):
         number of HDUs (= CCDs) of input files
     """
 
-    def __init__(self, input_file_list, output_dir,
-                 file_number_string, output_suffix, n_hdu):
+    def __init__(
+        self,
+        input_file_list,
+        output_dir,
+        file_number_string,
+        output_suffix,
+        n_hdu
+    ):
 
         self._input_file_list = input_file_list
         self._output_dir = output_dir
@@ -52,15 +58,31 @@ class SplitExposures(object):
         Process the splitting of single-exposure images
         """
 
-        for exp_path, output_suffix in zip(self._input_file_list, self._output_suffix):
+        for exp_path, output_suffix in zip(
+            self._input_file_list,
+            self._output_suffix
+        ):
 
             transf_int = 'flag' in output_suffix
             transf_coord = 'image' in output_suffix
             save_header = 'image' in output_suffix
 
-            self.create_hdus(exp_path, output_suffix, transf_coord, transf_int, save_header)
+            self.create_hdus(
+                exp_path,
+                output_suffix,
+                transf_coord,
+                transf_int,
+                save_header
+            )
 
-    def create_hdus(self, exp_path, output_suffix, transf_coord, transf_int, save_header):
+    def create_hdus(
+        self,
+        exp_path,
+        output_suffix,
+        transf_coord,
+        transf_int,
+        save_header
+    ):
         """ Create HDUs
 
         Split a single exposures CCDs into separate files.
@@ -91,20 +113,27 @@ class SplitExposures(object):
             if transf_int:
                 d = d.astype(np.int16)
 
-            file_name = f'{self._output_dir}/{output_suffix}{self._file_number_string}-{str(i-1)}.fits'
+            file_name = (
+                f'{self._output_dir}/{output_suffix}'
+                + '{self._file_number_string}-{str(i-1)}.fits'
+            )
 
-            new_file = io.FITSCatalog(file_name,
-                                      open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+            new_file = io.FITSCatalog(
+                file_name,
+                open_mode=io.BaseCatalog.OpenMode.ReadWrite
+            )
             new_file.save_as_fits(data=d, image=True, image_header=h)
 
             if save_header:
                 try:
                     w = WCS(h)
                 except:
-                    print('WCS error for file {}'.format(exp_path))
+                    print(f'WCS error for file {exp_path}')
                     raise
                 header_file[i-1] = {'WCS': w, 'header': h.tostring()}
 
         if save_header:
-            file_name = f'{self._output_dir}/headers{self._file_number_string}.npy'
+            file_name = (
+                f'{self._output_dir}/headers{self._file_number_string}.npy'
+            )
             np.save(file_name, header_file)
