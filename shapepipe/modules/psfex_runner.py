@@ -76,7 +76,7 @@ def psfex_runner(
         check_image_list = ['']
 
     # prepare the psfex command line
-    PSFex_call  = PSFex_caller(
+    PSFex_call = PSFex_caller(
         psfex_executable_path,
         input_file_path,
         psfex_config_file,

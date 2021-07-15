@@ -37,7 +37,7 @@ class PSFex_caller:
         output_dir,
         outcatalog_name,
         check_image_list
-        ):
+    ):
         self.psfex_executable_path = psfex_executable_path
         self.input_file_path = input_file_path
         self.psfex_config_file = psfex_config_file
