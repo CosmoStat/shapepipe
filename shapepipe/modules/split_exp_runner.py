@@ -26,14 +26,23 @@ from shapepipe.modules.SplitExp_package import SplitExp_script as split
     depends=['numpy', 'astropy', 'sip_tpv'],
     run_method='parallel'
 )
-def split_exp_runner(input_file_list, run_dirs, file_number_string,
-                     config, w_log):
+def split_exp_runner(
+    input_file_list,
+    run_dirs,
+    file_number_string,
+    config,
+    w_log):
 
     output_suffix = config.getlist("SPLIT_EXP_RUNNER", "OUTPUT_SUFFIX")
     n_hdu = config.getint("SPLIT_EXP_RUNNER", "N_HDU")
 
-    inst = split.SplitExposures(input_file_list, run_dirs['output'],
-                                file_number_string, output_suffix, n_hdu)
+    inst = split.SplitExposures(
+        input_file_list,
+        run_dirs['output'],
+        file_number_string,
+        output_suffix,
+        n_hdu
+    )
 
     inst.process()
 
