@@ -22,13 +22,12 @@ from shapepipe.modules.psfex_package.psfex import PSFex_caller
     file_ext=['.fits'],
     executes='psfex'
 )
-
 def psfex_runner(
-    input_file_list,
-    run_dirs,
-    file_number_string,
-    config,
-    w_log
+        input_file_list,
+        run_dirs,
+        file_number_string,
+        config,
+        w_log
     ):
     """
     Runs the psfex wrapper package.
@@ -53,11 +52,6 @@ def psfex_runner(
         Strings with the output and error output of execution.
 
     """
-    inputs = [input_file_list,
-                     run_dirs,
-                     file_number_string,
-                     config,
-                     w_log]
 
     # extract psfex  run configurations
     psfex_executable_path = config.getexpanded(

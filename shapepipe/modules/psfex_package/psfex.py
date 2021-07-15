@@ -6,6 +6,7 @@ This module contains a wrapper class to prepare the psfex command line.
 import os
 import re
 
+
 class PSFex_caller:
     """This class contains functions to generate a PSFex command line.
     Parameters:
@@ -28,7 +29,6 @@ class PSFex_caller:
         Command line with correct and complete paths for PSFEx execution.
     """
 
-
     def __init__(
         self,
         psfex_executable_path,
@@ -48,7 +48,6 @@ class PSFex_caller:
     def generate_command(self):
         """ Generates a command line for running PSFEx """
 
-
         # Prepare command line
         command_line = (
             f'{self.psfex_executable_path} '
@@ -58,8 +57,10 @@ class PSFex_caller:
             + f'-OUTCAT_NAME {self.outcatalog_name}'
         )
 
-        if ((len(self.check_image_list) == 1)
-             & (self.check_image_list[0] == '')) :
+        if (
+            (len(self.check_image_list) == 1)
+            & (self.check_image_list[0] == '')
+            ):
             check_type_list = ['NONE']
             check_name_list = ['none']
         else:
