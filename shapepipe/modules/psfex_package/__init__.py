@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-"""VIGNET MAKER PACKAGE
-This package contains the module(s) for ``psfex``.
+"""PSFEX SCRIPT PACKAGE
+This package contains the module(s) for ``psfex_script``.
 :Authors: Axel Guinot, Tobias Liaudat
 """
 
-__all__ = ['psfex']
+__all__ = ['psfex_script']

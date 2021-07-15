@@ -12,7 +12,7 @@ import re
 import os
 from shapepipe.pipeline.execute import execute
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.psfex_package.psfex import PSFex_caller
+from shapepipe.modules.psfex_package.psfex_script import PSFex_caller
 
 
 @module_runner(
