@@ -31,7 +31,8 @@ def split_exp_runner(
     run_dirs,
     file_number_string,
     config,
-    w_log):
+    w_log
+):
 
     output_suffix = config.getlist("SPLIT_EXP_RUNNER", "OUTPUT_SUFFIX")
     n_hdu = config.getint("SPLIT_EXP_RUNNER", "N_HDU")
