@@ -46,7 +46,6 @@ class ShapePipe():
         Set up ShapePipe properties.
 
         """
-
         self._args = create_arg_parser()
         self.config = create_config_parser(self._args.config)
         self._set_run_name()
@@ -63,7 +62,6 @@ class ShapePipe():
         Set the name of the current pipeline run.
 
         """
-
         self._run_name = self.config.get('DEFAULT', 'RUN_NAME')
 
         if self.config.getboolean('DEFAULT', 'RUN_DATETIME'):
@@ -75,7 +73,6 @@ class ShapePipe():
         Create a general logging instance for the pipeline run.
 
         """
-
         self.log = set_up_log(self.filehd.log_name, verbose=False)
 
         start_text = f'Starting ShapePipe Run: {self._run_name}'
@@ -100,7 +97,6 @@ class ShapePipe():
             if error occurs during pipeline run
 
         """
-
         if self.error_count == 1:
             plur = ' was'
         else:
@@ -134,7 +130,6 @@ class ShapePipe():
             List of python dependencies, list of system executables
 
         """
-
         prop_list = []
 
         module_runners = self.filehd.module_runners
@@ -155,8 +150,6 @@ class ShapePipe():
                     property,
                 )
 
-        print(prop_list)
-
         return prop_list
 
     def _check_dependencies(self):
@@ -165,7 +158,6 @@ class ShapePipe():
         Check that all pipeline dependencies have been installed.
 
         """
-
         module_dep = self._get_module_depends('depends') + __installs__
         module_exe = self._get_module_depends('executes')
 
@@ -212,7 +204,6 @@ class ShapePipe():
         Check versions of the modules.
 
         """
-
         ver_text = 'Checking Module Versions:'
 
         self.log.info(ver_text)
@@ -239,7 +230,6 @@ class ShapePipe():
         Create a dictionary of modules with corresponding run methods.
 
         """
-
         self.run_method = {}
 
         for module in self.modules:
@@ -254,7 +244,6 @@ class ShapePipe():
         Run the pipeline.
 
         """
-
         # Make output directories for the pipeline run
         self.filehd.create_global_run_dirs()
 
@@ -276,7 +265,6 @@ class ShapePipe():
         Log mode in which ShapePipe is running.
 
         """
-
         mode_text = f'Running ShapePipe using {self.mode}'
 
         self.log.info(mode_text)
@@ -295,8 +283,8 @@ def run_smp(pipe):
     ----------
     pipe : ShapePipe
         ShapePipe instance
-    """
 
+    """
     # Loop through modules to be run
     for module in pipe.modules:
 
@@ -334,8 +322,8 @@ def run_mpi(pipe, comm):
         ShapePipe instance
     comm : MPI.COMM_WORLD
         MPI common world instance
-    """
 
+    """
     # Assign master node
     master = comm.rank == 0
 

@@ -12,7 +12,7 @@ import numpy as np
 
 
 class RunLog(object):
-    """ Run Log Class
+    """Run Log Class
 
     This class manages the run log for ShapePipe.
 
@@ -36,29 +36,27 @@ class RunLog(object):
         self._get_list()
 
     def _write(self):
-        """ Write
+        """Write
 
         Write current run to the run log.
 
         """
-
         with open(self.run_log_file, 'a') as run_log:
             run_log.write(f'{self.current_run} {self._module_list}\n')
 
     def _get_list(self):
-        """ Get List
+        """Get List
 
         Get a list of all runs in the run log.
 
         """
-
         with open(self.run_log_file, 'r') as run_log:
             lines = run_log.readlines()
 
         self._runs = [line.rstrip() for line in lines]
 
     def get_all(self, module):
-        """ Get All
+        """Get All
 
         Get all previous pipeline runs of a given model.
 
@@ -73,7 +71,6 @@ class RunLog(object):
             All run paths for a given module
 
         """
-
         all_runs = [
             run for run in self._runs
             if module in run.split()[1].split(',')
@@ -88,7 +85,7 @@ class RunLog(object):
         return all_runs
 
     def get_last(self, module):
-        """ Get Last
+        """Get Last
 
         Get the last run of the pipeline for a given module.
 
@@ -103,14 +100,13 @@ class RunLog(object):
             The last run for a given module
 
         """
-
         all_runs = self.get_all(module)
         last_run = all_runs[0]
 
         return last_run.split(' ')[0]
 
     def get_run(self, search_string):
-        """ Get Run
+        """Get Run
 
         Get a specific run that matches the input search string.
 
@@ -132,7 +128,6 @@ class RunLog(object):
             If more than one run is found matches the search string
 
         """
-
         runs = [run for run in self._runs if search_string in run]
 
         if len(runs) < 1:

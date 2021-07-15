@@ -13,20 +13,21 @@ from shapepipe.modules import __module_list__
 from shapepipe.info import shapepipe_logo, __version__
 
 
-class cutomFormatter(ap.ArgumentDefaultsHelpFormatter,
-                     ap.RawDescriptionHelpFormatter):
-    """ Custom Formatter
+class cutomFormatter(
+    ap.ArgumentDefaultsHelpFormatter,
+    ap.RawDescriptionHelpFormatter,
+):
+    """Custom Formatter
 
     This class combines the argparse ``ArgumentDefaultsHelpFormatter`` and
     ``RawDescriptionHelpFormatter`` formatters.
 
     """
-
     pass
 
 
 def print_message(message):
-    """ Print Message
+    """Print Message
 
     This method returns a custom argparse action for printing a message.
 
@@ -38,10 +39,9 @@ def print_message(message):
     Returns
     -------
     customAction
-        Custom action class instance
+        Custom action class object
 
     """
-
     class customAction(ap.Action):
 
         def __init__(self, option_strings, version=None, dest=ap.SUPPRESS,
@@ -61,7 +61,7 @@ def print_message(message):
 
 
 def module_str():
-    """ Module String
+    """Module String
 
     Format the list of modules as a single string.
 
@@ -71,7 +71,6 @@ def module_str():
         Formatted string of module names
 
     """
-
     string = ''
 
     for module in __module_list__:
@@ -81,7 +80,7 @@ def module_str():
 
 
 def create_arg_parser():
-    """ Create Argument Parser
+    """Create Argument Parser
 
     This method returns an argument parser.
 
@@ -91,27 +90,43 @@ def create_arg_parser():
         Argument parser
 
     """
-
     # Create parser
-    parser = ap.ArgumentParser(add_help=False, description=shapepipe_logo(),
-                               formatter_class=cutomFormatter)
+    parser = ap.ArgumentParser(
+        add_help=False, description=shapepipe_logo(),
+        formatter_class=cutomFormatter,
+    )
     optional = parser.add_argument_group('Optional Arguments')
 
     # Add arguments
-    optional.add_argument('-h', '--help', action='help',
-                          help='show this help message and exit')
+    optional.add_argument(
+        '-h',
+        '--help',
+        action='help',
+        help='show this help message and exit',
+    )
 
-    optional.add_argument('-v', '--version', action='version',
-                          version='%(prog)s v{}'.format(__version__))
+    optional.add_argument(
+        '-v',
+        '--version',
+        action='version',
+        version=f'%(prog)s v{__version__}'
+    )
 
-    optional.add_argument('-l', '--list_modules',
-                          action=print_message('ShapePipe modules currently '
-                                               'available:\n'
-                                               '{}'.format(module_str())),
-                          help='list modules currently available and exit')
+    optional.add_argument(
+        '-l',
+        '--list_modules',
+        action=print_message(
+            f'ShapePipe modules currently available:\n{module_str()}'
+        ),
+        help='list modules currently available and exit',
+    )
 
-    optional.add_argument('-c', '--config', default='config.ini',
-                          help='configuration file name')
+    optional.add_argument(
+        '-c',
+        '--config',
+        default='config.ini',
+        help='configuration file name',
+    )
 
     # Return parser
     return parser.parse_args()
