@@ -29,13 +29,15 @@ class PSFex_caller:
     """
 
 
-    def __init__(self,
+    def __init__(
+        self,
         psfex_executable_path,
         input_file_path,
         psfex_config_file,
         output_dir,
         outcatalog_name,
-        check_image_list):
+        check_image_list
+        ):
         self.psfex_executable_path = psfex_executable_path
         self.input_file_path = input_file_path
         self.psfex_config_file = psfex_config_file
@@ -48,11 +50,13 @@ class PSFex_caller:
 
 
         # Prepare command line
-        command_line = (f'{self.psfex_executable_path} '
-                        + f'{self.input_file_path} '
-                        + f'-c {self.psfex_config_file} '
-                        + f'-PSF_DIR {self.output_dir} '
-                        + f'-OUTCAT_NAME {self.outcatalog_name}')
+        command_line = (
+            f'{self.psfex_executable_path} '
+            + f'{self.input_file_path} '
+            + f'-c {self.psfex_config_file} '
+            + f'-PSF_DIR {self.output_dir} '
+            + f'-OUTCAT_NAME {self.outcatalog_name}'
+        )
 
         if ((len(self.check_image_list) == 1)
              & (self.check_image_list[0] == '')) :
@@ -68,14 +72,15 @@ class PSFex_caller:
             check_name_list = []
             for check_image in self.check_image_list:
                 check_type_list.append(check_image.upper())
-                check_name_list.append(f'{output_dir}'
-                                + f'/{suffix}'
-                                + f'{check_image.lower()}'
-                                + f'{file_number_string}.fits')
+                check_name_list.append(
+                    f'{output_dir}'
+                    + f'/{suffix}'
+                    + f'{check_image.lower()}'
+                    + f'{file_number_string}.fits')
 
         # Add checks to command line
         command_line += (f' -CHECKIMAGE_TYPE {",".join(check_type_list)}'
-                       + f' -CHECKIMAGE_NAME {",".join(check_name_list)}')
+            + f' -CHECKIMAGE_NAME {",".join(check_name_list)}')
 
         self.command_line = command_line
         return command_line
