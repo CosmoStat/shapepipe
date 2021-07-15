@@ -15,7 +15,7 @@ from shapepipe.modules.find_exposures_package import find_exposures_script as fe
 
 
 @module_runner(
-    version='1.0',
+    version='1.1',
     file_pattern=['image'],
     file_ext='.fits',
     depends=['numpy', 'astropy', 'sip_tpv'],
