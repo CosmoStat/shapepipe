@@ -87,5 +87,32 @@ class FindExposures():
         exp_list = []
 
         # Get exposure file names
+        # History entries have format as the following example:
+        # "input image 2243881p.fits 6 extension(s)"
         for h in hist:
             temp = h.split(' ')
+
+            pattern = r'(.*)\.{1}.*'
+            m = re.search(pattern, temp[3])
+            if not m:
+                raise IndexError(
+                    f're match \'{pattern}\' failed for filename \'{temp[3]}\''
+                )
+
+            exp_name = m.group(1)
+
+            # LSB exposure names have 's', header still says 'p'
+            # exp_name = re.sub(r'p', 's', exp_name)
+
+            exp_list.append(exp_name)
+
+        # Remove potential duplicates
+        exp_list_uniq = list(set(exp_list))
+
+        # For log output
+        n_exp_uniq = len(exp_list_uniq)
+        n_duplicate = len(exp_list) - n_exp_uniq
+        self._w_log.info(f'Found {n_exp_uniq} exposures used in tile')
+        self._w_log.info(f'{n_duplicate} duplicates were removed')
+
+        return exp_list_uniq
