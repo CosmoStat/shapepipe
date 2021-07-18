@@ -16,6 +16,7 @@ This module uncompress fits images and save them on a single hdu fits.
 from shapepipe.modules.module_decorator import module_runner
 import shapepipe.modules.uncompress_fits_image_package.uncompress as uz
 
+
 @module_runner(
     version='1.1',
     file_pattern=['image'],

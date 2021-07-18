@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-  
+
 """UNCOMRESS FITS
 
 This module uncompress fits images and save them on a single hdu fits.
