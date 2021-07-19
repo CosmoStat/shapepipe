@@ -58,8 +58,9 @@ class vosHandler:
         """
 
         if import_fail:
-            raise ImportError('vos package not found, re-install ShapePipe '
-                              'with \'./install_shapepipe --vos\'')
+            raise ImportError(
+                'vos package not found, re-install ShapePipe '
+                'with \'./install_shapepipe --vos\'')
 
     @property
     def command(self):
@@ -75,8 +76,9 @@ class vosHandler:
     def command(self, value):
 
         if value not in self._avail_commands:
-            raise ValueError('vos command must be one of {}'
-                             ''.format(self._avail_commands))
+            raise ValueError(
+                f'vos command must be one of {self._avail_commands}'
+            )
 
         self._command = getattr(vosc, value)
 
@@ -91,8 +93,9 @@ class vosHandler:
             self._command()
 
         except:
-            raise vosError('Error in VOs command: {}'
-                           ''.format(self._command.__name__))
+            raise vosError(
+                f'Error in VOs command: {self._command.__name__}'
+            )
 
 
 def download(source, target, verbose=False):
@@ -118,14 +121,14 @@ def download(source, target, verbose=False):
     if not os.path.exists(target):
         sys.argv = [cmd, source, target]
         if verbose:
-            print('Downloading file {} to {}...'.format(source, target))
+            print(f'Downloading file {source} to {target}...')
         vcp = vosHandler(cmd)
         vcp()
         if verbose:
             print('Download finished.')
     else:
         if verbose:
-            print('Target file {} exists, skipping download.'.format(target))
+            print(f'Target file {target} exists, skipping download.')
 
 
 def dir_list(path, verbose=False):
