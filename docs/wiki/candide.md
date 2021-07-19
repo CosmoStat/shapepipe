@@ -24,11 +24,7 @@ To request and account on CANDIDE send an email to [Henry Joy McCracken](mailto:
 
 ### SSH
 
-Once you have an account on CANDIDE you can connect via SSH as follows:
-
-```bash
-$ ping -c 1 -s 999 candide.iap.fr; ssh <mylogin>@candide.iap.fr
-```
+Please refer to  https://candideusers.calet.org how to ssh to the candide cluster.
 
 ## Installation
 

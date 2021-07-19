@@ -51,8 +51,27 @@ class Dummy(object):
         text_file.close()
 
 
-@module_runner(version='1.0', file_pattern=['numbers', 'letters'],
-               file_ext='.txt', depends='numpy', run_method='parallel')
+@module_runner(
+    version='1.0',
+    file_pattern=['numbers', 'letters'],
+    file_ext='.txt',
+    depends=[
+        'numpy',
+        'astropy',
+        'galsim',
+        'joblib',
+        'mccd',
+        'ngmix',
+        'pandas',
+        'pysap',
+        'scipy',
+        'sf_tools',
+        'sip_tpv',
+        'sqlitedict',
+        'treecorr',
+    ],
+    run_method='parallel'
+)
 def python_example(input_file_list, run_dirs, file_number_string,
                    config, w_log):
 

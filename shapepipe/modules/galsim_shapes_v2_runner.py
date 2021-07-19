@@ -712,8 +712,10 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
 
         if skip_col:
             # Skip this object if marked, also if mark is nan
-            if tile_skip[i_tile] == skip_val \
-                or (np.isnan(tile_skip[i_tile]) and np.isnan(skip_val)):
+            if (
+                tile_skip[i_tile] == skip_val
+                or (np.isnan(tile_skip[i_tile]) and np.isnan(skip_val))
+            ):
                 continue
 
         count = count + 1
