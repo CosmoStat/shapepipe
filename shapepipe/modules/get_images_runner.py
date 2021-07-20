@@ -14,7 +14,7 @@ Module runner for ``get_images``
 
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.get_images_runner import get_images as gi
+from shapepipe.modules.get_images_package import get_images as gi
 
 
 @module_runner(
@@ -80,10 +80,5 @@ def get_images_runner(
     )
 
     inst.process(input_dir, output_dir)
-
-    # Assemble input and output file lists
-    all_inputs = inst.get_file_list(input_dir, output_file_pattern=False)
-    all_outputs = inst.get_file_list(output_dir, output_file_pattern=True)
-    inst.retrieve(all_inputs, all_outputs)
 
     return None, None
