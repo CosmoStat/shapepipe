@@ -95,8 +95,6 @@ class GetImages(object):
             copy/download method
         retrieve_option : string
             retrieve options
-        input_dir : string
-            input directory
         input_file_list : list of string
             input files
         input_numbering : string
@@ -117,7 +115,6 @@ class GetImages(object):
 
         self._retrieve_method = retrieve_method
         self._retrieve_options = retrieve_options
-        self._input_dir = input_dir
         self._input_file_list = input_file_list
         self._input_numbering = input_numbering
         self._input_file_pattern = input_file_pattern
@@ -127,10 +124,17 @@ class GetImages(object):
         self._check_existing_dir = check_existing_dir
         self._n_expected = n_expected
 
-    def process():
+    def process(input_dir, output_dir):
         """Process
 
         Main function to process GetImages
+
+        Parameters
+        ----------
+        input_dir : string
+            input directory
+        output_dir : string
+            output directory
         """
 
         # Input image numbers from all input tile files
@@ -150,24 +154,35 @@ class GetImages(object):
         )
 
         # Create array to make it compatible with input dir
-        nitem = len(input_dir)
+        nitem = len(self._input_dir)
+
+        # Make sure output_dir is list and compatible to input lists
         if len(output_dir) == 1:
             output_dir = [output_dir] * nitem
                                    
         # Check consistency of list lengths
         if any(len(lst) != nitem for lst in [
-            self._input_dir,
+            input_dir,
             self._input_file_pattern,
             self._input_file_ext,
             output_file_pattern
         ]:
             raise ValueError(
-                f'Lists INPUT_PATH ({len(self._input_dir)}), '
+                f'Lists INPUT_PATH ({len(input_dir)}), '
                 + f'INPUT_FILE_PATTERN ({len(self._input_file_pattern)}), '
                 + f'INPUT_FILE_EXT ({llen(self._input_file_ext)}), '
                 + f 'OUTPUT_FILE_PATTERN ({len(self._output_file_pattern)}) '
                 + 'need to have equal length'
             )
+
+        # Assemble input and output file lists
+        all_inputs = self.get_file_list(input_dir, output_file_pattern=False)
+        all_outputs = self.get_file_list(output_dir, output_file_pattern=True)
+
+        # Retrieve files
+        self.retrieve(all_inputs, all_outputs)
+
+
 
     def get_file_list(self, dest_dir, use_output_file_pattern=False):
         """Get File List

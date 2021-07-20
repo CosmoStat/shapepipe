@@ -69,7 +69,6 @@ def get_images_runner(
     inst = gi.GetImages(
         retrieve_method,
         retrieve_options,
-        input_dir,
         input_file_list,
         input_numbering,
         input_file_pattern,
@@ -80,14 +79,7 @@ def get_images_runner(
         n_expected=n_expected
     )
 
-    inst.process()
-
-    nitem = len(input_dir)
-
-    # Create array to make it compatible with input dir
-    if len(output_dir) == 1:
-        output_dir = [output_dir] * nitem
-
+    inst.process(input_dir, output_dir)
 
     # Assemble input and output file lists
     all_inputs = inst.get_file_list(input_dir, output_file_pattern=False)
