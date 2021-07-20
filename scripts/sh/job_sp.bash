@@ -311,7 +311,7 @@ if [[ $do_job != 0 ]]; then
   done
 
   ### Download config files
-  #command_sp "$VCP vos:cfis/cosmostat/kilbinger/cfis ." "Get shapepipe config files"
+  command_sp "$VCP vos:cfis/cosmostat/kilbinger/cfis ." "Get shapepipe config files"
 
   ### Get tiles
   command_sp "shapepipe_run -c $SP_CONFIG/config_get_tiles_$retrieve.ini" "Run shapepipe (get tiles)"
