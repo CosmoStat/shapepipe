@@ -27,7 +27,8 @@ def get_images_runner(
     run_dirs,
     file_number_string,
     config,
-    w_log):
+    w_log
+):
 
     # Read config file section
 
@@ -35,18 +36,32 @@ def get_images_runner(
     retrieve_method = config.get('GET_IMAGES_RUNNER', 'RETRIEVE')
     retrieve_ok = ['vos', 'symlink']
     if retrieve_method not in retrieve_ok:
-        raise ValueError(f'key RETRIEVE={retrieve_method} is invalid, must be in {retrieve_ok}')
+        raise ValueError(
+            f'key RETRIEVE={retrieve_method} is invalid, must be in {retrieve_ok}'
+        )
 
     if config.has_option('GET_IMAGES_RUNNER', 'RETRIEVE_OPTIONS'):
-        retrieve_options = config.getexpanded('GET_IMAGES_RUNNER', 'RETRIEVE_OPTIONS')
+        retrieve_options = config.getexpanded(
+            'GET_IMAGES_RUNNER',
+            'RETRIEVE_OPTIONS'
+        )
     else:
         retrieve_options = None
 
     # Paths
     input_dir = config.getlist('GET_IMAGES_RUNNER', 'INPUT_PATH')
-    input_file_pattern = config.getlist('GET_IMAGES_RUNNER', 'INPUT_FILE_PATTERN')
-    input_file_ext = config.getlist('GET_IMAGES_RUNNER', 'INPUT_FILE_EXT')
-    output_file_pattern = config.getlist('GET_IMAGES_RUNNER', 'OUTPUT_FILE_PATTERN')
+    input_file_pattern = config.getlist(
+        'GET_IMAGES_RUNNER',
+        'INPUT_FILE_PATTERN'
+    )
+    input_file_ext = config.getlist(
+        'GET_IMAGES_RUNNER',
+        'INPUT_FILE_EXT'
+    )
+    output_file_pattern = config.getlist(
+        'GET_IMAGES_RUNNER',
+        'OUTPUT_FILE_PATTERN'
+    )
 
     input_numbering = config.get('GET_IMAGES_RUNNER', 'INPUT_NUMBERING')
 
@@ -57,7 +72,10 @@ def get_images_runner(
 
     # Flags to check for already retrieved files
     if config.has_option('GET_IMAGES_RUNNER', 'CHECK_EXISTING_DIR'):
-        check_existing_dir = config.getexpanded('GET_IMAGES_RUNNER', 'CHECK_EXISTING_DIR')
+        check_existing_dir = config.getexpanded(
+            'GET_IMAGES_RUNNER',
+            'CHECK_EXISTING_DIR'
+        )
         if config.has_option('GET_IMAGES_RUNNER', 'N_EXPECTED'):
             n_expected = config.getint('GET_IMAGES_RUNNER', 'N_EXPECTED')
         else:

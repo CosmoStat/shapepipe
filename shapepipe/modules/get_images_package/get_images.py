@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-  
+
 """GET IMAGES
 
 This module copies all images required for processing
@@ -107,9 +107,11 @@ class GetImages(object):
         w_log :
             log file
         check_existing_dir : string, optional, default=None
-            if not None, only retrieve image if not existing at this path (recursively)
+            if not None, only retrieve image if not existing at this
+            path (recursively)
         n_expected : int, optional, default=None
-            number of expected files per type and ID to download/check for existence
+            number of expected files per type and ID to download/check for
+            existence
         """
 
         self._retrieve_method = retrieve_method
@@ -156,9 +158,8 @@ class GetImages(object):
         nitem = len(input_dir)
 
         # Make sure output_dir is list and compatible to input lists
-        #if len(output_dir) == 1:
         output_dir = [output_dir] * nitem
-                                   
+
         # Check consistency of list lengths
         if any(
             len(lst) != nitem for lst in [
@@ -177,13 +178,19 @@ class GetImages(object):
             )
 
         # Assemble input and output file lists
-        all_inputs = self.get_file_list(image_number_list, input_dir, use_output_file_pattern=False)
-        all_outputs = self.get_file_list(image_number_list, output_dir, use_output_file_pattern=True)
+        all_inputs = self.get_file_list(
+            image_number_list,
+            input_dir,
+            use_output_file_pattern=False
+        )
+        all_outputs = self.get_file_list(
+            image_number_list,
+            output_dir,
+            use_output_file_pattern=True
+        )
 
         # Retrieve files
         self.retrieve(all_inputs, all_outputs)
-
-
 
     def get_file_list(self, image_number_list, dest_dir, use_output_file_pattern=False):
         """Get File List
@@ -223,7 +230,9 @@ class GetImages(object):
                     x = in_ext[1:]
                     x2 = re.sub(r'\.', '', x)
                     ext_final = in_ext[0] + x2
-                    fbase = '{}{}'.format(self._output_file_pattern[i], number_final)
+                    fbase = (
+                        f'{self._output_file_pattern[i],}{number_final}'
+                    )
                 else:
                     fbase = re.sub(self._input_numbering, number, in_pattern)
                     ext_final = in_ext
@@ -315,4 +324,3 @@ class GetImages(object):
                     # dst is regular file
                     dst_name = dst
                 os.symlink(src, dst_name)
-
