@@ -75,8 +75,7 @@ class GetImages(object):
         self,
         retrieve_method,
         retrieve_options,
-        input_dir,
-        image_file_list,
+        input_file_list,
         input_numbering,
         input_file_pattern,
         input_file_ext,
@@ -124,7 +123,7 @@ class GetImages(object):
         self._check_existing_dir = check_existing_dir
         self._n_expected = n_expected
 
-    def process(input_dir, output_dir):
+    def process(self, input_dir, output_dir):
         """Process
 
         Main function to process GetImages
@@ -154,43 +153,47 @@ class GetImages(object):
         )
 
         # Create array to make it compatible with input dir
-        nitem = len(self._input_dir)
+        nitem = len(input_dir)
 
         # Make sure output_dir is list and compatible to input lists
-        if len(output_dir) == 1:
-            output_dir = [output_dir] * nitem
+        #if len(output_dir) == 1:
+        output_dir = [output_dir] * nitem
                                    
         # Check consistency of list lengths
-        if any(len(lst) != nitem for lst in [
-            input_dir,
-            self._input_file_pattern,
-            self._input_file_ext,
-            output_file_pattern
-        ]:
+        if any(
+            len(lst) != nitem for lst in [
+                input_dir,
+                self._input_file_pattern,
+                self._input_file_ext,
+                self._output_file_pattern
+            ]
+        ):
             raise ValueError(
                 f'Lists INPUT_PATH ({len(input_dir)}), '
                 + f'INPUT_FILE_PATTERN ({len(self._input_file_pattern)}), '
                 + f'INPUT_FILE_EXT ({llen(self._input_file_ext)}), '
-                + f 'OUTPUT_FILE_PATTERN ({len(self._output_file_pattern)}) '
+                + f'OUTPUT_FILE_PATTERN ({len(self._output_file_pattern)}) '
                 + 'need to have equal length'
             )
 
         # Assemble input and output file lists
-        all_inputs = self.get_file_list(input_dir, output_file_pattern=False)
-        all_outputs = self.get_file_list(output_dir, output_file_pattern=True)
+        all_inputs = self.get_file_list(image_number_list, input_dir, use_output_file_pattern=False)
+        all_outputs = self.get_file_list(image_number_list, output_dir, use_output_file_pattern=True)
 
         # Retrieve files
         self.retrieve(all_inputs, all_outputs)
 
 
 
-    def get_file_list(self, dest_dir, use_output_file_pattern=False):
+    def get_file_list(self, image_number_list, dest_dir, use_output_file_pattern=False):
         """Get File List
         Return lists of file paths to retrieve.
 
         Parameters
         ----------
-        dest_dir : list of stringsr
+        image_number_list : list of string
+            image numbers
+        dest_dir : list of string
             input directory or url
         use_output_file_pattern : bool, optional, default=False
             if True, use output file base patterns excluding numbering scheme;
@@ -209,7 +212,7 @@ class GetImages(object):
             in_ext = self._input_file_ext[i]
 
             list_files_per_type = []
-            for number in self._image_number_list:
+            for number in image_number_list:
 
                 if use_output_file_pattern:
                     # Transform input to output number patterns
@@ -220,7 +223,7 @@ class GetImages(object):
                     x = in_ext[1:]
                     x2 = re.sub(r'\.', '', x)
                     ext_final = in_ext[0] + x2
-                    fbase = '{}{}'.format(sef._output_file_pattern[i], number_final)
+                    fbase = '{}{}'.format(self._output_file_pattern[i], number_final)
                 else:
                     fbase = re.sub(self._input_numbering, number, in_pattern)
                     ext_final = in_ext
