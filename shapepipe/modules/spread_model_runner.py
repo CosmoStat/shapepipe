@@ -11,7 +11,7 @@ Module runner for ``spread_model``
 """
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.spread_mdel_package import spread_model as sm
+from shapepipe.modules.spread_model_package import spread_model as sm
 
 
 @module_runner(
