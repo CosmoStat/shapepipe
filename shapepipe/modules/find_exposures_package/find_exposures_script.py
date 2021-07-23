@@ -63,12 +63,9 @@ class FindExposures():
         Return list of exposure file used for the tile in process, from tiles
         FITS header
 
-        Parameters
-        ----------
-
         Returns
         -------
-        exp_list_uniq: list of string
+        exp_list_uniq: list of strings
             list of exposure basenames
         """
 
