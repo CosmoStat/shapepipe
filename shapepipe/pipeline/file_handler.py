@@ -722,14 +722,23 @@ class FileHandler(object):
 
         else:
 
+            print(self._module_dict)
+
             input_dir = []
-            for in_mod_run in (
+            for input_module in (
                 self._module_dict[module][run_name]['input_module']
             ):
-                input_mod = in_mod_run.split('/')[0]
-                if input_mod in self._module_dict:
+                run_split = '_run_'
+                if run_split in input_module:
+                    in_mod_run = input_module
+                    input_module = input_module.split('_run_')[0]
+                else:
+                    in_mod_run = self._module_dict[input_module]['latest']
+                if input_module in self._module_dict:
                     input_dir.append(
-                        self._module_dict[input_mod][in_mod_run]['output_dir']
+                        self._module_dict[input_module][in_mod_run][
+                            'output_dir'
+                        ]
                     )
 
         if self._config.has_option(run_name.upper(), 'INPUT_DIR'):
@@ -1200,13 +1209,19 @@ class FileHandler(object):
             Module name
 
         """
+
+        multi_call = self._module_list.count(module) > 1
+
         if module in self._module_dict.keys():
             self._module_dict[module]['run_count'] += 1
-            call_num = self._module_dict[module]['run_count']
-            run_name = f'{module}/run_{call_num}'
         else:
             self._module_dict[module] = {}
             self._module_dict[module]['run_count'] = 1
+
+        if multi_call:
+            call_num = self._module_dict[module]['run_count']
+            run_name = f'{module}_run_{call_num}'
+        else:
             run_name = module
 
         self._module_dict[module]['latest'] = run_name
