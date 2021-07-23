@@ -64,7 +64,7 @@ def psfex_runner(
     )
 
     # generates the psfex command
-    command_line = PSFex_call.generate_command()
+    command_line = PSFEx_call.generate_command()
 
     w_log.info(f'Running command \'{command_line}\'')
     stderr, stdout = execute(command_line)
