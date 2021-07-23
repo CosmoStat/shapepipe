@@ -29,29 +29,7 @@ def psfex_runner(
         config,
         w_log
 ):
-    """
-    Runs the psfex wrapper package.
 
-    Parameters:
-    ----------
-    input_file_list: list
-        List with the full path to the input file
-    run_dirs: dict
-        Dictionary with directories
-    file_number_string: str
-        Specific number of the data file being processed
-    config:
-        Config object
-    w_log:
-        Log object
-
-
-    Returns:
-    -------
-    stdout, stderr: str
-        Strings with the output and error output of execution.
-
-    """
 
     # extract psfex  run configurations
     psfex_executable_path = config.getexpanded(

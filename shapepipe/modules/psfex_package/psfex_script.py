@@ -23,11 +23,6 @@ class PSFex_caller:
         Full path pf the output catalogue
     check_image_list: list of str
         List of check images
-
-    Returns:
-    -------
-    command_line: str
-        Command line with correct and complete paths for PSFEx execution.
     """
 
     def __init__(
@@ -47,7 +42,12 @@ class PSFex_caller:
         self.check_image_list = check_image_list
 
     def generate_command(self):
-        """ Generates a command line for running PSFEx """
+        """ Generates a command line for running PSFEx
+        Returns:
+        -------
+        command_line: str
+            Command line with correct and complete paths for PSFEx execution.
+        """
 
         # Prepare command line
         command_line = (
@@ -78,7 +78,8 @@ class PSFex_caller:
                     f'{output_dir}'
                     + f'/{suffix}'
                     + f'{check_image.lower()}'
-                    + f'{file_number_string}.fits')
+                    + f'{file_number_string}.fits'
+                )
 
         # Add checks to command line
         command_line += (
@@ -88,15 +89,6 @@ class PSFex_caller:
 
         self.command_line = command_line
         return command_line
-
-    def exec(self):
-        """
-        Executes the command line.
-        """
-        self.generate_command()
-        stderr, stdout = execute(self.command_line)
-
-        return stderr, stdout
 
     def parse_errors(stderr, stdout):
         """
