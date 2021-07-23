@@ -25,6 +25,7 @@ class PSFex_caller:
         List of check images
 
     Returns:
+    -------
     command_line: str
         Command line with correct and complete paths for PSFEx execution.
     """

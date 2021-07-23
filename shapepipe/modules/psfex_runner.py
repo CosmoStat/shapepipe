@@ -47,7 +47,7 @@ def psfex_runner(
 
 
     Returns:
-
+    -------
     stdout, stderr: str
         Strings with the output and error output of execution.
 
@@ -92,15 +92,6 @@ def psfex_runner(
     stderr, stdout = execute(command_line)
 
     # move psfex errors reported as stdout to stderr
-    check_error = re.findall('error', stdout.lower())
-    check_error2 = re.findall('all done', stdout.lower())
+    stdout, stderr = PSFex_call.parse_errors(stderr, stdout)
 
-    if check_error == []:
-        stderr2 = ''
-    else:
-        stderr2 = stdout
-
-    if check_error2 == []:
-        stderr2 = stdout
-
-    return stdout, stderr2
+    return stdout, stderr
