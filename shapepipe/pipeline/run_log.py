@@ -9,6 +9,7 @@ This module defines methods for creating a run log.
 """
 
 import numpy as np
+from shapepipe.pipeline.shared import split_module_run
 
 
 class RunLog(object):
@@ -71,6 +72,8 @@ class RunLog(object):
             All run paths for a given module
 
         """
+        module, _ = split_module_run(module)
+
         all_runs = [
             run for run in self._runs
             if module in run.split()[1].split(',')

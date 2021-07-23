@@ -15,6 +15,7 @@ from shutil import copyfile
 from glob import glob
 from functools import reduce, partial
 from shapepipe.pipeline.run_log import RunLog
+from shapepipe.pipeline.shared import split_module_run
 from shapepipe.modules.module_runners import get_module_runners
 from shapepipe.utilities.file_system import mkdir
 
@@ -728,11 +729,8 @@ class FileHandler(object):
             for input_module in (
                 self._module_dict[module][run_name]['input_module']
             ):
-                run_split = '_run_'
-                if run_split in input_module:
-                    in_mod_run = input_module
-                    input_module = input_module.split('_run_')[0]
-                else:
+                input_module, in_mod_run = split_module_run(input_module)
+                if in_mod_run == input_module:
                     in_mod_run = self._module_dict[input_module]['latest']
                 if input_module in self._module_dict:
                     input_dir.append(

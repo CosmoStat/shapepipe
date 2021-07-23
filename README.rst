@@ -223,7 +223,7 @@ The configuration parameters for the pipeline are:
       specified module from a run matching the specified pattern.
 
    In all cases the module name can be succeded by the run number (*e.g.*
-   ``MODULE/run_2``)
+   ``MODULE_run_2``)
 
 4. ``OUTPUT_DIR`` : (``str``) A valid directory to write the pipeline output
    files.
@@ -266,7 +266,7 @@ specified as follows:
 
 .. code-block:: bash
 
-  [MODULE_NAME/RUN_X]
+  [MODULE_NAME_RUN_X]
   PARAMETER = PARAMETER VALUE
 
 Where ``X`` is an integer greater than ``1``.
