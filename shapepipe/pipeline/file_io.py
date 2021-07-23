@@ -1182,7 +1182,6 @@ class FITSCatalog(BaseCatalog):
       if data is None:
          raise ValueError('Data not provided')
 
-      print('MKDEBUG ', overwrite, self.fullpath)
       if self._file_exists(self.fullpath) and not overwrite:
           if self._cat_data is None:
               self.open()
