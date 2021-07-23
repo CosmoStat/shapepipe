@@ -7,8 +7,11 @@ import os
 import re
 
 
-class PSFex_caller:
-    """This class contains functions to generate a PSFex command line.
+class PSFEx_caller:
+    """ PSFEx caller
+
+    This class contains functions to generate a PSFex command line.
+
     Parameters:
     ----------
     psfex_executable_path: str
@@ -42,7 +45,10 @@ class PSFex_caller:
         self.check_image_list = check_image_list
 
     def generate_command(self):
-        """ Generates a command line for running PSFEx
+        """Generate command
+
+        This method generates a command line for running PSFEx.
+
         Returns:
         -------
         command_line: str
@@ -90,9 +96,22 @@ class PSFex_caller:
         self.command_line = command_line
         return command_line
 
+    @staticmethod
     def parse_errors(stderr, stdout):
-        """
-        Move errors from output from psfex to errors.
+        """Parse errors
+
+        This methoid move errors from output from psfex to errors.
+
+        Parameters:
+        ----------
+        stderr, stdout: str
+            strings with outputs from the execute command
+
+        Returns:
+        -------
+        stdout, stderr2: str
+
+
         """
         check_error = re.findall('error', stdout.lower())
         check_error2 = re.findall('all done', stdout.lower())

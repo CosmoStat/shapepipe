@@ -12,7 +12,7 @@ import re
 import os
 from shapepipe.pipeline.execute import execute
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.psfex_package.psfex_script import PSFex_caller
+from shapepipe.modules.psfex_package.psfex_script import PSFEx_caller
 
 
 @module_runner(
@@ -54,7 +54,7 @@ def psfex_runner(
         check_image_list = ['']
 
     # prepare the psfex command line
-    PSFex_call = PSFex_caller(
+    PSFEx_call = PSFEx_caller(
         psfex_executable_path,
         input_file_path,
         psfex_config_file,
@@ -70,6 +70,6 @@ def psfex_runner(
     stderr, stdout = execute(command_line)
 
     # move psfex errors reported as stdout to stderr
-    stdout, stderr = PSFex_call.parse_errors(stderr, stdout)
+    stdout, stderr = PSFEx_call.parse_errors(stderr, stdout)
 
     return stdout, stderr
