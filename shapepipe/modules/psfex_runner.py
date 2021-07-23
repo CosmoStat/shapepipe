@@ -30,7 +30,6 @@ def psfex_runner(
         w_log
 ):
 
-
     # extract psfex  run configurations
     psfex_executable_path = config.getexpanded(
         "PSFEX_RUNNER",
