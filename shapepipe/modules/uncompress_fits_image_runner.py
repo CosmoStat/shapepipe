@@ -1,46 +1,61 @@
 # -*- coding: utf-8 -*-
 
-"""UNCOMPRESS_FITS_IMAGE_RUNNER
+"""UNCOMPRESS FITS IMAGE RUNNER
 
+Module runner for ``uncompress_fits_image_runner``
 This module uncompress fits images and save them on a single hdu fits.
 
-:Author: Axel Guinot
+:Author: Axel Guinot, Martin Kilbinger <martin.kilbinger@cea.fr>
+
+:Date: 2020
+
+:Package: ShapePipe
 
 """
 
 from shapepipe.modules.module_decorator import module_runner
+import shapepipe.modules.uncompress_fits_image_package.uncompress as uz
 
-from astropy.io import fits
 
+@module_runner(
+    version='1.1',
+    file_pattern=['image'],
+    file_ext=['.fits'],
+    numbering_scheme='_0'
+)
+def uncompress_fits_image_runner(
+    input_file_list,
+    run_dirs,
+    file_number_string,
+    config,
+    w_log
+):
 
-@module_runner(version='1.0',
-               file_pattern=['image'],
-               file_ext=['.fits'],
-               numbering_scheme='_0')
-def uncompress_fits_image_runner(input_file_list, run_dirs, file_number_string,
-                                 config, w_log):
-
+    # Get output patterns
     output_pattern_list = config.getlist('UNCOMPRESS_FITS_IMAGE_RUNNER', 'OUTPUT_PATTERN')
 
+    # Get HDU number
     if config.has_option('UNCOMPRESS_FITS_IMAGE_RUNNER', 'HDU_DATA'):
         data_hdu = config.getint("UNCOMPRESS_FITS_IMAGE_RUNNER", "HDU_DATA")
     else:
         data_hdu = 0
 
+    # Check consistency of input and output list lengths
     if len(input_file_list) != len(output_pattern_list):
-        raise ValueError('Lists INPUT_PATH ({}) and OUTPUT_PATTERN ({}) '
-                         'need to be of equal length.'
-                         ''.format(len(input_file_list),
-                                   len(output_pattern_list)))
+        raise ValueError(
+            f'Lists INPUT_PATH ({len(input_file_list)})'
+            + f' and OUTPUT_PATTERN ({len(output_pattern_list)})'
+            + 'need to be of equal length.'
+        )
 
-    # Read data from input list files
-    for i in range(len(input_file_list)):
-        data = fits.getdata(input_file_list[i], data_hdu)
-        header = fits.getheader(input_file_list[i], data_hdu)
+    # Create instance of uncompress
+    uz_inst = uz.Uncompress(
+        input_file_list,
+        output_pattern_list,
+        run_dirs['output'],
+        file_number_string,
+        data_hdu)
 
-        # Create and write new FITS file with that HDU only
-        hdu = fits.PrimaryHDU(data, header)
-        hdul = fits.HDUList([hdu])
-        hdul.writeto('{}/{}{}.fits'.format(run_dirs['output'], output_pattern_list[i], file_number_string))
+    uz_inst.process()
 
     return None, None
