@@ -43,10 +43,10 @@ https://arbutus-canfar.cloud.computecanada.ca/project/instances.
 
 For `ShapePipe` we use the following instance:
 - `ShapePipe2`:
-- 90 GB RAM
+- 60 GB RAM
 - 20 GB Disk
 - 8 CPUs
-- Flavour: c8-90gb-186
+- Flavour: c8-60gb-186
 - IP Address: 206.12.92.159
 
 ### Available Snapshots
@@ -54,7 +54,7 @@ For `ShapePipe` we use the following instance:
 All snapshots are listed here:
 https://arbutus-canfar.cloud.computecanada.ca/project/images
 Snapshots created from the `ShapePipe2` instance are typically called
-`ShapePipe2-mk-<date>`.
+`ShapePipe2-<date>`.
 
 Note that if `vos` down- or up-loads to the `canfar` storage are performed by a job,
 this requires a `cadc` certificate, which is valid for 10 days. In that case, a snapshot
