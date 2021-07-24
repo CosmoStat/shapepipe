@@ -451,7 +451,7 @@ class FITSCatalog(BaseCatalog):
 
    # ------------------------------------------------------------------------------------------------
    # MODIFIED
-   def create(self, ext_name=None, overwrite=True, s_hdu=True, sex_cat_path=None):
+   def create(self, ext_name=None, s_hdu=True, sex_cat_path=None):
       """!
          Create an empty catalog with a FITS format
          @param ext_name extension name or number
@@ -468,7 +468,7 @@ class FITSCatalog(BaseCatalog):
                   sex_cat.open()
                   secondary_hdu = sex_cat._cat_data[1]
                   self._cat_data = fits.HDUList([primary_hdu, secondary_hdu])
-                  self._cat_data.writeto(self.fullpath, overwrite=overwrite)
+                  self._cat_data.writeto(self.fullpath, overwrite=True)
                   sex_cat.close()
                   del(sex_cat)
               else:
@@ -478,10 +478,10 @@ class FITSCatalog(BaseCatalog):
       elif s_hdu:
           secondary_hdu = fits.BinTableHDU(data=None, header=None, name=ext_name)
           self._cat_data = fits.HDUList([primary_hdu, secondary_hdu])
-          self._cat_data.writeto(self.fullpath, overwrite=overwrite)
+          self._cat_data.writeto(self.fullpath, overwrite=True)
       else:
           self._cat_data = fits.HDUList([primary_hdu])
-          self._cat_data.writeto(self.fullpath, overwrite=overwrite)
+          self._cat_data.writeto(self.fullpath, overwrite=True)
 
    # ------------------------------------------------------------------------------------------------
    # ADDED
