@@ -9,8 +9,6 @@ This module build SExtractor command line.
 """
 
 import re
-from shapepipe.pipeline.execute import execute
-from shapepipe.modules.module_decorator import module_runner
 from shapepipe.pipeline import file_io as io
 
 import numpy as np
@@ -44,7 +42,9 @@ def get_header_value(image_path, key):
     try:
         val = float(val)
     except:
-        raise ValueError('The key {} does not return a float value. Got {}'.format(key, val))
+        raise ValueError(
+            f'The key {key} does not return a float value. Got {val}'
+        )
 
     return val
 
@@ -75,15 +75,16 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
 
     """
 
-    cat = io.FITSCatalog(cat_path, SEx_catalog=True,
-                         open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+    cat = io.FITSCatalog(
+            cat_path, SEx_catalog=True,
+            open_mode=io.BaseCatalog.OpenMode.ReadWrite,
+    )
     cat.open()
 
     f_wcs = SqliteDict(f_wcs_path)
     key_list = list(f_wcs.keys())
     if len(key_list) == 0:
-        raise IOError('Could not read sql file \'{}\''
-                      ''.format(f_wcs_path))
+        raise IOError(f'Could not read sql file \'{f_wcs_path}\'')
     n_hdu = len(f_wcs[key_list[0]])
 
     hist = []
@@ -138,8 +139,10 @@ class sextractor_caller():
     ----------
     path_input_files: list
         List with all the path for the input files
-    path_output_file: str
-        Path for the output catalogue
+    path_output_dir: str
+        Path for the output directory
+    number_string: str
+        Pipeline intern numerotation
     path_dot_sex: str
         Path to the ".sex" config file
     path_dot_param: str
@@ -152,7 +155,7 @@ class sextractor_caller():
         Weither a flag is provided for the measurement
     use_psf: bool
         Weither a psf is provided for the model
-    use_detection: bool
+    use_detection_image: bool
         Weither a detection image is provided
     use_detection_weight: bool
         Weither a detection weight is provided
@@ -166,18 +169,21 @@ class sextractor_caller():
         Header key corresponding to the background value
     check_image: str
         If provided, add SExtractor check image to the output
+    output_suffix: str
+        If provided, add a suffix to the output files
 
     """
-
-    def __init__(self,
-                path_input_files,
-                path_output_dir, number_string,
-                path_dot_sex, path_dot_param, path_dot_conv,
-                use_weight, use_flag, use_psf,
-                use_detection_image, use_detection_weight,
-                use_zero_point, use_background,
-                zero_point_key=None, background_key=None,
-                check_image=None, output_suffix=None):
+    def __init__(
+            self,
+            path_input_files,
+            path_output_dir, number_string,
+            path_dot_sex, path_dot_param, path_dot_conv,
+            use_weight, use_flag, use_psf,
+            use_detection_image, use_detection_weight,
+            use_zero_point, use_background,
+            zero_point_key=None, background_key=None,
+            check_image=None, output_suffix=None
+    ):
 
         self.cmd_line = ''
         self._cmd_line_extra = ''
@@ -221,18 +227,21 @@ class sextractor_caller():
         if isinstance(output_suffix, type(None)):
             self.suffix = ''
         else:
-            if (output_suffix.lower() != None) & (output_suffix != ''):
+            if (output_suffix.lower() is not None) & (output_suffix != ''):
                 self.suffix = output_suffix + '_'
             else:
                 self.suffix = ''
 
-        output_file_name = self.suffix + 'sexcat{}.fits'.format(self._num_str)
-        output_file_path = '{}/{}'.format(self._path_output_dir, output_file_name)
+        output_file_name = self.suffix + f'sexcat{self._num_str}.fits'
+        output_file_path = f'{self._path_output_dir}/{output_file_name}'
 
         return output_file_path
 
-    def set_input_files(self, use_weight, use_flag, use_psf,
-                        use_detect_img, use_detect_weight):
+    def set_input_files(
+            self,
+            use_weight, use_flag, use_psf,
+            use_detect_img, use_detect_weight
+    ):
         """Set input files
 
         Setup all the input image files.
@@ -253,27 +262,39 @@ class sextractor_caller():
         Raise
         -----
         ValueError
-        
+
         """
         if use_weight:
             weight_image = self._all_input_path[self._extra]
             self._extra += 1
-        
+
         if use_flag:
-            self._cmd_line_extra += ' -FLAG_IMAGE {0}'.format(self._all_input_path[self._extra])
+            self._cmd_line_extra += (
+                f' -FLAG_IMAGE '
+                + f'{self._all_input_path[self._extra]}'
+            )
             self._extra += 1
 
         if use_psf:
-            self._cmd_line_extra += ' -PSF_NAME {0}'.format(self._all_input_path[self._extra])
+            self._cmd_line_extra += (
+                ' -PSF_NAME '
+                + f'{self._all_input_path[self._extra]}'
+            )
             self._extra += 1
 
         # Check for separate files for detection and measurement
 
         # First, consistency checks
         if use_detect_weight and not use_detect_img:
-            raise ValueError('DETECTION_WEIGHT cannot be True if DETECTION_IMAGE is False')
+            raise ValueError(
+                    'DETECTION_WEIGHT cannot be True '
+                    + 'if DETECTION_IMAGE is False'
+            )
         if use_detect_weight and not use_weight:
-            raise ValueError('DETECTION_WEIGHT cannot be True if WEIGHT_FILE is False')
+            raise ValueError(
+                    'DETECTION_WEIGHT cannot be True '
+                    + 'if WEIGHT_FILE is False'
+            )
 
         # Check for separate image file for detection and measurement
         if use_detect_img:
@@ -292,17 +313,20 @@ class sextractor_caller():
                 self._extra += 1
             else:
                 detect_weight_path = weight_image
-            self._cmd_line_extra += ' -WEIGHT_IMAGE {0},{1}'\
-                                    ''.format(detect_weight_path, weight_image)
+            self._cmd_line_extra += (
+                    f' -WEIGHT_IMAGE {detect_weight_path}'
+                    + f',{weight_image}'
+            )
         else:
             self._cmd_line_extra += ' -WEIGHT_TYPE None'
 
         if self._extra != len(self._all_input_path):
-            raise ValueError('Incoherence between input file number and keys '
-                            'related to extra files: 1 regular + {} extra '
-                            'files not compatible with total file list '
-                            'length of {}'
-                            ''.format(self._extra-1, len(self._all_input_path)))
+            raise ValueError(
+                f'Incoherence between input file number and keys '
+                + f'related to extra files: 1 regular + {self._extra-1} extra '
+                + f'files not compatible with total file list '
+                + f'length of {len(self._all_input_path)}'
+            )
 
     def get_zero_point(self, use_zp, zp_key=None):
         """Get Zero Point
@@ -319,7 +343,7 @@ class sextractor_caller():
         """
         if use_zp and isinstance(zp_key, type(None)):
             zp_value = get_header_value(self._meas_img_path, zp_key)
-            self._cmd_line_extra += ' -MAG_ZEROPOINT {}'.format(zp_value)
+            self._cmd_line_extra += f' -MAG_ZEROPOINT {zp_value}'
 
     def get_background(self, use_bkg, bkg_key=None):
         """Get Background
@@ -332,13 +356,14 @@ class sextractor_caller():
             If True, add the background value to the command line
         bkg_key: str
             Header key corresponding to the background value
-        
+
         """
         if use_bkg and isinstance(bkg_key, type(None)):
             bkg_value = get_header_value(self._meas_img_path, bkg_key)
-            self._cmd_line_extra += ' -BACK_TYPE MANUAL' \
-                                    ' -BACK_VALUE {0}'.format(bkg_value)
-            
+            self._cmd_line_extra += (
+                f' -BACK_TYPE MANUAL -BACK_VALUE {bkg_value}'
+            )
+
     def get_check_image(self, check_image):
         """Get check image
 
@@ -348,7 +373,7 @@ class sextractor_caller():
         ----------
         check_image: list
             List of SExtractor keys corresponding to check images
-        
+
         """
 
         if (len(check_image) == 1) & (check_image[0] == ''):
@@ -359,13 +384,17 @@ class sextractor_caller():
             check_name = []
             for i in check_image:
                 check_type.append(i.upper())
-                check_name.append(self._path_output_dir + '/' + self.suffix 
-                                  + i.lower() +
-                                  self._num_str + '.fits')
+                check_name.append(
+                    self._path_output_dir + '/' + self.suffix
+                    + i.lower()
+                    + self._num_str + '.fits'
+                )
 
-        self._cmd_line_extra += (' -CHECKIMAGE_TYPE {0} -CHECKIMAGE_NAME {1}'
-                          ''.format(','.join(check_type), ','.join(check_name)))
-    
+        self._cmd_line_extra += (
+            f" -CHECKIMAGE_TYPE {','.join(check_type)} "
+            + f"-CHECKIMAGE_NAME {','.join(check_name)}"
+        )
+
     def make_command_line(self, exec_path):
         """ Make command line
 
@@ -384,19 +413,14 @@ class sextractor_caller():
         """
 
         # Base arguments for SExtractor
-        command_line_base = ('{0} {1},{2} -c {3} -PARAMETERS_NAME {4} -FILTER_NAME {5} '
-                            '-CATALOG_NAME {6}'
-                            ''.format(exec_path,
-                                      self._detect_img_path,
-                                      self._meas_img_path,
-                                      self._path_dot_sex,
-                                      self._path_dot_param,
-                                      self._path_dot_conv,
-                                      self.path_output_file))
+        command_line_base = (
+            f'{exec_path} {self._detect_img_path},{self._meas_img_path} '
+            + f'-c {self._path_dot_sex} '
+            + f'-PARAMETERS_NAME {self._path_dot_param}'
+            + f' -FILTER_NAME {self._path_dot_conv} '
+            + f'-CATALOG_NAME {self.path_output_file}'
+        )
 
-        command_line = '{} {}'.format(command_line_base, self._cmd_line_extra)
+        command_line = f'{command_line_base} {self._cmd_line_extra}'
 
         return command_line
-    
-
-
