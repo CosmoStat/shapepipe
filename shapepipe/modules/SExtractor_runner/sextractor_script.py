@@ -2,7 +2,7 @@
 
 """SEXTRACTOR SCRIPT
 
-This module build SExtractor command line.
+This module builds the SExtractor command line.
 
 :Author: Axel Guinot & Martin Kilbinger
 
@@ -19,7 +19,7 @@ from astropy.io import fits
 def get_header_value(image_path, key):
     """Get header value
 
-    This function read a value from the header image.
+    This function reads a value from the header image.
 
     Parameters
     ----------
@@ -56,7 +56,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
     Only works for tiles.
     The columns will be: NUMBER same as SExtractor NUMBER
                          EXP_NAME name of the single exposure for this epoch
-                         CCD_N extansion where the object is
+                         CCD_N extension where the object is
 
     Parameters
     ----------
@@ -132,7 +132,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
 class sextractor_caller():
     """SExtractor Caller
 
-    This class construct the command line to call SExtractor based on the
+    This class constructs the command line to call SExtractor based on the
     input files and parameters.
 
     Parameters
@@ -187,7 +187,6 @@ class sextractor_caller():
 
         self.cmd_line = ''
         self._cmd_line_extra = ''
-        self._extra = 1
 
         self._meas_img_path = path_input_files[0]
         self._all_input_path = path_input_files
@@ -264,23 +263,25 @@ class sextractor_caller():
         ValueError
 
         """
+        extra = 1
+
         if use_weight:
-            weight_image = self._all_input_path[self._extra]
-            self._extra += 1
+            weight_image = self._all_input_path[extra]
+            extra += 1
 
         if use_flag:
             self._cmd_line_extra += (
-                f' -FLAG_IMAGE '
-                + f'{self._all_input_path[self._extra]}'
+                ' -FLAG_IMAGE '
+                + f'{self._all_input_path[extra]}'
             )
-            self._extra += 1
+            extra += 1
 
         if use_psf:
             self._cmd_line_extra += (
                 ' -PSF_NAME '
-                + f'{self._all_input_path[self._extra]}'
+                + f'{self._all_input_path[extra]}'
             )
-            self._extra += 1
+            extra += 1
 
         # Check for separate files for detection and measurement
 
@@ -298,8 +299,8 @@ class sextractor_caller():
 
         # Check for separate image file for detection and measurement
         if use_detect_img:
-            self._detect_img_path = self._all_input_path[self._extra]
-            self._extra += 1
+            self._detect_img_path = self._all_input_path[extra]
+            extra += 1
         else:
             self._detect_img_path = self._meas_img_path
 
@@ -309,8 +310,8 @@ class sextractor_caller():
         # this might lead to more user errors.
         if use_weight:
             if use_detect_weight:
-                detect_weight_path = self._all_input_path[self._extra]
-                self._extra += 1
+                detect_weight_path = self._all_input_path[extra]
+                extra += 1
             else:
                 detect_weight_path = weight_image
             self._cmd_line_extra += (
@@ -320,11 +321,11 @@ class sextractor_caller():
         else:
             self._cmd_line_extra += ' -WEIGHT_TYPE None'
 
-        if self._extra != len(self._all_input_path):
+        if extra != len(self._all_input_path):
             raise ValueError(
-                f'Incoherence between input file number and keys '
-                + f'related to extra files: 1 regular + {self._extra-1} extra '
-                + f'files not compatible with total file list '
+                'Incoherence between input file number and keys '
+                + f'related to extra files: 1 regular + {extra-1} extra '
+                + 'files not compatible with total file list '
                 + f'length of {len(self._all_input_path)}'
             )
 
