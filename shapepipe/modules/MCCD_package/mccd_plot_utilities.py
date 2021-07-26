@@ -146,6 +146,20 @@ def plot_meanshapes(starcat_path, output_path, nb_pixel, w_log,
     all_X = starcat[2].data['X']
     all_Y = starcat[2].data['Y']
 
+    # Remove stars/PSFs where the measured size is zero
+    # Sometimes the HSM shape measurement gives objects with measured
+    # size equals to zero without an error Flag.
+    bad_stars = (abs(all_star_shapes[2, :]) < 0.1)
+    bad_psfs = (abs(all_psf_shapes[2, :]) < 0.1)
+    size_mask = np.abs(bad_stars) * np.abs(bad_psfs)
+    # Remove outlier stars/PSFs
+    all_star_shapes = all_star_shapes[:, ~size_mask]
+    all_psf_shapes = all_psf_shapes[:, ~size_mask]
+    all_CCDs = all_CCDs[~size_mask]
+    all_X = all_X[~size_mask]
+    all_Y = all_Y[~size_mask]
+    flagmask = flagmask[~size_mask]
+
     if remove_outliers:
         shape_std_max = 5.
         # Outlier rejection based on the size
