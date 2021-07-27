@@ -35,8 +35,13 @@ def mccd_fit_runner(input_file_list, run_dirs, file_number_string,
 
     if mccd_mode == 'FIT':
         aux_mccd.mccd_fit_pipeline(
-            trainstar_path, file_number_string, mccd_parser, output_dir,
-            verbose, saving_name)
+            trainstar_path=trainstar_path,
+            file_number_string=file_number_string,
+            mccd_parser=mccd_parser,
+            output_dir=output_dir,
+            verbose=verbose,
+            saving_name=saving_name,
+            w_log=w_log)
 
     else:
         raise ValueError('''mccd_fit_runner should be called when the

@@ -45,7 +45,8 @@ def mccd_fit_val_runner(input_file_list, run_dirs, file_number_string,
             mccd_parser=mccd_parser,
             output_dir=output_dir,
             verbose=verbose,
-            saving_name=fit_saving_name)
+            saving_name=fit_saving_name,
+            w_log=w_log)
 
         # Fitted model is found in the output directory
         mccd_model_path = output_dir + fit_saving_name + file_number_string \
