@@ -15,6 +15,7 @@ import mccd
 from astropy.io import fits
 import galsim
 from shapepipe.pipeline import file_io as sc
+import pprint
 
 NOT_ENOUGH_STARS = 'Not enough stars to train the model.'
 
@@ -194,7 +195,8 @@ def mccd_preprocessing_pipeline(input_file_list,
 
 
 def mccd_fit_pipeline(trainstar_path, file_number_string, mccd_parser,
-                      output_dir, verbose, saving_name='fitted_model'):
+                      output_dir, verbose, saving_name='fitted_model',
+                      w_log=None):
     r"""Fit the MCCD model to the observations."""
     # Extract the MCCD parameters from the parser
     mccd_inst_kw = mccd_parser.get_instance_kw()
@@ -202,10 +204,17 @@ def mccd_fit_pipeline(trainstar_path, file_number_string, mccd_parser,
     use_SNR_weight = mccd_parser.get_extra_kw('use_SNR_weight')
 
     # Print the model configuration so that it is saved in log files
-    print('MCCD configuration parameters:')
-    print('[INPUTS]\n', 'use_SNR_weight: ', use_SNR_weight)
-    print('[INSTANCE]\n', mccd_inst_kw)
-    print('[FIT]\n', mccd_fit_kw)
+    w_log.info('MCCD configuration parameters:')
+    w_log.info('[INPUTS]')
+    inputs_dict_str = pprint.pformat({'use_SNR_weight': use_SNR_weight})
+    w_log.info(inputs_dict_str)
+    w_log.info('[INSTANCE]')
+    inst_dict_str = pprint.pformat(mccd_inst_kw)
+    w_log.info(inst_dict_str)
+    w_log.info('[FIT]')
+    fit_dict_str = pprint.pformat(mccd_fit_kw)
+    w_log.info(fit_dict_str)   
+    w_log.info('End of MCCD configuration parameters.')
 
     # Open fits file
     starcat = fits.open(trainstar_path, memmap=False)
