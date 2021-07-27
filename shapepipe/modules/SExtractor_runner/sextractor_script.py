@@ -76,8 +76,8 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
     """
 
     cat = io.FITSCatalog(
-            cat_path, SEx_catalog=True,
-            open_mode=io.BaseCatalog.OpenMode.ReadWrite,
+        cat_path, SEx_catalog=True,
+        open_mode=io.BaseCatalog.OpenMode.ReadWrite,
     )
     cat.open()
 
@@ -288,13 +288,13 @@ class sextractor_caller():
         # First, consistency checks
         if use_detect_weight and not use_detect_img:
             raise ValueError(
-                    'DETECTION_WEIGHT cannot be True '
-                    + 'if DETECTION_IMAGE is False'
+                'DETECTION_WEIGHT cannot be True '
+                + 'if DETECTION_IMAGE is False'
             )
         if use_detect_weight and not use_weight:
             raise ValueError(
-                    'DETECTION_WEIGHT cannot be True '
-                    + 'if WEIGHT_FILE is False'
+                'DETECTION_WEIGHT cannot be True '
+                + 'if WEIGHT_FILE is False'
             )
 
         # Check for separate image file for detection and measurement
@@ -315,8 +315,8 @@ class sextractor_caller():
             else:
                 detect_weight_path = weight_image
             self._cmd_line_extra += (
-                    f' -WEIGHT_IMAGE {detect_weight_path}'
-                    + f',{weight_image}'
+                f' -WEIGHT_IMAGE {detect_weight_path}'
+                + f',{weight_image}'
             )
         else:
             self._cmd_line_extra += ' -WEIGHT_TYPE None'
