@@ -201,6 +201,12 @@ def mccd_fit_pipeline(trainstar_path, file_number_string, mccd_parser,
     mccd_fit_kw = mccd_parser.get_fit_kw()
     use_SNR_weight = mccd_parser.get_extra_kw('use_SNR_weight')
 
+    # Print the model configuration so that it is saved in log files
+    print('MCCD configuration parameters:')
+    print('[INPUTS]\n', 'use_SNR_weight: ', use_SNR_weight)
+    print('[INSTANCE]\n', mccd_inst_kw)
+    print('[FIT]\n', mccd_fit_kw)
+
     # Open fits file
     starcat = fits.open(trainstar_path, memmap=False)
 
