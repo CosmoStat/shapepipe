@@ -269,7 +269,7 @@ specified as follows:
   [MODULE_NAME_RUN_X]
   PARAMETER = PARAMETER VALUE
 
-Where ``X`` is an integer greater than ``1``.
+Where ``X`` is an integer greater than or equal to ``1``.
 
 
 Development
