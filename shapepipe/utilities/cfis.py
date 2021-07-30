@@ -101,7 +101,7 @@ class image():
 
     def cut(self, no_cuts=False):
         """cut
-        
+
         Return True (False) if image does (not) need to be cut from selection.
 
         Parameters
@@ -156,7 +156,8 @@ class image():
         file=sys.stdout,
         base_name=False,
         name_only=True,
-        ID_only=False):
+        ID_only=False
+    ):
         """Print
 
         Print image information as ascii Table column
@@ -667,7 +668,7 @@ def get_log_file(path, verbose=False):
     f_log = open(path, 'r')
     log = f_log.readlines()
     if verbose:
-        print(f'Reading log file, {len(log)} lines found'))
+        print(f'Reading log file, {len(log)} lines found')
     f_log.close()
 
     return log
@@ -1259,9 +1260,10 @@ def find_images_in_area(
         ra_bounds = [[angles[0].ra, angles[1].ra]]
 
     if verbose:
-        print('Looking for all images within rectangle, '
-              + f'dec=({angles[0].dec}, {angles[1].dec}), ',
-              end=''
+        print(
+            'Looking for all images within rectangle, '
+            + f'dec=({angles[0].dec}, {angles[1].dec}), ',
+            end=''
         )
         for ra_min_max in ra_bounds:
             print(f'ra=[({ra_min_max[0]}, {ra_min_max[1]}) ', end='')
