@@ -484,7 +484,8 @@ def print_color(color, txt, file=sys.stdout, end='\n'):
 
     try:
         import colorama
-        colors = {'red': colorama.Fore.RED,
+        colors = {
+            'red': colorama.Fore.RED,
             'green': colorama.Fore.GREEN,
             'blue': colorama.Fore.BLUE,
             'yellow': colorama.Fore.YELLOW,
@@ -589,8 +590,13 @@ def get_file_pattern(pattern, band, image_type, want_re=True, ext=True):
     """
 
     if pattern == '':
-        if image_type in ('exposure', 'exposure_flag', 'exposure_flag.fz',
-                          'exposure_weight', 'exposure_weight.fz'):
+        if image_type in (
+            'exposure',
+            'exposure_flag',
+            'exposure_flag.fz',
+            'exposure_weight',
+            'exposure_weight.fz'
+        ):
             pattern_base = r'\d{7}p'
         else:
             pattern_base = r'CFIS.*\.{}'.format(band)
@@ -765,7 +771,9 @@ def get_tile_number(tile_name):
 
     m = re.search(r'(\d{3})[\.-](\d{3})', tile_name)
     if m is None or len(m.groups()) != 2:
-        raise CfisError('Image name \'{}\' does not match tile name syntax'.format(tile_name))
+        raise CfisError(
+            f'Image name \'{tile_name}\' does not match tile name syntax'
+        )
 
     nix = m.groups()[0]
     niy = m.groups()[1]
@@ -1306,9 +1314,10 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, input_fo
                 # Update coordinate in image for tiles with central coordinates
                 ra_c, dec_c = get_tile_coord_from_nixy(nix, niy)
                 if img.ra is not None or img.dec is not None:
-                    raise CfisError('Coordinates in image are already '
-                                    'set to {}, {}, cannot update to {}, {}'
-                                    ''.format(img.ra, img.dec, ra_c, dec_c))
+                    raise CfisError(
+                        'Coordinates in image are already '
+                        + f'set to {img.ra}, {img.rec}, cannot update to {ra_c}, {ra_dec}'
+                    )
                 img.ra = ra_c
                 img.dec = dec_c
                 img_found.append(img)
@@ -1532,9 +1541,14 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_n
         y = img.dec.degree
         nix, niy = get_tile_number(img.name)
         if show_numbers:
-            plt.text(x, y, '{}.{}'.format(nix, niy), fontsize=3,
-                     horizontalalignment='center',
-                     verticalalignment='center')
+            plt.text(
+                x,
+                y,
+                f'{nix}.{niy}',
+                fontsize=3,
+                horizontalalignment='center',
+                verticalalignment='center'
+            )
 
         # Image boundary
         dx = size[image_type] / 2 / cos_dec_c
