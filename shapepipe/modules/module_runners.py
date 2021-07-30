@@ -12,7 +12,7 @@ from importlib import import_module
 
 
 def get_module_runners(modules):
-    """ Get Module Runners
+    """Get Module Runners
 
     Import the specified module runners.
 
@@ -30,8 +30,15 @@ def get_module_runners(modules):
 
     package = 'shapepipe.modules'
 
-    module_runners = dict([(module, getattr(import_module('.{}'.format(module),
-                                            package=package), module))
-                           for module in modules])
+    module_runners = dict([
+        (
+            module,
+            getattr(
+                import_module('.{}'.format(module), package=package),
+                module,
+            )
+        )
+        for module in modules
+    ])
 
     return module_runners
