@@ -24,16 +24,17 @@ def psfex_interp_runner(
     run_dirs,
     file_number_string,
     config,
+    module_config_sec,
     w_log,
 ):
 
     # Fetch interpolation run mode
-    mode = config.get('PSFEX_INTERP_RUNNER', 'MODE')
+    mode = config.get(module_config_sec, 'MODE')
     # Fetch parameter values
-    pos_params = config.getlist('PSFEX_INTERP_RUNNER', 'POSITION_PARAMS')
-    get_shapes = config.getboolean('PSFEX_INTERP_RUNNER', 'GET_SHAPES')
-    star_thresh = config.getint('PSFEX_INTERP_RUNNER', 'STAR_THRESH')
-    chi2_thresh = config.getint('PSFEX_INTERP_RUNNER', 'CHI2_THRESH')
+    pos_params = config.getlist(module_config_sec, 'POSITION_PARAMS')
+    get_shapes = config.getboolean(module_config_sec, 'GET_SHAPES')
+    star_thresh = config.getint(module_config_sec, 'STAR_THRESH')
+    chi2_thresh = config.getint(module_config_sec, 'CHI2_THRESH')
 
     # Run in CLASSIC mode
     if mode == 'CLASSIC':
@@ -62,14 +63,14 @@ def psfex_interp_runner(
 
         # Fetch multi-epoch parameters
         dot_psf_dir = config.getexpanded(
-            'PSFEX_INTERP_RUNNER',
+            module_config_sec,
             'ME_DOT_PSF_DIR',
         )
         dot_psf_pattern = config.get(
-            'PSFEX_INTERP_RUNNER',
+            module_config_sec,
             'ME_DOT_PSF_PATTERN',
         )
-        f_wcs_path = config.getexpanded('PSFEX_INTERP_RUNNER', 'ME_LOG_WCS')
+        f_wcs_path = config.getexpanded(module_config_sec, 'ME_LOG_WCS')
 
         # Set input paths
         galcat_path = input_file_list[0]
