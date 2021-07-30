@@ -213,10 +213,10 @@ class GetImages(object):
         """
 
         list_all_files = []
-        for i in range(len(dest_dir)):
-            in_path = dest_dir[i]
-            in_pattern = self._input_file_pattern[i]
-            in_ext = self._input_file_ext[i]
+        for idx in range(len(dest_dir)):
+            in_path = dest_dir[idx]
+            in_pattern = self._input_file_pattern[idx]
+            in_ext = self._input_file_ext[idx]
 
             list_files_per_type = []
             for number in image_number_list:
@@ -263,9 +263,9 @@ class GetImages(object):
         """
 
         for in_per_type, out_per_type in zip(all_inputs, all_outputs):
-            for i in range(len(in_per_type)):
+            for idx in range(len(in_per_type)):
                 if self._check_existing_dir:
-                    out_base = os.path.basename(in_per_type[i])
+                    out_base = os.path.basename(in_per_type[idx])
                     path = glob.glob('{}/**/{}'
                                      ''.format(self._check_existing_dir,
                                                out_base),
@@ -274,8 +274,8 @@ class GetImages(object):
                         self._w_log.info('{} found, skipping'
                                          ''.format(path[0]))
                         continue
-                self._w_log.info('Retrieving {}'.format(in_per_type[i]))
-                self.retrieve_one(in_per_type[i], out_per_type[i])
+                self._w_log.info('Retrieving {}'.format(in_per_type[idx]))
+                self.retrieve_one(in_per_type[i], out_per_type[idx])
 
     def retrieve_one(self, in_path, out_path):
         """Retrieve One
