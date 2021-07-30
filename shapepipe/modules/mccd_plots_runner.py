@@ -13,7 +13,7 @@ installed.
 """
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.MCCD_package import mccd_plot_utilities as mccd_plots
+from shapepipe.modules.mccd_package import mccd_plot_utilities as mccd_plots
 import warnings
 
 

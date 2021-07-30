@@ -9,9 +9,9 @@ This file is the pipeline runner for the MCCD_interpolation package.
 """
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.MCCD_package import mccd_interpolation_script\
+from shapepipe.modules.mccd_package import mccd_interpolation_script\
     as mccd_interp
-from shapepipe.modules.MCCD_package import shapepipe_auxiliary_mccd\
+from shapepipe.modules.mccd_package import shapepipe_auxiliary_mccd\
     as aux_mccd
 import os
 

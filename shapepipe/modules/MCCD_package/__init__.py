@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""MCCD auxiliary functions package.
+"""MCCD AUXILIARY FUNCTIONS PACKAGE.
 
 This module contains auxiliary functions for the MCCD package.
 

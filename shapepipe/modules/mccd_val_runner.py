@@ -9,7 +9,7 @@ This file is the pipeline validation runner for the MCCD package.
 """
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.MCCD_package import shapepipe_auxiliary_mccd as\
+from shapepipe.modules.mccd_package import shapepipe_auxiliary_mccd as\
     aux_mccd
 import mccd
 
