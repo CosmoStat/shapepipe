@@ -16,6 +16,7 @@
 ## Default values
 do_env=0
 job=255
+config_dir='vos:cfis/cosmostat/kilbinger/cfis'
 psf='psfex'
 retrieve='vos'
 RESULTS='cosmostat/kilbinger/results'
@@ -37,6 +38,8 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    \t  32: shapes and morphology (offline)\n
    \t  64: paste catalogues (offline)\n
    \t 128: upload results (online)\n
+   -c, --config_dir DIR\n
+   \t config file directory, default='$config_dir'\n
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    -r, --retrieve METHOD\n
@@ -74,6 +77,10 @@ while [ $# -gt 0 ]; do
       ;;
     -j|--job)
       job="$2"
+      shift
+      ;;
+    -c|--config_dir)
+      config_dir="$2"
       shift
       ;;
     -p|--psf)
@@ -310,10 +317,14 @@ if [[ $do_job != 0 ]]; then
     echo $TILE >> $TILE_NUMBERS_PATH
   done
 
-  ### Download config files
-  command_sp "$VCP vos:cfis/cosmostat/kilbinger/cfis ." "Get shapepipe config files"
+  ### Retrieve config files
+  if [[ $config_file == "*vos:" ]]; then
+    command_sp "$VCP $config_dir ." "Retrieve shapepipe config files"
+  else
+    command_sp "ln -s $config_dir cfis" "Retrieve shapepipe config files"
+  fi
 
-  ### Get tiles
+  ### Retrieve tiles
   command_sp "shapepipe_run -c $SP_CONFIG/config_get_tiles_$retrieve.ini" "Run shapepipe (get tiles)"
 
   ### Find exposures
