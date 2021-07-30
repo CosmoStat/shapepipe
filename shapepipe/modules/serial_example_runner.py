@@ -39,15 +39,26 @@ class Dummy(object):
         text_file.close()
 
 
-@module_runner(input_module='python_example', version='1.0',
-               file_pattern=['numbers', 'letters', 'pyex_output'],
-               file_ext=['.txt', '.txt', '.cat'], depends='numpy',
-               run_method='serial')
-def serial_example(input_file_list, run_dirs, file_number_string,
-                   config, w_log):
+@module_runner(
+    input_module='python_example_runner',
+    version='1.0',
+    file_pattern=['numbers', 'letters', 'pyex_output'],
+    file_ext=['.txt', '.txt', '.cat'],
+    depends='numpy',
+    run_method='serial',
+)
+def serial_example_runner(
+    input_file_list,
+    run_dirs,
+    file_number_string,
+    config,
+    module_config_sec,
+    w_log,
+):
 
-    output_file_name = ('{}/serial_output{}.cat'.format(run_dirs['output'],
-                        file_number_string))
+    output_file_name = (
+        f"{run_dirs['output']}/serial_outputfile_number_string.cat"
+    )
 
     inst = Dummy()
     inst.read_files(input_file_list)
