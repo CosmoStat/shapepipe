@@ -90,7 +90,7 @@ class GetImages(object):
 
         Parameters
         ----------
-        retrieve_method : string
+        retrieve_method : str
             copy/download method
         retrieve_option : string
             retrieve options
