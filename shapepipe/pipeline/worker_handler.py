@@ -17,7 +17,7 @@ from shapepipe.pipeline.timeout import with_timeout
 
 
 class WorkerHandler(object):
-    """ Worker Handler
+    """Worker Handler
 
     This class defines the worker to process a given job.
 
@@ -30,9 +30,18 @@ class WorkerHandler(object):
         self._stderr = None
         self._verbose = verbose
 
-    def worker(self, process, job_name, w_log_name, run_dirs, config,
-               timeout, module_runner):
-        """ Worker
+    def worker(
+        self,
+        process,
+        job_name,
+        w_log_name,
+        run_dirs,
+        config,
+        module_config_sec,
+        timeout,
+        module_runner
+    ):
+        """Worker
 
         This method defines a worker.
 
@@ -48,6 +57,8 @@ class WorkerHandler(object):
             Run directories
         config : CustomParser
             Configuaration parser instance
+        module_config_sec : str
+            Configuration file section name
         timeout : int
             Timeout limit in seconds
 
@@ -57,10 +68,10 @@ class WorkerHandler(object):
             Worker dictionary
 
         """
-
         self._w_log_name = w_log_name
         self._run_dirs = run_dirs
         self._config = config
+        self._module_config_sec = module_config_sec
         self._module_runner = module_runner
         self._prepare_worker(process, job_name, timeout,
                              module_runner.__name__)
@@ -72,7 +83,7 @@ class WorkerHandler(object):
 
     @staticmethod
     def _set_job_name(num):
-        """ Set Job Name
+        """Set Job Name
 
         This method creates a job name for a given process number.
 
@@ -87,8 +98,7 @@ class WorkerHandler(object):
             Job name
 
         """
-
-        return 'process{}'.format(num)
+        return f'process{num}'
 
     def _prepare_worker(self, process, job_name, timeout, module):
         """ Prepare Worker
@@ -107,7 +117,6 @@ class WorkerHandler(object):
             Module runner name
 
         """
-
         self.worker_dict['pid'] = getpid()
         self.worker_dict['threads'] = active_count()
         self.worker_dict['node'] = platform.node()
@@ -128,65 +137,65 @@ class WorkerHandler(object):
         worker parameters.
 
         """
-
         process_size = len(str(self.worker_dict['process']))
 
         if self._verbose:
 
-            print(' - {} PID: {} '.format(
-                  self.worker_dict['job_name'],
-                  self.worker_dict['pid']), end='')
+            job_name = self.worker_dict['job_name']
+            pid = self.worker_dict['pid']
 
-            if (process_size <
-                    self._config.getint('WORKER', 'PROCESS_PRINT_LIMIT')):
-                print('processing {} {}'.format(
-                      self.worker_dict['file_number_string'],
-                      self.worker_dict['process']))
+            print(f' - {job_name} PID: {pid} ', end='')
+
+            if (
+                process_size
+                < self._config.getint('WORKER', 'PROCESS_PRINT_LIMIT')
+            ):
+                print(
+                    f'processing {self.worker_dict["file_number_string"]} '
+                    + f'{self.worker_dict["process"]}'
+                )
             else:
                 print()
 
         self.w_log = set_up_log(self._w_log_name, verbose=False)
         self.worker_dict['log'] = self.w_log.name
         self.w_log.info('Worker process running with:')
-        self.w_log.info(' - Job Name: {}'.format(
-                        self.worker_dict['job_name']))
-        self.w_log.info(' - PID: {}'.format(self.worker_dict['pid']))
-        self.w_log.info(' - Threads: {}'.format(self.worker_dict['threads']))
-        self.w_log.info(' - Node: {}'.format(self.worker_dict['node']))
-        self.w_log.info(' - System: {}'.format(self.worker_dict['system']))
-        self.w_log.info(' - Machine: {}'.format(self.worker_dict['machine']))
-        self.w_log.info(' - Timeout Limit: {}'.format(
-                        self.worker_dict['timeout']))
-        self.w_log.info(' - Process: {}'.format(self.worker_dict['process']))
+        self.w_log.info(f' - Job Name: {self.worker_dict["job_name"]}')
+        self.w_log.info(f' - PID: {self.worker_dict["pid"]}')
+        self.w_log.info(f' - Threads: {self.worker_dict["threads"]}')
+        self.w_log.info(f' - Node: {self.worker_dict["node"]}')
+        self.w_log.info(f' - System: {self.worker_dict["system"]}')
+        self.w_log.info(f' - Machine: {self.worker_dict["machine"]}')
+        self.w_log.info(f' - Timeout Limit: {self.worker_dict["timeout"]}')
+        self.w_log.info(f' - Process: {self.worker_dict["process"]}')
 
     def _run_worker(self):
-        """ Run Worker
+        """Run Worker
 
         This method runs the worker with a given timeout limit and catches the
         corresponding errors.
 
         """
-
         try:
-            with_timeout(self.worker_dict['timeout'],
-                         self.w_log.name)(self._worker_execution)()
+            with_timeout(self.worker_dict['timeout'], self.w_log.name)(
+                self._worker_execution
+            )()
 
         except Exception as err:
             catch_error(err, self.w_log)
             self.worker_dict['exception'] = type(err).__name__
 
     def _worker_execution(self):
-        """ Worker Execution
+        """Worker Execution
 
         This method executes a worker job and logs the results.
 
         """
-
         self._run_module()
         self._log_stdout()
 
     def _run_module(self):
-        """ Run Module
+        """Run Module
 
         This method runs a module script.
 
@@ -196,30 +205,34 @@ class WorkerHandler(object):
             For non-existent module runner
 
         """
-
-        self.w_log.info(' - Running module: {}'.format(
-                        self.worker_dict['module']))
+        self.w_log.info(
+            f' - Running module: {self.worker_dict["module"]}'
+        )
 
         file_number_string = self.worker_dict['file_number_string']
         input_file_list = self.worker_dict['process']
 
-        self._stdout, self._stderr = self._module_runner(input_file_list,
-                                                         self._run_dirs,
-                                                         file_number_string,
-                                                         self._config,
-                                                         self.w_log)
+        self._stdout, self._stderr = self._module_runner(
+            input_file_list,
+            self._run_dirs,
+            file_number_string,
+            self._config,
+            self._module_config_sec,
+            self.w_log,
+        )
 
     def _log_stdout(self):
-        """ Log STDOUT
+        """Log STDOUT
 
         This method logs the stdout and stderr output of the job.
 
         """
-
-        self.w_log.info('Process produced the following output: {}'.format(
-                        self._stdout))
+        self.w_log.info(
+            f'Process produced the following output: {self._stdout}'
+        )
 
         if self._stderr:
-            self.w_log.info('Process produced the following error(s): {}'
-                            ''.format(self._stderr))
+            self.w_log.info(
+                f'Process produced the following error(s): {self._stderr}'
+            )
             self.worker_dict['stderr'] = True
