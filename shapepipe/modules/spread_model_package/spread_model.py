@@ -269,6 +269,11 @@ class SpreadModel(object):
             Magnitude of all objects (only for new catalog).
         number : numpy.ndarray
             Id of all objects (only for new catalog).
+
+        Raises
+        ------
+        ValueError
+            For incorrect output mod
         """
 
         if self._output_mode == 'new':
