@@ -58,7 +58,7 @@ class param:
 
 
 class CfisError(Exception):
-   """ MyError
+   """ Cfis Error
 
    Generic error that is raised by this script.
 
@@ -68,29 +68,25 @@ class CfisError(Exception):
 
 
 class image():
+    """Class image.
+
+    Class to store and create image information.
+
+    Parameters
+    ----------
+    name: str
+        file name
+    ra: Angle
+        right ascension
+    dec: Angle
+        declination
+    exp_time: int, optional, default=-1
+        exposure time
+    valid: sstr, optional, default='Unknown'
+        validation flag
+    """
 
     def __init__(self, name, ra, dec, exp_time=-1, valid='Unknown'):
-        """Create image information.
-
-        Parameters
-        ----------
-        name: string
-            file name
-        ra: Angle
-            right ascension
-        dec: Angle
-            declination
-        exp_time: integer, optiona, default=-1
-            exposure time
-        valid: string, optional, default='Unknown'
-            validation flag
-
-        Returns
-        -------
-        self: class image
-            image information
-        """
-
         self.name = name
         self.ra = ra
         self.dec = dec
@@ -104,7 +100,9 @@ class image():
             self.valid = valid
 
     def cut(self, no_cuts=False):
-        """Return True (False) if image does (not) need to be cut from selection.
+        """cut
+        
+        Return True (False) if image does (not) need to be cut from selection.
 
         Parameters
         ----------
@@ -121,7 +119,8 @@ class image():
         if no_cuts:
             return False
 
-        # Cut if exposure time smaller than minimum (and not flagged as unknown or n/a)
+        # Cut if exposure time smaller than minimum (and not flagged as
+        # unknown or n/a)
         if self.exp_time < exp_time_min and self.exp_time != -1:
             return True
 
@@ -133,11 +132,12 @@ class image():
 
     def get_ID(self):
         """get_ID
+
         Return image ID.
 
         Returns
         -------
-        ID : string
+        ID : str
             image iD
 
         Raises
@@ -147,12 +147,19 @@ class image():
 
         m = re.search(r'(\d{3}).{1}(\d{3})', self.name)
         if m is None:
-            raise NoneType('No ID match in file name {}'.format(name))
+            raise NoneType(f'No ID match in file name {name}')
         else:
-            return '{}.{}'.format(m[1], m[2])
+            return f'{m[1]}.{m[2]}'
 
-    def print(self, file=sys.stdout, base_name=False, name_only=True, ID_only=False):
-        """Print image information as ascii Table column
+    def print(
+        self,
+        file=sys.stdout,
+        base_name=False,
+        name_only=True,
+        ID_only=False):
+        """Print
+
+        Print image information as ascii Table column
 
         Parameters
         ----------
@@ -164,10 +171,6 @@ class image():
             if True, do not print metainfo
         ID_only: bool, optional, default=False
             if True, only print file ID instead of entire name
-
-        Returns
-        -------
-        None
         """
 
         if base_name:
@@ -178,228 +181,61 @@ class image():
         if ID_only:
             m = re.search(r'\d{3}.\d{3}', name)
             if m is None:
-                raise NoneType('No ID match in file name {}'.format(name))
+                raise NoneType(f'No ID match in file name {name}')
             else:
                 name = m[0]
         print(name, end='', file=file)
 
         if not name_only:
             if self.ra is not None:
-                print(' {:10.2f}'.format(getattr(self.ra, unitdef)), end='', file=file)
+                ra_unit = getattr(self.ra, unitdef)
+                print(f' {ra_unit:10.2f}', end='', file=file)
             if self.dec is not None:
-                print(' {:10.2f}'.format(getattr(self.dec, unitdef)), end='', file=file)
-            print(' {:5d} {:8s}'.format(self.exp_time, self.valid), end='', file=file)
+                dec_unit = getattr(self.dec, unitdef)
+                print(f' {dec_unit:10.2f}', end='', file=file)
+            print(f' {self.exp_time:5d} {self.valid:8s}', end='', file=file)
         print(file=file)
 
     def print_header(self, file=sys.stdout):
-        """Print header for ascii Table output
+        """Print Header
+
+        Print header for ascii Table output
 
         Parameters
         ----------
         file: file handle, optional, default=sys.stdout
             output file handle
-
-        Returns
-        -------
-        None
         """
 
-        print('#Name ra[{0}] dec[{0}] exp_time[s] validation'.format(unitdef), file=file)
+        print(f'#Name ra[{unitdef}] dec[{unitdef}] exp_time[s] validation', file=file)
 
 
 def run_cmd(cmd, verbose=True, run=True):
-    """Run shell command using shapepipe.pipeline.execute
+    """run_cmd
+
+    Run shell command using shapepipe.pipeline.execute
     """
 
     from shapepipe.pipeline.execute import execute
 
     if not run:
         if verbose:
-            print_color('yellow', 'Not running command \'{0}\''.format(cmd))
+            print_color('yellow', f'Not running command \'{cmd}\'')
         out = ''
         err = ''
     else:
         if verbose:
-            print_color('green', 'Running command \'{0}\''.format(cmd))
+            print_color('green', f'Running command \'{cmd}\'')
         out, err = execute(cmd)
 
     return out, err
 
 
-def run_cmd_old(cmd_list, run=True, verbose=True, stop=False, parallel=True, file_list=None, devnull=False, env=None):
-    """Run shell command or a list of commands using subprocess.Popen().
-
-    Parameters
-    ----------
-
-    cmd_list: string, or array of strings
-        list of commands
-    run: bool
-        If True (default), run commands. run=False is for testing and debugging purpose
-    verbose: bool
-        If True (default), verbose output
-    stop: bool
-        If False (default), do not stop after command exits with error.
-    parallel: bool
-        If True (default), run commands in parallel, i.e. call subsequent comands via
-        subprocess.Popen() without waiting for the previous job to finish.
-    file_list: array of strings
-        If file_list[i] exists, cmd_list[i] is not run. Default value is None
-    devnull: boolean
-        If True, all output is suppressed. Default is False.
-    env: bool, optional, default=None
-        Modified environment in which shell command will runi
-
-    Returns
-    -------
-    sum_ex: int
-        Sum of exit codes of all commands
-    """
-
-    if type(cmd_list) is not list:
-        cmd_list = [cmd_list]
-
-    if verbose is True and len(cmd_list) > 1:
-        print('Running {} commands, parallel = {}'.format(len(cmd_list), parallel))
-
-    ex_list = []
-    pipe_list = []
-    out_list = []
-    err_list = []
-
-    if env is None:
-        env = os.environ.copy()
-
-    for i, cmd in enumerate(cmd_list):
-
-        ex = 0
-        out = ''
-        err = ''
-
-        if run is True:
-            # Check for existing file
-            if file_list is not None and os.path.isfile(file_list[i]):
-                if verbose is True:
-                    print_color('blue', 'Skipping command \'{}\', file \'{}\' exists'.format(cmd, file_list[i]))
-            else:
-                if verbose is True:
-                    print_color('green', 'Running command \'{0}\''.format(cmd))
-
-                # Run command
-                try:
-                    cmds = shlex.split(cmd)
-                    if devnull is True:
-                        pipe = subprocess.Popen(cmds, stdout=subprocess.DEVNULL, env=env)
-                    else:
-                        pipe = subprocess.Popen(cmds, stdout=subprocess.PIPE, env=env)
-                        # See https://www.endpoint.com/blog/2015/01/28/getting-realtime-output-using-python
-                        while True:
-                            output = pipe.stdout.readline()
-                            if output == '' and pipe.poll() is not None:
-                                break
-                            if output:
-                                print(output.strip())
-                            ex = pipe.poll()
-
-                    if parallel is False:
-                        # Wait for process to terminate
-                        pipe.wait()
-
-                    pipe_list.append(pipe)
-
-                except OSError as e:
-                    print_color('red', 'Error: {0}'.format(e.strerror))
-                    ex = e.errno
-
-                    check_error_stop([ex], verbose=verbose, stop=stop)
-
-        else:
-            if verbose is True:
-                print_color('yellow', 'Not running command \'{0}\''.format(cmd))
-
-        ex_list.append(ex)
-        out_list.append(out)
-        err_list.append(err)
-
-    if parallel is True:
-        for i, pipe in enumerate(pipe_list):
-            pipe.wait()
-
-            # Update exit code list
-            ex_list[i] = pipe.returncode
-    s = check_error_stop(ex_list, verbose=verbose, stop=stop)
-
-    return s, out_list, err_list
-
-
-def mkdir_p(path, verbose=False):
-    """Create diretorcy by calling os.makedirs. Emulate shell function 'mkdir -p':
-       If path already exists, returns without raising an error.
-
-    Parameters
-    ----------
-    path: string
-        Directory name
-    verbose: boolean
-        Verbose mode, default False
-
-    Returns
-    -------
-    None
-
-    """
-
-    if verbose is True:
-        print('Creating directory \'{}\''.format('{}'.format(path)))
-
-    mkdir(str(path))
-
-
-def check_error_stop(ex_list, verbose=True, stop=False):
-    """Check error list and stop if one or more are != 0 and stop=True
-
-    Parameters
-    ----------
-    ex_list: list of integers
-        List of exit codes
-    verbose: boolean
-        Verbose output, default=True
-    stop: boolean
-        If False (default), does not stop program
-
-    Returns
-    -------
-    s: integer
-        sum of absolute values of exit codes
-    """
-
-    if ex_list is None:
-        s = 0
-    else:
-        s = sum([abs(i) for i in ex_list])
-
-    # Evaluate exit codes
-    if s > 0:
-        n_ex = sum([1 for i in ex_list if i != 0])
-        if verbose is True:
-            if len(ex_list) == 1:
-                print_color('red', 'The last command returned sum|exit codes|={}'.format(s), end='')
-            else:
-                print_color('red', '{} of the last {} commands returned sum|exit codes|={}'.format(n_ex, len(ex_list), s), end='')
-        if stop is True:
-            print_color('red', ', stopping')
-        else:
-            print_color('red', ', continuing')
-
-        if stop is True:
-            sys.exit(s)
-
-    return s
-
-
 def log_command(argv, name=None, close_no_return=True):
-    """Write command with arguments to a file or stdout.
-       Choose name = 'sys.stdout' or 'sys.stderr' for output on sceen.
+    """Log Command
+
+    Write command with arguments to a file or stdout.
+    Choose name = 'sys.stdout' or 'sys.stderr' for output on sceen.
 
     Parameters
     ----------
@@ -445,26 +281,10 @@ def log_command(argv, name=None, close_no_return=True):
         f.close()
 
 
-def symlink(src, dst, verbose=False):
-    """Creates a pointing to src with name dst.
-
-    Parameters
-    ----------
-    src: string
-        source file name
-    dst: string
-        destination link name
-    verbose: bool, optional, default=False
-        verbose output if True
-    """
-
-    if verbose:
-        print(' {} <- {}'.format(src, dst))
-    os.symlink(src, dst)
-
-
 def print_color(color, txt, file=sys.stdout, end='\n'):
-    """Print text with color. If not supported, print standard text.
+    """Print Color
+
+    Print text with color. If not supported, print standard text.
 
     Parameters
     ----------
@@ -504,13 +324,15 @@ def print_color(color, txt, file=sys.stdout, end='\n'):
 
 
 def my_string_split(string, num=-1, verbose=False, stop=False, sep=None):
-    """Split a *string* into a list of strings. Choose as separator
-        the first in the list [space, underscore] that occurs in the string.
-        (Thus, if both occur, use space.)
+    """My String Split
+
+    Split a *string* into a list of strings. Choose as separator
+    the first in the list [space, underscore] that occurs in the string.
+    (Thus, if both occur, use space.)
 
     Parameters
     ----------
-    string: string
+    string: str
         Input string
     num: int
         Required length of output list of strings, -1 if no requirement.
@@ -525,10 +347,12 @@ def my_string_split(string, num=-1, verbose=False, stop=False, sep=None):
     ------
     CfisError
         If number of elements in string and num are different, for stop=True
+    ValueError
+        If no separator found in string
 
     Returns
     -------
-    list_str: string, array()
+    list_str: str, array()
         List of string on success, and None if failed.
     """
 
@@ -551,30 +375,39 @@ def my_string_split(string, num=-1, verbose=False, stop=False, sep=None):
             if num == -1 or num == 1:
                 my_sep = None
             else:
-                error('No separator (\' \', \'_\', or \'.\') found in string \'{}\', cannot split'.format(string))
+                raise Valueerror(
+                    'No separator (\' \', \'_\', or \'.\') found in string'
+                    + f' \'{string}\', cannot split'
+                )
     else:
         if not string.find(sep):
-            error('No separator \'{}\' found in string \'{}\', cannot split'.format(sep))
+            raise ValueError(
+                f'No separator \'{sep}\' found in string \'{string}\', cannot split'
+            )
         my_sep = sep
 
     res = string.split(my_sep)
 
     if num != -1 and num != len(res) and stop:
-        raise CfisError('String \'{}\' has length {}, required is {}'.format(string, len(res), num))
+        raise CfisError(
+            f'String \'{len(res)}\' has length {num}, required is {num}'
+        )
 
     return res
 
 
 def get_file_pattern(pattern, band, image_type, want_re=True, ext=True):
-    """Return file pattern of CFIS image file.
+    """Get File Pattern
+
+    Return file pattern of CFIS image file.
 
     Parameters
     ----------
-    pattern : string
+    pattern : str
         input pattern, can be ''
-    band : string
+    band : str
         band, one of 'r', 'u'
-    image_type : string
+    image_type : str
         image type, one of 'exposure', 'exposure_flag', 'exposure_flag.fz',
         'exposure_weight', 'exposure_weight.fz', 'tile', 'cat',
         'weight', 'weight.fz'
@@ -585,7 +418,7 @@ def get_file_pattern(pattern, band, image_type, want_re=True, ext=True):
 
     Returns
     -------
-    pattern_out : string
+    pattern_out : str
         output pattern
     """
 
@@ -605,25 +438,25 @@ def get_file_pattern(pattern, band, image_type, want_re=True, ext=True):
 
     if ext:
         if image_type == 'exposure':
-            pattern_out = r'{}\.fits\.fz'.format(pattern_base)
+            pattern_out = rf'{pattern_base}\.fits\.fz'
         elif image_type == 'exposure_flag':
-            pattern_out = r'{}\.flag\.fits'.format(pattern_base)
+            pattern_out = rf'{pattern_base}\.flag\.fits'
         elif image_type == 'exposure_flag.fz':
-            pattern_out = r'{}\.flag\.fits\.fz'.format(pattern_base)
+            pattern_out = rf'{pattern_base}\.flag\.fits\.fz'
         elif image_type == 'exposure_weight':
-            pattern_out = r'{}\.weight\.fits'.format(pattern_base)
+            pattern_out = rf'{pattern_base}\.weight\.fits'
         elif image_type == 'exposure_weight.fz':
-            pattern_out = r'{}\.weight\.fits\.fz'.format(pattern_base)
+            pattern_out = rf'{pattern_base}\.weight\.fits\.fz'
         elif image_type == 'tile':
-            pattern_out = r'{}\.fits'.format(pattern_base)
+            pattern_out = rf'{pattern_base}\.fits'
         elif image_type == 'cat':
-            pattern_out = r'{}\.cat'.format(pattern_base)
+            pattern_out = rf'{pattern_base}\.cat'
         elif image_type == 'weight':
-            pattern_out = r'{}\.weight\.fits'.format(pattern_base)
+            pattern_out = rf'{pattern_base}\.weight\.fits'
         elif image_type == 'weight.fz':
-            pattern_out = r'{}\.weight\.fits\.fz'.format(pattern_base)
+            pattern_out = rf'{pattern_base}\.weight\.fits\.fz'
         else:
-            raise CfisError('Invalid type \'{}\''.format(image_type))
+            raise CfisError(f'Invalid type \'{image_type}\'')
     else:
         pattern_out = pattern_base
 
@@ -634,8 +467,10 @@ def get_file_pattern(pattern, band, image_type, want_re=True, ext=True):
 
 
 def get_tile_number_from_coord(ra, dec, return_type=str):
-    """Return CFIS stacked image tile number covering input coordinates.
-        This is the inverse to get_tile_coord_from_nixy.
+    """Get Tile Number From Coord
+
+    Return CFIS stacked image tile number covering input coordinates.
+    This is the inverse to get_tile_coord_from_nixy.
 
     Parameters
     ----------
@@ -646,11 +481,16 @@ def get_tile_number_from_coord(ra, dec, return_type=str):
     return type: <type 'type'>
         return type, int or str
 
+    Raises
+    ------
+    CfisError
+        for invalid return type
+
     Returns
     -------
-    nix: string
+    nix: str
         tile number for x
-    niy: string
+    niy: str
         tile number for y
     """
 
@@ -669,19 +509,22 @@ def get_tile_number_from_coord(ra, dec, return_type=str):
         nix = xi
         niy = yi
     else:
-        raise CfisError('Invalid return type {}'.format(return_type))
+        raise CfisError(f'Invalid return type {return_type}')
 
     return nix, niy
 
 
 def get_tile_coord_from_nixy(nix, niy):
-    """ Return coordinates corresponding to tile with number (nix,niy).
-        This is the inverse to get_tile_number_from_coord.
+    """Get Tile Coord From Nixy
+
+    Return coordinates corresponding to tile with number (nix,niy).
+    This is the inverse to get_tile_number_from_coord.
+
     Parameters
     ----------
-    nix: string
+    nix: str
         tile number for x
-    niy: string
+    niy: str
         tile number for y
 
     Returns
@@ -695,77 +538,91 @@ def get_tile_coord_from_nixy(nix, niy):
     xi = int(nix)
     yi = int(niy)
 
-    d = (yi/2.0 - 90)
-    dec = Angle('{} degrees'.format(d))
-    r = xi / 2.0 / np.cos(dec.radian)
-    ra = Angle('{} degrees'.format(r))
+    d = yi / 2 - 90
+    dec = Angle(f'{d} degrees')
+    r = xi / 2 / np.cos(dec.radian)
+    ra = Angle(f'{r} degrees')
 
     return ra, dec
 
 
 def get_tile_name(nix, niy, band, image_type='tile', input_format='full'):
-    """Return tile name for given tile numbers.
+    """Get Tile Name
 
-   Parameters
-   ----------
-    nix: string
+    Return tile name for given tile numbers.
+
+    Parameters
+    ----------
+    nix: str
         tile number for x
-    niy: string
+    niy: str
         tile number for y
-    band: string
+    band: str
         band, one in 'r' or 'u'
-    image_type: string, optional, default='tile'
+    image_type: str optional, default='tile'
         image type
-    input_format : string, optional, default='full'
+    input_format : str optional, default='full'
         'full' (name) or 'ID_only' input format for image names
+
+    Raises
+    ------
+    CfisError
+        for invalid type
 
     Returns
     -------
-    tile_name: string
+    tile_name: str
         tile name
     """
 
     if type(nix) is int and type(niy) is int:
         if input_format == 'ID_only':
-            tile_base = '{:03d}.{:03d}'.format(nix, niy)
+            tile_base = f'{nix:03d}.{niy:03d}'
         else:
-            tile_base = 'CFIS.{:03d}.{:03d}.{}'.format(nix, niy, band)
+            tile_base = f'CFIS.{nix:03d}.{niy:03d}.{band}'
     elif type(nix) is str and type(niy) is str:
         if input_format == 'ID_only':
-            tile_base = '{}.{}'.format(nix, niy)
+            tile_base = f'{nix}.{niy}'
         else:
-            tile_base = 'CFIS.{}.{}.{}'.format(nix, niy, band)
+            tile_base = f'CFIS.{nix}.{niy}.{band}'
     else:
-        raise CfisError('Invalid type for input tile numbers {}, {}'.format(nix, niy))
+        raise CfisError(f'Invalid type for input tile numbers {nix}, {niy}')
 
     if input_format == 'ID_only':
         tile_name = tile_base
     else:
         if image_type == 'tile':
-            tile_name = '{}.fits'.format(tile_base)
+            tile_name = f'{tile_base}.fits'
         elif image_type == 'weight':
-            tile_name = '{}.weight.fits'.format(tile_base)
+            tile_name = f'{tile_base}.weight.fits'
         elif image_type == 'weight.fz':
-            tile_name = '{}.weight.fits.fz'.format(tile_base)
+            tile_name = f'{tile_base}.weight.fits.fz'
         else:
-            raise CfisError('Invalid image type {}'.format(image_type))
+            raise CfisError(f'Invalid image type {image_type}')
 
     return tile_name
 
 
 def get_tile_number(tile_name):
-    """Return tile number of given image tile name
+    """Get Tile Number
+
+    Return tile number of given image tile name
 
     Parameters
     ----------
-    tile_name: string
+    tile_name: str
         tile name
+
+    Raises
+    ------
+    CfisError
+        if tile name does not match expected pipeline numbering scheme
 
     Returns
     -------
-    nix: string
+    nix: str
         tile number for x
-    niy: string
+    niy: str
         tile number for y
     """
 
@@ -782,40 +639,54 @@ def get_tile_number(tile_name):
 
 
 def get_log_file(path, verbose=False):
-    """Return log file content
+    """Get Log File
+
+    Return log file content
 
     Parameters
     ----------
-    path: string
+    path: str
         log file path
     verbose: bool, optional, default=False
         verbose output if True
 
+    Raises
+    ------
+    CfisError
+        if input path does not exist
+
     Returns
     -------
-    log: list of strings
+    log: list of str
         log file lines
     """
 
     if not os.path.isfile(path):
-        raise CfisError('Log file \'{}\' not found'.format(path))
+        raise CfisError(f'Log file \'{path}\' not found')
 
     f_log = open(path, 'r')
     log = f_log.readlines()
     if verbose:
-        print('Reading log file, {} lines found'.format(len(log)))
+        print(f'Reading log file, {len(log)} lines found'))
     f_log.close()
 
     return log
 
 
 def check_ra(ra):
-    """Range check of right ascension.
+    """Check Ra
+
+    Range check of right ascension.
 
     Parameters
     ----------
     ra: Angle
         right ascension
+
+    Raises
+    ------
+    CfisError
+        for invalid ra range on input
 
     Returns
     -------
@@ -832,12 +703,19 @@ def check_ra(ra):
 
 
 def check_dec(dec):
-    """Range check of declination.
+    """Check Dec
+
+    Range check of declination.
 
     Parameters
     ----------
     dec: Angle
         declination
+
+    Raises
+    ------
+    CfisError
+        for invalid dec range on input
 
     Returns
     -------
@@ -853,7 +731,9 @@ def check_dec(dec):
 
 
 def get_Angle(str_coord):
-    """Return Angles ra, dec from coordinate string
+    """Get Angle
+
+    Return Angles ra, dec from coordinate string
 
     Parameters
     ----------
@@ -877,17 +757,19 @@ def get_Angle(str_coord):
 
 
 def get_Angle_arr(str_coord, num=-1, wrap=True, verbose=False):
-    """Return array of Angles from coordinate string
+    """Get Angle Arr
+
+    Return array of Angles from coordinate string
 
     Parameters
     ----------
-    str_coord: string
+    str_coord : str
         string of input coordinates
-    num: int, optional, default=-1
+    num : int, optional, default=-1
         expected number of coordinates (even number)
-    wrap: bool, optional, default=True
+    wrap : bool, optional, default=True
         if True, wrap ra to [0; 360)
-    verbose: bool, optional, default=False
+    verbose : bool, optional, default=False
         verbose output
 
     Returns
@@ -896,7 +778,12 @@ def get_Angle_arr(str_coord, num=-1, wrap=True, verbose=False):
         array of sky coordinates (pairs ra, dec)
     """
 
-    angles_mixed = my_string_split(str_coord, num=num, verbose=verbose, stop=True)
+    angles_mixed = my_string_split(
+        str_coord,
+        num=num,
+        verbose=verbose,
+        stop=True
+    )
     n = len(angles_mixed)
     n = int(n / 2)
 
@@ -914,18 +801,20 @@ def get_Angle_arr(str_coord, num=-1, wrap=True, verbose=False):
 
 
 def read_list(fname, col=None):
-    """Read list from ascii file.
+    """Read List
+
+    Read list from ascii file.
 
     Parameters
     ----------
-    fname: string
+    fname: str
         ascii file name
-    col: string, optional, default=None
+    col: str, optional, default=None
         column name
 
     Returns
     -------
-    file_list: list of strings
+    file_list: list of str
         list of file name
     """
 
@@ -946,19 +835,21 @@ def read_list(fname, col=None):
 
 
 def create_image_list(fname, ra, dec, exp_time=[], valid=[]):
-    """Return list of image information.
+    """Create Image List
+
+    Return list of image information.
 
     Parameters
     ----------
-    fname: list of strings
+    fname: list of str
         file names
-    ra: list of strings
+    ra: list of str
         right ascension
-    dec: list of strings
+    dec: list of str
         declination
-    exp_time: list of integers, optional, default=[]
+    exp_time: list of int, optional, default=[]
         exposure time
-    valid: list of strings, optional, default=[]
+    valid: list of str, optional, default=[]
         QSO exposure validation flag
 
     Returns
@@ -1028,19 +919,21 @@ def get_exposure_info(logfile_name, verbose=False):
 
 
 def get_image_list(inp, band, image_type, col=None, input_format='full', verbose=False):
-    """Return list of images.
+    """Get Image List
+
+    Return list of images.
 
     Parameters
     ----------
-    inp : string
+    inp : str
         file name or direcory path
-    band : string
+    band : str
         optical band
-    image_type : string
+    image_type : str
         image type ('tile', 'exposure', 'cat', 'weight', 'weight.fz')
     col : string, optionalm default=None
         column name for file list input file
-    input_format : string, optional, default='full'
+    input_format : str, optional, default='full'
         'full' (name) or 'ID_only' input format for image names
     verbose : bool, optional, default=False
         verbose output if True
@@ -1063,7 +956,7 @@ def get_image_list(inp, band, image_type, col=None, input_format='full', verbose
 
         # Read file names from directory listing
         inp_type = 'dir'
-        file_list = glob.glob('{}/*'.format(os.path.abspath(inp)))
+        file_list = glob.glob(f'{os.path.abspath(inp)}/*')
 
     elif os.path.isfile(inp):
         if image_type in ('tile', 'weight', 'weight.fz'):
@@ -1084,29 +977,43 @@ def get_image_list(inp, band, image_type, col=None, input_format='full', verbose
                 # File is log file, e.g. from http://www.cfht.hawaii.edu/Science/CFIS-DATA/logs/MCLOG-CFIS.r.qso-elx.log
                 # Default file separator is '|'
                 for d in dat:
-                    file_list.append('d{}p.fits.fz'.format(d['col1']))
+                    file_list.append(f'd{d["col1"]}p.fits.fz')
                     ra = re.split(r'\s*', d['col4'])[0]
                     dec = re.split(r'\s*', d['col4'])[1]
-                    ra_list.append(Angle('{} hours'.format(ra)).degree)
+                    ang = Angle('{ra} hours')
+                    ra_list.append(ang.degree)
                     dec_list.append(dec)
                     exp_time = int(d['col5'])
                     exp_time_list.append(exp_time)
                     valid = re.split(r'\s*', d['col11'])[2]
                     valid_list.append(valid)
             else:
-                raise CfisError('Wrong file format, #columns={}, has to be 3 or 12'.format(len(dat.keys())))
+                raise CfisError(
+                    f'Wrong file format, #columns={len(dat.keys()},'
+                    + f' has to be 3 or 12'
+                )
         else:
-            raise CfisError('Image type \'{}\' not supported'.format(image_type))
+            raise CfisError(f'Image type \'{image_type}\' not supported')
 
     # Create list of objects, coordinate lists can be empty
-    image_list = create_image_list(file_list, ra_list, dec_list, exp_time=exp_time_list, valid=valid_list)
+    image_list = create_image_list(
+        file_list,
+        ra_list,
+        dec_list,
+        exp_time=exp_time_list,
+        valid=valid_list
+    )
 
     # Filter file list to match CFIS image pattern
     img_list = []
     if input_format == 'ID_only':
         pattern = get_file_pattern(r'\d{3}.\d{3}', band, image_type, ext=False)
     else:
-        pattern = get_file_pattern(r'CFIS.\d{{3}}.\d{{3}}\.{}'.format(band), band, image_type)
+        pattern = get_file_pattern(
+            rf'CFIS.\d{{3}}.\d{{3}}\.{band}',
+            band,
+            image_type
+        )
 
     for img in image_list:
 
@@ -1123,19 +1030,21 @@ def get_image_list(inp, band, image_type, col=None, input_format='full', verbose
             img_list.append(img)
 
     if verbose and len(img_list) > 0:
-        print('{} image files found in input {} \'{}\''.format(len(img_list), inp_type, inp))
+        print(f'{len(img_list} image files found in input {inp_type} \'{inp}\'')
 
     return img_list
 
 
 def exclude(f, exclude_list):
-    """Return True if f is on exclude_list
+    """Exclude
+
+    Return True if f is on exclude_list
 
     Parameters
     ----------
-    f: string
+    f: str
         file name
-    exclude_list: list of strings
+    exclude_list: list of str
         list of files
 
     Returns
@@ -1145,15 +1054,6 @@ def exclude(f, exclude_list):
     """
 
     return f in exclude_list
-
-
-def log_append_to_tiles_exp(log, exp_path, tile_num, k_img, k_weight, k_flag, exp_num):
-    """Append information to tiles-exposure log string lines
-    """
-
-    log.append('{}  {}   {} {} {}  {}\n'.format(exp_path, tile_num, k_img, k_weight, k_flag, exp_num))
-
-    return log
 
 
 def log_line_get_entry(log_line, entry):
