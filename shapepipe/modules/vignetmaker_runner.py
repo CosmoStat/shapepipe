@@ -24,7 +24,8 @@ def vignetmaker_runner(
     run_dirs,
     file_number_string,
     config,
-    w_log
+    module_config_sec,
+    w_log,
 ):
 
     # Get path to galaxy catalogue
@@ -32,9 +33,9 @@ def vignetmaker_runner(
 
     # Check if masking should be performed
     # With masking
-    if config.getboolean('VIGNETMAKER_RUNNER', 'MASKING'):
+    if config.getboolean(module_config_sec, 'MASKING'):
         # Fetch the mask value
-        mask_value = config.getfloat('VIGNETMAKER_RUNNER', 'MASK_VALUE')
+        mask_value = config.getfloat(module_config_sec, 'MASK_VALUE')
         # Make a mask
         vignet = vm.make_mask(galcat_path=galcat_path, mask_value=mask_value)
         # Save the vignet
@@ -50,7 +51,7 @@ def vignetmaker_runner(
     else:
 
         # Fetch stamp size
-        stamp_size = config.getint('VIGNETMAKER_RUNNER', 'STAMP_SIZE') - 1
+        stamp_size = config.getint(module_config_sec, 'STAMP_SIZE') - 1
         # Check stamp size
         if stamp_size % 2 != 0:
             raise ValueError('The STAMP_SIZE must be odd')
@@ -58,10 +59,10 @@ def vignetmaker_runner(
         radius = int(stamp_size / 2)
 
         # Fetch position type and values
-        pos_type = config.get('VIGNETMAKER_RUNNER', 'COORD')
-        pos_params = config.getlist('VIGNETMAKER_RUNNER', 'POSITION_PARAMS')
+        pos_type = config.get(module_config_sec, 'COORD')
+        pos_params = config.getlist(module_config_sec, 'POSITION_PARAMS')
         # Fetch vignet run mode
-        mode = config.get('VIGNETMAKER_RUNNER', 'MODE')
+        mode = config.get(module_config_sec, 'MODE')
 
         # Create instance of VignetMaker
         vm_inst = vm.VignetMaker(
@@ -75,7 +76,7 @@ def vignetmaker_runner(
         # Run in CLASSIC mode
         if mode == 'CLASSIC':
             # Fetch suffix
-            suffix = config.getlist('VIGNETMAKER_RUNNER', 'SUFFIX')
+            suffix = config.getlist(module_config_sec, 'SUFFIX')
             # Check suffix
             if len(suffix) != len(input_file_list[1:]):
                 raise ValueError(
@@ -90,13 +91,13 @@ def vignetmaker_runner(
         # Run in MULTI-EPOCH mode
         elif mode == 'MULTI-EPOCH':
             # Fetch image directory and patterns
-            image_dir = config.getlist('VIGNETMAKER_RUNNER', 'ME_IMAGE_DIR')
+            image_dir = config.getlist(module_config_sec, 'ME_IMAGE_DIR')
             image_pattern = config.getlist(
-                'VIGNETMAKER_RUNNER',
+                module_config_sec,
                 'ME_IMAGE_PATTERN',
             )
             # Fetch WCS log path
-            f_wcs_path = config.getexpanded('VIGNETMAKER_RUNNER', 'ME_LOG_WCS')
+            f_wcs_path = config.getexpanded(module_config_sec, 'ME_LOG_WCS')
 
             # Process inputs
             vm_inst.process_me(image_dir, image_pattern, f_wcs_path, radius)

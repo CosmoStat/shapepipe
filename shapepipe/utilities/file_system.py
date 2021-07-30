@@ -12,13 +12,12 @@ import os
 
 
 class FileSystemError(Exception):
-   """ File System Error
+    """File System Error
 
-   Generic error that is raised by the file system.
+    Generic error that is raised by the file system.
 
-   """
-
-   pass
+    """
+    pass
 
 
 def check_dir(dir_name):
@@ -32,12 +31,11 @@ def check_dir(dir_name):
         Directory name
 
     """
-
     return os.path.isdir(dir_name)
 
 
 def mkdir(dir_name, check_created=True, exist_ok=True):
-    """ Make Directory
+    """Make Directory
 
     This method creates a directory in the specified path.
 
@@ -60,9 +58,9 @@ def mkdir(dir_name, check_created=True, exist_ok=True):
         If directory not properly created.
 
     """
-
     os.makedirs(dir_name, exist_ok=exist_ok)
 
     if check_created and not check_dir(dir_name):
-        raise FileSystemError('Directory \"{}\" not found after mkdir command.'
-                              ''.format(dir_name))
+        raise FileSystemError(
+            f'Directory \"{dir_name}\" not found after mkdir command.'
+        )
