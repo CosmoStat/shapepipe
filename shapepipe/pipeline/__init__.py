@@ -8,5 +8,13 @@ This module contains sub-modules for handling the pipeline job management.
 
 """
 
-__all__ = ['args', 'config', 'execute', 'file_handler', 'job_handler',
-           'timeout', 'worker_handler', 'file_io']
+__all__ = [
+    'args',
+    'config',
+    'execute',
+    'file_handler',
+    'job_handler',
+    'timeout',
+    'worker_handler',
+    'file_io'
+]

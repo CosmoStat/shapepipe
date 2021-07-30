@@ -13,7 +13,7 @@ import subprocess as sp
 
 
 def execute(command_line):
-    """ Execute
+    """Execute
 
     This method executes a given command line.
 
@@ -33,7 +33,6 @@ def execute(command_line):
         For invalid input type
 
     """
-
     if not isinstance(command_line, str):
         raise TypeError('Command line must be a string.')
 
@@ -64,7 +63,6 @@ def check_executable(exe_name):
         For non-existent executable
 
     """
-
     if not isinstance(exe_name, str):
         raise TypeError('Executable name must be a string.')
 
@@ -74,12 +72,16 @@ def check_executable(exe_name):
     fpath, fname = os.path.split(exe_name)
 
     if not fpath:
-        res = any([is_exe(os.path.join(path, exe_name)) for path in
-                   os.environ["PATH"].split(os.pathsep)])
+        res = any([
+            is_exe(os.path.join(path, exe_name))
+            for path in os.environ['PATH'].split(os.pathsep)
+        ])
 
     else:
         res = is_exe(exe_name)
 
     if not res:
-        raise OSError('{} does not appear to be a valid executable on this '
-                      'system.'.format(exe_name))
+        raise OSError(
+            f'{exe_name} does not appear to be a valid executable on this '
+            + 'system.'
+        )

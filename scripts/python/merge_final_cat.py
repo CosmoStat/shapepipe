@@ -25,7 +25,7 @@ from optparse import OptionParser
 
 from tqdm import tqdm
 
-import cfis
+from shapepipe.utilities import cfis
 
 
 class param:
@@ -74,21 +74,32 @@ def parse_options(p_def):
     -------
     options: tuple
         Command line options
-    args: string
-        Command line string
+    args: str
+        Command line str
     """
 
     usage  = "%prog [OPTIONS]"
     parser = OptionParser(usage=usage)
 
-    parser.add_option('-i', '--input_path', dest='input_path', type='string',
-                      default=p_def.input_path,
-                      help='input path, default=\'{}\''.format(p_def.input_path))
+    parser.add_option(
+        '-i',
+        '--input_path',
+        dest='input_path',
+        type='string',
+        default=p_def.input_path,
+        help=f'input path, default=\'{p_def.input_path}\''
+    )
     parser.add_option('-p', '--param_path', dest='param_path', type='string',
                       default=None,
                       help='parameter file path, default=None')
 
-    parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
+    parser.add_option(
+        '-v',
+        '--verbose',
+        dest='verbose',
+        action='store_true',
+        help='verbose output'
+    )
 
     options, args = parser.parse_args()
 
@@ -150,14 +161,14 @@ def read_param_file(path, verbose=False):
 
     Parameters
     ----------
-    path: string
+    path: str
         input file name
     verbose: bool, optional, default=False
         verbose output if True
 
     Returns
     -------
-    param_list: list of strings
+    param_list: list of str
         parameter names
     """
 
@@ -176,7 +187,7 @@ def read_param_file(path, verbose=False):
 
     if verbose:
         if len(param_list) > 0: 
-            print('Copying {} columns'.format(len(param_list)), end='')
+            print(f'Copying {len(param_list)} columns', end='')
         else:
             print('Copying all columns', end='')
         print(' into final catalogue')
@@ -203,11 +214,11 @@ def get_data(path, hdu_num, param_list):
 
     Parameters
     ----------
-    path: string
+    path: str
         input file name
     hdu_num: int
         HDU number
-    param_list: list of strings
+    param_list: list of str
         parameters to be extracted. If none, copy
         all columns
 
@@ -259,7 +270,7 @@ def main(argv=None):
         lpath.append(os.path.join(path, this_l))
 
     if param.verbose:
-        print('{} final catalog files found'.format(len(lpath)))
+        print(f'{len(lpath)} final catalog files found')
 
     count = 0
 
@@ -270,42 +281,33 @@ def main(argv=None):
     for key in d_tmp.dtype.names:
         d[key] = d_tmp[key]
     count = count + 1
-    print('File \'{}\' copied ({}/{})'.format(lpath[0], count, len(lpath)))
+    if param.verbose:
+        print(f'File \'lpath[0]{}\' copied ({count}/{len(lpath)})')
 
-    #new_dt = np.dtype(d_tmp.dtype.descr + [('TILE_ID', '>i4')])
-    #d = np.zeros(d_tmp.shape, dtype=new_dt)
-
-    #if 'TILE_ID' in d_tmp.dtype.names:
-        #d['TILE_ID'].fill(int(''.join(re.findall('\d+', l[0]))))
-
-    # Read all final catalogues and merge
-    #for i in tqdm(lpath[1:], total=len(lpath)-1):
-
-    for i in lpath[1:]:
-        if ('final_cat' not in i) | ('.npy' in i):
+    for idx in lpath[1:]:
+        if ('final_cat' not in idx) | ('.npy' in idx):
             continue
 
         try:
-            d_tmp = get_data(i, 1, param.param_list)
+            d_tmp = get_data(idx, 1, param.param_list)
 
             dd = np.zeros(d_tmp.shape, dtype=d_tmp.dtype)
             for key in d_tmp.dtype.names:
                 dd[key] = d_tmp[key]
             count = count + 1
-            print('File \'{}\' copied ({}/{})'.format(i, count, len(lpath)))
-
-            #if 'TILE_ID' in d_tmp.dtype.names:
-                #dd['TILE_ID'].fill(int(''.join(re.findall('\d+', i))))
+            if param.verbose:
+                print(f'File \'{idx}\' copied ({count}/{len(lpath)})')
 
             d = np.concatenate((d, dd))
         except:
-            print('Error while copying file \'{}\''.format(i))
+            print(f'Error while copying file \'{idx}\'')
 
     # Save merged catalogue as numpy binary file
-    print('Saving final catalogue')
+    if param.verbose:
+        print('Saving final catalogue')
     np.save('final_cat.npy', d)
 
-    mgs = '{} catalog files merged with success'.format(count)
+    msg = f'{count} catalog files merged with success'
     if param.verbose:
         print(msg)
     print(msg, file=f_log)

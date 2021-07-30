@@ -11,7 +11,7 @@
 
 # Job file for one tile
 SP_ROOT=$HOME/shapepipe
-sp_job="$SP_ROOT/scripts/sh/canfar_sp.bash"
+sp_job="$SP_ROOT/scripts/sh/job_sp.bash"
 
 
 # Functions
