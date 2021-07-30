@@ -13,12 +13,22 @@ from shapepipe.modules.MCCD_package import shapepipe_auxiliary_mccd as aux_mccd
 import mccd
 
 
-@module_runner(input_module=['mccd_preprocessing_runner'], version='1.0',
-               file_pattern=['train_star_selection'],
-               file_ext=['.fits'], numbering_scheme='-0000000',
-               depends=['numpy', 'mccd', 'galsim'], run_method='parallel')
-def mccd_fit_runner(input_file_list, run_dirs, file_number_string,
-                    config, w_log):
+@module_runner(
+    input_module=['mccd_preprocessing_runner'],
+    version='1.0',
+    file_pattern=['train_star_selection'],
+    file_ext=['.fits'],
+    numbering_scheme='-0000000',
+    depends=['numpy', 'mccd', 'galsim'],
+    run_method='parallel'
+)
+def mccd_fit_runner(
+    input_file_list,
+    run_dirs,
+    file_number_string,
+    config,
+    w_log
+):
     # Recover the MCCD config file and its params
     config_file_path = config.getexpanded('MCCD', 'CONFIG_PATH')
     mccd_mode = config.get('MCCD', 'MODE')
@@ -41,10 +51,12 @@ def mccd_fit_runner(input_file_list, run_dirs, file_number_string,
             output_dir=output_dir,
             verbose=verbose,
             saving_name=saving_name,
-            w_log=w_log)
+            w_log=w_log
+        )
 
     else:
-        raise ValueError('''mccd_fit_runner should be called when the
-        MODE is "FIT".''')
+        raise ValueError(
+            "mccd_fit_runner should be called when the MODE is 'FIT'."
+        )
 
     return None, None
