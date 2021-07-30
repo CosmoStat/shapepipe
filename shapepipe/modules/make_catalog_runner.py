@@ -34,6 +34,7 @@ def make_catalog_runner(
     run_dirs,
     file_number_string,
     config,
+    module_config_sec,
     w_log,
 ):
 
@@ -49,19 +50,19 @@ def make_catalog_runner(
 
     # Fetch classification options
     do_classif = config.getboolean(
-        'MAKE_CATALOG_RUNNER',
+        module_config_sec,
         'SM_DO_CLASSIFICATION',
     )
     if do_classif:
-        star_thresh = config.getfloat('MAKE_CATALOG_RUNNER', 'SM_STAR_STRESH')
-        gal_thresh = config.getfloat('MAKE_CATALOG_RUNNER', 'SM_GAL_THRESH')
+        star_thresh = config.getfloat(module_config_sec, 'SM_STAR_STRESH')
+        gal_thresh = config.getfloat(module_config_sec, 'SM_GAL_THRESH')
     else:
         star_thresh = None
         gal_thresh = None
 
     # Fetch shape measurement type
     shape_type_list = config.getlist(
-        'MAKE_CATALOG_RUNNER',
+        module_config_sec,
         'SHAPE_MEASUREMENT_TYPE',
     )
     for shape_type in shape_type_list:
@@ -71,8 +72,8 @@ def make_catalog_runner(
             )
 
     # Fetch path to tiles
-    if config.has_option('MAKE_CATALOG_RUNNER', 'TILE_LIST'):
-        tile_list_path = config.getexpanded('MAKE_CATALOG_RUNNER', 'TILE_LIST')
+    if config.has_option(module_config_sec, 'TILE_LIST'):
+        tile_list_path = config.getexpanded(module_config_sec, 'TILE_LIST')
     else:
         tile_list_path = None
 
