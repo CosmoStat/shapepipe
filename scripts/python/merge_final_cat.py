@@ -74,8 +74,8 @@ def parse_options(p_def):
     -------
     options: tuple
         Command line options
-    args: string
-        Command line string
+    args: str
+        Command line str
     """
 
     usage  = "%prog [OPTIONS]"
@@ -150,14 +150,14 @@ def read_param_file(path, verbose=False):
 
     Parameters
     ----------
-    path: string
+    path: str
         input file name
     verbose: bool, optional, default=False
         verbose output if True
 
     Returns
     -------
-    param_list: list of strings
+    param_list: list of str
         parameter names
     """
 
@@ -203,11 +203,11 @@ def get_data(path, hdu_num, param_list):
 
     Parameters
     ----------
-    path: string
+    path: str
         input file name
     hdu_num: int
         HDU number
-    param_list: list of strings
+    param_list: list of str
         parameters to be extracted. If none, copy
         all columns
 

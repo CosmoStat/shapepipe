@@ -27,12 +27,12 @@ def read_image_numbers(path):
 
     Parameters
     ----------
-    path : string
+    path : str
         input file path
 
     Returns
     -------
-    image_number_list : list of string
+    image_number_list : list of str
         image numbers
     """
 
@@ -50,12 +50,12 @@ def in2out_pattern(number):
 
     Parameters
     ----------
-    number : string
+    number : str
         input number
 
     Returns
     -------
-    number_final : string
+    number_final : str
         output number
     """
 
@@ -90,23 +90,23 @@ class GetImages(object):
 
         Parameters
         ----------
-        retrieve_method : string
+        retrieve_method : str
             copy/download method
-        retrieve_option : string
+        retrieve_option : str
             retrieve options
-        input_file_list : list of string
+        input_file_list : list of str
             input files
-        input_numbering : string
+        input_numbering : str
             numbering scheme, python regexp
-        input_file_pattern : list of strings
+        input_file_pattern : list of str
             file pattern including input number template of input files
-        input_file_ext : list of strings
+        input_file_ext : list of str
             input file extensions
-        output_file_pattern : list of strings
+        output_file_pattern : list of str
             output file patterns
         w_log :
             log file
-        check_existing_dir : string, optional, default=None
+        check_existing_dir : str, optional, default=None
             if not None, only retrieve image if not existing at this
             path (recursively)
         n_expected : int, optional, default=None
@@ -132,9 +132,9 @@ class GetImages(object):
 
         Parameters
         ----------
-        input_dir : string
+        input_dir : str
             input directory
-        output_dir : string
+        output_dir : str
             output directory
         """
 
@@ -198,9 +198,9 @@ class GetImages(object):
 
         Parameters
         ----------
-        image_number_list : list of string
+        image_number_list : list of str
             image numbers
-        dest_dir : list of string
+        dest_dir : list of str
             input directory or url
         use_output_file_pattern : bool, optional, default=False
             if True, use output file base patterns excluding numbering scheme;
@@ -208,7 +208,7 @@ class GetImages(object):
 
         Returns
         -------
-        list_all_files : list of list of strings
+        list_all_files : list of list of str
             complete file paths, one list for each input file type
         """
 
@@ -256,9 +256,9 @@ class GetImages(object):
 
         Parameters
         ----------
-        all_inputs: list of list of strings
+        all_inputs: list of list of str
             input file paths, one list for each input file type
-        all_outputs: list of list of strings
+        all_outputs: list of list of str
             output file paths, one list for each input file type
         """
 
@@ -283,9 +283,9 @@ class GetImages(object):
 
         Parameters
         ----------
-        in_path : string
+        in_path : str
             input path
-        out_path : string
+        out_path : str
             output path
         """
 
