@@ -1057,7 +1057,26 @@ def exclude(f, exclude_list):
 
 
 def log_line_get_entry(log_line, entry):
-    """Return entry from log string line
+    """Log Line Get Entry
+
+    Return entry from log string line
+
+    Parameters
+    ----------
+    log_line : str
+        log file line
+    entry : str
+        log file entry to check
+
+    Raises
+    ------
+    CfisError
+        for invalid log file entry
+
+    Returns
+    -------
+    s : str
+        value of corresponding log file entry
     """
 
     line_s = log_line.split()
@@ -1075,123 +1094,46 @@ def log_line_get_entry(log_line, entry):
     elif entry == 'exp_num':
         return line_s[5]
     else:
-        raise CfisError('Entry \'{}\' not valid in tiles-expsure log string'.format(entry))
+        raise CfisError(f'Entry \'{entry}\' not valid in tiles-expsure log string')
 
 
-def log_get_exp_nums_for_tiles_num(log, tile_num):
-    """Return all exposure numbers for a given tile number
-    """
+def find_image_at_coord(
+    images,
+    coord,
+    band,
+    image_type,
+    no_cuts=False,
+    input_format='full',
+    verbose=False
+):
+    """Find Image At Coordinates
 
-    exp_num = []
-
-    for line in log:
-        my_tile_num = log_line_get_entry(line, 'tile_num')
-        if tile_num == my_tile_num:
-            exp_num.append(log_line_get_entry(line, 'exp_num'))
-
-    if len(exp_num) == 0:
-        raise CfisError('Tile number \'{}\' not found in log file'.format(tile_num))
-
-    return exp_num
-
-
-def log_get_exp_names_for_tiles_num(log, tile_num):
-    """Return all exposure file names for a given tile number
-    """
-
-    exp_names = []
-
-    for line in log:
-        my_tile_num = log_line_get_entry(line, 'tile_num')
-        if tile_num == my_tile_num:
-            exp_names.append(log_line_get_entry(line, 'exp_name'))
-
-    if len(exp_names) == 0:
-        raise CfisError('Tile number \'{}\' not found in log file'.format(tile_num))
-
-    return exp_names
-
-
-def log_get_tile_nums(log):
-    """Return all tile numbers from log file.
-
-    Parameters
-    ----------
-    log: list of strings
-        log file content
-
-    Returns
-    -------
-    tile_nums: list of strings
-        list of tile numbers
-    """
-
-    tile_nums = []
-    for line in log:
-        my_tile_num = log_line_get_entry(line, 'tile_num')
-        tile_nums.append(my_tile_num)
-
-    return set(tile_nums)
-
-
-def log_get_exp_num(log, exp_name, k_img, k_weight, k_flag):
-    """Return exposure number from log file for given exposure name and HDU numbers.
-
-    Parameters
-    ----------
-    log: list of strings
-        log file content
-    exp_name: string
-        exposure name
-    k_img: int
-        image HDU number
-    k_weight: int
-        weight HDU number
-    k_flag: int
-        flag HDU number
-
-    Return
-    ------
-    exp_num: int
-        exposure number, None if not found
-    """
-
-    for line in log:
-        this_exp_name = log_line_get_entry(line, 'exp_name')
-        this_k_img = log_line_get_entry(line, 'k_img')
-        this_k_weight = log_line_get_entry(line, 'k_weight')
-        this_k_flag = log_line_get_entry(line, 'k_flag')
-
-        if this_exp_name == exp_name \
-                and int(this_k_img) == k_img \
-                and int(this_k_weight) == k_weight \
-                and int(this_k_flag) == k_flag:
-            return log_line_get_entry(line, 'exp_num')
-
-    # No matching entry found
-    return None
-
-
-def find_image_at_coord(images, coord, band, image_type, no_cuts=False, input_format='full', verbose=False):
-    """Return image covering given coordinate.
+    Return image covering given coordinate.
 
     Parameters
     ----------
     images: list of class image
         list of images
-    coord: string
+    coord: str
         coordinate ra and dec with units
-    band: string
+    band: str
         optical band
-    image_type: string
+    image_type: str
         image type ('tile', 'weight', 'weight.fz', 'exposure', 'exposure_weight', \
         'exposure_weight.fz', 'exposure_flag', 'exposure_flag.fz', 'cat')
     no_cuts: bool, optional, default=False
         no cuts (of short exposure, validation flag) if True
-    input_format : string, optional, default='full'
+    input_format : str, optional, default='full'
         one of 'full', 'ID_only'
     verbose: bool, optional
         verbose output if True, default=False
+
+    Raises
+    ------
+    CfisError
+        if image type is not 'tile';
+        if more than one tile matches
+        if input image coordinates are already set
 
     Returns
     -------
@@ -1202,11 +1144,17 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, input_fo
     ra, dec = get_Angle(coord)
 
     if verbose:
-        print('Looking for image at coordinates {}, {}'.format(ra, dec))
+        print(f'Looking for image at coordinates {ra}, {dec}')
 
     if image_type in ('tile', 'weight', 'weight.fz'):
         nix, niy = get_tile_number_from_coord(ra, dec, return_type=int)
-        tile_name = get_tile_name(nix, niy, band, image_type, input_format=input_format)
+        tile_name = get_tile_name(
+            nix,
+            niy,
+            band,
+            image_type,
+            input_format=input_format
+        )
 
         img_found = []
         for img in images:
@@ -1216,7 +1164,8 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, input_fo
                 if img.ra is not None or img.dec is not None:
                     raise CfisError(
                         'Coordinates in image are already '
-                        + f'set to {img.ra}, {img.rec}, cannot update to {ra_c}, {ra_dec}'
+                        + f'set to {img.ra}, {img.rec}, '
+                        + f'cannot update to {ra_c}, {ra_dec}'
                     )
                 img.ra = ra_c
                 img.dec = dec_c
@@ -1226,10 +1175,10 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, input_fo
             pass
         else:
             if verbose:
-                print('Tile with numbers ({}, {}) not found'.format(nix, niy))
+                print(f'Tile with numbers ({nix}, {niy}) not found')
 
         if len(img_found) > 1:
-            raise CfisError('More than one tile ({}) found'.format(len(img_found)))
+            raise CfisError(f'More than one tile ({img_found}) found')
 
     elif image_type == 'exposure':
         sc_input = SkyCoord(ra, dec)
@@ -1241,7 +1190,10 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, input_fo
             sc_img_same_dec = SkyCoord(img.ra, dec)
             distance_ra = sc_input.separation(sc_img_same_dec)
             distance_dec = sc_input.separation(sc_img_same_ra)
-            if distance_ra.degree < size[image_type]/2 and distance_dec.degree < size[image_type]/2:
+            if (
+                distance_ra.degree < size[image_type] / 2
+                and distance_dec.degree < size[image_type] / 2
+            ):
                 if not img.cut(no_cuts=no_cuts):
                     img_found.append(img)
 
@@ -1257,8 +1209,17 @@ def find_image_at_coord(images, coord, band, image_type, no_cuts=False, input_fo
     return img_found
 
 
-def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose=False):
-    """Return image list within coordinate area (rectangle)
+def find_images_in_area(
+    images,
+    angles,
+    band,
+    image_type,
+    no_cuts=False,
+    verbose=False
+):
+    """Fine Images In Area
+
+    Return image list within coordinate area (rectangle)
 
     Parameters
     ----------
@@ -1268,7 +1229,7 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
         coordinates [(ra0, dec0), (ra1, dec1)]
     band: string
         optical band
-    image_type: string
+    image_type: str
         image type ('tile', 'exposure', 'cat', 'weight', 'weight.fz')
     no_cuts: bool, optional, default=False
         no cuts (of short exposure, validation flag) if True
@@ -1290,16 +1251,20 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
     ra_bounds = []
     threesixty = Angle(360, unitdef)
     if angles[1].ra > threesixty:
-        ra_bounds = [[angles[0].ra, threesixty], [Angle(0, unitdef), angles[1].ra-threesixty]]
+        ra_bounds = [
+            [angles[0].ra, threesixty],
+            [Angle(0, unitdef), angles[1].ra-threesixty]
+        ]
     else:
         ra_bounds = [[angles[0].ra, angles[1].ra]]
 
     if verbose:
         print('Looking for all images within rectangle, '
-              'dec=({}, {}), '
-              ''.format(angles[0].dec, angles[1].dec), end='')
+              + f'dec=({angles[0].dec}, {angles[1].dec}), ',
+              end=''
+        )
         for ra_min_max in ra_bounds:
-            print('ra=[({}, {}) '.format(ra_min_max[0], ra_min_max[1]), end='')
+            print(f'ra=[({ra_min_max[0]}, {ra_min_max[1]}) ', end='')
         print()
 
     if image_type in ('tile', 'weight', 'weight.fz'):
@@ -1337,15 +1302,19 @@ def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose
                         found.append(img)
 
     else:
-        raise CfisError('Image type \'{}\' not implemented yet'.format(image_type))
+        raise CfisError(f'Image type \'{image_type}\' not implemented yet')
 
     if verbose:
-        print('{} images found in area'.format(len(found)))
+        print(f'{len(found)} images found in area')
 
     return found
 
 
 def plot_init():
+    """Plot Init
+
+    Initialize a plot
+    """
 
     fs = 12
     fig, ax = plt.subplots()
@@ -1361,9 +1330,24 @@ def plot_init():
     return ax
 
 
-def plot_area(images, angles, image_type, outbase, interactive, col=None, show_numbers=False,
-              show_circle=True, show_area_border=False, ax=None, lw=None, save=True, dxy=0):
-    """Plot images within area.
+def plot_area(
+    images,
+    angles,
+    image_type,
+    outbase,
+    interactive,
+    col=None,
+    show_numbers=False,
+    show_circle=True,
+    show_area_border=False,
+    ax=None,
+    lw=None,
+    save=True,
+    dxy=0
+):
+    """Plot Area
+
+    Plot images within area.
 
     Parameters
     ----------
@@ -1371,17 +1355,19 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_n
         images
     angles : array(SkyCoord, 2)
         Corner coordinates of area rectangle
-    image_type : string
+    image_type : str
         image type ('tile', 'exposure', 'cat', weight')
-    outbase : string
+    outbase : str
         output file name base
     interactive : bool
         show plot if True
-    col : string, optional, default=None
+    col : str, optional, default=None
         color
-    show_circle : bool, optional, default True
+    show_numbers : bool, optional, default=False
+        show tile numbers if True
+    show_circle : bool, optional, default=True
         plot circle center and circumference around area if True
-    show_area_border : bool, optional, default False
+    show_area_border : bool, optional, default=False
         plot rectangle around area
     ax : axes, optional, default None
         Init axes if None
@@ -1396,7 +1382,7 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_n
     if outbase is None:
         outname = 'plot.pdf'
     else:
-        outname = '{}.pdf'.format(outbase)
+        outname = f'{outbase}.pdf'
 
     if not lw:
         my_lw = 0.1
@@ -1410,8 +1396,8 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_n
     # Field center
     n_ima = len(images)
     if n_ima > 0:
-        ra_c = sum([img.ra for img in images])/float(n_ima)
-        dec_c = sum([img.dec for img in images])/float(n_ima)
+        ra_c = sum([img.ra for img in images]) / float(n_ima)
+        dec_c = sum([img.dec for img in images]) / float(n_ima)
         cos_dec_c = np.cos(dec_c)
     else:
         ra_c = 0
@@ -1424,7 +1410,7 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_n
         dy = abs(angles[0].dec - angles[1].dec)
         dx = getattr(dx, unitdef)
         dy = getattr(dy, unitdef)
-        radius = max(dx, dy)/2 + (size['exposure'] + size['tile']) * np.sqrt(2)
+        radius = max(dx, dy) / 2 + (size['exposure'] + size['tile']) * np.sqrt(2)
         circle = plt.Circle((ra_c.deg, dec_c.deg), radius, color='r', fill=False)
         plt.plot(ra_c, dec_c, 'or', mfc='none', ms=3)
         ax.add_artist(circle)
@@ -1476,11 +1462,11 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_n
     ym = (angles[1].dec.degree + angles[0].dec.degree) / 2
     dy = angles[1].dec.degree - angles[0].dec.degree
     lim = max(dx, dy)
-    plt.xlim(xm - lim/2 - border, xm + lim/2 + border)
-    plt.ylim(ym - lim/2 - border, ym + lim/2 + border)
+    plt.xlim(xm - lim / 2 - border, xm + lim / 2 + border)
+    plt.ylim(ym - lim / 2 - border, ym + lim / 2 + border)
 
     if save:
-        print('Saving plot to {}'.format(outname))
+        print(f'Saving plot to {outname}')
         plt.savefig(outname)
 
     if interactive:
@@ -1490,7 +1476,30 @@ def plot_area(images, angles, image_type, outbase, interactive, col=None, show_n
 
 
 def square_from_centre(x, y, dx, dy, dxy=0):
-    """Return coordinate vectors of corners cx, cy that define a closed square for plotting.
+    """Square From Centre
+
+    Return coordinate vectors of corners that define a closed
+    square for plotting.
+
+    Parameters
+    ----------
+    x : float
+        x-coordinate centre
+    y : float
+        y-coordinate centre
+    dx : float
+        size in x
+    dy : float
+        size in y
+    dxy : float, optional, default=0
+        constant offset
+
+    Returns
+    -------
+    cx : array(4) of float
+        square coordinates in x
+    cy : array(4) of float
+        square coordinates in y
     """
 
     a = dxy
@@ -1501,13 +1510,30 @@ def square_from_centre(x, y, dx, dy, dxy=0):
 
 
 def square_from_corners(ang0, ang1):
-    """Return coordinate vectors of corners cx, cy that define a closed square for plotting.
+    """Square From Corners
+
+    Return coordinate vectors of corners that define a closed
+    square for plotting.
+
+    Parameters
+    ----------
+    ang0 : Angle
+        lower-left square coordinates
+    ang1 : Angle
+        upper-right square coordinates
+
+    Returns
+    -------
+    cxd : array(4) of float
+        square coordinates in x, in unit 'unitdef'
+    cyd : array(4) of float
+        square coordinates in y, in unit 'unitdef'
     """
 
     cx = [ang0.ra, ang1.ra, ang1.ra, ang0.ra, ang0.ra]
     cy = [ang0.dec, ang0.dec, ang1.dec, ang1.dec, ang0.dec]
 
-    cxd = [getattr(i, unitdef) for i in cx]
-    cyd = [getattr(i, unitdef) for i in cy]
+    cxd = [getattr(x, unitdef) for x in cx]
+    cyd = [getattr(y, unitdef) for y in cy]
 
     return cxd, cyd
