@@ -205,7 +205,7 @@ class SpreadModel(object):
         skip_obj = False
         spread_model_final = []
         spread_model_err_final = []
-        for idx id_tmp in enumerate(obj_id):
+        for idx, id_tmp in enumerate(obj_id):
             sigma_list = []
 
             if psf_cat[str(id_tmp)] == 'empty':

@@ -990,7 +990,7 @@ def get_image_list(inp, band, image_type, col=None, input_format='full', verbose
                     valid_list.append(valid)
             else:
                 raise CfisError(
-                    f'Wrong file format, #columns={len(dat.keys()},'
+                    f'Wrong file format, #columns={len(dat.keys())},'
                     + f' has to be 3 or 12'
                 )
         else:
@@ -1031,7 +1031,7 @@ def get_image_list(inp, band, image_type, col=None, input_format='full', verbose
             img_list.append(img)
 
     if verbose and len(img_list) > 0:
-        print(f'{len(img_list} image files found in input {inp_type} \'{inp}\'')
+        print(f'{len(img_list)} image files found in input {inp_type} \'{inp}\'')
 
     return img_list
 
