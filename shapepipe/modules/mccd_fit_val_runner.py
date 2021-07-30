@@ -27,12 +27,13 @@ def mccd_fit_val_runner(
     run_dirs,
     file_number_string,
     config,
+    module_config_sec,
     w_log
 ):
     # Recover the MCCD config file and its params
-    config_file_path = config.getexpanded('MCCD', 'CONFIG_PATH')
-    mccd_mode = config.get('MCCD', 'MODE')
-    verbose = config.getboolean('MCCD', 'VERBOSE')
+    config_file_path = config.getexpanded(module_config_sec, 'CONFIG_PATH')
+    mccd_mode = config.get(module_config_sec, 'MODE')
+    verbose = config.getboolean(module_config_sec, 'VERBOSE')
 
     # Parse MCCD config file
     mccd_parser = mccd.auxiliary_fun.MCCDParamsParser(config_file_path)

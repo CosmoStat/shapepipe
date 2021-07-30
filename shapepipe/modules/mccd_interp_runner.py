@@ -29,26 +29,27 @@ def mccd_interp_runner(
     run_dirs,
     file_number_string,
     config,
+    module_config_sec,
     w_log
 ):
 
-    mode = config.getexpanded('MCCD_INTERP_RUNNER', 'MODE')
-    pos_params = config.getlist('MCCD_INTERP_RUNNER', 'POSITION_PARAMS')
-    get_shapes = config.getboolean('MCCD_INTERP_RUNNER', 'GET_SHAPES')
+    mode = config.getexpanded(module_config_sec, 'MODE')
+    pos_params = config.getlist(module_config_sec, 'POSITION_PARAMS')
+    get_shapes = config.getboolean(module_config_sec, 'GET_SHAPES')
     mccd_model_extension = '.npy'
     output_dir = run_dirs['output']
 
     if mode == 'CLASSIC':
         psf_model_dir = config.getexpanded(
-            'MCCD_INTERP_RUNNER',
+            module_config_sec,
             'PSF_MODEL_DIR'
         )
         psf_model_pattern = config.get(
-            'MCCD_INTERP_RUNNER',
+            module_config_sec,
             'PSF_MODEL_PATTERN'
         )
         psf_separator = config.get(
-            'MCCD_INTERP_RUNNER',
+            module_config_sec,
             'PSF_MODEL_SEPARATOR'
         )
         # psfcat_path, galcat_path = input_file_list
@@ -91,15 +92,15 @@ def mccd_interp_runner(
 
     elif mode == 'MULTI-EPOCH':
         psf_model_dir = config.getexpanded(
-            'MCCD_INTERP_RUNNER',
+            module_config_sec,
             'PSF_MODEL_DIR'
         )
         psf_model_pattern = config.get(
-            'MCCD_INTERP_RUNNER',
+            module_config_sec,
             'PSF_MODEL_PATTERN'
         )
         f_wcs_path = config.getexpanded(
-            'MCCD_INTERP_RUNNER',
+            module_config_sec,
             'ME_LOG_WCS'
         )
 

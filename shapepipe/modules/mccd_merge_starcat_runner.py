@@ -29,6 +29,7 @@ def mccd_merge_starcat_runner(
     run_dirs,
     file_number_string,
     config,
+    module_config_sec,
     w_log
 ):
     w_log.info('Merging validation results..')

@@ -59,18 +59,19 @@ def mccd_plots_runner(
     run_dirs,
     file_number_string,
     config,
+    module_config_sec,
     w_log
 ):
     # Get parameters for meanshapes plots
-    x_nb_bins = config.getint('MCCD_PLOTS_RUNNER', 'X_GRID')
-    y_nb_bins = config.getint('MCCD_PLOTS_RUNNER', 'Y_GRID')
-    remove_outliers = config.getboolean('MCCD_PLOTS_RUNNER', 'REMOVE_OUTLIERS')
-    plot_meanshapes = config.getboolean('MCCD_PLOTS_RUNNER', 'PLOT_MEANSHAPES')
-    plot_histograms = config.getboolean('MCCD_PLOTS_RUNNER', 'PLOT_HISTOGRAMS')
+    x_nb_bins = config.getint(module_config_sec, 'X_GRID')
+    y_nb_bins = config.getint(module_config_sec, 'Y_GRID')
+    remove_outliers = config.getboolean(module_config_sec, 'REMOVE_OUTLIERS')
+    plot_meanshapes = config.getboolean(module_config_sec, 'PLOT_MEANSHAPES')
+    plot_histograms = config.getboolean(module_config_sec, 'PLOT_HISTOGRAMS')
 
     # Get parameters for Rho stats plots
-    plot_rho_stats = config.getboolean('MCCD_PLOTS_RUNNER', 'PLOT_RHO_STATS')
-    rho_stat_plot_style = config.get('MCCD_PLOTS_RUNNER', 'RHO_STATS_STYLE')
+    plot_rho_stats = config.getboolean(module_config_sec, 'PLOT_RHO_STATS')
+    rho_stat_plot_style = config.get(module_config_sec, 'RHO_STATS_STYLE')
 
     nb_pixel = x_nb_bins, y_nb_bins
     starcat_path = input_file_list[0][0]
