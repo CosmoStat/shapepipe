@@ -217,11 +217,21 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
 
     # Collect columns
     # convert back to sigma for consistency
-    data = {'X': x, 'Y': y, 'RA': ra, 'DEC': dec,
-            'E1_PSF_HSM': g1_psf, 'E2_PSF_HSM': g2_psf, 'SIGMA_PSF_HSM': np.sqrt(size_psf),
-            'E1_STAR_HSM': g1, 'E2_STAR_HSM': g2, 'SIGMA_STAR_HSM': np.sqrt(size),
-            'FLAG_PSF_HSM': flag_psf, 'FLAG_STAR_HSM': flag_star,
-            'CCD_NB': ccd_nb}
+    data = {
+        'X': x,
+        'Y': y,
+        'RA': ra,
+        'DEC': dec,
+        'E1_PSF_HSM': g1_psf,
+        'E2_PSF_HSM': g2_psf,
+        'SIGMA_PSF_HSM': np.sqrt(size_psf),
+        'E1_STAR_HSM': g1,
+        'E2_STAR_HSM': g2,
+        'SIGMA_STAR_HSM': np.sqrt(size),
+        'FLAG_PSF_HSM': flag_psf,
+        'FLAG_STAR_HSM': flag_star,
+        'CCD_NB': ccd_nb
+        }
 
     # Write file
     if verbose:
