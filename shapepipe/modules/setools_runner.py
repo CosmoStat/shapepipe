@@ -24,11 +24,12 @@ def setools_runner(
     run_dirs,
     file_number_string,
     config,
+    module_config_sec,
     w_log,
 ):
 
     # Get path to setools configuration file
-    config_file = config.getexpanded('SETOOLS_RUNNER', 'SETOOLS_CONFIG_PATH')
+    config_file = config.getexpanded(module_config_sec, 'SETOOLS_CONFIG_PATH')
 
     # Create instance of SETools
     se_inst = setools.SETools(

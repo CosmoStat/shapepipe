@@ -172,7 +172,6 @@ class SETools(object):
         self._stat = {}
         self._new_cat = {}
         self._rand_split = {}
-        # self._flag_split={}
         in_section = 0
         while True:
             line_tmp = self._config_file.readline()
@@ -250,8 +249,6 @@ class SETools(object):
                     self._new_cat[new_cat_name].append(line_tmp)
                 elif in_section == 5:
                     self._rand_split[rand_split_name].append(line_tmp)
-                # elif in_section == 6:
-                #     self._flag_split[flag_split_name].append(line_tmp)
 
     def _clean_line(self, line):
         """Clean Lines
