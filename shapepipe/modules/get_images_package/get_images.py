@@ -92,7 +92,7 @@ class GetImages(object):
         ----------
         retrieve_method : str
             copy/download method
-        retrieve_option : string
+        retrieve_option : str
             retrieve options
         input_file_list : list of string
             input files
