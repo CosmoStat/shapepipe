@@ -201,43 +201,43 @@ def mccd_merge_starcat_runner(
     # Regular pixel RMSE
     tot_pixel_rmse = rmse_calc(pixel_mse, size_mse)
     w_log.info(
-        'MCCD_merge_starcat: Regular Total pixel RMSE = %.5e\n' % (
-        tot_pixel_rmse)
+        f"MCCD_merge_starcat: Regular Total pixel RMSE ="
+        + f" {tot_pixel_rmse:.5e}\n"
     )
 
     # Regular Total pixel mean
     tot_pixel_mean = mean_calc(pixel_sum, size_mse)
     w_log.info(
-        'MCCD_merge_starcat: Regular Total pixel mean = %.5e\n' % (
-        tot_pixel_mean)
+        f"MCCD_merge_starcat: Regular Total pixel mean ="
+        + f" {tot_pixel_mean:.5e}\n"
     )
 
     # Regular Total MASKED pixel RMSE
     tot_masked_pixel_rmse = rmse_calc(masked_pixel_mse, masked_size)
     w_log.info(
-        'MCCD_merge_starcat: Regular Total MASKED pixel RMSE = %.5e\n' % (
-        tot_masked_pixel_rmse)
+        f"MCCD_merge_starcat: Regular Total MASKED pixel RMSE ="
+        + f" {tot_masked_pixel_rmse:.5e}\n"
     )
 
     # Regular Total MASKED pixel mean
     tot_masked_pixel_mean = mean_calc(masked_pixel_sum, masked_size)
     w_log.info(
-        'MCCD_merge_starcat: Regular Total MASKED pixel mean = %.5e\n' % (
-        tot_masked_pixel_mean)
+        f"MCCD_merge_starcat: Regular Total MASKED pixel mean ="
+        + f" {tot_masked_pixel_mean:.5e}\n"
     )
 
     # Normalized pixel RMSE
     tot_pix_norm_rmse = rmse_calc(pix_norm_mse, size_norm_mse)
     w_log.info(
-        'MCCD_merge_starcat: Normalized Total pixel RMSE = %.5e\n' % (
-        tot_pix_norm_rmse)
+        "MCCD_merge_starcat: Normalized Total pixel RMSE ="
+        + f" {tot_pix_norm_rmse:.5e}\n"
     )
 
     # Normalized filtered pixel RMSE
     tot_pix_filt_rmse = rmse_calc(pix_filt_mse, size_filt_mse)
     w_log.info(
-        'MCCD_merge_starcat: Filtered Total pixel RMSE = %.5e\n' % (
-        tot_pix_filt_rmse)
+        "MCCD_merge_starcat: Filtered Total pixel RMSE ="
+        + f" {tot_pix_filt_rmse:.5e}\n"
     )
 
     concat_model_var = np.concatenate(np.array(model_var))
@@ -248,9 +248,9 @@ def mccd_merge_starcat_runner(
     std_model_var = std_calc(concat_model_var)
     rmse_model_var = rmse_calc_2(concat_model_var, model_var_size)
     w_log.info(
-        "MCCD-RCA variance:\n Mean Variance= %.5e\n "
-        "Std Variance= %.5e\n RMSE Variance= %.5e\n" %
-        (mean_model_var, std_model_var, rmse_model_var)
+        f"MCCD-RCA variance:\n Mean Variance= {mean_model_var:.5e}\n"
+        + f"Std Variance= {std_model_var:.5e}\n"
+        + f"RMSE Variance= {rmse_model_var:.5e}\n"
     )
 
     # Star Noise Variance
@@ -258,9 +258,9 @@ def mccd_merge_starcat_runner(
     std_star_var = std_calc(concat_star_noise_var)
     rmse_star_var = rmse_calc_2(concat_star_noise_var, star_noise_size)
     w_log.info(
-        "Masked stars variance:\n Mean Variance= %.5e\n"
-        "Std Variance= %.5e\n RMSE Variance= %.5e\n" %
-        (mean_star_var, std_star_var, rmse_star_var)
+        f"Masked stars variance:\n Mean Variance= {mean_star_var:.5e}\n"
+        + f"Std Variance= {std_star_var:.5e}\n"
+        + f"RMSE Variance= {rmse_star_var:.5e}\n"
     )
 
     # Mask and transform to numpy arrays
@@ -274,24 +274,24 @@ def mccd_merge_starcat_runner(
 
     rmse, mean, std_dev = stats_calculator(star_e1, psf_e1)
     w_log.info(
-        "Moment residual e1:\n Mean= %.5e\n"
-        "Std Dev= %.5e\n RMSE= %.5e\n" % (mean, std_dev, rmse)
+        f"Moment residual e1:\n Mean= {mean:.5e}\nStd Dev= {std_dev:.5e}\n"
+        + f" RMSE= {rmse:.5e}\n"
     )
 
     rmse, mean, std_dev = stats_calculator(star_e2, psf_e2)
     w_log.info(
-        "Moment residual e2:\n Mean= %.5e\n"
-        "Std Dev= %.5e\n RMSE= %.5e\n" % (mean, std_dev, rmse)
+        f"Moment residual e2:\n Mean= {mean:.5e}\nStd Dev= {std_dev:.5e}\n"
+        + f"RMSE= {rmse:.5e}\n"
     )
 
     rmse, mean, std_dev = stats_calculator(star_r2, psf_r2)
     w_log.info(
-        "Moment residual R2:\n Mean= %.5e\n"
-        "Std Dev= %.5e\n RMSE= %.5e\n" % (mean, std_dev, rmse)
+        f"Moment residual R2:\n Mean= {mean:.5e}\nStd Dev= {std_dev:.5e}\n"
+        + f"RMSE= {rmse:.5e}\n"
     )
 
-    print('MCCD: Number of stars: %d' % (star_e1.shape[0]))
-    w_log.info('MCCD: Number of stars: %d' % (star_e1.shape[0]))
+    print(f"MCCD: Number of stars: {star_e1.shape[0]:d}")
+    w_log.info(f"MCCD: Number of stars: {star_e1.shape[0]:d}")
 
     output = sc.FITSCatalog(
         output_dir + '/full_starcat-0000000.fits',
