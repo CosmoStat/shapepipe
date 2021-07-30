@@ -100,9 +100,9 @@ def download(source, target, verbose=False):
 
     Parameters
     ----------
-    source : string
+    source : str
         source path on vos
-    target : string
+    target : str
         target path
     verbose : bool, optional, default=False
         verbose output if True
@@ -136,7 +136,7 @@ def dir_list(path, verbose=False):
 
     Parameters
     ----------
-    path : string
+    path : str
         path on vos, starts with 'vos:cfis/...'
     verbose : bool, optional, default=False
         verbose output if True
@@ -147,7 +147,7 @@ def dir_list(path, verbose=False):
 
     Returns
     -------
-    vls_out : array of string
+    vls_out : array of str
         file or directory at path
     """
 

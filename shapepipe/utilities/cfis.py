@@ -485,10 +485,11 @@ def print_color(color, txt, file=sys.stdout, end='\n'):
     try:
         import colorama
         colors = {'red': colorama.Fore.RED,
-                  'green': colorama.Fore.GREEN,
-                  'blue': colorama.Fore.BLUE,
-                  'yellow': colorama.Fore.YELLOW,
-                  'black': colorama.Fore.BLACK}
+            'green': colorama.Fore.GREEN,
+            'blue': colorama.Fore.BLUE,
+            'yellow': colorama.Fore.YELLOW,
+            'black': colorama.Fore.BLACK
+        }
 
         if colors[color] is None:
             col = colorama.Fore.BLACK
