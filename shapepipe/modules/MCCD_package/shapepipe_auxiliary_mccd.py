@@ -20,18 +20,20 @@ import pprint
 NOT_ENOUGH_STARS = 'Not enough stars to train the model.'
 
 
-def mccd_preprocessing_pipeline(input_file_list,
-                                output_path,
-                                input_file_position=0,
-                                min_n_stars=20,
-                                separator='-',
-                                CCD_id_filter_list=None,
-                                outlier_std_max=100.,
-                                save_masks=True,
-                                save_name='train_star_selection',
-                                save_extension='.fits',
-                                verbose=True,
-                                print_fun=None):
+def mccd_preprocessing_pipeline(
+    input_file_list,
+    output_path,
+    input_file_position=0,
+    min_n_stars=20,
+    separator='-',
+    CCD_id_filter_list=None,
+    outlier_std_max=100.,
+    save_masks=True,
+    save_name='train_star_selection',
+    save_extension='.fits',
+    verbose=True,
+    print_fun=None
+):
     r"""Preprocess input catalog.
 
     Parameters
@@ -97,7 +99,9 @@ def mccd_preprocessing_pipeline(input_file_list,
     print_fun('Processing dataset..')
     mccd_inputs = mccd.mccd_utils.MccdInputs(separator=separator)
     catalog_ids = mccd_inputs.proprocess_pipeline_data(
-        input_file_list, element_position=input_file_position)
+        input_file_list,
+        element_position=input_file_position
+    )
 
     # Loop over the catalogs
     for it in range(catalog_ids.shape[0]):
@@ -108,8 +112,16 @@ def mccd_preprocessing_pipeline(input_file_list,
 
         star_list, pos_list, mask_list, ccd_list, SNR_list, RA_list, \
             DEC_list, _ = mccd_inputs.outlier_rejection(
-                star_list, pos_list, mask_list, ccd_list, SNR_list, RA_list,
-                DEC_list, shape_std_max=outlier_std_max, print_fun=print_fun)
+                star_list,
+                pos_list,
+                mask_list,
+                ccd_list,
+                SNR_list,
+                RA_list,
+                DEC_list,
+                shape_std_max=outlier_std_max,
+                print_fun=print_fun
+            )
 
         mccd_star_list = []
         mccd_pos_list = []
@@ -182,7 +194,8 @@ def mccd_preprocessing_pipeline(input_file_list,
                          'GLOB_POSITION_IMG_LIST': mccd_poss,
                          'MASK_LIST': mccd_masks, 'CCD_ID_LIST': mccd_ccds,
                          'SNR_WIN_LIST': mccd_SNRs,
-                         'RA_LIST': mccd_RAs, 'DEC_LIST': mccd_DECs}
+                         'RA_LIST': mccd_RAs, 'DEC_LIST': mccd_DECs
+                        }
 
             saving_path = output_path + save_name + separator \
                 + catalog_id + save_extension
@@ -194,9 +207,15 @@ def mccd_preprocessing_pipeline(input_file_list,
     return mccd_inputs
 
 
-def mccd_fit_pipeline(trainstar_path, file_number_string, mccd_parser,
-                      output_dir, verbose, saving_name='fitted_model',
-                      w_log=None):
+def mccd_fit_pipeline(
+    trainstar_path,
+    file_number_string,
+    mccd_parser,
+    output_dir,
+    verbose,
+    saving_name='fitted_model',
+    w_log=None
+):
     r"""Fit the MCCD model to the observations."""
     # Extract the MCCD parameters from the parser
     mccd_inst_kw = mccd_parser.get_instance_kw()
@@ -228,14 +247,21 @@ def mccd_fit_pipeline(trainstar_path, file_number_string, mccd_parser,
         sex_thresh=-1e5,
         use_SNR_weight=use_SNR_weight,
         verbose=verbose,
-        saving_name=saving_name)
+        saving_name=saving_name
+    )
 
     starcat.close()
 
 
-def mccd_validation_pipeline(teststar_path, mccd_model_path, mccd_parser,
-                             output_dir, file_number_string, w_log,
-                             val_saving_name):
+def mccd_validation_pipeline(
+    teststar_path,
+    mccd_model_path,
+    mccd_parser,
+    output_dir,
+    file_number_string,
+    w_log,
+    val_saving_name
+):
     r"""Validate the MCCD trained model against a set of observations."""
     w_log.info('Validating catalog %s..' % file_number_string)
 
@@ -251,7 +277,8 @@ def mccd_validation_pipeline(teststar_path, mccd_model_path, mccd_parser,
             mccd_model_path=mccd_model_path,
             testcat=testcat[1],
             **mccd_val_kw,
-            sex_thresh=-1e5)
+            sex_thresh=-1e5
+        )
 
         testcat.close()
 
@@ -268,8 +295,14 @@ def mccd_validation_pipeline(teststar_path, mccd_model_path, mccd_parser,
             found.''' % file_number_string)
 
 
-def mccd_interpolation_pipeline(mccd_model_path, galcat_path, pos_params,
-                                ccd_id, saving_path, get_shapes):
+def mccd_interpolation_pipeline(
+    mccd_model_path,
+    galcat_path,
+    pos_params,
+    ccd_id,
+    saving_path,
+    get_shapes
+):
     r"""Interpolate MCCD model."""
     # Import MCCD model
     mccd_model = mccd.mccd_quickload(mccd_model_path)
@@ -295,21 +328,29 @@ def mccd_interpolation_pipeline(mccd_model_path, galcat_path, pos_params,
                                     moms.observed_shape.g2,
                                     moms.moments_sigma,
                                     int(bool(moms.error_message))]
-                                  for moms in PSF_moms])
+                                  for moms in PSF_moms]
+                                 )
 
-        shapepipe_write_output(saving_path=saving_path,
-                               example_fits_path=galcat_path,
-                               get_shapes=get_shapes,
-                               interp_PSFs=interp_PSFs,
-                               PSF_shapes=PSF_shapes)
+        shapepipe_write_output(
+            saving_path=saving_path,
+            example_fits_path=galcat_path,
+            get_shapes=get_shapes,
+            interp_PSFs=interp_PSFs,
+            PSF_shapes=PSF_shapes
+        )
 
         return None
     else:
         return NOT_ENOUGH_STARS
 
 
-def shapepipe_write_output(saving_path, example_fits_path, get_shapes,
-                           interp_PSFs, PSF_shapes=None):
+def shapepipe_write_output(
+    saving_path,
+    example_fits_path,
+    get_shapes,
+    interp_PSFs,
+    PSF_shapes=None
+):
     r"""Save interpolated PSFs dictionary to fits file.
 
     The saved files are compatible with the previous shapepipe's standard.
@@ -323,7 +364,8 @@ def shapepipe_write_output(saving_path, example_fits_path, get_shapes,
                 'E1_PSF_HSM': PSF_shapes[:, 0],
                 'E2_PSF_HSM': PSF_shapes[:, 1],
                 'SIGMA_PSF_HSM': PSF_shapes[:, 2],
-                'FLAG_PSF_HSM': PSF_shapes[:, 3].astype(int)}
+                'FLAG_PSF_HSM': PSF_shapes[:, 3].astype(int)
+               }
     else:
         data = {'VIGNET': interp_PSFs}
 
