@@ -59,10 +59,10 @@ def interp_MCCD(mccd_model_path, positions, ccd):
 
     # Positions to global coordinates
     loc2glob = mccd.mccd_utils.Loc2Glob()
-    glob_pos = np.array(
-        [loc2glob.loc2glob_img_coord(_ccd, _pos[0], _pos[1])
-        for _ccd, _pos in zip(ccd_list, positions)]
-    )
+    glob_pos = np.array([
+        loc2glob.loc2glob_img_coord(_ccd, _pos[0], _pos[1])
+        for _ccd, _pos in zip(ccd_list, positions)
+    ])
 
     # Interpolate the model
     PSFs = mccd_instance.estimate_psf(glob_pos, ccd)
@@ -199,13 +199,15 @@ class MCCDinterpolator(object):
             for psf in self.interp_PSFs
         ]
 
-        self.psf_shapes = np.array(
-            [[moms.observed_shape.g1,
-            moms.observed_shape.g2,
-            moms.moments_sigma,
-            int(bool(moms.error_message))]
-            for moms in psf_moms]
-        )
+        self.psf_shapes = np.array([
+            [
+                moms.observed_shape.g1,
+                moms.observed_shape.g2,
+                moms.moments_sigma,
+                int(bool(moms.error_message))
+            ]
+            for moms in psf_moms
+        ])
 
     def _write_output(self):
         """ Save computed PSFs to fits file.
@@ -248,13 +250,15 @@ class MCCDinterpolator(object):
             for star, mask in zip(star_vign, masks)
         ]
 
-        self.star_shapes = np.array(
-            [[moms.observed_shape.g1,
-            moms.observed_shape.g2,
-            moms.moments_sigma,
-            int(bool(moms.error_message))]
-            for moms in star_moms]
-        )
+        self.star_shapes = np.array([
+            [
+                moms.observed_shape.g1,
+                moms.observed_shape.g2,
+                moms.moments_sigma,
+                int(bool(moms.error_message))
+            ]
+            for moms in star_moms
+        ])
 
     def _get_psfexcatdict(self, psfex_cat_path):
         """ Get data from PSFEx .cat file.
