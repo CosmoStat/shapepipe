@@ -9,16 +9,27 @@ This file is the pipeline validation runner for the MCCD package.
 """
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.MCCD_package import shapepipe_auxiliary_mccd as aux_mccd
+from shapepipe.modules.MCCD_package import shapepipe_auxiliary_mccd as\
+    aux_mccd
 import mccd
 
 
-@module_runner(input_module=['mccd_preprocessing_runner'], version='1.0',
-               file_pattern=['fitted_model', 'test_star_selection'],
-               file_ext=['.npy', '.fits'], numbering_scheme='-0000000',
-               depends=['numpy', 'mccd', 'galsim'], run_method='parallel')
-def mccd_val_runner(input_file_list, run_dirs, file_number_string,
-                    config, w_log):
+@module_runner(
+    input_module=['mccd_preprocessing_runner'],
+    version='1.0',
+    file_pattern=['fitted_model', 'test_star_selection'],
+    file_ext=['.npy', '.fits'],
+    numbering_scheme='-0000000',
+    depends=['numpy', 'mccd', 'galsim'],
+    run_method='parallel'
+)
+def mccd_val_runner(
+    input_file_list,
+    run_dirs,
+    file_number_string,
+    config,
+    w_log
+):
 
     # Recover the MCCD config file and its params
     config_file_path = config.getexpanded('MCCD', 'CONFIG_PATH')
@@ -47,10 +58,12 @@ def mccd_val_runner(input_file_list, run_dirs, file_number_string,
             output_dir=output_dir,
             file_number_string=file_number_string,
             w_log=w_log,
-            val_saving_name=val_saving_name)
+            val_saving_name=val_saving_name
+        )
 
     else:
-        raise ValueError('''mccd_val_runner should be called when the
-        MODE is "VALIDATION".''')
+        raise ValueError(
+            "mccd_val_runner should be called when the MODE is 'VALIDATION'."
+        )
 
     return None, None
