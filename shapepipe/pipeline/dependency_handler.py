@@ -15,7 +15,7 @@ import importlib
 
 
 class DependencyHandler(object):
-    """ Dependency Handler
+    """Dependency Handler
 
     This class manages the required Python packages and system executables
     required to run the pipeline.
@@ -46,9 +46,7 @@ class DependencyHandler(object):
 
     @property
     def depend(self):
-        """ Input Dependency List
-        """
-
+        """Input Dependency List"""
         return self._depend
 
     @depend.setter
@@ -64,9 +62,7 @@ class DependencyHandler(object):
 
     @property
     def execute(self):
-        """ Input Executable List
-        """
-
+        """Input Executable List"""
         return self._execute
 
     @execute.setter
@@ -82,7 +78,7 @@ class DependencyHandler(object):
 
     @staticmethod
     def _convert_to_float(string):
-        """ Convert String to Float
+        """Convert String to Float
 
         This method converts numerical strings to floats.
 
@@ -97,7 +93,6 @@ class DependencyHandler(object):
             Converted value
 
         """
-
         try:
             val = float(string)
         except Exception:
@@ -107,7 +102,7 @@ class DependencyHandler(object):
 
     @staticmethod
     def _slice_1d(array, indices):
-        """ Slice 1D
+        """Slice 1D
 
         Slice 1D list by indices.
 
@@ -124,12 +119,11 @@ class DependencyHandler(object):
             Sliced list
 
         """
-
         return [array[index] for index in indices]
 
     @classmethod
     def _slice_2d(cls, array, indices):
-        """ Slice 2D
+        """Slice 2D
 
         Slice a list of lists by indices.
 
@@ -146,12 +140,11 @@ class DependencyHandler(object):
             Sliced list
 
         """
-
         return [cls._slice_1d(sublist, indices) for sublist in array]
 
     @staticmethod
     def _get_indices(array, value):
-        """ Get Indices
+        """Get Indices
 
         Get indices of array elements equal to input value.
 
@@ -168,13 +161,14 @@ class DependencyHandler(object):
             List of indices
 
         """
-
-        return [index for index, element in enumerate(array) if
-                element == value]
+        return [
+            index for index, element in enumerate(array)
+            if element == value
+        ]
 
     @classmethod
     def _slice_col_val(cls, array, col, value):
-        """ Slice by Column and Value
+        """Slice by Column and Value
 
         Slice a list of lists by elements in a given column equal to a given
         value.
@@ -194,7 +188,6 @@ class DependencyHandler(object):
             Slices list
 
         """
-
         return cls._slice_2d(array, cls._get_indices(array[col], value))
 
     @staticmethod
@@ -218,32 +211,31 @@ class DependencyHandler(object):
             For invalid input type
 
         """
-
         if not isinstance(exe_name, str):
-
             raise TypeError('Executable name must be a string.')
 
         def is_exe(fpath):
-
             return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
         fpath, fname = os.path.split(exe_name)
 
         if not fpath:
-
-            res = any([is_exe(os.path.join(path, exe_name)) for path in
-                       os.environ["PATH"].split(os.pathsep)])
+            res = any([
+                is_exe(os.path.join(path, exe_name))
+                for path in os.environ['PATH'].split(os.pathsep)
+            ])
 
         else:
-
             res = is_exe(exe_name)
 
         if not res:
-            raise IOError('{} does not appear to be a valid executable on '
-                          'this system.'.format(exe_name))
+            raise IOError(
+                f'{exe_name} does not appear to be a valid executable on '
+                + 'this system.'
+            )
 
     def _split_string(self, string):
-        """ Split String
+        """Split String
 
         This method splits the version number from the input module string.
 
@@ -258,15 +250,14 @@ class DependencyHandler(object):
             Array of string components
 
         """
-
         if self._greq in string:
-            val = re.split('({})'.format(self._greq), string)
+            val = re.split(f'({self._greq})', string)
 
         elif self._equal in string:
-            val = re.split('({})'.format(self._equal), string)
+            val = re.split(f'({self._equal})', string)
 
         elif self._great in string:
-            val = re.split('({})'.format(self._great), string)
+            val = re.split(f'({self._great})', string)
 
         elif self._less in string:
             raise ValueError('"<" not permitted in package version string.')
@@ -277,43 +268,45 @@ class DependencyHandler(object):
         return val
 
     def _split_strings(self):
-        """ Split Strings
+        """Split Strings
 
         This method splits the input dependency modules strings.
 
         """
-
-        self._depend_arr = list(map(list, zip(*[self._split_string(string)
-                                for string in self.depend])))
+        self._depend_arr = list(map(
+            list,
+            zip(*[self._split_string(string) for string in self.depend])
+        ))
         self._dependency_set = set(self._depend_arr[0])
 
     def _unique_dependencies(self):
-        """ Unique Dependencies
+        """Unique Dependencies
 
         This method creates a unique list of depencies.
 
         """
-
         for package_name in self._dependency_set:
 
             subset = self._slice_col_val(self._depend_arr, 0, package_name)
 
             if any(self._equal in element for element in subset):
-
                 subset = self._slice_col_val(subset, 1, self._equal)
 
             if any([ver != '' for ver in subset[2]]):
-
-                subset = (self._slice_col_val(subset, 2,
-                          str(max([self._convert_to_float(ver)
-                                   for ver in subset[2]]))))
+                subset = (self._slice_col_val(
+                    subset,
+                    2,
+                    str(max(
+                        [self._convert_to_float(ver) for ver in subset[2]]
+                    ))
+                ))
 
             subset = [element[0] for element in self._slice_2d(subset, [0])]
 
             self.dependency_list.append(''.join(subset))
 
     def check_dependencies(self):
-        """ Check Dependencies
+        """Check Dependencies
 
         This method checks that the required dependencies are installed.
 
@@ -323,7 +316,6 @@ class DependencyHandler(object):
             List of depenecies with versions and paths
 
         """
-
         dependency_status_list = []
 
         for dependency in self._dependency_set:
@@ -331,8 +323,9 @@ class DependencyHandler(object):
             try:
                 package = importlib.import_module(dependency)
             except Exception:
-                raise ImportError('Could not import pipeline dependency '
-                                  '{}'.format(dependency))
+                raise ImportError(
+                    f'Could not import pipeline dependency {dependency}'
+                )
 
             if hasattr(package, '__version__'):
                 version = package.__version__
@@ -346,14 +339,14 @@ class DependencyHandler(object):
             else:
                 path = 'N/A'
 
-            dependency_status_list.append(' - {} {} {}'.format(
-                                          package.__name__,
-                                          version, path))
+            dependency_status_list.append(
+                f' - {package.__name__} {version} {path}'
+            )
 
         return dependency_status_list
 
     def check_executables(self):
-        """ Check Executables
+        """Check Executables
 
         This method checks that the required executables are installed.
 
@@ -363,19 +356,20 @@ class DependencyHandler(object):
             List of executables with paths
 
         """
-
         executable_status_list = []
 
         for executable in self.executable_list:
 
             self._check_executable(executable)
 
-            exe_path, err = (subprocess.Popen('which {0}'.format(executable),
-                             shell=True, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE).communicate())
+            exe_path, err = subprocess.Popen(
+                f'which {executable}',
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            ).communicate()
 
-            string = ' - {} {}'.format(executable,
-                                       exe_path.rstrip().decode('utf-8'))
+            string = f' - {executable} {exe_path.rstrip().decode("utf-8")}'
 
             executable_status_list.append(string)
 
