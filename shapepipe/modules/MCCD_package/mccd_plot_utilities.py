@@ -117,12 +117,12 @@ def MeanShapesPlot(
         )
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.set_title('rmse=%.3e' % (np.sqrt(np.nanmean(ccd_map ** 2))), size=8)
+        ax.set_title(f'rmse={np.sqrt(np.nanmean(ccd_map ** 2)):.3e}', size=8)
     plt.suptitle(title, size=20)  # TODO: fix title
     fig.subplots_adjust(right=0.8)
     cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
     fig.colorbar(im, cax=cbar_ax)
-    plt.savefig('{}.png'.format(filename))
+    plt.savefig(f'{filename}.png')
     plt.close()
 
 
@@ -183,7 +183,7 @@ def plot_meanshapes(
         R2_thresh = shape_std_max * np.std(all_star_shapes[2, :]) + np.mean(
             all_star_shapes[2, :])
         bad_stars = (abs(all_star_shapes[2, :]) > R2_thresh)
-        w_log.info('Nb of outlier stars: %d' % (np.sum(bad_stars)))
+        w_log.info(f'Nb of outlier stars: {np.sum(bad_stars):d}')
         # Remove outlier PSFs
         all_star_shapes = all_star_shapes[:, ~bad_stars]
         all_psf_shapes = all_psf_shapes[:, ~bad_stars]
@@ -192,12 +192,18 @@ def plot_meanshapes(
         all_Y = all_Y[~bad_stars]
         flagmask = flagmask[~bad_stars]
 
-    w_log.info('TOTAL e1 residual RMSE: %.6e\n' % (
-        np.sqrt(np.mean((all_star_shapes[0, :] - all_psf_shapes[0, :]) ** 2))))
-    w_log.info('TOTAL e2 residual RMSE: %.6e\n' % (
-        np.sqrt(np.mean((all_star_shapes[1, :] - all_psf_shapes[1, :]) ** 2))))
-    w_log.info('TOTAL R2 residual RMSE: %.6e\n' % (
-        np.sqrt(np.mean((all_star_shapes[2, :] - all_psf_shapes[2, :]) ** 2))))
+    e1_res_rmse = np.sqrt(
+        np.mean((all_star_shapes[0, :] - all_psf_shapes[0, :]) ** 2)
+    )
+    e2_res_rmse = np.sqrt(
+        np.mean((all_star_shapes[1, :] - all_psf_shapes[1, :]) ** 2)
+    )
+    R2_res_rmse = np.sqrt(
+        np.mean((all_star_shapes[2, :] - all_psf_shapes[2, :]) ** 2)
+    )
+    w_log.info(f"TOTAL e1 residual RMSE: {e1_res_rmse:.6e}\n")
+    w_log.info(f"TOTAL e2 residual RMSE: {e2_res_rmse:.6e}\n")
+    w_log.info(f"TOTAL R2 residual RMSE: {R2_res_rmse:.6e}\n")
 
     # CCDs x star/model x (e1,e2,R2,nstars) x xpos x ypos
     ccd_maps = np.ones((40, 2, 4) + nb_pixel) * np.nan
@@ -240,9 +246,9 @@ def plot_meanshapes(
                    np.abs(np.nanmin(ccd_maps[:, :, 0])))
         vmin = -vmax
         wind = [vmin, vmax]
-        title = "e_1 (stars), std=%.5e\nvmax=%.4e" % (
-            np.nanstd(ccd_maps[:, 0, 0]),
-            np.nanmax(abs(ccd_maps[:, 0, 0]))
+        title = (
+            f"e_1 (stars), std={np.nanstd(ccd_maps[:, 0, 0]):.5e}\n"
+            + f"vmax={np.nanmax(abs(ccd_maps[:, 0, 0])):.4e}"
         )
         MeanShapesPlot(
             ccd_maps[:, 0, 0],
@@ -251,9 +257,9 @@ def plot_meanshapes(
             wind=wind
         )
 
-        title = "e_1 (model), std=%.5e\nvmax=%.4e" % (
-            np.nanstd(ccd_maps[:, 1, 0]),
-            np.nanmax(abs(ccd_maps[:, 1, 0]))
+        title = (
+            f"e_1 (model), std={np.nanstd(ccd_maps[:, 1, 0]):.5e}\n"
+            + f"vmax={np.nanmax(abs(ccd_maps[:, 1, 0])):.4e}"
         )
         MeanShapesPlot(
             ccd_maps[:, 1, 0],
@@ -267,14 +273,13 @@ def plot_meanshapes(
         e1_res = ccd_maps[:, 0, 0] - ccd_maps[:, 1, 0]
         e1_res = e1_res[~np.isnan(e1_res)]
         rmse_e1 = np.sqrt(np.mean(e1_res ** 2))
-        w_log.info("Bins: e1 residual RMSE: %.6f\n" % rmse_e1)
+        w_log.info(f"Bins: e1 residual RMSE: {rmse_e1:.6f}\n")
         vmax = np.nanmax(abs(ccd_maps[:, 0, 0] - ccd_maps[:, 1, 0]))
         vmin = -vmax
         wind = [vmin, vmax]
-        title = "e_1 res, rmse=%.5e\nvmax=%.4e , std=%.5e" % (
-            rmse_e1,
-            vmax,
-            np.nanstd(ccd_maps[:, 0, 0] - ccd_maps[:, 1, 0])
+        title = (
+            f"e_1 res, rmse={rmse_e1:.5e}\nvmax={vmax:.4e} , "
+            + f"std={np.nanstd(ccd_maps[:, 0, 0] - ccd_maps[:, 1, 0]):.5e}"
         )
         MeanShapesPlot(
             ccd_maps[:, 0, 0] - ccd_maps[:, 1, 0],
@@ -285,13 +290,15 @@ def plot_meanshapes(
         )
 
         # e_2
-        vmax = max(np.nanmax(ccd_maps[:, :, 1]),
-                   np.abs(np.nanmin(ccd_maps[:, :, 1])))
+        vmax = max(
+            np.nanmax(ccd_maps[:, :, 1]),
+            np.abs(np.nanmin(ccd_maps[:, :, 1]))
+        )
         vmin = -vmax
         wind = [vmin, vmax]
-        title = "e_2 (stars), std=%.5e\nvmax=%.4e" % (
-            np.nanstd(ccd_maps[:, 0, 1]),
-            np.nanmax(abs(ccd_maps[:, 0, 1]))
+        title = (
+            f"e_2 (stars), std={np.nanstd(ccd_maps[:, 0, 1]):.5e}\n"
+            + f"vmax={np.nanmax(abs(ccd_maps[:, 0, 1])):.4e}"
         )
         MeanShapesPlot(
             ccd_maps[:, 0, 1],
@@ -299,9 +306,9 @@ def plot_meanshapes(
             title,
             wind=wind
         )
-        title = "e_2 (model), std=%.5e\nvmax=%.4e" % (
-            np.nanstd(ccd_maps[:, 1, 1]),
-            np.nanmax(abs(ccd_maps[:, 1, 1]))
+        title = (
+            f"e_2 (model), std={np.nanstd(ccd_maps[:, 1, 1]):.5e}\n"
+            + f"vmax={np.nanmax(abs(ccd_maps[:, 1, 1])):.4e}"
         )
         MeanShapesPlot(
             ccd_maps[:, 1, 1],
@@ -317,14 +324,13 @@ def plot_meanshapes(
         e2_res = ccd_maps[:, 0, 1] - ccd_maps[:, 1, 1]
         e2_res = e2_res[~np.isnan(e2_res)]
         rmse_e2 = np.sqrt(np.mean(e2_res ** 2))
-        w_log.info('Bins: e2 residual RMSE: %.6f\n' % rmse_e2)
+        w_log.info(f"Bins: e2 residual RMSE: {rmse_e2:.6f}\n")
         vmax = np.nanmax(abs(ccd_maps[:, 0, 1] - ccd_maps[:, 1, 1]))
         vmin = -vmax
         wind = [vmin, vmax]
-        title = 'e_2 res, rmse=%.5e\nvmax=%.4e , std=%.5e' % (
-            rmse_e2,
-            vmax,
-            np.nanstd(ccd_maps[:, 0, 1] - ccd_maps[:, 1, 1])
+        title = (
+            f"e_2 res, rmse={rmse_e2:.5e}\nvmax={vmax:.4e} , "
+            + f"std={np.nanstd(ccd_maps[:, 0, 1] - ccd_maps[:, 1, 1]):.5e}"
         )
         MeanShapesPlot(
             ccd_maps[:, 0, 1] - ccd_maps[:, 1, 1],
@@ -337,9 +343,9 @@ def plot_meanshapes(
         # R^2
         wind = [0, np.nanmax(ccd_maps[:, :, 2])]
         colorbar_ampl = 1
-        title = 'R_2 (stars), std=%.5e\nvmax=%.4e' % (
-            np.nanstd(ccd_maps[:, 0, 2]),
-            np.nanmax(abs(ccd_maps[:, 0, 2]))
+        title = (
+            f"R_2 (stars), std={np.nanstd(ccd_maps[:, 0, 2]):.5e}\n"
+            + f"vmax={np.nanmax(abs(ccd_maps[:, 0, 2])):.4e}"
         )
         MeanShapesPlot(
             ccd_maps[:, 0, 2],
@@ -348,10 +354,9 @@ def plot_meanshapes(
             wind=wind,
             cmap='Reds'
         )
-        
-        title = 'R_2 (model), std=%.5e\nvmax=%.4e' % (
-            np.nanstd(ccd_maps[:, 1, 2]),
-            np.nanmax(abs(ccd_maps[:, 1, 2]))
+        title = (
+            f"R_2 (model), std={np.nanstd(ccd_maps[:, 1, 2]):.5e}\n"
+            + f"vmax={np.nanmax(abs(ccd_maps[:, 1, 2])):.4e}"
         )
         MeanShapesPlot(
             ccd_maps[:, 1, 2],
@@ -368,25 +373,19 @@ def plot_meanshapes(
         R2_res = (ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) / ccd_maps[:, 0, 2]
         R2_res = R2_res[~np.isnan(R2_res)]
         rmse_r2 = np.sqrt(np.mean(R2_res ** 2))
-        w_log.info('Bins: R2 residual RMSE: %.6f\n' % rmse_r2)
+        w_log.info(f"Bins: R2 residual RMSE: {rmse_r2:.6f}\n")
         vmax = np.nanmax(
             abs((ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) / ccd_maps[:, 0, 2]))
         wind = [0, vmax]
+        std_title = np.nanstd(
+            (ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) / ccd_maps[:, 0, 2]
+        )
+        title = (
+            f"∆(R_2)/R_2 res, rmse={rmse_r2:.5e}\nvmax={vmax:.4e} , "
+            + f"std={std_title:.5e}"
+        )
         if remove_outliers:
-            title = "Outliers removed\n∆(R_2)/R_2 res, " \
-                "rmse=%.5e\nvmax=%.4e , std=%.5e" % (
-                    rmse_r2,
-                    vmax,
-                    np.nanstd((ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) /
-                        ccd_maps[:, 0, 2])
-                )
-        else:
-            title = "∆(R_2)/R_2 res, rmse=%.5e\nvmax=%.4e , std=%.5e" % (
-                rmse_r2,
-                vmax,
-                np.nanstd((ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) /
-                          ccd_maps[:, 0, 2])
-            )
+            title = "Outliers removed\n" + title
 
         MeanShapesPlot(
             np.abs((ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) /
@@ -400,7 +399,7 @@ def plot_meanshapes(
 
         # nstars
         wind = (0, np.max(ccd_maps[:, 0, 3]))
-        title = 'Number of stars\nTotal=%d' % (np.nansum(ccd_maps[:, 0, 3]))
+        title = f"Number of stars\nTotal={np.nansum(ccd_maps[:, 0, 3]):d}"
         MeanShapesPlot(
             ccd_maps[:, 0, 3],
             output_path + 'nstar',
