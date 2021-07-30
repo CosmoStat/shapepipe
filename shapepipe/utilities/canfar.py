@@ -22,13 +22,12 @@ else:
 
 
 class vosError(Exception):
-   """ VOS Error
+    """VOS Error
 
-   Generic error that is raised by the vosHandler.
+    Generic error that is raised by the vosHandler.
 
-   """
-
-   pass
+    """
+    pass
 
 
 class vosHandler:
@@ -56,11 +55,11 @@ class vosHandler:
         Check if VOS is correctly installed.
 
         """
-
         if import_fail:
             raise ImportError(
                 'vos package not found, re-install ShapePipe '
-                'with \'./install_shapepipe --vos\'')
+                + 'with \'./install_shapepipe --vos\''
+            )
 
     @property
     def command(self):
@@ -69,7 +68,6 @@ class vosHandler:
         This method sets the VOS command property.
 
         """
-
         return self._command
 
     @command.setter
@@ -88,7 +86,6 @@ class vosHandler:
         This method allows class instances to be called as functions.
 
         """
-
         try:
             self._command()
 
@@ -96,7 +93,6 @@ class vosHandler:
             raise vosError(
                 f'Error in VOs command: {self._command.__name__}'
             )
-
 
 
 def download(source, target, verbose=False):
@@ -124,6 +120,7 @@ def download(source, target, verbose=False):
         if verbose:
             print(f'Downloading file {source} to {target}...')
         vcp = vosHandler(cmd)
+
         vcp()
         if verbose:
             print('Download finished.')

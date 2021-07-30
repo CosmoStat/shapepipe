@@ -9,4 +9,4 @@ scripts.
 
 """
 
-__all__ = ['canfar', 'file_system', 'cfis']
+__all__ = ['canfar', 'file_system', 'cfis', 'galaxy']

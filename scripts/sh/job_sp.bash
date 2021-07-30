@@ -19,6 +19,7 @@ job=255
 config_dir='vos:cfis/cosmostat/kilbinger/cfis'
 psf='psfex'
 retrieve='vos'
+RESULTS='cosmostat/kilbinger/results'
 nsh_step=3500
 nsh_max=-1
 nsh_jobs=8
@@ -43,6 +44,8 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    -r, --retrieve METHOD\n
    \tmethod to retrieve images, one in ['vos'|'symlink]', default='$retrieve'\n
+   -o, --output_dir\n
+   \toutput (upload) directory on vos:cfis, default='$RESULTS'\n
    --nsh_jobs NJOB\n
    \tnumber of shape measurement parallel jobs, default=$nsh_jobs\n
    --nsh_step NSTEP\n
@@ -135,9 +138,6 @@ fi
 
 # SExtractor library bug work-around
 export PATH="$PATH:$VM_HOME/bin"
-
-# Results upload subdirectory on vos
-RESULTS=results_$psf
 
 ## Path variables used in shapepipe config files
 
@@ -249,7 +249,7 @@ function upload() {
       fi
    fi
    tar czf ${base}_${ID}.tgz ${upl[@]}
-   command "$VCP ${base}_${ID}.tgz vos:cfis/cosmostat/kilbinger/$RESULTS" "Upload log tar ball"
+   command "$VCP ${base}_${ID}.tgz vos:cfis/$RESULTS" "Upload log tar ball"
 }
 
 # Upload log files
