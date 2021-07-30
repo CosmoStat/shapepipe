@@ -81,14 +81,25 @@ def parse_options(p_def):
     usage  = "%prog [OPTIONS]"
     parser = OptionParser(usage=usage)
 
-    parser.add_option('-i', '--input_path', dest='input_path', type='string',
-                      default=p_def.input_path,
-                      help='input path, default=\'{}\''.format(p_def.input_path))
+    parser.add_option(
+        '-i',
+        '--input_path',
+        dest='input_path',
+        type='string',
+        default=p_def.input_path,
+        help=f'input path, default=\'{p_def.input_path}\''
+    )
     parser.add_option('-p', '--param_path', dest='param_path', type='string',
                       default=None,
                       help='parameter file path, default=None')
 
-    parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
+    parser.add_option(
+        '-v',
+        '--verbose',
+        dest='verbose',
+        action='store_true',
+        help='verbose output'
+    )
 
     options, args = parser.parse_args()
 
@@ -176,7 +187,7 @@ def read_param_file(path, verbose=False):
 
     if verbose:
         if len(param_list) > 0: 
-            print('Copying {} columns'.format(len(param_list)), end='')
+            print(f'Copying {len(param_list)} columns', end='')
         else:
             print('Copying all columns', end='')
         print(' into final catalogue')
@@ -259,7 +270,7 @@ def main(argv=None):
         lpath.append(os.path.join(path, this_l))
 
     if param.verbose:
-        print('{} final catalog files found'.format(len(lpath)))
+        print(f'{len(lpath)} final catalog files found')
 
     count = 0
 
@@ -271,25 +282,25 @@ def main(argv=None):
         d[key] = d_tmp[key]
     count = count + 1
     if param.verbose:
-        print('File \'{}\' copied ({}/{})'.format(lpath[0], count, len(lpath)))
+        print(f'File \'lpath[0]{}\' copied ({count}/{len(lpath)})')
 
-    for i in lpath[1:]:
-        if ('final_cat' not in i) | ('.npy' in i):
+    for idx in lpath[1:]:
+        if ('final_cat' not in idx) | ('.npy' in idx):
             continue
 
         try:
-            d_tmp = get_data(i, 1, param.param_list)
+            d_tmp = get_data(idx, 1, param.param_list)
 
             dd = np.zeros(d_tmp.shape, dtype=d_tmp.dtype)
             for key in d_tmp.dtype.names:
                 dd[key] = d_tmp[key]
             count = count + 1
             if param.verbose:
-                print('File \'{}\' copied ({}/{})'.format(i, count, len(lpath)))
+                print(f'File \'{idx}\' copied ({count}/{len(lpath)})')
 
             d = np.concatenate((d, dd))
         except:
-            print('Error while copying file \'{}\''.format(i))
+            print(f'Error while copying file \'{idx}\'')
 
     # Save merged catalogue as numpy binary file
     if param.verbose:

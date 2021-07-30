@@ -116,6 +116,7 @@ def download(source, target, verbose=False):
         if verbose:
             print('Downloading file {} to {}...'.format(source, target))
         vcp = vosHandler(cmd)
+
         vcp()
         if verbose:
             print('Download finished.')
