@@ -148,14 +148,18 @@ def mccd_preprocessing_pipeline(
                             mccd_RA_list.append(RA_list[j])
                             mccd_DEC_list.append(DEC_list[j])
                     else:
-                        msg = '''Not enough stars in catalog_id %s
-                            ,ccd %d. Total stars = %d''' % (
-                            catalog_id, ccd_list[j], n_stars)
+                        msg = (
+                            f"Not enough stars in catalog_id {catalog_id} "
+                            + f",ccd {ccd_list[j]:d}. "
+                            + f"Total stars = {n_stars:d}."
+                        )
                         print_fun(msg)
 
                 except Exception:
-                    msg = '''Warning! Problem detected in
-                        catalog_id %s ,ccd %d''' % (catalog_id, ccd_list[j])
+                    msg = (
+                        f"Warning! Problem detected in catalog_id "
+                        + f"{catalog_id} ,ccd {ccd_list[j]:d}"
+                    ) 
                     print_fun(msg)
 
         if mccd_pos_list:
@@ -190,19 +194,22 @@ def mccd_preprocessing_pipeline(
             mccd_star_nb += mccd_stars.shape[0]
 
             # Save the fits file
-            train_dic = {'VIGNET_LIST': mccd_stars,
-                         'GLOB_POSITION_IMG_LIST': mccd_poss,
-                         'MASK_LIST': mccd_masks, 'CCD_ID_LIST': mccd_ccds,
-                         'SNR_WIN_LIST': mccd_SNRs,
-                         'RA_LIST': mccd_RAs, 'DEC_LIST': mccd_DECs
-                        }
+            train_dic = {
+                'VIGNET_LIST': mccd_stars,
+                'GLOB_POSITION_IMG_LIST': mccd_poss,
+                'MASK_LIST': mccd_masks,
+                'CCD_ID_LIST': mccd_ccds,
+                'SNR_WIN_LIST': mccd_SNRs,
+                'RA_LIST': mccd_RAs,
+                'DEC_LIST': mccd_DECs
+            }
 
             saving_path = output_path + save_name + separator \
                 + catalog_id + save_extension
             mccd.mccd_utils.save_to_fits(train_dic, saving_path)
 
     print_fun('Finished the training dataset processing.')
-    print_fun('Total stars processed = %d' % mccd_star_nb)
+    print_fun(f"Total stars processed = {mccd_star_nb:d}")
 
     return mccd_inputs
 
@@ -263,7 +270,7 @@ def mccd_validation_pipeline(
     val_saving_name
 ):
     r"""Validate the MCCD trained model against a set of observations."""
-    w_log.info('Validating catalog %s..' % file_number_string)
+    w_log.info(f"Validating catalog {file_number_string}..")
 
     # Get MCCD parameters
     save_extension = '.fits'
@@ -288,11 +295,13 @@ def mccd_validation_pipeline(
         # Save validation dictionary to fits file
         mccd.mccd_utils.save_to_fits(val_dict, val_saving_path)
 
-        w_log.info('Validation catalog < %s > saved.' % val_saving_path)
+        w_log.info(f"Validation catalog < {val_saving_path} > saved.")
 
     else:
-        w_log.info('''Fitted model corresponding to catalog %s was not
-            found.''' % file_number_string)
+        w_log.info(
+            f"Fitted model corresponding to catalog"
+            + f" {file_number_string} was not found."
+        )
 
 
 def mccd_interpolation_pipeline(
@@ -321,15 +330,20 @@ def mccd_interpolation_pipeline(
 
     if interp_PSFs is not None:
         if get_shapes:
-            PSF_moms = [galsim.hsm.FindAdaptiveMom(
-                galsim.Image(psf), strict=False) for psf in interp_PSFs]
+            PSF_moms = [
+                galsim.hsm.FindAdaptiveMom(galsim.Image(psf), strict=False) 
+                for psf in interp_PSFs
+            ]
 
-            PSF_shapes = np.array([[moms.observed_shape.g1,
-                                    moms.observed_shape.g2,
-                                    moms.moments_sigma,
-                                    int(bool(moms.error_message))]
-                                  for moms in PSF_moms]
-                                 )
+            PSF_shapes = np.array(
+                [
+                    [moms.observed_shape.g1,
+                    moms.observed_shape.g2,
+                    moms.moments_sigma,
+                    int(bool(moms.error_message))]
+                    for moms in PSF_moms
+                ]
+            )
 
         shapepipe_write_output(
             saving_path=saving_path,
@@ -355,17 +369,20 @@ def shapepipe_write_output(
 
     The saved files are compatible with the previous shapepipe's standard.
     """
-    output = sc.FITSCatalog(saving_path,
-                            open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
-                            SEx_catalog=True)
+    output = sc.FITSCatalog(
+        saving_path,
+        open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
+        SEx_catalog=True
+    )
 
     if get_shapes:
-        data = {'VIGNET': interp_PSFs,
-                'E1_PSF_HSM': PSF_shapes[:, 0],
-                'E2_PSF_HSM': PSF_shapes[:, 1],
-                'SIGMA_PSF_HSM': PSF_shapes[:, 2],
-                'FLAG_PSF_HSM': PSF_shapes[:, 3].astype(int)
-               }
+        data = {
+            'VIGNET': interp_PSFs,
+            'E1_PSF_HSM': PSF_shapes[:, 0],
+            'E2_PSF_HSM': PSF_shapes[:, 1],
+            'SIGMA_PSF_HSM': PSF_shapes[:, 2],
+            'FLAG_PSF_HSM': PSF_shapes[:, 3].astype(int)
+        }
     else:
         data = {'VIGNET': interp_PSFs}
 
