@@ -160,6 +160,62 @@ def save_sm_data(
     final_cat_file.close()
 
 
+def get_ra_dec(xxx, yyy):
+    """Get RA Dec.
+
+    Transform Stephen Gwyn naming into RA and Dec position
+
+    Parameters
+    ----------
+    xxx : int
+        First 3 numbers in the tile name.
+    yyy : int
+        Last 3 numbers in the tile name.
+
+    Returns
+    -------
+    ra, dec : tuple
+        Ra and dec positions for the center of tile.
+
+    """
+
+    return xxx / 2 / np.cos((yyy / 2 - 90) * np.pi / 180), yyy / 2 - 90
+
+
+def get_tile_wcs(xxx, yyy):
+    """Get Tile WCS.
+
+    Create an astropy.wcs.WCS object from the name of the tile.
+
+    Parameters
+    ----------
+    xxx : int
+        First 3 numbers in the tile name.
+    yyy : int
+        Last 3 numbers in the tile name.
+
+    Returns
+    -------
+    w : astropy.wcs.WCS
+        WCS for the tile.
+
+    """
+
+    ra, dec = get_ra_dec(xxx, yyy)
+
+    w = WCS(naxis=2)
+    w.wcs.crval = np.array([ra, dec])
+    w.wcs.crpix = np.array([5000, 5000])
+    w.wcs.cd = np.array(
+        [[0.187 / 3600, 0], [0, 0.187 / 3600]]
+    )
+    w.wcs.ctype = ['RA---TAN', 'DEC--TAN']
+    w.wcs.cunit = ['deg', 'deg']
+    w._naxis = [10000, 10000]
+
+    return w
+
+
 def remove_common_elements(
     final_cat_file,
     tiles_id_file,
@@ -182,59 +238,6 @@ def remove_common_elements(
     """
 
     key_id = 'TILE_ID'
-
-    def get_ra_dec(xxx, yyy):
-        """Get RA Dec.
-
-        Transform Stephen Gwyn naming into RA and Dec position
-
-        Parameters
-        ----------
-        xxx : int
-            First 3 numbers in the tile name.
-        yyy : int
-            Last 3 numbers in the tile name.
-
-        Returns
-        -------
-        ra, dec : tuple
-            Ra and dec positions for the center of tile.
-
-        """
-
-        return xxx / 2 / np.cos((yyy / 2 - 90) * np.pi / 180), yyy / 2 - 90
-
-    def get_tile_wcs(xxx, yyy):
-        """Get Tile WCS.
-
-        Create an astropy.wcs.WCS object from the name of the tile.
-
-        Parameters
-        ----------
-        xxx : int
-            First 3 numbers in the tile name.
-        yyy : int
-            Last 3 numbers in the tile name.
-
-        Returns
-        -------
-        w : astropy.wcs.WCS
-            WCS for the tile.
-
-        """
-
-        ra, dec = get_ra_dec(xxx, yyy)
-
-        w = WCS(naxis=2)
-        w.wcs.crval = np.array([ra, dec])
-        w.wcs.crpix = np.array([5000, 5000])
-        w.wcs.cd = np.array([[0.187/3600, 0],
-                            [0, 0.187/3600]])
-        w.wcs.ctype = ['RA---TAN', 'DEC--TAN']
-        w.wcs.cunit = ['deg', 'deg']
-        w._naxis = [10000, 10000]
-
-        return w
 
     final_cat_file.open()
     ra_tile = final_cat_file.get_data()[pos_param[0]]
@@ -298,511 +301,396 @@ def remove_common_elements(
     final_cat_file.close()
 
 
-def save_ngmix_data(final_cat_file, ngmix_cat_path):
-    """Save ngmix Data
+class SaveCatalog:
+    """Save Catalog.
 
-    Save the ngmix catalog into the final one.
-
-    Parameters
-    ----------
-    final_cat_file : io.FITSCatalog
-        Final catalog.
-    ngmix_cat_path : str
-        Path to ngmix catalog to save.
-
-    """
-
-    final_cat_file.open()
-    obj_id = np.copy(final_cat_file.get_data()['NUMBER'])
-
-    ngmix_cat_file = io.FITSCatalog(ngmix_cat_path)
-    ngmix_cat_file.open()
-    ngmix_n_epoch = ngmix_cat_file.get_data()['n_epoch_model']
-    ngmix_mcal_flags = ngmix_cat_file.get_data()['mcal_flags']
-
-    ngmix_mom_fail = ngmix_cat_file.get_data()['moments_fail']
-
-    ngmix_id = ngmix_cat_file.get_data()['id']
-
-    keys = ['1M', '1P', '2M', '2P', 'NOSHEAR']
-    output_dict = {
-        f'NGMIX_ELL_{key}': np.ones((len(obj_id), 2)) * -10.0
-        for key in keys
-    }
-    output_dict = {
-        **output_dict,
-        **{
-            f'NGMIX_ELL_ERR_{key}': np.ones((len(obj_id), 2)) * -10.
-            for key in keys
-        }
-    }
-    output_dict = {
-        **output_dict,
-        **{f'NGMIX_T_{key}': np.zeros(len(obj_id)) for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{f'NGMIX_T_ERR_{key}': np.ones(len(obj_id)) * 1e30 for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{f'NGMIX_Tpsf_{key}': np.zeros(len(obj_id)) for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{f'NGMIX_SNR_{key}': np.zeros(len(obj_id)) for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{f'NGMIX_FLUX_{key}': np.zeros(len(obj_id)) for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{f'NGMIX_FLUX_ERR_{key}': np.ones(len(obj_id)) * -1 for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{f'NGMIX_MAG_{key}': np.zeros(len(obj_id)) for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{f'NGMIX_MAG_ERR_{key}': np.ones(len(obj_id)) * -1 for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{
-            f'NGMIX_FLAGS_{key}': np.ones(len(obj_id), dtype='int16')
-            for key in keys
-        }
-    }
-    output_dict = {
-        **output_dict,
-        **{
-            f'NGMIX_ELL_PSFo_{key}': np.ones((len(obj_id), 2)) * -10.
-            for key in keys
-        }
-    }
-    output_dict = {
-        **output_dict,
-        **{f'NGMIX_T_PSFo_{key}': np.zeros(len(obj_id)) for key in keys}
-    }
-    output_dict['NGMIX_N_EPOCH'] = np.zeros(len(obj_id))
-    output_dict['NGMIX_MCAL_FLAGS'] = np.zeros(len(obj_id))
-    output_dict['NGMIX_MOM_FAIL'] = np.zeros(len(obj_id))
-
-    for idx, id_tmp in enumerate(obj_id):
-        ind = np.where(id_tmp == ngmix_id)[0]
-        if len(ind) > 0:
-
-            for key in keys:
-                output_dict[f'NGMIX_ELL_{key}'][idx][0] = (
-                    ngmix_cat_file.get_data(key)['g1'][ind[0]]
-                )
-                output_dict[f'NGMIX_ELL_{key}'][idx][1] = (
-                    ngmix_cat_file.get_data(key)['g2'][ind[0]]
-                )
-                output_dict[f'NGMIX_ELL_ERR_{key}'][idx][0] = (
-                    ngmix_cat_file.get_data(key)['g1_err'][ind[0]]
-                )
-                output_dict[f'NGMIX_ELL_ERR_{key}'][idx][1] = (
-                    ngmix_cat_file.get_data(key)['g2_err'][ind[0]]
-                )
-                output_dict[f'NGMIX_T_{key}'][idx] = (
-                    ngmix_cat_file.get_data(key)['T'][ind[0]]
-                )
-                output_dict[f'NGMIX_T_ERR_{key}'][idx] = (
-                    ngmix_cat_file.get_data(key)['T_err'][ind[0]]
-                )
-                output_dict[f'NGMIX_Tpsf_{key}'][idx] = (
-                    ngmix_cat_file.get_data(key)['Tpsf'][ind[0]]
-                )
-                output_dict[f'NGMIX_SNR_{key}'][idx] = (
-                    ngmix_cat_file.get_data(key)['s2n'][ind[0]]
-                )
-                output_dict[f'NGMIX_FLUX_{key}'][idx] = (
-                    ngmix_cat_file.get_data(key)['flux'][ind[0]]
-                )
-                output_dict[f'NGMIX_FLUX_ERR_{key}'][idx] = (
-                    ngmix_cat_file.get_data(key)['flux_err'][ind[0]]
-                )
-                output_dict[f'NGMIX_MAG_{key}'][idx] = (
-                    ngmix_cat_file.get_data(key)['mag'][ind[0]]
-                )
-                output_dict[f'NGMIX_MAG_ERR_{key}'][idx] = (
-                    ngmix_cat_file.get_data(key)['mag_err'][ind[0]]
-                )
-                output_dict[f'NGMIX_FLAGS_{key}'][idx] = (
-                    ngmix_cat_file.get_data(key)['flags'][ind[0]]
-                )
-                output_dict[f'NGMIX_ELL_PSFo_{key}'][idx][0] = (
-                    ngmix_cat_file.get_data(key)['g1_psfo_ngmix'][ind[0]]
-                )
-                output_dict[f'NGMIX_ELL_PSFo_{key}'][idx][1] = (
-                    ngmix_cat_file.get_data(key)['g2_psfo_ngmix'][ind[0]]
-                )
-                output_dict[f'NGMIX_T_PSFo_{key}'][idx] = (
-                    ngmix_cat_file.get_data(key)['T_psfo_ngmix'][ind[0]]
-                )
-
-            output_dict[f'NGMIX_N_EPOCH'][idx] = ngmix_n_epoch[ind[0]]
-            output_dict[f'NGMIX_MCAL_FLAGS'][idx] = ngmix_mcal_flags[ind[0]]
-            output_dict[f'NGMIX_MOM_FAIL'][idx] = ngmix_mom_fail[ind[0]]
-
-    for key in output_dict.keys():
-        final_cat_file.add_col(key, output_dict[key])
-
-    final_cat_file.close()
-    ngmix_cat_file.close()
-
-
-def save_ngmix_mom_shapes(final_cat_file, ngmix_cat_path):
-    """Save ngmix MOM Shapes.
-
-    Save the ngmix catalog into the final one.
+    Class to save catalog.
 
     Parameters
     ----------
-    final_cat_file : io.FITSCatalog
-        Final catalog.
-    ngmix_cat_path : str
-        Path to ngmix catalog to save.
+    final_cat_file : str
+        Final catalogue file name
 
     """
 
-    final_cat_file.open()
-    obj_id = np.copy(final_cat_file.get_data()['NUMBER'])
+    def __init__(self, final_cat_file):
 
-    ngmix_cat_file = io.FITSCatalog(ngmix_cat_path)
-    ngmix_cat_file.open()
-    ngmix_mcal_flags = ngmix_cat_file.get_data()['mcal_flags']
+        self.final_cat_file = final_cat_file
 
-    ngmix_id = ngmix_cat_file.get_data()['id']
+    def process(
+        mode='',
+        ngmix_cat_path=None,
+        moments=False,
+    ):
+        """Process Catalog.
 
-    keys = ['1M', '1P', '2M', '2P', 'NOSHEAR']
-    output_dict = {
-        f'NGMIXM_ELL_{key}': np.ones((len(obj_id), 2)) * -10. for key in keys
-    }
-    output_dict = {
-        **output_dict,
-        **{
-            f'NGMIXM_ELL_ERR_{key}': np.ones((len(obj_id), 2)) * -10.
-            for key in keys
+        Parameters
+        ----------
+        mode : str
+            Run mode, options are ('ngmix', 'galsim', 'psf')
+        ngmix_cat_path : str
+            Path to ngmix catalog
+        galsim_cat_path : str
+            Path to galsim catalog
+        psf_cat_path : str
+            Path to PSF catalog
+        moments : bool
+            Opotion to run ngmix mode with moment
+
+        """
+        self._output_dict = {}
+
+        final_cat_file.open()
+        self._obj_id = np.copy(final_cat_file.get_data()['NUMBER'])
+        self._max_epoch = np.max(final_cat_file.get_data()['N_EPOCH']) + 1
+
+        if mode == 'ngmix':
+            self._save_ngmix_data(ngmix_cat_path, moments)
+        elif mode == 'galsim':
+            self._save_ngmix_data(galsim_cat_path, moments)
+        elif mode == 'psf':
+            self._save_psf_data(psf_cat_path)
+        else:
+            raise ValueError(
+                f'Invalid process mode ({mode}) for '
+                + '``make_catalog.SaveCatalog``. Options are "ngmix", '
+                + '"galsim" or "psf".'
+            )
+
+        for key in self._output_dict.keys():
+            final_cat_file.add_col(key, self._output_dict[key])
+
+        final_cat_file.close()
+
+    def _update_dict(self, key_string, value):
+        """Update Dictionary
+
+        Update dictionary with value for all keys matching key string.
+
+        Parameters
+        ----------
+        key_string : str
+            Key string
+        value : np.ndarray
+            Value to be assigned to the keys
+
+        """
+        self._output_dict = {
+            **self._output_dict,
+            **{f'{key_string}{key_end}': value for key_end in self._key_ends}
         }
-    }
-    output_dict = {
-        **output_dict,
-        **{f'NGMIXM_T_{key}': np.zeros(len(obj_id)) for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{f'NGMIXM_T_ERR_{key}': np.ones(len(obj_id)) * 1e30 for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{f'NGMIXM_Tpsf_{key}': np.zeros(len(obj_id)) for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{f'NGMIXM_SNR_{key}': np.zeros(len(obj_id)) for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{f'NGMIXM_FLUX_{key}': np.zeros(len(obj_id)) for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{f'NGMIXM_FLUX_ERR_{key}': -1 * np.ones(len(obj_id)) for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{
-            f'NGMIXM_FLAGS_{key}': np.ones(len(obj_id), dtype='int16')
-            for key in keys
-        }
-    }
-    output_dict = {
-        **output_dict,
-        **{
-            f'NGMIXM_ELL_PSFo_{key}': np.ones((len(obj_id), 2)) * -10.
-            for key in keys
-        }
-    }
-    output_dict = {
-        **output_dict,
-        **{f'NGMIXM_T_PSFo_{key}': np.zeros(len(obj_id)) for key in keys}
-    }
 
-    output_dict['NGMIXM_MCAL_FLAGS'] = np.zeros(len(obj_id))
+    def _add2dict(self, key, value, index=None):
+        """Add to Dictionary
 
-    for idx, id_tmp in enumerate(obj_id):
-        ind = np.where(id_tmp == ngmix_id)[0]
-        if len(ind) > 0:
-            for key in keys:
-                output_dict[f'NGMIXM_ELL_{key}'][idx][0] = (
-                    ngmix_cat_file.get_data(key)['g1'][ind[0]]
+        Add key, value pair to output dictionary.
+
+        Parameters
+        ----------
+        key : str
+            Dictionary key
+        value : any
+            Dictionary value
+        index : int
+            Dictionary element index
+
+        """
+        if index:
+            self._output_dict[key][index] = value
+        else:
+            self._output_dict[key] = value
+
+    def _save_ngmix_data(ngmix_cat_path, moments=False):
+        """Save ngmix Data
+
+        Save the ngmix catalog into the final one.
+
+        Parameters
+        ----------
+        ngmix_cat_path : str
+            Path to ngmix catalog
+
+        """
+        self._key_ends = ['1M', '1P', '2M', '2P', 'NOSHEAR']
+
+        ngmix_cat_file = io.FITSCatalog(ngmix_cat_path)
+        ngmix_cat_file.open()
+
+        ngmix_n_epoch = ngmix_cat_file.get_data()['n_epoch_model']
+        ngmix_mom_fail = ngmix_cat_file.get_data()['moments_fail']
+
+        if moments:
+            m = 'm'
+        else:
+            m = ''
+
+            ngmix_mcal_flags = ngmix_cat_file.get_data()['mcal_flags']
+            ngmix_id = ngmix_cat_file.get_data()['id']
+
+            self._add2dict('NGMIX_N_EPOCH', np.zeros(len(self._obj_id)))
+            self._add2dict('NGMIX_MOM_FAIL', np.zeros(len(self._obj_id)))
+
+        for key_str in (
+            f'NGMIX{m}_T_',
+            f'NGMIX{m}_Tpsf_',
+            f'NGMIX{m}_SNR_',
+            f'NGMIX{m}_FLUX_',
+            f'NGMIX{m}_MAG_',
+            f'NGMIX{m}_FLAGS_',
+            f'NGMIX{m}_T_PSFo_',
+        ):
+            self._update_dict(key_str, np.zeros(len(self._obj_id)))
+        for key_str in (f'NGMIX{m}_FLUX_ERR_', f'NGMIX{m}_MAG_ERR_'):
+            self._update_dict(key_str, np.ones(len(self._obj_id)) * -1)
+        for key_str in (
+            f'NGMIX{m}_ELL_',
+            f'NGMIX{m}_ELL_ERR_',
+            f'NGMIX{m}_ELL_PSFo_'
+        ):
+            self._update_dict(key_str, np.ones((len(self._obj_id), 2)) * -10.0)
+        self._update_dict(
+            f'NGMIX{m}_T_ERR_',
+            np.ones(len(self._obj_id)) * 1e30,
+        )
+        self._add2dict(f'NGMIX{m}_MCAL_FLAGS', np.zeros(len(self._obj_id)))
+
+        for idx, id_tmp in enumerate(self._obj_id):
+            ind = np.where(id_tmp == ngmix_id)[0]
+            if len(ind) > 0:
+
+                for key in keys:
+
+                    ncf_data = ngmix_cat_file.get_data(key)
+
+                    g = (ncf_data['g1'][ind[0]], ncf_data['g2'][ind[0]])
+                    g_err = (
+                        ncf_data['g1_err'][ind[0]],
+                        ncf_data['g2_err'][ind[0]]
+                    )
+                    self._add2dict(f'NGMIX{m}_ELL_{key}', g, idx)
+                    self._add2dict(f'NGMIX{m}_ELL_ERR_{key}', g_err, idx)
+
+                    t = ncf_data['T'][ind[0]]
+                    t_err = ncf_data['T_err'][ind[0]]
+                    tpsf = ncf_data['Tpsf'][ind[0]]
+                    self._add2dict(f'NGMIX{m}_T_{key}', t, idx)
+                    self._add2dict(f'NGMIX{m}_T_ERR_{key}', t_err, idx)
+                    self._add2dict(f'NGMIX{m}_Tpsf_{key}', tpsf, idx)
+
+                    s2n = ncf_data['s2n'][ind[0]]
+                    self._add2dict(f'NGMIX{m}_SNR_{key}', s2n, idx)
+
+                    flux = ncf_data['flux'][ind[0]]
+                    flux_err = ncf_data['flux_err'][ind[0]]
+                    self._add2dict(f'NGMIX{m}_FLUX_{key}', flux, idx)
+                    self._add2dict(f'NGMIX{m}_FLUX_ERR_{key}', flux_err, idx)
+
+                    mag = ncf_data['mag'][ind[0]]
+                    mag_err = ncf_data['mag_err'][ind[0]]
+                    self._add2dict(f'NGMIX{m}_MAG_{key}', mag, idx)
+                    self._add2dict(f'NGMIX{m}_MAG_ERR_{key}', mag_err, idx)
+
+                    flags = ncf_data['flags'][ind[0]]
+                    self._add2dict(f'NGMIX{m}_FLAGS_{key}', flags, idx)
+
+                    g_psf = (
+                        ncf_data['g1_psfo_ngmix'][ind[0]],
+                        ncf_data['g2_psfo_ngmix'][ind[0]]
+                    )
+                    self._add2dict(f'NGMIX{m}_ELL_PSFo_{key}', g_psf, idx)
+
+                    t_psfo = ncf_data['T_psfo_ngmix'][ind[0]]
+                    self._add2dict(f'NGMIX{m}_T_PSFo_{key}', t_psfo, idx)
+
+                self._add2dict(
+                    f'NGMIX{m}_MCAL_FLAGS',
+                    ngmix_mcal_flags[ind[0]],
+                    idx,
                 )
-                output_dict[f'NGMIXM_ELL_{key}'][idx][1] = (
-                    ngmix_cat_file.get_data(key)['g2'][ind[0]]
-                )
-                output_dict[f'NGMIXM_ELL_ERR_{key}'][idx][0] = (
-                    ngmix_cat_file.get_data(key)['g1_err'][ind[0]]
-                )
-                output_dict[f'NGMIXM_ELL_ERR_{key}'][idx][1] = (
-                    ngmix_cat_file.get_data(key)['g2_err'][ind[0]]
-                )
-                output_dict[f'NGMIXM_T_{key}'][idx] = (
-                    ngmix_cat_file.get_data(key)['T'][ind[0]]
-                )
-                output_dict[f'NGMIXM_T_ERR_{key}'][idx] = (
-                    ngmix_cat_file.get_data(key)['T_err'][ind[0]]
-                )
-                output_dict[f'NGMIXM_Tpsf_{key}'][idx] = (
-                    ngmix_cat_file.get_data(key)['Tpsf'][ind[0]]
-                )
-                output_dict[f'NGMIXM_SNR_{key}'][idx] = (
-                    ngmix_cat_file.get_data(key)['s2n'][ind[0]]
-                )
-                output_dict[f'NGMIXM_FLUX_{key}'][idx] = (
-                    ngmix_cat_file.get_data(key)['flux'][ind[0]]
-                )
-                output_dict[f'NGMIXM_FLUX_ERR_{key}'][idx] = (
-                    ngmix_cat_file.get_data(key)['flux_err'][ind[0]]
-                )
-                output_dict[f'NGMIXM_FLAGS_{key}'][idx] = (
-                    ngmix_cat_file.get_data(key)['flags'][ind[0]]
-                )
-                output_dict[f'NGMIXM_ELL_PSFo_{key}'][idx][0] = (
-                    ngmix_cat_file.get_data(key)['g1_psfo_ngmix'][ind[0]]
-                )
-                output_dict[f'NGMIXM_ELL_PSFo_{key}'][idx][1] = (
-                    ngmix_cat_file.get_data(key)['g2_psfo_ngmix'][ind[0]]
-                )
-                output_dict[f'NGMIXM_T_PSFo_{key}'][idx] = (
-                    ngmix_cat_file.get_data(key)['T_psfo_ngmix'][ind[0]]
-                )
 
-            output_dict['NGMIXM_MCAL_FLAGS'][idx] = ngmix_mcal_flags[ind[0]]
-
-    for key in output_dict.keys():
-        final_cat_file.add_col(key, output_dict[key])
-
-    final_cat_file.close()
-    ngmix_cat_file.close()
-
-
-def save_galsim_shapes(final_cat_file, galsim_cat_path):
-    """Save GalSim Shapes.
-
-    Save the GalSim catalog into the final one.
-
-    Parameters
-    ----------
-    final_cat_file : io.FITSCatalog
-        Final catalog.
-    ngmix_cat_path : str
-        Path to ngmix catalog to save.
-
-    """
-
-    final_cat_file.open()
-    obj_id = np.copy(final_cat_file.get_data()['NUMBER'])
-
-    galsim_cat_file = io.FITSCatalog(galsim_cat_path)
-    galsim_cat_file.open()
-
-    galsim_id = galsim_cat_file.get_data()['id']
-
-    keys = galsim_cat_file.get_ext_name()[1:]
-    output_dict = {
-        f'GALSIM_GAL_ELL_{key}': np.ones((len(obj_id), 2)) * -10.
-        for key in keys
-    }
-    output_dict = {
-        **output_dict,
-        **{
-            f'GALSIM_GAL_ELL_ERR_{key}': np.ones((len(obj_id), 2)) * -10.
-            for key in keys
-        }
-    }
-    output_dict = {
-        **output_dict,
-        **{
-            f'GALSIM_GAL_ELL_UNCORR_{key}': np.ones((len(obj_id), 2)) * -10.
-            for key in keys
-        }
-    }
-    output_dict = {
-        **output_dict,
-        **{f'GALSIM_GAL_SIGMA_{key}': np.zeros(len(obj_id)) for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{
-            f'GALSIM_PSF_ELL_{key}': np.ones((len(obj_id), 2)) * -10.
-            for key in keys
-        }
-    }
-    output_dict = {
-        **output_dict,
-        **{f'GALSIM_PSF_SIGMA_{key}': np.zeros(len(obj_id)) for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{f'GALSIM_FLUX_{key}': np.zeros(len(obj_id)) for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{f'GALSIM_FLUX_ERR_{key}': np.ones(len(obj_id)) * -1 for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{f'GALSIM_MAG_{key}': np.zeros(len(obj_id)) for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{f'GALSIM_MAG_ERR_{key}': np.ones(len(obj_id)) * -1 for key in keys}
-    }
-    output_dict = {
-        **output_dict,
-        **{
-            f'GALSIM_FLAGS_{key}': np.ones(len(obj_id), dtype='int16')
-            for key in keys
-        }
-    }
-    output_dict = {
-        **output_dict,
-        **{f'GALSIM_RES_{key}': np.ones(len(obj_id)) * -1. for key in keys}
-    }
-    for idx, id_tmp in enumerate(obj_id):
-        ind = np.where(id_tmp == galsim_id)[0]
-        if len(ind) > 0:
-            for key in keys:
-                if key == 'ORIGINAL_PSF':
-                    output_dict[f'GALSIM_PSF_ELL_{key}'][idx][0] = (
-                        galsim_cat_file.get_data(key)['gal_uncorr_g1'][ind[0]]
+                if not moments:
+                    self._add2dict(
+                        f'NGMIX{m}_N_EPOCH',
+                        ngmix_n_epoch[ind[0]],
+                        idx,
                     )
-                    output_dict[f'GALSIM_PSF_ELL_{key}'][idx][1] = (
-                        galsim_cat_file.get_data(key)['gal_uncorr_g2'][ind[0]]
-                    )
-                    output_dict[f'GALSIM_PSF_SIGMA_{key}'][idx] = (
-                        galsim_cat_file.get_data(key)['gal_sigma'][ind[0]]
-                    )
-                else:
-                    output_dict[f'GALSIM_GAL_ELL_{key}'][idx][0] = (
-                        galsim_cat_file.get_data(key)['gal_g1'][ind[0]]
-                    )
-                    output_dict[f'GALSIM_GAL_ELL_{key}'][idx][1] = (
-                        galsim_cat_file.get_data(key)['gal_g2'][ind[0]]
-                    )
-                    output_dict[f'GALSIM_GAL_ELL_ERR_{key}'][idx][0] = (
-                        galsim_cat_file.get_data(key)['gal_g1_err'][ind[0]]
-                    )
-                    output_dict[f'GALSIM_GAL_ELL_ERR_{key}'][idx][1] = (
-                        galsim_cat_file.get_data(key)['gal_g2_err'][ind[0]]
-                    )
-                    output_dict[f'GALSIM_GAL_ELL_UNCORR_{key}'][idx][0] = (
-                        galsim_cat_file.get_data(key)['gal_uncorr_g1'][ind[0]]
-                    )
-                    output_dict[f'GALSIM_GAL_ELL_UNCORR_{key}'][idx][1] = (
-                        galsim_cat_file.get_data(key)['gal_uncorr_g2'][ind[0]]
-                    )
-                    output_dict[f'GALSIM_GAL_SIGMA_{key}'][idx] = (
-                        galsim_cat_file.get_data(key)['gal_sigma'][ind[0]]
-                    )
-                    output_dict[f'GALSIM_PSF_ELL_{key}'][idx][0] = (
-                        galsim_cat_file.get_data(key)['psf_g1'][ind[0]]
-                    )
-                    output_dict[f'GALSIM_PSF_ELL_{key}'][idx][1] = (
-                        galsim_cat_file.get_data(key)['psf_g2'][ind[0]]
-                    )
-                    output_dict[f'GALSIM_PSF_SIGMA_{key}'][idx] = (
-                        galsim_cat_file.get_data(key)['psf_sigma'][ind[0]]
-                    )
-                    output_dict[f'GALSIM_FLUX_{key}'][idx] = (
-                        galsim_cat_file.get_data(key)['gal_flux'][ind[0]]
-                    )
-                    output_dict[f'GALSIM_FLUX_ERR_{key}'][idx] = (
-                        galsim_cat_file.get_data(key)['gal_flux_err'][ind[0]]
-                    )
-                    output_dict[f'GALSIM_MAG_{key}'][idx] = (
-                        galsim_cat_file.get_data(key)['gal_mag'][ind[0]]
-                    )
-                    output_dict[f'GALSIM_MAG_ERR_{key}'][idx] = (
-                        galsim_cat_file.get_data(key)['gal_mag_err'][ind[0]]
-                    )
-                    output_dict[f'GALSIM_FLAGS_{key}'][idx] = (
-                        galsim_cat_file.get_data(key)['gal_flag'][ind[0]]
-                    )
-                    output_dict[f'GALSIM_RES_{key}'][idx] = (
-                        galsim_cat_file.get_data(key)['gal_resolution'][ind[0]]
+                    self._add2dict(
+                        f'NGMIX{m}_MOM_FAIL',
+                        ngmix_mom_fail[ind[0]],
+                        idx,
                     )
 
-    for key in output_dict.keys():
-        final_cat_file.add_col(key, output_dict[key])
+        ngmix_cat_file.close()
 
-    final_cat_file.close()
-    galsim_cat_file.close()
+    def _save_galsim_shapes(galsim_cat_path):
+        """Save GalSim Shapes.
 
+        Save the GalSim catalog into the final one.
 
-def save_psf_data(final_cat_file, galaxy_psf_path):
-    """ Save PSF data
+        Parameters
+        ----------
+        ngmix_cat_path : str
+            Path to ngmix catalog to save.
 
-    Save the PSF catalog into the final one.
+        """
+        self._key_ends = galsim_cat_file.get_ext_name()[1:]
 
-    Parameters
-    ----------
-    final_cat_file : io.FITSCatalog
-        Final catalog.
-    galaxy_psf_path : str
-        Path to the PSF catalog to save.
+        galsim_cat_file = io.FITSCatalog(galsim_cat_path)
+        galsim_cat_file.open()
 
-    """
+        galsim_id = galsim_cat_file.get_data()['id']
 
-    final_cat_file.open()
-    obj_id = np.copy(final_cat_file.get_data()['NUMBER'])
-    max_epoch = np.max(final_cat_file.get_data()['N_EPOCH']) + 1
+        for key_str in (
+            'GALSIM_GAL_SIGMA_',
+            'GALSIM_PSF_SIGMA_',
+            'GALSIM_FLUX_',
+            'GALSIM_MAG_',
+        ):
+            self._update_dict(key_str, np.zeros(len(self._obj_id)))
+        for key_str in ('GALSIM_FLUX_ERR_', 'GALSIM_MAG_ERR_', 'GALSIM_RES_'):
+            self._update_dict(key_str, np.ones(len(self._obj_id)) * -1)
+        for key_str in (
+            'GALSIM_GAL_ELL_',
+            'GALSIM_GAL_ELL_ERR_',
+            'GALSIM_GAL_ELL_UNCORR_',
+            'GALSIM_PSF_ELL_'
+        ):
+            self._update_dict(key_str, np.ones((len(self._obj_id), 2)) * -10.0)
+        self._update_dict(
+            'GALSIM_FLAGS_',
+            np.ones(len(self._obj_id), dtype='int16'),
+        )
 
-    galaxy_psf_cat = SqliteDict(galaxy_psf_path)
-    output_dict = {
-        f'PSF_ELL_{idx + 1}': np.ones((len(obj_id), 2)) * -10.
-        for idx in range(max_epoch)
-    }
-    output_dict = {
-        **output_dict,
-        **{
-            f'PSF_FWHM_{idx + 1}': np.zeros(len(obj_id))
+        for idx, id_tmp in enumerate(self._obj_id):
+            ind = np.where(id_tmp == galsim_id)[0]
+            if len(ind) > 0:
+
+                for key in keys:
+
+                    gcf_data = galsim_cat_file.get_data(key)
+
+                    if key == 'ORIGINAL_PSF':
+
+                        uncorr_g = (
+                            gcf_data['gal_uncorr_g1'][ind[0]],
+                            gcf_data['gal_uncorr_g2'][ind[0]]
+                        )
+                        psf_sig = gcf_data['gal_sigma'][ind[0]]
+                        self._add2dict(f'GALSIM_PSF_ELL_{key}', uncorr_g, idx)
+                        self._add2dict(f'GALSIM_PSF_SIGMA_{key}', psf_sig, idx)
+
+                    else:
+
+                        g = (
+                            gcf_data['gal_g1'][ind[0]],
+                            gcf_data['gal_g2'][ind[0]]
+                        )
+                        g_err = (
+                            gcf_data['gal_g1_err'][ind[0]]
+                            gcf_data['gal_g2_err'][ind[0]]
+                        )
+                        self._add2dict(f'GALSIM_GAL_ELL_{key}', g, idx)
+                        self._add2dict(f'GALSIM_GAL_ELL_ERR_{key}', g_err, idx)
+
+                        uncorr_g = (
+                            gcf_data['gal_uncorr_g1'][ind[0]],
+                            gcf_data['gal_uncorr_g2'][ind[0]],
+                        )
+                        self._add2dict(
+                            f'GALSIM_GAL_ELL_UNCORR_{key}',
+                            uncorr_g,
+                            idx,
+                        )
+
+                        sigma = gcf_data['gal_sigma'][ind[0]]
+                        self._add2dict(f'GALSIM_GAL_SIGMA_{key}', sigma, idx)
+
+                        psf_g = (
+                            gcf_data['psf_g1'][ind[0]],
+                            gcf_data['psf_g2'][ind[0]]
+                        )
+                        psf_sigma = gcf_data['psf_sigma'][ind[0]]
+                        self._add2dict(f'GALSIM_PSF_ELL_{key}', psf_g, idx)
+                        self._add2dict(
+                            f'GALSIM_PSF_SIGMA_{key}',
+                            psf_sigma,
+                            idx,
+                        )
+
+                        flux = gcf_data['gal_flux'][ind[0]]
+                        flux_err = gcf_data['gal_flux_err'][ind[0]]
+                        self._add2dict(f'GALSIM_FLUX_{key}', flux, idx)
+                        self._add2dict(f'GALSIM_FLUX_ERR_{key}', flux_err, idx)
+
+                        mag = gcf_data['gal_mag'][ind[0]]
+                        mag_err = gcf_data['gal_mag_err'][ind[0]]
+                        self._add2dict(f'GALSIM_MAG_{key}', mag, idx)
+                        self._add2dict(f'GALSIM_MAG_ERR_{key}', mag_err, idx)
+
+                        flags = gcf_data['gal_flag'][ind[0]]
+                        self._add2dict(f'GALSIM_FLAGS_{key}', flags, idx)
+
+                        res = gcf_data['gal_resolution'][ind[0]]
+                        self._add2dict(f'GALSIM_RES_{key}', res, idx)
+
+        galsim_cat_file.close()
+
+    def _save_psf_data(galaxy_psf_path):
+        """ Save PSF data
+
+        Save the PSF catalog into the final one.
+
+        Parameters
+        ----------
+        galaxy_psf_path : str
+            Path to the PSF catalog to save.
+
+        """
+        galaxy_psf_cat = SqliteDict(galaxy_psf_path)
+
+        self._output_dict = {
+            f'PSF_ELL_{idx + 1}': np.ones((len(obj_id), 2)) * -10.
             for idx in range(max_epoch)
         }
-    }
-    output_dict = {
-        **output_dict,
-        **{
-            f'PSF_FLAG_{idx + 1}': np.ones(len(obj_id), dtype='int16')
-            for idx in range(max_epoch)
+        self._output_dict = {
+            **self._output_dict,
+            **{
+                f'PSF_FWHM_{idx + 1}': np.zeros(len(obj_id))
+                for idx in range(max_epoch)
+            }
         }
-    }
-    for idx, id_tmp in enumerate(obj_id):
-        if galaxy_psf_cat[str(id_tmp)] == 'empty':
-            continue
-        for epoch, key in enumerate(galaxy_psf_cat[str(id_tmp)].keys()):
-            if galaxy_psf_cat[str(id_tmp)][key]['SHAPES']['FLAG_PSF_HSM'] != 0:
+        self._output_dict = {
+            **self._output_dict,
+            **{
+                f'PSF_FLAG_{idx + 1}': np.ones(len(obj_id), dtype='int16')
+                for idx in range(max_epoch)
+            }
+        }
+
+        for idx, id_tmp in enumerate(obj_id):
+
+            if galaxy_psf_cat[str(id_tmp)] == 'empty':
                 continue
-            output_dict[f'PSF_ELL_{epoch + 1}'][idx][0] = (
-                galaxy_psf_cat[str(id_tmp)][key]['SHAPES']['E1_PSF_HSM']
-            )
-            output_dict[f'PSF_ELL_{epoch + 1}'][idx][1] = (
-                galaxy_psf_cat[str(id_tmp)][key]['SHAPES']['E2_PSF_HSM']
-            )
-            output_dict[f'PSF_FWHM_{epoch + 1}'][idx] = (
-                galaxy_psf_cat[str(id_tmp)][key]['SHAPES']['SIGMA_PSF_HSM']
-                * 2.355
-            )
-            output_dict[f'PSF_FLAG_{epoch + 1}'][idx] = (
-                galaxy_psf_cat[str(id_tmp)][key]['SHAPES']['FLAG_PSF_HSM']
-            )
 
-    for key in output_dict.keys():
-        final_cat_file.add_col(key, output_dict[key])
+            for epoch, key in enumerate(galaxy_psf_cat[str(id_tmp)].keys()):
 
-    final_cat_file.close()
-    galaxy_psf_cat.close()
+                if galaxy_psf_cat[str(id_tmp)][key]['SHAPES'][
+                    'FLAG_PSF_HSM'
+                ] != 0:
+                    continue
+
+                    gpc_data = galaxy_psf_cat[str(id_tmp)][key]
+
+                e_psf = (
+                    gpc_data['SHAPES']['E1_PSF_HSM'],
+                    gpc_data['SHAPES']['E2_PSF_HSM']
+                )
+                self._add2dict(f'PSF_ELL_{epoch + 1}', e_psf, idx)
+
+                psf_fwhm = gpc_data['SHAPES']['SIGMA_PSF_HSM'] * 2.355
+                self._add2dict(f'PSF_FWHM_{epoch + 1}', psf_fwhm, idx)
+
+                flag_psf = gpc_data['SHAPES']['FLAG_PSF_HSM']
+                self._add2dict(f'PSF_FLAG_{epoch + 1}', flag_psf, idx)
+
+        galaxy_psf_cat.close()
