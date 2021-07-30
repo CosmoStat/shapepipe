@@ -89,7 +89,7 @@ def mccd_preprocessing_runner(
             save_extension='.fits',
             verbose=verbose,
             print_fun=w_log.info
-            )
+        )
         for _input_pos, _save_name, _min_stars in
         zip(input_file_pos_list, save_name_list, min_n_stars_list)
     ]
