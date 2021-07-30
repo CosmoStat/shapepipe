@@ -24,7 +24,7 @@ import numpy as np
 from optparse import OptionParser
 from astropy.io import fits
 
-import cfis
+from shapepipe.utilities import cfis
 from shapepipe.pipeline import file_io as sc
 
 
