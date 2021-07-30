@@ -31,6 +31,7 @@ def spread_model_runner(
     run_dirs,
     file_number_string,
     config,
+    module_config_sec,
     w_log
 ):
 
@@ -38,8 +39,8 @@ def spread_model_runner(
     sex_cat_path, psf_cat_path, weight_cat_path = input_file_list
 
     # Get file suffix (optional)
-    if config.has_option('SPREAD_MODEL_RUNNER', 'SUFFIX'):
-        suffix = config.get('SPREAD_MODEL_RUNNER', 'SUFFIX')
+    if config.has_option(module_config_sec, 'SUFFIX'):
+        suffix = config.get(module_config_sec, 'SUFFIX')
         if (suffix.lower() != 'none') & (suffix != ''):
             suffix = suffix + '_'
         else:
@@ -48,8 +49,8 @@ def spread_model_runner(
         suffix = ''
 
     # Get pixel scale and output mode
-    pixel_scale = config.getfloat('SPREAD_MODEL_RUNNER', 'PIXEL_SCALE')
-    output_mode = config.get('SPREAD_MODEL_RUNNER', 'OUTPUT_MODE')
+    pixel_scale = config.getfloat(module_config_sec, 'PIXEL_SCALE')
+    output_mode = config.get(module_config_sec, 'OUTPUT_MODE')
 
     # Set output file path
     file_name = f'{suffix}sexcat_sm{file_number_string}.fits'
