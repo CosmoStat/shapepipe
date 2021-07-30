@@ -145,13 +145,13 @@ class SpreadModel(object):
 
     Parameters
     ----------
-    sex_cat_path : string
+    sex_cat_path : str
         path to SExtractor catalogue
-    psf_cat_path : string
+    psf_cat_path : str
         path to PSF catalogue
-    weight_cat_path : string
+    weight_cat_path : str
         path to weight catalogue
-    output_path : string
+    output_path : str
         output file path of pasted catalog
     pixel_scale : float
         pixel scale in arcsec
@@ -205,7 +205,7 @@ class SpreadModel(object):
         skip_obj = False
         spread_model_final = []
         spread_model_err_final = []
-        for i, id_tmp in enumerate(obj_id):
+        for idx id_tmp in enumerate(obj_id):
             sigma_list = []
 
             if psf_cat[str(id_tmp)] == 'empty':
@@ -224,7 +224,7 @@ class SpreadModel(object):
             obj_vign_tmp = obj_vign[i]
             obj_flux_tmp = 1.
             obj_sigma_tmp = np.mean(sigma_list)
-            obj_weight_tmp = weigh_vign[i]
+            obj_weight_tmp = weigh_vign[idx]
             obj_model_tmp, obj_psf_tmp = get_model(
                 obj_sigma_tmp,
                 obj_flux_tmp,
