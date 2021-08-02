@@ -16,7 +16,7 @@ from shapepipe.modules.SETools_package import SETools_script as setools
                file_pattern=['sexcat'], file_ext=['.fits'],
                depends=['numpy', 'matplotlib'])
 def setools_runner(input_file_list, run_dirs, file_number_string,
-                   config, w_log):
+                   config, module_config_sec, w_log):
 
     config_file = config.getexpanded('SETOOLS_RUNNER', 'SETOOLS_CONFIG_PATH')
 

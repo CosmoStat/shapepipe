@@ -25,7 +25,7 @@ from shapepipe.modules.PastCat_package import PastCat_script as paste
     run_method='parallel'
 )
 def paste_cat_runner(input_file_list, run_dirs, file_number_string,
-                     config, w_log):
+                     config, module_config_sec, w_log):
 
     if config.has_option('PASTE_CAT_RUNNER', 'CHECK_COL_NAME'):
         check_col_name = config.get('PASTE_CAT_RUNNER', 'CHECK_COL_NAME')

@@ -231,13 +231,13 @@ class GetImages(object):
                     x2 = re.sub(r'\.', '', x)
                     ext_final = in_ext[0] + x2
                     fbase = (
-                        f'{self._output_file_pattern[i],}{number_final}'
+                        f'{self._output_file_pattern[idx]}{number_final}'
                     )
                 else:
                     fbase = re.sub(self._input_numbering, number, in_pattern)
                     ext_final = in_ext
 
-                if use_output_file_pattern and self._output_file_pattern[i] == '*':
+                if use_output_file_pattern and self._output_file_pattern[idx] == '*':
                     # retrieve all input files to output dir, do not append
                     # extension
                     # fpath = '{}/.'.format(in_path)
@@ -275,7 +275,7 @@ class GetImages(object):
                                          ''.format(path[0]))
                         continue
                 self._w_log.info('Retrieving {}'.format(in_per_type[idx]))
-                self.retrieve_one(in_per_type[i], out_per_type[idx])
+                self.retrieve_one(in_per_type[idx], out_per_type[idx])
 
     def retrieve_one(self, in_path, out_path):
         """Retrieve One

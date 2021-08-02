@@ -25,7 +25,7 @@ from shapepipe.pipeline import file_io as sc
                file_ext=['.fits'], depends=['numpy', 'sqlitedict'],
                run_method='serial')
 def merge_star_cat_runner(input_file_list, run_dirs, file_number_string,
-                          config, w_log):
+                          config, module_config_sec, w_log):
 
     output_dir = run_dirs['output']
     if config.has_option('MERGE_STAR_CAT_RUNNER', 'OUTPUT_PATH'):

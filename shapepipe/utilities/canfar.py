@@ -108,6 +108,7 @@ def download(source, target, verbose=False):
     -------
     status : bool
         status, True/False or success/failure
+    """
 
     cmd = 'vcp'
 

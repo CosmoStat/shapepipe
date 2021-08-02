@@ -13,7 +13,7 @@ This module defines methods to deal with galaxy images.
 """
 
 
-def sigma_to_fwhm(sigma, pixel_size=1):
+def sigma_to_fwhm(sigma, pixel_scale=1):
     """sigma to fwhm
 
     Transform from size sigma to FWHM.
@@ -23,8 +23,8 @@ def sigma_to_fwhm(sigma, pixel_size=1):
     ----------
     sigma : (array of) float
         input size(s)
-    pixel_size : float, optional, default=1
-        pixel size in arcsec, set to 1 if no scaling
+    pixel_scale : float, optional, default=1
+        pixel scale in arcsec, set to 1 if no scaling
         required
 
     Returns
@@ -36,4 +36,4 @@ def sigma_to_fwhm(sigma, pixel_size=1):
     # cst = 2 * sqrt(2 * ln(2))
     cst = 2.35482004503
 
-    return sigma * cst * pixel_size
+    return sigma * cst * pixel_scale

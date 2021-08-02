@@ -26,7 +26,7 @@ import shapepipe.pipeline.file_io as io
                file_pattern=['ngmix'],
                file_ext=['.fits'], depends=['numpy'])
 def merge_sep_cats_runner(input_file_list, run_dirs, file_number_string,
-                          config, w_log):
+                          config, module_config_sec, w_log):
 
     n_split_max = config.getint('MERGE_SEP_CATS_RUNNER', 'N_SPLIT_MAX')
 

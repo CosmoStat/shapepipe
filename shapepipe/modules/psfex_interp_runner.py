@@ -17,7 +17,7 @@ from shapepipe.modules.PSFExInterpolation_package import interpolation_script
                file_ext=['.psf', '.fits'],
                depends=['numpy', 'astropy', 'galsim', 'sqlitedict'])
 def psfex_interp_runner(input_file_list, run_dirs, file_number_string,
-                        config, w_log):
+                        config, module_config_sec, w_log):
 
     mode = config.get('PSFEX_INTERP_RUNNER', 'MODE')
 

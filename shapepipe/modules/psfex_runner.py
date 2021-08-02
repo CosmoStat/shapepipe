@@ -27,6 +27,7 @@ def psfex_runner(
         run_dirs,
         file_number_string,
         config,
+        module_config_sec,
         w_log
 ):
 

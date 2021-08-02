@@ -133,7 +133,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
                file_ext=['.fits', '.fits', '.fits'],
                executes=['sex'], depends=['numpy'])
 def sextractor_runner(input_file_list, run_dirs, file_number_string,
-                      config, w_log):
+                      config, module_config_sec, w_log):
 
     num = file_number_string
 

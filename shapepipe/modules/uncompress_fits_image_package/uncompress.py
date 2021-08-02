@@ -56,17 +56,17 @@ class Uncompress(object):
         """
 
         # Go through input list
-        for i in range(len(self._input_file_list)):
+        for idx in range(len(self._input_file_list)):
 
             # Get data and header
-            data = fits.getdata(self._input_file_list[i], self._data_hdu)
-            header = fits.getheader(self._input_file_list[i], self._data_hdu)
+            data = fits.getdata(self._input_file_list[idx], self._data_hdu)
+            header = fits.getheader(self._input_file_list[idx], self._data_hdu)
 
             # Create and write new FITS file with that HDU only
             hdu = fits.PrimaryHDU(data, header)
             hdul = fits.HDUList([hdu])
             hdul.writeto(
                 f'{self._output_dir}/'
-                + f'{self._output_pattern_list[i]}'
+                + f'{self._output_pattern_list[idx]}'
                 + f'{self._file_number_string}.fits'
             )

@@ -113,7 +113,7 @@ def get_model(sigma, flux, img_shape, pixel_scale=0.186):
     """
 
     # Get scale radius
-    scale_radius = 1/16 * galaxy.sigma_to_fhwm(sigma, pixel_scale=pixel_scale)
+    scale_radius = 1/16 * galaxy.sigma_to_fwhm(sigma, pixel_scale=pixel_scale)
 
     # Get galaxy model
     gal_obj = galsim.Exponential(scale_radius=scale_radius, flux=flux)
@@ -205,7 +205,7 @@ class SpreadModel(object):
         skip_obj = False
         spread_model_final = []
         spread_model_err_final = []
-        for idx id_tmp in enumerate(obj_id):
+        for idx, id_tmp in enumerate(obj_id):
             sigma_list = []
 
             if psf_cat[str(id_tmp)] == 'empty':
@@ -221,7 +221,7 @@ class SpreadModel(object):
                     psf_cat_id_ccd['SHAPES']['SIGMA_PSF_HSM']
                 )
 
-            obj_vign_tmp = obj_vign[i]
+            obj_vign_tmp = obj_vign[idx]
             obj_flux_tmp = 1.
             obj_sigma_tmp = np.mean(sigma_list)
             obj_weight_tmp = weigh_vign[idx]

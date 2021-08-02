@@ -19,7 +19,7 @@ job=255
 config_dir='vos:cfis/cosmostat/kilbinger/cfis'
 psf='psfex'
 retrieve='vos'
-RESULTS='cosmostat/kilbinger/results'
+results='cosmostat/kilbinger/results'
 nsh_step=3500
 nsh_max=-1
 nsh_jobs=8
@@ -45,7 +45,7 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    -r, --retrieve METHOD\n
    \tmethod to retrieve images, one in ['vos'|'symlink]', default='$retrieve'\n
    -o, --output_dir\n
-   \toutput (upload) directory on vos:cfis, default='$RESULTS'\n
+   \toutput (upload) directory on vos:cfis, default='$results'\n
    --nsh_jobs NJOB\n
    \tnumber of shape measurement parallel jobs, default=$nsh_jobs\n
    --nsh_step NSTEP\n
@@ -89,6 +89,10 @@ while [ $# -gt 0 ]; do
       ;;
     -r|--retrieve)
       retrieve="$2"
+      shift
+      ;;
+    -o|--output_dir)
+      results="$2"
       shift
       ;;
     --nsh_max)
@@ -159,7 +163,7 @@ OUTPUT=$SP_RUN/output
 # For tar archives
 output_rel=`realpath --relative-to=. $OUTPUT`
 
-# Stop on error
+# Stop on error, default=1
 STOP=1
 
 # Verbose mode (1: verbose, 0: quiet)
@@ -221,7 +225,6 @@ command_sp() {
    cmd=$1
    str=$2
 
-   #STOP=0
    command "$1" "$2"
    #res=$?
    #if [ $res != 0 ]; then
@@ -249,7 +252,7 @@ function upload() {
       fi
    fi
    tar czf ${base}_${ID}.tgz ${upl[@]}
-   command "$VCP ${base}_${ID}.tgz vos:cfis/$RESULTS" "Upload log tar ball"
+   command "$VCP ${base}_${ID}.tgz vos:cfis/$results" "Upload log tar ball"
 }
 
 # Upload log files
@@ -275,8 +278,6 @@ function print_env() {
    echo "Other variables:"
    echo " VCP=$VCP"
    echo " CERTFILE=$CERTFILE"
-   echo " STOP=$STOP"
-   echo " verbose=$VERBOSE"
    echo "***"
 }
 
@@ -289,9 +290,9 @@ if [ "$CONDA_DEFAULT_ENV" != "shapepipe" ]; then
   source $VM_HOME/miniconda3/bin/activate shapepipe
 fi
 
-print_env
 
 if [ $do_env == 1 ]; then
+   print_env
    echo "Exiting"
    return
 fi
@@ -321,7 +322,9 @@ if [[ $do_job != 0 ]]; then
   if [[ $config_file == "*vos:" ]]; then
     command_sp "$VCP $config_dir ." "Retrieve shapepipe config files"
   else
-    command_sp "ln -s $config_dir cfis" "Retrieve shapepipe config files"
+    if [[ ! -L cfis ]]; then
+      command_sp "ln -s $config_dir cfis" "Retrieve shapepipe config files"
+    fi
   fi
 
   ### Retrieve tiles
@@ -453,11 +456,11 @@ if [[ $do_job != 0 ]]; then
   ### module and pipeline log files
   upload_logs "$ID" "$VERBOSE"
 
+  ### Final shape catalog
+  ### pipeline_flags are the tile masks, for random cats
+  ### SETools masks (selection), stats and plots
   ### ${psf}_interp_exp for diagnostics, validation with leakage,
   ### validation with residuals, rho stats
-  ### SETools masks (selection), stats and plots
-  ### pipeline_flags are the tile masks, for random cats
-  ### Final shape catalog
 
   NAMES=(
     "final_cat"

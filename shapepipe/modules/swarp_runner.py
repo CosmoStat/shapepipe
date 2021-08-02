@@ -78,7 +78,7 @@ def get_history(coadd_path, image_path_list):
                file_ext=['.txt'],
                executes=['swarp'], depends=['numpy', 'astropy', 'sip_tpv'])
 def swarp_runner(input_file_list, run_dirs, file_number_string,
-                 config, w_log):
+                 config, module_config_sec, w_log):
 
     num = '-' + re.split('-', file_number_string)[1]
 

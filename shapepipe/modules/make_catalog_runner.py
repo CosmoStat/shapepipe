@@ -500,7 +500,7 @@ def save_psf_data(final_cat_file, galaxy_psf_path, w_log):
                file_ext=['.fits', '.fits', '.sqlite', '.fits'],
                depends=['numpy', 'sqlitedict'])
 def make_catalog_runner(input_file_list, run_dirs, file_number_string,
-                        config, w_log):
+                        config, module_config_sec, w_log):
 
     tile_sexcat_path, sexcat_sm_path, galaxy_psf_path, shape1_cat_path = input_file_list[0:4]
     if len(input_file_list) == 5:
