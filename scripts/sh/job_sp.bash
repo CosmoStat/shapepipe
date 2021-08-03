@@ -25,7 +25,7 @@ fi
 do_env=0
 job=255
 #config_dir='vos:cfis/cosmostat/kilbinger/cfis'
-config_dir=$VM_HOME
+config_dir=$VM_HOME/example/cfis
 psf='mccd'
 retrieve='vos'
 results='cosmostat/kilbinger/results_mccd_oc2'
