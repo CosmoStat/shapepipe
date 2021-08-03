@@ -12,15 +12,24 @@
 #       v1.1 01/2021
 # Package: shapepipe
 
+
+# VM home, required for canfar run.
+## On other machines set to $HOME
+export VM_HOME=/home/ubuntu
+if [ ! -d "$VM_HOME" ]; then
+    export VM_HOME=$HOME
+fi
+
 # Command line arguments
 ## Default values
 do_env=0
 job=255
-config_dir='vos:cfis/cosmostat/kilbinger/cfis'
-psf='psfex'
+#config_dir='vos:cfis/cosmostat/kilbinger/cfis'
+config_dir=$VM_HOME
+psf='mccd'
 retrieve='vos'
-results='cosmostat/kilbinger/results'
-nsh_step=3500
+results='cosmostat/kilbinger/results_mccd_oc2'
+nsh_step=3200
 nsh_max=-1
 nsh_jobs=8
 
@@ -133,13 +142,6 @@ export ID=`echo ${TILE_ARR[@]} | tr ' ' '_'`
 
 ## Paths
 
-# VM home, required for canfar run.
-# On other machines set to $HOME
-export VM_HOME=/home/ubuntu
-if [ ! -d "$VM_HOME" ]; then
-    export VM_HOME=$HOME
-fi
-
 # SExtractor library bug work-around
 export PATH="$PATH:$VM_HOME/bin"
 
@@ -244,6 +246,7 @@ function upload() {
    shift
    upl=("$@")
 
+   echo "Counting upload files"
    n_upl=(`ls -l ${upl[@]} | wc`)
    if [ $n_upl == 0 ]; then
       if [ $STOP == 1 ]; then
@@ -252,7 +255,7 @@ function upload() {
       fi
    fi
    tar czf ${base}_${ID}.tgz ${upl[@]}
-   command "$VCP ${base}_${ID}.tgz vos:cfis/$results" "Upload log tar ball"
+   command "$VCP ${base}_${ID}.tgz vos:cfis/$results" "Upload tar ball"
 }
 
 # Upload log files
@@ -319,7 +322,7 @@ if [[ $do_job != 0 ]]; then
   done
 
   ### Retrieve config files
-  if [[ $config_file == "*vos:" ]]; then
+  if [[ $config_dir == *"vos:"* ]]; then
     command_sp "$VCP $config_dir ." "Retrieve shapepipe config files"
   else
     if [[ ! -L cfis ]]; then
@@ -374,6 +377,7 @@ if [[ $do_job != 0 ]]; then
   STOP=1
 
   ### The following are very a bad hacks to get additional input file paths
+  echo "Looking for PSF ($psf) output files"
   if [ "$psf" == "psfex" ]; then
     input_psfex=`ls -1 ./output/*/psfex_runner/output/star_split_ratio_80*.psf | head -n 1`
     command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output"
@@ -382,9 +386,11 @@ if [[ $do_job != 0 ]]; then
     command_sp "ln -s `dirname $input_psf_mccd` input_psf_mccd" "Link MCCD output"
   fi
 
+  echo "Looking for single-exposure single-HDU output files"
   input_split_exp=`ls -1 ./output/*/split_exp_runner/output/flag*.fits | head -n 1`
   command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output"
 
+  echo "Looking for SExtractor output files"
   input_sextractor=`ls -1 ./output/*/sextractor_runner/output/sexcat_sexcat*.fits | head -n 1`
   command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor output"
 
