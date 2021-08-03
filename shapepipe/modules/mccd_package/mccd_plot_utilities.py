@@ -399,10 +399,10 @@ def plot_meanshapes(
 
         # nstars
         wind = (0, np.max(ccd_maps[:, 0, 3]))
-        title = f"Number of stars\nTotal={np.nansum(ccd_maps[:, 0, 3]):d}"
+        title = f'Number of stars\nTotal={np.nansum(ccd_maps[:, 0, 3]):.0f}'
         MeanShapesPlot(
             ccd_maps[:, 0, 3],
-            output_path + 'nstar',
+            f'{output_path}nstar',
             title,
             wind=wind,
             cmap='magma'
@@ -428,7 +428,7 @@ def plot_meanshapes(
         )
         plt.legend(loc='best', fontsize=16)
         plt.title('e1', fontsize=24)
-        plt.savefig(output_path + 'e1_hist.png')
+        plt.savefig(f'{output_path}e1_hist.png')
         plt.close()
 
         plt.figure(figsize=(12, 6), dpi=300)
