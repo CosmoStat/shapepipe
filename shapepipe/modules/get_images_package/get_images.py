@@ -274,7 +274,7 @@ class GetImages(object):
                         self._w_log.info('{} found, skipping'
                                          ''.format(path[0]))
                         continue
-                self._w_log.info('Retrieving {}'.format(in_per_type[idx]))
+                self._w_log.info(f'Retrieving {in_per_type[idx]}')
                 self.retrieve_one(in_per_type[idx], out_per_type[idx])
 
     def retrieve_one(self, in_path, out_path):
@@ -299,10 +299,12 @@ class GetImages(object):
             sys.argv.append(out_path)
 
             log_cmd = ' '.join(sys.argv)
-            self._w_log.info(f'Command \'{log_cmd}\'')
 
             vcp = vosHandler('vcp')
             vcp()
+
+            sys.argv = None
+            self._w_log.info(f'Command \'{log_cmd}\'')
 
         elif self._retrieve_method == 'symlink':
             src = in_path
