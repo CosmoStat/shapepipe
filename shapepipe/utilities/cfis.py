@@ -74,15 +74,15 @@ class image():
 
     Parameters
     ----------
-    name: str
+    name : str
         file name
-    ra: Angle
+    ra : Angle
         right ascension
-    dec: Angle
+    dec : Angle
         declination
-    exp_time: int, optional, default=-1
+    exp_time : int, optional, default=-1
         exposure time
-    valid: sstr, optional, default='Unknown'
+    valid : str, optional, default='Unknown'
         validation flag
     """
 
