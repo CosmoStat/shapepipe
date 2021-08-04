@@ -9,4 +9,3 @@ This package contains the module for ``split_exp``.
 """
 
 __all__ = ['split_exp_script.py']
-
