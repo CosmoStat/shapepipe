@@ -59,8 +59,10 @@ def interp_MCCD(mccd_model_path, positions, ccd):
 
     # Positions to global coordinates
     loc2glob = mccd.mccd_utils.Loc2Glob()
-    glob_pos = np.array([loc2glob.loc2glob_img_coord(_ccd, _pos[0], _pos[1])
-                         for _ccd, _pos in zip(ccd_list, positions)])
+    glob_pos = np.array([
+        loc2glob.loc2glob_img_coord(_ccd, _pos[0], _pos[1])
+        for _ccd, _pos in zip(ccd_list, positions)
+    ])
 
     # Interpolate the model
     PSFs = mccd_instance.estimate_psf(glob_pos, ccd)
@@ -102,8 +104,16 @@ class MCCDinterpolator(object):
 
     """
 
-    def __init__(self, dotpsf_path, galcat_path, output_path, img_number,
-                 w_log, pos_params=None, get_shapes=True):
+    def __init__(
+        self,
+        dotpsf_path,
+        galcat_path,
+        output_path,
+        img_number,
+        w_log,
+        pos_params=None,
+        get_shapes=True
+    ):
         # Path to PSFEx output file
         self._dotpsf_path = dotpsf_path
         # Path to catalog containing galaxy positions
@@ -127,9 +137,10 @@ class MCCDinterpolator(object):
         # CosmoStat's ShapePipe)
         if pos_params:
             if not len(pos_params) == 2:
-                raise ValueError('{} position parameters were passed on; '
-                                 'there should be exactly two.'
-                                 ''.format(len(pos_params)))
+                raise ValueError(
+                    f'{len(pos_params)} position parameters were passed on;'
+                    + f' there should be exactly two.'
+                )
             self._pos_params = pos_params
         else:
             self._pos_params = None
@@ -143,8 +154,10 @@ class MCCDinterpolator(object):
         """
         dotpsf = sc.FITSCatalog(self._dotpsf_path)
         dotpsf.open()
-        self._pos_params = [dotpsf.get_header()['POLNAME1'],
-                            dotpsf.get_header()['POLNAME2']]
+        self._pos_params = [
+            dotpsf.get_header()['POLNAME1'],
+            dotpsf.get_header()['POLNAME2']
+        ]
         dotpsf.close()
 
     def _get_galaxy_positions(self):
@@ -159,15 +172,19 @@ class MCCDinterpolator(object):
             self.gal_pos = np.array(
                 [[x, y] for x, y in zip(
                     galcat.get_data()[self._pos_params[0]],
-                    galcat.get_data()[self._pos_params[1]])])
+                    galcat.get_data()[self._pos_params[1]]
+                )]
+            )
 
         except KeyError as detail:
             # extract erroneous position parameter from original exception
             err_pos_param = detail.args[0][4:-15]
-            pos_param_err = ('Required position parameter ' + err_pos_param +
-                             'was not found in galaxy catalog. Leave '
-                             'pos_params (or EXTRA_CODE_OPTION) blank to '
-                             'read them from .psf file.')
+            pos_param_err = (
+                'Required position parameter ' + err_pos_param +
+                'was not found in galaxy catalog. Leave '
+                'pos_params (or EXTRA_CODE_OPTION) blank to '
+                'read them from .psf file.'
+            )
             raise KeyError(pos_param_err)
         galcat.close()
 
@@ -177,28 +194,38 @@ class MCCDinterpolator(object):
         if import_fail:
             raise ImportError('Galsim is required to get shapes information')
 
-        psf_moms = [hsm.FindAdaptiveMom(Image(psf), strict=False)
-                    for psf in self.interp_PSFs]
+        psf_moms = [
+            hsm.FindAdaptiveMom(Image(psf), strict=False)
+            for psf in self.interp_PSFs
+        ]
 
-        self.psf_shapes = np.array([[moms.observed_shape.g1,
-                                     moms.observed_shape.g2,
-                                     moms.moments_sigma,
-                                     int(bool(moms.error_message))] for moms in
-                                    psf_moms])
+        self.psf_shapes = np.array([
+            [
+                moms.observed_shape.g1,
+                moms.observed_shape.g2,
+                moms.moments_sigma,
+                int(bool(moms.error_message))
+            ]
+            for moms in psf_moms
+        ])
 
     def _write_output(self):
         """ Save computed PSFs to fits file.
         """
-        output = sc.FITSCatalog(self._output_path + self._img_number + '.fits',
-                                open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
-                                SEx_catalog=True)
+        output = sc.FITSCatalog(
+            self._output_path + self._img_number + '.fits',
+            open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
+            SEx_catalog=True
+        )
 
         if self._compute_shape:
-            data = {'VIGNET': self.interp_PSFs,
-                    'E1_PSF_HSM': self.psf_shapes[:, 0],
-                    'E2_PSF_HSM': self.psf_shapes[:, 1],
-                    'SIGMA_PSF_HSM': self.psf_shapes[:, 2],
-                    'FLAG_PSF_HSM': self.psf_shapes[:, 3].astype(int)}
+            data = {
+                'VIGNET': self.interp_PSFs,
+                'E1_PSF_HSM': self.psf_shapes[:, 0],
+                'E2_PSF_HSM': self.psf_shapes[:, 1],
+                'SIGMA_PSF_HSM': self.psf_shapes[:, 2],
+                'FLAG_PSF_HSM': self.psf_shapes[:, 3].astype(int)
+            }
         else:
             data = {'VIGNET': self.interp_PSFs}
         output.save_as_fits(data, sex_cat_path=self._galcat_path)
@@ -216,15 +243,22 @@ class MCCDinterpolator(object):
         masks = np.zeros_like(star_vign)
         masks[np.where(star_vign == -1e30)] = 1
 
-        star_moms = [
-            hsm.FindAdaptiveMom(Image(star), badpix=Image(mask), strict=False)
-            for star, mask in zip(star_vign, masks)]
+        star_moms = [hsm.FindAdaptiveMom(
+            Image(star),
+            badpix=Image(mask),
+            strict=False)
+            for star, mask in zip(star_vign, masks)
+        ]
 
-        self.star_shapes = np.array([[moms.observed_shape.g1,
-                                      moms.observed_shape.g2,
-                                      moms.moments_sigma,
-                                      int(bool(moms.error_message))] for moms
-                                     in star_moms])
+        self.star_shapes = np.array([
+            [
+                moms.observed_shape.g1,
+                moms.observed_shape.g2,
+                moms.moments_sigma,
+                int(bool(moms.error_message))
+            ]
+            for moms in star_moms
+        ])
 
     def _get_psfexcatdict(self, psfex_cat_path):
         """ Get data from PSFEx .cat file.
@@ -266,14 +300,16 @@ class MCCDinterpolator(object):
             open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
             SEx_catalog=True)
 
-        data = {'E1_PSF_HSM': self.psf_shapes[:, 0],
-                'E2_PSF_HSM': self.psf_shapes[:, 1],
-                'SIGMA_PSF_HSM': self.psf_shapes[:, 2],
-                'FLAG_PSF_HSM': self.psf_shapes[:, 3].astype(int),
-                'E1_STAR_HSM': self.star_shapes[:, 0],
-                'E2_STAR_HSM': self.star_shapes[:, 1],
-                'SIGMA_STAR_HSM': self.star_shapes[:, 2],
-                'FLAG_STAR_HSM': self.star_shapes[:, 3].astype(int)}
+        data = {
+            'E1_PSF_HSM': self.psf_shapes[:, 0],
+            'E2_PSF_HSM': self.psf_shapes[:, 1],
+            'SIGMA_PSF_HSM': self.psf_shapes[:, 2],
+            'FLAG_PSF_HSM': self.psf_shapes[:, 3].astype(int),
+            'E1_STAR_HSM': self.star_shapes[:, 0],
+            'E2_STAR_HSM': self.star_shapes[:, 1],
+            'SIGMA_STAR_HSM': self.star_shapes[:, 2],
+            'FLAG_STAR_HSM': self.star_shapes[:, 3].astype(int)
+        }
         data = {**data, **star_dict}
 
         data['ACCEPTED'] = np.ones_like(data['NUMBER'], dtype='int16')
@@ -345,38 +381,53 @@ class MCCDinterpolator(object):
                 # self._dot_psf_pattern + '-' + exp_name + '-' + str(ccd) +\
                 # '.psf'
                 mccd_model_path = self._dot_psf_dir + '/' +\
-                    self._dot_psf_pattern + '-' + exp_name +\
-                    '.npy'
+                    self._dot_psf_pattern + '-' + exp_name + '.npy'
+
                 ind_obj = np.where(cat.get_data(hdu_index)['CCD_N'] == ccd)[0]
                 obj_id = all_id[ind_obj]
                 gal_pos = np.array(
                     self._f_wcs_file[exp_name][ccd]['WCS'].all_world2pix(
                         self.gal_pos[:, 0][ind_obj],
-                        self.gal_pos[:, 1][ind_obj], 0)).T
+                        self.gal_pos[:, 1][ind_obj],
+                        0
+                    )
+                ).T
 
                 self.interp_PSFs = interp_MCCD(mccd_model_path, gal_pos, ccd)
                 # self.interp_PSFs = interpsfex(
                 # dot_psf_path, gal_pos, self._star_thresh, self._chi2_thresh)
 
-                if isinstance(self.interp_PSFs,
-                              str) and self.interp_PSFs == NOT_ENOUGH_STARS:
-                    self._w_log.info('Not enough stars find in the ccd'
-                                     ' {} of the exposure {}. Object inside'
-                                     ' this ccd will lose an'
-                                     'epoch.'.format(ccd, exp_name))
+                if (
+                    isinstance(self.interp_PSFs, str)
+                    and (self.interp_PSFs == NOT_ENOUGH_STARS)
+                ):
+                    self._w_log.info(                
+                        f'Not enough stars find in the ccd {ccd} of the'
+                        + f' exposure {exp_name}. Object inside this '
+                        + f'ccd will lose an epoch.'
+                    )
                     continue
-                if isinstance(self.interp_PSFs,
-                              str) and self.interp_PSFs == BAD_CHI2:
-                    self._w_log.info('Bad chi2 for the psf model in the ccd'
-                                     ' {} of the exposure {}. Object inside'
-                                     ' this ccd will lose an'
-                                     'epoch.'.format(ccd, exp_name))
+
+                if (
+                    isinstance(self.interp_PSFs, str)
+                    and (self.interp_PSFs == BAD_CHI2)
+                ):
+                    self._w_log.info(
+                        f'Bad chi2 for the psf model in the ccd {ccd} of the'
+                        + f' exposure {exp_name}. Object inside this ccd'
+                        + f' will lose an epoch.'
+                    )
+                    
                     continue
-                if isinstance(self.interp_PSFs,
-                              str) and self.interp_PSFs == FILE_NOT_FOUND:
-                    self._w_log.info('Psf model file {} not found. '
-                                     'Object inside this ccd will lose'
-                                     'an epoch'.format(self._dotpsf_path))
+
+                if (
+                    isinstance(self.interp_PSFs, str)
+                    and (self.interp_PSFs == FILE_NOT_FOUND)
+                ):
+                    self._w_log.info(
+                        f'Psf model file {self._dotpsf_path} not found.'
+                        + f' Object inside this ccd will lose an epoch.'
+                    )
                     continue
 
                 if array_psf is None:
