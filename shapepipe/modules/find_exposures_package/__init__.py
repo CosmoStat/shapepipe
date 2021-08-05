@@ -9,4 +9,3 @@ This package contains the module for ``find_exposures``.
 """
 
 __all__ = ['find_exposures.py']
-
