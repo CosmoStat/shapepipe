@@ -640,7 +640,7 @@ class SETools(object):
                 s = re.split('=', j)
                 if len(s) != 2:
                     raise ValueError(
-                        f'Not a valid format : {self._rand_split[i][0])}'
+                        f'Not a valid format : {self._rand_split[i][0]}'
                     )
                 if s[0] == 'RATIO':
                     try:
