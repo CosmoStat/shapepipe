@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
-"""SETOOLS MODULE
+"""SETOOLS PACKAGE
 
-This module contains SETools methods.
+This package contains the module(s) for ``setools``.
 
 :Author: Axel Guinot
 
 """
 
-__all__ = ['SETools_script']
+__all__ = ['setools']
