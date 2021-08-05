@@ -23,7 +23,7 @@ import matplotlib.pylab as plt
 
 from optparse import OptionParser
 
-import cfis
+import shapepipe.utilities.cfis as cfis
 
 
 def params_default():
