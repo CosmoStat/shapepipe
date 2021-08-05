@@ -74,8 +74,9 @@ class vosHandler:
     def command(self, value):
 
         if value not in self._avail_commands:
-            raise ValueError('vos command must be one of {}'
-                             ''.format(self._avail_commands))
+            raise ValueError(
+                f'vos command must be one of {self._avail_commands}'
+            )
 
         self._command = getattr(vosc, value)
 
@@ -88,8 +89,10 @@ class vosHandler:
         try:
             self._command()
 
-        except Exception:
-            raise vosError(f'Error in VOs command: {self._command.__name__}')
+        except:
+            raise vosError(
+                f'Error in VOs command: {self._command.__name__}'
+            )
 
 
 def download(source, target, verbose=False):
@@ -97,9 +100,9 @@ def download(source, target, verbose=False):
 
     Parameters
     ----------
-    source : string
+    source : str
         source path on vos
-    target : string
+    target : str
         target path
     verbose : bool, optional, default=False
         verbose output if True
@@ -108,13 +111,14 @@ def download(source, target, verbose=False):
     -------
     status : bool
         status, True/False or success/failure
+    """
 
     cmd = 'vcp'
 
     if not os.path.exists(target):
         sys.argv = [cmd, source, target]
         if verbose:
-            print('Downloading file {} to {}...'.format(source, target))
+            print(f'Downloading file {source} to {target}...')
         vcp = vosHandler(cmd)
 
         vcp()
@@ -122,7 +126,7 @@ def download(source, target, verbose=False):
             print('Download finished.')
     else:
         if verbose:
-            print('Target file {} exists, skipping download.'.format(target))
+            print(f'Target file {target} exists, skipping download.')
 
 
 def dir_list(path, verbose=False):
@@ -132,7 +136,7 @@ def dir_list(path, verbose=False):
 
     Parameters
     ----------
-    path : string
+    path : str
         path on vos, starts with 'vos:cfis/...'
     verbose : bool, optional, default=False
         verbose output if True
@@ -143,7 +147,7 @@ def dir_list(path, verbose=False):
 
     Returns
     -------
-    vls_out : array of string
+    vls_out : array of str
         file or directory at path
     """
 
