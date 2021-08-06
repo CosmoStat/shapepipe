@@ -19,13 +19,9 @@ from contextlib import redirect_stdout
 
 from optparse import OptionParser
 
-from shapepipe.utilities.canfar import vosHandler
+from shapepipe.utilities.canfar import dir_list
 
 import cfis
-
-
-# Global VLS definition
-vls = vosHandler('vls')
 
 
 def params_default():
@@ -205,25 +201,7 @@ def check_results(ID_files, input_vos, result_base_names, n_complete, verbose=Fa
     cmd = 'vls'
     vos_dir = 'vos:cfis/{}'.format(input_vos)
 
-    sys.argv = []
-    sys.argv.append(cmd)
-    sys.argv.append(vos_dir)
-    #sys.argv.append('> .vls.tmp')
-    #if certfile:
-        #sys.argv.append('--certfile={}'.format(certfile))
-
-    if verbose:
-        print('Getting vos directory content from vls...')
-    f = io.StringIO()
-
-    try:
-        with redirect_stdout(f):
-            vls()
-    except:
-        print('Error during vls command')
-        raise
- 
-    vls_out = f.getvalue()
+    vls_out = dir_list(vos_dir)
 
     n_found = {}
     n_IDs = {}

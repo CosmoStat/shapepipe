@@ -24,7 +24,7 @@ import numpy as np
 from optparse import OptionParser
 from astropy.io import fits
 
-import cfis
+from shapepipe.utilities import cfis
 from shapepipe.pipeline import file_io as sc
 
 
@@ -201,8 +201,10 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
         ccd_nb += [re.split(r"\-([0-9]*)\-([0-9]+)\.", name)[-2]]*len(starcat_j[2].data['RA'])
 
     # Prepare output FITS catalogue
-    output = sc.FITSCatalog(output_path,
-                            open_mode=sc.BaseCatalog.OpenMode.ReadWrite)
+    output = sc.FITSCatalog(
+        output_path,
+        open_mode=sc.BaseCatalog.OpenMode.ReadWrite
+    )
 
     # Collect columns
     # convert back to sigma for consistency
@@ -216,7 +218,7 @@ def create_full_cat(input_dir, input_file_pattern, output_path, verbose=False):
     # Write file
     if verbose:
         print('Writing full PSF catalog file {}...'.format(output_path))
-    output.save_as_fits(data)
+    output.save_as_fits(data, overwrite=True)
 
 
 def main(argv=None):

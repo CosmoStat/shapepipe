@@ -16,8 +16,10 @@
 ## Default values
 do_env=0
 job=255
-psf='mccd'
+config_dir='vos:cfis/cosmostat/kilbinger/cfis'
+psf='psfex'
 retrieve='vos'
+RESULTS='cosmostat/kilbinger/results'
 nsh_step=3500
 nsh_max=-1
 nsh_jobs=8
@@ -36,10 +38,14 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    \t  32: shapes and morphology (offline)\n
    \t  64: paste catalogues (offline)\n
    \t 128: upload results (online)\n
+   -c, --config_dir DIR\n
+   \t config file directory, default='$config_dir'\n
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    -r, --retrieve METHOD\n
    \tmethod to retrieve images, one in ['vos'|'symlink]', default='$retrieve'\n
+   -o, --output_dir\n
+   \toutput (upload) directory on vos:cfis, default='$RESULTS'\n
    --nsh_jobs NJOB\n
    \tnumber of shape measurement parallel jobs, default=$nsh_jobs\n
    --nsh_step NSTEP\n
@@ -71,6 +77,10 @@ while [ $# -gt 0 ]; do
       ;;
     -j|--job)
       job="$2"
+      shift
+      ;;
+    -c|--config_dir)
+      config_dir="$2"
       shift
       ;;
     -p|--psf)
@@ -128,9 +138,6 @@ fi
 
 # SExtractor library bug work-around
 export PATH="$PATH:$VM_HOME/bin"
-
-# Results upload subdirectory on vos
-RESULTS=results_$psf
 
 ## Path variables used in shapepipe config files
 
@@ -242,7 +249,7 @@ function upload() {
       fi
    fi
    tar czf ${base}_${ID}.tgz ${upl[@]}
-   command "$VCP ${base}_${ID}.tgz vos:cfis/cosmostat/kilbinger/$RESULTS" "Upload log tar ball"
+   command "$VCP ${base}_${ID}.tgz vos:cfis/$RESULTS" "Upload log tar ball"
 }
 
 # Upload log files
@@ -310,10 +317,14 @@ if [[ $do_job != 0 ]]; then
     echo $TILE >> $TILE_NUMBERS_PATH
   done
 
-  ### Download config files
-  command_sp "$VCP vos:cfis/cosmostat/kilbinger/cfis ." "Get shapepipe config files"
+  ### Retrieve config files
+  if [[ $config_file == "*vos:" ]]; then
+    command_sp "$VCP $config_dir ." "Retrieve shapepipe config files"
+  else
+    command_sp "ln -s $config_dir cfis" "Retrieve shapepipe config files"
+  fi
 
-  ### Get tiles
+  ### Retrieve tiles
   command_sp "shapepipe_run -c $SP_CONFIG/config_get_tiles_$retrieve.ini" "Run shapepipe (get tiles)"
 
   ### Find exposures
@@ -361,17 +372,17 @@ if [[ $do_job != 0 ]]; then
 
   ### The following are very a bad hacks to get additional input file paths
   if [ "$psf" == "psfex" ]; then
-    input_psfex=`find . -name star_split_ratio_80-*.psf | head -n 1`
+    input_psfex=`ls -1 ./output/*/psfex_runner/output/star_split_ratio_80*.psf | head -n 1`
     command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output"
   else
     input_psf_mccd=`find . -name "fitted_model*.npy" | head -n 1`
     command_sp "ln -s `dirname $input_psf_mccd` input_psf_mccd" "Link MCCD output"
   fi
 
-  input_split_exp=`find output -name flag-*.fits | head -n 1`
+  input_split_exp=`ls -1 ./output/*/split_exp_runner/output/flag*.fits | head -n 1`
   command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output"
 
-  input_sextractor=`find . -name sexcat_sexcat-*.fits | head -n 1`
+  input_sextractor=`ls -1 ./output/*/sextractor_runner/output/sexcat_sexcat*.fits | head -n 1`
   command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor output"
 
 fi

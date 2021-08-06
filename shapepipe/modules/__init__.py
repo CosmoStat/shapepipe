@@ -9,12 +9,17 @@ This module contains sub-modules that can be run with ShapePipe.
 """
 
 __all__ = [
+    'find_exposures_package',
+    'mask_package',
+    'MCCD_package',
     'module_decorator',
     'module_runners',
     'mask_package',
+    'PasteCat_package'
     'PSFExInterpolation_package',
-    'SETools_package',
-    'SExtractor_runner',
+    'python_example_package',
+    'setools_package',
+    'vignetmaker_package',
 ]
 __module_list__ = [
     'execute_example',
@@ -44,6 +49,5 @@ __module_list__ = [
     'spread_model_runner',
     'swarp_runner',
     'vignetmaker_runner',
-    'vignetmaker_runner2',
     'uncompress_fits_image_runner',
 ]

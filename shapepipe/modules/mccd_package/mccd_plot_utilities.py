@@ -84,8 +84,14 @@ def MegaCamFlip_2(xbins, ybins, ccd_nb, nb_pixel):
     return xbins, ybins
 
 
-def MeanShapesPlot(ccd_maps, filename, title='', colorbar_ampl=1., wind=None,
-                   cmap='bwr'):
+def MeanShapesPlot(
+    ccd_maps,
+    filename,
+    title='',
+    colorbar_ampl=1.,
+    wind=None,
+    cmap='bwr'
+):
     r"""Plot meanshapes from ccd maps."""
     # colorbar amplitude
     if wind is None:
@@ -102,22 +108,33 @@ def MeanShapesPlot(ccd_maps, filename, title='', colorbar_ampl=1., wind=None,
         axes.flat[j].axis('off')
     for ccd_nb, ccd_map in enumerate(ccd_maps):
         ax = axes.flat[MegaCamPos(ccd_nb)]
-        im = ax.imshow(ccd_map.T, cmap=cmap, interpolation='Nearest',
-                       vmin=vmin, vmax=vmax)
+        im = ax.imshow(
+            ccd_map.T,
+            cmap=cmap,
+            interpolation='Nearest',
+            vmin=vmin,
+            vmax=vmax
+        )
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.set_title('rmse=%.3e' % (np.sqrt(np.nanmean(ccd_map ** 2))), size=8)
+        ax.set_title(f'rmse={np.sqrt(np.nanmean(ccd_map ** 2)):.3e}', size=8)
     plt.suptitle(title, size=20)  # TODO: fix title
     fig.subplots_adjust(right=0.8)
     cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
     fig.colorbar(im, cax=cbar_ax)
-    plt.savefig('{}.png'.format(filename))
+    plt.savefig(f'{filename}.png')
     plt.close()
 
 
-def plot_meanshapes(starcat_path, output_path, nb_pixel, w_log,
-                    remove_outliers=False, plot_meanshapes=True,
-                    plot_histograms=True):
+def plot_meanshapes(
+    starcat_path,
+    output_path,
+    nb_pixel,
+    w_log,
+    remove_outliers=False,
+    plot_meanshapes=True,
+    plot_histograms=True
+):
     r"""Plot meanshapes and histograms."""
     # READ FULL STARCAT
     starcat = fits.open(starcat_path, memmap=False)
@@ -146,14 +163,27 @@ def plot_meanshapes(starcat_path, output_path, nb_pixel, w_log,
     all_X = starcat[2].data['X']
     all_Y = starcat[2].data['Y']
 
+    # Remove stars/PSFs where the measured size is zero
+    # Sometimes the HSM shape measurement gives objects with measured
+    # size equals to zero without an error Flag.
+    bad_stars = (abs(all_star_shapes[2, :]) < 0.1)
+    bad_psfs = (abs(all_psf_shapes[2, :]) < 0.1)
+    size_mask = np.abs(bad_stars) * np.abs(bad_psfs)
+    # Remove outlier stars/PSFs
+    all_star_shapes = all_star_shapes[:, ~size_mask]
+    all_psf_shapes = all_psf_shapes[:, ~size_mask]
+    all_CCDs = all_CCDs[~size_mask]
+    all_X = all_X[~size_mask]
+    all_Y = all_Y[~size_mask]
+    flagmask = flagmask[~size_mask]
+
     if remove_outliers:
         shape_std_max = 5.
         # Outlier rejection based on the size
         R2_thresh = shape_std_max * np.std(all_star_shapes[2, :]) + np.mean(
             all_star_shapes[2, :])
         bad_stars = (abs(all_star_shapes[2, :]) > R2_thresh)
-        bad_stars_idx = np.nonzero(bad_stars)[0]
-        w_log.info('Nb of outlier stars: %d' % (np.sum(bad_stars)))
+        w_log.info(f'Nb of outlier stars: {np.sum(bad_stars):d}')
         # Remove outlier PSFs
         all_star_shapes = all_star_shapes[:, ~bad_stars]
         all_psf_shapes = all_psf_shapes[:, ~bad_stars]
@@ -162,12 +192,18 @@ def plot_meanshapes(starcat_path, output_path, nb_pixel, w_log,
         all_Y = all_Y[~bad_stars]
         flagmask = flagmask[~bad_stars]
 
-    w_log.info('TOTAL e1 residual RMSE: %.6e\n' % (
-        np.sqrt(np.mean((all_star_shapes[0, :] - all_psf_shapes[0, :]) ** 2))))
-    w_log.info('TOTAL e2 residual RMSE: %.6e\n' % (
-        np.sqrt(np.mean((all_star_shapes[1, :] - all_psf_shapes[1, :]) ** 2))))
-    w_log.info('TOTAL R2 residual RMSE: %.6e\n' % (
-        np.sqrt(np.mean((all_star_shapes[2, :] - all_psf_shapes[2, :]) ** 2))))
+    e1_res_rmse = np.sqrt(
+        np.mean((all_star_shapes[0, :] - all_psf_shapes[0, :]) ** 2)
+    )
+    e2_res_rmse = np.sqrt(
+        np.mean((all_star_shapes[1, :] - all_psf_shapes[1, :]) ** 2)
+    )
+    R2_res_rmse = np.sqrt(
+        np.mean((all_star_shapes[2, :] - all_psf_shapes[2, :]) ** 2)
+    )
+    w_log.info(f"TOTAL e1 residual RMSE: {e1_res_rmse:.6e}\n")
+    w_log.info(f"TOTAL e2 residual RMSE: {e2_res_rmse:.6e}\n")
+    w_log.info(f"TOTAL R2 residual RMSE: {R2_res_rmse:.6e}\n")
 
     # CCDs x star/model x (e1,e2,R2,nstars) x xpos x ypos
     ccd_maps = np.ones((40, 2, 4) + nb_pixel) * np.nan
@@ -210,85 +246,125 @@ def plot_meanshapes(starcat_path, output_path, nb_pixel, w_log,
                    np.abs(np.nanmin(ccd_maps[:, :, 0])))
         vmin = -vmax
         wind = [vmin, vmax]
+        title = (
+            f"e_1 (stars), std={np.nanstd(ccd_maps[:, 0, 0]):.5e}\n"
+            + f"vmax={np.nanmax(abs(ccd_maps[:, 0, 0])):.4e}"
+        )
         MeanShapesPlot(
-            ccd_maps[:, 0, 0], output_path + 'e1s',
-            "e_1 (stars), std=%.5e\nvmax=%.4e" % (
-                np.nanstd(ccd_maps[:, 0, 0]),
-                np.nanmax(abs(ccd_maps[:, 0, 0]))),
-            wind=wind)
+            ccd_maps[:, 0, 0],
+            output_path + 'e1s',
+            title,
+            wind=wind
+        )
 
+        title = (
+            f"e_1 (model), std={np.nanstd(ccd_maps[:, 1, 0]):.5e}\n"
+            + f"vmax={np.nanmax(abs(ccd_maps[:, 1, 0])):.4e}"
+        )
         MeanShapesPlot(
-            ccd_maps[:, 1, 0], output_path + 'e1m',
-            'e_1 (model), std=%.5e\nvmax=%.4e' %
-            (np.nanstd(ccd_maps[:, 1, 0]),
-             np.nanmax(abs(ccd_maps[:, 1, 0]))),
-            wind=wind)
+            ccd_maps[:, 1, 0],
+            output_path + 'e1m',
+            title,
+            wind=wind
+        )
 
         if auto_colorbar:
             wind = None
         e1_res = ccd_maps[:, 0, 0] - ccd_maps[:, 1, 0]
         e1_res = e1_res[~np.isnan(e1_res)]
         rmse_e1 = np.sqrt(np.mean(e1_res ** 2))
-        w_log.info('Bins: e1 residual RMSE: %.6f\n' % rmse_e1)
+        w_log.info(f"Bins: e1 residual RMSE: {rmse_e1:.6f}\n")
         vmax = np.nanmax(abs(ccd_maps[:, 0, 0] - ccd_maps[:, 1, 0]))
         vmin = -vmax
         wind = [vmin, vmax]
+        title = (
+            f"e_1 res, rmse={rmse_e1:.5e}\nvmax={vmax:.4e} , "
+            + f"std={np.nanstd(ccd_maps[:, 0, 0] - ccd_maps[:, 1, 0]):.5e}"
+        )
         MeanShapesPlot(
             ccd_maps[:, 0, 0] - ccd_maps[:, 1, 0],
             output_path + 'e1res',
-            'e_1 res, rmse=%.5e\nvmax=%.4e , std=%.5e' % (
-                rmse_e1, vmax,
-                np.nanstd(ccd_maps[:, 0, 0] - ccd_maps[:, 1, 0])),
+            title,
             wind=wind,
-            colorbar_ampl=colorbar_ampl)
+            colorbar_ampl=colorbar_ampl
+        )
 
         # e_2
-        vmax = max(np.nanmax(ccd_maps[:, :, 1]),
-                   np.abs(np.nanmin(ccd_maps[:, :, 1])))
+        vmax = max(
+            np.nanmax(ccd_maps[:, :, 1]),
+            np.abs(np.nanmin(ccd_maps[:, :, 1]))
+        )
         vmin = -vmax
         wind = [vmin, vmax]
-        MeanShapesPlot(ccd_maps[:, 0, 1], output_path + 'e2s',
-                       'e_2 (stars), std=%.5e\nvmax=%.4e' %
-                       (np.nanstd(ccd_maps[:, 0, 1]),
-                        np.nanmax(abs(ccd_maps[:, 0, 1]))), wind=wind)
-        MeanShapesPlot(ccd_maps[:, 1, 1], output_path + 'e2m',
-                       'e_2 (model), std=%.5e\nvmax=%.4e' %
-                       (np.nanstd(ccd_maps[:, 1, 1]),
-                        np.nanmax(abs(ccd_maps[:, 1, 1]))), wind=wind)
+        title = (
+            f"e_2 (stars), std={np.nanstd(ccd_maps[:, 0, 1]):.5e}\n"
+            + f"vmax={np.nanmax(abs(ccd_maps[:, 0, 1])):.4e}"
+        )
+        MeanShapesPlot(
+            ccd_maps[:, 0, 1],
+            output_path + 'e2s',
+            title,
+            wind=wind
+        )
+        title = (
+            f"e_2 (model), std={np.nanstd(ccd_maps[:, 1, 1]):.5e}\n"
+            + f"vmax={np.nanmax(abs(ccd_maps[:, 1, 1])):.4e}"
+        )
+        MeanShapesPlot(
+            ccd_maps[:, 1, 1],
+            output_path + 'e2m',
+            title,
+            wind=wind
+        )
 
         if auto_colorbar:
             wind = None
             colorbar_ampl = 1.
+
         e2_res = ccd_maps[:, 0, 1] - ccd_maps[:, 1, 1]
         e2_res = e2_res[~np.isnan(e2_res)]
         rmse_e2 = np.sqrt(np.mean(e2_res ** 2))
-        w_log.info('Bins: e2 residual RMSE: %.6f\n' % rmse_e2)
+        w_log.info(f"Bins: e2 residual RMSE: {rmse_e2:.6f}\n")
         vmax = np.nanmax(abs(ccd_maps[:, 0, 1] - ccd_maps[:, 1, 1]))
         vmin = -vmax
         wind = [vmin, vmax]
+        title = (
+            f"e_2 res, rmse={rmse_e2:.5e}\nvmax={vmax:.4e} , "
+            + f"std={np.nanstd(ccd_maps[:, 0, 1] - ccd_maps[:, 1, 1]):.5e}"
+        )
         MeanShapesPlot(
-            ccd_maps[:, 0, 1] - ccd_maps[:, 1, 1], output_path + 'e2res',
-            'e_2 res, rmse=%.5e\nvmax=%.4e , std=%.5e' % (
-                rmse_e2, vmax,
-                np.nanstd(ccd_maps[:, 0, 1] - ccd_maps[:, 1, 1])),
-            wind=wind, colorbar_ampl=colorbar_ampl)
+            ccd_maps[:, 0, 1] - ccd_maps[:, 1, 1],
+            output_path + 'e2res',
+            title,
+            wind=wind,
+            colorbar_ampl=colorbar_ampl
+        )
 
         # R^2
         wind = [0, np.nanmax(ccd_maps[:, :, 2])]
         colorbar_ampl = 1
+        title = (
+            f"R_2 (stars), std={np.nanstd(ccd_maps[:, 0, 2]):.5e}\n"
+            + f"vmax={np.nanmax(abs(ccd_maps[:, 0, 2])):.4e}"
+        )
         MeanShapesPlot(
-            ccd_maps[:, 0, 2], output_path + 'R2s',
-            'R_2 (stars), std=%.5e\nvmax=%.4e' % (
-                np.nanstd(ccd_maps[:, 0, 2]),
-                np.nanmax(abs(ccd_maps[:, 0, 2]))),
-            wind=wind, cmap='Reds')
-
+            ccd_maps[:, 0, 2],
+            output_path + 'R2s',
+            title,
+            wind=wind,
+            cmap='Reds'
+        )
+        title = (
+            f"R_2 (model), std={np.nanstd(ccd_maps[:, 1, 2]):.5e}\n"
+            + f"vmax={np.nanmax(abs(ccd_maps[:, 1, 2])):.4e}"
+        )
         MeanShapesPlot(
-            ccd_maps[:, 1, 2], output_path + 'R2m',
-            'R_2 (model), std=%.5e\nvmax=%.4e' % (
-                np.nanstd(ccd_maps[:, 1, 2]),
-                np.nanmax(abs(ccd_maps[:, 1, 2]))),
-            wind=wind, cmap='Reds')
+            ccd_maps[:, 1, 2],
+            output_path + 'R2m',
+            title,
+            wind=wind,
+            cmap='Reds'
+        )
 
         if auto_colorbar:
             wind = [0, np.nanmax(np.abs(
@@ -297,44 +373,59 @@ def plot_meanshapes(starcat_path, output_path, nb_pixel, w_log,
         R2_res = (ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) / ccd_maps[:, 0, 2]
         R2_res = R2_res[~np.isnan(R2_res)]
         rmse_r2 = np.sqrt(np.mean(R2_res ** 2))
-        w_log.info('Bins: R2 residual RMSE: %.6f\n' % rmse_r2)
+        w_log.info(f"Bins: R2 residual RMSE: {rmse_r2:.6f}\n")
         vmax = np.nanmax(
             abs((ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) / ccd_maps[:, 0, 2]))
         wind = [0, vmax]
+        std_title = np.nanstd(
+            (ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) / ccd_maps[:, 0, 2]
+        )
+        title = (
+            f"∆(R_2)/R_2 res, rmse={rmse_r2:.5e}\nvmax={vmax:.4e} , "
+            + f"std={std_title:.5e}"
+        )
         if remove_outliers:
-            plot_title = "Outliers removed\n∆(R_2)/R_2 res, " \
-                         "rmse=%.5e\nvmax=%.4e , std=%.5e" % (
-                             rmse_r2, vmax,
-                             np.nanstd(
-                                 (ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) /
-                                 ccd_maps[:, 0, 2]))
-        else:
-            plot_title = "∆(R_2)/R_2 res, rmse=%.5e\nvmax=%.4e , std=%.5e" % (
-                rmse_r2, vmax,
-                np.nanstd((ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) /
-                          ccd_maps[:, 0, 2]))
+            title = "Outliers removed\n" + title
 
         MeanShapesPlot(
             np.abs((ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) /
                    ccd_maps[:, 0, 2]),
             output_path + 'R2res',
-            plot_title, wind=wind, colorbar_ampl=colorbar_ampl, cmap='Reds')
+            title,
+            wind=wind,
+            colorbar_ampl=colorbar_ampl,
+            cmap='Reds'
+        )
 
         # nstars
         wind = (0, np.max(ccd_maps[:, 0, 3]))
+        title = f"Number of stars\nTotal={np.nansum(ccd_maps[:, 0, 3]):d}"
         MeanShapesPlot(
-            ccd_maps[:, 0, 3], output_path + 'nstar',
-            'Number of stars\nTotal=%d' % (np.nansum(ccd_maps[:, 0, 3])),
-            wind=wind, cmap='magma')
+            ccd_maps[:, 0, 3],
+            output_path + 'nstar',
+            title,
+            wind=wind,
+            cmap='magma'
+        )
 
     # Histograms
     if plot_histograms:
         hist_bins = 50
         plt.figure(figsize=(12, 6), dpi=300)
-        plt.hist(all_star_shapes[0, :], bins=hist_bins, range=[-0.2, 0.2],
-                 label='stars', alpha=0.5)
-        plt.hist(all_psf_shapes[0, :], bins=hist_bins, range=[-0.2, 0.2],
-                 label='PSFs', alpha=0.5)
+        plt.hist(
+            all_star_shapes[0, :],
+            bins=hist_bins,
+            range=[-0.2, 0.2],
+            label='stars',
+            alpha=0.5
+        )
+        plt.hist(
+            all_psf_shapes[0, :],
+            bins=hist_bins,
+            range=[-0.2, 0.2],
+            label='PSFs',
+            alpha=0.5
+        )
         plt.legend(loc='best', fontsize=16)
         plt.title('e1', fontsize=24)
         plt.savefig(output_path + 'e1_hist.png')
@@ -342,19 +433,33 @@ def plot_meanshapes(starcat_path, output_path, nb_pixel, w_log,
 
         plt.figure(figsize=(12, 6), dpi=300)
         data_hist = all_star_shapes[0, :] - all_psf_shapes[0, :]
-        plt.hist(data_hist, bins=hist_bins,
-                 range=[np.min(data_hist), np.max(data_hist)],
-                 label='err(star - psf)', alpha=0.5)
+        plt.hist(
+            data_hist,
+            bins=hist_bins,
+            range=[np.min(data_hist), np.max(data_hist)],
+            label='err(star - psf)',
+            alpha=0.5
+        )
         plt.legend(loc='best', fontsize=16)
         plt.title('e1 err', fontsize=24)
         plt.savefig(output_path + 'err_e1_hist.png')
         plt.close()
 
         plt.figure(figsize=(12, 6), dpi=300)
-        plt.hist(all_star_shapes[1, :], bins=hist_bins, range=[-0.2, 0.2],
-                 label='stars', alpha=0.5)
-        plt.hist(all_psf_shapes[1, :], bins=hist_bins, range=[-0.2, 0.2],
-                 label='PSFs', alpha=0.5)
+        plt.hist(
+            all_star_shapes[1, :],
+            bins=hist_bins,
+            range=[-0.2, 0.2],
+            label='stars',
+            alpha=0.5
+        )
+        plt.hist(
+            all_psf_shapes[1, :],
+            bins=hist_bins,
+            range=[-0.2, 0.2],
+            label='PSFs',
+            alpha=0.5
+        )
         plt.legend(loc='best', fontsize=16)
         plt.title('e2', fontsize=24)
         plt.savefig(output_path + 'e2_hist.png')
@@ -362,9 +467,13 @@ def plot_meanshapes(starcat_path, output_path, nb_pixel, w_log,
 
         plt.figure(figsize=(12, 6), dpi=300)
         data_hist = all_star_shapes[1, :] - all_psf_shapes[1, :]
-        plt.hist(data_hist, bins=hist_bins,
-                 range=[np.min(data_hist), np.max(data_hist)],
-                 label='err(star - psf)', alpha=0.5)
+        plt.hist(
+            data_hist,
+            bins=hist_bins,
+            range=[np.min(data_hist), np.max(data_hist)],
+            label='err(star - psf)',
+            alpha=0.5
+        )
         plt.legend(loc='best', fontsize=16)
         plt.title('e2 err', fontsize=24)
         plt.savefig(output_path + 'err_e2_hist.png')
@@ -373,10 +482,20 @@ def plot_meanshapes(starcat_path, output_path, nb_pixel, w_log,
         plt.figure(figsize=(12, 6), dpi=300)
         mean_R2 = np.mean(all_star_shapes[2, :])
         wind = [mean_R2 - 4, mean_R2 + 4]
-        plt.hist(all_star_shapes[2, :], bins=hist_bins, range=wind, label='stars',
-                 alpha=0.5)
-        plt.hist(all_psf_shapes[2, :], bins=hist_bins, range=wind, label='PSFs',
-                 alpha=0.5)
+        plt.hist(
+            all_star_shapes[2, :],
+            bins=hist_bins,
+            range=wind,
+            label='stars',
+            alpha=0.5
+        )
+        plt.hist(
+            all_psf_shapes[2, :],
+            bins=hist_bins,
+            range=wind,
+            label='PSFs',
+            alpha=0.5
+        )
         plt.legend(loc='best', fontsize=16)
         plt.title('R2', fontsize=24)
         plt.savefig(output_path + 'R2_hist.png')
@@ -385,9 +504,13 @@ def plot_meanshapes(starcat_path, output_path, nb_pixel, w_log,
         plt.figure(figsize=(12, 6), dpi=300)
         data_hist = (all_star_shapes[2, :] -
                      all_psf_shapes[2, :]) / all_star_shapes[2, :]
-        plt.hist(data_hist, bins=hist_bins,
-                 range=[np.min(data_hist), np.max(data_hist)],
-                 label='err(star - psf)/star', alpha=0.5)
+        plt.hist(
+            data_hist,
+            bins=hist_bins,
+            range=[np.min(data_hist), np.max(data_hist)],
+            label='err(star - psf)/star',
+            alpha=0.5
+        )
         plt.legend(loc='best', fontsize=16)
         plt.title('R2 err', fontsize=24)
         plt.savefig(output_path + 'err_R2_hist.png')
@@ -399,12 +522,21 @@ def plot_meanshapes(starcat_path, output_path, nb_pixel, w_log,
 
 
 # Rho stats functions
-
-def NegDash(x_in, y_in, yerr_in, plot_name='', vertical_lines=True,
-            xlabel='', ylabel='', rho_nb='',
-            ylim=None, semilogx=False, semilogy=False,
-            **kwargs):
-    """ This function is for making plots with vertical errorbars,
+def NegDash(
+    x_in,
+    y_in,
+    yerr_in,
+    plot_name='',
+    vertical_lines=True,
+    xlabel='',
+    ylabel='',
+    rho_nb='',
+    ylim=None,
+    semilogx=False,
+    semilogy=False,
+    **kwargs
+):
+    r""" This function is for making plots with vertical errorbars,
     where negative values are shown in absolute value as dashed lines.
     The resulting plot can either be saved by specifying a file name as
     `plot_name', or be kept as a pyplot instance (for instance to combine
@@ -487,8 +619,13 @@ class new_BaseCorrelationFunctionSysTest(BaseCorrelationFunctionSysTest):
 
     """
 
-    def makeCatalog(self, data, config=None, use_as_k=None,
-                    use_chip_coords=False):
+    def makeCatalog(
+        self,
+        data,
+        config=None,
+        use_as_k=None,
+        use_chip_coords=False
+    ):
         if data is None or isinstance(data, treecorr.Catalog):
             return data
         catalog_kwargs = {}
@@ -543,8 +680,15 @@ class Rho1SysTest(new_BaseCorrelationFunctionSysTest):
     objects_list = ['star PSF']
     required_quantities = [('ra', 'dec', 'g1', 'g2', 'psf_g1', 'psf_g2', 'w')]
 
-    def __call__(self, data, data2=None, random=None, random2=None,
-                 config=None, **kwargs):
+    def __call__(
+        self,
+        data,
+        data2=None,
+        random=None,
+        random2=None,
+        config=None,
+        **kwargs
+    ):
         new_data = data.copy()
         new_data['g1'] = new_data['g1'] - new_data['psf_g1']
         new_data['g2'] = new_data['g2'] - new_data['psf_g2']
@@ -580,8 +724,15 @@ class DESRho2SysTest(new_BaseCorrelationFunctionSysTest):
     objects_list = ['star PSF']
     required_quantities = [('ra', 'dec', 'g1', 'g2', 'psf_g1', 'psf_g2', 'w')]
 
-    def __call__(self, data, data2=None, random=None, random2=None,
-                 config=None, **kwargs):
+    def __call__(
+        self,
+        data,
+        data2=None,
+        random=None,
+        random2=None,
+        config=None,
+        **kwargs
+    ):
         new_data = np.rec.fromarrays([data['ra'], data['dec'], data['g1'],
                                       data['g2'], data['w']],
                                      names=['ra', 'dec', 'g1', 'g2', 'w'])
@@ -625,8 +776,15 @@ class DESRho3SysTest(new_BaseCorrelationFunctionSysTest):
     required_quantities = [('ra', 'dec', 'sigma',
                             'g1', 'g2', 'psf_sigma', 'w')]
 
-    def __call__(self, data, data2=None, random=None, random2=None,
-                 config=None, **kwargs):
+    def __call__(
+        self,
+        data,
+        data2=None,
+        random=None,
+        random2=None,
+        config=None,
+        **kwargs
+    ):
         new_data = np.rec.fromarrays(
             [data['ra'], data['dec'],
              data['g1'] * (data['sigma'] - data[
@@ -634,7 +792,8 @@ class DESRho3SysTest(new_BaseCorrelationFunctionSysTest):
              data['g2'] * (data['sigma'] - data[
                  'psf_sigma']) / data['sigma'],
              data['w']],
-            names=['ra', 'dec', 'g1', 'g2', 'w'])
+            names=['ra', 'dec', 'g1', 'g2', 'w']
+        )
         if data2 is not None:
             new_data2 = np.rec.fromarrays(
                 [data2['ra'], data2['dec'],
@@ -643,7 +802,8 @@ class DESRho3SysTest(new_BaseCorrelationFunctionSysTest):
                  data2['g2'] * (data2['sigma'] - data2['psf_sigma']) /
                  data2['sigma'],
                  data2['w']],
-                names=['ra', 'dec', 'g1', 'g2', 'w'])
+                names=['ra', 'dec', 'g1', 'g2', 'w']
+            )
 
         else:
             new_data2 = data2
@@ -655,7 +815,8 @@ class DESRho3SysTest(new_BaseCorrelationFunctionSysTest):
                  random['g2'] * (random['sigma'] - random['psf_sigma']) /
                  random['sigma'],
                  random['w']],
-                names=['ra', 'dec', 'g1', 'g2', 'w'])
+                names=['ra', 'dec', 'g1', 'g2', 'w']
+            )
         else:
             new_random = random
 
@@ -667,12 +828,21 @@ class DESRho3SysTest(new_BaseCorrelationFunctionSysTest):
                  random2['g2'] * (random2['sigma'] - random2['psf_sigma']) /
                  random2['sigma'],
                  random2['w']],
-                names=['ra', 'dec', 'g1', 'g2', 'w'])
+                names=['ra', 'dec', 'g1', 'g2', 'w']
+            )
 
         else:
             new_random2 = random2
-        return self.getCF('gg', new_data, new_data2, new_random, new_random2,
-                          config=config, **kwargs)
+
+        return self.getCF(
+            'gg',
+            new_data,
+            new_data2,
+            new_random,
+            new_random2,
+            config=config,
+            **kwargs
+        )
 
 
 class DESRho4SysTest(new_BaseCorrelationFunctionSysTest):
@@ -686,12 +856,20 @@ class DESRho4SysTest(new_BaseCorrelationFunctionSysTest):
     required_quantities = [('ra', 'dec', 'g1', 'g2', 'sigma',
                             'psf_g1', 'psf_g2', 'psf_sigma', 'w')]
 
-    def __call__(self, data, data2=None, random=None, random2=None,
-                 config=None, **kwargs):
+    def __call__(
+        self,
+        data,
+        data2=None,
+        random=None,
+        random2=None,
+        config=None,
+        **kwargs
+    ):
         new_data = np.rec.fromarrays(
             [data['ra'], data['dec'], data['g1'] - data['psf_g1'],
              data['g2'] - data['psf_g2'], data['w']],
-            names=['ra', 'dec', 'g1', 'g2', 'w'])
+            names=['ra', 'dec', 'g1', 'g2', 'w']
+        )
         if data2 is None:
             data2 = data
         new_data2 = np.rec.fromarrays(
@@ -701,14 +879,16 @@ class DESRho4SysTest(new_BaseCorrelationFunctionSysTest):
              data2['g2'] * (data2['sigma'] - data2['psf_sigma']) / data2[
                  'sigma'],
              data2['w']],
-            names=['ra', 'dec', 'g1', 'g2', 'w'])
+            names=['ra', 'dec', 'g1', 'g2', 'w']
+        )
         if random is not None:
             new_random = np.rec.fromarrays(
                 [random['ra'], random['dec'],
                  random['g1'] - random['psf_g1'],
                  random['g2'] - random['psf_g2'],
                  random['w']],
-                names=['ra', 'dec', 'g1', 'g2', 'w'])
+                names=['ra', 'dec', 'g1', 'g2', 'w']
+            )
         else:
             new_random = random
         if random2 is None:
@@ -721,11 +901,19 @@ class DESRho4SysTest(new_BaseCorrelationFunctionSysTest):
                  random2['g2'] * (random2['sigma'] - random2['psf_sigma']) /
                  random2['sigma'],
                  random2['w']],
-                names=['ra', 'dec', 'g1', 'g2', 'w'])
+                names=['ra', 'dec', 'g1', 'g2', 'w']
+            )
         else:
             new_random2 = random2
-        return self.getCF('gg', new_data, new_data2, new_random, new_random2,
-                          config=config, **kwargs)
+        return self.getCF(
+            'gg',
+            new_data,
+            new_data2,
+            new_random,
+            new_random2,
+            config=config,
+            **kwargs
+        )
 
 
 class DESRho5SysTest(new_BaseCorrelationFunctionSysTest):
@@ -741,8 +929,15 @@ class DESRho5SysTest(new_BaseCorrelationFunctionSysTest):
     required_quantities = [('ra', 'dec', 'sigma',
                             'g1', 'g2', 'psf_sigma', 'w')]
 
-    def __call__(self, data, data2=None, random=None, random2=None,
-                 config=None, **kwargs):
+    def __call__(
+        self,
+        data,
+        data2=None,
+        random=None,
+        random2=None,
+        config=None,
+        **kwargs
+    ):
         new_data = np.rec.fromarrays([data['ra'], data['dec'], data['g1'],
                                       data['g2'], data['w']],
                                      names=['ra', 'dec', 'g1', 'g2', 'w'])
@@ -772,16 +967,28 @@ class DESRho5SysTest(new_BaseCorrelationFunctionSysTest):
                  random2['g2'] * (random2['sigma'] - random2['psf_sigma']) /
                  random2['sigma'],
                  random2['w']],
-                names=['ra', 'dec', 'g1', 'g2', 'w'])
+                names=['ra', 'dec', 'g1', 'g2', 'w']
+            )
 
         else:
             new_random2 = random2
-        return self.getCF('gg', new_data, new_data2, new_random, new_random2,
-                          config=config, **kwargs)
+        return self.getCF(
+            'gg',
+            new_data,
+            new_data2,
+            new_random,
+            new_random2,
+            config=config,
+            **kwargs
+        )
 
 
-def rho_stats(starcat_path, output_path, rho_def='HSC',
-              print_fun=lambda x: print(x)):
+def rho_stats(
+    starcat_path,
+    output_path,
+    rho_def='HSC',
+    print_fun=lambda x: print(x)
+):
     """Compute and plot the five rho statistics.
 
     Syntax:
@@ -815,12 +1022,14 @@ def rho_stats(starcat_path, output_path, rho_def='HSC',
          starcat[hdu_no].data['E2_PSF_HSM'],
          starcat[hdu_no].data['SIGMA_PSF_HSM'] ** 2],
         names=['w', 'ra', 'dec', 'g1', 'g2', 'sigma', 'psf_g1', 'psf_g2',
-               'psf_sigma'])
+               'psf_sigma']
+    )
 
     # TreeCorr config:
     TreeCorrConfig = {'ra_units': 'degrees', 'dec_units': 'degrees',
                       'max_sep': '3e2', 'min_sep': 5e-1, 'sep_units': 'arcmin',
-                      'nbins': 32}
+                      'nbins': 32
+                     }
 
     # Ininitialize all 5 rho stats
     if rho_def == 'HSC':
