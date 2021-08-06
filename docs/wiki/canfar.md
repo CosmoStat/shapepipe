@@ -249,7 +249,7 @@ to manage and monitor jobs.
 
 ### Snapshot
 
-   Create a snapshot of the currently set-up VM, see [Use the VM)(#use-the-vm):
+   Create a snapshot of the currently set-up VM, see [Use the VM](#use-the-vm):
 
    There are two options:
 
