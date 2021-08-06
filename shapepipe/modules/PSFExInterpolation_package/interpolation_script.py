@@ -298,6 +298,7 @@ class PSFExInterpolator(object):
             star_dict['DEC'] = np.copy(star_cat.get_data()['YWIN_WORLD'])
             star_dict['MAG'] = np.copy(star_cat.get_data()['MAG_AUTO'])
             star_dict['SNR'] = np.copy(star_cat.get_data()['SNR_WIN'])
+            star_dict['STAR_VIGNET'] = np.copy(star_cat.get_data()['VIGNET'])
             star_cat.close()
 
             self._get_psfshapes()
@@ -370,7 +371,9 @@ class PSFExInterpolator(object):
                                 open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
                                 SEx_catalog=True)
 
-        data = {'E1_PSF_HSM': self.psf_shapes[:, 0],
+        data = {'PSF_VIGNET': self.interp_PSFs,
+                'STAR_VIGNET': star_dict['STAR_VIGNET'],
+                'E1_PSF_HSM': self.psf_shapes[:, 0],
                 'E2_PSF_HSM': self.psf_shapes[:, 1],
                 'SIGMA_PSF_HSM': self.psf_shapes[:, 2],
                 'FLAG_PSF_HSM': self.psf_shapes[:, 3].astype(int),
