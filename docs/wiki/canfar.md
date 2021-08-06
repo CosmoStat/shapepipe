@@ -218,14 +218,7 @@ the VM is available for further use, and you can skip [ahead](#use-the-vm).
     ./shapepipe_run.py -c example/config.ini
     ```
 
-    If the test log returns the expected results the VM should be ready for a snapshot. You can now log out of the VM.
-
-6. Create a snapshot of the VM status:
-
-    On [OpenStack](https://arbutus-canfar.cloud.computecanada.ca/project/instances), under the tab "Instances", click the "Create Snapshot" button for the corresponding VM. Be sure to follow the snapshot naming scheme defined for the VM above.
-
-   It will take a few to a few ten minutes until a snapshot is ready to be used. See below under [Troubleshooting](#troubleshooting)
-   how to monitor the progress on the batch system.
+    If the test log returns the expected results the VM is now ready to be saved as a [Snapshot](#snapshot). You can now log out of the VM.
 
 ## Batch System
 
@@ -253,6 +246,29 @@ to manage and monitor jobs.
     ```
     When asked, enter your CADC password.
     This is a necessary step before submitting jobs.
+
+### Snapshot
+
+   Create a snapshot of the currently set-up VM, see [Use the VM)(#use-the-vm):
+
+   There are two options:
+
+   1. On the terminal.
+      Type
+      ```bash
+      openstack server image create --name <SnapShotName> shapepipe2
+      ```
+
+   2. On [OpenStack](https://arbutus-canfar.cloud.computecanada.ca/project/instances).
+      Under the tab "Instances", click the "Create Snapshot" button for the corresponding VM. Be sure to follow the snapshot naming scheme defined for the VM above.
+
+   For both options, it will take a few to a few ten minutes until a snapshot is ready to be used.
+   Check the status with:
+   ```bash
+   openstack image show -c visibility -c status <SnapShotName>
+   ```
+   When `status = active`, the job can be started. The field `visibiltiy` has the value `private` before first use, which afterwards changes to `shared`.
+
 
 ### Submit a general example job
 
@@ -426,11 +442,7 @@ cloud_status -m
 ```
 to check the status of all VMs.
 
-Sometime an snapshot is not (yet) active, since its creation can take a lot of time. Check the status with:
-```bash
-openstack image show -c visibility -c status <SnapShotName>
-```
-When `status = active`, the job can be started. The field `visibiltiy` has the value `private` before first use, which afterwards changes to `shared`.
+Sometime an snapshot is not (yet) active, see [Snapshop](#snapshot) how to check the status.
 
 In general, a job should be started within 5 - 10 minutes. This time will increase if the queue is full. If the job is launched before the snap shot status is `active`, it might be stuck in the queue for a long time, or even never start.
 
