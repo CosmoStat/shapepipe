@@ -16,7 +16,7 @@ from shapepipe.modules.module_decorator import module_runner
 
 
 @module_runner(
-    input_module=['mccd_fit_val_runner'],
+    input_module=['mccd_fit_val_runner', 'mccd_val_runner'],
     version='1.0',
     file_pattern=['validation_psf'],
     file_ext=['.fits'],
@@ -32,6 +32,7 @@ def mccd_merge_starcat_runner(
     module_config_sec,
     w_log
 ):
+
     w_log.info('Merging validation results..')
     hdu_table = 1
 
