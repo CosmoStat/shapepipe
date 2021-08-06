@@ -925,7 +925,7 @@ class SEPlot(object):
                 except Exception:
                     raise ValueError(
                         f'Plot {lim} keyword/value not in correct format '
-                        + f'({self._plot[lim]["0"]}=lower,upper): {1}'
+                        + f'({self._plot[lim]['0']}=lower,upper): {1}'
                     )
 
                 set_lim(float(val[0]), float(val[1]))
