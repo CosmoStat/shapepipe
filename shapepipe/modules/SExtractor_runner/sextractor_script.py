@@ -41,7 +41,7 @@ def get_header_value(image_path, key):
 
     try:
         val = float(val)
-    except:
+    except Exception:
         raise ValueError(
             f'The key {key} does not return a float value. Got {val}'
         )
@@ -87,21 +87,21 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
         raise IOError(f'Could not read sql file \'{f_wcs_path}\'')
     n_hdu = len(f_wcs[key_list[0]])
 
-    hist = []
+    history = []
     for i in cat.get_data(1)[0][0]:
         if re.split('HISTORY', i)[0] == '':
-            hist.append(i)
+            history.append(i)
 
     exp_list = []
     pattern = r'([0-9]*)p\.(.*)'
-    for i in hist:
-        m = re.search(pattern, i)
+    for hist in history:
+        m = re.search(pattern, hist)
         exp_list.append(m.group(1))
 
     obj_id = np.copy(cat.get_data()['NUMBER'])
 
     n_epoch = np.zeros(len(obj_id), dtype='int32')
-    for i, exp in enumerate(exp_list):
+    for idx, exp in enumerate(exp_list):
         pos_tmp = np.ones(len(obj_id), dtype='int32') * -1
         for j in range(n_hdu):
             w = f_wcs[exp][j]['WCS']
@@ -176,13 +176,22 @@ class sextractor_caller():
     def __init__(
             self,
             path_input_files,
-            path_output_dir, number_string,
-            path_dot_sex, path_dot_param, path_dot_conv,
-            use_weight, use_flag, use_psf,
-            use_detection_image, use_detection_weight,
-            use_zero_point, use_background,
-            zero_point_key=None, background_key=None,
-            check_image=None, output_suffix=None
+            path_output_dir,
+            number_string,
+            path_dot_sex,
+            path_dot_param,
+            path_dot_conv,
+            use_weight,
+            use_flag,
+            use_psf,
+            use_detection_image,
+            use_detection_weight,
+            use_zero_point,
+            use_background,
+            zero_point_key=None,
+            background_key=None,
+            check_image=None,
+            output_suffix=None
     ):
 
         self.cmd_line = ''
@@ -238,8 +247,11 @@ class sextractor_caller():
 
     def set_input_files(
             self,
-            use_weight, use_flag, use_psf,
-            use_detect_img, use_detect_weight
+            use_weight,
+            use_flag,
+            use_psf,
+            use_detect_img,
+            use_detect_weight
     ):
         """Set input files
 
@@ -383,11 +395,11 @@ class sextractor_caller():
         else:
             check_type = []
             check_name = []
-            for i in check_image:
-                check_type.append(i.upper())
+            for key in check_image:
+                check_type.append(key.upper())
                 check_name.append(
                     self._path_output_dir + '/' + self.suffix
-                    + i.lower()
+                    + key.lower()
                     + self._num_str + '.fits'
                 )
 

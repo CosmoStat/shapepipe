@@ -16,10 +16,12 @@ from shapepipe.modules.SExtractor_runner import sextractor_script as ss
 
 
 @module_runner(
-    input_module='mask_runner', version='1.0.1',
+    input_module='mask_runner',
+    version='1.0.1',
     file_pattern=['image', 'weight', 'flag'],
     file_ext=['.fits', '.fits', '.fits'],
-    executes=['sex'], depends=['numpy'],
+    executes=['sex'],
+    depends=['numpy'],
 )
 def sextractor_runner(input_file_list, run_dirs, file_number_string,
                       config, w_log):
