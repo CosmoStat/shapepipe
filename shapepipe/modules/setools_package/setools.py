@@ -89,33 +89,33 @@ class SETools(object):
 
         # Processing: Create mask = filter input
         if len(self._mask) != 0:
-            direc = self._output_dir + '/mask'
+            direc = f'{self._output_dir}/mask'
             mkdir(direc)
             self._make_mask()
             for i in self.mask.keys():
                 if 'NO_SAVE' in self._mask[i]:
                     continue
-                file_name = direc + '/' + i + file_number + '.fits'
+                file_name = f'{direc}/{i}{file_number}.fits'
                 self.save_mask(self.mask[i], file_name)
 
         if len(self._plot) != 0:
-            direc = self._output_dir + '/plot'
+            direc = f'{self._output_dir}/plot'
             mkdir(direc)
             self._make_plot()
             for i in self.plot.keys():
-                output_path = direc + '/' + i + file_number
+                output_path = f'{direc}/{i}{file_number}'
                 SEPlot(self.plot[i], self._data, output_path, self.mask)
 
         if len(self._new_cat) != 0:
-            direc = self._output_dir + '/new_cat'
+            direc = f'{self._output_dir}/new_cat'
             mkdir(direc)
             self._make_new_cat()
             for i in self.new_cat.keys():
-                file_name = direc + '/' + i + file_number
+                file_name = f'{direc}/{i}{file_number}'
                 self.save_new_cat(self.new_cat[i], file_name)
 
         if len(self._rand_split) != 0:
-            direc = self._output_dir + '/rand_split'
+            direc = f'{self._output_dir}/rand_split'
             mkdir(direc)
             self._make_rand_split()
 
@@ -134,7 +134,7 @@ class SETools(object):
                         + f'{sample_type}')
                     continue
 
-                output_dir = direc + '/' + sample_type + '_'
+                output_dir = f'{direc}/{sample_type}_'
                 self.save_rand_split(
                     self.rand_split[sample_type],
                     output_dir,
@@ -142,11 +142,11 @@ class SETools(object):
                 )
 
         if len(self._stat) != 0:
-            direc = self._output_dir + '/stat'
+            direc = f'{self._output_dir}/stat'
             mkdir(direc)
             self._make_stat()
             for i in self.stat.keys():
-                output_path = direc + '/' + i + file_number + '.txt'
+                output_path = f'{direc}/{i}{file_number}.txt'
                 self.save_stat(self.stat[i], output_path)
 
     def read(self):
@@ -610,7 +610,7 @@ class SETools(object):
                             mask_dict=self.mask,
                         ).result
                 else:
-                    raise ValueError(f'Not a good format : {j}')
+                    raise ValueError(f'Not a valid format : {j}')
 
     def _make_rand_split(self):
         """Make random split
@@ -640,7 +640,7 @@ class SETools(object):
                 s = re.split('=', j)
                 if len(s) != 2:
                     raise ValueError(
-                        f'Not a good format : {self._rand_split[i][0])}'
+                        f'Not a valid format : {self._rand_split[i][0]}'
                     )
                 if s[0] == 'RATIO':
                     try:
@@ -691,7 +691,7 @@ class SETools(object):
             for j in self._stat[i]:
                 s = re.split('=', j)
                 if len(s) != 2:
-                    raise ValueError(f'Not a good format : {j}')
+                    raise ValueError(f'Not a valid format : {j}')
                 self.stat[i][s[0]] = sc.interpreter(
                     s[1],
                     self._data,
@@ -925,7 +925,7 @@ class SEPlot(object):
                 except Exception:
                     raise ValueError(
                         f'Plot {lim} keyword/value not in correct format '
-                        + f'({self._plot[lim]['0']}=lower,upper): {1}'
+                        + f'({lim}=lower,upper): {self._plot[lim]["0"]}'
                     )
 
                 set_lim(float(val[0]), float(val[1]))
@@ -944,7 +944,7 @@ class SEPlot(object):
             out_format = "PNG"
 
         self._fig.savefig(
-            self._output_path + '.' + out_format.lower(),
+            f'{self._output_path}.{out_format.lower()}',
             format=out_format,
         )
         plt.close()
@@ -1075,7 +1075,7 @@ class SEPlot(object):
             out_format = 'PNG'
 
         self._fig.savefig(
-            self._output_path + '.' + out_format.lower(),
+            f'{self._output_path}.{out_format.lower()}',
             format=out_format,
         )
         plt.close()
@@ -1197,7 +1197,7 @@ class SEPlot(object):
             out_format = 'PNG'
 
         self._fig.savefig(
-            self._output_path + '.' + out_format.lower(),
+            f'{self._output_path}.{out_format.lower()}',
             format=out_format,
         )
         plt.close()

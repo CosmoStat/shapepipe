@@ -18,7 +18,7 @@ __all__ = [
     'PasteCat_package'
     'PSFExInterpolation_package',
     'python_example_package',
-    'SETools_package',
+    'setools_package',
     'vignetmaker_package',
 ]
 __module_list__ = [
