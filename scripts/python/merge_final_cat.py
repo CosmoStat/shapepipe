@@ -282,7 +282,7 @@ def main(argv=None):
         d[key] = d_tmp[key]
     count = count + 1
     if param.verbose:
-        print(f'File \'lpath[0]{}\' copied ({count}/{len(lpath)})')
+        print(f'File \'{lpath[0]}\' copied ({count}/{len(lpath)})')
 
     for idx in lpath[1:]:
         if ('final_cat' not in idx) | ('.npy' in idx):
