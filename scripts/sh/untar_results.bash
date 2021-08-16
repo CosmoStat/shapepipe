@@ -81,7 +81,9 @@ for out in ${NAMES[@]}; do
         res=$?
         if [ $res == 0 ]; then
             ((n_ok=n_ok+1))
-            echo $file >> $output
+            if [[ "$output" != "" ]]; then
+              echo $file >> $output
+            fi
         else
             ((n_fail=n_fail+1))
         fi

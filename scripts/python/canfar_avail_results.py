@@ -76,6 +76,7 @@ def parse_options(p_def):
     parser.add_option('-p', '--psf', dest='psf', type='string', default=p_def.psf,
          help='PSF model, one in [\'psfex\'|\'mccd\'], default=\'{}\''.format(p_def.psf))
 
+    parser.add_option('-f', '--final_only', dest='final_only', action='store_true', help='only check final catalogues')
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
 
     options, args = parser.parse_args()
@@ -300,19 +301,22 @@ def main(argv=None):
 
     ID_files = read_input_files(param.input_IDs, verbose=param.verbose)
 
-    result_base_names = [
-        'final_cat',
-        'logs',
-        'setools_mask', 
-        'setools_stat',
-        'setools_plot',
-        'pipeline_flag', 
-    ]
+    result_base_names = ['final_cat']
+    if not param.final_only:
+        types = [
+            'logs',
+            'setools_mask', 
+            'setools_stat',
+            'setools_plot',
+            'pipeline_flag', 
+        ]
+        for t in types:
+            result_base_names.append(t)
 
-    if param.psf == 'psfex':
-        result_base_names.append('psfex_interp_exp')
-    elif param.psf == 'mccd':
-        result_base_names.append('mccd_fit_val_runner')
+        if param.psf == 'psfex':
+            result_base_names.append('psfex_interp_exp')
+        elif param.psf == 'mccd':
+            result_base_names.append('mccd_fit_val_runner')
 
     n_complete = len(result_base_names)
 
