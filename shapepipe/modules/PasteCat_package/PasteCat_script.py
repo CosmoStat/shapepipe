@@ -13,7 +13,13 @@ Class to paste different (SExtractor) catalogs of objects.
 """
 
 
+import os
+import re
+
 import numpy as np
+from astropy import units as u
+from astropy import coordinates as coords
+from astropy.wcs import WCS
 
 from shapepipe.pipeline import file_io as io
 
