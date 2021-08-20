@@ -5,8 +5,38 @@
 #              links to all `final_cat` fits files
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr
 # Package: ShapePipe
-# Date: 06/2020
-# Version: 0.1
+# Date: 08/2021
+# Version: 0.2
+
+type='final'
+
+## Help string
+usage="Usage: $(basename "$0") [OPTIONS]
+\n\nOptions:\n
+   -h\tthis message\n
+   -t, --type TYPE\n
+   \tInput type, one in 'final', 'mask', default='$type'\n
+"
+
+## Parse command line
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h)
+      echo -ne $usage
+      exit 0
+      ;;
+    -t|--type)
+      type="$2"
+      shift
+      ;;
+    *)
+      echo -ne usage
+      exit 1
+      ;;
+  esac
+  shift
+done
+
 
 ## Functions
 function link_s () {
@@ -26,20 +56,35 @@ function link_s () {
 
 pwd=`pwd`
 out_base="output"
-run_dir="run_sp_combined"
 log_path="$pwd/$out_base/log_run_sp.txt"
-INPUT="$pwd/$out_base/run_sp_Mc_*"
+
+if [[ "$type" == "final" ]]; then
+  run_dir="run_sp_combined"
+  INPUT="$pwd/$out_base/run_sp_Mc_*"
+  DIRS=(
+	  "make_catalog_runner"
+  )
+  PATTERNS=(
+	  "final_cat-*"
+  )
+elif [[ "$type" == "mask" ]]; then
+  run_dir="run_sp_combined_mask"
+  INPUT="$pwd/$out_base/run_sp_tile_Ma_*"
+  DIRS=(
+    "mask_runner"
+  )
+  PATTERNS=(
+    "pipeline_flag-*"
+  )
+else
+  echo "Unknown type '$type'"
+  exit 2
+fi
+
 OUTPUT="$pwd/$out_base/$run_dir"
 mkdir -p $OUTPUT
 
-# Directories and file patterns to create/link
-DIRS=(
-	"make_catalog_runner"
-)
 
-PATTERNS=(
-	"final_cat-*"
-)
 
 # Create links
 for n in "${!PATTERNS[@]}"; do

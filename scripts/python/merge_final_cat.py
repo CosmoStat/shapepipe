@@ -57,6 +57,8 @@ def params_default():
 
     p_def = param(
         input_path  = '.',
+        input_name_base = 'final_cat',
+        hdu_num = 1,
     )
 
     return p_def
@@ -81,6 +83,7 @@ def parse_options(p_def):
     usage  = "%prog [OPTIONS]"
     parser = OptionParser(usage=usage)
 
+    # IO
     parser.add_option(
         '-i',
         '--input_path',
@@ -89,9 +92,34 @@ def parse_options(p_def):
         default=p_def.input_path,
         help=f'input path, default=\'{p_def.input_path}\''
     )
-    parser.add_option('-p', '--param_path', dest='param_path', type='string',
-                      default=None,
-                      help='parameter file path, default=None')
+
+    parser.add_option(
+        '-n',
+        '--input_name_base',
+        dest='input_name_base',
+        type='string',
+        default=p_def.input_name_base,
+        help=f'input name base, default=\'{p_def.input_name_base}\''
+    )
+
+    # Control
+    parser.add_option(
+        '-p',
+        '--param_path',
+        dest='param_path',
+        type='string',
+        default=None,
+        help='parameter file path, default=None'
+    )
+
+    parser.add_option(
+        '',
+        '--hdu_num',
+        dest='hdu_num',
+        type='int',
+        default=p_def.hdu_num,
+        help=f'input HDU number, default=\'{p_def.hdu_num}\''
+    )
 
     parser.add_option(
         '-v',
@@ -190,7 +218,7 @@ def read_param_file(path, verbose=False):
             print(f'Copying {len(param_list)} columns', end='')
         else:
             print('Copying all columns', end='')
-        print(' into final catalogue')
+        print(' into merged catalogue')
 
     # Check for multiples
     multiples = []
@@ -270,12 +298,12 @@ def main(argv=None):
         lpath.append(os.path.join(path, this_l))
 
     if param.verbose:
-        print(f'{len(lpath)} final catalog files found')
+        print(f'{len(lpath)} files files found in input path')
 
     count = 0
 
     # Determine number of columns and keys
-    d_tmp = get_data(lpath[0], 1, param.param_list)
+    d_tmp = get_data(lpath[0], param.hdu_num, param.param_list)
 
     d = np.zeros(d_tmp.shape, dtype=d_tmp.dtype)
     for key in d_tmp.dtype.names:
@@ -285,7 +313,7 @@ def main(argv=None):
         print(f'File \'{lpath[0]}\' copied ({count}/{len(lpath)})')
 
     for idx in lpath[1:]:
-        if ('final_cat' not in idx) | ('.npy' in idx):
+        if (f'{param.input_name_base}' not in idx) | ('.npy' in idx):
             continue
 
         try:
@@ -300,12 +328,12 @@ def main(argv=None):
 
             d = np.concatenate((d, dd))
         except:
-            print(f'Error while copying file \'{idx}\'')
+            print(f'Error while adding file \'{idx}\'')
 
     # Save merged catalogue as numpy binary file
     if param.verbose:
-        print('Saving final catalogue')
-    np.save('final_cat.npy', d)
+        print('Saving merge catalogue')
+    np.save(f'{param.input_name_base}.npy', d)
 
     msg = f'{count} catalog files merged with success'
     if param.verbose:
