@@ -14,12 +14,14 @@ to create tiles.
 
 
 import re
+import os
 
 import numpy as np
 import astropy.io.fits as fits
 from astropy import wcs
 
 import shapepipe.pipeline.file_io as io
+from shapepipe.utilities import cfis
 
 
 class RandomCat():
@@ -41,6 +43,9 @@ class RandomCat():
         n_rand is interpreted per square degrees if True
     w_log :
         log file
+    tile_list_path : str, optional, default=None
+        List to all tile IDs, to remove objects in
+        overlapping tile areas
     """
 
     def __init__(
@@ -50,7 +55,8 @@ class RandomCat():
         output_path,
         n_rand,
         density,
-        w_log
+        w_log,
+        tile_list_path=None
     ):
 
         self._input_image_path = input_image_path
@@ -59,6 +65,7 @@ class RandomCat():
         self._n_rand = n_rand
         self._density = density
         self._w_log = w_log
+        self._tile_list_path = tile_list_path
 
     def process(self):
         """Process
@@ -93,8 +100,8 @@ class RandomCat():
             area_pix = wcs.utils.proj_plane_pixel_area(WCS)
             area_deg2 = area_pix * n_pix
             area_deg2_eff = area_pix * n_unmasked
-            n_obj = self._n_rand / area_deg2 * area_deg2_eff / area_deg2
-            print(n_obj, area_deg2_eff, n_unmasked, self._output_path)
+            n_obj = int(self._n_rand / area_deg2 * area_deg2_eff / area_deg2)
+        self._w_log.info(f'Creating {n_obj} random objects')
 
         # Check that a reasonably large number of pixels is not masked
         if n_unmasked < n_obj:
@@ -113,7 +120,7 @@ class RandomCat():
             # Add points with additional random sub-pixel value
             if mask[idx_x, idx_y] == 0:
                 d = np.random.random(2)
-                #xy_rand.append([idx_x + d[0], idx_y + d[1]])
+                # MKDEBUG: the following seems to work, x and y interchanged
                 xy_rand.append([idx_y + d[1], idx_x + d[0]])
                 n_found = n_found + 1
         xy_rand = np.array(xy_rand)
@@ -123,11 +130,13 @@ class RandomCat():
         ra_rand = res[:,0]
         dec_rand = res[:,1]
 
-        # TODO: remove overlapping regions
-
+        # Tile ID
+        tile_id = float('.'.join(re.split('-', os.path.splitext(os.path.split(self._output_path)[1])[0])[1:]))
+        tile_id_array = np.ones(n_obj) * tile_id
+        
         # Write to output
-        cat_out = [ra_rand, dec_rand, xy_rand[:,0], xy_rand[:,1]]
-        column_names = ['RA', 'DEC', 'x', 'y']
+        cat_out = [ra_rand, dec_rand, xy_rand[:,0], xy_rand[:,1], tile_id_array]
+        column_names = ['RA', 'DEC', 'x', 'y', 'TILE_ID']
 
         # TODO: Add units to header
         output = io.FITSCatalog(
@@ -135,3 +144,8 @@ class RandomCat():
             open_mode=io.BaseCatalog.OpenMode.ReadWrite
         )
         output.save_as_fits(cat_out, names=column_names)
+
+        # Remove overlapping regions
+        if self._tile_list_path:
+            self._w_log.info('Flag overlapping objects')
+            cfis.remove_common_elements(output, self._tile_list_path, pos_param=['RA', 'DEC'])

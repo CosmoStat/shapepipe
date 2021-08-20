@@ -25,8 +25,8 @@ import pylab as plt
 
 from astropy import units
 from astropy.io import ascii
-from astropy.coordinates import Angle
-from astropy.coordinates import SkyCoord
+import astropy.coordinates as coords
+from astropy.wcs import WCS
 
 from shapepipe.utilities.file_system import mkdir
 
@@ -540,9 +540,9 @@ def get_tile_coord_from_nixy(nix, niy):
     yi = int(niy)
 
     d = yi / 2 - 90
-    dec = Angle(f'{d} degrees')
+    dec = coords.Angle(f'{d} degrees')
     r = xi / 2 / np.cos(dec.radian)
-    ra = Angle(f'{r} degrees')
+    ra = coords.Angle(f'{r} degrees')
 
     return ra, dec
 
@@ -751,8 +751,8 @@ def get_Angle(str_coord):
 
     ra, dec = my_string_split(str_coord, num=2, stop=True)
 
-    a_ra = Angle(ra)
-    a_dec = Angle(dec)
+    a_ra = coords.Angle(ra)
+    a_dec = coords.Angle(dec)
 
     return a_ra, a_dec
 
@@ -793,9 +793,9 @@ def get_Angle_arr(str_coord, num=-1, wrap=True, verbose=False):
         ra = angles_mixed[2*i]
         dec = angles_mixed[2*i+1]
         if wrap:
-            c = SkyCoord(ra, dec)
+            c = coords.SkyCoord(ra, dec)
         else:
-            c = param(ra=Angle(ra), dec=Angle(dec))
+            c = param(ra=coords.Angle(ra), dec=coords.Angle(dec))
         angles.append(c)
 
     return angles
@@ -870,8 +870,8 @@ def create_image_list(fname, ra, dec, exp_time=[], valid=[]):
     images = []
     for i in range(nf):
         if nr > 0 and nd > 0:
-            r = Angle('{} {}'.format(ra[i], unitdef))
-            d = Angle('{} {}'.format(dec[i], unitdef))
+            r = coords.Angle('{} {}'.format(ra[i], unitdef))
+            d = coords.Angle('{} {}'.format(dec[i], unitdef))
         else:
             r = None
             d = None
@@ -909,8 +909,8 @@ def get_exposure_info(logfile_name, verbose=False):
     for line in f:
         dat = re.split(' |', line)
         name = dat[0]
-        ra = Angle(' hours'.format(dat[8]))
-        dec = Angle(' degree'.format(dat[9]))
+        ra = coords.Angle(' hours'.format(dat[8]))
+        dec = coords.Angle(' degree'.format(dat[9]))
         valid = dat[21]
 
         img = image(name, ra, dec, valid=valid)
@@ -981,7 +981,7 @@ def get_image_list(inp, band, image_type, col=None, input_format='full', verbose
                     file_list.append(f'd{d["col1"]}p.fits.fz')
                     ra = re.split(r'\s*', d['col4'])[0]
                     dec = re.split(r'\s*', d['col4'])[1]
-                    ang = Angle('{ra} hours')
+                    ang = coords.Angle('{ra} hours')
                     ra_list.append(ang.degree)
                     dec_list.append(dec)
                     exp_time = int(d['col5'])
@@ -1182,13 +1182,13 @@ def find_image_at_coord(
             raise CfisError(f'More than one tile ({img_found}) found')
 
     elif image_type == 'exposure':
-        sc_input = SkyCoord(ra, dec)
+        sc_input = coords.SkyCoord(ra, dec)
 
         img_found = []
         for img in images:
             # Check distance along ra and dec from image center
-            sc_img_same_ra = SkyCoord(ra, img.dec)
-            sc_img_same_dec = SkyCoord(img.ra, dec)
+            sc_img_same_ra = coords.SkyCoord(ra, img.dec)
+            sc_img_same_dec = coords.SkyCoord(img.ra, dec)
             distance_ra = sc_input.separation(sc_img_same_dec)
             distance_dec = sc_input.separation(sc_img_same_ra)
             if (
@@ -1250,11 +1250,11 @@ def find_images_in_area(
     # if not:
     #  check range [ra_min, ra_max]
     ra_bounds = []
-    threesixty = Angle(360, unitdef)
+    threesixty = coords.Angle(360, unitdef)
     if angles[1].ra > threesixty:
         ra_bounds = [
             [angles[0].ra, threesixty],
-            [Angle(0, unitdef), angles[1].ra-threesixty]
+            [coords.Angle(0, unitdef), angles[1].ra-threesixty]
         ]
     else:
         ra_bounds = [[angles[0].ra, angles[1].ra]]
@@ -1539,3 +1539,117 @@ def square_from_corners(ang0, ang1):
     cyd = [getattr(y, unitdef) for y in cy]
 
     return cxd, cyd
+
+
+def remove_common_elements(
+    final_cat_file,
+    tiles_id_file,
+    pos_param=['XWIN_WORLD', 'YWIN_WORLD']
+):
+    """ Remove common elements
+
+    Create a mask for objects in the overlapping regions between
+    neigbouring stacked images. The object furthest from its stack
+    center is flagged.
+
+    Parameters
+    ----------
+    final_cat_file : io.FITSCatalog
+        Final catalog.
+    tile_id_file : str
+        Path to the file containing all the tile IDs.
+    pos_param : list
+        List with the column name for ra and dec positions.
+
+    """
+
+    key_id = 'TILE_ID'
+
+    def get_ra_dec(xxx, yyy):
+        """ Get ra dec
+        Transform Stephen Gwyn naming into ra and dec position
+
+        Parameters
+        ----------
+        xxx : int
+            First 3 numbers in the tile name.
+        yyy : int
+            Last 3 numbers in the tile name.
+
+        Returns
+        -------
+        ra, dec : float, float
+            Ra and dec positions for the center of tile.
+
+        """
+
+        return xxx/2/np.cos((yyy/2-90)*np.pi/180), yyy/2-90
+
+    def get_tile_wcs(xxx, yyy):
+        """ Get tile WCS
+        Create an astropy.wcs.WCS object from the name of the tile.
+
+        Parameters
+        ----------
+        xxx : int
+            First 3 numbers in the tile name.
+        yyy : int
+            Last 3 numbers in the tile name.
+
+        Returns
+        -------
+        w : astropy.wcs.WCS
+            WCS for the tile.
+
+        """
+
+        ra, dec = get_ra_dec(xxx, yyy)
+
+        w = WCS(naxis=2)
+        w.wcs.crval = np.array([ra, dec])
+        w.wcs.crpix = np.array([5000, 5000])
+        w.wcs.cd = np.array([[0.187/3600, 0],
+                            [0, 0.187/3600]])
+        w.wcs.ctype = ['RA---TAN', 'DEC--TAN']
+        w.wcs.cunit = ['deg', 'deg']
+        w._naxis = [10000, 10000]
+
+        return w
+
+    final_cat_file.open()
+    ra_tile = final_cat_file.get_data()[pos_param[0]]
+    dec_tile = final_cat_file.get_data()[pos_param[1]]
+    tile_id = final_cat_file.get_data()[key_id][0]*1000
+
+    all_id = np.loadtxt(tiles_id_file, unpack=True)*1000
+
+    all_tile_ra, all_tile_dec = get_ra_dec((all_id/1000).astype(int), all_id - (all_id/1000).astype(int)*1000)
+    all_tile_coord = coords.SkyCoord(ra=all_tile_ra*units.deg, dec=all_tile_dec*units.deg)
+
+    ra_m_tile, dec_m_tile = get_ra_dec(int(tile_id/1000), tile_id - int(tile_id/1000)*1000)
+
+    mask_tile = np.ones_like(ra_tile, dtype=bool)
+
+    tile_main_coord = coords.SkyCoord(ra=ra_m_tile*units.deg, dec=dec_m_tile*units.deg)
+    catalog_coord = coords.SkyCoord(ra=ra_tile*units.deg, dec=dec_tile*units.deg)
+
+    sep_ref = tile_main_coord.separation(catalog_coord)
+
+    close_tiles = np.argsort(tile_main_coord.separation(all_tile_coord))[1:9]
+
+    for id_tile_check in all_id[close_tiles]:
+
+        ra_m_check, dec_m_check = get_ra_dec(int(id_tile_check/1000), id_tile_check - int(id_tile_check/1000)*1000)
+
+        tile_check_coord = coords.SkyCoord(ra=ra_m_check*units.deg, dec=dec_m_check*units.deg)
+
+        sep_check = tile_check_coord.separation(catalog_coord)
+
+        w_tile_check = get_tile_wcs(int(id_tile_check/1000), id_tile_check - int(id_tile_check/1000)*1000)
+
+        mask_tile &= (np.less(sep_ref, sep_check) | np.invert(w_tile_check.footprint_contains(catalog_coord)))
+
+    final_cat_file.add_col('FLAG_TILING', mask_tile)
+
+    final_cat_file.close()
+

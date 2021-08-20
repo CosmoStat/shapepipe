@@ -21,6 +21,8 @@ from astropy import units as u
 from astropy import coordinates as coords
 from astropy.wcs import WCS
 
+from shapepipe.utilities import cfis
+
 
 def remove_field_name(arr, name):
     """ Remove field name
@@ -539,7 +541,7 @@ def make_catalog_runner(input_file_list, run_dirs, file_number_string,
 
     if tile_list_path:
         w_log.info('Flag overlapping objects')
-        remove_common_elements(final_cat_file, tile_list_path)
+        cfis.remove_common_elements(final_cat_file, tile_list_path)
 
     w_log.info('Save shape measurement data')
     for shape_type in shape_type_list:
