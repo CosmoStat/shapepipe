@@ -131,13 +131,18 @@ def plot_meanshapes(
     output_path,
     nb_pixel,
     w_log,
+    hdu_no=2,
     remove_outliers=False,
     plot_meanshapes=True,
     plot_histograms=True
 ):
-    r"""Plot meanshapes and histograms."""
+    """Plot Meanshapes
+
+    Plot mean shapes, sizes, and histograms"""
+
     # READ FULL STARCAT
     starcat = fits.open(starcat_path, memmap=False)
+
 
     auto_colorbar = False
     colorbar_ampl = 1.
@@ -148,20 +153,20 @@ def plot_meanshapes(
         np.linspace(0, loc2glob.y_npix, nb_pixel[1] + 1)
 
     # Flag mask
-    star_flags = starcat[2].data['FLAG_STAR_HSM']
-    psf_flags = starcat[2].data['FLAG_PSF_HSM']
+    star_flags = starcat[hdu_no].data['FLAG_STAR_HSM']
+    psf_flags = starcat[hdu_no].data['FLAG_PSF_HSM']
     flagmask = np.abs(star_flags - 1) * np.abs(psf_flags - 1)
 
     # convert sigma to R^2's
     all_star_shapes = np.array(
-        [starcat[2].data['E1_STAR_HSM'], starcat[2].data['E2_STAR_HSM'],
-         2. * starcat[2].data['SIGMA_STAR_HSM'] ** 2])
+        [starcat[hdu_no].data['E1_STAR_HSM'], starcat[hdu_no].data['E2_STAR_HSM'],
+         2. * starcat[hdu_no].data['SIGMA_STAR_HSM'] ** 2])
     all_psf_shapes = np.array(
-        [starcat[2].data['E1_PSF_HSM'], starcat[2].data['E2_PSF_HSM'],
-         2. * starcat[2].data['SIGMA_PSF_HSM'] ** 2])
-    all_CCDs = starcat[2].data['CCD_NB']
-    all_X = starcat[2].data['X']
-    all_Y = starcat[2].data['Y']
+        [starcat[hdu_no].data['E1_PSF_HSM'], starcat[hdu_no].data['E2_PSF_HSM'],
+         2. * starcat[hdu_no].data['SIGMA_PSF_HSM'] ** 2])
+    all_CCDs = starcat[hdu_no].data['CCD_NB']
+    all_X = starcat[hdu_no].data['X']
+    all_Y = starcat[hdu_no].data['Y']
 
     # Remove stars/PSFs where the measured size is zero
     # Sometimes the HSM shape measurement gives objects with measured
@@ -213,7 +218,7 @@ def plot_meanshapes(
         try:
             ccd_mask = ((all_CCDs.astype(int) == ccd_nb) * flagmask).astype(
                 bool)
-        except TypeError:
+        except (TypeError, ValueError) as e:
             ccd_mask = ((all_CCDs == str(ccd_nb)) * flagmask).astype(bool)
 
         star_shapes = all_star_shapes[:, ccd_mask]
@@ -987,30 +992,40 @@ def rho_stats(
     starcat_path,
     output_path,
     rho_def='HSC',
+    hdu_no=2,
+    ylim_l=None,
+    ylim_r=None,
     print_fun=lambda x: print(x)
 ):
-    """Compute and plot the five rho statistics.
+    """Rho Statistics
 
-    Syntax:
+    Compute and plot the five rho statistics.
 
-    > python rho_stats.py path/to/starcat rhofile_name [rho_def]
-    Where path/to/starcat is the path to the full validation star
-    catalog. rhofile_name is the name of the file where all rho_stats
-    will be written.
-    rho_def is optional and can be either 'HSC' or 'DES'
-    depending on the desired definition to use for tho statistics.
+    Parameters
+    ----------
+    starcat_path : string
+        star catalogue file path
+    output_path : string
+        output directory for plots
+    hdu_no : int, optional, default=2
+        input HDU
+    ylim_l : array(2) of float
+        y-axis limits for left-hand plot
+    ylim-r : array(2) of float
+        y-axis limits for right-hand plot
+    print_fun : function, optional, default=print
+        output message function
     """
+    
     # Read starcat
     starcat = fits.open(starcat_path, memmap=False)
 
     rho_stats_fun = None
 
     # Convert HSM flags to 0/1 weights
-    hdu_no = 2
     star_flags = starcat[hdu_no].data['FLAG_STAR_HSM']
     psf_flags = starcat[hdu_no].data['FLAG_PSF_HSM']
     w = np.abs(star_flags - 1) * np.abs(psf_flags - 1)
-    # w = starcat[2].data['w']
 
     # Convert to Stile-compatible and change sigmas to R^2 (up to constant)
     stilecat = np.rec.fromarrays(
@@ -1050,49 +1065,73 @@ def rho_stats(
     print_fun(' > Done in {}s.'.format(time.time() - start))
     np.save(output_path + 'rho_stat_results.npy', np.array(rho_results))
 
-    # in brackets are DES Y1's ylims
-    ylim_l = None  # (5e-9,5e-6)
-    ylim_r = None  # (5e-8,1e-5)
-
     # Plots
     ylims = [ylim_l, ylim_r, ylim_l, ylim_l, ylim_r]
-    colors = ['blue', 'blue', 'green', 'orange', 'green']
-    markers = ['o', 'o', 's', '^', 's']
+    colors = ['blue', 'red', 'green', 'orange', 'cyan']
+    markers = ['o', 'd', 'v', '^', 's']
+
+    xlabel = r'$\theta$ [arcmin]'
+    ylabel = r'$\rho$-statistics'
+    capsize = 3
+    alpha = 0.7
 
     for j, rhores in enumerate(rho_results):
-        # [TL] BUG fix on index names
-        # meanR [arcmin] -> meanr // sigma_xi -> sigma_xip (?)
-        NegDash(rhores['meanr'], rhores['xip'], rhores['sigma_xip'],
-                output_path + 'rho_{}.png'.format(j + 1),
-                semilogx=True, semilogy=True,
-                color=colors[j], capsize=3, fmt=markers[j], alpha=.7,
-                ylim=ylims[j],
-                xlabel=r'$\theta$ (arcmin)', ylabel=r'$\rho_i(\theta)$')
+        NegDash(
+            rhores['meanr'],
+            rhores['xip'],
+            rhores['sigma_xip'],
+            f'{output_path}/rho_{j+1}.png',
+            semilogx=True,
+            semilogy=True,
+            color=colors[j],
+            capsize=capsize,
+            fmt=markers[j],
+            alpha=alpha,
+            ylim=ylims[j],
+            xlabel=xlabel,
+            ylabel=ylabel
+        )
 
     for j, rhores in enumerate(rho_results):
         if j in [0, 2, 3]:
-            # [TL] BUG fix on index names
-            # meanR [arcmin] -> meanr // sigma_xi -> sigma_xip (?)
-            NegDash(rhores['meanr'], rhores['xip'], rhores['sigma_xip'],
-                    semilogx=True, semilogy=True, rho_nb=j + 1,
-                    color=colors[j], capsize=3, fmt=markers[j], alpha=.7,
-                    ylim=ylims[j],
-                    xlabel=r'$\theta$ (arcmin)', ylabel=r'$\rho_i(\theta)$')
+            NegDash(
+                rhores['meanr'],
+                rhores['xip'],
+                rhores['sigma_xip'],
+                semilogx=True,
+                semilogy=True,
+                rho_nb=j + 1,
+                color=colors[j],
+                capsize=capsize,
+                fmt=markers[j],
+                alpha=alpha,
+                ylim=ylims[j],
+                xlabel=xlabel,
+                ylabel=ylabel
+            )
     plt.legend()
-    plt.savefig(output_path + 'lefthand_rhos.pdf')
+    plt.savefig(f'{output_path}/lefthand_rhos.pdf')
     plt.close()
 
     for j, rhores in enumerate(rho_results):
         if j in [1, 4]:
-            # [TL] BUG fix on index names
-            # meanR [arcmin] -> meanr // sigma_xi -> sigma_xip (?)
-            NegDash(rhores['meanr'], rhores['xip'], rhores['sigma_xip'],
-                    semilogx=True, semilogy=True, rho_nb=j + 1,
-                    color=colors[j], capsize=3, fmt=markers[j], alpha=.7,
-                    ylim=ylims[j],
-                    xlabel=r'$\theta$ (arcmin)', ylabel=r'$\rho_i(\theta)$')
+            NegDash(
+                rhores['meanr'],
+                rhores['xip'],
+                rhores['sigma_xip'],
+                semilogx=True,
+                semilogy=True,
+                rho_nb=j + 1,
+                color=colors[j],
+                capsize=capsize,
+                fmt=markers[j],
+                alpha=alpha,
+                ylim=ylims[j],
+                xlabel=xlabel,
+                ylabel=ylabel
+            )
     plt.legend()
-    plt.savefig(output_path + 'righthand_rhos.pdf')
+    plt.savefig(f'{output_path}/righthand_rhos.pdf')
     plt.close()
 
     starcat.close()
