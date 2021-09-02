@@ -50,6 +50,7 @@ if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
 fi
 
 # Paths
+export SP_RUN=.
 SP_BASE=$HOME/astro/repositories/github/shapepipe
 SP_CONFIG=$SP_BASE/example/cfis
 
