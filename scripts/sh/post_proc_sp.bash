@@ -15,6 +15,7 @@
 
 ## Default values
 psf='mccd'
+random=0
 
 ## Help string
 usage="Usage: $(basename "$0") [OPTIONS]
@@ -22,6 +23,8 @@ usage="Usage: $(basename "$0") [OPTIONS]
    -h\tthis message\n
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
+   -r, --random\n
+   \tcreate random catalogue\n
 "
 
 ## Parse command line
@@ -35,6 +38,9 @@ while [ $# -gt 0 ]; do
       psf="$2"
       shift
       ;;
+    -r|--random)
+      random=1
+      ;;
     *)
       echo -ne usage
       exit 1
@@ -42,6 +48,7 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
+
 
 ## Check options
 if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
@@ -54,27 +61,24 @@ SP_BASE=$HOME/astro/repositories/github/shapepipe
 SP_CONFIG=$SP_BASE/example/cfis
 
 
-# To download results from canfar, use
-#
-# canfar_download_results.sh
-#
-# On candide this needs to be done on
-# the login node.
-
-# To Un-tar all .tgz results files, use
-#
-# $SP_BASE/scripts/sh/untar_results.sh
-#
-
 # Merge all psfinterp results and compute PSF residuals
 psf_residuals -p $psf
 
 # Prepare output directory with links to all 'final_cat' result files
 prepare_tiles_for_final
 
-# Merge final output files to single mother catalog
+# Merge final output files to single numpy catalog
 input_final=output/run_sp_combined/make_catalog_runner/output
 merge_final_cat -i $input_final -p $SP_CONFIG/final_cat.param -v 
+
+if [ "$random" == "1" ]; then
+  # Create random catalogues for each tile
+  shapepipe_run -c $SP_CONFIG/config_Rc.ini
+
+  # Merge all random catalogues to single numpy catalogue
+  input_final=output/run_sp_Rc/random_cat_runner/output
+  merge_final_cat -i $input_final -n random_cat -v 
+fi
 
 # Merge star catalogue and plot PSF residuals
 shapepipe_run -c $SP_CONFIG/config_MsPl_mccd.ini 
