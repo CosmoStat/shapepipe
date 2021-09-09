@@ -106,12 +106,8 @@ def make_catalog_runner(
     sc_inst = mc.SaveCatalog(final_cat_file)
     w_log.info('Save shape measurement data')
     for shape_type in shape_type_list:
-        if shape_type.lower() == 'ngmix':
-            w_log.info('Save ngmix data')
-            sc_inst_._save_ngmix_data(shape1_cat_path)
-        elif shape_type.lower() == 'galsim':
-            w_log.info('Save galsim data')
-            sc_inst._save_galsim_shapes(shape2_cat_path)
+        w_log.info(f'Save {shape_type.lower()} data')
+        sc_inst.process(shape_type.lower(), shape1_cat_path)
 
     # No return objects
     return None, None

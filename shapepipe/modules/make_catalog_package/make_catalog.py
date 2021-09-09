@@ -318,8 +318,9 @@ class SaveCatalog:
         self.final_cat_file = final_cat_file
 
     def process(
+        self,
         mode='',
-        ngmix_cat_path=None,
+        cat_path=None,
         moments=False,
     ):
         """Process Catalog.
@@ -328,28 +329,24 @@ class SaveCatalog:
         ----------
         mode : str
             Run mode, options are ('ngmix', 'galsim', 'psf')
-        ngmix_cat_path : str
-            Path to ngmix catalog
-        galsim_cat_path : str
-            Path to galsim catalog
-        psf_cat_path : str
-            Path to PSF catalog
+        cat_path : str
+            Path to input catalog
         moments : bool
             Opotion to run ngmix mode with moment
 
         """
         self._output_dict = {}
 
-        final_cat_file.open()
-        self._obj_id = np.copy(final_cat_file.get_data()['NUMBER'])
-        self._max_epoch = np.max(final_cat_file.get_data()['N_EPOCH']) + 1
+        self.final_cat_file.open()
+        self._obj_id = np.copy(self.final_cat_file.get_data()['NUMBER'])
+        self._max_epoch = np.max(self.final_cat_file.get_data()['N_EPOCH']) + 1
 
         if mode == 'ngmix':
-            self._save_ngmix_data(ngmix_cat_path, moments)
+            self._save_ngmix_data(cat_path, moments)
         elif mode == 'galsim':
-            self._save_ngmix_data(galsim_cat_path, moments)
+            self._save_galsim_shapes(cat_path)
         elif mode == 'psf':
-            self._save_psf_data(psf_cat_path)
+            self._save_psf_data(cat_path)
         else:
             raise ValueError(
                 f'Invalid process mode ({mode}) for '
@@ -358,9 +355,9 @@ class SaveCatalog:
             )
 
         for key in self._output_dict.keys():
-            final_cat_file.add_col(key, self._output_dict[key])
+            self.final_cat_file.add_col(key, self._output_dict[key])
 
-        final_cat_file.close()
+        self.final_cat_file.close()
 
     def _update_dict(self, key_string, value):
         """Update Dictionary
@@ -400,7 +397,7 @@ class SaveCatalog:
         else:
             self._output_dict[key] = value
 
-    def _save_ngmix_data(ngmix_cat_path, moments=False):
+    def _save_ngmix_data(self, ngmix_cat_path, moments=False):
         """Save ngmix Data
 
         Save the ngmix catalog into the final one.
@@ -458,7 +455,7 @@ class SaveCatalog:
             ind = np.where(id_tmp == ngmix_id)[0]
             if len(ind) > 0:
 
-                for key in keys:
+                for key in self._key_ends:
 
                     ncf_data = ngmix_cat_file.get_data(key)
 
@@ -467,7 +464,13 @@ class SaveCatalog:
                         ncf_data['g1_err'][ind[0]],
                         ncf_data['g2_err'][ind[0]]
                     )
+
+                    print('stuff', self._output_dict[f'NGMIX{m}_ELL_{key}'][idx], g)
+
                     self._add2dict(f'NGMIX{m}_ELL_{key}', g, idx)
+
+                    print('no problem')
+
                     self._add2dict(f'NGMIX{m}_ELL_ERR_{key}', g_err, idx)
 
                     t = ncf_data['T'][ind[0]]
@@ -522,7 +525,7 @@ class SaveCatalog:
 
         ngmix_cat_file.close()
 
-    def _save_galsim_shapes(galsim_cat_path):
+    def _save_galsim_shapes(self, galsim_cat_path):
         """Save GalSim Shapes.
 
         Save the GalSim catalog into the final one.
@@ -533,9 +536,9 @@ class SaveCatalog:
             Path to ngmix catalog to save.
 
         """
-        self._key_ends = galsim_cat_file.get_ext_name()[1:]
 
         galsim_cat_file = file_io.FITSCatalog(galsim_cat_path)
+        self._key_ends = galsim_cat_file.get_ext_name()[1:]
         galsim_cat_file.open()
 
         galsim_id = galsim_cat_file.get_data()['id']
@@ -565,7 +568,7 @@ class SaveCatalog:
             ind = np.where(id_tmp == galsim_id)[0]
             if len(ind) > 0:
 
-                for key in keys:
+                for key in self._key_ends:
 
                     gcf_data = galsim_cat_file.get_data(key)
 
@@ -586,7 +589,7 @@ class SaveCatalog:
                             gcf_data['gal_g2'][ind[0]]
                         )
                         g_err = (
-                            gcf_data['gal_g1_err'][ind[0]]
+                            gcf_data['gal_g1_err'][ind[0]],
                             gcf_data['gal_g2_err'][ind[0]]
                         )
                         self._add2dict(f'GALSIM_GAL_ELL_{key}', g, idx)
@@ -635,7 +638,7 @@ class SaveCatalog:
 
         galsim_cat_file.close()
 
-    def _save_psf_data(galaxy_psf_path):
+    def _save_psf_data(self, galaxy_psf_path):
         """ Save PSF data
 
         Save the PSF catalog into the final one.
