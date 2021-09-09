@@ -79,7 +79,7 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
 
     Parameters
     ----------
-    final_cat_file : io.FITSCatalog
+    final_cat_file : file_io.FITSCatalog
         Final catalog.
     sexcat_path : str
         Path to SExtractor catalog to save.
@@ -88,7 +88,7 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
 
     """
 
-    sexcat_file = io.FITSCatalog(sexcat_path, SEx_catalog=True)
+    sexcat_file = file_io.FITSCatalog(sexcat_path, SEx_catalog=True)
     sexcat_file.open()
     data = np.copy(sexcat_file.get_data())
     if remove_vignet:
@@ -122,7 +122,7 @@ def save_sm_data(
 
     Parameters
     ----------
-    final_cat_file : io.FITSCatalog
+    final_cat_file : file_io.FITSCatalog
         Final catalog.
     sexcat_sm_path : str
         Path to spread-model catalog to save.
@@ -138,7 +138,7 @@ def save_sm_data(
 
     final_cat_file.open()
 
-    sexcat_sm_file = io.FITSCatalog(sexcat_sm_path, SEx_catalog=True)
+    sexcat_sm_file = file_io.FITSCatalog(sexcat_sm_path, SEx_catalog=True)
     sexcat_sm_file.open()
 
     sm = np.copy(sexcat_sm_file.get_data()['SPREAD_MODEL'])
@@ -172,7 +172,7 @@ def remove_common_elements(
 
     Parameters
     ----------
-    final_cat_file : io.FITSCatalog
+    final_cat_file : file_io.FITSCatalog
         Final catalog.
     tile_id_file : str
         Path to the file containing all the tile IDs.
@@ -305,7 +305,7 @@ def save_ngmix_data(final_cat_file, ngmix_cat_path):
 
     Parameters
     ----------
-    final_cat_file : io.FITSCatalog
+    final_cat_file : file_io.FITSCatalog
         Final catalog.
     ngmix_cat_path : str
         Path to ngmix catalog to save.
@@ -315,7 +315,7 @@ def save_ngmix_data(final_cat_file, ngmix_cat_path):
     final_cat_file.open()
     obj_id = np.copy(final_cat_file.get_data()['NUMBER'])
 
-    ngmix_cat_file = io.FITSCatalog(ngmix_cat_path)
+    ngmix_cat_file =file_io.FITSCatalog(ngmix_cat_path)
     ngmix_cat_file.open()
     ngmix_n_epoch = ngmix_cat_file.get_data()['n_epoch_model']
     ngmix_mcal_flags = ngmix_cat_file.get_data()['mcal_flags']
@@ -462,7 +462,7 @@ def save_ngmix_mom_shapes(final_cat_file, ngmix_cat_path):
 
     Parameters
     ----------
-    final_cat_file : io.FITSCatalog
+    final_cat_file : file_io.FITSCatalog
         Final catalog.
     ngmix_cat_path : str
         Path to ngmix catalog to save.
@@ -472,7 +472,7 @@ def save_ngmix_mom_shapes(final_cat_file, ngmix_cat_path):
     final_cat_file.open()
     obj_id = np.copy(final_cat_file.get_data()['NUMBER'])
 
-    ngmix_cat_file = io.FITSCatalog(ngmix_cat_path)
+    ngmix_cat_file =file_io.FITSCatalog(ngmix_cat_path)
     ngmix_cat_file.open()
     ngmix_mcal_flags = ngmix_cat_file.get_data()['mcal_flags']
 
@@ -597,7 +597,7 @@ def save_galsim_shapes(final_cat_file, galsim_cat_path):
 
     Parameters
     ----------
-    final_cat_file : io.FITSCatalog
+    final_cat_file : file_io.FITSCatalog
         Final catalog.
     ngmix_cat_path : str
         Path to ngmix catalog to save.
@@ -607,7 +607,7 @@ def save_galsim_shapes(final_cat_file, galsim_cat_path):
     final_cat_file.open()
     obj_id = np.copy(final_cat_file.get_data()['NUMBER'])
 
-    galsim_cat_file = io.FITSCatalog(galsim_cat_path)
+    galsim_cat_file =file_io.FITSCatalog(galsim_cat_path)
     galsim_cat_file.open()
 
     galsim_id = galsim_cat_file.get_data()['id']
@@ -751,7 +751,7 @@ def save_psf_data(final_cat_file, galaxy_psf_path):
 
     Parameters
     ----------
-    final_cat_file : io.FITSCatalog
+    final_cat_file : file_io.FITSCatalog
         Final catalog.
     galaxy_psf_path : str
         Path to the PSF catalog to save.
