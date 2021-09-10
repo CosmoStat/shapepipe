@@ -156,12 +156,15 @@ class PSFExInterpolator(object):
     ):
 
         # Path to PSFEx output file
-        if os.path.isdir(dotpsf_path):
+        if (
+            isinstance(dotpsf_path, type(None))
+            or os.path.isdir(dotpsf_path)
+        ):
             self._dotpsf_path = dotpsf_path
         else:
             raise ValueError(f'Cound not find directory {dotpsf_path}.')
         # Path to catalog containing galaxy positions
-        if os.path.isdir(galcat_path):
+        if os.path.isfile(galcat_path):
             self._galcat_path = galcat_path
         else:
             raise ValueError(f'Cound not find directory {galcat_path}.')
@@ -587,7 +590,7 @@ class PSFExInterpolator(object):
                 if ccd == -1:
                     continue
                 dot_psf_path = (
-                    f'{self._dot_psf_dir}/{self._dot_psf_pattern}_{exp_name}'
+                    f'{self._dot_psf_dir}/{self._dot_psf_pattern}-{exp_name}'
                     + f'-{ccd}.psf'
                 )
                 ind_obj = np.where(cat.get_data(hdu_index)['CCD_N'] == ccd)[0]
