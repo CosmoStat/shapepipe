@@ -71,6 +71,12 @@ def make_catalog_runner(
                 'SHAPE_MEASUREMENT_TYPE must be in [ngmix, galsim]'
             )
 
+    # Fetch PSF data option
+    if config.has_option(module_config_sec, 'SAVE_PSF_DATA'):
+        save_psf = config.getboolean(module_config_sec, 'SAVE_PSF_DATA')
+    else:
+        save_psf = False
+
     # Fetch path to tiles
     if config.has_option(module_config_sec, 'TILE_LIST'):
         tile_list_path = config.getexpanded(module_config_sec, 'TILE_LIST')
@@ -107,7 +113,12 @@ def make_catalog_runner(
     w_log.info('Save shape measurement data')
     for shape_type in shape_type_list:
         w_log.info(f'Save {shape_type.lower()} data')
-        sc_inst.process(shape_type.lower(), shape1_cat_path)
+        cat_path = (
+            shape2_cat_path if shape_type == 'galsim' else shape1_cat_path
+        )
+        sc_inst.process(shape_type.lower(), cat_path)
+    if save_psf:
+        sc_inst.process('psf', galaxy_psf_path)
 
     # No return objects
     return None, None

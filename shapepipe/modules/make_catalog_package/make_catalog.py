@@ -87,7 +87,6 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
         If True will not save the 'VIGNET' field into the final catalog.
 
     """
-
     sexcat_file = file_io.FITSCatalog(sexcat_path, SEx_catalog=True)
     sexcat_file.open()
     data = np.copy(sexcat_file.get_data())
@@ -200,7 +199,6 @@ def get_tile_wcs(xxx, yyy):
         WCS for the tile.
 
     """
-
     ra, dec = get_ra_dec(xxx, yyy)
 
     w = WCS(naxis=2)
@@ -236,7 +234,6 @@ def remove_common_elements(
         List with the column name for ra and dec positions.
 
     """
-
     key_id = 'TILE_ID'
 
     final_cat_file.open()
@@ -339,7 +336,6 @@ class SaveCatalog:
 
         self.final_cat_file.open()
         self._obj_id = np.copy(self.final_cat_file.get_data()['NUMBER'])
-        self._max_epoch = np.max(self.final_cat_file.get_data()['N_EPOCH']) + 1
 
         if mode == 'ngmix':
             self._save_ngmix_data(cat_path, moments)
@@ -360,7 +356,7 @@ class SaveCatalog:
         self.final_cat_file.close()
 
     def _update_dict(self, key_string, value):
-        """Update Dictionary
+        """Update Dictionary.
 
         Update dictionary with value for all keys matching key string.
 
@@ -378,7 +374,7 @@ class SaveCatalog:
         }
 
     def _add2dict(self, key, value, index=None):
-        """Add to Dictionary
+        """Add to Dictionary.
 
         Add key, value pair to output dictionary.
 
@@ -392,13 +388,13 @@ class SaveCatalog:
             Dictionary element index
 
         """
-        if index:
+        if not isinstance(index, type(None)):
             self._output_dict[key][index] = value
         else:
             self._output_dict[key] = value
 
     def _save_ngmix_data(self, ngmix_cat_path, moments=False):
-        """Save ngmix Data
+        """Save ngmix Data.
 
         Save the ngmix catalog into the final one.
 
@@ -427,14 +423,16 @@ class SaveCatalog:
             self._add2dict('NGMIX_N_EPOCH', np.zeros(len(self._obj_id)))
             self._add2dict('NGMIX_MOM_FAIL', np.zeros(len(self._obj_id)))
 
+        prefix = f'NGMIX{m}'
+
         for key_str in (
-            f'NGMIX{m}_T_',
-            f'NGMIX{m}_Tpsf_',
-            f'NGMIX{m}_SNR_',
-            f'NGMIX{m}_FLUX_',
-            f'NGMIX{m}_MAG_',
-            f'NGMIX{m}_FLAGS_',
-            f'NGMIX{m}_T_PSFo_',
+            f'{prefix}_T_',
+            f'{prefix}_Tpsf_',
+            f'{prefix}_SNR_',
+            f'{prefix}_FLUX_',
+            f'{prefix}_MAG_',
+            f'{prefix}_FLAGS_',
+            f'{prefix}_T_PSFo_',
         ):
             self._update_dict(key_str, np.zeros(len(self._obj_id)))
         for key_str in (f'NGMIX{m}_FLUX_ERR_', f'NGMIX{m}_MAG_ERR_'):
@@ -451,6 +449,12 @@ class SaveCatalog:
         )
         self._add2dict(f'NGMIX{m}_MCAL_FLAGS', np.zeros(len(self._obj_id)))
 
+        for idx, _ in enumerate(self._obj_id):
+            for key in self._key_ends:
+                x = self._output_dict[f'NGMIX{m}_ELL_{key}'][idx]
+                if np.all(x != np.array([-10., -10.])):
+                    print(x)
+
         for idx, id_tmp in enumerate(self._obj_id):
             ind = np.where(id_tmp == ngmix_id)[0]
             if len(ind) > 0:
@@ -464,13 +468,7 @@ class SaveCatalog:
                         ncf_data['g1_err'][ind[0]],
                         ncf_data['g2_err'][ind[0]]
                     )
-
-                    print('stuff', self._output_dict[f'NGMIX{m}_ELL_{key}'][idx], g)
-
                     self._add2dict(f'NGMIX{m}_ELL_{key}', g, idx)
-
-                    print('no problem')
-
                     self._add2dict(f'NGMIX{m}_ELL_ERR_{key}', g_err, idx)
 
                     t = ncf_data['T'][ind[0]]
@@ -536,10 +534,10 @@ class SaveCatalog:
             Path to ngmix catalog to save.
 
         """
-
         galsim_cat_file = file_io.FITSCatalog(galsim_cat_path)
-        self._key_ends = galsim_cat_file.get_ext_name()[1:]
         galsim_cat_file.open()
+
+        self._key_ends = galsim_cat_file.get_ext_name()[1:]
 
         galsim_id = galsim_cat_file.get_data()['id']
 
@@ -639,7 +637,7 @@ class SaveCatalog:
         galsim_cat_file.close()
 
     def _save_psf_data(self, galaxy_psf_path):
-        """ Save PSF data
+        """Save PSF data.
 
         Save the PSF catalog into the final one.
 
@@ -651,38 +649,40 @@ class SaveCatalog:
         """
         galaxy_psf_cat = SqliteDict(galaxy_psf_path)
 
+        max_epoch = np.max(self.final_cat_file.get_data()['N_EPOCH']) + 1
+
         self._output_dict = {
-            f'PSF_ELL_{idx + 1}': np.ones((len(obj_id), 2)) * -10.
+            f'PSF_ELL_{idx + 1}': np.ones((len(self._obj_id), 2)) * -10.
             for idx in range(max_epoch)
         }
         self._output_dict = {
             **self._output_dict,
             **{
-                f'PSF_FWHM_{idx + 1}': np.zeros(len(obj_id))
+                f'PSF_FWHM_{idx + 1}': np.zeros(len(self._obj_id))
                 for idx in range(max_epoch)
             }
         }
         self._output_dict = {
             **self._output_dict,
             **{
-                f'PSF_FLAG_{idx + 1}': np.ones(len(obj_id), dtype='int16')
+                f'PSF_FLAG_{idx + 1}': np.ones(
+                    len(self._obj_id), dtype='int16'
+                )
                 for idx in range(max_epoch)
             }
         }
 
-        for idx, id_tmp in enumerate(obj_id):
+        for idx, id_tmp in enumerate(self._obj_id):
 
             if galaxy_psf_cat[str(id_tmp)] == 'empty':
                 continue
 
             for epoch, key in enumerate(galaxy_psf_cat[str(id_tmp)].keys()):
 
-                if galaxy_psf_cat[str(id_tmp)][key]['SHAPES'][
-                    'FLAG_PSF_HSM'
-                ] != 0:
-                    continue
+                gpc_data = galaxy_psf_cat[str(id_tmp)][key]
 
-                    gpc_data = galaxy_psf_cat[str(id_tmp)][key]
+                if gpc_data['SHAPES']['FLAG_PSF_HSM'] != 0:
+                    continue
 
                 e_psf = (
                     gpc_data['SHAPES']['E1_PSF_HSM'],
