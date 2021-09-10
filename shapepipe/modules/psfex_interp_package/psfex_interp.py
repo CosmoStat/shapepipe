@@ -156,9 +156,15 @@ class PSFExInterpolator(object):
     ):
 
         # Path to PSFEx output file
-        self._dotpsf_path = dotpsf_path
+        if os.path.isdir(dotpsf_path):
+            self._dotpsf_path = dotpsf_path
+        else:
+            raise ValueError(f'Cound not find directory {dotpsf_path}.')
         # Path to catalog containing galaxy positions
-        self._galcat_path = galcat_path
+        if os.path.isdir(galcat_path):
+            self._galcat_path = galcat_path
+        else:
+            raise ValueError(f'Cound not find directory {galcat_path}.')
         # Path to output file to be written
         self._output_path = output_path + '/galaxy_psf'
         # Path to output file to be written for validation
@@ -350,6 +356,9 @@ class PSFExInterpolator(object):
 
         """
 
+        if not os.path.isdir(psfex_cat_path):
+            raise ValueError(f'Cound not find directory {psfex_cat_path}.')
+
         if self.gal_pos is None:
             self._get_galaxy_positions()
 
@@ -445,6 +454,9 @@ class PSFExInterpolator(object):
 
         """
 
+        if not os.path.isdir(psfex_cat_path):
+            raise ValueError(f'Cound not find directory {psfex_cat_path}.')
+
         psfex_cat = sc.FITSCatalog(psfex_cat_path, SEx_catalog=True)
         psfex_cat.open()
 
@@ -519,9 +531,18 @@ class PSFExInterpolator(object):
             Path to the log file containing the WCS for each CCDs.
 
         """
-        self._dot_psf_dir = dot_psf_dir
+
+        if os.path.isdir(dot_psf_dir):
+            self._dot_psf_dir = dot_psf_dir
+        else:
+            raise ValueError(f'Cound not find directory {dot_psf_dir}.')
+
         self._dot_psf_pattern = dot_psf_pattern
-        self._f_wcs_file = SqliteDict(f_wcs_path)
+
+        if os.path.isfile(f_wcs_path):
+            self._f_wcs_file = SqliteDict(f_wcs_path)
+        else:
+            raise ValueError(f'Cound not find file {f_wcs_path}.')
 
         if self.gal_pos is None:
             self._get_galaxy_positions()
