@@ -370,7 +370,10 @@ class SaveCatalog:
         """
         self._output_dict = {
             **self._output_dict,
-            **{f'{key_string}{key_end}': value for key_end in self._key_ends}
+            **{
+                f'{key_string}{key_end}': np.copy(value)
+                for key_end in self._key_ends
+            }
         }
 
     def _add2dict(self, key, value, index=None):
@@ -468,6 +471,7 @@ class SaveCatalog:
                         ncf_data['g1_err'][ind[0]],
                         ncf_data['g2_err'][ind[0]]
                     )
+
                     self._add2dict(f'NGMIX{m}_ELL_{key}', g, idx)
                     self._add2dict(f'NGMIX{m}_ELL_ERR_{key}', g_err, idx)
 
