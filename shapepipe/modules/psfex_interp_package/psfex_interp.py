@@ -160,9 +160,9 @@ class PSFExInterpolator(object):
         # Path to catalog containing galaxy positions
         self._galcat_path = galcat_path
         # Path to output file to be written
-        self._output_path = output_path+'/galaxy_psf'
+        self._output_path = output_path + '/galaxy_psf'
         # Path to output file to be written for validation
-        self._output_path_validation = output_path+'/validation_psf'
+        self._output_path_validation = output_path + '/validation_psf'
         # if required, compute and save shapes
         self._compute_shape = get_shapes
         # Number of stars under which we don't interpolate the PSF
@@ -321,7 +321,7 @@ class PSFExInterpolator(object):
 
         """
         output = sc.FITSCatalog(
-            self._output_path+self._img_number+'.fits',
+            self._output_path + self._img_number + '.fits',
             open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
             SEx_catalog=True,
         )
@@ -612,7 +612,7 @@ class PSFExInterpolator(object):
                 ):
                     self._w_log.info(
                         f'Psf model file {self._dotpsf_path} not found. '
-                        + 'Object inside this ccd will lose an epoch'.
+                        + 'Object inside this ccd will lose an epoch.'
                     )
                     continue
 
