@@ -158,16 +158,16 @@ class PSFExInterpolator(object):
         # Path to PSFEx output file
         if (
             isinstance(dotpsf_path, type(None))
-            or os.path.isdir(dotpsf_path)
+            or os.path.isfile(dotpsf_path)
         ):
             self._dotpsf_path = dotpsf_path
         else:
-            raise ValueError(f'Cound not find directory {dotpsf_path}.')
+            raise ValueError(f'Cound not find file {dotpsf_path}.')
         # Path to catalog containing galaxy positions
         if os.path.isfile(galcat_path):
             self._galcat_path = galcat_path
         else:
-            raise ValueError(f'Cound not find directory {galcat_path}.')
+            raise ValueError(f'Cound not find file {galcat_path}.')
         # Path to output file to be written
         self._output_path = output_path + '/galaxy_psf'
         # Path to output file to be written for validation
@@ -359,8 +359,8 @@ class PSFExInterpolator(object):
 
         """
 
-        if not os.path.isdir(psfex_cat_path):
-            raise ValueError(f'Cound not find directory {psfex_cat_path}.')
+        if not os.path.isfile(psfex_cat_path):
+            raise ValueError(f'Cound not find file {psfex_cat_path}.')
 
         if self.gal_pos is None:
             self._get_galaxy_positions()
@@ -457,9 +457,6 @@ class PSFExInterpolator(object):
 
         """
 
-        if not os.path.isdir(psfex_cat_path):
-            raise ValueError(f'Cound not find directory {psfex_cat_path}.')
-
         psfex_cat = sc.FITSCatalog(psfex_cat_path, SEx_catalog=True)
         psfex_cat.open()
 
@@ -535,10 +532,10 @@ class PSFExInterpolator(object):
 
         """
 
-        if os.path.isdir(dot_psf_dir):
+        if os.path.isfile(dot_psf_dir):
             self._dot_psf_dir = dot_psf_dir
         else:
-            raise ValueError(f'Cound not find directory {dot_psf_dir}.')
+            raise ValueError(f'Cound not find file {dot_psf_dir}.')
 
         self._dot_psf_pattern = dot_psf_pattern
 
