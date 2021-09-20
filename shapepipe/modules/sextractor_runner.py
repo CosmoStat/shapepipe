@@ -76,11 +76,11 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
         detection_image,
         detection_weight,
         zp_from_header,
-        zp_key,
         bkg_from_header,
-        bkg_key,
-        check_image,
-        suffix,
+        zero_point_key=zp_key,
+        background_key=bkg_key,
+        check_image=check_image,
+        output_suffix=suffix,
     )
 
     command_line = SE_caller.make_command_line(exec_path)
