@@ -33,11 +33,11 @@ def uncompress_fits_image_runner(
 ):
 
     # Get output patterns
-    output_pattern_list = config.getlist('UNCOMPRESS_FITS_IMAGE_RUNNER', 'OUTPUT_PATTERN')
+    output_pattern_list = config.getlist(module_config_sec, 'OUTPUT_PATTERN')
 
     # Get HDU number
-    if config.has_option('UNCOMPRESS_FITS_IMAGE_RUNNER', 'HDU_DATA'):
-        data_hdu = config.getint("UNCOMPRESS_FITS_IMAGE_RUNNER", "HDU_DATA")
+    if config.has_option(module_config_sec, 'HDU_DATA'):
+        data_hdu = config.getint(module_config_sec, 'HDU_DATA')
     else:
         data_hdu = 0
 

@@ -5,6 +5,7 @@
 This module defines methods for managing CANFAR specific actions.
 
 :Author: Samuel Farrens <samuel.farrens@cea.fr>
+         Martin Kilbinger <martin.kilbinger@cea.fr>
 
 """
 
@@ -54,6 +55,10 @@ class vosHandler:
 
         Check if VOS is correctly installed.
 
+        Raises
+        ------
+        ImportError
+            if vos package cannot be imported
         """
         if import_fail:
             raise ImportError(
@@ -67,6 +72,10 @@ class vosHandler:
 
         This method sets the VOS command property.
 
+        Raises
+        ------
+        ValueError
+            if value is not valid vos command
         """
         return self._command
 
@@ -85,6 +94,10 @@ class vosHandler:
 
         This method allows class instances to be called as functions.
 
+        Raises
+        ------
+        vosError
+            if error in vos command occurs
         """
         try:
             self._command()
@@ -144,6 +157,7 @@ def dir_list(path, verbose=False):
     Raises
     ------
     HTTPError, KeyError
+        if error occurs during vos command
 
     Returns
     -------

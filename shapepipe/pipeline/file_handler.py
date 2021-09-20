@@ -723,6 +723,8 @@ class FileHandler(object):
 
         else:
 
+            print(self._module_dict)
+
             input_dir = []
             for input_module in (
                 self._module_dict[module][run_name]['input_module']

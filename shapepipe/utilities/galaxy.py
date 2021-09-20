@@ -24,7 +24,7 @@ def sigma_to_fwhm(sigma, pixel_scale=1):
     sigma : (array of) float
         input size(s)
     pixel_scale : float, optional, default=1
-        pixel scale in arcsec, set to 1 if no scaling
+        pixel size in arcsec, set to 1 if no scaling
         required
 
     Returns

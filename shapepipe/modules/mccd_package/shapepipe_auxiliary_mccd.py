@@ -159,7 +159,7 @@ def mccd_preprocessing_pipeline(
                     msg = (
                         f"Warning! Problem detected in catalog_id "
                         + f"{catalog_id} ,ccd {ccd_list[j]:d}"
-                    ) 
+                    )
                     print_fun(msg)
 
         if mccd_pos_list:
@@ -239,7 +239,7 @@ def mccd_fit_pipeline(
     w_log.info(inst_dict_str)
     w_log.info('[FIT]')
     fit_dict_str = pprint.pformat(mccd_fit_kw)
-    w_log.info(fit_dict_str)   
+    w_log.info(fit_dict_str)
     w_log.info('End of MCCD configuration parameters.')
 
     # Open fits file
@@ -331,19 +331,19 @@ def mccd_interpolation_pipeline(
     if interp_PSFs is not None:
         if get_shapes:
             PSF_moms = [
-                galsim.hsm.FindAdaptiveMom(galsim.Image(psf), strict=False) 
+                galsim.hsm.FindAdaptiveMom(galsim.Image(psf), strict=False)
                 for psf in interp_PSFs
             ]
 
-            PSF_shapes = np.array(
+            PSF_shapes = np.array([
                 [
-                    [moms.observed_shape.g1,
+                    moms.observed_shape.g1,
                     moms.observed_shape.g2,
                     moms.moments_sigma,
-                    int(bool(moms.error_message))]
-                    for moms in PSF_moms
+                    int(bool(moms.error_message))
                 ]
-            )
+                for moms in PSF_moms
+            ])
 
         shapepipe_write_output(
             saving_path=saving_path,
