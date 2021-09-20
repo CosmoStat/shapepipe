@@ -13,7 +13,7 @@ from functools import wraps
 
 
 def with_timeout(timeout, log_file):
-    """ Timeout Limit Decorator
+    """Timeout Limit Decorator
 
     This method provides a timeout decorator for a given input function.
 
@@ -30,10 +30,10 @@ def with_timeout(timeout, log_file):
         For process exceeding timeout limit
 
     """
-
     def handler(signum, frame):
-        raise TimeoutError('The process time exceeded {}s in '
-                           '{}'.format(timeout, log_file))
+        raise TimeoutError(
+            f'The process time exceeded {timeout}s in {log_file}'
+        )
 
     def decorator(decorated):
 

@@ -9,20 +9,32 @@ This file is the pipeline fit runner for the MCCD package.
 """
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.MCCD_package import shapepipe_auxiliary_mccd as aux_mccd
+from shapepipe.modules.mccd_package import shapepipe_auxiliary_mccd\
+    as aux_mccd
 import mccd
 
 
-@module_runner(input_module=['mccd_preprocessing_runner'], version='1.0',
-               file_pattern=['train_star_selection'],
-               file_ext=['.fits'], numbering_scheme='-0000000',
-               depends=['numpy', 'mccd', 'galsim'], run_method='parallel')
-def mccd_fit_runner(input_file_list, run_dirs, file_number_string,
-                    config, w_log):
+@module_runner(
+    input_module=['mccd_preprocessing_runner'],
+    version='1.0',
+    file_pattern=['train_star_selection'],
+    file_ext=['.fits'],
+    numbering_scheme='-0000000',
+    depends=['numpy', 'mccd', 'galsim'],
+    run_method='parallel'
+)
+def mccd_fit_runner(
+    input_file_list,
+    run_dirs,
+    file_number_string,
+    config,
+    module_config_sec,
+    w_log
+):
     # Recover the MCCD config file and its params
-    config_file_path = config.getexpanded('MCCD', 'CONFIG_PATH')
-    mccd_mode = config.get('MCCD', 'MODE')
-    verbose = config.getboolean('MCCD', 'VERBOSE')
+    config_file_path = config.getexpanded(module_config_sec, 'CONFIG_PATH')
+    mccd_mode = config.get(module_config_sec, 'MODE')
+    verbose = config.getboolean(module_config_sec, 'VERBOSE')
 
     # Parse MCCD config file
     mccd_parser = mccd.auxiliary_fun.MCCDParamsParser(config_file_path)
@@ -35,11 +47,18 @@ def mccd_fit_runner(input_file_list, run_dirs, file_number_string,
 
     if mccd_mode == 'FIT':
         aux_mccd.mccd_fit_pipeline(
-            trainstar_path, file_number_string, mccd_parser, output_dir,
-            verbose, saving_name)
+            trainstar_path=trainstar_path,
+            file_number_string=file_number_string,
+            mccd_parser=mccd_parser,
+            output_dir=output_dir,
+            verbose=verbose,
+            saving_name=saving_name,
+            w_log=w_log
+        )
 
     else:
-        raise ValueError('''mccd_fit_runner should be called when the
-        MODE is "FIT".''')
+        raise ValueError(
+            "mccd_fit_runner should be called when the MODE is 'FIT'."
+        )
 
     return None, None

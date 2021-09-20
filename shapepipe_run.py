@@ -30,7 +30,7 @@ else:
 
 
 class ShapePipe():
-    """ ShapePipe
+    """ShapePipe
 
     ShapePipe runner class.
 
@@ -41,12 +41,11 @@ class ShapePipe():
         self.log = None
 
     def set_up(self):
-        """ Set Up
+        """Set Up
 
         Set up ShapePipe properties.
 
         """
-
         self._args = create_arg_parser()
         self.config = create_config_parser(self._args.config)
         self._set_run_name()
@@ -58,27 +57,25 @@ class ShapePipe():
         self._prep_run()
 
     def _set_run_name(self):
-        """ Set Run Name
+        """Set Run Name
 
         Set the name of the current pipeline run.
 
         """
-
         self._run_name = self.config.get('DEFAULT', 'RUN_NAME')
 
         if self.config.getboolean('DEFAULT', 'RUN_DATETIME'):
             self._run_name += datetime.now().strftime('_%Y-%m-%d_%H-%M-%S')
 
     def _create_pipeline_log(self):
-        """ Create Pipeline Log
+        """Create Pipeline Log
 
         Create a general logging instance for the pipeline run.
 
         """
-
         self.log = set_up_log(self.filehd.log_name, verbose=False)
 
-        start_text = 'Starting ShapePipe Run: {}'.format(self._run_name)
+        start_text = f'Starting ShapePipe Run: {self._run_name}'
 
         self.log.info(shapepipe_logo())
         self.log.info(start_text)
@@ -90,7 +87,7 @@ class ShapePipe():
             print('')
 
     def close_pipeline_log(self):
-        """ Close Pipeline Log
+        """Close Pipeline Log
 
         Close general logging instance for the pipeline run.
 
@@ -100,13 +97,13 @@ class ShapePipe():
             if error occurs during pipeline run
 
         """
-
         if self.error_count == 1:
             plur = ' was'
         else:
             plur = 's were'
-        final_error_count = ('A total of {} error{} recorded.'.format(
-                             self.error_count, plur))
+        final_error_count = (
+            f'A total of {self.error_count} error{plur} recorded.'
+        )
         end_text = 'Finishing ShapePipe Run'
 
         self.log.info(final_error_count)
@@ -123,7 +120,7 @@ class ShapePipe():
             raise RuntimeError(final_error_count)
 
     def _get_module_depends(self, property):
-        """ Get Module Dependencies
+        """Get Module Dependencies
 
         List the Python packages and executables needed to run the modules.
 
@@ -133,7 +130,6 @@ class ShapePipe():
             List of python dependencies, list of system executables
 
         """
-
         prop_list = []
 
         module_runners = self.filehd.module_runners
@@ -141,24 +137,27 @@ class ShapePipe():
         for module in module_runners.keys():
 
             if self.config.has_option(module.upper(), property.upper()):
-                prop_list += self.config.getlist(module.upper(),
-                                                 property.upper())
+                prop_list += self.config.getlist(
+                    module.upper(),
+                    property.upper(),
+                )
             else:
                 prop_list += getattr(module_runners[module], property)
 
             if self.filehd.get_add_module_property(module, property):
-                prop_list += self.filehd.get_add_module_property(module,
-                                                                 property)
+                prop_list += self.filehd.get_add_module_property(
+                    module,
+                    property,
+                )
 
         return prop_list
 
     def _check_dependencies(self):
-        """ Check Dependencies
+        """Check Dependencies
 
         Check that all pipeline dependencies have been installed.
 
         """
-
         module_dep = self._get_module_depends('depends') + __installs__
         module_exe = self._get_module_depends('executes')
 
@@ -200,23 +199,22 @@ class ShapePipe():
             print('')
 
     def _check_module_versions(self):
-        """ Check Module Version
+        """Check Module Version
 
         Check versions of the modules.
 
         """
-
         ver_text = 'Checking Module Versions:'
 
         self.log.info(ver_text)
         if self.verbose:
             print(ver_text)
 
-        for module in self.modules:
+        for module in set(self.modules):
 
-            module_txt = (' - {} {}'.format(
-                          module,
-                          self.filehd.module_runners[module].version))
+            module_txt = (
+                f' - {module} {self.filehd.module_runners[module].version}'
+            )
 
             self.log.info(module_txt)
             if self.verbose:
@@ -227,26 +225,25 @@ class ShapePipe():
             print('')
 
     def _get_module_run_methods(self):
-        """ Get Module Run Method
+        """Get Module Run Method
 
         Create a dictionary of modules with corresponding run methods.
 
         """
-
         self.run_method = {}
 
         for module in self.modules:
 
-            self.run_method[module] = \
+            self.run_method[module] = (
                 self.filehd.module_runners[module].run_method
+            )
 
     def _prep_run(self):
-        """ Run
+        """Run
 
         Run the pipeline.
 
         """
-
         # Make output directories for the pipeline run
         self.filehd.create_global_run_dirs()
 
@@ -263,13 +260,12 @@ class ShapePipe():
         self._get_module_run_methods()
 
     def record_mode(self):
-        """ Record Mode
+        """Record Mode
 
         Log mode in which ShapePipe is running.
 
         """
-
-        mode_text = 'Running ShapePipe using {}'.format(self.mode)
+        mode_text = f'Running ShapePipe using {self.mode}'
 
         self.log.info(mode_text)
         self.log.info('')
@@ -279,7 +275,7 @@ class ShapePipe():
 
 
 def run_smp(pipe):
-    """ Run SMP
+    """Run SMP
 
     Run ShapePipe using SMP.
 
@@ -287,15 +283,20 @@ def run_smp(pipe):
     ----------
     pipe : ShapePipe
         ShapePipe instance
-    """
 
+    """
     # Loop through modules to be run
     for module in pipe.modules:
 
         # Create a job handler for the current module
-        jh = JobHandler(module, filehd=pipe.filehd, config=pipe.config,
-                        log=pipe.log, job_type=pipe.run_method[module],
-                        verbose=pipe.verbose)
+        jh = JobHandler(
+            module,
+            filehd=pipe.filehd,
+            config=pipe.config,
+            log=pipe.log,
+            job_type=pipe.run_method[module],
+            verbose=pipe.verbose,
+        )
 
         # Submit jobs
         jh.submit_jobs()
@@ -311,7 +312,7 @@ def run_smp(pipe):
 
 
 def run_mpi(pipe, comm):
-    """ Run MPI
+    """Run MPI
 
     Run ShapePipe using MPI.
 
@@ -321,8 +322,8 @@ def run_mpi(pipe, comm):
         ShapePipe instance
     comm : MPI.COMM_WORLD
         MPI common world instance
-    """
 
+    """
     # Assign master node
     master = comm.rank == 0
 
@@ -345,9 +346,15 @@ def run_mpi(pipe, comm):
         # Run set up on master
         if master:
             # Create a job handler for the current module
-            jh = JobHandler(module, filehd=pipe.filehd, config=config,
-                            log=pipe.log, job_type=pipe.run_method[module],
-                            parallel_mode='mpi', verbose=verbose)
+            jh = JobHandler(
+                module,
+                filehd=pipe.filehd,
+                config=config,
+                log=pipe.log,
+                job_type=pipe.run_method[module],
+                parallel_mode='mpi',
+                verbose=verbose,
+            )
 
             # Get job type
             job_type = jh.job_type
@@ -387,9 +394,18 @@ def run_mpi(pipe, comm):
             jobs = comm.scatter(jobs, root=0)
 
             # Submit the MPI jobs and gather results
-            results = comm.gather(submit_mpi_jobs(jobs, config, timeout,
-                                  run_dirs, module_runner, worker_log,
-                                  verbose), root=0)
+            results = comm.gather(
+                submit_mpi_jobs(
+                    jobs,
+                    config,
+                    timeout,
+                    run_dirs,
+                    module_runner,
+                    worker_log,
+                    verbose
+                ),
+                root=0,
+            )
 
             # Delete broadcast objects
             del module_runner, worker_log, timeout, jobs
