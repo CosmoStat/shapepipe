@@ -5,7 +5,7 @@
 This module defines methods for managing CANFAR specific actions.
 
 :Author: Samuel Farrens <samuel.farrens@cea.fr>
-         Martin Kilbinger <martin.kilbinger@cea.fr> 
+         Martin Kilbinger <martin.kilbinger@cea.fr>
 
 """
 

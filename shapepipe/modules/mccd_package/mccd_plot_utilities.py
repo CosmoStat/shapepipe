@@ -1026,10 +1026,14 @@ def rho_stats(
     )
 
     # TreeCorr config:
-    TreeCorrConfig = {'ra_units': 'degrees', 'dec_units': 'degrees',
-                      'max_sep': '3e2', 'min_sep': 5e-1, 'sep_units': 'arcmin',
-                      'nbins': 32
-                     }
+    TreeCorrConfig = {
+        'ra_units': 'degrees',
+        'dec_units': 'degrees',
+        'max_sep': '3e2',
+        'min_sep': 5e-1,
+        'sep_units': 'arcmin',
+        'nbins': 32
+    }
 
     # Ininitialize all 5 rho stats
     if rho_def == 'HSC':
