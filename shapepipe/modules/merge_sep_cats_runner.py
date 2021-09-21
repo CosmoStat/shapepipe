@@ -28,13 +28,13 @@ import shapepipe.pipeline.file_io as io
 def merge_sep_cats_runner(input_file_list, run_dirs, file_number_string,
                           config, module_config_sec, w_log):
 
-    n_split_max = config.getint('MERGE_SEP_CATS_RUNNER', 'N_SPLIT_MAX')
+    n_split_max = config.getint(module_config_sec, 'N_SPLIT_MAX')
 
-    file_pattern = config.getlist('MERGE_SEP_CATS_RUNNER', 'FILE_PATTERN')
-    file_ext = config.getlist('MERGE_SEP_CATS_RUNNER', 'FILE_EXT')
+    file_pattern = config.getlist(module_config_sec, 'FILE_PATTERN')
+    file_ext = config.getlist(module_config_sec, 'FILE_EXT')
 
-    if config.has_option('MERGE_SEP_CATS_RUNNER', 'WARNING'):
-        warning = config.get('MERGE_SEP_CATS_RUNNER', 'WARNING')
+    if config.has_option(module_config_sec, 'WARNING'):
+        warning = config.get(module_config_sec, 'WARNING')
     else:
         warning = 'error'
     warnings.simplefilter(warning, UserWarning)
