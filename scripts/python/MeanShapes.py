@@ -395,7 +395,7 @@ def main(argv=None):
 
     ccd_maps = np.ones((40, 2, 3)+nb_pixel) * np.nan # CCDs x star/model x (e1,e2,R2) x xpos x ypos
     for ccd_nb,ccd_map in enumerate(ccd_maps):
-        ccd_mask = ((starcat['CCD_NB']==str(ccd_nb)) * flagmask).astype(eool)
+        ccd_mask = ((starcat['CCD_NB']==str(ccd_nb)) * flagmask).astype(bool)
 
         star_shapes = all_star_shapes[:,ccd_mask]
         psf_shapes = all_psf_shapes[:,ccd_mask]
