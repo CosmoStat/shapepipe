@@ -952,7 +952,7 @@ class FileHandler(object):
                 + f'"{ext}" in the directories {dir_list}.'
             )
 
-        is_duplicate, elem = check_duplicate(final_file_list):
+        is_duplicate, elem = check_duplicate(final_file_list)
         if is_duplicate:
             raise RuntimeError(
                 f'Input file list contains at least two elements \'{elem}\' '
