@@ -90,11 +90,11 @@ def check_duplicate(input_list):
 
     for elem in input_list:
         if elem in input_set:
-            return True
+            return True, elem
         else:
             input_set.add(elem)
 
-    return False
+    return False, ''
 
 
 class FileHandler(object):
@@ -952,11 +952,12 @@ class FileHandler(object):
                 + f'"{ext}" in the directories {dir_list}.'
             )
 
-        if check_duplicate(final_file_list):
+        is_duplicate, elem = check_duplicate(final_file_list):
+        if is_duplicate:
             raise RuntimeError(
-                'Input file list contains at least two elements that match '
-                + 'file pattern and numbering scheme, leading to identical '
-                + 'input files.  Make sure that the correct input '
+                f'Input file list contains at least two elements \'{elem}\' '
+                + 'that match file pattern and numbering scheme, leading to '
+                + 'identical input files.  Make sure that the correct input '
                 + 'directory is used.'
             )
 
