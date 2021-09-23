@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""FILE SYSTEM TOOLS
+"""FILE SYSTEM TOOLS.
 
 This module defines methods for managing actions on the file system.
 
@@ -12,7 +12,7 @@ import os
 
 
 class FileSystemError(Exception):
-    """File System Error
+    """File System Error.
 
     Generic error that is raised by the file system.
 
@@ -21,7 +21,7 @@ class FileSystemError(Exception):
 
 
 def check_dir(dir_name):
-    """Check Directory
+    """Check Directory.
 
     Check if directory exists.
 
@@ -30,12 +30,22 @@ def check_dir(dir_name):
     dir_name : str
         Directory name
 
+    Raises
+    ------
+    TypeError
+        If directory name is not a string
+
     """
+    if not isinstance(dir_name, str):
+        raise TypeError(
+            f'Directory name must be of type string, not {type(dir_name)}'
+        )
+
     return os.path.isdir(dir_name)
 
 
 def mkdir(dir_name, check_created=True, exist_ok=True):
-    """Make Directory
+    """Make Directory.
 
     This method creates a directory in the specified path.
 
@@ -53,9 +63,9 @@ def mkdir(dir_name, check_created=True, exist_ok=True):
     Raises
     ------
     FileSystemError
-        If directory already exists.
+        If directory already exists
     FileSystemError
-        If directory not properly created.
+        If directory not properly created
 
     """
     os.makedirs(dir_name, exist_ok=exist_ok)
