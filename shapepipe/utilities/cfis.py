@@ -25,8 +25,8 @@ import pylab as plt
 
 from astropy import units
 from astropy.io import ascii
-from astropy.coordinates import Angle
-from astropy.coordinates import SkyCoord
+import astropy.coordinates as coords
+from astropy.wcs import WCS
 
 from shapepipe.utilities.file_system import mkdir
 
@@ -504,8 +504,8 @@ def get_tile_number_from_coord(ra, dec, return_type=str):
         xi = 0
 
     if return_type == str:
-        nix = '{:03d}'.format(xi)
-        niy = '{:03d}'.format(yi)
+        nix = f'{xi:03d}'
+        niy = f'{yi:03d}'
     elif return_type == int:
         nix = xi
         niy = yi
@@ -523,9 +523,9 @@ def get_tile_coord_from_nixy(nix, niy):
 
     Parameters
     ----------
-    nix: str
+    nix: str or int, scalar or list
         tile number for x
-    niy: str
+    niy: str or int, scalar or list
         tile number for y
 
     Returns
@@ -536,13 +536,18 @@ def get_tile_coord_from_nixy(nix, niy):
         declination
     """
 
-    xi = int(nix)
-    yi = int(niy)
+    if not np.isscalar(nix):
+        # Transform to int, necessary if input is string
+        xi = np.array(nix).astype(int)
+        yi = np.array(niy).astype(int)
+    else:
+        xi = int(nix)
+        yi = int(niy)
 
     d = yi / 2 - 90
-    dec = Angle(f'{d} degrees')
+    dec = coords.Angle(d, unit='deg')
     r = xi / 2 / np.cos(dec.radian)
-    ra = Angle(f'{r} degrees')
+    ra = coords.Angle(r, unit='deg')
 
     return ra, dec
 
@@ -637,6 +642,34 @@ def get_tile_number(tile_name):
     niy = m.groups()[1]
 
     return nix, niy
+
+
+def get_tile_number_list(tile_name_list):
+    """Get Tile Number List
+
+    Return tile numbers of given image tiles
+
+    Parameters
+    ----------
+    tile_name_list: list of str
+        tile names
+
+    Returns
+    -------
+    nix_list: list of str
+        tile numbers for x
+    niy_list: list of str
+        tile numbers for y
+    """
+
+    nix_list = []
+    niy_list = []
+    for tile_name in tile_name_list:
+        nix, niy = get_tile_number(tile_name)
+        nix_list.append(nix)
+        niy_list.append(niy)
+
+    return nix_list, niy_list
 
 
 def get_log_file(path, verbose=False):
@@ -751,8 +784,8 @@ def get_Angle(str_coord):
 
     ra, dec = my_string_split(str_coord, num=2, stop=True)
 
-    a_ra = Angle(ra)
-    a_dec = Angle(dec)
+    a_ra = coords.Angle(ra)
+    a_dec = coords.Angle(dec)
 
     return a_ra, a_dec
 
@@ -793,9 +826,9 @@ def get_Angle_arr(str_coord, num=-1, wrap=True, verbose=False):
         ra = angles_mixed[2*i]
         dec = angles_mixed[2*i+1]
         if wrap:
-            c = SkyCoord(ra, dec)
+            c = coords.SkyCoord(ra, dec)
         else:
-            c = param(ra=Angle(ra), dec=Angle(dec))
+            c = param(ra=coords.Angle(ra), dec=coords.Angle(dec))
         angles.append(c)
 
     return angles
@@ -870,8 +903,8 @@ def create_image_list(fname, ra, dec, exp_time=[], valid=[]):
     images = []
     for i in range(nf):
         if nr > 0 and nd > 0:
-            r = Angle('{} {}'.format(ra[i], unitdef))
-            d = Angle('{} {}'.format(dec[i], unitdef))
+            r = coords.Angle('{} {}'.format(ra[i], unitdef))
+            d = coords.Angle('{} {}'.format(dec[i], unitdef))
         else:
             r = None
             d = None
@@ -909,8 +942,8 @@ def get_exposure_info(logfile_name, verbose=False):
     for line in f:
         dat = re.split(' |', line)
         name = dat[0]
-        ra = Angle(' hours'.format(dat[8]))
-        dec = Angle(' degree'.format(dat[9]))
+        ra = coords.Angle(' hours'.format(dat[8]))
+        dec = coords.Angle(' degree'.format(dat[9]))
         valid = dat[21]
 
         img = image(name, ra, dec, valid=valid)
@@ -981,7 +1014,7 @@ def get_image_list(inp, band, image_type, col=None, input_format='full', verbose
                     file_list.append(f'd{d["col1"]}p.fits.fz')
                     ra = re.split(r'\s*', d['col4'])[0]
                     dec = re.split(r'\s*', d['col4'])[1]
-                    ang = Angle('{ra} hours')
+                    ang = coords.Angle('{ra} hours')
                     ra_list.append(ang.degree)
                     dec_list.append(dec)
                     exp_time = int(d['col5'])
@@ -1182,13 +1215,13 @@ def find_image_at_coord(
             raise CfisError(f'More than one tile ({img_found}) found')
 
     elif image_type == 'exposure':
-        sc_input = SkyCoord(ra, dec)
+        sc_input = coords.SkyCoord(ra, dec)
 
         img_found = []
         for img in images:
             # Check distance along ra and dec from image center
-            sc_img_same_ra = SkyCoord(ra, img.dec)
-            sc_img_same_dec = SkyCoord(img.ra, dec)
+            sc_img_same_ra = coords.SkyCoord(ra, img.dec)
+            sc_img_same_dec = coords.SkyCoord(img.ra, dec)
             distance_ra = sc_input.separation(sc_img_same_dec)
             distance_dec = sc_input.separation(sc_img_same_ra)
             if (
@@ -1250,11 +1283,11 @@ def find_images_in_area(
     # if not:
     #  check range [ra_min, ra_max]
     ra_bounds = []
-    threesixty = Angle(360, unitdef)
+    threesixty = coords.Angle(360, unitdef)
     if angles[1].ra > threesixty:
         ra_bounds = [
             [angles[0].ra, threesixty],
-            [Angle(0, unitdef), angles[1].ra-threesixty]
+            [coords.Angle(0, unitdef), angles[1].ra-threesixty]
         ]
     else:
         ra_bounds = [[angles[0].ra, angles[1].ra]]
@@ -1539,3 +1572,125 @@ def square_from_corners(ang0, ang1):
     cyd = [getattr(y, unitdef) for y in cy]
 
     return cxd, cyd
+
+
+def remove_common_elements(
+    final_cat_file,
+    tiles_id_file,
+    pos_param=['XWIN_WORLD', 'YWIN_WORLD']
+):
+    """ Remove common elements
+
+    Create a mask for objects in the overlapping regions between
+    neigbouring stacked images. The object furthest from its stack
+    center is flagged.
+
+    Parameters
+    ----------
+    final_cat_file : io.FITSCatalog
+        Final catalog.
+    tile_id_file : str
+        Path to the file containing all the tile IDs.
+    pos_param : list
+        List with the column name for ra and dec positions.
+
+    """
+
+    key_id = 'TILE_ID'
+
+    def get_tile_wcs(xxx, yyy):
+        """ Get tile WCS
+        Create an astropy.wcs.WCS object from the name of the tile.
+
+        Parameters
+        ----------
+        xxx : int
+            First 3 numbers in the tile name.
+        yyy : int
+            Last 3 numbers in the tile name.
+
+        Returns
+        -------
+        w : astropy.wcs.WCS
+            WCS for the tile.
+
+        """
+
+        ra, dec = get_tile_coord_from_nixy(xxx, yyy)
+
+        w = WCS(naxis=2)
+        w.wcs.crval = np.array([ra.deg, dec.deg])
+        w.wcs.crpix = np.array([5000, 5000])
+        w.wcs.cd = np.array([[0.187/3600, 0],
+                            [0, 0.187/3600]])
+        w.wcs.ctype = ['RA---TAN', 'DEC--TAN']
+        w.wcs.cunit = ['deg', 'deg']
+        w._naxis = [10000, 10000]
+
+        return w
+
+    final_cat_file.open()
+
+    # Get object coordinates
+    ra_tile = final_cat_file.get_data()[pos_param[0]]
+    dec_tile = final_cat_file.get_data()[pos_param[1]]
+    catalog_coord = coords.SkyCoord(ra=ra_tile*units.deg, dec=dec_tile*units.deg)
+
+    #tile_id = final_cat_file.get_data()[key_id][0]*1000
+
+    # Get tile ID from FITS header
+
+    # Format string to make sure trailing zeros are not cut
+    tile_id_format = f'{final_cat_file.get_data()[key_id][0]:07.3f}'
+
+    # Transform to strings (nix, niy)
+    tile_id_str = str(tile_id_format)
+    tile_id = get_tile_number(tile_id_str)
+
+    #all_id = np.loadtxt(tiles_id_file, unpack=True)*1000
+
+    # Get tile ID for entire survey from ascii file
+    all_id_float = np.loadtxt(tiles_id_file, unpack=True)
+    all_id_format = [f'{id:07.3f}' for id in all_id_float]
+    all_id_str = [str(id_f) for id_f in all_id_format]
+    all_id2 = get_tile_number_list(all_id_str)
+
+    all_tile_ra, all_tile_dec = get_tile_coord_from_nixy(
+        all_id2[0],
+        all_id2[1],
+    )
+    all_tile_coord = coords.SkyCoord(ra=all_tile_ra, dec=all_tile_dec)
+
+    ra_m_tile, dec_m_tile = get_tile_coord_from_nixy(
+        tile_id[0],
+        tile_id[1]
+    )
+    tile_main_coord = coords.SkyCoord(ra=ra_m_tile, dec=dec_m_tile)
+
+    mask_tile = np.ones_like(ra_tile, dtype=bool)
+
+    # Compute separation between objects and tile center
+    sep_ref = tile_main_coord.separation(catalog_coord)
+
+    # Find close tiles = nearest 9 neighbours
+    close_tiles = np.argsort(tile_main_coord.separation(all_tile_coord))[1:9]
+
+    # Loop over neighbours
+    for close in close_tiles:
+
+        ra_m_check, dec_m_check = get_tile_coord_from_nixy(
+            all_id2[0][close],
+            all_id2[1][close]
+        )
+        tile_check_coord = coords.SkyCoord(ra=ra_m_check, dec=dec_m_check)
+
+        sep_check = tile_check_coord.separation(catalog_coord)
+
+        w_tile_check = get_tile_wcs(all_id2[0][close], all_id2[1][close])
+
+        # Mask objects who are closer to neighbour than tile center
+        mask_tile &= (np.less(sep_ref, sep_check) | np.invert(w_tile_check.footprint_contains(catalog_coord)))
+
+    final_cat_file.add_col('FLAG_TILING', mask_tile)
+
+    final_cat_file.close()
