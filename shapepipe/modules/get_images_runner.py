@@ -43,7 +43,7 @@ def get_images_runner(
 
     if config.has_option(module_config_sec, 'RETRIEVE_OPTIONS'):
         retrieve_options = config.getexpanded(
-            'GET_IMAGES_RUNNER',
+            module_config_sec,
             'RETRIEVE_OPTIONS'
         )
     else:
@@ -52,15 +52,15 @@ def get_images_runner(
     # Paths
     input_dir = config.getlist(module_config_sec, 'INPUT_PATH')
     input_file_pattern = config.getlist(
-        'GET_IMAGES_RUNNER',
+        module_config_sec,
         'INPUT_FILE_PATTERN'
     )
     input_file_ext = config.getlist(
-        'GET_IMAGES_RUNNER',
+        module_config_sec,
         'INPUT_FILE_EXT'
     )
     output_file_pattern = config.getlist(
-        'GET_IMAGES_RUNNER',
+        module_config_sec,
         'OUTPUT_FILE_PATTERN'
     )
 

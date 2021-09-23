@@ -2,7 +2,7 @@
 
 """GET IMAGES PACKAGE
 
-This package contains the module for ``get_images
+This package contains the module for ``get_images``
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
