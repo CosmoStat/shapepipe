@@ -720,8 +720,8 @@ def create_image_list(fname, ra, dec, exp_time=[], valid=[]):
     images = []
     for i in range(nf):
         if nr > 0 and nd > 0:
-            r = Angle('{} {}'.format(ra[i], unitdef))
-            d = Angle('{} {}'.format(dec[i], unitdef))
+            r = Angle(f'{ra[i]} {unitdef}')
+            d = Angle(f'{dec[i]} {unitdef}')
         else:
             r = None
             d = None
