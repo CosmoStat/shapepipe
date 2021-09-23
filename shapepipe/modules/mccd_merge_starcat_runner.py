@@ -16,7 +16,7 @@ from shapepipe.modules.module_decorator import module_runner
 
 
 @module_runner(
-    input_module=['mccd_fit_val_runner'],
+    input_module=['mccd_fit_val_runner', 'mccd_val_runner'],
     version='1.0',
     file_pattern=['validation_psf'],
     file_ext=['.fits'],
@@ -32,6 +32,7 @@ def mccd_merge_starcat_runner(
     module_config_sec,
     w_log
 ):
+
     w_log.info('Merging validation results..')
     hdu_table = 1
 
@@ -115,8 +116,10 @@ def mccd_merge_starcat_runner(
         stars_norm_vals = stars_norm_vals[non_zero_elems].reshape(-1, 1, 1)
         psfs_norm_vals = psfs_norm_vals[non_zero_elems].reshape(-1, 1, 1)
         pix_norm_val = np.sum(
-            (stars[non_zero_elems] / stars_norm_vals -
-            psfs[non_zero_elems] / psfs_norm_vals) ** 2
+            (
+                stars[non_zero_elems] / stars_norm_vals -
+                psfs[non_zero_elems] / psfs_norm_vals
+            ) ** 2
         )
         # Calculate sizes
         filt_size = stars[non_zero_elems].size
@@ -150,16 +153,18 @@ def mccd_merge_starcat_runner(
             ra += list(starcat_j[hdu_table].data['RA_LIST'][:])
             dec += list(starcat_j[hdu_table].data['DEC_LIST'][:])
         except Exception:
-            ra += list(
-                np.zeros(starcat_j[hdu_table].data[
-                    'GLOB_POSITION_IMG_LIST'][:, 0].shape,
-                dtype=int)
-            )
-            dec += list(
-                np.zeros(starcat_j[hdu_table].data[
-                    'GLOB_POSITION_IMG_LIST'][:, 0].shape,
-                dtype=int)
-            )
+            ra += list(np.zeros(
+                starcat_j[hdu_table].data[
+                    'GLOB_POSITION_IMG_LIST'
+                ][:, 0].shape,
+                dtype=int,
+            ))
+            dec += list(np.zeros(
+                starcat_j[hdu_table].data[
+                    'GLOB_POSITION_IMG_LIST'
+                ][:, 0].shape,
+                dtype=int,
+            ))
 
         # shapes (convert sigmas to R^2)
         g1_psf += list(starcat_j[hdu_table].data['PSF_MOM_LIST'][:, 0])
@@ -191,8 +196,8 @@ def mccd_merge_starcat_runner(
         )
 
     def mean_calc(values, sizes):
-        return np.nansum(
-            np.array(values)) / np.nansum(np.array(sizes)
+        return (
+            np.nansum(np.array(values)) / np.nansum(np.array(sizes))
         )
 
     def std_calc(values):

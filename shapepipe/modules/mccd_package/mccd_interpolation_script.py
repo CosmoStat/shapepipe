@@ -65,7 +65,7 @@ def interp_MCCD(mccd_model_path, positions, ccd):
     ])
 
     # Interpolate the model
-    PSFs = mccd_instance.estimate_psf(glob_pos, ccd)
+    PSFs = mccd_instance.interpolate_psf_pipeline(glob_pos, ccd)
 
     del mccd_instance
 
@@ -401,7 +401,7 @@ class MCCDinterpolator(object):
                     isinstance(self.interp_PSFs, str)
                     and (self.interp_PSFs == NOT_ENOUGH_STARS)
                 ):
-                    self._w_log.info(                
+                    self._w_log.info(
                         f'Not enough stars find in the ccd {ccd} of the'
                         + f' exposure {exp_name}. Object inside this '
                         + f'ccd will lose an epoch.'
@@ -417,7 +417,7 @@ class MCCDinterpolator(object):
                         + f' exposure {exp_name}. Object inside this ccd'
                         + f' will lose an epoch.'
                     )
-                    
+
                     continue
 
                 if (

@@ -62,6 +62,13 @@ def mccd_plots_runner(
     module_config_sec,
     w_log
 ):
+
+    # Input parameters
+    if config.has_option(module_config_sec, 'HDU'):
+        hdu_no = config.getint(module_config_sec, 'HDU')
+    else:
+        hdu_no = 2
+
     # Get parameters for meanshapes plots
     x_nb_bins = config.getint(module_config_sec, 'X_GRID')
     y_nb_bins = config.getint(module_config_sec, 'Y_GRID')
@@ -69,9 +76,20 @@ def mccd_plots_runner(
     plot_meanshapes = config.getboolean(module_config_sec, 'PLOT_MEANSHAPES')
     plot_histograms = config.getboolean(module_config_sec, 'PLOT_HISTOGRAMS')
 
-    # Get parameters for Rho stats plots
+    # Get parameters for rho stats plots
     plot_rho_stats = config.getboolean(module_config_sec, 'PLOT_RHO_STATS')
     rho_stat_plot_style = config.get(module_config_sec, 'RHO_STATS_STYLE')
+
+    if config.has_option(module_config_sec, 'RHO_STATS_YLIM_L'):
+        str_list = config.getlist(module_config_sec, 'RHO_STATS_YLIM_L')
+        ylim_l = [float(s) for s in str_list]
+    else:
+        ylim_l = None
+    if config.has_option(module_config_sec, 'RHO_STATS_YLIM_R'):
+        str_list = config.getlist(module_config_sec, 'RHO_STATS_YLIM_R')
+        ylim_r = [float(s) for s in str_list]
+    else:
+        ylim_r = None
 
     nb_pixel = x_nb_bins, y_nb_bins
     starcat_path = input_file_list[0][0]
@@ -84,16 +102,17 @@ def mccd_plots_runner(
                 output_path,
                 nb_pixel,
                 w_log,
-                remove_outliers,
-                plot_meanshapes,
-                plot_histograms
+                hdu_no=hdu_no,
+                remove_outliers=remove_outliers,
+                plot_meanshapes=plot_meanshapes,
+                plot_histograms=plot_histograms
             )
         else:
             msg = (
-                "[!] In order to plot the Meanshapes the package "
-                + "_matplotlib_ has to be correctly imported. This was not"
-                + " the case, so the task is aborted. For the next time make"
-                + " sure the package is installed."
+                '[!] In order to plot the Meanshapes the package '
+                + '_matplotlib_ has to be correctly imported. This was not'
+                + ' the case, so the task is aborted. For the next time make'
+                + ' sure the package is installed.'
             )
             warnings.warn(msg)
             w_log.info(msg)
@@ -101,18 +120,18 @@ def mccd_plots_runner(
     if plot_rho_stats:
         if has_stile is False or has_treecorr is False:
             msg = (
-                "[!] In order to calculate the Rho stats the packages "
-                + "_stile_ and _treecorr_ have to be correctly imported."
-                + " This was not the case, so the rho stat calculation is"
-                + "aborted. For the next time make sure both of the"
-                + "packages are installed."
+                '[!] In order to calculate the Rho stats the packages '
+                + '_stile_ and _treecorr_ have to be correctly imported.'
+                + ' This was not the case, so the rho stat calculation is'
+                + 'aborted. For the next time make sure both of the'
+                + 'packages are installed.'
             )
             warnings.warn(msg)
             w_log.info(msg)
         elif rho_stat_plot_style != 'HSC' and rho_stat_plot_style != 'DEC':
             msg = (
-                "The rho stat definition should be HSC or DEC. An unknown"
-                + " definition was used. Rho stat calculation aborted."
+                'The rho stat definition should be HSC or DEC. An unknown'
+                + ' definition was used. Rho stat calculation aborted.'
             )
             warnings.warn(msg)
             w_log.info(msg)
@@ -121,6 +140,9 @@ def mccd_plots_runner(
                 starcat_path,
                 output_path,
                 rho_def=rho_stat_plot_style,
+                hdu_no=hdu_no,
+                ylim_l=ylim_l,
+                ylim_r=ylim_r,
                 print_fun=lambda x: w_log.info(x)
             )
 

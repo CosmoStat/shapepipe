@@ -829,7 +829,7 @@ def process(tile_cat_path, gal_vignet_path, bkg_vignet_path,
                          '.sqlite'],
                depends=['numpy', 'ngmix', 'galsim', 'sqlitedict', 'astropy'])
 def ngmix_runner(input_file_list, run_dirs, file_number_string,
-                 config, w_log):
+                 config, module_config_sec, w_log):
 
     # Init randoms
     seed = int(''.join(re.findall(r'\d+', file_number_string)))

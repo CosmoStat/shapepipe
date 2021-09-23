@@ -35,6 +35,7 @@ def params_default():
     """
 
     p_def = cfis.param(
+        psf = 'mccd'
     )
 
     return p_def
@@ -82,6 +83,17 @@ def parse_options(p_def):
         help='output directory name'
     )
 
+    # Misc
+    parser.add_option(
+        '-p',
+        '--psf',
+        dest='psf',
+        type='string',
+        default=p_def.psf,
+        help=f'PSF model, one in [\'psfex\'|\'mccd\'], default=\'{p_def.psf}\''
+    )
+
+    # Control
     parser.add_option(
         '-v',
         '--verbose',
@@ -266,14 +278,17 @@ def main(argv=None):
     input_IDs = read_ID_list(param.input_IDs, verbose=param.verbose)
 
     result_base_names = [
-        'psfex_interp_exp',
+        'final_cat',
+        'logs',
         'setools_mask',
         'setools_stat',
         'setools_plot',
         'pipeline_flag',
-        'final_cat',
-        'logs'
     ]
+    if param.psf == 'psfex':
+        result_base_names.append('psfex_interp_exp')
+    elif param.psf == 'mccd':
+        result_base_names.append('mccd_fit_val_runner')
 
     if os.path.isdir(param.output_dir):
         if param.verbose:

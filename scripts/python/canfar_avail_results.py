@@ -21,7 +21,7 @@ from optparse import OptionParser
 
 from shapepipe.utilities.canfar import dir_list
 
-import cfis
+from shapepipe.utilities import cfis
 
 
 def params_default():
@@ -39,7 +39,7 @@ def params_default():
 
     p_def = cfis.param(
         input_IDs  = '.',
-        input_vos = 'cosmostat/kilbinger/results',
+        input_path = 'vos:cfis/cosmostat/kilbinger/results',
         psf = 'mccd',
     )
 
@@ -68,14 +68,15 @@ def parse_options(p_def):
     # I/O
     parser.add_option('-i', '--input_IDs', dest='input_IDs', type='string', default=p_def.input_IDs,
          help='input tile ID file(s) or directory path, default=\'{}\''.format(p_def.input_IDs))
-    parser.add_option('', '--input_vos', dest='input_vos', type='string', default=p_def.input_vos,
-         help='input path on vos, default=\'{}\''.format(p_def.input_vos))
+    parser.add_option('', '--input_path', dest='input_path', type='string', default=p_def.input_path,
+         help='input path, local or vos url, default=\'{}\''.format(p_def.input_path))
     parser.add_option('-o', '--output_not_avail', dest='output_not_avail', type='string',
          help='output file for not-available IDs, default no output')
 
     parser.add_option('-p', '--psf', dest='psf', type='string', default=p_def.psf,
          help='PSF model, one in [\'psfex\'|\'mccd\'], default=\'{}\''.format(p_def.psf))
 
+    parser.add_option('-f', '--final_only', dest='final_only', action='store_true', help='only check final catalogues')
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
 
     options, args = parser.parse_args()
@@ -98,7 +99,7 @@ def check_options(options):
     """
 
     if options.psf not in ['psfex', 'mccd']:
-        print('Invalid PSF model \'{}\''.format(option.psf))
+        print('Invalid PSF model \'{}\''.format(options.psf))
         return False
 
     return True
@@ -155,6 +156,8 @@ def read_input_files(input_path, verbose=False):
 
     if os.path.isdir(input_path):
         input_files = glob.glob('{}/*'.format(input_path))
+    #elif os.path.isfile(input_path):
+        #input_files = [line.rstrip('\n') for line in open(input_path)]
     else:
         input_files =  cfis.my_string_split(input_path, stop=True, sep=' ')
 
@@ -172,15 +175,15 @@ def read_input_files(input_path, verbose=False):
     return ID_files
 
 
-def check_results(ID_files, input_vos, result_base_names, n_complete, verbose=False):
+def check_results(ID_files, input_path, result_base_names, n_complete, verbose=False):
     """Count the number of result files uploaded to vos for each input ID file.
 
     Parameters
     ----------
     ID_files: list of strings
         file name with tile IDs
-    input_vos: string
-        vos input directory
+    input_path: string
+        path input directory
     result_base_names: list of strings
         result file base names
     n_complete: int
@@ -198,10 +201,12 @@ def check_results(ID_files, input_vos, result_base_names, n_complete, verbose=Fa
         IDs that are not available on vos
     """
 
-    cmd = 'vls'
-    vos_dir = 'vos:cfis/{}'.format(input_vos)
-
-    vls_out = dir_list(vos_dir)
+    m = re.match('vos:', input_path)
+    if m:
+        ls_tmp = dir_list(input_path)
+    else:
+        ls_tmp = glob.glob(f'{input_path}/*')
+    ls_out = [os.path.basename(path) for path in ls_tmp]
 
     n_found = {}
     n_IDs = {}
@@ -223,7 +228,7 @@ def check_results(ID_files, input_vos, result_base_names, n_complete, verbose=Fa
                 # Count how many result files are available
                 for base in result_base_names:
                     name = '{}_{}.tgz'.format(base, ID)
-                    if name in vls_out:
+                    if name in ls_out:
                         n_found[ID_list][ID] = n_found[ID_list][ID] + 1
                 n_IDs[ID_list] = n_IDs[ID_list] + 1
 
@@ -296,17 +301,26 @@ def main(argv=None):
 
     ID_files = read_input_files(param.input_IDs, verbose=param.verbose)
 
-    result_base_names = ['setools_mask', 'setools_stat', 'setools_plot',
-                         'final_cat', 'pipeline_flag', 'logs']
+    result_base_names = ['final_cat']
+    if not param.final_only:
+        types = [
+            'logs',
+            'setools_mask', 
+            'setools_stat',
+            'setools_plot',
+            'pipeline_flag', 
+        ]
+        for t in types:
+            result_base_names.append(t)
 
-    if param.psf == 'psfex':
-        result_base_names.append('psfex_interp_exp')
-    elif param.psf == 'mccd':
-        result_base_names.append('mccd_fit_val_runner')
+        if param.psf == 'psfex':
+            result_base_names.append('psfex_interp_exp')
+        elif param.psf == 'mccd':
+            result_base_names.append('mccd_fit_val_runner')
 
     n_complete = len(result_base_names)
 
-    n_found, n_IDs, IDs_not_avail = check_results(ID_files, param.input_vos, result_base_names, n_complete, verbose=param.verbose)
+    n_found, n_IDs, IDs_not_avail = check_results(ID_files, param.input_path, result_base_names, n_complete, verbose=param.verbose)
 
     output_summary(n_found, n_IDs, n_complete)
 

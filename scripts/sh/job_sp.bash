@@ -12,15 +12,24 @@
 #       v1.1 01/2021
 # Package: shapepipe
 
+
+# VM home, required for canfar run.
+## On other machines set to $HOME
+export VM_HOME=/home/ubuntu
+if [ ! -d "$VM_HOME" ]; then
+    export VM_HOME=$HOME
+fi
+
 # Command line arguments
 ## Default values
 do_env=0
 job=255
-config_dir='vos:cfis/cosmostat/kilbinger/cfis'
-psf='psfex'
+#config_dir='vos:cfis/cosmostat/kilbinger/cfis'
+config_dir=$VM_HOME/shapepipe/example/cfis
+psf='mccd'
 retrieve='vos'
-RESULTS='cosmostat/kilbinger/results'
-nsh_step=3500
+results='cosmostat/kilbinger/results_v1'
+nsh_step=3200
 nsh_max=-1
 nsh_jobs=8
 
@@ -45,7 +54,7 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    -r, --retrieve METHOD\n
    \tmethod to retrieve images, one in ['vos'|'symlink]', default='$retrieve'\n
    -o, --output_dir\n
-   \toutput (upload) directory on vos:cfis, default='$RESULTS'\n
+   \toutput (upload) directory on vos:cfis, default='$results'\n
    --nsh_jobs NJOB\n
    \tnumber of shape measurement parallel jobs, default=$nsh_jobs\n
    --nsh_step NSTEP\n
@@ -91,6 +100,10 @@ while [ $# -gt 0 ]; do
       retrieve="$2"
       shift
       ;;
+    -o|--output_dir)
+      results="$2"
+      shift
+      ;;
     --nsh_max)
       nsh_max="$2"
       shift
@@ -129,13 +142,6 @@ export ID=`echo ${TILE_ARR[@]} | tr ' ' '_'`
 
 ## Paths
 
-# VM home, required for canfar run.
-# On other machines set to $HOME
-export VM_HOME=/home/ubuntu
-if [ ! -d "$VM_HOME" ]; then
-    export VM_HOME=$HOME
-fi
-
 # SExtractor library bug work-around
 export PATH="$PATH:$VM_HOME/bin"
 
@@ -159,7 +165,7 @@ OUTPUT=$SP_RUN/output
 # For tar archives
 output_rel=`realpath --relative-to=. $OUTPUT`
 
-# Stop on error
+# Stop on error, default=1
 STOP=1
 
 # Verbose mode (1: verbose, 0: quiet)
@@ -221,7 +227,6 @@ command_sp() {
    cmd=$1
    str=$2
 
-   #STOP=0
    command "$1" "$2"
    #res=$?
    #if [ $res != 0 ]; then
@@ -241,6 +246,7 @@ function upload() {
    shift
    upl=("$@")
 
+   echo "Counting upload files"
    n_upl=(`ls -l ${upl[@]} | wc`)
    if [ $n_upl == 0 ]; then
       if [ $STOP == 1 ]; then
@@ -249,7 +255,7 @@ function upload() {
       fi
    fi
    tar czf ${base}_${ID}.tgz ${upl[@]}
-   command "$VCP ${base}_${ID}.tgz vos:cfis/$RESULTS" "Upload log tar ball"
+   command "$VCP ${base}_${ID}.tgz vos:cfis/$results" "Upload tar ball"
 }
 
 # Upload log files
@@ -275,8 +281,6 @@ function print_env() {
    echo "Other variables:"
    echo " VCP=$VCP"
    echo " CERTFILE=$CERTFILE"
-   echo " STOP=$STOP"
-   echo " verbose=$VERBOSE"
    echo "***"
 }
 
@@ -289,9 +293,9 @@ if [ "$CONDA_DEFAULT_ENV" != "shapepipe" ]; then
   source $VM_HOME/miniconda3/bin/activate shapepipe
 fi
 
-print_env
 
 if [ $do_env == 1 ]; then
+   print_env
    echo "Exiting"
    return
 fi
@@ -318,10 +322,12 @@ if [[ $do_job != 0 ]]; then
   done
 
   ### Retrieve config files
-  if [[ $config_file == "*vos:" ]]; then
+  if [[ $config_dir == *"vos:"* ]]; then
     command_sp "$VCP $config_dir ." "Retrieve shapepipe config files"
   else
-    command_sp "ln -s $config_dir cfis" "Retrieve shapepipe config files"
+    if [[ ! -L cfis ]]; then
+      command_sp "ln -s $config_dir cfis" "Retrieve shapepipe config files"
+    fi
   fi
 
   ### Retrieve tiles
@@ -371,6 +377,7 @@ if [[ $do_job != 0 ]]; then
   STOP=1
 
   ### The following are very a bad hacks to get additional input file paths
+  echo "Looking for PSF ($psf) output files"
   if [ "$psf" == "psfex" ]; then
     input_psfex=`ls -1 ./output/*/psfex_runner/output/star_split_ratio_80*.psf | head -n 1`
     command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output"
@@ -379,9 +386,11 @@ if [[ $do_job != 0 ]]; then
     command_sp "ln -s `dirname $input_psf_mccd` input_psf_mccd" "Link MCCD output"
   fi
 
+  echo "Looking for single-exposure single-HDU output files"
   input_split_exp=`ls -1 ./output/*/split_exp_runner/output/flag*.fits | head -n 1`
   command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output"
 
+  echo "Looking for SExtractor output files"
   input_sextractor=`ls -1 ./output/*/sextractor_runner/output/sexcat_sexcat*.fits | head -n 1`
   command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor output"
 
@@ -453,11 +462,11 @@ if [[ $do_job != 0 ]]; then
   ### module and pipeline log files
   upload_logs "$ID" "$VERBOSE"
 
+  ### Final shape catalog
+  ### pipeline_flags are the tile masks, for random cats
+  ### SETools masks (selection), stats and plots
   ### ${psf}_interp_exp for diagnostics, validation with leakage,
   ### validation with residuals, rho stats
-  ### SETools masks (selection), stats and plots
-  ### pipeline_flags are the tile masks, for random cats
-  ### Final shape catalog
 
   NAMES=(
     "final_cat"

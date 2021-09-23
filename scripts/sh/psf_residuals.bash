@@ -43,8 +43,6 @@ done
 ## Default variables
 psfval_file_base="validation_psf"
 dir_individual="psf_validation_ind"
-dir_merged="psf_validation_merged"
-fname_merged="psf_cat_full.fits"
 pwd=`pwd`
 
 # Command line sarguments
@@ -94,14 +92,10 @@ function link_s () {
 }
 
 
-### Start ###
-
 # Create output dirs
-for dir in $dir_individual $dir_merged; do
-    if [ ! -d "$dir" ]; then
-        mkdir -p $dir
-    fi
-done
+if [ ! -d "$dir_individual" ]; then
+    mkdir -p $dir_individual
+fi
 
 if [ "$psf" == "psfex" ]; then
   runner="psfex_interp_runner"
@@ -119,15 +113,3 @@ for val in ${FILES[@]}; do
     link_s "$pwd/$val" "$dir_individual/$base"
 done
 echo " Created $n_created links, skipped $n_skipped files"
-
-# Create merged PSF validation catalog
-merge_star_cat_${psf} -i $dir_individual -o $dir_merged/$fname_merged -v
-
-# Create plots
-if [ "$psf" == "psfex" ]; then
-  MeanShapes -o $dir_merged -i $dir_merged/$fname_merged -v -x 20 --max_e=0.05 --max_d=0.005 --hdu=1
-else
-  echo "Plots of mean shapes are create elsewhere for MCCD"
-fi
-
-### End ###
