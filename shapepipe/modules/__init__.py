@@ -11,6 +11,7 @@ This module contains sub-modules that can be run with ShapePipe.
 __all__ = [
     'find_exposures_package',
     'mask_package',
+    'merge_sep_cats_package',
     'MCCD_package',
     'module_decorator',
     'module_runners',
