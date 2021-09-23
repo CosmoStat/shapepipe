@@ -151,6 +151,10 @@ fail_vos_not_found = -11
 fail_corrupt_fits = -12
 fail_time_out = -13
 fail_res_err_mod = -14
+fail_vos_no_resp = -15
+fail_connection = -16
+fail_server = -17
+fail_transient = -18
 
 
 def get_status(tile_num):
@@ -171,14 +175,11 @@ def get_status(tile_num):
             final_cat_found = False
             with open(out_name) as out_file:
                 for line in out_file:
-                    m = re.match('Upload.*final_cat.*return value = (\.*)', line)
+                    m = re.match('Upload.*final_cat_*', line)
                     if m:
                         final_cat_found = True
-                        if m[1] == '0':
-                            status = res_ok, 'successful upload of final_cat'
-                        else:
-                            status = res_noout, 'failed upload of final_cat'
-                        break
+                        status = res_ok, 'successful upload of final_cat'
+                        # TODO: check next line for upload success
 
             if final_cat_found == False:
                 status = res_unk, 'Failed before final_cat'
@@ -197,6 +198,22 @@ def get_status(tile_num):
                         mm = re.search('ERROR:: HTTPSConnectionPool.*Max retries', line_err)
                         if mm:
                             status = status + (fail_time_out, 'vos time out')
+                            break
+                        mm = re.search('ERROR:: __str__ returned non-string', line_err)
+                        if mm:
+                            status = status + (fail_connection, 'Connection/HTTP error')
+                            break
+                        mm = re.search('ERROR:: 503 Server Error', line_err)
+                        if mm:
+                            status = status + (fail_server, 'server connection error')
+                            break
+                        mm = re.search('ERROR:: \[Errno 14\] vos', line_err)
+                        if mm:
+                            status = status + (fail_transient, 'TransientException')
+                            break
+                        mm = re.search('Connection aborted', line_err)
+                        if mm:
+                            status = status + (fail_vos_no_resp, 'vos no response')
                             break
 
                 if len(status) == 2:

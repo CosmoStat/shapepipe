@@ -113,13 +113,13 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
                    (pix_tmp[1] < int(ccd_size[3])))
             pos_tmp[ind] = j
             n_epoch[ind] += 1
-        exp_name = np.array([exp_list[i] for n in range(len(obj_id))])
+        exp_name = np.array([exp_list[idx] for n in range(len(obj_id))])
         a = np.array([(obj_id[ii], exp_name[ii], pos_tmp[ii])
                       for ii in range(len(exp_name))],
                      dtype=[('NUMBER', obj_id.dtype),
                             ('EXP_NAME', exp_name.dtype),
                             ('CCD_N', pos_tmp.dtype)])
-        cat.save_as_fits(data=a, ext_name='EPOCH_{}'.format(i))
+        cat.save_as_fits(data=a, ext_name='EPOCH_{}'.format(idx))
         cat.open()
 
     f_wcs.close()

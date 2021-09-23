@@ -76,7 +76,6 @@ class vosHandler:
         ------
         ValueError
             if value is not valid vos command
-
         """
         return self._command
 

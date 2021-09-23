@@ -50,6 +50,7 @@ if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
 fi
 
 # Paths
+export SP_RUN=.
 SP_BASE=$HOME/astro/repositories/github/shapepipe
 SP_CONFIG=$SP_BASE/example/cfis
 
@@ -66,12 +67,32 @@ SP_CONFIG=$SP_BASE/example/cfis
 # $SP_BASE/scripts/sh/untar_results.sh
 #
 
-# Merge all psfinterp results and compute PSF residuals
+
+# PSF
+
+## Collect all psfinterp results 
 psf_residuals -p $psf
 
-# Prepare output directory with links to all 'final_cat' result files
+## Merge all psfinterp results and compute PSF residuals
+if [[ "$psf" == "mccd" ]]; then
+  shapepipe_run -c $SP_CONFIG/config_MsPl_mccd.ini 
+else
+  ### Create merged PSF validation catalog
+  dir_individual="psf_validation_ind"
+  dir_merged="psf_validation_merged"
+  fname_merged="psf_cat_full-0000000.fits"
+  merge_star_cat_psfex -i $dir_individual -o $dir_merged/$fname_merged -v
+  shapepipe_run -c $SP_CONFIG/config_Pl_psfex.ini 
+fi
+
+
+# Galaxies
+
+## Prepare output directory with links to all 'final_cat' result files
 prepare_tiles_for_final
 
-# Merge final output files to single mother catalog
+## Merge final output files to single mother catalog
 input_final=output/run_sp_combined/make_catalog_runner/output
 merge_final_cat -i $input_final -p $SP_CONFIG/final_cat.param -v 
+
+

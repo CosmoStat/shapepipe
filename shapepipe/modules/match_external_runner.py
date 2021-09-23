@@ -193,7 +193,7 @@ class MatchCats(object):
                depends=['numpy', 'astropy'],
                run_method='parallel')
 def match_external_runner(input_file_list, run_dirs, file_number_string,
-                          config, w_log):
+                          config, module_config_sec, w_log):
 
     # Processing
     tmp = config.getfloat('MATCH_EXTERNAL_RUNNER', 'TOLERANCE')

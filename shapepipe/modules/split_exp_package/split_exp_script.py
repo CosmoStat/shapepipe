@@ -103,19 +103,19 @@ class SplitExposures(object):
 
         header_file = np.zeros(self._n_hdu, dtype='O')
 
-        for i in range(1, self._n_hdu+1):
+        for idx in range(1, self._n_hdu+1):
 
-            h = fits.getheader(exp_path, i)
+            h = fits.getheader(exp_path, idx)
             if transf_coord:
                 stp.pv_to_sip(h)
 
-            d = fits.getdata(exp_path, i)
+            d = fits.getdata(exp_path, idx)
             if transf_int:
                 d = d.astype(np.int16)
 
             file_name = (
                 f'{self._output_dir}/{output_suffix}'
-                + '{self._file_number_string}-{str(i-1)}.fits'
+                + f'{self._file_number_string}-{str(idx-1)}.fits'
             )
 
             new_file = io.FITSCatalog(
@@ -130,7 +130,7 @@ class SplitExposures(object):
                 except:
                     print(f'WCS error for file {exp_path}')
                     raise
-                header_file[i-1] = {'WCS': w, 'header': h.tostring()}
+                header_file[idx-1] = {'WCS': w, 'header': h.tostring()}
 
         if save_header:
             file_name = (

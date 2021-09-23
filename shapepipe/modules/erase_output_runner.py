@@ -17,7 +17,7 @@ from shapepipe.pipeline.execute import execute
                file_ext=['.output_ext'],
                numbering_scheme='_0')
 def erase_output_runner(input_file_list, run_dirs, file_number_string,
-                        config, w_log):
+                        config, module_config_sec, w_log):
 
     stdout, stderr = execute('rm -f {0}'.format(*input_file_list))
 

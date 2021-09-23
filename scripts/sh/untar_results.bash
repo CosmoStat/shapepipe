@@ -9,7 +9,8 @@
 # Command line arguments
 
 ## Default values
-psf='mccd'
+psf="mccd"
+output=""
 
 ## Help string
 usage="Usage: $(basename "$0") [OPTIONS]
@@ -17,6 +18,8 @@ usage="Usage: $(basename "$0") [OPTIONS]
    -h\tthis message\n
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
+   -o, --output FILE\n
+    \tOutput file to list untared archives, default None\n
 "
 
 ## Parse command line
@@ -28,6 +31,10 @@ while [ $# -gt 0 ]; do
       ;;
     -p|--psf)
       psf="$2"
+      shift
+      ;;
+    -o|--output)
+      output="$2"
       shift
       ;;
     *)
@@ -57,6 +64,11 @@ elif [ "$psf" == "mccd" ]; then
          )
 fi
 
+if [[ "$output" != "" ]]; then
+  echo "Resetting output file $output"
+  rm -f $output
+fi
+
 # Check number of files
 for out in ${NAMES[@]}; do
     echo "$out"
@@ -69,6 +81,9 @@ for out in ${NAMES[@]}; do
         res=$?
         if [ $res == 0 ]; then
             ((n_ok=n_ok+1))
+            if [[ "$output" != "" ]]; then
+              echo $file >> $output
+            fi
         else
             ((n_fail=n_fail+1))
         fi

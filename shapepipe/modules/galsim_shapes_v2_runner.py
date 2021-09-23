@@ -822,7 +822,7 @@ def process(tile_cat_path, tile_weight_path, gal_vignet_path, bkg_vignet_path,
                file_ext=['.fits', '.fits', '.sqlite', '.sqlite', '.sqlite', '.sqlite', '.sqlite'],
                depends=['numpy', 'ngmix', 'galsim', 'astropy'])
 def galsim_shapes_v2_runner(input_file_list, run_dirs, file_number_string,
-                            config, w_log):
+                            config, module_config_sec, w_log):
 
     output_name = run_dirs['output'] + '/' + 'galsim' + file_number_string + '.fits'
 
