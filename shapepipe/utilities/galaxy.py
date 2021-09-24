@@ -69,7 +69,7 @@ def sigma_to_fwhm(sigma, pixel_scale=1.0):
             f'The pixel scale must of type float, not {type(sigma)}.'
         )
 
-    if any(pixel_scale) <= 0:
+    if pixel_scale <= 0:
         raise ValueError(
             f'Invalid pixel scale {pixel_scale}, needs to be positive'
         )
