@@ -12,9 +12,10 @@ import numpy as np
 
 
 def sigma_to_fwhm(sigma, pixel_scale=1.0):
-    """Sigma to FWHM.
+    r"""Sigma to FWHM.
 
-    Transform standard deviation of a 1D Gaussian, sigma, to FWHM (Full Width Half Maximum).
+    Transform standard deviation of a 1D Gaussian, sigma, to FWHM
+    (Full Width Half Maximum).
 
     Parameters
     ----------
@@ -37,6 +38,12 @@ def sigma_to_fwhm(sigma, pixel_scale=1.0):
         If ``sigma`` array values are not of type float
     TypeError
         If ``pixel_scale`` is not of type float
+    ValueError
+        If ``sigma`` array values are not greater than 0.0
+    ValueError
+        If ``sigma`` is not greater than 0.0
+    ValueError
+        If ``pixel_scale`` is not greater than 0.0
 
     Notes
     -----
@@ -54,7 +61,6 @@ def sigma_to_fwhm(sigma, pixel_scale=1.0):
         \textrm{FWHM} = 2 \sqrt(2 \ln 2) \sigma \approx 2.355 \sigma
 
     """
-
     if not isinstance(sigma, (np.ndarray, float)):
         raise TypeError(
             f'Sigma must be of type numpy array or float, not {type(sigma)}.'
@@ -66,16 +72,23 @@ def sigma_to_fwhm(sigma, pixel_scale=1.0):
 
     if not isinstance(pixel_scale, float):
         raise TypeError(
-            f'The pixel scale must of type float, not {type(sigma)}.'
+            f'The pixel scale must of type float, not {type(pixel_scale)}.'
         )
 
-    if pixel_scale <= 0:
+    if isinstance(sigma, np.ndarray) and np.any(sigma <= 0.0):
         raise ValueError(
-            f'Invalid pixel scale {pixel_scale}, needs to be positive'
+            f'Found {sigma[sigma <=0].size} invalid standard deviation array '
+            + 'values, all elements must to be greater than 0.0.'
         )
-    if any(sigma) <= 0:
+    elif isinstance(sigma, float) and sigma <= 0.0:
         raise ValueError(
-            f'Invalid standard deviatoin {sigma}, needs to be positive'
+            f'Invalid standard deviation {sigma}, needs to be greater than '
+            + '0.0.'
+        )
+
+    if pixel_scale <= 0.0:
+        raise ValueError(
+            f'Invalid pixel scale {pixel_scale}, needs to be greater than 0.0.'
         )
 
     cst = 2.35482004503
