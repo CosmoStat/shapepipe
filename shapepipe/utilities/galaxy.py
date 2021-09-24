@@ -14,8 +14,7 @@ import numpy as np
 def sigma_to_fwhm(sigma, pixel_scale=1.0):
     """Sigma to FWHM.
 
-    Transform from size sigma to FWHM. The conversion factor corresponds to a
-    1D Gaussian profile.
+    Transform standard deviation of a 1D Gaussian, sigma, to FWHM (Full Width Half Maximum).
 
     Parameters
     ----------
@@ -39,7 +38,23 @@ def sigma_to_fwhm(sigma, pixel_scale=1.0):
     TypeError
         If ``pixel_scale`` is not of type float
 
+    Notes
+    -----
+    To compute the FWHMh for a 1D Gaussian N(x), solve the equation
+
+    ..math::
+
+        N(x) = (\sigma \sqrt{2\pi})^{-1} \exp[x^2/2\sigma^2] = \frac 1 2 N(x)
+
+
+    for :math:`x`. The FWHM is :math:`x + (-x) = 2x`. The solution is
+
+    ..math::
+
+        \textrm{FWHM} = 2 \sqrt(2 \ln 2) \sigma \approx 2.355 \sigma
+
     """
+
     if not isinstance(sigma, (np.ndarray, float)):
         raise TypeError(
             f'Sigma must be of type numpy array or float, not {type(sigma)}.'
