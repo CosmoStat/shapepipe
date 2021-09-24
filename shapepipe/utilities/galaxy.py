@@ -19,7 +19,7 @@ def sigma_to_fwhm(sigma, pixel_scale=1.0):
     Parameters
     ----------
     sigma : numpy.ndarray
-        input size(s)
+        input standard deviation(s)
     pixel_scale : float, optional, default=1
         pixel size in arcsec, set to 1 if no scaling
         required
@@ -67,6 +67,15 @@ def sigma_to_fwhm(sigma, pixel_scale=1.0):
     if not isinstance(pixel_scale, float):
         raise TypeError(
             f'The pixel scale must of type float, not {type(sigma)}.'
+        )
+
+    if pixel_scale <= 0:
+        raise ValueError(
+            f'Invalid pixel scale {pixel_scale}, needs to be positive'
+        )
+    if sigma <= 0:
+        raise ValueError(
+            f'Invalid standard deviatoin {sigma}, needs to be positive'
         )
 
     cst = 2.35482004503
