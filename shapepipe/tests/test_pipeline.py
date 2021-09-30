@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""UNIT TESTS FOR PIPELINE
+"""UNIT TESTS FOR PIPELINE.
 
 This module contains unit tests for the shapepipe.pipeline module.
 
