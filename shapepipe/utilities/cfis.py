@@ -61,7 +61,6 @@ class CfisError(Exception):
    """ Cfis Error
 
    Generic error that is raised by this script.
-
    """
 
    pass
@@ -142,12 +141,13 @@ class image():
 
         Raises
         ------
-        NoneType : if name does not match to ID pattern
+        ValueError
+            if name does not match to ID pattern
         """
 
         m = re.search(r'(\d{3}).{1}(\d{3})', self.name)
         if m is None:
-            raise NoneType(f'No ID match in file name {name}')
+            raise ValueError(f'No ID match in file name {name}')
         else:
             return f'{m[1]}.{m[2]}'
 
@@ -172,6 +172,11 @@ class image():
             if True, do not print metainfo
         ID_only: bool, optional, default=False
             if True, only print file ID instead of entire name
+
+        Raises
+        ------
+        ValueError
+            if name does not match to ID pattern
         """
 
         if base_name:
@@ -182,7 +187,7 @@ class image():
         if ID_only:
             m = re.search(r'\d{3}.\d{3}', name)
             if m is None:
-                raise NoneType(f'No ID match in file name {name}')
+                raise ValueError(f'No ID match in file name {name}')
             else:
                 name = m[0]
         print(name, end='', file=file)
@@ -208,28 +213,10 @@ class image():
             output file handle
         """
 
-        print(f'#Name ra[{unitdef}] dec[{unitdef}] exp_time[s] validation', file=file)
-
-
-def run_cmd(cmd, verbose=True, run=True):
-    """run_cmd
-
-    Run shell command using shapepipe.pipeline.execute
-    """
-
-    from shapepipe.pipeline.execute import execute
-
-    if not run:
-        if verbose:
-            print_color('yellow', f'Not running command \'{cmd}\'')
-        out = ''
-        err = ''
-    else:
-        if verbose:
-            print_color('green', f'Running command \'{cmd}\'')
-        out, err = execute(cmd)
-
-    return out, err
+        print(
+            f'#Name ra[{unitdef}] dec[{unitdef}] exp_time[s] validation',
+            file=file
+        )
 
 
 def log_command(argv, name=None, close_no_return=True):
@@ -268,7 +255,7 @@ def log_command(argv, name=None, close_no_return=True):
 
         # Quote argument if special characters
         if ']' in a or ']' in a:
-            a = '\"{}\"'.format(a)
+            a = f'\"{a}\"'
 
         print(a, end='', file=f)
         print(' ', end='', file=f)
@@ -280,48 +267,6 @@ def log_command(argv, name=None, close_no_return=True):
 
     if name != 'sys.stdout' and name != 'sys.stderr':
         f.close()
-
-
-def print_color(color, txt, file=sys.stdout, end='\n'):
-    """Print Color
-
-    Print text with color. If not supported, print standard text.
-
-    Parameters
-    ----------
-    color: string
-        color name
-    txt: string
-        message
-    file: file handler
-        output file handler, default=sys.stdout
-    end: string
-        end string, default='\n'
-
-    Returns
-    -------
-    None
-    """
-
-    try:
-        import colorama
-        colors = {
-            'red': colorama.Fore.RED,
-            'green': colorama.Fore.GREEN,
-            'blue': colorama.Fore.BLUE,
-            'yellow': colorama.Fore.YELLOW,
-            'black': colorama.Fore.BLACK
-        }
-
-        if colors[color] is None:
-            col = colorama.Fore.BLACK
-        else:
-            col = colors[color]
-
-        print(col + txt + colors['black'] + '', file=file, end=end)
-
-    except ImportError:
-        print(txt, file=file, end=end)
 
 
 def my_string_split(string, num=-1, verbose=False, stop=False, sep=None):
@@ -433,7 +378,7 @@ def get_file_pattern(pattern, band, image_type, want_re=True, ext=True):
         ):
             pattern_base = r'\d{7}p'
         else:
-            pattern_base = r'CFIS.*\.{}'.format(band)
+            pattern_base = rf'CFIS.*\.{band}'
     else:
         pattern_base = pattern
 
@@ -504,8 +449,8 @@ def get_tile_number_from_coord(ra, dec, return_type=str):
         xi = 0
 
     if return_type == str:
-        nix = '{:03d}'.format(xi)
-        niy = '{:03d}'.format(yi)
+        nix = f'{xi:03d}'
+        niy = f'{yi:03d}'
     elif return_type == int:
         nix = xi
         niy = yi
@@ -637,98 +582,6 @@ def get_tile_number(tile_name):
     niy = m.groups()[1]
 
     return nix, niy
-
-
-def get_log_file(path, verbose=False):
-    """Get Log File
-
-    Return log file content
-
-    Parameters
-    ----------
-    path: str
-        log file path
-    verbose: bool, optional, default=False
-        verbose output if True
-
-    Raises
-    ------
-    CfisError
-        if input path does not exist
-
-    Returns
-    -------
-    log: list of str
-        log file lines
-    """
-
-    if not os.path.isfile(path):
-        raise CfisError(f'Log file \'{path}\' not found')
-
-    f_log = open(path, 'r')
-    log = f_log.readlines()
-    if verbose:
-        print(f'Reading log file, {len(log)} lines found')
-    f_log.close()
-
-    return log
-
-
-def check_ra(ra):
-    """Check Ra
-
-    Range check of right ascension.
-
-    Parameters
-    ----------
-    ra: Angle
-        right ascension
-
-    Raises
-    ------
-    CfisError
-        for invalid ra range on input
-
-    Returns
-    -------
-    res: bool
-        result of check (True if pass, False if fail)
-    """
-
-    print(ra.deg)
-    if ra.deg < 0 or ra.deg > 360:
-        raise CfisError('Invalid ra, valid range is 0 < ra < 360 deg')
-        return 1
-
-    return 0
-
-
-def check_dec(dec):
-    """Check Dec
-
-    Range check of declination.
-
-    Parameters
-    ----------
-    dec: Angle
-        declination
-
-    Raises
-    ------
-    CfisError
-        for invalid dec range on input
-
-    Returns
-    -------
-    res: bool
-        result of check (True if pass, False if fail)
-    """
-
-    if dec.deg < -90 or dec.deg > 90:
-        raise CfisError('Invalid dec, valid range is -90 < dec < 90 deg')
-        return 1
-
-    return 0
 
 
 def get_Angle(str_coord):
@@ -865,13 +718,15 @@ def create_image_list(fname, ra, dec, exp_time=[], valid=[]):
     if nf == 0:
         raise CfisError('No entries in file name list')
     if (nf != nr or nf != nd) and nr != 0 and nd != 0:
-        raise CfisError('Lists fname, ra, dec have not same length ({}, {}, {})'.format(nf, nr, nd))
+        raise CfisError(
+            f'Lists fname, ra, dec have not same length ({nf}, {nr}, {nd})'
+        )
 
     images = []
     for i in range(nf):
         if nr > 0 and nd > 0:
-            r = Angle('{} {}'.format(ra[i], unitdef))
-            d = Angle('{} {}'.format(dec[i], unitdef))
+            r = Angle(f'{ra[i]} {unitdef}')
+            d = Angle(f'{dec[i]} {unitdef}')
         else:
             r = None
             d = None
@@ -889,37 +744,14 @@ def create_image_list(fname, ra, dec, exp_time=[], valid=[]):
     return images
 
 
-def get_exposure_info(logfile_name, verbose=False):
-    """Return information on run (single exposure) from log file.
-
-    Parameters
-    ----------
-    logfile_name: string
-        file name
-    verbose: bool, optional, default=False
-        verbose output
-
-    Returns:
-    images: list of class image
-        list of exposures
-    """
-
-    images = []
-    f = open(logfile_name)
-    for line in f:
-        dat = re.split(' |', line)
-        name = dat[0]
-        ra = Angle(' hours'.format(dat[8]))
-        dec = Angle(' degree'.format(dat[9]))
-        valid = dat[21]
-
-        img = image(name, ra, dec, valid=valid)
-        image.append(img)
-
-    return image
-
-
-def get_image_list(inp, band, image_type, col=None, input_format='full', verbose=False):
+def get_image_list(
+    inp,
+    band,
+    image_type,
+    col=None,
+    input_format='full',
+    verbose=False
+):
     """Get Image List
 
     Return list of images.
@@ -939,8 +771,8 @@ def get_image_list(inp, band, image_type, col=None, input_format='full', verbose
     verbose : bool, optional, default=False
         verbose output if True
 
-    Return
-    ------
+    Returns
+    -------
     img_list: list of class image
         image list
     """
@@ -953,7 +785,9 @@ def get_image_list(inp, band, image_type, col=None, input_format='full', verbose
 
     if os.path.isdir(inp):
         if col is not None:
-            raise CfisError('Column name (-c option) only valid if input is file')
+            raise CfisError(
+                'Column name (-c option) only valid if input is file'
+            )
 
         # Read file names from directory listing
         inp_type = 'dir'
@@ -970,12 +804,15 @@ def get_image_list(inp, band, image_type, col=None, input_format='full', verbose
             dat = ascii.read(inp)
 
             if len(dat.keys()) == 3:
-                # File is exposure + coord list (obtained from get_coord_CFIS_pointings.py)
+                # File is exposure + coord list
+                # (obtained from get_coord_CFIS_pointings.py)
                 file_list = dat['Pointing']
                 ra_list = dat['R.A.[degree]']
                 dec_list = dat['Declination[degree]']
             elif len(dat.keys()) == 12:
-                # File is log file, e.g. from http://www.cfht.hawaii.edu/Science/CFIS-DATA/logs/MCLOG-CFIS.r.qso-elx.log
+                # File is log file, e.g. from
+                # http://www.cfht.hawaii.edu/Science/CFIS-DATA
+                #  /logs/MCLOG-CFIS.r.qso-elx.log
                 # Default file separator is '|'
                 for d in dat:
                     file_list.append(f'd{d["col1"]}p.fits.fz')
@@ -1031,7 +868,9 @@ def get_image_list(inp, band, image_type, col=None, input_format='full', verbose
             img_list.append(img)
 
     if verbose and len(img_list) > 0:
-        print(f'{len(img_list)} image files found in input {inp_type} \'{inp}\'')
+        print(
+            f'{len(img_list)} image files found in input {inp_type} \'{inp}\''
+        )
 
     return img_list
 
@@ -1057,47 +896,6 @@ def exclude(f, exclude_list):
     return f in exclude_list
 
 
-def log_line_get_entry(log_line, entry):
-    """Log Line Get Entry
-
-    Return entry from log string line
-
-    Parameters
-    ----------
-    log_line : str
-        log file line
-    entry : str
-        log file entry to check
-
-    Raises
-    ------
-    CfisError
-        for invalid log file entry
-
-    Returns
-    -------
-    s : str
-        value of corresponding log file entry
-    """
-
-    line_s = log_line.split()
-
-    if entry == 'exp_name':
-        return line_s[0]
-    elif entry == 'tile_num':
-        return line_s[1]
-    elif entry == 'k_img':
-        return line_s[2]
-    elif entry == 'k_weight':
-        return line_s[3]
-    elif entry == 'k_flag':
-        return line_s[4]
-    elif entry == 'exp_num':
-        return line_s[5]
-    else:
-        raise CfisError(f'Entry \'{entry}\' not valid in tiles-expsure log string')
-
-
 def find_image_at_coord(
     images,
     coord,
@@ -1120,8 +918,9 @@ def find_image_at_coord(
     band: str
         optical band
     image_type: str
-        image type ('tile', 'weight', 'weight.fz', 'exposure', 'exposure_weight', \
-        'exposure_weight.fz', 'exposure_flag', 'exposure_flag.fz', 'cat')
+        image type ('tile', 'weight', 'weight.fz', 'exposure',
+        'exposure_weight', 'exposure_weight.fz', 'exposure_flag',
+        'exposure_flag.fz', 'cat')
     no_cuts: bool, optional, default=False
         no cuts (of short exposure, validation flag) if True
     input_format : str, optional, default='full'
