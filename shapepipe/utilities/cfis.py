@@ -141,13 +141,13 @@ class image():
 
         Raises
         ------
-        NoneType
+        ValueError
             if name does not match to ID pattern
         """
 
         m = re.search(r'(\d{3}).{1}(\d{3})', self.name)
         if m is None:
-            raise NoneType(f'No ID match in file name {name}')
+            raise ValueError(f'No ID match in file name {name}')
         else:
             return f'{m[1]}.{m[2]}'
 
@@ -172,6 +172,11 @@ class image():
             if True, do not print metainfo
         ID_only: bool, optional, default=False
             if True, only print file ID instead of entire name
+
+        Raises
+        ------
+        ValueError
+            if name does not match to ID pattern
         """
 
         if base_name:
@@ -182,7 +187,7 @@ class image():
         if ID_only:
             m = re.search(r'\d{3}.\d{3}', name)
             if m is None:
-                raise NoneType(f'No ID match in file name {name}')
+                raise ValueError(f'No ID match in file name {name}')
             else:
                 name = m[0]
         print(name, end='', file=file)
