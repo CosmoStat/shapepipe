@@ -13,7 +13,7 @@ from shapepipe.modules.setools_package import setools
 
 
 @module_runner(
-    input_module='sextractor_runner_exp',
+    input_module='sextractor_runner',
     version='1.0',
     file_pattern=['sexcat'],
     file_ext=['.fits'],

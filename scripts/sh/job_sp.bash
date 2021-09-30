@@ -183,13 +183,13 @@ function command () {
    cmd=$1
    str=$2
 
-   #RED='\033[0;31m'
-   #GREEN='\033[0;32m'
-   #NC='\033[0m' # No Color
+   RED='\033[0;31m'
+   GREEN='\033[0;32m'
+   NC='\033[0m' # No Color
    # Color escape characters show up in log files
-   RED=''
-   GREEN=''
-   NC=''
+   #RED=''
+   #GREEN=''
+   #NC=''
 
 
    if [ $# == 2 ]; then
@@ -228,12 +228,6 @@ command_sp() {
    str=$2
 
    command "$1" "$2"
-   #res=$?
-   #if [ $res != 0 ]; then
-      #upload_logs $ID $VERBOSE
-      #echo "exiting 'canfar_sp.bash', '$cmd' returned $res, log files for id=$ID uploaded"
-      #exit $res
-   #fi
 }
 
 # Tar and upload files to vos
@@ -288,10 +282,10 @@ function print_env() {
 ### Start ###
 
 # Activate conda environment
-if [ "$CONDA_DEFAULT_ENV" != "shapepipe" ]; then
-  echo "Activate conda 'shapepipe' environment"
-  source $VM_HOME/miniconda3/bin/activate shapepipe
-fi
+#if [ "$CONDA_DEFAULT_ENV" != "shapepipe" ]; then
+  #echo "Activate conda 'shapepipe' environment"
+  #source $VM_HOME/miniconda3/bin/activate shapepipe
+#fi
 
 
 if [ $do_env == 1 ]; then
@@ -330,14 +324,8 @@ if [[ $do_job != 0 ]]; then
     fi
   fi
 
-  ### Retrieve tiles
-  command_sp "shapepipe_run -c $SP_CONFIG/config_get_tiles_$retrieve.ini" "Run shapepipe (get tiles)"
-
-  ### Find exposures
-  command_sp "shapepipe_run -c $SP_CONFIG/config_find_exp.ini" "Run shapepipe (find exposures)" 
-
-  ### Retrieve exposures
-  command_sp "shapepipe_run -c $SP_CONFIG/config_get_exp_$retrieve.ini" "Run shapepipe (get exposures)"
+  ### Retrieve files
+  command_sp "shapepipe_run -c $SP_CONFIG/config_GitFeGie_$retrieve.ini" "Retrieve images"
 
 fi
 
@@ -346,7 +334,7 @@ fi
 if [[ $do_job != 0 ]]; then
 
   ### Uncompress tile weights
-  command_sp "shapepipe_run -c $SP_CONFIG/config_unfz_w.ini" "Run shapepipe (uncompress tile weights)"
+  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Uz.ini" "Run shapepipe (uncompress tile weights)"
 
   ### Split images into single-HDU files, merge headers for WCS info
   command_sp "shapepipe_run -c $SP_CONFIG/config_exp_SpMh.ini" "Run shapepipe (split images, merge headers)"

@@ -33,7 +33,7 @@ def psfex_runner(
 
     # extract psfex  run configurations
     psfex_executable_path = config.getexpanded(
-        "PSFEX_RUNNER",
+        module_config_sec,
         "EXEC_PATH"
     )
     output_dir = run_dirs['output']
@@ -41,15 +41,15 @@ def psfex_runner(
     outcatalog_name = f"psfex_cat{file_number_string}.cat"
 
     psfex_config_file = config.getexpanded(
-        "PSFEX_RUNNER",
+        module_config_sec,
         "DOT_PSFEX_FILE"
     )
 
     input_file_path = input_file_list[0]
 
     # check image options
-    if config.has_option('PSFEX_RUNNER', "CHECKIMAGE"):
-        check_image_list = config.getlist("PSFEX_RUNNER", "CHECKIMAGE")
+    if config.has_option(module_config_sec, "CHECKIMAGE"):
+        check_image_list = config.getlist(module_config_sec, "CHECKIMAGE")
     else:
         check_image_list = ['']
 

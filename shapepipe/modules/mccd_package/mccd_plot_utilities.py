@@ -232,7 +232,7 @@ def plot_meanshapes(
         try:
             ccd_mask = ((all_CCDs.astype(int) == ccd_nb) * flagmask).astype(
                 bool)
-        except (TypeError, ValueError) as e:
+        except:
             ccd_mask = ((all_CCDs == str(ccd_nb)) * flagmask).astype(bool)
 
         star_shapes = all_star_shapes[:, ccd_mask]
