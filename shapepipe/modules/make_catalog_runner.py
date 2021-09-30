@@ -10,6 +10,7 @@ Module runner for ``make_catalog``.
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.make_catalog_package import make_catalog as mc
+from shapepipe.utilities.cfis import remove_common_elements
 
 
 @module_runner(
@@ -106,7 +107,7 @@ def make_catalog_runner(
     # Flag overlapping objects
     if tile_list_path:
         w_log.info('Flag overlapping objects')
-        mc.remove_common_elements(final_cat_file, tile_list_path)
+        remove_common_elements(final_cat_file, tile_list_path)
 
     # Save shape data
     sc_inst = mc.SaveCatalog(final_cat_file)
