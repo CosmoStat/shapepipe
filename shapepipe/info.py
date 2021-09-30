@@ -69,11 +69,13 @@ def shapepipe_logo(colour=False):
 
     Authors: Samuel Farrens   <samuel.farrens@cea.fr>
              Axel Guinot      <axel.guinot@cea.fr>
+             Martin Kilbinger <martin.kilbinger@cea.fr>
 
     Main Contributors:
-             Martin Kilbinger
              Tobias Liaudat
              Morgan Schmitz
+             Andre Zamorano Vitorelli
+             Francois Lanusse
 
     Version: {}
 
