@@ -523,10 +523,10 @@ def get_tile_coord_from_nixy(nix, niy):
 
     Parameters
     ----------
-    nix: str or int, scalar or list
-        tile number for x
-    niy: str or int, scalar or list
-        tile number for y
+    nix: str or int
+        tile number for x, can be list
+    niy: str or int
+        tile number for y, can be list
 
     Returns
     -------
