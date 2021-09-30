@@ -39,7 +39,7 @@ class MergeSep(object):
         number of separate input catalogues
     warning : str
         action when warning occurs, one in 'error', 'warning'
-    w_log :
+    w_log : logging.Logger
         log file
     """
 
