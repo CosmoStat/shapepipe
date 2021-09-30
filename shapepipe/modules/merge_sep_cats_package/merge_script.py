@@ -7,8 +7,6 @@ Class to merge separate catalogues.
 
 :Date: 2020
 
-:Package: ShapePipe
-
 """
 
 import os
@@ -41,6 +39,8 @@ class MergeSep(object):
         number of separate input catalogues
     warning : str
         action when warning occurs, one in 'error', 'warning'
+    w_log :
+        log file
     """
 
     def __init__(
