@@ -11,6 +11,9 @@ Module runner for ``psfex_interp``.
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.psfex_interp_package import psfex_interp
 
+from shapepipe.pipeline.file_handler import get_last_dir
+
+
 
 @module_runner(
     input_module=['psfex_runner', 'setools_runner'],
@@ -62,10 +65,11 @@ def psfex_interp_runner(
     elif mode == 'MULTI-EPOCH':
 
         # Fetch multi-epoch parameters
-        dot_psf_dir = config.getexpanded(
+        module = config.getexpanded(
             module_config_sec,
             'ME_DOT_PSF_DIR',
         )
+        dot_psf_dir = get_last_dir(config, module)
         dot_psf_pattern = config.get(
             module_config_sec,
             'ME_DOT_PSF_PATTERN',

@@ -365,22 +365,22 @@ if [[ $do_job != 0 ]]; then
   STOP=1
 
   ### The following are very a bad hacks to get additional input file paths
-  echo "Looking for PSF ($psf) output files"
-  if [ "$psf" == "psfex" ]; then
-    input_psfex=`ls -1 ./output/*/psfex_runner/output/star_split_ratio_80*.psf | head -n 1`
-    command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output"
-  else
-    input_psf_mccd=`find . -name "fitted_model*.npy" | head -n 1`
-    command_sp "ln -s `dirname $input_psf_mccd` input_psf_mccd" "Link MCCD output"
-  fi
+  #echo "Looking for PSF ($psf) output files"
+  #if [ "$psf" == "psfex" ]; then
+    #input_psfex=`ls -1 ./output/*/psfex_runner/output/star_split_ratio_80*.psf | head -n 1`
+    #command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output"
+  #else
+    #input_psf_mccd=`find . -name "fitted_model*.npy" | head -n 1`
+    #command_sp "ln -s `dirname $input_psf_mccd` input_psf_mccd" "Link MCCD output"
+  #fi
 
-  echo "Looking for single-exposure single-HDU output files"
-  input_split_exp=`ls -1 ./output/*/split_exp_runner/output/flag*.fits | head -n 1`
-  command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output"
+  #echo "Looking for single-exposure single-HDU output files"
+  #input_split_exp=`ls -1 ./output/*/split_exp_runner/output/flag*.fits | head -n 1`
+  #command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output"
 
-  echo "Looking for SExtractor output files"
-  input_sextractor=`ls -1 ./output/*/sextractor_runner/output/sexcat_sexcat*.fits | head -n 1`
-  command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor output"
+  #echo "Looking for SExtractor output files"
+  #input_sextractor=`ls -1 ./output/*/sextractor_runner/output/sexcat_sexcat*.fits | head -n 1`
+  #command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor output"
 
 fi
 

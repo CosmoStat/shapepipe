@@ -1251,3 +1251,51 @@ class FileHandler(object):
         log_dir = self._module_dict[module][run_name]['log_dir']
 
         return f'{log_dir}/process{file_number_string}'
+
+
+def get_list(run_log_file):
+    """See RunLog.get_list()"""
+
+    with open(run_log_file, 'r') as run_log:
+        lines = run_log.readlines()
+
+    runs = [line.rstrip() for line in lines]
+
+    return runs
+
+
+def get_all(runs, module):
+    """See RunLog.get_all()"""
+
+    module_base, _ = split_module_run(module)
+
+    all_runs = [
+        run for run in runs
+        if module_base in run.split()[1].split(',')
+    ]
+    if len(all_runs) == 0:
+        raise RuntimeError(
+            f'No previous run of module \'{module_base}\' found'
+        )
+
+    all_runs = all_runs[::-1]
+
+    return all_runs
+
+
+def get_last_dir(config, module):
+
+    run_log_file = FileHandler.setpath(
+            config.getexpanded('FILE', 'OUTPUT_DIR'),
+            config.get('FILE', 'RUN_LOG_NAME'),
+            '.txt',
+        )
+    print('MKDEBUG', run_log_file)
+    runs = get_list(run_log_file)
+    module = 'split_exp_runner'
+    all_runs = get_all(runs, module)
+    last_run = all_runs[0].split(' ')[0]
+    last_dir = f'{last_run}/{module}/output'
+
+    return last_dir
+

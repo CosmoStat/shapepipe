@@ -15,6 +15,9 @@ from shapepipe.modules.mccd_package import shapepipe_auxiliary_mccd\
     as aux_mccd
 import os
 
+from shapepipe.pipeline.file_handler import get_last_dir
+
+
 
 @module_runner(
     input_module=['setools_runner'],
@@ -40,10 +43,11 @@ def mccd_interp_runner(
     output_dir = run_dirs['output']
 
     if mode == 'CLASSIC':
-        psf_model_dir = config.getexpanded(
+        module = config.getexpanded(
             module_config_sec,
             'PSF_MODEL_DIR'
         )
+        psf_model_dir = get_last_dir(config, module)
         psf_model_pattern = config.get(
             module_config_sec,
             'PSF_MODEL_PATTERN'
@@ -91,10 +95,11 @@ def mccd_interp_runner(
             )
 
     elif mode == 'MULTI-EPOCH':
-        psf_model_dir = config.getexpanded(
+        module = config.getexpanded(
             module_config_sec,
             'PSF_MODEL_DIR'
         )
+        psf_model_dir = get_last_dir(config, module)
         psf_model_pattern = config.get(
             module_config_sec,
             'PSF_MODEL_PATTERN'
