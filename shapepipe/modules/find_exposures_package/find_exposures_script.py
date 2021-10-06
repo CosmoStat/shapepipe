@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""SPLIT EXP SCRIPT
+"""FIND EXPOSURES SCRIPT
 
 This module contains a class to identify single exposures that were used
 to create tiles.
@@ -7,8 +7,6 @@ to create tiles.
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
 :Date: January 2019
-
-:Package: ShapePipe
 
 """
 

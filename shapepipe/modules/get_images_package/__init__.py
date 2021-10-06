@@ -9,4 +9,3 @@ This package contains the module for ``get_images``
 """
 
 __all__ = ['get_images.py']
-
