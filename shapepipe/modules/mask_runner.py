@@ -24,18 +24,18 @@ def mask_runner(input_file_list, run_dirs, file_number_string,
         ext_flag_name = None
         ext_star_cat = None
     elif len(input_file_list) == 3:
-        if config.getboolean('MASK_RUNNER', 'USE_EXT_FLAG'):
+        if config.getboolean(module_config_sec, 'USE_EXT_FLAG'):
             ext_flag_name = input_file_list[2]
             ext_star_cat = None
-        elif config.getboolean('MASK_RUNNER', 'USE_EXT_STAR'):
+        elif config.getboolean(module_config_sec, 'USE_EXT_STAR'):
             ext_flag_name = None
             ext_star_cat = input_file_list[2]
         else:
             raise ValueError('Expecting external flag or external star '
                              'catalog.')
     elif len(input_file_list) == 4:
-        if (config.getboolean('MASK_RUNNER', 'USE_EXT_FLAG') and
-                config.getboolean('MASK_RUNNER', 'USE_EXT_STAR')):
+        if (config.getboolean(module_config_sec, 'USE_EXT_FLAG') and
+                config.getboolean(module_config_sec, 'USE_EXT_STAR')):
             ext_flag_name = input_file_list[2]
             ext_star_cat = input_file_list[3]
         else:
@@ -47,20 +47,20 @@ def mask_runner(input_file_list, run_dirs, file_number_string,
                          "(optional)"
                          "".format(len(input_file_list)))
 
-    config_file = config.getexpanded('MASK_RUNNER', 'MASK_CONFIG_PATH')
+    config_file = config.getexpanded(module_config_sec, 'MASK_CONFIG_PATH')
 
-    if config.has_option('MASK_RUNNER', 'HDU'):
-        hdu = config.getint('MASK_RUNNER', 'HDU')
+    if config.has_option(module_config_sec, 'HDU'):
+        hdu = config.getint(module_config_sec, 'HDU')
     else:
         hdu = 0
 
-    if config.has_option('MASK_RUNNER', 'SUFFIX'):
-        suffix = config.get('MASK_RUNNER', 'SUFFIX')
+    if config.has_option(module_config_sec, 'SUFFIX'):
+        suffix = config.get(module_config_sec, 'SUFFIX')
     else:
         suffix = ''
 
-    if config.has_option('MASK_RUNNER', 'OUTNAME_BASE'):
-        outname_base = config.get('MASK_RUNNER', 'OUTNAME_BASE')
+    if config.has_option(module_config_sec, 'OUTNAME_BASE'):
+        outname_base = config.get(module_config_sec, 'OUTNAME_BASE')
     else:
         outname_base = 'flag'
 

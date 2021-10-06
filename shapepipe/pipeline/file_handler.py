@@ -712,6 +712,8 @@ class FileHandler(object):
             Module name
 
         """
+        # Check if current module is not module list of this run,
+        # or if module is first in the list.
         if (
             isinstance(
                 self._module_dict[module][run_name]['input_module'],
@@ -1290,9 +1292,7 @@ def get_last_dir(config, module):
             config.get('FILE', 'RUN_LOG_NAME'),
             '.txt',
         )
-    print('MKDEBUG', run_log_file)
     runs = get_list(run_log_file)
-    module = 'split_exp_runner'
     all_runs = get_all(runs, module)
     last_run = all_runs[0].split(' ')[0]
     last_dir = f'{last_run}/{module}/output'

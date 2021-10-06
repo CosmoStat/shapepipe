@@ -345,11 +345,8 @@ fi
 (( do_job= $job & 4 ))
 if [[ $do_job != 0 ]]; then
 
-  ### Mask tiles
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Ma.ini" "Run shapepipe (mask tiles)"
-
-  ### Mask exposures
-  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini" "Run shapepipe (mask exposures)"
+  ### Mask tiles and exposures
+  command_sp "shapepipe_run -c $SP_CONFIG/config_MaMa.ini" "Run shapepipe (mask)"
 
 fi
 
@@ -361,26 +358,8 @@ if [[ $do_job != 0 ]]; then
   ### Star detection, selection, PSF model. setools can exit with an error for CCD with insufficient stars,
   ### the script should continue
   STOP=0
-  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_$psf.ini" "Run shapepipe (exp $psf)"
+  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Sx_exp_${psf}.ini" "Run shapepipe (tile detection, exp $psf)"
   STOP=1
-
-  ### The following are very a bad hacks to get additional input file paths
-  #echo "Looking for PSF ($psf) output files"
-  #if [ "$psf" == "psfex" ]; then
-    #input_psfex=`ls -1 ./output/*/psfex_runner/output/star_split_ratio_80*.psf | head -n 1`
-    #command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output"
-  #else
-    #input_psf_mccd=`find . -name "fitted_model*.npy" | head -n 1`
-    #command_sp "ln -s `dirname $input_psf_mccd` input_psf_mccd" "Link MCCD output"
-  #fi
-
-  #echo "Looking for single-exposure single-HDU output files"
-  #input_split_exp=`ls -1 ./output/*/split_exp_runner/output/flag*.fits | head -n 1`
-  #command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output"
-
-  #echo "Looking for SExtractor output files"
-  #input_sextractor=`ls -1 ./output/*/sextractor_runner/output/sexcat_sexcat*.fits | head -n 1`
-  #command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor output"
 
 fi
 
@@ -391,7 +370,7 @@ if [[ $do_job != 0 ]]; then
   ### PSF model letter: 'P' (psfex) or 'M' (mccd)
   letter=${psf:0:1}
   Letter=${letter^}
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Sx${Letter}iViSmVi.ini" "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)"
+  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_${Letter}iViSmVi.ini" "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)"
 
 fi
 

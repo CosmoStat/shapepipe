@@ -15,7 +15,7 @@ from shapepipe.pipeline.file_handler import get_last_dir
 
 
 @module_runner(
-    input_module='sextractor_runner',
+    input_module=['sextractor_runner'],
     version='0.1',
     file_pattern=['galaxy_selection', 'image'],
     file_ext=['.fits', '.fits'],

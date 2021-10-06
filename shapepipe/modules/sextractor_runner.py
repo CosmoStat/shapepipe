@@ -28,38 +28,38 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
 
     num = file_number_string
 
-    exec_path = config.getexpanded("SEXTRACTOR_RUNNER", "EXEC_PATH")
-    dot_sex = config.getexpanded("SEXTRACTOR_RUNNER", "DOT_SEX_FILE")
-    dot_param = config.getexpanded("SEXTRACTOR_RUNNER", "DOT_PARAM_FILE")
-    dot_conv = config.getexpanded("SEXTRACTOR_RUNNER", "DOT_CONV_FILE")
+    exec_path = config.getexpanded(module_config_sec, "EXEC_PATH")
+    dot_sex = config.getexpanded(module_config_sec, "DOT_SEX_FILE")
+    dot_param = config.getexpanded(module_config_sec, "DOT_PARAM_FILE")
+    dot_conv = config.getexpanded(module_config_sec, "DOT_CONV_FILE")
 
-    weight_file = config.getboolean("SEXTRACTOR_RUNNER", "WEIGHT_IMAGE")
-    flag_file = config.getboolean("SEXTRACTOR_RUNNER", "FLAG_IMAGE")
-    psf_file = config.getboolean("SEXTRACTOR_RUNNER", "PSF_FILE")
-    detection_image = config.getboolean("SEXTRACTOR_RUNNER", "DETECTION_IMAGE")
+    weight_file = config.getboolean(module_config_sec, "WEIGHT_IMAGE")
+    flag_file = config.getboolean(module_config_sec, "FLAG_IMAGE")
+    psf_file = config.getboolean(module_config_sec, "PSF_FILE")
+    detection_image = config.getboolean(module_config_sec, "DETECTION_IMAGE")
     detection_weight = config.getboolean(
-        "SEXTRACTOR_RUNNER", "DETECTION_WEIGHT"
+        module_config_sec, "DETECTION_WEIGHT"
     )
 
-    zp_from_header = config.getboolean("SEXTRACTOR_RUNNER", "ZP_FROM_HEADER")
+    zp_from_header = config.getboolean(module_config_sec, "ZP_FROM_HEADER")
     if zp_from_header:
-        zp_key = config.get("SEXTRACTOR_RUNNER", "ZP_KEY")
+        zp_key = config.get(module_config_sec, "ZP_KEY")
     else:
         zp_key = None
 
-    bkg_from_header = config.getboolean("SEXTRACTOR_RUNNER", "BKG_FROM_HEADER")
+    bkg_from_header = config.getboolean(module_config_sec, "BKG_FROM_HEADER")
     if bkg_from_header:
-        bkg_key = config.get("SEXTRACTOR_RUNNER", "BKG_KEY")
+        bkg_key = config.get(module_config_sec, "BKG_KEY")
     else:
         bkg_key = None
 
-    if config.has_option('SEXTRACTOR_RUNNER', "CHECKIMAGE"):
-        check_image = config.getlist("SEXTRACTOR_RUNNER", "CHECKIMAGE")
+    if config.has_option(module_config_sec, "CHECKIMAGE"):
+        check_image = config.getlist(module_config_sec, "CHECKIMAGE")
     else:
         check_image = ['']
 
-    if config.has_option('SEXTRACTOR_RUNNER', 'SUFFIX'):
-        suffix = config.get('SEXTRACTOR_RUNNER', 'SUFFIX')
+    if config.has_option(module_config_sec, 'SUFFIX'):
+        suffix = config.get(module_config_sec, 'SUFFIX')
     else:
         suffix = None
 
@@ -98,10 +98,10 @@ def sextractor_runner(input_file_list, run_dirs, file_number_string,
     if check_error2 == []:
         stderr2 = stdout
 
-    if config.getboolean("SEXTRACTOR_RUNNER", "MAKE_POST_PROCESS"):
-        f_wcs_path = config.getexpanded("SEXTRACTOR_RUNNER", "LOG_WCS")
-        pos_params = config.getlist("SEXTRACTOR_RUNNER", "WORLD_POSITION")
-        ccd_size = config.getlist("SEXTRACTOR_RUNNER", "CCD_SIZE")
+    if config.getboolean(module_config_sec, "MAKE_POST_PROCESS"):
+        f_wcs_path = config.getexpanded(module_config_sec, "LOG_WCS")
+        pos_params = config.getlist(module_config_sec, "WORLD_POSITION")
+        ccd_size = config.getlist(module_config_sec, "CCD_SIZE")
         ss.make_post_process(
             SE_caller.path_output_file,
             f_wcs_path,
