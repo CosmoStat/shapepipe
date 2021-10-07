@@ -34,16 +34,28 @@ class MergeStarCatMCCD(object):
     stamp_size : int
         stamp size, in pixels
     rad : int
-        radius for mask, in pixels
+        radius for mask, in pixels, required for
+        some statistics computations
+    hdu_table : int, optional, default=1
+        HDU number
     """
 
-    def __init__(self, input_file_list, output_dir, w_log, stamp_size, rad):
+    def __init__(
+        self,
+        input_file_list,
+        output_dir,
+        w_log,
+        stamp_size,
+        rad,
+        hdu_table=1
+    ):
 
         self._input_file_list = input_file_list
         self._output_dir = output_dir
         self._w_log = w_log
         self._stamp_size = stamp_size
         self._rad = rad
+        self._hdu_table = hdu_table
 
     @staticmethod
     def rmse_calc(values, sizes):
@@ -207,14 +219,12 @@ class MergeStarCatMCCD(object):
                 if np.sqrt((i - cent[0]) ** 2 + (j - cent[1]) ** 2) <= self._rad:
                     my_mask[i, j] = True
 
-        hdu_table = 1
-
         for name in self._input_file_list:
             starcat_j = fits.open(name[0], memmap=False)
 
-            stars = np.copy(starcat_j[hdu_table].data['VIGNET_LIST'])
+            stars = np.copy(starcat_j[self._hdu_table].data['VIGNET_LIST'])
             stars[stars < -1e6] = 0
-            psfs = np.copy(starcat_j[hdu_table].data['PSF_VIGNET_LIST'])
+            psfs = np.copy(starcat_j[self._hdu_table].data['PSF_VIGNET_LIST'])
 
             # Pixel mse calculation
             pix_val = np.sum((stars - psfs) ** 2)
@@ -284,43 +294,57 @@ class MergeStarCatMCCD(object):
             model_var_size.append(model_var_val.size)
 
             # positions
-            x += list(starcat_j[hdu_table].data['GLOB_POSITION_IMG_LIST'][:, 0])
-            y += list(starcat_j[hdu_table].data['GLOB_POSITION_IMG_LIST'][:, 1])
+            x += list(
+                starcat_j[self._hdu_table].data['GLOB_POSITION_IMG_LIST'][:, 0]
+            )
+            y += list(
+                starcat_j[self._hdu_table].data['GLOB_POSITION_IMG_LIST'][:, 1]
+            )
 
             # RA and DEC positions
             try:
-                ra += list(starcat_j[hdu_table].data['RA_LIST'][:])
-                dec += list(starcat_j[hdu_table].data['DEC_LIST'][:])
+                ra += list(starcat_j[self._hdu_table].data['RA_LIST'][:])
+                dec += list(starcat_j[self._hdu_table].data['DEC_LIST'][:])
             except Exception:
                 ra += list(np.zeros(
-                    starcat_j[hdu_table].data[
+                    starcat_j[self._hdu_table].data[
                         'GLOB_POSITION_IMG_LIST'
                     ][:, 0].shape,
                     dtype=int,
                 ))
                 dec += list(np.zeros(
-                    starcat_j[hdu_table].data[
+                    starcat_j[self._hdu_table].data[
                         'GLOB_POSITION_IMG_LIST'
                     ][:, 0].shape,
                     dtype=int,
                 ))
 
             # shapes (convert sigmas to R^2)
-            g1_psf += list(starcat_j[hdu_table].data['PSF_MOM_LIST'][:, 0])
-            g2_psf += list(starcat_j[hdu_table].data['PSF_MOM_LIST'][:, 1])
-            size_psf += list(
-                starcat_j[hdu_table].data['PSF_MOM_LIST'][:, 2] ** 2
+            g1_psf += list(
+                starcat_j[self._hdu_table].data['PSF_MOM_LIST'][:, 0]
             )
-            g1 += list(starcat_j[hdu_table].data['STAR_MOM_LIST'][:, 0])
-            g2 += list(starcat_j[hdu_table].data['STAR_MOM_LIST'][:, 1])
-            size += list(starcat_j[hdu_table].data['STAR_MOM_LIST'][:, 2] ** 2)
+            g2_psf += list(
+                starcat_j[self._hdu_table].data['PSF_MOM_LIST'][:, 1]
+            )
+            size_psf += list(
+                starcat_j[self._hdu_table].data['PSF_MOM_LIST'][:, 2] ** 2
+            )
+            g1 += list(starcat_j[self._hdu_table].data['STAR_MOM_LIST'][:, 0])
+            g2 += list(starcat_j[self._hdu_table].data['STAR_MOM_LIST'][:, 1])
+            size += list(
+                starcat_j[self._hdu_table].data['STAR_MOM_LIST'][:, 2] ** 2
+            )
 
             # flags
-            flag_psf += list(starcat_j[hdu_table].data['PSF_MOM_LIST'][:, 3])
-            flag_star += list(starcat_j[hdu_table].data['STAR_MOM_LIST'][:, 3])
+            flag_psf += list(
+                starcat_j[self._hdu_table].data['PSF_MOM_LIST'][:, 3]
+            )
+            flag_star += list(
+                starcat_j[self._hdu_table].data['STAR_MOM_LIST'][:, 3]
+            )
 
             # ccd id list
-            ccd_nb += list(starcat_j[hdu_table].data['CCD_ID_LIST'])
+            ccd_nb += list(starcat_j[self._hdu_table].data['CCD_ID_LIST'])
 
             starcat_j.close()
 
