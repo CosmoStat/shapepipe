@@ -49,7 +49,8 @@ class MergeStarCat(object):
     def rmse_calc(values, sizes):
         """Rmse Calculation
 
-        Calculate pixel root mean square error over all input images
+        Calculate square root of mean over input values. If values are (x - <x>),
+        this function computes the RMSE.
 
         Parameters
         ----------
@@ -64,9 +65,6 @@ class MergeStarCat(object):
             root mean square error
         """
 
-        #rmse = np.sqrt(
-            #np.nansum(np.array(values)) / np.nansum(np.array(sizes))
-        #)
         rmse = np.sqrt(MergeStarCat.mean_calc(values, sizes))
 
         return rmse
@@ -75,7 +73,7 @@ class MergeStarCat(object):
     def rmse_calc_2(values, sizes):
         """Rmse calculation 2
 
-        Calculate pixel root mean square error over all input images
+        TBD
 
         Parameters
         ----------
