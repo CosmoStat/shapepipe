@@ -34,7 +34,8 @@ class MergeStarCat(object):
     stamp_size : int
         stamp size, in pixels
     rad : int
-        radius for mask, in pixels
+        radius for mask, in pixels, required for
+        some statistics computations
     hdu_table : int, optional, default=1
         HDU number
     """
