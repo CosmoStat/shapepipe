@@ -18,10 +18,10 @@ from astropy.io import fits
 from shapepipe.pipeline import file_io as sc
 
 
-class MergeStarCat(object):
-    """Merge Star Catalogue
+class MergeStarCatMCCD(object):
+    """Merge Star Catalogue MCCD
 
-    Merge MCCD star catalogues
+    Merge star catalogues of MCCD PSF model output
 
     Parameters
     ----------
@@ -65,7 +65,7 @@ class MergeStarCat(object):
             root mean square error
         """
 
-        rmse = np.sqrt(MergeStarCat.mean_calc(values, sizes))
+        rmse = np.sqrt(MergeStarCatMCCD.mean_calc(values, sizes))
 
         return rmse
 
@@ -324,47 +324,45 @@ class MergeStarCat(object):
 
             starcat_j.close()
 
+        MSC = MergeStarCatMCCD
+
         # Regular pixel RMSE
-        tot_pixel_rmse = MergeStarCat.rmse_calc(pixel_mse, size_mse)
+        tot_pixel_rmse = MSC.rmse_calc(pixel_mse, size_mse)
         self._w_log.info(
             f'MCCD_merge_starcat: Regular Total pixel RMSE ='
             + f' {tot_pixel_rmse:.5e}\n'
         )
 
         # Regular Total pixel mean
-        tot_pixel_mean = MergeStarCat.mean_calc(pixel_sum, size_mse)
+        tot_pixel_mean = MSC.mean_calc(pixel_sum, size_mse)
         self._w_log.info(
             f'MCCD_merge_starcat: Regular Total pixel mean ='
             + f' {tot_pixel_mean:.5e}\n'
         )
 
         # Regular Total MASKED pixel RMSE
-        tot_masked_pixel_rmse = MergeStarCat.rmse_calc(
-            masked_pixel_mse, masked_size
-        )
+        tot_masked_pixel_rmse = MSC.rmse_calc(masked_pixel_mse, masked_size)
         self._w_log.info(
             f'MCCD_merge_starcat: Regular Total MASKED pixel RMSE ='
             + f' {tot_masked_pixel_rmse:.5e}\n'
         )
 
         # Regular Total MASKED pixel mean
-        tot_masked_pixel_mean = MergeStarCat.mean_calc(
-            masked_pixel_sum, masked_size
-        )
+        tot_masked_pixel_mean = MSC.mean_calc(masked_pixel_sum, masked_size)
         self._w_log.info(
             f'MCCD_merge_starcat: Regular Total MASKED pixel mean ='
             + f' {tot_masked_pixel_mean:.5e}\n'
         )
 
         # Normalized pixel RMSE
-        tot_pix_norm_rmse = MergeStarCat.rmse_calc(pix_norm_mse, size_norm_mse)
+        tot_pix_norm_rmse = MSC.rmse_calc(pix_norm_mse, size_norm_mse)
         self._w_log.info(
             'MCCD_merge_starcat: Normalized Total pixel RMSE ='
             + f' {tot_pix_norm_rmse:.5e}\n'
         )
 
         # Normalized filtered pixel RMSE
-        tot_pix_filt_rmse = MergeStarCat.rmse_calc(pix_filt_mse, size_filt_mse)
+        tot_pix_filt_rmse = MSC.rmse_calc(pix_filt_mse, size_filt_mse)
         self._w_log.info(
             'MCCD_merge_starcat: Filtered Total pixel RMSE ='
             + f' {tot_pix_filt_rmse:.5e}\n'
@@ -374,13 +372,9 @@ class MergeStarCat(object):
         concat_star_noise_var = np.concatenate(np.array(star_noise_var))
 
         # Model variance
-        mean_model_var = MergeStarCat.mean_calc(
-            concat_model_var, model_var_size
-        )
-        std_model_var = MergeStarCat.std_calc(concat_model_var)
-        rmse_model_var = MergeStarCat.rmse_calc_2(
-            concat_model_var, model_var_size
-        )
+        mean_model_var = MSC.mean_calc(concat_model_var, model_var_size)
+        std_model_var = MSC.std_calc(concat_model_var)
+        rmse_model_var = MSC.rmse_calc_2(concat_model_var, model_var_size)
         self._w_log.info(
             f'MCCD-RCA variance:\nMean Variance= {mean_model_var:.5e}\n'
             + f'Std Variance= {std_model_var:.5e}\n'
@@ -388,13 +382,9 @@ class MergeStarCat(object):
         )
 
         # Star Noise Variance
-        mean_star_var = MergeStarCat.mean_calc(
-            concat_star_noise_var, star_noise_size
-        )
-        std_star_var = MergeStarCat.std_calc(concat_star_noise_var)
-        rmse_star_var = MergeStarCat.rmse_calc_2(
-            concat_star_noise_var, star_noise_size
-        )
+        mean_star_var = MSC.mean_calc(concat_star_noise_var, star_noise_size)
+        std_star_var = MSC.std_calc(concat_star_noise_var)
+        rmse_star_var = MSC.rmse_calc_2(concat_star_noise_var, star_noise_size)
         self._w_log.info(
             f'Masked stars variance:\nMean Variance= {mean_star_var:.5e}\n'
             + f'Std Variance= {std_star_var:.5e}\n'
@@ -412,19 +402,19 @@ class MergeStarCat(object):
         star_e2 = np.array(g2)[flagmask.astype(bool)]
         star_r2 = np.array(size)[flagmask.astype(bool)]
 
-        rmse, mean, std_dev = MergeStarCat.stats_calculator(star_e1, psf_e1)
+        rmse, mean, std_dev = MSC.stats_calculator(star_e1, psf_e1)
         self._w_log.info(
             f'Moment residual e1:\nMean= {mean:.5e}\nStd Dev= {std_dev:.5e}\n'
             + f'RMSE= {rmse:.5e}\n'
         )
 
-        rmse, mean, std_dev = MergeStarCat.stats_calculator(star_e2, psf_e2)
+        rmse, mean, std_dev = MSC.stats_calculator(star_e2, psf_e2)
         self._w_log.info(
             f'Moment residual e2:\nMean= {mean:.5e}\nStd Dev= {std_dev:.5e}\n'
             + f'RMSE= {rmse:.5e}\n'
         )
 
-        rmse, mean, std_dev = MergeStarCat.stats_calculator(star_r2, psf_r2)
+        rmse, mean, std_dev = MSC.stats_calculator(star_r2, psf_r2)
         self._w_log.info(
             f'Moment residual R2:\nMean= {mean:.5e}\nStd Dev= {std_dev:.5e}\n'
             + f'RMSE= {rmse:.5e}\n'
@@ -456,3 +446,43 @@ class MergeStarCat(object):
         }
 
         output.save_as_fits(data, sex_cat_path=self._input_file_list[0][0])
+
+
+class MergeStarCatPSFEX(object):
+    """Merge Star Catalogue PSFEx
+
+    Merge star catalogues of PSFEx PSF model output
+
+    Parameters
+    ----------
+    input_file_list : list of str
+        input files
+    output_dir : str
+        output directory
+    w_log :
+        log file
+    stamp_size : int
+        stamp size, in pixels
+    rad : int
+        radius for mask, in pixels
+    """
+
+    def __init__(self, input_file_list, output_dir, w_log, stamp_size, rad):
+
+        self._input_file_list = input_file_list
+        self._output_dir = output_dir
+        self._w_log = w_log
+        self._stamp_size = stamp_size
+        self._rad = rad
+
+    def process(self):
+
+        x, y, ra, dec = [], [], [], []
+        g1_psf, g2_psf, size_psf = [], [], []
+        g1, g2, size = [], [], []
+        flag_psf, flag_star = [], []
+        mag, snr, psfex_acc = [], [], []
+        ccd_nb = []
+
+    
+

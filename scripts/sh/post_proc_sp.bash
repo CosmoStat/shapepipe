@@ -80,6 +80,7 @@ else
   ### Create merged PSF validation catalog
   dir_individual="psf_validation_ind"
   dir_merged="psf_validation_merged"
+  mkdir -p $dir_merged
   fname_merged="psf_cat_full-0000000.fits"
   merge_star_cat_psfex -i $dir_individual -o $dir_merged/$fname_merged -v
   shapepipe_run -c $SP_CONFIG/config_Pl_psfex.ini 

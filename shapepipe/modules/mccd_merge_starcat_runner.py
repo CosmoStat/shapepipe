@@ -37,7 +37,7 @@ def mccd_merge_starcat_runner(
 
     stamp_size = 51
     rad = 10
-    ms = merge.MergeStarCat(input_file_list, output_dir, w_log, stamp_size, rad)
+    ms = merge.MergeStarCatMCCD(input_file_list, output_dir, w_log, stamp_size, rad)
 
     ms.process()
 
