@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""MCCD MERGE STARCAT MODULE
+"""MERGE STARCAT MODULE
 
 This module contains methods to merge MCCD star catalogues
 for validation
@@ -9,4 +9,4 @@ for validation
 
 """
 
-__all__ = ['mccd_merge_starcat_script']
+__all__ = ['merge']

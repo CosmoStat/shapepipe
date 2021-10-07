@@ -46,7 +46,7 @@ except ImportError:
 
 
 @module_runner(
-    input_module=['mccd_merge_starcat_runner'],
+    input_module=['merge_starcat_runner'],
     version='1.0',
     file_pattern=['full_starcat'],
     file_ext=['.fits'],

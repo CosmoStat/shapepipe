@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
-"""MCCD MERGE STARCAT SCRIPT
+"""MERGE STARCAT SCRIPT
 
 This module contains a class to identify single exposures that were used
 to create tiles.
 
-:Author: Martin Kilbinger <martin.kilbinger@cea.fr>, Tobias Liaudat
+:Author: Martin Kilbinger <martin.kilbinger@cea.fr>, Tobias Liaudat,
+    Morgan Schmitz, Axel Guinot
 
 :Date: 2021
-
-:Package: ShapePipe
 
 """
 
 
 import numpy as np
+import re
+
 from astropy.io import fits
 from shapepipe.pipeline import file_io as sc
 
@@ -31,11 +32,10 @@ class MergeStarCatMCCD(object):
         output directory
     w_log :
         log file
-    stamp_size : int
+    stamp_size : int, optional, default=51
         stamp size, in pixels
-    rad : int
-        radius for mask, in pixels, required for
-        some statistics computations
+    rad : int, optional, default=10
+        radius for mask, in pixels
     hdu_table : int, optional, default=1
         HDU number
     """
@@ -45,8 +45,8 @@ class MergeStarCatMCCD(object):
         input_file_list,
         output_dir,
         w_log,
-        stamp_size,
-        rad,
+        stamp_size=51,
+        rad=10,
         hdu_table=1
     ):
 
@@ -348,6 +348,7 @@ class MergeStarCatMCCD(object):
 
             starcat_j.close()
 
+        # Shortcut name
         MSC = MergeStarCatMCCD
 
         # Regular pixel RMSE
@@ -446,12 +447,14 @@ class MergeStarCatMCCD(object):
 
         self._w_log.info(f'MCCD: Number of stars: {star_e1.shape[0]:d}')
 
+        # Prepare output FITS catalogue
         output = sc.FITSCatalog(
-            self._output_dir + '/full_starcat-0000000.fits',
+            f'{self._output_dir}/full_starcat-0000000.fits',
             open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
             SEx_catalog=True
         )
 
+        # Collect columns
         # convert back to sigma for consistency
         data = {
             'X': x,
@@ -469,6 +472,7 @@ class MergeStarCatMCCD(object):
             'CCD_NB': ccd_nb
         }
 
+        # Write file
         output.save_as_fits(data, sex_cat_path=self._input_file_list[0][0])
 
 
@@ -485,19 +489,16 @@ class MergeStarCatPSFEX(object):
         output directory
     w_log :
         log file
-    stamp_size : int
-        stamp size, in pixels
-    rad : int
-        radius for mask, in pixels
+    hdu_table : int, optional, default=2
+        HDU number
     """
 
-    def __init__(self, input_file_list, output_dir, w_log, stamp_size, rad):
+    def __init__(self, input_file_list, output_dir, w_log, hdu_table=2):
 
         self._input_file_list = input_file_list
         self._output_dir = output_dir
         self._w_log = w_log
-        self._stamp_size = stamp_size
-        self._rad = rad
+        self._hdu_table = hdu_table
 
     def process(self):
 
@@ -508,5 +509,70 @@ class MergeStarCatPSFEX(object):
         mag, snr, psfex_acc = [], [], []
         ccd_nb = []
 
-    
+        self._w_log.info(
+            f'Merging {len(self._input_file_list)} star catalogues'
+        )
 
+        for name in self._input_file_list:
+            starcat_j = fits.open(name[0], memmap=False)
+
+            data_j = starcat_j[self._hdu_table].data
+
+            # positions
+            x += list(data_j['X'])
+            y += list(data_j['Y'])
+            ra += list(data_j['RA'])
+            dec += list(data_j['DEC'])
+
+            # shapes (convert sigmas to R^2)
+            g1_psf += list(data_j['E1_PSF_HSM'])
+            g2_psf += list(data_j['E2_PSF_HSM'])
+            size_psf += list(data_j['SIGMA_PSF_HSM']**2)
+            g1 += list(data_j['E1_STAR_HSM'])
+            g2 += list(data_j['E2_STAR_HSM'])
+            size += list(data_j['SIGMA_STAR_HSM']**2)
+
+            # flags
+            flag_psf += list(data_j['FLAG_PSF_HSM'])
+            flag_star += list(data_j['FLAG_STAR_HSM'])
+
+            # misc
+            mag += list(data_j['MAG'])
+            snr += list(data_j['SNR'])
+            psfex_acc += list(data_j['ACCEPTED'])
+
+            # CCD number
+            ccd_nb += [
+                re.split(r"\-([0-9]*)\-([0-9]+)\.", name[0])[-2]
+            ] * len(data_j['RA'])
+
+        # Prepare output FITS catalogue
+        output = sc.FITSCatalog(
+            f'{self._output_dir}/full_starcat-0000000.fits',
+            open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
+            SEx_catalog=True
+        )
+
+        # Collect columns
+        # convert back to sigma for consistency
+        data = {
+            'X': x,
+            'Y': y,
+            'RA': ra,
+            'DEC': dec,
+            'E1_PSF_HSM': g1_psf,
+            'E2_PSF_HSM': g2_psf,
+            'SIGMA_PSF_HSM': np.sqrt(size_psf),
+            'E1_STAR_HSM': g1,
+            'E2_STAR_HSM': g2,
+            'SIGMA_STAR_HSM': np.sqrt(size),
+            'FLAG_PSF_HSM': flag_psf,
+            'FLAG_STAR_HSM': flag_star,
+            'MAG': mag,
+            'SNR': snr,
+            'ACCEPTED': psfex_acc,
+            'CCD_NB': ccd_nb
+        }
+
+        # Write file
+        output.save_as_fits(data, overwrite=True, sex_cat_path=self._input_file_list[0][0])
