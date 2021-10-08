@@ -65,7 +65,6 @@ SP_CONFIG=$SP_BASE/example/cfis
 # To Un-tar all .tgz results files, use
 #
 # $SP_BASE/scripts/sh/untar_results.sh
-#
 
 
 # PSF
@@ -74,17 +73,7 @@ SP_CONFIG=$SP_BASE/example/cfis
 psf_residuals -p $psf
 
 ## Merge all psfinterp results and compute PSF residuals
-#if [[ "$psf" == "mccd" ]]; then
-  shapepipe_run -c $SP_CONFIG/config_MsPl.ini 
-#else
-  #### Create merged PSF validation catalog
-  #dir_individual="psf_validation_ind"
-  #dir_merged="psf_validation_merged"
-  #mkdir -p $dir_merged
-  #fname_merged="psf_cat_full-0000000.fits"
-  #merge_star_cat_psfex -i $dir_individual -o $dir_merged/$fname_merged -v
-  #shapepipe_run -c $SP_CONFIG/config_Pl_psfex.ini 
-#fi
+shapepipe_run -c $SP_CONFIG/config_MsPl_$psf.ini 
 
 
 # Galaxies
