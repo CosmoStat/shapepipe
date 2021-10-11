@@ -61,7 +61,11 @@ class MergeStarCatMCCD(object):
     def rmse_calc(values, sizes):
         """Rmse Calculation
 
-        Calculate square root of mean over input values. If values are (x - <x>),
+        Calculate square root of mean over input values.
+        If values is an array with element j being
+        :math:`\sum_j^{N_j}(x_{i, j}^2`, with :math:`x_{ij}`
+        being a residual (ground truth - estimation), and
+        sizes is the array :math:`N_j`, then
         this function computes the RMSE.
 
         Parameters
@@ -85,7 +89,12 @@ class MergeStarCatMCCD(object):
     def rmse_calc_2(values, sizes):
         """Rmse calculation 2
 
-        TBD
+        Calculate square root of mean over squared input valuess.
+        If values is an array with element j being
+        :math:`\sum_j^{N_j}(x_{i, j}`, with :math:`x_{ij}`
+        being a residual (ground truth - estimation), and
+        sizes is the array :math:`N_j`, then
+        this function computes the RMSE.
 
         Parameters
         ----------
