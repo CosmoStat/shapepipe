@@ -17,7 +17,7 @@ from shapepipe.modules.ngmix_package import ngmix
 
 @module_runner(
     input_module=[
-        'sextractor_runner', 'psfex_interp_runner_me', 'vignetmaker_runner2'
+        'sextractor_runner', 'psfex_interp_runner', 'vignetmaker_runner'
     ],
     version='0.0.1',
     file_pattern=[
@@ -45,6 +45,9 @@ def ngmix_runner(
     # Photometric zero point
     ZP = config.getfloat(module_config_sec, 'MAG_ZP')
 
+    # Pixel scale
+    pixel_scale = config.getfloat(module_config_sec, 'PIXEL_SCALE')
+
     # Path to merged single-exposure single-HDU headers
     f_wcs_path = config.getexpanded(module_config_sec, 'LOG_WCS')
 
@@ -52,24 +55,20 @@ def ngmix_runner(
     id_obj_min = config.getint(module_config_sec, 'ID_OBJ_MIN')
     id_obj_max = config.getint(module_config_sec, 'ID_OBJ_MAX')
 
+    # Initialise class instance
     inst = ngmix.Ngmix(
         input_file_list,
+        run_dirs['output'],
+        file_number_string,
         ZP,
+        pixel_scale,
         f_wcs_path,
         w_log,
         id_obj_min=id_obj_min,
         id_obj_max=id_obj_max
     )
 
-    # Init randoms
-    seed = int(''.join(re.findall(r'\d+', file_number_string)))
-    np.random.seed(seed)
-
-    output_name = f'{run_dirs["output"]}/ngmix{file_number_string}.fits'
-
-    metacal_res = inst.process()
-
-    #res_dict = ngmix.compile_results(metacal_res, ZP)
-    #ngmix.save_results(res_dict, output_name)
+    # Process ngmix shape measurement and metacalibration
+    inst.process()
 
     return None, None
