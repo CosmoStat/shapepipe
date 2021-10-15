@@ -6,10 +6,6 @@ This module contain a class to create star mask for an image.
 
 :Authors: Axel Guinot, Martin Kilbinger
 
-:Date: 20/12/2017
-
-:Version: 1.1
-
 """
 
 import shapepipe.pipeline.file_io as sc
@@ -25,10 +21,10 @@ import re
 import os
 
 
-class mask(object):
-    """Mask class
+class Mask(object):
+    """Mask
 
-    Class to create mask based on a star catalog.
+    Class to create mask based on a star catalogue.
 
     Parameters
     ----------
@@ -45,20 +41,35 @@ class mask(object):
 
     """
 
-    def __init__(self, image_path, weight_path, image_suffix, image_num, config_filepath,
-                 output_dir, path_external_flag=None, outname_base='flag',
-                 star_cat_path=None, hdu=0):
+    def __init__(
+        self,
+        image_path,
+        weight_path,
+        image_suffix,
+        image_num,
+        config_filepath,
+        output_dir,
+        path_external_flag=None,
+        outname_base='flag',
+        star_cat_path=None,
+        hdu=0,
+    ):
 
-        self._image_fullpath = image_path                                       # Path to the image to mask
-        self._weight_fullpath = weight_path                                     # Path to the weight associated to the image
+        # Path to the image to mask
+        self._image_fullpath = image_path
+        # Path to the weight associated to the image
+        self._weight_fullpath = weight_path
         self._config_filepath = config_filepath
-        self._output_dir = output_dir                                           # Path to the output directory
-        self._path_external_flag = path_external_flag                           # Path to an external flag file
-        self._outname_base = outname_base                                       # Output file base name
+        # Path to the output directory
+        self._output_dir = output_dir
+        # Path to an external flag file
+        self._path_external_flag = path_external_flag
+        # Output file base name
+        self._outname_base = outname_base
 
         self._img_number = image_num
-        if (image_suffix.lower() != 'none') & (image_suffix != ''):
-            self._img_suffix = image_suffix + '_'
+        if (image_suffix.lower() != 'none') and (image_suffix != ''):
+            self._img_suffix = f'{image_suffix}_'
         else:
             self._img_suffix = ''
 
@@ -67,22 +78,22 @@ class mask(object):
             self._star_cat_path = star_cat_path
 
         self._hdu = hdu
-
         self._get_config()
-
-        self._set_parameters()                                       # Set parameters needed for the stars detection
-
+        # Set parameters needed for the stars detection
+        self._set_parameters()
         self._err = False
 
     def _get_config(self):
-        """Get config value
+        """Get Config Values
 
         Read the config file and set parameters.
 
         Raises
         ------
-        ValueError : not config file name
-        IOError : no config file
+        ValueError
+            If config file name is None
+        IOError
+            If config file not found
 
         """
 
@@ -90,67 +101,144 @@ class mask(object):
             raise ValueError('No path to config file')
 
         if not os.path.exists(self._config_filepath):
-            raise IOError('Config file \'{}\' not found'
-                          ''.format(self._config_filepath))
+            raise IOError(
+                f'Config file "{self._config_filepath}" not found'
+            )
 
         conf = CustomParser()
         conf.read(self._config_filepath)
 
-        self._config = {'PATH': {},
-                        'BORDER': {},
-                        'HALO': {},
-                        'SPIKE': {},
-                        'MESSIER': {},
-                        'MD': {},
-                        'EXTERNAL_FLAG': {}}
+        self._config = {
+            'PATH': {},
+            'BORDER': {},
+            'HALO': {},
+            'SPIKE': {},
+            'MESSIER': {},
+            'MD': {},
+            'EXTERNAL_FLAG': {}
+        }
 
-        self._config['PATH']['WW'] = conf.getexpanded('PROGRAM_PATH', 'WW_PATH')
-        self._config['PATH']['WW_configfile'] = conf.getexpanded('PROGRAM_PATH', 'WW_CONFIG_FILE')
-        # self._config['PATH']['CDSclient'] = conf.getexpanded('PROGRAM_PATH', 'CDSCLIENT_PATH')
+        self._config['PATH']['WW'] = (
+            conf.getexpanded('PROGRAM_PATH', 'WW_PATH')
+        )
+        self._config['PATH']['WW_configfile'] = (
+            conf.getexpanded('PROGRAM_PATH', 'WW_CONFIG_FILE')
+        )
         if conf.has_option('PROGRAM_PATH', 'CDSCLIENT_PATH'):
-            self._config['PATH']['CDSclient'] = conf.getexpanded('PROGRAM_PATH', 'CDSCLIENT_PATH')
+            self._config['PATH']['CDSclient'] = (
+                conf.getexpanded('PROGRAM_PATH', 'CDSCLIENT_PATH')
+            )
         elif self._star_cat_path is not None:
             self._config['PATH']['star_cat'] = self._star_cat_path
         else:
-            raise ValueError('Either CDSCLIENT_PATH or STAR_CAT needs to be given in the [PROGRAM_PATH] section of the mask config file')
+            raise ValueError(
+                'Either CDSCLIENT_PATH or STAR_CAT needs to be given in the '
+                + '[PROGRAM_PATH] section of the mask config file'
+            )
 
-        self._config['PATH']['temp_dir'] = self._get_temp_dir_path(conf.getexpanded('OTHER', 'TEMP_DIRECTORY'))
-        self._config['BORDER']['make'] = conf.getboolean('BORDER_PARAMETERS', 'BORDER_MAKE')
+        self._config['PATH']['temp_dir'] = self._get_temp_dir_path(
+            conf.getexpanded('OTHER', 'TEMP_DIRECTORY')
+        )
+        self._config['BORDER']['make'] = (
+            conf.getboolean('BORDER_PARAMETERS', 'BORDER_MAKE')
+        )
         if self._config['BORDER']['make']:
-            self._config['BORDER']['width'] = conf.getint('BORDER_PARAMETERS', 'BORDER_WIDTH')
-            self._config['BORDER']['flag'] = conf.get('BORDER_PARAMETERS', 'BORDER_FLAG_VALUE')
+            self._config['BORDER']['width'] = (
+                conf.getint('BORDER_PARAMETERS', 'BORDER_WIDTH')
+            )
+            self._config['BORDER']['flag'] = (
+                conf.get('BORDER_PARAMETERS', 'BORDER_FLAG_VALUE')
+            )
+
         for mask_shape in ['HALO', 'SPIKE']:
-            self._config[mask_shape]['make'] = conf.getboolean(mask_shape + '_PARAMETERS', mask_shape + '_MAKE')
-            self._config[mask_shape]['individual'] = conf.getboolean('OTHER', 'KEEP_INDIVIDUAL_MASK')
+
+            self._config[mask_shape]['make'] = conf.getboolean(
+                f'{mask_shape}_PARAMETERS',
+                f'{mask_shape}_MAKE',
+            )
+            self._config[mask_shape]['individual'] = (
+                conf.getboolean('OTHER', 'KEEP_INDIVIDUAL_MASK')
+            )
+
             if self._config[mask_shape]['make']:
-                self._config[mask_shape]['maskmodel_path'] = conf.getexpanded(mask_shape+'_PARAMETERS', mask_shape+'_MASKMODEL_PATH')
-                self._config[mask_shape]['mag_lim'] = conf.getfloat(mask_shape+'_PARAMETERS', mask_shape+'_MAG_LIM')
-                self._config[mask_shape]['scale_factor'] = conf.getfloat(mask_shape+'_PARAMETERS', mask_shape+'_SCALE_FACTOR')
-                self._config[mask_shape]['mag_pivot'] = conf.getfloat(mask_shape+'_PARAMETERS', mask_shape+'_MAG_PIVOT')
-                self._config[mask_shape]['flag'] = conf.getint(mask_shape+'_PARAMETERS', mask_shape+'_FLAG_VALUE')
+                self._config[mask_shape]['maskmodel_path'] = conf.getexpanded(
+                    f'{mask_shape}_PARAMETERS',
+                    f'{mask_shape}_MASKMODEL_PATH',
+                )
+                self._config[mask_shape]['mag_lim'] = conf.getfloat(
+                    f'{mask_shape}_PARAMETERS',
+                    f'{mask_shape}_MAG_LIM',
+                )
+                self._config[mask_shape]['scale_factor'] = conf.getfloat(
+                    f'{mask_shape}_PARAMETERS',
+                    f'{mask_shape}_SCALE_FACTOR',
+                )
+                self._config[mask_shape]['mag_pivot'] = conf.getfloat(
+                    f'{mask_shape}_PARAMETERS',
+                    f'{mask_shape}_MAG_PIVOT',
+                )
+                self._config[mask_shape]['flag'] = conf.getint(
+                    f'{mask_shape}_PARAMETERS',
+                    f'{mask_shape}_FLAG_VALUE',
+                )
+
                 if conf.getboolean('OTHER', 'KEEP_REG_FILE'):
-                    self._config[mask_shape]['reg_file'] = self._config['PATH']['temp_dir'] + '/{0}{1}.reg'.format(re.split(".reg", conf.getexpanded(mask_shape+'_PARAMETERS', mask_shape+'_REG_FILE'))[0], self._img_number)
+                    reg_file = conf.getexpanded(
+                        f'{mask_shape}_PARAMETERS',
+                        f'{mask_shape}_REG_FILE',
+                    )
+                    self._config[mask_shape]['reg_file'] = (
+                        f'{self._config["PATH"]["temp_dir"]}/'
+                        + f'{re.split('.reg', reg_file)[0]}'
+                        + f'{self._img_number}.reg'
+                    )
                 else:
                     self._config[mask_shape]['reg_file'] = None
-        self._config['MESSIER']['make'] = conf.getboolean('MESSIER_PARAMETERS', 'MESSIER_MAKE')
+
+        self._config['MESSIER']['make'] = (
+            conf.getboolean('MESSIER_PARAMETERS', 'MESSIER_MAKE')
+        )
+
         if self._config['MESSIER']['make']:
-            self._config['MESSIER']['cat_path'] = conf.getexpanded('MESSIER_PARAMETERS', 'MESSIER_CAT_PATH')
-            self._config['MESSIER']['pixel_scale'] = conf.getfloat('MESSIER_PARAMETERS', 'MESSIER_PIXEL_SCALE')
-            self._config['MESSIER']['size_plus'] = conf.getfloat('MESSIER_PARAMETERS', 'MESSIER_SIZE_PLUS')
-            self._config['MESSIER']['flag'] = conf.getint('MESSIER_PARAMETERS', 'MESSIER_FLAG_VALUE')
-        self._config['MD']['make'] = conf.getboolean('MD_PARAMETERS', 'MD_MAKE')
+            self._config['MESSIER']['cat_path'] = (
+                conf.getexpanded('MESSIER_PARAMETERS', 'MESSIER_CAT_PATH')
+            )
+            self._config['MESSIER']['pixel_scale'] = (
+                conf.getfloat('MESSIER_PARAMETERS', 'MESSIER_PIXEL_SCALE')
+            )
+            self._config['MESSIER']['size_plus'] = (
+                conf.getfloat('MESSIER_PARAMETERS', 'MESSIER_SIZE_PLUS')
+            )
+            self._config['MESSIER']['flag'] = (
+                conf.getint('MESSIER_PARAMETERS', 'MESSIER_FLAG_VALUE')
+            )
+
+        self._config['MD']['make'] = (
+            conf.getboolean('MD_PARAMETERS', 'MD_MAKE')
+        )
+
         if self._config['MD']['make']:
-            self._config['MD']['thresh_flag'] = conf.getfloat('MD_PARAMETERS', 'MD_THRESH_FLAG')
-            self._config['MD']['thresh_remove'] = conf.getfloat('MD_PARAMETERS', 'MD_THRESH_REMOVE')
-            self._config['MD']['remove'] = conf.getboolean('MD_PARAMETERS', 'MD_REMOVE')
-        self._config['EXTERNAL_FLAG']['make'] = conf.getboolean('EXTERNAL_FLAG', 'EF_MAKE')
+            self._config['MD']['thresh_flag'] = (
+                conf.getfloat('MD_PARAMETERS', 'MD_THRESH_FLAG')
+            )
+            self._config['MD']['thresh_remove'] = (
+                conf.getfloat('MD_PARAMETERS', 'MD_THRESH_REMOVE')
+            )
+            self._config['MD']['remove'] = (
+                conf.getboolean('MD_PARAMETERS', 'MD_REMOVE')
+            )
+
+        self._config['EXTERNAL_FLAG']['make'] = (
+            conf.getboolean('EXTERNAL_FLAG', 'EF_MAKE')
+        )
+
         if self._config['EXTERNAL_FLAG']['make']:
             if self._path_external_flag is None:
                 raise ValueError('External flag file has to be provided')
             self._config['EXTERNAL_FLAG']['path'] = self._path_external_flag
 
     def _set_parameters(self):
-        """Set parameters
+        """Set Parameters
 
         Set the parameters for the stars detection.
 
@@ -166,17 +254,19 @@ class mask(object):
         self._wcs = wcs.WCS(self._header)
 
         # Note: get_data().shape corresponds to (n_y, n_x)
-        pix_center = [img_shape[1]/2., img_shape[0]/2.]
+        pix_center = [img_shape[1] / 2.0, img_shape[0] / 2.0]
         wcs_center = self._wcs.all_pix2world([pix_center], 1)[0]
 
         self._fieldcenter = {}
         self._fieldcenter['pix'] = np.array(pix_center)
-        self._fieldcenter['wcs'] = SkyCoord(ra=wcs_center[0], dec=wcs_center[1], unit='deg')
+        self._fieldcenter['wcs'] = (
+            SkyCoord(ra=wcs_center[0], dec=wcs_center[1], unit='deg')
+        )
 
         self._img_radius = self._get_image_radius()
 
     def make_mask(self):
-        """Make mask
+        """Make Mask
 
         Main function to create the mask.
 
@@ -185,38 +275,61 @@ class mask(object):
         if self._config['MD']['make']:
             self.missing_data()
 
-        if self._config['HALO']['make'] | self._config['SPIKE']['make']:
-            stars = self.find_stars(np.array([self._fieldcenter['wcs'].ra.value, self._fieldcenter['wcs'].dec.value]), radius=self._img_radius)
+        if self._config['HALO']['make'] or self._config['SPIKE']['make']:
+            stars = self.find_stars(
+                np.array([
+                    self._fieldcenter['wcs'].ra.value,
+                    self._fieldcenter['wcs'].dec.value
+                ]),
+                radius=self._img_radius,
+            )
 
         if not self._err:
-            for i in ['HALO', 'SPIKE']:
-                if self._config[i]['make']:
-                    self._create_mask(stars=stars, types=i, mag_limit=self._config[i]['mag_lim'], scale_factor=self._config[i]['scale_factor'], mag_pivot=self._config[i]['mag_pivot'])
+            for _type in ('HALO', 'SPIKE'):
+                if self._config[_type]['make']:
+                    self._create_mask(
+                        stars=stars,
+                        types=_type,
+                        mag_limit=self._config[_type]['mag_lim'],
+                        scale_factor=self._config[_type]['scale_factor'],
+                        mag_pivot=self._config[_type]['mag_pivot'],
+                    )
 
         if not self._err:
             if self._config['BORDER']['make']:
-                border_mask = self.mask_border(width=self._config['BORDER']['width'])
+                border_mask = self.mask_border(
+                    width=self._config['BORDER']['width']
+                )
             else:
                 border_mask = None
 
         if not self._err:
             mask_name = []
-            if self._config['HALO']['make'] & self._config['SPIKE']['make']:
+            if self._config['HALO']['make'] and self._config['SPIKE']['make']:
                 self._exec_WW(types='ALL')
-                mask_name.append(self._config['PATH']['temp_dir'] + 'halo_spike_flag' + self._img_number + '.fits')
+                mask_name.append(
+                    f'{self._config["PATH"]["temp_dir"]}halo_spike_flag'
+                    + f'{self._img_number}.fits'
+                )
                 mask_name.append(None)
-                # mask_name.append(self._config['PATH']['temp_dir'] + 'spike_flag' + self._img_number + '.fits')
             else:
-                for i in ['HALO', 'SPIKE']:
-                    if self._config[i]['make']:
-                        self._exec_WW(types=i)
-                        mask_name.append(self._config['PATH']['temp_dir'] + i.lower()+'_flag' + self._img_number + '.fits')
+                for _type in ('HALO', 'SPIKE'):
+                    if self._config[_type]['make']:
+                        self._exec_WW(types=_type)
+                        mask_name.append(
+                            f'{self._config["PATH"]["temp_dir"]}'
+                            + f'{_type.lower()}_flag{self._img_number}.fits'
+                        )
                     else:
                         mask_name.append(None)
 
         if not self._err:
             if self._config['MESSIER']['make']:
-                messier_mask = self.mask_messier(self._config['MESSIER']['cat_path'], size_plus=self._config['MESSIER']['size_plus'], flag_value=self._config['MESSIER']['flag'])
+                messier_mask = self.mask_messier(
+                    self._config['MESSIER']['cat_path'],
+                    size_plus=self._config['MESSIER']['size_plus'],
+                    flag_value=self._config['MESSIER']['flag'],
+                )
             else:
                 messier_mask = None
 
@@ -234,48 +347,69 @@ class mask(object):
 
         if not self._err:
             if im_pass:
-                final_mask = self._build_final_mask(path_mask1=mask_name[0], path_mask2=mask_name[1],
-                                                    border=border_mask, messier=messier_mask,
-                                                    path_external_flag=path_external_flag)
+                final_mask = self._build_final_mask(
+                    path_mask1=mask_name[0],
+                    path_mask2=mask_name[1],
+                    border=border_mask,
+                    messier=messier_mask,
+                    path_external_flag=path_external_flag,
+                )
 
                 if not self._config['HALO']['individual']:
                     if mask_name[0] is not None:
-                        # os.system('rm {0}'.format(mask_name[0]))
-                        self._rm_fits1_stdout, self._rm_fits1_stderr = execute('rm {0}'.format(mask_name[0]))
+                        self._rm_fits1_stdout, self._rm_fits1_stderr = (
+                            execute('rm {0}'.format(mask_name[0]))
+                        )
                     if mask_name[1] is not None:
-                        # os.system('rm {1}'.format(mask_name[1]))
-                        self._rm_fits2_stdout, self._rm_fits2_stderr = execute('rm {0}'.format(mask_name[1]))
+                        self._rm_fits2_stdout, self._rm_fits2_stderr = (
+                            execute('rm {0}'.format(mask_name[1]))
+                        )
 
-                self._mask_to_file(input_mask=final_mask, output_fullpath=self._output_dir+'/'+self._img_suffix+self._outname_base+self._img_number+'.fits')
+                output_file_name = (
+                    f'{self._output_dir}/{self._img_suffix}'
+                    + f'{self._outname_base}{self._img_number}.fits'
+                )
+
+                self._mask_to_file(
+                    input_mask=final_mask,
+                    output_fullpath=output_file_name,
+                )
 
         # Handle stdout / stderr
-        general_stdout = '\nCDSClient\n' + self._CDS_stdout
+        general_stdout = f'\nCDSClient\n{self._CDS_stdout}'
         general_stderr = ''
         if self._CDS_stderr != '':
-            general_stderr += '\nCDSClient\n' + self._CDS_stderr
-        if hasattr(self, '_WW_stdout') | hasattr(self, '_WW_stdout'):
-            general_stdout += '\n\nWeightWatcher\n' + self._WW_stdout
+            general_stderr += f'\nCDSClient\n{self._CDS_stderr}'
+        if hasattr(self, '_WW_stdout') or hasattr(self, '_WW_stdout'):
+            general_stdout += f'\n\nWeightWatcher\n{self._WW_stdout}'
             if self._WW_stderr != '':
-                general_stderr += '\n\nWeightWatcher\n' + self._WW_stderr
-        if hasattr(self, '_rm_reg_stderr') | hasattr(self, '_rm_reg_stdout'):
-            general_stdout += '\n\nrm reg file\n' + self._rm_reg_stdout
+                general_stderr += f'\n\nWeightWatcher\n{self._WW_stderr}'
+        if hasattr(self, '_rm_reg_stderr') or hasattr(self, '_rm_reg_stdout'):
+            general_stdout += f'\n\nrm reg file\n{self._rm_reg_stdout}'
             if self._rm_reg_stderr != '':
-                general_stderr += '\n\nrm reg file\n' + self._rm_reg_stderr
-        if hasattr(self, '_rm_fits1_stderr') | hasattr(self, '_rm_fits1_stdout'):
-            general_stdout += '\n\nrm fits1 file\n' + self._rm_fits1_stdout
+                general_stderr += f'\n\nrm reg file\n{self._rm_reg_stderr}'
+        if (
+            hasattr(self, '_rm_fits1_stderr')
+            or hasattr(self, '_rm_fits1_stdout')
+        ):
+            general_stdout += f'\n\nrm fits1 file\n{self._rm_fits1_stdout}'
             if self._rm_fits1_stderr != '':
-                general_stderr += '\n\nrm fits1 file\n' + self._rm_fits1_stderr
-        if hasattr(self, '_rm_fits2_stderr') | hasattr(self, '_rm_fits2_stdout'):
-            general_stdout += '\n\nrm fits2 file\n' + self._rm_fits2_stdout
+                general_stderr += f'\n\nrm fits1 file\n{self._rm_fits1_stderr}'
+        if (
+            hasattr(self, '_rm_fits2_stderr')
+            or hasattr(self, '_rm_fits2_stdout')
+        ):
+            general_stdout += f'\n\nrm fits2 file\n{self._rm_fits2_stdout}'
             if self._rm_fits2_stderr != '':
-                general_stderr += '\n\nrm fits2 file\n' + self._rm_fits2_stderr
+                general_stderr += f'\n\nrm fits2 file\n{self._rm_fits2_stderr}'
 
         return general_stdout, general_stderr
 
     def find_stars(self, position, radius=None):
-        """Find stars
+        """Find Stars
 
-        Return GSC (Guide Star Catalog) objects for a field with center (ra,dec) and radius r.
+        Return GSC (Guide Star Catalog) objects for a field with center
+        (ra,dec) and radius r.
 
         Parameters
         ----------
@@ -289,40 +423,49 @@ class mask(object):
         dict
           Stars dicotionnary for GSC objects in the field.
 
+        Raises
+        ------
+        ValueError
+            For invalid configuration options
+
         """
 
         if 'CDSclient' in self._config['PATH']:
+            ra = position[0]
+            dec = position[1]
 
-          ra = position[0]
-          dec = position[1]
-          if dec > 0.:
-              sign = '+'
-          else:
-              sign = ''
-          cmd_line = '{0} {1} {2}{3} -r {4} -n 1000000'.format(self._config['PATH']['CDSclient'], ra, sign, dec, radius)
-          # self._w_log.info('Calling command \'{}\''.format(cmd_line))
-          self._CDS_stdout, self._CDS_stderr = execute(cmd_line)
+            if dec > 0.0:
+                sign = '+'
+            else:
+                sign = ''
+
+            cmd_line = (
+                f'{self._config["PATH"]["CDSclient"]} {ra} {sign}{dec} '
+                + f'-r {radius} -n 1000000'
+            )
+
+            self._CDS_stdout, self._CDS_stderr = execute(cmd_line)
 
         elif 'star_cat' in self._config['PATH']:
-
-          # self._w_log.info('Reading star catalogue file \'{}\''.format(self._config['PATH']['star_cat']))
-          f = open(self._config['PATH']['star_cat'], 'r')
-          self._CDS_stdout = f.read()
-          self._CDS_stderr = ''
-          f.close()
+            f = open(self._config['PATH']['star_cat'], 'r')
+            self._CDS_stdout = f.read()
+            self._CDS_stderr = ''
+            f.close()
 
         else:
-
-          raise ValueError('Either CDSCLIENT_PATH or STAR_CAT needs to be given in the [PROGRAM_PATH] section of the mask config file')
+            raise ValueError(
+                'Either CDSCLIENT_PATH or STAR_CAT needs to be given in the '
+                + '[PROGRAM_PATH] section of the mask config file'
+            )
 
         if self._CDS_stderr != '':
-          self._err = True
-          return None
+            self._err = True
+            return None
 
         return self._make_star_cat(self._CDS_stdout)
 
     def mask_border(self, width=100, flag_value=4):
-        """Create mask border
+        """Create Mask Border
 
         Mask 'width' pixels around the image.
 
@@ -336,7 +479,12 @@ class mask(object):
         Returns
         -------
         numpy.ndarray
-            Array containing the mask.
+            Array containing the mask
+
+        Raises
+        ------
+        ValueError
+            If width is None
 
         """
 
@@ -344,7 +492,13 @@ class mask(object):
             raise ValueError('Width not provided')
 
         # Note that python image array is [y, x]
-        flag = np.zeros((int(self._fieldcenter['pix'][1]*2), int(self._fieldcenter['pix'][0]*2)), dtype='uint16')
+        flag = np.zeros(
+            (
+                int(self._fieldcenter['pix'][1] * 2),
+                int(self._fieldcenter['pix'][0] * 2)
+            ),
+            dtype='uint16',
+        )
 
         flag[0:width, :] = flag_value
         flag[-width:, :] = flag_value
@@ -354,7 +508,7 @@ class mask(object):
         return flag
 
     def mask_messier(self, cat_path, size_plus=0.1, flag_value=8):
-        """Create mask for Messier objects
+        """Mask Messier
 
         Create a circular patch for Messier objects.
 
@@ -363,14 +517,23 @@ class mask(object):
         cat_path : str
             Path to the Messier catalog
         size_plus : float
-            Increase the size of the mask by this factor (Example : 0.1 means 10%)
+            Increase the size of the mask by this factor
+            (Example : 0.1 means 10%)
         flag_value : float
             Value of the flag, some power of 2
 
         Returns
         -------
         numpy.ndarray/None
-            If no Messier objectds find in the field return None and the flag map otherwise.
+            If no Messier objectds find in the field return None and the
+            flag map otherwise
+
+        Raises
+        ------
+        ValueError
+            If size_plus is negative
+        ValueError
+            If cat_path is None
 
         """
 
@@ -381,39 +544,61 @@ class mask(object):
             raise ValueError('cat_path has to be provided')
 
         m_cat = np.load(cat_path, allow_pickle=True)
-        m_sc = SkyCoord(ra=m_cat['ra'] * u.degree, dec=m_cat['dec'] * u.degree)
+        m_sc = SkyCoord(
+            ra=m_cat['ra'] * u.degree,
+            dec=m_cat['dec'] * u.degree,
+        )
 
         nx = self._fieldcenter['pix'][0] * 2
         ny = self._fieldcenter['pix'][1] * 2
 
         # Get the four corners of the image
         corners = self._wcs.calc_footprint()
-        corners_sc = SkyCoord(ra=corners[:, 0] * u.degree, dec=corners[:, 1] * u.degree)
+        corners_sc = SkyCoord(
+            ra=corners[:, 0] * u.degree,
+            dec=corners[:, 1] * u.degree,
+        )
 
-        # Loop through all Messier objects and check whether any corner is closer
-        # than the object's radius
-        ind = []
-        for i, m_obj in enumerate(m_cat):
+        # Loop through all Messier objects and check whether any corner is
+        # closer than the object's radius
+        indices = []
+        for idx, m_obj in enumerate(m_cat):
             r = max(m_obj['size']) * u.arcmin
             r_deg = r.to(u.degree)
             if np.any(corners_sc.separation(m_sc[i]) < r_deg):
-                ind.append(i)
+                indices.append(idx)
 
-        if len(ind) == 0:
+        if len(indices) == 0:
             # No closeby Messier object found
             return None
 
         # Note: python image array is [y, x]
-        flag = np.zeros((int(self._fieldcenter['pix'][1]*2), int(self._fieldcenter['pix'][0]*2)), dtype='uint16')
+        flag = np.zeros(
+            (
+                int(self._fieldcenter['pix'][1] * 2),
+                int(self._fieldcenter['pix'][0] * 2)
+            ),
+            dtype='uint16',
+        )
 
-        for i in ind:
-            m_center = np.hstack(self._wcs.all_world2pix(m_cat['ra'][i], m_cat['dec'][i], 0))
-            r_pix = max(m_cat['size'][i])/60. * (1 + size_plus) / np.abs(self._wcs.pixel_scale_matrix[0][0])
+        for idx in indices:
+            m_center = np.hstack(self._wcs.all_world2pix(
+                m_cat['ra'][idx],
+                m_cat['dec'][idx],
+                0,
+            ))
+            r_pix = (
+                max(m_cat['size'][idx]) / 60.0 * (1 + size_plus)
+                / np.abs(self._wcs.pixel_scale_matrix[0][0])
+            )
 
             # The following accounts for Messier centers outside of image, without
             # creating masks for coordinates out of range
             y_c, x_c = np.ogrid[0:ny, 0:nx]
-            mask_tmp = (x_c - m_center[0])**2 + (y_c - m_center[1])**2 <= r_pix**2
+            mask_tmp = (
+                (x_c - m_center[0]) ** 2 + (y_c - m_center[1]) ** 2
+                <= r_pix ** 2
+            )
 
             flag[mask_tmp] = flag_value
 
@@ -422,7 +607,8 @@ class mask(object):
     def missing_data(self):
         """Find missing data
 
-        Look for 0 value in the image and flag it depending of the configuration.
+        Look for 0 value in the image and flag it depending of the
+        configuration.
 
         """
 
@@ -434,23 +620,24 @@ class mask(object):
 
         missing = float(len(np.where(img.get_data() == 0.)[0]))
 
-        self._ratio = missing/tot
+        self._ratio = missing / tot
 
         if self._ratio >= self._config['MD']['thresh_flag']:
             self._config['MD']['im_flagged'] = True
         else:
             self._config['MD']['im_flagged'] = False
+
         if self._config['MD']['remove']:
             if self._ratio >= self._config['MD']['thresh_remove']:
                 self._config['MD']['im_remove'] = True
-                for i in ['HALO', 'SPIKE', 'MESSIER', 'BORDER']:
-                    self._config[i]['make'] = False
+                for idx in ['HALO', 'SPIKE', 'MESSIER', 'BORDER']:
+                    self._config[idx]['make'] = False
             else:
                 self._config['MD']['im_remove'] = False
 
         img.close()
 
-    def SphereDist(self, position1, position2):
+    def sphere_dist(self, position1, position2):
         """Compute spherical distance
 
         Compute spherical distance between 2 points.
@@ -467,24 +654,39 @@ class mask(object):
         float
             The distance in degree.
 
+        Raises
+        ------
+        ValueError
+            If input positions are not Numpy arrays
+
         """
 
-        if (type(position1) is not np.ndarray) & (type(position2) is not np.ndarray):
+        if (
+            type(position1) is not np.ndarray
+            or type(position2) is not np.ndarray
+        ):
             raise ValueError('Positions need to be a numpy.ndarray')
 
-        p1 = (np.pi/180.)*np.hstack(self._wcs.all_pix2world(position1[0], position1[1], 1))
-        p2 = (np.pi/180.)*np.hstack(self._wcs.all_pix2world(position2[0], position2[1], 1))
+        p1 = (np.pi / 180.0) * np.hstack(
+            self._wcs.all_pix2world(position1[0], position1[1], 1)
+        )
+        p2 = (np.pi / 180.0) * np.hstack(
+            self._wcs.all_pix2world(position2[0], position2[1], 1)
+        )
 
         dTheta = p1 - p2
         dLong = dTheta[0]
         dLat = dTheta[1]
 
-        dist = 2*np.arcsin(np.sqrt(np.sin(dLat/2.)**2. + np.cos(p1[1])*np.cos(p2[1])*np.sin(dLong/2.)**2.))
+        dist = 2 * np.arcsin(np.sqrt(
+            np.sin(dLat / 2.0) ** 2.0 + np.cos(p1[1]) * np.cos(p2[1])
+            * np.sin(dLong / 2.0) ** 2.0
+        ))
 
-        return dist*(180./np.pi)*3600.
+        return dist * (180.0 / np.pi) * 3600.0
 
     def _get_image_radius(self, center=None):
-        """Get image radius
+        """Get Image Radius
 
         Compute the diagonal distance of the image in arcmin.
 
@@ -501,15 +703,18 @@ class mask(object):
         """
 
         if center is None:
-            return self.SphereDist(self._fieldcenter['pix'], np.zeros(2))/60.
+            return (
+                self.sphere_dist(self._fieldcenter['pix'], np.zeros(2)) / 60.0
+            )
+
         else:
-            if type(center) is np.ndarray:
-                return self.SphereDist(center, np.zeros(2))/60.
+            if isinstance(center, np.ndarray):
+                return self.sphere_dist(center, np.zeros(2)) / 60.0
             else:
                 raise TypeError('center has to be a numpy.ndarray')
 
     def _make_star_cat(self, CDSclient_output):
-        """Make star catalog
+        """Make Star Catalogue
 
         Make a dicotionnary from 'findgsc2.2' output.
 
@@ -525,44 +730,51 @@ class mask(object):
 
         """
 
-        h = []
+        header = []
         stars = {}
         # get header
-        for i in CDSclient_output.splitlines()[3].split(' '):
-            if (i != '') & (i != ';'):
+        for key in CDSclient_output.splitlines()[3].split(' '):
+            if (key != '') and (key != ';'):
                 # cleaning output
-                i = i.replace(' ', '')
-                for v in re.split(',|#|;', i):
-                    if v != '':
-                        i = v
-                h.append(i)
-                stars[i] = []
+                key = key.replace(' ', '')
+                for key_split in re.split(',|#|;', key):
+                    if key_split != '':
+                        key = key_split
+                header.append(i)
+                stars[key] = []
 
         # get data
-        for i in range(4, len(CDSclient_output.splitlines()) - 5):
-            k = 0
-            for j in CDSclient_output.splitlines()[i].split(' '):
-                if (j != '') & (j != ';'):
+        for _ in range(4, len(CDSclient_output.splitlines()) - 5):
+            idx = 0
+            for key in CDSclient_output.splitlines()[i].split(' '):
+                if (key != '') and (key != ';'):
                     # cleaning output
-                    j = j.replace(' ', '')
-                    for v in re.split(',|#|;', j):
-                        if v != '':
-                            j = v
+                    key = key.replace(' ', '')
+                    for key_split in re.split(',|#|;', key):
+                        if key_split != '':
+                            key = key_split
                     # handle missing data
                     try:
-                        j = float(j)
-                        stars[h[k]].append(j)
+                        key = float(key)
+                        stars[header[idx]].append(key)
                     except:
-                        if j == '---':
-                            stars[h[k]].append(None)
+                        if key == '---':
+                            stars[header[idx]].append(None)
                         else:
-                            stars[h[k]].append(j)
-                    k += 1
+                            stars[header[idx]].append(key)
+                    idx += 1
 
         return stars
 
-    def _create_mask(self, stars, types=None, mag_limit=18., mag_pivot=13.8, scale_factor=0.3):
-        """Create mask
+    def _create_mask(
+        self,
+        stars,
+        types=None,
+        mag_limit=18.,
+        mag_pivot=13.8,
+        scale_factor=0.3,
+    ):
+        """Create Mask
 
         Apply mask from model to stars and save into DS9 region file.
 
@@ -579,67 +791,85 @@ class mask(object):
         scale_factor : float
             Scaling for the model
 
-        Returns
-        -------
-        None
         """
 
         if stars is None:
             raise ValueError('No stars catalog provided')
 
+        if types not in ('HALO', 'SPIKE'):
+            ValueError('types need to be in ["HALO", "SPIKE"]')
+
         if self._config[types]['reg_file'] is None:
-            reg = self._config['PATH']['temp_dir'] + types.lower() + self._img_number + '.reg'
+            reg = (
+                f'{self._config["PATH"]["temp_dir"]}{types.lower()}'
+                + f'{self._img_number}.reg'
+            )
         else:
             reg = self._config[types]['reg_file']
 
-        if types == 'HALO':
-            mask_model = np.loadtxt(self._config['HALO']['maskmodel_path']).transpose()
-            mask_reg = open(reg, 'w')
-        elif types == 'SPIKE':
-            mask_model = np.loadtxt(self._config['SPIKE']['maskmodel_path']).transpose()
-            mask_reg = open(reg, 'w')
-        else:
-            ValueError("types need to be in ['HALO', 'SPIKE']")
+        mask_model = np.loadtxt(
+            self._config[types]['maskmodel_path']
+        ).transpose()
+        mask_reg = open(reg, 'w')
 
         stars_used = [[], [], []]
-        for ra, dec, Fmag, Jmag, Vmag, Nmag, clas in zip(stars['RA(J2000)'], stars['Dec(J2000)'], stars['Fmag'], stars['Jmag'], stars['Vmag'], stars['Nmag'], stars['Clas']):
+        for (
+            ra, dec, Fmag, Jmag, Vmag, Nmag, clas
+            in zip(
+                stars['RA(J2000)'],
+                stars['Dec(J2000)'],
+                stars['Fmag'],
+                stars['Jmag'],
+                stars['Vmag'],
+                stars['Nmag'],
+                stars['Clas'],
+            )
+        ):
             mag = 0.
-            i = 0.
+            idx = 0.
+
             if Fmag is not None:
                 mag += Fmag
-                i += 1.
+                idx += 1.
             if Jmag is not None:
                 mag += Jmag
-                i += 1.
+                idx += 1.
             if Vmag is not None:
                 mag += Vmag
-                i += 1.
+                idx += 1.
             if Nmag is not None:
                 mag += Nmag
-                i += 1.
-            if i == 0.:
+                idx += 1.
+            if idx == 0.:
                 mag = None
             else:
-                mag /= i
+                mag /= idx
 
-            if (ra is not None) & (dec is not None) & (mag is not None) & (clas is not None):
+            if (
+                ra is not None and dec is not None and mag is not None
+                and clas is not None
+            ):
                 if (mag < mag_limit) & (clas == 0):
-                    scaling = 1. - scale_factor * (mag - mag_pivot)
+                    scaling = 1.0 - scale_factor * (mag - mag_pivot)
                     pos = self._wcs.all_world2pix(ra, dec, 0)
                     stars_used[0].append(pos[0])
                     stars_used[1].append(pos[1])
                     stars_used[2].append(scaling)
 
-        for i in range(len(stars_used[0])):
+        for idx in range(len(stars_used[0])):
             poly = 'polygon('
             for x, y in zip(mask_model[0], mask_model[1]):
                 angle = np.arctan2(y, x)
-                ll = stars_used[2][i] * np.sqrt(x ** 2. + y ** 2.)
+                ll = stars_used[2][idx] * np.sqrt(x ** 2 + y ** 2)
                 xnew = ll * np.cos(angle)
                 ynew = ll * np.sin(angle)
 
-                poly = poly + str(stars_used[0][i] + xnew + 0.5) + ' ' + str(stars_used[1][i] + ynew + 0.5) + ' '
-            poly = poly + ')\n'
+                poly = (
+                    f'{poly}{str(stars_used[0][idx] + xnew + 0.5)} '
+                    + f'{str(stars_used[1][idx] + ynew + 0.5)}'
+                )
+
+            poly = f'{poly})\n'
             mask_reg.write(poly)
 
         mask_reg.close()

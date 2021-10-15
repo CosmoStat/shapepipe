@@ -2,10 +2,10 @@
 
 """MASK MODULE
 
-This module contains methods to create masks.
+This package contains the module(s) for ``mask``.
 
 :Author: Axel Guinot
 
 """
 
-__all__ = ['mask_script']
+__all__ = ['mask']
