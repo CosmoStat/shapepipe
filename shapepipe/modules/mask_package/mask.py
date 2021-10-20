@@ -16,7 +16,7 @@ from shapepipe.utilities.file_system import mkdir
 import numpy as np
 from astropy.coordinates import SkyCoord
 from astropy import wcs
-from astropy import units as u
+from astropy import units
 import re
 import os
 
@@ -358,11 +358,11 @@ class Mask(object):
                 if not self._config['HALO']['individual']:
                     if mask_name[0] is not None:
                         self._rm_fits1_stdout, self._rm_fits1_stderr = (
-                            execute('rm {0}'.format(mask_name[0]))
+                            execute(f'rm {mask_name[0]}')
                         )
                     if mask_name[1] is not None:
                         self._rm_fits2_stdout, self._rm_fits2_stderr = (
-                            execute('rm {0}'.format(mask_name[1]))
+                            execute(f'rm {mask_name[1]}')
                         )
 
                 output_file_name = (
@@ -545,8 +545,8 @@ class Mask(object):
 
         m_cat = np.load(cat_path, allow_pickle=True)
         m_sc = SkyCoord(
-            ra=m_cat['ra'] * u.degree,
-            dec=m_cat['dec'] * u.degree,
+            ra=m_cat['ra'] * units.degree,
+            dec=m_cat['dec'] * units.degree,
         )
 
         nx = self._fieldcenter['pix'][0] * 2
@@ -555,17 +555,17 @@ class Mask(object):
         # Get the four corners of the image
         corners = self._wcs.calc_footprint()
         corners_sc = SkyCoord(
-            ra=corners[:, 0] * u.degree,
-            dec=corners[:, 1] * u.degree,
+            ra=corners[:, 0] * units.degree,
+            dec=corners[:, 1] * units.degree,
         )
 
         # Loop through all Messier objects and check whether any corner is
         # closer than the object's radius
         indices = []
         for idx, m_obj in enumerate(m_cat):
-            r = max(m_obj['size']) * u.arcmin
-            r_deg = r.to(u.degree)
-            if np.any(corners_sc.separation(m_sc[i]) < r_deg):
+            r = max(m_obj['size']) * units.arcmin
+            r_deg = r.to(units.degree)
+            if np.any(corners_sc.separation(m_sc[idx]) < r_deg):
                 indices.append(idx)
 
         if len(indices) == 0:
@@ -692,13 +692,18 @@ class Mask(object):
 
         Parameters
         ----------
-        center : numpy.ndarray
-            Coordinates of the center of the image (in pixel)
+        center : numpy.ndarray, optional
+            Coordinates of the center of the image (in pixels)
 
         Returns
         -------
         float
-            The diagonal distance of the image in arcmin.
+            The diagonal distance of the image in arcmin
+
+        Raises
+        ------
+        TypeError
+            If center is not a Numpy array
 
         """
 
@@ -711,7 +716,7 @@ class Mask(object):
             if isinstance(center, np.ndarray):
                 return self.sphere_dist(center, np.zeros(2)) / 60.0
             else:
-                raise TypeError('center has to be a numpy.ndarray')
+                raise TypeError('Center has to be a numpy.ndarray')
 
     def _make_star_cat(self, CDSclient_output):
         """Make Star Catalogue
@@ -726,12 +731,13 @@ class Mask(object):
         Returns
         -------
         dict
-            Stars dicotionnary containing all informations.
+            Star dicotionnary containing all information
 
         """
 
         header = []
         stars = {}
+
         # get header
         for key in CDSclient_output.splitlines()[3].split(' '):
             if (key != '') and (key != ';'):
@@ -746,7 +752,7 @@ class Mask(object):
         # get data
         for _ in range(4, len(CDSclient_output.splitlines()) - 5):
             idx = 0
-            for key in CDSclient_output.splitlines()[i].split(' '):
+            for key in CDSclient_output.splitlines()[idx].split(' '):
                 if (key != '') and (key != ';'):
                     # cleaning output
                     key = key.replace(' ', '')
@@ -769,8 +775,8 @@ class Mask(object):
     def _create_mask(
         self,
         stars,
-        types=None,
-        mag_limit=18.,
+        types='HALO',
+        mag_limit=18.0,
         mag_pivot=13.8,
         scale_factor=0.3,
     ):
@@ -782,22 +788,29 @@ class Mask(object):
         ----------
         stars : dict
             Stars dictionary (output of find_stars)
-        types : str
-            Type of mask in ['HALO', 'SPIKE']
-        mag_limit : float
-            Higher magnitude to apply the mask
-        mag_pivot : float
-            Pivot magnitude for the model
-        scale_factor : float
-            Scaling for the model
+        types : {'HALO', 'SPIKE'}, optional
+            Type of mask, options are 'HALO' or 'SPIKE'
+        mag_limit : float, optional
+            Higher magnitude to apply the mask, default is ``18.0``
+        mag_pivot : float, optional
+            Pivot magnitude for the model, default is ``13.8``
+        scale_factor : float, optional
+            Scaling for the model, default is ``0.3``
+
+        Raises
+        ------
+        ValueError
+            If no star catalogue is provided
+        ValueError
+            If an invalid option is provided for type
 
         """
 
         if stars is None:
-            raise ValueError('No stars catalog provided')
+            raise ValueError('No star catalogue provided')
 
         if types not in ('HALO', 'SPIKE'):
-            ValueError('types need to be in ["HALO", "SPIKE"]')
+            ValueError('Types need to be in ["HALO", "SPIKE"]')
 
         if self._config[types]['reg_file'] is None:
             reg = (
@@ -825,22 +838,22 @@ class Mask(object):
                 stars['Clas'],
             )
         ):
-            mag = 0.
-            idx = 0.
+            mag = 0.0
+            idx = 0.0
 
             if Fmag is not None:
                 mag += Fmag
-                idx += 1.
+                idx += 1.0
             if Jmag is not None:
                 mag += Jmag
-                idx += 1.
+                idx += 1.0
             if Vmag is not None:
                 mag += Vmag
-                idx += 1.
+                idx += 1.0
             if Nmag is not None:
                 mag += Nmag
-                idx += 1.
-            if idx == 0.:
+                idx += 1.0
+            if idx == 0.0:
                 mag = None
             else:
                 mag /= idx
@@ -849,7 +862,7 @@ class Mask(object):
                 ra is not None and dec is not None and mag is not None
                 and clas is not None
             ):
-                if (mag < mag_limit) & (clas == 0):
+                if (mag < mag_limit) and (clas == 0):
                     scaling = 1.0 - scale_factor * (mag - mag_pivot)
                     pos = self._wcs.all_world2pix(ra, dec, 0)
                     stars_used[0].append(pos[0])
@@ -874,94 +887,190 @@ class Mask(object):
 
         mask_reg.close()
 
-    def _exec_WW(self, types=None):
+    def _exec_WW(self, types='HALO'):
         """Execute WeightWatcher
 
         Execute WeightWatcher to transform '.reg' to '.fits' flag map.
 
         Parameters
         ----------
-        types : str
-            Type of mask to make in ['HALO','SPIKE']
+        types : {'HALO', 'SPIKE', 'ALL'}, optional
+            Type of WeightWatcher execution, options are 'HALO', 'SPIKE' or
+            'ALL'
+
+        Raises
+        ------
+        BaseCatalog.CatalogFileNotFound
+            If catalogue file not found
 
         """
 
-        if types in ['HALO', 'SPIKE']:
-            default_reg = self._config['PATH']['temp_dir'] + types.lower() + self._img_number + '.reg'
-            defaul_out = self._config['PATH']['temp_dir'] + types.lower() + '_flag' + self._img_number + '.fits'
+        if types in ('HALO', 'SPIKE'):
+
+            default_reg = (
+                f'{self._config["PATH"]["temp_dir"]}{types.lower()}'
+                + f'{self._img_number}.reg'
+            )
+            default_out = (
+                f'{self._config["PATH"]["temp_dir"]}{types.lower()}_flag'
+                + f'{self._img_number}.fits'
+            )
+
             if self._config[types]['reg_file'] is None:
                 reg = default_reg
+
                 if not sc.BaseCatalog(reg)._file_exists(reg):
                     raise sc.BaseCatalog.CatalogFileNotFound(reg)
-                cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3} -POLY_OUTFLAGS {4} -FLAG_NAMES "" -OUTFLAG_NAME {5} -OUTWEIGHT_NAME ""'.\
-                      format(self._config['PATH']['WW'], self._config['PATH']['WW_configfile'], self._weight_fullpath, reg, self._config[types]['flag'], defaul_out)
-                # os.system(cmd)
+
+                cmd = (
+                    f'{self._config["PATH"]["WW"]} '
+                    + f'-c {self._config["PATH"]["WW_configfile"]} '
+                    + f'-WEIGHT_NAMES {self._weight_fullpath} '
+                    + f'-POLY_NAMES {reg} '
+                    + f'-POLY_OUTFLAGS {self._config[types]["flag"]} '
+                    + f'-FLAG_NAMES "" -OUTFLAG_NAME {default_out} '
+                    + '-OUTWEIGHT_NAME ""'
+                )
+
                 self._WW_stdout, self._WW_stderr = execute(cmd)
-                # os.system('rm {0}'.format(reg))
-                self._rm_reg_stdout, self._rm_reg_stderr = execute('rm {0}'.format(reg))
+                self._rm_reg_stdout, self._rm_reg_stderr = (
+                    execute(f'rm {reg}')
+                )
+
             else:
                 reg = self._config[types]['reg_file']
+
                 if not sc.BaseCatalog(reg)._file_exists(reg):
                     raise sc.BaseCatalog.CatalogFileNotFound(reg)
-                cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3} -POLY_OUTFLAGS {4} -FLAG_NAMES "" -OUTFLAG_NAME {5} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'], self._config['PATH']['WW_configfile'], self._weight_fullpath, reg, self._config[types]['flag'], defaul_out)
-                # os.system(cmd)
+
+                cmd = (
+                    f'{self._config["PATH"]["WW"]} '
+                    + f'-c {self._config["PATH"]["WW_configfile"]} '
+                    + f'-WEIGHT_NAMES {self._weight_fullpath} '
+                    + f'-POLY_NAMES {reg} '
+                    + f'-POLY_OUTFLAGS {self._config[types]["flag"]} '
+                    + f'-FLAG_NAMES "" -OUTFLAG_NAME {default_out} '
+                    + '-OUTWEIGHT_NAME ""'
+                )
+
                 self._WW_stdout, self._WW_stderr = execute(cmd)
 
         elif types == 'ALL':
-            default_reg = [self._config['PATH']['temp_dir'] + 'halo' + self._img_number + '.reg', self._config['PATH']['temp_dir'] + 'spike' + self._img_number + '.reg']
-            defaul_out = self._config['PATH']['temp_dir'] + 'halo_spike_flag' + self._img_number + '.fits'
+
+            default_reg = [
+                (
+                    f'{self._config["PATH"]["temp_dir"]}'
+                    + f'halo{self._img_number}.reg'
+                ),
+                (
+                    f'{self._config["PATH"]["temp_dir"]}'
+                    + f'spike{self._img_number}.reg'
+                )
+            ]
+            defaul_out = (
+                f'{self._config["PATH"]["temp_dir"]}'
+                + f'halo_spike_flag{self._img_number}.fits'
+            )
+
             if self._config['HALO']['reg_file'] is None:
                 reg = default_reg
-                for i in range(2):
-                    if not sc.BaseCatalog(reg[i])._file_exists(reg[i]):
-                        raise sc.BaseCatalog.CatalogFileNotFound(reg[i])
-                cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3},{4} -POLY_OUTFLAGS {5},{6} -FLAG_NAMES "" -OUTFLAG_NAME {7} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'], self._config['PATH']['WW_configfile'], self._weight_fullpath, reg[0], reg[1], self._config['HALO']['flag'], self._config['SPIKE']['flag'], defaul_out)
-                # os.system(cmd)
-                self._WW_stdout, self._WW_stderr = execute(cmd)
-                # os.system('rm {0} {1}'.format(reg[0],reg[1]))
-                self._rm_reg_stdout, self._rm_reg_stderr = execute('rm {0} {1}'.format(reg[0], reg[1]))
-            else:
-                reg = [self._config['HALO']['reg_file'], self._config['SPIKE']['reg_file']]
-                for i in range(2):
-                    if not sc.BaseCatalog(reg[i])._file_exists(reg[i]):
-                        raise sc.BaseCatalog.CatalogFileNotFound(reg[i])
-                cmd = '{0} -c {1} -WEIGHT_NAMES {2} -POLY_NAMES {3},{4} -POLY_OUTFLAGS {5},{6} -FLAG_NAMES "" -OUTFLAG_NAME {7} -OUTWEIGHT_NAME ""'.format(self._config['PATH']['WW'], self._config['PATH']['WW_configfile'], self._weight_fullpath, reg[0], reg[1], self._config['HALO']['flag'], self._config['SPIKE']['flag'], defaul_out)
-                # os.system(cmd)
-                self._WW_stdout, self._WW_stderr = execute(cmd)
-        else:
-            ValueError("types must be in ['HALO','SPIKE','ALL']")
 
-        if (self._WW_stderr != '') | (self._rm_reg_stderr != ''):
+                for idx in range(2):
+                    if not sc.BaseCatalog(reg[idx])._file_exists(reg[idx]):
+                        raise sc.BaseCatalog.CatalogFileNotFound(reg[idx])
+
+                cmd = (
+                    f'{self._config["PATH"]["WW"]} '
+                    + f'-c {self._config["PATH"]["WW_configfile"]} '
+                    + f'-WEIGHT_NAMES {self._weight_fullpath} '
+                    + f'-POLY_NAMES {reg[0]},{reg[1]} '
+                    + f'-POLY_OUTFLAGS {self._config["HALO"]["flag"]},'
+                    + f'{self._config["SPIKE"]["flag"]} '
+                    + f'-FLAG_NAMES "" -OUTFLAG_NAME {default_out} '
+                    + '-OUTWEIGHT_NAME ""'
+                )
+
+                self._WW_stdout, self._WW_stderr = execute(cmd)
+                self._rm_reg_stdout, self._rm_reg_stderr = (
+                    execute(f'rm {reg[0]} {reg[1]}')
+                )
+
+            else:
+                reg = [
+                    self._config['HALO']['reg_file'],
+                    self._config['SPIKE']['reg_file']
+                ]
+
+                for idx in range(2):
+                    if not sc.BaseCatalog(reg[idx])._file_exists(reg[idx]):
+                        raise sc.BaseCatalog.CatalogFileNotFound(reg[idx])
+
+                cmd = (
+                    f'{self._config["PATH"]["WW"]} '
+                    + f'-c {self._config["PATH"]["WW_configfile"]} '
+                    + f'-WEIGHT_NAMES {self._weight_fullpath} '
+                    + f'-POLY_NAMES {reg[0]},{reg[1]} '
+                    + f'-POLY_OUTFLAGS {self._config["HALO"]["flag"]},'
+                    + f'{self._config["SPIKE"]["flag"]} '
+                    + f'-FLAG_NAMES "" -OUTFLAG_NAME {default_out} '
+                    + '-OUTWEIGHT_NAME ""'
+                )
+
+                self._WW_stdout, self._WW_stderr = execute(cmd)
+
+        else:
+            ValueError("Types must be in ['HALO','SPIKE','ALL']")
+
+        if (self._WW_stderr != '') or (self._rm_reg_stderr != ''):
             self._err = True
 
-    def _build_final_mask(self, path_mask1, path_mask2=None, border=None, messier=None, path_external_flag=None):
-        """Create final mask
+    def _build_final_mask(
+        self,
+        path_mask1,
+        path_mask2=None,
+        border=None,
+        messier=None,
+        path_external_flag=None,
+    ):
+        """Create Final Mask
 
-        Create the final mask by combination of individual mask.
+        Create the final mask by combination of individual masks.
 
         Parameters
         ----------
         path_mask1 : str
             Path to a mask (fits format)
-        path_mask2 : str
+        path_mask2 : str, optional
             Path to a mask (fits format)
-        border : numpy.ndarray
+        border : numpy.ndarray, optional
             Array containing the border mask
-        messier : numpy.ndarray
+        messier : numpy.ndarray, optional
             Array containing the messier mask
-        path_external_flag : str
+        path_external_flag : str, optional
             Path to an external flag file
 
         Returns
         -------
         numpy.ndarray
-            Array containing the final mask.
+            Array containing the final mask
+
+        Raises
+        ------
+        ValueError
+            If path_mask1, path_mask2, border and messier are of type None
+        TypeError
+            If border is not a Numpy array
+        TypeError
+            If Messier mask is not a Numpy array
 
         """
 
         final_mask = None
 
-        if (path_mask1 is None) & (path_mask2 is None) & (border is None) & (messier is None):
+        if (
+            path_mask1 is None and path_mask2 is None and border is None
+            and messier is None
+        ):
             raise ValueError('No path to a mask, border or messier provided')
 
         if path_mask1 is not None:
@@ -997,7 +1106,10 @@ class Mask(object):
                 raise TypeError('messier has to be a numpy.ndarray')
 
         if path_external_flag is not None:
-            external_flag = sc.FITSCatalog(path_external_flag, hdu_no=self._hdu)
+            external_flag = sc.FITSCatalog(
+                path_external_flag,
+                hdu_no=self._hdu,
+            )
             external_flag.open()
             if final_mask is not None:
                 final_mask += external_flag.get_data()[:, :]
@@ -1008,7 +1120,7 @@ class Mask(object):
         return final_mask.astype(np.int16, copy=False)
 
     def _mask_to_file(self, input_mask, output_fullpath):
-        """Mask to file
+        """Mask to File
 
         Save the mask to a fits file.
 
@@ -1019,6 +1131,13 @@ class Mask(object):
         output_fullpath : str
             Path of the output file
 
+        Raises
+        ------
+        ValueError
+            If input_mask is type None
+        ValueError
+            If output_fullpath is type None
+
         """
 
         if input_mask is None:
@@ -1026,50 +1145,67 @@ class Mask(object):
         if output_fullpath is None:
             raise ValueError('fullpath not provided')
 
-        out = sc.FITSCatalog(output_fullpath, open_mode=sc.BaseCatalog.OpenMode.ReadWrite, hdu_no=0)
+        out = sc.FITSCatalog(
+            output_fullpath,
+            open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
+            hdu_no=0,
+        )
         out.save_as_fits(data=input_mask, image=True)
 
         if self._config['MD']['make']:
             out.open()
-            out.add_header_card('MRATIO', self._ratio, 'ratio missing_pixels/all_pixels')
-            out.add_header_card('MFLAG', self._config['MD']['im_flagged'], 'threshold value {:.3}'.format(self._config['MD']['thresh_flag']))
+            out.add_header_card(
+                'MRATIO',
+                self._ratio,
+                'ratio missing_pixels/all_pixels',
+            )
+            out.add_header_card(
+                'MFLAG',
+                self._config['MD']['im_flagged'],
+                f'threshold value {self._config["MD"]["thresh_flag"]:.3}',
+            )
 
             # Write WCS information to header
             if self._wcs:
                 header_wcs = self._wcs.to_header()
                 for card in header_wcs:
-                    out.add_header_card(card, header_wcs[card], header_wcs.comments[card])
+                    out.add_header_card(
+                        card,
+                        header_wcs[card],
+                        header_wcs.comments[card],
+                    )
             out.close()
 
     def _get_temp_dir_path(self, temp_dir_path):
-        """Get temporary directory path
+        """Get Temporary Directory Path
 
-        Create the path and the directory for temporary file.
+        Create the path and the directory for temporary files.
 
         Parameters
         -----------
         temp_dir_path : str
-            Path to the temporary directory
+            Path to the temporary directory, a value of 'OUTPUT' will include
+            the temporary files in the run directory
 
         Returns
         -------
         str
             Path to the temporary directory
 
-        Notes
-        -----
-        It is possible to have it in the output directory of the run, just
-        enter 'OUTPUT'.
+        Raises
+        ------
+        ValueError
+            If temp_dir_path is of type None
 
         """
 
         if temp_dir_path is None:
-            raise ValueError('temp directory path not parovided')
+            raise ValueError('Temporary directory path not provided')
 
         path = temp_dir_path.replace(' ', '')
 
         if path == 'OUTPUT':
-            path = self._output_dir + '/temp'
+            path = f'{self._output_dir}/temp'
 
         path += '/'
         if not os.path.isdir(path):
