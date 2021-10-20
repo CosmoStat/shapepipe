@@ -30,7 +30,7 @@ class MergeStarCatMCCD(object):
         input files
     output_dir : str
         output directory
-    w_log :
+    w_log : logging.Logger
         log file
     stamp_size : int, optional, default=51
         stamp size, in pixels
@@ -496,7 +496,7 @@ class MergeStarCatPSFEX(object):
         input files
     output_dir : str
         output directory
-    w_log :
+    w_log : logging.Logger
         log file
     hdu_table : int, optional, default=2
         HDU number

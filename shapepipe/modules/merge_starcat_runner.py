@@ -37,7 +37,7 @@ def merge_starcat_runner(
     if psf_model not in allowed_psf_models:
         raise ValueError(
             f'Invalid config entry PSF_MODEL={psf_model} found,'
-            + 'needs to be one of {allowed_psf_models}'
+            + f'needs to be one of {allowed_psf_models}'
         )
 
     output_dir = run_dirs['output']
