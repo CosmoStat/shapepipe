@@ -223,10 +223,13 @@ class MergeStarCatMCCD(object):
 
         my_mask = np.zeros((self._stamp_size, self._stamp_size), dtype=bool)
 
-        for idx in range(shap[0]):
-            for jdx in range(shap[1]):
-                if np.sqrt((idx - cent[0]) ** 2 + (jdx - cent[1]) ** 2) <= self._rad:
-                    my_mask[idx, jdx] = True
+        idx = np.arange(0, shap[0])
+        jdx = np.arange(0, shap[1])
+        inside_circle = np.sqrt(
+            (idx[np.newaxis, :] - cent[0]) ** 2
+            + (jdx[:, np.newaxis] -cent[1]) ** 2
+        ) <= self._rad
+        my_mask[inside_circle] = True
 
         for name in self._input_file_list:
             starcat_j = fits.open(name[0], memmap=False)
