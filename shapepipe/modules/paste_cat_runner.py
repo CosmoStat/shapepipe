@@ -13,7 +13,7 @@ Pipeline runner for the PasteCat package.
 """
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.PastCat_package import PastCat_script as paste
+from shapepipe.modules.PasteCat_package import PasteCat_script as paste
 
 
 @module_runner(
