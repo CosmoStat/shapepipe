@@ -98,4 +98,4 @@ class PasteCat(object):
                 ext_name = input_file
             pasted_cat.save_as_fits(data, ext_name=ext_name)
 
-        pasted_cat.close()
+        #pasted_cat.close()
