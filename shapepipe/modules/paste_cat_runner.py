@@ -13,7 +13,7 @@ Pipeline runner for the PasteCat package.
 """
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.PasteCat_package import PasteCat_script as paste
+from shapepipe.modules.PasteCat_package.PasteCat_script import PasteCat
 
 
 @module_runner(
@@ -58,13 +58,21 @@ def paste_cat_runner(input_file_list, run_dirs, file_number_string,
 
     file_ext = 'fits'
 
-    output_path = '{}/{}{}.{}'.format(run_dirs['output'],
-                                      output_file_pattern,
-                                      file_number_string,
-                                      file_ext)
+    output_path = '{}/{}{}.{}'.format(
+	run_dirs['output'],
+        output_file_pattern,
+        file_number_string,
+        file_ext
+    )
 
-    inst = paste.PasteCat(input_file_list, output_path, w_log, ext_name=ext_name_list,
-                          check_col_name=check_col_name, hdu_no=hdu_no)
+    inst = PasteCat(
+	input_file_list, 
+	output_path, 
+	w_log, 
+	ext_name = ext_name_list,
+       	check_col_name = check_col_name, 
+        hdu_no=hdu_no
+    )
 
     inst.process()
 
