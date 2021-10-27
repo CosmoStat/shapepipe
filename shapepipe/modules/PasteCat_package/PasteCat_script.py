@@ -68,7 +68,7 @@ class PasteCat(object):
                                     open_mode=io.BaseCatalog.OpenMode.ReadWrite)
 
         for i, input_file in enumerate(self._input_file_list):
-            self._w_log.info('Pasting catalog \'{}\''.format(input_file))
+            self._w_log.info(f'Pasting catalog \'{input_file}\'')
 
             # Read input data
             cat = io.FITSCatalog(input_file)
@@ -81,14 +81,16 @@ class PasteCat(object):
             if self._check_col_name:
                 if i > 0:
                     if self._check_col_name not in col_names:
-                        raise KeyError('CHECK_COL_NAME key \'{}\' not found in '
-                                       'input catalog'
-                                       ''.format(self._check_col_name))
+                        raise KeyError(
+				f'CHECK_COL_NAME key \'{self._check_col_name}\' not found in '
+                                 +'input catalog'
+                        )
                     if not (data[self._check_col_name] == data_prev[self._check_col_name]).all():
-                        raise Exception('Column check using key \'{}\''
-                                        ' failed for input catalogs '
-                                        '#{} and #{}'
-                                        ''.format(self._check_col_name, i-1, i))
+                        raise Exception(
+				f'Column check using key \'{self._check_col_name}\' '
+                                + 'failed for input catalogs '
+                                + f'#{i-1} and #{i}'
+                        )
                 data_prev = data
 
             # Add to output cat
@@ -98,4 +100,3 @@ class PasteCat(object):
                 ext_name = input_file
             pasted_cat.save_as_fits(data, ext_name=ext_name)
 
-        #pasted_cat.close()
