@@ -35,18 +35,25 @@ class PasteCat(object):
         output file path of pasted catalog
     w_log :
         log file
-    ext_name : list of strings, optional, default=None
+    ext_name : list of strings, optional, default = None
         HDU extension names, if None use input file names
     check_col_name : string, optional, default=None:
         if not None, use column with this key to check equal number
         of rows in each input catalog
-    hdu_no : array of int, optional, default=None
+    hdu_no : array of int, optional, default = None
         hdu numbers of input catalog; by default set to 2 for all
         input files
     """
 
-    def __init__(self, input_file_list, output_path, w_log,
-                 ext_name=None, check_col_name=None, hdu_no=None):
+    def __init__(
+		self, 
+		input_file_list, 
+		output_path, 
+		w_log,
+                ext_name = None, 
+		check_col_name = None, 
+		hdu_no = None
+	):
 
         self._input_file_list = input_file_list
         self._output_path = output_path
@@ -64,8 +71,10 @@ class PasteCat(object):
         """
 
         # Create output catalog
-        pasted_cat = io.FITSCatalog(self._output_path,
-                                    open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+        pasted_cat = io.FITSCatalog(
+		self._output_path,
+                open_mode = io.BaseCatalog.OpenMode.ReadWrite
+	)
 
         for i, input_file in enumerate(self._input_file_list):
             self._w_log.info(f'Pasting catalog \'{input_file}\'')
@@ -83,7 +92,7 @@ class PasteCat(object):
                     if self._check_col_name not in col_names:
                         raise KeyError(
 				f'CHECK_COL_NAME key \'{self._check_col_name}\' not found in '
-                                 +'input catalog'
+                                +'input catalog'
                         )
                     if not (data[self._check_col_name] == data_prev[self._check_col_name]).all():
                         raise Exception(
