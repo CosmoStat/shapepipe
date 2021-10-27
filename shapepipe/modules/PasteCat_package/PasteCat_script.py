@@ -91,14 +91,18 @@ class PasteCat(object):
                 if i > 0:
                     if self._check_col_name not in col_names:
                         raise KeyError(
-				f'CHECK_COL_NAME key \'{self._check_col_name}\' not found in '
-                                +'input catalog'
+                            f'CHECK_COL_NAME key \'{self._check_col_name}\''
+                            + 'not found in input catalog'
                         )
-                    if not (data[self._check_col_name] == data_prev[self._check_col_name]).all():
+                    if not (
+                        data[self._check_col_name] 
+                        == data_prev[self._check_col_name]
+                    ).all():
                         raise Exception(
-				f'Column check using key \'{self._check_col_name}\' '
-                                + 'failed for input catalogs '
-                                + f'#{i-1} and #{i}'
+                            f'Column check using key' 
+                            + '\'{self._check_col_name}\''
+                            + 'failed for input catalogs '
+                            + f'#{i-1} and #{i}'
                         )
                 data_prev = data
 
