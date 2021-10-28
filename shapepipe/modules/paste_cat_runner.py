@@ -13,7 +13,7 @@ Pipeline runner for the PasteCat package.
 """
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.PasteCat_package.PasteCat_script import PasteCat
+from shapepipe.modules.PasteCat_package.pastecat_script import PasteCat
 
 
 @module_runner(
@@ -37,13 +37,17 @@ def paste_cat_runner(input_file_list, run_dirs, file_number_string,
         hdu_no = [int(i) for i in tmp]
         if len(hdu_no) != len(input_file_list):
             raise IndexError(
-		f'Different lengths for input file list ({len(input_file_list)}) and HDU ({len(hdu_no)})'
+		f'Different lengths for input file list ({len(input_file_list)})'
+        +' and HDU ({len(hdu_no)})'
             )
     else:
         hdu_no = None
 
     if config.has_option('PASTE_CAT_RUNNER', 'OUTPUT_FILE_PATTERN'):
-        output_file_pattern = config.get('PASTE_CAT_RUNNER', 'OUTPUT_FILE_PATTERN')
+        output_file_pattern = config.get(
+            'PASTE_CAT_RUNNER',
+            'OUTPUT_FILE_PATTERN'
+        )
     else:
         output_file_pattern = 'cat_pasted'
 
@@ -51,8 +55,9 @@ def paste_cat_runner(input_file_list, run_dirs, file_number_string,
         ext_name_list = config.getlist('PASTE_CAT_RUNNER', 'EXT_NAME')
         if len(ext_name_list) != len(input_file_list):
             raise ValueError(
-		f'Input file list length ({len(input_file_list)}) and EXT_NAME list ({len(ext_name_list)})'
-                + 'need to be equal'
+		f'Input file list length ({len(input_file_list)})'
+        +' and EXT_NAME list ({len(ext_name_list)})'
+        + 'need to be equal'
             )
     else:
         ext_name_list = None
@@ -67,11 +72,11 @@ def paste_cat_runner(input_file_list, run_dirs, file_number_string,
     )
 
     inst = PasteCat(
-	input_file_list, 
-	output_path, 
-	w_log, 
+	input_file_list,
+	output_path,
+	w_log,
 	ext_name = ext_name_list,
-       	check_col_name = check_col_name, 
+       	check_col_name = check_col_name,
         hdu_no=hdu_no
     )
 
