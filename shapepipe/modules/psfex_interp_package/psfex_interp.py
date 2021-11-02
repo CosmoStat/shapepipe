@@ -4,9 +4,6 @@
 
 This module computes the PSFs from a PSFEx model at several galaxy positions.
 
-Was using Erin Sheldon & Eli Rykoff's psfex module, available on GitHub at:
-https://github.com/esheldon/psfex
-
 :Author: Morgan Schmitz and Axel Guinot
 
 :Version: 1.2.1
