@@ -37,8 +37,8 @@ def paste_cat_runner(input_file_list, run_dirs, file_number_string,
         hdu_no = [int(i) for i in tmp]
         if len(hdu_no) != len(input_file_list):
             raise IndexError(
-		f'Different lengths for input file list ({len(input_file_list)})'
-        +' and HDU ({len(hdu_no)})'
+                f'Different lengths for input file list'
+                +' ({len(input_file_list)}) and HDU ({len(hdu_no)})'
             )
     else:
         hdu_no = None
@@ -55,7 +55,7 @@ def paste_cat_runner(input_file_list, run_dirs, file_number_string,
         ext_name_list = config.getlist('PASTE_CAT_RUNNER', 'EXT_NAME')
         if len(ext_name_list) != len(input_file_list):
             raise ValueError(
-		f'Input file list length ({len(input_file_list)})'
+        f'Input file list length ({len(input_file_list)})'
         +' and EXT_NAME list ({len(ext_name_list)})'
         + 'need to be equal'
             )
@@ -65,18 +65,18 @@ def paste_cat_runner(input_file_list, run_dirs, file_number_string,
     file_ext = 'fits'
 
     output_path = '{}/{}{}.{}'.format(
-	run_dirs['output'],
+        run_dirs['output'],
         output_file_pattern,
         file_number_string,
         file_ext
     )
 
     inst = PasteCat(
-	input_file_list,
-	output_path,
-	w_log,
-	ext_name = ext_name_list,
-       	check_col_name = check_col_name,
+        input_file_list,
+        output_path,
+        w_log,
+        ext_name = ext_name_list,
+        check_col_name = check_col_name,
         hdu_no=hdu_no
     )
 
