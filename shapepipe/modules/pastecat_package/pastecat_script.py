@@ -46,15 +46,15 @@ class PasteCat(object):
     """
 
     def __init__(
-		self,
-		input_file_list,
-		output_path,
-		w_log,
+        self,
+        input_file_list,
+        output_path,
+        w_log,
         ext_name=None,
-		check_col_name=None,
-		hdu_no=None
-	):
-
+        check_col_name=None,
+        hdu_no=None
+    ):
+    
         self._input_file_list = input_file_list
         self._output_path = output_path
         self._w_log = w_log
@@ -72,20 +72,21 @@ class PasteCat(object):
 
         # Create output catalog
         pasted_cat = io.FITSCatalog(
-		self._output_path,
-                open_mode = io.BaseCatalog.OpenMode.ReadWrite
+            self._output_path,
+            open_mode=io.BaseCatalog.OpenMode.ReadWrite
 	)
 
         for i, input_file in enumerate(self._input_file_list):
-            self._w_log.info(f'Pasting catalog \'{input_file}\'')
 
+            self._w_log.info(f'Pasting catalog \'{input_file}\'')
+            
             # Read input data
             cat = io.FITSCatalog(input_file)
             cat.open()
             data = np.copy(cat.get_data(self._hdu_no[i]))
             col_names = cat.get_col_names(self._hdu_no[i])
             cat.close()
-
+            
             # Check equality if required by user
             if self._check_col_name:
                 if i > 0:
