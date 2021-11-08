@@ -54,7 +54,7 @@ class PasteCat(object):
         check_col_name=None,
         hdu_no=None
     ):
- 
+
         self._input_file_list = input_file_list
         self._output_path = output_path
         self._w_log = w_log
