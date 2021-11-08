@@ -588,7 +588,7 @@ def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
     ----------
     obs : galsim Observation
         image to fit
-    model : string
+    model : str
         model for fit
     guess0 : numpy array
         parameters of first model guess
