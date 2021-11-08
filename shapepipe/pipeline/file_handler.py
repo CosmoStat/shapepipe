@@ -232,7 +232,7 @@ class FileHandler(object):
 
         """
         if check_exists and os.path.isdir(dir_name):
-            raise OSError('Directory {dir_name} already exists.')
+            raise OSError(f'Directory {dir_name} already exists.')
 
         return cls.strip_slash(dir_name)
 
