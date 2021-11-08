@@ -579,16 +579,28 @@ def get_guess(
     return guess
 
 
-def make_galsimfit(obs, model, guess0, prior=None, lm_pars=None, ntry=5):
+def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
     """Make GalSim Fit
 
     Fit image using simple galsim model.
 
     Parameters
     ----------
+    obs : galsim Observation
+        image to fit
+    model : string
+        model for fit
+    guess0 : numpy array
+        parameters of first model guess
+    prior : ngmix.prior, optional, default=None
+        prior for fit paraemeters
+    ntry : int, optional, default=5
+        number of tries for fit
 
     Returns
     -------
+    fres : dict
+        results
 
     Raises
     ------
@@ -608,7 +620,6 @@ def make_galsimfit(obs, model, guess0, prior=None, lm_pars=None, ntry=5):
                 obs,
                 model,
                 prior=prior,
-                lm_pars=lm_pars
             )
             fitter.go(guess)
             fres = fitter.get_result()
@@ -781,7 +792,7 @@ def do_ngmix_metacal(
 
         psf_guess = np.array([0., 0., 0., 0., psf_T, 1.])
         try:
-            psf_res = make_galsimfit(psf_obs, 'gauss', psf_guess, None)
+            psf_res = make_galsimfit(psf_obs, 'gauss', psf_guess)
         except:
             continue
 
@@ -884,7 +895,8 @@ def do_ngmix_metacal(
 
         fres = make_galsimfit(
             obs_dict_mcal[key],
-            gal_model, gal_pars,
+            gal_model,
+            gal_pars,
             prior=prior
         )
 
@@ -907,7 +919,6 @@ def do_ngmix_metacal(
                         obs.psf_nopix,
                         psf_model,
                         np.array([0., 0., 0., 0., Tguess, 1.]),
-                        prior=None,
                         ntry=ntry
                     )
                 except:
@@ -919,8 +930,7 @@ def do_ngmix_metacal(
                     psf_res = make_galsimfit(
                         obs.psf,
                         psf_model,
-                        np.array([0., 0., 0., 0., Tguess, 1.]),
-                        prior=None
+                        np.array([0., 0., 0., 0., Tguess, 1.])
                     )
                 except:
                     continue
