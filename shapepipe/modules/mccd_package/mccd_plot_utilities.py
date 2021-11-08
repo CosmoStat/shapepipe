@@ -1058,7 +1058,7 @@ def rho_stats(
     TreeCorrConfig = {
         'ra_units': 'degrees',
         'dec_units': 'degrees',
-        'max_sep': 3e2,
+        'max_sep': '3e2',
         'min_sep': 5e-1,
         'sep_units': 'arcmin',
         'nbins': 32

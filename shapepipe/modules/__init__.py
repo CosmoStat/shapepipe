@@ -16,7 +16,6 @@ __all__ = [
     'module_decorator',
     'module_runners',
     'mask_package',
-    'ngmix_package',
     'PasteCat_package'
     'PSFExInterpolation_package',
     'python_example_package',

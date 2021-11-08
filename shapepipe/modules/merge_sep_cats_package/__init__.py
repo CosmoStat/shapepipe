@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""MERGE SEP CATS PACKAGE
+"""MERGE SEP CAT PACKAGE
 
 This package contains the module for ``merge_sep_cat``.
 
