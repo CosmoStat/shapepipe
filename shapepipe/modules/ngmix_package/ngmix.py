@@ -226,68 +226,68 @@ class Ngmix(object):
             'mcal_flags'
         ]
         output_dict = {k: {kk: [] for kk in names2} for k in names}
-        for i in range(len(results)):
+        for idx in range(len(results)):
             for name in names:
 
-                mag = -2.5 * np.log10(results[i][name]['flux']) + self._zero_point
+                mag = -2.5 * np.log10(results[idx][name]['flux']) + self._zero_point
                 mag_err = np.abs(
-                    -2.5 * results[i][name]['flux_err']
-                    / (results[i][name]['flux'] * np.log(10))
+                    -2.5 * results[idx][name]['flux_err']
+                    / (results[idx][name]['flux'] * np.log(10))
                 )
 
-                output_dict[name]['id'].append(results[i]['obj_id'])
+                output_dict[name]['id'].append(results[idx]['obj_id'])
                 output_dict[name]['n_epoch_model'].append(
-                    results[i]['n_epoch_model']
+                    results[idx]['n_epoch_model']
                 )
                 output_dict[name]['moments_fail'].append(
-                    results[i]['moments_fail']
+                    results[idx]['moments_fail']
                 )
-                output_dict[name]['ntry_fit'].append(results[i][name]['ntry'])
+                output_dict[name]['ntry_fit'].append(results[idx][name]['ntry'])
                 output_dict[name]['g1_psfo_ngmix'].append(
-                    results[i]['g_PSFo'][0]
+                    results[idx]['g_PSFo'][0]
                 )
                 output_dict[name]['g2_psfo_ngmix'].append(
-                    results[i]['g_PSFo'][1]
+                    results[idx]['g_PSFo'][1]
                 )
                 output_dict[name]['g1_err_psfo_ngmix'].append(
-                    results[i]['g_err_PSFo'][0]
+                    results[idx]['g_err_PSFo'][0]
                 )
                 output_dict[name]['g2_err_psfo_ngmix'].append(
-                    results[i]['g_err_PSFo'][1]
+                    results[idx]['g_err_PSFo'][1]
                 )
-                output_dict[name]['T_psfo_ngmix'].append(results[i]['T_PSFo'])
+                output_dict[name]['T_psfo_ngmix'].append(results[idx]['T_PSFo'])
                 output_dict[name]['T_err_psfo_ngmix'].append(
-                    results[i]['T_err_PSFo']
+                    results[idx]['T_err_PSFo']
                 )
-                output_dict[name]['g1'].append(results[i][name]['g'][0])
+                output_dict[name]['g1'].append(results[idx][name]['g'][0])
                 output_dict[name]['g1_err'].append(
-                    results[i][name]['pars_err'][2]
+                    results[idx][name]['pars_err'][2]
                 )
-                output_dict[name]['g2'].append(results[i][name]['g'][1])
+                output_dict[name]['g2'].append(results[idx][name]['g'][1])
                 output_dict[name]['g2_err'].append(
-                    results[i][name]['pars_err'][3]
+                    results[idx][name]['pars_err'][3]
                 )
-                output_dict[name]['T'].append(results[i][name]['T'])
-                output_dict[name]['T_err'].append(results[i][name]['T_err'])
-                output_dict[name]['Tpsf'].append(results[i][name]['Tpsf'])
-                output_dict[name]['g1_psf'].append(results[i][name]['gpsf'][0])
-                output_dict[name]['g2_psf'].append(results[i][name]['gpsf'][1])
-                output_dict[name]['flux'].append(results[i][name]['flux'])
+                output_dict[name]['T'].append(results[idx][name]['T'])
+                output_dict[name]['T_err'].append(results[idx][name]['T_err'])
+                output_dict[name]['Tpsf'].append(results[idx][name]['Tpsf'])
+                output_dict[name]['g1_psf'].append(results[idx][name]['gpsf'][0])
+                output_dict[name]['g2_psf'].append(results[idx][name]['gpsf'][1])
+                output_dict[name]['flux'].append(results[idx][name]['flux'])
                 output_dict[name]['flux_err'].append(
-                    results[i][name]['flux_err']
+                    results[idx][name]['flux_err']
                 )
                 output_dict[name]['mag'].append(mag)
                 output_dict[name]['mag_err'].append(mag_err)
 
-                if 's2n' in results[i][name]:
-                    output_dict[name]['s2n'].append(results[i][name]['s2n'])
-                elif 's2n_r' in results[i][name]:
-                    output_dict[name]['s2n'].append(results[i][name]['s2n_r'])
+                if 's2n' in results[idx][name]:
+                    output_dict[name]['s2n'].append(results[idx][name]['s2n'])
+                elif 's2n_r' in results[idx][name]:
+                    output_dict[name]['s2n'].append(results[idx][name]['s2n_r'])
                 else:
                     raise KeyError('No SNR key (s2n, s2n_r) found in results')
 
-                output_dict[name]['flags'].append(results[i][name]['flags'])
-                output_dict[name]['mcal_flags'].append(results[i]['mcal_flags'])
+                output_dict[name]['flags'].append(results[idx][name]['flags'])
+                output_dict[name]['mcal_flags'].append(results[idx]['mcal_flags'])
 
         return output_dict
 
