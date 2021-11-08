@@ -590,7 +590,7 @@ def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
         image to fit
     model : str
         model for fit
-    guess0 : numpy array
+    guess0 : numpy.ndarray
         parameters of first model guess
     prior : ngmix.prior, optional, default=None
         prior for fit paraemeters
