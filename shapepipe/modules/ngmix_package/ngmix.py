@@ -604,7 +604,8 @@ def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
 
     Raises
     ------
-    BootGalFailure :
+    BootGalFailure : ngmix exception
+        failure to bootstrap galaxy
     """
 
     limit = 0.1
