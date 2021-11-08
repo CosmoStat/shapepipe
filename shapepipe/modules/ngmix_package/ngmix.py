@@ -586,7 +586,7 @@ def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
 
     Parameters
     ----------
-    obs : galsim Observation
+    obs : ngmix.Observation
         image to fit
     model : str
         model for fit
