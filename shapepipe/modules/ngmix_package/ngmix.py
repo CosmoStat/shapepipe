@@ -44,7 +44,7 @@ class Ngmix(object):
         pixel scale in arcsec
     f_wcs_path : str
         path to merged single-exposure single-HDU headers
-    w_log :
+    w_log : logging.Logger
         log file
     id_obj_min : int, optional, default=-1
         first galaxy ID to process, not used if -1
