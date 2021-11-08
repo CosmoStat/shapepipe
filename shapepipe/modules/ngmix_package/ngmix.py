@@ -773,7 +773,7 @@ def do_ngmix_metacal(
                   'T_err_PSFo': 0.}
     gal_guess = []
     gal_guess_flag = True
-    wsum = 0.
+    wsum = 0
     for n_e in range(n_epoch):
 
         psf_jacob = ngmix.Jacobian(
@@ -786,9 +786,9 @@ def do_ngmix_metacal(
 
         psf_T = psfs_sigma[n_e] * 1.17741 * pixel_scale
 
-        w = np.copy(weights[n_e])
-        w[np.where(flags[n_e] != 0)] = 0.
-        w[w != 0] = 1
+        weight = np.copy(weights[n_e])
+        weight[np.where(flags[n_e] != 0)] = 0.
+        weight[weight != 0] = 1
 
         psf_guess = np.array([0., 0., 0., 0., psf_T, 1.])
         try:
@@ -812,33 +812,33 @@ def do_ngmix_metacal(
 
         # Noise handling
         if gal_guess_flag:
-            sig_noise = get_noise(gals[n_e], w, gal_guess_tmp, pixel_scale)
+            sig_noise = get_noise(gals[n_e], weight, gal_guess_tmp, pixel_scale)
         else:
             sig_noise = sigma_mad(gals[n_e])
 
-        noise_img = np.random.randn(*gals[n_e].shape)*sig_noise
-        noise_img_gal = np.random.randn(*gals[n_e].shape)*sig_noise
+        noise_img = np.random.randn(*gals[n_e].shape) * sig_noise
+        noise_img_gal = np.random.randn(*gals[n_e].shape) * sig_noise
 
         gal_masked = np.copy(gals[n_e])
-        if (len(np.where(w == 0)[0]) != 0):
-            gal_masked[w == 0] = noise_img_gal[w == 0]
+        if (len(np.where(weight == 0)[0]) != 0):
+            gal_masked[weight == 0] = noise_img_gal[weight == 0]
 
-        w *= 1/sig_noise**2.
+        weight *= 1 / sig_noise**2
 
         # Original PSF fit
-        w_tmp = np.sum(w)
-        psf_res_gT['g_PSFo'] += psf_res['g']*w_tmp
+        w_tmp = np.sum(weight)
+        psf_res_gT['g_PSFo'] += psf_res['g'] * w_tmp
         psf_res_gT['g_err_PSFo'] += np.array([
             psf_res['pars_err'][2],
             psf_res['pars_err'][3]
         ]) * w_tmp
-        psf_res_gT['T_PSFo'] += psf_res['T']*w_tmp
-        psf_res_gT['T_err_PSFo'] += psf_res['T_err']*w_tmp
+        psf_res_gT['T_PSFo'] += psf_res['T'] * w_tmp
+        psf_res_gT['T_err_PSFo'] += psf_res['T_err'] * w_tmp
         wsum += w_tmp
 
         gal_obs = Observation(
             gal_masked,
-            weight=w,
+            weight=weight,
             jacobian=gal_jacob,
             psf=psf_obs,
             noise=noise_img
@@ -941,13 +941,13 @@ def do_ngmix_metacal(
             twsum = obs.weight.sum()
 
             wsum += twsum
-            gpsf_sum[0] += g1*twsum
-            gpsf_sum[1] += g2*twsum
-            Tpsf_sum += T*twsum
+            gpsf_sum[0] += g1 * twsum
+            gpsf_sum[1] += g2 * twsum
+            Tpsf_sum += T * twsum
             npsf += 1
 
-        tres['gpsf'] = gpsf_sum/wsum
-        tres['Tpsf'] = Tpsf_sum/wsum
+        tres['gpsf'] = gpsf_sum / wsum
+        tres['Tpsf'] = Tpsf_sum / wsum
 
         res[key] = tres
 
