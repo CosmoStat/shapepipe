@@ -38,7 +38,7 @@ class Ngmix(object):
         output directory
     file_number_string : str
         file numbering scheme
-    ZP : float
+    zero_point : float
         photometric zero point
     pixel_scale : float
         pixel scale in arcsec
@@ -62,7 +62,7 @@ class Ngmix(object):
         input_file_list,
         output_dir,
         file_number_string,
-        ZP,
+        zero_point,
         pixel_scale,
         f_wcs_path,
         w_log,
@@ -86,7 +86,7 @@ class Ngmix(object):
         self._output_dir = output_dir
         self._file_number_string = file_number_string
 
-        self._ZP = ZP
+        self._zero_point = zero_point
         self._pixel_scale = pixel_scale
 
         self._f_wcs_path = f_wcs_path
@@ -229,7 +229,7 @@ class Ngmix(object):
         for i in range(len(results)):
             for name in names:
 
-                mag = -2.5 * np.log10(results[i][name]['flux']) + self._ZP
+                mag = -2.5 * np.log10(results[i][name]['flux']) + self._zero_point
                 mag_err = np.abs(
                     -2.5 * results[i][name]['flux_err']
                     / (results[i][name]['flux'] * np.log(10))
