@@ -17,7 +17,9 @@ from shapepipe.modules.ngmix_package import ngmix
 
 @module_runner(
     input_module=[
-        'sextractor_runner', 'psfex_interp_runner', 'vignetmaker_runner'
+        'sextractor_runner', 
+        'psfex_interp_runner', 
+        'vignetmaker_runner'
     ],
     version='0.0.1',
     file_pattern=[
