@@ -13,7 +13,7 @@ Pipeline runner for the PasteCat package.
 """
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.PastCat_package import PastCat_script as paste
+from shapepipe.modules.pastecat_package.pastecat_script import PasteCat
 
 
 @module_runner(
@@ -36,35 +36,49 @@ def paste_cat_runner(input_file_list, run_dirs, file_number_string,
         tmp = config.getlist('PASTE_CAT_RUNNER', 'HDU')
         hdu_no = [int(i) for i in tmp]
         if len(hdu_no) != len(input_file_list):
-            raise IndexError('Different lengths for input file list ({}) and'
-                             'HDU ({})'
-                             ''.format(len(input_file_list), len(hdu_no)))
+            raise IndexError(
+                f'Different lengths for input file list'
+                + ' ({len(input_file_list)}) and HDU ({len(hdu_no)})'
+            )
     else:
         hdu_no = None
 
     if config.has_option('PASTE_CAT_RUNNER', 'OUTPUT_FILE_PATTERN'):
-        output_file_pattern = config.get('PASTE_CAT_RUNNER', 'OUTPUT_FILE_PATTERN')
+        output_file_pattern = config.get(
+            'PASTE_CAT_RUNNER',
+            'OUTPUT_FILE_PATTERN'
+        )
     else:
         output_file_pattern = 'cat_pasted'
 
     if config.has_option('PASTE_CAT_RUNNER', 'EXT_NAME'):
         ext_name_list = config.getlist('PASTE_CAT_RUNNER', 'EXT_NAME')
         if len(ext_name_list) != len(input_file_list):
-            raise ValueError('Input file list length ({}) and EXT_NAME list ({}) '
-                             'need to be equal'
-                             ''.format(len(input_file_list), len(ext_name_list)))
+            raise ValueError(
+                f'Input file list length ({len(input_file_list)})'
+                + ' and EXT_NAME list ({len(ext_name_list)})'
+                + 'need to be equal'
+            )
     else:
         ext_name_list = None
 
     file_ext = 'fits'
 
-    output_path = '{}/{}{}.{}'.format(run_dirs['output'],
-                                      output_file_pattern,
-                                      file_number_string,
-                                      file_ext)
+    output_path = '{}/{}{}.{}'.format(
+        run_dirs['output'],
+        output_file_pattern,
+        file_number_string,
+        file_ext
+    )
 
-    inst = paste.PasteCat(input_file_list, output_path, w_log, ext_name=ext_name_list,
-                          check_col_name=check_col_name, hdu_no=hdu_no)
+    inst = PasteCat(
+        input_file_list,
+        output_path,
+        w_log,
+        ext_name=ext_name_list,
+        check_col_name=check_col_name,
+        hdu_no=hdu_no
+    )
 
     inst.process()
 
