@@ -17,7 +17,9 @@ from shapepipe.modules.ngmix_package import ngmix
 
 @module_runner(
     input_module=[
-        'sextractor_runner', 'psfex_interp_runner', 'vignetmaker_runner'
+        'sextractor_runner',
+        'psfex_interp_runner',
+        'vignetmaker_runner'
     ],
     version='0.0.1',
     file_pattern=[
@@ -43,7 +45,7 @@ def ngmix_runner(
     # Read config file entries
 
     # Photometric zero point
-    ZP = config.getfloat(module_config_sec, 'MAG_ZP')
+    zero_point = config.getfloat(module_config_sec, 'MAG_ZP')
 
     # Pixel scale
     pixel_scale = config.getfloat(module_config_sec, 'PIXEL_SCALE')
@@ -60,7 +62,7 @@ def ngmix_runner(
         input_file_list,
         run_dirs['output'],
         file_number_string,
-        ZP,
+        zero_point,
         pixel_scale,
         f_wcs_path,
         w_log,
