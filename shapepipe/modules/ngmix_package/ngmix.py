@@ -618,7 +618,8 @@ def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
 
     Raises
     ------
-    BootGalFailure :
+    BootGalFailure : ngmix exception
+        failure to bootstrap galaxy
     """
 
     limit = 0.1
@@ -781,11 +782,12 @@ def do_ngmix_metacal(
     # Make observation
     gal_obs_list = ObsList()
     T_guess_psf = []
-    psf_res_gT = {'g_PSFo': np.array([0., 0.]),
-                  'g_err_PSFo': np.array([0., 0.]),
-                  'T_PSFo': 0.,
-                  'T_err_PSFo': 0.}
-    gal_guess = []
+     psf_res_gT = {
+         'g_PSFo': np.array([0., 0.]),
+         'g_err_PSFo': np.array([0., 0.]),
+         'T_PSFo': 0.,
+         'T_err_PSFo': 0.
+      }
     gal_guess_flag = True
     wsum = 0
     for n_e in range(n_epoch):
@@ -959,13 +961,13 @@ def do_ngmix_metacal(
             twsum = obs.weight.sum()
 
             wsum += twsum
-            gpsf_sum[0] += g1*twsum
-            gpsf_sum[1] += g2*twsum
-            Tpsf_sum += T*twsum
+            gpsf_sum[0] += g1 * twsum
+            gpsf_sum[1] += g2 * twsum
+            Tpsf_sum += T * twsum
             npsf += 1
 
-        tres['gpsf'] = gpsf_sum/wsum
-        tres['Tpsf'] = Tpsf_sum/wsum
+        tres['gpsf'] = gpsf_sum / wsum
+        tres['Tpsf'] = Tpsf_sum / wsum
 
         res[key] = tres
 
