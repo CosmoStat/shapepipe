@@ -782,12 +782,12 @@ def do_ngmix_metacal(
     # Make observation
     gal_obs_list = ObsList()
     T_guess_psf = []
-     psf_res_gT = {
-         'g_PSFo': np.array([0., 0.]),
-         'g_err_PSFo': np.array([0., 0.]),
-         'T_PSFo': 0.,
-         'T_err_PSFo': 0.
-      }
+    psf_res_gT = {
+        'g_PSFo': np.array([0., 0.]),
+        'g_err_PSFo': np.array([0., 0.]),
+        'T_PSFo': 0.,
+        'T_err_PSFo': 0.
+    }
     gal_guess_flag = True
     wsum = 0
     for n_e in range(n_epoch):
