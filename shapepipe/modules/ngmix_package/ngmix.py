@@ -421,7 +421,7 @@ class Ngmix(object):
                 Fscale = header_tmp['FSCALE']
 
                 gal_vign_scaled = gal_vign_sub_bkg*Fscale
-                weight_vign_scaled = weight_vign_tmp * 1/Fscale**2.
+                weight_vign_scaled = weight_vign_tmp * 1/Fscale**2
 
                 gal_vign.append(gal_vign_scaled)
                 psf_vign.append(
@@ -542,7 +542,7 @@ def get_guess(
     if guess_flux_unit == 'img':
         guess_flux = hsm_shape.moments_amp
     elif guess_flux_unit == 'sky':
-        guess_flux = hsm_shape.moments_amp/pixel_scale**2.
+        guess_flux = hsm_shape.moments_amp/pixel_scale**2
     else:
         raise ValueError(
             f'invalid guess_flux_unit \'{guess_flux_unit}\','
@@ -843,7 +843,7 @@ def do_ngmix_metacal(
         if (len(np.where(weight_map == 0)[0]) != 0):
             gal_masked[weight_map == 0] = noise_img_gal[weight_map == 0]
 
-        weight_map *= 1/sig_noise**2.
+        weight_map *= 1/sig_noise**2
 
         # Original PSF fit
         w_tmp = np.sum(weight_map)
