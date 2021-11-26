@@ -1527,8 +1527,6 @@ def remove_common_elements(
     dec_tile = final_cat_file.get_data()[pos_param[1]]
     catalog_coord = coords.SkyCoord(ra=ra_tile*units.deg, dec=dec_tile*units.deg)
 
-    #tile_id = final_cat_file.get_data()[key_id][0]*1000
-
     # Get tile ID from FITS header
 
     # Format string to make sure trailing zeros are not cut
@@ -1537,8 +1535,6 @@ def remove_common_elements(
     # Transform to strings (nix, niy)
     tile_id_str = str(tile_id_format)
     tile_id = get_tile_number(tile_id_str)
-
-    #all_id = np.loadtxt(tiles_id_file, unpack=True)*1000
 
     # Get tile ID for entire survey from ascii file
     all_id_float = np.loadtxt(tiles_id_file, unpack=True)
