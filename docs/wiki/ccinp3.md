@@ -16,7 +16,7 @@
 
 ### CCIN2P3 Account
 
-To get an account on CCIN2P3 you need to follow [their instructions](https://doc.cc.in2p3.fr/en/Getting-started/access.html). In summary:
+To get an account on CCIN2P3 you need to follow [their instructions](https://doc.cc.in2p3.fr/en/Getting-started/start.html). In summary:
 - Fill in the [application form](http://cctools.in2p3.fr/cclogon/) and print the resulting PDF
 - Get this document signed by your local "czar". For CEA this should be [Georgette Zoulikha](mailto:zou.georgette@cea.fr).
 - Next, send the document to the IRFU head, [Anne-Isabelle Etienvre](anne-isabelle.etienvre@cea.fr), for signature.
