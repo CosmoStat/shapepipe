@@ -39,10 +39,10 @@ def mask_runner(
 
     # Set options for 3 inputs
     elif n_inputs == 3:
-        if config.getboolean('MASK_RUNNER', 'USE_EXT_FLAG'):
+        if config.getboolean(module_config_sec, 'USE_EXT_FLAG'):
             ext_flag_name = input_file_list[2]
             ext_star_cat = None
-        elif config.getboolean('MASK_RUNNER', 'USE_EXT_STAR'):
+        elif config.getboolean(module_config_sec, 'USE_EXT_STAR'):
             ext_flag_name = None
             ext_star_cat = input_file_list[2]
         else:
@@ -55,8 +55,8 @@ def mask_runner(
     # Set options for 4 inputs
     elif n_inputs == 4:
         if (
-            config.getboolean('MASK_RUNNER', 'USE_EXT_FLAG')
-            and config.getboolean('MASK_RUNNER', 'USE_EXT_STAR')
+            config.getboolean(module_config_sec, 'USE_EXT_FLAG')
+            and config.getboolean(module_config_sec, 'USE_EXT_STAR')
         ):
             ext_flag_name = input_file_list[2]
             ext_star_cat = input_file_list[3]
@@ -77,23 +77,23 @@ def mask_runner(
         )
 
     # Get path to mask configuration options
-    config_file = config.getexpanded('MASK_RUNNER', 'MASK_CONFIG_PATH')
+    config_file = config.getexpanded(module_config_sec, 'MASK_CONFIG_PATH')
 
     # Get mask HDU number
-    if config.has_option('MASK_RUNNER', 'HDU'):
-        hdu = config.getint('MASK_RUNNER', 'HDU')
+    if config.has_option(module_config_sec, 'HDU'):
+        hdu = config.getint(module_config_sec, 'HDU')
     else:
         hdu = 0
 
     # Get mask mask file name suffix
-    if config.has_option('MASK_RUNNER', 'SUFFIX'):
-        suffix = config.get('MASK_RUNNER', 'SUFFIX')
+    if config.has_option(module_config_sec, 'SUFFIX'):
+        suffix = config.get(module_config_sec, 'SUFFIX')
     else:
         suffix = ''
 
     # Get mask base ouput file name
-    if config.has_option('MASK_RUNNER', 'OUTNAME_BASE'):
-        outname_base = config.get('MASK_RUNNER', 'OUTNAME_BASE')
+    if config.has_option(module_config_sec, 'OUTNAME_BASE'):
+        outname_base = config.get(module_config_sec, 'OUTNAME_BASE')
     else:
         outname_base = 'flag'
 
