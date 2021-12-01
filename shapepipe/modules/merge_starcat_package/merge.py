@@ -249,7 +249,7 @@ class MergeStarCatMCCD(object):
 
             # Star noise variance (using masked stars)
             star_noise_var_val = np.array(
-                [np.var(_star[~my_mask]) for _star in stars]
+                [np.var(_star[np.invert(my_mask)]) for _star in stars]
             )
             res_var_val = np.array(
                 [np.var(_star - _psf) for _star, _psf in zip(stars, psfs)]
