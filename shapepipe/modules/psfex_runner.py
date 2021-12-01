@@ -38,7 +38,7 @@ def psfex_runner(
     )
     output_dir = run_dirs['output']
 
-    outcatalog_name = f"psfex_cat{file_number_string}.cat"
+    outcatalog_name = f"{output_dir}/psfex_cat{file_number_string}.cat"
 
     psfex_config_file = config.getexpanded(
         module_config_sec,

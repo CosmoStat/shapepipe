@@ -136,9 +136,9 @@ class MergeSep(object):
                 if ext_name == 'PRIMARY':
                     continue
                 output.save_as_fits(
-                data[ext_name],
-                names=list_col_name,
-                ext_name=ext_name
+                    data[ext_name],
+                    names=list_col_name,
+                    ext_name=ext_name
                 )
 
         return None, None

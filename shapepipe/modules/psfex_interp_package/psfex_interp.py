@@ -529,7 +529,7 @@ class PSFExInterpolator(object):
 
         """
 
-        if os.path.isfile(dot_psf_dir):
+        if os.path.exists(dot_psf_dir):
             self._dot_psf_dir = dot_psf_dir
         else:
             raise ValueError(f'Cound not find file {dot_psf_dir}.')

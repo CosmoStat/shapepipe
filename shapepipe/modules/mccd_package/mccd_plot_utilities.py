@@ -143,7 +143,6 @@ def plot_meanshapes(
     # READ FULL STARCAT
     starcat = fits.open(starcat_path, memmap=False)
 
-
     auto_colorbar = False
     colorbar_ampl = 1.
     loc2glob = mccd_utils.Loc2Glob()
@@ -1030,7 +1029,7 @@ def rho_stats(
     print_fun : function, optional, default=print
         output message function
     """
-    
+
     # Read starcat
     starcat = fits.open(starcat_path, memmap=False)
 
