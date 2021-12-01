@@ -73,7 +73,6 @@ class Mask(object):
         else:
             self._img_suffix = ''
 
-        self._star_cat_path = None
         if star_cat_path is not None:
             self._star_cat_path = star_cat_path
 
@@ -189,7 +188,7 @@ class Mask(object):
                     )
                     self._config[mask_shape]['reg_file'] = (
                         f'{self._config["PATH"]["temp_dir"]}/'
-                        + f'{re.split('.reg', reg_file)[0]}'
+                        + f'{re.split(".reg", reg_file)[0]}'
                         + f'{self._img_number}.reg'
                     )
                 else:
@@ -746,7 +745,7 @@ class Mask(object):
                 for key_split in re.split(',|#|;', key):
                     if key_split != '':
                         key = key_split
-                header.append(i)
+                header.append(key)
                 stars[key] = []
 
         # get data
@@ -826,18 +825,18 @@ class Mask(object):
         mask_reg = open(reg, 'w')
 
         stars_used = [[], [], []]
-        for (
-            ra, dec, Fmag, Jmag, Vmag, Nmag, clas
-            in zip(
-                stars['RA(J2000)'],
-                stars['Dec(J2000)'],
-                stars['Fmag'],
-                stars['Jmag'],
-                stars['Vmag'],
-                stars['Nmag'],
-                stars['Clas'],
-            )
-        ):
+
+        star_zip = zip(
+            stars['RA(J2000)'],
+            stars['Dec(J2000)'],
+            stars['Fmag'],
+            stars['Jmag'],
+            stars['Vmag'],
+            stars['Nmag'],
+            stars['Clas'],
+        )
+
+        for ra, dec, Fmag, Jmag, Vmag, Nmag, clas in star_zip:
             mag = 0.0
             idx = 0.0
 
@@ -967,7 +966,7 @@ class Mask(object):
                     + f'spike{self._img_number}.reg'
                 )
             ]
-            defaul_out = (
+            default_out = (
                 f'{self._config["PATH"]["temp_dir"]}'
                 + f'halo_spike_flag{self._img_number}.fits'
             )
