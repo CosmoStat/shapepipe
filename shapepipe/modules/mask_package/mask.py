@@ -404,7 +404,7 @@ class Mask(object):
 
         return general_stdout, general_stderr
 
-    def find_stars(self, position, radius=None):
+    def find_stars(self, position, radius):
         """Find Stars
 
         Return GSC (Guide Star Catalog) objects for a field with center
