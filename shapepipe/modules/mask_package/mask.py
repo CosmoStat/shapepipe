@@ -749,9 +749,9 @@ class Mask(object):
                 stars[key] = []
 
         # get data
-        for _ in range(4, len(CDSclient_output.splitlines()) - 5):
+        for elem in range(4, len(CDSclient_output.splitlines()) - 5):
             idx = 0
-            for key in CDSclient_output.splitlines()[idx].split(' '):
+            for key in CDSclient_output.splitlines()[elem].split(' '):
                 if (key != '') and (key != ';'):
                     # cleaning output
                     key = key.replace(' ', '')
@@ -762,7 +762,7 @@ class Mask(object):
                     try:
                         key = float(key)
                         stars[header[idx]].append(key)
-                    except:
+                    except Exception:
                         if key == '---':
                             stars[header[idx]].append(None)
                         else:
@@ -875,12 +875,10 @@ class Mask(object):
                 ll = stars_used[2][idx] * np.sqrt(x ** 2 + y ** 2)
                 xnew = ll * np.cos(angle)
                 ynew = ll * np.sin(angle)
-
                 poly = (
                     f'{poly}{str(stars_used[0][idx] + xnew + 0.5)} '
-                    + f'{str(stars_used[1][idx] + ynew + 0.5)}'
+                    + f'{str(stars_used[1][idx] + ynew + 0.5)} '
                 )
-
             poly = f'{poly})\n'
             mask_reg.write(poly)
 
