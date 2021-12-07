@@ -1859,7 +1859,7 @@ class FITScatalogue(Basecatalogue):
             self._data = data
 
 
-class interpreter(object):
+class StrInterpreter(object):
     """Interpreter class
 
     Class to handle operation/comparison in a string.
