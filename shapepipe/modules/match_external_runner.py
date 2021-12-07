@@ -9,7 +9,7 @@ This module matches an external catalogue to a ShapePipe (SExtractor) catalog
 """
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.match_external_package import match_external
+from shapepipe.modules.match_external_package.match_external import MatchCats
 
 
 @module_runner(
@@ -86,7 +86,7 @@ def match_external_runner(
     # Set output file path
     file_ext = 'fits'
     output_path = (
-        f'{run_dirs['output']}/{output_file_pattern}{file_number_string}.'
+        f'{run_dirs["output"]}/{output_file_pattern}{file_number_string}.'
         + f'{file_ext}'
     )
 
