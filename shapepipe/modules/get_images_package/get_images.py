@@ -21,6 +21,7 @@ import sys
 import glob
 
 
+# pragma: no cover
 def read_image_numbers(path):
     """Read Image Numbers
     Read image numbers from file.
