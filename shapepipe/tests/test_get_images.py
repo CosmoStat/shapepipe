@@ -27,6 +27,7 @@ class GetImagesTestCase(TestCase):
 
         self.number_tile = None
         self.number_exp = None
+        self.number_int = None
 
     def test_in2out_pattern(self):
 
