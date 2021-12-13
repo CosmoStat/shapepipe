@@ -34,7 +34,7 @@ def random_cat_runner(
     input_image_name = input_file_list[0]
     input_mask_name = input_file_list[1]
 
-    # Create output ascii file name
+    # Set output file name
     output_path = f'{run_dirs["output"]}/random_cat-{file_number_string}.fits'
 
     # Get number of random objects requested on output
