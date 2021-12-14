@@ -332,7 +332,7 @@ def main(argv=None):
 
     # Save merged catalogue as numpy binary file
     if param.verbose:
-        print('Saving merge catalogue')
+        print('Saving merged catalogue')
     np.save(f'{param.input_name_base}.npy', d)
 
     msg = f'{count} catalog files merged with success'
