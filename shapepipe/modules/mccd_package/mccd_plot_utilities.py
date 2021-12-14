@@ -134,11 +134,34 @@ def plot_meanshapes(
     hdu_no=2,
     remove_outliers=False,
     plot_meanshapes=True,
-    plot_histograms=True
+    plot_histograms=True,
+    psf_model_type='mccd'
 ):
     """Plot Meanshapes
 
-    Plot mean shapes, sizes, and histograms"""
+    Plot mean shapes, sizes, and histograms
+
+    Parameters
+    ----------
+    starcat_path : str
+        input star and PSF catalogue
+    output_path : str
+        output directory for plots
+    nb_pixel : array(2) of int
+        number of pixels per CCD in x- and y-direction
+    w_log : logging.Logger
+        log file
+    hdu_no : int, optional, default=2
+        HDU number of data in input FITS file
+    remove_outliers : bool, optional, default=False
+        perform outlier rejection if True
+    plot_meanshape : bool, optional, default=True
+        plot mean focal plane ellipticities, sizes, and residuals if True
+    plot_histograms : bool, optional, default=True
+        plot 1D histogram of ellipticities, sizes, and residuals if True
+    psf_model_type : str, optional, default='mccd'
+        psf model type, one in 'mccd', 'psfex'
+    """
 
     # READ FULL STARCAT
     starcat = fits.open(starcat_path, memmap=False)
@@ -228,19 +251,26 @@ def plot_meanshapes(
 
     for ccd_nb, ccd_map in enumerate(ccd_maps):
         # handle different scatalog versions
-        try:
-            ccd_mask = ((all_CCDs.astype(int) == ccd_nb) * flagmask).astype(
-                bool)
-        except:
+        #try:
+        if psf_model_type == 'mccd':
+            ccd_mask = (
+                ((all_CCDs.astype(int) == ccd_nb) * flagmask).astype(bool)
+            )
+            x_shift, y_shift = loc2glob.shift_coord(ccd_nb)
+        #except:
+        elif psf_model_type == 'psfex':
             ccd_mask = ((all_CCDs == str(ccd_nb)) * flagmask).astype(bool)
+            x_shift, y_shift = 0, 0
+        else:
+            raise ValueError(f'Invalid psf model type {psf_model_type}')
 
         star_shapes = all_star_shapes[:, ccd_mask]
         psf_shapes = all_psf_shapes[:, ccd_mask]
 
         # Calculate shift to go from global coordinates to local coordinates
-        x_shift, y_shift = loc2glob.shift_coord(ccd_nb)
-        #xs_loc, ys_loc = all_X[ccd_mask] - x_shift, all_Y[ccd_mask] - y_shift
-        xs_loc, ys_loc = all_X[ccd_mask], all_Y[ccd_mask]
+        #x_shift, y_shift = loc2glob.shift_coord(ccd_nb)
+        xs_loc, ys_loc = all_X[ccd_mask] - x_shift, all_Y[ccd_mask] - y_shift
+        #xs_loc, ys_loc = all_X[ccd_mask], all_Y[ccd_mask]
 
         # swap axes to match CCD orientation and origin convention
         ys_loc = loc2glob.y_npix - ys_loc + 1
@@ -256,9 +286,6 @@ def plot_meanshapes(
                 bin_psf_shapes = psf_shapes[
                     :, (xbins == xb + 1) * (ybins == yb + 1)]
                 ccd_map[0, :3, xb, yb] = np.mean(bin_star_shapes, axis=1)
-                if xb == 0 and yb == 1:
-                    print('MKDEBUG', ccd_nb, xb, xb, ccd_map[0, :3, xb, yb]) 
-                    print(bin_star_shapes)
                 ccd_map[1, :3, xb, yb] = np.mean(bin_psf_shapes, axis=1)
                 ccd_map[:, 3, xb, yb] = bin_star_shapes.shape[1]
 
@@ -539,8 +566,6 @@ def plot_meanshapes(
         plt.close()
 
     starcat.close()
-
-    return None
 
 
 # Rho stats functions
