@@ -106,7 +106,7 @@ class GetImages(object):
             input file extensions
         output_file_pattern : list of str
             output file patterns
-        w_log :
+        w_log : logging.Logger
             log file
         check_existing_dir : str, optional, default=None
             if not None, only retrieve image if not existing at this
