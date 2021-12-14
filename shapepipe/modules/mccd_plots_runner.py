@@ -70,6 +70,7 @@ def mccd_plots_runner(
         hdu_no = 2
 
     # Get parameters for meanshapes plots
+    psf_model_type = config.get(module_config_sec, 'PSF')
     x_nb_bins = config.getint(module_config_sec, 'X_GRID')
     y_nb_bins = config.getint(module_config_sec, 'Y_GRID')
     remove_outliers = config.getboolean(module_config_sec, 'REMOVE_OUTLIERS')
@@ -105,7 +106,8 @@ def mccd_plots_runner(
                 hdu_no=hdu_no,
                 remove_outliers=remove_outliers,
                 plot_meanshapes=plot_meanshapes,
-                plot_histograms=plot_histograms
+                plot_histograms=plot_histograms,
+                psf_model_type=psf_model_type
             )
         else:
             msg = (
