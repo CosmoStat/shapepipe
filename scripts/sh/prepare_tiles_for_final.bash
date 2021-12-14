@@ -8,6 +8,39 @@
 # Date: 06/2020
 # Version: 0.1
 
+# Command line arguments
+
+## Default values
+cat='final'  
+
+## Help string
+usage="Usage: $(basename "$0") [OPTIONS]
+\n\nOptions:\n
+   -h\tthis message\n
+   -c, --cat TYPE\n
+    \tCatalogue type, one in ['final'|'flag'], default='$cat'\n
+"
+
+## Parse command line
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h)
+      echo -ne $usage
+      exit 0
+      ;;
+    -c|--cat)
+      cat="$2"
+      shift
+      ;;
+    *)
+      echo -ne $usage
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+
 ## Functions
 function link_s () {
     target=$1
@@ -21,25 +54,46 @@ function link_s () {
     fi
 }
 
+## Check options
+if [ "$cat" != "final" ] && [ "$cat" != "flag" ]; then
+  echo "cat (option -c) needs to be 'final' or 'flag'"
+  exit 2
+fi
+
 
 ### Start ###
 
 pwd=`pwd`
 out_base="output"
-run_dir="run_sp_combined"
+
+if [ "$cat" == "final" ]; then
+  run_dir="run_sp_combined"
+  INPUT="$pwd/$out_base/run_sp_Mc_*"
+else
+  run_dir="run_sp_combined_flag"
+  INPUT="$pwd/$out_base/run_sp_tile_Ma_*"
+fi
+
 log_path="$pwd/$out_base/log_run_sp.txt"
-INPUT="$pwd/$out_base/run_sp_Mc_*"
 OUTPUT="$pwd/$out_base/$run_dir"
 mkdir -p $OUTPUT
 
 # Directories and file patterns to create/link
-DIRS=(
-	"make_catalog_runner"
-)
-
-PATTERNS=(
-	"final_cat-*"
-)
+if [ "$cat" == "final" ]; then
+  DIRS=(
+	  "make_catalog_runner"
+  )
+  PATTERNS=(
+	  "final_cat-*"
+  )
+else
+  DIRS=(
+	  "mask_runner"
+  )
+  PATTERNS=(
+	  "pipeline_flag-*"
+  )
+fi
 
 # Create links
 for n in "${!PATTERNS[@]}"; do
