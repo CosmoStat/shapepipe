@@ -83,7 +83,8 @@ class GetImages(object):
         output_file_pattern,
         w_log,
         check_existing_dir=None,
-        n_expected=None
+        n_expected=None,
+        n_try=3,
     ):
         """Get Images
 
@@ -113,6 +114,8 @@ class GetImages(object):
         n_expected : int, optional, default=None
             number of expected files per type and ID to download/check for
             existence
+        n_try : int, optional, default=3
+            number of attempts for VOs download
         """
 
         self._retrieve_method = retrieve_method
@@ -125,6 +128,7 @@ class GetImages(object):
         self._w_log = w_log
         self._check_existing_dir = check_existing_dir
         self._n_expected = n_expected
+        self._n_try = n_try
 
     def process(self, input_dir, output_dir):
         """Process
@@ -300,17 +304,17 @@ class GetImages(object):
 
             log_cmd = ' '.join(sys.argv)
             vcp = vosHandler('vcp')
+            print(log_cmd)
 
-            n_try = 3
             attempt = 0
-            while attempt < n_try:
+            while attempt < self._n_try:
                 try:
                     vcp()
-                    self._w_log.info(f'Success of command vcp after {attempt}/{n_try} attempts')
+                    self._w_log.info(f'Success of command vcp after {attempt}/{self._n_try} attempts')
                     break
                 except:
                     attempt += 1
-                    self._w_log.info(f'Error with command vcp, attempt {attempt}/{n_try}')
+                    self._w_log.info(f'Error with command vcp, attempt {attempt}/{self._n_try}')
 
             sys.argv = None
 

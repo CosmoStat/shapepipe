@@ -29,17 +29,17 @@ class RandomCat():
 
     Parameters
     ----------
-    input_image_path : string
+    input_image_path : str
         path to input image file
-    input_mask_path : string
+    input_mask_path : str
         path to input mask file
-    output_path : string
+    output_path : str
         output file path for random catalogue
     n_rand : float
         number of random objects on output
     density : bool
         n_rand is interpreted per square degrees if True
-    w_log :
+    w_log : logging.Logger
         log file
     tile_list_path : str, optional, default=None
         List to all tile IDs, to remove objects in
@@ -76,6 +76,7 @@ class RandomCat():
             img = fits.open(self._input_image_path)
             header = img[0].header
         except OSError:
+        except IOError:
             # FITS file might contain only header.
             # Try as ascii file
             try:
