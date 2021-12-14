@@ -75,8 +75,7 @@ class RandomCat():
         try:
             img = fits.open(self._input_image_path)
             header = img[0].header
-        except OSError:
-        except IOError:
+        except (OSError, IOError) as error:
             # FITS file might contain only header.
             # Try as ascii file
             try:
