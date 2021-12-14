@@ -74,8 +74,18 @@ class RandomCat():
         """
 
         # Read image FITS file header
-        img = fits.open(self._input_image_path)
-        header = img[0].header
+        try:
+            img = fits.open(self._input_image_path)
+            header = img[0].header
+        except OSError:
+            # FITS file might contain only header.
+            # Try as ascii file
+            try:
+                fin = open(self._input_image_path)
+                header = fits.Header.fromtextfile(fin)
+                fin.close()
+            except:
+                raise
 
         # Get WCS
         WCS = wcs.WCS(header)
@@ -92,15 +102,26 @@ class RandomCat():
         # Number of non-masked pixels
         n_unmasked = len(np.where(hdu_mask[0].data == 0)[0])
 
+        # Compute various areas
+
+        # Pixel area in deg^2
+        area_pix = wcs.utils.proj_plane_pixel_area(WCS)
+
+        # Tile area
+        area_deg2 = area_pix * n_pix
+
+        # Area of unmasked region
+        area_deg2_eff = area_pix * n_unmasked
+
         # Compute number of requested objects
         if not self._density:
+            # Use value from config file
             n_obj = self._n_rand
         else:
-            # Area in deg^2 of non-pixels
-            area_pix = wcs.utils.proj_plane_pixel_area(WCS)
-            area_deg2 = area_pix * n_pix
-            area_deg2_eff = area_pix * n_unmasked
+            # Compute number of objects from density
             n_obj = int(self._n_rand / area_deg2 * area_deg2_eff / area_deg2)
+
+
         self._w_log.info(f'Creating {n_obj} random objects')
 
         # Check that a reasonably large number of pixels is not masked
@@ -148,4 +169,19 @@ class RandomCat():
         # Remove overlapping regions
         if self._tile_list_path:
             self._w_log.info('Flag overlapping objects')
-            cfis.remove_common_elements(output, self._tile_list_path, pos_param=['RA', 'DEC'])
+            ratio_non_overl_tot = cfis.remove_common_elements(output, self._tile_list_path, pos_param=['RA', 'DEC'])
+        else:
+            ratio_non_overl_tot = 1
+
+        # Compute area without overlapping regions (approximation)
+        area_deg2_non_overl = area_deg2 * ratio_non_overl_tot
+        area_deg2_eff_non_overl = area_deg2_eff * ratio_non_overl_tot
+
+        # Write area information to log file
+        self._w_log.info(f'Total area = {area_deg2:.4f} deg^2')
+        self._w_log.info(f'Unmasked area = {area_deg2_eff:.4f} deg^2')
+        self._w_log.info(f'Ratio masked to total pixels = {n_unmasked / n_pix:.3f}')
+
+        self._w_log.info(f'Total area without overlap = {area_deg2_non_overl:.4f} deg^2')
+        self._w_log.info(f'Unmaskewd area without overlap = {area_deg2_eff_non_overl:.4f} deg^2')
+        self._w_log.info(f'Ratio of non-overlap to total area = {ratio_non_overl_tot:.3f}')

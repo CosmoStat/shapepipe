@@ -299,9 +299,18 @@ class GetImages(object):
             sys.argv.append(out_path)
 
             log_cmd = ' '.join(sys.argv)
-
             vcp = vosHandler('vcp')
-            vcp()
+
+            n_try = 3
+            attempt = 0
+            while attempt < n_try:
+                try:
+                    vcp()
+                    self._w_log.info(f'Success of command vcp after {attempt}/{n_try} attempts')
+                    break
+                except:
+                    attempt += 1
+                    self._w_log.info(f'Error with command vcp, attempt {attempt}/{n_try}')
 
             sys.argv = None
 

@@ -36,7 +36,7 @@ while [ $# -gt 0 ]; do
       shift
       ;;
     *)
-      echo -ne usage
+      echo -ne $usage
       exit 1
       ;;
   esac

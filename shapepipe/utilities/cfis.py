@@ -1485,6 +1485,10 @@ def remove_common_elements(
     pos_param : list
         List with the column name for ra and dec positions.
 
+    Returns
+    -------
+    ratio_mask_tot : float
+        ratio of masked to total objects
     """
 
     key_id = 'TILE_ID'
@@ -1578,6 +1582,15 @@ def remove_common_elements(
         # Mask objects who are closer to neighbour than tile center
         mask_tile &= (np.less(sep_ref, sep_check) | np.invert(w_tile_check.footprint_contains(catalog_coord)))
 
+    # Add mask as column to FITS catalogue
     final_cat_file.add_col('FLAG_TILING', mask_tile)
 
     final_cat_file.close()
+
+    # Compute ratio of masked to total object
+    n_masked = np.sum(mask_tile)
+    n_tot = len(mask_tile)
+
+    ratio_mask_tot = n_masked / n_tot
+
+    return ratio_mask_tot
