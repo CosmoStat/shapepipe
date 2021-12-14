@@ -250,27 +250,32 @@ def plot_meanshapes(
     ccd_maps = np.ones((40, 2, 4) + nb_pixel) * np.nan
 
     for ccd_nb, ccd_map in enumerate(ccd_maps):
-        # handle different scatalog versions
-        #try:
+
+        # handle different input catalogue types
         if psf_model_type == 'mccd':
+
             ccd_mask = (
                 ((all_CCDs.astype(int) == ccd_nb) * flagmask).astype(bool)
             )
+
+            # Calculate shift to go from global coordinates to local coordinates
             x_shift, y_shift = loc2glob.shift_coord(ccd_nb)
-        #except:
+
         elif psf_model_type == 'psfex':
+
             ccd_mask = ((all_CCDs == str(ccd_nb)) * flagmask).astype(bool)
+
+            # No shift required for PSFEx
             x_shift, y_shift = 0, 0
+
         else:
+
             raise ValueError(f'Invalid psf model type {psf_model_type}')
 
         star_shapes = all_star_shapes[:, ccd_mask]
         psf_shapes = all_psf_shapes[:, ccd_mask]
 
-        # Calculate shift to go from global coordinates to local coordinates
-        #x_shift, y_shift = loc2glob.shift_coord(ccd_nb)
         xs_loc, ys_loc = all_X[ccd_mask] - x_shift, all_Y[ccd_mask] - y_shift
-        #xs_loc, ys_loc = all_X[ccd_mask], all_Y[ccd_mask]
 
         # swap axes to match CCD orientation and origin convention
         ys_loc = loc2glob.y_npix - ys_loc + 1
