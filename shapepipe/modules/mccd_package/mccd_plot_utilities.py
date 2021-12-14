@@ -237,9 +237,10 @@ def plot_meanshapes(
         star_shapes = all_star_shapes[:, ccd_mask]
         psf_shapes = all_psf_shapes[:, ccd_mask]
 
-        # Claculate shift to go from global coordinates to local coordinates
+        # Calculate shift to go from global coordinates to local coordinates
         x_shift, y_shift = loc2glob.shift_coord(ccd_nb)
-        xs_loc, ys_loc = all_X[ccd_mask] - x_shift, all_Y[ccd_mask] - y_shift
+        #xs_loc, ys_loc = all_X[ccd_mask] - x_shift, all_Y[ccd_mask] - y_shift
+        xs_loc, ys_loc = all_X[ccd_mask], all_Y[ccd_mask]
 
         # swap axes to match CCD orientation and origin convention
         ys_loc = loc2glob.y_npix - ys_loc + 1
@@ -255,6 +256,9 @@ def plot_meanshapes(
                 bin_psf_shapes = psf_shapes[
                     :, (xbins == xb + 1) * (ybins == yb + 1)]
                 ccd_map[0, :3, xb, yb] = np.mean(bin_star_shapes, axis=1)
+                if xb == 0 and yb == 1:
+                    print('MKDEBUG', ccd_nb, xb, xb, ccd_map[0, :3, xb, yb]) 
+                    print(bin_star_shapes)
                 ccd_map[1, :3, xb, yb] = np.mean(bin_psf_shapes, axis=1)
                 ccd_map[:, 3, xb, yb] = bin_star_shapes.shape[1]
 

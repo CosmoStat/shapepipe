@@ -410,7 +410,11 @@ def main(argv=None):
                 bin_star_shapes = star_shapes[:,(xbins==xb+1) * (ybins==yb+1)]
                 bin_psf_shapes = psf_shapes[:,(xbins==xb+1) * (ybins==yb+1)]
                 ccd_map[0,:,xb,yb] = np.mean(bin_star_shapes,axis=1)
+                if xb == 0 and yb == 1:
+                    print('MKDEBUG', ccd_nb, xb, xb, ccd_map[0, :, xb, yb])
+                    print(bin_star_shapes)
                 ccd_map[1,:,xb,yb] = np.mean(bin_psf_shapes,axis=1)
+
 
     # Create plots
     colorbar_ampl = 1
