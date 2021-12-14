@@ -38,12 +38,12 @@ def random_cat_runner(
     output_path = f'{run_dirs["output"]}/random_cat-{file_number_string}.fits'
 
     # Get number of random objects requested on output
-    n_rand = config.getfloat(module_config_sec, 'N_RANDOM') 
+    n_rand = config.getfloat(module_config_sec, 'N_RANDOM')
 
     # Flag whether n_rand is total (DENSITY=False, default)
     # or per square degree (DENSITY=True)
     if config.has_option(module_config_sec, 'DENSITY'):
-        density = config.getboolean(module_config_sec, 'DENSITY') 
+        density = config.getboolean(module_config_sec, 'DENSITY')
     else:
         density = False
 
@@ -52,7 +52,6 @@ def random_cat_runner(
         tile_list_path = config.getexpanded(module_config_sec, 'TILE_LIST')
     else:
         tile_list_path = None
-
 
     # Create class
     inst = rand.RandomCat(
