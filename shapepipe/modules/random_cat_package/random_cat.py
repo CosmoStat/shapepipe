@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
-"""SPLIT EXP SCRIPT
+"""RANDOM CAT SCRIPT
 
-This module contains a class to identify single exposures that were used
-to create tiles.
+This module contains a class to create a random catalogue, and to compute
+the tile area accounding for overlapping and masked regions.
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
-:Date: January 2019
-
-:Package: ShapePipe
+:Date: December 2021
 
 """
 
