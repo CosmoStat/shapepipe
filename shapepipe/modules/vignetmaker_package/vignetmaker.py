@@ -14,7 +14,7 @@ from astropy.wcs import WCS
 from sf_tools.image.stamp import FetchStamps
 from sqlitedict import SqliteDict
 
-import shapepipe.pipeline.file_io
+from shapepipe.pipeline import file_io
 
 
 class VignetMaker(object):

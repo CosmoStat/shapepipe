@@ -16,7 +16,7 @@ import warnings
 import numpy as np
 from astropy.io import fits
 
-import shapepipe.pipeline.file_io
+from shapepipe.pipeline import file_io
 
 
 class MergeSep(object):

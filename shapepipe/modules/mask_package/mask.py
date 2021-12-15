@@ -8,7 +8,7 @@ This module contain a class to create star mask for an image.
 
 """
 
-import shapepipe.pipeline.file_io
+from shapepipe.pipeline import file_io
 from shapepipe.pipeline.config import CustomParser
 from shapepipe.pipeline.execute import execute
 from shapepipe.utilities.file_system import mkdir

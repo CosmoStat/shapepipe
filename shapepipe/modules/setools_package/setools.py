@@ -16,7 +16,7 @@ import operator
 import re
 import string
 
-import shapepipe.pipeline.file_io
+from shapepipe.pipeline import file_io
 from shapepipe.pipeline.str_handler import StrInterpreter
 from shapepipe.utilities.file_system import mkdir
 

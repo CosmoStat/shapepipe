@@ -18,7 +18,7 @@ import numpy as np
 import astropy.io.fits as fits
 from astropy import wcs
 
-import shapepipe.pipeline.file_io
+from shapepipe.pipeline import file_io
 from shapepipe.utilities import cfis
 
 

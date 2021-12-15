@@ -226,7 +226,7 @@ class BaseCatalogue(object):
             Retrieve the number of rows of the column.
 
             """
-            raise BaseCatalogue.FeatureNotImplemented('get_nb_rows()'')
+            raise BaseCatalogue.FeatureNotImplemented('get_nb_rows()')
 
         def get_info(self):
             """Get Information
