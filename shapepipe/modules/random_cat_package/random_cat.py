@@ -18,7 +18,7 @@ import numpy as np
 import astropy.io.fits as fits
 from astropy import wcs
 
-import shapepipe.pipeline.file_io as io
+import shapepipe.pipeline.file_io
 from shapepipe.utilities import cfis
 
 
@@ -82,7 +82,7 @@ class RandomCat():
                 fin = open(self._input_image_path)
                 header = fits.Header.fromtextfile(fin)
                 fin.close()
-            except:
+            except Exception:
                 raise
 
         # Get WCS
@@ -166,9 +166,9 @@ class RandomCat():
         column_names = ['RA', 'DEC', 'x', 'y', 'TILE_ID']
 
         # TODO: Add units to header
-        output = io.FITSCatalog(
+        output = file_io.FITSCatalogue(
             self._output_path,
-            open_mode=io.BaseCatalog.OpenMode.ReadWrite
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
         )
         output.save_as_fits(cat_out, names=column_names)
 

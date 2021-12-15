@@ -33,7 +33,7 @@ def prepare_final_cat_file(output_path, file_number_string):
 
     Returns
     -------
-    shapepipe.pipeline.file_io.FITSCatalog
+    shapepipe.pipeline.file_io.FITSCatalogue
         Output FITS file
 
     """
@@ -41,9 +41,9 @@ def prepare_final_cat_file(output_path, file_number_string):
         f'{output_path}/final_cat{file_number_string}.fits'
     )
 
-    return file_io.FITSCatalog(
+    return file_io.FITSCatalogue(
         output_name,
-        open_mode=file_io.BaseCatalog.OpenMode.ReadWrite,
+        open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
     )
 
 
@@ -79,7 +79,7 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
 
     Parameters
     ----------
-    final_cat_file : file_io.FITSCatalog
+    final_cat_file : file_io.FITSCatalogue
         Final catalog.
     sexcat_path : str
         Path to SExtractor catalog to save.
@@ -87,7 +87,7 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
         If True will not save the 'VIGNET' field into the final catalog.
 
     """
-    sexcat_file = file_io.FITSCatalog(sexcat_path, SEx_catalog=True)
+    sexcat_file = file_io.FITSCatalogue(sexcat_path, SEx_catalog=True)
     sexcat_file.open()
     data = np.copy(sexcat_file.get_data())
     if remove_vignet:
@@ -121,7 +121,7 @@ def save_sm_data(
 
     Parameters
     ----------
-    final_cat_file : file_io.FITSCatalog
+    final_cat_file : file_io.FITSCatalogue
         Final catalog.
     sexcat_sm_path : str
         Path to spread-model catalog to save.
@@ -137,7 +137,7 @@ def save_sm_data(
 
     final_cat_file.open()
 
-    sexcat_sm_file = file_io.FITSCatalog(sexcat_sm_path, SEx_catalog=True)
+    sexcat_sm_file = file_io.FITSCatalogue(sexcat_sm_path, SEx_catalog=True)
     sexcat_sm_file.open()
 
     sm = np.copy(sexcat_sm_file.get_data()['SPREAD_MODEL'])
@@ -270,7 +270,7 @@ class SaveCatalog:
         """
         self._key_ends = ['1M', '1P', '2M', '2P', 'NOSHEAR']
 
-        ngmix_cat_file = file_io.FITSCatalog(ngmix_cat_path)
+        ngmix_cat_file = file_io.FITSCatalogue(ngmix_cat_path)
         ngmix_cat_file.open()
 
         ngmix_n_epoch = ngmix_cat_file.get_data()['n_epoch_model']
@@ -399,7 +399,7 @@ class SaveCatalog:
             Path to ngmix catalog to save.
 
         """
-        galsim_cat_file = file_io.FITSCatalog(galsim_cat_path)
+        galsim_cat_file = file_io.FITSCatalogue(galsim_cat_path)
         galsim_cat_file.open()
 
         self._key_ends = galsim_cat_file.get_ext_name()[1:]

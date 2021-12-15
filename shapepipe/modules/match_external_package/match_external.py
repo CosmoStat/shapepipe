@@ -12,7 +12,7 @@ catalogue.
 import numpy as np
 from astropy import units
 from astropy.coordinates import SkyCoord, match_coordinates_sky
-from shapepipe.pipeline import file_io as io
+from shapepipe.pipeline import file_io
 
 
 def get_cat(path):
@@ -31,7 +31,7 @@ def get_cat(path):
         Open FITS catalogue object
 
     """
-    cat = io.FITSCatalog(path)
+    cat = file_io.FITSCatalogue(path)
     cat.open()
 
     return cat
@@ -239,10 +239,10 @@ class MatchCats(object):
                             matched[col][idx] = self._mark_non_matched
 
             # Write FITS file
-            out_cat = io.FITSCatalog(
+            out_cat = file_io.FITSCatalogue(
                 self._output_path,
                 SEx_catalog=True,
-                open_mode=io.BaseCatalog.OpenMode.ReadWrite,
+                open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
             )
             out_cat.save_as_fits(
                 data=matched,

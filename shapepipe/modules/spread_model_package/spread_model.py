@@ -17,7 +17,7 @@ import numpy as np
 import galsim
 from sqlitedict import SqliteDict
 
-from shapepipe.pipeline import file_io as io
+from shapepipe.pipeline import file_io
 from shapepipe.utilities import galaxy
 
 
@@ -62,15 +62,15 @@ def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
     w_v = w.ravel()
 
     # Compute scalar products used in spread model
-    tg = np.sum(t_v*w_v*g_v)
-    pg = np.sum(psf_v*w_v*g_v)
-    tp = np.sum(t_v*w_v*psf_v)
-    pp = np.sum(psf_v*w_v*psf_v)
+    tg = np.sum(t_v * w_v * g_v)
+    pg = np.sum(psf_v * w_v * g_v)
+    tp = np.sum(t_v * w_v * psf_v)
+    pp = np.sum(psf_v * w_v * psf_v)
 
-    tnt = np.sum(t_v*noise_v*t_v*w_v)
-    pnp = np.sum(psf_v*noise_v*psf_v*w_v)
-    tnp = np.sum(t_v*noise_v*psf_v*w_v)
-    err = tnt * pg**2 + pnp * tg**2 - 2*tnp * pg * tg
+    tnt = np.sum(t_v * noise_v * t_v * w_v)
+    pnp = np.sum(psf_v * noise_v * psf_v * w_v)
+    tnp = np.sum(t_v * noise_v * psf_v * w_v)
+    err = tnt * pg ** 2 + pnp * tg ** 2 - 2 * tnp * pg * tg
 
     # Compute spread model
     if pg > 0:
@@ -113,13 +113,15 @@ def get_model(sigma, flux, img_shape, pixel_scale=0.186):
     """
 
     # Get scale radius
-    scale_radius = 1/16 * galaxy.sigma_to_fwhm(sigma, pixel_scale=pixel_scale)
+    scale_radius = (
+        1 / 16 * galaxy.sigma_to_fwhm(sigma, pixel_scale=pixel_scale)
+    )
 
     # Get galaxy model
     gal_obj = galsim.Exponential(scale_radius=scale_radius, flux=flux)
 
     # Get PSF
-    psf_obj = galsim.Gaussian(sigma=sigma*pixel_scale)
+    psf_obj = galsim.Gaussian(sigma=sigma * pixel_scale)
 
     # Convolve both
     gal_obj = galsim.Convolve(gal_obj, psf_obj)
@@ -185,7 +187,7 @@ class SpreadModel(object):
         """
 
         # Get data
-        sex_cat = io.FITSCatalog(self._sex_cat_path, SEx_catalog=True)
+        sex_cat = file_io.FITSCatalogue(self._sex_cat_path, SEx_catalog=True)
         sex_cat.open()
         obj_id = np.copy(sex_cat.get_data()['NUMBER'])
         obj_vign = np.copy(sex_cat.get_data()['VIGNET'])
@@ -196,7 +198,10 @@ class SpreadModel(object):
 
         psf_cat = SqliteDict(self._psf_cat_path)
 
-        weight_cat = io.FITSCatalog(self._weight_cat_path, SEx_catalog=True)
+        weight_cat = file_io.FITSCatalogue(
+            self._weight_cat_path,
+            SEx_catalog=True,
+        )
         weight_cat.open()
         weigh_vign = weight_cat.get_data()['VIGNET']
         weight_cat.close()
@@ -277,10 +282,10 @@ class SpreadModel(object):
         """
 
         if self._output_mode == 'new':
-            new_cat = io.FITSCatalog(
+            new_cat = file_io.FITSCatalogue(
                 self._output_path,
                 SEx_catalog=True,
-                open_mode=io.BaseCatalog.OpenMode.ReadWrite
+                open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
             )
             dict_data = {
                 'NUMBER': number,
@@ -293,12 +298,15 @@ class SpreadModel(object):
                 sex_cat_path=self._sex_cat_path
             )
         elif self._output_mode == 'add':
-            ori_cat = io.FITSCatalog(self._sex_cat_path, SEx_catalog=True)
+            ori_cat = file_io.FITSCatalogue(
+                self._sex_cat_path,
+                SEx_catalog=True,
+            )
             ori_cat.open()
-            new_cat = io.FITSCatalog(
+            new_cat = file_io.FITSCatalogue(
                 self._output_path,
                 SEx_catalog=True,
-                open_mode=io.BaseCatalog.OpenMode.ReadWrite
+                open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
             )
             ori_cat.add_col(
                 'SPREAD_MODEL',

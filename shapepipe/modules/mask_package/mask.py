@@ -8,7 +8,7 @@ This module contain a class to create star mask for an image.
 
 """
 
-import shapepipe.pipeline.file_io as sc
+import shapepipe.pipeline.file_io
 from shapepipe.pipeline.config import CustomParser
 from shapepipe.pipeline.execute import execute
 from shapepipe.utilities.file_system import mkdir
@@ -243,7 +243,7 @@ class Mask(object):
 
         """
 
-        img = sc.FITSCatalog(self._image_fullpath, hdu_no=0)
+        img = file_io.FITSCatalogue(self._image_fullpath, hdu_no=0)
         img.open()
         self._header = img.get_header()
         img_shape = img.get_data().shape
@@ -335,7 +335,7 @@ class Mask(object):
         if not self._err:
             try:
                 im_pass = self._config['MD']['im_remove']
-            except:
+            except Exception:
                 im_pass = True
 
         if not self._err:
@@ -591,8 +591,8 @@ class Mask(object):
                 / np.abs(self._wcs.pixel_scale_matrix[0][0])
             )
 
-            # The following accounts for Messier centers outside of image, without
-            # creating masks for coordinates out of range
+            # The following accounts for Messier centers outside of image,
+            # without creating masks for coordinates out of range
             y_c, x_c = np.ogrid[0:ny, 0:nx]
             mask_tmp = (
                 (x_c - m_center[0]) ** 2 + (y_c - m_center[1]) ** 2
@@ -611,7 +611,7 @@ class Mask(object):
 
         """
 
-        img = sc.FITSCatalog(self._image_fullpath, hdu_no=0)
+        img = file_io.FITSCatalogue(self._image_fullpath, hdu_no=0)
         img.open()
 
         im_shape = img.get_data().shape
@@ -916,8 +916,8 @@ class Mask(object):
             if self._config[types]['reg_file'] is None:
                 reg = default_reg
 
-                if not sc.BaseCatalog(reg)._file_exists(reg):
-                    raise sc.BaseCatalog.CatalogFileNotFound(reg)
+                if not file_io.BaseCatalogue(reg)._file_exists(reg):
+                    raise file_io.BaseCatalogue.CatalogFileNotFound(reg)
 
                 cmd = (
                     f'{self._config["PATH"]["WW"]} '
@@ -937,8 +937,8 @@ class Mask(object):
             else:
                 reg = self._config[types]['reg_file']
 
-                if not sc.BaseCatalog(reg)._file_exists(reg):
-                    raise sc.BaseCatalog.CatalogFileNotFound(reg)
+                if not file_io.BaseCatalogue(reg)._file_exists(reg):
+                    raise file_io.BaseCatalogue.CatalogFileNotFound(reg)
 
                 cmd = (
                     f'{self._config["PATH"]["WW"]} '
@@ -973,8 +973,12 @@ class Mask(object):
                 reg = default_reg
 
                 for idx in range(2):
-                    if not sc.BaseCatalog(reg[idx])._file_exists(reg[idx]):
-                        raise sc.BaseCatalog.CatalogFileNotFound(reg[idx])
+                    if not (
+                        file_io.BaseCatalogue(reg[idx])._file_exists(reg[idx])
+                    ):
+                        raise (
+                            file_io.BaseCatalogue.CatalogFileNotFound(reg[idx])
+                        )
 
                 cmd = (
                     f'{self._config["PATH"]["WW"]} '
@@ -999,8 +1003,12 @@ class Mask(object):
                 ]
 
                 for idx in range(2):
-                    if not sc.BaseCatalog(reg[idx])._file_exists(reg[idx]):
-                        raise sc.BaseCatalog.CatalogFileNotFound(reg[idx])
+                    if not (
+                        file_io.BaseCatalogue(reg[idx])._file_exists(reg[idx])
+                    ):
+                        raise (
+                            file_io.BaseCatalogue.CatalogFileNotFound(reg[idx])
+                        )
 
                 cmd = (
                     f'{self._config["PATH"]["WW"]} '
@@ -1071,13 +1079,13 @@ class Mask(object):
             raise ValueError('No path to a mask, border or messier provided')
 
         if path_mask1 is not None:
-            mask1 = sc.FITSCatalog(path_mask1, hdu_no=self._hdu)
+            mask1 = file_io.FITSCatalogue(path_mask1, hdu_no=self._hdu)
             mask1.open()
             dat = mask1.get_data()
             final_mask = dat[:, :]
 
         if path_mask2 is not None:
-            mask2 = sc.FITSCatalog(path_mask2, hdu_no=self._hdu)
+            mask2 = file_io.FITSCatalogue(path_mask2, hdu_no=self._hdu)
             mask2.open()
             if final_mask is not None:
                 final_mask += mask2.get_data()[:, :]
@@ -1103,7 +1111,7 @@ class Mask(object):
                 raise TypeError('messier has to be a numpy.ndarray')
 
         if path_external_flag is not None:
-            external_flag = sc.FITSCatalog(
+            external_flag = file_io.FITSCatalogue(
                 path_external_flag,
                 hdu_no=self._hdu,
             )
@@ -1142,9 +1150,9 @@ class Mask(object):
         if output_fullpath is None:
             raise ValueError('fullpath not provided')
 
-        out = sc.FITSCatalog(
+        out = file_io.FITSCatalogue(
             output_fullpath,
-            open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
             hdu_no=0,
         )
         out.save_as_fits(data=input_mask, image=True)
