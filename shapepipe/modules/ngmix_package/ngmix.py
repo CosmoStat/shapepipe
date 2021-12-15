@@ -340,7 +340,7 @@ class Ngmix(object):
             Dictionary containing the ngmix metacal results.
         """
 
-        tile_cat = file_io.FITSCatalogue(self._tile_cat_path, SEx_catalog=True)
+        tile_cat = file_io.FITSCatalogue(self._tile_cat_path, SEx_catalogue=True)
         tile_cat.open()
         obj_id = np.copy(tile_cat.get_data()['NUMBER'])
         tile_vign = np.copy(tile_cat.get_data()['VIGNET'])

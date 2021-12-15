@@ -463,7 +463,7 @@ class MergeStarCatMCCD(object):
         output = file_io.FITSCatalogue(
             f'{self._output_dir}/full_starcat-0000000.fits',
             open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-            SEx_catalog=True
+            SEx_catalogue=True
         )
 
         # Collect columns
@@ -562,7 +562,7 @@ class MergeStarCatPSFEX(object):
         output = file_io.FITSCatalogue(
             f'{self._output_dir}/full_starcat-0000000.fits',
             open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-            SEx_catalog=True
+            SEx_catalogue=True
         )
 
         # Collect columns

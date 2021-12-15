@@ -249,7 +249,7 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
 
     """
 
-    tile_cat = file_io.FITSCatalogue(tile_cat_path, SEx_catalog=True)
+    tile_cat = file_io.FITSCatalogue(tile_cat_path, SEx_catalogue=True)
     tile_cat.open()
     obj_id = np.copy(tile_cat.get_data()['NUMBER'])
     tile_vign = np.copy(tile_cat.get_data()['VIGNET'])
@@ -260,7 +260,7 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
     tile_n_epoch = np.copy(tile_cat.get_data()['N_EPOCH'])
     tile_fwhm = np.copy(tile_cat.get_data()['FWHM_IMAGE'])
     tile_cat.close()
-    sm_cat = file_io.FITSCatalogue(sm_cat_path, SEx_catalog=True)
+    sm_cat = file_io.FITSCatalogue(sm_cat_path, SEx_catalogue=True)
     sm_cat.open()
     sm = np.copy(sm_cat.get_data()['SPREAD_MODEL'])
     sm_err = np.copy(sm_cat.get_data()['SPREADERR_MODEL'])

@@ -372,7 +372,7 @@ def shapepipe_write_output(
     output = file_io.FITSCatalogue(
         saving_path,
         open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-        SEx_catalog=True
+        SEx_catalogue=True
     )
 
     if get_shapes:

@@ -84,7 +84,7 @@ class MergeSep(object):
                 input_path_n.append(res)
 
             # Open first catalogue, read number of extensions and columns
-            cat0 = file_io.FITSCatalogue(input_file, SEx_catalog=True)
+            cat0 = file_io.FITSCatalogue(input_file, SEx_catalogue=True)
             cat0.open()
             list_ext_name = cat0.get_ext_name()
             list_col_name = cat0.get_col_names()
@@ -104,7 +104,7 @@ class MergeSep(object):
             for n in range(self._n_split_max):
                 cat_path = input_path_n[n]
                 if os.path.exists(cat_path):
-                    cat = file_io.FITSCatalogue(cat_path, SEx_catalog=True)
+                    cat = file_io.FITSCatalogue(cat_path, SEx_catalogue=True)
                     cat.open()
 
                     for hdu_ind, ext_name in enumerate(list_ext_name):

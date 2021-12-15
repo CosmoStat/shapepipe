@@ -187,7 +187,7 @@ class SpreadModel(object):
         """
 
         # Get data
-        sex_cat = file_io.FITSCatalogue(self._sex_cat_path, SEx_catalog=True)
+        sex_cat = file_io.FITSCatalogue(self._sex_cat_path, SEx_catalogue=True)
         sex_cat.open()
         obj_id = np.copy(sex_cat.get_data()['NUMBER'])
         obj_vign = np.copy(sex_cat.get_data()['VIGNET'])
@@ -200,7 +200,7 @@ class SpreadModel(object):
 
         weight_cat = file_io.FITSCatalogue(
             self._weight_cat_path,
-            SEx_catalog=True,
+            SEx_catalogue=True,
         )
         weight_cat.open()
         weigh_vign = weight_cat.get_data()['VIGNET']
@@ -284,7 +284,7 @@ class SpreadModel(object):
         if self._output_mode == 'new':
             new_cat = file_io.FITSCatalogue(
                 self._output_path,
-                SEx_catalog=True,
+                SEx_catalogue=True,
                 open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
             )
             dict_data = {
@@ -300,12 +300,12 @@ class SpreadModel(object):
         elif self._output_mode == 'add':
             ori_cat = file_io.FITSCatalogue(
                 self._sex_cat_path,
-                SEx_catalog=True,
+                SEx_catalogue=True,
             )
             ori_cat.open()
             new_cat = file_io.FITSCatalogue(
                 self._output_path,
-                SEx_catalog=True,
+                SEx_catalogue=True,
                 open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
             )
             ori_cat.add_col(

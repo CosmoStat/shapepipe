@@ -87,7 +87,7 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
         If True will not save the 'VIGNET' field into the final catalog.
 
     """
-    sexcat_file = file_io.FITSCatalogue(sexcat_path, SEx_catalog=True)
+    sexcat_file = file_io.FITSCatalogue(sexcat_path, SEx_catalogue=True)
     sexcat_file.open()
     data = np.copy(sexcat_file.get_data())
     if remove_vignet:
@@ -137,7 +137,7 @@ def save_sm_data(
 
     final_cat_file.open()
 
-    sexcat_sm_file = file_io.FITSCatalogue(sexcat_sm_path, SEx_catalog=True)
+    sexcat_sm_file = file_io.FITSCatalogue(sexcat_sm_path, SEx_catalogue=True)
     sexcat_sm_file.open()
 
     sm = np.copy(sexcat_sm_file.get_data()['SPREAD_MODEL'])

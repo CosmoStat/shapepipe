@@ -241,7 +241,7 @@ class MatchCats(object):
             # Write FITS file
             out_cat = file_io.FITSCatalogue(
                 self._output_path,
-                SEx_catalog=True,
+                SEx_catalogue=True,
                 open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
             )
             out_cat.save_as_fits(

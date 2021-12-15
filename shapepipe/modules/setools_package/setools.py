@@ -56,7 +56,7 @@ class SETools(object):
             self._cat_filepath = cat
             cat_file = file_io.FITSCatalogue(
                 self._cat_filepath,
-                SEx_catalog=True,
+                SEx_catalogue=True,
             )
             cat_file.open()
             self._data = cat_file.get_data()
@@ -327,7 +327,7 @@ class SETools(object):
         mask_file = file_io.FITSCatalogue(
             output_path,
             open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-            SEx_catalog=(self._cat_filepath is not None),
+            SEx_catalogue=(self._cat_filepath is not None),
         )
         mask_file.save_as_fits(
             data=self._data[mask],
@@ -374,7 +374,7 @@ class SETools(object):
             new_file = file_io.FITSCatalogue(
                 output_path + '.fits',
                 open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-                SEx_catalog=(self._cat_filepath is not None),
+                SEx_catalogue=(self._cat_filepath is not None),
             )
             new_file.save_as_fits(
                 data=new_cat,
@@ -449,7 +449,7 @@ class SETools(object):
             rand_split_file = file_io.FITSCatalogue(
                 output_path + i + file_number + '.fits',
                 open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-                SEx_catalog=(self._cat_filepath is not None),
+                SEx_catalogue=(self._cat_filepath is not None),
             )
             rand_split_file.save_as_fits(
                 data=data[rand_split[i]],

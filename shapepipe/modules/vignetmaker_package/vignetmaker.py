@@ -109,7 +109,7 @@ class VignetMaker(object):
             Array of the positions
 
         """
-        file = file_io.FITSCatalogue(self._galcat_path, SEx_catalog=True)
+        file = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
         file.open()
 
         pos = np.array(
@@ -202,7 +202,7 @@ class VignetMaker(object):
             Directory containing object id and vignets for each epoch.
 
         """
-        cat = file_io.FITSCatalogue(self._galcat_path, SEx_catalog=True)
+        cat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
         cat.open()
 
         all_id = np.copy(cat.get_data()['NUMBER'])
@@ -372,7 +372,7 @@ def get_original_vignet(galcat_path):
         Array containing the vignets
 
     """
-    file = file_io.FITSCatalogue(galcat_path, SEx_catalog=True)
+    file = file_io.FITSCatalogue(galcat_path, SEx_catalogue=True)
     file.open()
 
     vignet = file.get_data()['VIGNET']
@@ -430,7 +430,7 @@ def save_vignet(vignet, sexcat_path, output_dir, suffix, image_num):
 
     file = file_io.FITSCatalogue(
         output_name,
-        SEx_catalog=True,
+        SEx_catalogue=True,
         open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
     )
 

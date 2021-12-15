@@ -76,7 +76,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
     """
 
     cat = file_io.FITSCatalogue(
-        cat_path, SEx_catalog=True,
+        cat_path, SEx_catalogue=True,
         open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
     )
     cat.open()

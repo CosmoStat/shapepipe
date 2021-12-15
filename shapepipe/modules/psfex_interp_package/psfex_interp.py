@@ -256,7 +256,7 @@ class PSFExInterpolator(object):
         if self._pos_params is None:
             self._get_position_parameters()
 
-        galcat = file_io.FITSCatalogue(self._galcat_path, SEx_catalog=True)
+        galcat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
         galcat.open()
 
         try:
@@ -329,7 +329,7 @@ class PSFExInterpolator(object):
         output = file_io.FITSCatalogue(
             self._output_path + self._img_number + '.fits',
             open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-            SEx_catalog=True,
+            SEx_catalogue=True,
         )
 
         if self._compute_shape:
@@ -388,7 +388,7 @@ class PSFExInterpolator(object):
         else:
             star_cat = file_io.FITSCatalogue(
                 self._galcat_path,
-                SEx_catalog=True,
+                SEx_catalogue=True,
             )
             star_cat.open()
             star_dict = {}
@@ -457,7 +457,7 @@ class PSFExInterpolator(object):
 
         """
 
-        psfex_cat = file_io.FITSCatalogue(psfex_cat_path, SEx_catalog=True)
+        psfex_cat = file_io.FITSCatalogue(psfex_cat_path, SEx_catalogue=True)
         psfex_cat.open()
 
         psfex_cat_dict = {}
@@ -492,7 +492,7 @@ class PSFExInterpolator(object):
         output = file_io.FITSCatalogue(
             self._output_path_validation + self._img_number + '.fits',
             open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-            SEx_catalog=True,
+            SEx_catalogue=True,
         )
 
         data = {
@@ -563,7 +563,7 @@ class PSFExInterpolator(object):
             (optionally)
 
         """
-        cat = file_io.FITSCatalogue(self._galcat_path, SEx_catalog=True)
+        cat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
         cat.open()
 
         all_id = np.copy(cat.get_data()['NUMBER'])
