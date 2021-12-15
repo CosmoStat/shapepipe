@@ -44,6 +44,7 @@ __module_list__ = [
     'psfex_runner',
     'psfex_interp_runner',
     'python_example',
+    'random_cat_runner',
     'serial_example',
     'setools_runner',
     'sextractor_runner',

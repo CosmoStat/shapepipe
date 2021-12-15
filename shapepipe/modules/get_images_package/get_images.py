@@ -21,6 +21,7 @@ import sys
 import glob
 
 
+# pragma: no cover
 def read_image_numbers(path):
     """Read Image Numbers
     Read image numbers from file.
@@ -82,7 +83,8 @@ class GetImages(object):
         output_file_pattern,
         w_log,
         check_existing_dir=None,
-        n_expected=None
+        n_expected=None,
+        n_try=3,
     ):
         """Get Images
 
@@ -104,7 +106,7 @@ class GetImages(object):
             input file extensions
         output_file_pattern : list of str
             output file patterns
-        w_log :
+        w_log : logging.Logger
             log file
         check_existing_dir : str, optional, default=None
             if not None, only retrieve image if not existing at this
@@ -112,6 +114,8 @@ class GetImages(object):
         n_expected : int, optional, default=None
             number of expected files per type and ID to download/check for
             existence
+        n_try : int, optional, default=3
+            number of attempts for VOs download
         """
 
         self._retrieve_method = retrieve_method
@@ -124,6 +128,7 @@ class GetImages(object):
         self._w_log = w_log
         self._check_existing_dir = check_existing_dir
         self._n_expected = n_expected
+        self._n_try = n_try
 
     def process(self, input_dir, output_dir):
         """Process
@@ -298,9 +303,18 @@ class GetImages(object):
             sys.argv.append(out_path)
 
             log_cmd = ' '.join(sys.argv)
-
             vcp = vosHandler('vcp')
-            vcp()
+            print(log_cmd)
+
+            attempt = 0
+            while attempt < self._n_try:
+                try:
+                    vcp()
+                    self._w_log.info(f'Success of command vcp after {attempt}/{self._n_try} attempts')
+                    break
+                except:
+                    attempt += 1
+                    self._w_log.info(f'Error with command vcp, attempt {attempt}/{self._n_try}')
 
             sys.argv = None
 

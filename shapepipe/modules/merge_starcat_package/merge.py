@@ -227,7 +227,7 @@ class MergeStarCatMCCD(object):
         jdx = np.arange(0, shap[1])
         inside_circle = np.sqrt(
             (idx[np.newaxis, :] - cent[0]) ** 2
-            + (jdx[:, np.newaxis] -cent[1]) ** 2
+            + (jdx[:, np.newaxis] - cent[1]) ** 2
         ) <= self._rad
         my_mask[inside_circle] = True
 

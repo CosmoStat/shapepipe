@@ -49,6 +49,11 @@ def get_images_runner(
     else:
         retrieve_options = None
 
+    if config.has_option(module_config_sec, 'N_TRY'):
+        n_try = config.getint(module_config_sec, 'N_TRY')
+    else:
+        n_try = None
+
     # Paths
     input_dir = config.getlist(module_config_sec, 'INPUT_PATH')
     input_file_pattern = config.getlist(
@@ -95,7 +100,8 @@ def get_images_runner(
         output_file_pattern,
         w_log,
         check_existing_dir=check_existing_dir,
-        n_expected=n_expected
+        n_expected=n_expected,
+        n_try=n_try
     )
 
     inst.process(input_dir, output_dir)
