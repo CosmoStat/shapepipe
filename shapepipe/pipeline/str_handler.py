@@ -8,6 +8,10 @@ This module defines a class for handling string operations.
 
 """
 
+import re
+import numpy as np
+import operator
+
 
 class StrInterpreter(object):
     """Interpreter class
@@ -185,7 +189,7 @@ class StrInterpreter(object):
                 return res
 
             else:
-                if s[0] not in self._stat_func:
+                if str_split[0] not in self._stat_func:
                     raise KeyError(
                         f'Invalid function \'{str_split[0]}\' in expression '
                         + f'\'{string}\''
@@ -558,7 +562,7 @@ class StrInterpreter(object):
         try:
             string_value = float(string)
             return string_value
-        except Exeption:
+        except Exception:
             str_split = re.split(r'\{|\}', string)
             if len(str_split) == 1:
                 try:
@@ -572,7 +576,7 @@ class StrInterpreter(object):
                 if str_split[1] in self._mask.keys():
                     try:
                         return self._cat[s[0]][self._mask[str_split[1]]]
-                    except Exeption:
+                    except Exception:
                         raise ValueError(
                             'String has to be a catalogue parameter. '
                             + f'{str_split[0]} not found'
