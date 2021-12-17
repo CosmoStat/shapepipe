@@ -10,7 +10,10 @@ This module defines a class for handling string operations.
 
 import re
 import numpy as np
+import itertools
 import operator
+
+from modopt.math.stats import sigma_mad
 
 
 class StrInterpreter(object):
@@ -575,7 +578,9 @@ class StrInterpreter(object):
             if len(str_split) == 3:
                 if str_split[1] in self._mask.keys():
                     try:
-                        return self._cat[str_split[0]][self._mask[str_split[1]]]
+                        return (
+                            self._cat[str_split[0]][self._mask[str_split[1]]]
+                        )
                     except Exception:
                         raise ValueError(
                             'String has to be a catalogue parameter. '

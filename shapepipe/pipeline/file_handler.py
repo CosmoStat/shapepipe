@@ -82,7 +82,7 @@ def check_duplicate(input_list):
 
     Returns
     -------
-    elem : str
+    str
         Duplicate element, empty string if none found
 
     """

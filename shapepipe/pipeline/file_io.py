@@ -9,17 +9,10 @@ This file contains methods for file I/O handling.
 """
 
 import os
-import string
-import re
 import numpy as np
-
-import operator
-import itertools
 
 from astropy.io import fits
 from astropy.table import Table
-
-from modopt.math.stats import sigma_mad
 
 
 class BaseCatalogue(object):
