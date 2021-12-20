@@ -272,8 +272,10 @@ class JobHandler(object):
             print('All processes complete')
             print('')
 
+        print('MKDEBUG collect')
         collect()
 
+        print('MKDEBUG clean_up')
         self.clean_up()
 
     def submit_jobs(self):
@@ -288,6 +290,7 @@ class JobHandler(object):
             self._distribute_smp_jobs()
 
         self.finish_up()
+        print('MKDEBUG submit_jobs done')
 
     @staticmethod
     def hms2sec(time_str):

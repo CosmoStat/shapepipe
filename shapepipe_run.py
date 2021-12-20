@@ -457,6 +457,7 @@ def main(args=None):
             run_mpi(pipe, comm)
         else:
             run_smp(pipe)
+        print('MKDEBUG done run_xxx')
 
     except Exception as err:
         if master:
