@@ -6,7 +6,7 @@ This package contains the module for ``get_images``
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
-:Parent module: None/find_exposure_runner
+:Parent module: None or find_exposure_runner
 
 :Input: image ID list
 
@@ -15,19 +15,19 @@ This package contains the module for ``get_images``
 Description
 ===========
 
-Retrieve images. Download using the `vos` python library from the `VOSpace`
+Retrieve images. Download using the ``vos`` python library from the ``VOSpace``
 (http://www.ivoa.net/documents/VOSpace) software, or by creating symbolic links
 to exising images.
 
 Note that the input for this module are (1) a ASCII file specifying the parent
 image IDs, and (2) the images to retrieve.
-For (1) the standard config entries 'FILE_PATTERN`, `FILE_EXT`, `NUMBERING_SCHEME`
+For (1) the standard config entries ``FILE_PATTERN``, ``FILE_EXT``, ``NUMBERING_SCHEME``
 are used. For (2), additional config entries are to be specified, see below.
 
 Module-specific entries
 =======================
 RETRIEVE : str
-    retrieval method, 'vos' or 'symlink'
+    retrieval method, ``vos`` or ``symlink``
 RETRIEVE_OPTIONS : str, optional
     options to pass to retrieval method
 N_TRY : int, optional, default=3
@@ -52,4 +52,4 @@ N_EXPECTED : int, optional, default=1
 
 """
 
-__all__ = ['get_images.py']
+__all__ = ['get_ima`ges.py']
