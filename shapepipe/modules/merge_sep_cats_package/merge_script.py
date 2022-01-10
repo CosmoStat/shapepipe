@@ -16,7 +16,7 @@ import warnings
 import numpy as np
 from astropy.io import fits
 
-import shapepipe.pipeline.file_io as io
+from shapepipe.pipeline import file_io
 
 
 class MergeSep(object):
@@ -84,7 +84,7 @@ class MergeSep(object):
                 input_path_n.append(res)
 
             # Open first catalogue, read number of extensions and columns
-            cat0 = io.FITSCatalog(input_file, SEx_catalog=True)
+            cat0 = file_io.FITSCatalogue(input_file, SEx_catalogue=True)
             cat0.open()
             list_ext_name = cat0.get_ext_name()
             list_col_name = cat0.get_col_names()
@@ -104,7 +104,7 @@ class MergeSep(object):
             for n in range(self._n_split_max):
                 cat_path = input_path_n[n]
                 if os.path.exists(cat_path):
-                    cat = io.FITSCatalog(cat_path, SEx_catalog=True)
+                    cat = file_io.FITSCatalogue(cat_path, SEx_catalogue=True)
                     cat.open()
 
                     for hdu_ind, ext_name in enumerate(list_ext_name):
@@ -128,9 +128,9 @@ class MergeSep(object):
                 f'{self._output_dir}/{self._file_pattern[idx]}'
                 + f'{self._file_number_string}{self._file_ext[idx]}'
             )
-            output = io.FITSCatalog(
+            output = file_io.FITSCatalogue(
                 output_name,
-                open_mode=io.BaseCatalog.OpenMode.ReadWrite
+                open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
             )
             for hdu_ind, ext_name in enumerate(list_ext_name):
                 if ext_name == 'PRIMARY':
