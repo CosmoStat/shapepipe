@@ -16,14 +16,14 @@ from astropy.table import Table
 
 
 class BaseCatalogue(object):
-    """Base catalogueue
+    """Base catalogue
 
     Base catalogue management class.
 
     Parameters
     ----------
     fullpath : str
-      Full path to catalogueue
+      Full path to catalogue
 
     Notes
     -----
@@ -33,7 +33,7 @@ class BaseCatalogue(object):
 
     def __init__(self, fullpath):
 
-        # catalogueue file path
+        # catalogue file path
         self._directory, self._filename = os.path.split(fullpath)
         # input/output format
         self._format = BaseCatalogue.InputFormat.Undefined
