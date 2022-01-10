@@ -9,7 +9,7 @@ This module builds the SExtractor command line.
 """
 
 import re
-from shapepipe.pipeline import file_io as io
+from shapepipe.pipeline import file_io
 
 import numpy as np
 from sqlitedict import SqliteDict
@@ -75,9 +75,9 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
 
     """
 
-    cat = io.FITSCatalog(
-        cat_path, SEx_catalog=True,
-        open_mode=io.BaseCatalog.OpenMode.ReadWrite,
+    cat = file_io.FITSCatalogue(
+        cat_path, SEx_catalogue=True,
+        open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
     )
     cat.open()
 

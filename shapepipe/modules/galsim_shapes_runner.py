@@ -9,7 +9,7 @@ This file contains methods to measure shapes with Galsim.
 """
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.pipeline import file_io as io
+from shapepipe.pipeline import file_io
 from sqlitedict import SqliteDict
 
 import re
@@ -211,8 +211,8 @@ def save_results(output_dict, output_name):
 
     """
 
-    f = io.FITSCatalog(output_name,
-                       open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+    f = file_io.FITSCatalogue(output_name,
+                       open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite)
 
     # for key in output_dict.keys():
     f.save_as_fits(output_dict, ext_name='RESULTS')
@@ -249,7 +249,7 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
 
     """
 
-    tile_cat = io.FITSCatalog(tile_cat_path, SEx_catalog=True)
+    tile_cat = file_io.FITSCatalogue(tile_cat_path, SEx_catalogue=True)
     tile_cat.open()
     obj_id = np.copy(tile_cat.get_data()['NUMBER'])
     tile_vign = np.copy(tile_cat.get_data()['VIGNET'])
@@ -260,7 +260,7 @@ def process(tile_cat_path, sm_cat_path, gal_vignet_path, bkg_vignet_path,
     tile_n_epoch = np.copy(tile_cat.get_data()['N_EPOCH'])
     tile_fwhm = np.copy(tile_cat.get_data()['FWHM_IMAGE'])
     tile_cat.close()
-    sm_cat = io.FITSCatalog(sm_cat_path, SEx_catalog=True)
+    sm_cat = file_io.FITSCatalogue(sm_cat_path, SEx_catalogue=True)
     sm_cat.open()
     sm = np.copy(sm_cat.get_data()['SPREAD_MODEL'])
     sm_err = np.copy(sm_cat.get_data()['SPREADERR_MODEL'])

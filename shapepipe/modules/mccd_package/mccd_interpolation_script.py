@@ -152,7 +152,7 @@ class MCCDinterpolator(object):
     def _get_position_parameters(self):
         """ Read position parameters from .psf file.
         """
-        dotpsf = sc.FITSCatalog(self._dotpsf_path)
+        dotpsf = file_io.FITSCatalogue(self._dotpsf_path)
         dotpsf.open()
         self._pos_params = [
             dotpsf.get_header()['POLNAME1'],
@@ -166,7 +166,7 @@ class MCCDinterpolator(object):
         if self._pos_params is None:
             self._get_position_parameters()
 
-        galcat = sc.FITSCatalog(self._galcat_path, SEx_catalog=True)
+        galcat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
         galcat.open()
         try:
             self.gal_pos = np.array(
@@ -180,10 +180,10 @@ class MCCDinterpolator(object):
             # extract erroneous position parameter from original exception
             err_pos_param = detail.args[0][4:-15]
             pos_param_err = (
-                'Required position parameter ' + err_pos_param +
-                'was not found in galaxy catalog. Leave '
-                'pos_params (or EXTRA_CODE_OPTION) blank to '
-                'read them from .psf file.'
+                f'Required position parameter {err_pos_param}'
+                + 'was not found in galaxy catalog. Leave '
+                + 'pos_params (or EXTRA_CODE_OPTION) blank to '
+                + 'read them from .psf file.'
             )
             raise KeyError(pos_param_err)
         galcat.close()
@@ -212,10 +212,10 @@ class MCCDinterpolator(object):
     def _write_output(self):
         """ Save computed PSFs to fits file.
         """
-        output = sc.FITSCatalog(
+        output = file_io.FITSCatalogue(
             self._output_path + self._img_number + '.fits',
-            open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
-            SEx_catalog=True
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
+            SEx_catalogue=True
         )
 
         if self._compute_shape:
@@ -272,7 +272,7 @@ class MCCDinterpolator(object):
             Dictionary containing information from PFSEx .cat file.
         """
 
-        psfex_cat = sc.FITSCatalog(psfex_cat_path, SEx_catalog=True)
+        psfex_cat = file_io.FITSCatalogue(psfex_cat_path, SEx_catalogue=True)
         psfex_cat.open()
 
         psfex_cat_dict = {}
@@ -295,10 +295,10 @@ class MCCDinterpolator(object):
         psfex_cat_dict : dict
             Dictionary containing information from PFSEx .cat file.
         """
-        output = sc.FITSCatalog(
+        output = file_io.FITSCatalogue(
             self._output_path_validation + self._img_number + '.fits',
-            open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
-            SEx_catalog=True)
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
+            SEx_catalogue=True)
 
         data = {
             'E1_PSF_HSM': self.psf_shapes[:, 0],
@@ -356,7 +356,7 @@ class MCCDinterpolator(object):
             shapes (optionally).
 
         """
-        cat = sc.FITSCatalog(self._galcat_path, SEx_catalog=True)
+        cat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
         cat.open()
 
         all_id = np.copy(cat.get_data()['NUMBER'])

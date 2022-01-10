@@ -21,7 +21,7 @@ from astropy import units as u
 from astropy import coordinates as coords
 from astropy.wcs import WCS
 
-from shapepipe.pipeline import file_io as io
+from shapepipe.pipeline import file_io
 
 
 class PasteCat(object):
@@ -71,9 +71,9 @@ class PasteCat(object):
         """
 
         # Create output catalog
-        pasted_cat = io.FITSCatalog(
+        pasted_cat = file_io.FITSCatalogue(
             self._output_path,
-            open_mode=io.BaseCatalog.OpenMode.ReadWrite
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
         )
 
         for i, input_file in enumerate(self._input_file_list):
@@ -81,7 +81,7 @@ class PasteCat(object):
             self._w_log.info(f'Pasting catalog \'{input_file}\'')
 
             # Read input data
-            cat = io.FITSCatalog(input_file)
+            cat = file_io.FITSCatalogue(input_file)
             cat.open()
             data = np.copy(cat.get_data(self._hdu_no[i]))
             col_names = cat.get_col_names(self._hdu_no[i])

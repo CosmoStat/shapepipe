@@ -17,7 +17,7 @@ import sip_tpv as stp
 from astropy.wcs import WCS
 from astropy.io import fits
 
-from shapepipe.pipeline import file_io as io
+from shapepipe.pipeline import file_io
 
 
 class SplitExposures(object):
@@ -118,19 +118,19 @@ class SplitExposures(object):
                 + f'{self._file_number_string}-{str(idx-1)}.fits'
             )
 
-            new_file = io.FITSCatalog(
+            new_file = file_io.FITSCatalogue(
                 file_name,
-                open_mode=io.BaseCatalog.OpenMode.ReadWrite
+                open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
             )
             new_file.save_as_fits(data=d, image=True, image_header=h)
 
             if save_header:
                 try:
                     w = WCS(h)
-                except:
+                except Exception:
                     print(f'WCS error for file {exp_path}')
                     raise
-                header_file[idx-1] = {'WCS': w, 'header': h.tostring()}
+                header_file[idx - 1] = {'WCS': w, 'header': h.tostring()}
 
         if save_header:
             file_name = (

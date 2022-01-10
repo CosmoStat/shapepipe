@@ -34,8 +34,11 @@ def get_history(coadd_path, image_path_list):
         List of the single exposures path to check
 
     """
-    coadd_file = io.FITSCatalog(coadd_path, hdu_no=0,
-                                open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+    coadd_file = file_io.FITSCatalogue(
+        coadd_path,
+        hdu_no=0,
+        open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
+    )
     coadd_file.open()
     wcs_coadd = WCS(coadd_file.get_header())
     corner_coadd = wcs_coadd.calc_footprint().T
@@ -46,7 +49,7 @@ def get_history(coadd_path, image_path_list):
         img_path = img_path.replace('\n', '')
         img_path = img_path.replace(' ', '')
 
-        f_tmp = io.FITSCatalog(img_path)
+        f_tmp = file_io.FITSCatalogue(img_path)
         f_tmp.open()
         n_hdu = len(f_tmp.get_ext_name())
         ccd_inter = 0
@@ -55,11 +58,15 @@ def get_history(coadd_path, image_path_list):
             stp.pv_to_sip(h_tmp)
             wcs_tmp = WCS(h_tmp)
             corner_tmp = wcs_tmp.calc_footprint().T
-            if (np.min(corner_coadd[0]) > np.max(corner_tmp[0]) or
-                    np.max(corner_coadd[0]) < np.min(corner_tmp[0])):
+            if (
+                np.min(corner_coadd[0]) > np.max(corner_tmp[0])
+                or np.max(corner_coadd[0]) < np.min(corner_tmp[0])
+            ):
                 continue
-            if (np.min(corner_coadd[1]) > np.max(corner_tmp[1]) or
-                    np.max(corner_coadd[1]) < np.min(corner_tmp[1])):
+            if (
+                np.min(corner_coadd[1]) > np.max(corner_tmp[1])
+                or np.max(corner_coadd[1]) < np.min(corner_tmp[1])
+            ):
                 continue
 
             ccd_inter += 1
