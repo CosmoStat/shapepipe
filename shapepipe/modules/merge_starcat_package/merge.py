@@ -16,7 +16,7 @@ import numpy as np
 import re
 
 from astropy.io import fits
-from shapepipe.pipeline import file_io as sc
+from shapepipe.pipeline import file_io
 
 
 class MergeStarCatMCCD(object):
@@ -59,7 +59,7 @@ class MergeStarCatMCCD(object):
 
     @staticmethod
     def rmse_calc(values, sizes):
-        """Rmse Calculation
+        r"""Rmse Calculation
 
         Calculate square root of mean over input values.
         If values is an array with element j being
@@ -87,7 +87,7 @@ class MergeStarCatMCCD(object):
 
     @staticmethod
     def rmse_calc_2(values, sizes):
-        """Rmse calculation 2
+        r"""Rmse calculation 2
 
         Calculate square root of mean over squared input valuess.
         If values is an array with element j being
@@ -278,8 +278,8 @@ class MergeStarCatMCCD(object):
             psfs_norm_vals = psfs_norm_vals[non_zero_elems].reshape(-1, 1, 1)
             pix_norm_val = np.sum(
                 (
-                    stars[non_zero_elems] / stars_norm_vals -
-                    psfs[non_zero_elems] / psfs_norm_vals
+                    stars[non_zero_elems] / stars_norm_vals
+                    - psfs[non_zero_elems] / psfs_norm_vals
                 ) ** 2
             )
             # Calculate sizes
@@ -460,10 +460,10 @@ class MergeStarCatMCCD(object):
         self._w_log.info(f'MCCD: Number of stars: {star_e1.shape[0]:d}')
 
         # Prepare output FITS catalogue
-        output = sc.FITSCatalog(
+        output = file_io.FITSCatalogue(
             f'{self._output_dir}/full_starcat-0000000.fits',
-            open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
-            SEx_catalog=True
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
+            SEx_catalogue=True
         )
 
         # Collect columns
@@ -559,10 +559,10 @@ class MergeStarCatPSFEX(object):
             ] * len(data_j['RA'])
 
         # Prepare output FITS catalogue
-        output = sc.FITSCatalog(
+        output = file_io.FITSCatalogue(
             f'{self._output_dir}/full_starcat-0000000.fits',
-            open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
-            SEx_catalog=True
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
+            SEx_catalogue=True
         )
 
         # Collect columns
@@ -587,4 +587,8 @@ class MergeStarCatPSFEX(object):
         }
 
         # Write file
-        output.save_as_fits(data, overwrite=True, sex_cat_path=self._input_file_list[0][0])
+        output.save_as_fits(
+            data,
+            overwrite=True,
+            sex_cat_path=self._input_file_list[0][0],
+        )

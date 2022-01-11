@@ -14,7 +14,7 @@ import numpy as np
 import mccd
 from astropy.io import fits
 import galsim
-from shapepipe.pipeline import file_io as sc
+from shapepipe.pipeline import file_io
 import pprint
 
 NOT_ENOUGH_STARS = 'Not enough stars to train the model.'
@@ -369,10 +369,10 @@ def shapepipe_write_output(
 
     The saved files are compatible with the previous shapepipe's standard.
     """
-    output = sc.FITSCatalog(
+    output = file_io.FITSCatalogue(
         saving_path,
-        open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
-        SEx_catalog=True
+        open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
+        SEx_catalogue=True
     )
 
     if get_shapes:

@@ -12,10 +12,7 @@ to create tiles.
 
 
 import re
-
 import astropy.io.fits as fits
-
-import shapepipe.pipeline.file_io as io
 
 
 class FindExposures():

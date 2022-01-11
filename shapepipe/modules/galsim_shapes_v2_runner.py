@@ -621,7 +621,7 @@ def save_results(output_dict, output_name):
 
     """
 
-    f = io.FITSCatalog(output_name, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+    f = file_io.FITSCatalogue(output_name, open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite)
 
     for key in output_dict.keys():
         f.save_as_fits(output_dict[key], ext_name=key.upper())
