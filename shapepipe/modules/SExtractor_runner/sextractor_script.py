@@ -354,7 +354,7 @@ class sextractor_caller():
             Header key corresponding to the zero point
 
         """
-        if use_zp and isinstance(zp_key, type(None)):
+        if use_zp and not isinstance(zp_key, type(None)):
             zp_value = get_header_value(self._meas_img_path, zp_key)
             self._cmd_line_extra += f' -MAG_ZEROPOINT {zp_value}'
 
@@ -371,7 +371,7 @@ class sextractor_caller():
             Header key corresponding to the background value
 
         """
-        if use_bkg and isinstance(bkg_key, type(None)):
+        if use_bkg and not isinstance(bkg_key, type(None)):
             bkg_value = get_header_value(self._meas_img_path, bkg_key)
             self._cmd_line_extra += (
                 f' -BACK_TYPE MANUAL -BACK_VALUE {bkg_value}'
