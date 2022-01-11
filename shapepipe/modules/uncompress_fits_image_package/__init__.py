@@ -18,7 +18,7 @@ Description
 ===========
 
 This module uncompresses FITS files (e.g. images, weights, flags), and ignores
-dummy HDUs with no image data. (E.g. the compressed FITS weight images contain
+dummy HDUs with no image data. (e.g. the compressed FITS weight images contain
 a primary empty HDU #0 that will interfer with further processing by
 ShapePipe). The uncompressed image is save as FITS file
 with a single image hdu.
