@@ -14,7 +14,7 @@ __all__ = [
     'dependency_handler',
     'execute',
     'file_handler',
-    'file_io'
+    'file_io',
     'job_handler',
     'mpi_run',
     'run_log',
