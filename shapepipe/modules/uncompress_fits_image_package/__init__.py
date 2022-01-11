@@ -2,13 +2,11 @@
 
 """UNCOMRESS FITS
 
-This module uncompress fits images and save them on a single hdu fits.
+This module uncompresses FITS images and save them as a single-hdu FITS file.
 
 :Author: Axel Guinot, Martin Kilbinger <martin.kilbinger@cea.fr>
 
 :Date: 2020
-
-:Package: ShapePipe
 
 """
 
