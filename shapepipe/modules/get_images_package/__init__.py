@@ -40,7 +40,7 @@ INPUT_FILE_PATTERN : (list of) str
 INPUT_FILE_EXT : (list of) str
     input file extension(s)
     input path(s) of images
-OUTPUT_FILE_PATTERN : (list) of str
+OUTPUT_FILE_PATTERN : (list of) str
     output file pattern
 INPUT_NUMBERING : str
     input numbering scheme, python regexp
