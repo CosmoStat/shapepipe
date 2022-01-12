@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """VIGNET MAKER
 
 This module contains a class to create postage stamps from images.
@@ -8,8 +6,9 @@ This module contains a class to create postage stamps from images.
 
 """
 
-import numpy as np
 import re
+
+import numpy as np
 from astropy.wcs import WCS
 from sf_tools.image.stamp import FetchStamps
 from sqlitedict import SqliteDict

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """SEXTRACTOR SCRIPT
 
 This module builds the SExtractor command line.
@@ -9,15 +7,16 @@ This module builds the SExtractor command line.
 """
 
 import re
-from shapepipe.pipeline import file_io
 
 import numpy as np
-from sqlitedict import SqliteDict
 from astropy.io import fits
+from sqlitedict import SqliteDict
+
+from shapepipe.pipeline import file_io
 
 
 def get_header_value(image_path, key):
-    """Get header value
+    """Get Header Value
 
     This function reads a value from the header image.
 
@@ -34,7 +33,6 @@ def get_header_value(image_path, key):
         Value associated to the key provided
 
     """
-
     h = fits.getheader(image_path)
 
     val = h[key]
@@ -50,10 +48,11 @@ def get_header_value(image_path, key):
 
 
 def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
-    """Make post process
+    """Make Post Process
 
     This function will add one hdu by epoch to the SExtractor catalog.
     Only works for tiles.
+
     The columns will be: NUMBER same as SExtractor NUMBER
                          EXP_NAME name of the single exposure for this epoch
                          CCD_N extension where the object is
@@ -72,9 +71,9 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
     Raises
     ------
     IOError
+        If SQL file not found
 
     """
-
     cat = file_io.FITSCatalogue(
         cat_path, SEx_catalogue=True,
         open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
@@ -88,9 +87,9 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
     n_hdu = len(f_wcs[key_list[0]])
 
     history = []
-    for i in cat.get_data(1)[0][0]:
-        if re.split('HISTORY', i)[0] == '':
-            history.append(i)
+    for idx in cat.get_data(1)[0][0]:
+        if re.split('HISTORY', idx)[0] == '':
+            history.append(idx)
 
     exp_list = []
     pattern = r'([0-9]*)p\.(.*)'
@@ -103,23 +102,34 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
     n_epoch = np.zeros(len(obj_id), dtype='int32')
     for idx, exp in enumerate(exp_list):
         pos_tmp = np.ones(len(obj_id), dtype='int32') * -1
-        for j in range(n_hdu):
-            w = f_wcs[exp][j]['WCS']
-            pix_tmp = w.all_world2pix(cat.get_data()[pos_params[0]],
-                                      cat.get_data()[pos_params[1]], 0)
-            ind = ((pix_tmp[0] > int(ccd_size[0])) &
-                   (pix_tmp[0] < int(ccd_size[1])) &
-                   (pix_tmp[1] > int(ccd_size[2])) &
-                   (pix_tmp[1] < int(ccd_size[3])))
-            pos_tmp[ind] = j
+        for idx_j in range(n_hdu):
+            w = f_wcs[exp][idx_j]['WCS']
+            pix_tmp = w.all_world2pix(
+                cat.get_data()[pos_params[0]],
+                cat.get_data()[pos_params[1]],
+                0
+            )
+            ind = (
+                (pix_tmp[0] > int(ccd_size[0]))
+                & (pix_tmp[0] < int(ccd_size[1]))
+                & (pix_tmp[1] > int(ccd_size[2]))
+                & (pix_tmp[1] < int(ccd_size[3]))
+            )
+            pos_tmp[ind] = idx_j
             n_epoch[ind] += 1
         exp_name = np.array([exp_list[idx] for n in range(len(obj_id))])
-        a = np.array([(obj_id[ii], exp_name[ii], pos_tmp[ii])
-                      for ii in range(len(exp_name))],
-                     dtype=[('NUMBER', obj_id.dtype),
-                            ('EXP_NAME', exp_name.dtype),
-                            ('CCD_N', pos_tmp.dtype)])
-        cat.save_as_fits(data=a, ext_name='EPOCH_{}'.format(idx))
+        a = np.array(
+            [
+                (obj_id[ii], exp_name[ii], pos_tmp[ii])
+                for ii in range(len(exp_name))
+            ],
+            dtype=[
+                ('NUMBER', obj_id.dtype),
+                ('EXP_NAME', exp_name.dtype),
+                ('CCD_N', pos_tmp.dtype)
+            ]
+        )
+        cat.save_as_fits(data=a, ext_name=f'EPOCH_{idx}')
         cat.open()
 
     f_wcs.close()
@@ -129,7 +139,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
     cat.close()
 
 
-class sextractor_caller():
+class SExtractorCaller():
     """SExtractor Caller
 
     This class constructs the command line to call SExtractor based on the
@@ -191,7 +201,7 @@ class sextractor_caller():
             zero_point_key=None,
             background_key=None,
             check_image=None,
-            output_suffix=None
+            output_suffix=None,
     ):
 
         self.cmd_line = ''
@@ -217,7 +227,7 @@ class sextractor_caller():
         self.get_check_image(check_image)
 
     def get_output_name(self, output_suffix=None):
-        """Get output names
+        """Get Output Names
 
         Construct the output file path.
 
@@ -251,9 +261,9 @@ class sextractor_caller():
             use_flag,
             use_psf,
             use_detect_img,
-            use_detect_weight
+            use_detect_weight,
     ):
-        """Set input files
+        """Set Input Files
 
         Setup all the input image files.
 
@@ -378,7 +388,7 @@ class sextractor_caller():
             )
 
     def get_check_image(self, check_image):
-        """Get check image
+        """Get Check Image
 
         Handle the check images if any are requested.
 
@@ -388,7 +398,6 @@ class sextractor_caller():
             List of SExtractor keys corresponding to check images
 
         """
-
         if (len(check_image) == 1) & (check_image[0] == ''):
             check_type = ['NONE']
             check_name = ['none']
@@ -404,14 +413,14 @@ class sextractor_caller():
                 )
 
         self._cmd_line_extra += (
-            f" -CHECKIMAGE_TYPE {','.join(check_type)} "
-            + f"-CHECKIMAGE_NAME {','.join(check_name)}"
+            f' -CHECKIMAGE_TYPE {",".join(check_type)} '
+            + f'-CHECKIMAGE_NAME {",".join(check_name)}'
         )
 
     def make_command_line(self, exec_path):
-        """ Make command line
+        """Make Command Line
 
-        Main that construct the command line to run SExtractor
+        Main that construct the command line to run SExtractor.
 
         Parameters
         ----------
@@ -424,16 +433,45 @@ class sextractor_caller():
             Full command line to call SExtractor
 
         """
-
         # Base arguments for SExtractor
         command_line_base = (
             f'{exec_path} {self._detect_img_path},{self._meas_img_path} '
             + f'-c {self._path_dot_sex} '
-            + f'-PARAMETERS_NAME {self._path_dot_param}'
-            + f' -FILTER_NAME {self._path_dot_conv} '
+            + f'-PARAMETERS_NAME {self._path_dot_param} '
+            + f'-FILTER_NAME {self._path_dot_conv} '
             + f'-CATALOG_NAME {self.path_output_file}'
         )
 
         command_line = f'{command_line_base} {self._cmd_line_extra}'
 
         return command_line
+
+    @staticmethod
+    def parse_errors(stderr, stdout):
+        """Parse Errors
+
+        This methoid move errors from output from SExtractor to errors.
+
+        Parameters:
+        ----------
+        stderr, stdout: str
+            strings with outputs from the execute command
+
+        Returns:
+        -------
+        tuple
+            stdout and stderr
+
+        """
+        check_error = re.findall('error', stdout.lower())
+        check_error2 = re.findall('all done', stdout.lower())
+
+        if check_error == []:
+            stderr2 = ''
+        else:
+            stderr2 = stdout
+
+        if check_error2 == []:
+            stderr2 = stdout
+
+        return stdout, stderr2

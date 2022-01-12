@@ -1,24 +1,22 @@
-# -*- coding: utf-8 -*-
+"""MASK
 
-"""MASK SCRIPT
-
-This module contain a class to create star mask for an image.
+This module contains a class to create star mask for an image.
 
 :Authors: Axel Guinot, Martin Kilbinger
 
 """
 
+import os
+import re
+
+import numpy as np
+from astropy import units, wcs
+from astropy.coordinates import SkyCoord
+
 from shapepipe.pipeline import file_io
 from shapepipe.pipeline.config import CustomParser
 from shapepipe.pipeline.execute import execute
 from shapepipe.utilities.file_system import mkdir
-
-import numpy as np
-from astropy.coordinates import SkyCoord
-from astropy import wcs
-from astropy import units
-import re
-import os
 
 
 class Mask(object):
@@ -95,7 +93,6 @@ class Mask(object):
             If config file not found
 
         """
-
         if self._config_filepath is None:
             raise ValueError('No path to config file')
 
@@ -242,7 +239,6 @@ class Mask(object):
         Set the parameters for the stars detection.
 
         """
-
         img = file_io.FITSCatalogue(self._image_fullpath, hdu_no=0)
         img.open()
         self._header = img.get_header()
@@ -270,7 +266,6 @@ class Mask(object):
         Main function to create the mask.
 
         """
-
         if self._config['MD']['make']:
             self.missing_data()
 
@@ -428,7 +423,6 @@ class Mask(object):
             For invalid configuration options
 
         """
-
         if 'CDSclient' in self._config['PATH']:
             ra = position[0]
             dec = position[1]
@@ -486,7 +480,6 @@ class Mask(object):
             If width is None
 
         """
-
         if width is None:
             raise ValueError('Width not provided')
 
@@ -535,7 +528,6 @@ class Mask(object):
             If cat_path is None
 
         """
-
         if size_plus < 0:
             raise ValueError('size_plus has to be larger than 0')
 
@@ -604,13 +596,12 @@ class Mask(object):
         return flag
 
     def missing_data(self):
-        """Find missing data
+        """Find Missing Data
 
         Look for 0 value in the image and flag it depending of the
         configuration.
 
         """
-
         img = file_io.FITSCatalogue(self._image_fullpath, hdu_no=0)
         img.open()
 
@@ -637,7 +628,7 @@ class Mask(object):
         img.close()
 
     def sphere_dist(self, position1, position2):
-        """Compute spherical distance
+        """Compute Spherical Distance
 
         Compute spherical distance between 2 points.
 
@@ -659,7 +650,6 @@ class Mask(object):
             If input positions are not Numpy arrays
 
         """
-
         if (
             type(position1) is not np.ndarray
             or type(position2) is not np.ndarray
@@ -705,7 +695,6 @@ class Mask(object):
             If center is not a Numpy array
 
         """
-
         if center is None:
             return (
                 self.sphere_dist(self._fieldcenter['pix'], np.zeros(2)) / 60.0
@@ -733,7 +722,6 @@ class Mask(object):
             Star dicotionnary containing all information
 
         """
-
         header = []
         stars = {}
 
@@ -804,7 +792,6 @@ class Mask(object):
             If an invalid option is provided for type
 
         """
-
         if stars is None:
             raise ValueError('No star catalogue provided')
 
@@ -892,8 +879,8 @@ class Mask(object):
         Parameters
         ----------
         types : {'HALO', 'SPIKE', 'ALL'}, optional
-            Type of WeightWatcher execution, options are 'HALO', 'SPIKE' or
-            'ALL'
+            Type of WeightWatcher execution, options are ``'HALO'``,
+            ``'SPIKE'`` or ``'ALL'``
 
         Raises
         ------
@@ -901,7 +888,6 @@ class Mask(object):
             If catalogue file not found
 
         """
-
         if types in ('HALO', 'SPIKE'):
 
             default_reg = (
@@ -1069,7 +1055,6 @@ class Mask(object):
             If Messier mask is not a Numpy array
 
         """
-
         final_mask = None
 
         if (
@@ -1144,7 +1129,6 @@ class Mask(object):
             If output_fullpath is type None
 
         """
-
         if input_mask is None:
             raise ValueError('input_mask not provided')
         if output_fullpath is None:
@@ -1203,7 +1187,6 @@ class Mask(object):
             If temp_dir_path is of type None
 
         """
-
         if temp_dir_path is None:
             raise ValueError('Temporary directory path not provided')
 

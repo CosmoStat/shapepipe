@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """MCCD auxiliary functions.
 
 This module contains auxiliary functions for the MCCD package that are needed
@@ -10,12 +8,14 @@ by the MCCD runners.
 """
 
 import os
-import numpy as np
-import mccd
-from astropy.io import fits
-import galsim
-from shapepipe.pipeline import file_io
 import pprint
+
+import galsim
+import mccd
+import numpy as np
+from astropy.io import fits
+
+from shapepipe.pipeline import file_io
 
 NOT_ENOUGH_STARS = 'Not enough stars to train the model.'
 

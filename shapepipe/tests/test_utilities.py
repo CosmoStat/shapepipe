@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """UNIT TESTS FOR UTILITIES.
 
 This module contains unit tests for the shapepipe.pipeline module.

@@ -1,13 +1,8 @@
-# -*- coding: utf-8 -*-
-
 """UNCOMRESS FITS
 
 This module uncompresses fits images and saves them as a single-hdu FITS file.
 
-
 :Author: Axel Guinot, Martin Kilbinger <martin.kilbinger@cea.fr>
-
-:Date: 2020
 
 """
 
@@ -21,16 +16,17 @@ class Uncompress(object):
 
     Parameters
     ----------
-    input_file_list : array of string
+    input_file_list : np.ndarray of string
         input files
-    output_pattern_list : array of string
+    output_pattern_list : np.ndarray of string
         output file pattern
-    output_dir : string
+    output_dir : str
         output directory
-    file_number_string : string
+    file_number_string : str
         image numbering (pipeline ID string)
     data_hdu : int
         input HDU number
+
     """
 
     def __init__(
@@ -52,8 +48,8 @@ class Uncompress(object):
         """Process
 
         Main function to process uncompress.
-        """
 
+        """
         # Go through input list
         for idx in range(len(self._input_file_list)):
 

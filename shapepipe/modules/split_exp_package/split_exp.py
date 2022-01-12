@@ -1,40 +1,39 @@
-# -*- coding: utf-8 -*-
 """SPLIT EXP SCRIPT
 
-Class to split single-exposure multi-CCD mosaic images into single-exposure single-CCD
-files, one HDU per CCD.
+Class to split single-exposure multi-CCD mosaic images into single-exposure
+single-CCD files, one HDU per CCD.
+
+This module splits the different CCDs (= hdus in FITS files) of a
+single exposure into separate files.
 
 :Author: Axel Guinot
-
-:Date: 2019, 2020
-
-:Package: ShapePipe
 
 """
 
 import numpy as np
 import sip_tpv as stp
-from astropy.wcs import WCS
 from astropy.io import fits
+from astropy.wcs import WCS
 
 from shapepipe.pipeline import file_io
 
 
 class SplitExposures(object):
-    """Split Exposures initialisation
+    """Split Exposures
 
     Parameters
     ----------
-    input_file_list : list of strings
+    input_file_list : list of str
         input file paths, typically image, weight, and flag
-    output_dir : string
+    output_dir : str
         output directory
-    file_number_string : string
+    file_number_string : str
         input file identified
-    output_suffix : string
+    output_suffix : str
         output file suffix
     n_hdu : int
         number of HDUs (= CCDs) of input files
+
     """
 
     def __init__(
@@ -55,9 +54,9 @@ class SplitExposures(object):
     def process(self):
         """Process
 
-        Process the splitting of single-exposure images
-        """
+        Process the splitting of single-exposure images.
 
+        """
         for exp_path, output_suffix in zip(
             self._input_file_list,
             self._output_suffix
@@ -83,7 +82,7 @@ class SplitExposures(object):
         transf_int,
         save_header
     ):
-        """ Create HDUs
+        """Create HDUs
 
         Split a single exposures CCDs into separate files.
 
@@ -99,11 +98,11 @@ class SplitExposures(object):
             Set data types to int if True
         save_header : bool
             Save WCS information if True
-        """
 
+        """
         header_file = np.zeros(self._n_hdu, dtype='O')
 
-        for idx in range(1, self._n_hdu+1):
+        for idx in range(1, self._n_hdu + 1):
 
             h = fits.getheader(exp_path, idx)
             if transf_coord:

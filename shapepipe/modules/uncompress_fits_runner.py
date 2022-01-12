@@ -1,35 +1,30 @@
-# -*- coding: utf-8 -*-
+"""UNCOMPRESS FITS RUNNER.
 
-"""UNCOMPRESS FITS IMAGE RUNNER
-
-Module runner for ``uncompress_fits_image_runner``.
-This module uncompresses FITS images and saves them as a single-hdu FITS file.
+Module runner for ``uncompress_fits``.
 
 :Author: Axel Guinot, Martin Kilbinger <martin.kilbinger@cea.fr>
-
-:Date: 2020
 
 """
 
 from shapepipe.modules.module_decorator import module_runner
-import shapepipe.modules.uncompress_fits_image_package.uncompress as uz
+from shapepipe.modules.uncompress_fits_package import uncompress_fits
 
 
 @module_runner(
     version='1.1',
     file_pattern=['image'],
     file_ext=['.fits'],
-    numbering_scheme='_0'
+    numbering_scheme='_0',
 )
-def uncompress_fits_image_runner(
+def uncompress_fits_runner(
     input_file_list,
     run_dirs,
     file_number_string,
     config,
     module_config_sec,
-    w_log
+    w_log,
 ):
-
+    """Define The Uncompress Fits Runner."""
     # Get HDU number of input image data
     if config.has_option(module_config_sec, 'HDU_DATA'):
         data_hdu = config.getint(module_config_sec, 'HDU_DATA')
@@ -48,13 +43,16 @@ def uncompress_fits_image_runner(
         )
 
     # Create instance of uncompress
-    uz_inst = uz.Uncompress(
+    uncompress_inst = uncompress_fits.Uncompress(
         input_file_list,
         output_pattern_list,
         run_dirs['output'],
         file_number_string,
-        data_hdu)
+        data_hdu,
+    )
 
-    uz_inst.process()
+    # Process uncompressing
+    uncompress_inst.process()
 
+    # No return objects
     return None, None

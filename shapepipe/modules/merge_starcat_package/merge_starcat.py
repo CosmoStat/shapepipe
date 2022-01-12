@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-"""MERGE STARCAT SCRIPT
+"""MERGE STARCAT
 
 This module contains a class to identify single exposures that were used
 to create tiles.
@@ -7,22 +6,20 @@ to create tiles.
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>, Tobias Liaudat,
     Morgan Schmitz, Axel Guinot
 
-:Date: 2021
-
 """
 
-
-import numpy as np
 import re
 
+import numpy as np
 from astropy.io import fits
+
 from shapepipe.pipeline import file_io
 
 
 class MergeStarCatMCCD(object):
     """Merge Star Catalogue MCCD
 
-    Merge star catalogues of MCCD PSF model output
+    Merge star catalogues of MCCD PSF model output.
 
     Parameters
     ----------
@@ -38,6 +35,7 @@ class MergeStarCatMCCD(object):
         radius for mask, in pixels
     hdu_table : int, optional, default=1
         HDU number
+
     """
 
     def __init__(
@@ -79,8 +77,8 @@ class MergeStarCatMCCD(object):
         -------
         rmse : float
             root mean square error
-        """
 
+        """
         rmse = np.sqrt(MergeStarCatMCCD.mean_calc(values, sizes))
 
         return rmse
@@ -107,8 +105,8 @@ class MergeStarCatMCCD(object):
         -------
         rmse : float
             root mean square error
-        """
 
+        """
         rmse = np.sqrt(
             np.nansum(np.array(values) ** 2) / np.nansum(np.array(sizes))
         )
@@ -119,7 +117,7 @@ class MergeStarCatMCCD(object):
     def mean_calc(values, sizes):
         """"Mean calculation
 
-        Calculate pixel mean over all input images
+        Calculate pixel mean over all input images.
 
         Parameters
         ----------
@@ -132,8 +130,8 @@ class MergeStarCatMCCD(object):
         -------
         mean : float
             mean
-        """
 
+        """
         mean = (
             np.nansum(np.array(values)) / np.nansum(np.array(sizes))
         )
@@ -144,7 +142,7 @@ class MergeStarCatMCCD(object):
     def std_calc(values):
         """"Standard deviation calculation
 
-        Calculate pixel standard deviation over all input images
+        Calculate pixel standard deviation over all input images.
 
         Parameters
         ----------
@@ -157,8 +155,8 @@ class MergeStarCatMCCD(object):
         -------
         std : float
             standard deviation
-        """
 
+        """
         std = np.nanstd(np.array(values))
 
         return std
@@ -167,7 +165,7 @@ class MergeStarCatMCCD(object):
     def stats_calculator(val_ref, val_model):
         """Stats Calculator
 
-        Calculate RMSE, mean, and standard deviation of residuals
+        Calculate RMSE, mean, and standard deviation of residuals.
 
         Parameters
         ----------
@@ -184,8 +182,8 @@ class MergeStarCatMCCD(object):
             mean
         std_dev : float
             standard deviation
-        """
 
+        """
         residual = val_ref - val_model
 
         rmse = np.sqrt(np.mean(residual ** 2))
@@ -195,7 +193,11 @@ class MergeStarCatMCCD(object):
         return rmse, mean, std_dev
 
     def process(self):
+        """Process.
 
+        Process merging.
+
+        """
         x, y = [], []
         ra, dec = [], []
         g1_psf, g2_psf, size_psf = [], [], []
@@ -491,7 +493,7 @@ class MergeStarCatMCCD(object):
 class MergeStarCatPSFEX(object):
     """Merge Star Catalogue PSFEx
 
-    Merge star catalogues of PSFEx PSF model output
+    Merge star catalogues of PSFEx PSF model output.
 
     Parameters
     ----------
@@ -503,6 +505,7 @@ class MergeStarCatPSFEX(object):
         log file
     hdu_table : int, optional, default=2
         HDU number
+
     """
 
     def __init__(self, input_file_list, output_dir, w_log, hdu_table=2):
@@ -513,7 +516,11 @@ class MergeStarCatPSFEX(object):
         self._hdu_table = hdu_table
 
     def process(self):
+        """Process
 
+        Process merging.
+
+        """
         x, y, ra, dec = [], [], [], []
         g1_psf, g2_psf, size_psf = [], [], []
         g1, g2, size = [], [], []

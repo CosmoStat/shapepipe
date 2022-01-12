@@ -1,10 +1,20 @@
-# -*- coding: utf-8 -*-
+"""SPREAD MODEL PACKAGE
 
-"""VIGNET MAKER PACKAGE
-
-This package contains the module(s) for ``spread_model``.
+This package contains the module for ``spread_model``.
 
 :Author: Axel Guinot
+
+:Parent module:
+
+:Input:
+
+:Output:
+
+Description
+===========
+
+Module-specific config file entries
+===================================
 
 """
 

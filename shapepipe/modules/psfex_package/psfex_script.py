@@ -1,14 +1,17 @@
+"""PSFEX SCRIPTS
 
-"""PSFEX PACKAGE
 This module contains a wrapper class to prepare the psfex command line.
+
 :Author: Axel Guinot
+
 """
+
 import os
 import re
 
 
-class PSFEx_caller:
-    """ PSFEx caller
+class PSFExCaller:
+    """PSFEx Caller
 
     This class contains functions to generate a PSFex command line.
 
@@ -26,6 +29,7 @@ class PSFEx_caller:
         Full path pf the output catalogue
     check_image_list: list of str
         List of check images
+
     """
 
     def __init__(
@@ -45,7 +49,7 @@ class PSFEx_caller:
         self.check_image_list = check_image_list
 
     def generate_command(self):
-        """Generate command
+        """Generate Command
 
         This method generates a command line for running PSFEx.
 
@@ -53,8 +57,8 @@ class PSFEx_caller:
         -------
         command_line: str
             Command line with correct and complete paths for PSFEx execution.
-        """
 
+        """
         # Prepare command line
         command_line = (
             f'{self.psfex_executable_path} '
@@ -98,7 +102,7 @@ class PSFEx_caller:
 
     @staticmethod
     def parse_errors(stderr, stdout):
-        """Parse errors
+        """Parse Errors
 
         This methoid move errors from output from psfex to errors.
 
@@ -109,8 +113,8 @@ class PSFEx_caller:
 
         Returns:
         -------
-        stdout, stderr2: str
-
+        tuple
+            stdout and stderr
 
         """
         check_error = re.findall('error', stdout.lower())

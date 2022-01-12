@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""SHAPEPIPE INFO
+"""SHAPEPIPE INFO.
 
 This module provides some basic information about the ShapePipe package.
 
@@ -40,7 +38,7 @@ __tests__ = [
 
 
 def shapepipe_logo(colour=False):
-    """ShapePipe Logo
+    """Get ShapePipe Logo.
 
     Returns
     -------
@@ -86,7 +84,7 @@ def shapepipe_logo(colour=False):
 
 
 def line():
-    """Line
+    """Get Horizontal Line.
 
     Returns
     -------

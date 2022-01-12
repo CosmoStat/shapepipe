@@ -1,10 +1,20 @@
-# -*- coding: utf-8 -*-
+"""NGMIX PACKAGE
 
-""" NGMIX PACKAGE
-
-This package contains the code for ``ngmix``.
+This package contains the module for ``ngmix``.
 
 :Author: Axel Guinot
+
+:Parent module:
+
+:Input:
+
+:Output:
+
+Description
+===========
+
+Module-specific config file entries
+===================================
 
 """
 

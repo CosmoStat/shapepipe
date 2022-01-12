@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """FIND EXPOSURES SCRIPT
 
 This module contains a class to identify single exposures that were used
@@ -6,12 +5,11 @@ to create tiles.
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
-:Date: January 2019
-
 """
 
 
 import re
+
 import astropy.io.fits as fits
 
 
@@ -22,12 +20,13 @@ class FindExposures():
 
     Parameters
     ----------
-    img_tile_path : string
+    img_tile_path : str
         path to tile image file
-    output_path : string
+    output_path : str
         output file path
-    w_log :
+    w_log : logging.Logger
         log file
+
     """
 
     def __init__(self, img_tile_path, output_path, w_log):
@@ -40,8 +39,8 @@ class FindExposures():
         """Process
 
         Main function to identify exposures.
-        """
 
+        """
         # Get list of exposures
         exp_list_uniq = self.get_exposure_list()
 
@@ -62,8 +61,8 @@ class FindExposures():
         -------
         exp_list_uniq: list of strings
             list of exposure basenames
-        """
 
+        """
         try:
             # Get history from tiles FITS header
             hdu = fits.open(self._img_tile_path)
@@ -81,12 +80,12 @@ class FindExposures():
         # Get exposure file names
         # History entries have format as the following example:
         # "input image 2243881p.fits 6 extension(s)"
-        for h in hist:
-            temp = h.split(' ')
+        for _hist in hist:
+            temp = _hist.split(' ')
 
             pattern = r'(.*)\.{1}.*'
-            m = re.search(pattern, temp[3])
-            if not m:
+            pattern_match = re.search(pattern, temp[3])
+            if not pattern_match:
                 raise IndexError(
                     f're match \'{pattern}\' failed for filename \'{temp[3]}\''
                 )

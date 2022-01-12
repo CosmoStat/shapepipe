@@ -1,48 +1,42 @@
-# -*- coding: utf-8 -*-
-
 """PASTE CAT SCRIPT
 
 Class to paste different (SExtractor) catalogs of objects.
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>, Axel Guinot
 
-:Date: 10/2020
-
-:Package: ShapePipe
-
 """
-
 
 import os
 import re
 
 import numpy as np
-from astropy import units as u
 from astropy import coordinates as coords
+from astropy import units as u
 from astropy.wcs import WCS
 
 from shapepipe.pipeline import file_io
 
 
 class PasteCat(object):
-    """PasteCat initialisation.
+    """PasteCat
 
     Parameters
     ----------
     input_file_list : list of strings
         list of input catalogue paths to be pasted.
-    output_path : string
+    output_path : str
         output file path of pasted catalog
-    w_log :
+    w_log : logging.Logger
         log file
-    ext_name : list of strings, optional, default = None
+    ext_name : list of str, optional, default = None
         HDU extension names, if None use input file names
-    check_col_name : string, optional, default=None:
+    check_col_name : str, optional, default=None:
         if not None, use column with this key to check equal number
         of rows in each input catalog
-    hdu_no : array of int, optional, default = None
+    hdu_no : np.ndarray of int, optional, default = None
         hdu numbers of input catalog; by default set to 2 for all
         input files
+
     """
 
     def __init__(
@@ -67,9 +61,10 @@ class PasteCat(object):
 
     def process(self):
         """Process
-        Process the pasting of catalogues
-        """
 
+        Process the pasting of catalogues.
+
+        """
         # Create output catalog
         pasted_cat = file_io.FITSCatalogue(
             self._output_path,

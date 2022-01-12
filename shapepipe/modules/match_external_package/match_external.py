@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """MATCH EXTERNAL
 
 This module matches an external catalogue to a ShapePipe (SExtractor)
@@ -12,6 +10,7 @@ catalogue.
 import numpy as np
 from astropy import units
 from astropy.coordinates import SkyCoord, match_coordinates_sky
+
 from shapepipe.pipeline import file_io
 
 

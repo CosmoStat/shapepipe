@@ -1,26 +1,19 @@
-# -*- coding: utf-8 -*-
+"""MERGE SEP CATS RUNNER.
 
-"""MERGE SEP CATS RUNNER
+Module runner for ``merge_sep_cats``.
 
-This module merges output catalogues that have been created by separate (parallel)
-calls to ShapePipe with the respective modules. Example: ngmix.
-
-:Author: Morgan Schmitz, Axel Guinot, Martin Kilbinger <martin.kilbinger@cea.fr>
-
-:Date: 2020, 2021
-
-:Package: ShapePipe
+:Author: Morgan Schmitz, Axel Guinot,
+Martin Kilbinger <martin.kilbinger@cea.fr>
 
 """
 
-
+from shapepipe.modules.merge_sep_cats_package.merge_sep_cats import MergeSep
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.merge_sep_cats_package import merge_script as merge
 
 
 @module_runner(
+    version='1.1',
     input_module='ngmix_runner',
-    version='1.0',
     file_pattern=['ngmix'],
     file_ext=['.fits'],
     depends=['numpy'])
@@ -30,9 +23,9 @@ def merge_sep_cats_runner(
     file_number_string,
     config,
     module_config_sec,
-    w_log
+    w_log,
 ):
-
+    """Define The Merge SEP Catalogues Runner."""
     # Get config entries
     n_split_max = config.getint(module_config_sec, 'N_SPLIT_MAX')
 
@@ -44,7 +37,8 @@ def merge_sep_cats_runner(
     else:
         warning = 'error'
 
-    inst = merge.MergeSep(
+    # Create merge sep cat class instance
+    merge_sep_inst = MergeSep(
         input_file_list,
         file_number_string,
         file_pattern,
@@ -52,9 +46,11 @@ def merge_sep_cats_runner(
         run_dirs['output'],
         n_split_max,
         warning,
-        w_log
+        w_log,
     )
 
-    inst.process()
+    # Run processing
+    merge_sep_inst.process()
 
+    # No return objects
     return None, None

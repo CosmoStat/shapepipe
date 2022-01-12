@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """SETOOLS
 
 This module contains a class to handle operations on SExtractor output
@@ -9,12 +7,13 @@ catalogues.
 
 """
 
-import matplotlib.pylab as plt
-import numpy as np
-import os
 import operator
+import os
 import re
 import string
+
+import matplotlib.pylab as plt
+import numpy as np
 
 from shapepipe.pipeline import file_io
 from shapepipe.pipeline.str_handler import StrInterpreter
@@ -37,7 +36,7 @@ class SETools(object):
         input catalogue number/specifier
     config_filepath: str
         Path to config.setools file
-    cat_file: boolean, optional
+    cat_file: bool, optional
         True if 'cat' is a path to a file. False otherwise
 
     """
@@ -79,11 +78,10 @@ class SETools(object):
 
         Parameters
         ----------
-        w_log :
+        w_log : logging.Logger
             Worker log instance
 
         """
-
         if self._is_file:
             file_number = self._file_number_string
         else:
@@ -96,27 +94,27 @@ class SETools(object):
             direc = f'{self._output_dir}/mask'
             mkdir(direc)
             self._make_mask()
-            for i in self.mask.keys():
-                if 'NO_SAVE' in self._mask[i]:
+            for key in self.mask.keys():
+                if 'NO_SAVE' in self._mask[key]:
                     continue
-                file_name = f'{direc}/{i}{file_number}.fits'
-                self.save_mask(self.mask[i], file_name)
+                file_name = f'{direc}/{key}{file_number}.fits'
+                self.save_mask(self.mask[key], file_name)
 
         if len(self._plot) != 0:
             direc = f'{self._output_dir}/plot'
             mkdir(direc)
             self._make_plot()
-            for i in self.plot.keys():
-                output_path = f'{direc}/{i}{file_number}'
-                SEPlot(self.plot[i], self._data, output_path, self.mask)
+            for key in self.plot.keys():
+                output_path = f'{direc}/{key}{file_number}'
+                SEPlot(self.plot[key], self._data, output_path, self.mask)
 
         if len(self._new_cat) != 0:
             direc = f'{self._output_dir}/new_cat'
             mkdir(direc)
             self._make_new_cat()
-            for i in self.new_cat.keys():
-                file_name = f'{direc}/{i}{file_number}'
-                self.save_new_cat(self.new_cat[i], file_name)
+            for key in self.new_cat.keys():
+                file_name = f'{direc}/{key}{file_number}'
+                self.save_new_cat(self.new_cat[key], file_name)
 
         if len(self._rand_split) != 0:
             direc = f'{self._output_dir}/rand_split'
@@ -149,12 +147,12 @@ class SETools(object):
             direc = f'{self._output_dir}/stat'
             mkdir(direc)
             self._make_stat()
-            for i in self.stat.keys():
-                output_path = f'{direc}/{i}{file_number}.txt'
-                self.save_stat(self.stat[i], output_path)
+            for key in self.stat.keys():
+                output_path = f'{direc}/{key}{file_number}.txt'
+                self.save_stat(self.stat[key], output_path)
 
     def read(self):
-        """Read the config file
+        """Read the Config File
 
         This function read the config file and create a dictionary for every
         task.
@@ -167,7 +165,6 @@ class SETools(object):
             For invalid section
 
         """
-
         self._config_file.seek(0)
 
         self._mask = {}
@@ -272,7 +269,6 @@ class SETools(object):
             None otherwise.
 
         """
-
         s = re.split('"', line)
         if len(s) == 3:
             line_tmp = s[0].replace(' ', '') + s[1] + s[2].replace(' ', '')
@@ -315,7 +311,6 @@ class SETools(object):
             If output path not provided
 
         """
-
         if mask is None:
             raise ValueError('mask not provided')
         if len(mask) == 0:
@@ -336,7 +331,7 @@ class SETools(object):
         )
 
     def save_new_cat(self, new_cat, output_path, ext_name='LDAC_OBJECTS'):
-        """Save new catalogue
+        """Save New Catalogue
 
         This function create a new catalog with a specific format
         (fits bin table, SExtractor like fits catalog or ASCII).
@@ -358,7 +353,6 @@ class SETools(object):
             For invalid output format
 
         """
-
         try:
             output_format = new_cat.pop('OUTPUT_FORMAT')
         except Exception:
@@ -386,15 +380,15 @@ class SETools(object):
             new_file.write('# HEADER\n')
             new_file.write('# ')
             n_max = -1
-            for i in new_cat.keys():
-                if len(new_cat[i]) > n_max:
-                    n_max = len(new_cat[i])
-                new_file.write(f'{i}\t')
+            for key in new_cat.keys():
+                if len(new_cat[key]) > n_max:
+                    n_max = len(new_cat[key])
+                new_file.write(f'{key}\t')
             new_file.write('\n')
-            for i in range(n_max):
-                for j in new_cat.keys():
+            for idx in range(n_max):
+                for key in new_cat.keys():
                     try:
-                        new_file.write(f'{new_cat[j][i]}\t')
+                        new_file.write(f'{new_cat[key][idx]}\t')
                     except Exception:
                         new_file.write('\t')
                 new_file.write('\n')
@@ -409,7 +403,7 @@ class SETools(object):
         file_number,
         ext_name='LDAC_OBJECTS',
     ):
-        """Save random splitted catalogs
+        """Save Random Split Catalogues
 
         Save two catalogs following the random split specified.
 
@@ -434,7 +428,6 @@ class SETools(object):
             If file_number not provided
 
         """
-
         if rand_split is None:
             raise ValueError('rand_split not provided')
         if output_path is None:
@@ -445,20 +438,20 @@ class SETools(object):
         mask = rand_split.pop('mask')
         data = self._data[mask]
 
-        for i in rand_split.keys():
+        for idx in rand_split.keys():
             rand_split_file = file_io.FITSCatalogue(
-                output_path + i + file_number + '.fits',
+                output_path + idx + file_number + '.fits',
                 open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
                 SEx_catalogue=(self._cat_filepath is not None),
             )
             rand_split_file.save_as_fits(
-                data=data[rand_split[i]],
+                data=data[rand_split[idx]],
                 ext_name=ext_name,
                 sex_cat_path=self._cat_filepath,
             )
 
     def save_stat(self, stat, output_path):
-        """Save statistics
+        """Save Statistics
 
         Save the statistics in ASCII format.
 
@@ -477,22 +470,21 @@ class SETools(object):
             If output path not provided
 
         """
-
         if stat is None:
             raise ValueError('stat not provided')
         if output_path is None:
             raise ValueError('output path not provided')
 
-        f = open(output_path, 'w')
-        f.write('# Statistics\n')
+        file = open(output_path, 'w')
+        file.write('# Statistics\n')
 
-        for i in stat.keys():
-            f.write(i + ' = ' + str(stat[i]) + '\n')
+        for key in stat.keys():
+            file.write(key + ' = ' + str(stat[key]) + '\n')
 
-        f.close()
+        file.close()
 
     def _make_mask(self):
-        """Make mask
+        """Make Mask
 
         This function transforms the constraints from the config file to
         conditions.
@@ -503,31 +495,30 @@ class SETools(object):
             If value not found in mask
 
         """
-
         if len(self._mask) == 0:
             return None
 
         self.mask = {}
 
-        for i in self._mask_key:
+        for key in self._mask_key:
             global_mask = np.ones(self._cat_size, dtype=bool)
             global_ind = np.where(global_mask)[0]
-            for j in self._mask[i]:
-                s = re.split('{|}', j)
+            for idx in self._mask[key]:
+                s = re.split('{|}', idx)
                 if s[0] == '':
                     try:
                         global_mask &= self.mask[s[1]]
                         global_ind = np.where(global_mask)[0]
-                        self._mask[i].pop(self._mask[i].index(j))
+                        self._mask[key].pop(self._mask[key].index(idx))
                     except Exception:
-                        raise RuntimeError(f"'{s[1]}' not found in mask")
+                        raise RuntimeError(f'"{s[1]}" not found in mask')
 
             mask_tmp = None
-            for j in self._mask[i]:
-                if j == 'NO_SAVE':
+            for idx in self._mask[idx]:
+                if idx == 'NO_SAVE':
                     continue
                 tmp = StrInterpreter(
-                    j,
+                    idx,
                     self._data[global_mask],
                     make_compare=True,
                     mask_dict=self.mask,
@@ -540,10 +531,10 @@ class SETools(object):
             final_mask = np.zeros(self._cat_size, dtype=bool)
             final_mask[new_ind] = True
 
-            self.mask[i] = final_mask
+            self.mask[key] = final_mask
 
     def _make_plot(self):
-        """Make plot
+        """Make Plot
 
         This function interpret the different parameters for the plot.
 
@@ -555,35 +546,34 @@ class SETools(object):
             If plot keyword not in the correct format
 
         """
-
         if len(self._plot) == 0:
             return None
 
         self.plot = {}
-        for i in self._plot.keys():
-            self.plot[i] = {}
-            for j in self._plot[i]:
-                s = re.split('=', j)
+        for key in self._plot.keys():
+            self.plot[key] = {}
+            for idx in self._plot[key]:
+                s = re.split('=', idx)
                 if len(s) != 2:
                     raise ValueError(
                         'Plot option keyword/value not in correct format '
-                        + f'(key=val): {j}'
+                        + f'(key=val): {idx}'
                     )
                 ss = re.split('_', s[0])
                 if len(ss) == 1:
-                    self.plot[i][ss[0]] = {'0': s[1]}
+                    self.plot[key][ss[0]] = {'0': s[1]}
                 elif len(ss) == 2:
-                    if ss[0] not in self.plot[i].keys():
-                        self.plot[i][ss[0]] = {}
-                    self.plot[i][ss[0]][ss[1]] = s[1]
+                    if ss[0] not in self.plot[key].keys():
+                        self.plot[key][ss[0]] = {}
+                    self.plot[key][ss[0]][ss[1]] = s[1]
                 else:
                     raise ValueError(
                         'Plot keyword not in correct format (key or key_i)'
-                        + f': {j}'
+                        + f': {idx}'
                     )
 
     def _make_new_cat(self):
-        """Make new catalog
+        """Make New Catalogue
 
         This function interprets the contents for each column of the new
         catalogue.
@@ -594,30 +584,29 @@ class SETools(object):
             For invalid output format
 
         """
-
         if len(self._new_cat) == 0:
             return None
 
         self.new_cat = {}
-        for i in self._new_cat.keys():
-            self.new_cat[i] = {}
-            for j in self._new_cat[i]:
+        for key in self._new_cat.keys():
+            self.new_cat[key] = {}
+            for idx in self._new_cat[key]:
                 s = re.split('=', j)
                 if len(s) == 2:
                     if s[0] == 'OUTPUT_FORMAT':
-                        self.new_cat[i][s[0]] = s[1]
+                        self.new_cat[key][s[0]] = s[1]
                     else:
-                        self.new_cat[i][s[0]] = StrInterpreter(
+                        self.new_cat[key][s[0]] = StrInterpreter(
                             s[1],
                             self._data,
                             make_compare=False,
                             mask_dict=self.mask,
                         ).result
                 else:
-                    raise ValueError(f'Not a valid format : {j}')
+                    raise ValueError(f'Not a valid format : {idx}')
 
     def _make_rand_split(self):
-        """Make random split
+        """Make Random Split
 
         This function create mask with random indices corresponding of the
         specfied ratio.
@@ -632,19 +621,18 @@ class SETools(object):
             If mask does not exist
 
         """
-
         if len(self._rand_split) == 0:
             return None
 
         self.rand_split = {}
         mask = np.ones(self._cat_size, dtype=bool)
-        for i in self._rand_split.keys():
-            self.rand_split[i] = {}
-            for j in self._rand_split[i]:
-                s = re.split('=', j)
+        for key in self._rand_split.keys():
+            self.rand_split[key] = {}
+            for idx in self._rand_split[key]:
+                s = re.split('=', idx)
                 if len(s) != 2:
                     raise ValueError(
-                        f'Not a valid format : {self._rand_split[i][0]}'
+                        f'Not a valid format : {self._rand_split[key][0]}'
                     )
                 if s[0] == 'RATIO':
                     try:
@@ -666,16 +654,16 @@ class SETools(object):
             mask_ratio = []
             mask_left = list(range(0, cat_size))
             while(len(mask_ratio) != n_keep):
-                j = np.random.randint(0, len(mask_left))
-                mask_ratio.append(mask_left.pop(j))
+                idx = np.random.randint(0, len(mask_left))
+                mask_ratio.append(mask_left.pop(idx))
             mask_ratio = np.array(mask_ratio)
             mask_left = np.array(mask_left)
-            self.rand_split[i]['mask'] = mask
-            self.rand_split[i][f'ratio_{int(ratio * 100)}'] = mask_ratio
-            self.rand_split[i][f'ratio_{100 - int(ratio * 100)}'] = mask_left
+            self.rand_split[key]['mask'] = mask
+            self.rand_split[key][f'ratio_{int(ratio * 100)}'] = mask_ratio
+            self.rand_split[key][f'ratio_{100 - int(ratio * 100)}'] = mask_left
 
     def _make_stat(self):
-        """Make statistics
+        """Make Statistics
 
         This function interpret the different statistics required.
 
@@ -685,18 +673,17 @@ class SETools(object):
             For invalid statistic format
 
         """
-
         if len(self._stat) == 0:
             return None
 
         self.stat = {}
-        for i in self._stat.keys():
-            self.stat[i] = {}
-            for j in self._stat[i]:
-                s = re.split('=', j)
+        for key in self._stat.keys():
+            self.stat[key] = {}
+            for idx in self._stat[key]:
+                s = re.split('=', idx)
                 if len(s) != 2:
-                    raise ValueError(f'Not a valid format : {j}')
-                self.stat[i][s[0]] = StrInterpreter(
+                    raise ValueError(f'Not a valid format : {idx}')
+                self.stat[key][s[0]] = StrInterpreter(
                     s[1],
                     self._data,
                     make_compare=False,
@@ -705,7 +692,7 @@ class SETools(object):
 
 
 class SEPlot(object):
-    """SEPlot class
+    """SEPlot Class
 
     Tools to create plots.
 
@@ -774,7 +761,7 @@ class SEPlot(object):
             raise ValueError(f'Type : {self._plot["TYPE"]["0"]} not available')
 
     def _check_key_for_plot(self, key_list):
-        """Check key for plot
+        """Check Key for Plot
 
         Raise exception if keys not found in plot description.
 
@@ -789,7 +776,6 @@ class SEPlot(object):
             If key not provided for plot type
 
         """
-
         for key in key_list:
             if key not in self._plot.keys():
                 raise ValueError(
@@ -798,7 +784,7 @@ class SEPlot(object):
                 )
 
     def _make_plot(self):
-        """Make plot
+        """Make Plot
 
         This function calls pyplot.plot.
 
@@ -810,7 +796,6 @@ class SEPlot(object):
             If plot keyword not in the correct format
 
         """
-
         self._fig = plt.figure()
 
         if 'TITLE' in self._plot.keys():
@@ -819,12 +804,12 @@ class SEPlot(object):
             if len(s) >= 3:
                 title = s[0]
                 ii = 1
-                for i in s[1:-1]:
+                for idx in s[1:-1]:
                     if ii % 2 == 0:
-                        title += i
+                        title += idx
                     else:
                         title += str(StrInterpreter(
-                            i,
+                            idx,
                             self._cat,
                             make_compare=False,
                             mask_dict=self._mask_dict,
@@ -835,10 +820,10 @@ class SEPlot(object):
 
         self._fig.suptitle(title)
 
-        for i in self._plot['Y'].keys():
+        for key in self._plot['Y'].keys():
             if 'LABEL' in self._plot.keys():
                 try:
-                    label = self._plot['LABEL'][i]
+                    label = self._plot['LABEL'][key]
                     s = re.split('@', label)
                     if len(s) >= 3:
                         label = s[0]
@@ -860,42 +845,42 @@ class SEPlot(object):
                 label = None
             if 'COLOR' in self._plot.keys():
                 try:
-                    color = self._plot['COLOR'][i]
+                    color = self._plot['COLOR'][key]
                 except Exception:
                     color = None
             else:
                 color = None
             if 'MARKER' in self._plot.keys():
                 try:
-                    marker = self._plot['MARKER'][i]
+                    marker = self._plot['MARKER'][key]
                 except Exception:
                     marker = '+'
             else:
                 marker = '+'
             if 'MARKERSIZE' in self._plot.keys():
                 try:
-                    markersize = self._plot['MARKERSIZE'][i]
+                    markersize = self._plot['MARKERSIZE'][key]
                 except Exception:
                     markersize = 1
             else:
                 markersize = 1
             if 'LINE' in self._plot.keys():
                 try:
-                    line = self._plot['LINE'][i]
+                    line = self._plot['LINE'][key]
                 except Exception:
                     line = ''
             else:
                 line = ''
             if 'ALPHA' in self._plot.keys():
                 try:
-                    alpha = self._plot['ALPHA'][i]
+                    alpha = self._plot['ALPHA'][key]
                 except Exception:
                     alpha = None
             else:
                 alpha = None
 
             try:
-                x = self._plot['X'][i]
+                x = self._plot['X'][key]
             except Exception:
                 if len(self._plot['X']) == 1:
                     x = self._plot['X'][self._plot['X'].keys()[0]]
@@ -908,7 +893,7 @@ class SEPlot(object):
             plt.plot(
                 StrInterpreter(x, self._cat, mask_dict=self._mask_dict).result,
                 StrInterpreter(
-                    self._plot['Y'][i],
+                    self._plot['Y'][key],
                     self._cat,
                     mask_dict=self._mask_dict,
                 ).result,
@@ -954,7 +939,7 @@ class SEPlot(object):
         plt.close()
 
     def _make_scatter(self):
-        """Make scatter
+        """Make Scatter
 
         This function call pyplot.scatter.
 
@@ -966,7 +951,6 @@ class SEPlot(object):
             If Y not provided for every SCATTER
 
         """
-
         self._fig = plt.figure()
 
         if 'TITLE' in self._plot.keys():
@@ -974,27 +958,27 @@ class SEPlot(object):
             s = re.split('@', title)
             if len(s) >= 3:
                 title = s[0]
-                ii = 1
-                for i in s[1:-1]:
-                    if ii % 2 == 0:
-                        title += i
+                counter = 1
+                for idx in s[1:-1]:
+                    if counter % 2 == 0:
+                        title += idx
                     else:
                         title += str(StrInterpreter(
-                            i,
+                            idx,
                             self._cat,
                             make_compare=False,
                             mask_dict=self._mask_dict,
                         ).result)
-                    ii += 1
+                    counter += 1
         else:
             title = ''
 
         self._fig.suptitle(title)
 
-        for i in self._plot['SCATTER'].keys():
+        for key in self._plot['SCATTER'].keys():
             if 'LABEL' in self._plot.keys():
                 try:
-                    label = self._plot['LABEL'][i]
+                    label = self._plot['LABEL'][key]
                     s = re.split('@', label)
                     if len(s) >= 3:
                         label = s[0]
@@ -1016,21 +1000,21 @@ class SEPlot(object):
                 label = None
             if 'MARKER' in self._plot.keys():
                 try:
-                    marker = self._plot['MARKER'][i]
+                    marker = self._plot['MARKER'][key]
                 except Exception:
                     marker = '+'
             else:
                 marker = '+'
             if 'ALPHA' in self._plot.keys():
                 try:
-                    alpha = self._plot['ALPHA'][i]
+                    alpha = self._plot['ALPHA'][key]
                 except Exception:
                     alpha = None
             else:
                 alpha = None
 
             try:
-                x = self._plot['X'][i]
+                x = self._plot['X'][key]
             except Exception:
                 if len(self._plot['X']) == 1:
                     x = self._plot['X'][self._plot['X'].keys()[0]]
@@ -1040,7 +1024,7 @@ class SEPlot(object):
                         + 'they dont have the same'
                     )
             try:
-                y = self._plot['Y'][i]
+                y = self._plot['Y'][key]
             except Exception:
                 if len(self._plot['Y']) == 1:
                     y = self._plot['Y'][self._plot['Y'].keys()[0]]
@@ -1054,7 +1038,7 @@ class SEPlot(object):
                 StrInterpreter(x, self._cat, mask_dict=self._mask_dict).result,
                 StrInterpreter(y, self._cat, mask_dict=self._mask_dict).result,
                 c=StrInterpreter(
-                    self._plot['SCATTER'][i],
+                    self._plot['SCATTER'][key],
                     self._cat,
                     mask_dict=self._mask_dict,
                 ).result,
@@ -1085,12 +1069,11 @@ class SEPlot(object):
         plt.close()
 
     def _make_hist(self):
-        """Make hist
+        """Make Hist
 
         This function call pyplot.hist.
 
         """
-
         self._fig = plt.figure()
 
         if 'TITLE' in self._plot.keys():
@@ -1098,18 +1081,18 @@ class SEPlot(object):
             s = re.split('@', title)
             if len(s) >= 3:
                 title = s[0]
-                ii = 1
-                for i in s[1:-1]:
-                    if ii % 2 == 0:
-                        title += i
+                counter = 1
+                for idx in s[1:-1]:
+                    if counter % 2 == 0:
+                        title += idx
                     else:
                         title += str(StrInterpreter(
-                            i,
+                            idx,
                             self._cat,
                             make_compare=False,
                             mask_dict=self._mask_dict,
                         ).result)
-                    ii += 1
+                    counter += 1
         else:
             title = ''
 
@@ -1127,10 +1110,10 @@ class SEPlot(object):
         else:
             log = False
 
-        for i in self._plot['Y'].keys():
+        for key in self._plot['Y'].keys():
             if 'LABEL' in self._plot.keys():
                 try:
-                    label = self._plot['LABEL'][i]
+                    label = self._plot['LABEL'][key]
                     s = re.split('@', label)
                     if len(s) >= 3:
                         label = s[0]
@@ -1152,14 +1135,14 @@ class SEPlot(object):
                 label = None
             if 'COLOR' in self._plot.keys():
                 try:
-                    color = self._plot['COLOR'][i]
+                    color = self._plot['COLOR'][key]
                 except Exception:
                     color = None
             else:
                 color = None
             if 'BIN' in self._plot.keys():
                 try:
-                    bins = int(self._plot['BIN'][i])
+                    bins = int(self._plot['BIN'][key])
                 except Exception:
                     if len(self._plot['BIN']) == 1:
                         bins = int(
@@ -1169,7 +1152,7 @@ class SEPlot(object):
                 bins = 50
             if 'ALPHA' in self._plot.keys():
                 try:
-                    alpha = float(self._plot['ALPHA'][i])
+                    alpha = float(self._plot['ALPHA'][key])
                 except Exception:
                     alpha = None
             else:
@@ -1177,7 +1160,7 @@ class SEPlot(object):
 
             plt.hist(
                 StrInterpreter(
-                    self._plot['Y'][i],
+                    self._plot['Y'][key],
                     self._cat,
                     mask_dict=self._mask_dict,
                 ).result,

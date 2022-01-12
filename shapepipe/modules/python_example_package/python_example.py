@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """PYTHON EXAMPLE
 
 This module contains an example Python class.
@@ -9,6 +7,7 @@ This module contains an example Python class.
 """
 
 import time
+
 from numpy.random import randint
 
 
@@ -81,7 +80,7 @@ class PythonExample:
         content1 = self._read_file(file_name1)
         content2 = self._read_file(file_name2)
 
-        self.content = '{} and {}'.format(content1, content2)
+        self.content = f'{content1} and {content2}'
 
     def write_file(self, file_name, message):
         """Write File

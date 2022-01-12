@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """MERGE HEADERS
 
 This module merges the output "header" files of the ``split_exp_runner.py``
@@ -12,6 +10,7 @@ exposure.
 
 import os
 import re
+
 import numpy as np
 from sqlitedict import SqliteDict
 
@@ -35,7 +34,6 @@ def merge_headers(input_file_list, output_dir):
         For invalid ``output_dir`` type
 
     """
-
     if not isinstance(output_dir, str):
         raise TypeError(
             'Output directory for merge headers must be a string '

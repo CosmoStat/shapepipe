@@ -1,28 +1,27 @@
-# -*- coding: utf-8 -*-
+"""MAKE CATALOGUE
 
-"""MAKE CATALOG
-
-This module contains a class to create a shear catalog.
+This module contains a class to create a shear catalogue.
 
 :Author: Axel Guinot
 
 """
 
-from astropy import units as u
-from astropy import coordinates as coords
-from astropy.wcs import WCS
-from shapepipe.pipeline import file_io
-from sqlitedict import SqliteDict
-
 import os
 import re
+
 import numpy as np
+from astropy import coordinates as coords
+from astropy import units as u
+from astropy.wcs import WCS
+from sqlitedict import SqliteDict
+
+from shapepipe.pipeline import file_io
 
 
 def prepare_final_cat_file(output_path, file_number_string):
-    """Prepare Final Catalog File.
+    """Prepare Final Catalogue File.
 
-    Create a FITSCatalog object for the current file.
+    Create a ``FITSCatalogue`` object for the current file.
 
     Parameters
     ----------
@@ -75,16 +74,16 @@ def remove_field_name(arr, name):
 def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     """Save SExtractor Data.
 
-    Save the SExtractor catalog into the final one.
+    Save the SExtractor catalogue into the final one.
 
     Parameters
     ----------
     final_cat_file : file_io.FITSCatalogue
-        Final catalog.
+        Final catalogue
     sexcat_path : str
-        Path to SExtractor catalog to save.
+        Path to SExtractor catalogue to save.
     remove_vignet : bool
-        If True will not save the 'VIGNET' field into the final catalog.
+        If True will not save the 'VIGNET' field into the final catalogue.
 
     """
     sexcat_file = file_io.FITSCatalogue(sexcat_path, SEx_catalogue=True)
@@ -117,14 +116,14 @@ def save_sm_data(
 ):
     """Save Spread-Model Data.
 
-    Save the spread-model data into the final catalog.
+    Save the spread-model data into the final catalogue.
 
     Parameters
     ----------
     final_cat_file : file_io.FITSCatalogue
-        Final catalog.
+        Final catalogue.
     sexcat_sm_path : str
-        Path to spread-model catalog to save.
+        Path to spread-model catalogue to save.
     do_classif : bool
         If True will make a star/galaxy classification. Based on :
         class = sm + 5/3 * sm_err
@@ -134,7 +133,6 @@ def save_sm_data(
         Threshold for galaxy selection. class > gal_thresh
 
     """
-
     final_cat_file.open()
 
     sexcat_sm_file = file_io.FITSCatalogue(sexcat_sm_path, SEx_catalogue=True)
@@ -159,10 +157,10 @@ def save_sm_data(
     final_cat_file.close()
 
 
-class SaveCatalog:
-    """Save Catalog.
+class SaveCatalogue:
+    """Save Catalogue.
 
-    Class to save catalog.
+    Class to save catalogue.
 
     Parameters
     ----------
@@ -181,14 +179,14 @@ class SaveCatalog:
         cat_path=None,
         moments=False,
     ):
-        """Process Catalog.
+        """Process Catalogue.
 
         Parameters
         ----------
         mode : str
-            Run mode, options are ('ngmix', 'galsim', 'psf')
+            Run mode, options are (``'ngmix'``, ``'galsim'``, ``'psf'``)
         cat_path : str
-            Path to input catalog
+            Path to input catalogue
         moments : bool
             Opotion to run ngmix mode with moment
 
@@ -207,7 +205,7 @@ class SaveCatalog:
         else:
             raise ValueError(
                 f'Invalid process mode ({mode}) for '
-                + '``make_catalog.SaveCatalog``. Options are "ngmix", '
+                + '``make_catalogue.Savecatalogue``. Options are "ngmix", '
                 + '"galsim" or "psf".'
             )
 
@@ -260,12 +258,12 @@ class SaveCatalog:
     def _save_ngmix_data(self, ngmix_cat_path, moments=False):
         """Save ngmix Data.
 
-        Save the ngmix catalog into the final one.
+        Save the ngmix catalogue into the final one.
 
         Parameters
         ----------
         ngmix_cat_path : str
-            Path to ngmix catalog
+            Path to ngmix catalogue
 
         """
         self._key_ends = ['1M', '1P', '2M', '2P', 'NOSHEAR']
@@ -391,12 +389,12 @@ class SaveCatalog:
     def _save_galsim_shapes(self, galsim_cat_path):
         """Save GalSim Shapes.
 
-        Save the GalSim catalog into the final one.
+        Save the GalSim catalogue into the final one.
 
         Parameters
         ----------
         ngmix_cat_path : str
-            Path to ngmix catalog to save.
+            Path to ngmix catalogue to save.
 
         """
         galsim_cat_file = file_io.FITSCatalogue(galsim_cat_path)
@@ -504,12 +502,12 @@ class SaveCatalog:
     def _save_psf_data(self, galaxy_psf_path):
         """Save PSF data.
 
-        Save the PSF catalog into the final one.
+        Save the PSF catalogue into the final one.
 
         Parameters
         ----------
         galaxy_psf_path : str
-            Path to the PSF catalog to save.
+            Path to the PSF catalogue to save.
 
         """
         galaxy_psf_cat = SqliteDict(galaxy_psf_path)

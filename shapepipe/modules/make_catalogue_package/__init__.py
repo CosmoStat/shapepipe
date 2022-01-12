@@ -1,6 +1,6 @@
-"""MERGE HEADERS PACKAGE
+"""MAKE CATALOGUE PACKAGE
 
-This package contains the module for ``merge_headers``.
+This package contains the module for ``make_catalogue``.
 
 :Author: Axel Guinot
 
@@ -18,4 +18,4 @@ Module-specific config file entries
 
 """
 
-__all__ = ['merge_headers']
+__all__ = ['make_catalogue']

@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""DEPENDENCY HANDLER
+"""DEPENDENCY HANDLER.
 
 This module defines a class for handling pipeline dependencies.
 
@@ -15,7 +13,7 @@ import importlib
 
 
 class DependencyHandler(object):
-    """Dependency Handler
+    """Dependency Handler.
 
     This class manages the required Python packages and system executables
     required to run the pipeline.
@@ -46,7 +44,7 @@ class DependencyHandler(object):
 
     @property
     def depend(self):
-        """Input Dependency List"""
+        """Input Dependency List."""
         return self._depend
 
     @depend.setter
@@ -62,7 +60,7 @@ class DependencyHandler(object):
 
     @property
     def execute(self):
-        """Input Executable List"""
+        """Input Executable List."""
         return self._execute
 
     @execute.setter
@@ -78,7 +76,7 @@ class DependencyHandler(object):
 
     @staticmethod
     def _convert_to_float(string):
-        """Convert String to Float
+        """Convert String to Float.
 
         This method converts numerical strings to floats.
 
@@ -102,7 +100,7 @@ class DependencyHandler(object):
 
     @staticmethod
     def _slice_1d(array, indices):
-        """Slice 1D
+        """Slice 1D.
 
         Slice 1D list by indices.
 
@@ -123,7 +121,7 @@ class DependencyHandler(object):
 
     @classmethod
     def _slice_2d(cls, array, indices):
-        """Slice 2D
+        """Slice 2D.
 
         Slice a list of lists by indices.
 
@@ -144,7 +142,7 @@ class DependencyHandler(object):
 
     @staticmethod
     def _get_indices(array, value):
-        """Get Indices
+        """Get Indices.
 
         Get indices of array elements equal to input value.
 
@@ -168,7 +166,7 @@ class DependencyHandler(object):
 
     @classmethod
     def _slice_col_val(cls, array, col, value):
-        """Slice by Column and Value
+        """Slice by Column and Value.
 
         Slice a list of lists by elements in a given column equal to a given
         value.
@@ -192,7 +190,7 @@ class DependencyHandler(object):
 
     @staticmethod
     def _check_executable(exe_name):
-        """Check if Input is Executable
+        """Check if Input is Executable.
 
         This method checks if the input executable exists.
 
@@ -235,7 +233,7 @@ class DependencyHandler(object):
             )
 
     def _split_string(self, string):
-        """Split String
+        """Split String.
 
         This method splits the version number from the input module string.
 
@@ -268,7 +266,7 @@ class DependencyHandler(object):
         return val
 
     def _split_strings(self):
-        """Split Strings
+        """Split Strings.
 
         This method splits the input dependency modules strings.
 
@@ -280,7 +278,7 @@ class DependencyHandler(object):
         self._dependency_set = set(self._depend_arr[0])
 
     def _unique_dependencies(self):
-        """Unique Dependencies
+        """Create Unique Dependencies.
 
         This method creates a unique list of depencies.
 
@@ -306,7 +304,7 @@ class DependencyHandler(object):
             self.dependency_list.append(''.join(subset))
 
     def check_dependencies(self):
-        """Check Dependencies
+        """Check Dependencies.
 
         This method checks that the required dependencies are installed.
 
@@ -346,7 +344,7 @@ class DependencyHandler(object):
         return dependency_status_list
 
     def check_executables(self):
-        """Check Executables
+        """Check Executables.
 
         This method checks that the required executables are installed.
 

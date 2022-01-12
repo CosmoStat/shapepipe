@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
+"""UNCOMRESS FITS PACKAGE
 
-"""UNCOMRESS FITS
-
-This package contains the module for ``get_uncompress``.
+This package contains the module for ``uncompress_fits``.
 
 :Author: Axel Guinot, Martin Kilbinger <martin.kilbinger@cea.fr>
 
@@ -11,8 +9,6 @@ This package contains the module for ``get_uncompress``.
 :Input: compressed FITS file
 
 :Ouput: uncompressed FITS file
-
-:Date: 2020
 
 Description
 ===========
@@ -25,10 +21,12 @@ with a single image hdu.
 
 Module-specific config file entries
 ===================================
+
 HDU_DATA : int, optional, default=0
     HDU number of input data
 OUTPUT_PATTERN : str
     output file pattern
+
 """
 
-__all__ = ['uncompress']
+__all__ = ['uncompress_fits']

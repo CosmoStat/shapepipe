@@ -1,22 +1,19 @@
-# -*- coding: utf-8 -*-
-
 """INTERPOLATION SCRIPT
 
 This module computes the PSFs from a PSFEx model at several galaxy positions.
 
 :Author: Morgan Schmitz and Axel Guinot
 
-:Version: 1.2.1
-
 """
 
-from astropy.io import fits
-from shapepipe.pipeline import file_io
-from sqlitedict import SqliteDict
+import os
+import re
 
 import numpy as np
-import re
-import os
+from astropy.io import fits
+from sqlitedict import SqliteDict
+
+from shapepipe.pipeline import file_io
 
 try:
     import galsim.hsm as hsm
@@ -124,13 +121,13 @@ class PSFExInterpolator(object):
         Path to folder where output PSFs should be written.
     img_number : str
         File number string
-    w_log :
+    w_log : logging.Logger
         Worker log instance
     pos_params : list, optional
         Desired position parameters. If provided, there should be exactly two,
         and they must also be present in the galaxy catalog. Otherwise,
         they are read directly from the .psf file.
-    get_shapes : boolean
+    get_shapes : bool
         If True will compute shapes for the PSF model.
     star_thresh : int
         Threshold of stars under which the PSF is not interpolated.
@@ -234,7 +231,7 @@ class PSFExInterpolator(object):
             self._write_output()
 
     def _get_position_parameters(self):
-        """Get Position Parameters
+        """Get Position Parameters.
 
         Read position parameters from .psf file.
 
@@ -456,7 +453,6 @@ class PSFExInterpolator(object):
             Dictionary containing information from PFSEx .cat file.
 
         """
-
         psfex_cat = file_io.FITSCatalogue(psfex_cat_path, SEx_catalogue=True)
         psfex_cat.open()
 
@@ -531,7 +527,6 @@ class PSFExInterpolator(object):
             Path to the log file containing the WCS for each CCDs.
 
         """
-
         if os.path.exists(dot_psf_dir):
             self._dot_psf_dir = dot_psf_dir
         else:
@@ -715,13 +710,12 @@ class PSFExInterpolator(object):
                 output_dict[id_tmp] = 'empty'
                 n_empty += 1
 
-        self._w_log.info('{}/{} PSFs are empty'
-                         ''.format(n_empty, len(all_id)))
+        self._w_log.info(f'{n_empty}/{len(all_id)} PSFs are empty')
 
         return output_dict
 
     def _write_output_me(self, output_dict):
-        """Write Output Multi-Epoch
+        """Write Output Multi-Epoch.
 
         Save computed PSFs to numpy object file for multi-epoch run.
 

@@ -1,19 +1,13 @@
-# -*- coding: utf-8 -*-
+"""PASTE CAT RUNNER.
 
-"""PASTE CAT RUNNER
-
-Pipeline runner for the PasteCat package.
+Module runner for ``paste_cat``.
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>, Axel Guinot
-
-:Date: 10/2020
-
-:Package: ShapePipe
 
 """
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.pastecat_package.pastecat_script import PasteCat
+from shapepipe.modules.pastecat_package.pastecat import PasteCat
 
 
 @module_runner(
@@ -22,56 +16,64 @@ from shapepipe.modules.pastecat_package.pastecat_script import PasteCat
     file_pattern='tile_sexcat',
     file_ext='.fits',
     depends=['numpy', 'astropy'],
-    run_method='parallel'
+    run_method='parallel',
 )
-def paste_cat_runner(input_file_list, run_dirs, file_number_string,
-                     config, module_config_sec, w_log):
-
-    if config.has_option('PASTE_CAT_RUNNER', 'CHECK_COL_NAME'):
-        check_col_name = config.get('PASTE_CAT_RUNNER', 'CHECK_COL_NAME')
+def paste_cat_runner(
+    input_file_list,
+    run_dirs,
+    file_number_string,
+    config,
+    module_config_sec,
+    w_log,
+):
+    """Define The Paste Catalogue Runner."""
+    # Get config options
+    if config.has_option(module_config_sec, 'CHECK_COL_NAME'):
+        check_col_name = config.get(module_config_sec, 'CHECK_COL_NAME')
     else:
         check_col_name = None
 
-    if config.has_option('PASTE_CAT_RUNNER', 'HDU'):
-        tmp = config.getlist('PASTE_CAT_RUNNER', 'HDU')
-        hdu_no = [int(i) for i in tmp]
+    if config.has_option(module_config_sec, 'HDU'):
+        tmp = config.getlist(module_config_sec, 'HDU')
+        hdu_no = [int(idx) for idx in tmp]
         if len(hdu_no) != len(input_file_list):
             raise IndexError(
-                f'Different lengths for input file list'
-                + ' ({len(input_file_list)}) and HDU ({len(hdu_no)})'
+                'Different lengths for input file list '
+                + f'({len(input_file_list)}) and HDU ({len(hdu_no)}).'
             )
     else:
         hdu_no = None
 
-    if config.has_option('PASTE_CAT_RUNNER', 'OUTPUT_FILE_PATTERN'):
+    if config.has_option(module_config_sec, 'OUTPUT_FILE_PATTERN'):
         output_file_pattern = config.get(
-            'PASTE_CAT_RUNNER',
+            module_config_sec,
             'OUTPUT_FILE_PATTERN'
         )
     else:
         output_file_pattern = 'cat_pasted'
 
-    if config.has_option('PASTE_CAT_RUNNER', 'EXT_NAME'):
-        ext_name_list = config.getlist('PASTE_CAT_RUNNER', 'EXT_NAME')
+    if config.has_option(module_config_sec, 'EXT_NAME'):
+        ext_name_list = config.getlist(module_config_sec, 'EXT_NAME')
         if len(ext_name_list) != len(input_file_list):
             raise ValueError(
-                f'Input file list length ({len(input_file_list)})'
-                + ' and EXT_NAME list ({len(ext_name_list)})'
-                + 'need to be equal'
+                f'Input file list length ({len(input_file_list)}) '
+                + f'and EXT_NAME list ({len(ext_name_list)})'
+                + 'need to be equal.'
             )
     else:
         ext_name_list = None
 
+    # Set file extension
     file_ext = 'fits'
 
-    output_path = '{}/{}{}.{}'.format(
-        run_dirs['output'],
-        output_file_pattern,
-        file_number_string,
-        file_ext
+    # Set output path
+    output_path = (
+        f'{run_dirs["output"]}/{output_file_pattern}'
+        + f'{file_number_string}.{file_ext}'
     )
 
-    inst = PasteCat(
+    # Create rand cat class instance
+    paste_cat_inst = PasteCat(
         input_file_list,
         output_path,
         w_log,
@@ -80,6 +82,8 @@ def paste_cat_runner(input_file_list, run_dirs, file_number_string,
         hdu_no=hdu_no
     )
 
-    inst.process()
+    # Run processing
+    paste_cat_inst.process()
 
+    # No return objects
     return None, None

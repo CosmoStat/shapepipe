@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""SERIAL MODULE EXAMPLE
+"""SERIAL MODULE EXAMPLE.
 
 This module defines methods for an example serial module.
 
@@ -12,20 +10,21 @@ from shapepipe.modules.module_decorator import module_runner
 
 
 class Dummy(object):
+    """Dummy Class."""
 
     def __init__(self):
 
         pass
 
     def _read_file(self, file_name):
-
+        """Read File."""
         with open(file_name) as data_file:
             content = data_file.read().replace('\n', '')
 
         return content
 
     def read_files(self, input_file_list):
-
+        """Read Files."""
         self.content = ''
 
         for file_list in input_file_list:
@@ -33,15 +32,15 @@ class Dummy(object):
                 self.content += self._read_file(file_name)
 
     def write_file(self, file_name):
-
+        """Write Files."""
         text_file = open(file_name, 'w')
         text_file.write(self.content)
         text_file.close()
 
 
 @module_runner(
+    version='1.1',
     input_module='python_example_runner',
-    version='1.0',
     file_pattern=['numbers', 'letters', 'pyex_output'],
     file_ext=['.txt', '.txt', '.cat'],
     depends='numpy',
@@ -55,9 +54,9 @@ def serial_example_runner(
     module_config_sec,
     w_log,
 ):
-
+    """Define The Serial Example Runner."""
     output_file_name = (
-        f"{run_dirs['output']}/serial_outputfile_number_string.cat"
+        f'{run_dirs["output"]}/serial_outputfile_number_string.cat'
     )
 
     inst = Dummy()

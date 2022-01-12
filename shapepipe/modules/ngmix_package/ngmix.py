@@ -1,28 +1,24 @@
-# -*- coding: utf-8 -*-
+"""NGMIX
 
-""" NGMIX
-
-Class for ngmix shape measurement.
+This module contains a class for ngmix shape measurement.
 
 :Author: Axel Guinot
 
 """
 
-from shapepipe.pipeline import file_io
-from sqlitedict import SqliteDict
-
 import re
-
-import numpy as np
-from numpy.random import uniform as urand
-from modopt.math.stats import sigma_mad
 
 import galsim
 import ngmix
-from ngmix.observation import Observation, ObsList, MultiBandObsList
-from ngmix.fitting import LMSimple
-
+import numpy as np
 from astropy.io import fits
+from modopt.math.stats import sigma_mad
+from ngmix.fitting import LMSimple
+from ngmix.observation import MultiBandObsList, Observation, ObsList
+from numpy.random import uniform as urand
+from sqlitedict import SqliteDict
+
+from shapepipe.pipeline import file_io
 
 
 class Ngmix(object):
@@ -55,6 +51,7 @@ class Ngmix(object):
     ------
     IndexError:
         if input file list has incorrect length
+
     """
 
     def __init__(
@@ -102,9 +99,10 @@ class Ngmix(object):
 
     @classmethod
     def MegaCamFlip(self, vign, ccd_nb):
-        """ MegaCam Flip
-        MegaCam has CCDs that are upside down.
-        This function flip the postage stamp on those CCDs.
+        """MegaCam Flip
+
+        MegaCam has CCDs that are upside down. This function flip the
+        postage stamp on those CCDs.
 
         Parameters
         ----------
@@ -115,11 +113,10 @@ class Ngmix(object):
 
         Return
         ------
-        vign : numpy.ndarray
+        numpy.ndarray
             The postage stamp flip accordingly.
 
         """
-
         if ccd_nb < 18 or ccd_nb in [36, 37]:
             # swap x axis so origin is on top-right
             return np.rot90(vign, k=2)
@@ -128,17 +125,16 @@ class Ngmix(object):
             return vign
 
     def get_prior(self):
-        """ Get prior
+        """Get Prior
 
-        Return prior for the different parameters
+        Return prior for the different parameters.
 
         Return
         ------
-        prior : ngmix.priors
+        ngmix.priors
             Priors for the different parameters.
 
         """
-
         # Prior on ellipticity. Details do not matter, as long
         # as it regularizes the fit. From Bernstein & Armstrong 2014
         g_sigma = 0.4
@@ -175,7 +171,7 @@ class Ngmix(object):
         return prior
 
     def compile_results(self, results):
-        """ Compile results
+        """Compile Results
 
         Prepare the results of ngmix before saving.
 
@@ -186,7 +182,7 @@ class Ngmix(object):
 
         Returns
         -------
-        output_dict : dict
+        dict
             compiled results ready to be written to a file
 
         Raises
@@ -195,7 +191,6 @@ class Ngmix(object):
             if SNR key not found
 
         """
-
         names = ['1m', '1p', '2m', '2p', 'noshear']
         names2 = [
             'id',
@@ -307,16 +302,16 @@ class Ngmix(object):
         return output_dict
 
     def save_results(self, output_dict):
-        """ Save results
+        """Save Results
 
         Save the results into a fits file.
 
         Parameters
         ----------
-        output_dict : dict
-            Dictionary containing the results.
-        """
+        dict
+            Dictionary containing the results
 
+        """
         output_name = (
             f'{self._output_dir}/ngmix{self._file_number_string}.fits'
         )
@@ -332,15 +327,18 @@ class Ngmix(object):
     def process(self):
         """Process
 
-        Funcion to processs Ngmix
+        Funcion to processs Ngmix.
 
         Returns
         -------
-        final_res: dict
-            Dictionary containing the ngmix metacal results.
-        """
+        dict
+            Dictionary containing the ngmix metacal results
 
-        tile_cat = file_io.FITSCatalogue(self._tile_cat_path, SEx_catalogue=True)
+        """
+        tile_cat = file_io.FITSCatalogue(
+            self._tile_cat_path,
+            SEx_catalogue=True,
+        )
         tile_cat.open()
         obj_id = np.copy(tile_cat.get_data()['NUMBER'])
         tile_vign = np.copy(tile_cat.get_data()['VIGNET'])
@@ -495,7 +493,7 @@ def get_guess(
     guess_centroid=True,
     guess_centroid_unit='sky'
 ):
-    """Get guess
+    """Get Guess
 
     Get the guess vector for the ngmix shape measurement
     [center_x, center_y, g1, g2, size_T, flux]
@@ -525,7 +523,7 @@ def get_guess(
 
     Returns
     -------
-    guess : numpy.ndarray
+    numpy.ndarray
         Return the guess array : [center_x, center_y, g1, g2, size_T, flux]
 
     Raises
@@ -534,8 +532,8 @@ def get_guess(
         for error in computation of adaptive moments
     ValueError :
         for invalid unit guess types
-    """
 
+    """
     galsim_img = galsim.Image(img, scale=pixel_scale)
 
     hsm_shape = galsim.hsm.FindAdaptiveMom(galsim_img, strict=False)
@@ -621,15 +619,15 @@ def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
 
     Returns
     -------
-    fres : dict
+    dict
         results
 
     Raises
     ------
     BootGalFailure : ngmix exception
         failure to bootstrap galaxy
-    """
 
+    """
     limit = 0.1
 
     guess = np.copy(guess0)
@@ -663,7 +661,7 @@ def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
 
 
 def get_jacob(wcs, ra, dec):
-    """ Get jacobian
+    """Get Jacobian
 
     Return the jacobian of the wcs at the required position.
 
@@ -678,11 +676,10 @@ def get_jacob(wcs, ra, dec):
 
     Returns
     -------
-    galsim_jacob : galsim.wcs.BaseWCS.jacobian
+    galsim.wcs.BaseWCS.jacobian
         Jacobian of the WCS at the required position.
 
     """
-
     g_wcs = galsim.fitswcs.AstropyWCS(wcs=wcs)
     world_pos = galsim.CelestialCoord(
         ra=ra * galsim.angle.degrees,
@@ -694,7 +691,7 @@ def get_jacob(wcs, ra, dec):
 
 
 def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
-    """ Get Noise
+    """Get Noise
 
     Compute the sigma of the noise from an object postage stamp.
     Use a guess on the object size, ellipticity and flux to create a window
@@ -715,11 +712,10 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
 
     Return
     ------
-    sig_noise : float
+    float
         Sigma of the noise on the galaxy image.
 
     """
-
     img_shape = gal.shape
 
     m_weight = weight != 0
@@ -751,10 +747,10 @@ def do_ngmix_metacal(
     prior,
     pixel_scale
 ):
-    """ Do ngmix metacal
+    """Do Ngmix Metacal
 
     Do the metacalibration on a multi-epoch object and return the join shape
-    measurement with ngmix
+    measurement with ngmix.
 
     Parameters
     ---------
@@ -777,11 +773,10 @@ def do_ngmix_metacal(
 
     Returns
     -------
-    metacal_res : dict
+    dict
         Dictionary containing the results of ngmix metacal.
 
     """
-
     n_epoch = len(gals)
 
     if n_epoch == 0:

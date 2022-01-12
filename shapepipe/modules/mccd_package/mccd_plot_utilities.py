@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """MCCD PLOTS UTILITIES.
 
 This module is used to generate a series of plots from the merged validation
@@ -8,20 +6,21 @@ It plots the Meanshape plots for the merged validation catalog.
 It can also plot the rho statistics provided that the required packages are
 installed.
 
-:Author: Tobias Liaudat base on Axel Guinot's code
+:Author: Tobias Liaudat based on Axel Guinot's code
 
 """
 
-import numpy as np
-from astropy.io import fits
+import time
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import mccd.mccd_utils as mccd_utils
-import time
+import numpy as np
 import stile
 import stile.stile_utils
-from stile.sys_tests import BaseCorrelationFunctionSysTest
 import treecorr
+from astropy.io import fits
+from stile.sys_tests import BaseCorrelationFunctionSysTest
 
 # Define the backend for matplotlib
 mpl.use('agg')
@@ -643,7 +642,7 @@ def NegDash(
         first_change = np.argmax(current_sign * y < 0)
     # one last time when `first_change'==0 ie no more changes:
     if rho_nb:
-        lab = r'$\rho_{}(\theta)$'.format(rho_nb)
+        lab = fr'$\rho_{rho_nb}(\theta)$'
     else:
         lab = ''
     if current_sign > 0:
@@ -1099,8 +1098,9 @@ def rho_stats(
 
     # Ininitialize all 5 rho stats
     if rho_def == 'HSC':
-        rho_stats_fun = [stile.CorrelationFunctionSysTest('Rho{}'.format(j))
-                         for j in range(1, 6)]
+        rho_stats_fun = [
+            stile.CorrelationFunctionSysTest(f'Rho{j}') for j in range(1, 6)
+        ]
     elif rho_def == 'DES':
         rho_stats_fun = [Rho1SysTest(), DESRho2SysTest(), DESRho3SysTest(),
                          DESRho4SysTest(), DESRho5SysTest()]
@@ -1113,7 +1113,7 @@ def rho_stats(
     start = time.time()
     rho_results = [rho_stat(stilecat, config=TreeCorrConfig) for rho_stat in
                    rho_stats_fun]
-    print_fun(' > Done in {}s.'.format(time.time() - start))
+    print_fun(f' > Done in {time.time() - start}s.')
     np.save(output_path + 'rho_stat_results.npy', np.array(rho_results))
 
     # Plots

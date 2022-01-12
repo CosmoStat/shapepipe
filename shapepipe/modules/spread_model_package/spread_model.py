@@ -1,20 +1,13 @@
-# -*- coding: utf-8 -*-
-
 """SPREAD MODEL SCRIPT
 
 Class to compute the spread model, criterion to select galaxies
 
 :Author: Axel Guinot
 
-:Date: 2019, 2020
-
-:Package: ShapePipe
-
 """
 
-
-import numpy as np
 import galsim
+import numpy as np
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
@@ -22,7 +15,7 @@ from shapepipe.utilities import galaxy
 
 
 def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
-    """ Get Spread model
+    """Get Spread Model
 
     This method compute the spread moel for an object.
 
@@ -43,8 +36,8 @@ def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
         Spread model value.
     sm_err : float
         Spread model error value.
-    """
 
+    """
     # Mask invalid pixels
     m = (obj_vign > -1e29) & (weight_vign > 0)
     w = m.astype(float)
@@ -87,7 +80,7 @@ def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
 
 
 def get_model(sigma, flux, img_shape, pixel_scale=0.186):
-    """ Get model
+    """Get Model
 
     This method computes
      - an exponential galaxy model with scale radius = 1/16 FWHM
@@ -96,22 +89,22 @@ def get_model(sigma, flux, img_shape, pixel_scale=0.186):
     Parameters
     ----------
     sigma : float
-        Sigma of the PSF (in pixel units).
+        Sigma of the PSF (in pixel units)
     flux : float
-        Flux of the galaxy for the model.
+        Flux of the galaxy for the model
     img_shape : list
-        Size of the output vignet [xsize, ysize].
+        Size of the output vignet [xsize, ysize]
     pixel_scale : float, optional, default=0.186
         Pixel scale to use for the model (in arcsec)
 
     Returns
     -------
     gal_vign : numpy.ndarray
-        Vignet of the galaxy model.
+        Vignet of the galaxy model
     psf_vign : numpy.ndarray
-        Vignet of the PSF model.
-    """
+        Vignet of the PSF model
 
+    """
     # Get scale radius
     scale_radius = (
         1 / 16 * galaxy.sigma_to_fwhm(sigma, pixel_scale=pixel_scale)
@@ -143,7 +136,7 @@ def get_model(sigma, flux, img_shape, pixel_scale=0.186):
 
 
 class SpreadModel(object):
-    """SpreadModel class.
+    """SpreadModel Class
 
     Parameters
     ----------
@@ -162,6 +155,7 @@ class SpreadModel(object):
          'new' will create a new catalog with : [number, mag, sm, sm_err]
          'add' will output a copy of the input SExtractor with the column sm
           and sm_err.
+
     """
 
     def __init__(
@@ -183,9 +177,10 @@ class SpreadModel(object):
 
     def process(self):
         """Process
-        Process the spread model computation
-        """
 
+        Process the spread model computation
+
+        """
         # Get data
         sex_cat = file_io.FITSCatalogue(self._sex_cat_path, SEx_catalogue=True)
         sex_cat.open()
@@ -267,20 +262,20 @@ class SpreadModel(object):
         Parameters
         ----------
         sm : numpy.ndarray
-            Value of the spread model for all objects.
+            Value of the spread model for all objects
         sm_err : numpy.ndarray
-            Value of the spread model error for all objects.
+            Value of the spread model error for all objects
         mag : numpy.ndarray
-            Magnitude of all objects (only for new catalog).
+            Magnitude of all objects (only for new catalog)
         number : numpy.ndarray
-            Id of all objects (only for new catalog).
+            Id of all objects (only for new catalog)
 
         Raises
         ------
         ValueError
             For incorrect output mod
-        """
 
+        """
         if self._output_mode == 'new':
             new_cat = file_io.FITSCatalogue(
                 self._output_path,

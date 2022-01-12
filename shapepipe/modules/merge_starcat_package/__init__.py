@@ -1,12 +1,21 @@
-# -*- coding: utf-8 -*-
-
 """MERGE STARCAT MODULE
 
-This module contains methods to merge MCCD star catalogues
-for validation
+This package contains the module for ``merge_starcat``.
 
 :Author: Tobias Liaudat, Martin Kilbinger
 
+:Parent module:
+
+:Input:
+
+:Output:
+
+Description
+===========
+
+Module-specific config file entries
+===================================
+
 """
 
-__all__ = ['merge']
+__all__ = ['merge_starcat']

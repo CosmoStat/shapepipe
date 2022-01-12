@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """INTERPOLATION SCRIPT
 
 This module computes the PSFs from a MCCD model at several galaxy positions.
@@ -9,10 +7,13 @@ This module computes the PSFs from a MCCD model at several galaxy positions.
 """
 
 import os
-import numpy as np
-from shapepipe.pipeline import file_io as sc
-from sqlitedict import SqliteDict
+
 import mccd
+import numpy as np
+from sqlitedict import SqliteDict
+
+from shapepipe.pipeline import file_io as sc
+
 try:
     import galsim.hsm as hsm
     from galsim import Image

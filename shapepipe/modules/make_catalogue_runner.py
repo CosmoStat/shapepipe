@@ -1,26 +1,24 @@
-# -*- coding: utf-8 -*-
+"""MAKE CATALOGUE RUNNER.
 
-"""MAKE CATALOG RUNNER
-
-Module runner for ``make_catalog``.
+Module runner for ``make_catalogue``.
 
 :Author: Axel Guinot
 
 """
 
+from shapepipe.modules.make_catalogue_package import make_catalogue as mc
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.make_catalog_package import make_catalog as mc
 from shapepipe.utilities.cfis import remove_common_elements
 
 
 @module_runner(
+    version='1.1',
     input_module=[
         'sextractor_runner',
         'spread_model_runner',
         'psfex_interp_runner',
         'ngmix_runner',
     ],
-    version='1.1',
     file_pattern=[
         'tile_sexcat',
         'sexcat_sm',
@@ -30,7 +28,7 @@ from shapepipe.utilities.cfis import remove_common_elements
     file_ext=['.fits', '.fits', '.sqlite', '.fits'],
     depends=['numpy', 'sqlitedict'],
 )
-def make_catalog_runner(
+def make_catalogue_runner(
     input_file_list,
     run_dirs,
     file_number_string,
@@ -38,7 +36,7 @@ def make_catalog_runner(
     module_config_sec,
     w_log,
 ):
-
+    """Define The Make Catalogue Runner."""
     # Set input file paths
     (
         tile_sexcat_path,
@@ -110,7 +108,7 @@ def make_catalog_runner(
         remove_common_elements(final_cat_file, tile_list_path)
 
     # Save shape data
-    sc_inst = mc.SaveCatalog(final_cat_file)
+    sc_inst = mc.SaveCatalogue(final_cat_file)
     w_log.info('Save shape measurement data')
     for shape_type in shape_type_list:
         w_log.info(f'Save {shape_type.lower()} data')

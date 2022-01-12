@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
 """MERGE SCRIPT
 
 Class to merge separate catalogues.
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>
-
-:Date: 2020
 
 """
 
@@ -21,7 +18,8 @@ from shapepipe.pipeline import file_io
 
 class MergeSep(object):
     """Merge Sep
-    Merge Separate Catalogues
+
+    Merge separate catalogues.
 
     Parameters
     ----------
@@ -33,7 +31,7 @@ class MergeSep(object):
         file base name
     file_ext : str
         file extension
-    output_dir : string
+    output_dir : str
         output directory
     n_split_max : int
         number of separate input catalogues
@@ -41,6 +39,7 @@ class MergeSep(object):
         action when warning occurs, one in 'error', 'warning'
     w_log : logging.Logger
         log file
+
     """
 
     def __init__(
@@ -68,8 +67,8 @@ class MergeSep(object):
         """Process
 
         Process merging of separate catalogues.
-        """
 
+        """
         # Set warning action
         warnings.simplefilter(self._warning, UserWarning)
 
