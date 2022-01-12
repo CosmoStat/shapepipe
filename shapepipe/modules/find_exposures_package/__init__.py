@@ -35,5 +35,6 @@ identification (``HISTORY``), and the exposure file patterns.
 Module-specific entries
 =======================
 None
+"""
 
 __all__ = ['find_exposures.py']
