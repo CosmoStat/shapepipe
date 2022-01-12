@@ -118,6 +118,7 @@ class RandomCat():
         else:
             # Compute number of objects from density
             n_obj = int(self._n_rand / area_deg2 * area_deg2_eff / area_deg2)
+            print('MKDEBUG ', n_obj, self._n_rand, area_deg2, area_deg2_eff)
 
         self._w_log.info(f'Creating {n_obj} random objects')
 
