@@ -11,6 +11,7 @@ This module contains sub-modules that can be run with ShapePipe.
 __all__ = [
     'find_exposures_package',
     'mask_package',
+    'merge_headers_package',
     'merge_starcat_package',
     'merge_sep_cats_package',
     'MCCD_package',
@@ -36,9 +37,9 @@ __module_list__ = [
     'mask_runner',
     'mask_runner_exp',
     'match_external_runner',
+    'merge_headers_runner',
     'merge_starcat_runner',
     'merge_sep_cats_runner',
-    'merge_headers_runner',
     'ngmix_runner',
     'paste_cat_runner',
     'psfex_runner',
