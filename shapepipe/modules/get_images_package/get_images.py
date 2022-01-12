@@ -177,7 +177,7 @@ class GetImages(object):
             raise ValueError(
                 f'Lists INPUT_PATH ({len(input_dir)}), '
                 + f'INPUT_FILE_PATTERN ({len(self._input_file_pattern)}), '
-                + f'INPUT_FILE_EXT ({llen(self._input_file_ext)}), '
+                + f'INPUT_FILE_EXT ({len(self._input_file_ext)}), '
                 + f'OUTPUT_FILE_PATTERN ({len(self._output_file_pattern)}) '
                 + 'need to have equal length'
             )
