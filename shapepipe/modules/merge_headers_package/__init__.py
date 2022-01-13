@@ -8,7 +8,7 @@ This package contains the module(s) for ``merge_headers``.
 
 :Parent module: ``split_exp_runner``
 
-:Input: npy files with single-exposure header information
+:Input: numpy binary files (``.npy``) with single-exposure header information
 
 :Output: single SQL file with combined header information
 
