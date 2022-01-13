@@ -10,7 +10,7 @@ This package contains the module for ``split_exp``.
 
 :Input: single-exposure image, weight, or flag file
 
-:Output: single-exposure single-HDU file; header numpy binary file (``.npy``) if input is image
+:Output: single-exposure single-HDU file; header numpy binary file (``.npy``) if input is an image
 
 Description
 ===========
