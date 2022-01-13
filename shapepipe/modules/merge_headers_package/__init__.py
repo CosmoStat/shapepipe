@@ -21,6 +21,7 @@ single-exposure images. The merged information is saved as a single SQL file.
 
 Module-specific config file entries
 ===================================
+
 OUTPUT_PATH : str, optional
     overrides the module output dir under ``[FILE]:OUTPUT_DIR``
 """
