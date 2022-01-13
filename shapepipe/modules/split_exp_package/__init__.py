@@ -31,6 +31,7 @@ OUTPUT_SUFFIX : (list of) str
     - ``flag`` : data is save as ``int16``
 N_HDU : int
     number of HDUs (CCDs) of the input mosaic FITS file
+
 """
 
 __all__ = ['split_exp_script.py']
