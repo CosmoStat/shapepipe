@@ -33,7 +33,8 @@ __installs__ = [
 __tests__ = [
     'pytest',
     'pytest-cov',
-    'pytest-pycodestyle'
+    'pytest-pycodestyle',
+    'pytest-pydocstyle',
 ]
 
 
