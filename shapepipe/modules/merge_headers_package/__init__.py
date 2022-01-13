@@ -24,6 +24,7 @@ Module-specific config file entries
 
 OUTPUT_PATH : str, optional
     overrides the module output dir under ``[FILE]:OUTPUT_DIR``
+
 """
 
 __all__ = ['merge_headers']
