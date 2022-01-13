@@ -66,13 +66,13 @@ def mccd_interp_runner(
         if not os.path.exists(psf_model_path):
             error_msg = "The corresponding PSF model was not not found."
             w_log.info(
-                f"Error message: {error_msg}.\n On catalog with"
+                f"Error message: {error_msg}.\n On catalogue with"
                 + f" id: {file_number_string}."
             )
 
             return None, None
 
-        w_log.info('Interpolating catalog %s..' % file_number_string)
+        w_log.info('Interpolating catalogue %s..' % file_number_string)
         output_msg = aux_mccd.mccd_interpolation_pipeline(
             mccd_model_path=psf_model_path,
             galcat_path=galcat_path,
@@ -84,7 +84,7 @@ def mccd_interp_runner(
 
         if output_msg is not None:
             w_log.info(
-                f"Error message: {output_msg}.\n On catalog with"
+                f"Error message: {output_msg}.\n On catalogue with"
                 + f" id: {file_number_string}."
             )
 

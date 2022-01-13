@@ -28,7 +28,7 @@ class SETools(object):
     Parameters
     ----------
     cat: str, numpy.ndarray
-        Path to SExtractor catalog (FITS_LDAC format) or numpy.ndarray
+        Path to SExtractor catalogue (FITS_LDAC format) or numpy.ndarray
         (structured array)
     output_dir: str
         Path to pipeline result directory
@@ -291,7 +291,7 @@ class SETools(object):
         """Save Mask.
 
         This function will apply a mask on the data and save them into a new
-        SExtractor catalog like fits file.
+        SExtractor catalogue like fits file.
 
         Parameters
         ----------
@@ -333,8 +333,8 @@ class SETools(object):
     def save_new_cat(self, new_cat, output_path, ext_name='LDAC_OBJECTS'):
         """Save New Catalogue.
 
-        This function create a new catalog with a specific format
-        (fits bin table, SExtractor like fits catalog or ASCII).
+        This function create a new catalogue with a specific format
+        (fits bin table, SExtractor like fits catalogue or ASCII).
 
         Parameters
         ----------
@@ -700,7 +700,7 @@ class SEPlot(object):
     ----------
     plot_dict : dict
         Dictionary containing the parameters for the plot
-    catalog : numpy.recarray or astropy.fits.fitsrec
+    catalogue : numpy.recarray or astropy.fits.fitsrec
         Array containing the full data
     output_path : str
         Path for the output
@@ -712,7 +712,7 @@ class SEPlot(object):
     ValueError
         If plot_dict not provided
     ValueError
-        If catalog not provided
+        If catalogue not provided
     ValueError
         If output_path not provided
     ValueError
@@ -730,8 +730,8 @@ class SEPlot(object):
 
         if plot_dict is None:
             raise ValueError('plot_dict not provided')
-        if catalog is None:
-            raise ValueError('catalog not provided')
+        if catalogue is None:
+            raise ValueError('catalogue not provided')
         if output_path is None:
             raise ValueError('output_path not provided')
 

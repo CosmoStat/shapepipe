@@ -152,7 +152,7 @@ class SpreadModel(object):
         pixel scale in arcsec
     output_mode : str
         must be in ['new', 'add'].
-         'new' will create a new catalog with : [number, mag, sm, sm_err]
+         'new' will create a new catalogue with : [number, mag, sm, sm_err]
          'add' will output a copy of the input SExtractor with the column sm
           and sm_err.
 
@@ -266,9 +266,9 @@ class SpreadModel(object):
         sm_err : numpy.ndarray
             Value of the spread model error for all objects
         mag : numpy.ndarray
-            Magnitude of all objects (only for new catalog)
+            Magnitude of all objects (only for new catalogue)
         number : numpy.ndarray
-            Id of all objects (only for new catalog)
+            Id of all objects (only for new catalogue)
 
         Raises
         ------

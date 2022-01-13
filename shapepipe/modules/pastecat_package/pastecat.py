@@ -73,7 +73,7 @@ class PasteCat(object):
 
         for i, input_file in enumerate(self._input_file_list):
 
-            self._w_log.info(f'Pasting catalog \'{input_file}\'')
+            self._w_log.info(f'Pasting catalogue \'{input_file}\'')
 
             # Read input data
             cat = file_io.FITSCatalogue(input_file)

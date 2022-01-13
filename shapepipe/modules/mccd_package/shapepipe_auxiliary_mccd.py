@@ -49,7 +49,7 @@ def mccd_preprocessing_pipeline(
         Minimum number of stars in order to preprocess the CCD.
         Default is ``20``.
     separator: str
-        Separator string that separates the catalog id and the CCD id.
+        Separator string that separates the catalogue id and the CCD id.
         Default is ``'-'``.
     CCD_id_filter_list: list of int or None
         A list that correspond to the CCDs that should be preprocessed.
@@ -311,7 +311,7 @@ def mccd_validation_pipeline(
         Name for validation file
 
     """
-    w_log.info(f"Validating catalog {file_number_string}..")
+    w_log.info(f"Validating catalogue {file_number_string}..")
 
     # Get MCCD parameters
     save_extension = '.fits'
@@ -336,7 +336,7 @@ def mccd_validation_pipeline(
         # Save validation dictionary to fits file
         mccd.mccd_utils.save_to_fits(val_dict, val_saving_path)
 
-        w_log.info(f"Validation catalog < {val_saving_path} > saved.")
+        w_log.info(f"Validation catalogue < {val_saving_path} > saved.")
 
     else:
         w_log.info(

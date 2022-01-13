@@ -120,7 +120,7 @@ class MCCDinterpolator(object):
     ):
         # Path to PSFEx output file
         self._dotpsf_path = dotpsf_path
-        # Path to catalog containing galaxy positions
+        # Path to catalogue containing galaxy positions
         self._galcat_path = galcat_path
         # Path to output file to be written
         self._output_path = output_path + '/galaxy_psf'

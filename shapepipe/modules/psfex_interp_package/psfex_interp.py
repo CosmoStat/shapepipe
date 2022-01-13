@@ -157,7 +157,7 @@ class PSFExInterpolator(object):
             self._dotpsf_path = dotpsf_path
         else:
             raise ValueError(f'Cound not find file {dotpsf_path}.')
-        # Path to catalog containing galaxy positions
+        # Path to catalogue containing galaxy positions
         if os.path.isfile(galcat_path):
             self._galcat_path = galcat_path
         else:
