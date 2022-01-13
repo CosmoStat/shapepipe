@@ -247,8 +247,8 @@ class SpreadModel(object):
             spread_model_final.append(obj_sm)
             spread_model_err_final.append(obj_sm_err)
 
-        spread_model_final = np.array(spread_model_final)
-        spread_model_err_final = np.array(spread_model_err_final)
+        spread_model_final = np.array(spread_model_final, dtype='float64')
+        spread_model_err_final = np.array(spread_model_err_final, dtype='float64')
 
         psf_cat.close()
 
