@@ -22,6 +22,7 @@ that each resulting file only contains data from one CCD.
 
 Module-specific config file entries
 ===================================
+
 OUTPUT_SUFFIX : (list of) str
     output file name prefixes. Special strings are:
     - ``image`` : (1) header is saved to npy file; (2) header WCS is saved in
