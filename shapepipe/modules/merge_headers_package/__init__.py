@@ -6,7 +6,7 @@ This package contains the module(s) for ``merge_headers``.
 
 :Author: Axel Guinot
 
-:Parent module: split_exp_runner
+:Parent module: ``split_exp_runner``
 
 :Input: npy files with single-exposure header information
 
