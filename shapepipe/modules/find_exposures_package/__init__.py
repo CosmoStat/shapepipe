@@ -13,9 +13,9 @@ This package contains the module for ``find_exposures``.
 Description
 ===========
 
-Identify the exposure images that where co-added to produce the tiles. The
-image names are listed in the tile FITS header, which is read by this module to
-extract the names.
+Identify the exposure images that where co-added to produce the tiles
+(stacked image). The image names are listed in the tile FITS header,
+which is read by this module to extract the names.
 
 The output ASCII file contains the image base names (without file extension).
 

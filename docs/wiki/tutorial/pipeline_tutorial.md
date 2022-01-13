@@ -209,72 +209,16 @@ Next, the output file pattern without the tile number is specified in the config
 be different from the original image names to be consistent with the `ShapePipe` naming conventions, e.g.~no
 dots other than for the file extension.
 
-After that we name the copy or download method, for example `vos`. Additional command options can be indicated with the key `COPY_OPTIONS`. Here is the example:
-```ini
-[GET_IMAGES_RUNNER]
-FILE_PATTERN = tile_numbers
-FILE_EXT = .txt
-NUMBERING_SCHEME =
-INPUT_PATH = vos:cfis/tiles_DR2, vos:cfis/tiles_DR2
-INPUT_FILE_PATTERN = CFIS.000.000.r, CFIS.000.000.r.weight
-INPUT_FILE_EXT = .fits, .fits.fz
-INPUT_NUMBERING = \d{3}\.\d{3}
-OUTPUT_FILE_PATTERN = CFIS_image-, CFIS_weight-
-COPY = vos
-```
-
-On success, tile images and compressed tile weights are created, either as physical files or symbolic links.
-
 ### Uncompress tile weights
 
-**Module:** uncompress_fits_images_runner  
-**Parent:**  get_image_runner    
-**Input:** compressed tile weight  
-**Output:** tile weight
-
 The compressed stack weights (.fits.fz/.fitsfz files) need to be uncompressed before further processing. An example config file is `$SP_CONFIG/config_unfz_w.ini`. Except from the input file pattern and extension (see `File Options` in the [general pipeline readme](README.rst)), we need to specify the output file patern (can be the same as the input), and the HDU number of the weight image data:
-```ini
-[UNCOMPRESS_FITS_IMAGE_RUNNER]
-FILE_PATTERN = CFIS_weight
-FILE_EXT = .fitsfz
-OUTPUT_PATTERN = CFIS_weight
-HDU_DATA = 1
-```
-
-On success, the uncompressed weight image with the correct (only) HDU is written.
 
 ### Find single exposures
-
-```
-[FIND_EXPOSURE_RUNNER]
-INPUT_DIR = last:get_images_runner
-FILE_PATTERN = CFIS_image
-FILE_EXT = .fits
-NUMBERING_SCHEME = -000-000
-```
 
 
 ### Retrieve single exposures
 
-**Module:** get_image_runner2  
-**Parent:**  find_exposure_runner  
-**Input:** single-exposure name list  
-**Output:** tile image, compressed tile weight
-
-This process works as the one to download tiles, see [Download tiles](#download-tiles). The single-exposure names are read from the output ascii file of the previous module (`find-exposure-runner`). Single-exposure images, weights, and flags are retrieved. Here is the example `$SP_CONFIG/config_tile_Gie.ini` relevant section:
-```ini
-[GET_IMAGES_RUNNER2]
-INPUT_DIR = last:find_exposures_runner
-FILE_PATTERN = exp_numbers
-FILE_EXT = .txt
-NUMBERING_SCHEME = -000-000 
-INPUT_PATH = vos:cfis/pitcairn, vos:cfis/weights, vos:cfis/flags
-INPUT_FILE_PATTERN = 000000, 000000.weight, 000000.flag
-INPUT_FILE_EXT = .fits.fz, .fits.fz, .fits.fz
-INPUT_NUMBERING = \d{6}
-OUTPUT_FILE_PATTERN = image-, weight-, flag-
-RETRIEVE = vos
-```
+This process works as the one to download tiles, see [Download tiles](#download-tiles). The single-exposure names are read from the output ascii file of the previous module (`find-exposure-runner`). Single-exposure images, weights, and flags are retrieved. Here is the example `$SP_CONFIG/config_tile_Gie.ini` relevant section.
 
 On sucess, single-exposure images, weights, and flags are downloaded, or links to existing files are created.
 
@@ -301,31 +245,8 @@ Alternatively each module can be executed by a separate `ShapePipe` call. The co
 
 ### Split images
 
-**Module:** split_exp_runner   
-**Parent:**  get_images_runner2  
-**Input:** single-exposure images, weights, flags  
-**Output:** single_exposure single-CCD files for input images, weights, flags; SQL files with single-exposure header information
-
 The first step of single-exposure processing is to split the single-exposures images into
 files that contain one CCD each.
-
-The example config file is `$SP_CONFIG/config_split_exp.ini`.
-On input, we need to specify the three input types (images, weights, flags),
-and their extensions. On output, the same three file types are required.
-And we specify the number of CCDs, which for MegaCAM CCDs is 40:
-```ini
-[SPLIT_EXP_RUNNER]
-INPUT_DIR = last:get_images_runner2
-NUMBERING_SCHEME = -0000000
-FILE_PATTERN = image, weight, flag
-FILE_EXT = .fitsfz, .fitsfz, .fitsfz
-OUTPUT_SUFFIX = image, weight, flag
-N_HDU = 40
-```
-
-On success, files according to the three output types are created. In addition, the FITS headers of all input
-single-exposure images are written to the same output directory, as SQL numpy files. The main purpose
-is to save the image WCS information for quick access lateron.
 
 ### Merge WCS headers
 
