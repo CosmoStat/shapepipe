@@ -152,9 +152,15 @@ class SpreadModel(object):
         pixel scale in arcsec
     output_mode : str
         must be in ['new', 'add'].
-         'new' will create a new catalogue with : [number, mag, sm, sm_err]
-         'add' will output a copy of the input SExtractor with the column sm
-          and sm_err.
+
+    Notes
+    -----
+    For the ``output_mode``:
+
+    - ``'new'`` will create a new catalogue with :
+      ``[number, mag, sm, sm_err]``
+    - ``'add'`` will output a copy of the input SExtractor with the column sm
+      and sm_err.
 
     """
 

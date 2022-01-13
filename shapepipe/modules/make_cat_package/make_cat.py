@@ -125,7 +125,7 @@ def save_sm_data(
     sexcat_sm_path : str
         Path to spread-model catalogue to save.
     do_classif : bool
-        If True will make a star/galaxy classification. Based on :
+        If True will make a star/galaxy classification. Based on
         class = sm + 5/3 * sm_err
     star_thresh : float
         Threshold for star selection. |class| < star_thresh

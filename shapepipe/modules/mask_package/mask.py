@@ -31,7 +31,7 @@ class Mask(object):
     weight_path : str
         Path to the weight image (fits format)
     config_filepath : str
-        Path to the *.mask config file
+        Path to the ``.mask`` config file
     output_dir : str
         Path to the output directory
     hdu : int, optional, default = 0

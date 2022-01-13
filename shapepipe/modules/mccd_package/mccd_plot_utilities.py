@@ -679,7 +679,7 @@ def neg_dash(
     This function is for making plots with vertical errorbars,
     where negative values are shown in absolute value as dashed lines.
     The resulting plot can either be saved by specifying a file name as
-    `plot_name', or be kept as a pyplot instance (for instance to combine
+    ``plot_name``, or be kept as a pyplot instance (for instance to combine
     several neg dashes).
 
     Parameters

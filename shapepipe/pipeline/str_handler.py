@@ -437,8 +437,8 @@ class StrInterpreter(object):
         float
             Result of the operation
 
-        Note
-        ----
+        Notes
+        -----
         It's used as a recursive function
 
         """
@@ -546,8 +546,8 @@ class StrInterpreter(object):
         float
             Value of the parameter. Or float
 
-        Note
-        ----
+        Notes
+        -----
         You can't perform operations here!
 
         """

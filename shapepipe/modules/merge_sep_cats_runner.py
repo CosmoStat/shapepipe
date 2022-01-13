@@ -3,7 +3,7 @@
 Module runner for ``merge_sep_cats``.
 
 :Author: Morgan Schmitz, Axel Guinot,
-Martin Kilbinger <martin.kilbinger@cea.fr>
+    Martin Kilbinger <martin.kilbinger@cea.fr>
 
 """
 

@@ -129,8 +129,8 @@ class VignetMaker(object):
         image_path : str
             Path to the image from where the stamp are created.
 
-        Return
-        ------
+        Returns
+        -------
         numpy.ndarray
             New positions in pixel coordinates.
 

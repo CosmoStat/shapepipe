@@ -561,7 +561,7 @@ class FileHandler(object):
 
         1. Look for properties in module section of the config file,
         2. look for default properties in the file handler, which sources the
-        ``[FILE]`` section of the config file,
+           ``[FILE]`` section of the config file,
         3. look for default properties in the module runner definition.
 
         In other words, module runner definitions will only be used if the
@@ -1008,7 +1008,7 @@ class FileHandler(object):
         ext : str
             File extension
 
-        Retunrs
+        Returns
         -------
         str
             File name

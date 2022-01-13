@@ -111,8 +111,8 @@ class Ngmix(object):
         ccd_nb : int
             Id of the ccd containing the postage stamp.
 
-        Return
-        ------
+        Returns
+        -------
         numpy.ndarray
             The postage stamp flip accordingly.
 
@@ -129,8 +129,8 @@ class Ngmix(object):
 
         Return prior for the different parameters.
 
-        Return
-        ------
+        Returns
+        -------
         ngmix.priors
             Priors for the different parameters.
 
@@ -710,8 +710,8 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
     thresh : float, optional, default=1.2
         Threshold to cut the window function. Cut = thresh * sig_noise
 
-    Return
-    ------
+    Returns
+    -------
     float
         Sigma of the noise on the galaxy image.
 

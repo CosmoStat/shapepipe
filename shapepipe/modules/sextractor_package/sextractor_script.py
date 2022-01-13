@@ -281,9 +281,10 @@ class SExtractorCaller():
         use_detect_weight: bool
             Weither a detection weight is provided
 
-        Raise
-        -----
+        Raises
+        ------
         ValueError
+            For invalid detection weight
 
         """
         extra = 1
@@ -428,8 +429,8 @@ class SExtractorCaller():
         exec_path: str
             Path to SExtractor executable
 
-        Return
-        ------
+        Returns
+        -------
         command_line: str
             Full command line to call SExtractor
 
