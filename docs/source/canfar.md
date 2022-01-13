@@ -1,13 +1,3 @@
-[Home](./shapepipe.md) | [Environments](./environment.md)
-
-Authors:
-
-Sam Farrens <samuel.farrens@cea.fr>
-
-Martin Kilbinger <martin.kilbinger@cea.fr>
-
-Axel Guinot <axel.guinot@cea.fr>
-
 # CANFAR Set Up
 
 Here are some instructions on how to set up a VM on CANFAR to run the pipeline.
@@ -27,26 +17,26 @@ Here are some instructions on how to set up a VM on CANFAR to run the pipeline.
 
 The following steps need to be done to get access to all CANFAR and VOS services:
 
-1. Demand access to CADC (Canadian Astronomy Data Center) 
+1. Demand access to CADC (Canadian Astronomy Data Center)
 
    Go to https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/auth/request.html and fill out the form.
 
 2. Demand access to CANFAR
 
-   Send an email to [CANFAR support](support@canfar.net) and include:
+   Send an email to [CANFAR support](mailto:support@canfar.net) and include:
    * your CADC account name;
    * a rough amount of required resources (storage capacity and processing capabilities), and if you need batch processing;
    * a few sentences describing what you want to do.
 
 3. Access to the VM system
 
-   Send a mail to [Sebastian Fabbro](sebfabbro@gmail.com) with you ssh public key to ask access to the batch system
+   Send a mail to [Sebastian Fabbro](mailto:sebfabbro@gmail.com) with you ssh public key to ask access to the batch system
    and the `shapepipe2` virtual machine (see below).
 
 4. Access to the UNIONS/CFIS VOSPACE
 
    If you want to use UNIONS/CFIS data, read the [data access rules](https://www.cfht.hawaii.edu/Science/CFIS/cfisaccess.html).
-   Then, write an email to the UNIONS [Steering Group](unions-sg@cfht.hawaii.edu) and include:
+   Then, write an email to the UNIONS [Steering Group](mailto:unions-sg@cfht.hawaii.edu) and include:
    * brief introduction of your academic status and affiliation; if you are a PhD or master student, please say so, and include
      your supervisor's name;
    * brief description of what your plan is within UNIONS/CFIS;
@@ -55,7 +45,7 @@ The following steps need to be done to get access to all CANFAR and VOS services
 
    If you are already a UNIONS/CFIS member, but don't have access to the UNIONS/CFIS VOSPACE, write an email to
    Stephen Gwyn (Stephen.Gwyn@nrc-cnrc.gc.ca) with you CADC user name, and ask for access.
-   
+
 
 
 ## Current Set Up
@@ -225,7 +215,7 @@ the VM is available for further use, and you can skip [ahead](#use-the-vm).
 The batch system is a server where jobs can be submitted to the CANFAR cluster using a previously defined snapshot. It also serves
 to manage and monitor jobs.
 
-> Note: You will have to request access from [Sebastian Fabbro](sebfabbro@gmail.com) to the batch system before you can connect.
+> Note: You will have to request access from [Sebastian Fabbro](mailto:sebfabbro@gmail.com) to the batch system before you can connect.
 
 ### Connect and initialise
 
@@ -273,7 +263,7 @@ to manage and monitor jobs.
 ### Submit a general example job
 
 We recommend to go through this example to understand how the job submission system works. If you only want to submit
-a CFIS job, you may skip [ahead](#).
+a CFIS job, you may skip ahead.
 
 1. Create a bash program script.
 
@@ -302,7 +292,7 @@ a CFIS job, you may skip [ahead](#).
 
     The job submission file defines the bash script to be run (*i.e.* the bash script created above), the corresponding outputs and the computational requirements for the job.
 
-    ```txt
+    ```
     executable     = shapepipe.bash
 
     output         = shapepipe.out
@@ -361,7 +351,7 @@ For the job submission script we have the option to create it by hand, or automa
 1. Create job submission script by hand.
 
    Here is an example of a job submission script:
-   ```txt
+   ```
    executable     = /path/to/shapepipe/scripts/sh/job_sp.bash
 
    output         = log_sp_tile_$(arguments).out
@@ -487,7 +477,7 @@ executable bash script is set up correctly and runs without errors.
    ```
    In case the script needs to write to VM-directories in $VM_ROOT,
    you can create symbolic links to /mnt/scratch.
-   
+
    To run the example from above of four tiles, type
    ```bash
    bash canfar_sp.bash 255.287 256.287 258.286 259.286

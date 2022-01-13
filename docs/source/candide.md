@@ -1,5 +1,3 @@
-[Home](./shapepipe.md) | [Environments](./environment.md)
-
 # CANDIDE Set Up
 
 > Environment Status Notes  
@@ -126,7 +124,7 @@ In this script you can specify:
 
 ### Example SMP Script
 
-[`candide_smp.sh`](../../example/pbs/candide_smp.sh)
+[`candide_smp.sh`](https://github.com/CosmoStat/shapepipe/example/pbs/candide_smp.sh)
 
 ```bash
 #!/bin/bash
@@ -166,7 +164,7 @@ exit 0
 
 ### Example MPI Script
 
-[`candide_mpi.sh`](../../example/pbs/candide_mpi.sh)
+[`candide_mpi.sh`](https://github.com/CosmoStat/shapepipe/example/pbs/candide_mpi.sh)
 
 ```bash
 #!/bin/bash

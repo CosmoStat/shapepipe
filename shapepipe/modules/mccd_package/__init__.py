@@ -13,6 +13,8 @@ This package contains the modules for ``mccd``.
 Description
 ===========
 
+:cite:`liaudat:2021`
+
 Module-specific config file entries
 ===================================
 
