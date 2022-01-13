@@ -13,9 +13,6 @@ This package contains the module for ``merge_headers``.
 Description
 ===========
 
-===================================
-
-=======
 This pipeline module merges the WCS information (image transformation and
 distortions, computed during astrometrical calibration) for each CCD of
 single-exposure images. The merged information is saved as a single SQL file.

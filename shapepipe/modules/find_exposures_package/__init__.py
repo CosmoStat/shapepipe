@@ -24,6 +24,7 @@ identification (``HISTORY``), and the exposure file patterns.
 
 Module-specific config file entries
 ===================================
+
 None
 
 """
