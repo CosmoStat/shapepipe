@@ -25,7 +25,7 @@ Module-specific config file entries
 
 OUTPUT_SUFFIX : (list of) str
     output file name prefixes. Special strings are:
-    - ``image`` : (1) header is saved to npy file; (2) header WCS is saved in
+    - ``image`` : (1) header is saved to numpy binary file (``.npy``); (2) header WCS is saved in
       output FITS file header; (3) header WCS coordinates are
       transformed from pv to sip using the ``sip_tpv`` package
     - ``flag`` : data is save as ``int16``
