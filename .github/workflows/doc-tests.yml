@@ -35,9 +35,6 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: api-docs
-<<<<<<< HEAD
           retention-days: 14
-=======
->>>>>>> 2421c8ba0eaa0c1e0a243df846b347c69719c0e8
           path: |
             docs/_build
