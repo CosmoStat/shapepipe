@@ -332,7 +332,6 @@ def main(argv=None):
             d = np.concatenate((d, dd))
         except:
             print(f'Error while adding file \'{idx}\', {len(dd)} objects not in final cat')
-            raise
 
     # Save merged catalogue as numpy binary file
     if param.verbose:
