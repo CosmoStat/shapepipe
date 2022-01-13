@@ -84,5 +84,3 @@ prepare_tiles_for_final
 ## Merge final output files to single mother catalog
 input_final=output/run_sp_combined/make_catalog_runner/output
 merge_final_cat -i $input_final -p $SP_CONFIG/final_cat.param -v 
-
-
