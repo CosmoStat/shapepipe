@@ -1,4 +1,4 @@
-"""MATCH EXTERNAL
+"""MATCH EXTERNAL.
 
 This module matches an external catalogue to a ShapePipe (SExtractor)
 catalogue.

@@ -1,4 +1,4 @@
-"""GET IMAGES PACKAGE
+"""GET IMAGES PACKAGE.
 
 This package contains the module for ``get_images``
 

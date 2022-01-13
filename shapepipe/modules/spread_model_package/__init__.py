@@ -1,4 +1,4 @@
-"""SPREAD MODEL PACKAGE
+"""SPREAD MODEL PACKAGE.
 
 This package contains the module for ``spread_model``.
 

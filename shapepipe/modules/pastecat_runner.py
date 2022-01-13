@@ -1,6 +1,6 @@
-"""PASTE CAT RUNNER.
+"""PASTECAT RUNNER.
 
-Module runner for ``paste_cat``.
+Module runner for ``pastecat``.
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>, Axel Guinot
 

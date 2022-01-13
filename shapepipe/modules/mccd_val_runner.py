@@ -62,7 +62,8 @@ def mccd_val_runner(
 
     else:
         raise ValueError(
-            "mccd_val_runner should be called when the MODE is 'VALIDATION'."
+            'The mccd_val_runner should only be called when the MODE is '
+            + '"VALIDATION".'
         )
 
     # No return objects

@@ -1,4 +1,4 @@
-"""INTERPOLATION SCRIPT
+"""PSFEX INTERPOLATION SCRIPT.
 
 This module computes the PSFs from a PSFEx model at several galaxy positions.
 
@@ -106,7 +106,7 @@ def interpsfex(dotpsfpath, pos, thresh_star, thresh_chi2):
 
 
 class PSFExInterpolator(object):
-    """Interpolator class.
+    """The PSFEx Interpolator Class.
 
     This class uses a PSFEx output file to compute the PSF at desired
     positions.
@@ -352,7 +352,6 @@ class PSFExInterpolator(object):
             Path to PSFEx catalogue
 
         """
-
         if not os.path.isfile(psfex_cat_path):
             raise ValueError(f'Cound not find file {psfex_cat_path}.')
 

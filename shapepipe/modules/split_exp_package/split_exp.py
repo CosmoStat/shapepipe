@@ -1,4 +1,4 @@
-"""SPLIT EXP SCRIPT
+"""SPLIT EXPOSURE.
 
 Class to split single-exposure multi-CCD mosaic images into single-exposure
 single-CCD files, one HDU per CCD.
@@ -19,7 +19,7 @@ from shapepipe.pipeline import file_io
 
 
 class SplitExposures(object):
-    """Split Exposures
+    """Split Exposures.
 
     Parameters
     ----------
@@ -52,7 +52,7 @@ class SplitExposures(object):
         self._n_hdu = n_hdu
 
     def process(self):
-        """Process
+        """Process.
 
         Process the splitting of single-exposure images.
 
@@ -82,7 +82,7 @@ class SplitExposures(object):
         transf_int,
         save_header
     ):
-        """Create HDUs
+        """Create HDUs.
 
         Split a single exposures CCDs into separate files.
 

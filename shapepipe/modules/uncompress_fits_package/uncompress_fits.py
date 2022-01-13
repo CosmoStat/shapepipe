@@ -1,4 +1,4 @@
-"""UNCOMRESS FITS
+"""UNCOMPRESS FITS.
 
 This module uncompresses fits images and saves them as a single-hdu FITS file.
 
@@ -10,15 +10,15 @@ from astropy.io import fits
 
 
 class Uncompress(object):
-    """Uncompress
+    """Uncompress.
 
     This class handles the uncompress process of compressed FITS files.
 
     Parameters
     ----------
-    input_file_list : np.ndarray of string
+    input_file_list : numpy.ndarray of string
         input files
-    output_pattern_list : np.ndarray of string
+    output_pattern_list : numpy.ndarray of string
         output file pattern
     output_dir : str
         output directory
@@ -45,7 +45,7 @@ class Uncompress(object):
         self._data_hdu = data_hdu
 
     def process(self):
-        """Process
+        """Process.
 
         Main function to process uncompress.
 

@@ -1,4 +1,4 @@
-"""SEXTRACTOR MODULE
+"""SEXTRACTOR MODULE.
 
 This package contains the module for ``sextractor``.
 

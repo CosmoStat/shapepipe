@@ -1,4 +1,4 @@
-"""SPLIT EXP PACKAGE
+"""SPLIT EXPOSURE PACKAGE.
 
 This package contains the module for ``split_exp``.
 

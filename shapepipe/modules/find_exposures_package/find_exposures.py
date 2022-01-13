@@ -1,4 +1,4 @@
-"""FIND EXPOSURES SCRIPT
+"""FIND EXPOSURES SCRIPT.
 
 This module contains a class to identify single exposures that were used
 to create tiles.
@@ -7,14 +7,13 @@ to create tiles.
 
 """
 
-
 import re
 
 import astropy.io.fits as fits
 
 
 class FindExposures():
-    """Find Exposures
+    """Find Exposures.
 
     This class finds exposures that are used for a given tile.
 
@@ -36,7 +35,7 @@ class FindExposures():
         self._w_log = w_log
 
     def process(self):
-        """Process
+        """Process.
 
         Main function to identify exposures.
 
@@ -52,7 +51,7 @@ class FindExposures():
         f_out.close()
 
     def get_exposure_list(self):
-        """Get Exposure List
+        """Get Exposure List.
 
         Return list of exposure file used for the tile in process, from tiles
         FITS header

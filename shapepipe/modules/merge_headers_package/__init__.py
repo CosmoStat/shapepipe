@@ -1,4 +1,4 @@
-"""MERGE HEADERS PACKAGE
+"""MERGE HEADERS PACKAGE.
 
 This package contains the module for ``merge_headers``.
 

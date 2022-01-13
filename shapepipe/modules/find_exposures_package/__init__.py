@@ -1,4 +1,4 @@
-"""FIND EXPOSURES PACKAGE
+"""FIND EXPOSURES PACKAGE.
 
 This package contains the module for ``find_exposures``.
 

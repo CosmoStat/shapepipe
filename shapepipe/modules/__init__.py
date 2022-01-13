@@ -1,4 +1,4 @@
-"""SHAPEPIPE MODULES
+"""SHAPEPIPE MODULES.
 
 This module contains sub-modules that can be run with ShapePipe.
 

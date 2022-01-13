@@ -1,4 +1,4 @@
-"""MAKE CATALOGUE
+"""MAKE CATALOGUE.
 
 This module contains a class to create a shear catalogue.
 
@@ -223,7 +223,7 @@ class SaveCatalogue:
         ----------
         key_string : str
             Key string
-        value : np.ndarray
+        value : numpy.ndarray
             Value to be assigned to the keys
 
         """
@@ -256,7 +256,7 @@ class SaveCatalogue:
             self._output_dict[key] = value
 
     def _save_ngmix_data(self, ngmix_cat_path, moments=False):
-        """Save ngmix Data.
+        """Save Ngmix Data.
 
         Save the ngmix catalogue into the final one.
 

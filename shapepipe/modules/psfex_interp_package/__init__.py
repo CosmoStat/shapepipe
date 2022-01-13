@@ -1,4 +1,4 @@
-"""PSFEX INTERPOLATION PACKAGE
+"""PSFEX INTERPOLATION PACKAGE.
 
 This package contains the module for ``psfex_interp``.
 

@@ -1,4 +1,4 @@
-"""MATCH EXTERNAL PACKAGE
+"""MATCH EXTERNAL PACKAGE.
 
 This package contains the module for ``match_external``.
 

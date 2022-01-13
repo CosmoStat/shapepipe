@@ -1,4 +1,4 @@
-"""MERGE STARCAT
+"""MERGE STAR CATALOGUES.
 
 This module contains a class to identify single exposures that were used
 to create tiles.
@@ -17,7 +17,7 @@ from shapepipe.pipeline import file_io
 
 
 class MergeStarCatMCCD(object):
-    """Merge Star Catalogue MCCD
+    """Merge Star Catalogue MCCD.
 
     Merge star catalogues of MCCD PSF model output.
 
@@ -57,7 +57,7 @@ class MergeStarCatMCCD(object):
 
     @staticmethod
     def rmse_calc(values, sizes):
-        r"""Rmse Calculation
+        r"""Calculate RMSE.
 
         Calculate square root of mean over input values.
         If values is an array with element j being
@@ -85,7 +85,7 @@ class MergeStarCatMCCD(object):
 
     @staticmethod
     def rmse_calc_2(values, sizes):
-        r"""Rmse calculation 2
+        r"""Calculate RMSE 2.
 
         Calculate square root of mean over squared input valuess.
         If values is an array with element j being
@@ -115,7 +115,7 @@ class MergeStarCatMCCD(object):
 
     @staticmethod
     def mean_calc(values, sizes):
-        """"Mean calculation
+        """Calculate Mean.
 
         Calculate pixel mean over all input images.
 
@@ -140,7 +140,7 @@ class MergeStarCatMCCD(object):
 
     @staticmethod
     def std_calc(values):
-        """"Standard deviation calculation
+        """Calculate Standard Deviation.
 
         Calculate pixel standard deviation over all input images.
 
@@ -163,7 +163,7 @@ class MergeStarCatMCCD(object):
 
     @staticmethod
     def stats_calculator(val_ref, val_model):
-        """Stats Calculator
+        """Calculate Stats.
 
         Calculate RMSE, mean, and standard deviation of residuals.
 
@@ -491,7 +491,7 @@ class MergeStarCatMCCD(object):
 
 
 class MergeStarCatPSFEX(object):
-    """Merge Star Catalogue PSFEx
+    """Merge Star Catalogue PSFEx.
 
     Merge star catalogues of PSFEx PSF model output.
 
@@ -516,7 +516,7 @@ class MergeStarCatPSFEX(object):
         self._hdu_table = hdu_table
 
     def process(self):
-        """Process
+        """Process.
 
         Process merging.
 

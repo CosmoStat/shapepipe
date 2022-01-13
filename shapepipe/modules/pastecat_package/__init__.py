@@ -1,6 +1,6 @@
-"""PASTECAT PACKAGE
+"""PASTE CATALOGUES PACKAGE.
 
-This package contains the module for ``PasteCat_script``.
+This package contains the module for ``pastecat``.
 
 :Authors: Martin Kilbinger, Axel Guinot
 
@@ -18,4 +18,4 @@ Module-specific config file entries
 
 """
 
-__all__ = ['pastecat_script']
+__all__ = ['pastecat']

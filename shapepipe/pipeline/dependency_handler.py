@@ -244,7 +244,7 @@ class DependencyHandler(object):
 
         Returns
         -------
-        np.ndarray
+        numpy.ndarray
             Array of string components
 
         """

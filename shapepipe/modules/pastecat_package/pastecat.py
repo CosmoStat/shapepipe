@@ -1,4 +1,4 @@
-"""PASTE CAT SCRIPT
+"""PASTE CATALOGUES.
 
 Class to paste different (SExtractor) catalogs of objects.
 
@@ -18,7 +18,7 @@ from shapepipe.pipeline import file_io
 
 
 class PasteCat(object):
-    """PasteCat
+    """Paste Catalogue.
 
     Parameters
     ----------
@@ -33,7 +33,7 @@ class PasteCat(object):
     check_col_name : str, optional, default=None:
         if not None, use column with this key to check equal number
         of rows in each input catalog
-    hdu_no : np.ndarray of int, optional, default = None
+    hdu_no : numpy.ndarray of int, optional, default = None
         hdu numbers of input catalog; by default set to 2 for all
         input files
 
@@ -60,7 +60,7 @@ class PasteCat(object):
             self._hdu_no = hdu_no
 
     def process(self):
-        """Process
+        """Process.
 
         Process the pasting of catalogues.
 

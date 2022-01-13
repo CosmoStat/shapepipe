@@ -1,4 +1,4 @@
-"""MASK MODULE
+"""MASK MODULE.
 
 This package contains the module for ``mask``.
 

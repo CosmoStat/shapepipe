@@ -1,4 +1,4 @@
-"""PSFEX PACKAGE
+"""PSFEX PACKAGE.
 
 This package contains the module for ``psfex``.
 

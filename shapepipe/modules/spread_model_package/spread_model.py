@@ -1,4 +1,4 @@
-"""SPREAD MODEL SCRIPT
+"""SPREAD MODEL.
 
 Class to compute the spread model, criterion to select galaxies
 
@@ -15,7 +15,7 @@ from shapepipe.utilities import galaxy
 
 
 def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
-    """Get Spread Model
+    """Get Spread Model.
 
     This method compute the spread moel for an object.
 
@@ -80,7 +80,7 @@ def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
 
 
 def get_model(sigma, flux, img_shape, pixel_scale=0.186):
-    """Get Model
+    """Get Model.
 
     This method computes
      - an exponential galaxy model with scale radius = 1/16 FWHM
@@ -136,7 +136,7 @@ def get_model(sigma, flux, img_shape, pixel_scale=0.186):
 
 
 class SpreadModel(object):
-    """SpreadModel Class
+    """The Spread Model Class.
 
     Parameters
     ----------
@@ -176,7 +176,7 @@ class SpreadModel(object):
         self._output_mode = output_mode
 
     def process(self):
-        """Process
+        """Process.
 
         Process the spread model computation
 
@@ -255,7 +255,7 @@ class SpreadModel(object):
         )
 
     def save_results(self, sm, sm_err, mag, number):
-        """Save Results
+        """Save Results.
 
         Save output catalogue with spread model and errors.
 

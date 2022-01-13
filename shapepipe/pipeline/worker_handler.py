@@ -45,7 +45,7 @@ class WorkerHandler(object):
 
         Parameters
         ----------
-        process : np.ndarray
+        process : numpy.ndarray
             File(s) to be processed
         w_log_name : str
             Worker log name

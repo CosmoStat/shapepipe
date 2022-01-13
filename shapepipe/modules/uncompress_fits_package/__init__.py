@@ -1,4 +1,4 @@
-"""UNCOMRESS FITS PACKAGE
+"""UNCOMPRESS FITS PACKAGE.
 
 This package contains the module for ``uncompress_fits``.
 

@@ -1,4 +1,4 @@
-"""MASK
+"""MASK.
 
 This module contains a class to create star mask for an image.
 
@@ -20,7 +20,7 @@ from shapepipe.utilities.file_system import mkdir
 
 
 class Mask(object):
-    """Mask
+    """Mask.
 
     Class to create mask based on a star catalogue.
 
@@ -81,7 +81,7 @@ class Mask(object):
         self._err = False
 
     def _get_config(self):
-        """Get Config Values
+        """Get Config Values.
 
         Read the config file and set parameters.
 
@@ -234,7 +234,7 @@ class Mask(object):
             self._config['EXTERNAL_FLAG']['path'] = self._path_external_flag
 
     def _set_parameters(self):
-        """Set Parameters
+        """Set Parameters.
 
         Set the parameters for the stars detection.
 
@@ -261,7 +261,7 @@ class Mask(object):
         self._img_radius = self._get_image_radius()
 
     def make_mask(self):
-        """Make Mask
+        """Make Mask.
 
         Main function to create the mask.
 
@@ -400,7 +400,7 @@ class Mask(object):
         return general_stdout, general_stderr
 
     def find_stars(self, position, radius):
-        """Find Stars
+        """Find Stars.
 
         Return GSC (Guide Star Catalog) objects for a field with center
         (ra,dec) and radius r.
@@ -458,7 +458,7 @@ class Mask(object):
         return self._make_star_cat(self._CDS_stdout)
 
     def mask_border(self, width=100, flag_value=4):
-        """Create Mask Border
+        """Create Mask Border.
 
         Mask 'width' pixels around the image.
 
@@ -500,7 +500,7 @@ class Mask(object):
         return flag
 
     def mask_messier(self, cat_path, size_plus=0.1, flag_value=8):
-        """Mask Messier
+        """Mask Messier.
 
         Create a circular patch for Messier objects.
 
@@ -596,7 +596,7 @@ class Mask(object):
         return flag
 
     def missing_data(self):
-        """Find Missing Data
+        """Find Missing Data.
 
         Look for 0 value in the image and flag it depending of the
         configuration.
@@ -628,7 +628,7 @@ class Mask(object):
         img.close()
 
     def sphere_dist(self, position1, position2):
-        """Compute Spherical Distance
+        """Compute Spherical Distance.
 
         Compute spherical distance between 2 points.
 
@@ -675,7 +675,7 @@ class Mask(object):
         return dist * (180.0 / np.pi) * 3600.0
 
     def _get_image_radius(self, center=None):
-        """Get Image Radius
+        """Get Image Radius.
 
         Compute the diagonal distance of the image in arcmin.
 
@@ -707,7 +707,7 @@ class Mask(object):
                 raise TypeError('Center has to be a numpy.ndarray')
 
     def _make_star_cat(self, CDSclient_output):
-        """Make Star Catalogue
+        """Make Star Catalogue.
 
         Make a dicotionnary from 'findgsc2.2' output.
 
@@ -767,7 +767,7 @@ class Mask(object):
         mag_pivot=13.8,
         scale_factor=0.3,
     ):
-        """Create Mask
+        """Create Mask.
 
         Apply mask from model to stars and save into DS9 region file.
 
@@ -872,7 +872,7 @@ class Mask(object):
         mask_reg.close()
 
     def _exec_WW(self, types='HALO'):
-        """Execute WeightWatcher
+        """Execute WeightWatcher.
 
         Execute WeightWatcher to transform '.reg' to '.fits' flag map.
 
@@ -1023,7 +1023,7 @@ class Mask(object):
         messier=None,
         path_external_flag=None,
     ):
-        """Create Final Mask
+        """Create Final Mask.
 
         Create the final mask by combination of individual masks.
 
@@ -1110,7 +1110,7 @@ class Mask(object):
         return final_mask.astype(np.int16, copy=False)
 
     def _mask_to_file(self, input_mask, output_fullpath):
-        """Mask to File
+        """Mask to File.
 
         Save the mask to a fits file.
 
@@ -1166,12 +1166,12 @@ class Mask(object):
             out.close()
 
     def _get_temp_dir_path(self, temp_dir_path):
-        """Get Temporary Directory Path
+        """Get Temporary Directory Path.
 
         Create the path and the directory for temporary files.
 
         Parameters
-        -----------
+        ----------
         temp_dir_path : str
             Path to the temporary directory, a value of 'OUTPUT' will include
             the temporary files in the run directory

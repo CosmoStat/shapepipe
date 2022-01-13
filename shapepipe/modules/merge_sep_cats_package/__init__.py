@@ -1,4 +1,4 @@
-"""MERGE SEP CATS PACKAGE
+"""MERGE SEP CATS PACKAGE.
 
 This package contains the module for ``merge_sep_cat``.
 

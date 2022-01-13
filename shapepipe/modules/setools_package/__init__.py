@@ -1,4 +1,4 @@
-"""SETOOLS PACKAGE
+"""SETOOLS PACKAGE.
 
 This package contains the module(s) for ``setools``.
 

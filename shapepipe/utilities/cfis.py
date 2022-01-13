@@ -1269,9 +1269,9 @@ def plot_area(
 
     Parameters
     ----------
-    images : np.ndarray of image
+    images : numpy.ndarray of image
         images
-    angles : np.ndarray (SkyCoord, 2)
+    angles : numpy.ndarray (SkyCoord, 2)
         Corner coordinates of area rectangle
     image_type : str
         image type ('tile', 'exposure', 'cat', weight')

@@ -1,4 +1,4 @@
-"""MERGE SCRIPT
+"""MERGE SCRIPT.
 
 Class to merge separate catalogues.
 
@@ -17,7 +17,7 @@ from shapepipe.pipeline import file_io
 
 
 class MergeSep(object):
-    """Merge Sep
+    """Merge Sep.
 
     Merge separate catalogues.
 
@@ -64,7 +64,7 @@ class MergeSep(object):
         self._w_log = w_log
 
     def process(self):
-        """Process
+        """Process.
 
         Process merging of separate catalogues.
 

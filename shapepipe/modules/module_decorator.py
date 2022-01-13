@@ -17,7 +17,7 @@ def module_runner(
     numbering_scheme=None,
     run_method='parallel',
 ):
-    """Module Runner Wrapper.
+    """Wrap Module Runners.
 
     This method adds properties to module runners.
 
@@ -62,7 +62,6 @@ def module_runner(
         If length of ``file_pattern`` and ``file_ext`` lists do not match
 
     """
-
     if not isinstance(version, str):
         raise TypeError('Module version must be a string.')
 

@@ -1,4 +1,4 @@
-"""RANDOM CAT SCRIPT
+"""RANDOM CATALOGUE.
 
 This module contains a class to create a random catalogue, and to compute
 the tile area accounding for overlapping and masked regions.
@@ -19,7 +19,7 @@ from shapepipe.utilities import cfis
 
 
 class RandomCat():
-    """Random Catalogue
+    """Random Catalogue.
 
     This class creates a random catalogue given a mask FITS file.
 
@@ -63,7 +63,7 @@ class RandomCat():
         self._tile_list_path = tile_list_path
 
     def process(self):
-        """Process
+        """Process.
 
         Main function to identify exposures.
 

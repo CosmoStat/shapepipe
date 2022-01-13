@@ -1,4 +1,4 @@
-"""MERGE STARCAT MODULE
+"""MERGE STAR CATALOGUES PACKAGE.
 
 This package contains the module for ``merge_starcat``.
 

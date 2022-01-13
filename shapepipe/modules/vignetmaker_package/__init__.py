@@ -1,4 +1,4 @@
-"""VIGNET MAKER PACKAGE
+"""VIGNET MAKER PACKAGE.
 
 This package contains the module(s) for ``vignetmaker``.
 

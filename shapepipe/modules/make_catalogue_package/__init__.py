@@ -1,4 +1,4 @@
-"""MAKE CATALOGUE PACKAGE
+"""MAKE CATALOGUE PACKAGE.
 
 This package contains the module for ``make_catalogue``.
 

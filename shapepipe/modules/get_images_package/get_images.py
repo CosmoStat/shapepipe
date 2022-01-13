@@ -1,4 +1,4 @@
-"""GET IMAGES
+"""GET IMAGES.
 
 This module copies all images required for processing.
 
@@ -17,7 +17,7 @@ from shapepipe.utilities.canfar import vosHandler
 
 # pragma: no cover
 def read_image_numbers(path):
-    """Read Image Numbers
+    """Read Image Numbers.
 
     Read image numbers from file.
 
@@ -41,7 +41,7 @@ def read_image_numbers(path):
 
 
 def in2out_pattern(number):
-    """In2out Pattern
+    """Get In2out Pattern.
 
     Transform input to output number pattern or image ID.
 
@@ -67,7 +67,7 @@ def in2out_pattern(number):
 
 
 class GetImages(object):
-    """Get Images
+    """Get Images.
 
     Class handling retrieval of input images.
 
@@ -128,7 +128,7 @@ class GetImages(object):
         self._n_try = n_try
 
     def process(self, input_dir, output_dir):
-        """Process
+        """Process.
 
         Main function to process GetImages.
 
@@ -200,7 +200,7 @@ class GetImages(object):
         dest_dir,
         use_output_file_pattern=False,
     ):
-        """Get File List
+        """Get File List.
 
         Return lists of file paths to retrieve.
 
@@ -261,7 +261,7 @@ class GetImages(object):
         return list_all_files
 
     def retrieve(self, all_inputs, all_outputs):
-        """Retrieve
+        """Retrieve.
 
         Retrieve all files.
 
@@ -287,7 +287,7 @@ class GetImages(object):
                 self.retrieve_one(in_per_type[idx], out_per_type[idx])
 
     def retrieve_one(self, in_path, out_path):
-        """Retrieve One
+        """Retrieve One.
 
         Retrieve one file.
 

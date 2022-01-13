@@ -1,4 +1,4 @@
-"""SEXTRACTOR SCRIPT
+"""SEXTRACTOR SCRIPT.
 
 This module builds the SExtractor command line.
 
@@ -16,7 +16,7 @@ from shapepipe.pipeline import file_io
 
 
 def get_header_value(image_path, key):
-    """Get Header Value
+    """Get Header Value.
 
     This function reads a value from the header image.
 
@@ -48,7 +48,7 @@ def get_header_value(image_path, key):
 
 
 def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
-    """Make Post Process
+    """Make Post Process.
 
     This function will add one hdu by epoch to the SExtractor catalog.
     Only works for tiles.
@@ -140,7 +140,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
 
 
 class SExtractorCaller():
-    """SExtractor Caller
+    """The SExtractor Caller.
 
     This class constructs the command line to call SExtractor based on the
     input files and parameters.
@@ -183,6 +183,7 @@ class SExtractorCaller():
         If provided, add a suffix to the output files
 
     """
+
     def __init__(
             self,
             path_input_files,
@@ -227,7 +228,7 @@ class SExtractorCaller():
         self.get_check_image(check_image)
 
     def get_output_name(self, output_suffix=None):
-        """Get Output Names
+        """Get Output Names.
 
         Construct the output file path.
 
@@ -263,7 +264,7 @@ class SExtractorCaller():
             use_detect_img,
             use_detect_weight,
     ):
-        """Set Input Files
+        """Set Input Files.
 
         Setup all the input image files.
 
@@ -352,7 +353,7 @@ class SExtractorCaller():
             )
 
     def get_zero_point(self, use_zp, zp_key=None):
-        """Get Zero Point
+        """Get Zero Point.
 
         Use a zero point from input image header.
 
@@ -369,7 +370,7 @@ class SExtractorCaller():
             self._cmd_line_extra += f' -MAG_ZEROPOINT {zp_value}'
 
     def get_background(self, use_bkg, bkg_key=None):
-        """Get Background
+        """Get Background.
 
         Use a background value from input image header.
 
@@ -388,7 +389,7 @@ class SExtractorCaller():
             )
 
     def get_check_image(self, check_image):
-        """Get Check Image
+        """Get Check Image.
 
         Handle the check images if any are requested.
 
@@ -418,7 +419,7 @@ class SExtractorCaller():
         )
 
     def make_command_line(self, exec_path):
-        """Make Command Line
+        """Make Command Line.
 
         Main that construct the command line to run SExtractor.
 
@@ -448,16 +449,16 @@ class SExtractorCaller():
 
     @staticmethod
     def parse_errors(stderr, stdout):
-        """Parse Errors
+        """Parse Errors.
 
         This methoid move errors from output from SExtractor to errors.
 
-        Parameters:
+        Parameters
         ----------
         stderr, stdout: str
             strings with outputs from the execute command
 
-        Returns:
+        Returns
         -------
         tuple
             stdout and stderr

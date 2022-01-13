@@ -1,4 +1,4 @@
-"""NGMIX PACKAGE
+"""NGMIX PACKAGE.
 
 This package contains the module for ``ngmix``.
 

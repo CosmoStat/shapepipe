@@ -1,4 +1,4 @@
-"""PYTHON EXAMPLE PACKAGE
+"""PYTHON EXAMPLE PACKAGE.
 
 This package contains the module for ``python_example``.
 

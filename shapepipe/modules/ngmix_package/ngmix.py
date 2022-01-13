@@ -1,4 +1,4 @@
-"""NGMIX
+"""NGMIX.
 
 This module contains a class for ngmix shape measurement.
 
@@ -22,7 +22,7 @@ from shapepipe.pipeline import file_io
 
 
 class Ngmix(object):
-    """Ngmix
+    """Ngmix.
 
     Class to handle ngmix shapepe measurement.
 
@@ -99,10 +99,10 @@ class Ngmix(object):
 
     @classmethod
     def MegaCamFlip(self, vign, ccd_nb):
-        """MegaCam Flip
+        """Flip for MegaCam.
 
-        MegaCam has CCDs that are upside down. This function flip the
-        postage stamp on those CCDs.
+        MegaCam has CCDs that are upside down. This function flips the
+        postage stamp in these CCDs.
 
         Parameters
         ----------
@@ -125,7 +125,7 @@ class Ngmix(object):
             return vign
 
     def get_prior(self):
-        """Get Prior
+        """Get Prior.
 
         Return prior for the different parameters.
 
@@ -171,7 +171,7 @@ class Ngmix(object):
         return prior
 
     def compile_results(self, results):
-        """Compile Results
+        """Compile Results.
 
         Prepare the results of ngmix before saving.
 
@@ -302,7 +302,7 @@ class Ngmix(object):
         return output_dict
 
     def save_results(self, output_dict):
-        """Save Results
+        """Save Results.
 
         Save the results into a fits file.
 
@@ -325,7 +325,7 @@ class Ngmix(object):
             f.save_as_fits(output_dict[key], ext_name=key.upper())
 
     def process(self):
-        """Process
+        """Process.
 
         Funcion to processs Ngmix.
 
@@ -493,7 +493,7 @@ def get_guess(
     guess_centroid=True,
     guess_centroid_unit='sky'
 ):
-    """Get Guess
+    """Get Guess.
 
     Get the guess vector for the ngmix shape measurement
     [center_x, center_y, g1, g2, size_T, flux]
@@ -600,7 +600,7 @@ def get_guess(
 
 
 def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
-    """Make GalSim Fit
+    """Make GalSim Fit.
 
     Fit image using simple galsim model.
 
@@ -661,7 +661,7 @@ def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
 
 
 def get_jacob(wcs, ra, dec):
-    """Get Jacobian
+    """Get Jacobian.
 
     Return the jacobian of the wcs at the required position.
 
@@ -691,7 +691,7 @@ def get_jacob(wcs, ra, dec):
 
 
 def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
-    """Get Noise
+    """Get Noise.
 
     Compute the sigma of the noise from an object postage stamp.
     Use a guess on the object size, ellipticity and flux to create a window
@@ -747,13 +747,13 @@ def do_ngmix_metacal(
     prior,
     pixel_scale
 ):
-    """Do Ngmix Metacal
+    """Do Ngmix Metacal.
 
     Do the metacalibration on a multi-epoch object and return the join shape
     measurement with ngmix.
 
     Parameters
-    ---------
+    ----------
     gals : list
         List of the galaxy vignets.
     psfs : list

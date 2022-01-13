@@ -1,4 +1,4 @@
-"""SETOOLS
+"""SETOOLS.
 
 This module contains a class to handle operations on SExtractor output
 catalogues.
@@ -21,7 +21,7 @@ from shapepipe.utilities.file_system import mkdir
 
 
 class SETools(object):
-    """SETools class
+    """The SETools Class.
 
     Tools to analyse SExtractor catalogues.
 
@@ -72,7 +72,7 @@ class SETools(object):
         self._file_number_string = file_number_string
 
     def process(self, w_log):
-        """Process
+        """Process.
 
         Main function called to process a SExtractor catalogue.
 
@@ -152,7 +152,7 @@ class SETools(object):
                 self.save_stat(self.stat[key], output_path)
 
     def read(self):
-        """Read the Config File
+        """Read the Config File.
 
         This function read the config file and create a dictionary for every
         task.
@@ -252,7 +252,7 @@ class SETools(object):
                     self._rand_split[rand_split_name].append(line_tmp)
 
     def _clean_line(self, line):
-        """Clean Lines
+        """Clean Lines.
 
         This function is called during the reading process to clean line
         from spaces, empty lines and ignore comments.
@@ -288,7 +288,7 @@ class SETools(object):
             return None
 
     def save_mask(self, mask, output_path, ext_name='LDAC_OBJECTS'):
-        """Save Mask
+        """Save Mask.
 
         This function will apply a mask on the data and save them into a new
         SExtractor catalog like fits file.
@@ -331,7 +331,7 @@ class SETools(object):
         )
 
     def save_new_cat(self, new_cat, output_path, ext_name='LDAC_OBJECTS'):
-        """Save New Catalogue
+        """Save New Catalogue.
 
         This function create a new catalog with a specific format
         (fits bin table, SExtractor like fits catalog or ASCII).
@@ -403,7 +403,7 @@ class SETools(object):
         file_number,
         ext_name='LDAC_OBJECTS',
     ):
-        """Save Random Split Catalogues
+        """Save Random Split Catalogues.
 
         Save two catalogs following the random split specified.
 
@@ -451,7 +451,7 @@ class SETools(object):
             )
 
     def save_stat(self, stat, output_path):
-        """Save Statistics
+        """Save Statistics.
 
         Save the statistics in ASCII format.
 
@@ -484,7 +484,7 @@ class SETools(object):
         file.close()
 
     def _make_mask(self):
-        """Make Mask
+        """Make Mask.
 
         This function transforms the constraints from the config file to
         conditions.
@@ -534,7 +534,7 @@ class SETools(object):
             self.mask[key] = final_mask
 
     def _make_plot(self):
-        """Make Plot
+        """Make Plot.
 
         This function interpret the different parameters for the plot.
 
@@ -573,7 +573,7 @@ class SETools(object):
                     )
 
     def _make_new_cat(self):
-        """Make New Catalogue
+        """Make New Catalogue.
 
         This function interprets the contents for each column of the new
         catalogue.
@@ -606,7 +606,7 @@ class SETools(object):
                     raise ValueError(f'Not a valid format : {idx}')
 
     def _make_rand_split(self):
-        """Make Random Split
+        """Make Random Split.
 
         This function create mask with random indices corresponding of the
         specfied ratio.
@@ -663,7 +663,7 @@ class SETools(object):
             self.rand_split[key][f'ratio_{100 - int(ratio * 100)}'] = mask_left
 
     def _make_stat(self):
-        """Make Statistics
+        """Make Statistics.
 
         This function interpret the different statistics required.
 
@@ -692,7 +692,7 @@ class SETools(object):
 
 
 class SEPlot(object):
-    """SEPlot Class
+    """The SEPlot Class.
 
     Tools to create plots.
 
@@ -761,7 +761,7 @@ class SEPlot(object):
             raise ValueError(f'Type : {self._plot["TYPE"]["0"]} not available')
 
     def _check_key_for_plot(self, key_list):
-        """Check Key for Plot
+        """Check Key for Plot.
 
         Raise exception if keys not found in plot description.
 
@@ -784,7 +784,7 @@ class SEPlot(object):
                 )
 
     def _make_plot(self):
-        """Make Plot
+        """Make Plot.
 
         This function calls pyplot.plot.
 
@@ -939,7 +939,7 @@ class SEPlot(object):
         plt.close()
 
     def _make_scatter(self):
-        """Make Scatter
+        """Make Scatter.
 
         This function call pyplot.scatter.
 
@@ -1069,7 +1069,7 @@ class SEPlot(object):
         plt.close()
 
     def _make_hist(self):
-        """Make Hist
+        """Make Hist.
 
         This function call pyplot.hist.
 
