@@ -1,12 +1,12 @@
 """MAKE CATALOGUE RUNNER.
 
-Module runner for ``make_catalogue``.
+Module runner for ``make_cat``.
 
 :Author: Axel Guinot
 
 """
 
-from shapepipe.modules.make_catalogue_package import make_catalogue as mc
+from shapepipe.modules.make_cat_package import make_cat
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.utilities.cfis import remove_common_elements
 
@@ -83,18 +83,18 @@ def make_catalogue_runner(
         tile_list_path = None
 
     # Set final output file
-    final_cat_file = mc.prepare_final_cat_file(
+    final_cat_file = make_cat.prepare_final_cat_file(
         run_dirs['output'],
         file_number_string,
     )
 
     # Save SExtractor data
     w_log.info('Save SExtractor data')
-    mc.save_sextractor_data(final_cat_file, tile_sexcat_path)
+    make_cat.save_sextractor_data(final_cat_file, tile_sexcat_path)
 
     # Save spread-model data
     w_log.info('Save spread-model data')
-    mc.save_sm_data(
+    make_cat.save_sm_data(
         final_cat_file,
         sexcat_sm_path,
         do_classif,
@@ -108,7 +108,7 @@ def make_catalogue_runner(
         remove_common_elements(final_cat_file, tile_list_path)
 
     # Save shape data
-    sc_inst = mc.SaveCatalogue(final_cat_file)
+    sc_inst = make_cat.SaveCatalogue(final_cat_file)
     w_log.info('Save shape measurement data')
     for shape_type in shape_type_list:
         w_log.info(f'Save {shape_type.lower()} data')

@@ -1,6 +1,6 @@
 """MAKE CATALOGUE PACKAGE.
 
-This package contains the module for ``make_catalogue``.
+This package contains the module for ``make_cat``.
 
 :Author: Axel Guinot
 
@@ -18,4 +18,4 @@ Module-specific config file entries
 
 """
 
-__all__ = ['make_catalogue']
+__all__ = ['make_cat']
