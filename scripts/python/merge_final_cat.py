@@ -293,9 +293,11 @@ def main(argv=None):
     param.param_list = read_param_file(param.param_path, verbose=param.verbose)
 
     l = os.listdir(path=path)
+    ext = 'fits'
     lpath = []
     for this_l in l:
-        lpath.append(os.path.join(path, this_l))
+        if this_l.endswith(ext):
+            lpath.append(os.path.join(path, this_l))
 
     if param.verbose:
         print(f'{len(lpath)} files files found in input path')
@@ -318,10 +320,11 @@ def main(argv=None):
 
         try:
             d_tmp = get_data(idx, 1, param.param_list)
+            dd = np.zeros(d_tmp.shape, dtype=d.dtype)
 
-            dd = np.zeros(d_tmp.shape, dtype=d_tmp.dtype)
             for key in d_tmp.dtype.names:
                 dd[key] = d_tmp[key]
+
             count = count + 1
             if param.verbose:
                 print(f'File \'{idx}\' copied ({count}/{len(lpath)})')
