@@ -440,7 +440,7 @@ class SETools(object):
 
         for idx in rand_split.keys():
             rand_split_file = file_io.FITSCatalogue(
-                output_path + idx + file_number + '.fits',
+                f'{output_path}{idx}{file_number}.fits',
                 open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
                 SEx_catalogue=(self._cat_filepath is not None),
             )
@@ -479,7 +479,7 @@ class SETools(object):
         file.write('# Statistics\n')
 
         for key in stat.keys():
-            file.write(key + ' = ' + str(stat[key]) + '\n')
+            file.write(f'{key} = {str(stat[key])}\n')
 
         file.close()
 

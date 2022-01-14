@@ -165,7 +165,7 @@ class image():
 
         Parameters
         ----------
-        file : str, optional, default=sys.stdout
+        file : file, optional, default=sys.stdout
             output file handle
         base_name : bool, optional, default=False
             if True (False), print image base name (full path)
@@ -210,7 +210,7 @@ class image():
 
         Parameters
         ----------
-        file : file handle, optional, default=sys.stdout
+        file : file, optional, default=sys.stdout
             output file handle
 
         """
