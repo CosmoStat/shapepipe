@@ -49,7 +49,7 @@ to ``vos``.
 
 Now, download the missing masks with
 ```bash
-canfar_download_results.bash -i missing_mask.txt --input_vos vos-path/to/results -m -v
+canfar_download_results -i missing_mask.txt --input_vos vos-path/to/results -m -v
 ```
 Untar .tgz files if required,
 ```bash
