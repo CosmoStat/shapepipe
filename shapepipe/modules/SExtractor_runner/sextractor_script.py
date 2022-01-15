@@ -9,7 +9,7 @@ This module builds the SExtractor command line.
 """
 
 import re
-from shapepipe.pipeline import file_io as io
+from shapepipe.pipeline import file_io
 
 import numpy as np
 from sqlitedict import SqliteDict
@@ -75,9 +75,9 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
 
     """
 
-    cat = io.FITSCatalog(
-        cat_path, SEx_catalog=True,
-        open_mode=io.BaseCatalog.OpenMode.ReadWrite,
+    cat = file_io.FITSCatalogue(
+        cat_path, SEx_catalogue=True,
+        open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
     )
     cat.open()
 
@@ -354,7 +354,7 @@ class sextractor_caller():
             Header key corresponding to the zero point
 
         """
-        if use_zp and isinstance(zp_key, type(None)):
+        if use_zp and not isinstance(zp_key, type(None)):
             zp_value = get_header_value(self._meas_img_path, zp_key)
             self._cmd_line_extra += f' -MAG_ZEROPOINT {zp_value}'
 
@@ -371,7 +371,7 @@ class sextractor_caller():
             Header key corresponding to the background value
 
         """
-        if use_bkg and isinstance(bkg_key, type(None)):
+        if use_bkg and not isinstance(bkg_key, type(None)):
             bkg_value = get_header_value(self._meas_img_path, bkg_key)
             self._cmd_line_extra += (
                 f' -BACK_TYPE MANUAL -BACK_VALUE {bkg_value}'

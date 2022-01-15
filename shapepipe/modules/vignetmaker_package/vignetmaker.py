@@ -14,7 +14,7 @@ from astropy.wcs import WCS
 from sf_tools.image.stamp import FetchStamps
 from sqlitedict import SqliteDict
 
-import shapepipe.pipeline.file_io as io
+from shapepipe.pipeline import file_io
 
 
 class VignetMaker(object):
@@ -25,7 +25,7 @@ class VignetMaker(object):
     Parameters
     ----------
     galcat_path : str
-        Path to catalog containing the positions.
+        Path to catalogue containing the positions.
     pos_type : str
         Must be in ['PIX', 'SPHE']
         PIX : position in pixel coordinates.
@@ -95,7 +95,7 @@ class VignetMaker(object):
     def get_pos(self, pos_params):
         """Get Positions
 
-        Get the positions of the given parameters from SExtractor catalog.
+        Get the positions of the given parameters from SExtractor catalogue.
 
         Parameters
         ----------
@@ -109,7 +109,7 @@ class VignetMaker(object):
             Array of the positions
 
         """
-        file = io.FITSCatalog(self._galcat_path, SEx_catalog=True)
+        file = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
         file.open()
 
         pos = np.array(
@@ -136,7 +136,7 @@ class VignetMaker(object):
             New positions in pixel coordinates.
 
         """
-        file = io.FITSCatalog(image_path)
+        file = file_io.FITSCatalogue(image_path)
         file.open()
         head = file.get_header(0)
         file.close()
@@ -172,7 +172,7 @@ class VignetMaker(object):
             Array containing the vignets
 
         """
-        img_file = io.FITSCatalog(img_path)
+        img_file = file_io.FITSCatalogue(img_path)
         img_file.open()
         img = img_file.get_data(0)
         img_file.close()
@@ -202,7 +202,7 @@ class VignetMaker(object):
             Directory containing object id and vignets for each epoch.
 
         """
-        cat = io.FITSCatalog(self._galcat_path, SEx_catalog=True)
+        cat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
         cat.open()
 
         all_id = np.copy(cat.get_data()['NUMBER'])
@@ -372,7 +372,7 @@ def get_original_vignet(galcat_path):
         Array containing the vignets
 
     """
-    file = io.FITSCatalog(galcat_path, SEx_catalog=True)
+    file = file_io.FITSCatalogue(galcat_path, SEx_catalogue=True)
     file.open()
 
     vignet = file.get_data()['VIGNET']
@@ -428,10 +428,10 @@ def save_vignet(vignet, sexcat_path, output_dir, suffix, image_num):
     """
     output_name = f'{output_dir}/{suffix}_vignet{image_num}.fits'
 
-    file = io.FITSCatalog(
+    file = file_io.FITSCatalogue(
         output_name,
-        SEx_catalog=True,
-        open_mode=io.BaseCatalog.OpenMode.ReadWrite,
+        SEx_catalogue=True,
+        open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
     )
 
     file.save_as_fits(vignet, names=['VIGNET'], sex_cat_path=sexcat_path)

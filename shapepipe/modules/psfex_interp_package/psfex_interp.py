@@ -11,7 +11,7 @@ This module computes the PSFs from a PSFEx model at several galaxy positions.
 """
 
 from astropy.io import fits
-from shapepipe.pipeline import file_io as sc
+from shapepipe.pipeline import file_io
 from sqlitedict import SqliteDict
 
 import numpy as np
@@ -239,7 +239,7 @@ class PSFExInterpolator(object):
         Read position parameters from .psf file.
 
         """
-        dotpsf = sc.FITSCatalog(self._dotpsf_path)
+        dotpsf = file_io.FITSCatalogue(self._dotpsf_path)
         dotpsf.open()
         self._pos_params = [
             dotpsf.get_header()['POLNAME1'],
@@ -256,7 +256,7 @@ class PSFExInterpolator(object):
         if self._pos_params is None:
             self._get_position_parameters()
 
-        galcat = sc.FITSCatalog(self._galcat_path, SEx_catalog=True)
+        galcat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
         galcat.open()
 
         try:
@@ -326,10 +326,10 @@ class PSFExInterpolator(object):
         Save computed PSFs to fits file.
 
         """
-        output = sc.FITSCatalog(
+        output = file_io.FITSCatalogue(
             self._output_path + self._img_number + '.fits',
-            open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
-            SEx_catalog=True,
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
+            SEx_catalogue=True,
         )
 
         if self._compute_shape:
@@ -386,7 +386,10 @@ class PSFExInterpolator(object):
         ):
             self._w_log.info(f'Psf model file {self._dotpsf_path} not found.')
         else:
-            star_cat = sc.FITSCatalog(self._galcat_path, SEx_catalog=True)
+            star_cat = file_io.FITSCatalogue(
+                self._galcat_path,
+                SEx_catalogue=True,
+            )
             star_cat.open()
             star_dict = {}
             star_vign = np.copy(star_cat.get_data()['VIGNET'])
@@ -454,7 +457,7 @@ class PSFExInterpolator(object):
 
         """
 
-        psfex_cat = sc.FITSCatalog(psfex_cat_path, SEx_catalog=True)
+        psfex_cat = file_io.FITSCatalogue(psfex_cat_path, SEx_catalogue=True)
         psfex_cat.open()
 
         psfex_cat_dict = {}
@@ -486,10 +489,10 @@ class PSFExInterpolator(object):
             Dictionary containing information from PFSEx .cat file.
 
         """
-        output = sc.FITSCatalog(
+        output = file_io.FITSCatalogue(
             self._output_path_validation + self._img_number + '.fits',
-            open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
-            SEx_catalog=True,
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
+            SEx_catalogue=True,
         )
 
         data = {
@@ -560,7 +563,7 @@ class PSFExInterpolator(object):
             (optionally)
 
         """
-        cat = sc.FITSCatalog(self._galcat_path, SEx_catalog=True)
+        cat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
         cat.open()
 
         all_id = np.copy(cat.get_data()['NUMBER'])

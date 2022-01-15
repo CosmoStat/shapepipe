@@ -16,7 +16,8 @@ import operator
 import re
 import string
 
-import shapepipe.pipeline.file_io as sc
+from shapepipe.pipeline import file_io
+from shapepipe.pipeline.str_handler import StrInterpreter
 from shapepipe.utilities.file_system import mkdir
 
 
@@ -53,7 +54,10 @@ class SETools(object):
         if cat_file:
             self._is_file = True
             self._cat_filepath = cat
-            cat_file = sc.FITSCatalog(self._cat_filepath, SEx_catalog=True)
+            cat_file = file_io.FITSCatalogue(
+                self._cat_filepath,
+                SEx_catalogue=True,
+            )
             cat_file.open()
             self._data = cat_file.get_data()
             cat_file.close()
@@ -320,10 +324,10 @@ class SETools(object):
         if output_path is None:
             raise ValueError('output path not provided')
 
-        mask_file = sc.FITSCatalog(
+        mask_file = file_io.FITSCatalogue(
             output_path,
-            open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
-            SEx_catalog=(self._cat_filepath is not None),
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
+            SEx_catalogue=(self._cat_filepath is not None),
         )
         mask_file.save_as_fits(
             data=self._data[mask],
@@ -361,16 +365,16 @@ class SETools(object):
             raise ValueError('OUTPUT_FORMAT not provided')
 
         if output_format == 'fits':
-            new_file = sc.FITSCatalog(
+            new_file = file_io.FITSCatalogue(
                 output_path + '.fits',
-                open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
+                open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
             )
             new_file.save_as_fits(data=new_cat, ext_name=ext_name)
         elif output_format == 'SEx_cat':
-            new_file = sc.FITSCatalog(
+            new_file = file_io.FITSCatalogue(
                 output_path + '.fits',
-                open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
-                SEx_catalog=(self._cat_filepath is not None),
+                open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
+                SEx_catalogue=(self._cat_filepath is not None),
             )
             new_file.save_as_fits(
                 data=new_cat,
@@ -442,10 +446,10 @@ class SETools(object):
         data = self._data[mask]
 
         for i in rand_split.keys():
-            rand_split_file = sc.FITSCatalog(
+            rand_split_file = file_io.FITSCatalogue(
                 output_path + i + file_number + '.fits',
-                open_mode=sc.BaseCatalog.OpenMode.ReadWrite,
-                SEx_catalog=(self._cat_filepath is not None),
+                open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
+                SEx_catalogue=(self._cat_filepath is not None),
             )
             rand_split_file.save_as_fits(
                 data=data[rand_split[i]],
@@ -522,7 +526,7 @@ class SETools(object):
             for j in self._mask[i]:
                 if j == 'NO_SAVE':
                     continue
-                tmp = sc.interpreter(
+                tmp = StrInterpreter(
                     j,
                     self._data[global_mask],
                     make_compare=True,
@@ -603,7 +607,7 @@ class SETools(object):
                     if s[0] == 'OUTPUT_FORMAT':
                         self.new_cat[i][s[0]] = s[1]
                     else:
-                        self.new_cat[i][s[0]] = sc.interpreter(
+                        self.new_cat[i][s[0]] = StrInterpreter(
                             s[1],
                             self._data,
                             make_compare=False,
@@ -692,7 +696,7 @@ class SETools(object):
                 s = re.split('=', j)
                 if len(s) != 2:
                     raise ValueError(f'Not a valid format : {j}')
-                self.stat[i][s[0]] = sc.interpreter(
+                self.stat[i][s[0]] = StrInterpreter(
                     s[1],
                     self._data,
                     make_compare=False,
@@ -819,7 +823,7 @@ class SEPlot(object):
                     if ii % 2 == 0:
                         title += i
                     else:
-                        title += str(sc.interpreter(
+                        title += str(StrInterpreter(
                             i,
                             self._cat,
                             make_compare=False,
@@ -843,7 +847,7 @@ class SEPlot(object):
                             if jj % 2 == 0:
                                 label += j
                             else:
-                                label += str(sc.interpreter(
+                                label += str(StrInterpreter(
                                     j,
                                     self._cat,
                                     make_compare=False,
@@ -902,8 +906,8 @@ class SEPlot(object):
                     )
 
             plt.plot(
-                sc.interpreter(x, self._cat, mask_dict=self._mask_dict).result,
-                sc.interpreter(
+                StrInterpreter(x, self._cat, mask_dict=self._mask_dict).result,
+                StrInterpreter(
                     self._plot['Y'][i],
                     self._cat,
                     mask_dict=self._mask_dict,
@@ -975,7 +979,7 @@ class SEPlot(object):
                     if ii % 2 == 0:
                         title += i
                     else:
-                        title += str(sc.interpreter(
+                        title += str(StrInterpreter(
                             i,
                             self._cat,
                             make_compare=False,
@@ -999,7 +1003,7 @@ class SEPlot(object):
                             if jj % 2 == 0:
                                 label += j
                             else:
-                                label += str(sc.interpreter(
+                                label += str(StrInterpreter(
                                     j,
                                     self._cat,
                                     make_compare=False,
@@ -1047,9 +1051,9 @@ class SEPlot(object):
                     )
 
             plt.scatter(
-                sc.interpreter(x, self._cat, mask_dict=self._mask_dict).result,
-                sc.interpreter(y, self._cat, mask_dict=self._mask_dict).result,
-                c=sc.interpreter(
+                StrInterpreter(x, self._cat, mask_dict=self._mask_dict).result,
+                StrInterpreter(y, self._cat, mask_dict=self._mask_dict).result,
+                c=StrInterpreter(
                     self._plot['SCATTER'][i],
                     self._cat,
                     mask_dict=self._mask_dict,
@@ -1099,7 +1103,7 @@ class SEPlot(object):
                     if ii % 2 == 0:
                         title += i
                     else:
-                        title += str(sc.interpreter(
+                        title += str(StrInterpreter(
                             i,
                             self._cat,
                             make_compare=False,
@@ -1135,7 +1139,7 @@ class SEPlot(object):
                             if jj % 2 == 0:
                                 label += j
                             else:
-                                label += str(sc.interpreter(
+                                label += str(StrInterpreter(
                                     j,
                                     self._cat,
                                     make_compare=False,
@@ -1172,7 +1176,7 @@ class SEPlot(object):
                 alpha = None
 
             plt.hist(
-                sc.interpreter(
+                StrInterpreter(
                     self._plot['Y'][i],
                     self._cat,
                     mask_dict=self._mask_dict,

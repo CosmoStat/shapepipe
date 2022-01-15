@@ -42,15 +42,11 @@ Run the pipeline on a single example CFIS image:
    The file size is 4.1 Gb, this might take a while. This data consists of a single CFIS tile image and weight, and all contributing exposure
    images, weights, and flag FITS files.
    Note that these files represent unpublished, sensitive pixel data, which according to [CFIS rules](https://www.cfht.hawaii.edu/Science/CFIS/cfisaccess.html) should not be downloaded outside of France or Canada, and not be shared with non-CFIS members.
-2. [Install](https://github.com/cosmostat/shapepipe#installing-shapepipe) `ShapePipe` under the `photoz` branch, and activate the `shapepipe` conda environment.
-3. Run the tutorial
+2. [Install](https://github.com/cosmostat/shapepipe#installing-shapepipe) `ShapePipe` and activate the `shapepipe` conda environment.
+3. Run the job script
 ```bash
-/path/to/shapepipe/scripts/sh/tutorial_sp_shear_individual.sh -r symlink 246.290
+job_sp -r symlink 246.290
 ```
-
-At the moment the tutorial is implemented up to shape measurement.
-The script is running with the following set-up:
-- interactive on the [canfar VM](https://github.com/CosmoStat/shapepipe/blob/master/docs/wiki/canfar.md#interactive-mode) (use ShapePipe path `-b ~/shapepipe`)
 
 
 ## Introduction
@@ -144,21 +140,23 @@ Below, the individual processing steps are described in detail.
 
 ### Path variables
 
-The following path variables need to be defined where `ShapePipe` is to be run. If this is done via job submission on a cluster, these variables need to be communicated to the job environment.
+All required variables are automatically set in the job script `job_sp`. If an example config file is to be run outside this script,
+the following path variables might need to be defined. 
 - `$SP_RUN`: Run directory of `ShapePipe`. In general this is just `pwd`, and can be set via
   ```bash
   export SP_RUN=`pwd`
   ```
   but on a cluster this directory might be different.
-- `SP_BASE`: Not required, but for convenience define this path to point at `/path/to/shapepipe/example/tutorial`.
-- `$SP_CONFIG`: Path to configuration files. In our example this is `$SP_BASE/example/tutorial`.
+- `$SP_CONFIG`: Path to configuration files. In our example this is `$SP_BASE/example/cfis`.
 
 ### Running the pipeline
 
 See the main `ShapePipe` readme for more details.
 
-In `$SP_RUN` the following subdirectory `output` needs to be created by the user, to store all pipeline output
+In `$SP_RUN` the following subdirectory `output` is created to store all pipeline outputs
 (log files, diagnostics, statistics, output images, catalogues, single-exposure headers with WCS information).
+Note that this is done automcatically in `job_sp`.
+
 Optionally, the subdir `output_star_cat` is created by the used to store the external star catalogues for masking. This is only necessary if the pipeline is run on a cluster without internet connection to access star catalogues. In that case, the star catalogues need to be retrieved outside the pipeline, for example on a login node, and copied to `output_star_cat`.
 
 In general, a call to the pipeline is done as follows, after activating the `shapepipe` conda environment (indicated by `(shapepipe)` at the beginning of the shell prompt.
@@ -195,14 +193,6 @@ Now we are ready to run the first, pre-processing `ShapePipe` modules.
 
 ### Retrieve tiles
 
-**Module:** get_image_runner  
-**Parent:**  none  
-**Input:** tile ID list  
-**Output:** tile image, compressed tile weight
-
-The tile images and weights selected in the previous section will be retrieved now, by running the module `get_image_runner`. This module either downloads the images or, if they already exist on a local hard disk, creates symbolic links. Downloading uses the Virtual Observatory VOSpace (vos) software (http://www.ivoa.net/documents/VOSpace). The downloaded files (or link names) are then modified to be parsable by the pipeline.
-
-An example config file is `SP_CONFIG/config_tile_Git.ini`.
 The module section `[GET_IMAGES_RUNNER]` first contains the input tile ID list file path (default is `tile_numbers.txt`). This is assembled from `FILE_PATTERN`, `FILE_EXT`, and `NUMBERING_SCHEME`. Since there
 is only a single input text file with no number, the latter entry is empty. See see `File options` in the [general pipeline readme](README.rst)) for more details on the numbering scheme.
 
@@ -219,81 +209,16 @@ Next, the output file pattern without the tile number is specified in the config
 be different from the original image names to be consistent with the `ShapePipe` naming conventions, e.g.~no
 dots other than for the file extension.
 
-After that we name the copy or download method, for example `vos`. Additional command options can be indicated with the key `COPY_OPTIONS`. Here is the example:
-```ini
-[GET_IMAGES_RUNNER]
-FILE_PATTERN = tile_numbers
-FILE_EXT = .txt
-NUMBERING_SCHEME =
-INPUT_PATH = vos:cfis/tiles_DR2, vos:cfis/tiles_DR2
-INPUT_FILE_PATTERN = CFIS.000.000.r, CFIS.000.000.r.weight
-INPUT_FILE_EXT = .fits, .fits.fz
-INPUT_NUMBERING = \d{3}\.\d{3}
-OUTPUT_FILE_PATTERN = CFIS_image-, CFIS_weight-
-COPY = vos
-```
-
-On success, tile images and compressed tile weights are created, either as physical files or symbolic links.
-
 ### Uncompress tile weights
 
-**Module:** uncompress_fits_images_runner  
-**Parent:**  get_image_runner    
-**Input:** compressed tile weight  
-**Output:** tile weight
-
 The compressed stack weights (.fits.fz/.fitsfz files) need to be uncompressed before further processing. An example config file is `$SP_CONFIG/config_unfz_w.ini`. Except from the input file pattern and extension (see `File Options` in the [general pipeline readme](README.rst)), we need to specify the output file patern (can be the same as the input), and the HDU number of the weight image data:
-```ini
-[UNCOMPRESS_FITS_IMAGE_RUNNER]
-FILE_PATTERN = CFIS_weight
-FILE_EXT = .fitsfz
-OUTPUT_PATTERN = CFIS_weight
-HDU_DATA = 1
-```
-
-On success, the uncompressed weight image with the correct (only) HDU is written.
 
 ### Find single exposures
-
-**Module:** find_exposures_runner  
-**Parent:**  get_image_runner    
-**Input:** tile image  
-**Output:** single-exposure name list
-
-Once the resulting tiles and weight images are downloaded, we need to identify the exposure images that where co-added to produce the tiles. These can be found in the tile FITS header. The example config file `$SP_CONFIG/config_tile_Fe.ini` has as entries the
-information for the input tiles, which are input directoy (last run of get_images) and file names:
-```
-[FIND_EXPOSURE_RUNNER]
-INPUT_DIR = last:get_images_runner
-FILE_PATTERN = CFIS_image
-FILE_EXT = .fits
-NUMBERING_SCHEME = -000-000
-```
-
-On success, the ascii files with the single-exposure names are produced.
 
 
 ### Retrieve single exposures
 
-**Module:** get_image_runner2  
-**Parent:**  find_exposure_runner  
-**Input:** single-exposure name list  
-**Output:** tile image, compressed tile weight
-
-This process works as the one to download tiles, see [Download tiles](#download-tiles). The single-exposure names are read from the output ascii file of the previous module (`find-exposure-runner`). Single-exposure images, weights, and flags are retrieved. Here is the example `$SP_CONFIG/config_tile_Gie.ini` relevant section:
-```ini
-[GET_IMAGES_RUNNER2]
-INPUT_DIR = last:find_exposures_runner
-FILE_PATTERN = exp_numbers
-FILE_EXT = .txt
-NUMBERING_SCHEME = -000-000 
-INPUT_PATH = vos:cfis/pitcairn, vos:cfis/weights, vos:cfis/flags
-INPUT_FILE_PATTERN = 000000, 000000.weight, 000000.flag
-INPUT_FILE_EXT = .fits.fz, .fits.fz, .fits.fz
-INPUT_NUMBERING = \d{6}
-OUTPUT_FILE_PATTERN = image-, weight-, flag-
-RETRIEVE = vos
-```
+This process works as the one to download tiles, see [Download tiles](#download-tiles). The single-exposure names are read from the output ascii file of the previous module (`find-exposure-runner`). Single-exposure images, weights, and flags are retrieved. Here is the example `$SP_CONFIG/config_tile_Gie.ini` relevant section.
 
 On sucess, single-exposure images, weights, and flags are downloaded, or links to existing files are created.
 
@@ -320,31 +245,8 @@ Alternatively each module can be executed by a separate `ShapePipe` call. The co
 
 ### Split images
 
-**Module:** split_exp_runner   
-**Parent:**  get_images_runner2  
-**Input:** single-exposure images, weights, flags  
-**Output:** single_exposure single-CCD files for input images, weights, flags; SQL files with single-exposure header information
-
 The first step of single-exposure processing is to split the single-exposures images into
 files that contain one CCD each.
-
-The example config file is `$SP_CONFIG/config_split_exp.ini`.
-On input, we need to specify the three input types (images, weights, flags),
-and their extensions. On output, the same three file types are required.
-And we specify the number of CCDs, which for MegaCAM CCDs is 40:
-```ini
-[SPLIT_EXP_RUNNER]
-INPUT_DIR = last:get_images_runner2
-NUMBERING_SCHEME = -0000000
-FILE_PATTERN = image, weight, flag
-FILE_EXT = .fitsfz, .fitsfz, .fitsfz
-OUTPUT_SUFFIX = image, weight, flag
-N_HDU = 40
-```
-
-On success, files according to the three output types are created. In addition, the FITS headers of all input
-single-exposure images are written to the same output directory, as SQL numpy files. The main purpose
-is to save the image WCS information for quick access lateron.
 
 ### Merge WCS headers
 
