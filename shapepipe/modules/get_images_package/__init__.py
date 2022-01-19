@@ -48,7 +48,7 @@ CHECK_EXISTING_DIR : str, optional
     if given, check this directory for existing images, which will then not be
     downloaded
 N_EXPECTED : int, optional, default=1
-    if CHECK_EXISTING_DIR is given, number of expected images 
+    if CHECK_EXISTING_DIR is given, number of expected images
 
 """
 

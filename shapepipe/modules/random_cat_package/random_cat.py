@@ -186,9 +186,9 @@ class RandomCat():
 
         # Remove overlapping regions
         if n_unmasked > 0 and self._tile_list_path:
-             self._w_log.info('Flag overlapping objects')
-             ratio_non_overl_tot = cfis.remove_common_elements(
-                 output,
+            self._w_log.info('Flag overlapping objects')
+            ratio_non_overl_tot = cfis.remove_common_elements(
+                output,
                 self._tile_list_path,
                 pos_param=['RA', 'DEC']
             )
