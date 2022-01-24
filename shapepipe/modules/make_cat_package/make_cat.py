@@ -205,7 +205,7 @@ class SaveCatalogue:
         else:
             raise ValueError(
                 f'Invalid process mode ({mode}) for '
-                + '``make_catalogue.Savecatalogue``. Options are "ngmix", '
+                + '``make_cat.Savecatalogue``. Options are "ngmix", '
                 + '"galsim" or "psf".'
             )
 
