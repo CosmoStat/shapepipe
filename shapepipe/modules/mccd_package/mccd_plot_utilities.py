@@ -43,7 +43,7 @@ mpl.use('agg')
 '''
 
 
-def megacam_pos(j):
+def megacam_pos(index):
     """Handle MegaCam Positions.
 
     Parameters
