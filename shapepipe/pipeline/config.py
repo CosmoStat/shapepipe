@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""CONFIGURATION FILE HANDLING
+"""CONFIGURATION FILE HANDLING.
 
 This module defines methods for handling the pipeline configuration file.
 
@@ -13,14 +11,14 @@ from configparser import ConfigParser
 
 
 class CustomParser(ConfigParser):
-    """Custom Parser
+    """Custom Parser.
 
     This class adds functionality to the ``ConfigParser`` class.
 
     """
 
     def getexpanded(self, section, option):
-        """Get Expanded
+        """Get Expanded.
 
         This method expands enviroment varibles obtaiened using the get method.
 
@@ -40,7 +38,7 @@ class CustomParser(ConfigParser):
         return self._get(section, os.path.expandvars, option)
 
     def getlist(self, section, option, delimiter=','):
-        """Get List
+        """Get List.
 
         This method retrieves a list of strings separated by a given
         delimiter.
@@ -67,7 +65,7 @@ class CustomParser(ConfigParser):
 
 
 class SetUpParser(object):
-    """Set Up Parser
+    """Set Up Parser.
 
     This class sets up an instance of ``CustomParser`` and checks the
     pipeline related parameters.
@@ -86,7 +84,7 @@ class SetUpParser(object):
 
     @property
     def file_name(self):
-        """File name
+        """Set file name.
 
         This sets the configuration file name.
 
@@ -107,7 +105,7 @@ class SetUpParser(object):
         self._file_name = value
 
     def _set_defaults(self):
-        """Set Defaults
+        """Set Defaults.
 
         Set default configuration options.
 
@@ -122,7 +120,7 @@ class SetUpParser(object):
             self.config.set('DEFAULT', 'VERBOSE', 'True')
 
     def _set_execution_options(self):
-        """Set Execution Options
+        """Set Execution Options.
 
         This method checks the execution options in the configuration file.
 
@@ -141,7 +139,7 @@ class SetUpParser(object):
             self.config.set('EXECUTION', 'MODE', 'smp')
 
     def _set_file_options(self):
-        """Set File Options
+        """Set File Options.
 
         This module checks the file options in the configuration file.
 
@@ -179,7 +177,7 @@ class SetUpParser(object):
             self.config.set('FILE', 'CORRECT_FILE_PATTERN', 'True')
 
     def _set_worker_options(self):
-        """Set Worker Options
+        """Set Worker Options.
 
         This module checks the worker options in the configuration file.
 
@@ -191,7 +189,7 @@ class SetUpParser(object):
             self.config.set('WORKER', 'PROCESS_PRINT_LIMIT', '200')
 
     def get_parser(self):
-        """Get Parser
+        """Get Parser.
 
         Return a configuration file parser instance.
 
@@ -211,7 +209,7 @@ class SetUpParser(object):
 
 
 def create_config_parser(file_name):
-    """Create Configuration Parser
+    """Create Configuration Parser.
 
     This method creates a configuration file parser instance.
 

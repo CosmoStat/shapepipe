@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""SHAPEPIPE PACKAGE
+"""SHAPEPIPE PACKAGE.
 
 ShapePipe is a galaxy shape measurement pipeline.
 

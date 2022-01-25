@@ -1,36 +1,30 @@
-# -*- coding: utf-8 -*-
-
-"""GET IMAGES RUNNER
+"""GET IMAGES RUNNER.
 
 Module runner for ``get_images``
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
-:Date: 2019 - 2021
-
-:Package: ShapePipe
-
 """
 
-
+from shapepipe.modules.get_images_package.get_images import GetImages
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.get_images_package import get_images as gi
 
 
 @module_runner(
-    version='1.0',
+    version='1.1',
     depends=['numpy'],
     run_method='serial',
-    numbering_scheme='_0')
+    numbering_scheme='_0',
+)
 def get_images_runner(
     input_file_list,
     run_dirs,
     file_number_string,
     config,
     module_config_sec,
-    w_log
+    w_log,
 ):
-
+    """Define The Get Images Runner."""
     # Read config file section
 
     # Copy/download method
@@ -38,7 +32,8 @@ def get_images_runner(
     retrieve_ok = ['vos', 'symlink']
     if retrieve_method not in retrieve_ok:
         raise ValueError(
-            f'key RETRIEVE={retrieve_method} is invalid, must be in {retrieve_ok}'
+            f'key RETRIEVE={retrieve_method} is invalid, '
+            + f'must be in {retrieve_ok}'
         )
 
     if config.has_option(module_config_sec, 'RETRIEVE_OPTIONS'):
@@ -90,7 +85,8 @@ def get_images_runner(
         check_existing_dir = None
         n_expected = None
 
-    inst = gi.GetImages(
+    # Create get images class instance
+    get_images_inst = GetImages(
         retrieve_method,
         retrieve_options,
         input_file_list,
@@ -101,9 +97,11 @@ def get_images_runner(
         w_log,
         check_existing_dir=check_existing_dir,
         n_expected=n_expected,
-        n_try=n_try
+        n_try=n_try,
     )
 
-    inst.process(input_dir, output_dir)
+    # Run processing
+    get_images_inst.process(input_dir, output_dir)
 
+    # No return objects
     return None, None

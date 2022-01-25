@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""MERGE HEADERS RUNNER
+"""MERGE HEADERS RUNNER.
 
 Module runner for ``merge_headers``.
 
@@ -8,8 +6,8 @@ Module runner for ``merge_headers``.
 
 """
 
+from shapepipe.modules.merge_headers_package.merge_headers import merge_headers
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.merge_headers_package import merge_headers as mh
 
 
 @module_runner(
@@ -28,7 +26,7 @@ def merge_headers_runner(
     module_config_sec,
     w_log,
 ):
-
+    """Define The Merge Headers Runner."""
     # Set output directory
     output_dir = run_dirs['output']
     if config.has_option(module_config_sec, 'OUTPUT_PATH'):
@@ -38,7 +36,7 @@ def merge_headers_runner(
     w_log.info(f'output_dir = {output_dir}')
 
     # Merge header files
-    mh.merge_headers(input_file_list, output_dir)
+    merge_headers(input_file_list, output_dir)
 
     # No return objects
     return None, None

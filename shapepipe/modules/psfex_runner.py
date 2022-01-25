@@ -1,18 +1,14 @@
-# -*- coding: utf-8 -*-
+"""PSFEX RUNNER.
 
-"""PSFEX RUNNER
-
-This module run PSFEx.
+Module runner for ``psfex``.
 
 :Author: Axel Guinot
 
 """
 
-import re
-import os
-from shapepipe.pipeline.execute import execute
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.psfex_package.psfex_script import PSFEx_caller
+from shapepipe.modules.psfex_package.psfex_script import PSFExCaller
+from shapepipe.pipeline.execute import execute
 
 
 @module_runner(
@@ -20,7 +16,7 @@ from shapepipe.modules.psfex_package.psfex_script import PSFEx_caller
     version='1.0',
     file_pattern=['star_selection'],
     file_ext=['.fits'],
-    executes='psfex'
+    executes='psfex',
 )
 def psfex_runner(
         input_file_list,
@@ -28,48 +24,50 @@ def psfex_runner(
         file_number_string,
         config,
         module_config_sec,
-        w_log
+        w_log,
 ):
-
-    # extract psfex  run configurations
+    """Define The PSFEx Runner."""
+    # Extract psfex run configurations
     psfex_executable_path = config.getexpanded(
         module_config_sec,
-        "EXEC_PATH"
+        'EXEC_PATH'
     )
     output_dir = run_dirs['output']
 
-    outcatalog_name = f"{output_dir}/psfex_cat{file_number_string}.cat"
+    outcatalog_name = f'{output_dir}/psfex_cat{file_number_string}.cat'
 
     psfex_config_file = config.getexpanded(
         module_config_sec,
-        "DOT_PSFEX_FILE"
+        'DOT_PSFEX_FILE'
     )
 
     input_file_path = input_file_list[0]
 
-    # check image options
-    if config.has_option(module_config_sec, "CHECKIMAGE"):
-        check_image_list = config.getlist(module_config_sec, "CHECKIMAGE")
+    # Check image options
+    if config.has_option(module_config_sec, 'CHECKIMAGE'):
+        check_image_list = config.getlist(module_config_sec, 'CHECKIMAGE')
     else:
         check_image_list = ['']
 
-    # prepare the psfex command line
-    PSFEx_call = PSFEx_caller(
+    # Create psfex caller class instance
+    psfex_inst = PSFExCaller(
         psfex_executable_path,
         input_file_path,
         psfex_config_file,
         output_dir,
         outcatalog_name,
-        check_image_list
+        check_image_list,
     )
 
-    # generates the psfex command
-    command_line = PSFEx_call.generate_command()
-
+    # Generate psfex command line
+    command_line = psfex_inst.generate_command()
     w_log.info(f'Running command \'{command_line}\'')
+
+    # Execute command line
     stderr, stdout = execute(command_line)
 
-    # move psfex errors reported as stdout to stderr
-    stdout, stderr = PSFEx_call.parse_errors(stderr, stdout)
+    # Parse psfex errors
+    stdout, stderr = psfex_call.parse_errors(stderr, stdout)
 
+    # Return stdout and stderr
     return stdout, stderr

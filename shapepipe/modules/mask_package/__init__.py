@@ -1,10 +1,20 @@
-# -*- coding: utf-8 -*-
+"""MASK MODULE.
 
-"""MASK MODULE
-
-This package contains the module(s) for ``mask``.
+This package contains the module for ``mask``.
 
 :Author: Axel Guinot
+
+:Parent module:
+
+:Input:
+
+:Output:
+
+Description
+===========
+
+Module-specific config file entries
+===================================
 
 """
 

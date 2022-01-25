@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""MERGE HEADERS
+"""MERGE HEADERS.
 
 This module merges the output "header" files of the ``split_exp_runner.py``
 module. It creates a binnary file that contains the WCS of each CCD for each
@@ -12,12 +10,13 @@ exposure.
 
 import os
 import re
+
 import numpy as np
 from sqlitedict import SqliteDict
 
 
 def merge_headers(input_file_list, output_dir):
-    """Merge Headers
+    """Merge Headers.
 
     This function opens the files in the input file list and merges them into
     a SqliteDict file provided they match the appropriate pattern.
@@ -35,7 +34,6 @@ def merge_headers(input_file_list, output_dir):
         For invalid ``output_dir`` type
 
     """
-
     if not isinstance(output_dir, str):
         raise TypeError(
             'Output directory for merge headers must be a string '

@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""EXECUTE MODULE EXAMPLE
+"""EXECUTE MODULE EXAMPLE.
 
 This module defines methods for an example command line execution module.
 
@@ -8,8 +6,8 @@ This module defines methods for an example command line execution module.
 
 """
 
-from shapepipe.pipeline.execute import execute
 from shapepipe.modules.module_decorator import module_runner
+from shapepipe.pipeline.execute import execute
 
 
 @module_runner(
@@ -28,7 +26,7 @@ def execute_example_runner(
     module_config_sec,
     w_log,
 ):
-
+    """Define The Execute Example Runner."""
     command_line = f'head {input_file_list[0]}'
     output_file_name = (
         f'{run_dirs["output"]}/head_output{file_number_string}.txt'

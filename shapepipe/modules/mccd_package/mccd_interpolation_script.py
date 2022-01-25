@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""INTERPOLATION SCRIPT
+"""MCCD INTERPOLATION SCRIPT.
 
 This module computes the PSFs from a MCCD model at several galaxy positions.
 
@@ -9,10 +7,13 @@ This module computes the PSFs from a MCCD model at several galaxy positions.
 """
 
 import os
-import numpy as np
-from shapepipe.pipeline import file_io as sc
-from sqlitedict import SqliteDict
+
 import mccd
+import numpy as np
+from sqlitedict import SqliteDict
+
+from shapepipe.pipeline import file_io as sc
+
 try:
     import galsim.hsm as hsm
     from galsim import Image
@@ -28,7 +29,9 @@ FILE_NOT_FOUND = 'File_not_found'
 
 
 def interp_MCCD(mccd_model_path, positions, ccd):
-    r"""Interpolate MCCD model on requested positions.
+    r"""Interpolate MCCD.
+
+    Interpolate MCCD model on requested positions.
 
     Parameters
     ----------
@@ -78,7 +81,8 @@ def interp_MCCD(mccd_model_path, positions, ccd):
 
 
 class MCCDinterpolator(object):
-    """Interpolator class.
+    """The MCCD Interpolator Class.
+
     This class uses a PSFEx output file to compute the PSF at desired
     positions.
 
@@ -116,7 +120,7 @@ class MCCDinterpolator(object):
     ):
         # Path to PSFEx output file
         self._dotpsf_path = dotpsf_path
-        # Path to catalog containing galaxy positions
+        # Path to catalogue containing galaxy positions
         self._galcat_path = galcat_path
         # Path to output file to be written
         self._output_path = output_path + '/galaxy_psf'
@@ -150,7 +154,10 @@ class MCCDinterpolator(object):
         self._img_number = img_number
 
     def _get_position_parameters(self):
-        """ Read position parameters from .psf file.
+        """Get Position Parameters.
+
+        Read position parameters from a ``.psf`` file.
+
         """
         dotpsf = file_io.FITSCatalogue(self._dotpsf_path)
         dotpsf.open()
@@ -161,7 +168,10 @@ class MCCDinterpolator(object):
         dotpsf.close()
 
     def _get_galaxy_positions(self):
-        """ Extract galaxy positions from galaxy catalog.
+        """Get Galaxy Positions.
+
+        Extract galaxy positions from a galaxy catalogue.
+
         """
         if self._pos_params is None:
             self._get_position_parameters()
@@ -189,7 +199,10 @@ class MCCDinterpolator(object):
         galcat.close()
 
     def _get_psfshapes(self):
-        """ Compute shapes of PSF at galaxy positions using HSM.
+        """Get PSF Shapes.
+
+        Compute shapes of PSF at galaxy positions using HSM.
+
         """
         if import_fail:
             raise ImportError('Galsim is required to get shapes information')
@@ -210,7 +223,10 @@ class MCCDinterpolator(object):
         ])
 
     def _write_output(self):
-        """ Save computed PSFs to fits file.
+        """Write Output.
+
+        Save computed PSFs to fits file.
+
         """
         output = file_io.FITSCatalogue(
             self._output_path + self._img_number + '.fits',
@@ -231,11 +247,15 @@ class MCCDinterpolator(object):
         output.save_as_fits(data, sex_cat_path=self._galcat_path)
 
     def _get_starshapes(self, star_vign):
-        """ Compute shapes of stars at stars positions using HSM.
+        """Get Star Shapes.
+
+        Compute shapes of stars at stars positions using HSM.
+
         Parameters
         ----------
         star_vign : numpy.ndarray
             Array containing the star's vignets.
+
         """
         if import_fail:
             raise ImportError('Galsim is required to get shapes information')
@@ -261,17 +281,21 @@ class MCCDinterpolator(object):
         ])
 
     def _get_psfexcatdict(self, psfex_cat_path):
-        """ Get data from PSFEx .cat file.
+        """Get PSFEx Catalogue Dictionary.
+
+        Get data from a PSFEx ``.cat`` file.
+
         Parameters
         ----------
         psfex_cat_path : str
             Path to the .cat file from PSFEx.
+
         Returns
         -------
         psfex_cat_dict : dict
             Dictionary containing information from PFSEx .cat file.
-        """
 
+        """
         psfex_cat = file_io.FITSCatalogue(psfex_cat_path, SEx_catalogue=True)
         psfex_cat.open()
 
@@ -287,13 +311,17 @@ class MCCDinterpolator(object):
         return psfex_cat_dict
 
     def _write_output_validation(self, star_dict, psfex_cat_dict):
-        """ Save computed PSFs and stars to fits file.
+        """Write Output Validation.
+
+        Save computed PSFs and stars to a FITS file.
+
         Parameters
         ----------
         star_dict : dict
             Dictionary containing star informations.
         psfex_cat_dict : dict
             Dictionary containing information from PFSEx .cat file.
+
         """
         output = file_io.FITSCatalogue(
             self._output_path_validation + self._img_number + '.fits',
@@ -322,7 +350,7 @@ class MCCDinterpolator(object):
         output.save_as_fits(data, sex_cat_path=self._galcat_path)
 
     def process_me(self, dot_psf_dir, dot_psf_pattern, f_wcs_path):
-        """ Process the multi-epoch.
+        """Process Multi-Epoch.
 
         Parameters
         ----------
@@ -347,7 +375,9 @@ class MCCDinterpolator(object):
         self._write_output_me(output_dict)
 
     def _interpolate_me(self):
-        """ Interpolate PSFs for multi-epoch run.
+        """Interpolate Multi-Epoch.
+
+        Interpolate PSFs for multi-epoch run.
 
         Returns
         -------
@@ -494,11 +524,15 @@ class MCCDinterpolator(object):
         return output_dict
 
     def _write_output_me(self, output_dict):
-        """ Save computed PSFs to numpy object file for multi-epoch run.
+        """Write Output Multi-Epoch.
+
+        Save computed PSFs to numpy object file for multi-epoch run.
+
         Parameters
         ----------
         output_dict : dict
             Dictionnary of outputs to save
+
         """
         # np.save(self._output_path+self._img_number, output_dict)
 

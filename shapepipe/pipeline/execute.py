@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""EXECUTE
+"""EXECUTE.
 
 This module defines methods for running the pipeline modules.
 
@@ -13,7 +11,7 @@ import subprocess as sp
 
 
 def execute(command_line):
-    """Execute
+    """Execute.
 
     This method executes a given command line.
 
@@ -46,7 +44,7 @@ def execute(command_line):
 
 
 def check_executable(exe_name):
-    """Check if Input is Executable
+    """Check if Input is Executable.
 
     This methid checks if the input executable exists.
 

@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""STRING HANDLER
+"""STRING HANDLER.
 
 This module defines a class for handling string operations.
 
@@ -17,7 +15,7 @@ from modopt.math.stats import sigma_mad
 
 
 class StrInterpreter(object):
-    """Interpreter class
+    """String Interpreter Class.
 
     Class to handle operation/comparison in a string.
 
@@ -37,6 +35,7 @@ class StrInterpreter(object):
         If true return directly the result
 
     """
+
     def __init__(self, string, catalogue, make_compare=False, mask_dict=None):
 
         if type(string) is not str:
@@ -79,7 +78,7 @@ class StrInterpreter(object):
         make_func=True,
         make_operate=True,
     ):
-        """Interpret
+        """Interpret.
 
         This function handles the different possible operations
 
@@ -104,7 +103,6 @@ class StrInterpreter(object):
         This is a recursive function.
 
         """
-
         if make_compare:
             result = self._compare(string)
         else:
@@ -120,7 +118,7 @@ class StrInterpreter(object):
         return result
 
     def _compare(self, string):
-        """Handle comparison in a string
+        """Handle Comparison in a String.
 
         This function transform condition in a string to real condition.
 
@@ -130,7 +128,6 @@ class StrInterpreter(object):
             strind containing the comparison.
 
         """
-
         comp = '<|>|<=|>=|==|!='
 
         if len(re.split(comp, string)) != 2:
@@ -148,7 +145,7 @@ class StrInterpreter(object):
                 return self._comp_dict[operator](first, second)
 
     def _apply_func(self, string):
-        """Parse input string for function name and apply function.
+        """Parse Input String for Function Name and Apply Function.
 
         Parameters
         ----------
@@ -161,7 +158,6 @@ class StrInterpreter(object):
             result of the function
 
         """
-
         str_split = re.split(r'\(|\)', string)
 
         if len(str_split) == 1:
@@ -210,7 +206,7 @@ class StrInterpreter(object):
             )
 
     def _init_stat_function(self):
-        """Initialise available stat functions
+        """Initialise Available Stat Functions.
 
         Create a dictionary containing the functions.
 
@@ -233,7 +229,7 @@ class StrInterpreter(object):
         self._stat_func['homogen'] = self._test_homogeneity
 
     def _mean(self, input):
-        """Mean
+        """Get Mean.
 
         Compute the mean of a distribution.
 
@@ -255,7 +251,7 @@ class StrInterpreter(object):
             return np.mean()
 
     def _mode(self, input, eps=0.001, iter_max=1000):
-        """Mode
+        """Get Mode.
 
         Compute the mode, the most frequent value of a continuous distribution.
 
@@ -313,7 +309,7 @@ class StrInterpreter(object):
             return mode
 
     def _sigma_mad(self, input):
-        """Mean absolute deviation
+        """Get Mean Absolute Deviation.
 
         Compute median absolute deviation (MAD).
 
@@ -335,7 +331,7 @@ class StrInterpreter(object):
             return sigma_mad(input)
 
     def _test_homogeneity(self, *args):
-        """Test Homogeneity
+        """Test Homogeneity.
 
         Test homogeneity on 1D or 2D space.
 
@@ -355,7 +351,6 @@ class StrInterpreter(object):
             (based on the standard deviation)
 
         """
-
         if len(args) == 2:
             n_param = 1
             param = [args[0]]
@@ -426,7 +421,7 @@ class StrInterpreter(object):
         return actual_std / worse_std * 100.0
 
     def _operate(self, string, string_split):
-        """Handle operation in a string
+        """Handle Operation in a String.
 
         Make operation between catalogue's parameters and/or numbers.
 
@@ -442,12 +437,11 @@ class StrInterpreter(object):
         float
             Result of the operation
 
-        Note
-        ----
+        Notes
+        -----
         It's used as a recursive function
 
         """
-
         op = r'\*|\/|\-|\+\s*(?![^()]*\))'
         if string is None:
             raise ValueError('Parameter not specified')
@@ -492,7 +486,7 @@ class StrInterpreter(object):
                     )
 
     def _string_op_func(self, string_op, string_split, op, tmp):
-        r"""Perform a specified operation
+        r"""Perform a Specified Operation.
 
         This function handle the posible operation between parameters.
 
@@ -516,7 +510,6 @@ class StrInterpreter(object):
             Result of the operation or 'pass' if there are remaining operations
 
         """
-
         if len(string_op) > 2:
             for operator in string_op:
                 if tmp == 'init':
@@ -538,7 +531,7 @@ class StrInterpreter(object):
             return 'pass'
 
     def _get_value(self, string):
-        """Get Value
+        """Get Value.
 
         Return the value of the corresponding parameter. Or return a float
         with a number as parameter.
@@ -553,12 +546,11 @@ class StrInterpreter(object):
         float
             Value of the parameter. Or float
 
-        Note
-        ----
+        Notes
+        -----
         You can't perform operations here!
 
         """
-
         if string is None:
             raise ValueError("Parameter not specified")
 

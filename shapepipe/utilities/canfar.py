@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""CANFAR TOOLS
+"""CANFAR TOOLS.
 
 This module defines methods for managing CANFAR specific actions.
 
@@ -23,16 +21,17 @@ else:
 
 
 class vosError(Exception):
-    """VOS Error
+    """VOS Error.
 
     Generic error that is raised by the vosHandler.
 
     """
+
     pass
 
 
 class vosHandler:
-    """VOS Handler
+    """VOS Handler.
 
     This class manages the use of VOS commands.
 
@@ -51,7 +50,7 @@ class vosHandler:
 
     @staticmethod
     def _check_vos_install():
-        """Check VOS Install
+        """Check VOS Install.
 
         Check if VOS is correctly installed.
 
@@ -59,6 +58,7 @@ class vosHandler:
         ------
         ImportError
             if vos package cannot be imported
+
         """
         if import_fail:
             raise ImportError(
@@ -68,7 +68,7 @@ class vosHandler:
 
     @property
     def command(self):
-        """Command
+        """Set Command.
 
         This method sets the VOS command property.
 
@@ -76,6 +76,7 @@ class vosHandler:
         ------
         ValueError
             if value is not valid vos command
+
         """
         return self._command
 
@@ -90,7 +91,7 @@ class vosHandler:
         self._command = getattr(vosc, value)
 
     def __call__(self, *args, **kwargs):
-        """Call Method
+        """Call Method.
 
         This method allows class instances to be called as functions.
 
@@ -98,18 +99,21 @@ class vosHandler:
         ------
         vosError
             if error in vos command occurs
+
         """
         try:
             self._command()
 
-        except:
+        except Exception:
             raise vosError(
                 f'Error in VOs command: {self._command.__name__}'
             )
 
 
 def download(source, target, verbose=False):
-    """Download file from vos.
+    """Download.
+
+    Download file from vos.
 
     Parameters
     ----------
@@ -124,8 +128,8 @@ def download(source, target, verbose=False):
     -------
     status : bool
         status, True/False or success/failure
-    """
 
+    """
     cmd = 'vcp'
 
     if not os.path.exists(target):
@@ -143,9 +147,9 @@ def download(source, target, verbose=False):
 
 
 def dir_list(path, verbose=False):
-    """list
+    """Set Directory List.
 
-    List content of path on vos
+    List content of path on vos.
 
     Parameters
     ----------
@@ -163,8 +167,8 @@ def dir_list(path, verbose=False):
     -------
     vls_out : array of str
         file or directory at path
-    """
 
+    """
     cmd = 'vls'
     sys.argv = [cmd, path]
     vls = vosHandler(cmd)
@@ -177,7 +181,7 @@ def dir_list(path, verbose=False):
     try:
         with redirect_stdout(f):
             vls()
-    except:
+    except Exception:
         print('Error during vls command')
         raise
 
