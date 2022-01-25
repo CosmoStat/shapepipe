@@ -299,7 +299,7 @@ def mccd_validation_pipeline(
         Path to test stars
     mccd_model_path : str
         Path to MCCD model
-    mccd_parser :
+    mccd_parser : mccd.auxiliary_fun.MCCDParamsParser object
         MCCD parser
     output_dir : str
         Output directory
