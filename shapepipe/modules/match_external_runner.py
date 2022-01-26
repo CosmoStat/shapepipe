@@ -1,15 +1,13 @@
-# -*- coding: utf-8 -*-
+"""MATCH EXTERNAL RUNNER.
 
-"""MATCH EXTERNAL RUNNER
-
-This module matches an external catalogue to a ShapePipe (SExtractor) catalog
+Module runner for ``match_external``.
 
 :Author: Martin Kilbinger, Xavier Jimenez
 
 """
 
-from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.match_external_package.match_external import MatchCats
+from shapepipe.modules.module_decorator import module_runner
 
 
 @module_runner(
@@ -28,7 +26,7 @@ def match_external_runner(
     module_config_sec,
     w_log,
 ):
-
+    """Define The Match External Runner."""
     # Get processing tolerance
     tolerance = config.getfloat(module_config_sec, 'TOLERANCE')
 
@@ -91,7 +89,7 @@ def match_external_runner(
     )
 
     # Create instance of MatchCats
-    mc_inst = MatchCats(
+    match_cats_inst = MatchCats(
         input_file_list,
         output_path,
         w_log,
@@ -107,7 +105,7 @@ def match_external_runner(
     )
 
     # Process inputs
-    mc_inst.process()
+    match_cats_inst.process()
 
     # No return objects
     return None, None

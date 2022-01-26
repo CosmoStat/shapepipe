@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""FILE HANDLER
+"""FILE HANDLER.
 
 This module defines a class for handling pipeline files.
 
@@ -10,18 +8,20 @@ This module defines a class for handling pipeline files.
 
 import os
 import re
-import numpy as np
-from shutil import copyfile
+from functools import partial, reduce
 from glob import glob
-from functools import reduce, partial
+from shutil import copyfile
+
+import numpy as np
+
+from shapepipe.modules.module_runners import get_module_runners
 from shapepipe.pipeline.run_log import RunLog
 from shapepipe.pipeline.shared import split_module_run
-from shapepipe.modules.module_runners import get_module_runners
 from shapepipe.utilities.file_system import mkdir
 
 
 def find_files(path, pattern='*', ext='*'):
-    """Find Files
+    """Find Files.
 
     This method recursively retrieves file names from a given path that
     match a given pattern and/or have a given extension.
@@ -98,7 +98,7 @@ def check_duplicate(input_list):
 
 
 class FileHandler(object):
-    """File Handler
+    """File Handler.
 
     This class manages the files used and produced during a pipeline run.
 
@@ -157,7 +157,7 @@ class FileHandler(object):
 
     @property
     def run_dir(self):
-        """Run Directory
+        """Run Directory.
 
         This method defines the run directory.
 
@@ -171,7 +171,7 @@ class FileHandler(object):
 
     @property
     def _input_dir(self):
-        """Input Directory
+        """Input Directory.
 
         This method defines the input directories.
 
@@ -185,7 +185,7 @@ class FileHandler(object):
 
     @property
     def _output_dir(self):
-        """Output Directory
+        """Output Directory.
 
         This method defines the output directory.
 
@@ -199,7 +199,7 @@ class FileHandler(object):
 
     @staticmethod
     def read_number_list(file_name):
-        """Read Number List
+        """Read Number List.
 
         Extract number strings to be processed from a file.
 
@@ -216,7 +216,7 @@ class FileHandler(object):
 
     @classmethod
     def check_dir(cls, dir_name, check_exists=False):
-        """Check Directory
+        """Check Directory.
 
         Raise error if directory exists.
 
@@ -238,7 +238,7 @@ class FileHandler(object):
 
     @classmethod
     def check_dirs(cls, dir_list):
-        """Check Directories
+        """Check Directories.
 
         Check directories in list
 
@@ -252,7 +252,7 @@ class FileHandler(object):
 
     @classmethod
     def mkdir(cls, dir_name):
-        """Make Directory
+        """Make Directory.
 
         This method creates a directory at the specified path.
 
@@ -267,7 +267,7 @@ class FileHandler(object):
 
     @staticmethod
     def setpath(path, name, ext=''):
-        """Set Path Name
+        """Set Path Name.
 
         This method appends the file/directory name to the input path.
 
@@ -290,7 +290,7 @@ class FileHandler(object):
 
     @staticmethod
     def strip_slash(path):
-        """Strip Slash
+        """Strip Slash.
 
         This method removes the trailing slash from a path.
 
@@ -309,7 +309,7 @@ class FileHandler(object):
 
     @classmethod
     def strip_slash_list(cls, path_list):
-        """Strip Slash List
+        """Strip Slash List.
 
         This method removes the trailing slash from a list of paths.
 
@@ -328,7 +328,7 @@ class FileHandler(object):
 
     @staticmethod
     def flatten_list(input_list):
-        """Flatten List
+        """Flatten List.
 
         Flatten a list of lists.
 
@@ -347,7 +347,7 @@ class FileHandler(object):
 
     @staticmethod
     def _get_module_run_name(dir):
-        """Get Module Run Name
+        """Get Module Run Name.
 
         Retrieve module run name, module name and search string from input
         string.
@@ -369,7 +369,7 @@ class FileHandler(object):
         return module_run.lower(), module.lower(), string
 
     def _check_input_dir_list(self, dir_list):
-        """Check Input Directory List
+        """Check Input Directory List.
 
         Check an input list to see if the directories exist or if the the run
         log should be serarched for an appropriate output directory.
@@ -435,7 +435,7 @@ class FileHandler(object):
         return input_dir
 
     def _get_input_dir(self):
-        """Get Input Directory
+        """Get Input Directory.
 
         This method sets the module input directory
 
@@ -443,7 +443,7 @@ class FileHandler(object):
         self._input_dir = self._check_input_dir_list(self._input_list)
 
     def create_global_run_dirs(self):
-        """Create Global Run Directories
+        """Create Global Run Directories.
 
         This method creates the pipeline output directories for a given run.
 
@@ -466,7 +466,7 @@ class FileHandler(object):
         self._copy_config_to_log()
 
     def _copy_config_to_log(self):
-        """Copy Config to Log
+        """Copy Config to Log.
 
         Copy configuration file to run log directory.
 
@@ -479,7 +479,7 @@ class FileHandler(object):
         )
 
     def get_module_current_run(self, module):
-        """Get Module Current Run
+        """Get Module Current Run.
 
         Get the run current run count for the module.
 
@@ -497,7 +497,7 @@ class FileHandler(object):
         return str(self._module_dict[module]['run_count'])
 
     def get_module_config_sec(self, module):
-        """Get Module Configuration Section
+        """Get Module Configuration Section.
 
         Get the name of section name in the configuration file for the module.
 
@@ -515,7 +515,7 @@ class FileHandler(object):
         return self._module_dict[module]['latest'].upper()
 
     def get_add_module_property(self, run_name, property):
-        """Get Additional Module Properties
+        """Get Additional Module Properties.
 
         Get a list of additional module property values.
 
@@ -543,7 +543,7 @@ class FileHandler(object):
             )
 
     def _set_module_property(self, module, run_name, property, get_type):
-        """Set Module Property
+        """Set Module Property.
 
         Set a module property from either the configuration file or the module
         runner.
@@ -563,7 +563,7 @@ class FileHandler(object):
 
         1. Look for properties in module section of the config file,
         2. look for default properties in the file handler, which sources the
-        ``[FILE]`` section of the config file,
+           ``[FILE]`` section of the config file,
         3. look for default properties in the module runner definition.
 
         In other words, module runner definitions will only be used if the
@@ -611,7 +611,7 @@ class FileHandler(object):
         self._module_dict[module][run_name][property] = prop_val
 
     def _set_module_properties(self, module, run_name):
-        """Get Module Properties
+        """Get Module Properties.
 
         Get module properties defined in module runner wrapper.
 
@@ -656,7 +656,7 @@ class FileHandler(object):
             )
 
     def _create_module_run_dirs(self, module, run_name):
-        """Create Module Run Directories
+        """Create Module Run Directories.
 
         This method creates the module output directories for a given run.
 
@@ -696,7 +696,7 @@ class FileHandler(object):
         }
 
     def _set_module_input_dir(self, module, run_name):
-        """Set Module Input Directory
+        """Set Module Input Directory.
 
         Set the module input directory. If the module specified is the
         first module in the pipeline or does not have any input modules then
@@ -722,9 +722,6 @@ class FileHandler(object):
             input_dir = self._input_dir
 
         else:
-
-            print(self._module_dict)
-
             input_dir = []
             for input_module in (
                 self._module_dict[module][run_name]['input_module']
@@ -759,7 +756,7 @@ class FileHandler(object):
 
     @staticmethod
     def _generate_re_pattern(match_pattern):
-        """Generate Regular Expression Pattern
+        """Generate Regular Expression Pattern.
 
         Generate a regular expression pattern from an input string.
 
@@ -797,7 +794,7 @@ class FileHandler(object):
 
     @staticmethod
     def _strip_dir_from_file(file_name, dir_list):
-        """Strip Directory from File Name
+        """Strip Directory from File Name.
 
         Remove the directory string from the file name.
 
@@ -821,7 +818,7 @@ class FileHandler(object):
 
     @classmethod
     def _get_re(cls, num_scheme):
-        """Get Regular Expression
+        """Get Regular Expression.
 
         Return the regular expression corresponding to the numbering scheme.
 
@@ -865,7 +862,7 @@ class FileHandler(object):
         ext,
         output_file
     ):
-        """Save Number Patterns
+        """Save Number Patterns.
 
         Save file number patterns to numpy binary, update file patterns and
         get correct file paths.
@@ -971,7 +968,7 @@ class FileHandler(object):
 
     @staticmethod
     def _save_match_patterns(output_file, mmap_list):
-        """Save Match Patterns
+        """Save Match Patterns.
 
         Save matching number patterns to numpy binary.
 
@@ -997,7 +994,7 @@ class FileHandler(object):
 
     @staticmethod
     def _get_file_name(path, pattern, number, ext):
-        """Get File Name
+        """Get File Name.
 
         Get file name corresponding to the path, file pattern, number pattern
         and file extension.
@@ -1013,18 +1010,17 @@ class FileHandler(object):
         ext : str
             File extension
 
-        Retunrs
+        Returns
         -------
         str
             File name
 
         """
-
         return f'{path}/{pattern}{number}{ext}'
 
     @staticmethod
     def _remove_mmaps(mmap_list):
-        """Remove Memory Maps
+        """Remove Memory Maps.
 
         Remove memory map files in input list.
 
@@ -1034,7 +1030,6 @@ class FileHandler(object):
             List of memory map files
 
         """
-
         if isinstance(mmap_list, str):
             mmap_list = [str]
 
@@ -1049,7 +1044,7 @@ class FileHandler(object):
         num_scheme,
         run_method,
     ):
-        """Format Process List
+        """Format Process List.
 
         Format the list of files to be processed.
 
@@ -1109,7 +1104,7 @@ class FileHandler(object):
         num_scheme,
         run_method,
     ):
-        """Save Process List
+        """Save Process List.
 
         Save list of processes to a numpy binary.
 
@@ -1166,7 +1161,7 @@ class FileHandler(object):
         self._remove_mmaps(np_mmap_list + [match_mmap])
 
     def remove_process_mmap(self):
-        """Remove Process MMAP
+        """Remove Process MMAP.
 
         Remove process list memory map.
 
@@ -1174,7 +1169,7 @@ class FileHandler(object):
         self._remove_mmaps([self.process_mmap])
 
     def _get_module_input_files(self, module, run_name):
-        """Get Module Input Files
+        """Get Module Input Files.
 
         Retrieve the module input files names from the input directory.
 
@@ -1199,7 +1194,7 @@ class FileHandler(object):
         )
 
     def set_up_module(self, module):
-        """Set Up Module
+        """Set Up Module.
 
         Set up module parameters for file handler.
 
@@ -1209,7 +1204,6 @@ class FileHandler(object):
             Module name
 
         """
-
         multi_call = self._module_list.count(module) > 1
 
         if module in self._module_dict.keys():
@@ -1233,7 +1227,7 @@ class FileHandler(object):
         self._get_module_input_files(module, run_name)
 
     def get_worker_log_name(self, module, file_number_string):
-        """Get Worker Log Name
+        """Get Worker Log Name.
 
         This method generates a worker log name.
 

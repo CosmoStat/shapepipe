@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""JOB HANDLER
+"""JOB HANDLER.
 
 This module defines a class for handling pipeline jobs.
 
@@ -10,14 +8,16 @@ This module defines a class for handling pipeline jobs.
 
 from configparser import ConfigParser
 from gc import collect
-from joblib import Parallel, delayed, cpu_count
 from logging import Logger
+
+from joblib import Parallel, cpu_count, delayed
 from modopt.interface.errors import warn
+
 from shapepipe.pipeline.worker_handler import WorkerHandler
 
 
 class JobHandler(object):
-    """Job Handler
+    """Job Handler.
 
     This class handles the submition of jobs to workers distributed among a
     specified number of CPUs.
@@ -74,7 +74,7 @@ class JobHandler(object):
 
     @property
     def config(self):
-        """Config
+        """Set Config.
 
         This method defines the configuation parser instance
 
@@ -98,7 +98,7 @@ class JobHandler(object):
 
     @property
     def log(self):
-        """Log
+        """Set Log.
 
         This method defines the logging instance
 
@@ -120,7 +120,7 @@ class JobHandler(object):
 
     @property
     def job_type(self):
-        """Job Type
+        """Set Job Type.
 
         This method defines the job type
 
@@ -142,7 +142,7 @@ class JobHandler(object):
 
     @property
     def parallel_mode(self):
-        """Parallel Mode
+        """Set Parallel Mode.
 
         This method defines the mode of parallelisation.
 
@@ -164,7 +164,7 @@ class JobHandler(object):
 
     @property
     def batch_size(self):
-        """Batch Size
+        """Set Batch Size.
 
         This method defines the job batch size.
 
@@ -198,7 +198,7 @@ class JobHandler(object):
 
     @property
     def backend(self):
-        """Backend
+        """Set Backend.
 
         This method defines the joblib backend. The default is 'loky'.
 
@@ -228,7 +228,7 @@ class JobHandler(object):
 
     @property
     def timeout(self):
-        """Timeout Limit
+        """Set Timeout Limit.
 
         This method defines the timeout limit for all jobs.
 
@@ -258,7 +258,7 @@ class JobHandler(object):
         self._timeout = value
 
     def finish_up(self):
-        """Finish Up
+        """Finish Up.
 
         Finish up JobHandler session.
 
@@ -277,7 +277,7 @@ class JobHandler(object):
         self.clean_up()
 
     def submit_jobs(self):
-        """Submit Jobs
+        """Submit Jobs.
 
         Submit jobs in serial or parallel.
 
@@ -291,7 +291,7 @@ class JobHandler(object):
 
     @staticmethod
     def hms2sec(time_str):
-        """HMS to Seconds
+        """Convert HMS to Seconds.
 
         Convert a string from hours, minutes and seconds to seconds.
 
@@ -315,7 +315,7 @@ class JobHandler(object):
         return int(h) * 3600 + int(m) * 60 + int(s)
 
     def _log_job_parameters(self):
-        """Log Job Parameters
+        """Log Job Parameters.
 
         This method logs the class instance parameters.
 
@@ -354,7 +354,7 @@ class JobHandler(object):
         self.log.info(time_info)
 
     def _distribute_smp_jobs(self):
-        """Distribute SMP Jobs
+        """Distribute SMP Jobs.
 
         This method distributes the jobs to the workers using SMP.
 
@@ -378,7 +378,7 @@ class JobHandler(object):
         self.worker_dicts = result
 
     def submit_serial_job(self):
-        """Submit Serial Job
+        """Submit Serial Job.
 
         Submit a single serial job with access to all processes.
 
@@ -399,7 +399,7 @@ class JobHandler(object):
         self.worker_dicts = [result]
 
     def _check_for_errors(self):
-        """Check for Errors
+        """Check for Errors.
 
         This method checks the worker dictionaries for errors and exceptions.
 
@@ -409,7 +409,7 @@ class JobHandler(object):
         self._check_stderr_status()
 
     def _check_exception_status(self):
-        """Check Exception Status
+        """Check Exception Status.
 
         This method checks the worker dictionaries for exceptions raised by
         Python and logs the instances.
@@ -424,7 +424,7 @@ class JobHandler(object):
                 self.error_count += 1
 
     def _check_stderr_status(self):
-        """Check STDERR Status
+        """Check STDERR Status.
 
         This method checks the worker dictionaries for errors raised by
         stderr and logs the instances.
@@ -438,7 +438,7 @@ class JobHandler(object):
                 self.error_count += 1
 
     def _check_missed_processes(self):
-        """Check Missed Processes
+        """Check Missed Processes.
 
         This method checks the file handler for processes that were not
         submitted.
@@ -458,7 +458,7 @@ class JobHandler(object):
                 print(f' - {self.filehd.missed}')
 
     def clean_up(self):
-        """Finish
+        """Finish.
 
         Finish job handler instance.
 

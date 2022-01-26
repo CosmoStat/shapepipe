@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """MCCD PREPROCESSING RUNNER.
 
 This file is the pipeline runner for the preprocessing of the inputs for the
@@ -8,19 +6,19 @@ MCCD algorithm.
 :Author: Tobias Liaudat
 
 """
-from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.mccd_package import shapepipe_auxiliary_mccd\
-    as aux_mccd
 import mccd
+
+from shapepipe.modules.mccd_package import shapepipe_auxiliary_mccd as aux_mccd
+from shapepipe.modules.module_decorator import module_runner
 
 
 @module_runner(
+    version='1.1',
     input_module=['setools_runner'],
-    version='1.0',
     file_pattern=['star_split_ratio_80', 'star_split_ratio_20'],
     file_ext=['.fits', '.fits'],
     depends=['numpy', 'mccd', 'galsim', 'astropy'],
-    run_method='serial'
+    run_method='serial',
 )
 def mccd_preprocessing_runner(
     input_file_list,
@@ -28,8 +26,9 @@ def mccd_preprocessing_runner(
     file_number_string,
     config,
     module_config_sec,
-    w_log
+    w_log,
 ):
+    """Define The MCCD Pre-processing Runner."""
     # Recover the MCCD config file and its params
     config_file_path = config.getexpanded(module_config_sec, 'CONFIG_PATH')
     mccd_mode = config.get(module_config_sec, 'MODE')
@@ -88,10 +87,11 @@ def mccd_preprocessing_runner(
             save_name=_save_name,
             save_extension='.fits',
             verbose=verbose,
-            print_fun=w_log.info
+            print_fun=w_log.info,
         )
         for _input_pos, _save_name, _min_stars in
         zip(input_file_pos_list, save_name_list, min_n_stars_list)
     ]
 
+    # No return objects
     return None, None

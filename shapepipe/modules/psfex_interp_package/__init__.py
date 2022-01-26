@@ -1,10 +1,20 @@
-# -*- coding: utf-8 -*-
+"""PSFEX INTERPOLATION PACKAGE.
 
-"""PSFEX INTERPOLATION PACKAGE
-
-This package contains the module(s) for ``psfex_interp``.
+This package contains the module for ``psfex_interp``.
 
 :Author: Axel Guinot
+
+:Parent module:
+
+:Input:
+
+:Output:
+
+Description
+===========
+
+Module-specific config file entries
+===================================
 
 """
 

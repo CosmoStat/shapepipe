@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""MASK RUNNER
+"""MASK RUNNER.
 
 Module runner for ``mask``.
 
@@ -8,8 +6,8 @@ Module runner for ``mask``.
 
 """
 
-from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.mask_package.mask import Mask
+from shapepipe.modules.module_decorator import module_runner
 
 
 @module_runner(
@@ -28,7 +26,7 @@ def mask_runner(
     module_config_sec,
     w_log,
 ):
-
+    """Define The Mask Runner."""
     # Get number of input files
     n_inputs = len(input_file_list)
 
@@ -98,7 +96,7 @@ def mask_runner(
         outname_base = 'flag'
 
     # Create instance of Mask
-    inst = Mask(
+    mask_inst = Mask(
         *input_file_list[:2],
         image_suffix=suffix.replace(" ", ""),
         image_num=file_number_string,
@@ -111,7 +109,7 @@ def mask_runner(
     )
 
     # Make the mask
-    stdout, stderr = inst.make_mask()
+    stdout, stderr = mask_inst.make_mask()
 
     # Return stdout and stderr
     return stdout, stderr
