@@ -28,6 +28,16 @@
   pipeline_tutorial
 
 .. toctree::
+  :hidden:
+  :titlesonly:
+  :caption: Miscellaneous
+
+  post_processing
+  random_cat
+
+  basic_execution
+ 
+.. toctree::
    :hidden:
    :titlesonly:
    :caption: API Documentation
