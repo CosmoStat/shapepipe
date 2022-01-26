@@ -28,7 +28,7 @@ from shapepipe.utilities.cfis import remove_common_elements
     file_ext=['.fits', '.fits', '.sqlite', '.fits'],
     depends=['numpy', 'sqlitedict'],
 )
-def make_catalogue_runner(
+def make_cat_runner(
     input_file_list,
     run_dirs,
     file_number_string,
