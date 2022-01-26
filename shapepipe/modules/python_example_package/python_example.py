@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""PYTHON EXAMPLE
+"""PYTHON EXAMPLE.
 
 This module contains an example Python class.
 
@@ -9,11 +7,12 @@ This module contains an example Python class.
 """
 
 import time
+
 from numpy.random import randint
 
 
 class PythonExample:
-    """Python Example
+    """Python Example.
 
     An example Python class.
 
@@ -33,16 +32,15 @@ class PythonExample:
             self.sleep_time = randint(1, 10)
 
     def _wait(self):
-        """Wait
+        """Wait.
 
         Wait for n seconds.
 
         """
-
         time.sleep(self.sleep_time)
 
     def _read_file(self, file_name):
-        """Read File
+        """Read File.
 
         Read input file content.
 
@@ -57,14 +55,13 @@ class PythonExample:
             Content of file
 
         """
-
         with open(file_name) as data_file:
             content = data_file.read().replace('\n', '')
 
         return content
 
     def read_files(self, file_name1, file_name2):
-        """Read Files
+        """Read Files.
 
         Read two input files.
 
@@ -76,15 +73,14 @@ class PythonExample:
             Name of second file
 
         """
-
         self._wait()
         content1 = self._read_file(file_name1)
         content2 = self._read_file(file_name2)
 
-        self.content = '{} and {}'.format(content1, content2)
+        self.content = f'{content1} and {content2}'
 
     def write_file(self, file_name, message):
-        """Write File
+        """Write File.
 
         Write content to file.
 
@@ -96,7 +92,6 @@ class PythonExample:
             Content to write to file
 
         """
-
         new_content = message + str(self.content)
 
         text_file = open(file_name, 'w')

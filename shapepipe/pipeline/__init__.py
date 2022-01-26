@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""SHAPEPIPE PIPELINE
+"""SHAPEPIPE PIPELINE.
 
 This module contains sub-modules for handling the pipeline job management.
 
@@ -19,6 +17,7 @@ __all__ = [
     'mpi_run',
     'run_log',
     'shared',
+    'str_handler',
     'timeout',
     'worker_handler',
 ]

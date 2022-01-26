@@ -1,4 +1,4 @@
-name: API Doc Test
+name: Build API Doc
 
 on: [workflow_dispatch]
 
@@ -35,5 +35,6 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: api-docs
+          retention-days: 14
           path: |
             docs/_build

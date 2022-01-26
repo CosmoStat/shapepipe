@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""ARGUMENT HANDLING
+"""ARGUMENT HANDLING.
 
 This module defines methods for handling the pipeline arguments.
 
@@ -9,25 +7,27 @@ This module defines methods for handling the pipeline arguments.
 """
 
 import argparse as ap
+
+from shapepipe.info import __version__, shapepipe_logo
 from shapepipe.modules import __module_list__
-from shapepipe.info import shapepipe_logo, __version__
 
 
 class cutomFormatter(
     ap.ArgumentDefaultsHelpFormatter,
     ap.RawDescriptionHelpFormatter,
 ):
-    """Custom Formatter
+    """Custom Formatter.
 
     This class combines the argparse ``ArgumentDefaultsHelpFormatter`` and
     ``RawDescriptionHelpFormatter`` formatters.
 
     """
+
     pass
 
 
 def print_message(message):
-    """Print Message
+    """Print Message.
 
     This method returns a custom argparse action for printing a message.
 
@@ -61,7 +61,7 @@ def print_message(message):
 
 
 def module_str():
-    """Module String
+    """Format Module String.
 
     Format the list of modules as a single string.
 
@@ -74,13 +74,13 @@ def module_str():
     string = ''
 
     for module in __module_list__:
-        string += ' - {}\n'.format(module)
+        string += f' - {module}\n'
 
     return string
 
 
 def create_arg_parser():
-    """Create Argument Parser
+    """Create Argument Parser.
 
     This method returns an argument parser.
 
