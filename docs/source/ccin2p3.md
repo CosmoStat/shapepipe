@@ -1,5 +1,3 @@
-[Home](./shapepipe.md) | [Environments](./environment.md)
-
 # CCIN2P3 Set Up
 
 ## Contents
@@ -19,7 +17,7 @@
 To get an account on CCIN2P3 you need to follow [their instructions](https://doc.cc.in2p3.fr/en/Getting-started/start.html). In summary:
 - Fill in the [application form](http://cctools.in2p3.fr/cclogon/) and print the resulting PDF
 - Get this document signed by your local "czar". For CEA this should be [Georgette Zoulikha](mailto:zou.georgette@cea.fr).
-- Next, send the document to the IRFU head, [Anne-Isabelle Etienvre](anne-isabelle.etienvre@cea.fr), for signature.
+- Next, send the document to the IRFU head, [Anne-Isabelle Etienvre](mailto:anne-isabelle.etienvre@cea.fr), for signature.
 - [Submit a ticket](https://cc-usersupport.in2p3.fr/otrs/customer.pl) with a scan of the signed document.
 - If required indicate `Euclid` as project.
 - If you do not receive a login password, send a mail to [Georgette](mailto:zou.georgette@cea.fr) and ask for one.
@@ -115,7 +113,7 @@ In this script you can specify:
 
 ### Example SMP Script
 
-[`cc_smp.sh`](../../example/pbs/cc_smp.sh)
+[`cc_smp.sh`](https://github.com/CosmoStat/shapepipe/example/pbs/cc_smp.sh)
 
 ```bash
 #!/bin/bash
@@ -159,7 +157,7 @@ exit 0
 
 ### Example MPI Script
 
-[`cc_mpi.sh`](../../example/pbs/cc_mpi.sh)
+[`cc_mpi.sh`](https://github.com/CosmoStat/shapepipe/example/pbs/cc_mpi.sh)
 
 ```bash
 #!/bin/bash
