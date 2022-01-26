@@ -7,6 +7,7 @@ This module defines methods for creating a run log.
 """
 
 import numpy as np
+
 from shapepipe.pipeline.shared import split_module_run
 
 

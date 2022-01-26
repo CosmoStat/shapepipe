@@ -830,16 +830,16 @@ class new_BaseCorrelationFunctionSysTest(BaseCorrelationFunctionSysTest):
             Input data
         config : dict
             The `config` parameter to be passed to treecorr's
-            catalogue. A configuration dict which defines attributes 
-            about how to read the file. Any optional kwargs may be 
-            given here in the config dict if desired. Invalid keys 
-            in the config dict are ignored. See the `treecorr` 
+            catalogue. A configuration dict which defines attributes
+            about how to read the file. Any optional kwargs may be
+            given here in the config dict if desired. Invalid keys
+            in the config dict are ignored. See the `treecorr`
             package documentation for more details
             Default is ``None``.
         use_as_k : str, optional
             String representing the field in `data` that will be
-            used to replace the convergence, kappa, that is 
-            identified with the string `k`. See the `treecorr` 
+            used to replace the convergence, kappa, that is
+            identified with the string `k`. See the `treecorr`
             package documentation for more details
         use_chip_coords : bool, optional
             Option to use chip coordinates, default is ``False``

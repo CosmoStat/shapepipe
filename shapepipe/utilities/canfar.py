@@ -9,8 +9,8 @@ This module defines methods for managing CANFAR specific actions.
 
 import os
 import sys
-from io import StringIO
 from contextlib import redirect_stdout
+from io import StringIO
 
 try:
     import vos.commands as vosc

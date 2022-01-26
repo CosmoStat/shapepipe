@@ -6,11 +6,11 @@ This module defines a class for handling string operations.
 
 """
 
-import re
-import numpy as np
 import itertools
 import operator
+import re
 
+import numpy as np
 from modopt.math.stats import sigma_mad
 
 
