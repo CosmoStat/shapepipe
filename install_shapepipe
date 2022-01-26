@@ -380,7 +380,7 @@ uninstall() {
 
 # Function to activate ShapePipe environment
 activate_shapepipe() {
-  source activate $ENV_NAME || ( source $CONDA_PREFIX_1/etc/profile.d/conda.sh && conda activate $ENV_NAME )
+  conda activate $ENV_NAME || source activate $ENV_NAME || ( source $CONDA_PREFIX_1/etc/profile.d/conda.sh && conda activate $ENV_NAME )
   if [ "$?" -eq 0 ]
   then
     echo -ne "Activating Conda environment ${CYAN}$CONDA_PREFIX${NC}\n"
@@ -393,7 +393,7 @@ activate_shapepipe() {
 
 # Function to deactivate ShapePipe environment
 deactivate_shapepipe() {
-  source deactivate || source $CONDA_PREFIX_1/etc/profile.d/conda.sh && conda deactivate
+  conda deactivate || source deactivate || ( source $CONDA_PREFIX_1/etc/profile.d/conda.sh && conda deactivate )
 }
 
 # Build symbolic links for scripts
