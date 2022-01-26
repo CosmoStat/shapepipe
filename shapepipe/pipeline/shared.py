@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""SHARED
+"""SHARED.
 
 The module defines functions that can be shared between pipeline modules.
 
@@ -10,7 +8,7 @@ The module defines functions that can be shared between pipeline modules.
 
 
 def split_module_run(module_str):
-    """Split Module Run
+    """Split Module Run.
 
     Extract module name and run from input string.
 

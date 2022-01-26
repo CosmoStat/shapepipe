@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""MCCD auxiliary functions.
+"""MCCD AUXILIARY FUNCTIONS.
 
 This module contains auxiliary functions for the MCCD package that are needed
 by the MCCD runners.
@@ -10,12 +8,14 @@ by the MCCD runners.
 """
 
 import os
-import numpy as np
-import mccd
-from astropy.io import fits
-import galsim
-from shapepipe.pipeline import file_io
 import pprint
+
+import galsim
+import mccd
+import numpy as np
+from astropy.io import fits
+
+from shapepipe.pipeline import file_io
 
 NOT_ENOUGH_STARS = 'Not enough stars to train the model.'
 
@@ -34,7 +34,7 @@ def mccd_preprocessing_pipeline(
     verbose=True,
     print_fun=None
 ):
-    r"""Preprocess input catalog.
+    r"""Preprocess Input Catalogue.
 
     Parameters
     ----------
@@ -49,7 +49,7 @@ def mccd_preprocessing_pipeline(
         Minimum number of stars in order to preprocess the CCD.
         Default is ``20``.
     separator: str
-        Separator string that separates the catalog id and the CCD id.
+        Separator string that separates the catalogue id and the CCD id.
         Default is ``'-'``.
     CCD_id_filter_list: list of int or None
         A list that correspond to the CCDs that should be preprocessed.
@@ -73,7 +73,6 @@ def mccd_preprocessing_pipeline(
         Verbose mode.
         Default is ``True``.
     print_fun: function or None
-
 
     Returns
     -------
@@ -223,7 +222,28 @@ def mccd_fit_pipeline(
     saving_name='fitted_model',
     w_log=None
 ):
-    r"""Fit the MCCD model to the observations."""
+    r"""Fit MCCD Model.
+
+    Fit the MCCD model to the Observations.
+
+    Parameters
+    ----------
+    trainstar_path : str
+        Path to training stars
+    file_number_string : str
+        File number string
+    mccd_parser :
+        MCCD parser
+    output_dir : str
+        Output directory
+    verbose : bool
+        MCCD verbose option
+    saving_name : str
+        Name for output file
+    w_log : logging.Logger
+        Worker log
+
+    """
     # Extract the MCCD parameters from the parser
     mccd_inst_kw = mccd_parser.get_instance_kw()
     mccd_fit_kw = mccd_parser.get_fit_kw()
@@ -269,8 +289,29 @@ def mccd_validation_pipeline(
     w_log,
     val_saving_name
 ):
-    r"""Validate the MCCD trained model against a set of observations."""
-    w_log.info(f"Validating catalog {file_number_string}..")
+    r"""Validate MCCD Pipeline.
+
+    Validate the MCCD trained model against a set of observations.
+
+    Parameters
+    ----------
+    teststar_path : str
+        Path to test stars
+    mccd_model_path : str
+        Path to MCCD model
+    mccd_parser : mccd.auxiliary_fun.MCCDParamsParser object
+        MCCD parser
+    output_dir : str
+        Output directory
+    file_number_string : str
+        File number string
+    w_log : logging.Logger
+        Worker log
+    val_saving_name : str
+        Name for validation file
+
+    """
+    w_log.info(f"Validating catalogue {file_number_string}..")
 
     # Get MCCD parameters
     save_extension = '.fits'
@@ -295,7 +336,7 @@ def mccd_validation_pipeline(
         # Save validation dictionary to fits file
         mccd.mccd_utils.save_to_fits(val_dict, val_saving_path)
 
-        w_log.info(f"Validation catalog < {val_saving_path} > saved.")
+        w_log.info(f"Validation catalogue < {val_saving_path} > saved.")
 
     else:
         w_log.info(
@@ -312,7 +353,29 @@ def mccd_interpolation_pipeline(
     saving_path,
     get_shapes
 ):
-    r"""Interpolate MCCD model."""
+    r"""Interpolate the MCCD Model.
+
+    Parameters
+    ----------
+    mccd_model_path : str
+        Path to MCCD model
+    galcat_path : str
+        Path to galaxy catalogue
+    pos_params : numpy.ndarray
+        Position parameters
+    ccd_id : int
+        CCD identifier
+    saving_path : str
+        Path to save output
+    get_shapes : bool
+        Option to save PSF shapes
+
+    Returns
+    -------
+    str or None
+        String returned if not enough stars found
+
+    """
     # Import MCCD model
     mccd_model = mccd.mccd_quickload(mccd_model_path)
     # Open galaxy catalog
@@ -365,9 +428,24 @@ def shapepipe_write_output(
     interp_PSFs,
     PSF_shapes=None
 ):
-    r"""Save interpolated PSFs dictionary to fits file.
+    r"""Write ShapePipe Output.
 
-    The saved files are compatible with the previous shapepipe's standard.
+    Save interpolated PSFs dictionary to fits file. The saved files are
+    compatible with the previous shapepipe's standard.
+
+    Parameters
+    ----------
+    saving_path : str
+        Path to save output
+    example_fits_path : str
+        Path to example FITS file
+    get_shapes : bool
+        Option to save PSF shapes
+    interp_PSFs : numpy.ndarray
+        PSF interpolation
+    PSF_shapes : numpy.ndarray
+        PSF shapes
+
     """
     output = file_io.FITSCatalogue(
         saving_path,

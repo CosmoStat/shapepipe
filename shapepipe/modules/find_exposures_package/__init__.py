@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""FIND EXPOSURES PACKAGE
+"""FIND EXPOSURES PACKAGE.
 
 This package contains the module for ``find_exposures``.
 
@@ -11,12 +9,6 @@ This package contains the module for ``find_exposures``.
 :Input: tile image
 
 :Output: single-exposure ID list
-=======
-:Parent module: get_image_runner
-
-:Input: tile image
-
-:Output: single-exposure name list ASCII file
 
 Description
 ===========
@@ -30,8 +22,11 @@ The output ASCII file contains the image base names (without file extension).
 Note that this module is specific for CFIS, in particular the FITS keyword for
 identification (``HISTORY``), and the exposure file patterns.
 
-Module-specific entries
-=======================
+Module-specific config file entries
+===================================
+
 None
+
+"""
 
 __all__ = ['find_exposures.py']

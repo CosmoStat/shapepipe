@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """FILE SYSTEM TOOLS.
 
 This module defines methods for managing actions on the file system.
@@ -17,6 +15,7 @@ class FileSystemError(Exception):
     Generic error that is raised by the file system.
 
     """
+
     pass
 
 

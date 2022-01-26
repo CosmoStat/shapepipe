@@ -1,27 +1,22 @@
-# -*- coding: utf-8 -*-
+"""NGMIX RUNNER.
 
-""" NGMIX RUNNER
-
-This file contains methods to run ngmix for shape measurement.
+Module runner for ``ngmix``.
 
 :Author: Axel Guinot
 
 """
 
-import re
-import numpy as np
-
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.ngmix_package import ngmix
+from shapepipe.modules.ngmix_package.ngmix import Ngmix
 
 
 @module_runner(
+    version='0.0.1',
     input_module=[
         'sextractor_runner',
         'psfex_interp_runner',
         'vignetmaker_runner'
     ],
-    version='0.0.1',
     file_pattern=[
         'tile_sexcat',
         'image',
@@ -31,7 +26,7 @@ from shapepipe.modules.ngmix_package import ngmix
         'flag'
     ],
     file_ext=['.fits', '.sqlite', '.sqlite', '.sqlite', '.sqlite', '.sqlite'],
-    depends=['numpy', 'ngmix', 'galsim', 'sqlitedict', 'astropy']
+    depends=['numpy', 'ngmix', 'galsim', 'sqlitedict', 'astropy'],
 )
 def ngmix_runner(
     input_file_list,
@@ -39,9 +34,9 @@ def ngmix_runner(
     file_number_string,
     config,
     module_config_sec,
-    w_log
+    w_log,
 ):
-
+    """Define The Ngmix Runner."""
     # Read config file entries
 
     # Photometric zero point
@@ -58,7 +53,7 @@ def ngmix_runner(
     id_obj_max = config.getint(module_config_sec, 'ID_OBJ_MAX')
 
     # Initialise class instance
-    inst = ngmix.Ngmix(
+    ngmix_inst = Ngmix(
         input_file_list,
         run_dirs['output'],
         file_number_string,
@@ -67,10 +62,11 @@ def ngmix_runner(
         f_wcs_path,
         w_log,
         id_obj_min=id_obj_min,
-        id_obj_max=id_obj_max
+        id_obj_max=id_obj_max,
     )
 
     # Process ngmix shape measurement and metacalibration
-    inst.process()
+    ngmix_inst.process()
 
+    # No return objects
     return None, None
