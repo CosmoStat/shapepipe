@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
+"""MERGE HEADERS PACKAGE.
 
-"""MERGE HEADERS PACKAGE
-
-This package contains the module(s) for ``merge_headers``.
+This package contains the module for ``merge_headers``.
 
 :Author: Axel Guinot
 

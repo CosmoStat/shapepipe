@@ -1,21 +1,17 @@
-# -*- coding: utf-8 -*-
-"""RANDOM CAT SCRIPT
+"""RANDOM CATALOGUE.
 
 This module contains a class to create a random catalogue, and to compute
 the tile area accounding for overlapping and masked regions.
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
-:Date: December 2021
-
 """
 
-
-import re
 import os
+import re
 
-import numpy as np
 import astropy.io.fits as fits
+import numpy as np
 from astropy import wcs
 
 from shapepipe.pipeline import file_io
@@ -23,9 +19,9 @@ from shapepipe.utilities import cfis
 
 
 class RandomCat():
-    """Random Catalogue
+    """Random Catalogue.
 
-    This class creates a random catalogue given a mask FITS file
+    This class creates a random catalogue given a mask FITS file.
 
     Parameters
     ----------
@@ -44,6 +40,7 @@ class RandomCat():
     tile_list_path : str, optional, default=None
         List to all tile IDs, to remove objects in
         overlapping tile areas
+
     """
 
     def __init__(
@@ -54,7 +51,7 @@ class RandomCat():
         n_rand,
         density,
         w_log,
-        tile_list_path=None
+        tile_list_path=None,
     ):
 
         self._input_image_path = input_image_path
@@ -66,11 +63,11 @@ class RandomCat():
         self._tile_list_path = tile_list_path
 
     def process(self):
-        """Process
+        """Process.
 
         Main function to identify exposures.
-        """
 
+        """
         # Read image FITS file header
         try:
             img = fits.open(self._input_image_path)

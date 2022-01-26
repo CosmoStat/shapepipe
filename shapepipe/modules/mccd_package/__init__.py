@@ -1,12 +1,25 @@
-# -*- coding: utf-8 -*-
-
 """MCCD AUXILIARY FUNCTIONS PACKAGE.
 
-This module contains auxiliary functions for the MCCD package.
+This package contains the modules for ``mccd``.
 
 :Author: Tobias Liaudat
 
+:Parent module:
+
+:Input:
+
+:Output:
+
+Description
+===========
+
+Module-specific config file entries
+===================================
+
 """
 
-__all__ = ['shapepipe_auxiliary_mccd', 'mccd_interpolation_script']
-__all__ += ['mccd_plot_utilities']
+__all__ = [
+    'shapepipe_auxiliary_mccd',
+    'mccd_interpolation_script',
+    'mccd_plot_utilities',
+]

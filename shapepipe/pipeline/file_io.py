@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""FILE IO
+"""FILE IO.
 
 This file contains methods for file I/O handling.
 
@@ -9,14 +7,14 @@ This file contains methods for file I/O handling.
 """
 
 import os
-import numpy as np
 
+import numpy as np
 from astropy.io import fits
 from astropy.table import Table
 
 
 class BaseCatalogue(object):
-    """Base catalogue
+    """Base catalogue.
 
     Base catalogue management class.
 
@@ -42,7 +40,7 @@ class BaseCatalogue(object):
 
     @property
     def fullpath(self):
-        """Full Path
+        """Set Full Path.
 
         Get the full path of the catalogue file
 
@@ -51,7 +49,7 @@ class BaseCatalogue(object):
 
     @property
     def directory(self):
-        """Directory
+        """Set Directory.
 
         Get the directory of the catalogue file
 
@@ -60,7 +58,7 @@ class BaseCatalogue(object):
 
     @property
     def filename(self):
-        """File Name
+        """Set File Name.
 
         Get the name of the catalogue file
 
@@ -69,7 +67,7 @@ class BaseCatalogue(object):
 
     @property
     def format(self):
-        """Format
+        """Format.
 
         Get the default input/output format of the catalogue
         (e.g. Text, SExtractor, FITS)
@@ -78,7 +76,7 @@ class BaseCatalogue(object):
         return self._format
 
     def get_nb_rows(self):
-        """Get Number of Rows
+        """Get Number of Rows.
 
         Get the number of rows in the catalogue
 
@@ -91,7 +89,7 @@ class BaseCatalogue(object):
         raise BaseCatalogue.FeatureNotImplemented('get_nb_rows()')
 
     def get_nb_cols(self):
-        """Get Number of Columns
+        """Get Number of Columns.
 
         Get the number of columns in the catalogue
 
@@ -103,7 +101,7 @@ class BaseCatalogue(object):
         raise BaseCatalogue.FeatureNotImplemented("get_nb_cols()")
 
     def get_col_names(self):
-        """Get Column Names
+        """Get Column Names.
 
         Get the list of column names in the catalogue
 
@@ -115,7 +113,7 @@ class BaseCatalogue(object):
         raise BaseCatalogue.FeatureNotImplemented('get_col_names()')
 
     def get_col_formats(self):
-        """Get Column Formats
+        """Get Column Formats.
 
         Get the list of column formats in the order of columns
 
@@ -129,7 +127,7 @@ class BaseCatalogue(object):
         col_comment=None,
         col_data=None,
     ):
-        """Add Column
+        """Add Column.
 
         Add a Column to the catalogue
 
@@ -148,7 +146,7 @@ class BaseCatalogue(object):
         raise BaseCatalogue.FeatureNotImplemented('add_col()')
 
     def _file_exists(self, filepath):
-        """File Exists
+        """File Exists.
 
         Check if input file path is a valid file.
 
@@ -164,7 +162,8 @@ class BaseCatalogue(object):
             return True
 
     class InputFormat:
-        """Supported input catalogue formats"""
+        """Supported input catalogue formats."""
+
         Undefined = 0
         TabulatedText = 1
         SExtractor = 2
@@ -172,13 +171,14 @@ class BaseCatalogue(object):
         FITS_LDAC = 5
 
     class OpenMode:
-        """Supported input catalogue open modes"""
+        """Supported input catalogue open modes."""
+
         ReadOnly = 'readonly'
         ReadWrite = 'update'
         Append = 'append'
 
     class Column(object):
-        """Column
+        """Column.
 
         Represents a column in the catalogue.
 
@@ -189,7 +189,7 @@ class BaseCatalogue(object):
 
         @property
         def name(self):
-            """Name
+            """Set Name.
 
             Get the name of the column
             """
@@ -197,7 +197,7 @@ class BaseCatalogue(object):
 
         @property
         def format(self):
-            """Format
+            """Format.
 
             Get the format of the column
 
@@ -206,7 +206,7 @@ class BaseCatalogue(object):
 
         @property
         def data(self):
-            """Data
+            """Set Data.
 
             Get the data associated with the column
 
@@ -214,7 +214,7 @@ class BaseCatalogue(object):
             raise BaseCatalogue.FeatureNotImplemented('column.data')
 
         def get_nb_rows(self):
-            """Get Number of Rows
+            """Get Number of Rows.
 
             Retrieve the number of rows of the column.
 
@@ -222,7 +222,7 @@ class BaseCatalogue(object):
             raise BaseCatalogue.FeatureNotImplemented('get_nb_rows()')
 
         def get_info(self):
-            """Get Information
+            """Get Information.
 
             Retrieve information about the column.
 
@@ -230,7 +230,7 @@ class BaseCatalogue(object):
             raise BaseCatalogue.FeatureNotImplemented('get_info()')
 
         def get_type(self):
-            """Get Type
+            """Get Type.
 
             Get the data type of the column
 
@@ -238,7 +238,7 @@ class BaseCatalogue(object):
             raise BaseCatalogue.FeatureNotImplemented('get_type()')
 
     class FeatureNotImplemented(NotImplementedError):
-        """Feature Not Implemented
+        """Feature Not Implemented.
 
         Parameters
         ----------
@@ -257,7 +257,7 @@ class BaseCatalogue(object):
             )
 
     class catalogueNotOpen(Exception):
-        """Catalogue Not Open
+        """Catalogue Not Open.
 
         Catalogue has not been open yet.
 
@@ -278,7 +278,7 @@ class BaseCatalogue(object):
             )
 
     class DataNotFound(Exception):
-        """Data Not Found
+        """Data Not Found.
 
         No data found (at given hdu).
 
@@ -302,7 +302,7 @@ class BaseCatalogue(object):
             )
 
     class catalogueFileNotFound(Exception):
-        """Catalogue File Not Found
+        """Catalogue File Not Found.
 
         Exception thrown when a catalogue file is not found on disk.
 
@@ -317,12 +317,11 @@ class BaseCatalogue(object):
             self._filepath = filepath
 
         def __str__(self):
-            """String representation of the exception object"""
-
+            """Set string representation of the exception object."""
             return f'File IO *** ERROR ***: file {self._filepath} no found'
 
     class ColumnNotFound(Exception):
-        """Column Not Found
+        """Column Not Found.
 
         Exception thrown when a named catalogue column could not be found
 
@@ -337,12 +336,11 @@ class BaseCatalogue(object):
             self._col_name = col_name
 
         def __str__(self):
-            """String representation of the exception object"""
-
+            """Set string representation of the exception object."""
             return f'File IO *** ERROR ***: column {self._col_name} no found'
 
     class catalogueNotCreated(Exception):
-        """Catalogue Not Created
+        """Catalogue Not Created.
 
         Catalogue could not be created.
 
@@ -363,7 +361,7 @@ class BaseCatalogue(object):
             )
 
     class OpenModeNotSupported(Exception):
-        """Open Mode Not Supported
+        """Open Mode Not Supported.
 
         Opening mode not supported by this version.
 
@@ -387,7 +385,7 @@ class BaseCatalogue(object):
             )
 
     class OpenModeConflict(Exception):
-        """Open Mode Conflict
+        """Open Mode Conflict.
 
         Opening mode is in conflict with an action.
 
@@ -412,7 +410,7 @@ class BaseCatalogue(object):
 
 
 class FITSCatalogue(BaseCatalogue):
-    """FITS Catalogue
+    """FITS Catalogue.
 
     Catalogues management in .FITS format.
 
@@ -469,7 +467,7 @@ class FITSCatalogue(BaseCatalogue):
 
     @property
     def hdu_no(self):
-        """HDU Number
+        """Set HDU Number.
 
         Get the HDU index of the table.
 
@@ -478,12 +476,12 @@ class FITSCatalogue(BaseCatalogue):
 
     @property
     def open_mode(self):
-        """Open Mode
+        """Set Open Mode.
 
         Return the catalogue opening mode.
 
         See Also
-        ---------
+        --------
         FITSCatalogue.OpenMode
 
         """
@@ -491,7 +489,7 @@ class FITSCatalogue(BaseCatalogue):
 
     @property
     def use_memmap(self):
-        """Use Memory Map
+        """Use Memory Map.
 
         If True, use memory mapping.
 
@@ -511,7 +509,7 @@ class FITSCatalogue(BaseCatalogue):
         self._use_memmap = use_memmap
 
     def open(self):
-        """Open
+        """Open.
 
         Open an existing catalogue.
 
@@ -529,7 +527,7 @@ class FITSCatalogue(BaseCatalogue):
             raise BaseCatalogue.catalogueFileNotFound(self.fullpath)
 
     def create(self, ext_name=None, s_hdu=True, sex_cat_path=None):
-        """Create
+        """Create.
 
         Create an empty catalogue in FITS format.
 
@@ -543,7 +541,6 @@ class FITSCatalogue(BaseCatalogue):
             Path to SEXtractor catalogue
 
         """
-
         primary_hdu = fits.PrimaryHDU()
         if self._SEx_catalogue:
             if sex_cat_path is not None:
@@ -575,7 +572,7 @@ class FITSCatalogue(BaseCatalogue):
             self._cat_data.writeto(self.fullpath, overwrite=True)
 
     def copy_hdu(self, fits_file=None, hdu_no=None, hdu_name=None):
-        """Copy HDU
+        """Copy HDU.
 
         Copy an HDU from a FITS file.
 
@@ -589,7 +586,6 @@ class FITSCatalogue(BaseCatalogue):
             HDU name
 
         """
-
         if fits_file is None:
             fits_file = self
 
@@ -615,7 +611,7 @@ class FITSCatalogue(BaseCatalogue):
         mask=None,
         hdu_name=None,
     ):
-        """Apply Mask
+        """Apply Mask.
 
         Apply a mask to data for a specified HDU.
 
@@ -679,7 +675,7 @@ class FITSCatalogue(BaseCatalogue):
         image_header=None,
         overwrite=False,
     ):
-        """Save as FITS
+        """Save as FITS.
 
         Save data into an existing FITS file or into a new one.
 
@@ -714,7 +710,6 @@ class FITSCatalogue(BaseCatalogue):
         ``SEx_catalogue=True`` when declaring the FITSCatalogue object.
 
         """
-
         if self.open_mode != FITSCatalogue.OpenMode.ReadWrite:
             raise BaseCatalogue.OpenModeConflict(
                 open_mode=self.open_mode,
@@ -819,7 +814,7 @@ class FITSCatalogue(BaseCatalogue):
         ext_ver=None,
         header=None,
     ):
-        """Create from Numpy
+        """Create from Numpy.
 
         Create a new catalogue from a two-dimensional numpy array.
 
@@ -838,7 +833,6 @@ class FITSCatalogue(BaseCatalogue):
             'value_orig', 'comment'
 
         """
-
         col_list = []
         for col_name in col_names:
             icol = col_names.index(col_name)
@@ -868,6 +862,7 @@ class FITSCatalogue(BaseCatalogue):
         self._cat_data.writeto(self.fullpath, overwrite=True)
 
     def close(self):
+        """Close."""
         if self._cat_data is not None:
             if self.open_mode == FITSCatalogue.OpenMode.ReadWrite:
                 self.save()
@@ -878,6 +873,7 @@ class FITSCatalogue(BaseCatalogue):
             raise BaseCatalogue.catalogueNotOpen(self.fullpath)
 
     def save(self):
+        """Save."""
         if self.open_mode == FITSCatalogue.OpenMode.ReadWrite:
             self._cat_data.flush()
         else:
@@ -887,7 +883,7 @@ class FITSCatalogue(BaseCatalogue):
             )
 
     def get_nb_rows(self, hdu_no=None):
-        """Get Number of Rows
+        """Get Number of Rows.
 
         Get the number of rows in the catalogue.
 
@@ -916,7 +912,7 @@ class FITSCatalogue(BaseCatalogue):
         return nb_rows
 
     def get_nb_cols(self, hdu_no=None):
-        """Get Number of Columns
+        """Get Number of Columns.
 
         Get the number of columns in the catalogue.
 
@@ -938,7 +934,7 @@ class FITSCatalogue(BaseCatalogue):
         return len(self.get_col_names(hdu_no))
 
     def get_col_names(self, hdu_no=None):
-        """Get Column Names
+        """Get Column Names.
 
         Get the list of column names in the catalogue.
 
@@ -961,7 +957,7 @@ class FITSCatalogue(BaseCatalogue):
             return self._cat_data[hdu_no].columns.names
 
     def get_info(self):
-        """Get Information
+        """Get Information.
 
         Retrieve some information about the catalogue.
 
@@ -981,7 +977,7 @@ class FITSCatalogue(BaseCatalogue):
             return fits.info(self.fullpath)
 
     def get_ext_name(self, hdu_no=None):
-        """Get Extension Name
+        """Get Extension Name.
 
         Return the name of an extansion or all of them.
 
@@ -1004,7 +1000,7 @@ class FITSCatalogue(BaseCatalogue):
         return n
 
     def col_exists(self, col_name, hdu_no=None):
-        """Column Exists
+        """Column Exists.
 
         Check whether a named column exists.
 
@@ -1023,7 +1019,7 @@ class FITSCatalogue(BaseCatalogue):
         return col_name in self.get_col_names()
 
     def get_col_index(self, col_name, hdu_no=None):
-        """Get Column Index
+        """Get Column Index.
 
         Get the column index from a column name.
 
@@ -1046,7 +1042,7 @@ class FITSCatalogue(BaseCatalogue):
         return col_names.index(col_name)
 
     def get_col_data(self, col_index, hdu_no=None):
-        """Get Column Data
+        """Get Column Data.
 
         Return the data of a column from its index.
 
@@ -1076,7 +1072,7 @@ class FITSCatalogue(BaseCatalogue):
             raise BaseCatalogue.catalogueNotOpen(self.fullpath)
 
     def get_named_col_data(self, col_name, hdu_no=None):
-        """Get Named Column Data
+        """Get Named Column Data.
 
         Return the data of a column from its index (zero-based).
 
@@ -1106,7 +1102,7 @@ class FITSCatalogue(BaseCatalogue):
             raise BaseCatalogue.catalogueNotOpen(self.fullpath)
 
     def get_data(self, hdu_no=None):
-        """Get Data
+        """Get Data.
 
         Return data of the specified hdu.
 
@@ -1135,7 +1131,7 @@ class FITSCatalogue(BaseCatalogue):
             raise BaseCatalogue.catalogueNotOpen(self.fullpath)
 
     def get_header(self, hdu_no=None):
-        """Get Header
+        """Get Header.
 
         Return the catalogue header as a list of dictionaries.
 
@@ -1162,7 +1158,7 @@ class FITSCatalogue(BaseCatalogue):
             raise BaseCatalogue.catalogueNotOpen(self.fullpath)
 
     def get_header_value(self, request, hdu_no=None):
-        """Get Header Value
+        """Get Header Value.
 
         Return the value of a parameters or a linear combination of parameters
         and/or numbers.
@@ -1180,7 +1176,6 @@ class FITSCatalogue(BaseCatalogue):
             Result of the request
 
         """
-
         if request is None:
             raise ValueError('request not provided')
         if type(request) is not str:
@@ -1196,7 +1191,7 @@ class FITSCatalogue(BaseCatalogue):
         return interpreter(string=request, catalogue=header).result
 
     def add_header_card(self, key, value=None, comment=None, hdu_no=None):
-        """Add Header Card
+        """Add Header Card.
 
         Add a card in the header of the specified HDU.
 
@@ -1212,7 +1207,6 @@ class FITSCatalogue(BaseCatalogue):
             HDU index
 
         """
-
         if self.open_mode != FITSCatalogue.OpenMode.ReadWrite:
             raise BaseCatalogue.OpenModeConflict(
                 open_mode=self.open_mode,
@@ -1245,7 +1239,7 @@ class FITSCatalogue(BaseCatalogue):
         self._cat_data[hdu_no].header.append(card, end=True)
 
     def get_headers(self):
-        """Get Headers
+        """Get Headers.
 
         Return the catalogue header as a list of dictionaries.
 
@@ -1265,7 +1259,7 @@ class FITSCatalogue(BaseCatalogue):
         return headers
 
     def get_comments(self, hdu_no=None):
-        """Get Comments
+        """Get Comments.
 
         Return the list catalogue comments.
 
@@ -1291,7 +1285,7 @@ class FITSCatalogue(BaseCatalogue):
             raise BaseCatalogue.catalogueNotOpen(self.fullpath)
 
     def get_col_comments(self, hdu_no=None):
-        """Get Column Comments
+        """Get Column Comments.
 
         Return the list of column comments.
 
@@ -1321,7 +1315,7 @@ class FITSCatalogue(BaseCatalogue):
             raise BaseCatalogue.catalogueNotOpen(self.fullpath)
 
     def get_col_formats(self, hdu_no=None):
-        """Get Column Formats
+        """Get Column Formats.
 
         Get the list of python column formats in the order of columns.
 
@@ -1352,7 +1346,7 @@ class FITSCatalogue(BaseCatalogue):
         new_cat=False,
         new_cat_inst=None,
     ):
-        """Add Column
+        """Add Column.
 
         Add a Column to the catalogue.
 
@@ -1458,7 +1452,7 @@ class FITSCatalogue(BaseCatalogue):
             )
 
     def remove_col(self, col_index):
-        """Remove Column
+        """Remove Column.
 
         Delete a column from its index.
 
@@ -1468,11 +1462,10 @@ class FITSCatalogue(BaseCatalogue):
             Index of the column to delete
 
         """
-
         raise BaseCatalogue.FeatureNotImplemented('remove_col()')
 
     def remove_named_col(self, col_name):
-        """Remove Named Column
+        """Remove Named Column.
 
         Delete a column from its index.
 
@@ -1489,7 +1482,7 @@ class FITSCatalogue(BaseCatalogue):
             raise BaseCatalogue.catalogueNotOpen(self.fullpath)
 
     def _append_col(self, column, hdu_no=None):
-        """Append Column
+        """Append Column.
 
         Append a Column object.
 
@@ -1528,7 +1521,7 @@ class FITSCatalogue(BaseCatalogue):
             raise BaseCatalogue.catalogueNotOpen(self.fullpath)
 
     def _get_fits_col_type(self, col_data):
-        """Get FITS Column Type
+        """Get FITS Column Type.
 
         Get the FITS data type of a given column.
 
@@ -1563,7 +1556,7 @@ class FITSCatalogue(BaseCatalogue):
         return col_type
 
     def _get_python_col_type(self, col_type):
-        """Get Python Column Type
+        """Get Python Column Type.
 
         Get the Python data type of a given column.
 
@@ -1600,7 +1593,7 @@ class FITSCatalogue(BaseCatalogue):
             sex_cat_path=None,
             overwrite=False,
     ):
-        """Save to FITS
+        """Save to FITS.
 
         Save array of data as fits with their associated column names.
 
@@ -1620,7 +1613,6 @@ class FITSCatalogue(BaseCatalogue):
             Option to overwrite an existing catalogue
 
         """
-
         if data is None:
             raise ValueError('Data not provided')
 
@@ -1689,7 +1681,7 @@ class FITSCatalogue(BaseCatalogue):
         sex_cat_path=None,
         overwrite=False,
     ):
-        """Save From Record Array
+        """Save From Record Array.
 
         Save a numpy.recarray or astropy.io.fits.fitsrec.FITS_rec into a FITS
         file.
@@ -1706,7 +1698,6 @@ class FITSCatalogue(BaseCatalogue):
             Option to overwrite an existing catalogue
 
         """
-
         if data is None:
             raise ValueError('Data not provided')
 
@@ -1734,7 +1725,7 @@ class FITSCatalogue(BaseCatalogue):
                 self.close()
 
     def _save_image(self, data=None, header=None, overwrite=False):
-        """Save Image
+        """Save Image.
 
         Save an image into a FITS file.
 
@@ -1757,7 +1748,7 @@ class FITSCatalogue(BaseCatalogue):
             raise ValueError('Data or names not provided')
 
     class Column(BaseCatalogue.Column):
-        """Column
+        """Column.
 
         Represents a column in the catalogue.
 
@@ -1801,7 +1792,7 @@ class FITSCatalogue(BaseCatalogue):
 
         @property
         def name(self):
-            """Name
+            """Set Name.
 
             Get the name of the column.
 
@@ -1810,7 +1801,7 @@ class FITSCatalogue(BaseCatalogue):
 
         @property
         def format(self):
-            """Format
+            """Format.
 
             Get the format of the column.
 
@@ -1819,7 +1810,7 @@ class FITSCatalogue(BaseCatalogue):
 
         @property
         def comment(self):
-            """Comment
+            """Comment.
 
             Get the comment string associated with the column.
 
@@ -1828,7 +1819,7 @@ class FITSCatalogue(BaseCatalogue):
 
         @property
         def data(self):
-            """Data
+            """Set Data.
 
             Get the data associated with the column.
 

@@ -1,10 +1,16 @@
-# -*- coding: utf-8 -*-
+"""MPI RUN.
+
+This module includes functions for handling the distribution of MPI jobs.
+
+:Author: Samuel Farrens <samuel.farrens@cea.fr>
+
+"""
 
 from shapepipe.pipeline.worker_handler import WorkerHandler
 
 
 def split_mpi_jobs(jobs, batch_size):
-    """Split MPI Jobs
+    """Split MPI Jobs.
 
     Split the number of MPI jobs over the number of processes.
 
@@ -33,7 +39,7 @@ def submit_mpi_jobs(
     worker_log,
     verbose,
 ):
-    """Submit MPI Jobs
+    """Submit MPI Jobs.
 
     This method distributes the jobs to the workers using MPI.
 

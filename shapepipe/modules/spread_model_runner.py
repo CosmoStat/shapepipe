@@ -1,21 +1,17 @@
-# -*- coding: utf-8 -*-
+"""SPREAD MODEL RUNNER.
 
-"""SPREAD MODEL RUNNER
-
-Module runner for ``spread_model``
+Module runner for ``spread_model``.
 
 :Author: Axel Guinot
-
-:Date: 2019, 2020
 
 """
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.spread_model_package import spread_model as sm
+from shapepipe.modules.spread_model_package.spread_model import SpreadModel
 
 
 @module_runner(
-    version='1.0',
+    version='1.1',
     input_module=[
         'sextractor_runner',
         'psfex_interp_runner_me',
@@ -24,7 +20,7 @@ from shapepipe.modules.spread_model_package import spread_model as sm
     file_pattern=['sexcat', 'galaxy_psf', 'weight_vign'],
     file_ext=['.fits', '.sqlite', '.fits'],
     depends=['numpy', 'galsim'],
-    run_method='parallel'
+    run_method='parallel',
 )
 def spread_model_runner(
     input_file_list,
@@ -32,9 +28,9 @@ def spread_model_runner(
     file_number_string,
     config,
     module_config_sec,
-    w_log
+    w_log,
 ):
-
+    """Define The Spread Model Runner."""
     # Get input files
     sex_cat_path, psf_cat_path, weight_cat_path = input_file_list
 
@@ -57,16 +53,17 @@ def spread_model_runner(
     output_path = f'{run_dirs["output"]}/{file_name}'
 
     # Create spread model class instance
-    inst = sm.SpreadModel(
+    sm_inst = SpreadModel(
         sex_cat_path,
         psf_cat_path,
         weight_cat_path,
         output_path,
         pixel_scale,
-        output_mode
+        output_mode,
     )
 
     # Process spread model computation
-    inst.process()
+    sm_inst.process()
 
+    # No return objects
     return None, None
