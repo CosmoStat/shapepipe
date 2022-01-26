@@ -1,6 +1,4 @@
-[Home](./shapepipe.md)
-
-# ShapePipe tutorial
+# ShapePipe Tutorial
 
 ## Index
 
@@ -48,7 +46,6 @@ Run the pipeline on a single example CFIS image:
 job_sp -r symlink 246.290
 ```
 
-
 ## Introduction
 
 The `ShapePipe` pipeline processes single-exposure images and stacked images. Input images have to be calibrated beforehand for astrometry and photometry. This tutorial of an entire `ShapePipe` run covers specifically images from CFIS, the Canada-France Imaging Survey. CFIS stacks are so-called tiles, which are the co-adds of on average three exposures in the r-band.
@@ -72,7 +69,7 @@ Naming and numbering of the input files can closely follow the original image na
   The `p` needs to be removed, the image type needs to precede the ID, and the file name can only contain a single dot (`.`) delimiting the file extension. We create the extension `fitsfz` for compressed FITS file.  
   Default convention: **<image_type>-<exposure_number>.fitsfz**.  
   Examples: `image-2228303.fitsfz`, `flag-2214439.fitsfz`
-  
+
 - Single-exposure single-CCD image.  
   FITS file containing a single CCD from an individual exposure. The pixel data can contain the observed image, a weight
   map, or a flag map.  
@@ -89,42 +86,42 @@ Naming and numbering of the input files can closely follow the original image na
   clarity, we include the string `image` for a tile image type.  
   Default convention: **<image_type>-<tile_number>.fits**  
   Examples: `CFIS_image-277-282.fits`, `CFIS_weight-274-282.fitsfz`, `pipeline_flag-239-293.fits`
-    
+
 - Database catalogue files  
   For very large files that combine information from multiple tiles or single exposures, `ShapePipe` creates `sqlite`
   data base catalogues.  
   Examples: `log_exp_headers.sqlite`, exposure header information
-  
+
 - Numpy array binary files  
-  Some large files are stored as numpy arrays. These contain FITS header information. 
+  Some large files are stored as numpy arrays. These contain FITS header information.
   Example: `headers-2366993.npy`
-  
+
 - PSF files  
   `PSFEx` and `SExtractor` produce FITS files with file exentions other than `.fits`: `.psf` for files containing PSF
   model information for a single CCD, and `.cat` for a PSF catalogue.
-  
+
 - Summary statistic files  
   The `SETools` module that creates samples of objects according to some user-defined selection criteria (see [Select stars](#select-stars)) also outputs ASCII   
   files with user-defined summary statistics for each CCD, for example the number of selected stars, or mean and standard deviation of their FWHM.  
   Example: `star_stat-2366993-18.txt`
-  
+
 - Tile ID list
   ASCII file with a tile number on each line. Used for the `get_image_runner` module to download CFIS images (see [Download tiles](#download-tiles)).
-  
+
   - Single-exposure name list
     ASCII file with a single-exposure name on each line. Produced by the `find_exposure_runner` module to identify single exposures that were used to create
     a given tile. See [Find exposures](#find-exposures)).
-  
+
 - Plots
   The `SETools` module can also produce plots of the objects properties that were selected for a given CCD.
   The type of plot (histogram, scatter plot, ...) and quantities to plot as well as plot decorations can be specified in the
   selection criteria config file (see [Select stars](#select-stars)).
   Example: `hist_mag_stars-2104133-5.png`
-  
+
 - Log files
   The pipeline core and all called modules write ASCII log files to disk.  
-  Examples: `process-2366993-6.log`, `log_sp_exp.log`. 
-  
+  Examples: `process-2366993-6.log`, `log_sp_exp.log`.
+
 ### CFIS processing
 
 `ShapePipe` splits the processing of CFIS images into three parts:  
@@ -134,14 +131,14 @@ Naming and numbering of the input files can closely follow the original image na
 
 The following flowchart visualised the processing parts and steps.
 
-![ShapePipe_FlowChart](./ShapePipe_v0.0.1.png)
+![ShapePipe_FlowChart](./images/ShapePipe_v0.0.1.png)
 
 Below, the individual processing steps are described in detail.
 
 ### Path variables
 
 All required variables are automatically set in the job script `job_sp`. If an example config file is to be run outside this script,
-the following path variables might need to be defined. 
+the following path variables might need to be defined.
 - `$SP_RUN`: Run directory of `ShapePipe`. In general this is just `pwd`, and can be set via
   ```bash
   export SP_RUN=`pwd`
@@ -194,7 +191,7 @@ Now we are ready to run the first, pre-processing `ShapePipe` modules.
 ### Retrieve tiles
 
 The module section `[GET_IMAGES_RUNNER]` first contains the input tile ID list file path (default is `tile_numbers.txt`). This is assembled from `FILE_PATTERN`, `FILE_EXT`, and `NUMBERING_SCHEME`. Since there
-is only a single input text file with no number, the latter entry is empty. See see `File options` in the [general pipeline readme](README.rst)) for more details on the numbering scheme.
+is only a single input text file with no number, the latter entry is empty. See `File options` in the [configuration](configuration.md) for more details on the numbering scheme.
 
 Next, we need to specify for the images input path (for example a VOS url),
 input file pattern and their extension. The entry `INPUT_FILE_PATTERN` includes the
@@ -211,7 +208,7 @@ dots other than for the file extension.
 
 ### Uncompress tile weights
 
-The compressed stack weights (.fits.fz/.fitsfz files) need to be uncompressed before further processing. An example config file is `$SP_CONFIG/config_unfz_w.ini`. Except from the input file pattern and extension (see `File Options` in the [general pipeline readme](README.rst)), we need to specify the output file patern (can be the same as the input), and the HDU number of the weight image data:
+The compressed stack weights (.fits.fz/.fitsfz files) need to be uncompressed before further processing. An example config file is `$SP_CONFIG/config_unfz_w.ini`. Except from the input file pattern and extension (see `File Options` in [configuration](configuration.md), we need to specify the output file patern (can be the same as the input), and the HDU number of the weight image data:
 
 ### Find single exposures
 
@@ -348,7 +345,7 @@ have a zero-padded pixel border, which is not accounted for by `ds9`.
 
 **Module:** sextractor_runner  
 **Parent:** split_exp_runner, mask_runner  
-**Input:** single-exp_single-CCD image[, weights] [, flags] [, PSF file] [, detection image] [, detection weight] 
+**Input:** single-exp_single-CCD image[, weights] [, flags] [, PSF file] [, detection image] [, detection weight]
 **Output:** sextractor catalogue
 
 The purpose of source extraction/source identification on single exposures is
@@ -499,7 +496,7 @@ to create histograms (as `.txt` tables and `.png` plots) in the directory `stats
 | Non-masked objects per CCD | Stars per CCD | FWHM mode |
 | --- | --- | --- |
 | <img width="250" src="1_nb_nonmasked.png" title="Number of non-masked objects per CCD"> | <img width="250" src="2_nb_stars.png" title="Number stars per CCD"> | <img width="250" src="5_mode_fhwm_star.png" title="FWHM mode"> |
-| No CCD with a very large masked area | No CCD with insufficient stars | Rather broad seeing distribution | 
+| No CCD with a very large masked area | No CCD with insufficient stars | Rather broad seeing distribution |
 
 Note that `stats_global` read all `SETool` output stats files found in a given input directory tree. It can thus produce histogram combining
 several runs.

@@ -1,4 +1,4 @@
-name: API Doc Test
+name: Build API Doc
 
 on: [workflow_dispatch]
 
