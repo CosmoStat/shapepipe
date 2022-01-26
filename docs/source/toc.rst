@@ -35,8 +35,6 @@
   post_processing
   random_cat
 
-  basic_execution
- 
 .. toctree::
    :hidden:
    :titlesonly:
