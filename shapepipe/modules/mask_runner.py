@@ -89,11 +89,7 @@ def mask_runner(
     else:
         suffix = ''
 
-    # Get mask base ouput file name
-    if config.has_option(module_config_sec, 'OUTNAME_BASE'):
-        outname_base = config.get(module_config_sec, 'OUTNAME_BASE')
-    else:
-        outname_base = 'flag'
+    outname_base = 'flag'
 
     # Create instance of Mask
     mask_inst = Mask(
@@ -108,7 +104,7 @@ def mask_runner(
         hdu=hdu,
     )
 
-    # Make the mask
+    # Process module
     stdout, stderr = mask_inst.make_mask()
 
     # Return stdout and stderr
