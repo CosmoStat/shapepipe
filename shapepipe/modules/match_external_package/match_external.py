@@ -181,8 +181,6 @@ class MatchCats(object):
         ra, dec = get_ra_dec(data, self._col_match[0], self._col_match[1])
         coord = SkyCoord(ra=ra, dec=dec, unit='deg')
 
-        # Todo: cut duplicates
-
         # Match objects in external cat to internal cat. indices=indices to
         # external object for each object in internal cat e.g.
         # external_coord[indices[0]] is the match for coord[0].
@@ -241,13 +239,12 @@ class MatchCats(object):
             # Write FITS file
             out_cat = file_io.FITSCatalogue(
                 self._output_path,
-                SEx_catalogue=True,
+                SEx_catalogue=False,
                 open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
             )
             out_cat.save_as_fits(
                 data=matched,
                 ext_name='MATCHED',
-                sex_cat_path=self._input_file_list[0],
             )
 
             # Write all extensions if in multi-epoch mode
@@ -268,5 +265,3 @@ class MatchCats(object):
                         data=matched_me,
                         ext_name=ext_names[hdu_me],
                     )
-
-            # TODO: Compute stats
