@@ -8,9 +8,11 @@ This module defines a class for handling pipeline jobs.
 
 from configparser import ConfigParser
 from gc import collect
-from joblib import Parallel, delayed, cpu_count
 from logging import Logger
+
+from joblib import Parallel, cpu_count, delayed
 from modopt.interface.errors import warn
+
 from shapepipe.pipeline.worker_handler import WorkerHandler
 
 

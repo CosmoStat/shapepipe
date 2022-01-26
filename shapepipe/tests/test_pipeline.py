@@ -7,8 +7,10 @@ This module contains unit tests for the shapepipe.pipeline module.
 """
 
 from unittest import TestCase
+
 import numpy as np
 import numpy.testing as npt
+
 from shapepipe.pipeline import *
 
 

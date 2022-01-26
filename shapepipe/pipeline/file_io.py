@@ -7,8 +7,8 @@ This file contains methods for file I/O handling.
 """
 
 import os
-import numpy as np
 
+import numpy as np
 from astropy.io import fits
 from astropy.table import Table
 

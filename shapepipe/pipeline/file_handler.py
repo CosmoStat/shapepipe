@@ -8,13 +8,15 @@ This module defines a class for handling pipeline files.
 
 import os
 import re
-import numpy as np
-from shutil import copyfile
+from functools import partial, reduce
 from glob import glob
-from functools import reduce, partial
+from shutil import copyfile
+
+import numpy as np
+
+from shapepipe.modules.module_runners import get_module_runners
 from shapepipe.pipeline.run_log import RunLog
 from shapepipe.pipeline.shared import split_module_run
-from shapepipe.modules.module_runners import get_module_runners
 from shapepipe.utilities.file_system import mkdir
 
 

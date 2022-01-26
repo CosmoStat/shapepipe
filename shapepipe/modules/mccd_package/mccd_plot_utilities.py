@@ -43,7 +43,7 @@ mpl.use('agg')
 '''
 
 
-def megacam_pos(j):
+def megacam_pos(index):
     """Handle MegaCam Positions.
 
     Parameters
@@ -828,17 +828,27 @@ class new_BaseCorrelationFunctionSysTest(BaseCorrelationFunctionSysTest):
         ----------
         data : numpy.ndarray
             Input data
-        config : ?
-            ?
-        use_as_k : ?, optional
-            ?
+        config : dict
+            The `config` parameter to be passed to treecorr's
+            catalogue. A configuration dict which defines attributes
+            about how to read the file. Any optional kwargs may be
+            given here in the config dict if desired. Invalid keys
+            in the config dict are ignored. See the `treecorr`
+            package documentation for more details
+            Default is ``None``.
+        use_as_k : str, optional
+            String representing the field in `data` that will be
+            used to replace the convergence, kappa, that is
+            identified with the string `k`. See the `treecorr`
+            package documentation for more details
         use_chip_coords : bool, optional
             Option to use chip coordinates, default is ``False``
 
         Returns
         -------
-        numpy.ndarray
-            Catalogue data
+        treecorr.Catalog
+            An instance of the `treecorr.Catalog` class.
+            Contains a data catalogue that will be correlated
 
         """
         if data is None or isinstance(data, treecorr.Catalog):
@@ -920,13 +930,16 @@ class Rho1SysTest(new_BaseCorrelationFunctionSysTest):
             Random data
         random2 : numpy.ndarray, optional
             Second random data
-        config : ?
-            ?
+        config : dict, optional
+            Configuration dict to be passed to treecorr.
+            Default is ``None``
 
         Returns
         -------
-        ?
-            ?
+        numpy.ndarray
+            A numpy array of the treecorr outputs. Handled via the
+            Stile package through the `BaseCorrelationFunctionSysTest`
+            class
 
         """
         new_data = data.copy()
@@ -995,13 +1008,16 @@ class DESRho2SysTest(new_BaseCorrelationFunctionSysTest):
             Random data
         random2 : numpy.ndarray, optional
             Second random data
-        config : ?
-            ?
+        config : dict, optional
+            Configuration dict to be passed to treecorr.
+            Default is ``None``
 
         Returns
         -------
-        ?
-            ?
+        numpy.ndarray
+            A numpy array of the treecorr outputs. Handled via the
+            Stile package through the `BaseCorrelationFunctionSysTest`
+            class
 
         """
         new_data = np.rec.fromarrays(
@@ -1049,8 +1065,15 @@ class DESRho2SysTest(new_BaseCorrelationFunctionSysTest):
             )
         else:
             new_random2 = random2
-        return self.getCF('gg', new_data, new_data2, new_random, new_random2,
-                          config=config, **kwargs)
+        return self.getCF(
+            'gg',
+            new_data,
+            new_data2,
+            new_random,
+            new_random2,
+            config=config,
+            **kwargs
+        )
 
 
 class DESRho3SysTest(new_BaseCorrelationFunctionSysTest):
@@ -1091,13 +1114,16 @@ class DESRho3SysTest(new_BaseCorrelationFunctionSysTest):
             Random data
         random2 : numpy.ndarray, optional
             Second random data
-        config : ?
-            ?
+        config : dict, optional
+            Configuration dict to be passed to treecorr.
+            Default is ``None``
 
         Returns
         -------
-        ?
-            ?
+        numpy.ndarray
+            A numpy array of the treecorr outputs. Handled via the
+            Stile package through the `BaseCorrelationFunctionSysTest`
+            class
 
         """
         new_data = np.rec.fromarrays(
@@ -1203,13 +1229,16 @@ class DESRho4SysTest(new_BaseCorrelationFunctionSysTest):
             Random data
         random2 : numpy.ndarray, optional
             Second random data
-        config : ?
-            ?
+        config : dict, optional
+            Configuration dict to be passed to treecorr.
+            Default is ``None``
 
         Returns
         -------
-        ?
-            ?
+        numpy.ndarray
+            A numpy array of the treecorr outputs. Handled via the
+            Stile package through the `BaseCorrelationFunctionSysTest`
+            class
 
         """
         new_data = np.rec.fromarrays(
@@ -1314,13 +1343,16 @@ class DESRho5SysTest(new_BaseCorrelationFunctionSysTest):
             Random data
         random2 : numpy.ndarray, optional
             Second random data
-        config : ?
-            ?
+        config : dict, optional
+            Configuration dict to be passed to treecorr.
+            Default is ``None``
 
         Returns
         -------
-        ?
-            ?
+        numpy.ndarray
+            A numpy array of the treecorr outputs. Handled via the
+            Stile package through the `BaseCorrelationFunctionSysTest`
+            class
 
         """
         new_data = np.rec.fromarrays(

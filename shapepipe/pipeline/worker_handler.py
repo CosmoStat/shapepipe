@@ -9,8 +9,10 @@ This module defines a class for handling pipeline wokers.
 import platform
 from os import getpid
 from threading import active_count
+
 from modopt.interface.errors import catch_error, warn
-from modopt.interface.log import set_up_log, close_log
+from modopt.interface.log import close_log, set_up_log
+
 from shapepipe.pipeline.timeout import with_timeout
 
 

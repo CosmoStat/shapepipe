@@ -440,7 +440,7 @@ class SETools(object):
 
         for idx in rand_split.keys():
             rand_split_file = file_io.FITSCatalogue(
-                output_path + idx + file_number + '.fits',
+                f'{output_path}{idx}{file_number}.fits',
                 open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
                 SEx_catalogue=(self._cat_filepath is not None),
             )
@@ -479,7 +479,7 @@ class SETools(object):
         file.write('# Statistics\n')
 
         for key in stat.keys():
-            file.write(key + ' = ' + str(stat[key]) + '\n')
+            file.write(f'{key} = {str(stat[key])}\n')
 
         file.close()
 
@@ -514,7 +514,7 @@ class SETools(object):
                         raise RuntimeError(f'"{s[1]}" not found in mask')
 
             mask_tmp = None
-            for idx in self._mask[idx]:
+            for idx in self._mask[key]:
                 if idx == 'NO_SAVE':
                     continue
                 tmp = StrInterpreter(
@@ -726,7 +726,7 @@ class SEPlot(object):
 
     """
 
-    def __init__(self, plot_dict, catalog, output_path, mask_dict=None):
+    def __init__(self, plot_dict, catalogue, output_path, mask_dict=None):
 
         if plot_dict is None:
             raise ValueError('plot_dict not provided')
@@ -737,7 +737,7 @@ class SEPlot(object):
 
         self._plot = plot_dict
         self._output_path = output_path
-        self._cat = catalog
+        self._cat = catalogue
         self._mask_dict = mask_dict
 
         if 'TYPE' not in self._plot.keys():

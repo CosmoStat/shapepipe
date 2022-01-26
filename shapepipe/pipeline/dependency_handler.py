@@ -6,10 +6,10 @@ This module defines a class for handling pipeline dependencies.
 
 """
 
+import importlib
 import os
 import re
 import subprocess
-import importlib
 
 
 class DependencyHandler(object):

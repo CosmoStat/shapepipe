@@ -89,7 +89,7 @@ class FindExposures():
                     f're match \'{pattern}\' failed for filename \'{temp[3]}\''
                 )
 
-            exp_name = m.group(1)
+            exp_name = pattern_match.group(1)
 
             # LSB exposure names have 's', header still says 'p'
             # exp_name = re.sub(r'p', 's', exp_name)

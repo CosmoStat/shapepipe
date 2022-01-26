@@ -6,20 +6,18 @@ CFIS module.
 
 """
 
-import re
-import sys
-import os
-import glob
-import shlex
 import errno
+import glob
+import os
+import re
+import shlex
+import sys
 
+import astropy.coordinates as coords
 import numpy as np
-
 import pylab as plt
-
 from astropy import units
 from astropy.io import ascii
-import astropy.coordinates as coords
 from astropy.wcs import WCS
 
 from shapepipe.utilities.file_system import mkdir
@@ -165,7 +163,7 @@ class image():
 
         Parameters
         ----------
-        file : str, optional, default=sys.stdout
+        file : file, optional, default=sys.stdout
             output file handle
         base_name : bool, optional, default=False
             if True (False), print image base name (full path)
@@ -210,7 +208,7 @@ class image():
 
         Parameters
         ----------
-        file : file handle, optional, default=sys.stdout
+        file : file, optional, default=sys.stdout
             output file handle
 
         """

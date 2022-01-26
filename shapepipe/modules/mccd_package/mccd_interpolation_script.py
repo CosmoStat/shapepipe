@@ -12,7 +12,7 @@ import mccd
 import numpy as np
 from sqlitedict import SqliteDict
 
-from shapepipe.pipeline import file_io as sc
+from shapepipe.pipeline import file_io
 
 try:
     import galsim.hsm as hsm

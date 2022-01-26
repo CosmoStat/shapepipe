@@ -8,8 +8,10 @@ shapepipe.modules.get_images_package.get_images
 """
 
 from unittest import TestCase
+
 import numpy as np
 import numpy.testing as npt
+
 from shapepipe.modules.get_images_package import get_images
 
 
