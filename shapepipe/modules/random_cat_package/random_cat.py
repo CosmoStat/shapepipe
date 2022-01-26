@@ -109,21 +109,25 @@ class RandomCat():
         area_deg2_eff = area_pix * n_unmasked
 
         # Compute number of requested objects
-        if not self._density:
-            # Use value from config file
-            n_obj = self._n_rand
+        if n_unmasked > 0:
+            if not self._density:
+                # Use value from config file
+                n_obj = self._n_rand
+            else:
+                # Compute number of objects from density
+                n_obj = int(self._n_rand / area_deg2 * area_deg2_eff / area_deg2)
+
+            # Check that a reasonably large number of pixels is not masked
+            if n_unmasked < n_obj:
+               raise ValueError(
+                   f'Number of un-masked pixels {n_unmasked} is '
+                   + f'smaller than number of random objects requested {n_obj}'
+               )
+
         else:
-            # Compute number of objects from density
-            n_obj = int(self._n_rand / area_deg2 * area_deg2_eff / area_deg2)
+            n_obj = 0
 
         self._w_log.info(f'Creating {n_obj} random objects')
-
-        # Check that a reasonably large number of pixels is not masked
-        if n_unmasked < n_obj:
-            raise ValueError(
-                f'Number of un-masked pixels {n_unmasked} is '
-                + f'smaller than number of random objects requested {n_obj}'
-            )
 
         # Draw points until n are in mask
         n_found = 0
@@ -142,8 +146,16 @@ class RandomCat():
 
         # Transform to WCS
         res = WCS.all_pix2world(xy_rand, 1)
-        ra_rand = res[:, 0]
-        dec_rand = res[:, 1]
+        if n_unmasked > 0:
+            ra_rand = res[:, 0]
+            dec_rand = res[:, 1]
+            x_rand = xy_rand[:, 0]
+            y_rand = xy_rand[:, 1]
+        else:
+            ra_rand = []
+            dec_rand = []
+            x_rand = []
+            y_rand = []
 
         # Tile ID
         file_name = os.path.split(self._output_path)[1]
@@ -156,8 +168,8 @@ class RandomCat():
         cat_out = [
             ra_rand,
             dec_rand,
-            xy_rand[:, 0],
-            xy_rand[:, 1],
+            x_rand,
+            y_rand,
             tile_id_array
         ]
         column_names = ['RA', 'DEC', 'x', 'y', 'TILE_ID']
@@ -170,7 +182,7 @@ class RandomCat():
         output.save_as_fits(cat_out, names=column_names)
 
         # Remove overlapping regions
-        if self._tile_list_path:
+        if n_unmasked > 0 and self._tile_list_path:
             self._w_log.info('Flag overlapping objects')
             ratio_non_overl_tot = cfis.remove_common_elements(
                 output,

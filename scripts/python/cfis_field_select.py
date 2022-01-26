@@ -30,7 +30,7 @@ from astropy.table import Table, Column
 from astropy import units
 from astropy.coordinates import Angle, SkyCoord
 
-import cfis
+from shapepipe.utilities import cfis
 
 
 def get_images_used_in_tiles(images, band, image_type):
