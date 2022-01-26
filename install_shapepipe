@@ -9,7 +9,7 @@ LC_CTYPE=en_US.utf8
 #
 ##############################################################################
 
-version="1.4"
+version="1.5"
 
 ##############################################################################
 # EXTERNAL PACKAGES AND SCRIPTS
@@ -32,9 +32,7 @@ psfex_bin="psfex"
 psfex_version=TRUE
 
 # WeightWatcher Package
-# ww_url="https://www.astromatic.net/download/weightwatcher/weightwatcher-1.12.tar.gz"
 ww_url="http://snapshot.debian.org/archive/debian/20171211T160522Z/pool/main/w/weightwatcher/weightwatcher_1.12.orig.tar.gz"
-# ww_tar="weightwatcher-1.12.tar.gz"
 ww_tar="weightwatcher_1.12.orig.tar.gz"
 ww_dir="weightwatcher-1.12"
 ww_bin="ww"
@@ -54,25 +52,11 @@ mpi_dir="mpi4py-3.0.3"
 mpi_bin="mpiexec"
 mpi_version=TRUE
 
-# Auxillary scripts
-PY_SCRIPTS=(
-  cfis_weight_format.py
-  cfis_field_select.py
-  cfis_download_images.py
-  create_star_cat.py
-  merge_star_cat_psfex.py
-  MeanShapes.py
-  stats_global.py
-  merge_final_cat.py
-  canfar_avail_results.py
-)
-BASH_SCRIPTS=(
-  job_sp.bash
-  post_proc_sp.bash
-  psf_residuals.bash
-  prepare_tiles_for_final.bash
-  canfar_download_results.bash
-  untar_results.bash
+# Allowed script extensions
+script_ext=(
+  .py
+  .sh
+  .bash
 )
 
 # Divider line
@@ -258,8 +242,8 @@ start() {
   echo 'ShapePipe Installation Script'
   echo ''
   echo 'Author: Samuel Farrens'
-  echo 'Year: 2019'
   echo 'Version:' $version
+  echo 'Last Update: 26/01/2022'
   echo $line
   echo ''
 }
@@ -317,7 +301,7 @@ package_report() {
   echo 'Package Report'
   echo ''
   packages
-  pip list
+  python -m piplist
   echo ''
   exit_code
 }
@@ -410,6 +394,16 @@ activate_shapepipe() {
 # Function to deactivate ShapePipe environment
 deactivate_shapepipe() {
   source deactivate || source $CONDA_PREFIX_1/etc/profile.d/conda.sh && conda deactivate
+}
+
+# Build symbolic links for scripts
+build_symlinks() {
+  for ext in ${script_ext[@]}; do
+    for script in $CONDA_PREFIX/bin/*$ext; do
+      link_name=`basename $script $ext`
+      ln -s $script $CONDA_PREFIX/bin/$link_name
+    done
+  done
 }
 
 ##############################################################################
@@ -625,7 +619,8 @@ if [ -z "$BLAS_INC" ]; then BLAS_INC=$CONDA_PREFIX/include; fi
 if [ "$DEVELOP" == TRUE ]
 then
   report_progress 'Developer Packages'
-  pip install numpydoc pytest pytest-cov pytest-codestyle sphinx sphinx-rtd-theme
+  python -m pip install -r develop.txt
+  python -m pip install -r docs/requirements.txt
 fi
 
 ##############################################################################
@@ -636,7 +631,7 @@ fi
 if [ "$VOS" == TRUE ]
 then
   report_progress 'vos'
-  pip install vos
+  python -m pip install vos
 fi
 
 ##############################################################################
@@ -727,22 +722,13 @@ fi
 # INSTALL SHAPEPIPE LIBRARY
 ##############################################################################
 
+# Install ShapePipe package
 report_progress 'ShapePipe'
 cd $PIPE_DIR
-python setup.py install
+python -m pip install .
 
-# Create symbolic link to main program
-ln -s $PWD/shapepipe_run.py $CONDA_PREFIX/bin/shapepipe_run
-
-# Create symbolic link to auxiliary scripts
-for script in ${PY_SCRIPTS[@]}; do
-  link_name=`basename $script .py`
-  ln -s $PWD/scripts/python/$script $CONDA_PREFIX/bin/$link_name
-done
-for script in ${BASH_SCRIPTS[@]}; do
-  link_name=`basename $script .bash`
-  ln -s $PWD/scripts/sh/$script $CONDA_PREFIX/bin/$link_name
-done
+# Create symbolic links to scripts
+build_symlinks
 
 finish
 
