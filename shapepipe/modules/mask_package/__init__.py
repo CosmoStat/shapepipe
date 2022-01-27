@@ -26,7 +26,7 @@ conveniently are powers of two such that they can be combined bit-wise.
 
 To mask bright stars, this module either creates a star catalogue from the
 online
-[guide star catalogue](https://heasarc.gsfc.nasa.gov/W3Browse/all/gsc.html)
+`guide starcatalogue <https://heasarc.gsfc.nasa.gov/W3Browse/all/gsc.html>`_
 database relevant to the the footprint. Note that this requires online access,
 which in some cases is not granted on compute nodes of a cluster. In this case,
 set the config flag ``USE_EXT_STAR`` to False. Alternatively, a star catalogue
