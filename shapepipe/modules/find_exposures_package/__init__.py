@@ -26,7 +26,6 @@ Module-specific config file entries
 ===================================
 
 None
-
 """
 
 __all__ = ['find_exposures.py']
