@@ -49,7 +49,7 @@ MASK_CONFIG_PATH : str
 HDU : int, optional, default=0
     HDU of external flag FITS file
 SUFFIX : str, optional, default=''
-    prefix to be appended to output file name 'flag';
+    prefix to be appended to output file name ``flag``;
     helps to distinguish the file patterns of newly created and external
     mask files
 
