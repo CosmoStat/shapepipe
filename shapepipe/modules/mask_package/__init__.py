@@ -25,14 +25,14 @@ Masked pixels of different mask types are indicated by integers, which
 conveniently are powers of two such that they can be combined bit-wise.
 
 To mask bright stars, this module either creates a star catalogue from the
-online [guide star
-catalogue](https://heasarc.gsfc.nasa.gov/W3Browse/all/gsc.html) database
-relevant to the the footprint. Note that this requires online access, which in
-some cases is not granted on compute nodes of a cluster. In this case, set the
-config flag ``USE_EXT_STAR`` to False. Alternatively, a star catalogue can be
-created before running this module via the script ``create_star_cat``. During
-the processing of this module, this star catalogue is read from disk, with
-``USE_SET_STAR = True``.
+online
+[guide star catalogue](https://heasarc.gsfc.nasa.gov/W3Browse/all/gsc.html)
+database relevant to the the footprint. Note that this requires online access,
+which in some cases is not granted on compute nodes of a cluster. In this case,
+set the config flag ``USE_EXT_STAR`` to False. Alternatively, a star catalogue
+can be created before running this module via the script ``create_star_cat``.
+During the processing of this module, this star catalogue is read from disk,
+with ``USE_SET_STAR = True``.
 
 Module-specific config file entries
 ===================================
