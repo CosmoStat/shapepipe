@@ -16,20 +16,23 @@ Description
 This module creates masks for bright stars, diffraction spikes, Messier
 objects, borders, and other artifacts. If a flag file is given as input,
 for example from pre-processing, the mask that is created by this module
-is joined with the mask from this external flag file.
+is joined with the mask from this external flag file. In this case
+the config flag ``USE_EXT_FLAG`` needs to be set to ``True``. To distinguish
+the newly created output flag file from the input ones, a prefix can added as
+specificed by the config entry ``SUFFIX``.
 
 Masked pixels of different mask types are indicated by integers, which
 conveniently are powers of two such that they can be combined bit-wise.
 
-Exposures, unlike tile images, come with external flag files on input. This is
-specified by the key USE_EXT_FLAG. To distinguish the newly created output flag
-file from the input ones, a suffix is added:
-
-To mask bright stars, this module either creates a star catalogue from the online
-[guide star catalogue](https://heasarc.gsfc.nasa.gov/W3Browse/all/gsc.html) data
-base relevant to the the footprint. Note that this requires online access, which in
-some cases is not granted on compute nodes of a cluster.
-Alternatively, the star catalogue can be read from disk.
+To mask bright stars, this module either creates a star catalogue from the
+online [guide star
+catalogue](https://heasarc.gsfc.nasa.gov/W3Browse/all/gsc.html) database
+relevant to the the footprint. Note that this requires online access, which in
+some cases is not granted on compute nodes of a cluster. In this case, set the
+config flag ``USE_EXT_STAR`` to False. Alternatively, a star catalogue can be
+created before running this module via the script ``create_star_cat``. During
+the processing of this module, this star catalogue is read from disk, with
+``USE_SET_STAR = True``.
 
 Module-specific config file entries
 ===================================
