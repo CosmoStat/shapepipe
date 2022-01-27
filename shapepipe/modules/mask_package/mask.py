@@ -43,7 +43,7 @@ class Mask(object):
         self,
         image_path,
         weight_path,
-        image_suffix,
+        image_prefix,
         image_num,
         config_filepath,
         output_dir,
@@ -66,10 +66,10 @@ class Mask(object):
         self._outname_base = outname_base
 
         self._img_number = image_num
-        if (image_suffix.lower() != 'none') and (image_suffix != ''):
-            self._img_suffix = f'{image_suffix}_'
+        if (image_prefix.lower() != 'none') and (image_prefix != ''):
+            self._img_prefix = f'{image_prefix}_'
         else:
-            self._img_suffix = ''
+            self._img_prefix = ''
 
         if star_cat_path is not None:
             self._star_cat_path = star_cat_path
@@ -360,7 +360,7 @@ class Mask(object):
                         )
 
                 output_file_name = (
-                    f'{self._output_dir}/{self._img_suffix}'
+                    f'{self._output_dir}/{self._img_prefix}'
                     + f'{self._outname_base}{self._img_number}.fits'
                 )
 

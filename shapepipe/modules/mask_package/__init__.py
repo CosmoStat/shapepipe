@@ -19,7 +19,7 @@ for example from pre-processing, the mask that is created by this module
 is joined with the mask from this external flag file. In this case
 the config flag ``USE_EXT_FLAG`` needs to be set to ``True``. To distinguish
 the newly created output flag file from the input ones, a prefix can added as
-specificed by the config entry ``SUFFIX``.
+specificed by the config entry ``PREFIX``.
 
 Masked pixels of different mask types are indicated by integers, which
 conveniently are powers of two such that they can be combined bit-wise.
@@ -48,7 +48,7 @@ MASK_CONFIG_PATH : str
     path to mask config file
 HDU : int, optional, default=0
     HDU of external flag FITS file
-SUFFIX : str, optional, default=''
+PREFIX : str, optional, default=''
     prefix to be appended to output file name ``flag``;
     helps to distinguish the file patterns of newly created and external
     mask files
