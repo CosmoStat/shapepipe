@@ -153,6 +153,15 @@ MD_THRESH_REMOVE : float
 MD_REMOVE : bool
     image is removed if markefd for removal 
 
+[OTHER]
+-------
+
+TEMP_DIRECTORY : str
+    path to temporary dictionary
+KEEP_INDIVIDUAL_MASK : bool
+    keep individual masks in addition to merged mask file
+KEEP_REG_FILE : bool
+    keep .reg mask file
 
 """
 

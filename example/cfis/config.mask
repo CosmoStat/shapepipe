@@ -75,7 +75,8 @@ MD_REMOVE = False
 # ----------------------------- Other parameters ----------------------------------
 [OTHER]
 
+TEMP_DIRECTORY = .temp
+
 KEEP_REG_FILE = False
 KEEP_INDIVIDUAL_MASK = False
 
-TEMP_DIRECTORY = .temp
