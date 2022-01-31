@@ -41,6 +41,7 @@ def params_default():
         input_IDs  = '.',
         input_path = 'vos:cfis/cosmostat/kilbinger/results',
         psf = 'mccd',
+        extension = 'tgz',
     )
 
     return p_def
@@ -77,6 +78,9 @@ def parse_options(p_def):
          help='PSF model, one in [\'psfex\'|\'mccd\'], default=\'{}\''.format(p_def.psf))
 
     parser.add_option('-f', '--final_only', dest='final_only', action='store_true', help='only check final catalogues')
+    parser.add_option('-m', '--mask_only', dest='mask_only', action='store_true', help='only check mask files (pipeline_flag)')
+    parser.add_option('-x', '--extension', dest='extension', type='string', default=p_def.extension,
+        help=f'file extension, default=\'{p_def.extension}\'')
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
 
     options, args = parser.parse_args()
@@ -100,6 +104,10 @@ def check_options(options):
 
     if options.psf not in ['psfex', 'mccd']:
         print('Invalid PSF model \'{}\''.format(options.psf))
+        return False
+
+    if options.final_only and options.mask_only:
+        print('One one of the options \'-f\' or \'-m\' can be given')
         return False
 
     return True
@@ -175,7 +183,7 @@ def read_input_files(input_path, verbose=False):
     return ID_files
 
 
-def check_results(ID_files, input_path, result_base_names, n_complete, verbose=False):
+def check_results(ID_files, input_path, result_base_names, n_complete, extension, verbose=False):
     """Count the number of result files uploaded to vos for each input ID file.
 
     Parameters
@@ -225,9 +233,14 @@ def check_results(ID_files, input_path, result_base_names, n_complete, verbose=F
                 ID = line.rstrip()
                 n_found[ID_list][ID] = 0
 
+                if extension == 'fits':
+                    ID_fname = ID.replace('.', '-') 
+                    ID_fname = f'-{ID_fname}'
+                else:
+                    ID_fname = f'_{ID}'
                 # Count how many result files are available
                 for base in result_base_names:
-                    name = '{}_{}.tgz'.format(base, ID)
+                    name = '{}{}.{}'.format(base, ID_fname, extension)
                     if name in ls_out:
                         n_found[ID_list][ID] = n_found[ID_list][ID] + 1
                 n_IDs[ID_list] = n_IDs[ID_list] + 1
@@ -301,14 +314,19 @@ def main(argv=None):
 
     ID_files = read_input_files(param.input_IDs, verbose=param.verbose)
 
-    result_base_names = ['final_cat']
-    if not param.final_only:
+    if param.final_only:
+        result_base_names = ['final_cat']
+    elif param.mask_only:
+        result_base_names = ['pipeline_flag']
+    else:
+        result_base_names = []
         types = [
+            'final_cat',
+            'pipeline_flag', 
             'logs',
             'setools_mask', 
             'setools_stat',
             'setools_plot',
-            'pipeline_flag', 
         ]
         for t in types:
             result_base_names.append(t)
@@ -320,7 +338,7 @@ def main(argv=None):
 
     n_complete = len(result_base_names)
 
-    n_found, n_IDs, IDs_not_avail = check_results(ID_files, param.input_path, result_base_names, n_complete, verbose=param.verbose)
+    n_found, n_IDs, IDs_not_avail = check_results(ID_files, param.input_path, result_base_names, n_complete, param.extension, verbose=param.verbose)
 
     output_summary(n_found, n_IDs, n_complete)
 

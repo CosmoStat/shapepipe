@@ -1,11 +1,21 @@
-# -*- coding: utf-8 -*-
+"""MASK MODULE.
 
-"""MASK MODULE
-
-This module contains methods to create masks.
+This package contains the module for ``mask``.
 
 :Author: Axel Guinot
 
+:Parent module:
+
+:Input:
+
+:Output:
+
+Description
+===========
+
+Module-specific config file entries
+===================================
+
 """
 
-__all__ = ['mask_script']
+__all__ = ['mask']

@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""RUN LOG HANDLING
+"""RUN LOG HANDLING.
 
 This module defines methods for creating a run log.
 
@@ -9,11 +7,12 @@ This module defines methods for creating a run log.
 """
 
 import numpy as np
+
 from shapepipe.pipeline.shared import split_module_run
 
 
 class RunLog(object):
-    """Run Log Class
+    """Run Log Class.
 
     This class manages the run log for ShapePipe.
 
@@ -37,7 +36,7 @@ class RunLog(object):
         self._get_list()
 
     def _write(self):
-        """Write
+        """Write.
 
         Write current run to the run log.
 
@@ -46,7 +45,7 @@ class RunLog(object):
             run_log.write(f'{self.current_run} {self._module_list}\n')
 
     def _get_list(self):
-        """Get List
+        """Get List.
 
         Get a list of all runs in the run log.
 
@@ -57,7 +56,7 @@ class RunLog(object):
         self._runs = [line.rstrip() for line in lines]
 
     def get_all(self, module):
-        """Get All
+        """Get All.
 
         Get all previous pipeline runs of a given model.
 
@@ -88,7 +87,7 @@ class RunLog(object):
         return all_runs
 
     def get_last(self, module):
-        """Get Last
+        """Get Last.
 
         Get the last run of the pipeline for a given module.
 
@@ -109,7 +108,7 @@ class RunLog(object):
         return last_run.split(' ')[0]
 
     def get_run(self, search_string):
-        """Get Run
+        """Get Run.
 
         Get a specific run that matches the input search string.
 
