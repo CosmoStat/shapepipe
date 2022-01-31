@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""SHAPEPIPE INFO
+"""SHAPEPIPE INFO.
 
 This module provides some basic information about the ShapePipe package.
 
@@ -35,12 +33,15 @@ __installs__ = [
 __tests__ = [
     'pytest',
     'pytest-cov',
-    'pytest-pycodestyle'
+    'pytest-pycodestyle',
+    'pytest-pydocstyle',
 ]
+__scripts_dir__ = 'scripts'
+__scripts_ext__ = ('.py', '.sh', '.bash')
 
 
 def shapepipe_logo(colour=False):
-    """ShapePipe Logo
+    """Get ShapePipe Logo.
 
     Returns
     -------
@@ -69,11 +70,13 @@ def shapepipe_logo(colour=False):
 
     Authors: Samuel Farrens   <samuel.farrens@cea.fr>
              Axel Guinot      <axel.guinot@cea.fr>
+             Martin Kilbinger <martin.kilbinger@cea.fr>
 
     Main Contributors:
-             Martin Kilbinger
              Tobias Liaudat
              Morgan Schmitz
+             Andre Zamorano Vitorelli
+             Francois Lanusse
 
     Version: {}
 
@@ -84,7 +87,7 @@ def shapepipe_logo(colour=False):
 
 
 def line():
-    """Line
+    """Get Horizontal Line.
 
     Returns
     -------

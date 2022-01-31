@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""VIGNET MAKER
+"""VIGNET MAKER.
 
 This module contains a class to create postage stamps from images.
 
@@ -8,24 +6,25 @@ This module contains a class to create postage stamps from images.
 
 """
 
-import numpy as np
 import re
+
+import numpy as np
 from astropy.wcs import WCS
 from sf_tools.image.stamp import FetchStamps
 from sqlitedict import SqliteDict
 
-import shapepipe.pipeline.file_io as io
+from shapepipe.pipeline import file_io
 
 
 class VignetMaker(object):
-    """Vignet Maker
+    """Vignet Maker.
 
     This class handles the creation of vignets.
 
     Parameters
     ----------
     galcat_path : str
-        Path to catalog containing the positions.
+        Path to catalogue containing the positions.
     pos_type : str
         Must be in ['PIX', 'SPHE']
         PIX : position in pixel coordinates.
@@ -55,7 +54,7 @@ class VignetMaker(object):
         self._pos_type = pos_type
 
     def process(self, image_path_list, rad, suffix):
-        """Process
+        """Process.
 
         Main function to create the stamps.
 
@@ -93,9 +92,9 @@ class VignetMaker(object):
             )
 
     def get_pos(self, pos_params):
-        """Get Positions
+        """Get Positions.
 
-        Get the positions of the given parameters from SExtractor catalog.
+        Get the positions of the given parameters from SExtractor catalogue.
 
         Parameters
         ----------
@@ -109,7 +108,7 @@ class VignetMaker(object):
             Array of the positions
 
         """
-        file = io.FITSCatalog(self._galcat_path, SEx_catalog=True)
+        file = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
         file.open()
 
         pos = np.array(
@@ -121,7 +120,7 @@ class VignetMaker(object):
         return pos
 
     def convert_pos(self, image_path):
-        """Convert Position
+        """Convert Position.
 
         Convert positions from world coordinates to pixel coordinates.
 
@@ -130,13 +129,13 @@ class VignetMaker(object):
         image_path : str
             Path to the image from where the stamp are created.
 
-        Return
-        ------
+        Returns
+        -------
         numpy.ndarray
             New positions in pixel coordinates.
 
         """
-        file = io.FITSCatalog(image_path)
+        file = file_io.FITSCatalogue(image_path)
         file.open()
         head = file.get_header(0)
         file.close()
@@ -153,7 +152,7 @@ class VignetMaker(object):
         return new_pos
 
     def _get_stamp(self, img_path, pos, rad):
-        """Get Stamp
+        """Get Stamp.
 
         Extract stamps at given positions in the image.
 
@@ -172,7 +171,7 @@ class VignetMaker(object):
             Array containing the vignets
 
         """
-        img_file = io.FITSCatalog(img_path)
+        img_file = file_io.FITSCatalogue(img_path)
         img_file.open()
         img = img_file.get_data(0)
         img_file.close()
@@ -185,7 +184,7 @@ class VignetMaker(object):
         return vign
 
     def _get_stamp_me(self, image_dir, image_pattern):
-        """Get Stamp Multi-Epoch
+        """Get Stamp Multi-Epoch.
 
         Get stamps for multi-epoch data.
 
@@ -202,7 +201,7 @@ class VignetMaker(object):
             Directory containing object id and vignets for each epoch.
 
         """
-        cat = io.FITSCatalog(self._galcat_path, SEx_catalog=True)
+        cat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
         cat.open()
 
         all_id = np.copy(cat.get_data()['NUMBER'])
@@ -294,7 +293,7 @@ class VignetMaker(object):
         return output_dict
 
     def process_me(self, image_dir, image_pattern, f_wcs_path, rad):
-        """Process Multi-Epoch
+        """Process Multi-Epoch.
 
         Main function to create the stamps in the multi-epoch case.
 
@@ -334,7 +333,7 @@ class VignetMaker(object):
         self._f_wcs_file.close()
 
     def _save_vignet_me(self, output_dict, suffix):
-        """Save vignet Multi-Epoch
+        """Save vignet Multi-Epoch.
 
         Save vignets for the multi-epoch case.
 
@@ -357,7 +356,7 @@ class VignetMaker(object):
 
 
 def get_original_vignet(galcat_path):
-    """Get Original Vignet
+    """Get Original Vignet.
 
     Get the vignets from the SExtractor catalogue.
 
@@ -372,7 +371,7 @@ def get_original_vignet(galcat_path):
         Array containing the vignets
 
     """
-    file = io.FITSCatalog(galcat_path, SEx_catalog=True)
+    file = file_io.FITSCatalogue(galcat_path, SEx_catalogue=True)
     file.open()
 
     vignet = file.get_data()['VIGNET']
@@ -383,7 +382,7 @@ def get_original_vignet(galcat_path):
 
 
 def make_mask(galcat_path, mask_value):
-    """Make Mask
+    """Make Mask.
 
     Change the value of the SExtractor mask in the vignet.
 
@@ -408,7 +407,7 @@ def make_mask(galcat_path, mask_value):
 
 
 def save_vignet(vignet, sexcat_path, output_dir, suffix, image_num):
-    """Save Vignet
+    """Save Vignet.
 
     Save the vignet to a SExtractor format catalogue.
 
@@ -428,10 +427,10 @@ def save_vignet(vignet, sexcat_path, output_dir, suffix, image_num):
     """
     output_name = f'{output_dir}/{suffix}_vignet{image_num}.fits'
 
-    file = io.FITSCatalog(
+    file = file_io.FITSCatalogue(
         output_name,
-        SEx_catalog=True,
-        open_mode=io.BaseCatalog.OpenMode.ReadWrite,
+        SEx_catalogue=True,
+        open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
     )
 
     file.save_as_fits(vignet, names=['VIGNET'], sex_cat_path=sexcat_path)

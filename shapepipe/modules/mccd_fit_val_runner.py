@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """MCCD FIT VAL RUNNER.
 
 This file is the pipeline fit and validation runner for the MCCD package.
@@ -8,19 +6,20 @@ This file is the pipeline fit and validation runner for the MCCD package.
 
 """
 
-from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.mccd_package import shapepipe_auxiliary_mccd as aux_mccd
 import mccd
+
+from shapepipe.modules.mccd_package import shapepipe_auxiliary_mccd as aux_mccd
+from shapepipe.modules.module_decorator import module_runner
 
 
 @module_runner(
+    version='1.1',
     input_module=['mccd_preprocessing_runner'],
-    version='1.0',
     file_pattern=['train_star_selection', 'test_star_selection'],
     file_ext=['.fits', '.fits'],
     numbering_scheme='-0000000',
     depends=['numpy', 'mccd', 'galsim'],
-    run_method='parallel'
+    run_method='parallel',
 )
 def mccd_fit_val_runner(
     input_file_list,
@@ -28,8 +27,9 @@ def mccd_fit_val_runner(
     file_number_string,
     config,
     module_config_sec,
-    w_log
+    w_log,
 ):
+    """Define The MCCD Fit Validation Runner."""
     # Recover the MCCD config file and its params
     config_file_path = config.getexpanded(module_config_sec, 'CONFIG_PATH')
     mccd_mode = config.get(module_config_sec, 'MODE')
@@ -57,7 +57,7 @@ def mccd_fit_val_runner(
             output_dir=output_dir,
             verbose=verbose,
             saving_name=fit_saving_name,
-            w_log=w_log
+            w_log=w_log,
         )
 
         # Fitted model is found in the output directory
@@ -71,7 +71,7 @@ def mccd_fit_val_runner(
             output_dir=output_dir,
             file_number_string=file_number_string,
             w_log=w_log,
-            val_saving_name=val_saving_name
+            val_saving_name=val_saving_name,
         )
 
     else:
@@ -80,4 +80,5 @@ def mccd_fit_val_runner(
             + " is 'FIT_VALIDATION'."
         )
 
+    # No return objects
     return None, None

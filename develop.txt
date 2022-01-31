@@ -1,0 +1,5 @@
+numpydoc
+pytest
+pytest-cov
+pytest-pycodestyle
+pytest-pydocstyle

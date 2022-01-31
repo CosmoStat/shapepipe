@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""SETOOLS RUNNER
+"""SETOOLS RUNNER.
 
 Module runner for ``setools``.
 
@@ -9,15 +7,15 @@ Module runner for ``setools``.
 """
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.setools_package import setools
+from shapepipe.modules.setools_package.setools import SETools
 
 
 @module_runner(
     input_module='sextractor_runner',
-    version='1.0',
+    version='1.1',
     file_pattern=['sexcat'],
     file_ext=['.fits'],
-    depends=['numpy', 'matplotlib']
+    depends=['numpy', 'matplotlib'],
 )
 def setools_runner(
     input_file_list,
@@ -27,12 +25,12 @@ def setools_runner(
     module_config_sec,
     w_log,
 ):
-
+    """Define The SETools Runner."""
     # Get path to setools configuration file
     config_file = config.getexpanded(module_config_sec, 'SETOOLS_CONFIG_PATH')
 
     # Create instance of SETools
-    se_inst = setools.SETools(
+    se_inst = SETools(
         input_file_list[0],
         run_dirs['output'],
         file_number_string,

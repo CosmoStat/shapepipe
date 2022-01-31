@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""MODULE RUNNERS
+"""MODULE RUNNERS.
 
 This module defines methods for running the pipeline modules.
 
@@ -12,7 +10,7 @@ from importlib import import_module
 
 
 def get_module_runners(modules):
-    """Get Module Runners
+    """Get Module Runners.
 
     Import the specified module runners.
 
@@ -27,14 +25,13 @@ def get_module_runners(modules):
         Dictionary of module runners
 
     """
-
     package = 'shapepipe.modules'
 
     module_runners = dict([
         (
             module,
             getattr(
-                import_module('.{}'.format(module), package=package),
+                import_module(f'.{module}', package=package),
                 module,
             )
         )

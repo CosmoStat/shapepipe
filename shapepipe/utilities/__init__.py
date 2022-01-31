@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""SHAPEPIPE UTILITIES
+"""SHAPEPIPE UTILITIES.
 
 This module contains tools that can be used by pipeline modules or external
 scripts.

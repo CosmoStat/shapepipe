@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""WORKER HANDLER
+"""WORKER HANDLER.
 
 This module defines a class for handling pipeline wokers.
 
@@ -11,13 +9,15 @@ This module defines a class for handling pipeline wokers.
 import platform
 from os import getpid
 from threading import active_count
+
 from modopt.interface.errors import catch_error, warn
-from modopt.interface.log import set_up_log, close_log
+from modopt.interface.log import close_log, set_up_log
+
 from shapepipe.pipeline.timeout import with_timeout
 
 
 class WorkerHandler(object):
-    """Worker Handler
+    """Worker Handler.
 
     This class defines the worker to process a given job.
 
@@ -41,13 +41,13 @@ class WorkerHandler(object):
         timeout,
         module_runner
     ):
-        """Worker
+        """Worker.
 
         This method defines a worker.
 
         Parameters
         ----------
-        process : np.ndarray
+        process : numpy.ndarray
             File(s) to be processed
         w_log_name : str
             Worker log name
@@ -83,7 +83,7 @@ class WorkerHandler(object):
 
     @staticmethod
     def _set_job_name(num):
-        """Set Job Name
+        """Set Job Name.
 
         This method creates a job name for a given process number.
 
@@ -101,7 +101,7 @@ class WorkerHandler(object):
         return f'process{num}'
 
     def _prepare_worker(self, process, job_name, timeout, module):
-        """ Prepare Worker
+        """Prepare Worker.
 
         This method defines a worker instance dictionary.
 
@@ -131,7 +131,7 @@ class WorkerHandler(object):
         self.worker_dict['module'] = module
 
     def _create_worker_log(self):
-        """ Create Worker Log
+        """Create Worker Log.
 
         This method prepares a logging instance for the worker and logs the
         worker parameters.
@@ -170,7 +170,7 @@ class WorkerHandler(object):
         self.w_log.info(f' - Process: {self.worker_dict["process"]}')
 
     def _run_worker(self):
-        """Run Worker
+        """Run Worker.
 
         This method runs the worker with a given timeout limit and catches the
         corresponding errors.
@@ -186,7 +186,7 @@ class WorkerHandler(object):
             self.worker_dict['exception'] = type(err).__name__
 
     def _worker_execution(self):
-        """Worker Execution
+        """Worker Execution.
 
         This method executes a worker job and logs the results.
 
@@ -195,7 +195,7 @@ class WorkerHandler(object):
         self._log_stdout()
 
     def _run_module(self):
-        """Run Module
+        """Run Module.
 
         This method runs a module script.
 
@@ -222,7 +222,7 @@ class WorkerHandler(object):
         )
 
     def _log_stdout(self):
-        """Log STDOUT
+        """Log STDOUT.
 
         This method logs the stdout and stderr output of the job.
 

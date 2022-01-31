@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""TIMEOUT
+"""TIMEOUT.
 
 This module defines a function for handling job timeout limits.
 
@@ -13,7 +11,7 @@ from functools import wraps
 
 
 def with_timeout(timeout, log_file):
-    """Timeout Limit Decorator
+    """Timeout Limit Decorator.
 
     This method provides a timeout decorator for a given input function.
 

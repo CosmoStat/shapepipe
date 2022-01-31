@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """MCCD INTERPOLATION.
 
 This file is the pipeline runner for the MCCD_interpolation package.
@@ -8,24 +6,23 @@ This file is the pipeline runner for the MCCD_interpolation package.
 
 """
 
-from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.mccd_package import mccd_interpolation_script\
-    as mccd_interp
-from shapepipe.modules.mccd_package import shapepipe_auxiliary_mccd\
-    as aux_mccd
 import os
 
 from shapepipe.pipeline.file_handler import get_last_dir
 
+from shapepipe.modules.mccd_package import \
+    mccd_interpolation_script as mccd_interp
+from shapepipe.modules.mccd_package import shapepipe_auxiliary_mccd as aux_mccd
+from shapepipe.modules.module_decorator import module_runner
 
 
 @module_runner(
-    input_module=['setools_runner'],
     version='1.0',
+    input_module=['setools_runner'],
     file_pattern=['galaxy_selection'],
     file_ext=['.npy'],
     depends=['numpy', 'astropy', 'galsim', 'sqlitedict', 'mccd'],
-    run_method='parallel'
+    run_method='parallel',
 )
 def mccd_interp_runner(
     input_file_list,
@@ -33,9 +30,9 @@ def mccd_interp_runner(
     file_number_string,
     config,
     module_config_sec,
-    w_log
+    w_log,
 ):
-
+    """Define The MCCD Interpolation Runner."""
     mode = config.getexpanded(module_config_sec, 'MODE')
     pos_params = config.getlist(module_config_sec, 'POSITION_PARAMS')
     get_shapes = config.getboolean(module_config_sec, 'GET_SHAPES')
@@ -72,25 +69,25 @@ def mccd_interp_runner(
         if not os.path.exists(psf_model_path):
             error_msg = "The corresponding PSF model was not not found."
             w_log.info(
-                f"Error message: {error_msg}.\n On catalog with"
+                f"Error message: {error_msg}.\n On catalogue with"
                 + f" id: {file_number_string}."
             )
 
             return None, None
 
-        w_log.info('Interpolating catalog %s..' % file_number_string)
+        w_log.info('Interpolating catalogue %s..' % file_number_string)
         output_msg = aux_mccd.mccd_interpolation_pipeline(
             mccd_model_path=psf_model_path,
             galcat_path=galcat_path,
             pos_params=pos_params,
             ccd_id=int(ccd_id),
             saving_path=saving_path,
-            get_shapes=get_shapes
+            get_shapes=get_shapes,
         )
 
         if output_msg is not None:
             w_log.info(
-                f"Error message: {output_msg}.\n On catalog with"
+                f"Error message: {output_msg}.\n On catalogue with"
                 + f" id: {file_number_string}."
             )
 
@@ -118,7 +115,7 @@ def mccd_interp_runner(
             file_number_string,
             w_log,
             pos_params,
-            get_shapes
+            get_shapes,
         )
 
         inst.process_me(psf_model_dir, psf_model_pattern, f_wcs_path)
@@ -132,4 +129,5 @@ def mccd_interp_runner(
     else:
         ValueError("MODE has to be in : [CLASSIC, MULTI-EPOCH]")
 
+    # No return objects
     return None, None

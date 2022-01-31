@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""PSFEX_INTERP RUNNER
+"""PSFEX_INTERP RUNNER.
 
 Module runner for ``psfex_interp``.
 
@@ -16,8 +14,8 @@ from shapepipe.pipeline.file_handler import get_last_dir
 
 
 @module_runner(
-    input_module=['psfex_runner', 'setools_runner'],
     version='1.1',
+    input_module=['psfex_runner', 'setools_runner'],
     file_pattern=['star_selection', 'galaxy_selection'],
     file_ext=['.psf', '.fits'],
     depends=['numpy', 'astropy', 'galsim', 'sqlitedict'],
@@ -30,7 +28,7 @@ def psfex_interp_runner(
     module_config_sec,
     w_log,
 ):
-
+    """Define The PSFEx Interpolation Runner."""
     # Fetch interpolation run mode
     mode = config.get(module_config_sec, 'MODE')
     # Fetch parameter values
@@ -80,7 +78,7 @@ def psfex_interp_runner(
         galcat_path = input_file_list[0]
 
         # Create instance of PSFExInterpolator
-        pi_inst = psfex_interp.PSFExInterpolator(
+        psfex_interp_inst = psfex_interp.PSFExInterpolator(
             None,
             galcat_path,
             run_dirs['output'],
@@ -93,7 +91,7 @@ def psfex_interp_runner(
         )
 
         # Process inputs multi-epoch
-        pi_inst.process_me(dot_psf_dir, dot_psf_pattern, f_wcs_path)
+        psfex_interp_inst.process_me(dot_psf_dir, dot_psf_pattern, f_wcs_path)
 
     # Run in VALIDATION mode
     elif mode == 'VALIDATION':
@@ -102,7 +100,7 @@ def psfex_interp_runner(
         psfcat_path, galcat_path, psfex_cat_path = input_file_list
 
         # Create instance of PSFExInterpolator
-        pi_inst = psfex_interp.PSFExInterpolator(
+        psfex_interp_inst = psfex_interp.PSFExInterpolator(
             psfcat_path,
             galcat_path,
             run_dirs['output'],
@@ -115,7 +113,7 @@ def psfex_interp_runner(
         )
 
         # Process inputs validation
-        pi_inst.process_validation(psfex_cat_path)
+        psfex_interp_inst.process_validation(psfex_cat_path)
 
     else:
         # Raise error for invalid run mode

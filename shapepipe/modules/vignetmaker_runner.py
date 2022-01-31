@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""VIGNET MAKER RUNNER
+"""VIGNET MAKER RUNNER.
 
 Module runner for ``vignetmaker``.
 
@@ -15,11 +13,11 @@ from shapepipe.pipeline.file_handler import get_last_dir
 
 
 @module_runner(
-    input_module=['sextractor_runner'],
-    version='0.1',
+    version='1.1',
+    input_module='sextractor_runner',
     file_pattern=['galaxy_selection', 'image'],
     file_ext=['.fits', '.fits'],
-    depends=['numpy', 'astropy', 'sf_tools', 'sqlitedict']
+    depends=['numpy', 'astropy', 'sf_tools', 'sqlitedict'],
 )
 def vignetmaker_runner(
     input_file_list,
@@ -29,7 +27,7 @@ def vignetmaker_runner(
     module_config_sec,
     w_log,
 ):
-
+    """Define The Vingent Maker Runner."""
     # Get path to galaxy catalogue
     galcat_path = input_file_list[0]
 
