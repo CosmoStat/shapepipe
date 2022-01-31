@@ -236,7 +236,6 @@ class MergeStarCatMCCD(object):
         for name in self._input_file_list:
             starcat_j = fits.open(name[0], memmap=False)
 
-            print(starcat_j[self._hdu_table].data['VIGNET_LIST'].shape)
             try:
                 stars = np.copy(starcat_j[self._hdu_table].data['VIGNET_LIST'])
             except ValueError:
