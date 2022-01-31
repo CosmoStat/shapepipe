@@ -599,25 +599,31 @@ class Mask(object):
     def missing_data(self):
         """Find Missing Data.
 
-        Look for 0 value in the image and flag it depending of the
-        configuration.
-
+        Look for zero-valued pixels in image. Flag if their relative number
+        is larger than a threshold.
         """
+        # Open image
         img = file_io.FITSCatalogue(self._image_fullpath, hdu_no=0)
         img.open()
 
+        # Get total number of pixels
         im_shape = img.get_data().shape
         tot = float(im_shape[0] * im_shape[1])
 
+        # Compute number and ratio of missing data (zero-valued pixels)
         missing = float(len(np.where(img.get_data() == 0.)[0]))
-
         self._ratio = missing / tot
 
+        # Mark image as to be flagged if ratio larger than 'flag' threshold
         if self._ratio >= self._config['MD']['thresh_flag']:
             self._config['MD']['im_flagged'] = True
         else:
             self._config['MD']['im_flagged'] = False
 
+        # Mark image as to be removed if flag is True and
+        # ratio large than 'remove' threshold.
+        # Reset all other mask 'make' flags to False (no other mask needs
+        # to be created)
         if self._config['MD']['remove']:
             if self._ratio >= self._config['MD']['thresh_remove']:
                 self._config['MD']['im_remove'] = True

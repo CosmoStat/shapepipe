@@ -139,13 +139,21 @@ MESSIER_FLAG_VALUE : int (power of 2)
 EF_MAKE : bool
     account for external (pre-existing) mask file if True
 
+[MD_PARAMETERS]
+---------------
+
+MD_MAKE : bool
+    account for mising data (= zero-valued pixels) if True
+MD_THRESH_FLAG : float
+    threhold; if relative number of missing data is larger than this theshold,
+    image is marked as flagged
+MD_THRESH_REMOVE : float
+    threshold; if relative number of missing data is larger than this threshold,
+    image is marked for removal
+MD_REMOVE : bool
+    image is removed if markefd for removal 
 
 
-
-
-
-
-    
 """
 
 __all__ = ['mask']
