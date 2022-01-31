@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """MCCD PLOTS RUNNER.
 
 This module is used to generate a series of plots from the merged validation
@@ -12,10 +10,10 @@ installed.
 
 """
 
-from shapepipe.modules.module_decorator import module_runner
-from shapepipe.modules.mccd_package import mccd_plot_utilities as mccd_plots
 import warnings
 
+from shapepipe.modules.mccd_package import mccd_plot_utilities as mccd_plots
+from shapepipe.modules.module_decorator import module_runner
 
 try:
     import stile
@@ -37,6 +35,7 @@ except ImportError:
 try:
     import matplotlib as mpl
     import matplotlib.pyplot as plt
+
     # Define the backend for matplotlib
     mpl.use('agg')
     has_mpl = True
@@ -46,13 +45,13 @@ except ImportError:
 
 
 @module_runner(
+    version='1.1',
     input_module=['merge_starcat_runner'],
-    version='1.0',
     file_pattern=['full_starcat'],
     file_ext=['.fits'],
     numbering_scheme='-0000000',
     depends=['numpy', 'mccd', 'astropy', 'matplotlib', 'stile', 'treecorr'],
-    run_method='serial'
+    run_method='serial',
 )
 def mccd_plots_runner(
     input_file_list,
@@ -60,9 +59,9 @@ def mccd_plots_runner(
     file_number_string,
     config,
     module_config_sec,
-    w_log
+    w_log,
 ):
-
+    """Define The MCCD Plots Runner."""
     # Input parameters
     if config.has_option(module_config_sec, 'HDU'):
         hdu_no = config.getint(module_config_sec, 'HDU')
@@ -70,6 +69,7 @@ def mccd_plots_runner(
         hdu_no = 2
 
     # Get parameters for meanshapes plots
+    psf_model_type = config.get(module_config_sec, 'PSF')
     x_nb_bins = config.getint(module_config_sec, 'X_GRID')
     y_nb_bins = config.getint(module_config_sec, 'Y_GRID')
     remove_outliers = config.getboolean(module_config_sec, 'REMOVE_OUTLIERS')
@@ -105,7 +105,8 @@ def mccd_plots_runner(
                 hdu_no=hdu_no,
                 remove_outliers=remove_outliers,
                 plot_meanshapes=plot_meanshapes,
-                plot_histograms=plot_histograms
+                plot_histograms=plot_histograms,
+                psf_model_type=psf_model_type,
             )
         else:
             msg = (
@@ -143,7 +144,8 @@ def mccd_plots_runner(
                 hdu_no=hdu_no,
                 ylim_l=ylim_l,
                 ylim_r=ylim_r,
-                print_fun=lambda x: w_log.info(x)
+                print_fun=lambda x: w_log.info(x),
             )
 
+    # No return objects
     return None, None

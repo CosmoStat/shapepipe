@@ -14,6 +14,7 @@
 INPUT_VOS="cosmostat/kilbinger/results"
 VERBOSE=0
 psf="mccd"
+only_mask=0
 
 
 usage="Usage: $(basename "$0") [OPTIONS]
@@ -21,12 +22,13 @@ usage="Usage: $(basename "$0") [OPTIONS]
     -h\tthis message\n
     -i, --input_IDs ID_FILE\n
     \tASCII file with tile IDs to download, default:\n
-    \t download all available IDs\n
+    \tdownload all available IDs\n
     --input_vos PATH\n
     \tinput path on vos:cfis, default='$INPUT_VOS'\n
   -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
-    -v\tverbose output\n
+  -m\tonly mask files\n
+  -v\tverbose output\n
 "
   
 ## Parse command line
@@ -48,6 +50,9 @@ while [ $# -gt 0 ]; do
     -p|--psf)
       psf="$2"
       shift
+      ;;
+    -m)
+      only_mask=1
       ;;
     -v)
       VERBOSE=1
@@ -71,23 +76,27 @@ fi
 remote="vos:cfis/$INPUT_VOS"
 local="."
 
-NAMES=(
+if [ $only_mask == 1 ]; then
+  NAMES=("pipeline_flag")
+else
+  NAMES=(
         "final_cat"
         "logs"
         "setools_mask"
         "setools_stat"
         "setools_plot"
         "pipeline_flag"
-      )
+  )
 
-if [ $psf == "psfex" ]; then
-  NAMES+=(
+  if [ $psf == "psfex" ]; then
+    NAMES+=(
           "psfex_interp_exp"
-         )
-else
-  NAMES+=(
+    )
+  else
+    NAMES+=(
           "mccd_fit_val_runner"
-         )
+    )
+  fi
 fi
 
 if [ $VERBOSE == 1 ]; then

@@ -1,31 +1,23 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+"""CFIS TOOLS.
 
-"""Module cfis.py
-
-CFIS module
+CFIS module.
 
 :Authors: Martin Kilbinger
 
-:Date: 19/01/2018
-
-:Package: ShapePipe
 """
 
-import re
-import sys
-import os
-import glob
-import shlex
 import errno
+import glob
+import os
+import re
+import shlex
+import sys
 
+import astropy.coordinates as coords
 import numpy as np
-
 import pylab as plt
-
 from astropy import units
 from astropy.io import ascii
-import astropy.coordinates as coords
 from astropy.wcs import WCS
 
 from shapepipe.utilities.file_system import mkdir
@@ -44,30 +36,36 @@ flag_valid = 'V'
 
 
 class param:
-    """General class to store (default) variables
+    """Param Class.
+
+    General class to store (default) variables.
+
     """
 
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
 
     def print(self, **kwds):
+        """Print."""
         print(self.__dict__)
 
     def var_list(self, **kwds):
+        """Get Variable List."""
         return vars(self)
 
 
 class CfisError(Exception):
-   """ Cfis Error
+    """Cfis Error.
 
-   Generic error that is raised by this script.
-   """
+    Generic error that is raised by this script.
 
-   pass
+    """
+
+    pass
 
 
 class image():
-    """Class image.
+    """Image Class.
 
     Class to store and create image information.
 
@@ -83,6 +81,7 @@ class image():
         exposure time
     valid : str, optional, default='Unknown'
         validation flag
+
     """
 
     def __init__(self, name, ra, dec, exp_time=-1, valid='Unknown'):
@@ -99,21 +98,21 @@ class image():
             self.valid = valid
 
     def cut(self, no_cuts=False):
-        """cut
+        """Cut.
 
         Return True (False) if image does (not) need to be cut from selection.
 
         Parameters
         ----------
-        no_cuts: bool, optiona, default=False
+        no_cuts : bool, optiona, default=False
             do not cut if True
 
         Returns
         -------
-        cut: bool
+        bool
             True (False) if image is (not) cut
-        """
 
+        """
         # Do not cut if no_cuts flag is set
         if no_cuts:
             return False
@@ -130,21 +129,21 @@ class image():
         return False
 
     def get_ID(self):
-        """get_ID
+        """Get ID.
 
         Return image ID.
 
         Returns
         -------
-        ID : str
+        str
             image iD
 
         Raises
         ------
         ValueError
             if name does not match to ID pattern
-        """
 
+        """
         m = re.search(r'(\d{3}).{1}(\d{3})', self.name)
         if m is None:
             raise ValueError(f'No ID match in file name {name}')
@@ -158,27 +157,27 @@ class image():
         name_only=True,
         ID_only=False
     ):
-        """Print
+        """Print.
 
-        Print image information as ascii Table column
+        Print image information as ascii Table column.
 
         Parameters
         ----------
-        file: file handle, optional, default=sys.stdout
+        file : file, optional, default=sys.stdout
             output file handle
-        base_name: bool, optional, default=False
+        base_name : bool, optional, default=False
             if True (False), print image base name (full path)
-        name_only: bool, optional, default=False
+        name_only : bool, optional, default=False
             if True, do not print metainfo
-        ID_only: bool, optional, default=False
+        ID_only : bool, optional, default=False
             if True, only print file ID instead of entire name
 
         Raises
         ------
         ValueError
             if name does not match to ID pattern
-        """
 
+        """
         if base_name:
             name = os.path.basename(self.name)
         else:
@@ -203,16 +202,16 @@ class image():
         print(file=file)
 
     def print_header(self, file=sys.stdout):
-        """Print Header
+        """Print Header.
 
         Print header for ascii Table output
 
         Parameters
         ----------
-        file: file handle, optional, default=sys.stdout
+        file : file, optional, default=sys.stdout
             output file handle
-        """
 
+        """
         print(
             f'#Name ra[{unitdef}] dec[{unitdef}] exp_time[s] validation',
             file=file
@@ -220,27 +219,27 @@ class image():
 
 
 def log_command(argv, name=None, close_no_return=True):
-    """Log Command
+    """Log Command.
 
     Write command with arguments to a file or stdout.
     Choose name = 'sys.stdout' or 'sys.stderr' for output on sceen.
 
     Parameters
     ----------
-    argv: array of strings
+    argv : numpy.ndarray of str
         Command line arguments
-    name: string
+    name : str
         Output file name (default: 'log_<command>')
-    close_no_return: bool
+    close_no_return : bool
         If True (default), close log file. If False, keep log file open
         and return file handler
 
     Returns
     -------
-    log: filehandler
+    filehandler
         log file handler (if close_no_return is False)
-    """
 
+    """
     if name is None:
         name = 'log_' + os.path.basename(argv[0])
 
@@ -270,7 +269,7 @@ def log_command(argv, name=None, close_no_return=True):
 
 
 def my_string_split(string, num=-1, verbose=False, stop=False, sep=None):
-    """My String Split
+    """My String Split.
 
     Split a *string* into a list of strings. Choose as separator
     the first in the list [space, underscore] that occurs in the string.
@@ -278,15 +277,15 @@ def my_string_split(string, num=-1, verbose=False, stop=False, sep=None):
 
     Parameters
     ----------
-    string: str
+    string : str
         Input string
-    num: int
+    num : int
         Required length of output list of strings, -1 if no requirement.
-    verbose: bool
+    verbose : bool
         Verbose output
-    stop: bool
+    stop : bool
         Stop programs with error if True, return None and continues otherwise
-    sep: bool
+    sep : bool
         Separator, try ' ', '_', and '.' if None (default)
 
     Raises
@@ -298,10 +297,10 @@ def my_string_split(string, num=-1, verbose=False, stop=False, sep=None):
 
     Returns
     -------
-    list_str: str, array()
-        List of string on success, and None if failed.
-    """
+    list
+        List of string on success, and None if failed
 
+    """
     if string is None:
         return None
 
@@ -328,7 +327,8 @@ def my_string_split(string, num=-1, verbose=False, stop=False, sep=None):
     else:
         if not string.find(sep):
             raise ValueError(
-                f'No separator \'{sep}\' found in string \'{string}\', cannot split'
+                f'No separator \'{sep}\' found in string \'{string}\', '
+                + 'cannot split'
             )
         my_sep = sep
 
@@ -343,7 +343,7 @@ def my_string_split(string, num=-1, verbose=False, stop=False, sep=None):
 
 
 def get_file_pattern(pattern, band, image_type, want_re=True, ext=True):
-    """Get File Pattern
+    """Get File Pattern.
 
     Return file pattern of CFIS image file.
 
@@ -364,10 +364,10 @@ def get_file_pattern(pattern, band, image_type, want_re=True, ext=True):
 
     Returns
     -------
-    pattern_out : str
+    str
         output pattern
-    """
 
+    """
     if pattern == '':
         if image_type in (
             'exposure',
@@ -413,18 +413,18 @@ def get_file_pattern(pattern, band, image_type, want_re=True, ext=True):
 
 
 def get_tile_number_from_coord(ra, dec, return_type=str):
-    """Get Tile Number From Coord
+    """Get Tile Number From Coord.
 
     Return CFIS stacked image tile number covering input coordinates.
     This is the inverse to get_tile_coord_from_nixy.
 
     Parameters
     ----------
-    ra: Angle
+    ra : Angle
         right ascension
-    dec: Angle
+    dec : Angle
         declination
-    return type: <type 'type'>
+    return type : <type 'type'>
         return type, int or str
 
     Raises
@@ -434,12 +434,10 @@ def get_tile_number_from_coord(ra, dec, return_type=str):
 
     Returns
     -------
-    nix: str
-        tile number for x
-    niy: str
-        tile number for y
-    """
+    tuple
+        tile number for x and tile number for y
 
+    """
     y = (dec.degree + 90) * 2.0
     yi = int(np.rint(y))
 
@@ -461,26 +459,24 @@ def get_tile_number_from_coord(ra, dec, return_type=str):
 
 
 def get_tile_coord_from_nixy(nix, niy):
-    """Get Tile Coord From Nixy
+    """Get Tile Coord From Nixy.
 
     Return coordinates corresponding to tile with number (nix,niy).
     This is the inverse to get_tile_number_from_coord.
 
     Parameters
     ----------
-    nix: str or int
+    nix : str or int
         tile number for x, can be list
-    niy: str or int
+    niy : str or int
         tile number for y, can be list
 
     Returns
     -------
-    ra: Angle
-        right ascension
-    dec: Angle
-        declination
-    """
+    tuple
+        right ascension and declination
 
+    """
     if not np.isscalar(nix):
         # Transform to int, necessary if input is string
         xi = np.array(nix).astype(int)
@@ -498,19 +494,19 @@ def get_tile_coord_from_nixy(nix, niy):
 
 
 def get_tile_name(nix, niy, band, image_type='tile', input_format='full'):
-    """Get Tile Name
+    """Get Tile Name.
 
     Return tile name for given tile numbers.
 
     Parameters
     ----------
-    nix: str
+    nix : str
         tile number for x
-    niy: str
+    niy : str
         tile number for y
-    band: str
+    band : str
         band, one in 'r' or 'u'
-    image_type: str optional, default='tile'
+    image_type : str optional, default='tile'
         image type
     input_format : str optional, default='full'
         'full' (name) or 'ID_only' input format for image names
@@ -522,10 +518,10 @@ def get_tile_name(nix, niy, band, image_type='tile', input_format='full'):
 
     Returns
     -------
-    tile_name: str
+    str
         tile name
-    """
 
+    """
     if type(nix) is int and type(niy) is int:
         if input_format == 'ID_only':
             tile_base = f'{nix:03d}.{niy:03d}'
@@ -555,13 +551,13 @@ def get_tile_name(nix, niy, band, image_type='tile', input_format='full'):
 
 
 def get_tile_number(tile_name):
-    """Get Tile Number
+    """Get Tile Number.
 
-    Return tile number of given image tile name
+    Return tile number of given image tile name.
 
     Parameters
     ----------
-    tile_name: str
+    tile_name : str
         tile name
 
     Raises
@@ -571,12 +567,10 @@ def get_tile_number(tile_name):
 
     Returns
     -------
-    nix: str
-        tile number for x
-    niy: str
-        tile number for y
-    """
+    tuple
+        tile number for x and tile number for y
 
+    """
     m = re.search(r'(\d{3})[\.-](\d{3})', tile_name)
     if m is None or len(m.groups()) != 2:
         raise CfisError(
@@ -590,23 +584,21 @@ def get_tile_number(tile_name):
 
 
 def get_tile_number_list(tile_name_list):
-    """Get Tile Number List
+    """Get Tile Number List.
 
-    Return tile numbers of given image tiles
+    Return tile numbers of given image tiles.
 
     Parameters
     ----------
-    tile_name_list: list of str
+    tile_name_list : list of str
         tile names
 
     Returns
     -------
-    nix_list: list of str
-        tile numbers for x
-    niy_list: list of str
-        tile numbers for y
-    """
+    tuple
+        tile numbers for x and tile numbers for y
 
+    """
     nix_list = []
     niy_list = []
     for tile_name in tile_name_list:
@@ -618,15 +610,15 @@ def get_tile_number_list(tile_name_list):
 
 
 def get_log_file(path, verbose=False):
-    """Get Log File
+    """Get Log File.
 
-    Return log file content
+    Return log file content.
 
     Parameters
     ----------
-    path: str
+    path : str
         log file path
-    verbose: bool, optional, default=False
+    verbose : bool, optional, default=False
         verbose output if True
 
     Raises
@@ -636,10 +628,10 @@ def get_log_file(path, verbose=False):
 
     Returns
     -------
-    log: list of str
+    list of str
         log file lines
-    """
 
+    """
     if not os.path.isfile(path):
         raise CfisError(f'Log file \'{path}\' not found')
 
@@ -653,13 +645,13 @@ def get_log_file(path, verbose=False):
 
 
 def check_ra(ra):
-    """Check Ra
+    """Check RA.
 
     Range check of right ascension.
 
     Parameters
     ----------
-    ra: Angle
+    ra : Angle
         right ascension
 
     Raises
@@ -669,10 +661,10 @@ def check_ra(ra):
 
     Returns
     -------
-    res: bool
+    bool
         result of check (True if pass, False if fail)
-    """
 
+    """
     print(ra.deg)
     if ra.deg < 0 or ra.deg > 360:
         raise CfisError('Invalid ra, valid range is 0 < ra < 360 deg')
@@ -682,13 +674,13 @@ def check_ra(ra):
 
 
 def check_dec(dec):
-    """Check Dec
+    """Check Dec.
 
     Range check of declination.
 
     Parameters
     ----------
-    dec: Angle
+    dec : Angle
         declination
 
     Raises
@@ -698,10 +690,10 @@ def check_dec(dec):
 
     Returns
     -------
-    res: bool
+    bool
         result of check (True if pass, False if fail)
-    """
 
+    """
     if dec.deg < -90 or dec.deg > 90:
         raise CfisError('Invalid dec, valid range is -90 < dec < 90 deg')
         return 1
@@ -710,23 +702,21 @@ def check_dec(dec):
 
 
 def get_Angle(str_coord):
-    """Get Angle
+    """Get Angle.
 
     Return Angles ra, dec from coordinate string
 
     Parameters
     ----------
-    str_coord: string
+    str_coord : string
         string of input coordinates
 
     Returns
     -------
-    ra: Angle
-        right ascension
-    dec: Angle
-        declination
-    """
+    tuple
+        right ascension and declination
 
+    """
     ra, dec = my_string_split(str_coord, num=2, stop=True)
 
     a_ra = coords.Angle(ra)
@@ -736,7 +726,7 @@ def get_Angle(str_coord):
 
 
 def get_Angle_arr(str_coord, num=-1, wrap=True, verbose=False):
-    """Get Angle Arr
+    """Get Angle Arr.
 
     Return array of Angles from coordinate string
 
@@ -753,10 +743,10 @@ def get_Angle_arr(str_coord, num=-1, wrap=True, verbose=False):
 
     Returns
     -------
-    angles: array of SkyCoord
+    numpy.ndarray of SkyCoord
         array of sky coordinates (pairs ra, dec)
-    """
 
+    """
     angles_mixed = my_string_split(
         str_coord,
         num=num,
@@ -767,9 +757,9 @@ def get_Angle_arr(str_coord, num=-1, wrap=True, verbose=False):
     n = int(n / 2)
 
     angles = []
-    for i in range(n):
-        ra = angles_mixed[2*i]
-        dec = angles_mixed[2*i+1]
+    for idx in range(n):
+        ra = angles_mixed[2 * idx]
+        dec = angles_mixed[2 * idx + 1]
         if wrap:
             c = coords.SkyCoord(ra, dec)
         else:
@@ -780,23 +770,23 @@ def get_Angle_arr(str_coord, num=-1, wrap=True, verbose=False):
 
 
 def read_list(fname, col=None):
-    """Read List
+    """Read List.
 
     Read list from ascii file.
 
     Parameters
     ----------
-    fname: str
+    fname : str
         ascii file name
-    col: str, optional, default=None
+    col : str, optional, default=None
         column name
 
     Returns
     -------
-    file_list: list of str
-        list of file name
-    """
+    list of str
+        list of file names
 
+    """
     if col is None:
         f = open(fname, 'rU', encoding='latin1')
         file_list = [x.strip() for x in f.readlines()]
@@ -814,29 +804,29 @@ def read_list(fname, col=None):
 
 
 def create_image_list(fname, ra, dec, exp_time=[], valid=[]):
-    """Create Image List
+    """Create Image List.
 
     Return list of image information.
 
     Parameters
     ----------
-    fname: list of str
+    fname : list of str
         file names
-    ra: list of str
+    ra : list of str
         right ascension
-    dec: list of str
+    dec : list of str
         declination
-    exp_time: list of int, optional, default=[]
+    exp_time : list of int, optional, default=[]
         exposure time
-    valid: list of str, optional, default=[]
+    valid : list of str, optional, default=[]
         QSO exposure validation flag
 
     Returns
     -------
-    images: list of image
+    list of images
         list of image information
-    """
 
+    """
     nf = len(fname)
     nr = len(ra)
     nd = len(dec)
@@ -877,7 +867,7 @@ def get_image_list(
     input_format='full',
     verbose=False
 ):
-    """Get Image List
+    """Get Image List.
 
     Return list of images.
 
@@ -889,7 +879,7 @@ def get_image_list(
         optical band
     image_type : str
         image type ('tile', 'exposure', 'cat', 'weight', 'weight.fz')
-    col : string, optionalm default=None
+    col : str, optionalm default=None
         column name for file list input file
     input_format : str, optional, default='full'
         'full' (name) or 'ID_only' input format for image names
@@ -898,10 +888,10 @@ def get_image_list(
 
     Returns
     -------
-    img_list: list of class image
+    list of class images
         image list
-    """
 
+    """
     file_list = []
     ra_list = []
     dec_list = []
@@ -984,7 +974,7 @@ def get_image_list(
         try:
             link_src = os.readlink(img.name)
             name = link_src
-        except:
+        except Exception:
             # No link, continue
             name = img.name
 
@@ -1001,23 +991,23 @@ def get_image_list(
 
 
 def exclude(f, exclude_list):
-    """Exclude
+    """Exclude.
 
-    Return True if f is on exclude_list
+    Return True if f is on ``exclude_list``.
 
     Parameters
     ----------
-    f: str
+    f : str
         file name
-    exclude_list: list of str
+    exclude_list : list of str
         list of files
 
     Returns
     -------
-    is_in_exclude: bool
+    bool
         True (False) if f is in list
-    """
 
+    """
     return f in exclude_list
 
 
@@ -1030,27 +1020,27 @@ def find_image_at_coord(
     input_format='full',
     verbose=False
 ):
-    """Find Image At Coordinates
+    """Find Image At Coordinates.
 
     Return image covering given coordinate.
 
     Parameters
     ----------
-    images: list of class image
+    images : list of class image
         list of images
-    coord: str
+    coord : str
         coordinate ra and dec with units
-    band: str
+    band : str
         optical band
-    image_type: str
+    image_type : str
         image type ('tile', 'weight', 'weight.fz', 'exposure',
         'exposure_weight', 'exposure_weight.fz', 'exposure_flag',
         'exposure_flag.fz', 'cat')
-    no_cuts: bool, optional, default=False
+    no_cuts : bool, optional, default=False
         no cuts (of short exposure, validation flag) if True
     input_format : str, optional, default='full'
         one of 'full', 'ID_only'
-    verbose: bool, optional
+    verbose : bool, optional
         verbose output if True, default=False
 
     Raises
@@ -1062,10 +1052,10 @@ def find_image_at_coord(
 
     Returns
     -------
-    img_found: list of image
+    list of images
         Found image(s), None if none found.
-    """
 
+    """
     ra, dec = get_Angle(coord)
 
     if verbose:
@@ -1142,31 +1132,31 @@ def find_images_in_area(
     no_cuts=False,
     verbose=False
 ):
-    """Fine Images In Area
+    """Fine Images In Area.
 
     Return image list within coordinate area (rectangle)
 
     Parameters
     ----------
-    images: list of class image
+    images : list of class image
         list of images
-    angles: array(2) of SkyCoord
+    angles : array(2) of SkyCoord
         coordinates [(ra0, dec0), (ra1, dec1)]
-    band: string
+    band : string
         optical band
-    image_type: str
+    image_type : str
         image type ('tile', 'exposure', 'cat', 'weight', 'weight.fz')
-    no_cuts: bool, optional, default=False
+    no_cuts : bool, optional, default=False
         no cuts (of short exposure, validation flag) if True
-    verbose: bool, optional, default=False
+    verbose : bool, optional, default=False
         verbose output if True
-`
+
     Returns
     -------
-    found: list of image
+    list of images
         found images
-    """
 
+    """
     found = []
 
     # if coordinates extend over 360:
@@ -1178,7 +1168,7 @@ def find_images_in_area(
     if angles[1].ra > threesixty:
         ra_bounds = [
             [angles[0].ra, threesixty],
-            [coords.Angle(0, unitdef), angles[1].ra-threesixty]
+            [coords.Angle(0, unitdef), angles[1].ra - threesixty]
         ]
     else:
         ra_bounds = [[angles[0].ra, angles[1].ra]]
@@ -1237,11 +1227,11 @@ def find_images_in_area(
 
 
 def plot_init():
-    """Plot Init
+    """Plot Init.
 
     Initialize a plot
-    """
 
+    """
     fs = 12
     fig, ax = plt.subplots()
 
@@ -1271,15 +1261,15 @@ def plot_area(
     save=True,
     dxy=0
 ):
-    """Plot Area
+    """Plot Area.
 
     Plot images within area.
 
     Parameters
     ----------
-    images : array of image
+    images : numpy.ndarray of image
         images
-    angles : array(SkyCoord, 2)
+    angles : numpy.ndarray (SkyCoord, 2)
         Corner coordinates of area rectangle
     image_type : str
         image type ('tile', 'exposure', 'cat', weight')
@@ -1303,8 +1293,8 @@ def plot_area(
         save plot to pdf file if True
     dxy : float, optional, default=0
         shift
-    """
 
+    """
     if outbase is None:
         outname = 'plot.pdf'
     else:
@@ -1336,8 +1326,15 @@ def plot_area(
         dy = abs(angles[0].dec - angles[1].dec)
         dx = getattr(dx, unitdef)
         dy = getattr(dy, unitdef)
-        radius = max(dx, dy) / 2 + (size['exposure'] + size['tile']) * np.sqrt(2)
-        circle = plt.Circle((ra_c.deg, dec_c.deg), radius, color='r', fill=False)
+        radius = (
+            max(dx, dy) / 2 + (size['exposure'] + size['tile']) * np.sqrt(2)
+        )
+        circle = plt.Circle(
+            (ra_c.deg, dec_c.deg),
+            radius,
+            color='r',
+            fill=False,
+        )
         plt.plot(ra_c, dec_c, 'or', mfc='none', ms=3)
         ax.add_artist(circle)
     else:
@@ -1402,7 +1399,7 @@ def plot_area(
 
 
 def square_from_centre(x, y, dx, dy, dxy=0):
-    """Square From Centre
+    """Square From Centre.
 
     Return coordinate vectors of corners that define a closed
     square for plotting.
@@ -1422,21 +1419,19 @@ def square_from_centre(x, y, dx, dy, dxy=0):
 
     Returns
     -------
-    cx : array(4) of float
-        square coordinates in x
-    cy : array(4) of float
-        square coordinates in y
-    """
+    tuple
+        square coordinates in x and y
 
+    """
     a = dxy
-    cx = [x-dx+a, x+dx+a, x+dx+a, x-dx+a, x-dx+a]
-    cy = [y-dy+a, y-dy+a, y+dy+a, y+dy+a, y-dy+a]
+    cx = [x - dx + a, x + dx + a, x + dx + a, x - dx + a, x - dx + a]
+    cy = [y - dy + a, y - dy + a, y + dy + a, y + dy + a, y - dy + a]
 
     return cx, cy
 
 
 def square_from_corners(ang0, ang1):
-    """Square From Corners
+    """Square From Corners.
 
     Return coordinate vectors of corners that define a closed
     square for plotting.
@@ -1450,12 +1445,10 @@ def square_from_corners(ang0, ang1):
 
     Returns
     -------
-    cxd : array(4) of float
-        square coordinates in x, in unit 'unitdef'
-    cyd : array(4) of float
-        square coordinates in y, in unit 'unitdef'
-    """
+    tuple
+        square coordinates in x and y, in unit 'unitdef'
 
+    """
     cx = [ang0.ra, ang1.ra, ang1.ra, ang0.ra, ang0.ra]
     cy = [ang0.dec, ang0.dec, ang1.dec, ang1.dec, ang0.dec]
 
@@ -1470,7 +1463,7 @@ def remove_common_elements(
     tiles_id_file,
     pos_param=['XWIN_WORLD', 'YWIN_WORLD']
 ):
-    """ Remove common elements
+    """Remove Common Elements.
 
     Create a mask for objects in the overlapping regions between
     neigbouring stacked images. The object furthest from its stack
@@ -1485,12 +1478,17 @@ def remove_common_elements(
     pos_param : list
         List with the column name for ra and dec positions.
 
-    """
+    Returns
+    -------
+    float
+        ratio of masked to total objects
 
+    """
     key_id = 'TILE_ID'
 
     def get_tile_wcs(xxx, yyy):
-        """ Get tile WCS
+        """Get tile WCS.
+
         Create an astropy.wcs.WCS object from the name of the tile.
 
         Parameters
@@ -1502,18 +1500,18 @@ def remove_common_elements(
 
         Returns
         -------
-        w : astropy.wcs.WCS
+        astropy.wcs.WCS
             WCS for the tile.
 
         """
-
         ra, dec = get_tile_coord_from_nixy(xxx, yyy)
 
         w = WCS(naxis=2)
         w.wcs.crval = np.array([ra.deg, dec.deg])
         w.wcs.crpix = np.array([5000, 5000])
-        w.wcs.cd = np.array([[0.187/3600, 0],
-                            [0, 0.187/3600]])
+        w.wcs.cd = np.array(
+            [[0.187 / 3600, 0], [0, 0.187 / 3600]]
+        )
         w.wcs.ctype = ['RA---TAN', 'DEC--TAN']
         w.wcs.cunit = ['deg', 'deg']
         w._naxis = [10000, 10000]
@@ -1525,7 +1523,10 @@ def remove_common_elements(
     # Get object coordinates
     ra_tile = final_cat_file.get_data()[pos_param[0]]
     dec_tile = final_cat_file.get_data()[pos_param[1]]
-    catalog_coord = coords.SkyCoord(ra=ra_tile*units.deg, dec=dec_tile*units.deg)
+    catalog_coord = coords.SkyCoord(
+        ra=ra_tile * units.deg,
+        dec=dec_tile * units.deg,
+    )
 
     # Get tile ID from FITS header
 
@@ -1576,8 +1577,20 @@ def remove_common_elements(
         w_tile_check = get_tile_wcs(all_id2[0][close], all_id2[1][close])
 
         # Mask objects who are closer to neighbour than tile center
-        mask_tile &= (np.less(sep_ref, sep_check) | np.invert(w_tile_check.footprint_contains(catalog_coord)))
+        mask_tile &= (
+            np.less(sep_ref, sep_check)
+            | np.invert(w_tile_check.footprint_contains(catalog_coord))
+        )
 
+    # Add mask as column to FITS catalogue
     final_cat_file.add_col('FLAG_TILING', mask_tile)
 
     final_cat_file.close()
+
+    # Compute ratio of masked to total object
+    n_masked = np.sum(mask_tile)
+    n_tot = len(mask_tile)
+
+    ratio_mask_tot = n_masked / n_tot
+
+    return ratio_mask_tot

@@ -1,11 +1,42 @@
-# -*- coding: utf-8 -*-
-
-"""SPLIT EXP PACKAGE
+"""SPLIT EXPOSURE PACKAGE.
 
 This package contains the module for ``split_exp``.
 
-:Author: Martin Kilbinger <martin.kilbinger@cea.fr>
+:Author: Axel Guinot
+
+:Parent module: ``get_images_runner``
+
+:Input: single-exposure image, weight, or flag file
+
+:Output: single-exposure single-HDU file; header numpy binary file (``.npy``)
+    if input is an image
+
+Description
+===========
+
+This module splits up single-exposure FITS files.
+Each CCD of a single-exposure mosaic image is stored in a HDU. This module
+saves each HDU in a separate single-exposure single-HDU FITS file, such
+that each resulting file only contains data from one CCD.
+
+Module-specific config file entries
+===================================
+
+OUTPUT_SUFFIX : (list of) str
+    Output file name prefixes. Special strings are:
+
+    ``image``:
+
+    1. header is saved to numpy binary file (``.npy``);
+    2. header WCS is saved in output FITS file header;
+    3. header WCS coordinates are transformed from pv to sip using the
+       ``sip_tpv`` package
+
+    ``flag``: data is save as ``int16``
+
+N_HDU : int
+    number of HDUs (CCDs) of the input mosaic FITS file
 
 """
 
-__all__ = ['split_exp_script.py']
+__all__ = ['split_exp.py']

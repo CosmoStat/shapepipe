@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""GALAXY TOOLS
+"""GALAXY TOOLS.
 
 This module defines methods to deal with galaxy images.
 
@@ -12,7 +10,7 @@ import numpy as np
 
 
 def sigma_to_fwhm(sigma, pixel_scale=1.0):
-    r"""Sigma to FWHM.
+    r"""Convert Sigma to FWHM.
 
     Transform standard deviation of a 1D Gaussian, sigma, to FWHM
     (Full Width Half Maximum).

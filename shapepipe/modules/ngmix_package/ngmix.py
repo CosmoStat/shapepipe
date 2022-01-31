@@ -1,32 +1,28 @@
-# -*- coding: utf-8 -*-
+"""NGMIX.
 
-""" NGMIX
-
-Class for ngmix shape measurement.
+This module contains a class for ngmix shape measurement.
 
 :Author: Axel Guinot
 
 """
 
-from shapepipe.pipeline import file_io as io
-from sqlitedict import SqliteDict
-
 import re
-
-import numpy as np
-from numpy.random import uniform as urand
-from modopt.math.stats import sigma_mad
 
 import galsim
 import ngmix
-from ngmix.observation import Observation, ObsList, MultiBandObsList
-from ngmix.fitting import LMSimple
-
+import numpy as np
 from astropy.io import fits
+from modopt.math.stats import sigma_mad
+from ngmix.fitting import LMSimple
+from ngmix.observation import MultiBandObsList, Observation, ObsList
+from numpy.random import uniform as urand
+from sqlitedict import SqliteDict
+
+from shapepipe.pipeline import file_io
 
 
 class Ngmix(object):
-    """Ngmix
+    """Ngmix.
 
     Class to handle ngmix shapepe measurement.
 
@@ -55,6 +51,7 @@ class Ngmix(object):
     ------
     IndexError:
         if input file list has incorrect length
+
     """
 
     def __init__(
@@ -102,9 +99,10 @@ class Ngmix(object):
 
     @classmethod
     def MegaCamFlip(self, vign, ccd_nb):
-        """ MegaCam Flip
-        MegaCam has CCDs that are upside down.
-        This function flip the postage stamp on those CCDs.
+        """Flip for MegaCam.
+
+        MegaCam has CCDs that are upside down. This function flips the
+        postage stamp in these CCDs.
 
         Parameters
         ----------
@@ -113,13 +111,12 @@ class Ngmix(object):
         ccd_nb : int
             Id of the ccd containing the postage stamp.
 
-        Return
-        ------
-        vign : numpy.ndarray
+        Returns
+        -------
+        numpy.ndarray
             The postage stamp flip accordingly.
 
         """
-
         if ccd_nb < 18 or ccd_nb in [36, 37]:
             # swap x axis so origin is on top-right
             return np.rot90(vign, k=2)
@@ -128,17 +125,16 @@ class Ngmix(object):
             return vign
 
     def get_prior(self):
-        """ Get prior
+        """Get Prior.
 
-        Return prior for the different parameters
+        Return prior for the different parameters.
 
-        Return
-        ------
-        prior : ngmix.priors
+        Returns
+        -------
+        ngmix.priors
             Priors for the different parameters.
 
         """
-
         # Prior on ellipticity. Details do not matter, as long
         # as it regularizes the fit. From Bernstein & Armstrong 2014
         g_sigma = 0.4
@@ -175,7 +171,7 @@ class Ngmix(object):
         return prior
 
     def compile_results(self, results):
-        """ Compile results
+        """Compile Results.
 
         Prepare the results of ngmix before saving.
 
@@ -186,7 +182,7 @@ class Ngmix(object):
 
         Returns
         -------
-        output_dict : dict
+        dict
             compiled results ready to be written to a file
 
         Raises
@@ -195,7 +191,6 @@ class Ngmix(object):
             if SNR key not found
 
         """
-
         names = ['1m', '1p', '2m', '2p', 'noshear']
         names2 = [
             'id',
@@ -245,7 +240,9 @@ class Ngmix(object):
                 output_dict[name]['moments_fail'].append(
                     results[idx]['moments_fail']
                 )
-                output_dict[name]['ntry_fit'].append(results[idx][name]['ntry'])
+                output_dict[name]['ntry_fit'].append(
+                    results[idx][name]['ntry']
+                )
                 output_dict[name]['g1_psfo_ngmix'].append(
                     results[idx]['g_PSFo'][0]
                 )
@@ -258,7 +255,9 @@ class Ngmix(object):
                 output_dict[name]['g2_err_psfo_ngmix'].append(
                     results[idx]['g_err_PSFo'][1]
                 )
-                output_dict[name]['T_psfo_ngmix'].append(results[idx]['T_PSFo'])
+                output_dict[name]['T_psfo_ngmix'].append(
+                    results[idx]['T_PSFo']
+                )
                 output_dict[name]['T_err_psfo_ngmix'].append(
                     results[idx]['T_err_PSFo']
                 )
@@ -289,7 +288,9 @@ class Ngmix(object):
                 if 's2n' in results[idx][name]:
                     output_dict[name]['s2n'].append(results[idx][name]['s2n'])
                 elif 's2n_r' in results[idx][name]:
-                    output_dict[name]['s2n'].append(results[idx][name]['s2n_r'])
+                    output_dict[name]['s2n'].append(
+                        results[idx][name]['s2n_r']
+                    )
                 else:
                     raise KeyError('No SNR key (s2n, s2n_r) found in results')
 
@@ -301,38 +302,43 @@ class Ngmix(object):
         return output_dict
 
     def save_results(self, output_dict):
-        """ Save results
+        """Save Results.
 
         Save the results into a fits file.
 
         Parameters
         ----------
-        output_dict : dict
-            Dictionary containing the results.
+        dict
+            Dictionary containing the results
+
         """
+        output_name = (
+            f'{self._output_dir}/ngmix{self._file_number_string}.fits'
+        )
 
-        output_name = f'{self._output_dir}/ngmix{self._file_number_string}.fits'
-
-        f = io.FITSCatalog(
+        f = file_io.FITSCatalogue(
             output_name,
-            open_mode=io.BaseCatalog.OpenMode.ReadWrite
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
         )
 
         for key in output_dict.keys():
             f.save_as_fits(output_dict[key], ext_name=key.upper())
 
     def process(self):
-        """Process
+        """Process.
 
-        Funcion to processs Ngmix
+        Funcion to processs Ngmix.
 
         Returns
         -------
-        final_res: dict
-            Dictionary containing the ngmix metacal results.
-        """
+        dict
+            Dictionary containing the ngmix metacal results
 
-        tile_cat = io.FITSCatalog(self._tile_cat_path, SEx_catalog=True)
+        """
+        tile_cat = file_io.FITSCatalogue(
+            self._tile_cat_path,
+            SEx_catalogue=True,
+        )
         tile_cat.open()
         obj_id = np.copy(tile_cat.get_data()['NUMBER'])
         tile_vign = np.copy(tile_cat.get_data()['VIGNET'])
@@ -402,7 +408,7 @@ class Ngmix(object):
                 )
                 flag_vign_tmp[np.where(tile_vign_tmp == -1e30)] = 2**10
                 v_flag_tmp = flag_vign_tmp.ravel()
-                if len(np.where(v_flag_tmp != 0)[0])/(51*51) > 1/3.:
+                if len(np.where(v_flag_tmp != 0)[0]) / (51 * 51) > 1 / 3.0:
                     continue
 
                 weight_vign_tmp = (
@@ -420,8 +426,8 @@ class Ngmix(object):
                 )
                 Fscale = header_tmp['FSCALE']
 
-                gal_vign_scaled = gal_vign_sub_bkg*Fscale
-                weight_vign_scaled = weight_vign_tmp * 1/Fscale**2
+                gal_vign_scaled = gal_vign_sub_bkg * Fscale
+                weight_vign_scaled = weight_vign_tmp * 1 / Fscale ** 2
 
                 gal_vign.append(gal_vign_scaled)
                 psf_vign.append(
@@ -487,7 +493,7 @@ def get_guess(
     guess_centroid=True,
     guess_centroid_unit='sky'
 ):
-    """Get guess
+    """Get Guess.
 
     Get the guess vector for the ngmix shape measurement
     [center_x, center_y, g1, g2, size_T, flux]
@@ -517,7 +523,7 @@ def get_guess(
 
     Returns
     -------
-    guess : numpy.ndarray
+    numpy.ndarray
         Return the guess array : [center_x, center_y, g1, g2, size_T, flux]
 
     Raises
@@ -526,8 +532,8 @@ def get_guess(
         for error in computation of adaptive moments
     ValueError :
         for invalid unit guess types
-    """
 
+    """
     galsim_img = galsim.Image(img, scale=pixel_scale)
 
     hsm_shape = galsim.hsm.FindAdaptiveMom(galsim_img, strict=False)
@@ -542,7 +548,7 @@ def get_guess(
     if guess_flux_unit == 'img':
         guess_flux = hsm_shape.moments_amp
     elif guess_flux_unit == 'sky':
-        guess_flux = hsm_shape.moments_amp/pixel_scale**2
+        guess_flux = hsm_shape.moments_amp / pixel_scale ** 2
     else:
         raise ValueError(
             f'invalid guess_flux_unit \'{guess_flux_unit}\','
@@ -562,7 +568,7 @@ def get_guess(
     if guess_size_type == 'sigma':
         guess_size = hsm_shape.moments_sigma * size_unit
     elif guess_size_type == 'T':
-        guess_size = 2 * (hsm_shape.moments_sigma*size_unit) ** 2
+        guess_size = 2 * (hsm_shape.moments_sigma * size_unit) ** 2
 
     if guess_centroid_unit == 'img':
         centroid_unit = 1
@@ -594,7 +600,7 @@ def get_guess(
 
 
 def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
-    """Make GalSim Fit
+    """Make GalSim Fit.
 
     Fit image using simple galsim model.
 
@@ -613,15 +619,15 @@ def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
 
     Returns
     -------
-    fres : dict
+    dict
         results
 
     Raises
     ------
     BootGalFailure : ngmix exception
         failure to bootstrap galaxy
-    """
 
+    """
     limit = 0.1
 
     guess = np.copy(guess0)
@@ -638,7 +644,7 @@ def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
             )
             fitter.go(guess)
             fres = fitter.get_result()
-        except:
+        except Exception:
             continue
 
         if fres['flags'] == 0:
@@ -655,7 +661,7 @@ def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
 
 
 def get_jacob(wcs, ra, dec):
-    """ Get jacobian
+    """Get Jacobian.
 
     Return the jacobian of the wcs at the required position.
 
@@ -670,15 +676,14 @@ def get_jacob(wcs, ra, dec):
 
     Returns
     -------
-    galsim_jacob : galsim.wcs.BaseWCS.jacobian
+    galsim.wcs.BaseWCS.jacobian
         Jacobian of the WCS at the required position.
 
     """
-
     g_wcs = galsim.fitswcs.AstropyWCS(wcs=wcs)
     world_pos = galsim.CelestialCoord(
-        ra=ra*galsim.angle.degrees,
-        dec=dec*galsim.angle.degrees
+        ra=ra * galsim.angle.degrees,
+        dec=dec * galsim.angle.degrees,
     )
     galsim_jacob = g_wcs.jacobian(world_pos=world_pos)
 
@@ -686,7 +691,7 @@ def get_jacob(wcs, ra, dec):
 
 
 def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
-    """ Get Noise
+    """Get Noise.
 
     Compute the sigma of the noise from an object postage stamp.
     Use a guess on the object size, ellipticity and flux to create a window
@@ -705,13 +710,12 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
     thresh : float, optional, default=1.2
         Threshold to cut the window function. Cut = thresh * sig_noise
 
-    Return
-    ------
-    sig_noise : float
+    Returns
+    -------
+    float
         Sigma of the noise on the galaxy image.
 
     """
-
     img_shape = gal.shape
 
     m_weight = weight != 0
@@ -726,9 +730,9 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
         scale=pixel_scale
     ).array
 
-    m_weight = weight[gauss_win < thresh*sig_tmp] != 0
+    m_weight = weight[gauss_win < thresh * sig_tmp] != 0
 
-    sig_noise = sigma_mad(gal[gauss_win < thresh*sig_tmp][m_weight])
+    sig_noise = sigma_mad(gal[gauss_win < thresh * sig_tmp][m_weight])
 
     return sig_noise
 
@@ -743,13 +747,13 @@ def do_ngmix_metacal(
     prior,
     pixel_scale
 ):
-    """ Do ngmix metacal
+    """Do Ngmix Metacal.
 
     Do the metacalibration on a multi-epoch object and return the join shape
-    measurement with ngmix
+    measurement with ngmix.
 
     Parameters
-    ---------
+    ----------
     gals : list
         List of the galaxy vignets.
     psfs : list
@@ -769,11 +773,10 @@ def do_ngmix_metacal(
 
     Returns
     -------
-    metacal_res : dict
+    dict
         Dictionary containing the results of ngmix metacal.
 
     """
-
     n_epoch = len(gals)
 
     if n_epoch == 0:
@@ -809,7 +812,7 @@ def do_ngmix_metacal(
         psf_guess = np.array([0., 0., 0., 0., psf_T, 1.])
         try:
             psf_res = make_galsimfit(psf_obs, 'gauss', psf_guess)
-        except:
+        except Exception:
             continue
 
         # Gal guess
@@ -819,7 +822,7 @@ def do_ngmix_metacal(
                 pixel_scale,
                 guess_size_type='sigma'
             )
-        except:
+        except Exception:
             gal_guess_flag = False
             gal_guess_tmp = np.array([0., 0., 0., 0., 1, 100])
 
@@ -832,7 +835,12 @@ def do_ngmix_metacal(
 
         # Noise handling
         if gal_guess_flag:
-            sig_noise = get_noise(gals[n_e], weight_map, gal_guess_tmp, pixel_scale)
+            sig_noise = get_noise(
+                gals[n_e],
+                weight_map,
+                gal_guess_tmp,
+                pixel_scale,
+            )
         else:
             sig_noise = sigma_mad(gals[n_e])
 
@@ -843,7 +851,7 @@ def do_ngmix_metacal(
         if (len(np.where(weight_map == 0)[0]) != 0):
             gal_masked[weight_map == 0] = noise_img_gal[weight_map == 0]
 
-        weight_map *= 1/sig_noise**2
+        weight_map *= 1 / sig_noise ** 2
 
         # Original PSF fit
         w_tmp = np.sum(weight_map)
@@ -941,7 +949,7 @@ def do_ngmix_metacal(
                         np.array([0., 0., 0., 0., Tguess, 1.]),
                         ntry=ntry
                     )
-                except:
+                except Exception:
                     continue
                 g1, g2 = psf_res['g']
                 T = psf_res['T']
@@ -952,7 +960,7 @@ def do_ngmix_metacal(
                         psf_model,
                         np.array([0., 0., 0., 0., Tguess, 1.]),
                     )
-                except:
+                except Exception:
                     continue
                 g1, g2 = psf_res['g']
                 T = psf_res['T']

@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""UNIT TESTS FOR MODULE PACKAGE: GET_IMAGES
+"""UNIT TESTS FOR MODULE PACKAGE: GET_IMAGES.
 
 This module contains unit tests for the module package
 shapepipe.modules.get_images_package.get_images
@@ -10,8 +8,10 @@ shapepipe.modules.get_images_package.get_images
 """
 
 from unittest import TestCase
+
 import numpy as np
 import numpy.testing as npt
+
 from shapepipe.modules.get_images_package import get_images
 
 
@@ -41,4 +41,8 @@ class GetImagesTestCase(TestCase):
             '2490092'
         )
 
-        npt.assert_raises(TypeError, get_images.in2out_pattern, self.number_int)
+        npt.assert_raises(
+            TypeError,
+            get_images.in2out_pattern,
+            self.number_int,
+        )

@@ -1,28 +1,21 @@
-# -*- coding: utf-8 -*-
-
-"""SPREAD MODEL SCRIPT
+"""SPREAD MODEL.
 
 Class to compute the spread model, criterion to select galaxies
 
 :Author: Axel Guinot
 
-:Date: 2019, 2020
-
-:Package: ShapePipe
-
 """
 
-
-import numpy as np
 import galsim
+import numpy as np
 from sqlitedict import SqliteDict
 
-from shapepipe.pipeline import file_io as io
+from shapepipe.pipeline import file_io
 from shapepipe.utilities import galaxy
 
 
 def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
-    """ Get Spread model
+    """Get Spread Model.
 
     This method compute the spread moel for an object.
 
@@ -43,8 +36,8 @@ def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
         Spread model value.
     sm_err : float
         Spread model error value.
-    """
 
+    """
     # Mask invalid pixels
     m = (obj_vign > -1e29) & (weight_vign > 0)
     w = m.astype(float)
@@ -62,15 +55,15 @@ def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
     w_v = w.ravel()
 
     # Compute scalar products used in spread model
-    tg = np.sum(t_v*w_v*g_v)
-    pg = np.sum(psf_v*w_v*g_v)
-    tp = np.sum(t_v*w_v*psf_v)
-    pp = np.sum(psf_v*w_v*psf_v)
+    tg = np.sum(t_v * w_v * g_v)
+    pg = np.sum(psf_v * w_v * g_v)
+    tp = np.sum(t_v * w_v * psf_v)
+    pp = np.sum(psf_v * w_v * psf_v)
 
-    tnt = np.sum(t_v*noise_v*t_v*w_v)
-    pnp = np.sum(psf_v*noise_v*psf_v*w_v)
-    tnp = np.sum(t_v*noise_v*psf_v*w_v)
-    err = tnt * pg**2 + pnp * tg**2 - 2*tnp * pg * tg
+    tnt = np.sum(t_v * noise_v * t_v * w_v)
+    pnp = np.sum(psf_v * noise_v * psf_v * w_v)
+    tnp = np.sum(t_v * noise_v * psf_v * w_v)
+    err = tnt * pg ** 2 + pnp * tg ** 2 - 2 * tnp * pg * tg
 
     # Compute spread model
     if pg > 0:
@@ -87,7 +80,7 @@ def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
 
 
 def get_model(sigma, flux, img_shape, pixel_scale=0.186):
-    """ Get model
+    """Get Model.
 
     This method computes
      - an exponential galaxy model with scale radius = 1/16 FWHM
@@ -96,30 +89,32 @@ def get_model(sigma, flux, img_shape, pixel_scale=0.186):
     Parameters
     ----------
     sigma : float
-        Sigma of the PSF (in pixel units).
+        Sigma of the PSF (in pixel units)
     flux : float
-        Flux of the galaxy for the model.
+        Flux of the galaxy for the model
     img_shape : list
-        Size of the output vignet [xsize, ysize].
+        Size of the output vignet [xsize, ysize]
     pixel_scale : float, optional, default=0.186
         Pixel scale to use for the model (in arcsec)
 
     Returns
     -------
     gal_vign : numpy.ndarray
-        Vignet of the galaxy model.
+        Vignet of the galaxy model
     psf_vign : numpy.ndarray
-        Vignet of the PSF model.
-    """
+        Vignet of the PSF model
 
+    """
     # Get scale radius
-    scale_radius = 1/16 * galaxy.sigma_to_fwhm(sigma, pixel_scale=pixel_scale)
+    scale_radius = (
+        1 / 16 * galaxy.sigma_to_fwhm(sigma, pixel_scale=pixel_scale)
+    )
 
     # Get galaxy model
     gal_obj = galsim.Exponential(scale_radius=scale_radius, flux=flux)
 
     # Get PSF
-    psf_obj = galsim.Gaussian(sigma=sigma*pixel_scale)
+    psf_obj = galsim.Gaussian(sigma=sigma * pixel_scale)
 
     # Convolve both
     gal_obj = galsim.Convolve(gal_obj, psf_obj)
@@ -141,7 +136,7 @@ def get_model(sigma, flux, img_shape, pixel_scale=0.186):
 
 
 class SpreadModel(object):
-    """SpreadModel class.
+    """The Spread Model Class.
 
     Parameters
     ----------
@@ -157,9 +152,16 @@ class SpreadModel(object):
         pixel scale in arcsec
     output_mode : str
         must be in ['new', 'add'].
-         'new' will create a new catalog with : [number, mag, sm, sm_err]
-         'add' will output a copy of the input SExtractor with the column sm
-          and sm_err.
+
+    Notes
+    -----
+    For the ``output_mode``:
+
+    - ``'new'`` will create a new catalogue with :
+      ``[number, mag, sm, sm_err]``
+    - ``'add'`` will output a copy of the input SExtractor with the column sm
+      and sm_err.
+
     """
 
     def __init__(
@@ -180,12 +182,13 @@ class SpreadModel(object):
         self._output_mode = output_mode
 
     def process(self):
-        """Process
-        Process the spread model computation
-        """
+        """Process.
 
+        Process the spread model computation
+
+        """
         # Get data
-        sex_cat = io.FITSCatalog(self._sex_cat_path, SEx_catalog=True)
+        sex_cat = file_io.FITSCatalogue(self._sex_cat_path, SEx_catalogue=True)
         sex_cat.open()
         obj_id = np.copy(sex_cat.get_data()['NUMBER'])
         obj_vign = np.copy(sex_cat.get_data()['VIGNET'])
@@ -196,7 +199,10 @@ class SpreadModel(object):
 
         psf_cat = SqliteDict(self._psf_cat_path)
 
-        weight_cat = io.FITSCatalog(self._weight_cat_path, SEx_catalog=True)
+        weight_cat = file_io.FITSCatalogue(
+            self._weight_cat_path,
+            SEx_catalogue=True,
+        )
         weight_cat.open()
         weigh_vign = weight_cat.get_data()['VIGNET']
         weight_cat.close()
@@ -242,8 +248,8 @@ class SpreadModel(object):
             spread_model_final.append(obj_sm)
             spread_model_err_final.append(obj_sm_err)
 
-        spread_model_final = np.array(spread_model_final)
-        spread_model_err_final = np.array(spread_model_err_final)
+        spread_model_final = np.array(spread_model_final, dtype='float64')
+        spread_model_err_final = np.array(spread_model_err_final, dtype='float64')
 
         psf_cat.close()
 
@@ -255,32 +261,32 @@ class SpreadModel(object):
         )
 
     def save_results(self, sm, sm_err, mag, number):
-        """Save Results
+        """Save Results.
 
         Save output catalogue with spread model and errors.
 
         Parameters
         ----------
         sm : numpy.ndarray
-            Value of the spread model for all objects.
+            Value of the spread model for all objects
         sm_err : numpy.ndarray
-            Value of the spread model error for all objects.
+            Value of the spread model error for all objects
         mag : numpy.ndarray
-            Magnitude of all objects (only for new catalog).
+            Magnitude of all objects (only for new catalogue)
         number : numpy.ndarray
-            Id of all objects (only for new catalog).
+            Id of all objects (only for new catalogue)
 
         Raises
         ------
         ValueError
             For incorrect output mod
-        """
 
+        """
         if self._output_mode == 'new':
-            new_cat = io.FITSCatalog(
+            new_cat = file_io.FITSCatalogue(
                 self._output_path,
-                SEx_catalog=True,
-                open_mode=io.BaseCatalog.OpenMode.ReadWrite
+                SEx_catalogue=True,
+                open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
             )
             dict_data = {
                 'NUMBER': number,
@@ -293,12 +299,15 @@ class SpreadModel(object):
                 sex_cat_path=self._sex_cat_path
             )
         elif self._output_mode == 'add':
-            ori_cat = io.FITSCatalog(self._sex_cat_path, SEx_catalog=True)
+            ori_cat = file_io.FITSCatalogue(
+                self._sex_cat_path,
+                SEx_catalogue=True,
+            )
             ori_cat.open()
-            new_cat = io.FITSCatalog(
+            new_cat = file_io.FITSCatalogue(
                 self._output_path,
-                SEx_catalog=True,
-                open_mode=io.BaseCatalog.OpenMode.ReadWrite
+                SEx_catalogue=True,
+                open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
             )
             ori_cat.add_col(
                 'SPREAD_MODEL',
