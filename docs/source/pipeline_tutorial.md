@@ -363,11 +363,6 @@ On success, SEXtractor catalogue FITS files are produced.
 
 ### Select stars
 
-**Module:** setools  
-**Parent:** sextractor_runner  
-**Input:** sextractor catalog  
-**Output:** masked sextractor catalogue
-
 For the star selection we use the size-magnitude plane. We first find the
 stellar locus, by computing the FWHM mode of all objects. Objects are selected
 within some range in FWHM around the mode, and within a magnitude range.
@@ -417,10 +412,6 @@ sample serves to [validate the PSF model](#validation-tests):
 RATIO = 20
 MASK = star_selection
 ```
-In addition, the selection config file can contain instructions to create plots and
-statistics of the selected population(s). The former can be scatter plots and histograms,
-the former can include mean, mode, extrema, and standard deviation
-of any quantity from the SExtractor input catalogue, the number of selected objects, etc..
 
 On success, masked SExtractor catalogues are created in `mask`, plots are put in `plots`,
 and text files with the computed statistics in `stats`.
