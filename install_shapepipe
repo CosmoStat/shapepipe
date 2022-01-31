@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-LC_CTYPE=en_US.utf8
+export LC_ALL=en_US.UTF-8
+export LC_CTYPE=en_US.utf8
 
 ##############################################################################
 # Install ShapePipe Executables
@@ -9,7 +10,7 @@ LC_CTYPE=en_US.utf8
 #
 ##############################################################################
 
-version="1.4"
+version="1.5"
 
 ##############################################################################
 # EXTERNAL PACKAGES AND SCRIPTS
@@ -32,9 +33,7 @@ psfex_bin="psfex"
 psfex_version=TRUE
 
 # WeightWatcher Package
-# ww_url="https://www.astromatic.net/download/weightwatcher/weightwatcher-1.12.tar.gz"
 ww_url="http://snapshot.debian.org/archive/debian/20171211T160522Z/pool/main/w/weightwatcher/weightwatcher_1.12.orig.tar.gz"
-# ww_tar="weightwatcher-1.12.tar.gz"
 ww_tar="weightwatcher_1.12.orig.tar.gz"
 ww_dir="weightwatcher-1.12"
 ww_bin="ww"
@@ -54,25 +53,11 @@ mpi_dir="mpi4py-3.0.3"
 mpi_bin="mpiexec"
 mpi_version=TRUE
 
-# Auxillary scripts
-PY_SCRIPTS=(
-  cfis_weight_format.py
-  cfis_field_select.py
-  cfis_download_images.py
-  create_star_cat.py
-  merge_star_cat_psfex.py
-  MeanShapes.py
-  stats_global.py
-  merge_final_cat.py
-  canfar_avail_results.py
-)
-BASH_SCRIPTS=(
-  job_sp.bash
-  post_proc_sp.bash
-  psf_residuals.bash
-  prepare_tiles_for_final.bash
-  canfar_download_results.bash
-  untar_results.bash
+# Allowed script extensions
+script_ext=(
+  .py
+  .sh
+  .bash
 )
 
 # Divider line
@@ -193,8 +178,40 @@ build_mpi(){
 check_conda() {
   if ! type -t "conda" > /dev/null
   then
-    echo "Conda command not found, make sure it is installed before proceding."
-    exit
+    echo -ne "${RED}ERROR: Conda command not found, make sure it is installed before proceding.${NC}\n"
+    exit 1
+  fi
+  # Set Conda variables
+  CONDA_VERSION=$(conda -V | perl -pe '($_)=/([0-9]+([.][0-9]+)+)/' )
+  CONDA_VERSION_MAJOR=$(cut -d'.' -f1 <<<$CONDA_VERSION)
+  CONDA_VERSION_MINOR=$(cut -d'.' -f2 <<<$CONDA_VERSION)
+  CONDA_VERSION_PATCH=$(cut -d'.' -f3 <<<$CONDA_VERSION)
+  CONDA_SH=/etc/profile.d/conda.sh
+  # Check Conda major version
+  if [ "$CONDA_VERSION_MAJOR" -lt 4 ]
+  then
+    echo -ne "${RED}ERROR: Found Conda version $CONDA_VERSION but require 4.0.0 or greater.${NC}\n"
+    exit 1
+  fi
+  # Check Conda minor version
+  if [ "$CONDA_VERSION_MINOR" -gt 4 ]
+  then
+    if [ -f "$CONDA_PREFIX_1$CONDA_SH" ]
+    then
+      source "$CONDA_PREFIX_1$CONDA_SH"
+    elif [ -f "$CONDA_PREFIX$CONDA_SH" ]
+    then
+      source "$CONDA_PREFIX$CONDA_SH"
+    else
+      echo -ne "${RED}ERROR: Could not find $CONDA_SH in \$CONDA_PREFIX.${NC}\n"
+      echo -ne "${RED}Activate the base/root Conda environment and try again.${NC}\n"
+      exit 1
+    fi
+    CONDA_ACTIVATE="conda activate"
+    CONDA_DEACTIVATE="conda deactivate"
+  else
+    CONDA_ACTIVATE="source activate"
+    CONDA_DEACTIVATE="source deactivate"
   fi
 }
 
@@ -217,7 +234,7 @@ check_binary2() {
     echo -ne "$2: ${GREEN}INSTALLED${NC}\n"
     if [ "$3" == TRUE ]
     then
-      "$CONDA_PREFIX/bin/$1" --version | head -n 1
+      "$CONDA_PREFIX/bin/$1" --version | head -n 2
     fi
   else
     if [ "$4" == TRUE ]
@@ -258,8 +275,8 @@ start() {
   echo 'ShapePipe Installation Script'
   echo ''
   echo 'Author: Samuel Farrens'
-  echo 'Year: 2019'
   echo 'Version:' $version
+  echo 'Last Update: 26/01/2022'
   echo $line
   echo ''
 }
@@ -317,7 +334,7 @@ package_report() {
   echo 'Package Report'
   echo ''
   packages
-  pip list
+  python -m piplist
   echo ''
   exit_code
 }
@@ -355,6 +372,7 @@ check_status () {
 # Function to show the installation setup
 setup() {
   check_status 'Operating System:' $SYSOS
+  check_status 'Conda Version:' $CONDA_VERSION
   check_status 'Build Conda Environment:' $BUILD_ENV $ENV_NAME
   check_status 'Install SExtractor:' $INSTALL_SEX
   check_status 'Install PSFEx:' $INSTALL_PSFEX
@@ -396,10 +414,13 @@ uninstall() {
 
 # Function to activate ShapePipe environment
 activate_shapepipe() {
-  source activate $ENV_NAME || ( source $CONDA_PREFIX_1/etc/profile.d/conda.sh && conda activate $ENV_NAME )
+  # Run activation command
+  echo -ne "Running ${CYAN}$CONDA_ACTIVATE $ENV_NAME${NC}\n"
+  eval "$CONDA_ACTIVATE $ENV_NAME"
+  # Check if the activation was successful
   if [ "$?" -eq 0 ]
   then
-    echo -ne "Activating Conda environment ${CYAN}$CONDA_PREFIX${NC}\n"
+    echo -ne "Successfully activated ShapePipe environment ${CYAN}$CONDA_PREFIX${NC}\n"
     export LD_RUN_PATH=$CONDA_PREFIX/lib
   else
     echo -ne "${RED}ERROR: Could not activate ShapePipe environment.${NC}\n"
@@ -409,7 +430,18 @@ activate_shapepipe() {
 
 # Function to deactivate ShapePipe environment
 deactivate_shapepipe() {
-  source deactivate || source $CONDA_PREFIX_1/etc/profile.d/conda.sh && conda deactivate
+  # Run deactivation command
+  eval $CONDA_DEACTIVATE
+}
+
+# Build symbolic links for scripts
+build_symlinks() {
+  for ext in ${script_ext[@]}; do
+    for script in $CONDA_PREFIX/bin/*$ext; do
+      link_name=`basename $script $ext`
+      ln -s $script $CONDA_PREFIX/bin/$link_name
+    done
+  done
 }
 
 ##############################################################################
@@ -625,7 +657,8 @@ if [ -z "$BLAS_INC" ]; then BLAS_INC=$CONDA_PREFIX/include; fi
 if [ "$DEVELOP" == TRUE ]
 then
   report_progress 'Developer Packages'
-  pip install numpydoc pytest pytest-cov pytest-codestyle sphinx sphinx-rtd-theme
+  python -m pip install -r develop.txt
+  python -m pip install -r docs/requirements.txt
 fi
 
 ##############################################################################
@@ -636,7 +669,7 @@ fi
 if [ "$VOS" == TRUE ]
 then
   report_progress 'vos'
-  pip install vos
+  python -m pip install vos
 fi
 
 ##############################################################################
@@ -727,22 +760,13 @@ fi
 # INSTALL SHAPEPIPE LIBRARY
 ##############################################################################
 
+# Install ShapePipe package
 report_progress 'ShapePipe'
 cd $PIPE_DIR
-python setup.py install
+python -m pip install .
 
-# Create symbolic link to main program
-ln -s $PWD/shapepipe_run.py $CONDA_PREFIX/bin/shapepipe_run
-
-# Create symbolic link to auxiliary scripts
-for script in ${PY_SCRIPTS[@]}; do
-  link_name=`basename $script .py`
-  ln -s $PWD/scripts/python/$script $CONDA_PREFIX/bin/$link_name
-done
-for script in ${BASH_SCRIPTS[@]}; do
-  link_name=`basename $script .bash`
-  ln -s $PWD/scripts/sh/$script $CONDA_PREFIX/bin/$link_name
-done
+# Create symbolic links to scripts
+build_symlinks
 
 finish
 
