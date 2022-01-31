@@ -343,11 +343,6 @@ have a zero-padded pixel border, which is not accounted for by `ds9`.
 
 ### Extract sources
 
-**Module:** sextractor_runner  
-**Parent:** split_exp_runner, mask_runner  
-**Input:** single-exp_single-CCD image[, weights] [, flags] [, PSF file] [, detection image] [, detection weight]
-**Output:** sextractor catalogue
-
 The purpose of source extraction/source identification on single exposures is
 to select stars in the next step. Therefore, a relatively high
 detection threshold is chosen to avoid to detect too many low-SNR
@@ -359,37 +354,9 @@ ANALYSIS_THRESH  1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
 ```
 in the file `$SP_CONFIG/default_exp.sex`.
 
-The module config file `$SP_CONFIG/config_exp_Sx.ini` specifies input modules, file pattern, and numbering scheme. Note that the flag files are the ones created by the [mask module](#mask-images), with name `pipeline_flag`. Next, the path to the `SExtractor` executable (installed in the `shapepipe` conda environment by default) is given, and the `SExtractor` configuration files, see below.
+Note that the flag files are the ones created by the [mask module](#mask-images), with name `pipeline_flag`.
 
-Then, boolean flags indicate the presence or absence of the additional input images for the `FILE_PATTERN` line. These are a weight image, a flag image, a PSF file, a distinct image for detection (for `SExtractor` in dual-image mode) that is different from the measurement image, and a distinct detection weight. In our case, we don't have a PSF [yet](#create-psf-model), and we do measurement and detection on the same images.
-
-After that, two entries determine the FITS header key that contains the photometric zero-point (by default 30 if not given). Then, information about the background handling are indicated before the output file suffix. A post processing flag is set to `False` for single-exposures:
-```ini
-[SEXTRACTOR_RUNNER]
-INPUT_MODULE = split_exp_runner, mask_runner
-FILE_PATTERN = image, weight, pipeline_flag
-NUMBERING_SCHEME = -0000000-0
-
-EXEC_PATH = sex
-DOT_SEX_FILE = $SP_CONFIG/default_exp.sex
-DOT_PARAM_FILE = $SP_CONFIG//default.param
-DOT_CONV_FILE = $SP_CONFIG/default.conv
-
-WEIGHT_IMAGE = True
-FLAG_IMAGE = True
-PSF_FILE = False
-DETECTION_IMAGE = False
-DETECTION_WEIGHT = False
-
-ZP_FROM_HEADER = True
-ZP_KEY = PHOTZP
-
-BKG_FROM_HEADER = False
-CHECKIMAGE = BACKGROUND
-
-SUFFIX = sexcat
-
-MAKE_POST_PROCESS = FALSE
+After that, two entries determine the FITS header key that contains the photometric zero-point (by default 30 if not given). Then, information about the background handling are indicated before the output file suffix. A post processing flag is set to `False` for single-exposures.
 ```
 
 On success, SEXtractor catalogue FITS files are produced.
