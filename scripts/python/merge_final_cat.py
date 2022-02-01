@@ -10,8 +10,6 @@ into a joined numpy binary file.
 :Authors: Axel Guinot, Martin Kilbinger
 
 :Date: 2020
-
-:Package: ShapePipe
 """
 
 from astropy.io import fits
