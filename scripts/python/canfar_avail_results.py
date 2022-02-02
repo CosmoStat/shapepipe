@@ -164,8 +164,6 @@ def read_input_files(input_path, verbose=False):
 
     if os.path.isdir(input_path):
         input_files = glob.glob('{}/*'.format(input_path))
-    #elif os.path.isfile(input_path):
-        #input_files = [line.rstrip('\n') for line in open(input_path)]
     else:
         input_files =  cfis.my_string_split(input_path, stop=True, sep=' ')
 
@@ -294,7 +292,6 @@ def main(argv=None):
 
     # Command line options
     options, args = parse_options(p_def)
-    # Without option parsing, this would be: args = argv[1:]
 
     if check_options(options) is False:
         return 1

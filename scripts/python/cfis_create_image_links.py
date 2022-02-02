@@ -9,8 +9,6 @@ Create links to images with link names according to pipeline format
 
 :Date: 15/02/2018 (v 1.0)
        03/03/2020 (v 1.1: added links for exposures)
-
-:Package: ShapePipe
 """
 
 # Compability with python2.x for x>6
@@ -270,5 +268,3 @@ def main(argv=None):
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
-
-
