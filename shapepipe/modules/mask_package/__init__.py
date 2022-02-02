@@ -26,9 +26,9 @@ conveniently are powers of two such that they can be combined bit-wise.
 
 To mask bright stars, this module either creates a star catalogue from the
 online
-`guide starcatalogue <https://heasarc.gsfc.nasa.gov/W3Browse/all/gsc.html>`_
+`guide star catalogue <https://heasarc.gsfc.nasa.gov/W3Browse/all/gsc.html>`_
 database relevant to the the footprint. This is done by calling a CDs
-(Centre de DonneÃ©s astronomique de Strassbourg)
+(Centre de DonneÃ©s astronomique de Strasbourg)
 `client <http://cdsarc.u-strasbg.fr/doc/cdsclient.html>`_
 program. Note that this requires online access,
 which in some cases is not granted on compute nodes of a cluster. In this case,
@@ -143,15 +143,15 @@ EF_MAKE : bool
 ---------------
 
 MD_MAKE : bool
-    account for mising data (= zero-valued pixels) if True
+    account for missing data (= zero-valued pixels) if True
 MD_THRESH_FLAG : float
-    threhold; if relative number of missing data is larger than this theshold,
+    threshold; if relative number of missing data is larger than this threshold,
     image is marked as flagged
 MD_THRESH_REMOVE : float
     threshold; if relative number of missing data is larger than this threshold,
     image is marked for removal
 MD_REMOVE : bool
-    image is removed if markefd for removal 
+    image is removed if marked for removal 
 
 [OTHER]
 -------
