@@ -11,7 +11,7 @@
 - [ ] The PR has appropriate labels
 - [ ] The PR is included in appropriate projects and/or milestones
 - [ ] The PR includes a clear description of the proposed changes
-- [ ] If the PR addresses and open issue the description includes "closes #<ISSUE NUMBER>"
+- [ ] If the PR addresses an open issue the description includes "closes #<ISSUE NUMBER>"
 - [ ] The code and documentation style match the current standards
 - [ ] All CI tests are passing
 - [ ] API docs have been built and checked at least once (if relevant)
