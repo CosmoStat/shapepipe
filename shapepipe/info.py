@@ -36,6 +36,8 @@ __tests__ = [
     'pytest-pycodestyle',
     'pytest-pydocstyle',
 ]
+__scripts_dir__ = 'scripts'
+__scripts_ext__ = ('.py', '.sh', '.bash')
 
 
 def shapepipe_logo(colour=False):

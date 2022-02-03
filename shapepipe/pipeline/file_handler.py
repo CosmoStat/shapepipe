@@ -700,18 +700,26 @@ class FileHandler(object):
 
         Set the module input directory. If the module specified is the
         first module in the pipeline or does not have any input modules then
-        only the `INPUT_DIR` from `[FILE]` is used, otherwise the output
+        only the ``INPUT_DIR`` from ``[FILE]`` is used, otherwise the output
         directory from the preceding module is used.
 
-        Additional input directories can be specified with `INPUT_DIR` from
-        `[MODULE]`.
+        Additional input directories can be specified with ``INPUT_DIR`` from
+        ``[MODULE]``.
 
         Parameters
         ----------
         module : str
             Module name
+        run_name : str
+            Module run name, if the module has only been called once this will
+            be identical to ``module``
 
         """
+        # Create a default empty list of input directories
+        input_dir = []
+
+        # Check if the module has no input modules or is the first module to
+        # run in the pipeline
         if (
             isinstance(
                 self._module_dict[module][run_name]['input_module'],
@@ -719,37 +727,68 @@ class FileHandler(object):
             )
             or len(self._module_dict) == 1
         ):
+            # If so, use the input directory/ies set in the [FILE] section
             input_dir = self._input_dir
 
-        else:
-            input_dir = []
+        # Check if input directory/ies has/have been set in the module config
+        # section
+        if self._config.has_option(run_name.upper(), 'INPUT_DIR'):
+            # If so set this/these as the input directory/ies, note that this
+            # overrides the value set in the [FILE] section
+            input_dir = self._check_input_dir_list(
+                self._config.getlist(run_name.upper(), 'INPUT_DIR')
+            )
+
+        # Check if input directory/ies has/have has not been set and if input
+        # modules have been defined for the current module
+        if (
+            not input_dir
+            and isinstance(
+                self._module_dict[module][run_name]['input_module'],
+                list
+            )
+        ):
+            # If so, loop through all the input modules defined for the current
+            # module
             for input_module in (
                 self._module_dict[module][run_name]['input_module']
             ):
+                # Get the input module name and run
                 input_module, in_mod_run = split_module_run(input_module)
-                if in_mod_run == input_module:
-                    in_mod_run = self._module_dict[input_module]['latest']
+                # Check if the input module was part of the current pipeline
                 if input_module in self._module_dict:
+                    # If so, check if the input module was a single run
+                    if in_mod_run == input_module:
+                        # If so, Set the input module run to the latest run
+                        in_mod_run = self._module_dict[input_module]['latest']
+                    # Add the output directory of the input module to
+                    # the list of input directories for the current module
                     input_dir.append(
                         self._module_dict[input_module][in_mod_run][
                             'output_dir'
                         ]
                     )
+                else:
+                    # If not, add the last run of the input module to the
+                    # list of input directories
+                    input_dir.append(f'{input_module}:last')
 
-        if self._config.has_option(run_name.upper(), 'INPUT_DIR'):
-            input_dir = self._check_input_dir_list(
-                self._config.getlist(run_name.upper(), 'INPUT_DIR')
-            )
-
+        # Check if input directory/ies has/have been added in the module config
+        # section
         if self.get_add_module_property(run_name, 'input_dir'):
+            # If so add this/these to the input directory/ies
             input_dir += self.get_add_module_property(run_name, 'input_dir')
 
+        # Check if no input directory has been set
         if not input_dir:
+            # If so, raise an error
             raise RuntimeError(
                 'Could not find appropriate input directory '
                 + f'for module {run_name}.'
             )
 
+        # Add the input directories for the current module to the module
+        # dictionary
         self._module_dict[module][run_name]['input_dir'] = (
             self.check_dirs(input_dir)
         )
