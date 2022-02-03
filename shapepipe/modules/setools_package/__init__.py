@@ -32,7 +32,7 @@ SETOOLS_CONFIG_PATH : str
 Setools configuration file
 ==========================
 
-This file can contain an arbitrary number of section. Each section is initiated by a line
+This file can contain an arbitrary number of sections. Each section is initiated by a line
 ``[TYPE:name]``. The following mask types ``TYPE`` are valid:
     - ``MASK``: define a selection or mask
     - ``RAND_SPLIT``: split an input into random subsamples
