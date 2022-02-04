@@ -99,14 +99,3 @@ NGMIX_MOM_FAIL
 CFIS_ID
 RA
 Dec
-CFIS_U_MAG_AUTO
-CFIS_U_MAGERR_AUTO
-CFIS_R_MAG_AUTO
-CFIS_R_MAGERR_AUTO
-HSC_G_MAG_AUTO
-HSC_G_MAGERR_AUTO
-PS_i_stk_kron
-PS_i_stk_kron_err
-PS_z_stk_kron
-PS_z_stk_kron_err
-CFIS_R_StarGal

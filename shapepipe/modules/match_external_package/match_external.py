@@ -119,6 +119,8 @@ class MatchCats(object):
     mark_non_matched : float, optional
         If not None, output not only matched but all objects, and mark
         non-matched objects with this value
+    output_distance : bool, optional, default=False
+        Output distance between matches if True
 
     """
 
@@ -136,6 +138,7 @@ class MatchCats(object):
         external_col_copy,
         external_hdu_no=1,
         mark_non_matched=None,
+        output_distance=False,
     ):
 
         self._input_file_list = input_file_list
@@ -154,6 +157,7 @@ class MatchCats(object):
         self._external_hdu_no = external_hdu_no
 
         self._mark_non_matched = mark_non_matched
+        self._output_distance = output_distance
 
     def process(self):
         """Process.
@@ -234,6 +238,10 @@ class MatchCats(object):
                     for idx, i_ext in enumerate(indices):
                         if not indices_close[idx]:
                             matched[col][idx] = self._mark_non_matched
+
+            # Output distance if desired
+            if self._output_distance:
+                matched['distance'] = d2d[id_data]
 
             # Write FITS file
             out_cat = file_io.FITSCatalogue(
