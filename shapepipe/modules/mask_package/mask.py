@@ -529,7 +529,7 @@ class Mask(object):
         nx = self._fieldcenter['pix'][0] * 2
         ny = self._fieldcenter['pix'][1] * 2
 
-        #. Get the four corners of the image
+        # Get the four corners of the image
         corners = self._wcs.calc_footprint()
         corners_sc = SkyCoord(
             ra=corners[:, 0] * units.degree,

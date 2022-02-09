@@ -145,7 +145,7 @@ MD_THRESH_REMOVE : float
     threshold; if relative number of missing data is larger than this threshold,
     image is marked for removal
 MD_REMOVE : bool
-    image is removed if marked for removal 
+    image is removed if marked for removal
 
 [OTHER]
 -------
