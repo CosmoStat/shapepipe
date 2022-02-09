@@ -133,12 +133,6 @@ MESSIER_SIZE_PLUS : float
 MESSIER_FLAG_VALUE : int (power of 2)
     Messier mask pixel value
 
-[EXTERNAL_FLAG]
----------------
-
-EF_MAKE : bool
-    account for external (pre-existing) mask file if True
-
 [MD_PARAMETERS]
 ---------------
 

@@ -111,7 +111,6 @@ class Mask(object):
             'SPIKE': {},
             'MESSIER': {},
             'MD': {},
-            'EXTERNAL_FLAG': {}
         }
 
         self._config['PATH']['WW'] = (
@@ -221,17 +220,6 @@ class Mask(object):
                 conf.getboolean('MD_PARAMETERS', 'MD_REMOVE')
             )
 
-        self._config['EXTERNAL_FLAG']['make'] = (
-            conf.getboolean('EXTERNAL_FLAG', 'EF_MAKE')
-        )
-
-        if self._config['EXTERNAL_FLAG']['make']:
-            if self._path_external_flag is None:
-                raise ValueError(
-                    'External flag file has to be provided as module input'
-                )
-            self._config['EXTERNAL_FLAG']['path'] = self._path_external_flag
-
     def _set_parameters(self):
         """Set Parameters.
 
@@ -333,10 +321,7 @@ class Mask(object):
                 im_pass = True
 
         if not self._err:
-            if self._config['EXTERNAL_FLAG']['make']:
-                path_external_flag = self._config['EXTERNAL_FLAG']['path']
-            else:
-                path_external_flag = None
+            path_external_flag = self._path_external_flag
 
         if not self._err:
             if im_pass:
@@ -542,7 +527,7 @@ class Mask(object):
         )
 
         nx = self._fieldcenter['pix'][0] * 2
-        ncannot be negativeter['pix'][1] * 2
+        ny = self._fieldcenter['pix'][1] * 2
 
         #. Get the four corners of the image
         corners = self._wcs.calc_footprint()
