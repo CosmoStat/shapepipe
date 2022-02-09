@@ -120,7 +120,7 @@ class MatchCats(object):
         If not None, output not only matched but all objects, and mark
         non-matched objects with this value
     output_distance : bool, optional, default=False
-        Output distance between matches if True
+        Output distance between matches if ``True``
 
     """
 
