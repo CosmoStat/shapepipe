@@ -82,12 +82,12 @@ def match_external_runner(
         mark_non_matched = None
 
     if config.has_option(module_config_sec, 'OUTPUT_DISTANCE'):
-        output_distance = config.getbool(
+        output_distance = config.getboolean(
             module_config_sec,
             'OUTPUT_DISTANCE',
         )
     else:
-        output_distance = None
+        output_distance = False
 
     # Set output file path
     file_ext = 'fits'
