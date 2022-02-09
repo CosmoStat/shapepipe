@@ -241,7 +241,8 @@ class MatchCats(object):
 
             # Output distance if desired
             if self._output_distance:
-                matched['distance'] = d2d[id_data]
+                # Output distance in arcsec
+                matched['distance'] = d2d[id_data].to('arcsec').value
 
             # Write FITS file
             out_cat = file_io.FITSCatalogue(
