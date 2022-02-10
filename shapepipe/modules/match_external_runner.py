@@ -81,6 +81,14 @@ def match_external_runner(
     else:
         mark_non_matched = None
 
+    if config.has_option(module_config_sec, 'OUTPUT_DISTANCE'):
+        output_distance = config.getboolean(
+            module_config_sec,
+            'OUTPUT_DISTANCE',
+        )
+    else:
+        output_distance = False
+
     # Set output file path
     file_ext = 'fits'
     output_path = (
@@ -102,6 +110,7 @@ def match_external_runner(
         external_col_copy,
         external_hdu_no=external_hdu_no,
         mark_non_matched=mark_non_matched,
+        output_distance=output_distance,
     )
 
     # Process inputs

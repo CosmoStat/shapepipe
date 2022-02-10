@@ -77,6 +77,7 @@ def shapepipe_logo(colour=False):
              Morgan Schmitz
              Andre Zamorano Vitorelli
              Francois Lanusse
+             Xavier Jimenez
 
     Version: {}
 
