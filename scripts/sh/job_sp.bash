@@ -183,13 +183,13 @@ function command () {
    cmd=$1
    str=$2
 
-   RED='\033[0;31m'
-   GREEN='\033[0;32m'
-   NC='\033[0m' # No Color
+   #RED='\033[0;31m'
+   #GREEN='\033[0;32m'
+   #NC='\033[0m' # No Color
    # Color escape characters show up in log files
-   #RED=''
-   #GREEN=''
-   #NC=''
+   RED=''
+   GREEN=''
+   NC=''
 
 
    if [ $# == 2 ]; then
