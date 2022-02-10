@@ -43,6 +43,11 @@ This is a FITS file for ``MASK``, .png file for ``PLOT``, and an ASCII file for 
 For ``TYPE = MASK`` and ``RAND_SPLIT, ``name`` is also the reference, by which the defined
 sample can be addressed within the configuration file.
 
+Entries in the ``MASK`` and ``STATS`` sections, lines can contain basic relational operations, and functions.
+The operands can be
+  - input column names, or ``SExtractor`` keywords
+  - names defined by a previous mask.
+
 """
 
 __all__ = ['setools']
