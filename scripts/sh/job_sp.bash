@@ -281,13 +281,6 @@ function print_env() {
 
 ### Start ###
 
-# Activate conda environment
-#if [ "$CONDA_DEFAULT_ENV" != "shapepipe" ]; then
-  #echo "Activate conda 'shapepipe' environment"
-  #source $VM_HOME/miniconda3/bin/activate shapepipe
-#fi
-
-
 if [ $do_env == 1 ]; then
    print_env
    echo "Exiting"

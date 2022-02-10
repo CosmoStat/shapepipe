@@ -1291,7 +1291,6 @@ class FileHandler(object):
 
 def get_list(run_log_file):
     """See RunLog.get_list()"""
-
     with open(run_log_file, 'r') as run_log:
         lines = run_log.readlines()
 
@@ -1302,7 +1301,6 @@ def get_list(run_log_file):
 
 def get_all(runs, module):
     """See RunLog.get_all()"""
-
     module_base, _ = split_module_run(module)
 
     all_runs = [
@@ -1320,16 +1318,17 @@ def get_all(runs, module):
 
 
 def get_last_dir(config, module):
-
+    """Get Last Dir
+    Return last directory path of given module
+    """
     run_log_file = FileHandler.setpath(
-            config.getexpanded('FILE', 'OUTPUT_DIR'),
-            config.get('FILE', 'RUN_LOG_NAME'),
-            '.txt',
-        )
+        config.getexpanded('FILE', 'OUTPUT_DIR'),
+        config.get('FILE', 'RUN_LOG_NAME'),
+        '.txt',
+    )
     runs = get_list(run_log_file)
     all_runs = get_all(runs, module)
     last_run = all_runs[0].split(' ')[0]
     last_dir = f'{last_run}/{module}/output'
 
     return last_dir
-

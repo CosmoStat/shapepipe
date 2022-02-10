@@ -49,7 +49,6 @@ def vignetmaker_runner(
 
     # Without masking
     else:
-
         # Fetch stamp size
         stamp_size = config.getint(module_config_sec, 'STAMP_SIZE') - 1
         # Check stamp size
