@@ -319,7 +319,7 @@ def main(argv=None):
             continue
 
         try:
-            d_tmp = get_data(idx, 1, param.param_list)
+            d_tmp = get_data(idx, param.hdu_num, param.param_list)
             dd = np.zeros(d_tmp.shape, dtype=d.dtype)
 
             for key in d_tmp.dtype.names:
