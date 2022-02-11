@@ -442,7 +442,6 @@ class FileHandler(object):
             For invalid module dictionary key
 
         """
-
         run_name = self._module_dict[module]['latest']
 
         if property == 'run_name':
