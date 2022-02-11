@@ -401,19 +401,6 @@ class FileHandler(object):
             f'{self._log_dir}/{config_file_name}',
         )
 
-    def set_run_log(self, log):
-        """Set Run Log.
-
-        Give the ``FileHandler`` instance access to the current run log.
-
-        Parameters
-        ----------
-        log : logging.Logger
-            Logging instance
-
-        """
-        self.log = log
-
     def get_module_current_run(self, module):
         """Get Module Current Run.
 
