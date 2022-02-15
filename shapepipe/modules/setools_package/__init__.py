@@ -43,6 +43,97 @@ This is a FITS file for ``MASK``, .png file for ``PLOT``, and an ASCII file for 
 For ``TYPE = MASK`` and ``RAND_SPLIT, ``name`` is also the reference, by which the defined
 sample can be addressed within the configuration file.
 
+The following is an example of a star selection using two ``MASK`` sections.
+First, a pre-selection is defined:
+
+[MASK:preselect]
+MAG_AUTO > 0
+MAG_AUTO < 21
+FWHM_IMAGE > 0.3 / 0.187
+FWHM_IMAGE < 1.5 / 0.187
+FLAGS == 0
+IMAFLAGS_ISO == 0
+NO_SAVE
+
+This selects objects within a magnitude (``MAG_AUTO``) and size (``FWHM_IMAGE``) ranges.
+The size limits of 0.3" and 1.5" are transformed from arcseconds to pixels.
+Additional flag criteria for ``FLAGS`` AND ``IMAFLAGS_ISO`` are specified.
+The keyword ``NO_SAVE`` indicates that this selection is not to be saved to disk.
+
+Next, the final star selection is defined:
+
+[MASK:star_selection]
+MAG_AUTO > 18.
+MAG_AUTO < 22.
+FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
+FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2
+FLAGS == 0
+IMAFLAGS_ISO == 0
+
+The size range is now refined using the mode of preselected objects. The preselection
+removes outliers before the mode computation.
+
+An example of the definition of random subsamples is as follows:
+
+[RAND_SPLIT:star_split]
+RATIO = 20
+MASK = star_selection
+
+This uses as input the ``star_selection`` sample. It creates two random
+subsamples: one with 20% and one with 80% (100 - RATIO) percent of input
+objects.
+
+
+The following are illustration of two plots. First, another mask
+is defined:
+
+[MASK:fwhm_mag_cut]
+FWHM_IMAGE > 0
+FWHM_IMAGE < 40
+MAG_AUTO < 35
+FLAGS == 0
+IMAFLAGS_ISO == 0
+NO_SAVE
+
+
+[PLOT:size_mag]
+TYPE = plot
+FORMAT = png
+X_1 = FWHM_IMAGE{fwhm_mag_cut}
+Y_1 = MAG_AUTO{fwhm_mag_cut}
+X_2 = FWHM_IMAGE{star_selection}
+Y_2 = MAG_AUTO{star_selection}
+MARKER_1 = +
+MARKER_2 = .
+MARKERSIZE_1 = 3
+MARKERSIZE_2 = 3
+LABEL_1 = All
+LABEL_2 = "Stars, mean FWHM: @mean(FWHM_IMAGE{star_selection})*0.187@ arcsec"
+TITLE = "Stellar locus"
+XLABEL = "FWHM (pix)"
+YLABEL = Mag
+
+[PLOT:hist_mag_stars]
+TYPE = hist
+FORMAT = png
+Y = MAG_AUTO{star_selection}
+BIN = 20
+LABEL = "stars"
+XLABEL = "Magnitude"
+YLABEL = "Number"
+TITLE = "Magnitude of stars"
+
+
+Possible values for ``TYPE`` are ``plot``, ``histogram``, ``scatter``.
+For a single sample, the values to plot on the x- and y-axis are given by the keywords ``X`` and ``Y``, respectively.
+Symbols are given by ``MARKER``, their size by ``MARKERSIZE1``, plot labels by ``LABEL``.
+More than one sample can be plotted by adding ``_1``, ``_2``, ... to all of the above given keywords.
+
+Axies labels are given by ``XLABEL`` and ``YLABEL``.
+
+
+
+
 """
 
 __all__ = ['setools']
