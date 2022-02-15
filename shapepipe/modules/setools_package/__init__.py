@@ -32,7 +32,7 @@ SETOOLS_CONFIG_PATH : str
 Setools configuration file
 ==========================
 
-This file can contain an arbitrary number of section. Each section is initiated by a line
+This file can contain an arbitrary number of sections. Each section is initiated by a line
 ``[TYPE:name]``. The following mask types ``TYPE`` are valid:
     - ``MASK``: define a selection or mask
     - ``RAND_SPLIT``: split an input into random subsamples
@@ -83,6 +83,12 @@ This uses as input the ``star_selection`` sample. It creates two random
 subsamples: one with 20% and one with 80% (100 - RATIO) percent of input
 objects.
 
+Entries in the ``MASK`` and ``STATS`` sections, lines can contain basic relational operations, and functions.
+The operands can be
+  - input column names, or ``SExtractor`` keywords
+  - names defined by a previous mask.
+
+
 
 The following are illustration of two plots. First, another mask
 is defined:
@@ -130,7 +136,6 @@ Symbols are given by ``MARKER``, their size by ``MARKERSIZE1``, plot labels by `
 More than one sample can be plotted by adding ``_1``, ``_2``, ... to all of the above given keywords.
 
 Axies labels are given by ``XLABEL`` and ``YLABEL``.
-
 
 
 
