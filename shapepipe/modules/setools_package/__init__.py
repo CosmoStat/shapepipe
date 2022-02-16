@@ -79,15 +79,17 @@ An example of the definition of random subsamples is as follows:
 RATIO = 20
 MASK = star_selection
 
-This uses as input the ``star_selection`` sample. It creates two random
-subsamples: one with 20% and one with 80% (100 - RATIO) percent of input
-objects.
+This uses as input the ``star_selection`` sample (given by the ``MASK`` entry).
+It creates two random subsamples: one with 20% and one with 80% (100 - RATIO)
+percent of input objects. The output file base names are given by the mask name and
+the ratios; in this case two files ``star_split_ratio_20-<num>.fits`` and 
+``star_split_ratio_80-<num>.fits`` are created, where ``<num>`` is the pipeline
+number of the (single-exposure single-HDU) image that is processed.
 
 Entries in the ``MASK`` and ``STATS`` sections, lines can contain basic relational operations, and functions.
 The operands can be
   - input column names, or ``SExtractor`` keywords
   - names defined by a previous mask.
-
 
 
 The following are illustration of two plots. First, another mask
@@ -131,13 +133,49 @@ TITLE = "Magnitude of stars"
 
 
 Possible values for ``TYPE`` are ``plot``, ``histogram``, ``scatter``.
-For a single sample, the values to plot on the x- and y-axis are given by the keywords ``X`` and ``Y``, respectively.
-Symbols are given by ``MARKER``, their size by ``MARKERSIZE1``, plot labels by ``LABEL``.
 More than one sample can be plotted by adding ``_1``, ``_2``, ... to all of the above given keywords.
 
-Axies labels are given by ``XLABEL`` and ``YLABEL``.
+Keywords for all plot types:
+Y : str
+    functions of samples to plot on y-axis
+XLABEL, YLABEL : str, optional, default=None
+    labels for x- and y-axes, respectively
+LABEL : str, optional, default=no label
+    plot label
+TITLE : str, optional, default=''
+    plot title
+ALPHA : float, default=None
+    alpha (transparency) parameter
+COLOR : str, optional, default=None (standard matplotlib color sequence)
+    plot color
+FORMAT : str, optional, default='png'
+    output file format
 
+Keywords for standard and scatter plots (``TYPE`` in ``plot``, ``scatter``)
+X : str
+    functions of samples to plot on x-axis
+MARKER : str, optional, default='+'
+    point marker symbol
 
+Additional keywords for standard line/points plot (``TYPE = plot``)
+MARKERSIZE : float, optional, default=1
+    marker size
+LINE : str, optional, default='' (no line is drawn)
+    line type
+
+Additional keywords for histograms (``TYPE = hist``):
+BIN : int, optional, default=50
+    number of bins
+HTYPE : str, optional, default='bar'
+    histogram type
+LOG : bool
+
+Additional keywords for scatter plots (``TYPE = scatter``):
+MARKER : str
+    point marker
+SCATTER : str, optional, default=None
+    function of some input sample acting as third variable
+    that is color-coded in the point colors.
 
 """
 
