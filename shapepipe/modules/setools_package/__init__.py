@@ -82,7 +82,7 @@ MASK = star_selection
 This uses as input the ``star_selection`` sample (given by the ``MASK`` entry).
 It creates two random subsamples: one with 20% and one with 80% (100 - RATIO)
 percent of input objects. The output file base names are given by the mask name and
-the ratios; in this case two files ``star_split_ratio_20-<num>.fits`` and 
+the ratios; in this case two files ``star_split_ratio_20-<num>.fits`` and
 ``star_split_ratio_80-<num>.fits`` are created, where ``<num>`` is the pipeline
 number of the (single-exposure single-HDU) image that is processed.
 
