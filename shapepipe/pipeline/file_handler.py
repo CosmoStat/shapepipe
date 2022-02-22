@@ -33,10 +33,12 @@ class FileHandler(object):
         List of modules to be run
     config : CustomParser
         Configuaration parser instance
+    verbose : bool, optional
+        Verbose setting, default is True
 
     """
 
-    def __init__(self, run_name, modules, config):
+    def __init__(self, run_name, modules, config, verbose=True):
 
         self._run_name = run_name
 
@@ -45,6 +47,8 @@ class FileHandler(object):
             raise ValueError('Invalid module list, check for a trailing comma')
 
         self._config = config
+        self._verbose = verbose
+
         self.module_runners = get_module_runners(self._module_list)
         self._input_list = config.getlist('FILE', 'INPUT_DIR')
         self._output_dir = config.getexpanded('FILE', 'OUTPUT_DIR')
@@ -763,6 +767,17 @@ class FileHandler(object):
         )
         self._module_dict[module][run_name]['dir_set_by'] = dir_set_by
 
+        # Log the input directories and how they were set
+        module_input_dir = f' -- Input directories: {input_dir}'
+        module_dir_set_by = f' -- Inputs set by: {dir_set_by}'
+
+        self.log.info(module_input_dir)
+        self.log.info(module_dir_set_by)
+
+        if self._verbose:
+            print(module_input_dir)
+            print(module_dir_set_by)
+
     @staticmethod
     def _generate_re_pattern(match_pattern):
         """Generate Regular Expression Pattern.
@@ -914,7 +929,7 @@ class FileHandler(object):
         # Correct the extension if necessary
         new_ext = '.' + ext if not ext.startswith('.') else ext
 
-        if new_ext != ext:
+        if self._verbose and new_ext != ext:
             print(f'Updating file extension from "{ext}" to "{new_ext}".')
             print()
 
@@ -1226,6 +1241,17 @@ class FileHandler(object):
             run_name = f'{module}_run_{call_num}'
         else:
             run_name = module
+
+        # Log run count
+        module_prop_text = ' - Module properties'
+        module_run_num = f' -- Run: {self._module_dict[module]["run_count"]}'
+
+        self.log.info(module_prop_text)
+        self.log.info(module_run_num)
+
+        if self._verbose:
+            print(module_prop_text)
+            print(module_run_num)
 
         self._module_dict[module]['latest'] = run_name
         self._module_dict[module][run_name] = {}

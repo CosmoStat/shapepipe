@@ -80,11 +80,11 @@ class JobHandler(object):
         # Set up module in file handler
         self.filehd.set_up_module(self._module)
 
-        # Set the total number of jobs
+        # Set the total number of processes
         self._n_procs = len(self.filehd.process_list)
 
-        # Add the module parameters to the log
-        self._log_module_parameters()
+        # Add the number of processes to the log
+        self._log_num_processes()
 
     @property
     def config(self):
@@ -362,40 +362,18 @@ class JobHandler(object):
                 print(batch_info)
             print(time_info)
 
-    def _log_module_parameters(self):
-        """Log Module Parameters.
+    def _log_num_processes(self):
+        """Log Number of Processes.
 
-        This method logs the module parameters.
+        This method logs the number of processes detected for a given module.
 
         """
-        module_run_num = (
-            self.filehd.get_module_run_prop(self._module, 'run_count')
-        )
-        module_input_dir = (
-            self.filehd.get_module_run_prop(self._module, 'input_dir')
-        )
-        module_dir_set_by = (
-            self.filehd.get_module_run_prop(self._module, 'dir_set_by')
-        )
-
-        module_prop_text = ' - Module properties'
-        module_run_num = f' -- Run: {module_run_num}'
         proc_info = f' -- Total number of processes: {self._n_procs}'
-        module_input_dir = f' -- Input directories: {module_input_dir}'
-        module_dir_set_by = f' -- Inputs set by: {module_dir_set_by}'
 
-        self.log.info(module_prop_text)
-        self.log.info(module_run_num)
         self.log.info(proc_info)
-        self.log.info(module_input_dir)
-        self.log.info(module_dir_set_by)
 
         if self._verbose:
-            print(module_prop_text)
-            print(module_run_num)
             print(proc_info)
-            print(module_input_dir)
-            print(module_dir_set_by)
 
     def _distribute_smp_jobs(self):
         """Distribute SMP Jobs.

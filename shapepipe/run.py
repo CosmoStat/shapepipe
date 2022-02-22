@@ -51,8 +51,13 @@ class ShapePipe():
         self._set_run_name()
         self.modules = self.config.getlist('EXECUTION', 'MODULE')
         self.mode = self.config.get('EXECUTION', 'MODE').lower()
-        self.filehd = FileHandler(self._run_name, self.modules, self.config)
         self.verbose = self.config.getboolean('DEFAULT', 'VERBOSE')
+        self.filehd = FileHandler(
+            self._run_name,
+            self.modules,
+            self.config,
+            self.verbose,
+        )
         self.error_count = 0
         self._prep_run()
 
@@ -85,6 +90,10 @@ class ShapePipe():
             print(shapepipe_logo(colour=True))
             print(start_text)
             print('')
+
+        # Temporary fix to give file handler access to the log. This should
+        # be improved at some point.
+        self.filehd.log = self.log
 
     def close_pipeline_log(self):
         """Close Pipeline Log.
