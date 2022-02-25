@@ -692,7 +692,8 @@ class FileHandler(object):
             'run': self.run_dir,
             'log': self._log_dir,
             'tmp': self._tmp_dir,
-            'output': self.output_dir
+            'output': self.output_dir,
+            'run_log': self._run_log_file
         }
 
     def _set_module_input_dir(self, module, run_name):
