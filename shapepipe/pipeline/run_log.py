@@ -91,12 +91,12 @@ def get_list(run_log_file):
     Parameters
     ----------
     run_log_file : str
-        run log file name
+        Run log file name
 
     Returns
     -------
     list of str :
-        run log file entries
+        Run log file entries
 
     """
     with open(run_log_file, 'r') as run_log:
