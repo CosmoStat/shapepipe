@@ -9,92 +9,14 @@ This module defines a class for handling pipeline files.
 import os
 import re
 from functools import partial, reduce
-from glob import glob
 from shutil import copyfile
 
 import numpy as np
 
 from shapepipe.modules.module_runners import get_module_runners
 from shapepipe.pipeline.run_log import RunLog, get_list, get_all, get_last
-from shapepipe.pipeline.shared import split_module_run
+from shapepipe.pipeline import shared
 from shapepipe.utilities.file_system import mkdir
-
-
-def find_files(path, pattern='*', ext='*'):
-    """Find Files.
-
-    This method recursively retrieves file names from a given path that
-    match a given pattern and/or have a given extension.
-
-    Parameters
-    ----------
-    path : str
-        Full path to files
-    pattern : str, optional
-        File pattern, default is '*'
-    ext : str, optional
-        File extension, default is '*'
-
-    Returns
-    -------
-    list
-        List of file names
-
-    Raises
-    ------
-    ValueError
-        For '*' in pattern
-    ValueError
-        For '*' in extension
-    ValueError
-        For invalid extension format
-
-    """
-    dot = '.'
-    star = '*'
-
-    if pattern != star and star in pattern:
-        raise ValueError('Do not include "*" in pattern.')
-
-    if ext != star and star in ext:
-        raise ValueError('Do not include "*" in extension.')
-
-    if (not ext.startswith(dot) and dot in ext) or (ext.count(dot) > 1):
-        raise ValueError(f'Invalid extension format: "{ext}".')
-
-    if ext != star and not ext.startswith(dot):
-        ext = dot + ext
-
-    search_string = f'{path}/**/*{pattern}*{ext}'
-
-    return glob(search_string, recursive=True)
-
-
-def check_duplicate(input_list):
-    """Check Duplicate.
-
-    Check whether input list contains at least one duplicate.
-
-    Parameters
-    ----------
-    input_list : list
-        input list
-
-    Returns
-    -------
-    str
-        Duplicate element, empty string if none found
-
-    """
-    input_set = set()
-
-    for elem in input_list:
-        if elem in input_set:
-            return elem
-        else:
-            input_set.add(elem)
-
-    return ''
 
 
 class FileHandler(object):
@@ -110,10 +32,12 @@ class FileHandler(object):
         List of modules to be run
     config : CustomParser
         Configuaration parser instance
+    verbose : bool, optional
+        Verbose setting, default is True
 
     """
 
-    def __init__(self, run_name, modules, config):
+    def __init__(self, run_name, modules, config, verbose=True):
 
         self._run_name = run_name
 
@@ -122,6 +46,8 @@ class FileHandler(object):
             raise ValueError('Invalid module list, check for a trailing comma')
 
         self._config = config
+        self._verbose = verbose
+
         self.module_runners = get_module_runners(self._module_list)
         self._input_list = config.getlist('FILE', 'INPUT_DIR')
         self._output_dir = config.getexpanded('FILE', 'OUTPUT_DIR')
@@ -498,6 +424,44 @@ class FileHandler(object):
         """
         return str(self._module_dict[module]['run_count'])
 
+    def get_module_run_prop(self, module, property):
+        """Get Module Run Property.
+
+        Return the requested property for a given module run.
+
+        Parameters
+        ----------
+        module : str
+            Module name
+        property : str
+            Module run property name
+
+        Returns
+        -------
+        any
+            Module run property value
+
+        Raises
+        ------
+        ValueError
+            For invalid module dictionary key
+
+        """
+        run_name = self._module_dict[module]['latest']
+
+        if property == 'run_name':
+            value = run_name
+        elif property in self._module_dict[module].keys():
+            value = self._module_dict[module][property]
+        elif property in self._module_dict[module][run_name].keys():
+            value = self._module_dict[module][run_name][property]
+        else:
+            raise ValueError(
+                f'Property {property} not found for module {module}.'
+            )
+
+        return value
+
     def get_module_config_sec(self, module):
         """Get Module Configuration Section.
 
@@ -720,6 +684,7 @@ class FileHandler(object):
         """
         # Create a default empty list of input directories
         input_dir = []
+        dir_set_by = None
 
         # Check if the module has no input modules or is the first module to
         # run in the pipeline
@@ -732,6 +697,7 @@ class FileHandler(object):
         ):
             # If so, use the input directory/ies set in the [FILE] section
             input_dir = self._input_dir
+            dir_set_by = '[FILE]'
 
         # Check if input directory/ies has/have been set in the module config
         # section
@@ -741,6 +707,7 @@ class FileHandler(object):
             input_dir = self._check_input_dir_list(
                 self._config.getlist(run_name.upper(), 'INPUT_DIR')
             )
+            dir_set_by = f'[{run_name.upper()}]'
 
         # Check if input directory/ies has/have has not been set and if input
         # modules have been defined for the current module
@@ -751,13 +718,16 @@ class FileHandler(object):
                 list
             )
         ):
+            dir_set_by = f'{module}.py'
             # If so, loop through all the input modules defined for the current
             # module
             for input_module in (
                 self._module_dict[module][run_name]['input_module']
             ):
                 # Get the input module name and run
-                input_module, in_mod_run = split_module_run(input_module)
+                input_module, in_mod_run = (
+                    shared.split_module_run(input_module)
+                )
                 # Check if the input module was part of the current pipeline
                 if input_module in self._module_dict:
                     # If so, check if the input module was a single run
@@ -781,6 +751,8 @@ class FileHandler(object):
         if self.get_add_module_property(run_name, 'input_dir'):
             # If so add this/these to the input directory/ies
             input_dir += self.get_add_module_property(run_name, 'input_dir')
+            if not dir_set_by == f'[{module}]':
+                dir_set_by = f'{dir_set_by} and [{run_name.upper()}]'
 
         # Check if no input directory has been set
         if not input_dir:
@@ -795,6 +767,18 @@ class FileHandler(object):
         self._module_dict[module][run_name]['input_dir'] = (
             self.check_dirs(input_dir)
         )
+        self._module_dict[module][run_name]['dir_set_by'] = dir_set_by
+
+        # Log the input directories and how they were set
+        module_input_dir = f' -- Input directories: {input_dir}'
+        module_dir_set_by = f' -- Inputs set by: {dir_set_by}'
+
+        self.log.info(module_input_dir)
+        self.log.info(module_dir_set_by)
+
+        if self._verbose:
+            print(module_input_dir)
+            print(module_dir_set_by)
 
     @staticmethod
     def _generate_re_pattern(match_pattern):
@@ -930,7 +914,7 @@ class FileHandler(object):
 
         for path in dir_list:
 
-            file_list = find_files(path, pattern, ext)
+            file_list = shared.find_files(path, pattern, ext)
 
             if file_list:
                 true_file_list = file_list
@@ -947,7 +931,7 @@ class FileHandler(object):
         # Correct the extension if necessary
         new_ext = '.' + ext if not ext.startswith('.') else ext
 
-        if new_ext != ext:
+        if self._verbose and new_ext != ext:
             print(f'Updating file extension from "{ext}" to "{new_ext}".')
             print()
 
@@ -991,7 +975,7 @@ class FileHandler(object):
                 + f'"{ext}" in the directories {dir_list}.'
             )
 
-        elem = check_duplicate(final_file_list)
+        elem = shared.check_duplicate(final_file_list)
         if elem != '':
             raise RuntimeError(
                 'Input file list contains at least one duplicate element, '
@@ -1259,6 +1243,17 @@ class FileHandler(object):
             run_name = f'{module}_run_{call_num}'
         else:
             run_name = module
+
+        # Log run count
+        module_prop_text = ' - Module properties'
+        module_run_num = f' -- Run: {self._module_dict[module]["run_count"]}'
+
+        self.log.info(module_prop_text)
+        self.log.info(module_run_num)
+
+        if self._verbose:
+            print(module_prop_text)
+            print(module_run_num)
 
         self._module_dict[module]['latest'] = run_name
         self._module_dict[module][run_name] = {}

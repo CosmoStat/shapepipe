@@ -1,3 +1,4 @@
+isort
 numpydoc
 pytest
 pytest-cov
