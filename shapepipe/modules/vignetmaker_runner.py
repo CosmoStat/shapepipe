@@ -9,7 +9,7 @@ Module runner for ``vignetmaker``.
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.vignetmaker_package import vignetmaker as vm
 
-from shapepipe.pipeline.file_handler import get_last_dir
+from shapepipe.pipeline.run_log import get_last_dir
 
 
 @module_runner(
@@ -93,7 +93,7 @@ def vignetmaker_runner(
             modules = config.getlist(module_config_sec, 'ME_IMAGE_DIR')
             image_dir = []
             for module in modules:
-                last_dir = get_last_dir(config, module)
+                last_dir = get_last_dir(run_dirs['run_log'], module)
                 image_dir.append(last_dir)
             image_pattern = config.getlist(
                 module_config_sec,
