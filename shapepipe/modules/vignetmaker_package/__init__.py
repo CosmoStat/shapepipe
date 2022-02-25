@@ -32,13 +32,14 @@ POSITION_PARAMS : list
     list of position parameter value names in the SExtractor output catalogue
 MODE : str
     run mode for module, options are ``CLASSIC`` or ``MULTI-EPOCH``
-SUFFIX : str or list
-    output file name suffix(es)
+PREFIX : str or list
+    output file name prefix(es)
 ME_IMAGE_DIR : list
-    input directories for single-exposure flags, images, weights, and SExtractor background
-    images, for multi-epoch processing
+    input directories for single-exposure flags, images, weights, and
+    SExtractor background images, for multi-epoch processing
 ME_IMAGE_PATTERN : list
-    input file name patterns for flag, image, weight, and SExtractor background files, for multi-epoch processing
+    input file name patterns for flag, image, weight, and SExtractor background
+    files, for multi-epoch processing
 ME_LOG_WCS : str
     path to world coordinate system log file (``*sqlite``)
 

@@ -41,7 +41,7 @@ def vignetmaker_runner(
             vignet=vignet,
             sexcat_path=galcat_path,
             output_dir=run_dirs['output'],
-            suffix='cat',
+            prefix='cat',
             image_num=file_number_string,
         )
 
@@ -73,18 +73,18 @@ def vignetmaker_runner(
 
         # Run in CLASSIC mode
         if mode == 'CLASSIC':
-            # Fetch suffix
-            suffix = config.getlist(module_config_sec, 'SUFFIX')
-            # Check suffix
-            if len(suffix) != len(input_file_list[1:]):
+            # Fetch prefix
+            prefix = config.getlist(module_config_sec, 'PREFIX')
+            # Check prefix
+            if len(prefix) != len(input_file_list[1:]):
                 raise ValueError(
-                    f'The number of suffixes ({len(suffix)}) has to be '
+                    f'The number of prefixes ({len(prefix)}) has to be '
                     + 'equal to the number of input file types '
                     + f'({len(input_file_list[1:])}).'
                 )
 
             # Process inputs
-            vm_inst.process(input_file_list[1:], radius, suffix)
+            vm_inst.process(input_file_list[1:], radius, prefix)
 
         # Run in MULTI-EPOCH mode
         elif mode == 'MULTI-EPOCH':

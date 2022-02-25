@@ -53,7 +53,7 @@ class VignetMaker(object):
         self._pos = self.get_pos(pos_params)
         self._pos_type = pos_type
 
-    def process(self, image_path_list, rad, suffix):
+    def process(self, image_path_list, rad, prefix):
         """Process.
 
         Main function to create the stamps.
@@ -64,11 +64,11 @@ class VignetMaker(object):
             List of path for the input images.
         rad : int
             Radius to use for the stamps.
-        suffix : str
-            Suffix of the output file.
+        prefix : str
+            prefix of the output file.
 
         """
-        for _suffix, img in zip(suffix, image_path_list):
+        for _prefix, img in zip(prefix, image_path_list):
             image_path = img
 
             if self._pos_type == 'PIX':
@@ -87,7 +87,7 @@ class VignetMaker(object):
                 vign,
                 self._galcat_path,
                 self._output_dir,
-                _suffix,
+                _prefix,
                 self._image_num,
             )
 
@@ -332,7 +332,7 @@ class VignetMaker(object):
 
         self._f_wcs_file.close()
 
-    def _save_vignet_me(self, output_dict, suffix):
+    def _save_vignet_me(self, output_dict, prefix):
         """Save vignet Multi-Epoch.
 
         Save vignets for the multi-epoch case.
@@ -341,11 +341,11 @@ class VignetMaker(object):
         ----------
         output_dict : dict
             Dictionary containing object id and vignets for each epoch.
-        suffix : str
-            Suffix to use for the output file name.
+        prefix : str
+            prefix to use for the output file name.
 
         """
-        output_name = f'{self._output_dir}/{suffix}_vignet{self._image_num}'
+        output_name = f'{self._output_dir}/{prefix}_vignet{self._image_num}'
         output_file = SqliteDict(output_name + '.sqlite')
 
         for _index in output_dict.keys():
@@ -406,7 +406,7 @@ def make_mask(galcat_path, mask_value):
     return vignet
 
 
-def save_vignet(vignet, sexcat_path, output_dir, suffix, image_num):
+def save_vignet(vignet, sexcat_path, output_dir, prefix, image_num):
     """Save Vignet.
 
     Save the vignet to a SExtractor format catalogue.
@@ -419,13 +419,13 @@ def save_vignet(vignet, sexcat_path, output_dir, suffix, image_num):
         Path to the original SExtractor catalog
     output_dir : str
         Path to the output directory
-    suffix : str
-        Suffix to use for the output file name.
+    prefix : str
+        prefix to use for the output file name.
     image_num : str
         Image numbering.
 
     """
-    output_name = f'{output_dir}/{suffix}_vignet{image_num}.fits'
+    output_name = f'{output_dir}/{prefix}_vignet{image_num}.fits'
 
     file = file_io.FITSCatalogue(
         output_name,
