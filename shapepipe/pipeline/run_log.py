@@ -44,47 +44,6 @@ class RunLog(object):
         with open(self.run_log_file, 'a') as run_log:
             run_log.write(f'{self.current_run} {self._module_list}\n')
 
-    def _get_list(self):
-        """Get List.
-
-        Get a list of all runs in the run log.
-
-        """
-        with open(self.run_log_file, 'r') as run_log:
-            lines = run_log.readlines()
-
-        self._runs = [line.rstrip() for line in lines]
-
-    def get_all(self, module):
-        """Get All.
-
-        Get all previous pipeline runs of a given model.
-
-        Parameters
-        ----------
-        module : str
-            Module name
-
-        Returns
-        -------
-        all_runs: list of str
-            All run paths for a given module
-
-        """
-        module, _ = split_module_run(module)
-
-        all_runs = [
-            run for run in self._runs
-            if module in run.split()[1].split(',')
-        ]
-        if len(all_runs) == 0:
-            raise RuntimeError(
-                f'No previous run of module \'{module}\' found'
-            )
-
-        all_runs = all_runs[::-1]
-
-        return all_runs
 
     def get_last(self, module):
         """Get Last.
@@ -144,3 +103,97 @@ class RunLog(object):
             )
 
         return runs[0].split(' ')[0]
+
+
+def get_list(run_log_file):
+    """Get List.
+
+    Get a list of all runs in the run log.
+
+    Parameters
+    ----------
+    run_log_file : str
+        run log file name
+
+    Returns
+    -------
+    list of str :
+        run log file entries 
+
+     """
+    with open(run_log_file, 'r') as run_log:
+        lines = run_log.readlines()
+
+    runs = [line.rstrip() for line in lines]
+
+    return runs
+
+
+def get_all(runs, module):
+    """Get All.
+
+    Get all previous pipeline runs of a given model.
+
+    Parameters
+    ----------
+    runs : list of str
+        Log file entries consisting of directory and module(s)
+    module : str
+        Module name
+
+    Raises
+    ------
+    RuntimeError
+        If no previous runs are found
+
+    Returns
+    -------
+    all_runs: list of str
+        All run paths for a given module
+
+    """
+    module_base, _ = split_module_run(module)
+
+    all_runs = [
+        run for run in runs
+        if module_base in run.split()[1].split(',')
+    ]
+    if len(all_runs) == 0:
+        raise RuntimeError(
+            f'No previous run of module \'{module_base}\' found'
+        )
+
+    all_runs = all_runs[::-1]
+
+    return all_runs
+
+
+def get_last_dir(config, module):
+    """Get Last Dir
+
+    Return directory path corresponding to last run of given module
+
+    Parameters
+    ----------
+    config : CustomParser
+        Configuaration parser instance
+    module : str
+        Module name
+
+    Returns
+    -------
+    str
+        Directory name of last module run
+
+    """
+    run_log_file = FileHandler.setpath(
+        config.getexpanded('FILE', 'OUTPUT_DIR'),
+        config.get('FILE', 'RUN_LOG_NAME'),
+        '.txt',
+    )
+    runs = get_list(run_log_file)
+    all_runs = get_all(runs, module)
+    last_run = all_runs[0].split(' ')[0]
+    last_dir = f'{last_run}/{module}/output'
+
+    return last_dir
