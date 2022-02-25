@@ -314,21 +314,21 @@ class VignetMaker(object):
         self._f_wcs_file = SqliteDict(f_wcs_path)
         self._rad = rad
 
-        for i in range(len(image_pattern)):
+        for idx in range(len(image_pattern)):
 
             if len(image_dir) != len(image_pattern):
                 output_dict = self._get_stamp_me(
                     image_dir[0],
-                    image_pattern[i],
+                    image_pattern[idx],
                 )
 
             else:
                 output_dict = self._get_stamp_me(
-                    image_dir[i],
-                    image_pattern[i],
+                    image_dir[idx],
+                    image_pattern[idx],
                 )
 
-            self._save_vignet_me(output_dict, image_pattern[i])
+            self._save_vignet_me(output_dict, image_pattern[idx])
 
         self._f_wcs_file.close()
 
