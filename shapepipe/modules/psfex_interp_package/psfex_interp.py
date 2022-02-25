@@ -526,7 +526,6 @@ class PSFExInterpolator(object):
             Path to the log file containing the WCS for each CCDs.
 
         """
-
         if os.path.exists(dot_psf_dir):
             self._dot_psf_dir = dot_psf_dir
         else:

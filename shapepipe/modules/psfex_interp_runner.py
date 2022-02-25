@@ -12,7 +12,6 @@ from shapepipe.modules.psfex_interp_package import psfex_interp
 from shapepipe.pipeline.run_log import get_last_dir
 
 
-
 @module_runner(
     version='1.1',
     input_module=['psfex_runner', 'setools_runner'],

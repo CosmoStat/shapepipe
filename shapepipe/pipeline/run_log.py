@@ -33,7 +33,7 @@ class RunLog(object):
         self._module_list = ','.join(module_list)
         self.current_run = current_run
         self._write()
-        self._get_list()
+        get_list(run_log_file)
 
     def _write(self):
         """Write.
@@ -43,28 +43,6 @@ class RunLog(object):
         """
         with open(self.run_log_file, 'a') as run_log:
             run_log.write(f'{self.current_run} {self._module_list}\n')
-
-
-    def get_last(self, module):
-        """Get Last.
-
-        Get the last run of the pipeline for a given module.
-
-        Parameters
-        ----------
-        module : str
-            Module name
-
-        Returns
-        -------
-        str
-            The last run for a given module
-
-        """
-        all_runs = self.get_all(module)
-        last_run = all_runs[0]
-
-        return last_run.split(' ')[0]
 
     def get_run(self, search_string):
         """Get Run.
@@ -118,9 +96,9 @@ def get_list(run_log_file):
     Returns
     -------
     list of str :
-        run log file entries 
+        run log file entries
 
-     """
+    """
     with open(run_log_file, 'r') as run_log:
         lines = run_log.readlines()
 
@@ -168,15 +146,39 @@ def get_all(runs, module):
     return all_runs
 
 
-def get_last_dir(run_log_file, module):
-    """Get Last Dir
+def get_last(runs, module):
+    """Get Last.
 
-    Return directory path corresponding to last run of given module
+    Get the last run of the pipeline for a given module.
+
+    Parameters
+    ----------
+    runs : list of str
+        Log file entries consisting of directory and module(s)
+    module : str
+        Module name
+
+    Returns
+    -------
+    str
+        The last run for a given module
+
+    """
+    all_runs = get_all(runs, module)
+    last_run = all_runs[0]
+
+    return last_run.split(' ')[0]
+
+
+def get_last_dir(run_log_file, module):
+    """Get Last Dir.
+
+    Return directory path corresponding to last run of given module.
 
     Parameters
     ----------
     run_log_file : str
-        run log file name
+        Run log file name
     module : str
         Module name
 
