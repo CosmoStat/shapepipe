@@ -15,7 +15,7 @@ from shutil import copyfile
 import numpy as np
 
 from shapepipe.modules.module_runners import get_module_runners
-from shapepipe.pipeline.run_log import RunLog
+from shapepipe.pipeline.run_log import RunLog, get_list, get_all, get_last
 from shapepipe.pipeline.shared import split_module_run
 from shapepipe.utilities.file_system import mkdir
 
