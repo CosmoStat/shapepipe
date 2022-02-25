@@ -133,6 +133,11 @@ class ShapePipe():
 
         List the Python packages and executables needed to run the modules.
 
+        Parameters
+        ----------
+        property : str
+            Module property to be checked
+
         Returns
         -------
         tuple
