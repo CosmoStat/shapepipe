@@ -14,9 +14,8 @@ from shutil import copyfile
 import numpy as np
 
 from shapepipe.modules.module_runners import get_module_runners
-from shapepipe.pipeline.run_log import RunLog
+from shapepipe.pipeline.run_log import RunLog, get_list, get_all, get_last
 from shapepipe.pipeline import shared
-from shapepipe.pipeline.shared import find_files, split_module_run
 from shapepipe.utilities.file_system import mkdir
 
 
@@ -321,7 +320,8 @@ class FileHandler(object):
 
             elif 'last' in dir.lower():
                 module_run, module, _ = self._get_module_run_name(dir)
-                last_module = self._run_log.get_last(module)
+                runs = get_list(self._run_log_file)
+                last_module = get_last(runs, module)
                 input_dir.append(
                     self.setpath(
                         self.setpath(last_module, module_run),
@@ -331,7 +331,8 @@ class FileHandler(object):
 
             elif 'all' in dir.lower():
                 module_run, module, _ = self._get_module_run_name(dir)
-                all_runs = self._run_log.get_all(module)
+                runs = get_list(self._run_log_file)
+                all_runs = get_all(runs, module)
                 input_dir.extend([
                     self.setpath(
                         self.setpath(run.split(' ')[0], module_run),
@@ -657,7 +658,8 @@ class FileHandler(object):
             'run': self.run_dir,
             'log': self._log_dir,
             'tmp': self._tmp_dir,
-            'output': self.output_dir
+            'output': self.output_dir,
+            'run_log': self._run_log_file
         }
 
     def _set_module_input_dir(self, module, run_name):

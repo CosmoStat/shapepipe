@@ -5,7 +5,6 @@
 #	       results processed on canfar
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 # Date: 05/2020
-# Package: shapepipe
 
 # Command line arguments
 
@@ -75,6 +74,7 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
+
 
 ## Functions
 function link_s () {
