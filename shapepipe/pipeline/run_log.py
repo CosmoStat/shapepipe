@@ -95,7 +95,7 @@ def get_list(run_log_file):
 
     Returns
     -------
-    list of str :
+    list :
         Run log file entries
 
     """
@@ -114,7 +114,7 @@ def get_all(runs, module):
 
     Parameters
     ----------
-    runs : list of str
+    runs : list
         Log file entries consisting of directory and module(s)
     module : str
         Module name
@@ -126,7 +126,7 @@ def get_all(runs, module):
 
     Returns
     -------
-    all_runs: list of str
+    all_runs: list
         All run paths for a given module
 
     """
@@ -153,7 +153,7 @@ def get_last(runs, module):
 
     Parameters
     ----------
-    runs : list of str
+    runs : list
         Log file entries consisting of directory and module(s)
     module : str
         Module name
