@@ -266,12 +266,10 @@ def output(status):
     print('## Summary')
     print('# Nb: status (code)') 
     for s in hist:
-        #print('{:2d}, {}: {}'.format(int(s[0]), s[1], hist[s]))
         print('{:6d}: {} ({})'.format(hist[s], s[1], int(s[0])), end='')
         if len(s) == 4:
             print('; {} ({})'.format(s[3], int(s[2])), end='')
         print()
-        #print(hist[s], s)
 
 
 def output_failed(output_fail, status):
@@ -291,7 +289,6 @@ def main(argv=None):
 
     # Command line options
     options, args = parse_options(p_def)
-    # Without option parsing, this would be: args = argv[1:]
 
     if check_options(options) is False:
         return 1
@@ -321,4 +318,3 @@ def main(argv=None):
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
-

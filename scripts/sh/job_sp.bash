@@ -10,7 +10,6 @@
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 # Date: v1.0 11/2020
 #       v1.1 01/2021
-# Package: shapepipe
 
 
 # VM home, required for canfar run.
