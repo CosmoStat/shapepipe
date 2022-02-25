@@ -168,15 +168,15 @@ def get_all(runs, module):
     return all_runs
 
 
-def get_last_dir(config, module):
+def get_last_dir(run_log_file, module):
     """Get Last Dir
 
     Return directory path corresponding to last run of given module
 
     Parameters
     ----------
-    config : CustomParser
-        Configuaration parser instance
+    run_log_file : str
+        run log file name
     module : str
         Module name
 
@@ -186,11 +186,6 @@ def get_last_dir(config, module):
         Directory name of last module run
 
     """
-    run_log_file = FileHandler.setpath(
-        config.getexpanded('FILE', 'OUTPUT_DIR'),
-        config.get('FILE', 'RUN_LOG_NAME'),
-        '.txt',
-    )
     runs = get_list(run_log_file)
     all_runs = get_all(runs, module)
     last_run = all_runs[0].split(' ')[0]
