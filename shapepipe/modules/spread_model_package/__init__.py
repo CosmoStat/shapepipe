@@ -4,17 +4,29 @@ This package contains the module for ``spread_model``.
 
 :Author: Axel Guinot
 
-:Parent module:
+:Parent module: ``sextractor_runner``, ``psfex_interp_runner``
+    and ``vignetmaker_runner``
 
-:Input:
+:Input: SExtractor output catalogue, PSFEx output catalogue and vignet files
 
-:Output:
+:Output: Updated SExtractor or new FITS file
 
 Description
 ===========
 
+This module refines the galaxy sample that will be used for shape measurement
+using the spread model method of :cite:`desai:12` and :cite:`mohr:12`.
+
 Module-specific config file entries
 ===================================
+
+PREFIX : str, optional
+    ouput file prefix
+PIXEL_SCALE : float
+    pixel scale in arcseconds
+OUTPUT_MODE : str
+    output mode, options are ``add`` to add the outputs to the input
+    SExtractor catalogue or ``new`` to generte a new output catalogue
 
 """
 
