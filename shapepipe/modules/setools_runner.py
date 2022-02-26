@@ -11,8 +11,8 @@ from shapepipe.modules.setools_package.setools import SETools
 
 
 @module_runner(
+    input_module='sextractor_runner',
     version='1.1',
-    input_module='sextractor_runner_exp',
     file_pattern=['sexcat'],
     file_ext=['.fits'],
     depends=['numpy', 'matplotlib'],

@@ -276,7 +276,7 @@ class GetImages(object):
         for in_per_type, out_per_type in zip(all_inputs, all_outputs):
             for idx in range(len(in_per_type)):
                 if self._check_existing_dir:
-                    out_base = os.path.basename(in_per_type[idx])
+                    out_base = os.path.basename(out_per_type[idx])
                     path = glob.glob(
                         f'{self._check_existing_dir}/**/{out_base}',
                         recursive=True,

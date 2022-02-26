@@ -8,6 +8,8 @@ This file is the pipeline runner for the MCCD_interpolation package.
 
 import os
 
+from shapepipe.pipeline.run_log import get_last_dir
+
 from shapepipe.modules.mccd_package import \
     mccd_interpolation_script as mccd_interp
 from shapepipe.modules.mccd_package import shapepipe_auxiliary_mccd as aux_mccd
@@ -38,10 +40,11 @@ def mccd_interp_runner(
     output_dir = run_dirs['output']
 
     if mode == 'CLASSIC':
-        psf_model_dir = config.getexpanded(
+        module = config.getexpanded(
             module_config_sec,
             'PSF_MODEL_DIR'
         )
+        psf_model_dir = get_last_dir(run_dirs['run_log'], module)
         psf_model_pattern = config.get(
             module_config_sec,
             'PSF_MODEL_PATTERN'
@@ -89,10 +92,11 @@ def mccd_interp_runner(
             )
 
     elif mode == 'MULTI-EPOCH':
-        psf_model_dir = config.getexpanded(
+        module = config.getexpanded(
             module_config_sec,
             'PSF_MODEL_DIR'
         )
+        psf_model_dir = get_last_dir(run_dirs['run_log'], module)
         psf_model_pattern = config.get(
             module_config_sec,
             'PSF_MODEL_PATTERN'

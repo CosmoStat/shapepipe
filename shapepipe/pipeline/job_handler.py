@@ -47,9 +47,19 @@ class JobHandler(object):
 
     """
 
-    def __init__(self, module, filehd, config, log, job_type='parallel',
-                 parallel_mode='smp', batch_size=None, backend=None,
-                 timeout=None, verbose=True):
+    def __init__(
+        self,
+        module,
+        filehd,
+        config,
+        log,
+        job_type='parallel',
+        parallel_mode='smp',
+        batch_size=None,
+        backend=None,
+        timeout=None,
+        verbose=True,
+    ):
 
         self.filehd = filehd
         self.log = log
@@ -64,13 +74,17 @@ class JobHandler(object):
         self.error_count = 0
         self._verbose = verbose
 
+        # Add the job parameters to the log
+        self._log_job_parameters()
+
         # Set up module in file handler
         self.filehd.set_up_module(self._module)
 
-        # Set the total number of jobs
+        # Set the total number of processes
         self._n_procs = len(self.filehd.process_list)
 
-        self._log_job_parameters()
+        # Add the number of processes to the log
+        self._log_num_processes()
 
     @property
     def config(self):
@@ -317,41 +331,49 @@ class JobHandler(object):
     def _log_job_parameters(self):
         """Log Job Parameters.
 
-        This method logs the class instance parameters.
+        This method logs the job handler instance parameters.
 
         """
-        module_run_num = self.filehd.get_module_current_run(self._module)
-
         text = 'Starting job handler with:'
         module_info = f' - Module: {self._module}'
-        module_run = f' -- Run: {module_run_num}'
-        cpu_info = f' - Number of available CPUs: {cpu_count()}'
-        proc_info = f' - Total number of processes: {self._n_procs}'
-        job_type = f' - Job Type: {self.job_type}'
-        batch_info = f' - Batch size: {self.batch_size}'
-        time_info = f' - Timeout Limit: {self.timeout}s'
+        job_prop_text = ' - Job Properties:'
+        job_type = f' -- Job Type: {self.job_type}'
+        batch_info = f' -- Batch size: {self.batch_size}'
+        time_info = f' -- Timeout Limit: {self.timeout}s'
+
+        show_batch_into = (
+            self.job_type == 'parallel' and self.parallel_mode == 'smp'
+        )
+
+        self.log.info(text)
+        self.log.info(module_info)
+        self.log.info(job_prop_text)
+        self.log.info(job_type)
+        if show_batch_into:
+            self.log.info(batch_info)
+        self.log.info(time_info)
 
         if self._verbose:
-            print('Starting job handler with:')
+            print(text)
             print(module_info)
-            print(module_run)
-            print(cpu_info)
-            print(proc_info)
+            print(job_prop_text)
             print(job_type)
-            if self.job_type == 'parallel' and self.parallel_mode == 'smp':
+            if show_batch_into:
                 print(batch_info)
             print(time_info)
 
-        # Log process properties
-        self.log.info(text)
-        self.log.info(module_info)
-        self.log.info(module_run)
-        self.log.info(cpu_info)
+    def _log_num_processes(self):
+        """Log Number of Processes.
+
+        This method logs the number of processes detected for a given module.
+
+        """
+        proc_info = f' -- Total number of processes: {self._n_procs}'
+
         self.log.info(proc_info)
-        self.log.info(job_type)
-        if self.job_type == 'parallel' and self.parallel_mode == 'smp':
-            self.log.info(batch_info)
-        self.log.info(time_info)
+
+        if self._verbose:
+            print(proc_info)
 
     def _distribute_smp_jobs(self):
         """Distribute SMP Jobs.
