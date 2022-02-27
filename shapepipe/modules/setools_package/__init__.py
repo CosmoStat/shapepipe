@@ -40,44 +40,44 @@ This file can contain an arbitrary number of sections. Each section is initiated
     - ``STATS``: output summary statistics
 ``name`` is the file name, in which the result of the section is saved.
 This is a FITS file for ``MASK``, .png file for ``PLOT``, and an ASCII file for ``STATS``.
-For ``TYPE = MASK`` and ``RAND_SPLIT, ``name`` is also the reference, by which the defined
+For ``TYPE = MASK`` and ``RAND_SPLIT``, ``name`` is also the reference, by which the defined
 sample can be addressed within the configuration file.
 
 The following is an example of a star selection using two ``MASK`` sections.
-First, a pre-selection is defined:
+First, a pre-selection is defined::
 
-[MASK:preselect]
-MAG_AUTO > 0
-MAG_AUTO < 21
-FWHM_IMAGE > 0.3 / 0.187
-FWHM_IMAGE < 1.5 / 0.187
-FLAGS == 0
-IMAFLAGS_ISO == 0
-NO_SAVE
+    [MASK:preselect]
+    MAG_AUTO > 0
+    MAG_AUTO < 21
+    FWHM_IMAGE > 0.3 / 0.187
+    FWHM_IMAGE < 1.5 / 0.187
+    FLAGS == 0
+    IMAFLAGS_ISO == 0
+    NO_SAVE
 
 This selects objects within a magnitude (``MAG_AUTO``) and size (``FWHM_IMAGE``) ranges.
 The size limits of 0.3" and 1.5" are transformed from arcseconds to pixels.
 Additional flag criteria for ``FLAGS`` AND ``IMAFLAGS_ISO`` are specified.
 The keyword ``NO_SAVE`` indicates that this selection is not to be saved to disk.
 
-Next, the final star selection is defined:
+Next, the final star selection is defined::
 
-[MASK:star_selection]
-MAG_AUTO > 18.
-MAG_AUTO < 22.
-FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
-FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2
-FLAGS == 0
-IMAFLAGS_ISO == 0
+    [MASK:star_selection]
+    MAG_AUTO > 18.
+    MAG_AUTO < 22.
+    FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
+    FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2
+    FLAGS == 0
+    IMAFLAGS_ISO == 0
 
 The size range is now refined using the mode of preselected objects. The preselection
 removes outliers before the mode computation.
 
-An example of the definition of random subsamples is as follows:
+An example of the definition of random subsamples is as follows::
 
-[RAND_SPLIT:star_split]
-RATIO = 20
-MASK = star_selection
+    [RAND_SPLIT:star_split]
+    RATIO = 20
+    MASK = star_selection
 
 This uses as input the ``star_selection`` sample (given by the ``MASK`` entry).
 It creates two random subsamples: one with 20% and one with 80% (100 - RATIO)
@@ -93,87 +93,93 @@ The operands can be
 
 
 The following are illustration of two plots. First, another mask
-is defined:
+is defined::
 
-[MASK:fwhm_mag_cut]
-FWHM_IMAGE > 0
-FWHM_IMAGE < 40
-MAG_AUTO < 35
-FLAGS == 0
-IMAFLAGS_ISO == 0
-NO_SAVE
+    [MASK:fwhm_mag_cut]
+    FWHM_IMAGE > 0
+    FWHM_IMAGE < 40
+    MAG_AUTO < 35
+    FLAGS == 0
+    IMAFLAGS_ISO == 0
+    NO_SAVE
 
+    [PLOT:size_mag]
+    TYPE = plot
+    FORMAT = png
+    X_1 = FWHM_IMAGE{fwhm_mag_cut}
+    Y_1 = MAG_AUTO{fwhm_mag_cut}
+    X_2 = FWHM_IMAGE{star_selection}
+    Y_2 = MAG_AUTO{star_selection}
+    MARKER_1 = +
+    MARKER_2 = .
+    MARKERSIZE_1 = 3
+    MARKERSIZE_2 = 3
+    LABEL_1 = All
+    LABEL_2 = "Stars, mean FWHM: @mean(FWHM_IMAGE{star_selection})*0.187@ arcsec"
+    TITLE = "Stellar locus"
+    XLABEL = "FWHM (pix)"
+    YLABEL = Mag
 
-[PLOT:size_mag]
-TYPE = plot
-FORMAT = png
-X_1 = FWHM_IMAGE{fwhm_mag_cut}
-Y_1 = MAG_AUTO{fwhm_mag_cut}
-X_2 = FWHM_IMAGE{star_selection}
-Y_2 = MAG_AUTO{star_selection}
-MARKER_1 = +
-MARKER_2 = .
-MARKERSIZE_1 = 3
-MARKERSIZE_2 = 3
-LABEL_1 = All
-LABEL_2 = "Stars, mean FWHM: @mean(FWHM_IMAGE{star_selection})*0.187@ arcsec"
-TITLE = "Stellar locus"
-XLABEL = "FWHM (pix)"
-YLABEL = Mag
-
-[PLOT:hist_mag_stars]
-TYPE = hist
-FORMAT = png
-Y = MAG_AUTO{star_selection}
-BIN = 20
-LABEL = "stars"
-XLABEL = "Magnitude"
-YLABEL = "Number"
-TITLE = "Magnitude of stars"
+    [PLOT:hist_mag_stars]
+    TYPE = hist
+    FORMAT = png
+    Y = MAG_AUTO{star_selection}
+    BIN = 20
+    LABEL = "stars"
+    XLABEL = "Magnitude"
+    YLABEL = "Number"
+    TITLE = "Magnitude of stars"
 
 
 Possible values for ``TYPE`` are ``plot``, ``histogram``, ``scatter``.
 More than one sample can be plotted by adding ``_1``, ``_2``, ... to all of the above given keywords.
 
 Keywords for all plot types:
+
 Y : str
     functions of samples to plot on y-axis
-XLABEL, YLABEL : str, optional, default=None
+XLABEL, YLABEL : str, optional, default is ``None``
     labels for x- and y-axes, respectively
-LABEL : str, optional, default=no label
+LABEL : str, optional, default is no label
     plot label
-TITLE : str, optional, default=''
+TITLE : str, optional, default is ``''``
     plot title
-ALPHA : float, default=None
+ALPHA : float, default is ``None``
     alpha (transparency) parameter
-COLOR : str, optional, default=None (standard matplotlib color sequence)
+COLOR : str, optional, default is ``None`` (standard matplotlib color sequence)
     plot color
-FORMAT : str, optional, default='png'
+FORMAT : str, optional, default is ``'png'``
     output file format
 
+
 Keywords for standard and scatter plots (``TYPE`` in ``plot``, ``scatter``)
+
 X : str
     functions of samples to plot on x-axis
-MARKER : str, optional, default='+'
+MARKER : str, optional, default is ``'+'``
     point marker symbol
 
 Additional keywords for standard line/points plot (``TYPE = plot``)
-MARKERSIZE : float, optional, default=1
+
+MARKERSIZE : float, optional, default is ``1``
     marker size
-LINE : str, optional, default='' (no line is drawn)
+LINE : str, optional, default is ``''`` (no line is drawn)
     line type
 
 Additional keywords for histograms (``TYPE = hist``):
-BIN : int, optional, default=50
+
+BIN : int, optional, default is ``50``
     number of bins
-HTYPE : str, optional, default='bar'
+HTYPE : str, optional, default is ``'bar'``
     histogram type
-LOG : bool
+LOG : bool, optional, defaul is ``False``
+    logarithmic (linear) bins if ``True`` (``False``)
 
 Additional keywords for scatter plots (``TYPE = scatter``):
+
 MARKER : str
     point marker
-SCATTER : str, optional, default=None
+SCATTER : str, optional, default is ``None``
     function of some input sample acting as third variable
     that is color-coded in the point colors.
 
