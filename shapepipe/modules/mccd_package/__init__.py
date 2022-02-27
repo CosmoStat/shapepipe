@@ -36,7 +36,6 @@ The input of this runner depends on the value of ``MODE``:
 
 
 Module-specific config file entries:
-
     - CONFIG_PATH: str
         path to the MCCD config file
     - MODE: str
@@ -62,17 +61,14 @@ MCCD_RUNNERS
 
 The three modules ``mccd_fit_runner``, ``mccd_val_runner`` and ``mccd_fit_val_runner`` handle the 
 fitting and the validation of the MCCD PSF models.
+
 They all share the same configuration file entries, although the inputs differ as follows
-  - ``[MCCD_FIT_RUNNER]``: Has as input the path to the star catalogue that will be used to train the PSF models. 
-    The star catalogue should be already preprocessed by ``[MCCD_PREPROCESSING_RUNNER]``.
-  - ``[MCCD_VAL_RUNNER]``: Has two inputs. First, the path to the fitted PSF models, and second, 
-  the path to the preprocessed validation star catalogue.
-  - ``[MCCD_FIT_VAL_RUNNER]``: Has two inputs. First, the path to the preprocessed training star catalogue 
-  that will be used to train the PSF models. Second, the path to the preprocessed validation star catalogue. 
+  - ``[MCCD_FIT_RUNNER]``: Has as input the path to the star catalogue that will be used to train the PSF models. The star catalogue should be already preprocessed by ``[MCCD_PREPROCESSING_RUNNER]``.
+  - ``[MCCD_VAL_RUNNER]``: Has two inputs. First, the path to the fitted PSF models, and second, the path to the preprocessed validation star catalogue.
+  - ``[MCCD_FIT_VAL_RUNNER]``: Has two inputs. First, the path to the preprocessed training star catalogue that will be used to train the PSF models. Second, the path to the preprocessed validation star catalogue. 
 
 
 Module-specific config file entries:
-
     - CONFIG_PATH: str
         path to the MCCD config file
     - MODE: str
@@ -97,14 +93,17 @@ This module interpolates the MCCD PSF model to target postions.
 
 
 Module-specific config file entries:
-
     - MODE: str
         run mode for module, options are ``CLASSIC`` and ``MULTI-EPOCH``
     - POSITION_PARAMS: (list) str
         list of position parameter value names in the SExtractor output catalogue.
-        When running in multi-epoch those position have to be WCS. For example:
+        When running in multi-epoch those position have to be WCS. 
+        
+        For example:
+
         ``MULTI-EPOCH`` case:
         POSITION_PARAMS = XWIN_WORLD,YWIN_WORLD
+
         ``CLASSIC`` case:
         POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE
     - GET_SHAPES: bool
@@ -137,7 +136,6 @@ The other plots are a histogram of the ellipticity errors and the rho stats plot
 
 
 Module-specific config file entries:
-
     - PSF: str
         PSF model type, options are ``mccd`` or ``psfex``
     - PLOT_MEANSHAPES: bool
