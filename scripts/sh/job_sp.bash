@@ -10,7 +10,6 @@
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 # Date: v1.0 11/2020
 #       v1.1 01/2021
-# Package: shapepipe
 
 
 # VM home, required for canfar run.
@@ -228,12 +227,6 @@ command_sp() {
    str=$2
 
    command "$1" "$2"
-   #res=$?
-   #if [ $res != 0 ]; then
-      #upload_logs $ID $VERBOSE
-      #echo "exiting 'canfar_sp.bash', '$cmd' returned $res, log files for id=$ID uploaded"
-      #exit $res
-   #fi
 }
 
 # Tar and upload files to vos
@@ -287,13 +280,6 @@ function print_env() {
 
 ### Start ###
 
-# Activate conda environment
-if [ "$CONDA_DEFAULT_ENV" != "shapepipe" ]; then
-  echo "Activate conda 'shapepipe' environment"
-  source $VM_HOME/miniconda3/bin/activate shapepipe
-fi
-
-
 if [ $do_env == 1 ]; then
    print_env
    echo "Exiting"
@@ -330,14 +316,8 @@ if [[ $do_job != 0 ]]; then
     fi
   fi
 
-  ### Retrieve tiles
-  command_sp "shapepipe_run -c $SP_CONFIG/config_get_tiles_$retrieve.ini" "Run shapepipe (get tiles)"
-
-  ### Find exposures
-  command_sp "shapepipe_run -c $SP_CONFIG/config_find_exp.ini" "Run shapepipe (find exposures)" 
-
-  ### Retrieve exposures
-  command_sp "shapepipe_run -c $SP_CONFIG/config_get_exp_$retrieve.ini" "Run shapepipe (get exposures)"
+  ### Retrieve files
+  command_sp "shapepipe_run -c $SP_CONFIG/config_GitFeGie_$retrieve.ini" "Retrieve images"
 
 fi
 
@@ -346,7 +326,7 @@ fi
 if [[ $do_job != 0 ]]; then
 
   ### Uncompress tile weights
-  command_sp "shapepipe_run -c $SP_CONFIG/config_unfz_w.ini" "Run shapepipe (uncompress tile weights)"
+  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Uz.ini" "Run shapepipe (uncompress tile weights)"
 
   ### Split images into single-HDU files, merge headers for WCS info
   command_sp "shapepipe_run -c $SP_CONFIG/config_exp_SpMh.ini" "Run shapepipe (split images, merge headers)"
@@ -357,11 +337,8 @@ fi
 (( do_job= $job & 4 ))
 if [[ $do_job != 0 ]]; then
 
-  ### Mask tiles
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Ma.ini" "Run shapepipe (mask tiles)"
-
-  ### Mask exposures
-  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_Ma.ini" "Run shapepipe (mask exposures)"
+  ### Mask tiles and exposures
+  command_sp "shapepipe_run -c $SP_CONFIG/config_MaMa.ini" "Run shapepipe (mask)"
 
 fi
 
@@ -373,26 +350,8 @@ if [[ $do_job != 0 ]]; then
   ### Star detection, selection, PSF model. setools can exit with an error for CCD with insufficient stars,
   ### the script should continue
   STOP=0
-  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_$psf.ini" "Run shapepipe (exp $psf)"
+  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Sx_exp_${psf}.ini" "Run shapepipe (tile detection, exp $psf)"
   STOP=1
-
-  ### The following are very a bad hacks to get additional input file paths
-  echo "Looking for PSF ($psf) output files"
-  if [ "$psf" == "psfex" ]; then
-    input_psfex=`ls -1 ./output/*/psfex_runner/output/star_split_ratio_80*.psf | head -n 1`
-    command_sp "ln -s `dirname $input_psfex` input_psfex" "Link psfex output"
-  else
-    input_psf_mccd=`find . -name "fitted_model*.npy" | head -n 1`
-    command_sp "ln -s `dirname $input_psf_mccd` input_psf_mccd" "Link MCCD output"
-  fi
-
-  echo "Looking for single-exposure single-HDU output files"
-  input_split_exp=`ls -1 ./output/*/split_exp_runner/output/flag*.fits | head -n 1`
-  command_sp "ln -s `dirname $input_split_exp` input_split_exp" "Link split_exp output"
-
-  echo "Looking for SExtractor output files"
-  input_sextractor=`ls -1 ./output/*/sextractor_runner/output/sexcat_sexcat*.fits | head -n 1`
-  command_sp "ln -s `dirname $input_sextractor` input_sextractor" "Link sextractor output"
 
 fi
 
@@ -403,7 +362,7 @@ if [[ $do_job != 0 ]]; then
   ### PSF model letter: 'P' (psfex) or 'M' (mccd)
   letter=${psf:0:1}
   Letter=${letter^}
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Sx${Letter}iViSmVi.ini" "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)"
+  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_${Letter}iViSmVi.ini" "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)"
 
 fi
 

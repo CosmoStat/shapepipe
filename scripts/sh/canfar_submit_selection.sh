@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 # Name: canfar_submit_selection.sh
-# Author: Martin Kilbinger (2020), martin.kilbinger@cea.fr
+# Author: Martin Kilbinger, martin.kilbinger@cea.fr
+# Date: 2020
 # Description: Submits jobs to canfar, each jobs processes
-#  single exposures for one tile
-# Package: ShapePipe
+#  one tile
 
 
 # Variables

@@ -211,7 +211,7 @@ class SetUpParser(object):
 def create_config_parser(file_name):
     """Create Configuration Parser.
 
-    This method creates a configuration file parser instance.
+    This function creates a configuration file parser instance.
 
     Parameters
     ----------

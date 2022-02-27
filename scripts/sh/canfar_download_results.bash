@@ -6,7 +6,6 @@
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 # Date: v1.0 05/2020
 #       v1.1 01/2021
-# Package: shapepipe
 
 # Command line
 
@@ -121,11 +120,6 @@ for name in ${NAMES[@]}; do
         done
     fi
 done
-
-
-# TODO: Save IDs in text file, check that
-# all files are downloaded correctly for
-# each ID.
 
 # Check number of files
 for name in ${NAMES[@]}; do

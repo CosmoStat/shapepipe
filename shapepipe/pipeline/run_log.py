@@ -33,7 +33,7 @@ class RunLog(object):
         self._module_list = ','.join(module_list)
         self.current_run = current_run
         self._write()
-        self._get_list()
+        get_list(run_log_file)
 
     def _write(self):
         """Write.
@@ -43,69 +43,6 @@ class RunLog(object):
         """
         with open(self.run_log_file, 'a') as run_log:
             run_log.write(f'{self.current_run} {self._module_list}\n')
-
-    def _get_list(self):
-        """Get List.
-
-        Get a list of all runs in the run log.
-
-        """
-        with open(self.run_log_file, 'r') as run_log:
-            lines = run_log.readlines()
-
-        self._runs = [line.rstrip() for line in lines]
-
-    def get_all(self, module):
-        """Get All.
-
-        Get all previous pipeline runs of a given model.
-
-        Parameters
-        ----------
-        module : str
-            Module name
-
-        Returns
-        -------
-        all_runs: list of str
-            All run paths for a given module
-
-        """
-        module, _ = split_module_run(module)
-
-        all_runs = [
-            run for run in self._runs
-            if module in run.split()[1].split(',')
-        ]
-        if len(all_runs) == 0:
-            raise RuntimeError(
-                f'No previous run of module \'{module}\' found'
-            )
-
-        all_runs = all_runs[::-1]
-
-        return all_runs
-
-    def get_last(self, module):
-        """Get Last.
-
-        Get the last run of the pipeline for a given module.
-
-        Parameters
-        ----------
-        module : str
-            Module name
-
-        Returns
-        -------
-        str
-            The last run for a given module
-
-        """
-        all_runs = self.get_all(module)
-        last_run = all_runs[0]
-
-        return last_run.split(' ')[0]
 
     def get_run(self, search_string):
         """Get Run.
@@ -144,3 +81,116 @@ class RunLog(object):
             )
 
         return runs[0].split(' ')[0]
+
+
+def get_list(run_log_file):
+    """Get List.
+
+    Get a list of all runs in the run log.
+
+    Parameters
+    ----------
+    run_log_file : str
+        Run log file name
+
+    Returns
+    -------
+    list
+        Run log file entries
+
+    """
+    with open(run_log_file, 'r') as run_log:
+        lines = run_log.readlines()
+
+    runs = [line.rstrip() for line in lines]
+
+    return runs
+
+
+def get_all(runs, module):
+    """Get All.
+
+    Get all previous pipeline runs of a given model.
+
+    Parameters
+    ----------
+    runs : list
+        Log file entries consisting of directory and module(s)
+    module : str
+        Module name
+
+    Raises
+    ------
+    RuntimeError
+        If no previous runs are found
+
+    Returns
+    -------
+    list
+        All run paths for a given module
+
+    """
+    module_base, _ = split_module_run(module)
+
+    all_runs = [
+        run for run in runs
+        if module_base in run.split()[1].split(',')
+    ]
+    if len(all_runs) == 0:
+        raise RuntimeError(
+            f'No previous run of module \'{module_base}\' found'
+        )
+
+    all_runs = all_runs[::-1]
+
+    return all_runs
+
+
+def get_last(runs, module):
+    """Get Last.
+
+    Get the last run of the pipeline for a given module.
+
+    Parameters
+    ----------
+    runs : list
+        Log file entries consisting of directory and module(s)
+    module : str
+        Module name
+
+    Returns
+    -------
+    str
+        The last run for a given module
+
+    """
+    all_runs = get_all(runs, module)
+    last_run = all_runs[0]
+
+    return last_run.split(' ')[0]
+
+
+def get_last_dir(run_log_file, module):
+    """Get Last Dir.
+
+    Return directory path corresponding to last run of given module.
+
+    Parameters
+    ----------
+    run_log_file : str
+        Run log file name
+    module : str
+        Module name
+
+    Returns
+    -------
+    str
+        Directory name of last module run
+
+    """
+    runs = get_list(run_log_file)
+    all_runs = get_all(runs, module)
+    last_run = all_runs[0].split(' ')[0]
+    last_dir = f'{last_run}/{module}/output'
+
+    return last_dir

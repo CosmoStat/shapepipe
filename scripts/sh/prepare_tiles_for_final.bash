@@ -3,8 +3,7 @@
 # Name: prepare_tiles_for_final.bash
 # Description: Create shapepipe run directory with
 #              links to all `final_cat` fits files
-# Author: Martin Kilbinger <martin.kilbinger@cea.fr
-# Package: ShapePipe
+# Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 # Date: 06/2020
 # Version: 0.1
 
