@@ -14,10 +14,11 @@ Description
 ===========
 
 This module merges separate input catalogues. This applies to 
-a run of the previous module was split into several (parallel) sub-processes
-to save wall-clock time. This is useful for time-consuming modules, such as
-galaxy shape measurement e.g. via ``ngmix_runner``. This module merges the
-outputs of those sub-processes back into a complete output catalogue.
+a run of the previous module that was split into several (parallel)
+sub-processes to save wall-clock time. This is useful for time-consuming
+modules, such as galaxy shape measurement e.g. via ``ngmix_runner``. This
+module merges the outputs of those sub-processes back into a complete output
+catalogue.
 
 Note that the input catalogues should not contain identical objects.
 
