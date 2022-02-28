@@ -435,8 +435,8 @@ if [[ $do_job != 0 ]]; then
     "setools_plot"
   )
   DIRS=(
-    "*/make_catalog_runner/output"
-    "*/mask_runner/output"
+    "*/make_cat_runner/output"
+    "*/mask_runner_run_1/output"
     "*/setools_runner/output/mask"
     "*/setools_runner/output/stat"
     "*/setools_runner/output/plot"
