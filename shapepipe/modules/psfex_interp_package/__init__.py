@@ -8,12 +8,12 @@ This package contains the module for ``psfex_interp``.
 
 :Input: PSFEx PSF model
 
-:Output: PSFEx PSF estimates at galaxy positions
+:Output: PSFEx PSF estimates at interpolated positions
 
 Description
 ===========
 
-This module interpolates the PSFEx PSF model to galaxy positions.
+This module interpolates the PSFEx PSF model.
 
 Module-specific config file entries
 ===================================
