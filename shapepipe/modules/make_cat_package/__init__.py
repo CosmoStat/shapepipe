@@ -4,8 +4,11 @@ This package contains the module for ``make_cat``.
 
 :Author: Axel Guinot
 
-:Parent modules: ``sextractor_runner``, ``spread_model_runner``, ``psfex_interp_runner``,
-    ``ngmix_runner``
+:Parent modules:
+- ``sextractor_runner``
+- ``spread_model_runner``
+- ``psfex_interp_runner`` or ``mccd_interp_runner``
+- ``ngmix_runner``
 
 :Input: ``SExtractor`` catalogues, ``sqlite`` catalogue
 
