@@ -65,13 +65,13 @@ def match_external_runner(
         external_hdu_no = 1
 
     # Output
-    if config.has_option(module_config_sec, 'OUTPUT_FILE_PATTERN'):
-        output_file_pattern = config.get(
+    if config.has_option(module_config_sec, 'PREFIX'):
+        prefix = config.get(
             module_config_sec,
-            'OUTPUT_FILE_PATTERN',
+            'PREFIX',
         )
     else:
-        output_file_pattern = 'cat_matched'
+        prefix = 'cat_matched'
 
     if config.has_option(module_config_sec, 'MARK_NON_MATCHED'):
         mark_non_matched = config.getfloat(
@@ -92,7 +92,7 @@ def match_external_runner(
     # Set output file path
     file_ext = 'fits'
     output_path = (
-        f'{run_dirs["output"]}/{output_file_pattern}{file_number_string}.'
+        f'{run_dirs["output"]}/{prefix}{file_number_string}.'
         + f'{file_ext}'
     )
 
