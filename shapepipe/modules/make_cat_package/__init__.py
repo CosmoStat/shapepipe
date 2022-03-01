@@ -31,14 +31,14 @@ SM_DO_CLASSIFICATION : bool, optional
     to output if ``True``
 SM_STAR_STRESH : float, optional
     Threshold for star selection; object is classified as star if
-    |sm + 2 * sm_err < SM_STAR_THRESH where sm (sm_err) is the spread
+    |sm + 2 * sm_err| < SM_STAR_THRESH where sm (sm_err) is the spread
     model (error); default is 0.003
 SM_GAL_STRESH : float, optional
     Threshold for galaxy selection; object is classified as galaxy if
     sm + 2 * sm_err > SM_GAL_THRESH where sm (sm_err) is the spread
     model (error); default is 0.01
 SHAPE_MEASUREMENT_TYPE : list
-    Shape measurement method, valid is ``ngmix``, ``galsim``
+    Shape measurement method, valid options are ``ngmix`` or ``galsim``
 SAVE_PSF_DATA : bool, optional
     Save PSF information if ``True``; default is ``False``
 TILE_LIST : str, optional
