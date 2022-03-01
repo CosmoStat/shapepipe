@@ -8,7 +8,7 @@ This package contains the modules for ``mccd``.
 Description
 ===========
 
-This package contains several modules related with the MCCD PSF model :cite:`liaudat:2021`.
+This package contains several modules related to the MCCD PSF model :cite:`liaudat:2021`.
 
 
 MCCD_PREPROCESSING_RUNNER
