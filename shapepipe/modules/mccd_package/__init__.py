@@ -35,7 +35,8 @@ The input of this runner depends on the value of ``MODE``:
   - ``FIT_VALIDATION``: the path to the training and validation star catalogues, in that order.
 
 
-Module-specific config file entries:
+Module-specific config file entries
+------------------------------------
     - CONFIG_PATH: str
         path to the MCCD config file
     - MODE: str
