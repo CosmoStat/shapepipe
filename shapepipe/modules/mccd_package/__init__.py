@@ -108,7 +108,7 @@ Module-specific config file entries:
         ``CLASSIC`` case:
         POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE
     - GET_SHAPES: bool
-        option to calculate PSF model shapes and save them on the output dictionary
+        calculate PSF model shapes and save to output if ``True``
     - PSF_MODEL_DIR: str
         input directories for the fitted MCCD PSF model files
     - PSF_MODEL_PATTERN: str
