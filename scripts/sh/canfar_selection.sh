@@ -5,12 +5,11 @@
 #              post-processing.
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 # Date: 06/2020
-# Package: shapepipe
 
 
 # Command line arguments
 if [ $# != 2 ] && [ $# != 3 ]; then
-    echo "Usage: canfar_selection.sh IN_DIR LIST_PATH [OUT_DIR]"
+    echo "Usage: $(basename "$0") IN_DIR LIST_PATH [OUT_DIR]"
     echo "  IN_DIR: input directory with .tgz files"
     echo "  LIST_PATH: ASCII file with tile IDs"
     echo "  OUT_DIR: output directory name, default=tile ID file base name"
