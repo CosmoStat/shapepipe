@@ -13,7 +13,7 @@ This package contains the module for ``merge_sep_cat``.
 Description
 ===========
 
-This module merges separate input catalogues. This applies to 
+This module merges separate input catalogues. This applies to
 a run of the previous module that was split into several (parallel)
 sub-processes to save wall-clock time. This is useful for time-consuming
 modules, such as galaxy shape measurement e.g. via ``ngmix_runner``. This
