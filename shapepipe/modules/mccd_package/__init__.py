@@ -30,9 +30,9 @@ The minimum number of stars required to keep the CCD can be specified inside the
 file with the ``min_n_stars`` parameter.
 
 The input of this runner depends on the value of ``MODE``:
-  - ``FIT``: the path to the training star catalogue which will be used to fit the PSF models.
-  - ``VALIDATION``: the path to the validation star catalogue.
-  - ``FIT_VALIDATION``: the path to the training and validation star catalogues, in that order.
+  - ``FIT``: the input star catalogue path which will be used to fit the PSF models.
+  - ``VALIDATION``: the input star catalogue path which will be used to validate the PSF models.
+  - ``FIT_VALIDATION``: two input star catalogue paths which will be used to fit and validate the PSF models, respectively.
 
 
 Module-specific config file entries
