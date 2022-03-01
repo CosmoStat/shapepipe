@@ -44,13 +44,13 @@ def paste_cat_runner(
     else:
         hdu_no = None
 
-    if config.has_option(module_config_sec, 'OUTPUT_FILE_PATTERN'):
-        output_file_pattern = config.get(
+    if config.has_option(module_config_sec, 'PREFIX'):
+        prefix = config.get(
             module_config_sec,
-            'OUTPUT_FILE_PATTERN'
+            'PREFIX'
         )
     else:
-        output_file_pattern = 'cat_pasted'
+        prefix = 'cat_pasted'
 
     if config.has_option(module_config_sec, 'EXT_NAME'):
         ext_name_list = config.getlist(module_config_sec, 'EXT_NAME')
@@ -68,7 +68,7 @@ def paste_cat_runner(
 
     # Set output path
     output_path = (
-        f'{run_dirs["output"]}/{output_file_pattern}'
+        f'{run_dirs["output"]}/{prefix}'
         + f'{file_number_string}.{file_ext}'
     )
 
