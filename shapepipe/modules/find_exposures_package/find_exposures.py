@@ -20,11 +20,11 @@ class FindExposures():
     Parameters
     ----------
     img_tile_path : str
-        path to tile image file
+        Path to tile image file
     output_path : str
-        output file path
+        Output file path
     w_log : logging.Logger
-        log file
+        Log file
 
     """
 
@@ -54,12 +54,12 @@ class FindExposures():
         """Get Exposure List.
 
         Return list of exposure file used for the tile in process, from tiles
-        FITS header
+        FITS header.
 
         Returns
         -------
-        exp_list_uniq: list of strings
-            list of exposure basenames
+        list
+            List of exposure basenames
 
         """
         try:

@@ -83,7 +83,7 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     sexcat_path : str
         Path to SExtractor catalogue to save.
     remove_vignet : bool
-        If True will not save the 'VIGNET' field into the final catalogue.
+        If ``True`` will not save the 'VIGNET' field into the final catalogue.
 
     """
     sexcat_file = file_io.FITSCatalogue(sexcat_path, SEx_catalogue=True)
@@ -114,7 +114,7 @@ def save_sm_data(
     star_thresh=0.003,
     gal_thresh=0.01,
 ):
-    """Save Spread-Model Data.
+    r"""Save Spread-Model Data.
 
     Save the spread-model data into the final catalogue.
 
@@ -125,14 +125,15 @@ def save_sm_data(
     sexcat_sm_path : str
         Path to spread-model catalogue to save.
     do_classif : bool
-        If True objects will be classified into stars, galaxies, and other,
-        uusing the classifier class = sm + 2 * sm_err
+        If ``True`` objects will be classified into stars, galaxies, and other,
+        using the classifier
+        :math:`{\rm class} = {\rm sm} + 2 * {\rm sm}_{\rm err}`
     star_thresh : float
         Threshold for star selection; object is classified as star if
-        |class| < star_thresh
+        :math:`|{\rm class}| <` ``star_thresh``
     gal_thresh : float
         Threshold for galaxy selection; object is classified as galaxy if
-        class > gal_thresh
+        :math:`{\rm class} >` ``gal_thresh``
 
     """
     final_cat_file.open()
@@ -186,11 +187,11 @@ class SaveCatalogue:
         Parameters
         ----------
         mode : str
-            Run mode, options are (``'ngmix'``, ``'galsim'``, ``'psf'``)
+            Run mode, options are ``'ngmix'``, ``'galsim'`` or ``'psf'``
         cat_path : str
             Path to input catalogue
         moments : bool
-            Opotion to run ngmix mode with moment
+            Option to run ngmix mode with moments
 
         """
         self._output_dict = {}

@@ -27,15 +27,15 @@ class Mask(object):
     Parameters
     ----------
     image_path : str
-        Path to image (fits format)
+        Path to image (FITS format)
     weight_path : str
-        Path to the weight image (fits format)
+        Path to the weight image (FITS format)
     config_filepath : str
         Path to the ``.mask`` config file
     output_dir : str
         Path to the output directory
-    hdu : int, optional, default = 0
-        HDU number
+    hdu : int, optional
+        HDU number, default is ``0``
 
     """
 
@@ -399,7 +399,7 @@ class Mask(object):
         Returns
         -------
         dict
-          Stars dicotionnary for GSC objects in the field.
+          Star dicotionnary for GSC objects in the field.
 
         Raises
         ------
@@ -461,7 +461,7 @@ class Mask(object):
         Raises
         ------
         ValueError
-            If width is None
+            If ``width`` is ``None``
 
         """
         if width is None:
@@ -494,22 +494,22 @@ class Mask(object):
             Path to the Messier catalog
         size_plus : float
             Increase the size of the mask by this factor
-            (Example : 0.1 means 10%)
+            (Example : ``0.1`` means 10%)
         flag_value : float
             Value of the flag, some power of 2
 
         Returns
         -------
-        numpy.ndarray/None
-            If no Messier objectds find in the field return None and the
-            flag map otherwise
+        numpy.ndarray or None
+            If no Messier objects are found in the field return ``None`` and
+            the flag map
 
         Raises
         ------
         ValueError
-            If size_plus is negative
+            If ``size_plus`` is negative
         ValueError
-            If cat_path is None
+            If ``cat_path`` is ``None``
 
         """
         if size_plus < 0:
@@ -634,7 +634,7 @@ class Mask(object):
         Returns
         -------
         float
-            The distance in degree.
+            The distance in degrees.
 
         Raises
         ------
@@ -703,12 +703,12 @@ class Mask(object):
     def _make_star_cat(self, CDSclient_output):
         """Make Star Catalogue.
 
-        Make a dicotionnary from 'findgsc2.2' output.
+        Make a dicotionary from findgsc2.2 output.
 
         Parameters
         ----------
         CDSclient_output : str
-            Output of 'findgsc2.2'
+            Output of findgsc2.2
 
         Returns
         -------
@@ -770,7 +770,7 @@ class Mask(object):
         stars : dict
             Stars dictionary (output of find_stars)
         types : {'HALO', 'SPIKE'}, optional
-            Type of mask, options are 'HALO' or 'SPIKE'
+            Type of mask, options are ``'HALO'`` or ``'SPIKE'``
         mag_limit : float, optional
             Faint magnitude limit for mask, default is ``18.0``
         mag_pivot : float, optional
@@ -868,7 +868,7 @@ class Mask(object):
     def _exec_WW(self, types='HALO'):
         """Execute WeightWatcher.
 
-        Execute WeightWatcher to transform '.reg' to '.fits' flag map.
+        Execute WeightWatcher to transform ``.reg`` to ``.fits`` flag map.
 
         Parameters
         ----------
@@ -878,7 +878,7 @@ class Mask(object):
 
         Raises
         ------
-        BaseCatalog.CatalogFileNotFound
+        BaseCatalogue.CatalogFileNotFound
             If catalogue file not found
 
         """
@@ -1019,7 +1019,7 @@ class Mask(object):
     ):
         """Create Final Mask.
 
-        Create the final mask by combination of individual masks.
+        Create the final mask by combining the individual masks.
 
         Parameters
         ----------
@@ -1170,7 +1170,7 @@ class Mask(object):
         Parameters
         ----------
         temp_dir_path : str
-            Path to the temporary directory, a value of 'OUTPUT' will include
+            Path to the temporary directory, a value of ``OUTPUT`` will include
             the temporary files in the run directory
 
         Returns
@@ -1181,7 +1181,7 @@ class Mask(object):
         Raises
         ------
         ValueError
-            If temp_dir_path is of type None
+            If ``temp_dir_path`` is of type None
 
         """
         if temp_dir_path is None:

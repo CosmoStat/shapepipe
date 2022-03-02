@@ -1,6 +1,6 @@
 """GET IMAGES PACKAGE.
 
-This package contains the module for ``get_images``
+This package contains the module for ``get_images``.
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
@@ -13,11 +13,11 @@ This package contains the module for ``get_images``
 Description
 ===========
 
-Retrieve images. Download using the ``vos`` python library from the ``VOSpace``
-(http://www.ivoa.net/documents/VOSpace) software, or by creating symbolic links
-to exising images.
+Retrieve images. Download using the ``vos`` python library from the
+`VOSpace <http://www.ivoa.net/documents/VOSpace>`_ software, or by creating
+symbolic links to exising images.
 
-Note that the input for this module are (1) a ASCII file specifying the parent
+Note that the input for this module are (1) an ASCII file specifying the parent
 image IDs, and (2) the images to retrieve.
 For (1) the standard config entries ``FILE_PATTERN``, ``FILE_EXT``,
 ``NUMBERING_SCHEME`` are used. For (2), additional config entries are to be
@@ -31,8 +31,8 @@ RETRIEVE : str
 RETRIEVE_OPTIONS : str, optional
     options to pass to retrieval method
 N_TRY : int, optional, default=3
-    if RETRIEVE=``vos``, number of attempts to download image in case of vos
-    failure
+    if ``RETRIEVE = vos``, this option specifies the number of attempts to
+    download an image in case of vos failure
 INPUT_PATH : (list of) str
     input path(s) of images
 INPUT_FILE_PATTERN : (list of) str
@@ -48,7 +48,8 @@ CHECK_EXISTING_DIR : str, optional
     if given, check this directory for existing images, which will then not be
     downloaded
 N_EXPECTED : int, optional, default=1
-    if CHECK_EXISTING_DIR is given, number of expected images
+    if ``CHECK_EXISTING_DIR`` is given, this option specifies the number of
+    expected images
 
 """
 

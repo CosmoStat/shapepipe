@@ -6,7 +6,8 @@ This package contains the module for ``mask``.
 
 :Parent module: ``split_exp_runner`` or None
 
-:Input: single-exposure single-CCD image, weight file, flag file (optional), star catalogue (optional)
+:Input: single-exposure single-CCD image, weight file, flag file (optional),
+        star catalogue (optional)
 
 :Output: single-exposure single-CCD flag files
 
@@ -28,17 +29,17 @@ To mask bright stars, this module either creates a star catalogue from the
 online
 `guide star catalogue <https://heasarc.gsfc.nasa.gov/W3Browse/all/gsc.html>`_
 database relevant to the the footprint. This is done by calling a CDs
-(Centre de DonneÃ©s astronomique de Strasbourg)
-`client <http://cdsarc.u-strasbg.fr/doc/cdsclient.html>`_
-program. Note that this requires online access,
+(Centre de Données astronomique de Strasbourg)
+`client program <http://cdsarc.u-strasbg.fr/doc/cdsclient.html>`_.
+Note that this requires online access,
 which in some cases is not granted on compute nodes of a cluster. In this case,
-set the config flag ``USE_EXT_STAR`` to False. Alternatively, a star catalogue
-can be created before running this module via the script ``create_star_cat``.
-During the processing of this module, this star catalogue is read from disk,
-with ``USE_SET_STAR = True``.
+set the config flag ``USE_EXT_STAR = False``. Alternatively, a star
+catalogue can be created before running this module via the script
+``create_star_cat``. During the processing of this module, this star catalogue
+is read from disk, with ``USE_SET_STAR = True``.
 
-The masking is done with the software ``WeightWatcher``, which is installed by ``ShapePipe``
-by default.
+The masking is done with the software ``WeightWatcher``, which is installed by
+``ShapePipe`` by default.
 
 Module-specific config file entries
 ===================================
@@ -62,9 +63,9 @@ PREFIX : str, optional, default=''
 Mask config file
 ================
 
-An additional configuration file is used by the mask module, its path is ``MASK_CONFIG_PATH``
-in the module config section, see above. The following describes the config file sections
-and their entries.
+An additional configuration file is used by the mask module, its path is
+``MASK_CONFIG_PATH`` in the module config section, see above. The following
+describes the config file sections and their entries.
 
 [PROGRAM_PATH]
 --------------
@@ -87,6 +88,7 @@ BORDER_FLAG_VALUE : int (power of 2)
     border mask pixel value
 
 [HALO_PARAMETERS]
+-----------------
 
 HALO_MAKE : bool
     create mask for halos of bright stars if ``True``
@@ -139,11 +141,11 @@ MESSIER_FLAG_VALUE : int (power of 2)
 MD_MAKE : bool
     account for missing data (= zero-valued pixels) if ``True``
 MD_THRESH_FLAG : float
-    threshold; if relative number of missing data is larger than this threshold,
-    image is marked as flagged
+    threshold; if relative number of missing data is larger than this
+    threshold, image is marked as flagged
 MD_THRESH_REMOVE : float
-    threshold; if relative number of missing data is larger than this threshold,
-    image is marked for removal
+    threshold; if relative number of missing data is larger than this
+    threshold, image is marked for removal
 MD_REMOVE : bool
     image is removed if marked for removal
 
