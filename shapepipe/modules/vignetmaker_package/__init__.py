@@ -19,7 +19,7 @@ SExtractor output files and saves the results to FITS files.
 Module-specific config file entries
 ===================================
 
-MASKING : bool, default=``False``
+MASKING : bool, default is ``False``
     option to modify the SExtractor masking value (``-1e29``) in the vignets
 MASK_VALUE : float
     value to use for masking in the vignets
