@@ -34,16 +34,11 @@
 
 ## Quick start
 
-Run the pipeline on a single example CFIS image:
-1. Download and un-tar the
-   [example data](https://drive.google.com/file/d/1AowB2_XJtoOI8eB21cKeQhhh3_8mDEHw/view?usp=sharing).
-   The file size is 4.1 Gb, this might take a while. This data consists of a single CFIS tile image and weight, and all contributing exposure
-   images, weights, and flag FITS files.
-   Note that these files represent unpublished, sensitive pixel data, which according to [CFIS rules](https://www.cfht.hawaii.edu/Science/CFIS/cfisaccess.html) should not be downloaded outside of France or Canada, and not be shared with non-CFIS members.
-2. [Install](https://github.com/cosmostat/shapepipe#installing-shapepipe) `ShapePipe` and activate the `shapepipe` conda environment.
+Run the entire pipeline on a single example CFIS image with tile ID 246.290:
+1. [Install](https://github.com/cosmostat/shapepipe#installing-shapepipe) `ShapePipe` and activate the `shapepipe` conda environment.
 3. Run the job script
 ```bash
-job_sp -r symlink 246.290
+job_sp 246.290 -j 127
 ```
 
 ## Introduction
@@ -124,10 +119,9 @@ Naming and numbering of the input files can closely follow the original image na
 
 ### CFIS processing
 
-`ShapePipe` splits the processing of CFIS images into three parts:  
-1.) [Retrieve and prepare input images](#retrieve-and-prepare-input-images)  
-2.) [Process single exposure images](#process-single-exposure-images)  
-3.) [Process stacked images](#process-stacked-images)    
+`ShapePipe` splits the processing of CFIS images into several parts:
+These are the retrieval and preparation of input images, processing of single exposures,
+processing of tile images, creation and upload (optional) of final shear catalogues.
 
 The following flowchart visualised the processing parts and steps.
 
