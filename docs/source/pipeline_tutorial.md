@@ -274,56 +274,31 @@ the previous one, `split_exp_runner`.
 
 ### Mask images
 
-**Module:** mask_runner   
-**Parent:** split_exp_runner  
-**Input:** single-exposure single-CCD images, weights, flags [, star catalogue]  
-**Output**: single-exposure single-CCD flag files
-
 This module creates masks for bright stars, diffraction spikes, Messier objects,
 borders, and other artifacts. It joins the newly created mask with the already
 existing masks (from the input flag files) of cosmic rays and various artifacts.  
 
-The example config file is `$SP_CONFIG/config_exp_Ma.ini`.
-The mask parameters are read from a secondary config file, whose path
-needs to be specified with `MAS_CONFIG_PATH`.
-
-In this mask config file the default parameters can be kept.
-These parameters specify the mask properties for border, halos, spikes, Messier
+The mask config file 
+specifies the mask properties for border, halos, spikes, Messier
 objects, and external flag input (in our case provided from CFIS pre-processing).
 
 It points to various default parameter files for the different mask types,
 make sure that that paths are correct, in our case
 `$SP_CONFIG/mask_default/` in front of each file name.
 
-Exposures, unlike tile images, come with external flag files on input. This is specified
-by the key `USE_EXT_FLAG`. To distinguish the newly created output flag file from the input ones,
-a suffix is added:
-```ini
-SUFFIX = pipeline
-```
-The output flag file combines input flags and flags created by `mask_runner`.
-
-Next, this module requires a star catalogue containing position and magnitude
+This module requires a star catalogue containing position and magnitude
 of bright stars. By default this is automatically created by accessing online
-star catalogues. Since in some cases computing nodes on clusters might not have
+star catalogues.
+
+Since in some cases computing nodes on clusters might not have
 internet access, such a catalog can also be created for each image, before running
-this module as follows:
+this module using as follows
 ```bash
 mkdir -o output_star_cat
 create_star_cat input_exposures output_star_cat exp
 ```
-Then, the star catalogue needs to be specified as input in the config file,
-and a flag has to be set:
-```ini
-INPUT_DIR = last:split_exp_runner, $SP_RUN/output_star_cat
-[MASK_RUNNER]
-USE_EXT_STAR = True
-```
-If instad the star catalogues can be accessed during the pipeline running,
-the config files looks as follows:
-```ini
-[MASK_RUNNER]
-USE_EXT_STAR = False
+In this case the star catalogue needs to be specified as input in the config file,
+and the config flag ``USE_EXT_STAR`` has to be set to ``True``.
 ```
 On success, pipeline-flag files are created.
 
