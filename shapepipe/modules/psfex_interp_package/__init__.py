@@ -28,7 +28,7 @@ GET_SHAPES : bool
 STAR_THRESH : int
     threshold of stars under which the PSF is not interpolated
 CHI2_THRESH : int
-    threshold for chi squared (:math:`$\Chi^2$`)
+    threshold for chi squared (:math:`\chi^2`)
 ME_DOT_PSF_DIR : list
     input directories for PSFEx PSF model files, for multi-epoch processing
 ME_DOT_PSF_PATTERN : list
