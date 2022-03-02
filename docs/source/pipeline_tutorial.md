@@ -6,31 +6,19 @@
 1. [Introduction](#introduction)
     1. [File types and names](#file-types-and-names)
     1. [CFIS processing](#cfis-processing)
-    1. [Running the pipeline](#running-the-pipeline)
-    1. [Path variables](#path-variables)
-1. [Retrieve input images](#retrieve-input-images)
+    1. [Input and output paths](#input-and-output-paths)
+    1. [Job and pipeline scripts](#job-and-pipeline-scripts)
     1. [Select tiles](#select-tiles)
-    1. [Retrieve tiles](#retrieve-tiles)
-    1. [Uncompress tile weights](#uncompress-tile-weights)
-    1. [Find single exposures](#find-single-exposures)
-    1. [Retrieve single exposure](#retrieve-single-exposures)
-1. [Process single exposure images](#process-single-exposure-images)
-    1. [Split images](#split-images)
-    1. [Merge WCS headers](#merge-wcs-headers)
+1. [Run the pipeline](#run-the-pipeline)
+    1. [Retrieve input images](#retrieve-input-images)
+    1. [Prepare input images](#prepare-input-images)
     1. [Mask images](#mask-images)
-    1. [Extract sources](#extract-sources)
-    1. [Select stars](#select-stars)
-    1. [Create PSF model](#create-psf-model)
-    1. [Validation tests](#validation-tests)
-1. [Process stacked images](#process-stacked-images)
-    1. [Mask stacks](#mask-stacks)
-    1. [Extract sources on stacks](#extract-sources-on-stacks)
-    1. [Interpolate multi-epoch PSF](#interpolate-multi-epoch-psf)
-    1. [Create weight postage stamps](#create-weight-postage-stamps)
-    1. [Compute spread model](#compute-spread-model)
-    1. [Create single-exposure postage stamps](#create-single-exposure-postage-stamps)
-    1. [Multi-epoch shape measurement with ngmix](#multi-epoch-shape-measurement-with-ngmix)
-    1. [Create final catalog](#create-final-catalog)
+    1. [Detect objects on tiles and process stars on single exposures](#detect-objects-on-tiles-and-process-stars-on-single-exposures)
+    1. [Global star sample statistics](#global-star-sample-statistics)
+    1. [Galaxy selection](#galaxy-selection)
+    1. [Shape measurement](#shape-measurement)
+    1. [Paste catalogues](#paste-catalogues)
+    1. [Upload results](#upload-results)
 
 ## Quick start
 
@@ -144,7 +132,7 @@ the following path variables might need to be defined.
 
 In addition, the output path `$SP_RUN/output` needs to be created by the user before running `ShapePipe`.
 
-### Running the pipeline
+### Job and pipeline scripts
 
 The job script to run the pipeline in its entity or in parts is `job_sp[.bash]`. Type
 ```bash
@@ -182,7 +170,9 @@ The input text file (provide via the flag `-i`) contains a list of CFIS tiles, t
 
 The following sections describe the different steps that are performed with `job_sp`.
 
-## Retrieve input images
+## Run the pipeline
+
+### Retrieve input images
 
 The command
 ```bash
@@ -232,7 +222,7 @@ seen. Note that the two frames might not match perfectly, since (a) WCS
 information is not available in the flag file FITS headers; (b) the image can
 have a zero-padded pixel border, which is not accounted for by `ds9`.
 
-## Detect objects on tiles; process stars on single exposures
+## Detect objects on tiles and process stars on single exposures
 
 The call
 ```bash
@@ -248,136 +238,19 @@ Next, the following tasks are run on the single-exposure single-CCD images:
   via a call to `psfex_interp`. For MCCD, the modules `merge_starcat`, `mccd_plots`, and
   `mccd_interp` are called.
 
-### Extract sources
-
-**Module:** sextractor_runner  
-**Parent:** split_exp_runner, mask_runner  
-**Input:** single-exp_single-CCD image[, weights] [, flags] [, PSF file] [, detection image] [, detection weight]
-**Output:** sextractor catalogue
-
-The purpose of source extraction/source identification on single exposures is
-to select stars in the next step. Therefore, a relatively high
-detection threshold is chosen to avoid to detect too many low-SNR
-artifacts, and to reduce the output catalogue size. The following config entry
-is
-```ini
-DETECT_THRESH    1.5             # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
-ANALYSIS_THRESH  1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
-```
-in the file `$SP_CONFIG/default_exp.sex`.
-
-The module config file `$SP_CONFIG/config_exp_Sx.ini` specifies input modules, file pattern, and numbering scheme. Note that the flag files are the ones created by the [mask module](#mask-images), with name `pipeline_flag`. Next, the path to the `SExtractor` executable (installed in the `shapepipe` conda environment by default) is given, and the `SExtractor` configuration files, see below.
-
-Then, boolean flags indicate the presence or absence of the additional input images for the `FILE_PATTERN` line. These are a weight image, a flag image, a PSF file, a distinct image for detection (for `SExtractor` in dual-image mode) that is different from the measurement image, and a distinct detection weight. In our case, we don't have a PSF [yet](#create-psf-model), and we do measurement and detection on the same images.
-
-After that, two entries determine the FITS header key that contains the photometric zero-point (by default 30 if not given). Then, information about the background handling are indicated before the output file suffix. A post processing flag is set to `False` for single-exposures:
-```ini
-[SEXTRACTOR_RUNNER]
-INPUT_MODULE = split_exp_runner, mask_runner
-FILE_PATTERN = image, weight, pipeline_flag
-NUMBERING_SCHEME = -0000000-0
-
-EXEC_PATH = sex
-DOT_SEX_FILE = $SP_CONFIG/default_exp.sex
-DOT_PARAM_FILE = $SP_CONFIG//default.param
-DOT_CONV_FILE = $SP_CONFIG/default.conv
-
-WEIGHT_IMAGE = True
-FLAG_IMAGE = True
-PSF_FILE = False
-DETECTION_IMAGE = False
-DETECTION_WEIGHT = False
-
-ZP_FROM_HEADER = True
-ZP_KEY = PHOTZP
-
-BKG_FROM_HEADER = False
-CHECKIMAGE = BACKGROUND
-
-SUFFIX = sexcat
-
-MAKE_POST_PROCESS = FALSE
-```
-
-On success, SEXtractor catalogue FITS files are produced.
-
-### Select stars
-
-**Module:** setools  
-**Parent:** sextractor_runner  
-**Input:** sextractor catalog  
-**Output:** masked sextractor catalogue
-
-For the star selection we use the size-magnitude plane. We first find the
-stellar locus, by computing the FWHM mode of all objects. Objects are selected
-within some range in FWHM around the mode, and within a magnitude range.
-
-Apart from the standard `INPUT_MODULE`, `FILE_PATTERN`, and `NUMBERING_SCHEME` entries, a file path for selection
-configuration file are given, containing the selection criteria for the star candidate sample:
-```ini
-[SETOOLS_RUNNER]
-INPUT_MODULE = sextractor_runner
-
-# Note: Make sure this does not match the SExtractor background images
-# (sexcat_background*)
-FILE_PATTERN = sexcat_sexcat
-NUMBERING_SCHEME = -0000000-0
-SETOOLS_CONFIG_PATH = $SP_CONFIG/star_selection.setools
-```
-The selection config file `$SP_CONFIG/star_selection.setools` first defines a pre-selection (also "filter" or "mask"),
-such that the subsequent computation of the mode is more stable:
-```ini
-[MASK:preselect]
-MAG_AUTO > 0
-MAG_AUTO < 21
-FWHM_IMAGE > 0.3 / 0.187
-FWHM_IMAGE < 1.5 / 0.187
-FLAGS == 0
-IMAFLAGS_ISO == 0
-NO_SAVE
-```
-> Note the normalisation by the pixel scale to express **FWHM_IMAGE** in arc seconds.
-
-The star sample is then selected in a smaller magnitude range, around the mode of the preselected sample, as follows:
-```ini
-[MASK:star_selection]
-MAG_AUTO > 18
-MAG_AUTO < 22
-# NOTE : unit is pixel
-FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
-FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2
-FLAGS == 0
-IMAFLAGS_ISO == 0
-```
-From this selection, two random sub-samples are created with a number ratio of 80:20.
-The first, larger sample is to [create the PSF model](#create-psf-model). The second, smaller
-sample serves to [validate the PSF model](#validation-tests):
-```ini
-[RAND_SPLIT:star_split]
-RATIO = 20
-MASK = star_selection
-```
-In addition, the selection config file can contain instructions to create plots and
-statistics of the selected population(s). The former can be scatter plots and histograms,
-the former can include mean, mode, extrema, and standard deviation
-of any quantity from the SExtractor input catalogue, the number of selected objects, etc..
-
-On success, masked SExtractor catalogues are created in `mask`, plots are put in `plots`,
-and text files with the computed statistics in `stats`.
-
-The following plots show an example, CCD #10 of exposure 2113737.
+The following plots show an example of a single CCD, in the center of the focal plane.
 
 | Size-magnitude plot | Star magnitude histogram | Stars in CCD (mag) | Stars in CCD (size) |
 | --- | --- | --- | --- |
 | <img width="250" src="size_mag-2113737-10.png" title="Size-magnitude plot with star selection"> | <img width="250" src="hist_mag_stars-2113737-10.png" title="Magnitude histogram of selected stars"> | <img width="250" src="mag_star_field-2113737-10.png" title="Magnitude distribution in CCD"> | <img width="250" src="fwhm_field-2113737-10.png" title="Size distribution in CCD"> |
 | The stellar locus is well-defined | Magnitude distribution looks reasonable | Stars are relatively homogeneously distributed over the CCD | The uniform and small seeing of CFHT is evident |
 
-To contrast the last plot, here is the case of CCD #35 (lower right corner), which shows a known (but yet unexplained) lack of stars
+To contrast the last plot, here is the case of the CCD in the lower right corner, which shows a known (but yet unexplained) lack of stars
 in the lower parts:
 
 <img width="250" src="fwhm_field-2113737-35.png" title="Size distribution in CCD">
 
-The statistics output file, also for CCD #10 is:
+The statistics output file for the center CCD #10:
 ```bash
 (shapepipe)  dap ~/ShapePipeRun $ cat output/shapepipe_run_2020-03-05_10-00-26/setools_runner/output/stat/star_stat-2113737-10.txt
 # Statistics
@@ -408,376 +281,45 @@ to create histograms (as `.txt` tables and `.png` plots) in the directory `stats
 Note that `stats_global` read all `SETool` output stats files found in a given input directory tree. It can thus produce histogram combining
 several runs.
 
-### Create PSF model
 
-**Module:** psfex  
-**Parent:** setools_runner  
-**Input:** setools_star_selection  
-**Output:** star catalogue, psf file
+## Galaxy selection
 
-The PSF modeling is done with `PSFEx`. The corresponding config file `$SP_CONFIG/config_exp_Psm.ini` section is noteworthy
-in the specification of the input file pattern, which matches the first random sub-sample defined in the previous section.
-The number has to match the previously defined ratio.
-
-Then, a `PSFEx` configuration path is given:
-```ini
-[PSFEX_RUNNER]
-INPUT_MODULE = setools_runner
-FILE_PATTERN = star_split_ratio_80
-NUMBERING_SCHEME = -0000000-0
-EXEC_PATH = psfex
-DOT_PSFEX_FILE = $SP_CONFIG/default.psfex
-```
-On success, FITS files containing the star catalalogue (`psfex_cat-*.cat`) and the PSF at
-the positions of the 80% star sub-sample (`star_split_ratio_80-*.psf`) are created.
-
-### Validation tests
-
-#### Interpolate PSF to star positions
-
-**Module:** psfinterp_runner  
-**Parent**: psfex, setools  
-**Input:** star catalogue, psfex_catalog  
-**Output:** star catalogue
-
-The interpolation of the PSF on single exposures alone is not required for shape
-measurement. But to carry validation tests on the PSF model we need the
-know the PSF at the position of the stars used. For that we run the module
-`psfinterp_runner`. Input files are the PSF, the positions of the 20% star sub-sample, and the PSF catalog.
-The key `MODE` is set to `VALIDATION`, column names for the position parameters (SExtractor output) are
-given next, and `GET_SHAPES` is True to output the PSF ellipticity using moments. And important
-parameter is `STAR_THRES`, the lower limit of the number of stars per CCD to be considered to have
-a valid PSF model. We set this to 22, corresponding to 20 for the 80% sub-sample used to construct the PSF.
-CCDs with less stars will be discarded later on for the shape measurement. An additional cut is performed
-on the chi^2 value of the PSF fit, the lower limit given by `CHI2_THRESH`.
-
-```ini
-[PSFEXINTERP_RUNNER]
-INPUT_MODULE = psfex_runner, setools_runner  
-FILE_PATTERN = star_split_ratio_80, star_split_ratio_20, psfex_cat
-FILE_EXT = .psf, .fits, .cat
-NUMBERING_SCHEME = -0000000-0
-
-MODE = VALIDATION
-POSITION_PARAMS = XWIN_IMAGE,YWIN_IMAGE
-GET_SHAPES = True
-STAR_THRESH = 22
-CHI2_THRESH = 2
-```
-
-On success, validation PSF catalogues are created.
-
-
-
-#### Merge PSF catalogues
-
-**Module:** merge_star_cat_runner  
-**Parent**: psfexinterp  
-**Input:** psfex cataloguefex  
-**Output:** merged SExtractor catalogue
-
-The star and PSF catalogues from the previous module are now merged
-into a single FITS file, encoding the CCD number, with output directory given
-in the module section:
-```ini
-OUTPUT_PATH = $SP_RUN/psf_validation
-```
-The (single) output file is then `SP_RUN/psf_validation/full_starcat.fits`. (No output is produced in the actual
-module output directory.)
-
-#### Plot focal-plane ellipticity, size and residuals
-
-Outside the pipeline, create plots of PSF, model, and residual
-ellipticity and shape:
+The focus of the next step,
 ```bash
- ```
-
-On success, `png` files with plot of the focal plane are created in `$SP_RUN/psf_validation`.
-
-## Process stacked images
-
-We leave the successfully processed single exposures for the moment, and turn our attention to the stacks. The first objective is to detect sources on the stacks, which provide a higher signal-to-noise ratio compared to detecting on the single exposures. For all further processing step, the information from the single exposures at the detected positions is used, for example the PSF model, and the object postage stamps.
-
-### Mask stacks
-
-**Module:** mask_runner   
-**Parent:** none  
-**Input:** stack image, stack weight [, star catalogue)   
-**Output:** stack flag
-
-This is the analogue of the single-exposure mask module (see [Mask images](#mask-images)) for the stacks.
-The example module config file is `$SP_CONFIG/config_mask_tile.ini`, pointing to the tile-specific
-mask configuration file:
-```ini
-[MASK_RUNNER]
-MASK_CONFIG_PATH = $SP_CONFIG/config.mask
+job_sp TILE_ID -j 16
 ```
-The mask configuration file has a few differences compared to the single-exposure one.
-First, no border region needs to be flagged. Second, no external flag files exist,
-and third, the temporary directory should be different:
-```ini
-[BORDER_PARAMETERS]
-BORDER_MAKE = False
-BORDER_WIDTH = 0
-[EXTERNAL_FLAG]
-EF_MAKE = False
-[OTHER]
-TEMP_DIRECTORY = .temp_tiles
-```
+is the selection of galaxies as extended objects compared to the PSF.
+First, the PSF model is interpolated to galaxy positions, according to the PSF model
+with `psfex_interp` or `mccd_interp`. Next, postage stamps around galaxies
+of the weights maps are created via `vignetmaker`. Then, the spread model
+is computed by the 'spread_model' module. Finally, postage stamps
+around galaxies of single-exposure data is extracted with another call
+to `vignetmaker`.
 
-> Note: On the cc the star catalogues created by `create_star_cat` did not
-work with the pipeline. Thus for the moment, the mask package needs to be run
-on the login node.
 
-On success, flag files containing the mask information are created.
+## Shape measurement
 
-### Extract sources on stacks
-
-**Module:** sextractor_runner (in multi-epoch mode)  
-**Parent:** mask_runner  
-**Input:** tile_image, tile_weight, tile_flag  
-**Output:** SExtractor catalogue with multi-epoch information
-
-To detect a maximum of sources on the tiles, we set a low detection threshold.
-In addition, a post-processing step is run to find all epochs that contributed
-to a given detected object. The different entries compared to the
-single-exposure case (see [Extract sources](#extract-sources)) are thus:
-```ini
-[SEXTRACTOR_RUNNER]
-# Point to the tile-specific SExtractor parameter file
-DOT_SEX_FILE = $SP_CONFIG/default_tile.sex
-
-# Necessary for tiles, to enable multi-exposure processing
-MAKE_POST_PROCESS = TRUE
-
-# Multi-epoch mode: Path to file with single-exposure WCS header information
-LOG_WCS = $SP_Run/output/log_exp_headers.sqlite
-
-# World coordinate keywords, SExtractor output. Format: KEY_X,KEY_Y
-WORLD_POSITION = XWIN_WORLD, YWIN_WORLD
-
-# Number of pixels in x,y of a CCD. Format: Nx,Ny
-CCD_SIZE = 33, 2080, 1, 4612
-
-```
-The different entries in the SExtractor parameter file are
-```ini
-DETECT_THRESH    1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
-ANALYSIS_THRESH  1.5            # <sigmas> or <threshold>,<ZP> in mag.arcsec-2
-DEBLEND_MINCONT  0.0005         # Minimum contrast parameter for deblending
-BACK_TYPE        MANUAL         # AUTO or MANUAL
-```
-On success, output FITS SExtractor files are created. They have the following format:
-```python
-HDU  Name        Ver Type         Cards   Dimensions    Format
-  0  PRIMARY       1 PrimaryHDU       4   ()      
-  1  LDAC_IMHEAD   1 BinTableHDU     12   1R x 1C       [8560A]   
-  2  LDAC_OBJECTS  1 BinTableHDU    180   25133R x 45C  [1J, 1I, 1E, 1E, ...]   
-  3  EPOCH_0       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
-  4  EPOCH_1       1 BinTableHDU     16   25133R x 3C   [1J, 7A, 1J]   
- ...
-```
-The first 3 HDUs correspond to the usual SExtractor output. The following HDUs
-`EPOCH_<N>` contain the single-exposure information contributing to the objects
-on the stack, one HDU for each epoch. For those HDUs the columns are:
-* **NUMBER**: object id atributed by SExtractor
-* **EXP_NAME**: name of the single exposure (same for all objects of one HDU)
-* **CCD_N**: CCD number in which the object is following the MegaCam numbering (set to -1 if the object is not
-  on the single exposure)
-
-These additionnal HDUs contain all the multi-epoch informations we need for the
-following processing steps.
-
-On success, multi-epoch SExtractor catalogues are created.
-
-### Interpolate multi-epoch PSF
-
-**Module:** psfexinterp_runner   
-**Parent:** SExtractor (in multi-epoch postprocessing mode)  
-**Input:** SExtractor catalog with multi-epoch information   
-**Output:** tile PSF dictionary
-
-This step interpolates the PSF to the positions of all detected sources on the
-tiles for all epochs on which the object is imaged.
-The run mode has to be set to multi-epoch. In addition, the single-exposure
-PSF information needs to be read. Unfortunately, at present, this cannot be
-set in the config file as general pointer to the corresponding files from the single-exposure run.
-The simplest way is to find the output directory of the star PSF files, and create a symbolic link:
+The call
 ```bash
-input_psfex=`find . -name star_selection-*.psf | head -n 1`
-ln -s `dirname $input_psfex` input_psfex
+job_sp TILE_ID -j 32
 ```
-and to provide the link name in the config file:
-```ini
-[PSFEXINTERP_RUNNER]
-MODE = MULTI-EPOCH
-ME_DOT_PSF_DIR = input_psfex
+computes galaxy shapes using the multi-epoch model-fitting method `ngmix`. At the same time,
+shapes of artifically sheared galaxies are obtained for metacalibration.
+
+
+## Paste catalogues
+
+The last real processing step,
+```bash
+job_sp TILE_ID -j 64
 ```
+which pastes previously obtained information into a 'final' catalogue via `make_cat`.
+This includes galaxy detection and basic measurement parameters, the PSF model at
+galaxy positions, the spread-model classification, and the shape measurement.
 
-On success, `sqlite` output data bases are created containing the PSF on
-vignets (postage stamps). The structure is similar
-to a dictionary with the following format:
-```python
-{'object_id': {'exp_name-CCD_number' : {'VIGNET': numpy.ndarray, 'SHAPES': {}}}
-```
-For example:
-```python
-{'1': {'2104127-35': {'VIGNET': numpy.ndarray, 'SHAPES': {}},
-       '2105224-13': {'VIGNET': numpy.ndarray, 'SHAPES': {}},
-       '2105382-3':  {'VIGNET': numpy.ndarray, 'SHAPES': {}}},
- '2': {'2104127-33': {'VIGNET': numpy.ndarray, 'SHAPES': {}},
-       '2105224-12': {'VIGNET': numpy.ndarray, 'SHAPES': {}},
-       '2105382-2':  {'VIGNET': numpy.ndarray, 'SHAPES': {}}},
- ...}
-```
+## Upload results
 
-### Create weight postage stamps
-
-**Module:** vignetmaker_runner   
-**Parent:** sextractor_runner (in multi-epoch mode)  
-**Input:** SExtractor catalog with multi-epoch information, tile weight  
-**Output:**  vignet FITS table
-
-This modules is a pre-processing step to compute the spread model. This galaxy
-classification computation, performed in the nex step, requires
-* The vignets of the objects on the stack
-* The PSF information at the objects' location
-* The vignets of the weight image at the objects' location
-
-The first two outputs have already been obtained (see [Extract sources on stacks](#extract-sources-on-stacks) and []Interpolate multi-epoch PSF(#interpolate-multi-epoch-psf)), thus we only need to extract the
-weights. These are needed to weigh the object images for the comparison to the weighted single-exposure PSFs
-in the spread model classification.
-
-On success, FITS tables with vignets containing the weight for each object are created.
-
-### Compute spread model
-
-**Module:** spread_model_runner  
-**Parent:** psfex_runner (single-exposure), psfexinterp_runner (tile), vignetmaker_runner  
-**Input:** psfex catalogue, tile psf dictionary, weight vignet  
-**Output:** SExtractor catalogue
-
-The spread model for each object is computed, which serves to classify a
-sub-set of detected objects on the tiles as galaxies.
-
-> Note: The effective PSF on the tiles is approximated by a weighted sum
-of the single-exposure PSFs. The weight for each epoch is the average over
-the postage stamp.
-
-On success, SExtractor catalogues with galaxy number, magnitude, spread model,
-and an error estimate is produced.
-
-### Create single-exposure postage stamps
-
-**Module:** vignetmaker_runner2  
-**Parent:**  sextractor_runner  
-**Input:** sextractor_catalog   
-**Output:** single-exposure vignet dictionary
-
-This second iteration of the vignet creation module is the last step in
-preparation for galaxy shape measurement. Multi-epoch shape measurement requires
-* The SExtractor tile catalog with spread-model information
-* The vignets of single-exposure images for tile-detected objects
-* The vignets of single-exposure weights at the position of tile-detected objects
-* The vignets of single-exposure flags at the position of tile-detected objects
-* The vignets of the single-exposure background images at the position of tile-
-  detected objects
-* The vignets of the single-exposure PSFs
-
-The first and last items of the list were already obtained (see [Compute spread model](#compute-spread-model)
-and [Interpolate multi-epoch PSF](#interpolate-multi-epoch-psf)). The missing middle three products are
-thus to be extracted here. For technical reasons, we have to use for the
-moment the module `vignetmaker_runner2`, run in `MULTI-EPOCH` mode. To work
-in tile coordinates, we need spherical WORLD coordinates instead of Cartesian IMAGE (pixel)
-units:
-```ini
-[VIGNETMAKER_RUNNER2]
-
-MODE = MULTI-EPOCH
-
-# Coordinate frame type, one in PIX (pixel frame), SPHE (spherical coordinates)
-COORD = SPHE
-
-# Coordinate frame type, one in PIX (pixel frame), SPHE (spherical coordinates)
-COORD = SPHE
-POSITION_PARAMS = XWIN_WORLD, YWIN_WORLD
-
-# Additional parameters for path and file pattern corresponding to single-exposure
-# run outputs
-ME_IMAGE_DIR = input_split_exp, input_split_exp, input_split_exp, input_sextractor
-ME_IMAGE_PATTERN = flag, image, weight,s excat_background
-```
-The last entries indicate four input paths and corresponding file patterns, for:
-single_exposure single-CCD images, weights, flags (created in [Split images](#split-images)), and
-single-exposure background vignet file (created in [Extract sources](#extract-sources)).
-
-On success, `sqlite` dictionaries with vignets for the image, weight, flag, and
-background are created.
-
-### Multi-epoch shape measurement with `ngmix`
-
-**Module:** ngmix_runner   
-**Parent:**
-**Input:** sextractor_catalog, single_exp_image_vignet, single_exp_bkg_vignet,
-tile_psf, single_exp_weight_vignet, single_exp_flag_vignet  
-**Output:** SExtractor catalogue
-
-Now we are finally ready to run the shape measurement. At the moment this is done with algorithms largely based on NGMIX, and extensively using `galsim` classes.
-Here is a commented example config file for the pipeline:
-
-```ini
-[NGMIX_RUNNER]
-
-# Create with the split_exp_hdu module
-LOG_WCS = $SP_CONFIG/output/log_exp_headers.npy
-```
-
-### Create final catalog
-
-**Module:** make_catalog_runner   
-**Inputs:** sextractor_catalog, spread_model, tile_psf, ngmix_catalog
-
-We finally merge all the results into one catalog per tiles. Here is a commented example config file for the pipeline :
-
-```ini
-[MAKE_CATALOG_RUNNER]
-
-# If true will add a column in the final catalog : "SPREAD_CLASS"
-SM_DO_CLASSIFICATION = True
-# The classification is done by computing :
-# classif = SPREAD_MODEL + 5/3 * SPREADERR_MODEL
-# The cut for the star : |classif| < SM_STAR_STRESH
-SM_STAR_STRESH = 0.003
-# The cut for the galaxies : classif > SM_GAL_THRESH
-SM_GAL_THRESH = 0.01
-```
-
-**Tips :** At the end we have one catalog per tiles. Here are a piece of code to merge all of them (assuming you are in the directory with all the catalogs) :
-
-```python
-import os
-import numpy as np
-from shapepipe.pipeline import file_io as io
-
-all_file = os.listdir()
-
-cat = io.FITSCatalog(all_file[0])
-cat.open()
-
-data = np.copy(cat.get_data())
-
-cat.close
-
-for f in all_file[1:]:
-  cat = io.FITSCatalog(f)
-  cat.open()
-
-  data = np.concatenate((data, np.copy(cat.get_data())))
-
-  cat.close()
-
-final_catalog = io.FITSCatalog('final_cat.fits', open_mode=io.BaseCatalog.OpenMode.ReadWrite)
-
-final_catalog.save_as_fits(data, ext_name='RESULTS')
-
+Optionally, after the pipeline is finished, results can be uploaded to VOspace via
+```bash
+job_sp TILE_ID -j 128
 ```
