@@ -80,7 +80,7 @@ CDSCLIENT_PATH : str, optional
 -------------------
 
 BORDER_MAKE : bool
-    create mask around borders if True
+    create mask around borders if ``True``
 BORDER_WIDTH : int
     width of border mask in pixels
 BORDER_FLAG_VALUE : int (power of 2)
@@ -89,7 +89,7 @@ BORDER_FLAG_VALUE : int (power of 2)
 [HALO_PARAMETERS]
 
 HALO_MAKE : bool
-    create mask for halos of bright stars if True
+    create mask for halos of bright stars if ``True``
 HALO_MASKMODEL_PATH : str
     .path to halo mask geometry (``.reg`` file)
 HALO_MAG_LIM : float
@@ -107,7 +107,7 @@ HALO_REG_FILE : str
 ------------------
 
 SPIKE_MAKE : bool
-    create mask for diffraction spikes of bright stars if True
+    create mask for diffraction spikes of bright stars if ``True``
 SPIKE_MASKMODEL_PATH : str
     path to diffraction spike geometry (``.reg`` file)
 SPIKE_MAG_LIM :
@@ -125,7 +125,7 @@ SPIKE_REG_FILE : str
 --------------------
 
 MESSIER_MAKE : bool
-    create mask around Messier objects if True
+    create mask around Messier objects if ``True``
 MESSIER_CAT_PATH : str
     path to Messier catalogue
 MESSIER_SIZE_PLUS : float
@@ -137,7 +137,7 @@ MESSIER_FLAG_VALUE : int (power of 2)
 ---------------
 
 MD_MAKE : bool
-    account for missing data (= zero-valued pixels) if True
+    account for missing data (= zero-valued pixels) if ``True``
 MD_THRESH_FLAG : float
     threshold; if relative number of missing data is larger than this threshold,
     image is marked as flagged
