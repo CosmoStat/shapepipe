@@ -10,9 +10,9 @@ This package contains the module for ``make_cat``.
 - ``psfex_interp_runner`` or ``mccd_interp_runner``
 - ``ngmix_runner``
 
-:Input: ``SExtractor`` catalogues, ``sqlite`` catalogue
+:Input: SExtractor catalogues, sqlite catalogue
 
-:Output: ``Sextractor`` catalogue
+:Output: Sextractor catalogue
 
 Description
 ===========
@@ -27,16 +27,17 @@ Module-specific config file entries
 ===================================
 
 SM_DO_CLASSIFICATION : bool, optional
-    Adds spread-model star/galaxy classification flag as column `SPREAD_CLASS`
+    Adds spread-model star/galaxy classification flag as column ``SPREAD_CLASS``
     to output if ``True``
 SM_STAR_STRESH : float, optional
-    Threshold for star selection; object is classified as star if
-    |sm + 2 * sm_err < SM_STAR_THRESH where sm (sm_err) is the spread
-    model (error); default is 0.003
+    Threshold :math:`s_{\\rm star, thresh}` for star selection; object is
+    classified as star if
+    :math:`| s + 2 \sigma_s | < s_{\\textrm{star, thresh}}`
+    where :math:`s (\sigma_s)` is the spread model (error); default is 0.003
 SM_GAL_STRESH : float, optional
-    Threshold for galaxy selection; object is classified as galaxy if
-    sm + 2 * sm_err > SM_GAL_THRESH where sm (sm_err) is the spread
-    model (error); default is 0.01
+    Threshold :math:`s_{\\rm gal, thresh}` for galaxy selection; object is classified as galaxy if
+    :math:`s + 2 \sigma_s  > s_{\\textrm{gal, thresh}}` where
+    :math:`s (\sigma_s)` is the spread model (error); default is 0.01
 SHAPE_MEASUREMENT_TYPE : list
     Shape measurement method, valid is ``ngmix``, ``galsim``
 SAVE_PSF_DATA : bool, optional
