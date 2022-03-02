@@ -26,6 +26,7 @@ the summaries are number, mean, mode, extrema, and standard deviation.
 
 Module-specific config file entries
 ===================================
+
 SETOOLS_CONFIG_PATH : str
     path to setools configuration file
 
@@ -73,7 +74,7 @@ Next, the final star selection is defined::
 The size range is now refined using the mode of preselected objects. The preselection
 removes outliers before the mode computation.
 
-An example of the definition of random subsamples is as follows::
+An example of the definition of random subsamples is as follows:
 
     [RAND_SPLIT:star_split]
     RATIO = 20
