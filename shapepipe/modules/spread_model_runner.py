@@ -14,7 +14,7 @@ from shapepipe.modules.spread_model_package.spread_model import SpreadModel
     version='1.1',
     input_module=[
         'sextractor_runner',
-        'psfex_interp_runner_me',
+        'psfex_interp_runner',
         'vignetmaker_runner'
     ],
     file_pattern=['sexcat', 'galaxy_psf', 'weight_vign'],
@@ -34,22 +34,22 @@ def spread_model_runner(
     # Get input files
     sex_cat_path, psf_cat_path, weight_cat_path = input_file_list
 
-    # Get file suffix (optional)
-    if config.has_option(module_config_sec, 'SUFFIX'):
-        suffix = config.get(module_config_sec, 'SUFFIX')
-        if (suffix.lower() != 'none') & (suffix != ''):
-            suffix = suffix + '_'
+    # Get file prefix (optional)
+    if config.has_option(module_config_sec, 'PREFIX'):
+        prefix = config.get(module_config_sec, 'PREFIX')
+        if (prefix.lower() != 'none') & (prefix != ''):
+            prefix = prefix + '_'
         else:
-            suffix = ''
+            prefix = ''
     else:
-        suffix = ''
+        prefix = ''
 
     # Get pixel scale and output mode
     pixel_scale = config.getfloat(module_config_sec, 'PIXEL_SCALE')
     output_mode = config.get(module_config_sec, 'OUTPUT_MODE')
 
     # Set output file path
-    file_name = f'{suffix}sexcat_sm{file_number_string}.fits'
+    file_name = f'{prefix}sexcat_sm{file_number_string}.fits'
     output_path = f'{run_dirs["output"]}/{file_name}'
 
     # Create spread model class instance
