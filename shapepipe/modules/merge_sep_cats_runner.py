@@ -1,8 +1,8 @@
 """MERGE SEP CATS RUNNER.
 
-Module runner for ``merge_sep_cats``.
+Module runner for ``merge_sep_cats``
 
-:Author: Morgan Schmitz, Axel Guinot,
+:Authors: Morgan Schmitz, Axel Guinot,
     Martin Kilbinger <martin.kilbinger@cea.fr>
 
 """

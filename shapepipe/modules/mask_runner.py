@@ -83,22 +83,18 @@ def mask_runner(
     else:
         hdu = 0
 
-    # Get mask mask file name suffix
-    if config.has_option(module_config_sec, 'SUFFIX'):
-        suffix = config.get(module_config_sec, 'SUFFIX')
+    # Get mask mask file name prefix
+    if config.has_option(module_config_sec, 'PREFIX'):
+        prefix = config.get(module_config_sec, 'PREFIX')
     else:
-        suffix = ''
+        prefix = ''
 
-    # Get mask base ouput file name
-    if config.has_option(module_config_sec, 'OUTNAME_BASE'):
-        outname_base = config.get(module_config_sec, 'OUTNAME_BASE')
-    else:
-        outname_base = 'flag'
+    outname_base = 'flag'
 
     # Create instance of Mask
     mask_inst = Mask(
         *input_file_list[:2],
-        image_suffix=suffix.replace(" ", ""),
+        image_prefix=prefix.replace(' ', ''),
         image_num=file_number_string,
         config_filepath=config_file,
         output_dir=run_dirs['output'],
@@ -108,7 +104,7 @@ def mask_runner(
         hdu=hdu,
     )
 
-    # Make the mask
+    # Process module
     stdout, stderr = mask_inst.make_mask()
 
     # Return stdout and stderr
