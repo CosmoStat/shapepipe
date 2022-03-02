@@ -4,7 +4,9 @@ This package contains the module for ``spread_model``.
 
 :Author: Axel Guinot
 
-:Parent module: ``sextractor_runner``, ``psfex_interp_runner``
+:Parent modules:
+- ``sextractor_runner``
+- ``psfex_interp_runner`` or ``mccd_interp_runner``
     and ``vignetmaker_runner``
 
 :Input: SExtractor output catalogue, PSFEx output catalogue and vignet files
