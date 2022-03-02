@@ -4,7 +4,8 @@ This package contains the module for ``merge_starcat``.
 
 :Author: Tobias Liaudat, Martin Kilbinger
 
-:Parent module: ``mccd_fit_val_runner``
+:Parent module: ``mccd_fit_val_runner``, ``mccd_interp_runner``,
+  ``mccd_val_runner`` or ``psfex_interp_runner``
 
 :Input: PSFEx or MCCD star catalogues
 
@@ -13,7 +14,7 @@ This package contains the module for ``merge_starcat``.
 Description
 ===========
 
-This module merged the star catalogues used for building either PSFEx or MCCD
+This module merges the star catalogues used for building either PSFEx or MCCD
 PSF models.
 
 Module-specific config file entries
