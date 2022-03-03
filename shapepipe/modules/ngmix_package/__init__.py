@@ -4,7 +4,10 @@ This package contains the module for ``ngmix``.
 
 :Author: Axel Guinot
 
-:Parent module:
+:Parent modules:
+- ``sextractor_runner``
+- ``psfex_interp_runner``
+- ``vignetmaker_runner``
 
 :Input:
 
@@ -15,6 +18,12 @@ Description
 
 Module-specific config file entries
 ===================================
+
+MAG_ZP : float
+PIXEL_SCALE : float
+LOG_WCS : str
+ID_OBJ_MIN : int
+ID_OBJ_MAX : int
 
 """
 
