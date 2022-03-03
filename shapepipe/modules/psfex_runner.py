@@ -67,7 +67,7 @@ def psfex_runner(
     stderr, stdout = execute(command_line)
 
     # Parse psfex errors
-    stdout, stderr = psfex_call.parse_errors(stderr, stdout)
+    stdout, stderr = PSFExCaller.parse_errors(stderr, stdout)
 
     # Return stdout and stderr
     return stdout, stderr
