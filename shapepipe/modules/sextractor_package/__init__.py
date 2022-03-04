@@ -6,7 +6,7 @@ This package contains the module for ``sextractor``.
 
 :Parent module: ``mask_runner``
 
-:Input: single-exposure image, weight and flag files
+:Input: single-exposure single-CCD image, weight and flag files
 
 :Output: SExtractor output catalogue
 
@@ -14,7 +14,7 @@ Description
 ===========
 
 This module calls the community standard source extraction software
-SExtractor :cite:`bertin:96` to identify stars and galaxies in the input
+SExtractor :cite:`bertin:96` to detect objects in the input
 images. All of the standard SExtractor options can be used by specifying
 the paths to the appropriate configuration files.
 
@@ -45,9 +45,9 @@ DETECTION_IMAGE : bool
 DETECTION_WEIGHT : bool
     option to specify if detection weights have been provided
 ZP_FROM_HEADER : bool
-    option to to use zero points defined in the image headers
+    option to to use magnitude zero points defined in the image headers
 ZP_KEY : str, optional
-    name of header key for zero points
+    name of header key for magnitude zero points
 BKG_FROM_HEADER : bool
     option to to use background levels defined in the image headers
 BKG_KEY : str, optional
