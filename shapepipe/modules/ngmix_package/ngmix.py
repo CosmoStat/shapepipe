@@ -671,7 +671,7 @@ def get_jacob(wcs, ra, dec):
     Parameters
     ----------
     wcs : astropy.wcs.WCS
-        WCS object for wich we want the Jacobian
+        WCS object for which we want the Jacobian
     ra : float
         RA position of the center of the vignet (in degrees)
     dec : float
