@@ -28,10 +28,13 @@ def psfex_runner(
 ):
     """Define The PSFEx Runner."""
     # Extract psfex run configurations
-    psfex_executable_path = config.getexpanded(
-        module_config_sec,
-        'EXEC_PATH'
-    )
+    if config.has_option(module_config_sec, 'EXEC_PATH'):
+        psfex_executable_path = config.getexpanded(
+            module_config_sec,
+            'EXEC_PATH'
+        )
+    else:
+        psfex_executable_path = 'psfex'
     output_dir = run_dirs['output']
 
     outcatalog_name = f'{output_dir}/psfex_cat{file_number_string}.cat'
