@@ -30,7 +30,7 @@ EXEC_PATH : str
 DOT_PSFEX_FILE : str
      full path to the ``.psfex`` configuration file for PSFEx
 CHECKIMAGE : list, optional
-     list of header key names corresponding to check images
+     check-image types, i.e. diagnostic FITS images that are created on output
 
 """
 
