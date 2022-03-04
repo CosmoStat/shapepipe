@@ -26,11 +26,11 @@ Module-specific config file entries
 ===================================
 
 MAG_ZP : float
-    photometric zero point
+    Photometric zero point
 PIXEL_SCALE : float
-    pixel scale in arcseconds
+    Pixel scale in arcseconds
 LOG_WCS : str
-    path to world coordinate system log file (``*sqlite``)
+    Path to world coordinate system log file (``*sqlite``)
 ID_OBJ_MIN : int
     ID of first galaxy object to be processed
 ID_OBJ_MAX : int
