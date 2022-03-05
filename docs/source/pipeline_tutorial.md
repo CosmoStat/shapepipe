@@ -184,7 +184,7 @@ The command
 job_sp TILE_ID -j 1
 ```
 retrieves the image and weight corresponding to TILE_ID using the module `get_images`.
-It then identifies the exposures that were used to create the tile image via the 'find_exposures` runner.
+It then identifies the exposures that were used to create the tile image via the `find_exposures` runner.
 Finally, another call to `get_images` retrieves the exposure images, weights, and flag files.
 
 For the retrieval method the user can choose betwen
