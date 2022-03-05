@@ -292,7 +292,7 @@ is the selection of galaxies as extended objects compared to the PSF.
 First, the PSF model is interpolated to galaxy positions, according to the PSF model
 with `psfex_interp` or `mccd_interp`. Next, postage stamps around galaxies
 of the weights maps are created via `vignetmaker`. Then, the spread model
-is computed by the 'spread_model' module. Finally, postage stamps
+is computed by the `spread_model` module. Finally, postage stamps
 around galaxies of single-exposure data is extracted with another call
 to `vignetmaker`.
 
