@@ -83,6 +83,11 @@ Naming and numbering of the input files can closely follow the original image na
   `PSFEx` and `SExtractor` produce FITS files with file exentions other than `.fits`: `.psf` for files containing PSF
   model information for a single CCD, and `.cat` for a PSF catalogue.
 
+- _final_ shape catalogue
+  The end product of `ShapePipe` is a _final_ catalogue containing a large number of information for each galaxy, including its
+  shape parameters, the ellipticity components :math:`e_1` and :math:`e_2`. This catalogue also contains shapes of artificially
+  sheared images. This information is used in post-processing to compute calibrated shear estimates via metacalibration. 
+
 - Summary statistic files  
   The `SETools` module that creates samples of objects according to some user-defined selection criteria (see [Select stars](#select-stars)) also outputs ASCII   
   files with user-defined summary statistics for each CCD, for example the number of selected stars, or mean and standard deviation of their FWHM.  
@@ -109,7 +114,7 @@ Naming and numbering of the input files can closely follow the original image na
 
 `ShapePipe` splits the processing of CFIS images into several parts:
 These are the retrieval and preparation of input images, processing of single exposures,
-processing of tile images, creation and upload (optional) of final shear catalogues.
+processing of tile images, creation and upload (optional) of _final_ shape catalogues.
 
 The following flowchart visualised the processing parts and steps.
 
@@ -313,7 +318,7 @@ The last real processing step,
 ```bash
 job_sp TILE_ID -j 64
 ```
-which pastes previously obtained information into a 'final' catalogue via `make_cat`.
+which pastes previously obtained information into a _final_ shape catalogue via `make_cat`.
 This includes galaxy detection and basic measurement parameters, the PSF model at
 galaxy positions, the spread-model classification, and the shape measurement.
 
