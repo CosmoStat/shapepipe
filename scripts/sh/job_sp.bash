@@ -35,7 +35,6 @@ nsh_jobs=8
 usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
 \n\nOptions:\n
    -h\tthis message\n
-   -e\tset environment and exit (run as '. $(basename "$0")'\n
    -j, --job JOB\tRunning JOB, bit-coded\n
    \t   1: retrieve images (online if method=vos)\n
    \t   2: prepare images (offline)\n
