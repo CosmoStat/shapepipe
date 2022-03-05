@@ -1,4 +1,4 @@
-"""MERGE SEP CATS PACKAGE.
+r"""MERGE SEP CATS PACKAGE.
 
 This package contains the module for ``merge_sep_cat``.
 
@@ -29,7 +29,7 @@ N_SPLIT_MAX : int
     Number of input sub-catalogues
 WARNING : str, optional
     Warning action if one or more input catalogue is missing, default is
-    ``'error'``; one of the actions defined 
+    ``'error'``; one of the actions defined
     `here <https://docs.python.org/3/library/warnings.html#warning-filter>`_
 """
 

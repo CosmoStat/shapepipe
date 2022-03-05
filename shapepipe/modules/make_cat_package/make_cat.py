@@ -121,16 +121,18 @@ def save_sm_data(
     Parameters
     ----------
     final_cat_file : file_io.FITSCatalogue
-        Final catalogue.
+        Final catalogue
     sexcat_sm_path : str
         Path to spread-model catalogue to save.
     do_classif : bool
-        If True will make a star/galaxy classification. Based on
-        class = sm + 5/3 * sm_err
+        If True objects will be classified into stars, galaxies, and other,
+        uusing the classifier class = sm + 2 * sm_err
     star_thresh : float
-        Threshold for star selection. |class| < star_thresh
+        Threshold for star selection; object is classified as star if
+        |class| < star_thresh
     gal_thresh : float
-        Threshold for galaxy selection. class > gal_thresh
+        Threshold for galaxy selection; object is classified as galaxy if
+        class > gal_thresh
 
     """
     final_cat_file.open()
@@ -148,7 +150,7 @@ def save_sm_data(
 
     if do_classif:
         obj_flag = np.ones_like(sm, dtype='int16') * 2
-        classif = sm + 2. * sm_err
+        classif = sm + 2.0 * sm_err
         obj_flag[np.where(np.abs(classif) < star_thresh)] = 0
         obj_flag[np.where(classif > gal_thresh)] = 1
 

@@ -24,33 +24,35 @@ from shapepipe.pipeline import file_io
 class Ngmix(object):
     """Ngmix.
 
-    Class to handle ngmix shapepe measurement.
+    Class to handle NGMIX shapepe measurement.
 
     Parameters
     ----------
-    input_file_list : list of str
-        input files
+    input_file_list : list
+        Input files
     output_dir : str
-        output directory
+        Output directory
     file_number_string : str
-        file numbering scheme
+        File numbering scheme
     zero_point : float
-        photometric zero point
+        Photometric zero point
     pixel_scale : float
-        pixel scale in arcsec
+        Pixel scale in arcsec
     f_wcs_path : str
-        path to merged single-exposure single-HDU headers
+        Path to merged single-exposure single-HDU headers
     w_log : logging.Logger
-        log file
-    id_obj_min : int, optional, default=-1
-        first galaxy ID to process, not used if -1
-    id_obj_max : int, optional, default=-1
-        last galaxy ID to process, not used if -1
+        Log file
+    id_obj_min : int, optional
+        First galaxy ID to process, not used if the value is set to ``-1``;
+        the default is ``-1``
+    id_obj_max : int, optional
+        Last galaxy ID to process, not used if the value is set to ``-1``;
+        the default is ``-1``
 
     Raises
     ------
-    IndexError:
-        if input file list has incorrect length
+    IndexError
+        If the length of the input file list is incorrect
 
     """
 
@@ -102,19 +104,19 @@ class Ngmix(object):
         """Flip for MegaCam.
 
         MegaCam has CCDs that are upside down. This function flips the
-        postage stamp in these CCDs.
+        postage stamps in these CCDs.
 
         Parameters
         ----------
         vign : numpy.ndarray
-            Array containing the postage stamp to flip.
+            Array containing the postage stamp to flip
         ccd_nb : int
-            Id of the ccd containing the postage stamp.
+            ID of the CCD containing the postage stamp
 
         Returns
         -------
         numpy.ndarray
-            The postage stamp flip accordingly.
+            The flipped postage stamp
 
         """
         if ccd_nb < 18 or ccd_nb in [36, 37]:
@@ -132,7 +134,7 @@ class Ngmix(object):
         Returns
         -------
         ngmix.priors
-            Priors for the different parameters.
+            Priors for the different parameters
 
         """
         # Prior on ellipticity. Details do not matter, as long
@@ -173,22 +175,22 @@ class Ngmix(object):
     def compile_results(self, results):
         """Compile Results.
 
-        Prepare the results of ngmix before saving.
+        Prepare the results of NGMIX before saving.
 
         Parameters
         ----------
         results : dict
-            results of ngmix metacal.
+            results of NGMIX metacal
 
         Returns
         -------
         dict
-            compiled results ready to be written to a file
+            Compiled results ready to be written to a file
 
         Raises
         ------
-        KeyError :
-            if SNR key not found
+        KeyError
+            If SNR key not found
 
         """
         names = ['1m', '1p', '2m', '2p', 'noshear']
@@ -304,7 +306,7 @@ class Ngmix(object):
     def save_results(self, output_dict):
         """Save Results.
 
-        Save the results into a fits file.
+        Save the results into a FITS file.
 
         Parameters
         ----------
@@ -327,12 +329,12 @@ class Ngmix(object):
     def process(self):
         """Process.
 
-        Funcion to processs Ngmix.
+        Funcion to processs NGMIX.
 
         Returns
         -------
         dict
-            Dictionary containing the ngmix metacal results
+            Dictionary containing the NGMIX metacal results
 
         """
         tile_cat = file_io.FITSCatalogue(
@@ -493,11 +495,11 @@ def get_guess(
     guess_centroid=True,
     guess_centroid_unit='sky'
 ):
-    """Get Guess.
+    r"""Get Guess.
 
-    Get the guess vector for the ngmix shape measurement
-    [center_x, center_y, g1, g2, size_T, flux]
-    No guess are given for the ellipticity (0., 0.)
+    Get the guess vector for the NGMIX shape measurement
+    ``[center_x, center_y, g1, g2, size_T, flux]``.
+    No guesses are given for the ellipticity ``(0, 0)``.
 
     Parameters
     ----------
@@ -506,32 +508,33 @@ def get_guess(
     pixel_scale : float
         Approximation of the pixel scale
     guess_flux_unit : str
-        If 'img' return the flux in pixel unit
-        if 'sky' return the flux in arcsec^-2
+        If ``img`` returns the flux in pixel units, otherwise if ``sky``
+        returns the flux in :math:`{\rm arcsec}^{-2}`
     guess_size_type : str
-        if 'T' return the size in quadrupole moments definition (2 * sigma**2)
-        if 'sigma' return moments sigma
+        If ``T`` returns the size in quadrupole moments definition
+        :math:`2\sigma^2`, otherwise if ``sigma`` returns the moments
+        :math:`\sigma`
     guess_size_unit : str
-        If 'img' return the size in pixel unit
-        if 'sky' return the size in arcsec
+        If ``img`` returns the size in pixel units, otherwise if ``sky``
+        returns the size in arcsec
     guess_centroid : bool
-        If True, will return a guess on the object centroid
-        if False, will return the image center
+        If ``True``, will return a guess on the object centroid, otherwise if
+        ``False``, will return the image centre
     guess_centroid_unit : str
-        If 'img' return the centroid in pixel unit
-        if 'sky' return the centroid in arcsec
+        If ``img`` returns the centroid in pixel unit, otherwise if ``sky``
+        returns the centroid in arcsec
 
     Returns
     -------
     numpy.ndarray
-        Return the guess array : [center_x, center_y, g1, g2, size_T, flux]
+        Return the guess array ``[center_x, center_y, g1, g2, size_T, flux]``
 
     Raises
     ------
-    GalSimHSMError :
-        for error in computation of adaptive moments
-    ValueError :
-        for invalid unit guess types
+    GalSimHSMError
+        For an error in the computation of adaptive moments
+    ValueError
+        For invalid unit guess types
 
     """
     galsim_img = galsim.Image(img, scale=pixel_scale)
@@ -602,30 +605,30 @@ def get_guess(
 def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
     """Make GalSim Fit.
 
-    Fit image using simple galsim model.
+    Fit image using simple GalSim model.
 
     Parameters
     ----------
     obs : ngmix.observation.Observation
-        image to fit
+        Image to fit
     model : str
-        model for fit
+        Model for fit
     guess0 : numpy.ndarray
-        parameters of first model guess
-    prior : ngmix.prior, optional, default=None
-        prior for fit paraemeters
-    ntry : int, optional, default=5
-        number of tries for fit
+        Parameters of first model guess
+    prior : ngmix.prior, optional
+        Prior for fit paraemeters
+    ntry : int, optional
+        Number of tries for fit, the default is ``5``
 
     Returns
     -------
     dict
-        results
+        Results
 
     Raises
     ------
-    BootGalFailure : ngmix exception
-        failure to bootstrap galaxy
+    ngmix.BootGalFailure
+        Failure to bootstrap galaxy
 
     """
     limit = 0.1
@@ -663,21 +666,21 @@ def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
 def get_jacob(wcs, ra, dec):
     """Get Jacobian.
 
-    Return the jacobian of the wcs at the required position.
+    Return the Jacobian of the WCS at the required position.
 
     Parameters
     ----------
     wcs : astropy.wcs.WCS
-        WCS object for wich we want the jacobian.
+        WCS object for which we want the Jacobian
     ra : float
-        Ra position of the center of the vignet (in Deg).
+        RA position of the center of the vignet (in degrees)
     dec : float
-        Dec position of the center of the vignet (in Deg).
+        Dec position of the center of the vignet (in degress)
 
     Returns
     -------
     galsim.wcs.BaseWCS.jacobian
-        Jacobian of the WCS at the required position.
+        Jacobian of the WCS at the required position
 
     """
     g_wcs = galsim.fitswcs.AstropyWCS(wcs=wcs)
@@ -691,7 +694,7 @@ def get_jacob(wcs, ra, dec):
 
 
 def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
-    """Get Noise.
+    r"""Get Noise.
 
     Compute the sigma of the noise from an object postage stamp.
     Use a guess on the object size, ellipticity and flux to create a window
@@ -700,20 +703,22 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
     Parameters
     ----------
     gal : numpy.ndarray
-        Galaxy image.
+        Galaxy image
     weight : numpy.ndarray
-        Weight image.
+        Weight image
     guess : list
-        Gaussian parameters fot the window function: [x0, y0, g1, g2, T, flux]
-    pixel_scale = float
+        Gaussian parameters fot the window function
+        ``[x0, y0, g1, g2, T, flux]``
+    pixel_scale : float
         Pixel scale of the galaxy image
-    thresh : float, optional, default=1.2
-        Threshold to cut the window function. Cut = thresh * sig_noise
+    thresh : float, optional
+        Threshold to cut the window function,
+        cut = ``thresh`` * :math:`\sigma_{\rm noise}`;  the default is ``1.2``
 
     Returns
     -------
     float
-        Sigma of the noise on the galaxy image.
+        Sigma of the noise on the galaxy image
 
     """
     img_shape = gal.shape
@@ -749,32 +754,32 @@ def do_ngmix_metacal(
 ):
     """Do Ngmix Metacal.
 
-    Do the metacalibration on a multi-epoch object and return the join shape
-    measurement with ngmix.
+    Perform the metacalibration on a multi-epoch object and return the joint
+    shape measurement with NGMIX.
 
     Parameters
     ----------
     gals : list
-        List of the galaxy vignets.
+        List of the galaxy vignets
     psfs : list
-        List of the PSF vignets.
+        List of the PSF vignets
     psfs_sigma : list
-        List of the sigma PSFs.
+        List of the sigma PSFs
     weights : list
-        List of the weight vignets.
+        List of the weight vignets
     flags : list
-        List of the flag vignets.
+        List of the flag vignets
     jacob_list : list
-        List of the jacobians.
+        List of the Jacobians
     prior : ngmix.priors
-        Priors for the fitting parameters.
+        Priors for the fitting parameters
     pixel_scale : float
-        pixel scale in arc second
+        pixel scale in arcsec
 
     Returns
     -------
     dict
-        Dictionary containing the results of ngmix metacal.
+        Dictionary containing the results of NGMIX metacal
 
     """
     n_epoch = len(gals)
