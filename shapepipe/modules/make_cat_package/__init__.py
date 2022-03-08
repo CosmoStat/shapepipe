@@ -32,7 +32,7 @@ SM_DO_CLASSIFICATION : bool, optional
 SM_STAR_STRESH : float, optional
     Threshold :math:`s_{\rm star, thresh}` for star selection; object is
     classified as star if
-    :math:`| s + 2 \sigma_s | < s_{\textrm{star, thresh}}`
+    :math:`|x s + 2 \sigma_s | < s_{\textrm{star, thresh}}`
     where :math:`s (\sigma_s)` is the spread model (error); default is
     ``0.003``
 SM_GAL_STRESH : float, optional

@@ -25,11 +25,11 @@ def get_header_value(image_path, key):
     image_path: str
         Path to the input image
     key: str
-        Key from which the value is requested (has to be float)
+        Key from which the value is requested (has to be a float)
 
     Returns
     -------
-    val: float
+    float
         Value associated to the key provided
 
     """
@@ -48,21 +48,23 @@ def get_header_value(image_path, key):
 
 
 def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
-    """Make Post Process.
+    """Make Post Processing.
 
-    This function will add one hdu by epoch to the SExtractor catalog.
-    Only works for tiles.
+    This function will add one HDU for each epoch to the SExtractor catalogue.
+    Note that this only works for tiles.
 
-    The columns will be: NUMBER same as SExtractor NUMBER
-                         EXP_NAME name of the single exposure for this epoch
-                         CCD_N extension where the object is
+    The columns will be:
+
+    - ``NUMBER``: same as SExtractor NUMBER
+    - ``EXP_NAME``: name of the single exposure for this epoch
+    - ``CCD_N``: extension where the object was detected
 
     Parameters
     ----------
     cat_path: str
         Path to the outputed SExtractor catalog
     f_wcs_path: str
-        Path to the log file containing wcs for all single exp CCDs
+        Path to the log file containing WCS for all single exp CCDs
     pos_params: list
         World coordinates to use to match the objects.
     ccd_size: list
@@ -148,39 +150,39 @@ class SExtractorCaller():
     Parameters
     ----------
     path_input_files: list
-        List with all the path for the input files
+        List with all the paths for the input files
     path_output_dir: str
         Path for the output directory
     number_string: str
-        Pipeline intern numerotation
+        Pipeline internal file numbering
     path_dot_sex: str
-        Path to the ".sex" config file
+        Path to the ``.sex`` config file
     path_dot_param: str
-        Path to the ".param" config file
+        Path to the ``.param`` config file
     path_dot_conv: str
-        Path to the ".conv" kernel file
+        Path to the ``.conv`` kernel file
     use_weight: bool
-        Weither a weight is profided for the measurement
+        Specify if a weight is profided for the measurement
     use_flag: bool
-        Weither a flag is provided for the measurement
+        Specify if a flag is provided for the measurement
     use_psf: bool
-        Weither a psf is provided for the model
+        Specify if a psf is provided for the model
     use_detection_image: bool
-        Weither a detection image is provided
+        Specify if a detection image is provided
     use_detection_weight: bool
-        Weither a detection weight is provided
+        Specify if a detection weight is provided
     use_zero_point: bool
-        Weither to use a zero point from the input image
-    zero_point_key: str
+        Specify whether or not to use a zero point from the input image
+    use_backgroud: bool
+        Specify whether or not to use a background value form the input image
+    zero_point_key: str, optional
         Header key corresponding to the zero point
-    use_backgroup: bool
-        Weither to use a background value form the input image
-    background_key: str
+    background_key: str, optional
         Header key corresponding to the background value
-    check_image: str
+    check_image: str, optional
         If provided, add SExtractor check image to the output
-    output_suffix: str
-        If provided, add a suffix to the output files
+    output_prefix: str, optional
+        If provided, add a prefix to the output file names
 
     """
 
@@ -202,7 +204,7 @@ class SExtractorCaller():
             zero_point_key=None,
             background_key=None,
             check_image=None,
-            output_suffix=None,
+            output_prefix=None,
     ):
 
         self.cmd_line = ''
@@ -213,7 +215,7 @@ class SExtractorCaller():
 
         self._path_output_dir = path_output_dir
         self._num_str = number_string
-        self.path_output_file = self.get_output_name(output_suffix)
+        self.path_output_file = self.get_output_name(output_prefix)
 
         self._path_dot_sex = path_dot_sex
         self._path_dot_param = path_dot_param
@@ -227,31 +229,31 @@ class SExtractorCaller():
         self.get_background(use_background, background_key)
         self.get_check_image(check_image)
 
-    def get_output_name(self, output_suffix=None):
+    def get_output_name(self, output_prefix=None):
         """Get Output Names.
 
         Construct the output file path.
 
         Parameters
         ----------
-        output_suffix: str
-            Suffix to add to the output name, can be None
+        output_prefix: str, optional
+            Prefix to add to the output name
 
         Returns
         -------
-        output_file_path: str
+        str
             Full path of the output file
 
         """
-        if isinstance(output_suffix, type(None)):
-            self.suffix = ''
+        if isinstance(output_prefix, type(None)):
+            self.prefix = ''
         else:
-            if (output_suffix.lower() is not None) & (output_suffix != ''):
-                self.suffix = output_suffix + '_'
+            if (output_prefix.lower() is not None) & (output_prefix != ''):
+                self.prefix = output_prefix + '_'
             else:
-                self.suffix = ''
+                self.prefix = ''
 
-        output_file_name = self.suffix + f'sexcat{self._num_str}.fits'
+        output_file_name = self.prefix + f'sexcat{self._num_str}.fits'
         output_file_path = f'{self._path_output_dir}/{output_file_name}'
 
         return output_file_path
@@ -266,20 +268,20 @@ class SExtractorCaller():
     ):
         """Set Input Files.
 
-        Setup all the input image files.
+        Set up all of the input image files.
 
         Parameters
         ----------
         use_weight: bool
-            Weither a weight is profided for the measurement
+            Specify if a weight is profided for the measurement
         use_flag: bool
-            Weither a flag is provided for the measurement
+            Specify if a flag is provided for the measurement
         use_psf: bool
-            Weither a psf is provided for the model
+            Specify if a psf is provided for the model
         use_detect_img: bool
-            Weither a detection image is provided
+            Specify if a detection image is provided
         use_detect_weight: bool
-            Weither a detection weight is provided
+            Specify if a detection weight is provided
 
         Raises
         ------
@@ -356,12 +358,12 @@ class SExtractorCaller():
     def get_zero_point(self, use_zp, zp_key=None):
         """Get Zero Point.
 
-        Use a zero point from input image header.
+        Use a zero point from an input image header.
 
         Parameters
         ----------
         use_zp: bool
-            If True, add the zero point to the command line
+            If ``True``, add the zero point to the command line
         zp_key: str
             Header key corresponding to the zero point
 
@@ -373,12 +375,12 @@ class SExtractorCaller():
     def get_background(self, use_bkg, bkg_key=None):
         """Get Background.
 
-        Use a background value from input image header.
+        Use a background value from an input image header.
 
         Parameters
         ----------
         use_bkg: bool
-            If True, add the background value to the command line
+            If ``True``, add the background value to the command line
         bkg_key: str
             Header key corresponding to the background value
 
@@ -409,7 +411,7 @@ class SExtractorCaller():
             for key in check_image:
                 check_type.append(key.upper())
                 check_name.append(
-                    self._path_output_dir + '/' + self.suffix
+                    self._path_output_dir + '/' + self.prefix
                     + key.lower()
                     + self._num_str + '.fits'
                 )
@@ -422,7 +424,7 @@ class SExtractorCaller():
     def make_command_line(self, exec_path):
         """Make Command Line.
 
-        Main that construct the command line to run SExtractor.
+        This method constructs the command line to run SExtractor.
 
         Parameters
         ----------
@@ -431,7 +433,7 @@ class SExtractorCaller():
 
         Returns
         -------
-        command_line: str
+        str
             Full command line to call SExtractor
 
         """
@@ -452,17 +454,20 @@ class SExtractorCaller():
     def parse_errors(stderr, stdout):
         """Parse Errors.
 
-        This methoid move errors from output from SExtractor to errors.
+        This methoid moves errors from the standard output of SExtractor to
+        the standard error.
 
         Parameters
         ----------
-        stderr, stdout: str
-            strings with outputs from the execute command
+        stderr: str
+            String containing the standard error contents
+        stdout: str
+            String containing the standard output content
 
         Returns
         -------
         tuple
-            stdout and stderr
+            Updated standard output and error
 
         """
         check_error = re.findall('error', stdout.lower())
