@@ -21,7 +21,6 @@ fi
 
 # Command line arguments
 ## Default values
-do_env=0
 job=255
 #config_dir='vos:cfis/cosmostat/kilbinger/cfis'
 config_dir=$VM_HOME/shapepipe/example/cfis
@@ -36,13 +35,12 @@ nsh_jobs=8
 usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
 \n\nOptions:\n
    -h\tthis message\n
-   -e\tset environment and exit (run as '. $(basename "$0")'\n
    -j, --job JOB\tRunning JOB, bit-coded\n
    \t   1: retrieve images (online if method=vos)\n
    \t   2: prepare images (offline)\n
    \t   4: mask (online)\n
-   \t   8: processing of stars on exposures (offline)\n
-   \t  16: detection and vignets (offline)\n
+   \t   8: detection of galaxies on tiles; processing of stars on exposures (offline)\n
+   \t  16: galaxy selection on tiles (offline)\n
    \t  32: shapes and morphology (offline)\n
    \t  64: paste catalogues (offline)\n
    \t 128: upload results (online)\n
@@ -79,9 +77,6 @@ while [ $# -gt 0 ]; do
     -h)
       echo -ne $usage
       exit 0
-      ;;
-    -e)
-      do_env=1
       ;;
     -j|--job)
       job="$2"
@@ -279,12 +274,6 @@ function print_env() {
 
 
 ### Start ###
-
-if [ $do_env == 1 ]; then
-   print_env
-   echo "Exiting"
-   return
-fi
 
 echo "Start"
 
