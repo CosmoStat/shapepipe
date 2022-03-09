@@ -5,6 +5,7 @@ This package contains the module for ``psfex``.
 :Authors: Axel Guinot, Tobias Liaudat
 
 :Parent modules:
+
 - ``sextractor_runner``
 - ``setools_runner``
 
