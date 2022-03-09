@@ -6,10 +6,10 @@ This package contains the module for ``mask``.
 
 :Parent module: ``split_exp_runner`` or None
 
-:Input: single-exposure single-CCD image, weight file, flag file (optional),
-        star catalogue (optional)
+:Input: Single-exposure single-CCD image, weight file, flag file (optional),
+        and star catalogue (optional)
 
-:Output: single-exposure single-CCD flag files
+:Output: Single-exposure single-CCD flag files
 
 Description
 ===========
@@ -38,25 +38,25 @@ catalogue can be created before running this module via the script
 ``create_star_cat``. During the processing of this module, this star catalogue
 is read from disk, with ``USE_SET_STAR = True``.
 
-The masking is done with the software ``WeightWatcher``, which is installed by
-``ShapePipe`` by default.
+The masking is done with the software ``WeightWatcher`` :cite:`marmo:08`,
+which is installed by ``ShapePipe`` by default.
 
 Module-specific config file entries
 ===================================
 
 USE_EXT_FLAG : bool
-    use external flag file to join with the mask created here;
+    Use external flag file to join with the mask created here;
     if ``True`` flag file needs to be given on input
 USE_EXT_STAR : bool
-    read external star catalogue instead of creating one during the
+    Read external star catalogue instead of creating one during the
     call of this module;
     if ``True`` star catalogue file needs to be given on input
 MASK_CONFIG_PATH : str
-    path to mask config file
-HDU : int, optional, default=0
-    HDU of external flag FITS file
-PREFIX : str, optional, default=''
-    prefix to be appended to output file name ``flag``;
+    Path to mask config file
+HDU : int, optional
+    HDU of external flag FITS file; the default value is ``0``
+PREFIX : str, optional
+    Prefix to be appended to output file name ``flag``;
     helps to distinguish the file patterns of newly created and external
     mask files
 
@@ -70,94 +70,96 @@ describes the config file sections and their entries.
 [PROGRAM_PATH]
 --------------
 
-WW_PATH : str
-    path to the ``WeightWatcher`` executable
+WW_PATH : str, optional
+    Full path to the WeightWatcher executable (``ww``) on the system ; if not
+    set the version controlled WeightWatcher installation in the ShapePipe
+    environment will be used
 WW_CONFIG_FILE : str
-    path to the ``WeightWatcher`` configuration file
+    Path to the WeightWatcher configuration file
 CDSCLIENT_PATH : str, optional
-    path to cds client executable; required if ``USE_EXT_STAR`` is ``False``
+    Path to CDS client executable; required if ``USE_EXT_STAR = False``
 
 [BORDER_PARAMETERS]
 -------------------
 
 BORDER_MAKE : bool
-    create mask around borders if ``True``
+    Create mask around borders if ``True``
 BORDER_WIDTH : int
-    width of border mask in pixels
-BORDER_FLAG_VALUE : int (power of 2)
-    border mask pixel value
+    Width of border mask in pixels
+BORDER_FLAG_VALUE : int
+    Border mask pixel value, power of 2
 
 [HALO_PARAMETERS]
 -----------------
 
 HALO_MAKE : bool
-    create mask for halos of bright stars if ``True``
+    Create mask for halos of bright stars if ``True``
 HALO_MASKMODEL_PATH : str
-    .path to halo mask geometry (``.reg`` file)
+    Path to halo mask geometry (``.reg`` file)
 HALO_MAG_LIM : float
-    faint stellar magnitude limit for halo mask
+    Faint stellar magnitude limit for halo mask
 HALO_SCALE_FACTOR : float
-    factor to scale between magnitude (relative to pivot) and halo mask sise
+    Factor to scale between magnitude (relative to pivot) and halo mask size
 HALO_MAG_PIVOT : float
-    pivot stellar magnitude
-HALO_FLAG_VALUE : int (power of 2)
-    halo mask pixel value
+    Pivot stellar magnitude
+HALO_FLAG_VALUE : int
+    Halo mask pixel value, power of 2
 HALO_REG_FILE : str
-    output halo mask ``.reg`` file
+    Output halo mask ``.reg`` file
 
 [SPIKE_PARAMETERS]
 ------------------
 
 SPIKE_MAKE : bool
-    create mask for diffraction spikes of bright stars if ``True``
+    Create mask for diffraction spikes of bright stars if ``True``
 SPIKE_MASKMODEL_PATH : str
-    path to diffraction spike geometry (``.reg`` file)
+    Path to diffraction spike geometry (``.reg`` file)
 SPIKE_MAG_LIM :
-    faint stellar magnitude limit for spike mask
+    Faint stellar magnitude limit for spike mask
 SPIKE_SCALE_FACTOR : float
-    factor to scale between magnitude (relative to pivot) and spike mask size
+    Factor to scale between magnitude (relative to pivot) and spike mask size
 SPIKE_MAG_PIVOT : float
-    pivot stellar magnitude
-SPIKE_FLAG_VALUE : int (power of two)
-    diffraction spike pixel value
+    Pivot stellar magnitude
+SPIKE_FLAG_VALUE : int
+    Diffraction spike pixel value, power of two
 SPIKE_REG_FILE : str
-    output spike mask ``.reg`` file
+    Output spike mask ``.reg`` file
 
 [MESSIER_PARAMETERS]
 --------------------
 
 MESSIER_MAKE : bool
-    create mask around Messier objects if ``True``
+    Create mask around Messier objects if ``True``
 MESSIER_CAT_PATH : str
-    path to Messier catalogue
+    Path to Messier catalogue
 MESSIER_SIZE_PLUS : float
-   fraction to increase Messier mask
-MESSIER_FLAG_VALUE : int (power of 2)
-    Messier mask pixel value
+    Fraction to increase Messier mask
+MESSIER_FLAG_VALUE : int
+    Messier mask pixel value, power of 2
 
 [MD_PARAMETERS]
 ---------------
 
 MD_MAKE : bool
-    account for missing data (= zero-valued pixels) if ``True``
+    Account for missing data (zero-valued pixels) if ``True``
 MD_THRESH_FLAG : float
-    threshold; if relative number of missing data is larger than this
+    Threshold; if relative number of missing data is larger than this
     threshold, image is marked as flagged
 MD_THRESH_REMOVE : float
-    threshold; if relative number of missing data is larger than this
+    Threshold; if relative number of missing data is larger than this
     threshold, image is marked for removal
 MD_REMOVE : bool
-    image is removed if marked for removal
+    Image is removed if marked for removal
 
 [OTHER]
 -------
 
 TEMP_DIRECTORY : str
-    path to temporary dictionary
+    Path to temporary dictionary
 KEEP_INDIVIDUAL_MASK : bool
-    keep individual masks in addition to merged mask file
+    Keep individual masks in addition to merged mask file
 KEEP_REG_FILE : bool
-    keep .reg mask file
+    Keep ``.reg`` mask file
 
 """
 

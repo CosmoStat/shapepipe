@@ -6,9 +6,9 @@ This package contains the module for ``find_exposures``.
 
 :Parent module: ``get_images_runner``
 
-:Input: tile image
+:Input: Tile image
 
-:Output: single-exposure ID list
+:Output: Single-exposure ID list
 
 Description
 ===========

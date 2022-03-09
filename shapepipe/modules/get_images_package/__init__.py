@@ -6,9 +6,9 @@ This package contains the module for ``get_images``.
 
 :Parent module: None or ``find_exposure_runner``
 
-:Input: image ID list
+:Input: Image ID list
 
-:Output: images
+:Output: Images
 
 Description
 ===========
@@ -27,29 +27,28 @@ Module-specific config file entries
 ===================================
 
 RETRIEVE : str
-    retrieval method, ``vos`` or ``symlink``
+    Retrieval method, ``vos`` or ``symlink``
 RETRIEVE_OPTIONS : str, optional
-    options to pass to retrieval method
-N_TRY : int, optional, default=3
-    if ``RETRIEVE = vos``, this option specifies the number of attempts to
-    download an image in case of vos failure
-INPUT_PATH : (list of) str
-    input path(s) of images
-INPUT_FILE_PATTERN : (list of) str
-    input file pattern(s) with image ID as dummy template
-INPUT_FILE_EXT : (list of) str
-    input file extension(s)
-    input path(s) of images
-OUTPUT_FILE_PATTERN : (list of) str
-    output file pattern
+    Options to pass to retrieval method
+N_TRY : int, optional
+    Ff ``RETRIEVE = vos``, this option specifies the number of attempts to
+    download an image in case of vos failure; the default value is ``3``
+INPUT_PATH : list
+    Input path(s) of images
+INPUT_FILE_PATTERN : list
+    Input file pattern(s) with image ID as dummy template
+INPUT_FILE_EXT : list
+    Input file extension(s)
+OUTPUT_FILE_PATTERN : list
+    Output file pattern(s)
 INPUT_NUMBERING : str
-    input numbering scheme, python regexp
+    Input numbering scheme, python regexp
 CHECK_EXISTING_DIR : str, optional
-    if given, check this directory for existing images, which will then not be
+    If given, check this directory for existing images, which will then not be
     downloaded
-N_EXPECTED : int, optional, default=1
-    if ``CHECK_EXISTING_DIR`` is given, this option specifies the number of
-    expected images
+N_EXPECTED : int, optional
+    If ``CHECK_EXISTING_DIR`` is given, this option specifies the number of
+    expected images; the default value is ``1``
 
 """
 

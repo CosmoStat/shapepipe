@@ -32,7 +32,7 @@ def prepare_final_cat_file(output_path, file_number_string):
 
     Returns
     -------
-    shapepipe.pipeline.file_io.FITSCatalogue
+    file_io.FITSCatalogue
         Output FITS file
 
     """
@@ -54,14 +54,14 @@ def remove_field_name(arr, name):
     Parameters
     ----------
     arr : numpy.ndarray
-        A numpy strucured array.
+        A numpy strucured array
     name : str
-        Name of the field to remove.
+        Name of the field to remove
 
     Returns
     -------
     numpy.ndarray
-        The structured with the field removed.
+        The structured array with the field removed
 
     """
     names = list(arr.dtype.names)
@@ -81,9 +81,9 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     final_cat_file : file_io.FITSCatalogue
         Final catalogue
     sexcat_path : str
-        Path to SExtractor catalogue to save.
+        Path to SExtractor catalogue to save
     remove_vignet : bool
-        If ``True`` will not save the 'VIGNET' field into the final catalogue.
+        If ``True`` will not save the ``VIGNET`` field into the final catalogue
 
     """
     sexcat_file = file_io.FITSCatalogue(sexcat_path, SEx_catalogue=True)
@@ -187,11 +187,11 @@ class SaveCatalogue:
         Parameters
         ----------
         mode : str
-            Run mode, options are ``'ngmix'``, ``'galsim'`` or ``'psf'``
+            Run mode, options are ``ngmix``, ``galsim`` or ``psf``
         cat_path : str
             Path to input catalogue
         moments : bool
-            Option to run ngmix mode with moments
+            Option to run ``ngmix`` mode with moments
 
         """
         self._output_dict = {}
@@ -259,14 +259,14 @@ class SaveCatalogue:
             self._output_dict[key] = value
 
     def _save_ngmix_data(self, ngmix_cat_path, moments=False):
-        """Save Ngmix Data.
+        """Save NGMIX Data.
 
-        Save the ngmix catalogue into the final one.
+        Save the NGMIX catalogue into the final one.
 
         Parameters
         ----------
         ngmix_cat_path : str
-            Path to ngmix catalogue
+            Path to NGMIX catalogue
 
         """
         self._key_ends = ['1M', '1P', '2M', '2P', 'NOSHEAR']
@@ -396,8 +396,8 @@ class SaveCatalogue:
 
         Parameters
         ----------
-        ngmix_cat_path : str
-            Path to ngmix catalogue to save.
+        galsim_cat_path : str
+            Path to GalSim catalogue to save
 
         """
         galsim_cat_file = file_io.FITSCatalogue(galsim_cat_path)
@@ -510,7 +510,7 @@ class SaveCatalogue:
         Parameters
         ----------
         galaxy_psf_path : str
-            Path to the PSF catalogue to save.
+            Path to the PSF catalogue to save
 
         """
         galaxy_psf_cat = SqliteDict(galaxy_psf_path)

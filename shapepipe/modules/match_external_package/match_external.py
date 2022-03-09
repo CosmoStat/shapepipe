@@ -3,7 +3,7 @@
 This module matches an external catalogue to a ShapePipe (SExtractor)
 catalogue.
 
-:Author: Martin Kilbinger, Xavier Jimenez
+:Authors: Martin Kilbinger, Xavier Jimenez
 
 """
 
@@ -26,7 +26,7 @@ def get_cat(path):
 
     Returns
     -------
-    FITSCatalog
+    file_io.FITSCatalogue
         Open FITS catalogue object
 
     """
@@ -51,7 +51,7 @@ def get_data(path, hdu_no):
     Returns
     -------
     tuple
-        data, column names and extension names
+        Data, column names and extension names
 
     """
     cat = get_cat(path)
@@ -105,22 +105,22 @@ class MatchCats(object):
     col_match : list
         (Internal data) column name(s) to copy into matched output catalogue
     hdu_no : int
-        (Internal) catalogue hdu number
+        (Internal) catalogue HDU number
     mode : str
-        Run mode, 'CLASSIC' or 'MULTI-EPOCH'
+        Run mode, ``CLASSIC`` or ``MULTI-EPOCH``
     external_cat_path : str
         External catalogue path
     external_col_match : list
         External data column name(s) for matching
     external_col_copy : list
         Column name(s) to copy into matched output catalogue
-    external_hdu_no : int, optional, default=1
-        External catalogue hdu number
+    external_hdu_no : int, optional
+        External catalogue hdu number, default is ``1``
     mark_non_matched : float, optional
-        If not None, output not only matched but all objects, and mark
+        If not ``None``, output not only matched but all objects, and mark
         non-matched objects with this value
-    output_distance : bool, optional, default=False
-        Output distance between matches if ``True``
+    output_distance : bool, optional
+        Output distance between matches if ``True``, default is ``False``
 
     """
 

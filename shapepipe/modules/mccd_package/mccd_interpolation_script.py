@@ -2,7 +2,7 @@
 
 This module computes the PSFs from a MCCD model at several galaxy positions.
 
-:Author: Tobias Liaudat based on Axel Guinot's code
+:Author: Tobias Liaudat
 
 """
 
@@ -36,19 +36,19 @@ def interp_MCCD(mccd_model_path, positions, ccd):
     Parameters
     ----------
     mccd_model_path: str
-        Path to the correct MCCD model.
+        Path to the correct MCCD model
     positions: numpy.ndarray
         Positions for the PSF recovery in local coordinates with respect to
-        the ``ccd``. Array shape: (n_pos, 2).
+        the ``ccd``; array shape: ``(n_pos, 2)``
     ccd: int
-        CCD from where the positions were taken.
+        CCD from where the positions were taken
 
     Returns
     -------
     PSFs: numpy.ndarray or str
-        Recovered PSFs at the required positions. Returned array has the
-        shape: (n_pos, n_pix, n_pix).
-        A ``str`` is returned if some error occur.
+        Recovered PSFs at the required positions; the returned array has the
+        shape: ``(n_pos, n_pix, n_pix)``; a ``str`` is returned if some error
+        occurs
 
     """
     if not os.path.exists(mccd_model_path):
@@ -89,22 +89,22 @@ class MCCDinterpolator(object):
     Parameters
     ----------
     dotpsf_path : str
-        Path to PSFEx output file.
+        Path to PSFEx output file
     galcat_path : str
-        Path to SExtractor-like galaxy catalog.
+        Path to SExtractor-like galaxy catalogue
     output_path : str
-        Path to folder where output PSFs should be written.
+        Path to folder where output PSFs should be written
     img_number: str
         Corresponds to shapepipe's module input ``file_number_string`` which
-        is the input file id.
-    w_log : logger
-        Shapepipe's logger function.
+        is the input file ID
+    w_log : logging.Logger
+        Logging instance
     pos_params : list, optional
-        Desired position parameters. If provided, there should be exactly two,
-        and they must also be present in the galaxy catalog. Otherwise,
-        they are read directly from the .psf file.
-    get_shapes : boolean
-        If True will compute shapes for the PSF model.
+        Desired position parameters, if provided, there should be exactly two,
+        and they must also be present in the galaxy catalogue; otherwise,
+        they are read directly from the ``.psf`` file.
+    get_shapes : bool
+        If ``True`` will compute shapes for the PSF model
 
     """
 
@@ -254,7 +254,7 @@ class MCCDinterpolator(object):
         Parameters
         ----------
         star_vign : numpy.ndarray
-            Array containing the star's vignets.
+            Array containing the star's vignets
 
         """
         if import_fail:
@@ -288,12 +288,12 @@ class MCCDinterpolator(object):
         Parameters
         ----------
         psfex_cat_path : str
-            Path to the .cat file from PSFEx.
+            Path to the ``.cat`` file from PSFEx
 
         Returns
         -------
         psfex_cat_dict : dict
-            Dictionary containing information from PFSEx .cat file.
+            Dictionary containing information from PFSEx ``.cat`` file
 
         """
         psfex_cat = file_io.FITSCatalogue(psfex_cat_path, SEx_catalogue=True)
@@ -318,9 +318,9 @@ class MCCDinterpolator(object):
         Parameters
         ----------
         star_dict : dict
-            Dictionary containing star informations.
+            Dictionary containing star informations
         psfex_cat_dict : dict
-            Dictionary containing information from PFSEx .cat file.
+            Dictionary containing information from PFSEx ``.cat`` file
 
         """
         output = file_io.FITSCatalogue(
@@ -357,10 +357,9 @@ class MCCDinterpolator(object):
         dot_psf_dir : str
             Path to the directory containing the PSF model files.
         dot_psf_pattern : str
-            Common pattern of the PSF model files.
-            Ex: ``fitted_model``
+            Common pattern of the PSF model files; e.g. ``fitted_model``
         f_wcs_path : str
-            Path to the log file containing the WCS for each CCDs.
+            Path to the log file containing the WCS for each CCD
 
         """
         self._dot_psf_dir = dot_psf_dir
@@ -382,8 +381,8 @@ class MCCDinterpolator(object):
         Returns
         -------
         output_dict: dict
-            Dictionnary containing object Ids, the interpolated PSFs and
-            shapes (optionally).
+            Dictionnary containing object IDs, the interpolated PSFs and
+            shapes (optionally)
 
         """
         cat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)

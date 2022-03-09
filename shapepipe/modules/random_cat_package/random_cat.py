@@ -26,18 +26,18 @@ class RandomCat():
     Parameters
     ----------
     input_image_path : str
-        path to input image file
+        Path to input image file
     input_mask_path : str
-        path to input mask file
+        Path to input mask file
     output_path : str
-        output file path for random catalogue
+        Output file path for random catalogue
     n_rand : float
-        number of random objects on output
+        Number of random objects on output
     density : bool
-        n_rand is interpreted per square degrees if True
+        ``n_rand`` is interpreted per square degrees if ``True``
     w_log : logging.Logger
-        log file
-    tile_list_path : str, optional, default=None
+        Logging instance
+    tile_list_path : str, optional
         List to all tile IDs, to remove objects in
         overlapping tile areas
 

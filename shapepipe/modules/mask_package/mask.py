@@ -88,7 +88,7 @@ class Mask(object):
         Raises
         ------
         ValueError
-            If config file name is None
+            If config file name is ``None``
         IOError
             If config file not found
 
@@ -113,9 +113,12 @@ class Mask(object):
             'MD': {},
         }
 
-        self._config['PATH']['WW'] = (
-            conf.getexpanded('PROGRAM_PATH', 'WW_PATH')
-        )
+        if conf.has_option('PROGRAM_PATH', 'WW_PATH'):
+            self._config['PATH']['WW'] = (
+                conf.getexpanded('PROGRAM_PATH', 'WW_PATH')
+            )
+        else:
+            self._config['PATH']['WW'] = 'ww'
         self._config['PATH']['WW_configfile'] = (
             conf.getexpanded('PROGRAM_PATH', 'WW_CONFIG_FILE')
         )
@@ -387,7 +390,7 @@ class Mask(object):
         """Find Stars.
 
         Return GSC (Guide Star Catalog) objects for a field with center
-        (ra,dec) and radius r.
+        (RA, Dec) and radius :math:`r`.
 
         Parameters
         ----------
@@ -399,7 +402,7 @@ class Mask(object):
         Returns
         -------
         dict
-          Star dicotionnary for GSC objects in the field.
+          Star dicotionnary for GSC objects in the field
 
         Raises
         ------
@@ -444,7 +447,7 @@ class Mask(object):
     def mask_border(self, width=100, flag_value=4):
         """Create Mask Border.
 
-        Mask 'width' pixels around the image.
+        Mask ``width`` pixels around the image.
 
         Parameters
         ----------
@@ -491,16 +494,16 @@ class Mask(object):
         Parameters
         ----------
         cat_path : str
-            Path to the Messier catalog
+            Path to the Messier catalogue
         size_plus : float
             Increase the size of the mask by this factor
-            (Example : ``0.1`` means 10%)
+            (e.g. ``0.1`` means 10%)
         flag_value : float
             Value of the flag, some power of 2
 
         Returns
         -------
-        numpy.ndarray or None
+        numpy.ndarray or ``None``
             If no Messier objects are found in the field return ``None`` and
             the flag map
 
@@ -627,9 +630,9 @@ class Mask(object):
         Parameters
         ----------
         position1 : numpy.ndarray
-            [x,y] first point (in pixel)
+            [x,y] first point (in pixels)
         position2 : numpy.ndarray
-            [x,y] second point (in pixel)
+            [x,y] second point (in pixels)
 
         Returns
         -------
@@ -684,7 +687,7 @@ class Mask(object):
         Raises
         ------
         TypeError
-            If center is not a Numpy array
+            If centre is not a Numpy array
 
         """
         if center is None:
@@ -713,7 +716,7 @@ class Mask(object):
         Returns
         -------
         dict
-            Star dicotionnary containing all information
+            Star dictionary containing all information
 
         """
         header = []
@@ -768,9 +771,9 @@ class Mask(object):
         Parameters
         ----------
         stars : dict
-            Stars dictionary (output of find_stars)
+            Stars dictionary (output of ``find_stars``)
         types : {'HALO', 'SPIKE'}, optional
-            Type of mask, options are ``'HALO'`` or ``'SPIKE'``
+            Type of mask, options are ``HALO`` or ``SPIKE``
         mag_limit : float, optional
             Faint magnitude limit for mask, default is ``18.0``
         mag_pivot : float, optional
@@ -873,8 +876,8 @@ class Mask(object):
         Parameters
         ----------
         types : {'HALO', 'SPIKE', 'ALL'}, optional
-            Type of WeightWatcher execution, options are ``'HALO'``,
-            ``'SPIKE'`` or ``'ALL'``
+            Type of WeightWatcher execution, options are ``HALO``,
+            ``SPIKE`` or ``ALL``
 
         Raises
         ------
@@ -1024,9 +1027,9 @@ class Mask(object):
         Parameters
         ----------
         path_mask1 : str
-            Path to a mask (fits format)
+            Path to a mask (FITS format)
         path_mask2 : str, optional
-            Path to a mask (fits format)
+            Path to a mask (FITS format)
         border : numpy.ndarray, optional
             Array containing the border mask
         messier : numpy.ndarray, optional
@@ -1042,7 +1045,8 @@ class Mask(object):
         Raises
         ------
         ValueError
-            If path_mask1, path_mask2, border and messier are of type None
+            If ``path_mask1``, ``path_mask2``, border and messier are of type
+            ``None``
         TypeError
             If border is not a Numpy array
         TypeError
@@ -1121,9 +1125,9 @@ class Mask(object):
         Raises
         ------
         ValueError
-            If input_mask is type None
+            If input_mask is type ``None``
         ValueError
-            If output_fullpath is type None
+            If output_fullpath is type ``None``
 
         """
         if input_mask is None:
@@ -1181,7 +1185,7 @@ class Mask(object):
         Raises
         ------
         ValueError
-            If ``temp_dir_path`` is of type None
+            If ``temp_dir_path`` is of type ``None``
 
         """
         if temp_dir_path is None:
