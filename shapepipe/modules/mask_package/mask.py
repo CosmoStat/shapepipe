@@ -498,7 +498,7 @@ class Mask(object):
         size_plus : float
             Increase the size of the mask by this factor
             (e.g. ``0.1`` means 10%)
-        flag_value : float
+        flag_value : int
             Value of the flag, some power of 2
 
         Returns
@@ -706,7 +706,7 @@ class Mask(object):
     def _make_star_cat(self, CDSclient_output):
         """Make Star Catalogue.
 
-        Make a dicotionary from findgsc2.2 output.
+        Make a dictionary from findgsc2.2 output.
 
         Parameters
         ----------
