@@ -1,25 +1,5 @@
 # ShapePipe Tutorial
 
-## Index
-
-1. [Quick start](#quick-start)
-1. [Introduction](#introduction)
-    1. [File types and names](#file-types-and-names)
-    1. [CFIS processing](#cfis-processing)
-    1. [Input and output paths](#input-and-output-paths)
-    1. [Job and pipeline scripts](#job-and-pipeline-scripts)
-    1. [Select tiles](#select-tiles)
-1. [Run the pipeline](#run-the-pipeline)
-    1. [Retrieve input images](#retrieve-input-images)
-    1. [Prepare input images](#prepare-input-images)
-    1. [Mask images](#mask-images)
-    1. [Detect objects on tiles and process stars on single exposures](#detect-objects-on-tiles-and-process-stars-on-single-exposures)
-    1. [Global star sample statistics](#global-star-sample-statistics)
-    1. [Galaxy selection](#galaxy-selection)
-    1. [Shape measurement](#shape-measurement)
-    1. [Paste catalogues](#paste-catalogues)
-    1. [Upload results](#upload-results)
-
 ## Quick start
 
 Run the entire pipeline on a single example CFIS image with tile ID 246.290:
@@ -86,7 +66,7 @@ Naming and numbering of the input files can closely follow the original image na
 - _final_ shape catalogue
   The end product of `ShapePipe` is a _final_ catalogue containing a large number of information for each galaxy, including its
   shape parameters, the ellipticity components :math:`e_1` and :math:`e_2`. This catalogue also contains shapes of artificially
-  sheared images. This information is used in post-processing to compute calibrated shear estimates via metacalibration. 
+  sheared images. This information is used in post-processing to compute calibrated shear estimates via metacalibration.
 
 - Summary statistic files  
   The `SETools` module that creates samples of objects according to some user-defined selection criteria (see [Select stars](#select-stars)) also outputs ASCII   

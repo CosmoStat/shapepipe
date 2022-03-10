@@ -1,12 +1,6 @@
 # Basic Execution
 
-## Running the ShapePipe with SMP
-
-The pipeline can be run with SMP as follows:
-
-```bash
-shapepipe_run
-```
+ShapePipe pipelines are launched and managed via the `shapepipe_run` script.
 
 A list of command line arguments can be displayed using the `--help`
 option:
@@ -15,12 +9,35 @@ option:
 shapepipe_run --help
 ```
 
-## Running the Pipeline with MPI
+The options for defining a pipeline are managed via a
+[configuration file](configuration.md).
 
-The pipeline can be run with MPI as follows:
+## Running ShapePipe with Joblib
+
+By default ShapePipe is run using
+[Joblib](https://joblib.readthedocs.io/en/latest/) to manage parallel
+processes. The `shapepipe_run` script can run as follows
 
 ```bash
-mpiexec -n <number_of_cores> shapepipe_run
+shapepipe_run
 ```
 
-where `<number_of_cores>` is the number of cores to allocate to the run.
+which will by default look for a file called `config.ini` in the current
+directory. To specify the path to a given configuration file (with any name)
+you would run
+
+```bash
+shapepipe_run -c <PATH TO CONFIG FILE>
+```
+
+## Running the Pipeline with MPI
+
+ShapePipe can also use [mpi4py](https://mpi4py.readthedocs.io/en/stable/)
+for managing parallel processes on clusters with multiple nodes.
+The `shapepipe_run` script can be run with MPI as follows
+
+```bash
+mpiexec -n <NUMBER OF CORES> shapepipe_run
+```
+
+where `<NUMBER OF CORES>` is the number of cores to allocate to the run.
