@@ -30,14 +30,14 @@ class PasteCat(object):
     output_path : str
         Output file path of pasted catalogue
     w_log : logging.Logger
-        Log file
+        Logging instance
     ext_name : list, optional
-        HDU extension names, if None use input file names
+        HDU extension names, if ``None`` use input file names
     check_col_name : str, optional
         If not ``None``, use column with this key to check equal number
         of rows in each input catalogue
     hdu_no : numpy.ndarray, optional
-        HDU numbers of the input catalogue; by default set to 2 for all
+        HDU numbers of the input catalogue; by default set to ``2`` for all
         input files
 
     """

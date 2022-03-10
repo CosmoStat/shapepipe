@@ -23,22 +23,22 @@ class MergeSep(object):
 
     Parameters
     ----------
-    input_file_list : list of str
-        input file paths
+    input_file_list : list
+        Input file paths
     file_number_string : str
-        file number following ShapePipe numbering scheme
+        File number following ShapePipe numbering scheme
     file_pattern : str
-        file base name
+        File base name
     file_ext : str
-        file extension
+        File extension
     output_dir : str
-        output directory
+        Output directory
     n_split_max : int
-        number of separate input catalogues
+        Number of separate input catalogues
     warning : str
-        action when warning occurs, one in 'error', 'warning'
+        Action when warning occurs; options are ``error`` or ``warning``
     w_log : logging.Logger
-        log file
+        Logging instance
 
     """
 

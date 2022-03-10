@@ -22,20 +22,18 @@ def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
     Parameters
     ----------
     obj_vign : numpy.ndarray
-        Vignet of the object.
+        Vignet of the object
     psf_vign : numpy.ndarray
-        Vignet of the gaussian model of the PSF.
+        Vignet of the gaussian model of the PSF
     model_vign : numpy.ndarray
-        Vignet of the galaxy model.
+        Vignet of the galaxy model
     weight_vign : numpy.ndarray
-        Vignet of the weight at the object position.
+        Vignet of the weight at the object position
 
     Returns
     -------
-    sm : float
-        Spread model value.
-    sm_err : float
-        Spread model error value.
+    tuple
+        Spread model and corresponding error values
 
     """
     # Mask invalid pixels
@@ -84,7 +82,7 @@ def get_model(sigma, flux, img_shape, pixel_scale=0.186):
 
     This method computes
      - an exponential galaxy model with scale radius = 1/16 FWHM
-     - a gaussian model for the PSF
+     - a Gaussian model for the PSF
 
     Parameters
     ----------
@@ -93,16 +91,14 @@ def get_model(sigma, flux, img_shape, pixel_scale=0.186):
     flux : float
         Flux of the galaxy for the model
     img_shape : list
-        Size of the output vignet [xsize, ysize]
-    pixel_scale : float, optional, default=0.186
-        Pixel scale to use for the model (in arcsec)
+        Size of the output vignet ``[xsize, ysize]``
+    pixel_scale : float, optional
+        Pixel scale to use for the model (in arcsec); default is ``0.186``
 
     Returns
     -------
-    gal_vign : numpy.ndarray
-        Vignet of the galaxy model
-    psf_vign : numpy.ndarray
-        Vignet of the PSF model
+    tuple
+        Vignet of the galaxy model and of the PSF model
 
     """
     # Get scale radius
@@ -141,26 +137,26 @@ class SpreadModel(object):
     Parameters
     ----------
     sex_cat_path : str
-        path to SExtractor catalogue
+        Path to SExtractor catalogue
     psf_cat_path : str
-        path to PSF catalogue
+        Path to PSF catalogue
     weight_cat_path : str
-        path to weight catalogue
+        Path to weight catalogue
     output_path : str
-        output file path of pasted catalog
+        Output file path of pasted catalog
     pixel_scale : float
-        pixel scale in arcsec
+        Pixel scale in arcsec
     output_mode : str
-        must be in ['new', 'add'].
+        Options are ``new`` or ``add``
 
     Notes
     -----
     For the ``output_mode``:
 
-    - ``'new'`` will create a new catalogue with :
+    - ``new`` will create a new catalogue with
       ``[number, mag, sm, sm_err]``
-    - ``'add'`` will output a copy of the input SExtractor with the column sm
-      and sm_err.
+    - ``add`` will output a copy of the input SExtractor with the columns
+      ``sm`` and ``sm_err``
 
     """
 
@@ -249,7 +245,10 @@ class SpreadModel(object):
             spread_model_err_final.append(obj_sm_err)
 
         spread_model_final = np.array(spread_model_final, dtype='float64')
-        spread_model_err_final = np.array(spread_model_err_final, dtype='float64')
+        spread_model_err_final = np.array(
+            spread_model_err_final,
+            dtype='float64',
+        )
 
         psf_cat.close()
 
@@ -272,14 +271,14 @@ class SpreadModel(object):
         sm_err : numpy.ndarray
             Value of the spread model error for all objects
         mag : numpy.ndarray
-            Magnitude of all objects (only for new catalogue)
+            Magnitude of all objects (only for a new catalogue)
         number : numpy.ndarray
-            Id of all objects (only for new catalogue)
+            ID of all objects (only for a new catalogue)
 
         Raises
         ------
         ValueError
-            For incorrect output mod
+            For incorrect output mode
 
         """
         if self._output_mode == 'new':

@@ -6,9 +6,9 @@ This package contains the module for ``merge_headers``.
 
 :Parent module: ``split_exp_runner``
 
-:Input: numpy binary files (``.npy``) with single-exposure header information
+:Input: Numpy binary files (``.npy``) with single-exposure header information
 
-:Output: single SQL file with combined header information
+:Output: Single SQL file with combined header information
 
 Description
 ===========
@@ -21,7 +21,7 @@ Module-specific config file entries
 ===================================
 
 OUTPUT_PATH : str, optional
-    overrides the module output dir under ``[FILE]:OUTPUT_DIR``
+    Overrides the default module output directory under ``[FILE]:OUTPUT_DIR``
 
 """
 
