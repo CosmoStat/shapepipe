@@ -83,7 +83,7 @@ Naming and numbering of the input files can closely follow the original image na
   `PSFEx` and `SExtractor` produce FITS files with file exentions other than `.fits`: `.psf` for files containing PSF
   model information for a single CCD, and `.cat` for a PSF catalogue.
 
-- _final_ shape catalogue 
+- _final_ shape catalogue
   The end product of `ShapePipe` is a _final_ catalogue containing a large number of information for each galaxy, including its
   shape parameters, the ellipticity components :math:`e_1` and :math:`e_2`. This catalogue also contains shapes of artificially
   sheared images. This information is used in post-processing to compute calibrated shear estimates via metacalibration. 
