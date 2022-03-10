@@ -28,9 +28,10 @@ Module-specific config file entries
 N_SPLIT_MAX : int
     Number of input sub-catalogues
 WARNING : str, optional
-    Warning action if one or more input catalogue is missing, default is
-    ``'error'``; one of the actions defined
-    `here <https://docs.python.org/3/library/warnings.html#warning-filter>`_
+    Warning action if one or more input catalogue is missing; default is
+    ``error`` (one of the actions defined
+    `here <https://docs.python.org/3/library/warnings.html#warning-filter>`_)
+
 """
 
 __all__ = ['merge_sep_cats.py']

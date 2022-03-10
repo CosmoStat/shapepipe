@@ -6,7 +6,7 @@ This package contains the module for ``sextractor``.
 
 :Parent module: ``mask_runner``
 
-:Input: single-exposure single-CCD image, weight and flag files
+:Input: Single-exposure single-CCD image, weight and flag files
 
 :Output: SExtractor output catalogue
 
@@ -25,8 +25,8 @@ Module-specific config file entries
 ===================================
 
 EXEC_PATH : str, optional
-    Full path to the SExtractor executable on the system; if not set the
-    version controlled SExtractor installation in the ShapePipe environment
+    Full path to the SExtractor executable (``sex``) on the system; if not set
+    the version controlled SExtractor installation in the ShapePipe environment
     will be used
 DOT_SEX_FILE : str
     Full path to the ``.sex`` configuration file for SExtractor
@@ -63,7 +63,7 @@ LOG_WCS : str, optional
 WORLD_POSITION : list, optional
     List of world coordinates to use to match objects
 CCD_SIZE : list, optional
-    Size of a CCD in pixels [nx, ny]
+    Size of a CCD in pixels ``[nx, ny]``
 
 """
 

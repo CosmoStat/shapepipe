@@ -26,9 +26,9 @@ HDU : list, optional
     HDU numbers of the input catalogues; default is set to ``2`` for all
     catalogues
 PREFIX : str, optional
-    ouput file name prefix; default is ``cat_pasted``
+    Ouput file name prefix; default is ``cat_pasted``
 EXT_NAME : list, optional
-    list of HDU extension names; default is to use the input file names
+    List of HDU extension names; default is to use the input file names
 
 """
 

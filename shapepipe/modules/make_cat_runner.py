@@ -53,7 +53,7 @@ def make_cat_runner(
         'SM_DO_CLASSIFICATION',
     )
     if do_classif:
-        star_thresh = config.getfloat(module_config_sec, 'SM_STAR_STRESH')
+        star_thresh = config.getfloat(module_config_sec, 'SM_STAR_THRESH')
         gal_thresh = config.getfloat(module_config_sec, 'SM_GAL_THRESH')
     else:
         star_thresh = None

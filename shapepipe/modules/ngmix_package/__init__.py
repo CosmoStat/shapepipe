@@ -5,13 +5,14 @@ This package contains the module for ``ngmix``.
 :Author: Axel Guinot
 
 :Parent modules:
+
 - ``sextractor_runner``
 - ``psfex_interp_runner`` or ``mccd_interp_runner``
 - ``vignetmaker_runner``
 
-:Input: galaxy image vignets
+:Input: Galaxy image vignets
 
-:Output: shape catalogue
+:Output: Shape catalogue
 
 Description
 ===========
@@ -32,9 +33,11 @@ PIXEL_SCALE : float
 LOG_WCS : str
     Path to world coordinate system log file (``*sqlite``)
 ID_OBJ_MIN : int
-    ID of first galaxy object to be processed; not used if set to -1 (default)
+    ID of first galaxy object to be processed; not used if set to ``-1``
+    (default)
 ID_OBJ_MAX : int
-    ID of last galaxy object to be processed; not used if set to -1 (default)
+    ID of last galaxy object to be processed; not used if set to ``-1``
+    (default)
 
 """
 

@@ -19,29 +19,30 @@ SExtractor output files and saves the results to FITS files.
 Module-specific config file entries
 ===================================
 
-MASKING : bool, default is ``False``
-    option to modify the SExtractor masking value (``-1e29``) in the vignets
+MASKING : bool, optional
+    Option to modify the SExtractor masking value (``-1e29``) in the vignets;
+    the default value is ``False``
 MASK_VALUE : float
-    value to use for masking in the vignets
+    Value to use for masking in the vignets
 STAMP_SIZE : int
-    size of the vignet in pixels, note that this must be an odd integer
+    Size of the vignet in pixels, note that this must be an odd integer
 COORD : str
-    coordinate convention, options are ``PIX`` for pixel coordinates
+    Coordinate convention, options are ``PIX`` for pixel coordinates
     or ``SPHE`` for world coordinates
 POSITION_PARAMS : list
-    list of position parameter value names in the SExtractor output catalogue
+    List of position parameter value names in the SExtractor output catalogue
 MODE : str
-    run mode for module, options are ``CLASSIC`` or ``MULTI-EPOCH``
+    Run mode for module, options are ``CLASSIC`` or ``MULTI-EPOCH``
 PREFIX : str or list
-    output file name prefix(es)
+    Output file name prefix(es)
 ME_IMAGE_DIR : list
-    input directories for single-exposure flags, images, weights, and
+    Input directories for single-exposure flags, images, weights, and
     SExtractor background images, for multi-epoch processing
 ME_IMAGE_PATTERN : list
-    input file name patterns for flag, image, weight, and SExtractor background
+    Input file name patterns for flag, image, weight, and SExtractor background
     files, for multi-epoch processing
 ME_LOG_WCS : str
-    path to world coordinate system log file (``*sqlite``)
+    Path to world coordinate system log file (``*sqlite``)
 
 """
 
