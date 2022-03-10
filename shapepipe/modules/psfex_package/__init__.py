@@ -5,6 +5,7 @@ This package contains the module for ``psfex``.
 :Authors: Axel Guinot, Tobias Liaudat
 
 :Parent modules:
+
 - ``sextractor_runner``
 - ``setools_runner``
 
@@ -23,14 +24,14 @@ This module requires a previous run of SExtractor.
 Module-specific config file entries
 ===================================
 
-EXEC_PATH : str
-    full path to the PSFEx executable on the system; if not set the
+EXEC_PATH : str, optional
+    Full path to the PSFEx executable (``psfex``) on the system; if not set the
     version controlled PSFEx installation in the ShapePipe environment
     will be used
 DOT_PSFEX_FILE : str
-     full path to the ``.psfex`` configuration file for PSFEx
+    Full path to the ``.psfex`` configuration file for PSFEx
 CHECKIMAGE : list, optional
-     check-image types, i.e. diagnostic FITS images that are created on output
+    Check-image types, i.e. diagnostic FITS images that are created on output
 
 """
 

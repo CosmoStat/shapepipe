@@ -3,7 +3,7 @@
 Class to split single-exposure multi-CCD mosaic images into single-exposure
 single-CCD files, one HDU per CCD.
 
-This module splits the different CCDs (= hdus in FITS files) of a
+This module splits the different CCDs (HDUs in FITS files) of a
 single exposure into separate files.
 
 :Author: Axel Guinot
@@ -23,16 +23,16 @@ class SplitExposures(object):
 
     Parameters
     ----------
-    input_file_list : list of str
-        input file paths, typically image, weight, and flag
+    input_file_list : list
+        Input file paths, typically image, weight, and flag
     output_dir : str
-        output directory
+        Output directory
     file_number_string : str
-        input file identified
+        Input file identified
     output_suffix : str
-        output file suffix
+        Output file suffix
     n_hdu : int
-        number of HDUs (= CCDs) of input files
+        Number of HDUs (CCDs) of input files
 
     """
 
@@ -93,11 +93,11 @@ class SplitExposures(object):
         output_suffix : str
             Suffix for the output file
         transf_coord : bool
-            Transform the WCS (pv to sip) if True
+            Transform the WCS (``pv`` to ``sip``) if ``True``
         transf_int : bool
-            Set data types to int if True
+            Set data types to int if ``True``
         save_header : bool
-            Save WCS information if True
+            Save WCS information if ``True``
 
         """
         header_file = np.zeros(self._n_hdu, dtype='O')

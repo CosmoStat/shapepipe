@@ -3,7 +3,7 @@
 This module contains a class to identify single exposures that were used
 to create tiles.
 
-:Author: Martin Kilbinger <martin.kilbinger@cea.fr>, Tobias Liaudat,
+:Authors: Martin Kilbinger <martin.kilbinger@cea.fr>, Tobias Liaudat,
     Morgan Schmitz, Axel Guinot
 
 """
@@ -23,18 +23,18 @@ class MergeStarCatMCCD(object):
 
     Parameters
     ----------
-    input_file_list : list of str
-        input files
+    input_file_list : list
+        Input files
     output_dir : str
-        output directory
+        Output directory
     w_log : logging.Logger
-        log file
-    stamp_size : int, optional, default=51
-        stamp size, in pixels
-    rad : int, optional, default=10
-        radius for mask, in pixels
-    hdu_table : int, optional, default=1
-        HDU number
+        Logging instance
+    stamp_size : int, optional
+        Stamp size, in pixels; default is ``51``
+    rad : int, optional
+        Radius for mask, in pixels; default is ``10``
+    hdu_table : int, optional
+        HDU number; default is ``1``
 
     """
 
@@ -60,23 +60,27 @@ class MergeStarCatMCCD(object):
         r"""Calculate RMSE.
 
         Calculate square root of mean over input values.
-        If values is an array with element j being
-        :math:`\sum_j^{N_j}(x_{i, j}^2`, with :math:`x_{ij}`
-        being a residual (ground truth - estimation), and
+        If ``values`` is an array with element :math:`j` being
+        :math:`\sum_j^{N_j}x_{i, j}^2`, where :math:`x_{ij}`
+        is the residual (ground truth - estimation), and
         sizes is the array :math:`N_j`, then
         this function computes the RMSE.
 
         Parameters
         ----------
-        values : list of float
-            sums of pixel values for a list of input images
-        sizes : list of int
-            number of pixels for a list of input images
+        values : list
+            Sums of pixel values for a list of input images
+        sizes : list
+            Number of pixels for a list of input images
 
         Returns
         -------
         rmse : float
-            root mean square error
+            Root mean square error
+
+        See Also
+        --------
+        MergeStarCatMCCD.mean_calc
 
         """
         rmse = np.sqrt(MergeStarCatMCCD.mean_calc(values, sizes))
@@ -88,23 +92,23 @@ class MergeStarCatMCCD(object):
         r"""Calculate RMSE 2.
 
         Calculate square root of mean over squared input valuess.
-        If values is an array with element j being
-        :math:`\sum_j^{N_j}(x_{i, j}`, with :math:`x_{ij}`
-        being a residual (ground truth - estimation), and
+        If ``values`` is an array with element :math:`j` being
+        :math:`\sum_j^{N_j}x_{i, j}`, where :math:`x_{ij}`
+        is the residual (ground truth - estimation), and
         sizes is the array :math:`N_j`, then
         this function computes the RMSE.
 
         Parameters
         ----------
-        values : list of float
-            sums of pixel values for a list of input images
-        sizes : list of int
-            number of pixels for a list of input images
+        values : list
+            Sums of pixel values for a list of input images
+        sizes : list
+            Number of pixels for a list of input images
 
         Returns
         -------
-        rmse : float
-            root mean square error
+        float
+            Root mean square error
 
         """
         rmse = np.sqrt(
@@ -121,15 +125,15 @@ class MergeStarCatMCCD(object):
 
         Parameters
         ----------
-        values : list of float
-            sums of pixel values for a list of input images
-        sizes : list of int
-            number of pixels for a list of input images
+        values : list
+            Sums of pixel values for a list of input images
+        sizes : list
+            Number of pixels for a list of input images
 
         Returns
         -------
-        mean : float
-            mean
+        float
+            Mean
 
         """
         mean = (
@@ -146,15 +150,15 @@ class MergeStarCatMCCD(object):
 
         Parameters
         ----------
-        values : list of float
-            sums of pixel values for a list of input images
-        sizes : list of int
-            number of pixels for a list of input images
+        values : list
+            Sums of pixel values for a list of input images
+        sizes : list
+            Number of pixels for a list of input images
 
         Returns
         -------
-        std : float
-            standard deviation
+        float
+            Standard deviation
 
         """
         std = np.nanstd(np.array(values))
@@ -169,19 +173,15 @@ class MergeStarCatMCCD(object):
 
         Parameters
         ----------
-        val_ref : list of float
-            reference values
-        val_model : list of flost
-            model values
+        val_ref : list
+            Reference values
+        val_model : list
+            Model values
 
         Returns
         -------
-        rmse : float
-            root mean square error
-        mean : float
-            mean
-        std_dev : float
-            standard deviation
+        tuple
+            Root mean square error, mean and standard deviation
 
         """
         residual = val_ref - val_model
@@ -501,14 +501,14 @@ class MergeStarCatPSFEX(object):
 
     Parameters
     ----------
-    input_file_list : list of str
-        input files
+    input_file_list : list
+        Input files
     output_dir : str
-        output directory
+        Output directory
     w_log : logging.Logger
-        log file
-    hdu_table : int, optional, default=2
-        HDU number
+        Logging instance
+    hdu_table : int, optional
+        HDU number; default is ``2``
 
     """
 

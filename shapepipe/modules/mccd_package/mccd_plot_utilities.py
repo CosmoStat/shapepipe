@@ -1,11 +1,11 @@
 """MCCD PLOTS UTILITIES.
 
 This module is used to generate a series of plots from the merged validation
-catalogues. It plots the Meanshape plots for the merged validation catalogue.
+catalogues. It plots the Mean shape plots for the merged validation catalogue.
 It can also plot the rho statistics provided that the required packages are
 installed.
 
-:Author: Tobias Liaudat based on Axel Guinot's code
+:Author: Tobias Liaudat
 
 """
 
@@ -80,9 +80,9 @@ def megacam_flip(xbins, ybins, ccd_nb, nb_pixel):
     Parameters
     ----------
     xbins : int
-        x-axis bins
+        X-axis bins
     ybins : int
-        y-axis bins
+        Y-axis bins
     ccd_nb : int
         CCD number
     nb_pixel : int
@@ -110,9 +110,9 @@ def megacam_flip_2(xbins, ybins, ccd_nb, nb_pixel):
     Parameters
     ----------
     xbins : int
-        x-axis bins
+        X-axis bins
     ybins : int
-        y-axis bins
+        Y-axis bins
     ccd_nb : int
         CCD number
     nb_pixel : int
@@ -145,7 +145,7 @@ def mean_shapes_plot(
 ):
     r"""Mean Shapes Plot.
 
-    Plot meanshapes from ccd maps.
+    Plot mean shapes from CCD maps.
 
     Parameters
     ----------
@@ -154,13 +154,13 @@ def mean_shapes_plot(
     filename : str
         File name
     title : str, optional
-        Plot title, default is ``''``
+        Plot title
     colorbar_ampl : float, optional
-        Colour bar amplitude, default is ``1.0``
-    wind : numpy.ndarray
-        ?
+        Colour bar amplitude; default is ``1.0``
+    wind : numpy.ndarray, optional
+        minimum and maximum values for color map; determined from ``ccd_maps`` if ``None`` (default)
     cmap : str, optional
-        Colour map, default is ``'bwr'``
+        Colour map; default is ``bwr``
 
     """
     # colorbar amplitude
@@ -207,30 +207,33 @@ def plot_meanshapes(
     plot_histograms=True,
     psf_model_type='mccd'
 ):
-    """Plot Meanshapes.
+    """Plot Mean Shapes.
 
     Plot mean shapes, sizes, and histograms
 
     Parameters
     ----------
     starcat_path : str
-        input star and PSF catalogue
+        Input star and PSF catalogue
     output_path : str
-        output directory for plots
-    nb_pixel : numpy.ndarray of int
-        number of pixels per CCD in x- and y-direction
+        Output directory for plots
+    nb_pixel : numpy.ndarray
+        Number of pixels per CCD in x- and y-direction
     w_log : logging.Logger
-        log file
-    hdu_no : int, optional, default=2
-        HDU number of data in input FITS file
-    remove_outliers : bool, optional, default=False
-        perform outlier rejection if True
-    plot_meanshape : bool, optional, default=True
-        plot mean focal plane ellipticities, sizes, and residuals if True
-    plot_histograms : bool, optional, default=True
-        plot 1D histogram of ellipticities, sizes, and residuals if True
-    psf_model_type : str, optional, default='mccd'
-        psf model type, one in 'mccd', 'psfex'
+        Logging instance
+    hdu_no : int, optional
+        HDU number of data in input FITS file; default is ``2``
+    remove_outliers : bool, optional
+        Perform outlier rejection if ``True``; default is ``False``
+    plot_meanshape : bool, optional
+        Plot mean focal plane ellipticities, sizes, and residuals if ``True``;
+        default is ``True``
+    plot_histograms : bool, optional
+        Plot 1D histogram of ellipticities, sizes, and residuals if ``True``;
+        default is ``True``
+    psf_model_type : str, optional
+        PSF model type, options are ``mccd`` or ``psfex``; defualt is ``mccd``
+
     """
     # READ FULL STARCAT
     starcat = fits.open(starcat_path, memmap=False)
@@ -685,27 +688,27 @@ def neg_dash(
     Parameters
     ----------
     x_in : numpy.ndarray
-        x-axis inputs
+        X-axis inputs
     y_in : numpy.ndarray
-        y-axis inputs
+        Y-axis inputs
     yerr_in : numpy.ndarray
-        y-axis error inputs
+        Y-axis error inputs
     plot_name : str, optional
-        Plot name, default is ``''``
+        Plot name
     vertical_lines : bool, optional
-        Option to plot vertical lines, default is ``True``
+        Option to plot vertical lines; default is ``True``
     xlabel : str, optional
-        x-axis label, default is ``''``
+        X-axis label
     ylabel : str, optional
-        y-axis label, default is ``''``
+        Y-axis label
     rho_nb : str, optional
-        Rho number, default is ``''``
+        Rho number
     ylim : float, optional
-        y-axis limit
+        Y-axis limit
     semilogx : bool
-        Option to plot the x-axis in log scale, default is ``False``
+        Option to plot the x-axis in log scale; default is ``False``
     semilogy : bool
-        Option to plot the y-axis in log scale, default is ``False``
+        Option to plot the y-axis in log scale; default is ``False``
 
     """
     x = np.copy(x_in)
@@ -829,26 +832,25 @@ class new_BaseCorrelationFunctionSysTest(BaseCorrelationFunctionSysTest):
         data : numpy.ndarray
             Input data
         config : dict
-            The `config` parameter to be passed to treecorr's
-            catalogue. A configuration dict which defines attributes
-            about how to read the file. Any optional kwargs may be
-            given here in the config dict if desired. Invalid keys
-            in the config dict are ignored. See the `treecorr`
-            package documentation for more details
-            Default is ``None``.
+            The config parameter to be passed to TreeCorr's
+            catalogue, a configuration dict which defines attributes
+            about how to read the file. Any optional keyword arguments may be
+            given here in the config dict if desired; invalid keys
+            in the config dict are ignored; See the TreeCorr
+            package documentation for more details; default is ``None``
         use_as_k : str, optional
-            String representing the field in `data` that will be
+            String representing the field in ``data`` that will be
             used to replace the convergence, kappa, that is
-            identified with the string `k`. See the `treecorr`
+            identified with the string ``k``; see the TreeCorr
             package documentation for more details
         use_chip_coords : bool, optional
-            Option to use chip coordinates, default is ``False``
+            Option to use chip coordinates; default is ``False``
 
         Returns
         -------
         treecorr.Catalog
-            An instance of the `treecorr.Catalog` class.
-            Contains a data catalogue that will be correlated
+            An instance of the ``treecorr.Catalog`` class; contains a data
+            catalogue that will be correlated
 
         """
         if data is None or isinstance(data, treecorr.Catalog):
@@ -931,15 +933,13 @@ class Rho1SysTest(new_BaseCorrelationFunctionSysTest):
         random2 : numpy.ndarray, optional
             Second random data
         config : dict, optional
-            Configuration dict to be passed to treecorr.
-            Default is ``None``
+            Configuration dict to be passed to TreeCorr; default is ``None``
 
         Returns
         -------
         numpy.ndarray
-            A numpy array of the treecorr outputs. Handled via the
-            Stile package through the `BaseCorrelationFunctionSysTest`
-            class
+            A numpy array of the TreeCorr outputs, handled via the
+            Stile package through the ``BaseCorrelationFunctionSysTest`` class
 
         """
         new_data = data.copy()
@@ -1009,15 +1009,13 @@ class DESRho2SysTest(new_BaseCorrelationFunctionSysTest):
         random2 : numpy.ndarray, optional
             Second random data
         config : dict, optional
-            Configuration dict to be passed to treecorr.
-            Default is ``None``
+            Configuration dict to be passed to TreeCorr; default is ``None``
 
         Returns
         -------
         numpy.ndarray
-            A numpy array of the treecorr outputs. Handled via the
-            Stile package through the `BaseCorrelationFunctionSysTest`
-            class
+            A numpy array of the TreeCorr outputs, handled via the
+            Stile package through the ``BaseCorrelationFunctionSysTest`` class
 
         """
         new_data = np.rec.fromarrays(
@@ -1115,15 +1113,13 @@ class DESRho3SysTest(new_BaseCorrelationFunctionSysTest):
         random2 : numpy.ndarray, optional
             Second random data
         config : dict, optional
-            Configuration dict to be passed to treecorr.
-            Default is ``None``
+            Configuration dict to be passed to TreeCorr; default is ``None``
 
         Returns
         -------
         numpy.ndarray
-            A numpy array of the treecorr outputs. Handled via the
-            Stile package through the `BaseCorrelationFunctionSysTest`
-            class
+            A numpy array of the TreeCorr outputs, handled via the
+            Stile package through the ``BaseCorrelationFunctionSysTest`` class
 
         """
         new_data = np.rec.fromarrays(
@@ -1230,15 +1226,13 @@ class DESRho4SysTest(new_BaseCorrelationFunctionSysTest):
         random2 : numpy.ndarray, optional
             Second random data
         config : dict, optional
-            Configuration dict to be passed to treecorr.
-            Default is ``None``
+            Configuration dict to be passed to TreeCorr; default is ``None``
 
         Returns
         -------
         numpy.ndarray
-            A numpy array of the treecorr outputs. Handled via the
-            Stile package through the `BaseCorrelationFunctionSysTest`
-            class
+            A numpy array of the TreeCorr outputs, handled via the
+            Stile package through the ``BaseCorrelationFunctionSysTest`` class
 
         """
         new_data = np.rec.fromarrays(
@@ -1344,14 +1338,13 @@ class DESRho5SysTest(new_BaseCorrelationFunctionSysTest):
         random2 : numpy.ndarray, optional
             Second random data
         config : dict, optional
-            Configuration dict to be passed to treecorr.
-            Default is ``None``
+            Configuration dict to be passed to TreeCorr; default is ``None``
 
         Returns
         -------
         numpy.ndarray
-            A numpy array of the treecorr outputs. Handled via the
-            Stile package through the `BaseCorrelationFunctionSysTest`
+            A numpy array of the TreeCorr outputs, handled via the
+            Stile package through the ``BaseCorrelationFunctionSysTest``
             class
 
         """
@@ -1432,17 +1425,17 @@ def rho_stats(
     Parameters
     ----------
     starcat_path : str
-        star catalogue file path
+        Star catalogue file path
     output_path : str
-        output directory for plots
-    hdu_no : int, optional, default=2
-        input HDU
-    ylim_l : numpy.ndaray of float
-        y-axis limits for left-hand plot
-    ylim-r : numpy.ndaray of float
-        y-axis limits for right-hand plot
-    print_fun : callable, optional, default=print
-        output message function
+        Output directory for plots
+    hdu_no : int, optional
+        Input HDU; default is ``2``
+    ylim_l : numpy.ndarray
+        Y-axis limits for left-hand plot
+    ylim-r : numpy.ndarray
+        Y-axis limits for right-hand plot
+    print_fun : callable, optional
+        Output message function; default is ``print``
 
     """
     # Read starcat

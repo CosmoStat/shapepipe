@@ -9,7 +9,7 @@ This package contains the module for ``merge_starcat``.
 
 :Input: PSFEx or MCCD star catalogues
 
-:Output: merged star catalogue
+:Output: Merged star catalogue
 
 Description
 ===========
