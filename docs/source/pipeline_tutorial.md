@@ -83,7 +83,7 @@ Naming and numbering of the input files can closely follow the original image na
   `PSFEx` and `SExtractor` produce FITS files with file exentions other than `.fits`: `.psf` for files containing PSF
   model information for a single CCD, and `.cat` for a PSF catalogue.
 
-- _final_ shape catalogue
+- _final_ shape catalogue 
   The end product of `ShapePipe` is a _final_ catalogue containing a large number of information for each galaxy, including its
   shape parameters, the ellipticity components :math:`e_1` and :math:`e_2`. This catalogue also contains shapes of artificially
   sheared images. This information is used in post-processing to compute calibrated shear estimates via metacalibration. 
@@ -93,20 +93,20 @@ Naming and numbering of the input files can closely follow the original image na
   files with user-defined summary statistics for each CCD, for example the number of selected stars, or mean and standard deviation of their FWHM.  
   Example: `star_stat-2366993-18.txt`
 
-- Tile ID list
+- Tile ID list  
   ASCII file with a tile number on each line. Used for the `get_image_runner` module to download CFIS images (see [Download tiles](#download-tiles)).
 
-  - Single-exposure name list
-    ASCII file with a single-exposure name on each line. Produced by the `find_exposure_runner` module to identify single exposures that were used to create
-    a given tile. See [Find exposures](#find-exposures)).
+- Single-exposure name list  
+  ASCII file with a single-exposure name on each line. Produced by the `find_exposure_runner` module to identify single exposures that were used to create
+  a given tile. See [Find exposures](#find-exposures)).
 
-- Plots
+- Plots  
   The `SETools` module can also produce plots of the objects properties that were selected for a given CCD.
   The type of plot (histogram, scatter plot, ...) and quantities to plot as well as plot decorations can be specified in the
   selection criteria config file (see [Select stars](#select-stars)).
   Example: `hist_mag_stars-2104133-5.png`
 
-- Log files
+- Log files  
   The pipeline core and all called modules write ASCII log files to disk.  
   Examples: `process-2366993-6.log`, `log_sp_exp.log`.
 
