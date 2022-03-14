@@ -1,0 +1,923 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Post-processing &#8212; ShapePipe v0.0</title>
+    
+  <link href="_static/css/theme.css" rel="stylesheet">
+  <link href="_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-book-theme.css?digest=84ace793992934648b4de8eed757e5a2" />
+    
+  <link rel="preload" as="script" href="_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx-book-theme.9d8b4a8b9bb19db25eeaddc40d639ba2.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Create random catalogue" href="random_cat.html" />
+    <link rel="prev" title="ShapePipe Tutorial" href="pipeline_tutorial.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<div class="col-12 col-md-3 bd-sidebar site-navigation " id="site-navigation">
+    
+        <div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="index.html">
+      
+      
+      
+      <h1 class="site-logo" id="site-title">ShapePipe v0.0</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  About ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="about.html">
+   About
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="contributors.html">
+   Contributors
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Installing ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="dependencies.html">
+   Dependencies
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="installation.html">
+   Installation
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Running ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="basic_execution.html">
+   Basic Execution
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="configuration.html">
+   Configuration
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="testing.html">
+   Testing
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="pipeline_tutorial.html">
+   ShapePipe Tutorial
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Miscellaneous
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Post-processing
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="random_cat.html">
+   Create random catalogue
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  API Documentation
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="shapepipe.html">
+   shapepipe
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="shapepipe.modules.html">
+     shapepipe.modules
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+    <label for="toctree-checkbox-2">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.find_exposures_package.html">
+       shapepipe.modules.find_exposures_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+      <label for="toctree-checkbox-3">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.find_exposures_package.find_exposures.html">
+         shapepipe.modules.find_exposures_package.find_exposures
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.get_images_package.html">
+       shapepipe.modules.get_images_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+      <label for="toctree-checkbox-4">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.get_images_package.get_images.html">
+         shapepipe.modules.get_images_package.get_images
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.make_cat_package.html">
+       shapepipe.modules.make_cat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+      <label for="toctree-checkbox-5">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.make_cat_package.make_cat.html">
+         shapepipe.modules.make_cat_package.make_cat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.mask_package.html">
+       shapepipe.modules.mask_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+      <label for="toctree-checkbox-6">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.mask_package.mask.html">
+         shapepipe.modules.mask_package.mask
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.match_external_package.html">
+       shapepipe.modules.match_external_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+      <label for="toctree-checkbox-7">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.match_external_package.match_external.html">
+         shapepipe.modules.match_external_package.match_external
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.mccd_package.html">
+       shapepipe.modules.mccd_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+      <label for="toctree-checkbox-8">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html">
+         shapepipe.modules.mccd_package.mccd_interpolation_script
+        </a>
+       </li>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.mccd_package.mccd_plot_utilities.html">
+         shapepipe.modules.mccd_package.mccd_plot_utilities
+        </a>
+       </li>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html">
+         shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.merge_headers_package.html">
+       shapepipe.modules.merge_headers_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+      <label for="toctree-checkbox-9">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.merge_headers_package.merge_headers.html">
+         shapepipe.modules.merge_headers_package.merge_headers
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.merge_sep_cats_package.html">
+       shapepipe.modules.merge_sep_cats_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+      <label for="toctree-checkbox-10">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.merge_sep_cats_package.merge_sep_cats.html">
+         shapepipe.modules.merge_sep_cats_package.merge_sep_cats
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.merge_starcat_package.html">
+       shapepipe.modules.merge_starcat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+      <label for="toctree-checkbox-11">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.merge_starcat_package.merge_starcat.html">
+         shapepipe.modules.merge_starcat_package.merge_starcat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.ngmix_package.html">
+       shapepipe.modules.ngmix_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/>
+      <label for="toctree-checkbox-12">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html">
+         shapepipe.modules.ngmix_package.ngmix
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.pastecat_package.html">
+       shapepipe.modules.pastecat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/>
+      <label for="toctree-checkbox-13">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.pastecat_package.pastecat.html">
+         shapepipe.modules.pastecat_package.pastecat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.psfex_interp_package.html">
+       shapepipe.modules.psfex_interp_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" type="checkbox"/>
+      <label for="toctree-checkbox-14">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.psfex_interp_package.psfex_interp.html">
+         shapepipe.modules.psfex_interp_package.psfex_interp
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.psfex_package.html">
+       shapepipe.modules.psfex_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" type="checkbox"/>
+      <label for="toctree-checkbox-15">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.psfex_package.psfex_script.html">
+         shapepipe.modules.psfex_package.psfex_script
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.python_example_package.html">
+       shapepipe.modules.python_example_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" type="checkbox"/>
+      <label for="toctree-checkbox-16">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.python_example_package.python_example.html">
+         shapepipe.modules.python_example_package.python_example
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.random_cat_package.html">
+       shapepipe.modules.random_cat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" type="checkbox"/>
+      <label for="toctree-checkbox-17">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.random_cat_package.random_cat.html">
+         shapepipe.modules.random_cat_package.random_cat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.setools_package.html">
+       shapepipe.modules.setools_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" type="checkbox"/>
+      <label for="toctree-checkbox-18">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.setools_package.setools.html">
+         shapepipe.modules.setools_package.setools
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.sextractor_package.html">
+       shapepipe.modules.sextractor_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" type="checkbox"/>
+      <label for="toctree-checkbox-19">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.sextractor_package.sextractor_script.html">
+         shapepipe.modules.sextractor_package.sextractor_script
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.split_exp_package.html">
+       shapepipe.modules.split_exp_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" type="checkbox"/>
+      <label for="toctree-checkbox-20">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.split_exp_package.split_exp.html">
+         shapepipe.modules.split_exp_package.split_exp
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.spread_model_package.html">
+       shapepipe.modules.spread_model_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-21" name="toctree-checkbox-21" type="checkbox"/>
+      <label for="toctree-checkbox-21">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.spread_model_package.spread_model.html">
+         shapepipe.modules.spread_model_package.spread_model
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.uncompress_fits_package.html">
+       shapepipe.modules.uncompress_fits_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-22" name="toctree-checkbox-22" type="checkbox"/>
+      <label for="toctree-checkbox-22">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.uncompress_fits_package.uncompress_fits.html">
+         shapepipe.modules.uncompress_fits_package.uncompress_fits
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.vignetmaker_package.html">
+       shapepipe.modules.vignetmaker_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-23" name="toctree-checkbox-23" type="checkbox"/>
+      <label for="toctree-checkbox-23">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.vignetmaker_package.vignetmaker.html">
+         shapepipe.modules.vignetmaker_package.vignetmaker
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.modules.module_decorator.html">
+       shapepipe.modules.module_decorator
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.modules.module_runners.html">
+       shapepipe.modules.module_runners
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="shapepipe.pipeline.html">
+     shapepipe.pipeline
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-24" name="toctree-checkbox-24" type="checkbox"/>
+    <label for="toctree-checkbox-24">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.args.html">
+       shapepipe.pipeline.args
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.config.html">
+       shapepipe.pipeline.config
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.dependency_handler.html">
+       shapepipe.pipeline.dependency_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.execute.html">
+       shapepipe.pipeline.execute
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.file_handler.html">
+       shapepipe.pipeline.file_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.file_io.html">
+       shapepipe.pipeline.file_io
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.job_handler.html">
+       shapepipe.pipeline.job_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.mpi_run.html">
+       shapepipe.pipeline.mpi_run
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.run_log.html">
+       shapepipe.pipeline.run_log
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.shared.html">
+       shapepipe.pipeline.shared
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.str_handler.html">
+       shapepipe.pipeline.str_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.timeout.html">
+       shapepipe.pipeline.timeout
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.worker_handler.html">
+       shapepipe.pipeline.worker_handler
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="shapepipe.utilities.html">
+     shapepipe.utilities
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" type="checkbox"/>
+    <label for="toctree-checkbox-25">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.utilities.canfar.html">
+       shapepipe.utilities.canfar
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.utilities.cfis.html">
+       shapepipe.utilities.cfis
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.utilities.file_system.html">
+       shapepipe.utilities.file_system
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.utilities.galaxy.html">
+       shapepipe.utilities.galaxy
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="shapepipe.info.html">
+     shapepipe.info
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="shapepipe.run.html">
+     shapepipe.run
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Contributing to ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="contributing.html">
+   Contribution Guidelines
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="module_develop.html">
+   Module Development
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="module_example.html">
+   Module Examples
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  References
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="z_ref.html">
+   References
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav> <!-- To handle the deprecated key -->
+
+<div class="navbar_extra_footer">
+  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+</div>
+
+</div>
+
+
+          
+
+
+          
+<!-- This is an invisible pixel that we watch to see if we've scrolled. -->
+<div class="sbt-scroll-pixel-helper"></div>
+<main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
+    
+    <div class="topbar container-xl fixed-top">
+    <div class="topbar-contents row">
+        <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show"></div>
+        <div class="col pl-md-4 topbar-main">
+            <div class="topbar-left">
+                
+                <label class="nav-toggle-button" for="__navigation">
+                    <div class="visually-hidden">Toggle navigation</div>
+                    <i class="fas fa-bars"></i>
+                </label>
+                
+            </div>
+            
+            <!-- Source interaction buttons -->
+
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Connect with source repository"><i class="fab fa-github"></i></button>
+    <div class="dropdown-buttons sourcebuttons">
+        <a class="repository-button"
+            href="https://github.com/CosmoStat/shapepipe"><button type="button" class="btn btn-secondary topbarbtn"
+                data-toggle="tooltip" data-placement="left" title="Source repository"><i
+                    class="fab fa-github"></i>repository</button></a>
+        <a class="issues-button"
+            href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2Fpost_processing.html&body=Your%20issue%20content%20here."><button
+                type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
+                title="Open an issue"><i class="fas fa-lightbulb"></i>open issue</button></a>
+        
+    </div>
+</div>
+
+            <!-- Full screen (wrap in <a> to have style consistency -->
+
+            <!-- Launch buttons -->
+
+        </div>
+
+        <!-- Table of contents -->
+        <div class="d-none d-md-block col-md-2 bd-toc show noprint">
+            
+        </div>
+    </div>
+</div>
+    <div id="main-content" class="row">
+        <div class="col-12 col-md-9 pl-md-3 pr-md-0">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>Post-processing</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                    </div>
+                </div>
+            </div>
+            
+              <div>
+                
+  <div class="section" id="post-processing">
+<h1>Post-processing<a class="headerlink" href="#post-processing" title="Permalink to this headline">¶</a></h1>
+<p>This page shows all required steps of post-processing a <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> run. Some details pertain specifically to
+runs carried out on <span class="xref myst">canfar</span>, but most are general.</p>
+<ol class="arabic">
+<li><p>Retrieve files with <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> results</p>
+<p>For a local run on the same machine as for post-processing, nothing needs to be done.
+In some cases, the run was carried out on a remote machine or cluster, and the resulting <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code>
+output files need to be retrieved.</p>
+<p>In the specific case of canfar_avail_results.py, this is done as follows.</p>
+<p>A. Check availability of results</p>
+<p>A <code class="docutils literal notranslate"><span class="pre">canfar</span></code> job can submit a large number of tiles, whose processing time can vary a lot.
+We assume that the submitted tile ID list is available locally via the ascii file <code class="docutils literal notranslate"><span class="pre">tile_numbers.txt</span></code>.
+To check which tiles have finished running, and whose results have been uploaded, use</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>canfar_avail_results -i tile_numbers.txt -v -p PSF --input_path INPUT_PATH
+</pre></div>
+</div>
+<p>where PSF is one in [<code class="docutils literal notranslate"><span class="pre">psfex</span></code>|<code class="docutils literal notranslate"><span class="pre">mccd</span></code>], and INPUT_PATH the input path on vos, default <code class="docutils literal notranslate"><span class="pre">vos:cfis/cosmostat/kilbinger/results</span></code>.
+See <code class="docutils literal notranslate"><span class="pre">-h</span></code> for all options.</p>
+<p>B. Download results</p>
+<p>All results files will be downloaded with</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>canfar_download_results -i tile_numbers.txt -v -p PSF --input_vos INPUT_VOS
+</pre></div>
+</div>
+<p>Use the same options as for same as for <code class="docutils literal notranslate"><span class="pre">canfar_avail_results</span></code>.</p>
+<p>This command can be run in the same directory at subsequent times, to complete an ongoing run: Only newer files will be downloaded
+from the <code class="docutils literal notranslate"><span class="pre">vos</span></code> directory. This also assures that partially downloaded or corrupt files will be replaced.</p>
+<p>Checking the <code class="docutils literal notranslate"><span class="pre">vos</span></code> directorty can be slow for large patches.
+To only download files that are not yet present locally (in <code class="docutils literal notranslate"><span class="pre">.</span></code>), first write the missing ones to an ascii file, using again the
+script <code class="docutils literal notranslate"><span class="pre">canfar_avail_results</span></code>, but this time with <code class="docutils literal notranslate"><span class="pre">.</span></code> as input path:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>canfar_avail_results -i tile_numbers.txt --input_path . -p PSF -v -o missing.txt
+&#39;&#39;&#39;
+Then, download only the missing files with
+```bash
+canfar_download_results -i missing.txt --input_vos cosmostat/kilbinger/results_mccd_oc2 -p mccd -v
+</pre></div>
+</div>
+<p>C. Un-tar results</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span> untar_results -p PSF
+</pre></div>
+</div>
+<p>On success, <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> output <code class="docutils literal notranslate"><span class="pre">fits</span></code> and <code class="docutils literal notranslate"><span class="pre">log</span></code> files will be now in various subdirs of the <code class="docutils literal notranslate"><span class="pre">output</span></code> directory.</p>
+</li>
+</ol>
+<p>At this step all required <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> resulting output files are available in <code class="docutils literal notranslate"><span class="pre">.</span></code>.</p>
+<ol class="arabic" start="2">
+<li><p>Optional: Split output in sub-samples</p>
+<p>An optional intermediate step is to create directories for sub-samples, for example one directory
+for each patch on the sky. This will create symbolic links to the results <code class="docutils literal notranslate"><span class="pre">.tgz</span></code> files downloaded in
+the previous step. For example, to create the subdir <code class="docutils literal notranslate"><span class="pre">tiles_W3</span></code> with links to result files to <code class="docutils literal notranslate"><span class="pre">all</span></code> for
+those tiles contained in the list <code class="docutils literal notranslate"><span class="pre">tiles_W3.txt</span></code>, do:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span> <span class="nv">$SP_ROOT</span>/scripts/python/create_sample_results.py --input_IDs tiles_W3.txt -i . all -o tiles_W3 -v
+</pre></div>
+</div>
+<p>The following steps will then be done in the directory <code class="docutils literal notranslate"><span class="pre">tiles_W3</span></code>.</p>
+</li>
+<li><p>Run PSF diagnostics, create merged catalogue</p>
+<p>Type</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>post_proc_sp -p PSF
+</pre></div>
+</div>
+<p>to automatically perform a number of post-processing steps. Chose the PSF model with the option <code class="docutils literal notranslate"><span class="pre">-p</span> <span class="pre">psfex|mccd</span></code>. In detail, these are (and can also be
+done individually
+by hand):</p>
+<p>A. Analyse psf validation files</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>psf_residuals
+</pre></div>
+</div>
+<p>with options as for <code class="docutils literal notranslate"><span class="pre">post_proc_sp</span></code>.
+This script identifies all psf validation files (from all processed tiles downloaded to <code class="docutils literal notranslate"><span class="pre">pwd</span></code>), creates symbolic links,
+merges the catalogues, and creates plots of PSF ellipticity, size, and residuals over the focal plane.</p>
+<p>B. Prepare output directory</p>
+<p>Create links to all ‘final_cat’ result files with</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>prepare_tiles_for_final
+</pre></div>
+</div>
+<p>The corresponding output directory that is created is <code class="docutils literal notranslate"><span class="pre">output/run_sp_combined/make_catalog_runner/output</span></code>.
+On success, it contains links to all <code class="docutils literal notranslate"><span class="pre">final_cat</span></code> output catalogues</p>
+<p>C. Merge final output files</p>
+<p>Create a single main catalog:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>merge_final_cat -i &lt;input_dir&gt; -p &lt;param_file&gt; -v
+</pre></div>
+</div>
+<p>Chose as input directory <code class="docutils literal notranslate"><span class="pre">input_dir</span></code> the output of step B. A default parameter file &lt;param_file&gt; is <code class="docutils literal notranslate"><span class="pre">/path/to/shapepipe/example/cfis/final_cat.param</span></code>.
+On success, the file <code class="docutils literal notranslate"><span class="pre">./final_cat.npy</span></code> is created. Depending on the number of input tiles, this file can be several tens of Gb large.</p>
+</li>
+</ol>
+</div>
+
+
+              </div>
+              
+            
+                <!-- Previous / next buttons -->
+<div class='prev-next-area'> 
+    <a class='left-prev' id="prev-link" href="pipeline_tutorial.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">ShapePipe Tutorial</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="random_cat.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Create random catalogue</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            
+        </div>
+    </div>
+    <footer class="footer">
+  <p>
+    
+      By Samuel Farrens<br/>
+    
+        &copy; Copyright 2018, Samuel Farrens.<br/>
+      Last updated on 14 Mar, 2022.<br/>
+  </p>
+</footer>
+</main>
+
+
+      </div>
+    </div>
+  
+  <script src="_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+
+  </body>
+</html>

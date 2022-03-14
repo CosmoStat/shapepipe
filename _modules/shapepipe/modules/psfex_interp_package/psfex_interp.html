@@ -1,0 +1,1554 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>shapepipe.modules.psfex_interp_package.psfex_interp &#8212; ShapePipe v0.0</title>
+    
+  <link href="../../../../_static/css/theme.css" rel="stylesheet">
+  <link href="../../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-book-theme.css?digest=84ace793992934648b4de8eed757e5a2" />
+    
+  <link rel="preload" as="script" href="../../../../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/sphinx-book-theme.9d8b4a8b9bb19db25eeaddc40d639ba2.js"></script>
+    <link rel="author" title="About these documents" href="../../../../about.html" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<div class="col-12 col-md-3 bd-sidebar site-navigation " id="site-navigation">
+    
+        <div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../../../../index.html">
+      
+      
+      
+      <h1 class="site-logo" id="site-title">ShapePipe v0.0</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  About ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../about.html">
+   About
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../contributors.html">
+   Contributors
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Installing ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../dependencies.html">
+   Dependencies
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../installation.html">
+   Installation
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Running ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../basic_execution.html">
+   Basic Execution
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../configuration.html">
+   Configuration
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../testing.html">
+   Testing
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../pipeline_tutorial.html">
+   ShapePipe Tutorial
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Miscellaneous
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../post_processing.html">
+   Post-processing
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../random_cat.html">
+   Create random catalogue
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  API Documentation
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../../shapepipe.html">
+   shapepipe
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../../../shapepipe.modules.html">
+     shapepipe.modules
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+    <label for="toctree-checkbox-2">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.find_exposures_package.html">
+       shapepipe.modules.find_exposures_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+      <label for="toctree-checkbox-3">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.find_exposures_package.find_exposures.html">
+         shapepipe.modules.find_exposures_package.find_exposures
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.get_images_package.html">
+       shapepipe.modules.get_images_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+      <label for="toctree-checkbox-4">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.get_images_package.get_images.html">
+         shapepipe.modules.get_images_package.get_images
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.make_cat_package.html">
+       shapepipe.modules.make_cat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+      <label for="toctree-checkbox-5">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.make_cat_package.make_cat.html">
+         shapepipe.modules.make_cat_package.make_cat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.mask_package.html">
+       shapepipe.modules.mask_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+      <label for="toctree-checkbox-6">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.mask_package.mask.html">
+         shapepipe.modules.mask_package.mask
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.match_external_package.html">
+       shapepipe.modules.match_external_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+      <label for="toctree-checkbox-7">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.match_external_package.match_external.html">
+         shapepipe.modules.match_external_package.match_external
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.mccd_package.html">
+       shapepipe.modules.mccd_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+      <label for="toctree-checkbox-8">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.mccd_package.mccd_interpolation_script.html">
+         shapepipe.modules.mccd_package.mccd_interpolation_script
+        </a>
+       </li>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.mccd_package.mccd_plot_utilities.html">
+         shapepipe.modules.mccd_package.mccd_plot_utilities
+        </a>
+       </li>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html">
+         shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.merge_headers_package.html">
+       shapepipe.modules.merge_headers_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+      <label for="toctree-checkbox-9">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.merge_headers_package.merge_headers.html">
+         shapepipe.modules.merge_headers_package.merge_headers
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.merge_sep_cats_package.html">
+       shapepipe.modules.merge_sep_cats_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+      <label for="toctree-checkbox-10">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.merge_sep_cats_package.merge_sep_cats.html">
+         shapepipe.modules.merge_sep_cats_package.merge_sep_cats
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.merge_starcat_package.html">
+       shapepipe.modules.merge_starcat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+      <label for="toctree-checkbox-11">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html">
+         shapepipe.modules.merge_starcat_package.merge_starcat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.ngmix_package.html">
+       shapepipe.modules.ngmix_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/>
+      <label for="toctree-checkbox-12">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.ngmix_package.ngmix.html">
+         shapepipe.modules.ngmix_package.ngmix
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.pastecat_package.html">
+       shapepipe.modules.pastecat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/>
+      <label for="toctree-checkbox-13">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.pastecat_package.pastecat.html">
+         shapepipe.modules.pastecat_package.pastecat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.psfex_interp_package.html">
+       shapepipe.modules.psfex_interp_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" type="checkbox"/>
+      <label for="toctree-checkbox-14">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html">
+         shapepipe.modules.psfex_interp_package.psfex_interp
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.psfex_package.html">
+       shapepipe.modules.psfex_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" type="checkbox"/>
+      <label for="toctree-checkbox-15">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.psfex_package.psfex_script.html">
+         shapepipe.modules.psfex_package.psfex_script
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.python_example_package.html">
+       shapepipe.modules.python_example_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" type="checkbox"/>
+      <label for="toctree-checkbox-16">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.python_example_package.python_example.html">
+         shapepipe.modules.python_example_package.python_example
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.random_cat_package.html">
+       shapepipe.modules.random_cat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" type="checkbox"/>
+      <label for="toctree-checkbox-17">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.random_cat_package.random_cat.html">
+         shapepipe.modules.random_cat_package.random_cat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.setools_package.html">
+       shapepipe.modules.setools_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" type="checkbox"/>
+      <label for="toctree-checkbox-18">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.setools_package.setools.html">
+         shapepipe.modules.setools_package.setools
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.sextractor_package.html">
+       shapepipe.modules.sextractor_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" type="checkbox"/>
+      <label for="toctree-checkbox-19">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html">
+         shapepipe.modules.sextractor_package.sextractor_script
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.split_exp_package.html">
+       shapepipe.modules.split_exp_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" type="checkbox"/>
+      <label for="toctree-checkbox-20">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.split_exp_package.split_exp.html">
+         shapepipe.modules.split_exp_package.split_exp
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.spread_model_package.html">
+       shapepipe.modules.spread_model_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-21" name="toctree-checkbox-21" type="checkbox"/>
+      <label for="toctree-checkbox-21">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.spread_model_package.spread_model.html">
+         shapepipe.modules.spread_model_package.spread_model
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.uncompress_fits_package.html">
+       shapepipe.modules.uncompress_fits_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-22" name="toctree-checkbox-22" type="checkbox"/>
+      <label for="toctree-checkbox-22">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.uncompress_fits_package.uncompress_fits.html">
+         shapepipe.modules.uncompress_fits_package.uncompress_fits
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.vignetmaker_package.html">
+       shapepipe.modules.vignetmaker_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-23" name="toctree-checkbox-23" type="checkbox"/>
+      <label for="toctree-checkbox-23">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.vignetmaker_package.vignetmaker.html">
+         shapepipe.modules.vignetmaker_package.vignetmaker
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.modules.module_decorator.html">
+       shapepipe.modules.module_decorator
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.modules.module_runners.html">
+       shapepipe.modules.module_runners
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../../../shapepipe.pipeline.html">
+     shapepipe.pipeline
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-24" name="toctree-checkbox-24" type="checkbox"/>
+    <label for="toctree-checkbox-24">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.args.html">
+       shapepipe.pipeline.args
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.config.html">
+       shapepipe.pipeline.config
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.dependency_handler.html">
+       shapepipe.pipeline.dependency_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.execute.html">
+       shapepipe.pipeline.execute
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.file_handler.html">
+       shapepipe.pipeline.file_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.file_io.html">
+       shapepipe.pipeline.file_io
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.job_handler.html">
+       shapepipe.pipeline.job_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.mpi_run.html">
+       shapepipe.pipeline.mpi_run
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.run_log.html">
+       shapepipe.pipeline.run_log
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.shared.html">
+       shapepipe.pipeline.shared
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.str_handler.html">
+       shapepipe.pipeline.str_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.timeout.html">
+       shapepipe.pipeline.timeout
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.worker_handler.html">
+       shapepipe.pipeline.worker_handler
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../../../shapepipe.utilities.html">
+     shapepipe.utilities
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" type="checkbox"/>
+    <label for="toctree-checkbox-25">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.utilities.canfar.html">
+       shapepipe.utilities.canfar
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.utilities.cfis.html">
+       shapepipe.utilities.cfis
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.utilities.file_system.html">
+       shapepipe.utilities.file_system
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.utilities.galaxy.html">
+       shapepipe.utilities.galaxy
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../shapepipe.info.html">
+     shapepipe.info
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../shapepipe.run.html">
+     shapepipe.run
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Contributing to ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../contributing.html">
+   Contribution Guidelines
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../module_develop.html">
+   Module Development
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../module_example.html">
+   Module Examples
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  References
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../z_ref.html">
+   References
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav> <!-- To handle the deprecated key -->
+
+<div class="navbar_extra_footer">
+  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+</div>
+
+</div>
+
+
+          
+
+
+          
+<!-- This is an invisible pixel that we watch to see if we've scrolled. -->
+<div class="sbt-scroll-pixel-helper"></div>
+<main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
+    
+    <div class="topbar container-xl fixed-top">
+    <div class="topbar-contents row">
+        <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show"></div>
+        <div class="col pl-md-4 topbar-main">
+            <div class="topbar-left">
+                
+                <label class="nav-toggle-button" for="__navigation">
+                    <div class="visually-hidden">Toggle navigation</div>
+                    <i class="fas fa-bars"></i>
+                </label>
+                
+            </div>
+            
+            <!-- Source interaction buttons -->
+
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Connect with source repository"><i class="fab fa-github"></i></button>
+    <div class="dropdown-buttons sourcebuttons">
+        <a class="repository-button"
+            href="https://github.com/CosmoStat/shapepipe"><button type="button" class="btn btn-secondary topbarbtn"
+                data-toggle="tooltip" data-placement="left" title="Source repository"><i
+                    class="fab fa-github"></i>repository</button></a>
+        <a class="issues-button"
+            href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2F_modules/shapepipe/modules/psfex_interp_package/psfex_interp.html&body=Your%20issue%20content%20here."><button
+                type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
+                title="Open an issue"><i class="fas fa-lightbulb"></i>open issue</button></a>
+        
+    </div>
+</div>
+
+            <!-- Full screen (wrap in <a> to have style consistency -->
+
+            <!-- Launch buttons -->
+
+        </div>
+
+        <!-- Table of contents -->
+        <div class="d-none d-md-block col-md-2 bd-toc show noprint">
+            
+        </div>
+    </div>
+</div>
+    <div id="main-content" class="row">
+        <div class="col-12 col-md-9 pl-md-3 pr-md-0">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1></h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                    </div>
+                </div>
+            </div>
+            
+              <div>
+                
+  <h1>Source code for shapepipe.modules.psfex_interp_package.psfex_interp</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;PSFEX INTERPOLATION SCRIPT.</span>
+
+<span class="sd">This module computes the PSFs from a PSFEx model at several galaxy positions.</span>
+
+<span class="sd">:Authors: Morgan Schmitz and Axel Guinot</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="kn">import</span> <span class="n">fits</span>
+<span class="kn">from</span> <span class="nn">sqlitedict</span> <span class="kn">import</span> <span class="n">SqliteDict</span>
+
+<span class="kn">from</span> <span class="nn">shapepipe.pipeline</span> <span class="kn">import</span> <span class="n">file_io</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">galsim.hsm</span> <span class="k">as</span> <span class="nn">hsm</span>
+    <span class="kn">from</span> <span class="nn">galsim</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">import_fail</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">import_fail</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<span class="n">NOT_ENOUGH_STARS</span> <span class="o">=</span> <span class="s1">&#39;Fail_stars&#39;</span>
+<span class="n">BAD_CHI2</span> <span class="o">=</span> <span class="s1">&#39;Fail_chi2&#39;</span>
+<span class="n">FILE_NOT_FOUND</span> <span class="o">=</span> <span class="s1">&#39;File_not_found&#39;</span>
+
+
+<div class="viewcode-block" id="interpsfex"><a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.interpsfex">[docs]</a><span class="k">def</span> <span class="nf">interpsfex</span><span class="p">(</span><span class="n">dotpsfpath</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">thresh_star</span><span class="p">,</span> <span class="n">thresh_chi2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Interpolate PSFEx.</span>
+
+<span class="sd">    Use PSFEx generated model to perform spatial PSF interpolation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dotpsfpath : str</span>
+<span class="sd">        Path to ``.psf`` file (PSFEx output)</span>
+<span class="sd">    pos : numpy.ndarray</span>
+<span class="sd">        Positions where the PSF model should be evaluated</span>
+<span class="sd">    thresh_star : int</span>
+<span class="sd">        Threshold of stars under which the PSF is not interpolated</span>
+<span class="sd">    thresh_chi2 : int</span>
+<span class="sd">        Threshold for chi squared</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        Array of PSFs, each row is the PSF image at the corresponding position</span>
+<span class="sd">        requested</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dotpsfpath</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">FILE_NOT_FOUND</span>
+
+    <span class="c1"># read PSF model and extract basis and polynomial degree and scale position</span>
+    <span class="n">PSF_model</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">dotpsfpath</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Check number of stars used to compute the PSF</span>
+    <span class="k">if</span> <span class="n">PSF_model</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;ACCEPTED&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">thresh_star</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">NOT_ENOUGH_STARS</span>
+    <span class="k">if</span> <span class="n">PSF_model</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;CHI2&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">thresh_chi2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">BAD_CHI2</span>
+
+    <span class="n">PSF_basis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">PSF_model</span><span class="o">.</span><span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">deg</span> <span class="o">=</span> <span class="n">PSF_model</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;POLDEG1&#39;</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="c1"># constant PSF model</span>
+        <span class="k">return</span> <span class="n">PSF_basis</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+
+    <span class="c1"># scale coordinates</span>
+    <span class="n">x_interp</span><span class="p">,</span> <span class="n">x_scale</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">PSF_model</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;POLZERO1&#39;</span><span class="p">],</span>
+        <span class="n">PSF_model</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;POLSCAL1&#39;</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">y_interp</span><span class="p">,</span> <span class="n">y_scale</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">PSF_model</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;POLZERO2&#39;</span><span class="p">],</span>
+        <span class="n">PSF_model</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;POLSCAL2&#39;</span><span class="p">]</span>
+
+    <span class="p">)</span>
+    <span class="n">xs</span><span class="p">,</span> <span class="n">ys</span> <span class="o">=</span> <span class="p">(</span><span class="n">pos</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">x_interp</span><span class="p">)</span> <span class="o">/</span> <span class="n">x_scale</span><span class="p">,</span> <span class="p">(</span><span class="n">pos</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">y_interp</span><span class="p">)</span> <span class="o">/</span> <span class="n">y_scale</span>
+
+    <span class="c1"># compute polynomial coefficients</span>
+    <span class="n">coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">x</span> <span class="o">**</span> <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">deg</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">])</span>
+    <span class="n">cross_coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span>
+            <span class="p">[(</span><span class="n">x</span> <span class="o">**</span> <span class="n">idx_j</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">y</span> <span class="o">**</span> <span class="n">idx_i</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx_j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">deg</span> <span class="o">-</span> <span class="n">idx_i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+            <span class="k">for</span> <span class="n">idx_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">deg</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="p">])</span>
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">)</span>
+    <span class="p">])</span>
+    <span class="n">coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">coeffs</span><span class="p">,</span> <span class="n">cross_coeffs</span><span class="p">))</span>
+
+    <span class="c1"># compute interpolated PSF</span>
+    <span class="n">PSFs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">coeff</span> <span class="o">*</span> <span class="n">atom</span> <span class="k">for</span> <span class="n">coeff</span><span class="p">,</span> <span class="n">atom</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">coeffs_posi</span><span class="p">,</span> <span class="n">PSF_basis</span><span class="p">)],</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">coeffs_posi</span> <span class="ow">in</span> <span class="n">coeffs</span>
+    <span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">PSFs</span></div>
+
+
+<div class="viewcode-block" id="PSFExInterpolator"><a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator">[docs]</a><span class="k">class</span> <span class="nc">PSFExInterpolator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The PSFEx Interpolator Class.</span>
+
+<span class="sd">    This class uses a PSFEx output file to compute the PSF at desired</span>
+<span class="sd">    positions.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dotpsf_path : str</span>
+<span class="sd">        Path to PSFEx output file</span>
+<span class="sd">    galcat_path : str</span>
+<span class="sd">        Path to SExtractor-like galaxy catalogue</span>
+<span class="sd">    output_path : str</span>
+<span class="sd">        Path to folder where output PSFs should be written</span>
+<span class="sd">    img_number : str</span>
+<span class="sd">        File number string</span>
+<span class="sd">    w_log : logging.Logger</span>
+<span class="sd">        Logging instance</span>
+<span class="sd">    pos_params : list, optional</span>
+<span class="sd">        Desired position parameters, ff provided, there should be exactly two,</span>
+<span class="sd">        and they must also be present in the galaxy catalogue; otherwise,</span>
+<span class="sd">        they are read directly from the ``.psf`` file.</span>
+<span class="sd">    get_shapes : bool</span>
+<span class="sd">        If ``True`` will compute shapes for the PSF model</span>
+<span class="sd">    star_thresh : int</span>
+<span class="sd">        Threshold of stars under which the PSF is not interpolated</span>
+<span class="sd">    thresh_chi2 : int</span>
+<span class="sd">        Threshold for chi squared</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dotpsf_path</span><span class="p">,</span>
+        <span class="n">galcat_path</span><span class="p">,</span>
+        <span class="n">output_path</span><span class="p">,</span>
+        <span class="n">img_number</span><span class="p">,</span>
+        <span class="n">w_log</span><span class="p">,</span>
+        <span class="n">pos_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">get_shapes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">star_thresh</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+        <span class="n">chi2_thresh</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="p">):</span>
+
+        <span class="c1"># Path to PSFEx output file</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">dotpsf_path</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+            <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">dotpsf_path</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dotpsf_path</span> <span class="o">=</span> <span class="n">dotpsf_path</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cound not find file </span><span class="si">{</span><span class="n">dotpsf_path</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="c1"># Path to catalogue containing galaxy positions</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">galcat_path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_galcat_path</span> <span class="o">=</span> <span class="n">galcat_path</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cound not find file </span><span class="si">{</span><span class="n">galcat_path</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="c1"># Path to output file to be written</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_output_path</span> <span class="o">=</span> <span class="n">output_path</span> <span class="o">+</span> <span class="s1">&#39;/galaxy_psf&#39;</span>
+        <span class="c1"># Path to output file to be written for validation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_output_path_validation</span> <span class="o">=</span> <span class="n">output_path</span> <span class="o">+</span> <span class="s1">&#39;/validation_psf&#39;</span>
+        <span class="c1"># if required, compute and save shapes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_compute_shape</span> <span class="o">=</span> <span class="n">get_shapes</span>
+        <span class="c1"># Number of stars under which we don&#39;t interpolate the PSF</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_star_thresh</span> <span class="o">=</span> <span class="n">star_thresh</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_chi2_thresh</span> <span class="o">=</span> <span class="n">chi2_thresh</span>
+
+        <span class="c1"># Logging</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span> <span class="o">=</span> <span class="n">w_log</span>
+
+        <span class="c1"># handle provided, but empty pos_params (for use within</span>
+        <span class="c1"># CosmoStat&#39;s ShapePipe)</span>
+        <span class="k">if</span> <span class="n">pos_params</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos_params</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">pos_params</span><span class="p">)</span><span class="si">}</span><span class="s1"> position parameters were passed on; &#39;</span>
+                    <span class="o">+</span> <span class="s1">&#39;there should be exactly two.&#39;</span>
+                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pos_params</span> <span class="o">=</span> <span class="n">pos_params</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pos_params</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gal_pos</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_img_number</span> <span class="o">=</span> <span class="n">img_number</span>
+
+<div class="viewcode-block" id="PSFExInterpolator.process"><a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Process.</span>
+
+<span class="sd">        Process the PSF interpolation single-epoch run.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gal_pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_galaxy_positions</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_interpolate</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span> <span class="o">==</span> <span class="n">NOT_ENOUGH_STARS</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s1">&#39;Not enough stars to interpolate the psf in the file &#39;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_dotpsf_path</span><span class="si">}</span><span class="s1">.&#39;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span> <span class="o">==</span> <span class="n">BAD_CHI2</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Bad chi2 for the psf model in the file </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_dotpsf_path</span><span class="si">}</span><span class="s1">.&#39;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span> <span class="o">==</span> <span class="n">FILE_NOT_FOUND</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Psf model file </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_dotpsf_path</span><span class="si">}</span><span class="s1"> not found.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_shape</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_get_psfshapes</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_write_output</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="PSFExInterpolator._get_position_parameters"><a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_position_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">_get_position_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get Position Parameters.</span>
+
+<span class="sd">        Read position parameters from ``.psf`` file.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dotpsf</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dotpsf_path</span><span class="p">)</span>
+        <span class="n">dotpsf</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pos_params</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">dotpsf</span><span class="o">.</span><span class="n">get_header</span><span class="p">()[</span><span class="s1">&#39;POLNAME1&#39;</span><span class="p">],</span>
+            <span class="n">dotpsf</span><span class="o">.</span><span class="n">get_header</span><span class="p">()[</span><span class="s1">&#39;POLNAME2&#39;</span><span class="p">]</span>
+        <span class="p">]</span>
+        <span class="n">dotpsf</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="PSFExInterpolator._get_galaxy_positions"><a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_galaxy_positions">[docs]</a>    <span class="k">def</span> <span class="nf">_get_galaxy_positions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get Galaxy Positions.</span>
+
+<span class="sd">        Extract galaxy positions from galaxy catalogue.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pos_params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_position_parameters</span><span class="p">()</span>
+
+        <span class="n">galcat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_galcat_path</span><span class="p">,</span> <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">galcat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gal_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+                <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                    <span class="n">galcat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pos_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+                    <span class="n">galcat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pos_params</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+                <span class="p">)</span>
+            <span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Read </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">gal_pos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1"> positions from galaxy catalog&#39;</span>
+            <span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">detail</span><span class="p">:</span>
+            <span class="c1"># extract erroneous position parameter from original exception</span>
+            <span class="n">err_pos_param</span> <span class="o">=</span> <span class="n">detail</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">4</span><span class="p">:</span><span class="o">-</span><span class="mi">15</span><span class="p">]</span>
+            <span class="n">pos_param_err</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Required position parameter </span><span class="si">{</span><span class="n">err_pos_param</span><span class="si">}</span><span class="s1">&#39;</span>
+                <span class="o">+</span> <span class="s1">&#39;was not found in galaxy catalog. Leave &#39;</span>
+                <span class="o">+</span> <span class="s1">&#39;pos_params (or EXTRA_CODE_OPTION) blank to &#39;</span>
+                <span class="o">+</span> <span class="s1">&#39;read them from .psf file.&#39;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">pos_param_err</span><span class="p">)</span>
+        <span class="n">galcat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="PSFExInterpolator._interpolate"><a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._interpolate">[docs]</a>    <span class="k">def</span> <span class="nf">_interpolate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Interpolate.</span>
+
+<span class="sd">        Run Sheldon and Rykoff&#39;s PSFEx interpolator method at the desired</span>
+<span class="sd">        positions.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span> <span class="o">=</span> <span class="n">interpsfex</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dotpsf_path</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gal_pos</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_star_thresh</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_chi2_thresh</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="PSFExInterpolator._get_psfshapes"><a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_psfshapes">[docs]</a>    <span class="k">def</span> <span class="nf">_get_psfshapes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get PSF Shapes.</span>
+
+<span class="sd">        Compute shapes of PSF at galaxy positions using HSM.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">import_fail</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;Galsim is required to get shapes information&#39;</span><span class="p">)</span>
+
+        <span class="n">psf_moms</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span><span class="n">Image</span><span class="p">(</span><span class="n">psf</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">psf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span>
+        <span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">psf_shapes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+            <span class="p">[</span>
+                <span class="n">moms</span><span class="o">.</span><span class="n">observed_shape</span><span class="o">.</span><span class="n">g1</span><span class="p">,</span>
+                <span class="n">moms</span><span class="o">.</span><span class="n">observed_shape</span><span class="o">.</span><span class="n">g2</span><span class="p">,</span>
+                <span class="n">moms</span><span class="o">.</span><span class="n">moments_sigma</span><span class="p">,</span>
+                <span class="nb">int</span><span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">moms</span><span class="o">.</span><span class="n">error_message</span><span class="p">))</span>
+            <span class="p">]</span>
+            <span class="k">for</span> <span class="n">moms</span> <span class="ow">in</span> <span class="n">psf_moms</span>
+        <span class="p">])</span></div>
+
+<div class="viewcode-block" id="PSFExInterpolator._write_output"><a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._write_output">[docs]</a>    <span class="k">def</span> <span class="nf">_write_output</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write Output.</span>
+
+<span class="sd">        Save computed PSFs to a FITS file.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_output_path</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_number</span> <span class="o">+</span> <span class="s1">&#39;.fits&#39;</span><span class="p">,</span>
+            <span class="n">open_mode</span><span class="o">=</span><span class="n">file_io</span><span class="o">.</span><span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span><span class="p">,</span>
+            <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_shape</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;VIGNET&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span><span class="p">,</span>
+                <span class="s1">&#39;E1_PSF_HSM&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">psf_shapes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="s1">&#39;E2_PSF_HSM&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">psf_shapes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+                <span class="s1">&#39;SIGMA_PSF_HSM&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">psf_shapes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+                <span class="s1">&#39;FLAG_PSF_HSM&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">psf_shapes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;VIGNET&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span><span class="p">}</span>
+        <span class="n">output</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sex_cat_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_galcat_path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PSFExInterpolator.process_validation"><a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator.process_validation">[docs]</a>    <span class="k">def</span> <span class="nf">process_validation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">psfex_cat_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Process Validation.</span>
+
+<span class="sd">        Process validation steps.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        str</span>
+<span class="sd">            Path to PSFEx catalogue</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">psfex_cat_path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cound not find file </span><span class="si">{</span><span class="n">psfex_cat_path</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gal_pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_galaxy_positions</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_interpolate</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span> <span class="o">==</span> <span class="n">NOT_ENOUGH_STARS</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s1">&#39;Not enough stars to interpolate the psf in the file &#39;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_dotpsf_path</span><span class="si">}</span><span class="s1">.&#39;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span> <span class="o">==</span> <span class="n">BAD_CHI2</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Bad chi2 for the psf model in the file </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_dotpsf_path</span><span class="si">}</span><span class="s1">.&#39;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span> <span class="o">==</span> <span class="n">FILE_NOT_FOUND</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Psf model file </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_dotpsf_path</span><span class="si">}</span><span class="s1"> not found.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">star_cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_galcat_path</span><span class="p">,</span>
+                <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">star_cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+            <span class="n">star_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">star_vign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">star_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s1">&#39;VIGNET&#39;</span><span class="p">])</span>
+            <span class="n">star_dict</span><span class="p">[</span><span class="s1">&#39;NUMBER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">star_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s1">&#39;NUMBER&#39;</span><span class="p">])</span>
+            <span class="n">star_dict</span><span class="p">[</span><span class="s1">&#39;X&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">star_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s1">&#39;XWIN_IMAGE&#39;</span><span class="p">])</span>
+            <span class="n">star_dict</span><span class="p">[</span><span class="s1">&#39;Y&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">star_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s1">&#39;YWIN_IMAGE&#39;</span><span class="p">])</span>
+            <span class="n">star_dict</span><span class="p">[</span><span class="s1">&#39;RA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">star_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s1">&#39;XWIN_WORLD&#39;</span><span class="p">])</span>
+            <span class="n">star_dict</span><span class="p">[</span><span class="s1">&#39;DEC&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">star_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s1">&#39;YWIN_WORLD&#39;</span><span class="p">])</span>
+            <span class="n">star_dict</span><span class="p">[</span><span class="s1">&#39;MAG&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">star_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s1">&#39;MAG_AUTO&#39;</span><span class="p">])</span>
+            <span class="n">star_dict</span><span class="p">[</span><span class="s1">&#39;SNR&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">star_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s1">&#39;SNR_WIN&#39;</span><span class="p">])</span>
+            <span class="n">star_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_psfshapes</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_starshapes</span><span class="p">(</span><span class="n">star_vign</span><span class="p">)</span>
+            <span class="n">psfex_cat_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_psfexcatdict</span><span class="p">(</span><span class="n">psfex_cat_path</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_write_output_validation</span><span class="p">(</span><span class="n">star_dict</span><span class="p">,</span> <span class="n">psfex_cat_dict</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PSFExInterpolator._get_starshapes"><a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_starshapes">[docs]</a>    <span class="k">def</span> <span class="nf">_get_starshapes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">star_vign</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get Star Shapes.</span>
+
+<span class="sd">        Compute shapes of stars at stars positions using HSM.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            Array containing the star&#39;s vignets.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">import_fail</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;Galsim is required to get shapes information&#39;</span><span class="p">)</span>
+
+        <span class="n">masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">star_vign</span><span class="p">)</span>
+        <span class="n">masks</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">star_vign</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1e30</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">star_moms</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span><span class="n">Image</span><span class="p">(</span><span class="n">star</span><span class="p">),</span> <span class="n">badpix</span><span class="o">=</span><span class="n">Image</span><span class="p">(</span><span class="n">mask</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">star</span><span class="p">,</span> <span class="n">mask</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">star_vign</span><span class="p">,</span> <span class="n">masks</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">star_shapes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+            <span class="p">[</span>
+                <span class="n">moms</span><span class="o">.</span><span class="n">observed_shape</span><span class="o">.</span><span class="n">g1</span><span class="p">,</span>
+                <span class="n">moms</span><span class="o">.</span><span class="n">observed_shape</span><span class="o">.</span><span class="n">g2</span><span class="p">,</span>
+                <span class="n">moms</span><span class="o">.</span><span class="n">moments_sigma</span><span class="p">,</span>
+                <span class="nb">int</span><span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">moms</span><span class="o">.</span><span class="n">error_message</span><span class="p">))</span>
+            <span class="p">]</span>
+            <span class="k">for</span> <span class="n">moms</span> <span class="ow">in</span> <span class="n">star_moms</span>
+        <span class="p">])</span></div>
+
+<div class="viewcode-block" id="PSFExInterpolator._get_psfexcatdict"><a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._get_psfexcatdict">[docs]</a>    <span class="k">def</span> <span class="nf">_get_psfexcatdict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">psfex_cat_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get PSFEx Catalogue Dictionary.</span>
+
+<span class="sd">        Get data from PSFEx ``.cat`` file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        psfex_cat_path : str</span>
+<span class="sd">            Path to the ``.cat`` file from PSFEx</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            Dictionary containing information from the PFSEx ``.cat`` file</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">psfex_cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span><span class="n">psfex_cat_path</span><span class="p">,</span> <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">psfex_cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+
+        <span class="n">psfex_cat_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">psfex_cat_dict</span><span class="p">[</span><span class="s1">&#39;SOURCE_NUMBER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span>
+            <span class="n">psfex_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s1">&#39;SOURCE_NUMBER&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">psfex_cat_dict</span><span class="p">[</span><span class="s1">&#39;DELTAX_IMAGE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span>
+            <span class="n">psfex_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s1">&#39;DELTAX_IMAGE&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">psfex_cat_dict</span><span class="p">[</span><span class="s1">&#39;DELTAY_IMAGE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span>
+            <span class="n">psfex_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s1">&#39;DELTAY_IMAGE&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">psfex_cat_dict</span><span class="p">[</span><span class="s1">&#39;CHI2_PSF&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span>
+            <span class="n">psfex_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s1">&#39;CHI2_PSF&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">psfex_cat_dict</span></div>
+
+<div class="viewcode-block" id="PSFExInterpolator._write_output_validation"><a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._write_output_validation">[docs]</a>    <span class="k">def</span> <span class="nf">_write_output_validation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">star_dict</span><span class="p">,</span> <span class="n">psfex_cat_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write Output Validation.</span>
+
+<span class="sd">        Save computed PSFs and stars to fits file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        star_dict : dict</span>
+<span class="sd">            Dictionary containing star information</span>
+<span class="sd">        psfex_cat_dict : dict</span>
+<span class="sd">            Dictionary containing information from the PFSEx ``.cat`` file</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_output_path_validation</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_number</span> <span class="o">+</span> <span class="s1">&#39;.fits&#39;</span><span class="p">,</span>
+            <span class="n">open_mode</span><span class="o">=</span><span class="n">file_io</span><span class="o">.</span><span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span><span class="p">,</span>
+            <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;E1_PSF_HSM&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">psf_shapes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="s1">&#39;E2_PSF_HSM&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">psf_shapes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="s1">&#39;SIGMA_PSF_HSM&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">psf_shapes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="s1">&#39;FLAG_PSF_HSM&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">psf_shapes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span>
+            <span class="s1">&#39;E1_STAR_HSM&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">star_shapes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="s1">&#39;E2_STAR_HSM&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">star_shapes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="s1">&#39;SIGMA_STAR_HSM&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">star_shapes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="s1">&#39;FLAG_STAR_HSM&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">star_shapes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="p">}</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">star_dict</span><span class="p">}</span>
+
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;ACCEPTED&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;NUMBER&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;int16&#39;</span><span class="p">)</span>
+        <span class="n">star_used</span> <span class="o">=</span> <span class="n">psfex_cat_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;SOURCE_NUMBER&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;NUMBER&#39;</span><span class="p">])):</span>
+            <span class="k">if</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">star_used</span><span class="p">:</span>
+                <span class="n">data</span><span class="p">[</span><span class="s1">&#39;ACCEPTED&#39;</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">output</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sex_cat_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_galcat_path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PSFExInterpolator.process_me"><a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator.process_me">[docs]</a>    <span class="k">def</span> <span class="nf">process_me</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dot_psf_dir</span><span class="p">,</span> <span class="n">dot_psf_pattern</span><span class="p">,</span> <span class="n">f_wcs_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Process Multi-Epoch.</span>
+
+<span class="sd">        Process the multi-epoch.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dot_psf_dir : str</span>
+<span class="sd">            Path to the directory containing the ``.psf`` files</span>
+<span class="sd">        dot_psf_pattern : str</span>
+<span class="sd">            Common pattern of the ``.psf`` files</span>
+<span class="sd">        f_wcs_path : str</span>
+<span class="sd">            Path to the log file containing the WCS for each CCDs</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dot_psf_dir</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dot_psf_dir</span> <span class="o">=</span> <span class="n">dot_psf_dir</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cound not find directory </span><span class="si">{</span><span class="n">dot_psf_dir</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dot_psf_pattern</span> <span class="o">=</span> <span class="n">dot_psf_pattern</span>
+
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">f_wcs_path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_f_wcs_file</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="n">f_wcs_path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cound not find file </span><span class="si">{</span><span class="n">f_wcs_path</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gal_pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_galaxy_positions</span><span class="p">()</span>
+
+        <span class="n">output_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolate_me</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_output_me</span><span class="p">(</span><span class="n">output_dict</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PSFExInterpolator._interpolate_me"><a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._interpolate_me">[docs]</a>    <span class="k">def</span> <span class="nf">_interpolate_me</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Interpolate Multi-Epoch.</span>
+
+<span class="sd">        Interpolate PSFs for multi-epoch run.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            Dictionnary containing object Ids, the interpolated PSFs and shapes</span>
+<span class="sd">            (optionally)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_galcat_path</span><span class="p">,</span> <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+
+        <span class="n">all_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s1">&#39;NUMBER&#39;</span><span class="p">])</span>
+        <span class="n">n_epoch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s1">&#39;N_EPOCH&#39;</span><span class="p">])</span>
+
+        <span class="n">list_ext_name</span> <span class="o">=</span> <span class="n">cat</span><span class="o">.</span><span class="n">get_ext_name</span><span class="p">()</span>
+        <span class="n">hdu_ind</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">list_ext_name</span><span class="p">))</span>
+            <span class="k">if</span> <span class="s1">&#39;EPOCH&#39;</span> <span class="ow">in</span> <span class="n">list_ext_name</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="p">]</span>
+
+        <span class="n">final_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">hdu_index</span> <span class="ow">in</span> <span class="n">hdu_ind</span><span class="p">:</span>
+            <span class="n">exp_name</span> <span class="o">=</span> <span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">hdu_index</span><span class="p">)[</span><span class="s1">&#39;EXP_NAME&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ccd_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">hdu_index</span><span class="p">)[</span><span class="s1">&#39;CCD_N&#39;</span><span class="p">]))</span>
+            <span class="n">array_psf</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">array_id</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">array_shape</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">array_exp_name</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">ccd</span> <span class="ow">in</span> <span class="n">ccd_list</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">ccd</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">dot_psf_path</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_dot_psf_dir</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_dot_psf_pattern</span><span class="si">}</span><span class="s1">-</span><span class="si">{</span><span class="n">exp_name</span><span class="si">}</span><span class="s1">&#39;</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;-</span><span class="si">{</span><span class="n">ccd</span><span class="si">}</span><span class="s1">.psf&#39;</span>
+                <span class="p">)</span>
+                <span class="n">ind_obj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">hdu_index</span><span class="p">)[</span><span class="s1">&#39;CCD_N&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ccd</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">obj_id</span> <span class="o">=</span> <span class="n">all_id</span><span class="p">[</span><span class="n">ind_obj</span><span class="p">]</span>
+                <span class="n">gal_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_f_wcs_file</span><span class="p">[</span><span class="n">exp_name</span><span class="p">][</span><span class="n">ccd</span><span class="p">][</span><span class="s1">&#39;WCS&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">all_world2pix</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">gal_pos</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">][</span><span class="n">ind_obj</span><span class="p">],</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">gal_pos</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">][</span><span class="n">ind_obj</span><span class="p">],</span>
+                        <span class="mi">0</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span> <span class="o">=</span> <span class="n">interpsfex</span><span class="p">(</span>
+                    <span class="n">dot_psf_path</span><span class="p">,</span>
+                    <span class="n">gal_pos</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_star_thresh</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_chi2_thresh</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span> <span class="o">==</span> <span class="n">NOT_ENOUGH_STARS</span>
+                <span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;Not enough stars find in the ccd </span><span class="si">{</span><span class="n">ccd</span><span class="si">}</span><span class="s1"> of the &#39;</span>
+                        <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;exposure </span><span class="si">{</span><span class="n">exp_name</span><span class="si">}</span><span class="s1">. Object inside this ccd will &#39;</span>
+                        <span class="o">+</span> <span class="s1">&#39;lose an epoch.&#39;</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span> <span class="o">==</span> <span class="n">BAD_CHI2</span>
+                <span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;Bad chi2 for the psf model in the ccd </span><span class="si">{</span><span class="n">ccd</span><span class="si">}</span><span class="s1"> of the &#39;</span>
+                        <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;exposure </span><span class="si">{</span><span class="n">exp_name</span><span class="si">}</span><span class="s1">. Object inside this ccd will &#39;</span>
+                        <span class="o">+</span> <span class="s1">&#39;lose an epoch.&#39;</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span> <span class="o">==</span> <span class="n">FILE_NOT_FOUND</span>
+                <span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;Psf model file </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_dotpsf_path</span><span class="si">}</span><span class="s1"> not found. &#39;</span>
+                        <span class="o">+</span> <span class="s1">&#39;Object inside this ccd will lose an epoch.&#39;</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="k">if</span> <span class="n">array_psf</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">array_psf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">array_psf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                        <span class="p">(</span><span class="n">array_psf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interp_PSFs</span><span class="p">))</span>
+                    <span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">array_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">array_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">array_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">array_id</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)))</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_shape</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_get_psfshapes</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">array_shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">array_shape</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">psf_shapes</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">array_shape</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span>
+                            <span class="n">array_shape</span><span class="p">,</span>
+                            <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">psf_shapes</span><span class="p">),</span>
+                        <span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">array_shape</span> <span class="o">=</span> <span class="kc">None</span>
+
+                <span class="n">exp_name_tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+                    <span class="n">exp_name</span> <span class="o">+</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">ccd</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obj_id</span><span class="p">))</span>
+                <span class="p">])</span>
+                <span class="k">if</span> <span class="n">array_exp_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">array_exp_name</span> <span class="o">=</span> <span class="n">exp_name_tmp</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">array_exp_name</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                        <span class="p">(</span><span class="n">array_exp_name</span><span class="p">,</span> <span class="n">exp_name_tmp</span><span class="p">)</span>
+                    <span class="p">)</span>
+
+            <span class="n">final_list</span><span class="o">.</span><span class="n">append</span><span class="p">([</span>
+                <span class="n">array_id</span><span class="p">,</span>
+                <span class="n">array_psf</span><span class="p">,</span>
+                <span class="n">array_shape</span><span class="p">,</span>
+                <span class="n">array_exp_name</span>
+            <span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_f_wcs_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="n">output_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">n_empty</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">id_tmp</span> <span class="ow">in</span> <span class="n">all_id</span><span class="p">:</span>
+            <span class="n">output_dict</span><span class="p">[</span><span class="n">id_tmp</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">final_list</span><span class="p">)):</span>
+                <span class="n">where_res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">final_list</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">id_tmp</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">where_res</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
+                    <span class="n">output_dict</span><span class="p">[</span><span class="n">id_tmp</span><span class="p">][</span><span class="n">final_list</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">3</span><span class="p">][</span><span class="n">where_res</span><span class="p">[</span><span class="mi">0</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="n">output_dict</span><span class="p">[</span><span class="n">id_tmp</span><span class="p">][</span>
+                        <span class="n">final_list</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">3</span><span class="p">][</span><span class="n">where_res</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+                    <span class="p">][</span><span class="s1">&#39;VIGNET&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">final_list</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="n">where_res</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_shape</span><span class="p">:</span>
+                        <span class="n">shape_dict</span> <span class="o">=</span> <span class="p">{}</span>
+                        <span class="n">shape_dict</span><span class="p">[</span><span class="s1">&#39;E1_PSF_HSM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                            <span class="n">final_list</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="n">where_res</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="p">)</span>
+                        <span class="n">shape_dict</span><span class="p">[</span><span class="s1">&#39;E2_PSF_HSM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                            <span class="n">final_list</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="n">where_res</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="p">)</span>
+                        <span class="n">shape_dict</span><span class="p">[</span><span class="s1">&#39;SIGMA_PSF_HSM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                            <span class="n">final_list</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="n">where_res</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="mi">2</span><span class="p">]</span>
+                        <span class="p">)</span>
+                        <span class="n">shape_dict</span><span class="p">[</span><span class="s1">&#39;FLAG_PSF_HSM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                            <span class="n">final_list</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="n">where_res</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="mi">3</span><span class="p">]</span>
+                        <span class="p">)</span>
+                        <span class="n">output_dict</span><span class="p">[</span><span class="n">id_tmp</span><span class="p">][</span>
+                            <span class="n">final_list</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">3</span><span class="p">][</span><span class="n">where_res</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+                        <span class="p">][</span><span class="s1">&#39;SHAPES&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">shape_dict</span>
+                    <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">counter</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">id_tmp</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;empty&#39;</span>
+                <span class="n">n_empty</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">n_empty</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">all_id</span><span class="p">)</span><span class="si">}</span><span class="s1"> PSFs are empty&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">output_dict</span></div>
+
+<div class="viewcode-block" id="PSFExInterpolator._write_output_me"><a class="viewcode-back" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html#shapepipe.modules.psfex_interp_package.psfex_interp.PSFExInterpolator._write_output_me">[docs]</a>    <span class="k">def</span> <span class="nf">_write_output_me</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write Output Multi-Epoch.</span>
+
+<span class="sd">        Save computed PSFs to numpy object file for multi-epoch run.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        output_dict : dict</span>
+<span class="sd">            Dictionnary of outputs to save</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">output_file</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_output_path</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_number</span> <span class="o">+</span> <span class="s1">&#39;.sqlite&#39;</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">output_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">output_file</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">)]</span> <span class="o">=</span> <span class="n">output_dict</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">output_file</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="n">output_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div></div>
+</pre></div>
+
+              </div>
+              
+            
+                <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+</div>
+            
+        </div>
+    </div>
+    <footer class="footer">
+  <p>
+    
+      By Samuel Farrens<br/>
+    
+        &copy; Copyright 2018, Samuel Farrens.<br/>
+      Last updated on 14 Mar, 2022.<br/>
+  </p>
+</footer>
+</main>
+
+
+      </div>
+    </div>
+  
+  <script src="../../../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+
+  </body>
+</html>

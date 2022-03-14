@@ -1,0 +1,7 @@
+shapepipe.modules.uncompress\_fits\_package.uncompress\_fits
+------------------------------------------------------------
+
+.. automodule:: shapepipe.modules.uncompress_fits_package.uncompress_fits
+   :members:
+   :undoc-members:
+   :show-inheritance:

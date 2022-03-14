@@ -1,0 +1,7 @@
+shapepipe.utilities.galaxy
+--------------------------
+
+.. automodule:: shapepipe.utilities.galaxy
+   :members:
+   :undoc-members:
+   :show-inheritance:

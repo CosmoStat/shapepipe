@@ -1,0 +1,16 @@
+shapepipe.modules.merge\_sep\_cats\_package
+===========================================
+
+
+.. automodule:: shapepipe.modules.merge_sep_cats_package
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   shapepipe.modules.merge_sep_cats_package.merge_sep_cats

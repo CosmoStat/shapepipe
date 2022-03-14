@@ -1,0 +1,18 @@
+shapepipe.modules.mccd\_package
+===============================
+
+
+.. automodule:: shapepipe.modules.mccd_package
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   shapepipe.modules.mccd_package.mccd_interpolation_script
+   shapepipe.modules.mccd_package.mccd_plot_utilities
+   shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd

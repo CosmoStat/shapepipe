@@ -1,0 +1,7 @@
+shapepipe.modules.random\_cat\_package.random\_cat
+--------------------------------------------------
+
+.. automodule:: shapepipe.modules.random_cat_package.random_cat
+   :members:
+   :undoc-members:
+   :show-inheritance:

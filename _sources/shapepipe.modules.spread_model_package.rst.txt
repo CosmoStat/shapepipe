@@ -1,0 +1,16 @@
+shapepipe.modules.spread\_model\_package
+========================================
+
+
+.. automodule:: shapepipe.modules.spread_model_package
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   shapepipe.modules.spread_model_package.spread_model

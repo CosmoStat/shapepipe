@@ -1,0 +1,7 @@
+shapepipe.modules.psfex\_package.psfex\_script
+----------------------------------------------
+
+.. automodule:: shapepipe.modules.psfex_package.psfex_script
+   :members:
+   :undoc-members:
+   :show-inheritance:

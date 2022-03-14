@@ -1,0 +1,1092 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>shapepipe.modules.setools_package &#8212; ShapePipe v0.0</title>
+    
+  <link href="_static/css/theme.css" rel="stylesheet">
+  <link href="_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-book-theme.css?digest=84ace793992934648b4de8eed757e5a2" />
+    
+  <link rel="preload" as="script" href="_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx-book-theme.9d8b4a8b9bb19db25eeaddc40d639ba2.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="shapepipe.modules.setools_package.setools" href="shapepipe.modules.setools_package.setools.html" />
+    <link rel="prev" title="shapepipe.modules.random_cat_package.random_cat" href="shapepipe.modules.random_cat_package.random_cat.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<div class="col-12 col-md-3 bd-sidebar site-navigation " id="site-navigation">
+    
+        <div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="index.html">
+      
+      
+      
+      <h1 class="site-logo" id="site-title">ShapePipe v0.0</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  About ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="about.html">
+   About
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="contributors.html">
+   Contributors
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Installing ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="dependencies.html">
+   Dependencies
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="installation.html">
+   Installation
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Running ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="basic_execution.html">
+   Basic Execution
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="configuration.html">
+   Configuration
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="testing.html">
+   Testing
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="pipeline_tutorial.html">
+   ShapePipe Tutorial
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Miscellaneous
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="post_processing.html">
+   Post-processing
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="random_cat.html">
+   Create random catalogue
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  API Documentation
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 current active has-children">
+  <a class="reference internal" href="shapepipe.html">
+   shapepipe
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul class="current">
+   <li class="toctree-l2 current active has-children">
+    <a class="reference internal" href="shapepipe.modules.html">
+     shapepipe.modules
+    </a>
+    <input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+    <label for="toctree-checkbox-2">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul class="current">
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.find_exposures_package.html">
+       shapepipe.modules.find_exposures_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+      <label for="toctree-checkbox-3">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.find_exposures_package.find_exposures.html">
+         shapepipe.modules.find_exposures_package.find_exposures
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.get_images_package.html">
+       shapepipe.modules.get_images_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+      <label for="toctree-checkbox-4">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.get_images_package.get_images.html">
+         shapepipe.modules.get_images_package.get_images
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.make_cat_package.html">
+       shapepipe.modules.make_cat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+      <label for="toctree-checkbox-5">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.make_cat_package.make_cat.html">
+         shapepipe.modules.make_cat_package.make_cat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.mask_package.html">
+       shapepipe.modules.mask_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+      <label for="toctree-checkbox-6">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.mask_package.mask.html">
+         shapepipe.modules.mask_package.mask
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.match_external_package.html">
+       shapepipe.modules.match_external_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+      <label for="toctree-checkbox-7">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.match_external_package.match_external.html">
+         shapepipe.modules.match_external_package.match_external
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.mccd_package.html">
+       shapepipe.modules.mccd_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+      <label for="toctree-checkbox-8">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html">
+         shapepipe.modules.mccd_package.mccd_interpolation_script
+        </a>
+       </li>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.mccd_package.mccd_plot_utilities.html">
+         shapepipe.modules.mccd_package.mccd_plot_utilities
+        </a>
+       </li>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html">
+         shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.merge_headers_package.html">
+       shapepipe.modules.merge_headers_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+      <label for="toctree-checkbox-9">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.merge_headers_package.merge_headers.html">
+         shapepipe.modules.merge_headers_package.merge_headers
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.merge_sep_cats_package.html">
+       shapepipe.modules.merge_sep_cats_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+      <label for="toctree-checkbox-10">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.merge_sep_cats_package.merge_sep_cats.html">
+         shapepipe.modules.merge_sep_cats_package.merge_sep_cats
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.merge_starcat_package.html">
+       shapepipe.modules.merge_starcat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+      <label for="toctree-checkbox-11">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.merge_starcat_package.merge_starcat.html">
+         shapepipe.modules.merge_starcat_package.merge_starcat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.ngmix_package.html">
+       shapepipe.modules.ngmix_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/>
+      <label for="toctree-checkbox-12">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html">
+         shapepipe.modules.ngmix_package.ngmix
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.pastecat_package.html">
+       shapepipe.modules.pastecat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/>
+      <label for="toctree-checkbox-13">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.pastecat_package.pastecat.html">
+         shapepipe.modules.pastecat_package.pastecat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.psfex_interp_package.html">
+       shapepipe.modules.psfex_interp_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" type="checkbox"/>
+      <label for="toctree-checkbox-14">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.psfex_interp_package.psfex_interp.html">
+         shapepipe.modules.psfex_interp_package.psfex_interp
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.psfex_package.html">
+       shapepipe.modules.psfex_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" type="checkbox"/>
+      <label for="toctree-checkbox-15">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.psfex_package.psfex_script.html">
+         shapepipe.modules.psfex_package.psfex_script
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.python_example_package.html">
+       shapepipe.modules.python_example_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" type="checkbox"/>
+      <label for="toctree-checkbox-16">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.python_example_package.python_example.html">
+         shapepipe.modules.python_example_package.python_example
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.random_cat_package.html">
+       shapepipe.modules.random_cat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" type="checkbox"/>
+      <label for="toctree-checkbox-17">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.random_cat_package.random_cat.html">
+         shapepipe.modules.random_cat_package.random_cat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 current active has-children">
+      <a class="current reference internal" href="#">
+       shapepipe.modules.setools_package
+      </a>
+      <input checked="" class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" type="checkbox"/>
+      <label for="toctree-checkbox-18">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.setools_package.setools.html">
+         shapepipe.modules.setools_package.setools
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.sextractor_package.html">
+       shapepipe.modules.sextractor_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" type="checkbox"/>
+      <label for="toctree-checkbox-19">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.sextractor_package.sextractor_script.html">
+         shapepipe.modules.sextractor_package.sextractor_script
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.split_exp_package.html">
+       shapepipe.modules.split_exp_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" type="checkbox"/>
+      <label for="toctree-checkbox-20">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.split_exp_package.split_exp.html">
+         shapepipe.modules.split_exp_package.split_exp
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.spread_model_package.html">
+       shapepipe.modules.spread_model_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-21" name="toctree-checkbox-21" type="checkbox"/>
+      <label for="toctree-checkbox-21">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.spread_model_package.spread_model.html">
+         shapepipe.modules.spread_model_package.spread_model
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.uncompress_fits_package.html">
+       shapepipe.modules.uncompress_fits_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-22" name="toctree-checkbox-22" type="checkbox"/>
+      <label for="toctree-checkbox-22">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.uncompress_fits_package.uncompress_fits.html">
+         shapepipe.modules.uncompress_fits_package.uncompress_fits
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.vignetmaker_package.html">
+       shapepipe.modules.vignetmaker_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-23" name="toctree-checkbox-23" type="checkbox"/>
+      <label for="toctree-checkbox-23">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.vignetmaker_package.vignetmaker.html">
+         shapepipe.modules.vignetmaker_package.vignetmaker
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.modules.module_decorator.html">
+       shapepipe.modules.module_decorator
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.modules.module_runners.html">
+       shapepipe.modules.module_runners
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="shapepipe.pipeline.html">
+     shapepipe.pipeline
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-24" name="toctree-checkbox-24" type="checkbox"/>
+    <label for="toctree-checkbox-24">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.args.html">
+       shapepipe.pipeline.args
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.config.html">
+       shapepipe.pipeline.config
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.dependency_handler.html">
+       shapepipe.pipeline.dependency_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.execute.html">
+       shapepipe.pipeline.execute
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.file_handler.html">
+       shapepipe.pipeline.file_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.file_io.html">
+       shapepipe.pipeline.file_io
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.job_handler.html">
+       shapepipe.pipeline.job_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.mpi_run.html">
+       shapepipe.pipeline.mpi_run
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.run_log.html">
+       shapepipe.pipeline.run_log
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.shared.html">
+       shapepipe.pipeline.shared
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.str_handler.html">
+       shapepipe.pipeline.str_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.timeout.html">
+       shapepipe.pipeline.timeout
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.worker_handler.html">
+       shapepipe.pipeline.worker_handler
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="shapepipe.utilities.html">
+     shapepipe.utilities
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" type="checkbox"/>
+    <label for="toctree-checkbox-25">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.utilities.canfar.html">
+       shapepipe.utilities.canfar
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.utilities.cfis.html">
+       shapepipe.utilities.cfis
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.utilities.file_system.html">
+       shapepipe.utilities.file_system
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.utilities.galaxy.html">
+       shapepipe.utilities.galaxy
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="shapepipe.info.html">
+     shapepipe.info
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="shapepipe.run.html">
+     shapepipe.run
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Contributing to ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="contributing.html">
+   Contribution Guidelines
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="module_develop.html">
+   Module Development
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="module_example.html">
+   Module Examples
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  References
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="z_ref.html">
+   References
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav> <!-- To handle the deprecated key -->
+
+<div class="navbar_extra_footer">
+  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+</div>
+
+</div>
+
+
+          
+
+
+          
+<!-- This is an invisible pixel that we watch to see if we've scrolled. -->
+<div class="sbt-scroll-pixel-helper"></div>
+<main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
+    
+    <div class="topbar container-xl fixed-top">
+    <div class="topbar-contents row">
+        <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show"></div>
+        <div class="col pl-md-4 topbar-main">
+            <div class="topbar-left">
+                
+                <label class="nav-toggle-button" for="__navigation">
+                    <div class="visually-hidden">Toggle navigation</div>
+                    <i class="fas fa-bars"></i>
+                </label>
+                
+            </div>
+            
+            <!-- Source interaction buttons -->
+
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Connect with source repository"><i class="fab fa-github"></i></button>
+    <div class="dropdown-buttons sourcebuttons">
+        <a class="repository-button"
+            href="https://github.com/CosmoStat/shapepipe"><button type="button" class="btn btn-secondary topbarbtn"
+                data-toggle="tooltip" data-placement="left" title="Source repository"><i
+                    class="fab fa-github"></i>repository</button></a>
+        <a class="issues-button"
+            href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2Fshapepipe.modules.setools_package.html&body=Your%20issue%20content%20here."><button
+                type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
+                title="Open an issue"><i class="fas fa-lightbulb"></i>open issue</button></a>
+        
+    </div>
+</div>
+
+            <!-- Full screen (wrap in <a> to have style consistency -->
+
+            <!-- Launch buttons -->
+
+        </div>
+
+        <!-- Table of contents -->
+        <div class="d-none d-md-block col-md-2 bd-toc show noprint">
+            
+            <div class="tocsection onthispage pt-5 pb-3">
+                <i class="fas fa-list"></i> Contents
+            </div>
+            <nav id="bd-toc-nav" aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#description">
+   Description
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#module-specific-config-file-entries">
+   Module-specific config file entries
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#setools-configuration-file">
+   Setools configuration file
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#submodules">
+   Submodules
+  </a>
+ </li>
+</ul>
+
+            </nav>
+        </div>
+    </div>
+</div>
+    <div id="main-content" class="row">
+        <div class="col-12 col-md-9 pl-md-3 pr-md-0">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>shapepipe.modules.setools_package</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#description">
+   Description
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#module-specific-config-file-entries">
+   Module-specific config file entries
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#setools-configuration-file">
+   Setools configuration file
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#submodules">
+   Submodules
+  </a>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            
+              <div>
+                
+  <div class="section" id="module-shapepipe.modules.setools_package">
+<span id="shapepipe-modules-setools-package"></span><h1>shapepipe.modules.setools_package<a class="headerlink" href="#module-shapepipe.modules.setools_package" title="Permalink to this headline">¶</a></h1>
+<p>SETOOLS PACKAGE.</p>
+<p>This package contains the module(s) for <code class="docutils literal notranslate"><span class="pre">setools</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Author</dt>
+<dd class="field-odd"><p>Axel Guinot</p>
+</dd>
+<dt class="field-even">Parent module</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">sextractor_runner</span></code></p>
+</dd>
+<dt class="field-odd">Input</dt>
+<dd class="field-odd"><p>SExtractor catalogue</p>
+</dd>
+<dt class="field-even">Output</dt>
+<dd class="field-even"><p>SExtractor catalogue</p>
+</dd>
+</dl>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>This module defines samples via selection criteria, or masks. A variety of
+statistical mathematical functions are implemented, that can be applied to the
+input catalogue.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">setools</span></code> module can create random sub-sample output catalogues, for
+example for training and validation purposes.</p>
+<p>In addition, the module can produce user-defined plots, and compute summary
+statistics of the selected population(s). The figures include scatter plots and
+histograms, the summaries are number, mean, mode, extrema, and standard
+deviation.</p>
+</div>
+<div class="section" id="module-specific-config-file-entries">
+<h2>Module-specific config file entries<a class="headerlink" href="#module-specific-config-file-entries" title="Permalink to this headline">¶</a></h2>
+<dl class="simple">
+<dt>SETOOLS_CONFIG_PATH<span class="classifier">str</span></dt><dd><p>Path to setools configuration file</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="setools-configuration-file">
+<h2>Setools configuration file<a class="headerlink" href="#setools-configuration-file" title="Permalink to this headline">¶</a></h2>
+<p>This file can contain an arbitrary number of sections. Each section is
+initiated by a line <code class="docutils literal notranslate"><span class="pre">[TYPE:name]</span></code>. The following mask types <code class="docutils literal notranslate"><span class="pre">TYPE</span></code>
+are valid.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">MASK</span></code>: define a selection or mask</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">RAND_SPLIT</span></code>: split an input into random subsamples</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PLOT</span></code>: create a plot</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">STATS</span></code>: output summary statistics</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">name</span></code> is the file name, in which the result of the section is saved.
+This is a FITS file for <code class="docutils literal notranslate"><span class="pre">MASK</span></code>, <code class="docutils literal notranslate"><span class="pre">.png</span></code> file for <code class="docutils literal notranslate"><span class="pre">PLOT</span></code>, and an ASCII file
+for <code class="docutils literal notranslate"><span class="pre">STATS</span></code>. For <code class="docutils literal notranslate"><span class="pre">TYPE</span> <span class="pre">=</span> <span class="pre">MASK</span></code> and <code class="docutils literal notranslate"><span class="pre">RAND_SPLIT</span></code>, <code class="docutils literal notranslate"><span class="pre">name</span></code> is also the
+reference, by which the defined sample can be addressed within the
+configuration file.</p>
+<p>The following is an example of a star selection using two <code class="docutils literal notranslate"><span class="pre">MASK</span></code> sections.
+First, a pre-selection is defined:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[MASK:preselect]</span><span class="w"></span>
+<span class="na">MAG_AUTO &gt; 0</span><span class="w"></span>
+<span class="na">MAG_AUTO &lt; 21</span><span class="w"></span>
+<span class="na">FWHM_IMAGE &gt; 0.3 / 0.187</span><span class="w"></span>
+<span class="na">FWHM_IMAGE &lt; 1.5 / 0.187</span><span class="w"></span>
+<span class="na">FLAGS</span><span class="w"> </span><span class="o">=</span><span class="s">= 0</span><span class="w"></span>
+<span class="na">IMAFLAGS_ISO</span><span class="w"> </span><span class="o">=</span><span class="s">= 0</span><span class="w"></span>
+<span class="na">NO_SAVE</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This selects objects within a magnitude (<code class="docutils literal notranslate"><span class="pre">MAG_AUTO</span></code>) and size
+(<code class="docutils literal notranslate"><span class="pre">FWHM_IMAGE</span></code>) ranges. The size limits of 0.3” and 1.5” are transformed from
+arcseconds to pixels. Additional flag criteria for <code class="docutils literal notranslate"><span class="pre">FLAGS</span></code> AND
+<code class="docutils literal notranslate"><span class="pre">IMAFLAGS_ISO</span></code> are specified. The keyword <code class="docutils literal notranslate"><span class="pre">NO_SAVE</span></code> indicates that this
+selection is not to be saved to disk.</p>
+<p>Next, the final star selection is defined:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[MASK:star_selection]</span><span class="w"></span>
+<span class="na">MAG_AUTO &gt; 18.</span><span class="w"></span>
+<span class="na">MAG_AUTO &lt; 22.</span><span class="w"></span>
+<span class="na">FWHM_IMAGE &lt;</span><span class="o">=</span><span class="w"> </span><span class="s">mode(FWHM_IMAGE{preselect}) + 0.2</span><span class="w"></span>
+<span class="na">FWHM_IMAGE &gt;</span><span class="o">=</span><span class="w"> </span><span class="s">mode(FWHM_IMAGE{preselect}) - 0.2</span><span class="w"></span>
+<span class="na">FLAGS</span><span class="w"> </span><span class="o">=</span><span class="s">= 0</span><span class="w"></span>
+<span class="na">IMAFLAGS_ISO</span><span class="w"> </span><span class="o">=</span><span class="s">= 0</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The size range is now refined using the mode of preselected objects. The
+preselection removes outliers before the mode computation.</p>
+<p>An example of the definition of random subsamples is as follows:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[RAND_SPLIT:star_split]</span><span class="w"></span>
+<span class="na">RATIO</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">20</span><span class="w"></span>
+<span class="na">MASK</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">star_selection</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This uses as input the <code class="docutils literal notranslate"><span class="pre">star_selection</span></code> sample (given by the <code class="docutils literal notranslate"><span class="pre">MASK</span></code> entry).
+It creates two random subsamples: one with 20% and one with 80% (100 - RATIO)
+percent of input objects. The output file base names are given by the mask name
+and the ratios; in this case two files <code class="docutils literal notranslate"><span class="pre">star_split_ratio_20-&lt;num&gt;.fits</span></code> and
+<code class="docutils literal notranslate"><span class="pre">star_split_ratio_80-&lt;num&gt;.fits</span></code> are created, where <code class="docutils literal notranslate"><span class="pre">&lt;num&gt;</span></code> is the pipeline
+number of the (single-exposure single-HDU) image that is processed.</p>
+<p>Entries in the <code class="docutils literal notranslate"><span class="pre">MASK</span></code> and <code class="docutils literal notranslate"><span class="pre">STATS</span></code> sections, lines can contain basic
+relational operations, and functions.</p>
+<p>The operands can be</p>
+<ul class="simple">
+<li><p>input column names, or <code class="docutils literal notranslate"><span class="pre">SExtractor</span></code> keywords,</p></li>
+<li><p>or names defined by a previous mask.</p></li>
+</ul>
+<p>The following are illustrations of two plots. First, another mask
+is defined.</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[MASK:fwhm_mag_cut]</span><span class="w"></span>
+<span class="na">FWHM_IMAGE &gt; 0</span><span class="w"></span>
+<span class="na">FWHM_IMAGE &lt; 40</span><span class="w"></span>
+<span class="na">MAG_AUTO &lt; 35</span><span class="w"></span>
+<span class="na">FLAGS</span><span class="w"> </span><span class="o">=</span><span class="s">= 0</span><span class="w"></span>
+<span class="na">IMAFLAGS_ISO</span><span class="w"> </span><span class="o">=</span><span class="s">= 0</span><span class="w"></span>
+<span class="na">NO_SAVE</span><span class="w"></span>
+
+<span class="k">[PLOT:size_mag]</span><span class="w"></span>
+<span class="na">TYPE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">plot</span><span class="w"></span>
+<span class="na">FORMAT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">png</span><span class="w"></span>
+<span class="na">X_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">FWHM_IMAGE{fwhm_mag_cut}</span><span class="w"></span>
+<span class="na">Y_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">MAG_AUTO{fwhm_mag_cut}</span><span class="w"></span>
+<span class="na">X_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">FWHM_IMAGE{star_selection}</span><span class="w"></span>
+<span class="na">Y_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">MAG_AUTO{star_selection}</span><span class="w"></span>
+<span class="na">MARKER_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">+</span><span class="w"></span>
+<span class="na">MARKER_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">.</span><span class="w"></span>
+<span class="na">MARKERSIZE_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">3</span><span class="w"></span>
+<span class="na">MARKERSIZE_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">3</span><span class="w"></span>
+<span class="na">LABEL_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">All</span><span class="w"></span>
+<span class="na">LABEL_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Stars, mean FWHM: @mean(FWHM_IMAGE{star_selection})*0.187@ arcsec&quot;</span><span class="w"></span>
+<span class="na">TITLE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Stellar locus&quot;</span><span class="w"></span>
+<span class="na">XLABEL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;FWHM (pix)&quot;</span><span class="w"></span>
+<span class="na">YLABEL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">Mag</span><span class="w"></span>
+
+<span class="k">[PLOT:hist_mag_stars]</span><span class="w"></span>
+<span class="na">TYPE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">hist</span><span class="w"></span>
+<span class="na">FORMAT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">png</span><span class="w"></span>
+<span class="na">Y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">MAG_AUTO{star_selection}</span><span class="w"></span>
+<span class="na">BIN</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">20</span><span class="w"></span>
+<span class="na">LABEL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;stars&quot;</span><span class="w"></span>
+<span class="na">XLABEL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Magnitude&quot;</span><span class="w"></span>
+<span class="na">YLABEL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Number&quot;</span><span class="w"></span>
+<span class="na">TITLE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Magnitude of stars&quot;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Possible values for <code class="docutils literal notranslate"><span class="pre">TYPE</span></code> are <code class="docutils literal notranslate"><span class="pre">plot</span></code>, <code class="docutils literal notranslate"><span class="pre">histogram</span></code>, <code class="docutils literal notranslate"><span class="pre">scatter</span></code>.
+More than one sample can be plotted by adding <code class="docutils literal notranslate"><span class="pre">_1</span></code>, <code class="docutils literal notranslate"><span class="pre">_2</span></code>, … to all of the
+above given keywords.</p>
+<p>Keywords for all plot types:</p>
+<dl class="simple">
+<dt>Y<span class="classifier">str</span></dt><dd><p>Functions of samples to plot on y-axis</p>
+</dd>
+<dt>XLABEL, YLABEL<span class="classifier">str, optional</span></dt><dd><p>Labels for x- and y-axes, respectively</p>
+</dd>
+<dt>LABEL<span class="classifier">str, optional</span></dt><dd><p>Plot label</p>
+</dd>
+<dt>TITLE<span class="classifier">str, optional</span></dt><dd><p>Plot title</p>
+</dd>
+<dt>ALPHA<span class="classifier">float</span></dt><dd><p>Alpha (transparency) parameter</p>
+</dd>
+<dt>COLOR<span class="classifier">str, optional</span></dt><dd><p>Plot color; the default is the standard matplotlib color sequence</p>
+</dd>
+<dt>FORMAT<span class="classifier">str, optional</span></dt><dd><p>Output file format; the default value is <code class="docutils literal notranslate"><span class="pre">png</span></code></p>
+</dd>
+</dl>
+<p>Keywords for standard and scatter plots (<code class="docutils literal notranslate"><span class="pre">TYPE</span></code> in <code class="docutils literal notranslate"><span class="pre">plot</span></code>, <code class="docutils literal notranslate"><span class="pre">scatter</span></code>):</p>
+<dl class="simple">
+<dt>X<span class="classifier">str</span></dt><dd><p>Functions of samples to plot on x-axis</p>
+</dd>
+<dt>MARKER<span class="classifier">str, optional</span></dt><dd><p>Point marker symbol; the default value is <code class="docutils literal notranslate"><span class="pre">+</span></code></p>
+</dd>
+</dl>
+<p>Additional keywords for standard line/points plot (<code class="docutils literal notranslate"><span class="pre">TYPE</span> <span class="pre">=</span> <span class="pre">plot</span></code>):</p>
+<dl class="simple">
+<dt>MARKERSIZE<span class="classifier">float, optional</span></dt><dd><p>Marker size; the default value is <code class="docutils literal notranslate"><span class="pre">1</span></code></p>
+</dd>
+<dt>LINE<span class="classifier">str, optional</span></dt><dd><p>Line type</p>
+</dd>
+</dl>
+<p>Additional keywords for histograms (<code class="docutils literal notranslate"><span class="pre">TYPE</span> <span class="pre">=</span> <span class="pre">hist</span></code>):</p>
+<dl class="simple">
+<dt>BIN<span class="classifier">int, optional</span></dt><dd><p>Number of bins; the default value is <code class="docutils literal notranslate"><span class="pre">50</span></code></p>
+</dd>
+<dt>HTYPE<span class="classifier">str, optional</span></dt><dd><p>Histogram type; the default value is <code class="docutils literal notranslate"><span class="pre">bar</span></code></p>
+</dd>
+<dt>LOG<span class="classifier">bool, optional</span></dt><dd><p>Logarithmic (linear) bins if <code class="docutils literal notranslate"><span class="pre">True</span></code> (<code class="docutils literal notranslate"><span class="pre">False</span></code>); the defaul value is
+<code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
+</dl>
+<p>Additional keywords for scatter plots (<code class="docutils literal notranslate"><span class="pre">TYPE</span> <span class="pre">=</span> <span class="pre">scatter</span></code>):</p>
+<dl class="simple">
+<dt>MARKER<span class="classifier">str</span></dt><dd><p>Point marker</p>
+</dd>
+<dt>SCATTER<span class="classifier">str, optional</span></dt><dd><p>Function of some input sample acting as third variable that is color-coded
+in the point colors.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="shapepipe.modules.setools_package.setools.html">shapepipe.modules.setools_package.setools</a></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+              </div>
+              
+            
+                <!-- Previous / next buttons -->
+<div class='prev-next-area'> 
+    <a class='left-prev' id="prev-link" href="shapepipe.modules.random_cat_package.random_cat.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">shapepipe.modules.random_cat_package.random_cat</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="shapepipe.modules.setools_package.setools.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">shapepipe.modules.setools_package.setools</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            
+        </div>
+    </div>
+    <footer class="footer">
+  <p>
+    
+      By Samuel Farrens<br/>
+    
+        &copy; Copyright 2018, Samuel Farrens.<br/>
+      Last updated on 14 Mar, 2022.<br/>
+  </p>
+</footer>
+</main>
+
+
+      </div>
+    </div>
+  
+  <script src="_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+
+  </body>
+</html>

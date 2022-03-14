@@ -1,0 +1,7 @@
+shapepipe.modules.psfex\_interp\_package.psfex\_interp
+------------------------------------------------------
+
+.. automodule:: shapepipe.modules.psfex_interp_package.psfex_interp
+   :members:
+   :undoc-members:
+   :show-inheritance:

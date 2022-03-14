@@ -1,0 +1,7 @@
+shapepipe.modules.split\_exp\_package.split\_exp
+------------------------------------------------
+
+.. automodule:: shapepipe.modules.split_exp_package.split_exp
+   :members:
+   :undoc-members:
+   :show-inheritance:

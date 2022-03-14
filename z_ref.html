@@ -1,0 +1,899 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>References &#8212; ShapePipe v0.0</title>
+    
+  <link href="_static/css/theme.css" rel="stylesheet">
+  <link href="_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-book-theme.css?digest=84ace793992934648b4de8eed757e5a2" />
+    
+  <link rel="preload" as="script" href="_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx-book-theme.9d8b4a8b9bb19db25eeaddc40d639ba2.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Module Examples" href="module_example.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<div class="col-12 col-md-3 bd-sidebar site-navigation " id="site-navigation">
+    
+        <div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="index.html">
+      
+      
+      
+      <h1 class="site-logo" id="site-title">ShapePipe v0.0</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  About ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="about.html">
+   About
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="contributors.html">
+   Contributors
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Installing ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="dependencies.html">
+   Dependencies
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="installation.html">
+   Installation
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Running ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="basic_execution.html">
+   Basic Execution
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="configuration.html">
+   Configuration
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="testing.html">
+   Testing
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="pipeline_tutorial.html">
+   ShapePipe Tutorial
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Miscellaneous
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="post_processing.html">
+   Post-processing
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="random_cat.html">
+   Create random catalogue
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  API Documentation
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="shapepipe.html">
+   shapepipe
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="shapepipe.modules.html">
+     shapepipe.modules
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+    <label for="toctree-checkbox-2">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.find_exposures_package.html">
+       shapepipe.modules.find_exposures_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+      <label for="toctree-checkbox-3">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.find_exposures_package.find_exposures.html">
+         shapepipe.modules.find_exposures_package.find_exposures
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.get_images_package.html">
+       shapepipe.modules.get_images_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+      <label for="toctree-checkbox-4">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.get_images_package.get_images.html">
+         shapepipe.modules.get_images_package.get_images
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.make_cat_package.html">
+       shapepipe.modules.make_cat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+      <label for="toctree-checkbox-5">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.make_cat_package.make_cat.html">
+         shapepipe.modules.make_cat_package.make_cat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.mask_package.html">
+       shapepipe.modules.mask_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+      <label for="toctree-checkbox-6">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.mask_package.mask.html">
+         shapepipe.modules.mask_package.mask
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.match_external_package.html">
+       shapepipe.modules.match_external_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+      <label for="toctree-checkbox-7">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.match_external_package.match_external.html">
+         shapepipe.modules.match_external_package.match_external
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.mccd_package.html">
+       shapepipe.modules.mccd_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+      <label for="toctree-checkbox-8">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html">
+         shapepipe.modules.mccd_package.mccd_interpolation_script
+        </a>
+       </li>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.mccd_package.mccd_plot_utilities.html">
+         shapepipe.modules.mccd_package.mccd_plot_utilities
+        </a>
+       </li>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html">
+         shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.merge_headers_package.html">
+       shapepipe.modules.merge_headers_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+      <label for="toctree-checkbox-9">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.merge_headers_package.merge_headers.html">
+         shapepipe.modules.merge_headers_package.merge_headers
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.merge_sep_cats_package.html">
+       shapepipe.modules.merge_sep_cats_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+      <label for="toctree-checkbox-10">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.merge_sep_cats_package.merge_sep_cats.html">
+         shapepipe.modules.merge_sep_cats_package.merge_sep_cats
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.merge_starcat_package.html">
+       shapepipe.modules.merge_starcat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+      <label for="toctree-checkbox-11">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.merge_starcat_package.merge_starcat.html">
+         shapepipe.modules.merge_starcat_package.merge_starcat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.ngmix_package.html">
+       shapepipe.modules.ngmix_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/>
+      <label for="toctree-checkbox-12">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html">
+         shapepipe.modules.ngmix_package.ngmix
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.pastecat_package.html">
+       shapepipe.modules.pastecat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/>
+      <label for="toctree-checkbox-13">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.pastecat_package.pastecat.html">
+         shapepipe.modules.pastecat_package.pastecat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.psfex_interp_package.html">
+       shapepipe.modules.psfex_interp_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" type="checkbox"/>
+      <label for="toctree-checkbox-14">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.psfex_interp_package.psfex_interp.html">
+         shapepipe.modules.psfex_interp_package.psfex_interp
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.psfex_package.html">
+       shapepipe.modules.psfex_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" type="checkbox"/>
+      <label for="toctree-checkbox-15">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.psfex_package.psfex_script.html">
+         shapepipe.modules.psfex_package.psfex_script
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.python_example_package.html">
+       shapepipe.modules.python_example_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" type="checkbox"/>
+      <label for="toctree-checkbox-16">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.python_example_package.python_example.html">
+         shapepipe.modules.python_example_package.python_example
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.random_cat_package.html">
+       shapepipe.modules.random_cat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" type="checkbox"/>
+      <label for="toctree-checkbox-17">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.random_cat_package.random_cat.html">
+         shapepipe.modules.random_cat_package.random_cat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.setools_package.html">
+       shapepipe.modules.setools_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" type="checkbox"/>
+      <label for="toctree-checkbox-18">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.setools_package.setools.html">
+         shapepipe.modules.setools_package.setools
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.sextractor_package.html">
+       shapepipe.modules.sextractor_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" type="checkbox"/>
+      <label for="toctree-checkbox-19">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.sextractor_package.sextractor_script.html">
+         shapepipe.modules.sextractor_package.sextractor_script
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.split_exp_package.html">
+       shapepipe.modules.split_exp_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" type="checkbox"/>
+      <label for="toctree-checkbox-20">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.split_exp_package.split_exp.html">
+         shapepipe.modules.split_exp_package.split_exp
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.spread_model_package.html">
+       shapepipe.modules.spread_model_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-21" name="toctree-checkbox-21" type="checkbox"/>
+      <label for="toctree-checkbox-21">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.spread_model_package.spread_model.html">
+         shapepipe.modules.spread_model_package.spread_model
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.uncompress_fits_package.html">
+       shapepipe.modules.uncompress_fits_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-22" name="toctree-checkbox-22" type="checkbox"/>
+      <label for="toctree-checkbox-22">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.uncompress_fits_package.uncompress_fits.html">
+         shapepipe.modules.uncompress_fits_package.uncompress_fits
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="shapepipe.modules.vignetmaker_package.html">
+       shapepipe.modules.vignetmaker_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-23" name="toctree-checkbox-23" type="checkbox"/>
+      <label for="toctree-checkbox-23">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="shapepipe.modules.vignetmaker_package.vignetmaker.html">
+         shapepipe.modules.vignetmaker_package.vignetmaker
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.modules.module_decorator.html">
+       shapepipe.modules.module_decorator
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.modules.module_runners.html">
+       shapepipe.modules.module_runners
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="shapepipe.pipeline.html">
+     shapepipe.pipeline
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-24" name="toctree-checkbox-24" type="checkbox"/>
+    <label for="toctree-checkbox-24">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.args.html">
+       shapepipe.pipeline.args
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.config.html">
+       shapepipe.pipeline.config
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.dependency_handler.html">
+       shapepipe.pipeline.dependency_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.execute.html">
+       shapepipe.pipeline.execute
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.file_handler.html">
+       shapepipe.pipeline.file_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.file_io.html">
+       shapepipe.pipeline.file_io
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.job_handler.html">
+       shapepipe.pipeline.job_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.mpi_run.html">
+       shapepipe.pipeline.mpi_run
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.run_log.html">
+       shapepipe.pipeline.run_log
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.shared.html">
+       shapepipe.pipeline.shared
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.str_handler.html">
+       shapepipe.pipeline.str_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.timeout.html">
+       shapepipe.pipeline.timeout
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.pipeline.worker_handler.html">
+       shapepipe.pipeline.worker_handler
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="shapepipe.utilities.html">
+     shapepipe.utilities
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" type="checkbox"/>
+    <label for="toctree-checkbox-25">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.utilities.canfar.html">
+       shapepipe.utilities.canfar
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.utilities.cfis.html">
+       shapepipe.utilities.cfis
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.utilities.file_system.html">
+       shapepipe.utilities.file_system
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="shapepipe.utilities.galaxy.html">
+       shapepipe.utilities.galaxy
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="shapepipe.info.html">
+     shapepipe.info
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="shapepipe.run.html">
+     shapepipe.run
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Contributing to ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="contributing.html">
+   Contribution Guidelines
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="module_develop.html">
+   Module Development
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="module_example.html">
+   Module Examples
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  References
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   References
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav> <!-- To handle the deprecated key -->
+
+<div class="navbar_extra_footer">
+  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+</div>
+
+</div>
+
+
+          
+
+
+          
+<!-- This is an invisible pixel that we watch to see if we've scrolled. -->
+<div class="sbt-scroll-pixel-helper"></div>
+<main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
+    
+    <div class="topbar container-xl fixed-top">
+    <div class="topbar-contents row">
+        <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show"></div>
+        <div class="col pl-md-4 topbar-main">
+            <div class="topbar-left">
+                
+                <label class="nav-toggle-button" for="__navigation">
+                    <div class="visually-hidden">Toggle navigation</div>
+                    <i class="fas fa-bars"></i>
+                </label>
+                
+            </div>
+            
+            <!-- Source interaction buttons -->
+
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Connect with source repository"><i class="fab fa-github"></i></button>
+    <div class="dropdown-buttons sourcebuttons">
+        <a class="repository-button"
+            href="https://github.com/CosmoStat/shapepipe"><button type="button" class="btn btn-secondary topbarbtn"
+                data-toggle="tooltip" data-placement="left" title="Source repository"><i
+                    class="fab fa-github"></i>repository</button></a>
+        <a class="issues-button"
+            href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2Fz_ref.html&body=Your%20issue%20content%20here."><button
+                type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
+                title="Open an issue"><i class="fas fa-lightbulb"></i>open issue</button></a>
+        
+    </div>
+</div>
+
+            <!-- Full screen (wrap in <a> to have style consistency -->
+
+            <!-- Launch buttons -->
+
+        </div>
+
+        <!-- Table of contents -->
+        <div class="d-none d-md-block col-md-2 bd-toc show noprint">
+            
+        </div>
+    </div>
+</div>
+    <div id="main-content" class="row">
+        <div class="col-12 col-md-9 pl-md-3 pr-md-0">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>References</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                    </div>
+                </div>
+            </div>
+            
+              <div>
+                
+  <div class="section" id="references">
+<h1>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h1>
+<p id="id1"><dl class="citation">
+<dt class="label" id="id9"><span class="brackets">DPS05</span></dt>
+<dd><p>Lisandro Dalcin, Rodrigo Paz, and Mario Storti. Mpi for python. <em>Journal of Parallel and Distributed Computing</em>, 65(9):1108 – 1115, 2005. URL: <a class="reference external" href="http://www.sciencedirect.com/science/article/pii/S0743731505000560">http://www.sciencedirect.com/science/article/pii/S0743731505000560</a>, <a class="reference external" href="https://doi.org/https://doi.org/10.1016/j.jpdc.2005.03.010">doi:https://doi.org/10.1016/j.jpdc.2005.03.010</a>.</p>
+</dd>
+<dt class="label" id="id10"><span class="brackets">DPSDElia08</span></dt>
+<dd><p>Lisandro Dalcin, Rodrigo Paz, Mario Storti, and Jorge D'Elía. Mpi for python: performance improvements and mpi-2 extensions. <em>Journal of Parallel and Distributed Computing</em>, 68(5):655 – 662, 2008. URL: <a class="reference external" href="http://www.sciencedirect.com/science/article/pii/S0743731507001712">http://www.sciencedirect.com/science/article/pii/S0743731507001712</a>, <a class="reference external" href="https://doi.org/https://doi.org/10.1016/j.jpdc.2007.09.005">doi:https://doi.org/10.1016/j.jpdc.2007.09.005</a>.</p>
+</dd>
+<dt class="label" id="id11"><span class="brackets">DPKC11</span></dt>
+<dd><p>Lisandro D. Dalcin, Rodrigo R. Paz, Pablo A. Kler, and Alejandro Cosimo. Parallel distributed computing using python. <em>Advances in Water Resources</em>, 34(9):1124 – 1139, 2011. New Computational Methods and Software Tools. URL: <a class="reference external" href="http://www.sciencedirect.com/science/article/pii/S0309170811000777">http://www.sciencedirect.com/science/article/pii/S0309170811000777</a>, <a class="reference external" href="https://doi.org/https://doi.org/10.1016/j.advwatres.2011.04.013">doi:https://doi.org/10.1016/j.advwatres.2011.04.013</a>.</p>
+</dd>
+<dt class="label" id="id12"><span class="brackets">DAM+12</span></dt>
+<dd><p>S. Desai, R. Armstrong, J. J. Mohr, D. R. Semler, J. Liu, E. Bertin, S. S. Allam, W. A. Barkhouse, G. Bazin, E. J. Buckley-Geer, and et al. The blanco cosmology survey: data acquisition, processing, calibration, quality diagnostics, and data release. <em>The Astrophysical Journal</em>, 757(1):83, Sep 2012. URL: <a class="reference external" href="http://dx.doi.org/10.1088/0004-637X/757/1/83">http://dx.doi.org/10.1088/0004-637X/757/1/83</a>, <a class="reference external" href="https://doi.org/10.1088/0004-637x/757/1/83">doi:10.1088/0004-637x/757/1/83</a>.</p>
+</dd>
+<dt class="label" id="id21"><span class="brackets">HMvdW+20</span></dt>
+<dd><p>Charles R. Harris, K. Jarrod Millman, St'efan J. van der Walt, Ralf Gommers, Pauli Virtanen, David Cournapeau, Eric Wieser, Julian Taylor, Sebastian Berg, Nathaniel J. Smith, Robert Kern, Matti Picus, Stephan Hoyer, Marten H. van Kerkwijk, Matthew Brett, Allan Haldane, Jaime Fern'andez del R'ıo, Mark Wiebe, Pearu Peterson, Pierre G'erard-Marchant, Kevin Sheppard, Tyler Reddy, Warren Weckesser, Hameer Abbasi, Christoph Gohlke, and Travis E. Oliphant. Array programming with NumPy. <em>Nature</em>, 585(7825):357–362, September 2020. URL: <a class="reference external" href="https://doi.org/10.1038/s41586-020-2649-2">https://doi.org/10.1038/s41586-020-2649-2</a>, <a class="reference external" href="https://doi.org/10.1038/s41586-020-2649-2">doi:10.1038/s41586-020-2649-2</a>.</p>
+</dd>
+<dt class="label" id="id22"><span class="brackets">Hun07</span></dt>
+<dd><p>J. D. Hunter. Matplotlib: a 2d graphics environment. <em>Computing in Science &amp; Engineering</em>, 9(3):90–95, 2007. <a class="reference external" href="https://doi.org/10.1109/MCSE.2007.55">doi:10.1109/MCSE.2007.55</a>.</p>
+</dd>
+<dt class="label" id="id32"><span class="brackets">MAB+12</span></dt>
+<dd><p>Joseph J. Mohr, Robert Armstrong, Emmanuel Bertin, Greg Daues, Shantanu Desai, Michelle Gower, Robert Gruendl, William Hanlon, Nikolay Kuropatkin, Huan Lin, and et al. The dark energy survey data processing and calibration system. <em>Software and Cyberinfrastructure for Astronomy II</em>, Sep 2012. URL: <a class="reference external" href="http://dx.doi.org/10.1117/12.926785">http://dx.doi.org/10.1117/12.926785</a>, <a class="reference external" href="https://doi.org/10.1117/12.926785">doi:10.1117/12.926785</a>.</p>
+</dd>
+<dt class="label" id="id34"><span class="brackets">pdt20</span></dt>
+<dd><p>The pandas development team. Pandas-dev/pandas: pandas. February 2020. URL: <a class="reference external" href="https://doi.org/10.5281/zenodo.3509134">https://doi.org/10.5281/zenodo.3509134</a>, <a class="reference external" href="https://doi.org/10.5281/zenodo.3509134">doi:10.5281/zenodo.3509134</a>.</p>
+</dd>
+<dt class="label" id="id3"><span class="brackets">AstropyCollaborationPriceWhelanSipHocz+18</span></dt>
+<dd><p>Astropy Collaboration, A. M. Price-Whelan, B. M. SipHocz, H. M. G&quot;unther, P. L. Lim, S. M. Crawford, S. Conseil, D. L. Shupe, M. W. Craig, N. Dencheva, A. Ginsburg, J. T. Vand erPlas, L. D. Bradley, D. P'erez-Su'arez, M. de Val-Borro, T. L. Aldcroft, K. L. Cruz, T. P. Robitaille, E. J. Tollerud, C. Ardelean, T. Babej, Y. P. Bach, M. Bachetti, A. V. Bakanov, S. P. Bamford, G. Barentsen, P. Barmby, A. Baumbach, K. L. Berry, F. Biscani, M. Boquien, K. A. Bostroem, L. G. Bouma, G. B. Brammer, E. M. Bray, H. Breytenbach, H. Buddelmeijer, D. J. Burke, G. Calderone, J. L. Cano Rodr'iguez, M. Cara, J. V. M. Cardoso, S. Cheedella, Y. Copin, L. Corrales, D. Crichton, D. D'Avella, C. Deil, 'E. Depagne, J. P. Dietrich, A. Donath, M. Droettboom, N. Earl, T. Erben, S. Fabbro, L. A. Ferreira, T. Finethy, R. T. Fox, L. H. Garrison, S. L. J. Gibbons, D. A. Goldstein, R. Gommers, J. P. Greco, P. Greenfield, A. M. Groener, F. Grollier, A. Hagen, P. Hirst, D. Homeier, A. J. Horton, G. Hosseinzadeh, L. Hu, J. S. Hunkeler,  Z. Ivezi'c, A. Jain, T. Jenness, G. Kanarek, S. Kendrew, N. S. Kern, W. E. Kerzendorf, A. Khvalko, J. King, D. Kirkby, A. M. Kulkarni, A. Kumar, A. Lee, D. Lenz, S. P. Littlefair, Z. Ma, D. M. Macleod, M. Mastropietro, C. McCully, S. Montagnac, B. M. Morris, M. Mueller, S. J. Mumford, D. Muna, N. A. Murphy, S. Nelson, G. H. Nguyen, J. P. Ninan, M. N&quot;othe, S. Ogaz, S. Oh, J. K. Parejko, N. Parley, S. Pascual, R. Patil, A. A. Patil, A. L. Plunkett, J. X. Prochaska, T. Rastogi, V. Reddy Janga, J. Sabater, P. Sakurikar, M. Seifert, L. E. Sherbert, H. Sherwood-Taylor, A. Y. Shih, J. Sick, M. T. Silbiger, S. Singanamalla, L. P. Singer, P. H. Sladen, K. A. Sooley, S. Sornarajah, O. Streicher, P. Teuben, S. W. Thomas, G. R. Tremblay, J. E. H. Turner, V. Terr'on, M. H. van Kerkwijk, A. de la Vega, L. L. Watkins, B. A. Weaver, J. B. Whitmore, J. Woillez, V. Zabalza, and Astropy Contributors. The Astropy Project: Building an Open-science Project and Status of the v2.0 Core Package. <em>aj</em>, 156(3):123, September 2018. <a class="reference external" href="https://arxiv.org/abs/1801.02634">arXiv:1801.02634</a>, <a class="reference external" href="https://doi.org/10.3847/1538-3881/aabc4f">doi:10.3847/1538-3881/aabc4f</a>.</p>
+</dd>
+<dt class="label" id="id2"><span class="brackets">AstropyCollaborationRobitailleTollerud+13</span></dt>
+<dd><p>Astropy Collaboration, T. P. Robitaille, E. J. Tollerud, P. Greenfield, M. Droettboom, E. Bray, T. Aldcroft, M. Davis, A. Ginsburg, A. M. Price-Whelan, W. E. Kerzendorf, A. Conley, N. Crighton, K. Barbary, D. Muna, H. Ferguson, F. Grollier, M. M. Parikh, P. H. Nair, H. M. Unther, C. Deil, J. Woillez, S. Conseil, R. Kramer, J. E. H. Turner, L. Singer, R. Fox, B. A. Weaver, V. Zabalza, Z. I. Edwards, K. Azalee Bostroem, D. J. Burke, A. R. Casey, S. M. Crawford, N. Dencheva, J. Ely, T. Jenness, K. Labrie, P. L. Lim, F. Pierfederici, A. Pontzen, A. Ptak, B. Refsdal, M. Servillat, and O. Streicher. Astropy: A community Python package for astronomy. <em>\aap </em>, 558:A33, October 2013. <a class="reference external" href="https://arxiv.org/abs/1307.6212">arXiv:1307.6212</a>, <a class="reference external" href="https://doi.org/10.1051/0004-6361/201322068">doi:10.1051/0004-6361/201322068</a>.</p>
+</dd>
+<dt class="label" id="id5"><span class="brackets">Bertin11</span></dt>
+<dd><p>E. Bertin. Automated Morphometry with SExtractor and PSFEx. In I. N. Evans, A. Accomazzi, D. J. Mink, and A. H. Rots, editors, <em>Astronomical Data Analysis Software and Systems XX</em>, volume 442 of Astronomical Society of the Pacific Conference Series, 435. July 2011.</p>
+</dd>
+<dt class="label" id="id4"><span class="brackets">BertinArnouts96</span></dt>
+<dd><p>E. Bertin and S. Arnouts. SExtractor: Software for source extraction. <em>\aaps </em>, 117:393–404, June 1996. <a class="reference external" href="https://doi.org/10.1051/aas:1996164">doi:10.1051/aas:1996164</a>.</p>
+</dd>
+<dt class="label" id="id17"><span class="brackets">FarrensGrigisElGueddari+20</span></dt>
+<dd><p>S. Farrens, A. Grigis, L. El Gueddari, Z. Ramzi, G. R. Chaithya, S. Starck, B. Sarthou, H. Cherkaoui, P. Ciuciu, and J. -L. Starck. PySAP: Python Sparse Data Analysis Package for multidisciplinary image processing. <em>Astronomy and Computing</em>, 32:100402, July 2020. <a class="reference external" href="https://arxiv.org/abs/1910.08465">arXiv:1910.08465</a>, <a class="reference external" href="https://doi.org/10.1016/j.ascom.2020.100402">doi:10.1016/j.ascom.2020.100402</a>.</p>
+</dd>
+<dt class="label" id="id19"><span class="brackets">GuinotKilbingerFarrens+21</span></dt>
+<dd><p>A. Guinot, M. Kilbinger, S. Farrens, and others. ShapePipe: a new shape measurement pipeline and weak-lensing application to UNIONS/CFIS data. <em>Submitted to \aap </em>, 2021.</p>
+</dd>
+<dt class="label" id="id25"><span class="brackets">JarvisBernsteinJain04</span></dt>
+<dd><p>M. Jarvis, G. Bernstein, and B. Jain. The skewness of the aperture mass statistic. <em>\mnras </em>, 352(1):338–352, July 2004. <a class="reference external" href="https://arxiv.org/abs/astro-ph/0307393">arXiv:astro-ph/0307393</a>, <a class="reference external" href="https://doi.org/10.1111/j.1365-2966.2004.07926.x">doi:10.1111/j.1365-2966.2004.07926.x</a>.</p>
+</dd>
+<dt class="label" id="id27"><span class="brackets">JoblibDTeam20</span></dt>
+<dd><p>Joblib Development Team. Joblib: running python functions as pipeline jobs. 2020. URL: <a class="reference external" href="https://joblib.readthedocs.io/">https://joblib.readthedocs.io/</a>.</p>
+</dd>
+<dt class="label" id="id30"><span class="brackets">LiaudatBonninStarck+21</span></dt>
+<dd><p>T. Liaudat, J. Bonnin, J. -L. Starck, M. A. Schmitz, A. Guinot, M. Kilbinger, and S. D. J. Gwyn. Multi-CCD modelling of the point spread function. <em>\aap </em>, 646:A27, February 2021. <a class="reference external" href="https://doi.org/10.1051/0004-6361/202039584">doi:10.1051/0004-6361/202039584</a>.</p>
+</dd>
+<dt class="label" id="id31"><span class="brackets">MarmoBertin08</span></dt>
+<dd><p>C. Marmo and E. Bertin. MissFITS and WeightWatcher: Two Optimised Tools for Managing FITS Data. In R. W. Argyle, P. S. Bunclark, and J. R. Lewis, editors, <em>Astronomical Data Analysis Software and Systems XVII</em>, volume 394 of Astronomical Society of the Pacific Conference Series, 619. August 2008.</p>
+</dd>
+<dt class="label" id="id37"><span class="brackets">RoweJarvisMandelbaum+15</span></dt>
+<dd><p>B. T. P. Rowe, M. Jarvis, R. Mandelbaum, G. M. Bernstein, J. Bosch, M. Simet, J. E. Meyers, T. Kacprzak, R. Nakajima, J. Zuntz, H. Miyatake, J. P. Dietrich, R. Armstrong, P. Melchior, and M. S. S. Gill. GALSIM: The modular galaxy image simulation toolkit. <em>Astronomy and Computing</em>, 10:121–150, April 2015. <a class="reference external" href="https://arxiv.org/abs/1407.7676">arXiv:1407.7676</a>, <a class="reference external" href="https://doi.org/10.1016/j.ascom.2015.02.002">doi:10.1016/j.ascom.2015.02.002</a>.</p>
+</dd>
+<dt class="label" id="id40"><span class="brackets">Sheldon15</span></dt>
+<dd><p>E. Sheldon. NGMIX: Gaussian mixture models for 2D images. Astrophysics Source Code Library, August 2015. <a class="reference external" href="https://arxiv.org/abs/1508.008">arXiv:1508.008</a>.</p>
+</dd>
+<dt class="label" id="id41"><span class="brackets">ShupeLaherStorrieLombardi+12</span></dt>
+<dd><p>David L. Shupe, Russ R. Laher, Lisa Storrie-Lombardi, Jason Surace, Carl Grillmair, David Levitan, and Branimir Sesar. More flexibility in representing geometric distortion in astronomical images. In Nicole M. Radziwill and Gianluca Chiozzi, editors, <em>Software and Cyberinfrastructure for Astronomy II</em>, volume 8451 of Society of Photo-Optical Instrumentation Engineers (SPIE) Conference Series, 84511M. September 2012. <a class="reference external" href="https://doi.org/10.1117/12.925460">doi:10.1117/12.925460</a>.</p>
+</dd>
+<dt class="label" id="id33"><span class="brackets">WesMcKinney10</span></dt>
+<dd><p>Wes McKinney. Data Structures for Statistical Computing in Python. In Stéfan van der Walt and Jarrod Millman, editors, <em>Proceedings of the 9th Python in Science Conference</em>, 56 – 61. 2010. <a class="reference external" href="https://doi.org/10.25080/Majora-92bf1922-00a">doi:10.25080/Majora-92bf1922-00a</a>.</p>
+</dd>
+</dl>
+</p>
+</div>
+
+
+              </div>
+              
+            
+                <!-- Previous / next buttons -->
+<div class='prev-next-area'> 
+    <a class='left-prev' id="prev-link" href="module_example.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">Module Examples</p>
+        </div>
+    </a>
+</div>
+            
+        </div>
+    </div>
+    <footer class="footer">
+  <p>
+    
+      By Samuel Farrens<br/>
+    
+        &copy; Copyright 2018, Samuel Farrens.<br/>
+      Last updated on 14 Mar, 2022.<br/>
+  </p>
+</footer>
+</main>
+
+
+      </div>
+    </div>
+  
+  <script src="_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+
+  </body>
+</html>

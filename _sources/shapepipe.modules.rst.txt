@@ -1,0 +1,45 @@
+shapepipe.modules
+=================
+
+
+.. automodule:: shapepipe.modules
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   shapepipe.modules.find_exposures_package
+   shapepipe.modules.get_images_package
+   shapepipe.modules.make_cat_package
+   shapepipe.modules.mask_package
+   shapepipe.modules.match_external_package
+   shapepipe.modules.mccd_package
+   shapepipe.modules.merge_headers_package
+   shapepipe.modules.merge_sep_cats_package
+   shapepipe.modules.merge_starcat_package
+   shapepipe.modules.ngmix_package
+   shapepipe.modules.pastecat_package
+   shapepipe.modules.psfex_interp_package
+   shapepipe.modules.psfex_package
+   shapepipe.modules.python_example_package
+   shapepipe.modules.random_cat_package
+   shapepipe.modules.setools_package
+   shapepipe.modules.sextractor_package
+   shapepipe.modules.split_exp_package
+   shapepipe.modules.spread_model_package
+   shapepipe.modules.uncompress_fits_package
+   shapepipe.modules.vignetmaker_package
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   shapepipe.modules.module_decorator
+   shapepipe.modules.module_runners

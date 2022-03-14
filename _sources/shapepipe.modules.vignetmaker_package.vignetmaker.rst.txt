@@ -1,0 +1,7 @@
+shapepipe.modules.vignetmaker\_package.vignetmaker
+--------------------------------------------------
+
+.. automodule:: shapepipe.modules.vignetmaker_package.vignetmaker
+   :members:
+   :undoc-members:
+   :show-inheritance:

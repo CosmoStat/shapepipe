@@ -1,0 +1,16 @@
+shapepipe.modules.random\_cat\_package
+======================================
+
+
+.. automodule:: shapepipe.modules.random_cat_package
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   shapepipe.modules.random_cat_package.random_cat

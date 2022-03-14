@@ -1,0 +1,7 @@
+shapepipe.modules.make\_cat\_package.make\_cat
+----------------------------------------------
+
+.. automodule:: shapepipe.modules.make_cat_package.make_cat
+   :members:
+   :undoc-members:
+   :show-inheritance:

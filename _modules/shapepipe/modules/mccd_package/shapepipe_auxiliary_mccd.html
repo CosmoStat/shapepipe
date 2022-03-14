@@ -1,0 +1,1284 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd &#8212; ShapePipe v0.0</title>
+    
+  <link href="../../../../_static/css/theme.css" rel="stylesheet">
+  <link href="../../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-book-theme.css?digest=84ace793992934648b4de8eed757e5a2" />
+    
+  <link rel="preload" as="script" href="../../../../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/sphinx-book-theme.9d8b4a8b9bb19db25eeaddc40d639ba2.js"></script>
+    <link rel="author" title="About these documents" href="../../../../about.html" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<div class="col-12 col-md-3 bd-sidebar site-navigation " id="site-navigation">
+    
+        <div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../../../../index.html">
+      
+      
+      
+      <h1 class="site-logo" id="site-title">ShapePipe v0.0</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  About ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../about.html">
+   About
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../contributors.html">
+   Contributors
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Installing ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../dependencies.html">
+   Dependencies
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../installation.html">
+   Installation
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Running ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../basic_execution.html">
+   Basic Execution
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../configuration.html">
+   Configuration
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../testing.html">
+   Testing
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../pipeline_tutorial.html">
+   ShapePipe Tutorial
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Miscellaneous
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../post_processing.html">
+   Post-processing
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../random_cat.html">
+   Create random catalogue
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  API Documentation
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../../shapepipe.html">
+   shapepipe
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../../../shapepipe.modules.html">
+     shapepipe.modules
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+    <label for="toctree-checkbox-2">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.find_exposures_package.html">
+       shapepipe.modules.find_exposures_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+      <label for="toctree-checkbox-3">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.find_exposures_package.find_exposures.html">
+         shapepipe.modules.find_exposures_package.find_exposures
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.get_images_package.html">
+       shapepipe.modules.get_images_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+      <label for="toctree-checkbox-4">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.get_images_package.get_images.html">
+         shapepipe.modules.get_images_package.get_images
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.make_cat_package.html">
+       shapepipe.modules.make_cat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+      <label for="toctree-checkbox-5">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.make_cat_package.make_cat.html">
+         shapepipe.modules.make_cat_package.make_cat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.mask_package.html">
+       shapepipe.modules.mask_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+      <label for="toctree-checkbox-6">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.mask_package.mask.html">
+         shapepipe.modules.mask_package.mask
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.match_external_package.html">
+       shapepipe.modules.match_external_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+      <label for="toctree-checkbox-7">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.match_external_package.match_external.html">
+         shapepipe.modules.match_external_package.match_external
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.mccd_package.html">
+       shapepipe.modules.mccd_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+      <label for="toctree-checkbox-8">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.mccd_package.mccd_interpolation_script.html">
+         shapepipe.modules.mccd_package.mccd_interpolation_script
+        </a>
+       </li>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.mccd_package.mccd_plot_utilities.html">
+         shapepipe.modules.mccd_package.mccd_plot_utilities
+        </a>
+       </li>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html">
+         shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.merge_headers_package.html">
+       shapepipe.modules.merge_headers_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+      <label for="toctree-checkbox-9">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.merge_headers_package.merge_headers.html">
+         shapepipe.modules.merge_headers_package.merge_headers
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.merge_sep_cats_package.html">
+       shapepipe.modules.merge_sep_cats_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+      <label for="toctree-checkbox-10">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.merge_sep_cats_package.merge_sep_cats.html">
+         shapepipe.modules.merge_sep_cats_package.merge_sep_cats
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.merge_starcat_package.html">
+       shapepipe.modules.merge_starcat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+      <label for="toctree-checkbox-11">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html">
+         shapepipe.modules.merge_starcat_package.merge_starcat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.ngmix_package.html">
+       shapepipe.modules.ngmix_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/>
+      <label for="toctree-checkbox-12">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.ngmix_package.ngmix.html">
+         shapepipe.modules.ngmix_package.ngmix
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.pastecat_package.html">
+       shapepipe.modules.pastecat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/>
+      <label for="toctree-checkbox-13">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.pastecat_package.pastecat.html">
+         shapepipe.modules.pastecat_package.pastecat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.psfex_interp_package.html">
+       shapepipe.modules.psfex_interp_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" type="checkbox"/>
+      <label for="toctree-checkbox-14">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html">
+         shapepipe.modules.psfex_interp_package.psfex_interp
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.psfex_package.html">
+       shapepipe.modules.psfex_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" type="checkbox"/>
+      <label for="toctree-checkbox-15">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.psfex_package.psfex_script.html">
+         shapepipe.modules.psfex_package.psfex_script
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.python_example_package.html">
+       shapepipe.modules.python_example_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" type="checkbox"/>
+      <label for="toctree-checkbox-16">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.python_example_package.python_example.html">
+         shapepipe.modules.python_example_package.python_example
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.random_cat_package.html">
+       shapepipe.modules.random_cat_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" type="checkbox"/>
+      <label for="toctree-checkbox-17">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.random_cat_package.random_cat.html">
+         shapepipe.modules.random_cat_package.random_cat
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.setools_package.html">
+       shapepipe.modules.setools_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" type="checkbox"/>
+      <label for="toctree-checkbox-18">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.setools_package.setools.html">
+         shapepipe.modules.setools_package.setools
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.sextractor_package.html">
+       shapepipe.modules.sextractor_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" type="checkbox"/>
+      <label for="toctree-checkbox-19">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html">
+         shapepipe.modules.sextractor_package.sextractor_script
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.split_exp_package.html">
+       shapepipe.modules.split_exp_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" type="checkbox"/>
+      <label for="toctree-checkbox-20">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.split_exp_package.split_exp.html">
+         shapepipe.modules.split_exp_package.split_exp
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.spread_model_package.html">
+       shapepipe.modules.spread_model_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-21" name="toctree-checkbox-21" type="checkbox"/>
+      <label for="toctree-checkbox-21">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.spread_model_package.spread_model.html">
+         shapepipe.modules.spread_model_package.spread_model
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.uncompress_fits_package.html">
+       shapepipe.modules.uncompress_fits_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-22" name="toctree-checkbox-22" type="checkbox"/>
+      <label for="toctree-checkbox-22">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.uncompress_fits_package.uncompress_fits.html">
+         shapepipe.modules.uncompress_fits_package.uncompress_fits
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../../../shapepipe.modules.vignetmaker_package.html">
+       shapepipe.modules.vignetmaker_package
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-23" name="toctree-checkbox-23" type="checkbox"/>
+      <label for="toctree-checkbox-23">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../../../shapepipe.modules.vignetmaker_package.vignetmaker.html">
+         shapepipe.modules.vignetmaker_package.vignetmaker
+        </a>
+       </li>
+      </ul>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.modules.module_decorator.html">
+       shapepipe.modules.module_decorator
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.modules.module_runners.html">
+       shapepipe.modules.module_runners
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../../../shapepipe.pipeline.html">
+     shapepipe.pipeline
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-24" name="toctree-checkbox-24" type="checkbox"/>
+    <label for="toctree-checkbox-24">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.args.html">
+       shapepipe.pipeline.args
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.config.html">
+       shapepipe.pipeline.config
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.dependency_handler.html">
+       shapepipe.pipeline.dependency_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.execute.html">
+       shapepipe.pipeline.execute
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.file_handler.html">
+       shapepipe.pipeline.file_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.file_io.html">
+       shapepipe.pipeline.file_io
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.job_handler.html">
+       shapepipe.pipeline.job_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.mpi_run.html">
+       shapepipe.pipeline.mpi_run
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.run_log.html">
+       shapepipe.pipeline.run_log
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.shared.html">
+       shapepipe.pipeline.shared
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.str_handler.html">
+       shapepipe.pipeline.str_handler
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.timeout.html">
+       shapepipe.pipeline.timeout
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.pipeline.worker_handler.html">
+       shapepipe.pipeline.worker_handler
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../../../shapepipe.utilities.html">
+     shapepipe.utilities
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" type="checkbox"/>
+    <label for="toctree-checkbox-25">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.utilities.canfar.html">
+       shapepipe.utilities.canfar
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.utilities.cfis.html">
+       shapepipe.utilities.cfis
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.utilities.file_system.html">
+       shapepipe.utilities.file_system
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../../../shapepipe.utilities.galaxy.html">
+       shapepipe.utilities.galaxy
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../shapepipe.info.html">
+     shapepipe.info
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../../shapepipe.run.html">
+     shapepipe.run
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Contributing to ShapePipe
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../contributing.html">
+   Contribution Guidelines
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../module_develop.html">
+   Module Development
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../module_example.html">
+   Module Examples
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  References
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../../z_ref.html">
+   References
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav> <!-- To handle the deprecated key -->
+
+<div class="navbar_extra_footer">
+  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+</div>
+
+</div>
+
+
+          
+
+
+          
+<!-- This is an invisible pixel that we watch to see if we've scrolled. -->
+<div class="sbt-scroll-pixel-helper"></div>
+<main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
+    
+    <div class="topbar container-xl fixed-top">
+    <div class="topbar-contents row">
+        <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show"></div>
+        <div class="col pl-md-4 topbar-main">
+            <div class="topbar-left">
+                
+                <label class="nav-toggle-button" for="__navigation">
+                    <div class="visually-hidden">Toggle navigation</div>
+                    <i class="fas fa-bars"></i>
+                </label>
+                
+            </div>
+            
+            <!-- Source interaction buttons -->
+
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Connect with source repository"><i class="fab fa-github"></i></button>
+    <div class="dropdown-buttons sourcebuttons">
+        <a class="repository-button"
+            href="https://github.com/CosmoStat/shapepipe"><button type="button" class="btn btn-secondary topbarbtn"
+                data-toggle="tooltip" data-placement="left" title="Source repository"><i
+                    class="fab fa-github"></i>repository</button></a>
+        <a class="issues-button"
+            href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2F_modules/shapepipe/modules/mccd_package/shapepipe_auxiliary_mccd.html&body=Your%20issue%20content%20here."><button
+                type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
+                title="Open an issue"><i class="fas fa-lightbulb"></i>open issue</button></a>
+        
+    </div>
+</div>
+
+            <!-- Full screen (wrap in <a> to have style consistency -->
+
+            <!-- Launch buttons -->
+
+        </div>
+
+        <!-- Table of contents -->
+        <div class="d-none d-md-block col-md-2 bd-toc show noprint">
+            
+        </div>
+    </div>
+</div>
+    <div id="main-content" class="row">
+        <div class="col-12 col-md-9 pl-md-3 pr-md-0">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1></h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                    </div>
+                </div>
+            </div>
+            
+              <div>
+                
+  <h1>Source code for shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;MCCD AUXILIARY FUNCTIONS.</span>
+
+<span class="sd">This module contains auxiliary functions for the MCCD package that are needed</span>
+<span class="sd">by the MCCD runners.</span>
+
+<span class="sd">:Author: Tobias Liaudat</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pprint</span>
+
+<span class="kn">import</span> <span class="nn">galsim</span>
+<span class="kn">import</span> <span class="nn">mccd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="kn">import</span> <span class="n">fits</span>
+
+<span class="kn">from</span> <span class="nn">shapepipe.pipeline</span> <span class="kn">import</span> <span class="n">file_io</span>
+
+<span class="n">NOT_ENOUGH_STARS</span> <span class="o">=</span> <span class="s1">&#39;Not enough stars to train the model.&#39;</span>
+
+
+<div class="viewcode-block" id="mccd_preprocessing_pipeline"><a class="viewcode-back" href="../../../../shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_preprocessing_pipeline">[docs]</a><span class="k">def</span> <span class="nf">mccd_preprocessing_pipeline</span><span class="p">(</span>
+    <span class="n">input_file_list</span><span class="p">,</span>
+    <span class="n">output_path</span><span class="p">,</span>
+    <span class="n">input_file_position</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">min_n_stars</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+    <span class="n">separator</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span>
+    <span class="n">CCD_id_filter_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">outlier_std_max</span><span class="o">=</span><span class="mf">100.</span><span class="p">,</span>
+    <span class="n">save_masks</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">save_name</span><span class="o">=</span><span class="s1">&#39;train_star_selection&#39;</span><span class="p">,</span>
+    <span class="n">save_extension</span><span class="o">=</span><span class="s1">&#39;.fits&#39;</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">print_fun</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Preprocess Input Catalogue.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_file_list: list</span>
+<span class="sd">        Input file list as taken from shapepipe&#39;s input</span>
+<span class="sd">    output_path: str</span>
+<span class="sd">        Path to the folder where to save the preprocessed files</span>
+<span class="sd">    input_file_position: int</span>
+<span class="sd">        Element position from the ``input_file_list`` to preprocess; default is</span>
+<span class="sd">        ``0``</span>
+<span class="sd">    min_n_stars: int</span>
+<span class="sd">        Minimum number of stars in order to preprocess the CCD; default is</span>
+<span class="sd">        ``20``</span>
+<span class="sd">    separator: str</span>
+<span class="sd">        Separator string that separates the catalogue id and the CCD id;</span>
+<span class="sd">        default is ``&#39;-&#39;``</span>
+<span class="sd">    CCD_id_filter_list: list</span>
+<span class="sd">        A list that corresponds to the CCDs that should be preprocessed,</span>
+<span class="sd">        if it is ``None``, all the CCDs are preprocessed</span>
+<span class="sd">        (the current version is hardcoded for MegaCam)</span>
+<span class="sd">    outlier_std_max: float</span>
+<span class="sd">        Parameter regulating the shape outlier removal, the default is very</span>
+<span class="sd">        high so as it is not done at all, a decent number would be ``10``;</span>
+<span class="sd">        default is ``100.``</span>
+<span class="sd">    save_masks: bool</span>
+<span class="sd">        If masks should be saved in the new file; default is ``True``</span>
+<span class="sd">    save_name: str</span>
+<span class="sd">        Name to save the preprocessed file; default is</span>
+<span class="sd">        ``train_star_selection``</span>
+<span class="sd">    save_extension: str</span>
+<span class="sd">        Extension of the saved file, default is ``.fits``</span>
+<span class="sd">    verbose: bool</span>
+<span class="sd">        Verbose mode; default is ``True``</span>
+<span class="sd">    print_fun : callable, optional</span>
+<span class="sd">        Output message function</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mccd.mccd_utils.MccdInputs</span>
+<span class="sd">        An instance of ``MccdInputs`` class used for the input preprocessing</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mccd_star_nb</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="n">CCD_id_filter_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">CCD_id_filter_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">40</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">CCD_id_filter_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">CCD_id_filter_list</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">print_fun</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">print_fun</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">print_fun</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">pass</span>
+
+    <span class="n">print_fun</span><span class="p">(</span><span class="s1">&#39;Processing dataset..&#39;</span><span class="p">)</span>
+    <span class="n">mccd_inputs</span> <span class="o">=</span> <span class="n">mccd</span><span class="o">.</span><span class="n">mccd_utils</span><span class="o">.</span><span class="n">MccdInputs</span><span class="p">(</span><span class="n">separator</span><span class="o">=</span><span class="n">separator</span><span class="p">)</span>
+    <span class="n">catalog_ids</span> <span class="o">=</span> <span class="n">mccd_inputs</span><span class="o">.</span><span class="n">proprocess_pipeline_data</span><span class="p">(</span>
+        <span class="n">input_file_list</span><span class="p">,</span>
+        <span class="n">element_position</span><span class="o">=</span><span class="n">input_file_position</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Loop over the catalogs</span>
+    <span class="k">for</span> <span class="n">it</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">catalog_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="c1"># For each observation position</span>
+        <span class="n">catalog_id</span> <span class="o">=</span> <span class="n">catalog_ids</span><span class="p">[</span><span class="n">it</span><span class="p">]</span>
+        <span class="n">star_list</span><span class="p">,</span> <span class="n">pos_list</span><span class="p">,</span> <span class="n">mask_list</span><span class="p">,</span> <span class="n">ccd_list</span><span class="p">,</span> <span class="n">SNR_list</span><span class="p">,</span> <span class="n">RA_list</span><span class="p">,</span> \
+            <span class="n">DEC_list</span> <span class="o">=</span> <span class="n">mccd_inputs</span><span class="o">.</span><span class="n">get_inputs</span><span class="p">(</span><span class="n">catalog_id</span><span class="p">)</span>
+
+        <span class="n">star_list</span><span class="p">,</span> <span class="n">pos_list</span><span class="p">,</span> <span class="n">mask_list</span><span class="p">,</span> <span class="n">ccd_list</span><span class="p">,</span> <span class="n">SNR_list</span><span class="p">,</span> <span class="n">RA_list</span><span class="p">,</span> \
+            <span class="n">DEC_list</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">mccd_inputs</span><span class="o">.</span><span class="n">outlier_rejection</span><span class="p">(</span>
+                <span class="n">star_list</span><span class="p">,</span>
+                <span class="n">pos_list</span><span class="p">,</span>
+                <span class="n">mask_list</span><span class="p">,</span>
+                <span class="n">ccd_list</span><span class="p">,</span>
+                <span class="n">SNR_list</span><span class="p">,</span>
+                <span class="n">RA_list</span><span class="p">,</span>
+                <span class="n">DEC_list</span><span class="p">,</span>
+                <span class="n">shape_std_max</span><span class="o">=</span><span class="n">outlier_std_max</span><span class="p">,</span>
+                <span class="n">print_fun</span><span class="o">=</span><span class="n">print_fun</span>
+            <span class="p">)</span>
+
+        <span class="n">mccd_star_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">mccd_pos_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">mccd_mask_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">mccd_ccd_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">mccd_SNR_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">mccd_RA_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">mccd_DEC_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">star_list</span><span class="p">)):</span>
+            <span class="c1"># For each CCD</span>
+            <span class="k">if</span> <span class="n">ccd_list</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="ow">in</span> <span class="n">CCD_id_filter_list</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">n_stars</span> <span class="o">=</span> <span class="n">star_list</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+                    <span class="k">if</span> <span class="n">n_stars</span> <span class="o">&gt;=</span> <span class="n">min_n_stars</span><span class="p">:</span>
+                        <span class="n">mccd_star_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">star_list</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                        <span class="n">mccd_pos_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pos_list</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                        <span class="n">mccd_mask_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mask_list</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                        <span class="n">mccd_ccd_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ccd_list</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_stars</span><span class="p">))</span>
+                        <span class="k">if</span> <span class="n">SNR_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">mccd_SNR_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SNR_list</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                        <span class="k">if</span> <span class="n">RA_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">mccd_RA_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">RA_list</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                            <span class="n">mccd_DEC_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DEC_list</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Not enough stars in catalog_id </span><span class="si">{</span><span class="n">catalog_id</span><span class="si">}</span><span class="s2"> &quot;</span>
+                            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;,ccd </span><span class="si">{</span><span class="n">ccd_list</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">. &quot;</span>
+                            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;Total stars = </span><span class="si">{</span><span class="n">n_stars</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">.&quot;</span>
+                        <span class="p">)</span>
+                        <span class="n">print_fun</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Warning! Problem detected in catalog_id &quot;</span>
+                        <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">catalog_id</span><span class="si">}</span><span class="s2"> ,ccd </span><span class="si">{</span><span class="n">ccd_list</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                    <span class="n">print_fun</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">mccd_pos_list</span><span class="p">:</span>
+            <span class="c1"># If the list is not empty</span>
+            <span class="c1"># Concatenate, as fits can&#39;t handle list of numpy arrays and</span>
+            <span class="c1"># turn into reg format</span>
+            <span class="n">mccd_stars</span> <span class="o">=</span> <span class="n">mccd</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">reg_format</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">mccd_star_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+            <span class="n">mccd_poss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">mccd_pos_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">mccd_ccds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">mccd_ccd_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">save_masks</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">mccd_masks</span> <span class="o">=</span> <span class="n">mccd</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">reg_format</span><span class="p">(</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">mccd_mask_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Send an array of False (None cannot be used in .fits)</span>
+                <span class="n">mccd_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">mccd_poss</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">SNR_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">mccd_SNRs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">mccd_SNR_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Send an array of False (None cannot be used in .fits)</span>
+                <span class="n">mccd_SNRs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">mccd_poss</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">RA_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">mccd_RAs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">mccd_RA_list</span><span class="p">)</span>
+                <span class="n">mccd_DECs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">mccd_DEC_list</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mccd_RAs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">mccd_poss</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+                <span class="n">mccd_DECs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">mccd_poss</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+            <span class="n">mccd_star_nb</span> <span class="o">+=</span> <span class="n">mccd_stars</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="c1"># Save the fits file</span>
+            <span class="n">train_dic</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;VIGNET_LIST&#39;</span><span class="p">:</span> <span class="n">mccd_stars</span><span class="p">,</span>
+                <span class="s1">&#39;GLOB_POSITION_IMG_LIST&#39;</span><span class="p">:</span> <span class="n">mccd_poss</span><span class="p">,</span>
+                <span class="s1">&#39;MASK_LIST&#39;</span><span class="p">:</span> <span class="n">mccd_masks</span><span class="p">,</span>
+                <span class="s1">&#39;CCD_ID_LIST&#39;</span><span class="p">:</span> <span class="n">mccd_ccds</span><span class="p">,</span>
+                <span class="s1">&#39;SNR_WIN_LIST&#39;</span><span class="p">:</span> <span class="n">mccd_SNRs</span><span class="p">,</span>
+                <span class="s1">&#39;RA_LIST&#39;</span><span class="p">:</span> <span class="n">mccd_RAs</span><span class="p">,</span>
+                <span class="s1">&#39;DEC_LIST&#39;</span><span class="p">:</span> <span class="n">mccd_DECs</span>
+            <span class="p">}</span>
+
+            <span class="n">saving_path</span> <span class="o">=</span> <span class="n">output_path</span> <span class="o">+</span> <span class="n">save_name</span> <span class="o">+</span> <span class="n">separator</span> \
+                <span class="o">+</span> <span class="n">catalog_id</span> <span class="o">+</span> <span class="n">save_extension</span>
+            <span class="n">mccd</span><span class="o">.</span><span class="n">mccd_utils</span><span class="o">.</span><span class="n">save_to_fits</span><span class="p">(</span><span class="n">train_dic</span><span class="p">,</span> <span class="n">saving_path</span><span class="p">)</span>
+
+    <span class="n">print_fun</span><span class="p">(</span><span class="s1">&#39;Finished the training dataset processing.&#39;</span><span class="p">)</span>
+    <span class="n">print_fun</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total stars processed = </span><span class="si">{</span><span class="n">mccd_star_nb</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">mccd_inputs</span></div>
+
+
+<div class="viewcode-block" id="mccd_fit_pipeline"><a class="viewcode-back" href="../../../../shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_fit_pipeline">[docs]</a><span class="k">def</span> <span class="nf">mccd_fit_pipeline</span><span class="p">(</span>
+    <span class="n">trainstar_path</span><span class="p">,</span>
+    <span class="n">file_number_string</span><span class="p">,</span>
+    <span class="n">mccd_parser</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">,</span>
+    <span class="n">saving_name</span><span class="o">=</span><span class="s1">&#39;fitted_model&#39;</span><span class="p">,</span>
+    <span class="n">w_log</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Fit MCCD Model.</span>
+
+<span class="sd">    Fit the MCCD model to the Observations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    trainstar_path : str</span>
+<span class="sd">        Path to training stars</span>
+<span class="sd">    file_number_string : str</span>
+<span class="sd">        File number string</span>
+<span class="sd">    mccd_parser : mccd.auxiliary_fun.MCCDParamsParser</span>
+<span class="sd">        MCCD parser</span>
+<span class="sd">    output_dir : str</span>
+<span class="sd">        Output directory</span>
+<span class="sd">    verbose : bool</span>
+<span class="sd">        MCCD verbose option</span>
+<span class="sd">    saving_name : str</span>
+<span class="sd">        Name for output file</span>
+<span class="sd">    w_log : logging.Logger</span>
+<span class="sd">        Logging instance</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Extract the MCCD parameters from the parser</span>
+    <span class="n">mccd_inst_kw</span> <span class="o">=</span> <span class="n">mccd_parser</span><span class="o">.</span><span class="n">get_instance_kw</span><span class="p">()</span>
+    <span class="n">mccd_fit_kw</span> <span class="o">=</span> <span class="n">mccd_parser</span><span class="o">.</span><span class="n">get_fit_kw</span><span class="p">()</span>
+    <span class="n">use_SNR_weight</span> <span class="o">=</span> <span class="n">mccd_parser</span><span class="o">.</span><span class="n">get_extra_kw</span><span class="p">(</span><span class="s1">&#39;use_SNR_weight&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Print the model configuration so that it is saved in log files</span>
+    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;MCCD configuration parameters:&#39;</span><span class="p">)</span>
+    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;[INPUTS]&#39;</span><span class="p">)</span>
+    <span class="n">inputs_dict_str</span> <span class="o">=</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">({</span><span class="s1">&#39;use_SNR_weight&#39;</span><span class="p">:</span> <span class="n">use_SNR_weight</span><span class="p">})</span>
+    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">inputs_dict_str</span><span class="p">)</span>
+    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;[INSTANCE]&#39;</span><span class="p">)</span>
+    <span class="n">inst_dict_str</span> <span class="o">=</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span><span class="n">mccd_inst_kw</span><span class="p">)</span>
+    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">inst_dict_str</span><span class="p">)</span>
+    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;[FIT]&#39;</span><span class="p">)</span>
+    <span class="n">fit_dict_str</span> <span class="o">=</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span><span class="n">mccd_fit_kw</span><span class="p">)</span>
+    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">fit_dict_str</span><span class="p">)</span>
+    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;End of MCCD configuration parameters.&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Open fits file</span>
+    <span class="n">starcat</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">trainstar_path</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">mccd</span><span class="o">.</span><span class="n">auxiliary_fun</span><span class="o">.</span><span class="n">mccd_fit</span><span class="p">(</span>
+        <span class="n">starcat</span><span class="o">=</span><span class="n">starcat</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="n">mccd_inst_kw</span><span class="o">=</span><span class="n">mccd_inst_kw</span><span class="p">,</span>
+        <span class="n">mccd_fit_kw</span><span class="o">=</span><span class="n">mccd_fit_kw</span><span class="p">,</span>
+        <span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span>
+        <span class="n">catalog_id</span><span class="o">=</span><span class="n">file_number_string</span><span class="p">,</span>
+        <span class="n">sex_thresh</span><span class="o">=-</span><span class="mf">1e5</span><span class="p">,</span>
+        <span class="n">use_SNR_weight</span><span class="o">=</span><span class="n">use_SNR_weight</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+        <span class="n">saving_name</span><span class="o">=</span><span class="n">saving_name</span>
+    <span class="p">)</span>
+
+    <span class="n">starcat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="mccd_validation_pipeline"><a class="viewcode-back" href="../../../../shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_validation_pipeline">[docs]</a><span class="k">def</span> <span class="nf">mccd_validation_pipeline</span><span class="p">(</span>
+    <span class="n">teststar_path</span><span class="p">,</span>
+    <span class="n">mccd_model_path</span><span class="p">,</span>
+    <span class="n">mccd_parser</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="p">,</span>
+    <span class="n">file_number_string</span><span class="p">,</span>
+    <span class="n">w_log</span><span class="p">,</span>
+    <span class="n">val_saving_name</span>
+<span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Validate MCCD Pipeline.</span>
+
+<span class="sd">    Validate the MCCD trained model against a set of observations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    teststar_path : str</span>
+<span class="sd">        Path to test stars</span>
+<span class="sd">    mccd_model_path : str</span>
+<span class="sd">        Path to MCCD model</span>
+<span class="sd">    mccd_parser : mccd.auxiliary_fun.MCCDParamsParser</span>
+<span class="sd">        MCCD parser</span>
+<span class="sd">    output_dir : str</span>
+<span class="sd">        Output directory</span>
+<span class="sd">    file_number_string : str</span>
+<span class="sd">        File number string</span>
+<span class="sd">    w_log : logging.Logger</span>
+<span class="sd">        Logging instance</span>
+<span class="sd">    val_saving_name : str</span>
+<span class="sd">        Name for validation file</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validating catalogue </span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s2">..&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Get MCCD parameters</span>
+    <span class="n">save_extension</span> <span class="o">=</span> <span class="s1">&#39;.fits&#39;</span>
+    <span class="n">mccd_val_kw</span> <span class="o">=</span> <span class="n">mccd_parser</span><span class="o">.</span><span class="n">get_val_kw</span><span class="p">()</span>
+    <span class="n">testcat</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">teststar_path</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Check if there is the fitted model</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">mccd_model_path</span><span class="p">):</span>
+
+        <span class="n">val_dict</span> <span class="o">=</span> <span class="n">mccd</span><span class="o">.</span><span class="n">auxiliary_fun</span><span class="o">.</span><span class="n">mccd_validation</span><span class="p">(</span>
+            <span class="n">mccd_model_path</span><span class="o">=</span><span class="n">mccd_model_path</span><span class="p">,</span>
+            <span class="n">testcat</span><span class="o">=</span><span class="n">testcat</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+            <span class="o">**</span><span class="n">mccd_val_kw</span><span class="p">,</span>
+            <span class="n">sex_thresh</span><span class="o">=-</span><span class="mf">1e5</span>
+        <span class="p">)</span>
+
+        <span class="n">testcat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="n">val_saving_path</span> <span class="o">=</span> <span class="n">output_dir</span> <span class="o">+</span> <span class="n">val_saving_name</span> <span class="o">+</span> \
+            <span class="n">file_number_string</span> <span class="o">+</span> <span class="n">save_extension</span>
+
+        <span class="c1"># Save validation dictionary to fits file</span>
+        <span class="n">mccd</span><span class="o">.</span><span class="n">mccd_utils</span><span class="o">.</span><span class="n">save_to_fits</span><span class="p">(</span><span class="n">val_dict</span><span class="p">,</span> <span class="n">val_saving_path</span><span class="p">)</span>
+
+        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validation catalogue &lt; </span><span class="si">{</span><span class="n">val_saving_path</span><span class="si">}</span><span class="s2"> &gt; saved.&quot;</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Fitted model corresponding to catalog&quot;</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s2"> was not found.&quot;</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mccd_interpolation_pipeline"><a class="viewcode-back" href="../../../../shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_interpolation_pipeline">[docs]</a><span class="k">def</span> <span class="nf">mccd_interpolation_pipeline</span><span class="p">(</span>
+    <span class="n">mccd_model_path</span><span class="p">,</span>
+    <span class="n">galcat_path</span><span class="p">,</span>
+    <span class="n">pos_params</span><span class="p">,</span>
+    <span class="n">ccd_id</span><span class="p">,</span>
+    <span class="n">saving_path</span><span class="p">,</span>
+    <span class="n">get_shapes</span>
+<span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Interpolate the MCCD Model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mccd_model_path : str</span>
+<span class="sd">        Path to MCCD model</span>
+<span class="sd">    galcat_path : str</span>
+<span class="sd">        Path to galaxy catalogue</span>
+<span class="sd">    pos_params : numpy.ndarray</span>
+<span class="sd">        Position parameters</span>
+<span class="sd">    ccd_id : int</span>
+<span class="sd">        CCD identifier</span>
+<span class="sd">    saving_path : str</span>
+<span class="sd">        Path to save output</span>
+<span class="sd">    get_shapes : bool</span>
+<span class="sd">        Option to save PSF shapes</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str or ``None``</span>
+<span class="sd">        String returned if not enough stars found</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Import MCCD model</span>
+    <span class="n">mccd_model</span> <span class="o">=</span> <span class="n">mccd</span><span class="o">.</span><span class="n">mccd_quickload</span><span class="p">(</span><span class="n">mccd_model_path</span><span class="p">)</span>
+    <span class="c1"># Open galaxy catalog</span>
+    <span class="n">galcat</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">galcat_path</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Extract positions</span>
+    <span class="n">x_pos</span> <span class="o">=</span> <span class="n">galcat</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">pos_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+    <span class="n">y_pos</span> <span class="o">=</span> <span class="n">galcat</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">pos_params</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+    <span class="n">interp_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x_pos</span><span class="p">,</span> <span class="n">y_pos</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+    <span class="c1"># Close catalog</span>
+    <span class="n">galcat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># Recover PSFs</span>
+    <span class="n">interp_PSFs</span> <span class="o">=</span> <span class="n">mccd_model</span><span class="o">.</span><span class="n">estimate_psf</span><span class="p">(</span><span class="n">test_pos</span><span class="o">=</span><span class="n">interp_pos</span><span class="p">,</span> <span class="n">ccd_n</span><span class="o">=</span><span class="n">ccd_id</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">interp_PSFs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">get_shapes</span><span class="p">:</span>
+            <span class="n">PSF_moms</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">galsim</span><span class="o">.</span><span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span><span class="n">galsim</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">psf</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">psf</span> <span class="ow">in</span> <span class="n">interp_PSFs</span>
+            <span class="p">]</span>
+
+            <span class="n">PSF_shapes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+                <span class="p">[</span>
+                    <span class="n">moms</span><span class="o">.</span><span class="n">observed_shape</span><span class="o">.</span><span class="n">g1</span><span class="p">,</span>
+                    <span class="n">moms</span><span class="o">.</span><span class="n">observed_shape</span><span class="o">.</span><span class="n">g2</span><span class="p">,</span>
+                    <span class="n">moms</span><span class="o">.</span><span class="n">moments_sigma</span><span class="p">,</span>
+                    <span class="nb">int</span><span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">moms</span><span class="o">.</span><span class="n">error_message</span><span class="p">))</span>
+                <span class="p">]</span>
+                <span class="k">for</span> <span class="n">moms</span> <span class="ow">in</span> <span class="n">PSF_moms</span>
+            <span class="p">])</span>
+
+        <span class="n">shapepipe_write_output</span><span class="p">(</span>
+            <span class="n">saving_path</span><span class="o">=</span><span class="n">saving_path</span><span class="p">,</span>
+            <span class="n">example_fits_path</span><span class="o">=</span><span class="n">galcat_path</span><span class="p">,</span>
+            <span class="n">get_shapes</span><span class="o">=</span><span class="n">get_shapes</span><span class="p">,</span>
+            <span class="n">interp_PSFs</span><span class="o">=</span><span class="n">interp_PSFs</span><span class="p">,</span>
+            <span class="n">PSF_shapes</span><span class="o">=</span><span class="n">PSF_shapes</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">NOT_ENOUGH_STARS</span></div>
+
+
+<div class="viewcode-block" id="shapepipe_write_output"><a class="viewcode-back" href="../../../../shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.shapepipe_write_output">[docs]</a><span class="k">def</span> <span class="nf">shapepipe_write_output</span><span class="p">(</span>
+    <span class="n">saving_path</span><span class="p">,</span>
+    <span class="n">example_fits_path</span><span class="p">,</span>
+    <span class="n">get_shapes</span><span class="p">,</span>
+    <span class="n">interp_PSFs</span><span class="p">,</span>
+    <span class="n">PSF_shapes</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Write ShapePipe Output.</span>
+
+<span class="sd">    Save interpolated PSFs dictionary to FITS file. The saved files are</span>
+<span class="sd">    compatible with the previous ShapePipe&#39;s standard.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    saving_path : str</span>
+<span class="sd">        Path to save output</span>
+<span class="sd">    example_fits_path : str</span>
+<span class="sd">        Path to example FITS file</span>
+<span class="sd">    get_shapes : bool</span>
+<span class="sd">        Option to save PSF shapes</span>
+<span class="sd">    interp_PSFs : numpy.ndarray</span>
+<span class="sd">        PSF interpolation</span>
+<span class="sd">    PSF_shapes : numpy.ndarray</span>
+<span class="sd">        PSF shapes</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
+        <span class="n">saving_path</span><span class="p">,</span>
+        <span class="n">open_mode</span><span class="o">=</span><span class="n">file_io</span><span class="o">.</span><span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span><span class="p">,</span>
+        <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">get_shapes</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;VIGNET&#39;</span><span class="p">:</span> <span class="n">interp_PSFs</span><span class="p">,</span>
+            <span class="s1">&#39;E1_PSF_HSM&#39;</span><span class="p">:</span> <span class="n">PSF_shapes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="s1">&#39;E2_PSF_HSM&#39;</span><span class="p">:</span> <span class="n">PSF_shapes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="s1">&#39;SIGMA_PSF_HSM&#39;</span><span class="p">:</span> <span class="n">PSF_shapes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="s1">&#39;FLAG_PSF_HSM&#39;</span><span class="p">:</span> <span class="n">PSF_shapes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;VIGNET&#39;</span><span class="p">:</span> <span class="n">interp_PSFs</span><span class="p">}</span>
+
+    <span class="n">output</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sex_cat_path</span><span class="o">=</span><span class="n">example_fits_path</span><span class="p">)</span></div>
+</pre></div>
+
+              </div>
+              
+            
+                <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+</div>
+            
+        </div>
+    </div>
+    <footer class="footer">
+  <p>
+    
+      By Samuel Farrens<br/>
+    
+        &copy; Copyright 2018, Samuel Farrens.<br/>
+      Last updated on 14 Mar, 2022.<br/>
+  </p>
+</footer>
+</main>
+
+
+      </div>
+    </div>
+  
+  <script src="../../../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+
+  </body>
+</html>

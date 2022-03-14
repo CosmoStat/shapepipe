@@ -1,0 +1,16 @@
+shapepipe.modules.uncompress\_fits\_package
+===========================================
+
+
+.. automodule:: shapepipe.modules.uncompress_fits_package
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   shapepipe.modules.uncompress_fits_package.uncompress_fits

@@ -1,0 +1,16 @@
+shapepipe.modules.python\_example\_package
+==========================================
+
+
+.. automodule:: shapepipe.modules.python_example_package
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   shapepipe.modules.python_example_package.python_example

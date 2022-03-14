@@ -1,0 +1,27 @@
+shapepipe
+=========
+
+
+.. automodule:: shapepipe
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   shapepipe.modules
+   shapepipe.pipeline
+   shapepipe.utilities
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   shapepipe.info
+   shapepipe.run

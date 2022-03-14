@@ -1,0 +1,7 @@
+shapepipe.utilities.cfis
+------------------------
+
+.. automodule:: shapepipe.utilities.cfis
+   :members:
+   :undoc-members:
+   :show-inheritance:

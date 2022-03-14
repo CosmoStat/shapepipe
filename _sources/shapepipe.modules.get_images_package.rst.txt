@@ -1,0 +1,16 @@
+shapepipe.modules.get\_images\_package
+======================================
+
+
+.. automodule:: shapepipe.modules.get_images_package
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   shapepipe.modules.get_images_package.get_images

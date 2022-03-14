@@ -1,0 +1,7 @@
+shapepipe.modules.merge\_sep\_cats\_package.merge\_sep\_cats
+------------------------------------------------------------
+
+.. automodule:: shapepipe.modules.merge_sep_cats_package.merge_sep_cats
+   :members:
+   :undoc-members:
+   :show-inheritance:

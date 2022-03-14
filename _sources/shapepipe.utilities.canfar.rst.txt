@@ -1,0 +1,7 @@
+shapepipe.utilities.canfar
+--------------------------
+
+.. automodule:: shapepipe.utilities.canfar
+   :members:
+   :undoc-members:
+   :show-inheritance:

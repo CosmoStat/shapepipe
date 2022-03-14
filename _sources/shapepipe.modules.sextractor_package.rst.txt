@@ -1,0 +1,16 @@
+shapepipe.modules.sextractor\_package
+=====================================
+
+
+.. automodule:: shapepipe.modules.sextractor_package
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   shapepipe.modules.sextractor_package.sextractor_script

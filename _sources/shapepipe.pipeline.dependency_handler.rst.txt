@@ -1,0 +1,7 @@
+shapepipe.pipeline.dependency\_handler
+--------------------------------------
+
+.. automodule:: shapepipe.pipeline.dependency_handler
+   :members:
+   :undoc-members:
+   :show-inheritance:

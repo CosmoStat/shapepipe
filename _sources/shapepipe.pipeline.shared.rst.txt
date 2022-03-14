@@ -1,0 +1,7 @@
+shapepipe.pipeline.shared
+-------------------------
+
+.. automodule:: shapepipe.pipeline.shared
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,0 +1,7 @@
+shapepipe.utilities.file\_system
+--------------------------------
+
+.. automodule:: shapepipe.utilities.file_system
+   :members:
+   :undoc-members:
+   :show-inheritance:

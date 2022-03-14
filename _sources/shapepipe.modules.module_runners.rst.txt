@@ -1,0 +1,7 @@
+shapepipe.modules.module\_runners
+---------------------------------
+
+.. automodule:: shapepipe.modules.module_runners
+   :members:
+   :undoc-members:
+   :show-inheritance:

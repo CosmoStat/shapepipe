@@ -1,0 +1,19 @@
+shapepipe.utilities
+===================
+
+
+.. automodule:: shapepipe.utilities
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   shapepipe.utilities.canfar
+   shapepipe.utilities.cfis
+   shapepipe.utilities.file_system
+   shapepipe.utilities.galaxy

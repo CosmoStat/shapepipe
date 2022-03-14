@@ -1,0 +1,7 @@
+shapepipe.modules.mask\_package.mask
+------------------------------------
+
+.. automodule:: shapepipe.modules.mask_package.mask
+   :members:
+   :undoc-members:
+   :show-inheritance:

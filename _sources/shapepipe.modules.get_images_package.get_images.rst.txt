@@ -1,0 +1,7 @@
+shapepipe.modules.get\_images\_package.get\_images
+--------------------------------------------------
+
+.. automodule:: shapepipe.modules.get_images_package.get_images
+   :members:
+   :undoc-members:
+   :show-inheritance:

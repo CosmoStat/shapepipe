@@ -1,0 +1,16 @@
+shapepipe.modules.pastecat\_package
+===================================
+
+
+.. automodule:: shapepipe.modules.pastecat_package
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   shapepipe.modules.pastecat_package.pastecat
