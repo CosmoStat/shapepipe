@@ -1,0 +1,42 @@
+name: Deploy API Docs
+
+on:
+  push:
+    branches:
+     - master
+     - main
+
+api:
+  name: Deploy API Documentation
+  runs-on: ubuntu-latest
+
+  steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up conda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
+        python-version: 3.9
+        auto-activate-base: true
+
+    - name: Install dependencies
+      shell: bash -l {0}
+      run: |
+        ./install_shapepipe --develop --no-exe --no-mpi
+        conda activate shapepipe
+        python -m pip install --upgrade importlib-metadata
+        conda install -c conda-forge pandoc
+
+    - name: Build API documentation
+      shell: bash -l {0}
+      run: |
+        conda activate shapepipe
+        sphinx-apidoc -t docs/_templates -feTMo docs/source shapepipe shapepipe/modules/*_runner.py
+        sphinx-build -E docs/source docs/_build
+
+    - name: Deploy API documentation
+      uses: peaceiris/actions-gh-pages@v3.5.9
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/_build
