@@ -73,20 +73,20 @@ Naming and numbering of the input files can closely follow the original image na
   files with user-defined summary statistics for each CCD, for example the number of selected stars, or mean and standard deviation of their FWHM.  
   Example: `star_stat-2366993-18.txt`
 
-- Tile ID list
+- Tile ID list  
   ASCII file with a tile number on each line. Used for the `get_image_runner` module to download CFIS images (see [Download tiles](#download-tiles)).
 
-  - Single-exposure name list
-    ASCII file with a single-exposure name on each line. Produced by the `find_exposure_runner` module to identify single exposures that were used to create
-    a given tile. See [Find exposures](#find-exposures)).
+- Single-exposure name list  
+  ASCII file with a single-exposure name on each line. Produced by the `find_exposure_runner` module to identify single exposures that were used to create
+  a given tile. See [Find exposures](#find-exposures)).
 
-- Plots
+- Plots  
   The `SETools` module can also produce plots of the objects properties that were selected for a given CCD.
   The type of plot (histogram, scatter plot, ...) and quantities to plot as well as plot decorations can be specified in the
   selection criteria config file (see [Select stars](#select-stars)).
   Example: `hist_mag_stars-2104133-5.png`
 
-- Log files
+- Log files  
   The pipeline core and all called modules write ASCII log files to disk.  
   Examples: `process-2366993-6.log`, `log_sp_exp.log`.
 
@@ -173,6 +173,9 @@ For the retrieval method the user can choose betwen
 
 Note that internet access is required for this step if the download method is `vos`.
 
+An output directory `run_sp_GitFeGie` is created containing the results of `get_images` for tiles (`Git`),
+`find_exposures` (`Fe`), and `get_images` for exposures (`Gie`).
+
 ## Prepare input images
 
 With
@@ -183,6 +186,9 @@ the compressed tile weight image is uncompressed via the `uncompress_fits` modul
 (one FITS file per CCD) with `split_exp`.
 Finally, the headers of all single-exposure single-CCD files are merged into a single `sqlite` file, to store the WCS information of the input exposures.
 
+Two output directories are created, `run_sp_Uz` for `uncompress_fits`, and `run_sp_exp_SpMh` for the output of the modules
+`split_exp` (`Sp`) and `merge_headers` (`Mh`).
+
 ## Mask images
 
 Run
@@ -192,6 +198,8 @@ job_sp TILE_ID -j 4
 to mask tile and single-exposure single-CCD images. Both tasks are performed by two calls to the `mask` runner.
 
 Note that internet access is required for this step, since a reference star catalogue is downloaded.
+
+The output of both masking runs are stored in the output directory `run_sp_MaMa`.
 
 **Diagnostics:** Open a single-exposure single-CCD image and the corresponding pipeline flag
 in `ds9`, and display both frames next to each other. Example
@@ -222,6 +230,10 @@ Next, the following tasks are run on the single-exposure single-CCD images:
 - The PSF model is interpolated to star positions for validation. For the PSFEx model, this is done
   via a call to `psfex_interp`. For MCCD, the modules `merge_starcat`, `mccd_plots`, and
   `mccd_interp` are called.
+
+The output directory for both the `mccd` and `psfex` options is `run_sp_tile_Sx_exp_SxSePsf`.
+This stores the output of SExtractor on the tiles (`tile_Sx`), on the exposures (`exp_Sx`),
+`setools` (`Se`), and the Psf model (`Psf`).  
 
 The following plots show an example of a single CCD, in the center of the focal plane.
 
@@ -281,6 +293,13 @@ is computed by the `spread_model` module. Finally, postage stamps
 around galaxies of single-exposure data is extracted with another call
 to `vignetmaker`.
 
+The output directory is
+- `run_sp_MiViSmVi` if the PSF model is `mccd`;
+- `run_sp_tile_PsViSmVi` for the `PSFEx` PSF model.
+
+This corresponds to the MCCD/PSFex interpolation (`Mi`/`Pi`), `vignetmaker` (`Vi`), `spread_model` (`Sm`), and the
+second call to `vignetmaker` (`Vi`).
+
 
 ## Shape measurement
 
@@ -290,6 +309,10 @@ job_sp TILE_ID -j 32
 ```
 computes galaxy shapes using the multi-epoch model-fitting method `ngmix`. At the same time,
 shapes of artifically sheared galaxies are obtained for metacalibration.
+
+Shape measurement is performed in parallel for each tile, the number of processes can be specified
+by the user with the option `--nsh_jobs NJOB`. This creates `NJOB` output directories `run_sp_tile_ngmix_Ng<X>u`.
+with `X` = 1 ... `NJOB` containing the result of `ngmix`.
 
 
 ## Paste catalogues
@@ -302,9 +325,13 @@ which pastes previously obtained information into a _final_ shape catalogue via 
 This includes galaxy detection and basic measurement parameters, the PSF model at
 galaxy positions, the spread-model classification, and the shape measurement.
 
+The output directory for this task is `run_sp_Ms` for the `merge_sep` run.
+
 ## Upload results
 
 Optionally, after the pipeline is finished, results can be uploaded to VOspace via
 ```bash
 job_sp TILE_ID -j 128
 ```
+
+Both for `MCCD` and `PSFex` the output directory containing the result of `make_cat` is `run_sp_Mc`.
