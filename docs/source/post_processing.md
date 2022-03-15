@@ -57,7 +57,7 @@ but most are general.
       ```
       On success, `ShapePipe` output `fits` and `log` files will be now in various subdirs of the `output` directory.
 
-At this step all required `ShapePipe` resulting output files are available in `.`.
+At this step all required `ShapePipe` resulting output files are available in the current working directory.
 
 2. Optional: Split output in sub-samples
 
@@ -83,13 +83,20 @@ At this step all required `ShapePipe` resulting output files are available in `.
    A. Analyse psf validation files
    
       ```bash
-      psf_residuals
+      psf_residuals -p PSF
       ```
       with options as for `post_proc_sp`.
       This script identifies all psf validation files (from all processed tiles downloaded to `pwd`), creates symbolic links,
       merges the catalogues, and creates plots of PSF ellipticity, size, and residuals over the focal plane.
 
-   B. Prepare output directory
+   B. Create plots of the PSF and their residuals in the focal plane, as a diagnostic of the overall PSF model.
+     As a scale-dependend test, which propagates directly to the shear correlation function, the rho statistics are computed,
+     see {cite:p}`rowe:10` and {cite:p}`jarvis:16`,
+      ```bash
+      shapepipe_run -c /path/to/shapepipe/example/cfis/config_MsPl_PSF.ini
+      ``` 
+
+   C. Prepare output directory
    
       Create links to all 'final_cat' result files with 
       ```bash
@@ -98,11 +105,13 @@ At this step all required `ShapePipe` resulting output files are available in `.
       The corresponding output directory that is created is `output/run_sp_combined/make_catalog_runner/output`.
       On success, it contains links to all `final_cat` output catalogues
 
-   C. Merge final output files
+   D. Merge final output files
    
       Create a single main shape catalog:
       ```bash
       merge_final_cat -i <input_dir> -p <param_file> -v
       ```
-      Chose as input directory `input_dir` the output of step B. A default parameter file <param_file> is `/path/to/shapepipe/example/cfis/final_cat.param`. 
-      On success, the file `./final_cat.npy` is created. Depending on the number of input tiles, this file can be several tens of Gb large. 
+      Choose as input directory `input_dir` the output of step C. A default
+      parameter file <param_file> is `/path/to/shapepipe/example/cfis/final_cat.param`. 
+      On success, the file `./final_cat.npy` is created. Depending on the number of
+      input tiles, this file can be several tens of Gb large. 

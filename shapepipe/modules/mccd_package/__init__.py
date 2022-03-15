@@ -143,11 +143,18 @@ MCCD_PLOTS_RUNNER
 
 :Output: Several plots
 
-This module generates different plots of the input merged star catalogue.
-The plots include mean shapes, where the ellipticity error is plotted as a
-function of the focal plane positions. The errors are binned through all the
-merged catalogue in the grid defined by ``X_GRID`` and ``Y_GRID``. The other
-plots are a histogram of the ellipticity errors and the rho stats plot.
+This module generates different series of plots of the input merged star catalogue.
+
+One series of plots are the "mean shapes", which is the PSF ellipticity and size
+and their residuals as a function of the focal plane positions. Values and residuals
+are combined from all merged catalogues, and binned in the focal plane according to
+``X_GRID`` and ``Y_GRID``.
+
+Another series of plots are a histogram of the ellipticity errors.
+
+A third series are the rho statistics plot, which are correlation functions of
+various combinations of PSF ellipticity, size, and their residuals,
+see :cite:`rowe:10` and :cite:`jarvis:16`.
 
 Module-specific config file entries
 -----------------------------------

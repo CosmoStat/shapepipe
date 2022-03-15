@@ -125,7 +125,7 @@ job_sp -h
 ```
 for all options.
 
-This script created the subdirectory `$SP_RUN/output` to store all pipeline outputs
+This script creates the subdirectory `$SP_RUN/output` to store all pipeline outputs
 (log files, diagnostics, statistics, output images, catalogues, single-exposure headers with WCS information).
 
 Optionally, the subdir `output_star_cat` is created by the used to store the external star catalogues for masking. This is only necessary if the pipeline is run on a cluster without internet connection to access star catalogues. In that case, the star catalogues need to be retrieved outside the pipeline, for example on a login node, and copied to `output_star_cat`.
@@ -173,7 +173,7 @@ For the retrieval method the user can choose betwen
 
 Note that internet access is required for this step if the download method is `vos`.
 
-An output directory `run_sp_GitFeGie` is created containing the results of `get_images` for tiles (`Git`),
+An output directory `run_sp_GitFeGie` (in `output`) is created containing the results of `get_images` for tiles (`Git`),
 `find_exposures` (`Fe`), and `get_images` for exposures (`Gie`).
 
 ## Prepare input images
@@ -199,16 +199,17 @@ to mask tile and single-exposure single-CCD images. Both tasks are performed by 
 
 Note that internet access is required for this step, since a reference star catalogue is downloaded.
 
-The output of both masking runs are stored in the output directory `run_sp_MaMa`.
+The output of both masking runs are stored in the output directory `run_sp_MaMa`, with run 1 (2) of
+`mask` corresponding to tiles (exposures).
 
 **Diagnostics:** Open a single-exposure single-CCD image and the corresponding pipeline flag
 in `ds9`, and display both frames next to each other. Example
 ```bash
-ds9 output/shapepipe_run_2020-03-03_15-31-00/split_exp_runner/output/image-2113737-10.fits output/shapepipe_run_2020-03-03_17-29-34/mask_runner/output/pipeline_flag-2113737-10.fits
+ds9 image-2113737-10.fits pipeline_flag-2113737-10.fits
 ```
 Choose `zoom fit` for both frames, click `scale zscale` for the image, and `color aips0` for the flag, to display something like this:
 
-<img width="250" src="diag_mask.png">
+<img width="250" src="../source/images/diag_mask.png">
 
 By eye the correspondence between the different flag types and the image can be
 seen. Note that the two frames might not match perfectly, since (a) WCS
@@ -239,17 +240,17 @@ The following plots show an example of a single CCD, in the center of the focal 
 
 | Size-magnitude plot | Star magnitude histogram | Stars in CCD (mag) | Stars in CCD (size) |
 | --- | --- | --- | --- |
-| <img width="250" src="size_mag-2113737-10.png" title="Size-magnitude plot with star selection"> | <img width="250" src="hist_mag_stars-2113737-10.png" title="Magnitude histogram of selected stars"> | <img width="250" src="mag_star_field-2113737-10.png" title="Magnitude distribution in CCD"> | <img width="250" src="fwhm_field-2113737-10.png" title="Size distribution in CCD"> |
+| <img width="250" src="../source/images/size_mag-2113737-10.png" title="Size-magnitude plot with star selection"> | <img width="250" src="../source/images/hist_mag_stars-2113737-10.png" title="Magnitude histogram of selected stars"> | <img width="250" src="../source/images/mag_star_field-2113737-10.png" title="Magnitude distribution in CCD"> | <img width="250" src="../source/images/fwhm_field-2113737-10.png" title="Size distribution in CCD"> |
 | The stellar locus is well-defined | Magnitude distribution looks reasonable | Stars are relatively homogeneously distributed over the CCD | The uniform and small seeing of CFHT is evident |
 
 To contrast the last plot, here is the case of the CCD in the lower right corner, which shows a known (but yet unexplained) lack of stars
 in the lower parts:
 
-<img width="250" src="fwhm_field-2113737-35.png" title="Size distribution in CCD">
+<img width="250" src="../source/images/fwhm_field-2113737-35.png" title="Size distribution in CCD">
 
 The statistics output file for the center CCD #10:
 ```bash
-(shapepipe)  dap ~/ShapePipeRun $ cat output/shapepipe_run_2020-03-05_10-00-26/setools_runner/output/stat/star_stat-2113737-10.txt
+(shapepipe)  dap ~/ShapePipeRun $ cat star_stat-2113737-10.txt
 # Statistics
 Nb objects full cat = 1267
 Nb stars = 160
@@ -272,7 +273,7 @@ to create histograms (as `.txt` tables and `.png` plots) in the directory `stats
 
 | Non-masked objects per CCD | Stars per CCD | FWHM mode |
 | --- | --- | --- |
-| <img width="250" src="1_nb_nonmasked.png" title="Number of non-masked objects per CCD"> | <img width="250" src="2_nb_stars.png" title="Number stars per CCD"> | <img width="250" src="5_mode_fhwm_star.png" title="FWHM mode"> |
+| <img width="250" src="../source/images/1_nb_nonmasked.png" title="Number of non-masked objects per CCD"> | <img width="250" src="../source/images/2_nb_stars.png" title="Number stars per CCD"> | <img width="250" src="../source/images/5_mode_fhwm_star.png" title="FWHM mode"> |
 | No CCD with a very large masked area | No CCD with insufficient stars | Rather broad seeing distribution |
 
 Note that `stats_global` read all `SETool` output stats files found in a given input directory tree. It can thus produce histogram combining
@@ -317,15 +318,19 @@ with `X` = 1 ... `NJOB` containing the result of `ngmix`.
 
 ## Paste catalogues
 
-The last real processing step,
+The last real processing step is
 ```bash
 job_sp TILE_ID -j 64
 ```
-which pastes previously obtained information into a _final_ shape catalogue via `make_cat`.
-This includes galaxy detection and basic measurement parameters, the PSF model at
+This task first merges the `NJOB` parallel `ngmix` output files from the previous step into
+one output file. Then, previously obtained information are pasted into a _final_ shape catalogue via `make_cat`.
+Included are galaxy detection and basic measurement parameters, the PSF model at
 galaxy positions, the spread-model classification, and the shape measurement.
 
-The output directory for this task is `run_sp_Ms` for the `merge_sep` run.
+Two output directories are created. 
+The first one is `run_sp_Ms` for the `merge_sep` run.
+The second is `run_sp_Mc` for the `make_cat` task; the name is the same for both the `MCCD` and `PSFEx` PSF model.
+
 
 ## Upload results
 
@@ -334,4 +339,3 @@ Optionally, after the pipeline is finished, results can be uploaded to VOspace v
 job_sp TILE_ID -j 128
 ```
 
-Both for `MCCD` and `PSFex` the output directory containing the result of `make_cat` is `run_sp_Mc`.
