@@ -1,6 +1,6 @@
 """PASTE CATALOGUES.
 
-Class to paste different (SExtractor) catalogs of objects.
+Class to paste different (SExtractor) catalogues of objects.
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>, Axel Guinot
 
@@ -18,23 +18,26 @@ from shapepipe.pipeline import file_io
 
 
 class PasteCat(object):
-    """Paste Catalogue.
+    """Paste Catalogues.
+
+    This class pastes (or concatenates) a series of SExtractor output
+    catalogues into a single output catalogue.
 
     Parameters
     ----------
-    input_file_list : list of strings
-        list of input catalogue paths to be pasted.
+    input_file_list : list
+        List of input catalogue paths to be pasted.
     output_path : str
-        output file path of pasted catalog
+        Output file path of pasted catalogue
     w_log : logging.Logger
-        log file
-    ext_name : list of str, optional, default = None
-        HDU extension names, if None use input file names
-    check_col_name : str, optional, default=None:
-        if not None, use column with this key to check equal number
-        of rows in each input catalog
-    hdu_no : numpy.ndarray of int, optional, default = None
-        hdu numbers of input catalog; by default set to 2 for all
+        Logging instance
+    ext_name : list, optional
+        HDU extension names, if ``None`` use input file names
+    check_col_name : str, optional
+        If not ``None``, use column with this key to check equal number
+        of rows in each input catalogue
+    hdu_no : numpy.ndarray, optional
+        HDU numbers of the input catalogue; by default set to ``2`` for all
         input files
 
     """
@@ -65,30 +68,30 @@ class PasteCat(object):
         Process the pasting of catalogues.
 
         """
-        # Create output catalog
+        # Create output catalogue
         pasted_cat = file_io.FITSCatalogue(
             self._output_path,
             open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
         )
 
-        for i, input_file in enumerate(self._input_file_list):
+        for idx, input_file in enumerate(self._input_file_list):
 
             self._w_log.info(f'Pasting catalogue \'{input_file}\'')
 
             # Read input data
             cat = file_io.FITSCatalogue(input_file)
             cat.open()
-            data = np.copy(cat.get_data(self._hdu_no[i]))
-            col_names = cat.get_col_names(self._hdu_no[i])
+            data = np.copy(cat.get_data(self._hdu_no[idx]))
+            col_names = cat.get_col_names(self._hdu_no[idx])
             cat.close()
 
             # Check equality if required by user
             if self._check_col_name:
-                if i > 0:
+                if idx > 0:
                     if self._check_col_name not in col_names:
                         raise KeyError(
                             f'CHECK_COL_NAME key \'{self._check_col_name}\''
-                            + 'not found in input catalog'
+                            + 'not found in input catalogue'
                         )
                     if not (
                         data[self._check_col_name]
@@ -97,14 +100,14 @@ class PasteCat(object):
                         raise Exception(
                             f'Column check using key'
                             + '\'{self._check_col_name}\''
-                            + 'failed for input catalogs '
-                            + f'#{i-1} and #{i}'
+                            + 'failed for input catalogues '
+                            + f'#{idx - 1} and #{idx}'
                         )
                 data_prev = data
 
             # Add to output cat
             if self._ext_name:
-                ext_name = self._ext_name[i]
+                ext_name = self._ext_name[idx]
             else:
                 ext_name = input_file
             pasted_cat.save_as_fits(data, ext_name=ext_name)

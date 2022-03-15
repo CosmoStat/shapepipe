@@ -63,7 +63,9 @@ autoclass_content = 'class'
 autodoc_default_options = {
     'member-order': 'bysource',
     'private-members': True,
-    'show-inheritance': True
+    'special-members': '__call__',
+    'show-inheritance': True,
+    'exclude-members': 'urand,randint'
 }
 
 # Generate summaries

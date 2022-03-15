@@ -30,8 +30,13 @@ def sextractor_runner(
     w_log,
 ):
     """Define The SExtractor Runner."""
+    # Set the SExtractor executable name
+    if config.has_option(module_config_sec, 'EXEC_PATH'):
+        exec_path = config.getexpanded(module_config_sec, 'EXEC_PATH')
+    else:
+        exec_path = 'sex'
+
     # Get SExtractor config options
-    exec_path = config.getexpanded(module_config_sec, 'EXEC_PATH')
     dot_sex = config.getexpanded(module_config_sec, 'DOT_SEX_FILE')
     dot_param = config.getexpanded(module_config_sec, 'DOT_PARAM_FILE')
     dot_conv = config.getexpanded(module_config_sec, 'DOT_CONV_FILE')
@@ -58,10 +63,10 @@ def sextractor_runner(
     else:
         check_image = ['']
 
-    if config.has_option(module_config_sec, 'SUFFIX'):
-        suffix = config.get(module_config_sec, 'SUFFIX')
+    if config.has_option(module_config_sec, 'PREFIX'):
+        prefix = config.get(module_config_sec, 'PREFIX')
     else:
-        suffix = None
+        prefix = None
 
     # Create sextractor caller class instance
     ss_inst = ss.SExtractorCaller(
@@ -81,7 +86,7 @@ def sextractor_runner(
         zero_point_key=zp_key,
         background_key=bkg_key,
         check_image=check_image,
-        output_suffix=suffix,
+        output_prefix=prefix,
     )
 
     # Generate sextractor command line

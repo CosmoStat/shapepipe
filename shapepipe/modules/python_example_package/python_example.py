@@ -4,6 +4,10 @@ This module contains an example Python class.
 
 :Author: Samuel Farrens
 
+.. warning::
+  This is a example module. It should only be used for running tests or as a
+  reference for developing new modules.
+
 """
 
 import time
@@ -34,7 +38,7 @@ class PythonExample:
     def _wait(self):
         """Wait.
 
-        Wait for n seconds.
+        Wait for :math:`n` seconds.
 
         """
         time.sleep(self.sleep_time)

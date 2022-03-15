@@ -2,7 +2,7 @@
 
 This module computes the PSFs from a PSFEx model at several galaxy positions.
 
-:Author: Morgan Schmitz and Axel Guinot
+:Authors: Morgan Schmitz and Axel Guinot
 
 """
 
@@ -37,9 +37,9 @@ def interpsfex(dotpsfpath, pos, thresh_star, thresh_chi2):
     Parameters
     ----------
     dotpsfpath : str
-        Path to .psf file (PSFEx output).
-    pos : numpy.ndaray
-        Positions where the PSF model should be evaluated.
+        Path to ``.psf`` file (PSFEx output)
+    pos : numpy.ndarray
+        Positions where the PSF model should be evaluated
     thresh_star : int
         Threshold of stars under which the PSF is not interpolated
     thresh_chi2 : int
@@ -47,8 +47,9 @@ def interpsfex(dotpsfpath, pos, thresh_star, thresh_chi2):
 
     Returns
     -------
-    PSFs : numpy.ndarray
-        Each row is the PSF imagette at the corresponding asked position.
+    numpy.ndarray
+        Array of PSFs, each row is the PSF image at the corresponding position
+        requested
 
     """
     if not os.path.exists(dotpsfpath):
@@ -114,23 +115,23 @@ class PSFExInterpolator(object):
     Parameters
     ----------
     dotpsf_path : str
-        Path to PSFEx output file.
+        Path to PSFEx output file
     galcat_path : str
-        Path to SExtractor-like galaxy catalog.
+        Path to SExtractor-like galaxy catalogue
     output_path : str
-        Path to folder where output PSFs should be written.
+        Path to folder where output PSFs should be written
     img_number : str
         File number string
     w_log : logging.Logger
-        Worker log instance
+        Logging instance
     pos_params : list, optional
-        Desired position parameters. If provided, there should be exactly two,
-        and they must also be present in the galaxy catalog. Otherwise,
-        they are read directly from the .psf file.
+        Desired position parameters, ff provided, there should be exactly two,
+        and they must also be present in the galaxy catalogue; otherwise,
+        they are read directly from the ``.psf`` file.
     get_shapes : bool
-        If True will compute shapes for the PSF model.
+        If ``True`` will compute shapes for the PSF model
     star_thresh : int
-        Threshold of stars under which the PSF is not interpolated.
+        Threshold of stars under which the PSF is not interpolated
     thresh_chi2 : int
         Threshold for chi squared
 
@@ -233,7 +234,7 @@ class PSFExInterpolator(object):
     def _get_position_parameters(self):
         """Get Position Parameters.
 
-        Read position parameters from .psf file.
+        Read position parameters from ``.psf`` file.
 
         """
         dotpsf = file_io.FITSCatalogue(self._dotpsf_path)
@@ -247,7 +248,7 @@ class PSFExInterpolator(object):
     def _get_galaxy_positions(self):
         """Get Galaxy Positions.
 
-        Extract galaxy positions from galaxy catalog.
+        Extract galaxy positions from galaxy catalogue.
 
         """
         if self._pos_params is None:
@@ -282,7 +283,7 @@ class PSFExInterpolator(object):
     def _interpolate(self):
         """Interpolate.
 
-        Run Sheldon & Rykoff's PSFEx interpolator method at desired
+        Run Sheldon and Rykoff's PSFEx interpolator method at the desired
         positions.
 
         """
@@ -320,7 +321,7 @@ class PSFExInterpolator(object):
     def _write_output(self):
         """Write Output.
 
-        Save computed PSFs to fits file.
+        Save computed PSFs to a FITS file.
 
         """
         output = file_io.FITSCatalogue(
@@ -348,7 +349,7 @@ class PSFExInterpolator(object):
 
         Parameters
         ----------
-        psfex_cat_path : str
+        str
             Path to PSFEx catalogue
 
         """
@@ -411,7 +412,7 @@ class PSFExInterpolator(object):
 
         Parameters
         ----------
-        star_vign : numpy.ndarray
+        numpy.ndarray
             Array containing the star's vignets.
 
         """
@@ -439,17 +440,17 @@ class PSFExInterpolator(object):
     def _get_psfexcatdict(self, psfex_cat_path):
         """Get PSFEx Catalogue Dictionary.
 
-        Get data from PSFEx .cat file.
+        Get data from PSFEx ``.cat`` file.
 
         Parameters
         ----------
         psfex_cat_path : str
-            Path to the .cat file from PSFEx.
+            Path to the ``.cat`` file from PSFEx
 
         Returns
         -------
-        psfex_cat_dict : dict
-            Dictionary containing information from PFSEx .cat file.
+        dict
+            Dictionary containing information from the PFSEx ``.cat`` file
 
         """
         psfex_cat = file_io.FITSCatalogue(psfex_cat_path, SEx_catalogue=True)
@@ -479,9 +480,9 @@ class PSFExInterpolator(object):
         Parameters
         ----------
         star_dict : dict
-            Dictionary containing star informations.
+            Dictionary containing star information
         psfex_cat_dict : dict
-            Dictionary containing information from PFSEx .cat file.
+            Dictionary containing information from the PFSEx ``.cat`` file
 
         """
         output = file_io.FITSCatalogue(
@@ -519,17 +520,17 @@ class PSFExInterpolator(object):
         Parameters
         ----------
         dot_psf_dir : str
-            Path to the directory containing the ".psf" files.
+            Path to the directory containing the ``.psf`` files
         dot_psf_pattern : str
-            Common pattern of the ".psf" files.
+            Common pattern of the ``.psf`` files
         f_wcs_path : str
-            Path to the log file containing the WCS for each CCDs.
+            Path to the log file containing the WCS for each CCDs
 
         """
         if os.path.exists(dot_psf_dir):
             self._dot_psf_dir = dot_psf_dir
         else:
-            raise ValueError(f'Cound not find file {dot_psf_dir}.')
+            raise ValueError(f'Cound not find directory {dot_psf_dir}.')
 
         self._dot_psf_pattern = dot_psf_pattern
 

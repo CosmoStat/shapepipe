@@ -9,6 +9,8 @@ Module runner for ``vignetmaker``.
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.vignetmaker_package import vignetmaker as vm
 
+from shapepipe.pipeline.run_log import get_last_dir
+
 
 @module_runner(
     version='1.1',
@@ -41,13 +43,12 @@ def vignetmaker_runner(
             vignet=vignet,
             sexcat_path=galcat_path,
             output_dir=run_dirs['output'],
-            suffix='cat',
+            prefix='cat',
             image_num=file_number_string,
         )
 
     # Without masking
     else:
-
         # Fetch stamp size
         stamp_size = config.getint(module_config_sec, 'STAMP_SIZE') - 1
         # Check stamp size
@@ -73,23 +74,27 @@ def vignetmaker_runner(
 
         # Run in CLASSIC mode
         if mode == 'CLASSIC':
-            # Fetch suffix
-            suffix = config.getlist(module_config_sec, 'SUFFIX')
-            # Check suffix
-            if len(suffix) != len(input_file_list[1:]):
+            # Fetch prefix
+            prefix = config.getlist(module_config_sec, 'PREFIX')
+            # Check prefix
+            if len(prefix) != len(input_file_list[1:]):
                 raise ValueError(
-                    f'The number of suffixes ({len(suffix)}) has to be '
+                    f'The number of prefixes ({len(prefix)}) has to be '
                     + 'equal to the number of input file types '
                     + f'({len(input_file_list[1:])}).'
                 )
 
             # Process inputs
-            vm_inst.process(input_file_list[1:], radius, suffix)
+            vm_inst.process(input_file_list[1:], radius, prefix)
 
         # Run in MULTI-EPOCH mode
         elif mode == 'MULTI-EPOCH':
             # Fetch image directory and patterns
-            image_dir = config.getlist(module_config_sec, 'ME_IMAGE_DIR')
+            modules = config.getlist(module_config_sec, 'ME_IMAGE_DIR')
+            image_dir = []
+            for module in modules:
+                last_dir = get_last_dir(run_dirs['run_log'], module)
+                image_dir.append(last_dir)
             image_pattern = config.getlist(
                 module_config_sec,
                 'ME_IMAGE_PATTERN',

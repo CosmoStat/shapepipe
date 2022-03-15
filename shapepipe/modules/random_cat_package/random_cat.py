@@ -1,7 +1,7 @@
 """RANDOM CATALOGUE.
 
 This module contains a class to create a random catalogue, and to compute
-the tile area accounding for overlapping and masked regions.
+the tile area accounting for overlapping and masked regions.
 
 :Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
@@ -26,18 +26,18 @@ class RandomCat():
     Parameters
     ----------
     input_image_path : str
-        path to input image file
+        Path to input image file
     input_mask_path : str
-        path to input mask file
+        Path to input mask file
     output_path : str
-        output file path for random catalogue
+        Output file path for random catalogue
     n_rand : float
-        number of random objects on output
+        Number of random objects on output
     density : bool
-        n_rand is interpreted per square degrees if True
+        ``n_rand`` is interpreted per square degrees if ``True``
     w_log : logging.Logger
-        log file
-    tile_list_path : str, optional, default=None
+        Logging instance
+    tile_list_path : str, optional
         List to all tile IDs, to remove objects in
         overlapping tile areas
 
@@ -115,14 +115,16 @@ class RandomCat():
                 n_obj = self._n_rand
             else:
                 # Compute number of objects from density
-                n_obj = int(self._n_rand / area_deg2 * area_deg2_eff / area_deg2)
+                n_obj = int(
+                    self._n_rand / area_deg2 * area_deg2_eff / area_deg2
+                )
 
             # Check that a reasonably large number of pixels is not masked
             if n_unmasked < n_obj:
-               raise ValueError(
-                   f'Number of un-masked pixels {n_unmasked} is '
-                   + f'smaller than number of random objects requested {n_obj}'
-               )
+                raise ValueError(
+                    f'Number of un-masked pixels {n_unmasked} is smaller '
+                    + f'than number of random objects requested {n_obj}'
+                )
 
         else:
             n_obj = 0

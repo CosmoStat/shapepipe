@@ -1,6 +1,6 @@
 """MERGE HEADERS.
 
-This module merges the output "header" files of the ``split_exp_runner.py``
+This module merges the output *header* files of the ``split_exp``
 module. It creates a binnary file that contains the WCS of each CCD for each
 exposure.
 

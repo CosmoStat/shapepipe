@@ -6,9 +6,9 @@ This package contains the module for ``split_exp``.
 
 :Parent module: ``get_images_runner``
 
-:Input: single-exposure image, weight, or flag file
+:Input: Single-exposure image, weight, or flag file
 
-:Output: single-exposure single-HDU file; header numpy binary file (``.npy``)
+:Output: Single-exposure single-HDU file; header numpy binary file (``.npy``)
     if input is an image
 
 Description
@@ -22,20 +22,20 @@ that each resulting file only contains data from one CCD.
 Module-specific config file entries
 ===================================
 
-OUTPUT_SUFFIX : (list of) str
+OUTPUT_SUFFIX : list
     Output file name prefixes. Special strings are:
 
     ``image``:
 
-    1. header is saved to numpy binary file (``.npy``);
-    2. header WCS is saved in output FITS file header;
-    3. header WCS coordinates are transformed from pv to sip using the
+    1. Header is saved to numpy binary file (``.npy``);
+    2. Header WCS is saved in output FITS file header;
+    3. Geader WCS coordinates are transformed from pv to sip using the
        ``sip_tpv`` package
 
     ``flag``: data is save as ``int16``
 
 N_HDU : int
-    number of HDUs (CCDs) of the input mosaic FITS file
+    Number of HDUs (CCDs) of the input mosaic FITS file
 
 """
 

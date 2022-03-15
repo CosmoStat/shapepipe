@@ -1,4 +1,6 @@
-# ----------------------------- Path ----------------------------------
+# Mask module configuration file
+
+## Paths to executables
 [PROGRAM_PATH]
 
 WW_PATH = ww
@@ -8,7 +10,8 @@ WW_CONFIG_FILE = $SP_CONFIG/mask_default/default.ww
 # (e.g. no internet access on run nodes)
 CDSCLIENT_PATH = findgsc2.2
 
-# ----------------------------- Border parameters ----------------------------------
+
+## Border mask
 [BORDER_PARAMETERS]
 
 BORDER_MAKE = True
@@ -17,7 +20,7 @@ BORDER_WIDTH = 50
 BORDER_FLAG_VALUE = 4
 
 
-# ----------------------------- Halo parameters ----------------------------------
+## Halo mask
 [HALO_PARAMETERS]
 
 HALO_MAKE = True
@@ -30,7 +33,7 @@ HALO_FLAG_VALUE = 2
 HALO_REG_FILE = halo.reg
 
 
-# ------------------------- Diffraction pike parameters ------------------------------
+## Diffraction spike mask
 [SPIKE_PARAMETERS]
 
 SPIKE_MAKE = True
@@ -43,21 +46,14 @@ SPIKE_FLAG_VALUE = 128
 SPIKE_REG_FILE = spike.reg
 
 
-# ---------------------------- Messier parameters ---------------------------------
+## Messier mask
 [MESSIER_PARAMETERS]
 
 MESSIER_MAKE = True
 
 MESSIER_CAT_PATH = $SP_CONFIG/mask_default/Messier_catalog_updated.npy
-MESSIER_PIXEL_SCALE = 0.187
 MESSIER_SIZE_PLUS = 0.
 MESSIER_FLAG_VALUE = 16
-
-
-# -------------------------------- External flag ----------------------------------
-[EXTERNAL_FLAG]
-
-EF_MAKE = True
 
 
 # -------------------------- Missing data parameters ------------------------------
@@ -73,7 +69,8 @@ MD_REMOVE = False
 # ----------------------------- Other parameters ----------------------------------
 [OTHER]
 
+TEMP_DIRECTORY = .temp
+
 KEEP_REG_FILE = False
 KEEP_INDIVIDUAL_MASK = False
 
-TEMP_DIRECTORY = .temp

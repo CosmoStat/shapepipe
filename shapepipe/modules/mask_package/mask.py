@@ -27,15 +27,15 @@ class Mask(object):
     Parameters
     ----------
     image_path : str
-        Path to image (fits format)
+        Path to image (FITS format)
     weight_path : str
-        Path to the weight image (fits format)
+        Path to the weight image (FITS format)
     config_filepath : str
         Path to the ``.mask`` config file
     output_dir : str
         Path to the output directory
-    hdu : int, optional, default = 0
-        HDU number
+    hdu : int, optional
+        HDU number, default is ``0``
 
     """
 
@@ -43,7 +43,7 @@ class Mask(object):
         self,
         image_path,
         weight_path,
-        image_suffix,
+        image_prefix,
         image_num,
         config_filepath,
         output_dir,
@@ -66,10 +66,10 @@ class Mask(object):
         self._outname_base = outname_base
 
         self._img_number = image_num
-        if (image_suffix.lower() != 'none') and (image_suffix != ''):
-            self._img_suffix = f'{image_suffix}_'
+        if (image_prefix.lower() != 'none') and (image_prefix != ''):
+            self._img_prefix = f'{image_prefix}_'
         else:
-            self._img_suffix = ''
+            self._img_prefix = ''
 
         if star_cat_path is not None:
             self._star_cat_path = star_cat_path
@@ -88,13 +88,13 @@ class Mask(object):
         Raises
         ------
         ValueError
-            If config file name is None
+            If config file name is ``None``
         IOError
             If config file not found
 
         """
         if self._config_filepath is None:
-            raise ValueError('No path to config file')
+            raise ValueError('No path to config file given')
 
         if not os.path.exists(self._config_filepath):
             raise IOError(
@@ -111,12 +111,14 @@ class Mask(object):
             'SPIKE': {},
             'MESSIER': {},
             'MD': {},
-            'EXTERNAL_FLAG': {}
         }
 
-        self._config['PATH']['WW'] = (
-            conf.getexpanded('PROGRAM_PATH', 'WW_PATH')
-        )
+        if conf.has_option('PROGRAM_PATH', 'WW_PATH'):
+            self._config['PATH']['WW'] = (
+                conf.getexpanded('PROGRAM_PATH', 'WW_PATH')
+            )
+        else:
+            self._config['PATH']['WW'] = 'ww'
         self._config['PATH']['WW_configfile'] = (
             conf.getexpanded('PROGRAM_PATH', 'WW_CONFIG_FILE')
         )
@@ -128,8 +130,8 @@ class Mask(object):
             self._config['PATH']['star_cat'] = self._star_cat_path
         else:
             raise ValueError(
-                'Either CDSCLIENT_PATH or STAR_CAT needs to be given in the '
-                + '[PROGRAM_PATH] section of the mask config file'
+                'Either [PROGRAM_PATH]:CDSCLIENT_PATH in the mask config file '
+                + ' or a star catalogue as module input needs to be present'
             )
 
         self._config['PATH']['temp_dir'] = self._get_temp_dir_path(
@@ -199,9 +201,6 @@ class Mask(object):
             self._config['MESSIER']['cat_path'] = (
                 conf.getexpanded('MESSIER_PARAMETERS', 'MESSIER_CAT_PATH')
             )
-            self._config['MESSIER']['pixel_scale'] = (
-                conf.getfloat('MESSIER_PARAMETERS', 'MESSIER_PIXEL_SCALE')
-            )
             self._config['MESSIER']['size_plus'] = (
                 conf.getfloat('MESSIER_PARAMETERS', 'MESSIER_SIZE_PLUS')
             )
@@ -223,15 +222,6 @@ class Mask(object):
             self._config['MD']['remove'] = (
                 conf.getboolean('MD_PARAMETERS', 'MD_REMOVE')
             )
-
-        self._config['EXTERNAL_FLAG']['make'] = (
-            conf.getboolean('EXTERNAL_FLAG', 'EF_MAKE')
-        )
-
-        if self._config['EXTERNAL_FLAG']['make']:
-            if self._path_external_flag is None:
-                raise ValueError('External flag file has to be provided')
-            self._config['EXTERNAL_FLAG']['path'] = self._path_external_flag
 
     def _set_parameters(self):
         """Set Parameters.
@@ -334,10 +324,7 @@ class Mask(object):
                 im_pass = True
 
         if not self._err:
-            if self._config['EXTERNAL_FLAG']['make']:
-                path_external_flag = self._config['EXTERNAL_FLAG']['path']
-            else:
-                path_external_flag = None
+            path_external_flag = self._path_external_flag
 
         if not self._err:
             if im_pass:
@@ -360,7 +347,7 @@ class Mask(object):
                         )
 
                 output_file_name = (
-                    f'{self._output_dir}/{self._img_suffix}'
+                    f'{self._output_dir}/{self._img_prefix}'
                     + f'{self._outname_base}{self._img_number}.fits'
                 )
 
@@ -403,7 +390,7 @@ class Mask(object):
         """Find Stars.
 
         Return GSC (Guide Star Catalog) objects for a field with center
-        (ra,dec) and radius r.
+        (RA, Dec) and radius :math:`r`.
 
         Parameters
         ----------
@@ -415,7 +402,7 @@ class Mask(object):
         Returns
         -------
         dict
-          Stars dicotionnary for GSC objects in the field.
+          Star dicotionnary for GSC objects in the field
 
         Raises
         ------
@@ -447,8 +434,8 @@ class Mask(object):
 
         else:
             raise ValueError(
-                'Either CDSCLIENT_PATH or STAR_CAT needs to be given in the '
-                + '[PROGRAM_PATH] section of the mask config file'
+                'Either [PROGRAM_PATH]:CDSCLIENT_PATH in the mask config file '
+                + ' or a star catalogue as module input needs to be present'
             )
 
         if self._CDS_stderr != '':
@@ -460,7 +447,7 @@ class Mask(object):
     def mask_border(self, width=100, flag_value=4):
         """Create Mask Border.
 
-        Mask 'width' pixels around the image.
+        Mask ``width`` pixels around the image.
 
         Parameters
         ----------
@@ -477,11 +464,11 @@ class Mask(object):
         Raises
         ------
         ValueError
-            If width is None
+            If ``width`` is ``None``
 
         """
         if width is None:
-            raise ValueError('Width not provided')
+            raise ValueError('Width for border mask not provided')
 
         # Note that python image array is [y, x]
         flag = np.zeros(
@@ -507,32 +494,34 @@ class Mask(object):
         Parameters
         ----------
         cat_path : str
-            Path to the Messier catalog
+            Path to the Messier catalogue
         size_plus : float
             Increase the size of the mask by this factor
-            (Example : 0.1 means 10%)
-        flag_value : float
+            (e.g. ``0.1`` means 10%)
+        flag_value : int
             Value of the flag, some power of 2
 
         Returns
         -------
-        numpy.ndarray/None
-            If no Messier objectds find in the field return None and the
-            flag map otherwise
+        numpy.ndarray or ``None``
+            If no Messier objects are found in the field return ``None`` and
+            the flag map
 
         Raises
         ------
         ValueError
-            If size_plus is negative
+            If ``size_plus`` is negative
         ValueError
-            If cat_path is None
+            If ``cat_path`` is ``None``
 
         """
         if size_plus < 0:
-            raise ValueError('size_plus has to be larger than 0')
+            raise ValueError(
+                'Messier mask size increase variable cannot be negative'
+            )
 
         if cat_path is None:
-            raise ValueError('cat_path has to be provided')
+            raise ValueError('Path to Messier object catalogue not provided')
 
         m_cat = np.load(cat_path, allow_pickle=True)
         m_sc = SkyCoord(
@@ -598,25 +587,31 @@ class Mask(object):
     def missing_data(self):
         """Find Missing Data.
 
-        Look for 0 value in the image and flag it depending of the
-        configuration.
-
+        Look for zero-valued pixels in image. Flag if their relative number
+        is larger than a threshold.
         """
+        # Open image
         img = file_io.FITSCatalogue(self._image_fullpath, hdu_no=0)
         img.open()
 
+        # Get total number of pixels
         im_shape = img.get_data().shape
         tot = float(im_shape[0] * im_shape[1])
 
+        # Compute number and ratio of missing data (zero-valued pixels)
         missing = float(len(np.where(img.get_data() == 0.)[0]))
-
         self._ratio = missing / tot
 
+        # Mark image as to be flagged if ratio larger than 'flag' threshold
         if self._ratio >= self._config['MD']['thresh_flag']:
             self._config['MD']['im_flagged'] = True
         else:
             self._config['MD']['im_flagged'] = False
 
+        # Mark image as to be removed if flag is True and
+        # ratio large than 'remove' threshold.
+        # Reset all other mask 'make' flags to False (no other mask needs
+        # to be created)
         if self._config['MD']['remove']:
             if self._ratio >= self._config['MD']['thresh_remove']:
                 self._config['MD']['im_remove'] = True
@@ -635,14 +630,14 @@ class Mask(object):
         Parameters
         ----------
         position1 : numpy.ndarray
-            [x,y] first point (in pixel)
+            [x,y] first point (in pixels)
         position2 : numpy.ndarray
-            [x,y] second point (in pixel)
+            [x,y] second point (in pixels)
 
         Returns
         -------
         float
-            The distance in degree.
+            The distance in degrees.
 
         Raises
         ------
@@ -654,7 +649,7 @@ class Mask(object):
             type(position1) is not np.ndarray
             or type(position2) is not np.ndarray
         ):
-            raise ValueError('Positions need to be a numpy.ndarray')
+            raise ValueError('Object coordinates need to be a numpy.ndarray')
 
         p1 = (np.pi / 180.0) * np.hstack(
             self._wcs.all_pix2world(position1[0], position1[1], 1)
@@ -692,7 +687,7 @@ class Mask(object):
         Raises
         ------
         TypeError
-            If center is not a Numpy array
+            If centre is not a Numpy array
 
         """
         if center is None:
@@ -704,22 +699,24 @@ class Mask(object):
             if isinstance(center, np.ndarray):
                 return self.sphere_dist(center, np.zeros(2)) / 60.0
             else:
-                raise TypeError('Center has to be a numpy.ndarray')
+                raise TypeError(
+                    'Image center coordinates has to be a numpy.ndarray'
+                )
 
     def _make_star_cat(self, CDSclient_output):
         """Make Star Catalogue.
 
-        Make a dicotionnary from 'findgsc2.2' output.
+        Make a dictionary from findgsc2.2 output.
 
         Parameters
         ----------
         CDSclient_output : str
-            Output of 'findgsc2.2'
+            Output of findgsc2.2
 
         Returns
         -------
         dict
-            Star dicotionnary containing all information
+            Star dictionary containing all information
 
         """
         header = []
@@ -774,11 +771,11 @@ class Mask(object):
         Parameters
         ----------
         stars : dict
-            Stars dictionary (output of find_stars)
+            Stars dictionary (output of ``find_stars``)
         types : {'HALO', 'SPIKE'}, optional
-            Type of mask, options are 'HALO' or 'SPIKE'
+            Type of mask, options are ``HALO`` or ``SPIKE``
         mag_limit : float, optional
-            Higher magnitude to apply the mask, default is ``18.0``
+            Faint magnitude limit for mask, default is ``18.0``
         mag_pivot : float, optional
             Pivot magnitude for the model, default is ``13.8``
         scale_factor : float, optional
@@ -793,10 +790,10 @@ class Mask(object):
 
         """
         if stars is None:
-            raise ValueError('No star catalogue provided')
+            raise ValueError('Star catalogue dictionary not provided')
 
         if types not in ('HALO', 'SPIKE'):
-            ValueError('Types need to be in ["HALO", "SPIKE"]')
+            raise ValueError('Mask types need to be in ["HALO", "SPIKE"]')
 
         if self._config[types]['reg_file'] is None:
             reg = (
@@ -874,17 +871,17 @@ class Mask(object):
     def _exec_WW(self, types='HALO'):
         """Execute WeightWatcher.
 
-        Execute WeightWatcher to transform '.reg' to '.fits' flag map.
+        Execute WeightWatcher to transform ``.reg`` to ``.fits`` flag map.
 
         Parameters
         ----------
         types : {'HALO', 'SPIKE', 'ALL'}, optional
-            Type of WeightWatcher execution, options are ``'HALO'``,
-            ``'SPIKE'`` or ``'ALL'``
+            Type of WeightWatcher execution, options are ``HALO``,
+            ``SPIKE`` or ``ALL``
 
         Raises
         ------
-        BaseCatalog.CatalogFileNotFound
+        BaseCatalogue.CatalogFileNotFound
             If catalogue file not found
 
         """
@@ -1025,14 +1022,14 @@ class Mask(object):
     ):
         """Create Final Mask.
 
-        Create the final mask by combination of individual masks.
+        Create the final mask by combining the individual masks.
 
         Parameters
         ----------
         path_mask1 : str
-            Path to a mask (fits format)
+            Path to a mask (FITS format)
         path_mask2 : str, optional
-            Path to a mask (fits format)
+            Path to a mask (FITS format)
         border : numpy.ndarray, optional
             Array containing the border mask
         messier : numpy.ndarray, optional
@@ -1048,7 +1045,8 @@ class Mask(object):
         Raises
         ------
         ValueError
-            If path_mask1, path_mask2, border and messier are of type None
+            If ``path_mask1``, ``path_mask2``, border and messier are of type
+            ``None``
         TypeError
             If border is not a Numpy array
         TypeError
@@ -1061,7 +1059,10 @@ class Mask(object):
             path_mask1 is None and path_mask2 is None and border is None
             and messier is None
         ):
-            raise ValueError('No path to a mask, border or messier provided')
+            raise ValueError(
+                'No paths to mask files containing halos and/or spikes,'
+                + ' borders, or Messier objects provided'
+            )
 
         if path_mask1 is not None:
             mask1 = file_io.FITSCatalogue(path_mask1, hdu_no=self._hdu)
@@ -1084,7 +1085,7 @@ class Mask(object):
                 else:
                     final_mask = border
             else:
-                raise TypeError('border has to be a numpy.ndarray')
+                raise TypeError('border mask has to be a numpy.ndarray')
 
         if messier is not None:
             if type(messier) is np.ndarray:
@@ -1093,7 +1094,7 @@ class Mask(object):
                 else:
                     final_mask = messier
             else:
-                raise TypeError('messier has to be a numpy.ndarray')
+                raise TypeError('Messier mask has to be a numpy.ndarray')
 
         if path_external_flag is not None:
             external_flag = file_io.FITSCatalogue(
@@ -1124,15 +1125,15 @@ class Mask(object):
         Raises
         ------
         ValueError
-            If input_mask is type None
+            If input_mask is type ``None``
         ValueError
-            If output_fullpath is type None
+            If output_fullpath is type ``None``
 
         """
         if input_mask is None:
-            raise ValueError('input_mask not provided')
+            raise ValueError('input mask file path not provided')
         if output_fullpath is None:
-            raise ValueError('fullpath not provided')
+            raise ValueError('output mask file path not provided')
 
         out = file_io.FITSCatalogue(
             output_fullpath,
@@ -1173,7 +1174,7 @@ class Mask(object):
         Parameters
         ----------
         temp_dir_path : str
-            Path to the temporary directory, a value of 'OUTPUT' will include
+            Path to the temporary directory, a value of ``OUTPUT`` will include
             the temporary files in the run directory
 
         Returns
@@ -1184,7 +1185,7 @@ class Mask(object):
         Raises
         ------
         ValueError
-            If temp_dir_path is of type None
+            If ``temp_dir_path`` is of type ``None``
 
         """
         if temp_dir_path is None:

@@ -32,7 +32,7 @@ def prepare_final_cat_file(output_path, file_number_string):
 
     Returns
     -------
-    shapepipe.pipeline.file_io.FITSCatalogue
+    file_io.FITSCatalogue
         Output FITS file
 
     """
@@ -54,14 +54,14 @@ def remove_field_name(arr, name):
     Parameters
     ----------
     arr : numpy.ndarray
-        A numpy strucured array.
+        A numpy strucured array
     name : str
-        Name of the field to remove.
+        Name of the field to remove
 
     Returns
     -------
     numpy.ndarray
-        The structured with the field removed.
+        The structured array with the field removed
 
     """
     names = list(arr.dtype.names)
@@ -81,9 +81,9 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     final_cat_file : file_io.FITSCatalogue
         Final catalogue
     sexcat_path : str
-        Path to SExtractor catalogue to save.
+        Path to SExtractor catalogue to save
     remove_vignet : bool
-        If True will not save the 'VIGNET' field into the final catalogue.
+        If ``True`` will not save the ``VIGNET`` field into the final catalogue
 
     """
     sexcat_file = file_io.FITSCatalogue(sexcat_path, SEx_catalogue=True)
@@ -114,23 +114,26 @@ def save_sm_data(
     star_thresh=0.003,
     gal_thresh=0.01,
 ):
-    """Save Spread-Model Data.
+    r"""Save Spread-Model Data.
 
     Save the spread-model data into the final catalogue.
 
     Parameters
     ----------
     final_cat_file : file_io.FITSCatalogue
-        Final catalogue.
+        Final catalogue
     sexcat_sm_path : str
         Path to spread-model catalogue to save.
     do_classif : bool
-        If True will make a star/galaxy classification. Based on
-        class = sm + 5/3 * sm_err
+        If ``True`` objects will be classified into stars, galaxies, and other,
+        using the classifier
+        :math:`{\rm class} = {\rm sm} + 2 * {\rm sm}_{\rm err}`
     star_thresh : float
-        Threshold for star selection. |class| < star_thresh
+        Threshold for star selection; object is classified as star if
+        :math:`|{\rm class}| <` ``star_thresh``
     gal_thresh : float
-        Threshold for galaxy selection. class > gal_thresh
+        Threshold for galaxy selection; object is classified as galaxy if
+        :math:`{\rm class} >` ``gal_thresh``
 
     """
     final_cat_file.open()
@@ -148,7 +151,7 @@ def save_sm_data(
 
     if do_classif:
         obj_flag = np.ones_like(sm, dtype='int16') * 2
-        classif = sm + 2. * sm_err
+        classif = sm + 2.0 * sm_err
         obj_flag[np.where(np.abs(classif) < star_thresh)] = 0
         obj_flag[np.where(classif > gal_thresh)] = 1
 
@@ -184,11 +187,11 @@ class SaveCatalogue:
         Parameters
         ----------
         mode : str
-            Run mode, options are (``'ngmix'``, ``'galsim'``, ``'psf'``)
+            Run mode, options are ``ngmix``, ``galsim`` or ``psf``
         cat_path : str
             Path to input catalogue
         moments : bool
-            Opotion to run ngmix mode with moment
+            Option to run ``ngmix`` mode with moments
 
         """
         self._output_dict = {}
@@ -256,14 +259,14 @@ class SaveCatalogue:
             self._output_dict[key] = value
 
     def _save_ngmix_data(self, ngmix_cat_path, moments=False):
-        """Save Ngmix Data.
+        """Save NGMIX Data.
 
-        Save the ngmix catalogue into the final one.
+        Save the NGMIX catalogue into the final one.
 
         Parameters
         ----------
         ngmix_cat_path : str
-            Path to ngmix catalogue
+            Path to NGMIX catalogue
 
         """
         self._key_ends = ['1M', '1P', '2M', '2P', 'NOSHEAR']
@@ -393,8 +396,8 @@ class SaveCatalogue:
 
         Parameters
         ----------
-        ngmix_cat_path : str
-            Path to ngmix catalogue to save.
+        galsim_cat_path : str
+            Path to GalSim catalogue to save
 
         """
         galsim_cat_file = file_io.FITSCatalogue(galsim_cat_path)
@@ -507,7 +510,7 @@ class SaveCatalogue:
         Parameters
         ----------
         galaxy_psf_path : str
-            Path to the PSF catalogue to save.
+            Path to the PSF catalogue to save
 
         """
         galaxy_psf_cat = SqliteDict(galaxy_psf_path)

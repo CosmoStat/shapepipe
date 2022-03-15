@@ -24,17 +24,17 @@ class VignetMaker(object):
     Parameters
     ----------
     galcat_path : str
-        Path to catalogue containing the positions.
+        Path to catalogue containing the positions
     pos_type : str
-        Must be in ['PIX', 'SPHE']
-        PIX : position in pixel coordinates.
-        SPHE : position in world coordinates.
+        Options are ``PIX`` or ``SPHE``
+        - ``PIX`` : position in pixel coordinates
+        - ``SPHE`` : position in world coordinates
     pos_params : list
-        Parameters to use as positions ['xpos', 'ypos'].
+        Parameters to use as positions, e.g. ``['xpos', 'ypos']``
     output_dir : str
-        Path to the output directory.
+        Path to the output directory
     image_num : str
-        Image numbering.
+        Image numbering
 
     """
 
@@ -53,7 +53,7 @@ class VignetMaker(object):
         self._pos = self.get_pos(pos_params)
         self._pos_type = pos_type
 
-    def process(self, image_path_list, rad, suffix):
+    def process(self, image_path_list, rad, prefix):
         """Process.
 
         Main function to create the stamps.
@@ -61,14 +61,14 @@ class VignetMaker(object):
         Parameters
         ----------
         image_path_list : list
-            List of path for the input images.
+            List of path for the input images
         rad : int
-            Radius to use for the stamps.
-        suffix : str
-            Suffix of the output file.
+            Radius to use for the stamps
+        prefix : str
+            Prefix of the output file
 
         """
-        for _suffix, img in zip(suffix, image_path_list):
+        for _prefix, img in zip(prefix, image_path_list):
             image_path = img
 
             if self._pos_type == 'PIX':
@@ -87,7 +87,7 @@ class VignetMaker(object):
                 vign,
                 self._galcat_path,
                 self._output_dir,
-                _suffix,
+                _prefix,
                 self._image_num,
             )
 
@@ -127,12 +127,12 @@ class VignetMaker(object):
         Parameters
         ----------
         image_path : str
-            Path to the image from where the stamp are created.
+            Path to the image from where the stamp are created
 
         Returns
         -------
         numpy.ndarray
-            New positions in pixel coordinates.
+            New positions in pixel coordinates
 
         """
         file = file_io.FITSCatalogue(image_path)
@@ -161,13 +161,13 @@ class VignetMaker(object):
         img_path : str
             Path to the image
         pos : numpy.ndarray
-            Array of positions for the vignet's centers.
+            Array of positions for the vignet's centres
         rad : int
-            Radius of the stamp, must be odd.
+            Radius of the stamp, must be odd
 
         Returns
         -------
-        numpy.array
+        numpy.ndarray
             Array containing the vignets
 
         """
@@ -191,14 +191,14 @@ class VignetMaker(object):
         Parameters
         ----------
         image_dir : str
-            Path to the directory where the image are.
+            Path to the directory where the images are
         image_pattern : str
-            Common part of the files.
+            Common part of the file names
 
         Returns
         -------
-        output_dict : dict
-            Directory containing object id and vignets for each epoch.
+        dict
+            Directory containing object id and vignets for each epoch
 
         """
         cat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
@@ -300,39 +300,39 @@ class VignetMaker(object):
         Parameters
         ----------
         image_dir : list
-            List of directories where the image are.9
-            If len(image_dir) == 1 -> all images in the same directory.
-            Else len(image_dir) must match len(image_pattern).
+            List of directories where the image are; ff ``len(image_dir) == 1``
+            -> all images are in the same directory, else ``len(image_dir)``
+            must match ``len(image_pattern)``
         image_pattern : list
-            Common part of each kind of files.
+            Common part of each kind of file names
         f_wcs_path : str
-            Path to the log file containing the WCS for each CCDs.
+            Path to the log file containing the WCS for each CCDs
         rad : int
-            Radius of the stamp, must be odd.
+            Radius of the stamp, must be odd
 
         """
         self._f_wcs_file = SqliteDict(f_wcs_path)
         self._rad = rad
 
-        for i in range(len(image_pattern)):
+        for idx in range(len(image_pattern)):
 
             if len(image_dir) != len(image_pattern):
                 output_dict = self._get_stamp_me(
                     image_dir[0],
-                    image_pattern[i],
+                    image_pattern[idx],
                 )
 
             else:
                 output_dict = self._get_stamp_me(
-                    image_dir[i],
-                    image_pattern[i],
+                    image_dir[idx],
+                    image_pattern[idx],
                 )
 
-            self._save_vignet_me(output_dict, image_pattern[i])
+            self._save_vignet_me(output_dict, image_pattern[idx])
 
         self._f_wcs_file.close()
 
-    def _save_vignet_me(self, output_dict, suffix):
+    def _save_vignet_me(self, output_dict, prefix):
         """Save vignet Multi-Epoch.
 
         Save vignets for the multi-epoch case.
@@ -341,11 +341,11 @@ class VignetMaker(object):
         ----------
         output_dict : dict
             Dictionary containing object id and vignets for each epoch.
-        suffix : str
-            Suffix to use for the output file name.
+        prefix : str
+            Prefix to use for the output file name
 
         """
-        output_name = f'{self._output_dir}/{suffix}_vignet{self._image_num}'
+        output_name = f'{self._output_dir}/{prefix}_vignet{self._image_num}'
         output_file = SqliteDict(output_name + '.sqlite')
 
         for _index in output_dict.keys():
@@ -395,7 +395,7 @@ def make_mask(galcat_path, mask_value):
 
     Returns
     -------
-    numpy.array
+    numpy.ndarray
         Array of the vignets with the new mask value
 
     """
@@ -406,7 +406,7 @@ def make_mask(galcat_path, mask_value):
     return vignet
 
 
-def save_vignet(vignet, sexcat_path, output_dir, suffix, image_num):
+def save_vignet(vignet, sexcat_path, output_dir, prefix, image_num):
     """Save Vignet.
 
     Save the vignet to a SExtractor format catalogue.
@@ -416,16 +416,16 @@ def save_vignet(vignet, sexcat_path, output_dir, suffix, image_num):
     vignet : numpy.ndarray
         Array containing the vignets to be saved
     sexcat_path : str
-        Path to the original SExtractor catalog
+        Path to the original SExtractor catalogue
     output_dir : str
         Path to the output directory
-    suffix : str
-        Suffix to use for the output file name.
+    prefix : str
+        Prefix to use for the output file name
     image_num : str
-        Image numbering.
+        Image numbering
 
     """
-    output_name = f'{output_dir}/{suffix}_vignet{image_num}.fits'
+    output_name = f'{output_dir}/{prefix}_vignet{image_num}.fits'
 
     file = file_io.FITSCatalogue(
         output_name,
