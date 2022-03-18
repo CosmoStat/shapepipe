@@ -240,7 +240,7 @@ The following plots show an example of a single CCD, in the center of the focal 
 
 | Size-magnitude plot | Star magnitude histogram | Stars in CCD (mag) | Stars in CCD (size) |
 | --- | --- | --- | --- |
-| <img width="250" src="../source/images/size_mag-2113737-10.png" title="Size-magnitude plot with star selection"> | <img width="250" src="../source/images/hist_mag_stars-2113737-10.png" title="Magnitude histogram of selected stars"> | <img width="250" src="../source/images/mag_star_field-2113737-10.png" title="Magnitude distribution in CCD"> | <img width="250" src="../source/images/fwhm_field-2113737-10.png" title="Size distribution in CCD"> |
+| <img width="250" src="./images/size_mag-2113737-10.png" title="Size-magnitude plot with star selection"> | <img width="250" src="./images/hist_mag_stars-2113737-10.png" title="Magnitude histogram of selected stars"> | <img width="250" src="./images/mag_star_field-2113737-10.png" title="Magnitude distribution in CCD"> | <img width="250" src="./images/fwhm_field-2113737-10.png" title="Size distribution in CCD"> |
 | The stellar locus is well-defined | Magnitude distribution looks reasonable | Stars are relatively homogeneously distributed over the CCD | The uniform and small seeing of CFHT is evident |
 
 To contrast the last plot, here is the case of the CCD in the lower right corner, which shows a known (but yet unexplained) lack of stars
