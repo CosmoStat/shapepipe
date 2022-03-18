@@ -209,7 +209,7 @@ ds9 image-2113737-10.fits pipeline_flag-2113737-10.fits
 ```
 Choose `zoom fit` for both frames, click `scale zscale` for the image, and `color aips0` for the flag, to display something like this:
 
-<img width="250" src="../source/images/diag_mask.png">
+<img width="250" src="./images/diag_mask.png">
 
 By eye the correspondence between the different flag types and the image can be
 seen. Note that the two frames might not match perfectly, since (a) WCS
