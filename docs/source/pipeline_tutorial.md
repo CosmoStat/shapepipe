@@ -246,7 +246,7 @@ The following plots show an example of a single CCD, in the center of the focal 
 To contrast the last plot, here is the case of the CCD in the lower right corner, which shows a known (but yet unexplained) lack of stars
 in the lower parts:
 
-<img width="250" src="../source/images/fwhm_field-2113737-35.png" title="Size distribution in CCD">
+<img width="250" src="./images/fwhm_field-2113737-35.png" title="Size distribution in CCD">
 
 The statistics output file for the center CCD #10:
 ```bash
