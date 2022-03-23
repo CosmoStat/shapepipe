@@ -133,7 +133,7 @@ is defined.
    MARKERSIZE_1 = 3
    MARKERSIZE_2 = 3
    LABEL_1 = All
-   LABEL_2 = "Stars, mean FWHM: @mean(FWHM_IMAGE{star_selection})*0.187@ arcsec"
+   LABEL_2 = "Stars, mean FWHM: @mean(FWHM_IMAGE{star_selection})*0.187@arcsec"
    TITLE = "Stellar locus"
    XLABEL = "FWHM (pix)"
    YLABEL = Mag

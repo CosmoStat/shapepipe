@@ -143,12 +143,13 @@ MCCD_PLOTS_RUNNER
 
 :Output: Several plots
 
-This module generates different series of plots of the input merged star catalogue.
+This module generates different series of plots of the input merged star
+catalogue.
 
-One series of plots are the _mean shapes_, which is the PSF ellipticity and size
-and their residuals as a function of the focal plane positions. Values and residuals
-are combined from all merged catalogues, and binned in the focal plane according to
-``X_GRID`` and ``Y_GRID``.
+One series of plots are the _mean shapes_, which is the PSF ellipticity and
+size and their residuals as a function of the focal plane positions. Values and
+residuals are combined from all merged catalogues, and binned in the focal
+plane according to ``X_GRID`` and ``Y_GRID``.
 
 Another series of plots are a histogram of the ellipticity errors.
 
