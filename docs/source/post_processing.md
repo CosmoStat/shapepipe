@@ -112,6 +112,6 @@ At this step all required `ShapePipe` resulting output files are available in th
       merge_final_cat -i <input_dir> -p <param_file> -v
       ```
       Choose as input directory `input_dir` the output of step C. A default
-      parameter file <param_file> is `/path/to/shapepipe/example/cfis/final_cat.param`. 
+      parameter file `<param_file>` is `/path/to/shapepipe/example/cfis/final_cat.param`. 
       On success, the file `./final_cat.npy` is created. Depending on the number of
       input tiles, this file can be several tens of Gb large. 
