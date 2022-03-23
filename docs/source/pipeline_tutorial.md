@@ -250,7 +250,7 @@ in the lower parts:
 
 The statistics output file for the center CCD #10:
 ```bash
-(shapepipe)  dap ~/ShapePipeRun $ cat star_stat-2113737-10.txt
+cat star_stat-2113737-10.txt
 # Statistics
 Nb objects full cat = 1267
 Nb stars = 160
