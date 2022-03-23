@@ -145,7 +145,7 @@ MCCD_PLOTS_RUNNER
 
 This module generates different series of plots of the input merged star catalogue.
 
-One series of plots are the "mean shapes", which is the PSF ellipticity and size
+One series of plots are the _mean shapes_, which is the PSF ellipticity and size
 and their residuals as a function of the focal plane positions. Values and residuals
 are combined from all merged catalogues, and binned in the focal plane according to
 ``X_GRID`` and ``Y_GRID``.
@@ -162,15 +162,15 @@ Module-specific config file entries
 PSF: str
     PSF model type, options are ``mccd`` or ``psfex``
 PLOT_MEANSHAPES: bool
-    Option to produce mean shapes plots
+    Option to produce _mean shapes_ plots
 X_GRID: int
-    Number of bins in the X axis of one CCD for the mean shapes plot grid
+    Number of bins in the X axis of one CCD for the _mean shapes_ plot grid
 Y_GRID: int
-    Number of bins in the Y axis of one CCD for the mean shapes plot grid
+    Number of bins in the Y axis of one CCD for the _mean shapes_ plot grid
 MAX_E: float
-    Max value for ellipticity in the mean shapes plot
+    Max value for ellipticity in the _mean shapes_ plot
 MAX_DE: float
-    Max value for the residual ellipticity in the mean shapes plot
+    Max value for the residual ellipticity in the _mean shapes_ plot
 PLOT_HISTOGRAMS: bool
     Option to produce histogram plots for shape errors
 REMOVE_OUTLIERS: bool
