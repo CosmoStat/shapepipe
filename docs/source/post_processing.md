@@ -5,9 +5,9 @@ more `ShapePipe` runs. Post-processing combines various individual 'ShapePipe'
 output files, and creates joint results, for example combining individual tile
 catalogues in a large sky area. The output of post-processing is a joint _shape
 catalogue_, containing all required information to create a calibrated shear
-catalogue via 'metacalibration'), a joint star catalogue, and PSF diagnostic plots.
+catalogue via _metacalibration_), a joint star catalogue, and PSF diagnostic plots.
 
-Some of the following steps pertain specifically to runs carried out on [canfar](./canfar.md),
+Some of the following steps pertain specifically to runs carried out on [canfar](https://www.canfar.net/en),
 but most are general.
 
 1. Retrieve `ShapePipe` result files
