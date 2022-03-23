@@ -33,7 +33,7 @@ class RunLog(object):
         self._module_list = ','.join(module_list)
         self.current_run = current_run
         self._write()
-        get_list(run_log_file)
+        self._runs = get_list(run_log_file)
 
     def _write(self):
         """Write.
