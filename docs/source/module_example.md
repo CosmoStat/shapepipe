@@ -10,12 +10,24 @@ As this module does not implement any system executable, it is not necessary to 
 return `None, None`.
 
 ```python
+"""PYTHON MODULE EXAMPLE.
+
+This module defines methods for an example Python module.
+
+:Author: Samuel Farrens <samuel.farrens@cea.fr>
+
+"""
+
+from shapepipe.modules.module_decorator import module_runner
+from shapepipe.modules.python_example_package import python_example
+
+
 @module_runner(
-  version='1.0',
-  file_pattern=['numbers', 'letters'],
-  file_ext='.txt',
-  depends='numpy',
-  run_method='parallel',
+    version='1.1',
+    file_pattern=['numbers', 'letters'],
+    file_ext='.txt',
+    depends='numpy',
+    run_method='parallel',
 )
 def python_example_runner(
     input_file_list,
@@ -25,26 +37,26 @@ def python_example_runner(
     module_config_sec,
     w_log,
 ):
-  """Define The Python Example Runner."""
-  # Set output file name
-  output_file_name = (
-      f'{run_dirs["output"]}/pyex_output{file_number_string}.cat'
-  )
+    """Define The Python Example Runner."""
+    # Set output file name
+    output_file_name = (
+        f'{run_dirs["output"]}/pyex_output{file_number_string}.cat'
+    )
 
-  # Retrieve log message from config file
-  message = config.get(module_config_sec, 'MESSAGE')
+    # Retrieve log message from config file
+    message = config.get(module_config_sec, 'MESSAGE')
 
-  # Create an instance of the Python example class
-  py_ex_inst = python_example.PythonExample(0)
+    # Create an instance of the Python example class
+    py_ex_inst = python_example.PythonExample(0)
 
-  # Read input files
-  py_ex_inst.read_files(*input_file_list)
+    # Read input files
+    py_ex_inst.read_files(*input_file_list)
 
-  # Write output files
-  py_ex_inst.write_file(output_file_name, message)
+    # Write output files
+    py_ex_inst.write_file(output_file_name, message)
 
-  # Return file content and no stderr
-  return py_ex_inst.content, None
+    # Return file content and no stderr
+    return py_ex_inst.content, None
 ```
 
 ## Executable Example
@@ -52,9 +64,21 @@ def python_example_runner(
 In this example the module runner call the system executable `head`. This module read input files from the `python_example` module output that match the file pattern `'process'` with file extension `'.cat'`.
 
 ```python
+"""EXECUTE MODULE EXAMPLE.
+
+This module defines methods for an example command line execution module.
+
+:Author: Samuel Farrens <samuel.farrens@cea.fr>
+
+"""
+
+from shapepipe.modules.module_decorator import module_runner
+from shapepipe.pipeline.execute import execute
+
+
 @module_runner(
-    version='1.0',
     input_module='python_example_runner',
+    version='1.0',
     file_pattern='pyex_output',
     file_ext='.cat',
     executes='head',

@@ -4,7 +4,7 @@ ShapePipe an open-source and modular weak-lensing measurement, analysis and
 validation pipeline written in Python.
 
 The current version of ShapePipe starts with reduced survey images and ends by
-providing gaaxy shape measurements along with all of the information required for
+providing galaxy shape measurements along with all of the information required for
 shear calibration. It includes various validation tools and a novel point spread
 function (PSF) modelling technique. The code has been designed to facilitate
 the inclusion of new or improved processing steps to adapt to advances made
