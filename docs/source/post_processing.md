@@ -1,7 +1,7 @@
 # Post-processing
 
 This page shows all required steps of post-processing the results from one or
-more `ShapePipe` runs. Post-processing combines various individual 'ShapePipe'
+more `ShapePipe` runs. Post-processing combines various individual `ShapePipe`
 output files, and creates joint results, for example combining individual tile
 catalogues in a large sky area. The output of post-processing is a joint _shape
 catalogue_, containing all required information to create a calibrated shear
