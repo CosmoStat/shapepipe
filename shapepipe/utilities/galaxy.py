@@ -47,14 +47,14 @@ def sigma_to_fwhm(sigma, pixel_scale=1.0):
     -----
     To compute the FWHMh for a 1D Gaussian N(x), solve the equation
 
-    ..math::
+    .. math::
 
         N(x) = (\sigma \sqrt{2\pi})^{-1} \exp[x^2/2\sigma^2] = \frac 1 2 N(x)
 
 
     for :math:`x`. The FWHM is :math:`x + (-x) = 2x`. The solution is
 
-    ..math::
+    .. math::
 
         \textrm{FWHM} = 2 \sqrt(2 \ln 2) \sigma \approx 2.355 \sigma
 
