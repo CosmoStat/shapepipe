@@ -104,7 +104,7 @@ ShapePipe will look for files of the form `galaxy-00-0.fits`,
 save outputs to `/home/username/my_output_dir`. Note that the `FILE_PATTERN`
 does not need to be complete, in other words files of the form
 `mygalaxy-00-0.fits` would equally be found if `CORRECT_FILE_PATTERN = True`
-was added to the options above.
+were added to the options above.
 
 Conversely, with the options
 
