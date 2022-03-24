@@ -6,14 +6,14 @@ This package contains the module for ``find_exposures``.
 
 :Parent module: ``get_images_runner``
 
-:Input: tile image
+:Input: Tile image
 
-:Output: single-exposure ID list
+:Output: Single-exposure ID list
 
 Description
 ===========
 
-Identify the exposure images that where co-added to produce the tiles
+Identify the exposure images that were co-added to produce the tiles
 (stacked image). The image names are listed in the tile FITS header,
 which is read by this module to extract the names.
 

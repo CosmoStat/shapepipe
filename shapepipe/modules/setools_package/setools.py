@@ -35,9 +35,9 @@ class SETools(object):
     file_number_string: str
         input catalogue number/specifier
     config_filepath: str
-        Path to config.setools file
+        Path to ``config.setools`` file
     cat_file: bool, optional
-        True if 'cat' is a path to a file. False otherwise
+        ``True`` if ``cat`` is a path to a file, ``False`` otherwise
 
     """
 
@@ -79,7 +79,7 @@ class SETools(object):
         Parameters
         ----------
         w_log : logging.Logger
-            Worker log instance
+            Logging instance
 
         """
         if self._is_file:
@@ -152,9 +152,9 @@ class SETools(object):
                 self.save_stat(self.stat[key], output_path)
 
     def read(self):
-        """Read the Config File.
+        """Read the Configuration File.
 
-        This function read the config file and create a dictionary for every
+        This function read the config file and creates a dictionary for every
         task.
 
         Raises
@@ -254,7 +254,7 @@ class SETools(object):
     def _clean_line(self, line):
         """Clean Lines.
 
-        This function is called during the reading process to clean line
+        This function is called during the reading process to clean lines
         from spaces, empty lines and ignore comments.
 
         Parameters
@@ -266,7 +266,7 @@ class SETools(object):
         -------
         str
             If the line is not empty or a comment return the contents and
-            None otherwise.
+            ``None`` otherwise
 
         """
         s = re.split('"', line)
@@ -290,18 +290,18 @@ class SETools(object):
     def save_mask(self, mask, output_path, ext_name='LDAC_OBJECTS'):
         """Save Mask.
 
-        This function will apply a mask on the data and save them into a new
-        SExtractor catalogue like fits file.
+        This function will apply a mask to the data and save them into a new
+        SExtractor-like FITS file.
 
         Parameters
         ----------
         mask : numpy.ndarray
-            Numpy array of boolean containing.
+            Numpy array of boolean containing
         output_path : str
-            Path to the general output directory.
+            Path to the general output directory
         ext_name : str, optional
-            Name of the HDU containing masked data (default is 'LDAC_OBJECTS',
-            SExtractor name)
+            Name of the HDU containing masked data; default is ``LDAC_OBJECTS``
+            SExtractor name
 
         Raises
         ------
@@ -333,22 +333,22 @@ class SETools(object):
     def save_new_cat(self, new_cat, output_path, ext_name='LDAC_OBJECTS'):
         """Save New Catalogue.
 
-        This function create a new catalogue with a specific format
-        (fits bin table, SExtractor like fits catalogue or ASCII).
+        This function creates a new catalogue with a specific format
+        (FITS bin table, SExtractor-like FITS catalogue or ASCII).
 
         Parameters
         ----------
         new_cat : dict
-            Dictionary containing the data and "OUTPUT_FORMAT"
+            Dictionary containing the data and ``OUTPUT_FORMAT``
         output_path : str
             Path of the output
         ext_name : str
-            Name of the extension for fits bin table output
+            Name of the extension for FITS bin table output
 
         Raises
         ------
         ValueError
-            If OUTPUT_FORMAT not provided
+            If ``OUTPUT_FORMAT`` not provided
         ValueError
             For invalid output format
 
@@ -405,7 +405,7 @@ class SETools(object):
     ):
         """Save Random Split Catalogues.
 
-        Save two catalogs following the random split specified.
+        Save two catalogues following the random split specified.
 
         Parameters
         ----------
@@ -421,11 +421,11 @@ class SETools(object):
         Raises
         ------
         ValueError
-            If rand_split not provided
+            If ``rand_split`` not provided
         ValueError
-            If output path not provided
+            If ``output_path`` not provided
         ValueError
-            If file_number not provided
+            If ``file_number`` not provided
 
         """
         if rand_split is None:
@@ -465,9 +465,9 @@ class SETools(object):
         Raises
         ------
         ValueError
-            If stat no provided
+            If ``stat`` not provided
         ValueError
-            If output path not provided
+            If ``output`` path not provided
 
         """
         if stat is None:
@@ -608,7 +608,7 @@ class SETools(object):
     def _make_rand_split(self):
         """Make Random Split.
 
-        This function create mask with random indices corresponding of the
+        This function creates mask with random indices corresponding to the
         specfied ratio.
 
         Raises
@@ -665,12 +665,12 @@ class SETools(object):
     def _make_stat(self):
         """Make Statistics.
 
-        This function interpret the different statistics required.
+        This function interprets the different statistics required.
 
         Raises
         ------
         ValueError
-            For invalid statistic format
+            For invalid statistics format
 
         """
         if len(self._stat) == 0:
@@ -710,11 +710,11 @@ class SEPlot(object):
     Raises
     ------
     ValueError
-        If plot_dict not provided
+        If ``plot_dict`` not provided
     ValueError
-        If catalogue not provided
+        If ``catalogue`` not provided
     ValueError
-        If output_path not provided
+        If ``output_path`` not provided
     ValueError
         If plot type not specified
     ValueError
@@ -767,8 +767,8 @@ class SEPlot(object):
 
         Parameters
         ----------
-        key_list: list of strings
-            list of keys
+        key_list: list
+            List of keys
 
         Raises
         ------
@@ -786,7 +786,7 @@ class SEPlot(object):
     def _make_plot(self):
         """Make Plot.
 
-        This function calls pyplot.plot.
+        This function calls ``matplotlib.pyplot.plot``.
 
         Raises
         ------
@@ -794,6 +794,10 @@ class SEPlot(object):
             If X not provided for each value of Y
         ValueError
             If plot keyword not in the correct format
+
+        See Also
+        --------
+        matplotlib.pyplot.plot
 
         """
         self._fig = plt.figure()
@@ -941,14 +945,18 @@ class SEPlot(object):
     def _make_scatter(self):
         """Make Scatter.
 
-        This function call pyplot.scatter.
+        This function calls ``matplotlib.pyplot.scatter``.
 
         Raises
         ------
         ValueError
-            If X not provided for every SCATTER
+            If X not provided for every ``SCATTER``
         ValueError
-            If Y not provided for every SCATTER
+            If Y not provided for every ``SCATTER``
+
+        See Also
+        --------
+        matplotlib.pyplot.scatter
 
         """
         self._fig = plt.figure()
@@ -1071,7 +1079,11 @@ class SEPlot(object):
     def _make_hist(self):
         """Make Hist.
 
-        This function call pyplot.hist.
+        This function calls ``matplotlib.pyplot.hist``.
+
+        See Also
+        --------
+        matplotlib.pyplot.hist
 
         """
         self._fig = plt.figure()

@@ -2,7 +2,7 @@
 
 This module builds the SExtractor command line.
 
-:Author: Axel Guinot & Martin Kilbinger
+:Author: Axel Guinot, Martin Kilbinger
 
 """
 
@@ -68,7 +68,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
     pos_params: list
         World coordinates to use to match the objects.
     ccd_size: list
-        Size of a ccd [nx, ny]
+        Size of a CCD ``[nx, ny]``
 
     Raises
     ------

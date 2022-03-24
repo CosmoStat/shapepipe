@@ -6,9 +6,9 @@ This package contains the module for ``random_cat``.
 
 :Parent module: None
 
-:Input: images and masks
+:Input: Images and masks
 
-:Output: random catalogue FITS file
+:Output: Random catalogue FITS file
 
 Description
 ===========
@@ -20,12 +20,12 @@ Module-specific config file entries
 ===================================
 
 N_RANDOM : float
-    the number of random objects requested on output
+    The number of random objects requested on output
 DENSITY : bool, optional
-    option to interpret the number of random objects per square degree, the
+    Option to interpret the number of random objects per square degree; the
     default is ``False``
 TILE_LIST : str, optional
-    path to tile IDs for overlap flagging
+    Path to tile IDs for overlap flagging
 
 """
 

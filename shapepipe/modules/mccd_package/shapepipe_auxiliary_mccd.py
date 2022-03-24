@@ -38,46 +38,43 @@ def mccd_preprocessing_pipeline(
 
     Parameters
     ----------
-    input_file_list: list of list of str or list of str
-        Input file list as taken from shapepipe's input.
+    input_file_list: list
+        Input file list as taken from shapepipe's input
     output_path: str
-        Path to the folder where to save the preprocessed files.
+        Path to the folder where to save the preprocessed files
     input_file_position: int
-        Element position from the ``input_file_list`` to preprocess.
-        Default is ``0``.
+        Element position from the ``input_file_list`` to preprocess; default is
+        ``0``
     min_n_stars: int
-        Minimum number of stars in order to preprocess the CCD.
-        Default is ``20``.
+        Minimum number of stars in order to preprocess the CCD; default is
+        ``20``
     separator: str
-        Separator string that separates the catalogue id and the CCD id.
-        Default is ``'-'``.
-    CCD_id_filter_list: list of int or None
-        A list that correspond to the CCDs that should be preprocessed.
-        If it is None, all the CCDs are preprocessed.
-        (Current version: Hardcoded for the MegaCam scenario).
-        Default is ``None``.
+        Separator string that separates the catalogue id and the CCD id;
+        default is ``'-'``
+    CCD_id_filter_list: list
+        A list that corresponds to the CCDs that should be preprocessed,
+        if it is ``None``, all the CCDs are preprocessed
+        (the current version is hardcoded for MegaCam)
     outlier_std_max: float
-        Parameter regulating the shape outlier removal. Default is very high
-        so as it is not done at all. A decent number would be ``10``.
-        Default is ``100.``.
+        Parameter regulating the shape outlier removal, the default is very
+        high so as it is not done at all, a decent number would be ``10``;
+        default is ``100.``
     save_masks: bool
-        If masks should be saved in the new file.
-        Default is ``True``.
+        If masks should be saved in the new file; default is ``True``
     save_name: str
-        Name to save the preprocessed file.
-        Default is ``'train_star_selection'``.
+        Name to save the preprocessed file; default is
+        ``train_star_selection``
     save_extension: str
-        Extension of the saved file.
-        Default is ``.fits``.
+        Extension of the saved file, default is ``.fits``
     verbose: bool
-        Verbose mode.
-        Default is ``True``.
-    print_fun: function or None
+        Verbose mode; default is ``True``
+    print_fun : callable, optional
+        Output message function
 
     Returns
     -------
-    mccd_inputs: class
-        An instance of ``MccdInputs`` class used for the input preprocessing.
+    mccd.mccd_utils.MccdInputs
+        An instance of ``MccdInputs`` class used for the input preprocessing
 
     """
     mccd_star_nb = 0
@@ -232,7 +229,7 @@ def mccd_fit_pipeline(
         Path to training stars
     file_number_string : str
         File number string
-    mccd_parser :
+    mccd_parser : mccd.auxiliary_fun.MCCDParamsParser
         MCCD parser
     output_dir : str
         Output directory
@@ -241,7 +238,7 @@ def mccd_fit_pipeline(
     saving_name : str
         Name for output file
     w_log : logging.Logger
-        Worker log
+        Logging instance
 
     """
     # Extract the MCCD parameters from the parser
@@ -299,14 +296,14 @@ def mccd_validation_pipeline(
         Path to test stars
     mccd_model_path : str
         Path to MCCD model
-    mccd_parser : mccd.auxiliary_fun.MCCDParamsParser object
+    mccd_parser : mccd.auxiliary_fun.MCCDParamsParser
         MCCD parser
     output_dir : str
         Output directory
     file_number_string : str
         File number string
     w_log : logging.Logger
-        Worker log
+        Logging instance
     val_saving_name : str
         Name for validation file
 
@@ -372,7 +369,7 @@ def mccd_interpolation_pipeline(
 
     Returns
     -------
-    str or None
+    str or ``None``
         String returned if not enough stars found
 
     """
@@ -430,8 +427,8 @@ def shapepipe_write_output(
 ):
     r"""Write ShapePipe Output.
 
-    Save interpolated PSFs dictionary to fits file. The saved files are
-    compatible with the previous shapepipe's standard.
+    Save interpolated PSFs dictionary to FITS file. The saved files are
+    compatible with the previous ShapePipe's standard.
 
     Parameters
     ----------

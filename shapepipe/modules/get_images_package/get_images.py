@@ -24,12 +24,12 @@ def read_image_numbers(path):
     Parameters
     ----------
     path : str
-        input file path
+        Input file path
 
     Returns
     -------
-    image_number_list : list of str
-        image numbers
+    list
+        Image numbers
 
     """
     image_number_list = []
@@ -48,12 +48,12 @@ def in2out_pattern(number):
     Parameters
     ----------
     number : str
-        input number
+        Input number
 
     Returns
     -------
-    number_final : str
-        output number
+    str
+        Output number
 
     """
     # replace dots ('.') with dashes ('-') to avoid confusion
@@ -74,29 +74,29 @@ class GetImages(object):
     Parameters
     ----------
     retrieve_method : str
-        copy/download method
+        Copy/download method
     retrieve_option : str
-        retrieve options
-    input_file_list : list of str
-        input files
+        Retrieve options
+    input_file_list : list
+        Input files
     input_numbering : str
-        numbering scheme, python regexp
-    input_file_pattern : list of str
-        file pattern including input number template of input files
-    input_file_ext : list of str
-        input file extensions
-    output_file_pattern : list of str
-        output file patterns
+        Numbering scheme, python regexp
+    input_file_pattern : list
+        File pattern including input number template of input files
+    input_file_ext : list
+        Input file extensions
+    output_file_pattern : list
+        Output file patterns
     w_log : logging.Logger
-        log file
-    check_existing_dir : str, optional, default=None
-        if not ``None``, only retrieve image if not existing at this
+        Log file
+    check_existing_dir : str, optional
+        If not ``None``, only retrieve image if not existing at this
         path (recursively)
-    n_expected : int, optional, default=None
-        number of expected files per type and ID to download/check for
+    n_expected : int, optional
+        Number of expected files per type and ID to download/check for
         existence
-    n_try : int, optional, default=3
-        number of attempts for VOs download
+    n_try : int, optional
+        Number of attempts for VOs download, default is ``3``
 
     """
 
@@ -135,9 +135,9 @@ class GetImages(object):
         Parameters
         ----------
         input_dir : str
-            input directory
+            Input directory
         output_dir : str
-            output directory
+            Output directory
 
         """
         # Input image numbers from all input tile files
@@ -206,18 +206,18 @@ class GetImages(object):
 
         Parameters
         ----------
-        image_number_list : list of str
-            image numbers
-        dest_dir : list of str
-            input directory or url
-        use_output_file_pattern : bool, optional, default=False
-            if True, use output file base patterns excluding numbering scheme;
-            if False, use input file patterns
+        image_number_list : list
+            Image numbers
+        dest_dir : list
+            Input directory or url
+        use_output_file_pattern : bool, optional
+            If ``True``, use output file base patterns excluding numbering
+            scheme; if ``False``, use input file patterns; default is ``False``
 
         Returns
         -------
-        list_all_files : list of list of str
-            complete file paths, one list for each input file type
+        list
+            Complete file paths, one list for each input file type
 
         """
         list_all_files = []
@@ -267,10 +267,10 @@ class GetImages(object):
 
         Parameters
         ----------
-        all_inputs: list of list of str
-            input file paths, one list for each input file type
-        all_outputs: list of list of str
-            output file paths, one list for each input file type
+        all_inputs: list
+            Input file paths, one list for each input file type
+        all_outputs: list
+            Output file paths, one list for each input file type
 
         """
         for in_per_type, out_per_type in zip(all_inputs, all_outputs):
@@ -294,9 +294,9 @@ class GetImages(object):
         Parameters
         ----------
         in_path : str
-            input path
+            Input path
         out_path : str
-            output path
+            Output path
 
         """
         if self._retrieve_method == 'vos':
@@ -310,7 +310,7 @@ class GetImages(object):
 
             log_cmd = ' '.join(sys.argv)
             vcp = vosHandler('vcp')
-            print(log_cmd)
+            self._w_log.info(log_cmd)
 
             attempt = 0
             while attempt < self._n_try:

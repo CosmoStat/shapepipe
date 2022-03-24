@@ -66,8 +66,7 @@ CHECKPLOT_NAME      fwhm, ellipticity, counts, countfrac, chi2, resi
 
 #------------------------------ Check-Images ---------------------------------
 
-#######
-## AG : This parameter is set in pipeline config file.
+# Note: Check-image types can be set the ShapePipe config file, psfex_runner section
 #######
 #CHECKIMAGE_TYPE     NONE            # CHI,PROTOTYPES,SAMPLES,RESIDUALS,SNAPSHOTS
                                 # or MOFFAT,-MOFFAT,-SYMMETRICAL

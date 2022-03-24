@@ -56,7 +56,7 @@ class PSFExCaller:
         Returns
         -------
         str
-            Command line with correct and complete paths for PSFEx execution.
+            Command line with correct and complete paths for PSFEx execution
 
         """
         # Prepare command line

@@ -5,6 +5,7 @@
   :titlesonly:
   :caption: About ShapePipe
 
+  about
   contributors
 
 .. toctree::
@@ -14,9 +15,6 @@
 
   dependencies
   installation
-  candide
-  canfar
-  ccin2p3
 
 .. toctree::
   :hidden:
@@ -25,6 +23,7 @@
 
   basic_execution
   configuration
+  testing
   pipeline_tutorial
 
 .. toctree::
@@ -40,6 +39,7 @@
    :titlesonly:
    :caption: API Documentation
 
+   understanding_api
    shapepipe
 
 .. toctree::
@@ -50,7 +50,6 @@
   contributing
   module_develop
   module_example
-  troubleshooting
 
 .. toctree::
   :hidden:

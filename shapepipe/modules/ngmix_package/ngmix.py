@@ -41,7 +41,7 @@ class Ngmix(object):
     f_wcs_path : str
         Path to merged single-exposure single-HDU headers
     w_log : logging.Logger
-        Log file
+        Logging instance
     id_obj_min : int, optional
         First galaxy ID to process, not used if the value is set to ``-1``;
         the default is ``-1``
@@ -180,7 +180,7 @@ class Ngmix(object):
         Parameters
         ----------
         results : dict
-            results of NGMIX metacal
+            Results of NGMIX metacal
 
         Returns
         -------
@@ -310,7 +310,7 @@ class Ngmix(object):
 
         Parameters
         ----------
-        dict
+        output_dict
             Dictionary containing the results
 
         """
@@ -796,6 +796,7 @@ def do_ngmix_metacal(
         'T_PSFo': 0.,
         'T_err_PSFo': 0.
     }
+    gal_guess = []
     gal_guess_flag = True
     wsum = 0
     for n_e in range(n_epoch):
