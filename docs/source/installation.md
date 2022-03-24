@@ -22,11 +22,21 @@ The ShapePipe package should first be cloned (or downloaded) from the
 [GitHub repository](https://github.com/CosmoStat/shapepipe).
 
 ```bash
-git clone git@github.com:CosmoStat/shapepipe.git
+git clone -b <VERSION> --depth 1 git@github.com:CosmoStat/shapepipe.git
 cd shapepipe
 ```
 
-Then the entire ShapePipe environment, including dependencies, can be built
+where `<VERSION>` is a
+[tagged release](https://github.com/CosmoStat/shapepipe/releases) of ShapePipe
+(e.g. `v1.0.0`). It is recommend to use the
+[latest release](https://github.com/CosmoStat/shapepipe/releases/latest)
+unless you want to reproduce an older set of results.
+
+```{note}
+Developers should simply clone the repository as usual.
+```
+
+Then, the entire ShapePipe environment, including dependencies, can be built
 using the `install_shapepipe` script as follows.
 
 ```bash
@@ -84,10 +94,10 @@ entire ShapePipe environment.
 ## Installing the ShapePipe Library Only
 
 ```{warning}
-Note, this method will not include any executable scripts or examples.
+Note, this method will not include any system executables or examples.
 ```
 
-The ShapePipe library, *i.e.* the core package not including module
+The ShapePipe library, i.e. the core package not including module
 dependencies, can be installed in the following ways.
 
 After cloning the repository.

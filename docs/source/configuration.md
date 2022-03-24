@@ -103,7 +103,8 @@ ShapePipe will look for files of the form `galaxy-00-0.fits`,
 `galaxy-00-1.fits`, etc. in the directory `/home/username/my_input_dir` and
 save outputs to `/home/username/my_output_dir`. Note that the `FILE_PATTERN`
 does not need to be complete, in other words files of the form
-`mygalaxy-00-0.fits` would equally be found with the above options.
+`mygalaxy-00-0.fits` would equally be found if `CORRECT_FILE_PATTERN = True`
+were added to the options above.
 
 Conversely, with the options
 
@@ -173,7 +174,7 @@ All ShapePipe modules accept the following options
 Additional module-specific options can be added using the following structure
 
 ```ini
-[MODULE_NAME]
+[MODULE_NAME_RUNNER]
 PARAMETER = PARAMETER VALUE
 ```
 
@@ -181,16 +182,31 @@ This mechanism can also be used to modify module decorator properties or append
 additional values to list properties as follows
 
 ```ini
-[MODULE_NAME]
+[MODULE_NAME_RUNNER]
 ADD_PARAMETER = PARAMETER VALUE
 ```
+
+### Multiple Module Runs
 
 If a given module is run more than once, run specific parameter values can be
 specified as follows
 
 ```ini
-[MODULE_NAME_RUN_X]
+[MODULE_NAME_RUNNER_RUN_X]
 PARAMETER = PARAMETER VALUE
 ```
 
-where ``X`` is an integer greater than or equal to ``1``.
+where ``X`` is an integer greater than or equal to ``1``. This feature can be combined with the ``INPUT_DIR`` options. For example, for module *B* to access the first of two runs of module *A* you could something like set up below.
+
+```ini
+
+[MODULE_A_RUNNER_RUN_1]
+...
+
+[MODULE_A_RUNNER_RUN_2]
+...
+
+[MODULE_B_RUNNER]
+INPUT_DIR = last:module_a_run_1
+
+```
