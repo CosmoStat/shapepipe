@@ -796,6 +796,7 @@ def do_ngmix_metacal(
         'T_PSFo': 0.,
         'T_err_PSFo': 0.
     }
+    gal_guess = []
     gal_guess_flag = True
     wsum = 0
     for n_e in range(n_epoch):

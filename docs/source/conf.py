@@ -19,13 +19,13 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'ShapePipe'
-copyright = '2018, Samuel Farrens'
-author = 'Samuel Farrens'
+copyright = '2022, CosmoStat'
+author = 'CosmoStat'
 
 # The short X.Y version
-version = '0.0'
+version = '1.0'
 # The full version, including alpha/beta/rc tags
-release = '0.0.4'
+release = '1.0.0'
 
 
 # -- General configuration ---------------------------------------------------

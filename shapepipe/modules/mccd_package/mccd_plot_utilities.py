@@ -158,7 +158,8 @@ def mean_shapes_plot(
     colorbar_ampl : float, optional
         Colour bar amplitude; default is ``1.0``
     wind : numpy.ndarray, optional
-        minimum and maximum values for color map; determined from ``ccd_maps`` if ``None`` (default)
+        minimum and maximum values for color map; determined from ``ccd_maps``
+        if ``None`` (default)
     cmap : str, optional
         Colour map; default is ``bwr``
 

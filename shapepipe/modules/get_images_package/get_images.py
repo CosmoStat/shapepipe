@@ -310,7 +310,7 @@ class GetImages(object):
 
             log_cmd = ' '.join(sys.argv)
             vcp = vosHandler('vcp')
-            print(log_cmd)
+            self._w_log.info(log_cmd)
 
             attempt = 0
             while attempt < self._n_try:

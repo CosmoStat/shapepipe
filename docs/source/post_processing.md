@@ -1,9 +1,16 @@
 # Post-processing
 
-This page shows all required steps of post-processing a `ShapePipe` run. Some details pertain specifically to
-runs carried out on [canfar](./canfar.md), but most are general.
+This page shows all required steps of post-processing the results from one or
+more `ShapePipe` runs. Post-processing combines various individual `ShapePipe`
+output files, and creates joint results, for example combining individual tile
+catalogues in a large sky area. The output of post-processing is a joint _shape
+catalogue_, containing all required information to create a calibrated shear
+catalogue via _metacalibration_), a joint star catalogue, and PSF diagnostic plots.
 
-1. Retrieve files with `ShapePipe` results
+Some of the following steps pertain specifically to runs carried out on [canfar](https://www.canfar.net/en),
+but most are general.
+
+1. Retrieve `ShapePipe` result files
 
    For a local run on the same machine as for post-processing, nothing needs to be done.
    In some cases, the run was carried out on a remote machine or cluster, and the resulting `ShapePipe`
@@ -50,7 +57,7 @@ runs carried out on [canfar](./canfar.md), but most are general.
       ```
       On success, `ShapePipe` output `fits` and `log` files will be now in various subdirs of the `output` directory.
 
-At this step all required `ShapePipe` resulting output files are available in `.`.
+At this step all required `ShapePipe` resulting output files are available in the current working directory.
 
 2. Optional: Split output in sub-samples
 
@@ -59,7 +66,7 @@ At this step all required `ShapePipe` resulting output files are available in `.
    the previous step. For example, to create the subdir `tiles_W3` with links to result files to `all` for
    those tiles contained in the list `tiles_W3.txt`, do:
    ```bash
-    $SP_ROOT/scripts/python/create_sample_results.py --input_IDs tiles_W3.txt -i . all -o tiles_W3 -v
+    create_sample_results --input_IDs tiles_W3.txt -i . all -o tiles_W3 -v
     ```
     The following steps will then be done in the directory `tiles_W3`.
 
@@ -69,20 +76,27 @@ At this step all required `ShapePipe` resulting output files are available in `.
    ```bash
    post_proc_sp -p PSF
    ```
-   to automatically perform a number of post-processing steps. Chose the PSF model with the option `-p psfex|mccd`. In detail, these are (and can also be
-   done individually
+   to automatically perform a number of post-processing steps. Chose the PSF model with the option
+   `-p psfex|mccd`. In detail, these are (and can also be done individually
    by hand):
    
    A. Analyse psf validation files
    
       ```bash
-      psf_residuals
+      psf_residuals -p PSF
       ```
       with options as for `post_proc_sp`.
       This script identifies all psf validation files (from all processed tiles downloaded to `pwd`), creates symbolic links,
       merges the catalogues, and creates plots of PSF ellipticity, size, and residuals over the focal plane.
 
-   B. Prepare output directory
+   B. Create plots of the PSF and their residuals in the focal plane, as a diagnostic of the overall PSF model.
+     As a scale-dependend test, which propagates directly to the shear correlation function, the rho statistics are computed,
+     see {cite:p}`rowe:10` and {cite:p}`jarvis:16`,
+      ```bash
+      shapepipe_run -c /path/to/shapepipe/example/cfis/config_MsPl_PSF.ini
+      ``` 
+
+   C. Prepare output directory
    
       Create links to all 'final_cat' result files with 
       ```bash
@@ -91,11 +105,13 @@ At this step all required `ShapePipe` resulting output files are available in `.
       The corresponding output directory that is created is `output/run_sp_combined/make_catalog_runner/output`.
       On success, it contains links to all `final_cat` output catalogues
 
-   C. Merge final output files
+   D. Merge final output files
    
-      Create a single main catalog:
+      Create a single main shape catalog:
       ```bash
       merge_final_cat -i <input_dir> -p <param_file> -v
       ```
-      Chose as input directory `input_dir` the output of step B. A default parameter file <param_file> is `/path/to/shapepipe/example/cfis/final_cat.param`. 
-      On success, the file `./final_cat.npy` is created. Depending on the number of input tiles, this file can be several tens of Gb large. 
+      Choose as input directory `input_dir` the output of step C. A default
+      parameter file `<param_file>` is `/path/to/shapepipe/example/cfis/final_cat.param`. 
+      On success, the file `./final_cat.npy` is created. Depending on the number of
+      input tiles, this file can be several tens of Gb large. 
