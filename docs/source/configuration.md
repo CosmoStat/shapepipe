@@ -207,6 +207,6 @@ where ``X`` is an integer greater than or equal to ``1``. This feature can be co
 ...
 
 [MODULE_B_RUNNER]
-INPUT_DIR = last:module_a_run_1
+INPUT_DIR = last:module_a_runner_run_1
 
 ```
