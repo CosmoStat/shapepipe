@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Module Development &#8212; ShapePipe v0.0</title>
+    <title>Module Development &#8212; ShapePipe v1.0</title>
     
   <link href="_static/css/theme.css" rel="stylesheet">
   <link href="_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -65,7 +65,7 @@
       
       
       
-      <h1 class="site-logo" id="site-title">ShapePipe v0.0</h1>
+      <h1 class="site-logo" id="site-title">ShapePipe v1.0</h1>
       
     </a>
 </div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
@@ -157,6 +157,11 @@
  </span>
 </p>
 <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="understanding_api.html">
+   Understanding the API Documentation
+  </a>
+ </li>
  <li class="toctree-l1 has-children">
   <a class="reference internal" href="shapepipe.html">
    shapepipe
@@ -771,6 +776,24 @@
         <!-- Table of contents -->
         <div class="d-none d-md-block col-md-2 bd-toc show noprint">
             
+            <div class="tocsection onthispage pt-5 pb-3">
+                <i class="fas fa-list"></i> Contents
+            </div>
+            <nav id="bd-toc-nav" aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#module-package">
+   Module Package
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#module-runner">
+   Module Runner
+  </a>
+ </li>
+</ul>
+
+            </nav>
         </div>
     </div>
 </div>
@@ -783,6 +806,24 @@
                 <div id="print-main-content">
                     <div id="jb-print-toc">
                         
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#module-package">
+   Module Package
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#module-runner">
+   Module Runner
+  </a>
+ </li>
+</ul>
+
+                        </nav>
                     </div>
                 </div>
             </div>
@@ -791,43 +832,123 @@
                 
   <div class="section" id="module-development">
 <h1>Module Development<a class="headerlink" href="#module-development" title="Permalink to this headline">¶</a></h1>
-<p>New modules can be implemented in the pipeline by simply writing a <em>module runner</em>.</p>
-<p>The basic requirement for a new module runner is a single function decorated with the <code class="docutils literal notranslate"><span class="pre">module_runner</span></code> wrapper that outputs the module <code class="docutils literal notranslate"><span class="pre">stdout</span></code> and <code class="docutils literal notranslate"><span class="pre">stderr</span></code>. <em>e.g.</em>:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@module_runner</span><span class="p">()</span>
-<span class="k">def</span> <span class="nf">example_module</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+<p>This page provides details on how new modules can be implemented in ShapePipe.</p>
+<div class="section" id="module-package">
+<h2>Module Package<a class="headerlink" href="#module-package" title="Permalink to this headline">¶</a></h2>
+<p>Every ShapePipe module requires a <em>module package</em>, which is simply a directory
+with the module name followed by <code class="docutils literal notranslate"><span class="pre">_package</span></code>, e.g. for a module called
+<code class="docutils literal notranslate"><span class="pre">my_new_module</span></code> you would create a new directory called <code class="docutils literal notranslate"><span class="pre">my_new_module_package</span></code>
+and put it in <code class="docutils literal notranslate"><span class="pre">shapepipe/modules</span></code>. Inside this directory you will need to
+include a Python file (ideally named after your module, e.g.
+<code class="docutils literal notranslate"><span class="pre">my_new_module.py</span></code>) and a <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> file with the following content.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;MY NEW MODULE PACKAGE.</span>
 
-<span class="c1"># DO SOMETHING</span>
+<span class="sd">This package contains the module for ``my_new_module``.</span>
 
-<span class="k">return</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span>
+<span class="sd">:Author:</span>
+
+<span class="sd">:Parent module:</span>
+
+<span class="sd">:Input:</span>
+
+<span class="sd">:Output:</span>
+
+<span class="sd">Description</span>
+<span class="sd">===========</span>
+
+
+<span class="sd">Module-specific config file entries</span>
+<span class="sd">===================================</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;my_new_module.py&#39;</span><span class="p">]</span>
 </pre></div>
+</div>
+<p>You should provide a description of what your module does, what the config file
+options are, the inputs and outputs, and any modules this module may depend on.</p>
+<p>The Python file (e.g. <code class="docutils literal notranslate"><span class="pre">my_new_module.py</span></code>) will contain all of the code for
+implementing the module operations.</p>
+</div>
+<div class="section" id="module-runner">
+<h2>Module Runner<a class="headerlink" href="#module-runner" title="Permalink to this headline">¶</a></h2>
+<p>In addition to the module package, new modules will also require a
+<em>module runner</em>.</p>
+<p>The basic requirement for a new module runner is a single function decorated
+with the <code class="docutils literal notranslate"><span class="pre">module_runner</span></code> wrapper that outputs the module <code class="docutils literal notranslate"><span class="pre">stdout</span></code> and
+<code class="docutils literal notranslate"><span class="pre">stderr</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shapepipe.modules.module_decorator</span> <span class="kn">import</span> <span class="n">module_runner</span>
+<span class="kn">from</span> <span class="nn">shapepipe.modules.module_name_package.module_name</span> <span class="kn">import</span> <span class="o">...</span>
+
+
+<span class="nd">@module_runner</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">example_module</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+
+    <span class="c1"># DO SOMETHING</span>
+
+    <span class="k">return</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span>
+</pre></div>
+</div>
+<p>In the specific case of a module that executes an executable available on the
+system, the module runner should also import the <code class="docutils literal notranslate"><span class="pre">execute</span></code> function.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shapepipe.modules.module_decorator</span> <span class="kn">import</span> <span class="n">module_runner</span>
+<span class="kn">from</span> <span class="nn">shapepipe.modules.module_name_package.module_name</span> <span class="kn">import</span> <span class="o">...</span>
+<span class="kn">from</span> <span class="nn">shapepipe.pipeline.execute</span> <span class="kn">import</span> <span class="n">execute</span>
+
+
+<span class="nd">@module_runner</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">example_module</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+
+    <span class="c1"># DO SOMETHING</span>
+    <span class="n">command_line</span> <span class="o">=</span> <span class="o">...</span>
+    <span class="c1"># Execute command line</span>
+    <span class="n">stderr</span><span class="p">,</span> <span class="n">stdout</span> <span class="o">=</span> <span class="n">execute</span><span class="p">(</span><span class="n">command_line</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If no <code class="docutils literal notranslate"><span class="pre">stdout</span></code> or <code class="docutils literal notranslate"><span class="pre">stderr</span></code> are provided by the given module, the the module
+runner should simply return <code class="docutils literal notranslate"><span class="pre">None,</span> <span class="pre">None</span></code>.</p>
 </div>
 <p>The module runner decorator takes the following keyword arguments:</p>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">version</span></code> : (<code class="docutils literal notranslate"><span class="pre">str</span></code>) The module version. Default value is <code class="docutils literal notranslate"><span class="pre">'0.0'</span></code>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">input_module</span></code> :  (<code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">list</span></code>) The name of a preceding module(s) whose output provide(s) the input to this module. Default value is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">file_pattern</span></code> : (<code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">list</span></code>) The input file pattern(s) to look for. Default value is <code class="docutils literal notranslate"><span class="pre">''</span></code>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">file_ext</span></code> : (<code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">list</span></code>) The input file extensions(s) to look for. Default value is <code class="docutils literal notranslate"><span class="pre">''</span></code>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">depends</span></code> : (<code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">list</span></code>) The Python package(s) the module depends on. Default value is <code class="docutils literal notranslate"><span class="pre">[]</span></code>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">executes</span></code> : (<code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">list</span></code>) The system executable(s) the module implements. Default value is <code class="docutils literal notranslate"><span class="pre">[]</span></code>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">numbering_scheme</span></code> : (<code class="docutils literal notranslate"><span class="pre">str</span></code>) The numbering scheme implemented by the module to find input files.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">run_method</span></code> : (<code class="docutils literal notranslate"><span class="pre">str</span></code>) The method by which the given module should be run. The options are <code class="docutils literal notranslate"><span class="pre">parallel</span></code> and <code class="docutils literal notranslate"><span class="pre">serial</span></code>. Default value is <code class="docutils literal notranslate"><span class="pre">parallel</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">input_module</span></code> :  (<code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">list</span></code>) The name of a preceding module(s)
+whose output provide(s) the input to this module.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">file_pattern</span></code> : (<code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">list</span></code>) The input file pattern(s) to look for.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">file_ext</span></code> : (<code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">list</span></code>) The input file extensions(s) to look for.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">depends</span></code> : (<code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">list</span></code>) The Python package(s) the module depends on.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">executes</span></code> : (<code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">list</span></code>) The system executable(s) the module
+implements.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">numbering_scheme</span></code> : (<code class="docutils literal notranslate"><span class="pre">str</span></code>) The numbering scheme implemented by the module
+to find input files.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">run_method</span></code> : (<code class="docutils literal notranslate"><span class="pre">str</span></code>) The method by which the given module should be run.
+The options are <code class="docutils literal notranslate"><span class="pre">parallel</span></code> and <code class="docutils literal notranslate"><span class="pre">serial</span></code>. Default value is <code class="docutils literal notranslate"><span class="pre">parallel</span></code>.</p></li>
 </ol>
 <p>The arguments passed to the module runner are the following:</p>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">input_file_list</span></code> : The list of input files.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">run_dirs</span></code> : The run directories for the module output files.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">file_number_string</span></code> : The number pattern corresponding to the current process.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">config</span></code> : The config parser instance, which provides access to the configuration file parameter values. Module specific parameters can be passed using the following structure:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">file_number_string</span></code> : The number pattern corresponding to the current
+process.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">config</span></code> : The config parser instance, which provides access to the
+configuration file parameter values. Module specific parameters can be
+passed using the following structure:</p></li>
 </ol>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span> <span class="n">parameter_value</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">module_config_sec</span><span class="p">,</span> <span class="s1">&#39;PARAMETER&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <ol class="arabic simple" start="5">
-<li><p><code class="docutils literal notranslate"><span class="pre">module_config_sec</span></code> : The name of the configuration file section for the current module.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">w_log</span></code> : The worker log instance, which can be used to record additional messages in the module output logs using the following structure:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">module_config_sec</span></code> : The name of the configuration file section for the
+current module.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">w_log</span></code> : The worker log instance, which can be used to record additional
+messages in the module output logs using the following structure:</p></li>
 </ol>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;MESSAGE&#39;</span><span class="p">)</span>
 </pre></div>
+</div>
 </div>
 </div>
 
@@ -858,10 +979,10 @@
     <footer class="footer">
   <p>
     
-      By Samuel Farrens<br/>
+      By CosmoStat<br/>
     
-        &copy; Copyright 2018, Samuel Farrens.<br/>
-      Last updated on 14 Mar, 2022.<br/>
+        &copy; Copyright 2022, CosmoStat.<br/>
+      Last updated on 01 Apr, 2022.<br/>
   </p>
 </footer>
 </main>

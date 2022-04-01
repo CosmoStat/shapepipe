@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Configuration &#8212; ShapePipe v0.0</title>
+    <title>Configuration &#8212; ShapePipe v1.0</title>
     
   <link href="_static/css/theme.css" rel="stylesheet">
   <link href="_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -65,7 +65,7 @@
       
       
       
-      <h1 class="site-logo" id="site-title">ShapePipe v0.0</h1>
+      <h1 class="site-logo" id="site-title">ShapePipe v1.0</h1>
       
     </a>
 </div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
@@ -157,6 +157,11 @@
  </span>
 </p>
 <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="understanding_api.html">
+   Understanding the API Documentation
+  </a>
+ </li>
  <li class="toctree-l1 has-children">
   <a class="reference internal" href="shapepipe.html">
    shapepipe
@@ -816,6 +821,11 @@
      Module-Specific Options
     </a>
    </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#multiple-module-runs">
+     Multiple Module Runs
+    </a>
+   </li>
   </ul>
  </li>
 </ul>
@@ -876,6 +886,11 @@
    <li class="toc-h3 nav-item toc-entry">
     <a class="reference internal nav-link" href="#module-specific-options">
      Module-Specific Options
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#multiple-module-runs">
+     Multiple Module Runs
     </a>
    </li>
   </ul>
@@ -990,7 +1005,8 @@ patterns. Default value is <code class="docutils literal notranslate"><span clas
 <code class="docutils literal notranslate"><span class="pre">galaxy-00-1.fits</span></code>, etc. in the directory <code class="docutils literal notranslate"><span class="pre">/home/username/my_input_dir</span></code> and
 save outputs to <code class="docutils literal notranslate"><span class="pre">/home/username/my_output_dir</span></code>. Note that the <code class="docutils literal notranslate"><span class="pre">FILE_PATTERN</span></code>
 does not need to be complete, in other words files of the form
-<code class="docutils literal notranslate"><span class="pre">mygalaxy-00-0.fits</span></code> would equally be found with the above options.</p>
+<code class="docutils literal notranslate"><span class="pre">mygalaxy-00-0.fits</span></code> would equally be found if <code class="docutils literal notranslate"><span class="pre">CORRECT_FILE_PATTERN</span> <span class="pre">=</span> <span class="pre">True</span></code>
+were added to the options above.</p>
 <p>Conversely, with the options</p>
 <div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[JOB]</span><span class="w"></span>
 <span class="na">INPUT_DIR</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">last:psfex_runner</span><span class="w"></span>
@@ -1055,23 +1071,36 @@ executables defined in the module runner.</p></li>
 <div class="section" id="module-specific-options">
 <h3>Module-Specific Options<a class="headerlink" href="#module-specific-options" title="Permalink to this headline">¶</a></h3>
 <p>Additional module-specific options can be added using the following structure</p>
-<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[MODULE_NAME]</span><span class="w"></span>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[MODULE_NAME_RUNNER]</span><span class="w"></span>
 <span class="na">PARAMETER</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">PARAMETER VALUE</span><span class="w"></span>
 </pre></div>
 </div>
 <p>This mechanism can also be used to modify module decorator properties or append
 additional values to list properties as follows</p>
-<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[MODULE_NAME]</span><span class="w"></span>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[MODULE_NAME_RUNNER]</span><span class="w"></span>
 <span class="na">ADD_PARAMETER</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">PARAMETER VALUE</span><span class="w"></span>
 </pre></div>
 </div>
+</div>
+<div class="section" id="multiple-module-runs">
+<h3>Multiple Module Runs<a class="headerlink" href="#multiple-module-runs" title="Permalink to this headline">¶</a></h3>
 <p>If a given module is run more than once, run specific parameter values can be
 specified as follows</p>
-<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[MODULE_NAME_RUN_X]</span><span class="w"></span>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[MODULE_NAME_RUNNER_RUN_X]</span><span class="w"></span>
 <span class="na">PARAMETER</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">PARAMETER VALUE</span><span class="w"></span>
 </pre></div>
 </div>
-<p>where <code class="docutils literal notranslate"><span class="pre">X</span></code> is an integer greater than or equal to <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p>
+<p>where <code class="docutils literal notranslate"><span class="pre">X</span></code> is an integer greater than or equal to <code class="docutils literal notranslate"><span class="pre">1</span></code>. This feature can be combined with the <code class="docutils literal notranslate"><span class="pre">INPUT_DIR</span></code> options. For example, for module <em>B</em> to access the first of two runs of module <em>A</em> you could something like set up below.</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[MODULE_A_RUNNER_RUN_1]</span><span class="w"></span>
+<span class="na">...</span><span class="w"></span>
+
+<span class="k">[MODULE_A_RUNNER_RUN_2]</span><span class="w"></span>
+<span class="na">...</span><span class="w"></span>
+
+<span class="k">[MODULE_B_RUNNER]</span><span class="w"></span>
+<span class="na">INPUT_DIR</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">last:module_a_runner_run_1</span><span class="w"></span>
+</pre></div>
+</div>
 </div>
 </div>
 </div>
@@ -1103,10 +1132,10 @@ specified as follows</p>
     <footer class="footer">
   <p>
     
-      By Samuel Farrens<br/>
+      By CosmoStat<br/>
     
-        &copy; Copyright 2018, Samuel Farrens.<br/>
-      Last updated on 14 Mar, 2022.<br/>
+        &copy; Copyright 2022, CosmoStat.<br/>
+      Last updated on 01 Apr, 2022.<br/>
   </p>
 </footer>
 </main>

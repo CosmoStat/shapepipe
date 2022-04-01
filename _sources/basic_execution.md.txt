@@ -9,6 +9,10 @@ option:
 shapepipe_run --help
 ```
 
+```{warning}
+The `shapepipe` environment will need to be built and activated in order to run this script (see [Installation](installation.md)).
+```
+
 The options for defining a pipeline are managed via a
 [configuration file](configuration.md).
 
