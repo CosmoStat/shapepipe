@@ -51,7 +51,7 @@ API docs by clicking the corresponding `[docs]` button.
 
 ## ShapePipe Module Docs
 
-In addition to the stand API docs, we provide a description of each ShapePipe
+In addition to the standard API docs, we provide a description of each ShapePipe
 module defined in the `__init__.py` file for each module package. On these
 pages you will find a header that specifies the package author, the
 `Parent module` (i.e. a module that should be run before the module in

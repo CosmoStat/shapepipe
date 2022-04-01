@@ -1,9 +1,0 @@
-* JOBID: 16561.cmaster
-* USER: guinot
-* GROUP: guinot
-* JOBNAME: shapepipe_smp_galsim_shapes
-* SESSIONID: 192901
-* RESOURCESLIST: neednodes=n08:ppn=48,nodes=n08:ppn=48,walltime=100:00:00
-* RESOURCESUSED: cput=00:01:19,mem=445700kb,vmem=3183056kb,walltime=00:01:18
-* QUEUE: batchl
-* JOB EXIT STATUS: 271
