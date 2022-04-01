@@ -1,18 +1,22 @@
 ShapePipe
 =========
 
-|CI| |python38|
+|CI| |CD| |python39| |release|
 
 .. |CI| image:: https://github.com/CosmoStat/shapepipe/workflows/CI/badge.svg
   :target: https://github.com/CosmoStat/shapepipe/actions?query=workflow%3ACI
 
-.. |python38| image:: https://img.shields.io/badge/python-3.8-green.svg
-  :target: https://www.python.org/
+.. |CD| image:: https://github.com/CosmoStat/shapepipe/actions/workflows/pages/pages-build-deployment/badge.svg
+  :target: https://github.com/CosmoStat/shapepipe/actions/workflows/pages/pages-build-deployment
 
-:Version: 0.0.4
+.. |python39| image:: https://img.shields.io/badge/python-3.9-green.svg
+  :target: https://www.python.org/‰
+
+.. |release| image:: https://img.shields.io/github/v/release/CosmoStat/shapepipe
+  :target: https://github.com/CosmoStat/shapepipe/releases/latest
 
 ShapePipe is a galaxy shape measurement pipeline developed within the
 CosmoStat lab at CEA Paris-Saclay.
 
-See the [documentation](https://cosmostat.github.io/shapepipe) for details
+See the `documentation <https://cosmostat.github.io/shapepipe>`_ for details
 on how to install and run ShapePipe.

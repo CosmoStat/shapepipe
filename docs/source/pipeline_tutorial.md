@@ -73,20 +73,20 @@ Naming and numbering of the input files can closely follow the original image na
   files with user-defined summary statistics for each CCD, for example the number of selected stars, or mean and standard deviation of their FWHM.  
   Example: `star_stat-2366993-18.txt`
 
-- Tile ID list
+- Tile ID list  
   ASCII file with a tile number on each line. Used for the `get_image_runner` module to download CFIS images (see [Download tiles](#download-tiles)).
 
-  - Single-exposure name list
-    ASCII file with a single-exposure name on each line. Produced by the `find_exposure_runner` module to identify single exposures that were used to create
-    a given tile. See [Find exposures](#find-exposures)).
+- Single-exposure name list  
+  ASCII file with a single-exposure name on each line. Produced by the `find_exposure_runner` module to identify single exposures that were used to create
+  a given tile. See [Find exposures](#find-exposures)).
 
-- Plots
+- Plots  
   The `SETools` module can also produce plots of the objects properties that were selected for a given CCD.
   The type of plot (histogram, scatter plot, ...) and quantities to plot as well as plot decorations can be specified in the
   selection criteria config file (see [Select stars](#select-stars)).
   Example: `hist_mag_stars-2104133-5.png`
 
-- Log files
+- Log files  
   The pipeline core and all called modules write ASCII log files to disk.  
   Examples: `process-2366993-6.log`, `log_sp_exp.log`.
 
@@ -125,7 +125,7 @@ job_sp -h
 ```
 for all options.
 
-This script created the subdirectory `$SP_RUN/output` to store all pipeline outputs
+This script creates the subdirectory `$SP_RUN/output` to store all pipeline outputs
 (log files, diagnostics, statistics, output images, catalogues, single-exposure headers with WCS information).
 
 Optionally, the subdir `output_star_cat` is created by the used to store the external star catalogues for masking. This is only necessary if the pipeline is run on a cluster without internet connection to access star catalogues. In that case, the star catalogues need to be retrieved outside the pipeline, for example on a login node, and copied to `output_star_cat`.
@@ -173,6 +173,9 @@ For the retrieval method the user can choose betwen
 
 Note that internet access is required for this step if the download method is `vos`.
 
+An output directory `run_sp_GitFeGie` (in `output`) is created containing the results of `get_images` for tiles (`Git`),
+`find_exposures` (`Fe`), and `get_images` for exposures (`Gie`).
+
 ## Prepare input images
 
 With
@@ -182,6 +185,9 @@ job_sp TILE_ID -j 2
 the compressed tile weight image is uncompressed via the `uncompress_fits` module. Then, the single-exposure images, weight, and flags are split into single-exposure single-CCD file
 (one FITS file per CCD) with `split_exp`.
 Finally, the headers of all single-exposure single-CCD files are merged into a single `sqlite` file, to store the WCS information of the input exposures.
+
+Two output directories are created, `run_sp_Uz` for `uncompress_fits`, and `run_sp_exp_SpMh` for the output of the modules
+`split_exp` (`Sp`) and `merge_headers` (`Mh`).
 
 ## Mask images
 
@@ -193,14 +199,17 @@ to mask tile and single-exposure single-CCD images. Both tasks are performed by 
 
 Note that internet access is required for this step, since a reference star catalogue is downloaded.
 
+The output of both masking runs are stored in the output directory `run_sp_MaMa`, with run 1 (2) of
+`mask` corresponding to tiles (exposures).
+
 **Diagnostics:** Open a single-exposure single-CCD image and the corresponding pipeline flag
 in `ds9`, and display both frames next to each other. Example
 ```bash
-ds9 output/shapepipe_run_2020-03-03_15-31-00/split_exp_runner/output/image-2113737-10.fits output/shapepipe_run_2020-03-03_17-29-34/mask_runner/output/pipeline_flag-2113737-10.fits
+ds9 image-2113737-10.fits pipeline_flag-2113737-10.fits
 ```
 Choose `zoom fit` for both frames, click `scale zscale` for the image, and `color aips0` for the flag, to display something like this:
 
-<img width="250" src="diag_mask.png">
+<img width="250" src="./images/diag_mask.png">
 
 By eye the correspondence between the different flag types and the image can be
 seen. Note that the two frames might not match perfectly, since (a) WCS
@@ -223,21 +232,25 @@ Next, the following tasks are run on the single-exposure single-CCD images:
   via a call to `psfex_interp`. For MCCD, the modules `merge_starcat`, `mccd_plots`, and
   `mccd_interp` are called.
 
+The output directory for both the `mccd` and `psfex` options is `run_sp_tile_Sx_exp_SxSePsf`.
+This stores the output of SExtractor on the tiles (`tile_Sx`), on the exposures (`exp_Sx`),
+`setools` (`Se`), and the Psf model (`Psf`).  
+
 The following plots show an example of a single CCD, in the center of the focal plane.
 
 | Size-magnitude plot | Star magnitude histogram | Stars in CCD (mag) | Stars in CCD (size) |
 | --- | --- | --- | --- |
-| <img width="250" src="size_mag-2113737-10.png" title="Size-magnitude plot with star selection"> | <img width="250" src="hist_mag_stars-2113737-10.png" title="Magnitude histogram of selected stars"> | <img width="250" src="mag_star_field-2113737-10.png" title="Magnitude distribution in CCD"> | <img width="250" src="fwhm_field-2113737-10.png" title="Size distribution in CCD"> |
+| <img width="250" src="./images/size_mag-2113737-10.png" title="Size-magnitude plot with star selection"> | <img width="250" src="./images/hist_mag_stars-2113737-10.png" title="Magnitude histogram of selected stars"> | <img width="250" src="./images/mag_star_field-2113737-10.png" title="Magnitude distribution in CCD"> | <img width="250" src="./images/fwhm_field-2113737-10.png" title="Size distribution in CCD"> |
 | The stellar locus is well-defined | Magnitude distribution looks reasonable | Stars are relatively homogeneously distributed over the CCD | The uniform and small seeing of CFHT is evident |
 
 To contrast the last plot, here is the case of the CCD in the lower right corner, which shows a known (but yet unexplained) lack of stars
 in the lower parts:
 
-<img width="250" src="fwhm_field-2113737-35.png" title="Size distribution in CCD">
+<img width="250" src="./images/fwhm_field-2113737-35.png" title="Size distribution in CCD">
 
 The statistics output file for the center CCD #10:
 ```bash
-(shapepipe)  dap ~/ShapePipeRun $ cat output/shapepipe_run_2020-03-05_10-00-26/setools_runner/output/stat/star_stat-2113737-10.txt
+cat star_stat-2113737-10.txt
 # Statistics
 Nb objects full cat = 1267
 Nb stars = 160
@@ -260,7 +273,7 @@ to create histograms (as `.txt` tables and `.png` plots) in the directory `stats
 
 | Non-masked objects per CCD | Stars per CCD | FWHM mode |
 | --- | --- | --- |
-| <img width="250" src="1_nb_nonmasked.png" title="Number of non-masked objects per CCD"> | <img width="250" src="2_nb_stars.png" title="Number stars per CCD"> | <img width="250" src="5_mode_fhwm_star.png" title="FWHM mode"> |
+| <img width="250" src="./images/1_nb_nonmasked.png" title="Number of non-masked objects per CCD"> | <img width="250" src="./images/2_nb_stars.png" title="Number stars per CCD"> | <img width="250" src="./images/5_mode_fhwm_star.png" title="FWHM mode"> |
 | No CCD with a very large masked area | No CCD with insufficient stars | Rather broad seeing distribution |
 
 Note that `stats_global` read all `SETool` output stats files found in a given input directory tree. It can thus produce histogram combining
@@ -281,6 +294,13 @@ is computed by the `spread_model` module. Finally, postage stamps
 around galaxies of single-exposure data is extracted with another call
 to `vignetmaker`.
 
+The output directory is
+- `run_sp_MiViSmVi` if the PSF model is `mccd`;
+- `run_sp_tile_PsViSmVi` for the `PSFEx` PSF model.
+
+This corresponds to the MCCD/PSFex interpolation (`Mi`/`Pi`), `vignetmaker` (`Vi`), `spread_model` (`Sm`), and the
+second call to `vignetmaker` (`Vi`).
+
 
 ## Shape measurement
 
@@ -291,16 +311,26 @@ job_sp TILE_ID -j 32
 computes galaxy shapes using the multi-epoch model-fitting method `ngmix`. At the same time,
 shapes of artifically sheared galaxies are obtained for metacalibration.
 
+Shape measurement is performed in parallel for each tile, the number of processes can be specified
+by the user with the option `--nsh_jobs NJOB`. This creates `NJOB` output directories `run_sp_tile_ngmix_Ng<X>u`.
+with `X` = 1 ... `NJOB` containing the result of `ngmix`.
+
 
 ## Paste catalogues
 
-The last real processing step,
+The last real processing step is
 ```bash
 job_sp TILE_ID -j 64
 ```
-which pastes previously obtained information into a _final_ shape catalogue via `make_cat`.
-This includes galaxy detection and basic measurement parameters, the PSF model at
+This task first merges the `NJOB` parallel `ngmix` output files from the previous step into
+one output file. Then, previously obtained information are pasted into a _final_ shape catalogue via `make_cat`.
+Included are galaxy detection and basic measurement parameters, the PSF model at
 galaxy positions, the spread-model classification, and the shape measurement.
+
+Two output directories are created. 
+The first one is `run_sp_Ms` for the `merge_sep` run.
+The second is `run_sp_Mc` for the `make_cat` task; the name is the same for both the `MCCD` and `PSFEx` PSF model.
+
 
 ## Upload results
 
@@ -308,3 +338,4 @@ Optionally, after the pipeline is finished, results can be uploaded to VOspace v
 ```bash
 job_sp TILE_ID -j 128
 ```
+

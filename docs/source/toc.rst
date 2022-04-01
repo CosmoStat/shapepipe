@@ -39,6 +39,7 @@
    :titlesonly:
    :caption: API Documentation
 
+   understanding_api
    shapepipe
 
 .. toctree::
