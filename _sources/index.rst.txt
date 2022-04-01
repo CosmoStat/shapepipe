@@ -26,7 +26,7 @@ cite :cite:`guinot:21` and Farrens et al. (in prep).
   <a href="https://github.com/CosmoStat/shapepipe/issues/new/choose"
   target="_blank">open an issue</a>
 
-.. |CS_LOGO| image:: images/cosmostat_logo.jpg
+.. |CS_LOGO| image:: img/cosmostat_logo.jpg
   :width: 45%
   :alt: CosmoStat Logo
   :target: http://www.cosmostat.org/
