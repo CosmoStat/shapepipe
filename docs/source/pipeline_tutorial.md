@@ -98,7 +98,7 @@ processing of tile images, creation and upload (optional) of _final_ shape catal
 
 The following flowchart visualised the processing parts and steps.
 
-![ShapePipe_FlowChart](./images/ShapePipe_v0.0.1.png)
+![ShapePipe_FlowChart](img/ShapePipe_v0.0.1.png)
 
 Below, the individual processing steps are described in detail.
 
@@ -209,7 +209,7 @@ ds9 image-2113737-10.fits pipeline_flag-2113737-10.fits
 ```
 Choose `zoom fit` for both frames, click `scale zscale` for the image, and `color aips0` for the flag, to display something like this:
 
-<img width="250" src="./images/diag_mask.png">
+<img width="250" src="img/diag_mask.png">
 
 By eye the correspondence between the different flag types and the image can be
 seen. Note that the two frames might not match perfectly, since (a) WCS
@@ -240,13 +240,13 @@ The following plots show an example of a single CCD, in the center of the focal 
 
 | Size-magnitude plot | Star magnitude histogram | Stars in CCD (mag) | Stars in CCD (size) |
 | --- | --- | --- | --- |
-| <img width="250" src="./images/size_mag-2113737-10.png" title="Size-magnitude plot with star selection"> | <img width="250" src="./images/hist_mag_stars-2113737-10.png" title="Magnitude histogram of selected stars"> | <img width="250" src="./images/mag_star_field-2113737-10.png" title="Magnitude distribution in CCD"> | <img width="250" src="./images/fwhm_field-2113737-10.png" title="Size distribution in CCD"> |
+| <img width="250" src="img/size_mag-2113737-10.png" title="Size-magnitude plot with star selection"> | <img width="250" src="img/hist_mag_stars-2113737-10.png" title="Magnitude histogram of selected stars"> | <img width="250" src="img/mag_star_field-2113737-10.png" title="Magnitude distribution in CCD"> | <img width="250" src="img/fwhm_field-2113737-10.png" title="Size distribution in CCD"> |
 | The stellar locus is well-defined | Magnitude distribution looks reasonable | Stars are relatively homogeneously distributed over the CCD | The uniform and small seeing of CFHT is evident |
 
 To contrast the last plot, here is the case of the CCD in the lower right corner, which shows a known (but yet unexplained) lack of stars
 in the lower parts:
 
-<img width="250" src="./images/fwhm_field-2113737-35.png" title="Size distribution in CCD">
+<img width="250" src="img/fwhm_field-2113737-35.png" title="Size distribution in CCD">
 
 The statistics output file for the center CCD #10:
 ```bash
@@ -273,7 +273,7 @@ to create histograms (as `.txt` tables and `.png` plots) in the directory `stats
 
 | Non-masked objects per CCD | Stars per CCD | FWHM mode |
 | --- | --- | --- |
-| <img width="250" src="./images/1_nb_nonmasked.png" title="Number of non-masked objects per CCD"> | <img width="250" src="./images/2_nb_stars.png" title="Number stars per CCD"> | <img width="250" src="./images/5_mode_fhwm_star.png" title="FWHM mode"> |
+| <img width="250" src="img/1_nb_nonmasked.png" title="Number of non-masked objects per CCD"> | <img width="250" src="img/2_nb_stars.png" title="Number stars per CCD"> | <img width="250" src="img/5_mode_fhwm_star.png" title="FWHM mode"> |
 | No CCD with a very large masked area | No CCD with insufficient stars | Rather broad seeing distribution |
 
 Note that `stats_global` read all `SETool` output stats files found in a given input directory tree. It can thus produce histogram combining
@@ -327,7 +327,7 @@ one output file. Then, previously obtained information are pasted into a _final_
 Included are galaxy detection and basic measurement parameters, the PSF model at
 galaxy positions, the spread-model classification, and the shape measurement.
 
-Two output directories are created. 
+Two output directories are created.
 The first one is `run_sp_Ms` for the `merge_sep` run.
 The second is `run_sp_Mc` for the `make_cat` task; the name is the same for both the `MCCD` and `PSFEx` PSF model.
 
@@ -338,4 +338,3 @@ Optionally, after the pipeline is finished, results can be uploaded to VOspace v
 ```bash
 job_sp TILE_ID -j 128
 ```
-

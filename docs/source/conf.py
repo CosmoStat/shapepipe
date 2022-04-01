@@ -92,6 +92,9 @@ pygments_style = 'default'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
+# -- Options for Markdown files ----------------------------------------------
+
+myst_enable_extensions = ['html_image']
 
 # -- Options for HTML output -------------------------------------------------
 
