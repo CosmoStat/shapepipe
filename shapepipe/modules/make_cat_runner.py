@@ -8,7 +8,6 @@ Module runner for ``make_cat``.
 
 from shapepipe.modules.make_cat_package import make_cat
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.utilities.cfis import remove_common_elements
 
 
 @module_runner(
@@ -76,12 +75,6 @@ def make_cat_runner(
     else:
         save_psf = False
 
-    # Fetch path to tiles
-    if config.has_option(module_config_sec, 'TILE_LIST'):
-        tile_list_path = config.getexpanded(module_config_sec, 'TILE_LIST')
-    else:
-        tile_list_path = None
-
     # Set final output file
     final_cat_file = make_cat.prepare_final_cat_file(
         run_dirs['output'],
@@ -101,11 +94,6 @@ def make_cat_runner(
         star_thresh,
         gal_thresh,
     )
-
-    # Flag overlapping objects
-    if tile_list_path:
-        w_log.info('Flag overlapping objects')
-        remove_common_elements(final_cat_file, tile_list_path)
 
     # Save shape data
     sc_inst = make_cat.SaveCatalogue(final_cat_file)

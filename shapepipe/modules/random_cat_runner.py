@@ -43,12 +43,6 @@ def random_cat_runner(
     else:
         density = False
 
-    # Path to all tile ID, for overlap flagging
-    if config.has_option(module_config_sec, 'TILE_LIST'):
-        tile_list_path = config.getexpanded(module_config_sec, 'TILE_LIST')
-    else:
-        tile_list_path = None
-
     # Create rand cat class instance
     rand_cat_inst = RandomCat(
         input_image_name,
@@ -56,8 +50,7 @@ def random_cat_runner(
         output_path,
         n_rand,
         density,
-        w_log,
-        tile_list_path=tile_list_path
+        w_log
     )
 
     # Run processing
