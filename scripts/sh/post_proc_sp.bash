@@ -79,7 +79,7 @@ shapepipe_run -c $SP_CONFIG/config_MsPl_$psf.ini
 # Galaxies
 
 ## Prepare output directory with links to all 'final_cat' result files
-prepare_tiles_for_final
+combine_run_results
 
 ## Merge final output files to single mother catalog
 input_final=output/run_sp_combined/make_catalog_runner/output

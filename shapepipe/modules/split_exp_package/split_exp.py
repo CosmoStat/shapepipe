@@ -100,29 +100,50 @@ class SplitExposures(object):
             Save WCS information if ``True``
 
         """
+        # Initialise array to store headers of all HDUs
         header_file = np.zeros(self._n_hdu, dtype='O')
 
+        hdu_list = fits.open(exp_path)
+
+        # Check completeness of HDUs
+        if len(hdu_list) <= self._n_hdu:
+            raise TypeError(
+                f'Only {len(hdu_list)} out of requested {self._n_hdu} HDUs '
+                + f'found in image {exp_path}. File might be corrupt or not '
+                'completely downloaded.'
+            )
+
+        # Loop over HDUs = CCDs
         for idx in range(1, self._n_hdu + 1):
 
-            h = fits.getheader(exp_path, idx)
+            # Get HDU header
+            h = hdu_list[idx].header
+
+            # Transform between astrometry systems if requested
             if transf_coord:
                 stp.pv_to_sip(h)
 
-            d = fits.getdata(exp_path, idx)
+            # Get CCD image data
+            d = hdu_list[idx].data
+
+            # Transform (bool) to int type if requested
             if transf_int:
                 d = d.astype(np.int16)
 
+            # Set output file name
             file_name = (
                 f'{self._output_dir}/{output_suffix}'
                 + f'{self._file_number_string}-{str(idx-1)}.fits'
             )
 
+            # Write HDU to output file
             new_file = file_io.FITSCatalogue(
                 file_name,
                 open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
             )
             new_file.save_as_fits(data=d, image=True, image_header=h)
 
+            # Save header to array if requested
             if save_header:
                 try:
                     w = WCS(h)
@@ -131,6 +152,7 @@ class SplitExposures(object):
                     raise
                 header_file[idx - 1] = {'WCS': w, 'header': h.tostring()}
 
+        # Save header array if requested
         if save_header:
             file_name = (
                 f'{self._output_dir}/headers{self._file_number_string}.npy'

@@ -23,6 +23,14 @@ For (1) the standard config entries ``FILE_PATTERN``, ``FILE_EXT``,
 ``NUMBERING_SCHEME`` are used. For (2), additional config entries are to be
 specified, see below.
 
+For the retrieval of images in ``vos`` mode, failure and incomplete download
+is not uncommon. In that case, use the config entry ``CHECK_EXISTING_DIR``
+to prevent multiple downloads of the same image, see below.
+
+To combine the results of multiple calls to this module, use the
+script ``combine_run_results``. This script also updates the pipeline
+run log file to allow for consistent use of subsequent module calls.
+
 Module-specific config file entries
 ===================================
 
