@@ -37,9 +37,6 @@ class RandomCat():
         ``n_rand`` is interpreted per square degrees if ``True``
     w_log : logging.Logger
         Logging instance
-    tile_list_path : str, optional
-        List to all tile IDs, to remove objects in
-        overlapping tile areas
 
     """
 
@@ -51,7 +48,6 @@ class RandomCat():
         n_rand,
         density,
         w_log,
-        tile_list_path=None,
     ):
 
         self._input_image_path = input_image_path
@@ -60,7 +56,6 @@ class RandomCat():
         self._n_rand = n_rand
         self._density = density
         self._w_log = w_log
-        self._tile_list_path = tile_list_path
 
     def process(self):
         """Process.
@@ -183,35 +178,9 @@ class RandomCat():
         )
         output.save_as_fits(cat_out, names=column_names)
 
-        # Remove overlapping regions
-        if n_unmasked > 0 and self._tile_list_path:
-            self._w_log.info('Flag overlapping objects')
-            ratio_non_overl_tot = cfis.remove_common_elements(
-                output,
-                self._tile_list_path,
-                pos_param=['RA', 'DEC']
-            )
-        else:
-            ratio_non_overl_tot = 1
-
-        # Compute area without overlapping regions (approximation)
-        area_deg2_non_overl = area_deg2 * ratio_non_overl_tot
-        area_deg2_eff_non_overl = area_deg2_eff * ratio_non_overl_tot
-
         # Write area information to log file
         self._w_log.info(f'Total area = {area_deg2:.4f} deg^2')
         self._w_log.info(f'Unmasked area = {area_deg2_eff:.4f} deg^2')
         self._w_log.info(
             f'Ratio masked to total pixels = {n_unmasked / n_pix:.3f}'
-        )
-
-        self._w_log.info(
-            f'Total area without overlap = {area_deg2_non_overl:.4f} deg^2'
-        )
-        self._w_log.info(
-            'Unmaskewd area without overlap = '
-            + f'{area_deg2_eff_non_overl:.4f} deg^2'
-        )
-        self._w_log.info(
-            f'Ratio of non-overlap to total area = {ratio_non_overl_tot:.3f}'
         )
