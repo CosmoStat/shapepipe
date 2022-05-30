@@ -103,7 +103,7 @@ def parse_options(p_def):
         dest='tile_ID_list_path',
         type='string',
         default=None,
-        help=f'tile ID list, default: Use all data in input files\''
+        help=f'tile ID list, default: Use all data in input files'
     )
 
     # Control
