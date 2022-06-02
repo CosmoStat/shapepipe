@@ -76,10 +76,6 @@ NGMIX_FLUX_ERR_2M
 NGMIX_FLUX_ERR_2P
 NGMIX_FLUX_ERR_NOSHEAR
 
-# Flag for multiple objects due to overlapping
-# tiles
-FLAG_TILING
-
 # magnitude, mainly for plots
 MAG_AUTO
 
