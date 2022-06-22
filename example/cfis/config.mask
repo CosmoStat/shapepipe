@@ -56,6 +56,17 @@ MESSIER_SIZE_PLUS = 0.
 MESSIER_FLAG_VALUE = 16
 
 
+## NGC mask
+[NGC_PARAMETERS]
+
+NGC_MAKE = True
+
+NGC_CAT_PATH = $SP_CONFIG/mask_default/ngc_cat.npy
+NGC_SIZE_PLUS = 0.
+NGC_FLAG_VALUE = 32
+
+
+
 # -------------------------- Missing data parameters ------------------------------
 [MD_PARAMETERS]
 

@@ -30,12 +30,15 @@ class Mask(object):
         Path to image (FITS format)
     weight_path : str
         Path to the weight image (FITS format)
+    image_prefix : str
     config_filepath : str
         Path to the ``.mask`` config file
     output_dir : str
         Path to the output directory
     hdu : int, optional
         HDU number, default is ``0``
+    w_log : logging.Logger
+        Log file
 
     """
 
@@ -47,6 +50,7 @@ class Mask(object):
         image_num,
         config_filepath,
         output_dir,
+        w_log,
         path_external_flag=None,
         outname_base='flag',
         star_cat_path=None,
@@ -309,13 +313,23 @@ class Mask(object):
 
         if not self._err:
             if self._config['MESSIER']['make']:
-                messier_mask = self.mask_messier(
+                messier_mask = self.mask_dso(
                     self._config['MESSIER']['cat_path'],
                     size_plus=self._config['MESSIER']['size_plus'],
                     flag_value=self._config['MESSIER']['flag'],
                 )
             else:
                 messier_mask = None
+
+        if not self._err:
+            if self._config['NGC']['make']:
+                ngc_mask = self.mask_dso(
+                    self._config['NGC']['cat_path'],
+                    size_plus=self._config['NGC']['size_plus'],
+                    flag_value=self._config['NGC']['flag'],
+                )
+            else:
+                ngc_mask = None
 
         if not self._err:
             try:
@@ -486,15 +500,16 @@ class Mask(object):
 
         return flag
 
-    def mask_messier(self, cat_path, size_plus=0.1, flag_value=8):
-        """Mask Messier.
+    def mask_dso(self, cat_path, size_plus=0.1, flag_value=8):
+        """Mask DSO.
 
-        Create a circular patch for Messier objects.
+        Create a circular patch for deep-sky objects (DSOs), e.g.
+        Messier or NGC objects.
 
         Parameters
         ----------
         cat_path : str
-            Path to the Messier catalogue
+            Path to the deep-sky catalogue
         size_plus : float
             Increase the size of the mask by this factor
             (e.g. ``0.1`` means 10%)
@@ -504,7 +519,7 @@ class Mask(object):
         Returns
         -------
         numpy.ndarray or ``None``
-            If no Messier objects are found in the field return ``None`` and
+            If no deep-sky objects are found in the field return ``None`` and
             the flag map
 
         Raises
@@ -517,11 +532,11 @@ class Mask(object):
         """
         if size_plus < 0:
             raise ValueError(
-                'Messier mask size increase variable cannot be negative'
+                'deep-sky mask size increase variable cannot be negative'
             )
 
         if cat_path is None:
-            raise ValueError('Path to Messier object catalogue not provided')
+            raise ValueError('Path to deep-sky object catalogue not provided')
 
         m_cat = np.load(cat_path, allow_pickle=True)
         m_sc = SkyCoord(
@@ -539,7 +554,7 @@ class Mask(object):
             dec=corners[:, 1] * units.degree,
         )
 
-        # Loop through all Messier objects and check whether any corner is
+        # Loop through all deep-sky objects and check whether any corner is
         # closer than the object's radius
         indices = []
         for idx, m_obj in enumerate(m_cat):
@@ -549,7 +564,7 @@ class Mask(object):
                 indices.append(idx)
 
         if len(indices) == 0:
-            # No closeby Messier object found
+            # No closeby deep-sky object found
             return None
 
         # Note: python image array is [y, x]
@@ -572,7 +587,7 @@ class Mask(object):
                 / np.abs(self._wcs.pixel_scale_matrix[0][0])
             )
 
-            # The following accounts for Messier centers outside of image,
+            # The following accounts for deep-sky centers outside of image,
             # without creating masks for coordinates out of range
             y_c, x_c = np.ogrid[0:ny, 0:nx]
             mask_tmp = (
