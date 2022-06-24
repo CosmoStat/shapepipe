@@ -31,14 +31,24 @@ class Mask(object):
     weight_path : str
         Path to the weight image (FITS format)
     image_prefix : str
+        prefix to input image name, specify as 'none' for no prefix
+    image_num : str
+        file number identified
     config_filepath : str
         Path to the ``.mask`` config file
     output_dir : str
         Path to the output directory
-    hdu : int, optional
-        HDU number, default is ``0``
     w_log : logging.Logger
         Log file
+    path_external_flag : str, optional
+        path to external flag file, default is ``None`` (not used)
+    outname_base : str, optional
+       output file name base, default is ``flag``
+    star_cat_path : str, optional
+        path to external star catalogue, default is ``None`` (not used;
+        instead star catalogue is produced on the fly at run time)
+    hdu : int, optional
+        HDU number, default is ``0``
 
     """
 
@@ -59,33 +69,51 @@ class Mask(object):
 
         # Path to the image to mask
         self._image_fullpath = image_path
+
         # Path to the weight associated to the image
         self._weight_fullpath = weight_path
-        self._config_filepath = config_filepath
-        # Path to the output directory
-        self._output_dir = output_dir
-        # Path to an external flag file
-        self._path_external_flag = path_external_flag
-        # Output file base name
-        self._outname_base = outname_base
 
-        self._img_number = image_num
+        # Input image prefix
         if (image_prefix.lower() != 'none') and (image_prefix != ''):
             self._img_prefix = f'{image_prefix}_'
         else:
             self._img_prefix = ''
 
+        # File number identified
+        self._img_number = image_num
+
+        # Path to mask config file
+        self._config_filepath = config_filepath
+
+        # Path to the output directory
+        self._output_dir = output_dir
+
+        # Log file
+        self._w_log = w_log
+
+        # Path to an external flag file
+        self._path_external_flag = path_external_flag
+
+        # Output file base name
+        self._outname_base = outname_base
+
+        # Set external star catalogue path if given
         if star_cat_path is not None:
             self._star_cat_path = star_cat_path
 
         self._hdu = hdu
+
+        # Read mask config file
         self._get_config()
-        # Set parameters needed for the stars detection
-        self._set_parameters()
+
+        # Set parameters needed for the star detection
+        self._set_image_coordinates()
+
+        # Set error flag
         self._err = False
 
     def _get_config(self):
-        """Get Config Values.
+        """Get Config.
 
         Read the config file and set parameters.
 
@@ -114,6 +142,7 @@ class Mask(object):
             'HALO': {},
             'SPIKE': {},
             'MESSIER': {},
+            'NGC' : {},
             'MD': {},
         }
 
@@ -163,6 +192,7 @@ class Mask(object):
             )
 
             if self._config[mask_shape]['make']:
+
                 self._config[mask_shape]['maskmodel_path'] = conf.getexpanded(
                     f'{mask_shape}_PARAMETERS',
                     f'{mask_shape}_MASKMODEL_PATH',
@@ -197,20 +227,26 @@ class Mask(object):
                 else:
                     self._config[mask_shape]['reg_file'] = None
 
-        self._config['MESSIER']['make'] = (
-            conf.getboolean('MESSIER_PARAMETERS', 'MESSIER_MAKE')
-        )
+        for mask_type in ['MESSIER', 'NGC']:
 
-        if self._config['MESSIER']['make']:
-            self._config['MESSIER']['cat_path'] = (
-                conf.getexpanded('MESSIER_PARAMETERS', 'MESSIER_CAT_PATH')
+            self._config[mask_type]['make'] = conf.getboolean(
+                f'{mask_type}_PARAMETERS',
+                f'{mask_type}_MAKE'
             )
-            self._config['MESSIER']['size_plus'] = (
-                conf.getfloat('MESSIER_PARAMETERS', 'MESSIER_SIZE_PLUS')
-            )
-            self._config['MESSIER']['flag'] = (
-                conf.getint('MESSIER_PARAMETERS', 'MESSIER_FLAG_VALUE')
-            )
+
+            if self._config[mask_type]['make']:
+                self._config[mask_type]['cat_path'] = conf.getexpanded(
+                    f'{mask_type}_PARAMETERS',
+                    f'{mask_type}_CAT_PATH',
+                )
+                self._config[mask_type]['size_plus'] = conf.getfloat(
+                    f'{mask_type}_PARAMETERS',
+                    f'{mask_type}_SIZE_PLUS',
+                )
+                self._config[mask_type]['flag'] = conf.getint(
+                    f'{mask_type}_PARAMETERS',
+                    f'{mask_type}_FLAG_VALUE',
+                )
 
         self._config['MD']['make'] = (
             conf.getboolean('MD_PARAMETERS', 'MD_MAKE')
@@ -227,10 +263,11 @@ class Mask(object):
                 conf.getboolean('MD_PARAMETERS', 'MD_REMOVE')
             )
 
-    def _set_parameters(self):
-        """Set Parameters.
+    def _set_image_coordinates(self):
+        """Set Image Coordinates.
 
-        Set the parameters for the stars detection.
+        Compute the image coordinates for matching with the star catalogue
+        and star mask..
 
         """
         img = file_io.FITSCatalogue(self._image_fullpath, hdu_no=0)
@@ -242,16 +279,25 @@ class Mask(object):
 
         self._wcs = wcs.WCS(self._header)
 
+        # Compute field center
+
         # Note: get_data().shape corresponds to (n_y, n_x)
         pix_center = [img_shape[1] / 2.0, img_shape[0] / 2.0]
         wcs_center = self._wcs.all_pix2world([pix_center], 1)[0]
-
         self._fieldcenter = {}
         self._fieldcenter['pix'] = np.array(pix_center)
         self._fieldcenter['wcs'] = (
             SkyCoord(ra=wcs_center[0], dec=wcs_center[1], unit='deg')
         )
 
+        # Get the four corners of the image
+        corners = self._wcs.calc_footprint()
+        self._corners_sc = SkyCoord(
+            ra=corners[:, 0] * units.degree,
+            dec=corners[:, 1] * units.degree,
+        )
+
+        # Compute image radius = image diagonal
         self._img_radius = self._get_image_radius()
 
     def make_mask(self):
@@ -317,6 +363,7 @@ class Mask(object):
                     self._config['MESSIER']['cat_path'],
                     size_plus=self._config['MESSIER']['size_plus'],
                     flag_value=self._config['MESSIER']['flag'],
+                    typ='Messier',
                 )
             else:
                 messier_mask = None
@@ -327,6 +374,7 @@ class Mask(object):
                     self._config['NGC']['cat_path'],
                     size_plus=self._config['NGC']['size_plus'],
                     flag_value=self._config['NGC']['flag'],
+                    typ='NGC',
                 )
             else:
                 ngc_mask = None
@@ -500,7 +548,7 @@ class Mask(object):
 
         return flag
 
-    def mask_dso(self, cat_path, size_plus=0.1, flag_value=8):
+    def mask_dso(self, cat_path, size_plus=0.1, flag_value=8, typ='Messier'):
         """Mask DSO.
 
         Create a circular patch for deep-sky objects (DSOs), e.g.
@@ -515,6 +563,8 @@ class Mask(object):
             (e.g. ``0.1`` means 10%)
         flag_value : int
             Value of the flag, some power of 2
+        typ : str, optional
+            Object type, one in ``Messier`` (default) or ``NGC``
 
         Returns
         -------
@@ -544,28 +594,39 @@ class Mask(object):
             dec=m_cat['dec'] * units.degree,
         )
 
-        nx = self._fieldcenter['pix'][0] * 2
-        ny = self._fieldcenter['pix'][1] * 2
-
-        # Get the four corners of the image
-        corners = self._wcs.calc_footprint()
-        corners_sc = SkyCoord(
-            ra=corners[:, 0] * units.degree,
-            dec=corners[:, 1] * units.degree,
-        )
-
         # Loop through all deep-sky objects and check whether any corner is
         # closer than the object's radius
         indices = []
         for idx, m_obj in enumerate(m_cat):
+
+            # DSO size
             r = max(m_obj['size']) * units.arcmin
             r_deg = r.to(units.degree)
-            if np.any(corners_sc.separation(m_sc[idx]) < r_deg):
+
+            # Add index to list if distance between DSO and any image corner
+            # is closer than DSO size
+            if np.any(self._corners_sc.separation(m_sc[idx]) < r_deg):
                 indices.append(idx)
+
+        self._w_log.info(
+            f'Found {len(indices)} {typ} objects overlapping with'
+            ' image'
+        )
 
         if len(indices) == 0:
             # No closeby deep-sky object found
             return None
+
+        # Compute number of DSO center coordinates in footprint, for logging
+        # purpose only
+        n_dso_center_in_footprint = 0
+        for idx in indices:
+            if self._wcs.footprint_contains(m_sc[idx]):
+                n_dso_center_in_footprint += 1
+        self._w_log.info(
+            f'of which {n_dso_center_in_footprint} have their center'
+            ' coordinates are in image footprint'
+        )
 
         # Note: python image array is [y, x]
         flag = np.zeros(
@@ -576,6 +637,8 @@ class Mask(object):
             dtype='uint16',
         )
 
+        nx = self._fieldcenter['pix'][0] * 2
+        ny = self._fieldcenter['pix'][1] * 2
         for idx in indices:
             m_center = np.hstack(self._wcs.all_world2pix(
                 m_cat['ra'][idx],
