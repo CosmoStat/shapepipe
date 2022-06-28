@@ -12,6 +12,7 @@ import re
 import numpy as np
 from astropy import units, wcs
 from astropy.coordinates import SkyCoord
+from astropy.io import fits
 
 from shapepipe.pipeline import file_io
 from shapepipe.pipeline.config import CustomParser
@@ -142,7 +143,7 @@ class Mask(object):
             'HALO': {},
             'SPIKE': {},
             'MESSIER': {},
-            'NGC' : {},
+            'NGC': {},
             'MD': {},
         }
 
@@ -588,11 +589,18 @@ class Mask(object):
         if cat_path is None:
             raise ValueError('Path to deep-sky object catalogue not provided')
 
-        m_cat = np.load(cat_path, allow_pickle=True)
+        # m_cat = np.load(cat_path, allow_pickle=True)
+        m_cat, header = fits.getdata(cat_path, header=True)
+
+        unit_ra = file_io.get_unit_from_fits_header(header, 'ra')
+        unit_dec = file_io.get_unit_from_fits_header(header, 'dec')
         m_sc = SkyCoord(
-            ra=m_cat['ra'] * units.degree,
-            dec=m_cat['dec'] * units.degree,
+            ra=m_cat['ra'] * unit_ra,
+            dec=m_cat['dec'] * unit_dec,
         )
+
+        unit_size_X = file_io.get_unit_from_fits_header(header, 'size_X')
+        unit_size_Y = file_io.get_unit_from_fits_header(header, 'size_Y')
 
         # Loop through all deep-sky objects and check whether any corner is
         # closer than the object's radius
@@ -600,7 +608,11 @@ class Mask(object):
         for idx, m_obj in enumerate(m_cat):
 
             # DSO size
-            r = max(m_obj['size']) * units.arcmin
+            # r = max(m_obj['size']) * units.arcmin
+            r = max(
+                m_obj['size_X'] * unit_size_X,
+                m_obj['size_Y'] * unit_size_Y,
+            )
             r_deg = r.to(units.degree)
 
             # Add index to list if distance between DSO and any image corner
