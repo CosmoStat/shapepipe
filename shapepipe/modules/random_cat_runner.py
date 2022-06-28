@@ -43,6 +43,19 @@ def random_cat_runner(
     else:
         density = False
 
+    # Get healpix output options
+    save_mask_as_healpix = config.getboolean(
+        module_config_sec,
+        'SAVE_MASK_AS_HEALPIX'
+    )
+    if save_mask_as_healpix:
+        healpix_options = {}
+        for option_trunc in ['FILE_BASE', 'OUT_NSIDE']:
+            option = f'HEALPIX_OUT_{option_trunc}'
+            healpix_options[option] = config.get(
+                module_config_sec,
+                option
+            )
     # Create rand cat class instance
     rand_cat_inst = RandomCat(
         input_image_name,

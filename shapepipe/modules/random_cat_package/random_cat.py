@@ -10,9 +10,13 @@ the tile area accounting for overlapping and masked regions.
 import os
 import re
 
-import astropy.io.fits as fits
 import numpy as np
+
+import astropy.io.fits as fits
 from astropy import wcs
+from astropy.table import Table
+
+from reproject import reproject_to_healpix
 
 from shapepipe.pipeline import file_io
 from shapepipe.utilities import cfis
@@ -57,6 +61,33 @@ class RandomCat():
         self._density = density
         self._w_log = w_log
 
+    def save_as_healpix(self, hdu_mask, header):
+        """Save As Healpix.
+
+        Save mask as healpix FITS file.
+
+        Parameters
+        ----------
+        hdu_mask : HDU list
+            HDU with 2D pixel mask image
+        header : FITS header
+            image header with WCS information
+
+        """
+        mask_1d, footprint = reproject_to_healpix(
+            (hdu_mask, header),
+            'galactic',
+            nside=self._nside_out
+        )
+
+        t = Table()
+        t['flux'] = mask_1d
+        t.meta['ORDERING'] = 'RING'
+        t.meta['COORDSYS'] = 'G'
+        t.meta['NSIDE'] = 128
+        t.meta['INDXSCHM'] = 'IMPLICIT'
+        t.write()
+
     def process(self):
         """Process.
 
@@ -83,6 +114,9 @@ class RandomCat():
         # Read mask FITS file
         hdu_mask = fits.open(self._input_mask_path)
         mask = hdu_mask[0].data
+
+        # Save mask in healpix format (if option is set)
+        self._save_as_healpix(hdu_mask, header)
 
         # Number of pixels
         n_pix_x = mask.data.shape[0]
