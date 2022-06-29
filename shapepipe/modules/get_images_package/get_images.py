@@ -281,9 +281,23 @@ class GetImages(object):
                         f'{self._check_existing_dir}/**/{out_base}',
                         recursive=True,
                     )
-                    if path and len(path) == self._n_expected:
-                        self._w_log.info(f'{path[0]} found, skipping')
-                        continue
+                    if path:
+                        if len(path) == self._n_expected:
+                            self._w_log.info(
+                                f'{path[0]} found, skipping download'
+                            )
+                            continue
+                        else:
+                            self._w_log.info(
+                                f'{len(path)} instead of {self._n_expected} '
+                                + f'files found at {self._check_existing_dir}'
+                                + ', downloading images'
+                            )
+                    else:
+                        self._w_log.info(
+                            f'No images found at {self._check_existing_dir},'
+                            + ' downloading images'
+                        )
                 self.retrieve_one(in_per_type[idx], out_per_type[idx])
 
     def retrieve_one(self, in_path, out_path):
