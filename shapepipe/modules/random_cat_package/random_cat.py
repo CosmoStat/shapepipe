@@ -33,33 +33,44 @@ class RandomCat():
         Path to input image file
     input_mask_path : str
         Path to input mask file
-    output_path : str
-        Output file path for random catalogue
+    output_dir : str
+        output directory
+    file_number_pattern : str
+        shapepipe image ID string
+    output_file_pattern : str
+        Output file pattern (base name) for random catalogue
     n_rand : float
         Number of random objects on output
     density : bool
         ``n_rand`` is interpreted per square degrees if ``True``
     w_log : logging.Logger
         Logging instance
-
+    healpix_options : dict
+        Parameters for healpix output mask file
     """
 
     def __init__(
         self,
         input_image_path,
         input_mask_path,
-        output_path,
+        output_dir,
+        file_number_string,
+        output_file_pattern,
         n_rand,
         density,
         w_log,
+        healpix_options,
     ):
 
         self._input_image_path = input_image_path
         self._input_mask_path = input_mask_path
-        self._output_path = output_path
+        self._output_dir = output_dir
+        self._file_number_string = file_number_string
+        self._output_file_pattern = output_file_pattern
         self._n_rand = n_rand
         self._density = density
         self._w_log = w_log
+        self._healpix_options = healpix_options
 
     def save_as_healpix(self, hdu_mask, header):
         """Save As Healpix.
@@ -74,19 +85,27 @@ class RandomCat():
             image header with WCS information
 
         """
+        if not self._healpix_options:
+            return
+
         mask_1d, footprint = reproject_to_healpix(
             (hdu_mask, header),
             'galactic',
-            nside=self._nside_out
+            nside=self._healpix_options['OUT_NSIDE']
         )
 
         t = Table()
         t['flux'] = mask_1d
         t.meta['ORDERING'] = 'RING'
         t.meta['COORDSYS'] = 'G'
-        t.meta['NSIDE'] = 128
+        t.meta['NSIDE'] = self._healpix_options['OUT_NSIDE']
         t.meta['INDXSCHM'] = 'IMPLICIT'
-        t.write()
+
+        output_path = (
+            f'{output_dir}/{self._healpix_options["FILE_BASE"]}-'
+            + f'{file_number_string}.fits'
+        )
+        t.write(output_path)
 
     def process(self):
         """Process.
@@ -189,10 +208,15 @@ class RandomCat():
             y_rand = []
 
         # Tile ID
+        output_path = (
+            f'{output_dir}/{output_file_pattern}-'
+            + f'{file_number_string}.fits'
+        )
         file_name = os.path.split(self._output_path)[1]
         file_base = os.path.splitext(file_name)[0]
         tile_ID_str = re.split('-', file_base)[1:]
         tile_id = float('.'.join(tile_ID_str))
+        print('MKDEBUG', tile_id, file_number_string)
         tile_id_array = np.ones(n_obj) * tile_id
 
         # Write to output
