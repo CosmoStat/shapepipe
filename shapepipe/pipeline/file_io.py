@@ -1885,7 +1885,7 @@ def get_unit_from_fits_header(header, key):
     if idx_found == -1:
         raise IndexError(f'Column \'{key}\' not found in FITS header')
 
-    # Extract coordinate unit string from header 
+    # Extract coordinate unit string from header
     tcunit_idx = f'TCUNI{idx}'
     if tcunit_idx not in header:
         raise IndexError(
