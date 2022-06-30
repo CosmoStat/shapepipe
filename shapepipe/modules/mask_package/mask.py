@@ -32,7 +32,7 @@ class Mask(object):
     weight_path : str
         Path to the weight image (FITS format)
     image_prefix : str
-        Prefix to input image name, specify as 'none' for no prefix
+        Prefix to input image name, specify as ``'none'`` for no prefix
     image_num : str
         file number identified
     config_filepath : str

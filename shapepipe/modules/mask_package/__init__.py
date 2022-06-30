@@ -22,8 +22,8 @@ In this case the config flag ``USE_EXT_FLAG`` needs to be set to ``True``. To
 distinguish the newly created output flag file from the input ones, a prefix
 can added as specificed by the config entry ``PREFIX``.
 
-An NGC catalogue with positions, sizes, and types is provided with `shapepipe`,
-source: www.klima-luft.de/steinicke/ngcic/rev2000/Explan.htm
+An NGC catalogue with positions, sizes, and types is provided with
+``shapepipe``, source: www.klima-luft.de/steinicke/ngcic/rev2000/Explan.htm
 
 Masked pixels of different mask types are indicated by integers, which
 conveniently are powers of two such that they can be combined bit-wise.

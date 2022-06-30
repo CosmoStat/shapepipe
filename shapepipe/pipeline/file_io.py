@@ -1863,7 +1863,7 @@ def get_unit_from_fits_header(header, key):
 
     Returns
     -------
-    class Unit
+    astropy.units.Unit
         unit object
 
     """

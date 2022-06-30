@@ -290,12 +290,14 @@ class GetImages(object):
                         else:
                             self._w_log.info(
                                 f'{len(path)} instead of {self._n_expected} '
-                                + f'files found at {self._check_existing_dir}'
+                                + 'existing files found at'
+                                + f' {self._check_existing_dir}'
                                 + ', downloading images'
                             )
                     else:
                         self._w_log.info(
-                            f'No images found at {self._check_existing_dir},'
+                            'No existing images found at'
+                            + f' {self._check_existing_dir},'
                             + ' downloading images'
                         )
                 self.retrieve_one(in_per_type[idx], out_per_type[idx])
