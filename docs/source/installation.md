@@ -1,6 +1,6 @@
 # Installation
 
-```{important}
+```{attention}
 ShapePipe was not designed to be a stand-alone Python library. Instead users
 are expected to install the full ShapePipe environment on the system(s) where
 data should be processed.
@@ -8,19 +8,24 @@ data should be processed.
 
 ## Standard Installation
 
+```{tip}
+:class: margin
+Check out [Miniconda](https://docs.conda.io/en/latest/miniconda.html) for a
+light weight and easy installation of Conda.
+```
+
 The standard installation of ShapePipe manages [dependencies](dependencies.md)
 and scripts using a [Conda](https://docs.conda.io/en/latest/) environment.
 Therefore, to follow the standard installation Conda must be available on the
 system.
 
-```{tip}
-Check out [Miniconda](https://docs.conda.io/en/latest/miniconda.html) for a
-light weight and easy installation of Conda.
-```
-
 The ShapePipe package should first be cloned (or downloaded) from the
 [GitHub repository](https://github.com/CosmoStat/shapepipe).
 
+```{note}
+:class: margin
+Developers should simply clone the repository as usual.
+```
 ```bash
 git clone -b <VERSION> --depth 1 git@github.com:CosmoStat/shapepipe.git
 cd shapepipe
@@ -31,10 +36,6 @@ where `<VERSION>` is a
 (e.g. `v1.0.0`). It is recommend to use the
 [latest release](https://github.com/CosmoStat/shapepipe/releases/latest)
 unless you want to reproduce an older set of results.
-
-```{note}
-Developers should simply clone the repository as usual.
-```
 
 Then, the entire ShapePipe environment, including dependencies, can be built
 using the `install_shapepipe` script as follows.
@@ -93,15 +94,15 @@ entire ShapePipe environment.
 
 ## Installing the ShapePipe Library Only
 
-```{warning}
-Note, this method will not include any system executables or examples.
-```
-
 The ShapePipe library, i.e. the core package not including module
 dependencies, can be installed in the following ways.
 
 After cloning the repository.
 
+```{warning}
+:class: margin
+Note, this method will not include any system executables or examples.
+```
 ```bash
 pip install .
 ```
