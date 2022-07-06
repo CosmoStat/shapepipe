@@ -4,6 +4,12 @@ ShapePipe
 .. Include table of contents
 .. include:: toc.rst
 
+.. figure:: img/cosmostat_logo.jpg
+  :figclass: margin
+  :width: 100%
+  :alt: CosmoStat Logo
+  :target: http://www.cosmostat.org/
+
 ShapePipe is a galaxy shape measurement pipeline developed within the
 |link-to-cosmostat| lab at CEA Paris-Saclay.
 
@@ -13,9 +19,7 @@ we invite you to |link-to-issues| on the GitHub repository an we will do our
 best to help you.
 
 We kindly request that if you use ShapePipe for your academic work that you
-cite :cite:`guinot:21` and Farrens et al. (in prep).
-
-|CS_LOGO|
+cite :cite:t:`guinot:22` and :cite:t:`farrens:22b`.
 
 .. |link-to-cosmostat| raw:: html
 
@@ -25,8 +29,3 @@ cite :cite:`guinot:21` and Farrens et al. (in prep).
 
   <a href="https://github.com/CosmoStat/shapepipe/issues/new/choose"
   target="_blank">open an issue</a>
-
-.. |CS_LOGO| image:: img/cosmostat_logo.jpg
-  :width: 45%
-  :alt: CosmoStat Logo
-  :target: http://www.cosmostat.org/
