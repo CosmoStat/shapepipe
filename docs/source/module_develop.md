@@ -69,7 +69,7 @@ system, the module runner should also import the `execute` function.
 
 ```{note}
 :class: margin
-If no `stdout` or `stderr` are provided by the given module, the the module
+If no `stdout` or `stderr` are provided by the given module, the module
 runner should simply return `None, None`.
 ```
 
