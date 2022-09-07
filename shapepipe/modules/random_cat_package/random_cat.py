@@ -46,7 +46,7 @@ class RandomCat():
     w_log : logging.Logger
         Logging instance
     healpix_options : dict
-        Parameters for healpix output mask file
+        Parameters for HEALPix output mask file
     """
 
     def __init__(
