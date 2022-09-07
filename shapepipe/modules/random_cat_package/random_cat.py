@@ -36,7 +36,7 @@ class RandomCat():
     output_dir : str
         Output directory
     file_number_pattern : str
-        shapepipe image ID string
+        ShapePipe image ID string
     output_file_pattern : str
         Output file pattern (base name) for random catalogue
     n_rand : float
