@@ -82,7 +82,7 @@ class RandomCat():
         hdu_mask : HDU list
             HDU with 2D pixel mask image
         header : FITS header
-            image header with WCS information
+            Image header with WCS information
 
         """
         if not self._healpix_options:
