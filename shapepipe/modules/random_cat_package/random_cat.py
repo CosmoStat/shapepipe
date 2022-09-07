@@ -34,7 +34,7 @@ class RandomCat():
     input_mask_path : str
         Path to input mask file
     output_dir : str
-        output directory
+        Output directory
     file_number_pattern : str
         shapepipe image ID string
     output_file_pattern : str
