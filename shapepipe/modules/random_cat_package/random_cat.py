@@ -79,9 +79,9 @@ class RandomCat():
 
         Parameters
         ----------
-        hdu_mask : HDU list
+        hdu_mask : class HDUList
             HDU with 2D pixel mask image
-        header : FITS header
+        header : class Header
             Image header with WCS information
 
         """
@@ -216,7 +216,6 @@ class RandomCat():
         file_base = os.path.splitext(file_name)[0]
         tile_ID_str = re.split('-', file_base)[1:]
         tile_id = float('.'.join(tile_ID_str))
-        print('MKDEBUG', tile_id, file_number_string)
         tile_id_array = np.ones(n_obj) * tile_id
 
         # Write to output
