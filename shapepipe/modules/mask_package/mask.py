@@ -234,7 +234,7 @@ class Mask(object):
         self._header = img.get_header()
         img_shape = img.get_data().shape
         img.close()
-        del(img)
+        del img
 
         self._wcs = wcs.WCS(self._header)
 
