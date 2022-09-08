@@ -551,7 +551,7 @@ class FITSCatalogue(BaseCatalogue):
                     self._cat_data = fits.HDUList([primary_hdu, secondary_hdu])
                     self._cat_data.writeto(self.fullpath, overwrite=True)
                     sex_cat.close()
-                    del(sex_cat)
+                    del sex_cat
                 else:
                     raise BaseCatalogue.catalogueFileNotFound(sex_cat_path)
             else:
