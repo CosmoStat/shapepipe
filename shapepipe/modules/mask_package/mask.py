@@ -44,7 +44,7 @@ class Mask(object):
     path_external_flag : str, optional
         Path to external flag file, default is ``None`` (not used)
     outname_base : str, optional
-       output file name base, default is ``flag``
+       Output file name base, default is ``flag``
     star_cat_path : str, optional
         path to external star catalogue, default is ``None`` (not used;
         instead star catalogue is produced on the fly at run time)
