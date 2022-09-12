@@ -46,7 +46,7 @@ class Mask(object):
     outname_base : str, optional
        Output file name base, default is ``flag``
     star_cat_path : str, optional
-        path to external star catalogue, default is ``None`` (not used;
+        Path to external star catalogue, default is ``None`` (not used;
         instead star catalogue is produced on the fly at run time)
     hdu : int, optional
         HDU number, default is ``0``
