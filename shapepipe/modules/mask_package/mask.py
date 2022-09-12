@@ -42,7 +42,7 @@ class Mask(object):
     w_log : logging.Logger
         Log file
     path_external_flag : str, optional
-        path to external flag file, default is ``None`` (not used)
+        Path to external flag file, default is ``None`` (not used)
     outname_base : str, optional
        output file name base, default is ``flag``
     star_cat_path : str, optional
