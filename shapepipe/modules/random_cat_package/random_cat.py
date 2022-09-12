@@ -85,7 +85,6 @@ class RandomCat():
             Image header with WCS information
 
         """
-
         if not self._healpix_options:
             return
 
