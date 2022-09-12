@@ -34,7 +34,7 @@ class Mask(object):
     image_prefix : str
         Prefix to input image name, specify as ``'none'`` for no prefix
     image_num : str
-        file number identified
+        File number identified
     config_filepath : str
         Path to the ``.mask`` config file
     output_dir : str
