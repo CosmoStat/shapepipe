@@ -551,7 +551,7 @@ class Mask(object):
         flag_value : int
             Value of the flag, some power of 2
         typ : str, optional
-            Object type, one in ``Messier`` (default) or ``NGC``
+            Object type, options are ``Messier`` (default) or ``NGC``
 
         Returns
         -------
