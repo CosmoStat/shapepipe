@@ -1110,7 +1110,7 @@ class Mask(object):
         path_mask2 : str, optional
             Path to a mask (FITS format)
         masks_internal : dict, optional
-            internally created masks
+            Internally created masks
         path_external_flag : str, optional
             Path to an external flag file
 
