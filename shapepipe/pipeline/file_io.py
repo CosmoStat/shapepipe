@@ -1854,7 +1854,7 @@ def get_unit_from_fits_header(header, key):
     header : FITS header
         Header information
     key : str
-        column name
+        Column name
 
     Raises
     ------
