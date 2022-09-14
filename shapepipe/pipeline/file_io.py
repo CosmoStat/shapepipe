@@ -1859,7 +1859,7 @@ def get_unit_from_fits_header(header, key):
     Raises
     ------
     IndexError
-        if key not in header
+        If key not in header
 
     Returns
     -------
