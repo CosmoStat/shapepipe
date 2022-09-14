@@ -550,8 +550,8 @@ class Mask(object):
             (e.g. ``0.1`` means 10%)
         flag_value : int
             Value of the flag, some power of 2
-        typ : str, optional
-            Object type, one in ``Messier`` (default) or ``NGC``
+        obj_type : {'Messier', 'NGO'}, optional
+            Object type
 
         Returns
         -------
@@ -575,7 +575,6 @@ class Mask(object):
         if cat_path is None:
             raise ValueError('Path to deep-sky object catalogue not provided')
 
-        # m_cat = np.load(cat_path, allow_pickle=True)
         m_cat, header = fits.getdata(cat_path, header=True)
 
         unit_ra = file_io.get_unit_from_fits_header(header, 'ra')
@@ -609,7 +608,7 @@ class Mask(object):
                 indices.append(idx)
 
         self._w_log.info(
-            f'Found {len(indices)} {typ} objects overlapping with'
+            f'Found {len(indices)} {obj_type} objects overlapping with'
             ' image'
         )
 
@@ -623,8 +622,8 @@ class Mask(object):
         for idx in indices:
             in_img = self._wcs.footprint_contains(m_sc[idx])
             self._w_log.info(
-                '(typ, ra, dec, in_img) = '
-                + f'({typ}, '
+                '(obj_type, ra, dec, in_img) = '
+                + f'({obj_type}, '
                 + f'{m_cat["ra"][idx]}, '
                 + f'{m_cat["dec"][idx]}, '
                 + f'{in_img})'
