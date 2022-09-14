@@ -1864,7 +1864,7 @@ def get_unit_from_fits_header(header, key):
     Returns
     -------
     astropy.units.Unit
-        unit object
+        Unit object
 
     """
     # Loop over column names to find key
