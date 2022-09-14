@@ -268,7 +268,7 @@ class Mask(object):
         """Set Image Coordinates.
 
         Compute the image coordinates for matching with the star catalogue
-        and star mask..
+        and star mask.
 
         """
         img = file_io.FITSCatalogue(self._image_fullpath, hdu_no=0)
