@@ -1845,7 +1845,7 @@ class FITSCatalogue(BaseCatalogue):
 
 
 def get_unit_from_fits_header(header, key):
-    """Get Unit From Fits Header.
+    """Get Unit From FITS Header.
 
     Return coordinate unit corresponding to column with name ``key``.
 
