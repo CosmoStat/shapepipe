@@ -1852,7 +1852,7 @@ def get_unit_from_fits_header(header, key):
     Parameters
     ----------
     header : FITS header
-        header information
+        Header information
     key : str
         column name
 
