@@ -47,7 +47,7 @@ class Mask(object):
        Output file name base, default is ``flag``
     star_cat_path : str, optional
         Path to external star catalogue, default is ``None`` (not used;
-        instead star catalogue is produced on the fly at run time)
+        instead the star catalogue is produced on the fly at run time)
     hdu : int, optional
         HDU number, default is ``0``
 
@@ -268,7 +268,7 @@ class Mask(object):
         """Set Image Coordinates.
 
         Compute the image coordinates for matching with the star catalogue
-        and star mask..
+        and star mask.
 
         """
         img = file_io.FITSCatalogue(self._image_fullpath, hdu_no=0)
@@ -1109,7 +1109,7 @@ class Mask(object):
         path_mask2 : str, optional
             Path to a mask (FITS format)
         masks_internal : dict, optional
-            internally created masks
+            Internally created masks
         path_external_flag : str, optional
             Path to an external flag file
 

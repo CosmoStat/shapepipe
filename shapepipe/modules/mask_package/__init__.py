@@ -24,7 +24,7 @@ can added as specificed by the config entry ``PREFIX``.
 
 An NGC catalogue with positions, sizes, and types is provided with
 ``shapepipe``,
-`source <www.klima-luft.de/steinicke/ngcic/rev2000/Explan.htmr>`_
+`source <www.klima-luft.de/steinicke/ngcic/rev2000/Explan.htm>`_
 
 Masked pixels of different mask types are indicated by integers, which
 conveniently are powers of two such that they can be combined bit-wise.

@@ -1845,26 +1845,26 @@ class FITSCatalogue(BaseCatalogue):
 
 
 def get_unit_from_fits_header(header, key):
-    """Get Unit From Fits Header.
+    """Get Unit From FITS Header.
 
-    Return coordinate unit corresponding to column with name ``key``
+    Return coordinate unit corresponding to column with name ``key``.
 
     Parameters
     ----------
     header : FITS header
-        header information
+        Header information
     key : str
-        column name
+        Column name
 
     Raises
     ------
     IndexError
-        if key not in header
+        If key not in header
 
     Returns
     -------
     astropy.units.Unit
-        unit object
+        Unit object
 
     """
     # Loop over column names to find key
