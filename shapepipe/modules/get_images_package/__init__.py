@@ -44,8 +44,8 @@ OUTPUT_FILE_PATTERN : list
 INPUT_NUMBERING : str
     Input numbering scheme, python regexp
 CHECK_EXISTING_DIR : str, optional
-    If given, check this directory for existing images, which will then not be
-    downloaded
+    If given, search this directory (recursively) for existing images, which
+    will then not be downloaded
 N_EXPECTED : int, optional
     If ``CHECK_EXISTING_DIR`` is given, this option specifies the number of
     expected images; the default value is ``1``
