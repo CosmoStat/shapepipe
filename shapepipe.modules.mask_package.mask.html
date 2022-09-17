@@ -723,7 +723,7 @@
 </nav> <!-- To handle the deprecated key -->
 
 <div class="navbar_extra_footer">
-  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+  <p></p>
 </div>
 
 </div>
@@ -764,7 +764,9 @@
             href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2Fshapepipe.modules.mask_package.mask.html&body=Your%20issue%20content%20here."><button
                 type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
                 title="Open an issue"><i class="fas fa-lightbulb"></i>open issue</button></a>
-        
+        <a class="edit-button" href="https://github.com/CosmoStat/shapepipe/edit/master/docs/source/shapepipe.modules.mask_package.mask.rst"><button
+                type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
+                title="Edit this page"><i class="fas fa-pencil-alt"></i>suggest edit</button></a>
     </div>
 </div>
 
@@ -806,7 +808,7 @@
 </dl>
 <dl class="py class">
 <dt class="sig sig-object py" id="shapepipe.modules.mask_package.mask.Mask">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_external_flag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outname_base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'flag'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">star_cat_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mask_package/mask.html#Mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mask_package.mask.Mask" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_external_flag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outname_base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'flag'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">star_cat_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mask_package/mask.html#Mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mask_package.mask.Mask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Mask.</p>
 <p>Class to create mask based on a star catalogue.</p>
@@ -815,8 +817,15 @@
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>image_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Path to image (FITS format)</p></li>
 <li><p><strong>weight_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Path to the weight image (FITS format)</p></li>
+<li><p><strong>image_prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Prefix to input image name, specify as <code class="docutils literal notranslate"><span class="pre">'none'</span></code> for no prefix</p></li>
+<li><p><strong>image_num</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – File number identified</p></li>
 <li><p><strong>config_filepath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Path to the <code class="docutils literal notranslate"><span class="pre">.mask</span></code> config file</p></li>
 <li><p><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Path to the output directory</p></li>
+<li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.10)"><em>logging.Logger</em></a>) – Log file</p></li>
+<li><p><strong>path_external_flag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) – Path to external flag file, default is <code class="docutils literal notranslate"><span class="pre">None</span></code> (not used)</p></li>
+<li><p><strong>outname_base</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) – Output file name base, default is <code class="docutils literal notranslate"><span class="pre">flag</span></code></p></li>
+<li><p><strong>star_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) – Path to external star catalogue, default is <code class="docutils literal notranslate"><span class="pre">None</span></code> (not used;
+instead the star catalogue is produced on the fly at run time)</p></li>
 <li><p><strong>hdu</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><em>optional</em>) – HDU number, default is <code class="docutils literal notranslate"><span class="pre">0</span></code></p></li>
 </ul>
 </dd>
@@ -824,7 +833,7 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="shapepipe.modules.mask_package.mask.Mask._get_config">
 <span class="sig-name descname"><span class="pre">_get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mask_package/mask.html#Mask._get_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mask_package.mask.Mask._get_config" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get Config Values.</p>
+<dd><p>Get Config.</p>
 <p>Read the config file and set parameters.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -837,10 +846,11 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="shapepipe.modules.mask_package.mask.Mask._set_parameters">
-<span class="sig-name descname"><span class="pre">_set_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mask_package/mask.html#Mask._set_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mask_package.mask.Mask._set_parameters" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set Parameters.</p>
-<p>Set the parameters for the stars detection.</p>
+<dt class="sig sig-object py" id="shapepipe.modules.mask_package.mask.Mask._set_image_coordinates">
+<span class="sig-name descname"><span class="pre">_set_image_coordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mask_package/mask.html#Mask._set_image_coordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mask_package.mask.Mask._set_image_coordinates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set Image Coordinates.</p>
+<p>Compute the image coordinates for matching with the star catalogue
+and star mask.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -859,7 +869,7 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>position</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a>) – Position of the center of the field</p></li>
+<li><p><strong>position</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)"><em>numpy.ndarray</em></a>) – Position of the center of the field</p></li>
 <li><p><strong>radius</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Radius in which the query is done (in arcmin)</p></li>
 </ul>
 </dd>
@@ -891,7 +901,7 @@
 <dd class="field-even"><p>Array containing the mask</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)">numpy.ndarray</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)">numpy.ndarray</a></p>
 </dd>
 <dt class="field-even">Raises</dt>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.10)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">width</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code></p>
@@ -900,21 +910,23 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="shapepipe.modules.mask_package.mask.Mask.mask_messier">
-<span class="sig-name descname"><span class="pre">mask_messier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size_plus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flag_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mask_package/mask.html#Mask.mask_messier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mask_package.mask.Mask.mask_messier" title="Permalink to this definition">¶</a></dt>
-<dd><p>Mask Messier.</p>
-<p>Create a circular patch for Messier objects.</p>
+<dt class="sig sig-object py" id="shapepipe.modules.mask_package.mask.Mask.mask_dso">
+<span class="sig-name descname"><span class="pre">mask_dso</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size_plus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flag_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typ</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Messier'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mask_package/mask.html#Mask.mask_dso"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mask_package.mask.Mask.mask_dso" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mask DSO.</p>
+<p>Create a circular patch for deep-sky objects (DSOs), e.g.
+Messier or NGC objects.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Path to the Messier catalogue</p></li>
+<li><p><strong>cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Path to the deep-sky catalogue</p></li>
 <li><p><strong>size_plus</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Increase the size of the mask by this factor
 (e.g. <code class="docutils literal notranslate"><span class="pre">0.1</span></code> means 10%)</p></li>
 <li><p><strong>flag_value</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Value of the flag, some power of 2</p></li>
+<li><p><strong>obj_type</strong> (<em>{'Messier'</em><em>, </em><em>'NGO'}</em><em>, </em><em>optional</em>) – Object type</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>If no Messier objects are found in the field return <code class="docutils literal notranslate"><span class="pre">None</span></code> and
+<dd class="field-even"><p>If no deep-sky objects are found in the field return <code class="docutils literal notranslate"><span class="pre">None</span></code> and
 the flag map</p>
 </dd>
 <dt class="field-odd">Return type</dt>
@@ -945,8 +957,8 @@ is larger than a threshold.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>position1</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a>) – [x,y] first point (in pixels)</p></li>
-<li><p><strong>position2</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a>) – [x,y] second point (in pixels)</p></li>
+<li><p><strong>position1</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)"><em>numpy.ndarray</em></a>) – [x,y] first point (in pixels)</p></li>
+<li><p><strong>position2</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)"><em>numpy.ndarray</em></a>) – [x,y] second point (in pixels)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -968,7 +980,7 @@ is larger than a threshold.</p>
 <p>Compute the diagonal distance of the image in arcmin.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>center</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Coordinates of the center of the image (in pixels)</p>
+<dd class="field-odd"><p><strong>center</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Coordinates of the center of the image (in pixels)</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>The diagonal distance of the image in arcmin</p>
@@ -1042,7 +1054,7 @@ is larger than a threshold.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="shapepipe.modules.mask_package.mask.Mask._build_final_mask">
-<span class="sig-name descname"><span class="pre">_build_final_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_mask1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_mask2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">border</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">messier</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_external_flag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mask_package/mask.html#Mask._build_final_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mask_package.mask.Mask._build_final_mask" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">_build_final_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_mask1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_mask2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">masks_internal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_external_flag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mask_package/mask.html#Mask._build_final_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mask_package.mask.Mask._build_final_mask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create Final Mask.</p>
 <p>Create the final mask by combining the individual masks.</p>
 <dl class="field-list simple">
@@ -1050,8 +1062,7 @@ is larger than a threshold.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>path_mask1</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Path to a mask (FITS format)</p></li>
 <li><p><strong>path_mask2</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) – Path to a mask (FITS format)</p></li>
-<li><p><strong>border</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Array containing the border mask</p></li>
-<li><p><strong>messier</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Array containing the messier mask</p></li>
+<li><p><strong>masks_internal</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a><em>, </em><em>optional</em>) – Internally created masks</p></li>
 <li><p><strong>path_external_flag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) – Path to an external flag file</p></li>
 </ul>
 </dd>
@@ -1059,12 +1070,11 @@ is larger than a threshold.</p>
 <dd class="field-even"><p>Array containing the final mask</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)">numpy.ndarray</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)">numpy.ndarray</a></p>
 </dd>
 <dt class="field-even">Raises</dt>
 <dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.10)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">path_mask1</span></code>, <code class="docutils literal notranslate"><span class="pre">path_mask2</span></code>, border and messier are of type
-<code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.10)"><strong>ValueError</strong></a> – If all masks are of type <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
 <li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.10)"><strong>TypeError</strong></a> – If border is not a Numpy array</p></li>
 <li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.10)"><strong>TypeError</strong></a> – If Messier mask is not a Numpy array</p></li>
 </ul>
@@ -1080,7 +1090,7 @@ is larger than a threshold.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_mask</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a>) – Mask to save</p></li>
+<li><p><strong>input_mask</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)"><em>numpy.ndarray</em></a>) – Mask to save</p></li>
 <li><p><strong>output_fullpath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Path of the output file</p></li>
 </ul>
 </dd>
@@ -1149,7 +1159,7 @@ the temporary files in the run directory</p>
       By CosmoStat<br/>
     
         &copy; Copyright 2022, CosmoStat.<br/>
-      Last updated on 01 Apr, 2022.<br/>
+      Last updated on 17 Sep, 2022.<br/>
   </p>
 </footer>
 </main>

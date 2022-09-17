@@ -722,7 +722,7 @@
 </nav> <!-- To handle the deprecated key -->
 
 <div class="navbar_extra_footer">
-  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+  <p></p>
 </div>
 
 </div>
@@ -763,7 +763,9 @@
             href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2Fshapepipe.modules.random_cat_package.random_cat.html&body=Your%20issue%20content%20here."><button
                 type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
                 title="Open an issue"><i class="fas fa-lightbulb"></i>open issue</button></a>
-        
+        <a class="edit-button" href="https://github.com/CosmoStat/shapepipe/edit/master/docs/source/shapepipe.modules.random_cat_package.random_cat.rst"><button
+                type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
+                title="Edit this page"><i class="fas fa-pencil-alt"></i>suggest edit</button></a>
     </div>
 </div>
 
@@ -806,7 +808,7 @@ the tile area accounting for overlapping and masked regions.</p>
 </dl>
 <dl class="py class">
 <dt class="sig sig-object py" id="shapepipe.modules.random_cat_package.random_cat.RandomCat">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RandomCat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_image_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_mask_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_rand</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tile_list_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/random_cat_package/random_cat.html#RandomCat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.random_cat_package.random_cat.RandomCat" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RandomCat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_image_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_mask_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_number_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file_pattern</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_rand</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">healpix_options</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/random_cat_package/random_cat.html#RandomCat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.random_cat_package.random_cat.RandomCat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Random Catalogue.</p>
 <p>This class creates a random catalogue given a mask FITS file.</p>
@@ -815,15 +817,31 @@ the tile area accounting for overlapping and masked regions.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>input_image_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Path to input image file</p></li>
 <li><p><strong>input_mask_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Path to input mask file</p></li>
-<li><p><strong>output_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Output file path for random catalogue</p></li>
+<li><p><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Output directory</p></li>
+<li><p><strong>file_number_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – ShapePipe image ID string</p></li>
+<li><p><strong>output_file_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Output file pattern (base name) for random catalogue</p></li>
 <li><p><strong>n_rand</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Number of random objects on output</p></li>
 <li><p><strong>density</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – <code class="docutils literal notranslate"><span class="pre">n_rand</span></code> is interpreted per square degrees if <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
 <li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.10)"><em>logging.Logger</em></a>) – Logging instance</p></li>
-<li><p><strong>tile_list_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) – List to all tile IDs, to remove objects in
-overlapping tile areas</p></li>
+<li><p><strong>healpix_options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) – Parameters for HEALPix output mask file</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.modules.random_cat_package.random_cat.RandomCat.save_as_healpix">
+<span class="sig-name descname"><span class="pre">save_as_healpix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdu_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">header</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/random_cat_package/random_cat.html#RandomCat.save_as_healpix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.random_cat_package.random_cat.RandomCat.save_as_healpix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save As Healpix.</p>
+<p>Save mask as healpix FITS file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hdu_mask</strong> (<em>class HDUList</em>) – HDU with 2D pixel mask image</p></li>
+<li><p><strong>header</strong> (<em>class Header</em>) – Image header with WCS information</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="shapepipe.modules.random_cat_package.random_cat.RandomCat.process">
 <span class="sig-name descname"><span class="pre">process</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/random_cat_package/random_cat.html#RandomCat.process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.random_cat_package.random_cat.RandomCat.process" title="Permalink to this definition">¶</a></dt>
@@ -865,7 +883,7 @@ overlapping tile areas</p></li>
       By CosmoStat<br/>
     
         &copy; Copyright 2022, CosmoStat.<br/>
-      Last updated on 01 Apr, 2022.<br/>
+      Last updated on 17 Sep, 2022.<br/>
   </p>
 </footer>
 </main>

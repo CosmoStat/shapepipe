@@ -720,7 +720,7 @@
 </nav> <!-- To handle the deprecated key -->
 
 <div class="navbar_extra_footer">
-  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+  <p></p>
 </div>
 
 </div>
@@ -1076,9 +1076,25 @@
                         <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_existing_dir</span><span class="si">}</span><span class="s1">/**/</span><span class="si">{</span><span class="n">out_base</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
                         <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                     <span class="p">)</span>
-                    <span class="k">if</span> <span class="n">path</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_expected</span><span class="p">:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1"> found, skipping&#39;</span><span class="p">)</span>
-                        <span class="k">continue</span>
+                    <span class="k">if</span> <span class="n">path</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_expected</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1"> found, skipping download&#39;</span>
+                            <span class="p">)</span>
+                            <span class="k">continue</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="si">}</span><span class="s1"> instead of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_expected</span><span class="si">}</span><span class="s1"> &#39;</span>
+                                <span class="o">+</span> <span class="s1">&#39;existing files found at&#39;</span>
+                                <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_existing_dir</span><span class="si">}</span><span class="s1">&#39;</span>
+                                <span class="o">+</span> <span class="s1">&#39;, downloading images&#39;</span>
+                            <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                            <span class="s1">&#39;No existing images found at&#39;</span>
+                            <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_existing_dir</span><span class="si">}</span><span class="s1">,&#39;</span>
+                            <span class="o">+</span> <span class="s1">&#39; downloading images&#39;</span>
+                        <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">retrieve_one</span><span class="p">(</span><span class="n">in_per_type</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">out_per_type</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="GetImages.retrieve_one"><a class="viewcode-back" href="../../../../shapepipe.modules.get_images_package.get_images.html#shapepipe.modules.get_images_package.get_images.GetImages.retrieve_one">[docs]</a>    <span class="k">def</span> <span class="nf">retrieve_one</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_path</span><span class="p">,</span> <span class="n">out_path</span><span class="p">):</span>
@@ -1162,7 +1178,7 @@
       By CosmoStat<br/>
     
         &copy; Copyright 2022, CosmoStat.<br/>
-      Last updated on 01 Apr, 2022.<br/>
+      Last updated on 17 Sep, 2022.<br/>
   </p>
 </footer>
 </main>

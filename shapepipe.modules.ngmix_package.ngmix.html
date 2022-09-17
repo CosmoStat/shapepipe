@@ -723,7 +723,7 @@
 </nav> <!-- To handle the deprecated key -->
 
 <div class="navbar_extra_footer">
-  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+  <p></p>
 </div>
 
 </div>
@@ -764,7 +764,9 @@
             href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2Fshapepipe.modules.ngmix_package.ngmix.html&body=Your%20issue%20content%20here."><button
                 type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
                 title="Open an issue"><i class="fas fa-lightbulb"></i>open issue</button></a>
-        
+        <a class="edit-button" href="https://github.com/CosmoStat/shapepipe/edit/master/docs/source/shapepipe.modules.ngmix_package.ngmix.rst"><button
+                type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
+                title="Edit this page"><i class="fas fa-pencil-alt"></i>suggest edit</button></a>
     </div>
 </div>
 
@@ -839,7 +841,7 @@ postage stamps in these CCDs.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>vign</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a>) – Array containing the postage stamp to flip</p></li>
+<li><p><strong>vign</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)"><em>numpy.ndarray</em></a>) – Array containing the postage stamp to flip</p></li>
 <li><p><strong>ccd_nb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – ID of the CCD containing the postage stamp</p></li>
 </ul>
 </dd>
@@ -847,7 +849,7 @@ postage stamps in these CCDs.</p>
 <dd class="field-even"><p>The flipped postage stamp</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)">numpy.ndarray</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)">numpy.ndarray</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -927,7 +929,7 @@ No guesses are given for the ellipticity <code class="docutils literal notransla
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>img</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a>) – Array containing the image</p></li>
+<li><p><strong>img</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)"><em>numpy.ndarray</em></a>) – Array containing the image</p></li>
 <li><p><strong>pixel_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Approximation of the pixel scale</p></li>
 <li><p><strong>guess_flux_unit</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – If <code class="docutils literal notranslate"><span class="pre">img</span></code> returns the flux in pixel units, otherwise if <code class="docutils literal notranslate"><span class="pre">sky</span></code>
 returns the flux in <span class="math notranslate nohighlight">\({\rm arcsec}^{-2}\)</span></p></li>
@@ -946,7 +948,7 @@ returns the centroid in arcsec</p></li>
 <dd class="field-even"><p>Return the guess array <code class="docutils literal notranslate"><span class="pre">[center_x,</span> <span class="pre">center_y,</span> <span class="pre">g1,</span> <span class="pre">g2,</span> <span class="pre">size_T,</span> <span class="pre">flux]</span></code></p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)">numpy.ndarray</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)">numpy.ndarray</a></p>
 </dd>
 <dt class="field-even">Raises</dt>
 <dd class="field-even"><ul class="simple">
@@ -967,7 +969,7 @@ returns the centroid in arcsec</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>obs</strong> (<em>ngmix.observation.Observation</em>) – Image to fit</p></li>
 <li><p><strong>model</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Model for fit</p></li>
-<li><p><strong>guess0</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a>) – Parameters of first model guess</p></li>
+<li><p><strong>guess0</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)"><em>numpy.ndarray</em></a>) – Parameters of first model guess</p></li>
 <li><p><strong>prior</strong> (<em>ngmix.prior</em><em>, </em><em>optional</em>) – Prior for fit paraemeters</p></li>
 <li><p><strong>ntry</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><em>optional</em>) – Number of tries for fit, the default is <code class="docutils literal notranslate"><span class="pre">5</span></code></p></li>
 </ul>
@@ -992,7 +994,7 @@ returns the centroid in arcsec</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>wcs</strong> (<a class="reference external" href="https://docs.astropy.org/en/latest/api/astropy.wcs.WCS.html#astropy.wcs.WCS" title="(in Astropy v5.1)"><em>astropy.wcs.WCS</em></a>) – WCS object for which we want the Jacobian</p></li>
+<li><p><strong>wcs</strong> (<a class="reference external" href="https://docs.astropy.org/en/latest/api/astropy.wcs.WCS.html#astropy.wcs.WCS" title="(in Astropy v5.2)"><em>astropy.wcs.WCS</em></a>) – WCS object for which we want the Jacobian</p></li>
 <li><p><strong>ra</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – RA position of the center of the vignet (in degrees)</p></li>
 <li><p><strong>dec</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Dec position of the center of the vignet (in degress)</p></li>
 </ul>
@@ -1016,8 +1018,8 @@ function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>gal</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a>) – Galaxy image</p></li>
-<li><p><strong>weight</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a>) – Weight image</p></li>
+<li><p><strong>gal</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)"><em>numpy.ndarray</em></a>) – Galaxy image</p></li>
+<li><p><strong>weight</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)"><em>numpy.ndarray</em></a>) – Weight image</p></li>
 <li><p><strong>guess</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) – Gaussian parameters fot the window function
 <code class="docutils literal notranslate"><span class="pre">[x0,</span> <span class="pre">y0,</span> <span class="pre">g1,</span> <span class="pre">g2,</span> <span class="pre">T,</span> <span class="pre">flux]</span></code></p></li>
 <li><p><strong>pixel_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Pixel scale of the galaxy image</p></li>
@@ -1094,7 +1096,7 @@ shape measurement with NGMIX.</p>
       By CosmoStat<br/>
     
         &copy; Copyright 2022, CosmoStat.<br/>
-      Last updated on 01 Apr, 2022.<br/>
+      Last updated on 17 Sep, 2022.<br/>
   </p>
 </footer>
 </main>

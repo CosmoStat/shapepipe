@@ -720,7 +720,7 @@
 </nav> <!-- To handle the deprecated key -->
 
 <div class="navbar_extra_footer">
-  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+  <p></p>
 </div>
 
 </div>
@@ -2251,144 +2251,6 @@
     <span class="n">cyd</span> <span class="o">=</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">unitdef</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">cy</span><span class="p">]</span>
 
     <span class="k">return</span> <span class="n">cxd</span><span class="p">,</span> <span class="n">cyd</span></div>
-
-
-<div class="viewcode-block" id="remove_common_elements"><a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.remove_common_elements">[docs]</a><span class="k">def</span> <span class="nf">remove_common_elements</span><span class="p">(</span>
-    <span class="n">final_cat_file</span><span class="p">,</span>
-    <span class="n">tiles_id_file</span><span class="p">,</span>
-    <span class="n">pos_param</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;XWIN_WORLD&#39;</span><span class="p">,</span> <span class="s1">&#39;YWIN_WORLD&#39;</span><span class="p">]</span>
-<span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Remove Common Elements.</span>
-
-<span class="sd">    Create a mask for objects in the overlapping regions between</span>
-<span class="sd">    neigbouring stacked images. The object furthest from its stack</span>
-<span class="sd">    center is flagged.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    final_cat_file : io.FITSCatalog</span>
-<span class="sd">        Final catalog.</span>
-<span class="sd">    tile_id_file : str</span>
-<span class="sd">        Path to the file containing all the tile IDs.</span>
-<span class="sd">    pos_param : list</span>
-<span class="sd">        List with the column name for ra and dec positions.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    float</span>
-<span class="sd">        ratio of masked to total objects</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">key_id</span> <span class="o">=</span> <span class="s1">&#39;TILE_ID&#39;</span>
-
-    <span class="k">def</span> <span class="nf">get_tile_wcs</span><span class="p">(</span><span class="n">xxx</span><span class="p">,</span> <span class="n">yyy</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get tile WCS.</span>
-
-<span class="sd">        Create an astropy.wcs.WCS object from the name of the tile.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        xxx : int</span>
-<span class="sd">            First 3 numbers in the tile name.</span>
-<span class="sd">        yyy : int</span>
-<span class="sd">            Last 3 numbers in the tile name.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        astropy.wcs.WCS</span>
-<span class="sd">            WCS for the tile.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span> <span class="o">=</span> <span class="n">get_tile_coord_from_nixy</span><span class="p">(</span><span class="n">xxx</span><span class="p">,</span> <span class="n">yyy</span><span class="p">)</span>
-
-        <span class="n">w</span> <span class="o">=</span> <span class="n">WCS</span><span class="p">(</span><span class="n">naxis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ra</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> <span class="n">dec</span><span class="o">.</span><span class="n">deg</span><span class="p">])</span>
-        <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">5000</span><span class="p">,</span> <span class="mi">5000</span><span class="p">])</span>
-        <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-            <span class="p">[[</span><span class="mf">0.187</span> <span class="o">/</span> <span class="mi">3600</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.187</span> <span class="o">/</span> <span class="mi">3600</span><span class="p">]]</span>
-        <span class="p">)</span>
-        <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">ctype</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;RA---TAN&#39;</span><span class="p">,</span> <span class="s1">&#39;DEC--TAN&#39;</span><span class="p">]</span>
-        <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cunit</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;deg&#39;</span><span class="p">,</span> <span class="s1">&#39;deg&#39;</span><span class="p">]</span>
-        <span class="n">w</span><span class="o">.</span><span class="n">_naxis</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10000</span><span class="p">,</span> <span class="mi">10000</span><span class="p">]</span>
-
-        <span class="k">return</span> <span class="n">w</span>
-
-    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
-
-    <span class="c1"># Get object coordinates</span>
-    <span class="n">ra_tile</span> <span class="o">=</span> <span class="n">final_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="n">pos_param</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
-    <span class="n">dec_tile</span> <span class="o">=</span> <span class="n">final_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="n">pos_param</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
-    <span class="n">catalog_coord</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">SkyCoord</span><span class="p">(</span>
-        <span class="n">ra</span><span class="o">=</span><span class="n">ra_tile</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span>
-        <span class="n">dec</span><span class="o">=</span><span class="n">dec_tile</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="c1"># Get tile ID from FITS header</span>
-
-    <span class="c1"># Format string to make sure trailing zeros are not cut</span>
-    <span class="n">tile_id_format</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">final_cat_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="n">key_id</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s1">07.3f</span><span class="si">}</span><span class="s1">&#39;</span>
-
-    <span class="c1"># Transform to strings (nix, niy)</span>
-    <span class="n">tile_id_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">tile_id_format</span><span class="p">)</span>
-    <span class="n">tile_id</span> <span class="o">=</span> <span class="n">get_tile_number</span><span class="p">(</span><span class="n">tile_id_str</span><span class="p">)</span>
-
-    <span class="c1"># Get tile ID for entire survey from ascii file</span>
-    <span class="n">all_id_float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">tiles_id_file</span><span class="p">,</span> <span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">all_id_format</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">:</span><span class="s1">07.3f</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">all_id_float</span><span class="p">]</span>
-    <span class="n">all_id_str</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">id_f</span><span class="p">)</span> <span class="k">for</span> <span class="n">id_f</span> <span class="ow">in</span> <span class="n">all_id_format</span><span class="p">]</span>
-    <span class="n">all_id2</span> <span class="o">=</span> <span class="n">get_tile_number_list</span><span class="p">(</span><span class="n">all_id_str</span><span class="p">)</span>
-
-    <span class="n">all_tile_ra</span><span class="p">,</span> <span class="n">all_tile_dec</span> <span class="o">=</span> <span class="n">get_tile_coord_from_nixy</span><span class="p">(</span>
-        <span class="n">all_id2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-        <span class="n">all_id2</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-    <span class="p">)</span>
-    <span class="n">all_tile_coord</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">all_tile_ra</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="n">all_tile_dec</span><span class="p">)</span>
-
-    <span class="n">ra_m_tile</span><span class="p">,</span> <span class="n">dec_m_tile</span> <span class="o">=</span> <span class="n">get_tile_coord_from_nixy</span><span class="p">(</span>
-        <span class="n">tile_id</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-        <span class="n">tile_id</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-    <span class="p">)</span>
-    <span class="n">tile_main_coord</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">ra_m_tile</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="n">dec_m_tile</span><span class="p">)</span>
-
-    <span class="n">mask_tile</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">ra_tile</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
-
-    <span class="c1"># Compute separation between objects and tile center</span>
-    <span class="n">sep_ref</span> <span class="o">=</span> <span class="n">tile_main_coord</span><span class="o">.</span><span class="n">separation</span><span class="p">(</span><span class="n">catalog_coord</span><span class="p">)</span>
-
-    <span class="c1"># Find close tiles = nearest 9 neighbours</span>
-    <span class="n">close_tiles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">tile_main_coord</span><span class="o">.</span><span class="n">separation</span><span class="p">(</span><span class="n">all_tile_coord</span><span class="p">))[</span><span class="mi">1</span><span class="p">:</span><span class="mi">9</span><span class="p">]</span>
-
-    <span class="c1"># Loop over neighbours</span>
-    <span class="k">for</span> <span class="n">close</span> <span class="ow">in</span> <span class="n">close_tiles</span><span class="p">:</span>
-
-        <span class="n">ra_m_check</span><span class="p">,</span> <span class="n">dec_m_check</span> <span class="o">=</span> <span class="n">get_tile_coord_from_nixy</span><span class="p">(</span>
-            <span class="n">all_id2</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">close</span><span class="p">],</span>
-            <span class="n">all_id2</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">close</span><span class="p">]</span>
-        <span class="p">)</span>
-        <span class="n">tile_check_coord</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">ra_m_check</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="n">dec_m_check</span><span class="p">)</span>
-
-        <span class="n">sep_check</span> <span class="o">=</span> <span class="n">tile_check_coord</span><span class="o">.</span><span class="n">separation</span><span class="p">(</span><span class="n">catalog_coord</span><span class="p">)</span>
-
-        <span class="n">w_tile_check</span> <span class="o">=</span> <span class="n">get_tile_wcs</span><span class="p">(</span><span class="n">all_id2</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">close</span><span class="p">],</span> <span class="n">all_id2</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">close</span><span class="p">])</span>
-
-        <span class="c1"># Mask objects who are closer to neighbour than tile center</span>
-        <span class="n">mask_tile</span> <span class="o">&amp;=</span> <span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">less</span><span class="p">(</span><span class="n">sep_ref</span><span class="p">,</span> <span class="n">sep_check</span><span class="p">)</span>
-            <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">invert</span><span class="p">(</span><span class="n">w_tile_check</span><span class="o">.</span><span class="n">footprint_contains</span><span class="p">(</span><span class="n">catalog_coord</span><span class="p">))</span>
-        <span class="p">)</span>
-
-    <span class="c1"># Add mask as column to FITS catalogue</span>
-    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">add_col</span><span class="p">(</span><span class="s1">&#39;FLAG_TILING&#39;</span><span class="p">,</span> <span class="n">mask_tile</span><span class="p">)</span>
-
-    <span class="n">final_cat_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-
-    <span class="c1"># Compute ratio of masked to total object</span>
-    <span class="n">n_masked</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask_tile</span><span class="p">)</span>
-    <span class="n">n_tot</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mask_tile</span><span class="p">)</span>
-
-    <span class="n">ratio_mask_tot</span> <span class="o">=</span> <span class="n">n_masked</span> <span class="o">/</span> <span class="n">n_tot</span>
-
-    <span class="k">return</span> <span class="n">ratio_mask_tot</span></div>
 </pre></div>
 
               </div>
@@ -2406,7 +2268,7 @@
       By CosmoStat<br/>
     
         &copy; Copyright 2022, CosmoStat.<br/>
-      Last updated on 01 Apr, 2022.<br/>
+      Last updated on 17 Sep, 2022.<br/>
   </p>
 </footer>
 </main>

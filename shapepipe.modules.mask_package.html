@@ -722,7 +722,7 @@
 </nav> <!-- To handle the deprecated key -->
 
 <div class="navbar_extra_footer">
-  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+  <p></p>
 </div>
 
 </div>
@@ -763,7 +763,9 @@
             href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2Fshapepipe.modules.mask_package.html&body=Your%20issue%20content%20here."><button
                 type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
                 title="Open an issue"><i class="fas fa-lightbulb"></i>open issue</button></a>
-        
+        <a class="edit-button" href="https://github.com/CosmoStat/shapepipe/edit/master/docs/source/shapepipe.modules.mask_package.rst"><button
+                type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
+                title="Edit this page"><i class="fas fa-pencil-alt"></i>suggest edit</button></a>
     </div>
 </div>
 
@@ -819,6 +821,11 @@
    <li class="toc-h3 nav-item toc-entry">
     <a class="reference internal nav-link" href="#messier-parameters">
      [MESSIER_PARAMETERS]
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#ngc-parameters">
+     [NGC_PARAMETERS]
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
@@ -899,6 +906,11 @@
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#ngc-parameters">
+     [NGC_PARAMETERS]
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
     <a class="reference internal nav-link" href="#md-parameters">
      [MD_PARAMETERS]
     </a>
@@ -945,13 +957,16 @@ and star catalogue (optional)</p>
 </dl>
 <div class="section" id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
-<p>This module creates masks for bright stars, diffraction spikes, Messier
-objects, borders, and other artifacts. If a flag file is given as input,
-for example from pre-processing, the mask that is created by this module
-is joined with the mask from this external flag file. In this case
-the config flag <code class="docutils literal notranslate"><span class="pre">USE_EXT_FLAG</span></code> needs to be set to <code class="docutils literal notranslate"><span class="pre">True</span></code>. To distinguish
-the newly created output flag file from the input ones, a prefix can added as
-specificed by the config entry <code class="docutils literal notranslate"><span class="pre">PREFIX</span></code>.</p>
+<p>This module creates masks for bright stars, diffraction spikes, deep sky
+objects (from the Messier and NGC catalogues), borders, and other artifacts. If
+a flag file is given as input, for example from pre-processing, the mask that
+is created by this module is joined with the mask from this external flag file.
+In this case the config flag <code class="docutils literal notranslate"><span class="pre">USE_EXT_FLAG</span></code> needs to be set to <code class="docutils literal notranslate"><span class="pre">True</span></code>. To
+distinguish the newly created output flag file from the input ones, a prefix
+can added as specificed by the config entry <code class="docutils literal notranslate"><span class="pre">PREFIX</span></code>.</p>
+<p>An NGC catalogue with positions, sizes, and types is provided with
+<code class="docutils literal notranslate"><span class="pre">shapepipe</span></code>,
+<a class="reference external" href="http://www.klima-luft.de/steinicke/ngcic/rev2000/Explan.htm">source</a>.</p>
 <p>Masked pixels of different mask types are indicated by integers, which
 conveniently are powers of two such that they can be combined bit-wise.</p>
 <p>To mask bright stars, this module either creates a star catalogue from the
@@ -966,7 +981,7 @@ set the config flag <code class="docutils literal notranslate"><span class="pre"
 catalogue can be created before running this module via the script
 <code class="docutils literal notranslate"><span class="pre">create_star_cat</span></code>. During the processing of this module, this star catalogue
 is read from disk, with <code class="docutils literal notranslate"><span class="pre">USE_SET_STAR</span> <span class="pre">=</span> <span class="pre">True</span></code>.</p>
-<p>The masking is done with the software <code class="docutils literal notranslate"><span class="pre">WeightWatcher</span></code> <span id="id1">[<a class="reference internal" href="z_ref.html#id32" title="C. Marmo and E. Bertin. MissFITS and WeightWatcher: Two Optimised Tools for Managing FITS Data. In R. W. Argyle, P. S. Bunclark, and J. R. Lewis, editors, Astronomical Data Analysis Software and Systems XVII, volume 394 of Astronomical Society of the Pacific Conference Series, 619. August 2008.">MarmoBertin08</a>]</span>,
+<p>The masking is done with the software <code class="docutils literal notranslate"><span class="pre">WeightWatcher</span></code> <span id="id1">[<a class="reference internal" href="z_ref.html#id33" title="C. Marmo and E. Bertin. MissFITS and WeightWatcher: Two Optimised Tools for Managing FITS Data. In R. W. Argyle, P. S. Bunclark, and J. R. Lewis, editors, Astronomical Data Analysis Software and Systems XVII, volume 394 of Astronomical Society of the Pacific Conference Series, 619. August 2008.">Marmo and Bertin, 2008</a>]</span>,
 which is installed by <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> by default.</p>
 </div>
 <div class="section" id="module-specific-config-file-entries">
@@ -1069,6 +1084,19 @@ environment will be used</p>
 </dd>
 </dl>
 </div>
+<div class="section" id="ngc-parameters">
+<h3>[NGC_PARAMETERS]<a class="headerlink" href="#ngc-parameters" title="Permalink to this headline">¶</a></h3>
+<dl class="simple">
+<dt>NGC_MAKE<span class="classifier">bool</span></dt><dd><p>Create mask around NGC objects if <code class="docutils literal notranslate"><span class="pre">True</span></code></p>
+</dd>
+<dt>NGC_CAT_PATH<span class="classifier">str</span></dt><dd><p>Path to NGC catalogue</p>
+</dd>
+<dt>NGC_SIZE_PLUS<span class="classifier">float</span></dt><dd><p>Fraction to increase NGC mask</p>
+</dd>
+<dt>NGC_FLAG_VALUE<span class="classifier">int</span></dt><dd><p>NGC mask pixel value, power of 2</p>
+</dd>
+</dl>
+</div>
 <div class="section" id="md-parameters">
 <h3>[MD_PARAMETERS]<a class="headerlink" href="#md-parameters" title="Permalink to this headline">¶</a></h3>
 <dl class="simple">
@@ -1136,7 +1164,7 @@ threshold, image is marked for removal</p>
       By CosmoStat<br/>
     
         &copy; Copyright 2022, CosmoStat.<br/>
-      Last updated on 01 Apr, 2022.<br/>
+      Last updated on 17 Sep, 2022.<br/>
   </p>
 </footer>
 </main>

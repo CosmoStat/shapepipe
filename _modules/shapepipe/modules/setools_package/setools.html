@@ -720,7 +720,7 @@
 </nav> <!-- To handle the deprecated key -->
 
 <div class="navbar_extra_footer">
-  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+  <p></p>
 </div>
 
 </div>
@@ -1448,7 +1448,7 @@
             <span class="n">n_keep</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">cat_size</span> <span class="o">*</span> <span class="n">ratio</span><span class="p">))</span>
             <span class="n">mask_ratio</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">mask_left</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">cat_size</span><span class="p">))</span>
-            <span class="k">while</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mask_ratio</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_keep</span><span class="p">):</span>
+            <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">mask_ratio</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_keep</span><span class="p">:</span>
                 <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">mask_left</span><span class="p">))</span>
                 <span class="n">mask_ratio</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mask_left</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
             <span class="n">mask_ratio</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mask_ratio</span><span class="p">)</span>
@@ -2012,7 +2012,7 @@
       By CosmoStat<br/>
     
         &copy; Copyright 2022, CosmoStat.<br/>
-      Last updated on 01 Apr, 2022.<br/>
+      Last updated on 17 Sep, 2022.<br/>
   </p>
 </footer>
 </main>

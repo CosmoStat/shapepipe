@@ -720,7 +720,7 @@
 </nav> <!-- To handle the deprecated key -->
 
 <div class="navbar_extra_footer">
-  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+  <p></p>
 </div>
 
 </div>
@@ -807,6 +807,7 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">astropy</span> <span class="kn">import</span> <span class="n">units</span><span class="p">,</span> <span class="n">wcs</span>
 <span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="kn">import</span> <span class="n">SkyCoord</span>
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="kn">import</span> <span class="n">fits</span>
 
 <span class="kn">from</span> <span class="nn">shapepipe.pipeline</span> <span class="kn">import</span> <span class="n">file_io</span>
 <span class="kn">from</span> <span class="nn">shapepipe.pipeline.config</span> <span class="kn">import</span> <span class="n">CustomParser</span>
@@ -825,10 +826,23 @@
 <span class="sd">        Path to image (FITS format)</span>
 <span class="sd">    weight_path : str</span>
 <span class="sd">        Path to the weight image (FITS format)</span>
+<span class="sd">    image_prefix : str</span>
+<span class="sd">        Prefix to input image name, specify as ``&#39;none&#39;`` for no prefix</span>
+<span class="sd">    image_num : str</span>
+<span class="sd">        File number identified</span>
 <span class="sd">    config_filepath : str</span>
 <span class="sd">        Path to the ``.mask`` config file</span>
 <span class="sd">    output_dir : str</span>
 <span class="sd">        Path to the output directory</span>
+<span class="sd">    w_log : logging.Logger</span>
+<span class="sd">        Log file</span>
+<span class="sd">    path_external_flag : str, optional</span>
+<span class="sd">        Path to external flag file, default is ``None`` (not used)</span>
+<span class="sd">    outname_base : str, optional</span>
+<span class="sd">       Output file name base, default is ``flag``</span>
+<span class="sd">    star_cat_path : str, optional</span>
+<span class="sd">        Path to external star catalogue, default is ``None`` (not used;</span>
+<span class="sd">        instead the star catalogue is produced on the fly at run time)</span>
 <span class="sd">    hdu : int, optional</span>
 <span class="sd">        HDU number, default is ``0``</span>
 
@@ -842,6 +856,7 @@
         <span class="n">image_num</span><span class="p">,</span>
         <span class="n">config_filepath</span><span class="p">,</span>
         <span class="n">output_dir</span><span class="p">,</span>
+        <span class="n">w_log</span><span class="p">,</span>
         <span class="n">path_external_flag</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">outname_base</span><span class="o">=</span><span class="s1">&#39;flag&#39;</span><span class="p">,</span>
         <span class="n">star_cat_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -850,33 +865,51 @@
 
         <span class="c1"># Path to the image to mask</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_image_fullpath</span> <span class="o">=</span> <span class="n">image_path</span>
+
         <span class="c1"># Path to the weight associated to the image</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_weight_fullpath</span> <span class="o">=</span> <span class="n">weight_path</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_config_filepath</span> <span class="o">=</span> <span class="n">config_filepath</span>
-        <span class="c1"># Path to the output directory</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
-        <span class="c1"># Path to an external flag file</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_path_external_flag</span> <span class="o">=</span> <span class="n">path_external_flag</span>
-        <span class="c1"># Output file base name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_outname_base</span> <span class="o">=</span> <span class="n">outname_base</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_img_number</span> <span class="o">=</span> <span class="n">image_num</span>
+        <span class="c1"># Input image prefix</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">image_prefix</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s1">&#39;none&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">image_prefix</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_img_prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">image_prefix</span><span class="si">}</span><span class="s1">_&#39;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_img_prefix</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
 
+        <span class="c1"># File number identified</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_img_number</span> <span class="o">=</span> <span class="n">image_num</span>
+
+        <span class="c1"># Path to mask config file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config_filepath</span> <span class="o">=</span> <span class="n">config_filepath</span>
+
+        <span class="c1"># Path to the output directory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
+
+        <span class="c1"># Log file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span> <span class="o">=</span> <span class="n">w_log</span>
+
+        <span class="c1"># Path to an external flag file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path_external_flag</span> <span class="o">=</span> <span class="n">path_external_flag</span>
+
+        <span class="c1"># Output file base name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outname_base</span> <span class="o">=</span> <span class="n">outname_base</span>
+
+        <span class="c1"># Set external star catalogue path if given</span>
         <span class="k">if</span> <span class="n">star_cat_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_star_cat_path</span> <span class="o">=</span> <span class="n">star_cat_path</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_hdu</span> <span class="o">=</span> <span class="n">hdu</span>
+
+        <span class="c1"># Read mask config file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_get_config</span><span class="p">()</span>
-        <span class="c1"># Set parameters needed for the stars detection</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_set_parameters</span><span class="p">()</span>
+
+        <span class="c1"># Set parameters needed for the star detection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_image_coordinates</span><span class="p">()</span>
+
+        <span class="c1"># Set error flag</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_err</span> <span class="o">=</span> <span class="kc">False</span>
 
 <div class="viewcode-block" id="Mask._get_config"><a class="viewcode-back" href="../../../../shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask._get_config">[docs]</a>    <span class="k">def</span> <span class="nf">_get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get Config Values.</span>
+        <span class="sd">&quot;&quot;&quot;Get Config.</span>
 
 <span class="sd">        Read the config file and set parameters.</span>
 
@@ -905,6 +938,7 @@
             <span class="s1">&#39;HALO&#39;</span><span class="p">:</span> <span class="p">{},</span>
             <span class="s1">&#39;SPIKE&#39;</span><span class="p">:</span> <span class="p">{},</span>
             <span class="s1">&#39;MESSIER&#39;</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="s1">&#39;NGC&#39;</span><span class="p">:</span> <span class="p">{},</span>
             <span class="s1">&#39;MD&#39;</span><span class="p">:</span> <span class="p">{},</span>
         <span class="p">}</span>
 
@@ -954,6 +988,7 @@
             <span class="p">)</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="n">mask_shape</span><span class="p">][</span><span class="s1">&#39;make&#39;</span><span class="p">]:</span>
+
                 <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="n">mask_shape</span><span class="p">][</span><span class="s1">&#39;maskmodel_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">getexpanded</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">mask_shape</span><span class="si">}</span><span class="s1">_PARAMETERS&#39;</span><span class="p">,</span>
                     <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">mask_shape</span><span class="si">}</span><span class="s1">_MASKMODEL_PATH&#39;</span><span class="p">,</span>
@@ -988,20 +1023,26 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="n">mask_shape</span><span class="p">][</span><span class="s1">&#39;reg_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;MESSIER&#39;</span><span class="p">][</span><span class="s1">&#39;make&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">conf</span><span class="o">.</span><span class="n">getboolean</span><span class="p">(</span><span class="s1">&#39;MESSIER_PARAMETERS&#39;</span><span class="p">,</span> <span class="s1">&#39;MESSIER_MAKE&#39;</span><span class="p">)</span>
-        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">mask_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;MESSIER&#39;</span><span class="p">,</span> <span class="s1">&#39;NGC&#39;</span><span class="p">]:</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;MESSIER&#39;</span><span class="p">][</span><span class="s1">&#39;make&#39;</span><span class="p">]:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;MESSIER&#39;</span><span class="p">][</span><span class="s1">&#39;cat_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">conf</span><span class="o">.</span><span class="n">getexpanded</span><span class="p">(</span><span class="s1">&#39;MESSIER_PARAMETERS&#39;</span><span class="p">,</span> <span class="s1">&#39;MESSIER_CAT_PATH&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="n">mask_type</span><span class="p">][</span><span class="s1">&#39;make&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">getboolean</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">mask_type</span><span class="si">}</span><span class="s1">_PARAMETERS&#39;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">mask_type</span><span class="si">}</span><span class="s1">_MAKE&#39;</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;MESSIER&#39;</span><span class="p">][</span><span class="s1">&#39;size_plus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">conf</span><span class="o">.</span><span class="n">getfloat</span><span class="p">(</span><span class="s1">&#39;MESSIER_PARAMETERS&#39;</span><span class="p">,</span> <span class="s1">&#39;MESSIER_SIZE_PLUS&#39;</span><span class="p">)</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;MESSIER&#39;</span><span class="p">][</span><span class="s1">&#39;flag&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">conf</span><span class="o">.</span><span class="n">getint</span><span class="p">(</span><span class="s1">&#39;MESSIER_PARAMETERS&#39;</span><span class="p">,</span> <span class="s1">&#39;MESSIER_FLAG_VALUE&#39;</span><span class="p">)</span>
-            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="n">mask_type</span><span class="p">][</span><span class="s1">&#39;make&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="n">mask_type</span><span class="p">][</span><span class="s1">&#39;cat_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">getexpanded</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">mask_type</span><span class="si">}</span><span class="s1">_PARAMETERS&#39;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">mask_type</span><span class="si">}</span><span class="s1">_CAT_PATH&#39;</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="n">mask_type</span><span class="p">][</span><span class="s1">&#39;size_plus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">getfloat</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">mask_type</span><span class="si">}</span><span class="s1">_PARAMETERS&#39;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">mask_type</span><span class="si">}</span><span class="s1">_SIZE_PLUS&#39;</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="n">mask_type</span><span class="p">][</span><span class="s1">&#39;flag&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">getint</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">mask_type</span><span class="si">}</span><span class="s1">_PARAMETERS&#39;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">mask_type</span><span class="si">}</span><span class="s1">_FLAG_VALUE&#39;</span><span class="p">,</span>
+                <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;MD&#39;</span><span class="p">][</span><span class="s1">&#39;make&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">conf</span><span class="o">.</span><span class="n">getboolean</span><span class="p">(</span><span class="s1">&#39;MD_PARAMETERS&#39;</span><span class="p">,</span> <span class="s1">&#39;MD_MAKE&#39;</span><span class="p">)</span>
@@ -1018,10 +1059,11 @@
                 <span class="n">conf</span><span class="o">.</span><span class="n">getboolean</span><span class="p">(</span><span class="s1">&#39;MD_PARAMETERS&#39;</span><span class="p">,</span> <span class="s1">&#39;MD_REMOVE&#39;</span><span class="p">)</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="Mask._set_parameters"><a class="viewcode-back" href="../../../../shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask._set_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">_set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Set Parameters.</span>
+<div class="viewcode-block" id="Mask._set_image_coordinates"><a class="viewcode-back" href="../../../../shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask._set_image_coordinates">[docs]</a>    <span class="k">def</span> <span class="nf">_set_image_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set Image Coordinates.</span>
 
-<span class="sd">        Set the parameters for the stars detection.</span>
+<span class="sd">        Compute the image coordinates for matching with the star catalogue</span>
+<span class="sd">        and star mask.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">img</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_image_fullpath</span><span class="p">,</span> <span class="n">hdu_no</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -1029,20 +1071,29 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_header</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">get_header</span><span class="p">()</span>
         <span class="n">img_shape</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span><span class="o">.</span><span class="n">shape</span>
         <span class="n">img</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-        <span class="k">del</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">img</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_wcs</span> <span class="o">=</span> <span class="n">wcs</span><span class="o">.</span><span class="n">WCS</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_header</span><span class="p">)</span>
+
+        <span class="c1"># Compute field center</span>
 
         <span class="c1"># Note: get_data().shape corresponds to (n_y, n_x)</span>
         <span class="n">pix_center</span> <span class="o">=</span> <span class="p">[</span><span class="n">img_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">img_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">]</span>
         <span class="n">wcs_center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wcs</span><span class="o">.</span><span class="n">all_pix2world</span><span class="p">([</span><span class="n">pix_center</span><span class="p">],</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">_fieldcenter</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fieldcenter</span><span class="p">[</span><span class="s1">&#39;pix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pix_center</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fieldcenter</span><span class="p">[</span><span class="s1">&#39;wcs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">wcs_center</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dec</span><span class="o">=</span><span class="n">wcs_center</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;deg&#39;</span><span class="p">)</span>
         <span class="p">)</span>
 
+        <span class="c1"># Get the four corners of the image</span>
+        <span class="n">corners</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wcs</span><span class="o">.</span><span class="n">calc_footprint</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_corners_sc</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span>
+            <span class="n">ra</span><span class="o">=</span><span class="n">corners</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span>
+            <span class="n">dec</span><span class="o">=</span><span class="n">corners</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Compute image radius = image diagonal</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_img_radius</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_image_radius</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Mask.make_mask"><a class="viewcode-back" href="../../../../shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask.make_mask">[docs]</a>    <span class="k">def</span> <span class="nf">make_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1075,14 +1126,6 @@
                     <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_err</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;BORDER&#39;</span><span class="p">][</span><span class="s1">&#39;make&#39;</span><span class="p">]:</span>
-                <span class="n">border_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_border</span><span class="p">(</span>
-                    <span class="n">width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;BORDER&#39;</span><span class="p">][</span><span class="s1">&#39;width&#39;</span><span class="p">]</span>
-                <span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">border_mask</span> <span class="o">=</span> <span class="kc">None</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_err</span><span class="p">:</span>
             <span class="n">mask_name</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;HALO&#39;</span><span class="p">][</span><span class="s1">&#39;make&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;SPIKE&#39;</span><span class="p">][</span><span class="s1">&#39;make&#39;</span><span class="p">]:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_exec_WW</span><span class="p">(</span><span class="n">types</span><span class="o">=</span><span class="s1">&#39;ALL&#39;</span><span class="p">)</span>
@@ -1102,15 +1145,22 @@
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">mask_name</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
 
+        <span class="n">masks_internal</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_err</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;MESSIER&#39;</span><span class="p">][</span><span class="s1">&#39;make&#39;</span><span class="p">]:</span>
-                <span class="n">messier_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_messier</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;MESSIER&#39;</span><span class="p">][</span><span class="s1">&#39;cat_path&#39;</span><span class="p">],</span>
-                    <span class="n">size_plus</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;MESSIER&#39;</span><span class="p">][</span><span class="s1">&#39;size_plus&#39;</span><span class="p">],</span>
-                    <span class="n">flag_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;MESSIER&#39;</span><span class="p">][</span><span class="s1">&#39;flag&#39;</span><span class="p">],</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;BORDER&#39;</span><span class="p">][</span><span class="s1">&#39;make&#39;</span><span class="p">]:</span>
+                <span class="n">masks_internal</span><span class="p">[</span><span class="s1">&#39;BORDER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_border</span><span class="p">(</span>
+                    <span class="n">width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="s1">&#39;BORDER&#39;</span><span class="p">][</span><span class="s1">&#39;width&#39;</span><span class="p">]</span>
                 <span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">messier_mask</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_err</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;MESSIER&#39;</span><span class="p">,</span> <span class="s1">&#39;NGC&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="n">_type</span><span class="p">][</span><span class="s1">&#39;make&#39;</span><span class="p">]:</span>
+                    <span class="n">masks_internal</span><span class="p">[</span><span class="n">_type</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_dso</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="n">_type</span><span class="p">][</span><span class="s1">&#39;cat_path&#39;</span><span class="p">],</span>
+                        <span class="n">size_plus</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="n">_type</span><span class="p">][</span><span class="s1">&#39;size_plus&#39;</span><span class="p">],</span>
+                        <span class="n">flag_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="n">_type</span><span class="p">][</span><span class="s1">&#39;flag&#39;</span><span class="p">],</span>
+                        <span class="n">typ</span><span class="o">=</span><span class="n">_type</span><span class="p">,</span>
+                    <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_err</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
@@ -1126,8 +1176,7 @@
                 <span class="n">final_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_final_mask</span><span class="p">(</span>
                     <span class="n">path_mask1</span><span class="o">=</span><span class="n">mask_name</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
                     <span class="n">path_mask2</span><span class="o">=</span><span class="n">mask_name</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-                    <span class="n">border</span><span class="o">=</span><span class="n">border_mask</span><span class="p">,</span>
-                    <span class="n">messier</span><span class="o">=</span><span class="n">messier_mask</span><span class="p">,</span>
+                    <span class="n">masks_internal</span><span class="o">=</span><span class="n">masks_internal</span><span class="p">,</span>
                     <span class="n">path_external_flag</span><span class="o">=</span><span class="n">path_external_flag</span><span class="p">,</span>
                 <span class="p">)</span>
 
@@ -1281,25 +1330,28 @@
 
         <span class="k">return</span> <span class="n">flag</span></div>
 
-<div class="viewcode-block" id="Mask.mask_messier"><a class="viewcode-back" href="../../../../shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask.mask_messier">[docs]</a>    <span class="k">def</span> <span class="nf">mask_messier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cat_path</span><span class="p">,</span> <span class="n">size_plus</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">flag_value</span><span class="o">=</span><span class="mi">8</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Mask Messier.</span>
+<div class="viewcode-block" id="Mask.mask_dso"><a class="viewcode-back" href="../../../../shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask.mask_dso">[docs]</a>    <span class="k">def</span> <span class="nf">mask_dso</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cat_path</span><span class="p">,</span> <span class="n">size_plus</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">flag_value</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">typ</span><span class="o">=</span><span class="s1">&#39;Messier&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Mask DSO.</span>
 
-<span class="sd">        Create a circular patch for Messier objects.</span>
+<span class="sd">        Create a circular patch for deep-sky objects (DSOs), e.g.</span>
+<span class="sd">        Messier or NGC objects.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        cat_path : str</span>
-<span class="sd">            Path to the Messier catalogue</span>
+<span class="sd">            Path to the deep-sky catalogue</span>
 <span class="sd">        size_plus : float</span>
 <span class="sd">            Increase the size of the mask by this factor</span>
 <span class="sd">            (e.g. ``0.1`` means 10%)</span>
 <span class="sd">        flag_value : int</span>
 <span class="sd">            Value of the flag, some power of 2</span>
+<span class="sd">        obj_type : {&#39;Messier&#39;, &#39;NGO&#39;}, optional</span>
+<span class="sd">            Object type</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray or ``None``</span>
-<span class="sd">            If no Messier objects are found in the field return ``None`` and</span>
+<span class="sd">            If no deep-sky objects are found in the field return ``None`` and</span>
 <span class="sd">            the flag map</span>
 
 <span class="sd">        Raises</span>
@@ -1312,40 +1364,65 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">size_plus</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s1">&#39;Messier mask size increase variable cannot be negative&#39;</span>
+                <span class="s1">&#39;deep-sky mask size increase variable cannot be negative&#39;</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">cat_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Path to Messier object catalogue not provided&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Path to deep-sky object catalogue not provided&#39;</span><span class="p">)</span>
 
-        <span class="n">m_cat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">cat_path</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">m_cat</span><span class="p">,</span> <span class="n">header</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getdata</span><span class="p">(</span><span class="n">cat_path</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">unit_ra</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">get_unit_from_fits_header</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="s1">&#39;ra&#39;</span><span class="p">)</span>
+        <span class="n">unit_dec</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">get_unit_from_fits_header</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="s1">&#39;dec&#39;</span><span class="p">)</span>
         <span class="n">m_sc</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span>
-            <span class="n">ra</span><span class="o">=</span><span class="n">m_cat</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span>
-            <span class="n">dec</span><span class="o">=</span><span class="n">m_cat</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span>
+            <span class="n">ra</span><span class="o">=</span><span class="n">m_cat</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">unit_ra</span><span class="p">,</span>
+            <span class="n">dec</span><span class="o">=</span><span class="n">m_cat</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">unit_dec</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="n">nx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldcenter</span><span class="p">[</span><span class="s1">&#39;pix&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span>
-        <span class="n">ny</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldcenter</span><span class="p">[</span><span class="s1">&#39;pix&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span>
+        <span class="n">unit_size_X</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">get_unit_from_fits_header</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="s1">&#39;size_X&#39;</span><span class="p">)</span>
+        <span class="n">unit_size_Y</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">get_unit_from_fits_header</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="s1">&#39;size_Y&#39;</span><span class="p">)</span>
 
-        <span class="c1"># Get the four corners of the image</span>
-        <span class="n">corners</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wcs</span><span class="o">.</span><span class="n">calc_footprint</span><span class="p">()</span>
-        <span class="n">corners_sc</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span>
-            <span class="n">ra</span><span class="o">=</span><span class="n">corners</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span>
-            <span class="n">dec</span><span class="o">=</span><span class="n">corners</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="c1"># Loop through all Messier objects and check whether any corner is</span>
+        <span class="c1"># Loop through all deep-sky objects and check whether any corner is</span>
         <span class="c1"># closer than the object&#39;s radius</span>
         <span class="n">indices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">size_max_deg</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">m_obj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">m_cat</span><span class="p">):</span>
-            <span class="n">r</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">m_obj</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">arcmin</span>
+
+            <span class="c1"># DSO size</span>
+            <span class="c1"># r = max(m_obj[&#39;size&#39;]) * units.arcmin</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
+                <span class="n">m_obj</span><span class="p">[</span><span class="s1">&#39;size_X&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">unit_size_X</span><span class="p">,</span>
+                <span class="n">m_obj</span><span class="p">[</span><span class="s1">&#39;size_Y&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">unit_size_Y</span><span class="p">,</span>
+            <span class="p">)</span>
             <span class="n">r_deg</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">degree</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">corners_sc</span><span class="o">.</span><span class="n">separation</span><span class="p">(</span><span class="n">m_sc</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">r_deg</span><span class="p">):</span>
+            <span class="n">size_max_deg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r_deg</span><span class="p">)</span>
+
+            <span class="c1"># Add index to list if distance between DSO and any image corner</span>
+            <span class="c1"># is closer than DSO size</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_corners_sc</span><span class="o">.</span><span class="n">separation</span><span class="p">(</span><span class="n">m_sc</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">r_deg</span><span class="p">):</span>
                 <span class="n">indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">obj_type</span><span class="si">}</span><span class="s1"> objects overlapping with&#39;</span>
+            <span class="s1">&#39; image&#39;</span>
+        <span class="p">)</span>
+
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c1"># No closeby Messier object found</span>
+            <span class="c1"># No closeby deep-sky object found</span>
             <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># Compute number of DSO center coordinates in footprint, for logging</span>
+        <span class="c1"># purpose only</span>
+        <span class="n">n_dso_center_in_footprint</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+            <span class="n">in_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wcs</span><span class="o">.</span><span class="n">footprint_contains</span><span class="p">(</span><span class="n">m_sc</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s1">&#39;(obj_type, ra, dec, in_img) = &#39;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">obj_type</span><span class="si">}</span><span class="s1">, &#39;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">m_cat</span><span class="p">[</span><span class="s2">&quot;ra&quot;</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s1">, &#39;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">m_cat</span><span class="p">[</span><span class="s2">&quot;dec&quot;</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s1">, &#39;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">in_img</span><span class="si">}</span><span class="s1">)&#39;</span>
+            <span class="p">)</span>
 
         <span class="c1"># Note: python image array is [y, x]</span>
         <span class="n">flag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
@@ -1356,6 +1433,8 @@
             <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint16&#39;</span><span class="p">,</span>
         <span class="p">)</span>
 
+        <span class="n">nx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldcenter</span><span class="p">[</span><span class="s1">&#39;pix&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span>
+        <span class="n">ny</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldcenter</span><span class="p">[</span><span class="s1">&#39;pix&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span>
         <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
             <span class="n">m_center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_wcs</span><span class="o">.</span><span class="n">all_world2pix</span><span class="p">(</span>
                 <span class="n">m_cat</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">][</span><span class="n">idx</span><span class="p">],</span>
@@ -1363,11 +1442,11 @@
                 <span class="mi">0</span><span class="p">,</span>
             <span class="p">))</span>
             <span class="n">r_pix</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="nb">max</span><span class="p">(</span><span class="n">m_cat</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">][</span><span class="n">idx</span><span class="p">])</span> <span class="o">/</span> <span class="mf">60.0</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">size_plus</span><span class="p">)</span>
+                <span class="n">size_max_deg</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">deg</span><span class="p">)</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">size_plus</span><span class="p">)</span>
                 <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_wcs</span><span class="o">.</span><span class="n">pixel_scale_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
             <span class="p">)</span>
 
-            <span class="c1"># The following accounts for Messier centers outside of image,</span>
+            <span class="c1"># The following accounts for deep-sky centers outside of image,</span>
             <span class="c1"># without creating masks for coordinates out of range</span>
             <span class="n">y_c</span><span class="p">,</span> <span class="n">x_c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ogrid</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">ny</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="n">nx</span><span class="p">]</span>
             <span class="n">mask_tmp</span> <span class="o">=</span> <span class="p">(</span>
@@ -1811,8 +1890,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">path_mask1</span><span class="p">,</span>
         <span class="n">path_mask2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">border</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">messier</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">masks_internal</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">path_external_flag</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Create Final Mask.</span>
@@ -1825,10 +1903,8 @@
 <span class="sd">            Path to a mask (FITS format)</span>
 <span class="sd">        path_mask2 : str, optional</span>
 <span class="sd">            Path to a mask (FITS format)</span>
-<span class="sd">        border : numpy.ndarray, optional</span>
-<span class="sd">            Array containing the border mask</span>
-<span class="sd">        messier : numpy.ndarray, optional</span>
-<span class="sd">            Array containing the messier mask</span>
+<span class="sd">        masks_internal : dict, optional</span>
+<span class="sd">            Internally created masks</span>
 <span class="sd">        path_external_flag : str, optional</span>
 <span class="sd">            Path to an external flag file</span>
 
@@ -1840,8 +1916,7 @@
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
 <span class="sd">        ValueError</span>
-<span class="sd">            If ``path_mask1``, ``path_mask2``, border and messier are of type</span>
-<span class="sd">            ``None``</span>
+<span class="sd">            If all masks are of type ``None``</span>
 <span class="sd">        TypeError</span>
 <span class="sd">            If border is not a Numpy array</span>
 <span class="sd">        TypeError</span>
@@ -1851,12 +1926,12 @@
         <span class="n">final_mask</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">if</span> <span class="p">(</span>
-            <span class="n">path_mask1</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">path_mask2</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">border</span> <span class="ow">is</span> <span class="kc">None</span>
-            <span class="ow">and</span> <span class="n">messier</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="n">path_mask1</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">path_mask2</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="n">masks_internal</span>
         <span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s1">&#39;No paths to mask files containing halos and/or spikes,&#39;</span>
-                <span class="o">+</span> <span class="s1">&#39; borders, or Messier objects provided&#39;</span>
+                <span class="o">+</span> <span class="s1">&#39; borders, or deep-sky objects provided&#39;</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">path_mask1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1873,23 +1948,18 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">final_mask</span> <span class="o">=</span> <span class="n">mask2</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[:,</span> <span class="p">:]</span>
 
-        <span class="k">if</span> <span class="n">border</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">border</span><span class="p">)</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">final_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">final_mask</span> <span class="o">+=</span> <span class="n">border</span>
+        <span class="k">for</span> <span class="n">typ</span> <span class="ow">in</span> <span class="n">masks_internal</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">masks_internal</span><span class="p">[</span><span class="n">typ</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">masks_internal</span><span class="p">[</span><span class="n">typ</span><span class="p">])</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">final_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">final_mask</span> <span class="o">+=</span> <span class="n">masks_internal</span><span class="p">[</span><span class="n">typ</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">final_mask</span> <span class="o">=</span> <span class="n">masks_internal</span><span class="p">[</span><span class="n">typ</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">final_mask</span> <span class="o">=</span> <span class="n">border</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;border mask has to be a numpy.ndarray&#39;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">messier</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">messier</span><span class="p">)</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">final_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">final_mask</span> <span class="o">+=</span> <span class="n">messier</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">final_mask</span> <span class="o">=</span> <span class="n">messier</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Messier mask has to be a numpy.ndarray&#39;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;internally created mask of type </span><span class="si">{</span><span class="n">typ</span><span class="si">}</span><span class="s1"> &#39;</span>
+                        <span class="o">+</span> <span class="s1">&#39;has to be numpy.ndarray&#39;</span>
+                    <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">path_external_flag</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">external_flag</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
@@ -2013,7 +2083,7 @@
       By CosmoStat<br/>
     
         &copy; Copyright 2022, CosmoStat.<br/>
-      Last updated on 01 Apr, 2022.<br/>
+      Last updated on 17 Sep, 2022.<br/>
   </p>
 </footer>
 </main>

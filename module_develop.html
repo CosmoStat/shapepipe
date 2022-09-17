@@ -722,7 +722,7 @@
 </nav> <!-- To handle the deprecated key -->
 
 <div class="navbar_extra_footer">
-  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+  <p></p>
 </div>
 
 </div>
@@ -763,7 +763,9 @@
             href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2Fmodule_develop.html&body=Your%20issue%20content%20here."><button
                 type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
                 title="Open an issue"><i class="fas fa-lightbulb"></i>open issue</button></a>
-        
+        <a class="edit-button" href="https://github.com/CosmoStat/shapepipe/edit/master/docs/source/module_develop.md"><button
+                type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
+                title="Edit this page"><i class="fas fa-pencil-alt"></i>suggest edit</button></a>
     </div>
 </div>
 
@@ -891,6 +893,11 @@ with the <code class="docutils literal notranslate"><span class="pre">module_run
 </div>
 <p>In the specific case of a module that executes an executable available on the
 system, the module runner should also import the <code class="docutils literal notranslate"><span class="pre">execute</span></code> function.</p>
+<div class="margin admonition note">
+<p class="admonition-title">Note</p>
+<p>If no <code class="docutils literal notranslate"><span class="pre">stdout</span></code> or <code class="docutils literal notranslate"><span class="pre">stderr</span></code> are provided by the given module, the module
+runner should simply return <code class="docutils literal notranslate"><span class="pre">None,</span> <span class="pre">None</span></code>.</p>
+</div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shapepipe.modules.module_decorator</span> <span class="kn">import</span> <span class="n">module_runner</span>
 <span class="kn">from</span> <span class="nn">shapepipe.modules.module_name_package.module_name</span> <span class="kn">import</span> <span class="o">...</span>
 <span class="kn">from</span> <span class="nn">shapepipe.pipeline.execute</span> <span class="kn">import</span> <span class="n">execute</span>
@@ -906,11 +913,6 @@ system, the module runner should also import the <code class="docutils literal n
 
     <span class="k">return</span> <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span>
 </pre></div>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>If no <code class="docutils literal notranslate"><span class="pre">stdout</span></code> or <code class="docutils literal notranslate"><span class="pre">stderr</span></code> are provided by the given module, the the module
-runner should simply return <code class="docutils literal notranslate"><span class="pre">None,</span> <span class="pre">None</span></code>.</p>
 </div>
 <p>The module runner decorator takes the following keyword arguments:</p>
 <ol class="arabic simple">
@@ -982,7 +984,7 @@ messages in the module output logs using the following structure:</p></li>
       By CosmoStat<br/>
     
         &copy; Copyright 2022, CosmoStat.<br/>
-      Last updated on 01 Apr, 2022.<br/>
+      Last updated on 17 Sep, 2022.<br/>
   </p>
 </footer>
 </main>

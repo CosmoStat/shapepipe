@@ -722,7 +722,7 @@
 </nav> <!-- To handle the deprecated key -->
 
 <div class="navbar_extra_footer">
-  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+  <p></p>
 </div>
 
 </div>
@@ -763,7 +763,9 @@
             href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2Finstallation.html&body=Your%20issue%20content%20here."><button
                 type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
                 title="Open an issue"><i class="fas fa-lightbulb"></i>open issue</button></a>
-        
+        <a class="edit-button" href="https://github.com/CosmoStat/shapepipe/edit/master/docs/source/installation.md"><button
+                type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
+                title="Edit this page"><i class="fas fa-pencil-alt"></i>suggest edit</button></a>
     </div>
 </div>
 
@@ -862,25 +864,29 @@
                 
   <div class="section" id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
-<div class="admonition important">
-<p class="admonition-title">Important</p>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
 <p>ShapePipe was not designed to be a stand-alone Python library. Instead users
 are expected to install the full ShapePipe environment on the system(s) where
 data should be processed.</p>
 </div>
 <div class="section" id="standard-installation">
 <h2>Standard Installation<a class="headerlink" href="#standard-installation" title="Permalink to this headline">¶</a></h2>
-<p>The standard installation of ShapePipe manages <a class="reference internal" href="dependencies.html"><span class="doc std std-doc">dependencies</span></a>
-and scripts using a <a class="reference external" href="https://docs.conda.io/en/latest/">Conda</a> environment.
-Therefore, to follow the standard installation Conda must be available on the
-system.</p>
-<div class="admonition tip">
+<div class="margin admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Check out <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">Miniconda</a> for a
 light weight and easy installation of Conda.</p>
 </div>
+<p>The standard installation of ShapePipe manages <a class="reference internal" href="dependencies.html"><span class="doc std std-doc">dependencies</span></a>
+and scripts using a <a class="reference external" href="https://docs.conda.io/en/latest/">Conda</a> environment.
+Therefore, to follow the standard installation Conda must be available on the
+system.</p>
 <p>The ShapePipe package should first be cloned (or downloaded) from the
 <a class="reference external" href="https://github.com/CosmoStat/shapepipe">GitHub repository</a>.</p>
+<div class="margin admonition note">
+<p class="admonition-title">Note</p>
+<p>Developers should simply clone the repository as usual.</p>
+</div>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone -b &lt;VERSION&gt; --depth <span class="m">1</span> git@github.com:CosmoStat/shapepipe.git
 <span class="nb">cd</span> shapepipe
 </pre></div>
@@ -890,10 +896,6 @@ light weight and easy installation of Conda.</p>
 (e.g. <code class="docutils literal notranslate"><span class="pre">v1.0.0</span></code>). It is recommend to use the
 <a class="reference external" href="https://github.com/CosmoStat/shapepipe/releases/latest">latest release</a>
 unless you want to reproduce an older set of results.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Developers should simply clone the repository as usual.</p>
-</div>
 <p>Then, the entire ShapePipe environment, including dependencies, can be built
 using the <code class="docutils literal notranslate"><span class="pre">install_shapepipe</span></code> script as follows.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./install_shapepipe
@@ -940,13 +942,13 @@ entire ShapePipe environment.</p>
 </div>
 <div class="section" id="installing-the-shapepipe-library-only">
 <h2>Installing the ShapePipe Library Only<a class="headerlink" href="#installing-the-shapepipe-library-only" title="Permalink to this headline">¶</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Note, this method will not include any system executables or examples.</p>
-</div>
 <p>The ShapePipe library, i.e. the core package not including module
 dependencies, can be installed in the following ways.</p>
 <p>After cloning the repository.</p>
+<div class="margin admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Note, this method will not include any system executables or examples.</p>
+</div>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install .
 </pre></div>
 </div>
@@ -993,7 +995,7 @@ we will do our best to help you.</p>
       By CosmoStat<br/>
     
         &copy; Copyright 2022, CosmoStat.<br/>
-      Last updated on 01 Apr, 2022.<br/>
+      Last updated on 17 Sep, 2022.<br/>
   </p>
 </footer>
 </main>

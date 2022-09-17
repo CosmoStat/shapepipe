@@ -720,7 +720,7 @@
 </nav> <!-- To handle the deprecated key -->
 
 <div class="navbar_extra_footer">
-  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+  <p></p>
 </div>
 
 </div>
@@ -805,9 +805,13 @@
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">re</span>
 
-<span class="kn">import</span> <span class="nn">astropy.io.fits</span> <span class="k">as</span> <span class="nn">fits</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">astropy.io.fits</span> <span class="k">as</span> <span class="nn">fits</span>
 <span class="kn">from</span> <span class="nn">astropy</span> <span class="kn">import</span> <span class="n">wcs</span>
+<span class="kn">from</span> <span class="nn">astropy.table</span> <span class="kn">import</span> <span class="n">Table</span>
+
+<span class="kn">from</span> <span class="nn">reproject</span> <span class="kn">import</span> <span class="n">reproject_to_healpix</span>
 
 <span class="kn">from</span> <span class="nn">shapepipe.pipeline</span> <span class="kn">import</span> <span class="n">file_io</span>
 <span class="kn">from</span> <span class="nn">shapepipe.utilities</span> <span class="kn">import</span> <span class="n">cfis</span>
@@ -824,38 +828,79 @@
 <span class="sd">        Path to input image file</span>
 <span class="sd">    input_mask_path : str</span>
 <span class="sd">        Path to input mask file</span>
-<span class="sd">    output_path : str</span>
-<span class="sd">        Output file path for random catalogue</span>
+<span class="sd">    output_dir : str</span>
+<span class="sd">        Output directory</span>
+<span class="sd">    file_number_pattern : str</span>
+<span class="sd">        ShapePipe image ID string</span>
+<span class="sd">    output_file_pattern : str</span>
+<span class="sd">        Output file pattern (base name) for random catalogue</span>
 <span class="sd">    n_rand : float</span>
 <span class="sd">        Number of random objects on output</span>
 <span class="sd">    density : bool</span>
 <span class="sd">        ``n_rand`` is interpreted per square degrees if ``True``</span>
 <span class="sd">    w_log : logging.Logger</span>
 <span class="sd">        Logging instance</span>
-<span class="sd">    tile_list_path : str, optional</span>
-<span class="sd">        List to all tile IDs, to remove objects in</span>
-<span class="sd">        overlapping tile areas</span>
-
+<span class="sd">    healpix_options : dict</span>
+<span class="sd">        Parameters for HEALPix output mask file</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">input_image_path</span><span class="p">,</span>
         <span class="n">input_mask_path</span><span class="p">,</span>
-        <span class="n">output_path</span><span class="p">,</span>
+        <span class="n">output_dir</span><span class="p">,</span>
+        <span class="n">file_number_string</span><span class="p">,</span>
+        <span class="n">output_file_pattern</span><span class="p">,</span>
         <span class="n">n_rand</span><span class="p">,</span>
         <span class="n">density</span><span class="p">,</span>
         <span class="n">w_log</span><span class="p">,</span>
-        <span class="n">tile_list_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">healpix_options</span><span class="p">,</span>
     <span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_input_image_path</span> <span class="o">=</span> <span class="n">input_image_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_input_mask_path</span> <span class="o">=</span> <span class="n">input_mask_path</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_output_path</span> <span class="o">=</span> <span class="n">output_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_file_number_string</span> <span class="o">=</span> <span class="n">file_number_string</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_output_file_pattern</span> <span class="o">=</span> <span class="n">output_file_pattern</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_n_rand</span> <span class="o">=</span> <span class="n">n_rand</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_density</span> <span class="o">=</span> <span class="n">density</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span> <span class="o">=</span> <span class="n">w_log</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tile_list_path</span> <span class="o">=</span> <span class="n">tile_list_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_healpix_options</span> <span class="o">=</span> <span class="n">healpix_options</span>
+
+<div class="viewcode-block" id="RandomCat.save_as_healpix"><a class="viewcode-back" href="../../../../shapepipe.modules.random_cat_package.random_cat.html#shapepipe.modules.random_cat_package.random_cat.RandomCat.save_as_healpix">[docs]</a>    <span class="k">def</span> <span class="nf">save_as_healpix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdu_mask</span><span class="p">,</span> <span class="n">header</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Save As Healpix.</span>
+
+<span class="sd">        Save mask as healpix FITS file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        hdu_mask : class HDUList</span>
+<span class="sd">            HDU with 2D pixel mask image</span>
+<span class="sd">        header : class Header</span>
+<span class="sd">            Image header with WCS information</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_healpix_options</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">mask_1d</span><span class="p">,</span> <span class="n">footprint</span> <span class="o">=</span> <span class="n">reproject_to_healpix</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">hdu_mask</span><span class="p">,</span> <span class="n">header</span><span class="p">),</span>
+            <span class="s1">&#39;galactic&#39;</span><span class="p">,</span>
+            <span class="n">nside</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_healpix_options</span><span class="p">[</span><span class="s1">&#39;OUT_NSIDE&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="n">Table</span><span class="p">()</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;flux&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mask_1d</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;ORDERING&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;RING&#39;</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;COORDSYS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;G&#39;</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;NSIDE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_healpix_options</span><span class="p">[</span><span class="s1">&#39;OUT_NSIDE&#39;</span><span class="p">]</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;INDXSCHM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;IMPLICIT&#39;</span>
+
+        <span class="n">output_path</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_healpix_options</span><span class="p">[</span><span class="s2">&quot;FILE_BASE&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">-&#39;</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s1">.fits&#39;</span>
+        <span class="p">)</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="RandomCat.process"><a class="viewcode-back" href="../../../../shapepipe.modules.random_cat_package.random_cat.html#shapepipe.modules.random_cat_package.random_cat.RandomCat.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Process.</span>
@@ -883,6 +928,9 @@
         <span class="c1"># Read mask FITS file</span>
         <span class="n">hdu_mask</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_mask_path</span><span class="p">)</span>
         <span class="n">mask</span> <span class="o">=</span> <span class="n">hdu_mask</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+
+        <span class="c1"># Save mask in healpix format (if option is set)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save_as_healpix</span><span class="p">(</span><span class="n">hdu_mask</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span>
 
         <span class="c1"># Number of pixels</span>
         <span class="n">n_pix_x</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -955,6 +1003,10 @@
             <span class="n">y_rand</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="c1"># Tile ID</span>
+        <span class="n">output_path</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">output_file_pattern</span><span class="si">}</span><span class="s1">-&#39;</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s1">.fits&#39;</span>
+        <span class="p">)</span>
         <span class="n">file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_path</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">file_base</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">file_name</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">tile_ID_str</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">file_base</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]</span>
@@ -978,37 +1030,11 @@
         <span class="p">)</span>
         <span class="n">output</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">cat_out</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">column_names</span><span class="p">)</span>
 
-        <span class="c1"># Remove overlapping regions</span>
-        <span class="k">if</span> <span class="n">n_unmasked</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tile_list_path</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Flag overlapping objects&#39;</span><span class="p">)</span>
-            <span class="n">ratio_non_overl_tot</span> <span class="o">=</span> <span class="n">cfis</span><span class="o">.</span><span class="n">remove_common_elements</span><span class="p">(</span>
-                <span class="n">output</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_tile_list_path</span><span class="p">,</span>
-                <span class="n">pos_param</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;RA&#39;</span><span class="p">,</span> <span class="s1">&#39;DEC&#39;</span><span class="p">]</span>
-            <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">ratio_non_overl_tot</span> <span class="o">=</span> <span class="mi">1</span>
-
-        <span class="c1"># Compute area without overlapping regions (approximation)</span>
-        <span class="n">area_deg2_non_overl</span> <span class="o">=</span> <span class="n">area_deg2</span> <span class="o">*</span> <span class="n">ratio_non_overl_tot</span>
-        <span class="n">area_deg2_eff_non_overl</span> <span class="o">=</span> <span class="n">area_deg2_eff</span> <span class="o">*</span> <span class="n">ratio_non_overl_tot</span>
-
         <span class="c1"># Write area information to log file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Total area = </span><span class="si">{</span><span class="n">area_deg2</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1"> deg^2&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unmasked area = </span><span class="si">{</span><span class="n">area_deg2_eff</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1"> deg^2&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="sa">f</span><span class="s1">&#39;Ratio masked to total pixels = </span><span class="si">{</span><span class="n">n_unmasked</span> <span class="o">/</span> <span class="n">n_pix</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">&#39;</span>
-        <span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39;Total area without overlap = </span><span class="si">{</span><span class="n">area_deg2_non_overl</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1"> deg^2&#39;</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s1">&#39;Unmaskewd area without overlap = &#39;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">area_deg2_eff_non_overl</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1"> deg^2&#39;</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39;Ratio of non-overlap to total area = </span><span class="si">{</span><span class="n">ratio_non_overl_tot</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">&#39;</span>
         <span class="p">)</span></div></div>
 </pre></div>
 
@@ -1027,7 +1053,7 @@
       By CosmoStat<br/>
     
         &copy; Copyright 2022, CosmoStat.<br/>
-      Last updated on 01 Apr, 2022.<br/>
+      Last updated on 17 Sep, 2022.<br/>
   </p>
 </footer>
 </main>

@@ -722,7 +722,7 @@
 </nav> <!-- To handle the deprecated key -->
 
 <div class="navbar_extra_footer">
-  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+  <p></p>
 </div>
 
 </div>
@@ -763,7 +763,9 @@
             href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2Fshapepipe.utilities.cfis.html&body=Your%20issue%20content%20here."><button
                 type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
                 title="Open an issue"><i class="fas fa-lightbulb"></i>open issue</button></a>
-        
+        <a class="edit-button" href="https://github.com/CosmoStat/shapepipe/edit/master/docs/source/shapepipe.utilities.cfis.rst"><button
+                type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
+                title="Edit this page"><i class="fas fa-pencil-alt"></i>suggest edit</button></a>
     </div>
 </div>
 
@@ -1386,7 +1388,7 @@ if input image coordinates are already set</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>images</strong> (<em>numpy.ndarray of image</em>) – images</p></li>
-<li><p><strong>angles</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a><em> (</em><em>SkyCoord</em><em>, </em><em>2</em><em>)</em>) – Corner coordinates of area rectangle</p></li>
+<li><p><strong>angles</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)"><em>numpy.ndarray</em></a><em> (</em><em>SkyCoord</em><em>, </em><em>2</em><em>)</em>) – Corner coordinates of area rectangle</p></li>
 <li><p><strong>image_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – image type (‘tile’, ‘exposure’, ‘cat’, weight’)</p></li>
 <li><p><strong>outbase</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – output file name base</p></li>
 <li><p><strong>interactive</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – show plot if True</p></li>
@@ -1450,30 +1452,6 @@ square for plotting.</p>
 </dl>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="shapepipe.utilities.cfis.remove_common_elements">
-<span class="sig-name descname"><span class="pre">remove_common_elements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">final_cat_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tiles_id_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['XWIN_WORLD',</span> <span class="pre">'YWIN_WORLD']</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/utilities/cfis.html#remove_common_elements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.utilities.cfis.remove_common_elements" title="Permalink to this definition">¶</a></dt>
-<dd><p>Remove Common Elements.</p>
-<p>Create a mask for objects in the overlapping regions between
-neigbouring stacked images. The object furthest from its stack
-center is flagged.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>final_cat_file</strong> (<em>io.FITSCatalog</em>) – Final catalog.</p></li>
-<li><p><strong>tile_id_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Path to the file containing all the tile IDs.</p></li>
-<li><p><strong>pos_param</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) – List with the column name for ra and dec positions.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>ratio of masked to total objects</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)">float</a></p>
-</dd>
-</dl>
-</dd></dl>
-
 </div>
 
 
@@ -1506,7 +1484,7 @@ center is flagged.</p>
       By CosmoStat<br/>
     
         &copy; Copyright 2022, CosmoStat.<br/>
-      Last updated on 01 Apr, 2022.<br/>
+      Last updated on 17 Sep, 2022.<br/>
   </p>
 </footer>
 </main>
