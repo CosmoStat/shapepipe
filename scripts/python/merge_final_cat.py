@@ -28,8 +28,8 @@ from shapepipe.utilities import cfis
 
 class param:
     """General class to store (default) variables
-    """
 
+    """
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
 
@@ -49,10 +49,10 @@ def params_default():
 
     Returns
     -------
-    p_def: class param
+    class param
         parameter values
-    """
 
+    """
     p_def = param(
         input_path  = '.',
         input_name_base = 'final_cat',
@@ -72,12 +72,11 @@ def parse_options(p_def):
 
     Returns
     -------
-    options: tuple
-        Command line options
-    args: str
-        Command line str
-    """
+    list
+        command line options
+        command line str
 
+    """
     usage  = "%prog [OPTIONS]"
     parser = OptionParser(usage=usage)
 
@@ -90,7 +89,6 @@ def parse_options(p_def):
         default=p_def.input_path,
         help=f'input path, default=\'{p_def.input_path}\''
     )
-
     parser.add_option(
         '-n',
         '--input_name_base',
@@ -98,6 +96,14 @@ def parse_options(p_def):
         type='string',
         default=p_def.input_name_base,
         help=f'input name base, default=\'{p_def.input_name_base}\''
+    )
+    parser.add_option(
+        '-l',
+        '--list_tile_ID_path',
+        dest='tile_ID_list_path',
+        type='string',
+        default=None,
+        help=f'tile ID list, default: Use all data in input files'
     )
 
     # Control
@@ -142,10 +148,10 @@ def check_options(options):
 
     Returns
     -------
-    erg: bool
+    bool
         Result of option check. False if invalid option value.
-    """
 
+    """
     return True
 
 
@@ -161,10 +167,10 @@ def update_param(p_def, options):
 
     Returns
     -------
-    param: class param
+    class param
         updated paramter values
-    """
 
+    """
     param = copy.copy(p_def)
 
     # Update keys in param according to options values
@@ -194,10 +200,10 @@ def read_param_file(path, verbose=False):
 
     Returns
     -------
-    param_list: list of str
+    list of str
         parameter names
-    """
 
+    """
     param_list = []
 
     if path:
@@ -250,10 +256,10 @@ def get_data(path, hdu_num, param_list):
 
     Returns
     -------
-    data: numpy array
+    numpy array
         data columns
-    """
 
+    """
     hdu_list = fits.open(path)
     hdu = hdu_list[hdu_num]
 
@@ -290,21 +296,42 @@ def main(argv=None):
 
     param.param_list = read_param_file(param.param_path, verbose=param.verbose)
 
+    # read (optional) input tile ID file
+    if param.tile_ID_list_path:
+        tile_ID_list = cfis.read_list(param.tile_ID_list_path)
+
+    # find input catalogue FITS files
     l = os.listdir(path=path)
     ext = 'fits'
     lpath = []
     for this_l in l:
-        if this_l.endswith(ext):
-            lpath.append(os.path.join(path, this_l))
+
+        add_this_l = False
+
+        # mark to add if correct extension, matches input pattern, not `.npy` file
+        if (
+            this_l.endswith(ext)
+            and (f'{param.input_name_base}' in this_l)
+            and ('.npy' not in this_l)
+        ):
+            add_this_l = True
+
+            # unmark to add if no in (optional) input tile ID file
+            if param.tile_ID_list_path: 
+                nix, niy = cfis.get_tile_number(this_l)
+                tile_ID = f'{nix}.{niy}'
+                if tile_ID not in tile_ID_list:
+                    add_this_l = False
+            if add_this_l:
+                lpath.append(os.path.join(path, this_l))
 
     if param.verbose:
-        print(f'{len(lpath)} files files found in input path')
+        print(f'{len(lpath)} files files to merge found')
 
     count = 0
 
-    # Determine number of columns and keys
+    # Determine number of columns and keys from first catalogue file
     d_tmp = get_data(lpath[0], param.hdu_num, param.param_list)
-
     d = np.zeros(d_tmp.shape, dtype=d_tmp.dtype)
     for key in d_tmp.dtype.names:
         d[key] = d_tmp[key]
@@ -312,12 +339,11 @@ def main(argv=None):
     if param.verbose:
         print(f'File \'{lpath[0]}\' copied ({count}/{len(lpath)})')
 
-    for idx in lpath[1:]:
-        if (f'{param.input_name_base}' not in idx) | ('.npy' in idx):
-            continue
+    # merge remaining catalogue files
+    for fname in lpath[1:]:
 
         try:
-            d_tmp = get_data(idx, param.hdu_num, param.param_list)
+            d_tmp = get_data(fname, param.hdu_num, param.param_list)
             dd = np.zeros(d_tmp.shape, dtype=d.dtype)
 
             for key in d_tmp.dtype.names:
@@ -325,11 +351,11 @@ def main(argv=None):
 
             count = count + 1
             if param.verbose:
-                print(f'File \'{idx}\' copied ({count}/{len(lpath)})')
+                print(f'File \'{fname}\' copied ({count}/{len(lpath)})')
 
             d = np.concatenate((d, dd))
         except:
-            print(f'Error while adding file \'{idx}\', {len(dd)} objects not in final cat')
+            print(f'Error while adding file \'{fname}\', {len(dd)} objects not in final cat')
 
     # Save merged catalogue as numpy binary file
     if param.verbose:

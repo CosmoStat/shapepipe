@@ -10,9 +10,13 @@ the tile area accounting for overlapping and masked regions.
 import os
 import re
 
-import astropy.io.fits as fits
 import numpy as np
+
+import astropy.io.fits as fits
 from astropy import wcs
+from astropy.table import Table
+
+from reproject import reproject_to_healpix
 
 from shapepipe.pipeline import file_io
 from shapepipe.utilities import cfis
@@ -29,38 +33,79 @@ class RandomCat():
         Path to input image file
     input_mask_path : str
         Path to input mask file
-    output_path : str
-        Output file path for random catalogue
+    output_dir : str
+        Output directory
+    file_number_pattern : str
+        ShapePipe image ID string
+    output_file_pattern : str
+        Output file pattern (base name) for random catalogue
     n_rand : float
         Number of random objects on output
     density : bool
         ``n_rand`` is interpreted per square degrees if ``True``
     w_log : logging.Logger
         Logging instance
-    tile_list_path : str, optional
-        List to all tile IDs, to remove objects in
-        overlapping tile areas
-
+    healpix_options : dict
+        Parameters for HEALPix output mask file
     """
 
     def __init__(
         self,
         input_image_path,
         input_mask_path,
-        output_path,
+        output_dir,
+        file_number_string,
+        output_file_pattern,
         n_rand,
         density,
         w_log,
-        tile_list_path=None,
+        healpix_options,
     ):
 
         self._input_image_path = input_image_path
         self._input_mask_path = input_mask_path
-        self._output_path = output_path
+        self._output_dir = output_dir
+        self._file_number_string = file_number_string
+        self._output_file_pattern = output_file_pattern
         self._n_rand = n_rand
         self._density = density
         self._w_log = w_log
-        self._tile_list_path = tile_list_path
+        self._healpix_options = healpix_options
+
+    def save_as_healpix(self, hdu_mask, header):
+        """Save As Healpix.
+
+        Save mask as healpix FITS file.
+
+        Parameters
+        ----------
+        hdu_mask : class HDUList
+            HDU with 2D pixel mask image
+        header : class Header
+            Image header with WCS information
+
+        """
+        if not self._healpix_options:
+            return
+
+        mask_1d, footprint = reproject_to_healpix(
+            (hdu_mask, header),
+            'galactic',
+            nside=self._healpix_options['OUT_NSIDE']
+        )
+
+        t = Table()
+        t['flux'] = mask_1d
+        t.meta['ORDERING'] = 'RING'
+        t.meta['COORDSYS'] = 'G'
+        t.meta['NSIDE'] = self._healpix_options['OUT_NSIDE']
+        t.meta['INDXSCHM'] = 'IMPLICIT'
+
+        output_path = (
+            f'{output_dir}/{self._healpix_options["FILE_BASE"]}-'
+            + f'{file_number_string}.fits'
+        )
+        t.write(output_path)
 
     def process(self):
         """Process.
@@ -88,6 +133,9 @@ class RandomCat():
         # Read mask FITS file
         hdu_mask = fits.open(self._input_mask_path)
         mask = hdu_mask[0].data
+
+        # Save mask in healpix format (if option is set)
+        self._save_as_healpix(hdu_mask, header)
 
         # Number of pixels
         n_pix_x = mask.data.shape[0]
@@ -160,6 +208,10 @@ class RandomCat():
             y_rand = []
 
         # Tile ID
+        output_path = (
+            f'{output_dir}/{output_file_pattern}-'
+            + f'{file_number_string}.fits'
+        )
         file_name = os.path.split(self._output_path)[1]
         file_base = os.path.splitext(file_name)[0]
         tile_ID_str = re.split('-', file_base)[1:]
@@ -183,35 +235,9 @@ class RandomCat():
         )
         output.save_as_fits(cat_out, names=column_names)
 
-        # Remove overlapping regions
-        if n_unmasked > 0 and self._tile_list_path:
-            self._w_log.info('Flag overlapping objects')
-            ratio_non_overl_tot = cfis.remove_common_elements(
-                output,
-                self._tile_list_path,
-                pos_param=['RA', 'DEC']
-            )
-        else:
-            ratio_non_overl_tot = 1
-
-        # Compute area without overlapping regions (approximation)
-        area_deg2_non_overl = area_deg2 * ratio_non_overl_tot
-        area_deg2_eff_non_overl = area_deg2_eff * ratio_non_overl_tot
-
         # Write area information to log file
         self._w_log.info(f'Total area = {area_deg2:.4f} deg^2')
         self._w_log.info(f'Unmasked area = {area_deg2_eff:.4f} deg^2')
         self._w_log.info(
             f'Ratio masked to total pixels = {n_unmasked / n_pix:.3f}'
-        )
-
-        self._w_log.info(
-            f'Total area without overlap = {area_deg2_non_overl:.4f} deg^2'
-        )
-        self._w_log.info(
-            'Unmaskewd area without overlap = '
-            + f'{area_deg2_eff_non_overl:.4f} deg^2'
-        )
-        self._w_log.info(
-            f'Ratio of non-overlap to total area = {ratio_non_overl_tot:.3f}'
         )

@@ -653,7 +653,7 @@ class SETools(object):
             n_keep = int(np.ceil(cat_size * ratio))
             mask_ratio = []
             mask_left = list(range(0, cat_size))
-            while(len(mask_ratio) != n_keep):
+            while len(mask_ratio) != n_keep:
                 idx = np.random.randint(0, len(mask_left))
                 mask_ratio.append(mask_left.pop(idx))
             mask_ratio = np.array(mask_ratio)

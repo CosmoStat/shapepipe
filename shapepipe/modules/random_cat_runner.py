@@ -31,7 +31,13 @@ def random_cat_runner(
     input_mask_name = input_file_list[1]
 
     # Set output file name
-    output_path = f'{run_dirs["output"]}/random_cat-{file_number_string}.fits'
+    if config.has_option(module_config_sec, 'OUTPUT_FILE_PATTERN'):
+        output_file_pattern = config.get(
+            module_config_sec,
+            'OUTPUT_FILE_PATTERN'
+        )
+    else:
+        output_file_pattern = 'random_cat'
 
     # Get number of random objects requested on output
     n_rand = config.getfloat(module_config_sec, 'N_RANDOM')
@@ -43,21 +49,30 @@ def random_cat_runner(
     else:
         density = False
 
-    # Path to all tile ID, for overlap flagging
-    if config.has_option(module_config_sec, 'TILE_LIST'):
-        tile_list_path = config.getexpanded(module_config_sec, 'TILE_LIST')
-    else:
-        tile_list_path = None
-
+    # Get healpix output options
+    save_mask_as_healpix = config.getboolean(
+        module_config_sec,
+        'SAVE_MASK_AS_HEALPIX'
+    )
+    if save_mask_as_healpix:
+        healpix_options = {}
+        for option_trunc in ['FILE_BASE', 'OUT_NSIDE']:
+            option = f'HEALPIX_OUT_{option_trunc}'
+            healpix_options[option_trunc] = config.get(
+                module_config_sec,
+                option
+            )
     # Create rand cat class instance
     rand_cat_inst = RandomCat(
         input_image_name,
         input_mask_name,
-        output_path,
+        run_dirs['output'],
+        file_number_string,
+        output_file_pattern,
         n_rand,
         density,
         w_log,
-        tile_list_path=tile_list_path
+        healpix_options,
     )
 
     # Run processing
