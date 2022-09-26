@@ -603,3 +603,103 @@ class MergeStarCatPSFEX(object):
             overwrite=True,
             sex_cat_path=self._input_file_list[0][0],
         )
+
+class MergeStarCatSetools(object):
+    """Merge Star Catalogue Setools.
+
+    Merge star catalogues of Setools output.
+
+    Parameters
+    ----------
+    input_file_list : list
+        Input files
+    output_dir : str
+        Output directory
+    w_log : logging.Logger
+        Logging instance
+    hdu_table : int, optional
+        HDU number; default is ``2``
+
+    """
+
+    def __init__(self, input_file_list, output_dir, w_log, hdu_table=2):
+
+        self._input_file_list = input_file_list
+        self._output_dir = output_dir
+        self._w_log = w_log
+        self._hdu_table = hdu_table
+
+    def process(self):
+        """Process.
+
+        Process merging.
+
+        """
+        x, y, ra, dec = [], [], [], []
+        g1, g2, size = [], [], []
+        flag_star = [], []
+        mag, snr, psfex_acc = [], [], []
+        ccd_nb = []
+
+        self._w_log.info(
+            f'Merging {len(self._input_file_list)} star catalogues'
+        )
+
+        for name in self._input_file_list:
+            starcat_j = fits.open(name[0], memmap=False)
+
+            data_j = starcat_j[self._hdu_table].data
+
+            # positions
+            x += list(data_j['XWIN_IMAGE'])
+            y += list(data_j['XWIN_IMAGE'])
+            ra += list(data_j['XWIN_WORLD'])
+            dec += list(data_j['YWIN_WORLD'])
+
+            # shapes (convert sigmas to R^2)
+            #g1 += list(data_j['E1_STAR_HSM'])
+            #g2 += list(data_j['E2_STAR_HSM'])
+            #size += list(data_j['SIGMA_STAR_HSM']**2)
+
+            # flags
+            flag_star += list(data_j['FLAGS_WIN'])
+
+            # misc
+            mag += list(data_j['MAG_WIN'])
+            snr += list(data_j['SNR_WIN'])
+
+            # CCD number
+            ccd_nb += [
+                re.split(r"\-([0-9]*)\-([0-9]+)\.", name[0])[-2]
+            ] * len(data_j['RA'])
+
+        # Prepare output FITS catalogue
+        output = file_io.FITSCatalogue(
+            f'{self._output_dir}/full_starcat-0000000.fits',
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
+            SEx_catalogue=True
+        )
+
+        # Collect columns
+        # convert back to sigma for consistency
+        data = {
+            'X': x,
+            'Y': y,
+            'RA': ra,
+            'DEC': dec,
+            'E1_STAR_HSM': g1,
+            'E2_STAR_HSM': g2,
+            'SIGMA_STAR_HSM': np.sqrt(size),
+            'FLAG_STAR_HSM': flag_star,
+            'MAG': mag,
+            'SNR': snr,
+            'ACCEPTED': psfex_acc,
+            'CCD_NB': ccd_nb
+        }
+
+        # Write file
+        output.save_as_fits(
+            data,
+            overwrite=True,
+            sex_cat_path=self._input_file_list[0][0],
+        )
