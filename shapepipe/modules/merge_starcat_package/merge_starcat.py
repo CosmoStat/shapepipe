@@ -629,6 +629,83 @@ class MergeStarCatSetools(object):
         self._w_log = w_log
         self._hdu_table = hdu_table
 
+    @classmethod
+    def get_moments(cls, data):
+        """Get Moments
+
+        Return second-order moments.
+
+        Parameters
+        ----------
+        data : dict
+            input data
+
+        Returns
+        -------
+        m11 : float
+            second-order moment along xy
+        m20 : float
+            second-order moment along x
+        m02 : float
+            second-order moment along y
+
+        """
+        # SExtractor output. First and second moments are normalised.
+        # Second moments are centred.
+        q11 = 'X2WIN_IMAGE'
+        q22 = 'Y2WIN_IMAGE'
+        q12 = 'XYWIN_IMAGE'
+
+        # Second moments
+        m11 = data[q12]
+        m20 = data[q11]
+        m02 = data[q22]
+
+        return m11, m20, m02
+
+    @classmethod
+    def get_ellipticity(cls, m11, m20, m02, typ):
+        """Get Ellipticity
+
+        Compute ellipticity from second-order moments.
+
+        Parameters
+        ----------
+        m11 : float
+            second-order moment along xy
+        m20 : float
+            second-order moment along x
+        m02 : float
+            second-order moment along y
+        typ : str
+            ellipticity type, allowed are 'epsilon', 'chi'
+
+        Returns
+        -------
+        list
+            ellipticity components
+        
+        """
+        if typ == 'epsilon':                                                       
+            # Determinant = (Q_11 Q_22 - Q_12^2)^(1/2)                              
+            det = np.sqrt(m20 * m02 - m11 * m11)                
+        elif typ == 'chi':                                                         
+            det = 0                                                                 
+        else:                                                                       
+            raise ValueError(f'Invalid ellipticity type {type}')
+                                                                                
+        # Denominator = Q_11 + Q_22 [ + 2 * det]                                    
+        den = m20 + m02 + 2 * det                                         
+                                                                                
+        # Ellipticity = (Q_11 - Q_22 + 2 i Q_12) / den                              
+        ell = (m20 - m02 + 1j * 2 * m11) / den                       
+                                                                                
+        if type == 'chi':                                                           
+            # chi estimates 2*g, so to get g we have to divide by 2                 
+            ell = ell / 2                                                           
+                                                                                
+        return ell.real, ell.imag
+
     def process(self):
         """Process.
 
@@ -636,9 +713,9 @@ class MergeStarCatSetools(object):
 
         """
         x, y, ra, dec = [], [], [], []
-        g1, g2, size = [], [], []
-        flag_star = [], []
-        mag, snr, psfex_acc = [], [], []
+        eps1, ep2, chi1, chi2, size = [], [], [], [], []
+        flags, flags_ext = [], []
+        mag, snr = [], []
         ccd_nb = []
 
         self._w_log.info(
@@ -652,17 +729,19 @@ class MergeStarCatSetools(object):
 
             # positions
             x += list(data_j['XWIN_IMAGE'])
-            y += list(data_j['XWIN_IMAGE'])
+            y += list(data_j['YWIN_IMAGE'])
             ra += list(data_j['XWIN_WORLD'])
             dec += list(data_j['YWIN_WORLD'])
 
-            # shapes (convert sigmas to R^2)
-            #g1 += list(data_j['E1_STAR_HSM'])
-            #g2 += list(data_j['E2_STAR_HSM'])
-            #size += list(data_j['SIGMA_STAR_HSM']**2)
+            m11, m20, m02 = self.get_moments(data_j)
+            eps1, eps2 = self.get_ellipticity(m11, m20, m02, 'epsilon')
+            chi1, chi2 = self.get_ellipticity(m11, m20, m02, 'chi')
+
+            size += list(data_j['FLUX_RADIUS'])
 
             # flags
-            flag_star += list(data_j['FLAGS_WIN'])
+            flags += list(data_j['FLAGS_WIN'])
+            flags_ext += list(data_j['IMAFLAGS_ISO'])
 
             # misc
             mag += list(data_j['MAG_WIN'])
@@ -671,7 +750,7 @@ class MergeStarCatSetools(object):
             # CCD number
             ccd_nb += [
                 re.split(r"\-([0-9]*)\-([0-9]+)\.", name[0])[-2]
-            ] * len(data_j['RA'])
+            ] * len(data_j['XWIN_IMAGE'])
 
         # Prepare output FITS catalogue
         output = file_io.FITSCatalogue(
@@ -687,14 +766,16 @@ class MergeStarCatSetools(object):
             'Y': y,
             'RA': ra,
             'DEC': dec,
-            'E1_STAR_HSM': g1,
-            'E2_STAR_HSM': g2,
-            'SIGMA_STAR_HSM': np.sqrt(size),
-            'FLAG_STAR_HSM': flag_star,
+            'EPS1': eps1,
+            'EPS2': eps2,
+            'CHI1': chi1,
+            'CHI2': chi2,
+            'SIZE': size,
+            'FLAGS': flags,
+            'FLAGS_EXT': flags_ext,
             'MAG': mag,
             'SNR': snr,
-            'ACCEPTED': psfex_acc,
-            'CCD_NB': ccd_nb
+            'CCD_NB': ccd_nb,
         }
 
         # Write file
