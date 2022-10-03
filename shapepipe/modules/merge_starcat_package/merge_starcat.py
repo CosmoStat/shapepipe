@@ -604,6 +604,7 @@ class MergeStarCatPSFEX(object):
             sex_cat_path=self._input_file_list[0][0],
         )
 
+
 class MergeStarCatSetools(object):
     """Merge Star Catalogue Setools.
 
@@ -631,7 +632,7 @@ class MergeStarCatSetools(object):
 
     @classmethod
     def get_moments(cls, data):
-        """Get Moments
+        """Get Moments.
 
         Return second-order moments.
 
@@ -665,7 +666,7 @@ class MergeStarCatSetools(object):
 
     @classmethod
     def get_ellipticity(cls, m11, m20, m02, typ):
-        """Get Ellipticity
+        """Get Ellipticity.
 
         Compute ellipticity from second-order moments.
 
@@ -684,26 +685,26 @@ class MergeStarCatSetools(object):
         -------
         list
             ellipticity components
-        
+
         """
-        if typ == 'epsilon':                                                       
-            # Determinant = (Q_11 Q_22 - Q_12^2)^(1/2)                              
-            det = np.sqrt(m20 * m02 - m11 * m11)                
-        elif typ == 'chi':                                                         
-            det = 0                                                                 
-        else:                                                                       
+        if typ == 'epsilon':
+            # Determinant = (Q_11 Q_22 - Q_12^2)^(1/2)
+            det = np.sqrt(m20 * m02 - m11 * m11)
+        elif typ == 'chi':
+            det = 0
+        else:
             raise ValueError(f'Invalid ellipticity type {type}')
-                                                                                
-        # Denominator = Q_11 + Q_22 [ + 2 * det]                                    
-        den = m20 + m02 + 2 * det                                         
-                                                                                
-        # Ellipticity = (Q_11 - Q_22 + 2 i Q_12) / den                              
-        ell = (m20 - m02 + 1j * 2 * m11) / den                       
-                                                                                
-        if type == 'chi':                                                           
-            # chi estimates 2*g, so to get g we have to divide by 2                 
-            ell = ell / 2                                                           
-                                                                                
+
+        # Denominator = Q_11 + Q_22 [ + 2 * det]
+        den = m20 + m02 + 2 * det
+
+        # Ellipticity = (Q_11 - Q_22 + 2 i Q_12) / den
+        ell = (m20 - m02 + 1j * 2 * m11) / den
+
+        if type == 'chi':
+            # chi estimates 2*g, so to get g we have to divide by 2
+            ell = ell / 2
+
         return ell.real, ell.imag
 
     def process(self):
