@@ -28,7 +28,7 @@ SAVE_MASK_AS_HEALPIX : bool
     Output healpix mask if ``True``
 HEALPIX_OUT_FILE_BASE : str, optional
     Output halpix mask file base name; used only if SAVE_MASK_AS_HEALPIX is
-    True
+    ``True``
 HEALPIX_OUT_NSIDE : int, optional
     Output healpix mask nside; used only if SAVE_MASK_AS_HEALPIX is True
 
