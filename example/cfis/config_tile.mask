@@ -8,7 +8,7 @@ WW_CONFIG_FILE = $SP_CONFIG/mask_default/default.ww
 
 # Indicate cds client executable if no external star catalogue is available
 # (e.g. no internet access on run nodes)
-CDSCLIENT_PATH = findgsc2.2
+#CDSCLIENT_PATH = findgsc2.2
 
 ## Border parameters
 [BORDER_PARAMETERS]

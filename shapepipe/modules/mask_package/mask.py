@@ -99,8 +99,8 @@ class Mask(object):
         self._outname_base = outname_base
 
         # Set external star catalogue path if given
-        if star_cat_path is not None:
-            self._star_cat_path = star_cat_path
+        #if star_cat_path is not None:
+        self._star_cat_path = star_cat_path
 
         self._hdu = hdu
 
@@ -164,7 +164,7 @@ class Mask(object):
             self._config['PATH']['star_cat'] = self._star_cat_path
         else:
             raise ValueError(
-                'Either [PROGRAM_PATH]:CDSCLIENT_PATH in the mask config file '
+                'Either [PROGRAM_PATH]:CDSCLIENT_PATH in the mask config file'
                 + ' or a star catalogue as module input needs to be present'
             )
 
@@ -451,7 +451,7 @@ class Mask(object):
         Returns
         -------
         dict
-          Star dicotionnary for GSC objects in the field
+          Star dictionary for GSC objects in the field
 
         Raises
         ------
@@ -460,6 +460,11 @@ class Mask(object):
 
         """
         if 'CDSclient' in self._config['PATH']:
+            self._w_log.info(
+                f'Using web service \'{self._config["PATH"]["CDSclient"]}'
+                + ' to mask bright stars and their halos'
+            )
+
             ra = position[0]
             dec = position[1]
 
@@ -476,6 +481,12 @@ class Mask(object):
             self._CDS_stdout, self._CDS_stderr = execute(cmd_line)
 
         elif 'star_cat' in self._config['PATH']:
+            self._w_log.info(
+                'Using external star catalogue '
+                + f' \'{self._config["PATH"]["star_cat"]}'
+                + ' to mask bright stars and their halos'
+            )
+
             f = open(self._config['PATH']['star_cat'], 'r')
             self._CDS_stdout = f.read()
             self._CDS_stderr = ''
