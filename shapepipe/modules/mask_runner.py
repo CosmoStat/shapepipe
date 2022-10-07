@@ -26,7 +26,6 @@ def mask_runner(
     module_config_sec,
     w_log,
 ):
-    """Define The Mask Runner."""
     # Get number of input files
     n_inputs = len(input_file_list)
 

@@ -459,10 +459,12 @@ class Mask(object):
             For invalid configuration options
 
         """
+        msg = 'to mask bright stars and their halos'
+
         if 'CDSclient' in self._config['PATH']:
             self._w_log.info(
-                f'Using web service \'{self._config["PATH"]["CDSclient"]}'
-                + ' to mask bright stars and their halos'
+                'Using web service'
+                + f' \'{self._config["PATH"]["CDSclient"]}\' {msg}'
             )
 
             ra = position[0]
@@ -483,8 +485,7 @@ class Mask(object):
         elif 'star_cat' in self._config['PATH']:
             self._w_log.info(
                 'Using external star catalogue '
-                + f' \'{self._config["PATH"]["star_cat"]}'
-                + ' to mask bright stars and their halos'
+                + f' \'{self._config["PATH"]["star_cat"]}\' {msg}'
             )
 
             f = open(self._config['PATH']['star_cat'], 'r')
