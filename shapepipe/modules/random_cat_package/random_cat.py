@@ -73,7 +73,6 @@ class RandomCat():
         self._healpix_options = healpix_options
 
     def save_as_healpix(self, mask, header):
-
         """Save As Healpix.
 
         Save mask as healpix FITS file.

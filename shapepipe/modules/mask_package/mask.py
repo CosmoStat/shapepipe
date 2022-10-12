@@ -542,7 +542,6 @@ class Mask(object):
         flag_value=8,
         obj_type='Messier',
     ):
-
         """Mask DSO.
 
         Create a circular patch for deep-sky objects (DSOs), e.g.
