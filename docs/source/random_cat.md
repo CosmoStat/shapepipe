@@ -79,7 +79,7 @@ Run
 ```bash
 shapepipe_run -c $SP_CONFIG/config_Rc.ini
 ```
-The random catalogue and, with the config entry `SAVE_MASK_AS_HEALPIX = True``
+The random catalogue and, with the config entry ``SAVE_MASK_AS_HEALPIX = True``
 a healpix mask FITS file, will be written to disk.
 
 ## Create joint random catalogue
