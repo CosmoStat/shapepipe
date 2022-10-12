@@ -1159,7 +1159,7 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="n">_type</span><span class="p">][</span><span class="s1">&#39;cat_path&#39;</span><span class="p">],</span>
                         <span class="n">size_plus</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="n">_type</span><span class="p">][</span><span class="s1">&#39;size_plus&#39;</span><span class="p">],</span>
                         <span class="n">flag_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">[</span><span class="n">_type</span><span class="p">][</span><span class="s1">&#39;flag&#39;</span><span class="p">],</span>
-                        <span class="n">typ</span><span class="o">=</span><span class="n">_type</span><span class="p">,</span>
+                        <span class="n">obj_type</span><span class="o">=</span><span class="n">_type</span><span class="p">,</span>
                     <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_err</span><span class="p">:</span>
@@ -1330,7 +1330,13 @@
 
         <span class="k">return</span> <span class="n">flag</span></div>
 
-<div class="viewcode-block" id="Mask.mask_dso"><a class="viewcode-back" href="../../../../shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask.mask_dso">[docs]</a>    <span class="k">def</span> <span class="nf">mask_dso</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cat_path</span><span class="p">,</span> <span class="n">size_plus</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">flag_value</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">typ</span><span class="o">=</span><span class="s1">&#39;Messier&#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="Mask.mask_dso"><a class="viewcode-back" href="../../../../shapepipe.modules.mask_package.mask.html#shapepipe.modules.mask_package.mask.Mask.mask_dso">[docs]</a>    <span class="k">def</span> <span class="nf">mask_dso</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cat_path</span><span class="p">,</span>
+        <span class="n">size_plus</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+        <span class="n">flag_value</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+        <span class="n">obj_type</span><span class="o">=</span><span class="s1">&#39;Messier&#39;</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Mask DSO.</span>
 
 <span class="sd">        Create a circular patch for deep-sky objects (DSOs), e.g.</span>
@@ -2083,7 +2089,7 @@
       By CosmoStat<br/>
     
         &copy; Copyright 2022, CosmoStat.<br/>
-      Last updated on 17 Sep, 2022.<br/>
+      Last updated on 12 Oct, 2022.<br/>
   </p>
 </footer>
 </main>

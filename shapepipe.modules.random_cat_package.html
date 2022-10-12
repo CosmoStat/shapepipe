@@ -873,7 +873,12 @@ for overlapping and masked regions.</p>
 <dt>DENSITY<span class="classifier">bool, optional</span></dt><dd><p>Option to interpret the number of random objects per square degree; the
 default is <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
-<dt>TILE_LIST<span class="classifier">str, optional</span></dt><dd><p>Path to tile IDs for overlap flagging</p>
+<dt>SAVE_MASK_AS_HEALPIX<span class="classifier">bool</span></dt><dd><p>Output healpix mask if <code class="docutils literal notranslate"><span class="pre">True</span></code></p>
+</dd>
+<dt>HEALPIX_OUT_FILE_BASE<span class="classifier">str, optional</span></dt><dd><p>Output halpix mask file base name; used only if SAVE_MASK_AS_HEALPIX is
+<code class="docutils literal notranslate"><span class="pre">True</span></code></p>
+</dd>
+<dt>HEALPIX_OUT_NSIDE<span class="classifier">int, optional</span></dt><dd><p>Output healpix mask nside; used only if SAVE_MASK_AS_HEALPIX is <code class="docutils literal notranslate"><span class="pre">True</span></code></p>
 </dd>
 </dl>
 </div>
@@ -917,7 +922,7 @@ default is <code class="docutils literal notranslate"><span class="pre">False</s
       By CosmoStat<br/>
     
         &copy; Copyright 2022, CosmoStat.<br/>
-      Last updated on 17 Sep, 2022.<br/>
+      Last updated on 12 Oct, 2022.<br/>
   </p>
 </footer>
 </main>
