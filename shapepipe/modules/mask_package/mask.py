@@ -364,7 +364,7 @@ class Mask(object):
                         self._config[_type]['cat_path'],
                         size_plus=self._config[_type]['size_plus'],
                         flag_value=self._config[_type]['flag'],
-                        typ=_type,
+                        obj_type=_type,
                     )
 
         if not self._err:
@@ -535,7 +535,13 @@ class Mask(object):
 
         return flag
 
-    def mask_dso(self, cat_path, size_plus=0.1, flag_value=8, typ='Messier'):
+    def mask_dso(
+        self,
+        cat_path,
+        size_plus=0.1,
+        flag_value=8,
+        obj_type='Messier',
+    ):
         """Mask DSO.
 
         Create a circular patch for deep-sky objects (DSOs), e.g.
