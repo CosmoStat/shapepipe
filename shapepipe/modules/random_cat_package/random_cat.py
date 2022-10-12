@@ -73,6 +73,7 @@ class RandomCat():
         self._healpix_options = healpix_options
 
     def save_as_healpix(self, mask, header):
+
         """Save As Healpix.
 
         Save mask as healpix FITS file.
@@ -81,6 +82,7 @@ class RandomCat():
         ----------
         mask : numpy.ndarray
             2D pixel mask image
+
         header : class Header
             Image header with WCS information
 
