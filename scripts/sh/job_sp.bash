@@ -27,7 +27,7 @@ config_dir=$VM_HOME/shapepipe/example/cfis
 psf='mccd'
 retrieve='vos'
 results='cosmostat/kilbinger/results_v1'
-nsh_step=3200
+nsh_step=-1
 nsh_max=-1
 nsh_jobs=8
 
@@ -56,7 +56,7 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    \tnumber of shape measurement parallel jobs, default=$nsh_jobs\n
    --nsh_step NSTEP\n
    \tnumber of objects per parallel shape module call, \n
-   \t default: $nsh_step\n
+   \t default: optimal number is computed\n
    --nsh_max NMAX\n
    \tmax number of objects per parallel shape module call, \n
    \t default: unlimited; has precedent over --nsh_step\n
@@ -362,6 +362,11 @@ if [[ $do_job != 0 ]]; then
   ### Prepare config files
   mkdir -p $SP_CONFIG_MOD
   n_min=0
+  if [[ $nsh_step == -1 ]]; then
+    n_obj=`get_number_objects.py`
+    nsh_step=`echo "$(($n_obj/$nsh_jobs))"`
+  fi
+
   n_max=$((nsh_step - 1))
   for k in $(seq 1 $nsh_jobs); do
     cat $SP_CONFIG/config_tile_Ng_template.ini | \
