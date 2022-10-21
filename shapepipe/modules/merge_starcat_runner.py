@@ -30,7 +30,7 @@ def merge_starcat_runner(
     """Define The Merge Star Catalogues Runner."""
     # Read config file options
     psf_model = config.get(module_config_sec, 'PSF_MODEL')
-    allowed_psf_models = ('psfex', 'mccd')
+    allowed_psf_models = ('psfex', 'mccd', 'setools')
     if psf_model not in allowed_psf_models:
         raise ValueError(
             f'Invalid config entry PSF_MODEL={psf_model} found, '
@@ -43,8 +43,10 @@ def merge_starcat_runner(
     # Set merge class to use
     if psf_model == 'mccd':
         MSC = merge_starcat.MergeStarCatMCCD
-    else:
+    elif psf_model == 'psfex':
         MSC = merge_starcat.MergeStarCatPSFEX
+    elif psf_model == 'setools':
+        MSC = merge_starcat.MergeStarCatSetools
 
     # Create instance of merge class
     merge_inst = MSC(input_file_list, output_dir, w_log)

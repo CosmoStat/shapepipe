@@ -70,7 +70,7 @@ SP_CONFIG=$SP_BASE/example/cfis
 # PSF
 
 ## Collect all psfinterp results 
-psf_residuals -p $psf
+prepare_star_cat -p $psf
 
 ## Merge all psfinterp results and compute PSF residuals
 shapepipe_run -c $SP_CONFIG/config_MsPl_$psf.ini 

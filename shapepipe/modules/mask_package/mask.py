@@ -540,7 +540,7 @@ class Mask(object):
         cat_path,
         size_plus=0.1,
         flag_value=8,
-        obj_type='Messier'
+        obj_type='Messier',
     ):
         """Mask DSO.
 

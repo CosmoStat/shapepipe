@@ -24,8 +24,13 @@ N_RANDOM : float
 DENSITY : bool, optional
     Option to interpret the number of random objects per square degree; the
     default is ``False``
-TILE_LIST : str, optional
-    Path to tile IDs for overlap flagging
+SAVE_MASK_AS_HEALPIX : bool
+    Output healpix mask if ``True``
+HEALPIX_OUT_FILE_BASE : str, optional
+    Output halpix mask file base name; used only if SAVE_MASK_AS_HEALPIX is
+    ``True``
+HEALPIX_OUT_NSIDE : int, optional
+    Output healpix mask nside; used only if SAVE_MASK_AS_HEALPIX is ``True``
 
 """
 
