@@ -102,6 +102,7 @@ def mask_runner(
         outname_base=outname_base,
         star_cat_path=ext_star_cat,
         hdu=hdu,
+        w_log=w_log,
     )
 
     # Process module

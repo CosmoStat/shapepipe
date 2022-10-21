@@ -81,6 +81,7 @@ class RandomCat():
         ----------
         mask : numpy.ndarray
             2D pixel mask image
+
         header : class Header
             Image header with WCS information
 

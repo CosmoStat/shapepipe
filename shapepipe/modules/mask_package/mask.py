@@ -12,6 +12,7 @@ import re
 import numpy as np
 from astropy import units, wcs
 from astropy.coordinates import SkyCoord
+from astropy.io import fits
 
 from shapepipe.pipeline import file_io
 from shapepipe.pipeline.config import CustomParser
@@ -30,10 +31,23 @@ class Mask(object):
         Path to image (FITS format)
     weight_path : str
         Path to the weight image (FITS format)
+    image_prefix : str
+        Prefix to input image name, specify as ``'none'`` for no prefix
+    image_num : str
+        File number identified
     config_filepath : str
         Path to the ``.mask`` config file
     output_dir : str
         Path to the output directory
+    w_log : logging.Logger
+        Log file
+    path_external_flag : str, optional
+        Path to external flag file, default is ``None`` (not used)
+    outname_base : str, optional
+       Output file name base, default is ``flag``
+    star_cat_path : str, optional
+        Path to external star catalogue, default is ``None`` (not used;
+        instead the star catalogue is produced on the fly at run time)
     hdu : int, optional
         HDU number, default is ``0``
 
@@ -47,6 +61,7 @@ class Mask(object):
         image_num,
         config_filepath,
         output_dir,
+        w_log,
         path_external_flag=None,
         outname_base='flag',
         star_cat_path=None,
@@ -55,33 +70,51 @@ class Mask(object):
 
         # Path to the image to mask
         self._image_fullpath = image_path
+
         # Path to the weight associated to the image
         self._weight_fullpath = weight_path
-        self._config_filepath = config_filepath
-        # Path to the output directory
-        self._output_dir = output_dir
-        # Path to an external flag file
-        self._path_external_flag = path_external_flag
-        # Output file base name
-        self._outname_base = outname_base
 
-        self._img_number = image_num
+        # Input image prefix
         if (image_prefix.lower() != 'none') and (image_prefix != ''):
             self._img_prefix = f'{image_prefix}_'
         else:
             self._img_prefix = ''
 
+        # File number identified
+        self._img_number = image_num
+
+        # Path to mask config file
+        self._config_filepath = config_filepath
+
+        # Path to the output directory
+        self._output_dir = output_dir
+
+        # Log file
+        self._w_log = w_log
+
+        # Path to an external flag file
+        self._path_external_flag = path_external_flag
+
+        # Output file base name
+        self._outname_base = outname_base
+
+        # Set external star catalogue path if given
         if star_cat_path is not None:
             self._star_cat_path = star_cat_path
 
         self._hdu = hdu
+
+        # Read mask config file
         self._get_config()
-        # Set parameters needed for the stars detection
-        self._set_parameters()
+
+        # Set parameters needed for the star detection
+        self._set_image_coordinates()
+
+        # Set error flag
         self._err = False
 
     def _get_config(self):
-        """Get Config Values.
+        """Get Config.
 
         Read the config file and set parameters.
 
@@ -110,6 +143,7 @@ class Mask(object):
             'HALO': {},
             'SPIKE': {},
             'MESSIER': {},
+            'NGC': {},
             'MD': {},
         }
 
@@ -159,6 +193,7 @@ class Mask(object):
             )
 
             if self._config[mask_shape]['make']:
+
                 self._config[mask_shape]['maskmodel_path'] = conf.getexpanded(
                     f'{mask_shape}_PARAMETERS',
                     f'{mask_shape}_MASKMODEL_PATH',
@@ -193,20 +228,26 @@ class Mask(object):
                 else:
                     self._config[mask_shape]['reg_file'] = None
 
-        self._config['MESSIER']['make'] = (
-            conf.getboolean('MESSIER_PARAMETERS', 'MESSIER_MAKE')
-        )
+        for mask_type in ['MESSIER', 'NGC']:
 
-        if self._config['MESSIER']['make']:
-            self._config['MESSIER']['cat_path'] = (
-                conf.getexpanded('MESSIER_PARAMETERS', 'MESSIER_CAT_PATH')
+            self._config[mask_type]['make'] = conf.getboolean(
+                f'{mask_type}_PARAMETERS',
+                f'{mask_type}_MAKE'
             )
-            self._config['MESSIER']['size_plus'] = (
-                conf.getfloat('MESSIER_PARAMETERS', 'MESSIER_SIZE_PLUS')
-            )
-            self._config['MESSIER']['flag'] = (
-                conf.getint('MESSIER_PARAMETERS', 'MESSIER_FLAG_VALUE')
-            )
+
+            if self._config[mask_type]['make']:
+                self._config[mask_type]['cat_path'] = conf.getexpanded(
+                    f'{mask_type}_PARAMETERS',
+                    f'{mask_type}_CAT_PATH',
+                )
+                self._config[mask_type]['size_plus'] = conf.getfloat(
+                    f'{mask_type}_PARAMETERS',
+                    f'{mask_type}_SIZE_PLUS',
+                )
+                self._config[mask_type]['flag'] = conf.getint(
+                    f'{mask_type}_PARAMETERS',
+                    f'{mask_type}_FLAG_VALUE',
+                )
 
         self._config['MD']['make'] = (
             conf.getboolean('MD_PARAMETERS', 'MD_MAKE')
@@ -223,10 +264,11 @@ class Mask(object):
                 conf.getboolean('MD_PARAMETERS', 'MD_REMOVE')
             )
 
-    def _set_parameters(self):
-        """Set Parameters.
+    def _set_image_coordinates(self):
+        """Set Image Coordinates.
 
-        Set the parameters for the stars detection.
+        Compute the image coordinates for matching with the star catalogue
+        and star mask.
 
         """
         img = file_io.FITSCatalogue(self._image_fullpath, hdu_no=0)
@@ -238,16 +280,25 @@ class Mask(object):
 
         self._wcs = wcs.WCS(self._header)
 
+        # Compute field center
+
         # Note: get_data().shape corresponds to (n_y, n_x)
         pix_center = [img_shape[1] / 2.0, img_shape[0] / 2.0]
         wcs_center = self._wcs.all_pix2world([pix_center], 1)[0]
-
         self._fieldcenter = {}
         self._fieldcenter['pix'] = np.array(pix_center)
         self._fieldcenter['wcs'] = (
             SkyCoord(ra=wcs_center[0], dec=wcs_center[1], unit='deg')
         )
 
+        # Get the four corners of the image
+        corners = self._wcs.calc_footprint()
+        self._corners_sc = SkyCoord(
+            ra=corners[:, 0] * units.degree,
+            dec=corners[:, 1] * units.degree,
+        )
+
+        # Compute image radius = image diagonal
         self._img_radius = self._get_image_radius()
 
     def make_mask(self):
@@ -280,14 +331,6 @@ class Mask(object):
                     )
 
         if not self._err:
-            if self._config['BORDER']['make']:
-                border_mask = self.mask_border(
-                    width=self._config['BORDER']['width']
-                )
-            else:
-                border_mask = None
-
-        if not self._err:
             mask_name = []
             if self._config['HALO']['make'] and self._config['SPIKE']['make']:
                 self._exec_WW(types='ALL')
@@ -307,15 +350,22 @@ class Mask(object):
                     else:
                         mask_name.append(None)
 
+        masks_internal = {}
         if not self._err:
-            if self._config['MESSIER']['make']:
-                messier_mask = self.mask_messier(
-                    self._config['MESSIER']['cat_path'],
-                    size_plus=self._config['MESSIER']['size_plus'],
-                    flag_value=self._config['MESSIER']['flag'],
+            if self._config['BORDER']['make']:
+                masks_internal['BORDER'] = self.mask_border(
+                    width=self._config['BORDER']['width']
                 )
-            else:
-                messier_mask = None
+
+        if not self._err:
+            for _type in ('MESSIER', 'NGC'):
+                if self._config[_type]['make']:
+                    masks_internal[_type] = self.mask_dso(
+                        self._config[_type]['cat_path'],
+                        size_plus=self._config[_type]['size_plus'],
+                        flag_value=self._config[_type]['flag'],
+                        obj_type=_type,
+                    )
 
         if not self._err:
             try:
@@ -331,8 +381,7 @@ class Mask(object):
                 final_mask = self._build_final_mask(
                     path_mask1=mask_name[0],
                     path_mask2=mask_name[1],
-                    border=border_mask,
-                    messier=messier_mask,
+                    masks_internal=masks_internal,
                     path_external_flag=path_external_flag,
                 )
 
@@ -486,25 +535,34 @@ class Mask(object):
 
         return flag
 
-    def mask_messier(self, cat_path, size_plus=0.1, flag_value=8):
-        """Mask Messier.
+    def mask_dso(
+        self,
+        cat_path,
+        size_plus=0.1,
+        flag_value=8,
+        obj_type='Messier',
+    ):
+        """Mask DSO.
 
-        Create a circular patch for Messier objects.
+        Create a circular patch for deep-sky objects (DSOs), e.g.
+        Messier or NGC objects.
 
         Parameters
         ----------
         cat_path : str
-            Path to the Messier catalogue
+            Path to the deep-sky catalogue
         size_plus : float
             Increase the size of the mask by this factor
             (e.g. ``0.1`` means 10%)
         flag_value : int
             Value of the flag, some power of 2
+        obj_type : {'Messier', 'NGO'}, optional
+            Object type
 
         Returns
         -------
         numpy.ndarray or ``None``
-            If no Messier objects are found in the field return ``None`` and
+            If no deep-sky objects are found in the field return ``None`` and
             the flag map
 
         Raises
@@ -517,40 +575,65 @@ class Mask(object):
         """
         if size_plus < 0:
             raise ValueError(
-                'Messier mask size increase variable cannot be negative'
+                'deep-sky mask size increase variable cannot be negative'
             )
 
         if cat_path is None:
-            raise ValueError('Path to Messier object catalogue not provided')
+            raise ValueError('Path to deep-sky object catalogue not provided')
 
-        m_cat = np.load(cat_path, allow_pickle=True)
+        m_cat, header = fits.getdata(cat_path, header=True)
+
+        unit_ra = file_io.get_unit_from_fits_header(header, 'ra')
+        unit_dec = file_io.get_unit_from_fits_header(header, 'dec')
         m_sc = SkyCoord(
-            ra=m_cat['ra'] * units.degree,
-            dec=m_cat['dec'] * units.degree,
+            ra=m_cat['ra'] * unit_ra,
+            dec=m_cat['dec'] * unit_dec,
         )
 
-        nx = self._fieldcenter['pix'][0] * 2
-        ny = self._fieldcenter['pix'][1] * 2
+        unit_size_X = file_io.get_unit_from_fits_header(header, 'size_X')
+        unit_size_Y = file_io.get_unit_from_fits_header(header, 'size_Y')
 
-        # Get the four corners of the image
-        corners = self._wcs.calc_footprint()
-        corners_sc = SkyCoord(
-            ra=corners[:, 0] * units.degree,
-            dec=corners[:, 1] * units.degree,
-        )
-
-        # Loop through all Messier objects and check whether any corner is
+        # Loop through all deep-sky objects and check whether any corner is
         # closer than the object's radius
         indices = []
+        size_max_deg = []
         for idx, m_obj in enumerate(m_cat):
-            r = max(m_obj['size']) * units.arcmin
+
+            # DSO size
+            # r = max(m_obj['size']) * units.arcmin
+            r = max(
+                m_obj['size_X'] * unit_size_X,
+                m_obj['size_Y'] * unit_size_Y,
+            )
             r_deg = r.to(units.degree)
-            if np.any(corners_sc.separation(m_sc[idx]) < r_deg):
+            size_max_deg.append(r_deg)
+
+            # Add index to list if distance between DSO and any image corner
+            # is closer than DSO size
+            if np.any(self._corners_sc.separation(m_sc[idx]) < r_deg):
                 indices.append(idx)
 
+        self._w_log.info(
+            f'Found {len(indices)} {obj_type} objects overlapping with'
+            ' image'
+        )
+
         if len(indices) == 0:
-            # No closeby Messier object found
+            # No closeby deep-sky object found
             return None
+
+        # Compute number of DSO center coordinates in footprint, for logging
+        # purpose only
+        n_dso_center_in_footprint = 0
+        for idx in indices:
+            in_img = self._wcs.footprint_contains(m_sc[idx])
+            self._w_log.info(
+                '(obj_type, ra, dec, in_img) = '
+                + f'({obj_type}, '
+                + f'{m_cat["ra"][idx]}, '
+                + f'{m_cat["dec"][idx]}, '
+                + f'{in_img})'
+            )
 
         # Note: python image array is [y, x]
         flag = np.zeros(
@@ -561,6 +644,8 @@ class Mask(object):
             dtype='uint16',
         )
 
+        nx = self._fieldcenter['pix'][0] * 2
+        ny = self._fieldcenter['pix'][1] * 2
         for idx in indices:
             m_center = np.hstack(self._wcs.all_world2pix(
                 m_cat['ra'][idx],
@@ -568,11 +653,11 @@ class Mask(object):
                 0,
             ))
             r_pix = (
-                max(m_cat['size'][idx]) / 60.0 * (1 + size_plus)
+                size_max_deg[idx].to(units.deg).value * (1 + size_plus)
                 / np.abs(self._wcs.pixel_scale_matrix[0][0])
             )
 
-            # The following accounts for Messier centers outside of image,
+            # The following accounts for deep-sky centers outside of image,
             # without creating masks for coordinates out of range
             y_c, x_c = np.ogrid[0:ny, 0:nx]
             mask_tmp = (
@@ -1016,8 +1101,7 @@ class Mask(object):
         self,
         path_mask1,
         path_mask2=None,
-        border=None,
-        messier=None,
+        masks_internal=None,
         path_external_flag=None,
     ):
         """Create Final Mask.
@@ -1030,10 +1114,8 @@ class Mask(object):
             Path to a mask (FITS format)
         path_mask2 : str, optional
             Path to a mask (FITS format)
-        border : numpy.ndarray, optional
-            Array containing the border mask
-        messier : numpy.ndarray, optional
-            Array containing the messier mask
+        masks_internal : dict, optional
+            Internally created masks
         path_external_flag : str, optional
             Path to an external flag file
 
@@ -1045,8 +1127,7 @@ class Mask(object):
         Raises
         ------
         ValueError
-            If ``path_mask1``, ``path_mask2``, border and messier are of type
-            ``None``
+            If all masks are of type ``None``
         TypeError
             If border is not a Numpy array
         TypeError
@@ -1056,12 +1137,12 @@ class Mask(object):
         final_mask = None
 
         if (
-            path_mask1 is None and path_mask2 is None and border is None
-            and messier is None
+            path_mask1 is None and path_mask2 is None
+            and not masks_internal
         ):
             raise ValueError(
                 'No paths to mask files containing halos and/or spikes,'
-                + ' borders, or Messier objects provided'
+                + ' borders, or deep-sky objects provided'
             )
 
         if path_mask1 is not None:
@@ -1078,23 +1159,18 @@ class Mask(object):
             else:
                 final_mask = mask2.get_data()[:, :]
 
-        if border is not None:
-            if type(border) is np.ndarray:
-                if final_mask is not None:
-                    final_mask += border
+        for typ in masks_internal:
+            if masks_internal[typ] is not None:
+                if type(masks_internal[typ]) is np.ndarray:
+                    if final_mask is not None:
+                        final_mask += masks_internal[typ]
+                    else:
+                        final_mask = masks_internal[typ]
                 else:
-                    final_mask = border
-            else:
-                raise TypeError('border mask has to be a numpy.ndarray')
-
-        if messier is not None:
-            if type(messier) is np.ndarray:
-                if final_mask is not None:
-                    final_mask += messier
-                else:
-                    final_mask = messier
-            else:
-                raise TypeError('Messier mask has to be a numpy.ndarray')
+                    raise TypeError(
+                        f'internally created mask of type {typ} '
+                        + 'has to be numpy.ndarray'
+                    )
 
         if path_external_flag is not None:
             external_flag = file_io.FITSCatalogue(
