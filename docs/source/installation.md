@@ -33,7 +33,7 @@ cd shapepipe
 
 where `<VERSION>` is a
 [tagged release](https://github.com/CosmoStat/shapepipe/releases) of ShapePipe
-(e.g. `v1.0.0`). It is recommend to use the
+(e.g. `v1.0.1`). It is recommend to use the
 [latest release](https://github.com/CosmoStat/shapepipe/releases/latest)
 unless you want to reproduce an older set of results.
 
