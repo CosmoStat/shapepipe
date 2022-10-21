@@ -17,7 +17,7 @@ usage="Usage: $(basename "$0") [OPTIONS]
 \n\nOptions:\n
    -h\tthis message\n
    -c, --cat TYPE\n
-    \tCatalogue type, one in ['final'|'flag'], default='$cat'\n
+    \tCatalogue type, one in ['final'|'flag'|'image'], default='$cat'\n
 "
 
 ## Parse command line
@@ -54,8 +54,8 @@ function link_s () {
 }
 
 ## Check options
-if [ "$cat" != "final" ] && [ "$cat" != "flag" ]; then
-  echo "cat (option -c) needs to be 'final' or 'flag'"
+if [ "$cat" != "final" ] && [ "$cat" != "flag" ] && [ "$cat" != "image" ]; then
+  echo "cat (option -c) needs to be 'final', 'flag', or 'image'"
   exit 2
 fi
 
@@ -68,9 +68,12 @@ out_base="output"
 if [ "$cat" == "final" ]; then
   run_dir="run_sp_combined"
   INPUT="$pwd/$out_base/run_sp_Mc_*"
-else
+elif [ "$cat" == "flag" ]; then
   run_dir="run_sp_combined_flag"
   INPUT="$pwd/$out_base/run_sp_tile_Ma_*"
+else
+  run_dir="run_sp_combined_image"
+  INPUT="$pwd/$out_base/run_sp_Git_*"
 fi
 
 log_path="$pwd/$out_base/log_run_sp.txt"
@@ -85,12 +88,19 @@ if [ "$cat" == "final" ]; then
   PATTERNS=(
 	  "final_cat-*"
   )
-else
+elif [ "$cat" == "flag" ]; then
   DIRS=(
 	  "mask_runner"
   )
   PATTERNS=(
 	  "pipeline_flag-*"
+  )
+else
+  DIRS=(
+    "get_images_runner"
+  )
+  PATTERNS=(
+	  "CFIS_image-*"
   )
 fi
 

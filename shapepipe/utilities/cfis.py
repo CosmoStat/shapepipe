@@ -6,11 +6,9 @@ CFIS module.
 
 """
 
-import errno
 import glob
 import os
 import re
-import shlex
 import sys
 
 import astropy.coordinates as coords
