@@ -42,16 +42,7 @@ def mccd_fit_val_runner(
     # Prepare inputs to run the main fit function
     output_dir = run_dirs['output'] + '/'
     fit_saving_name = 'fitted_model'
-
-    # Output file name
-    if config.has_option(module_config_sec, 'OUTPUT_FILE_PATTERN'):
-        output_file_pattern = config.get(
-            module_config_sec,
-            'OUTPUT_FILE_PATTERN'
-        )
-    else:
-        output_file_pattern = 'validation_psf'
-
+    val_saving_name = 'validation_psf'
     # Extract the training star catalog
     trainstar_path = input_file_list[0]
     # Validation stars are in the second position of the list
@@ -80,7 +71,7 @@ def mccd_fit_val_runner(
             output_dir=output_dir,
             file_number_string=file_number_string,
             w_log=w_log,
-            val_saving_name=output_file_pattern,
+            val_saving_name=val_saving_name,
         )
 
     else:
