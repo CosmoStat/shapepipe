@@ -47,9 +47,9 @@ def params_default():
 
     """
     p_def = param(
-        input_path  = '.',
-        input_name_base = 'final_cat',
-        hdu_num = 1,
+        input_path='.',
+        input_name_base='final_cat',
+        hdu_num=1,
     )
 
     return p_def
