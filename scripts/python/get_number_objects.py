@@ -22,9 +22,7 @@ from shapepipe.utilities import cfis
 
 
 class param:
-    """General class to store (default) variables
-
-    """
+    """General class to store (default) variables"""
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
 
