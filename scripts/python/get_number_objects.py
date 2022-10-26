@@ -36,10 +36,6 @@ class param:
 def params_default():
     """Set default parameter values.
 
-    Parameters
-    ----------
-    None
-
     Returns
     -------
     class param
