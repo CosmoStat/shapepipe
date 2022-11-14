@@ -32,11 +32,15 @@ def find_exposures_runner(
     # Create output ascii file name
     output_path = f'{run_dirs["output"]}/exp_numbers{file_number_string}.txt'
 
+    # Give clumn number for exposure name in fits header
+    colnum = config.getint(module_config_sec, 'COLNUM')
+
     # Create find exposures class instance
     find_exp_inst = find_exposures.FindExposures(
         input_file_name,
         output_path,
-        w_log
+        w_log,
+        colnum,
     )
 
     # Run processing
