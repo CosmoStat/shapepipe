@@ -10,6 +10,7 @@ ARG CXX=g++-9
 RUN apt-get update --allow-releaseinfo-change && \
     apt-get update && \
     apt-get upgrade -y && \
+    apt-get install make -y && \
     apt-get install gcc-9 g++-9 -y && \
     apt-get install locales -y && \
     apt install libgl1-mesa-glx -y && \
