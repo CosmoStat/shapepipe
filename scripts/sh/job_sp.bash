@@ -26,6 +26,7 @@ job=255
 config_dir=$VM_HOME/shapepipe/example/cfis
 psf='mccd'
 retrieve='vos'
+star_cat_for_mask='save'
 results='cosmostat/kilbinger/results_v1'
 nsh_step=-1
 nsh_max=-1
@@ -50,6 +51,8 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    -r, --retrieve METHOD\n
    \tmethod to retrieve images, one in ['vos'|'symlink]', default='$retrieve'\n
+   -s, --star_cat_for_mask\n
+   \tcatalogue for masking bright stars, allowed are 'onthefly' (default), 'save'\n
    -o, --output_dir\n
    \toutput (upload) directory on vos:cfis, default='$results'\n
    --nsh_jobs NJOB\n
@@ -94,6 +97,10 @@ while [ $# -gt 0 ]; do
       retrieve="$2"
       shift
       ;;
+    -s|--star_cat_for_mask)
+      star_cat_for_mask="$2"
+      shift
+      ;;
     -o|--output_dir)
       results="$2"
       shift
@@ -122,11 +129,23 @@ if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
   echo "PSF (option -p) needs to be 'psfex' or 'mccd'"
   exit 2
 fi
+
+if [ "$star_cat_for_mask" != "onthefly" ] && [ "$star_cat_for_mask" != "save" ]; then
+  echo "Star cat for mask (option -s) needs to be 'onthefly' or 'save'"
+  exit 4
+fi
+
+if [ "$retrieve" != "vos" ] && [ "$retrieve" != "symlink" ]; then
+  echo "method to retrieve images (option -r) needs to be 'vos' or 'symlink'"
+  exit 5
+fi
+
 n_tile=${#TILE_ARR[@]}
 if [ "$n_tile" == "0" ]; then
   echo "No tile ID given"
   exit 3
 fi
+
 if [ $nsh_max != -1 ]; then
   nsh_step=$nsh_max
 fi
@@ -177,13 +196,13 @@ function command () {
    cmd=$1
    str=$2
 
-   #RED='\033[0;31m'
-   #GREEN='\033[0;32m'
-   #NC='\033[0m' # No Color
+   RED='\033[0;31m'
+   GREEN='\033[0;32m'
+   NC='\033[0m' # No Color
    # Color escape characters show up in log files
-   RED=''
-   GREEN=''
-   NC=''
+   #RED=''
+   #GREEN=''
+   #NC=''
 
 
    if [ $# == 2 ]; then
@@ -287,6 +306,7 @@ mkdir -p $OUTPUT
 # Processing
 
 ## Retrieve config files and images (online if retrieve=vos)
+## Retrieve and save star catalogues for masking (if star_cat_for_mask=save)
 (( do_job= $job & 1 ))
 if [[ $do_job != 0 ]]; then
 
@@ -306,7 +326,18 @@ if [[ $do_job != 0 ]]; then
   fi
 
   ### Retrieve files
-  command_sp "shapepipe_run -c $SP_CONFIG/config_GitFeGie_$retrieve.ini" "Retrieve images"
+  #command_sp "shapepipe_run -c $SP_CONFIG/config_GitFeGie_$retrieve.ini" "Retrieve images"
+
+  ### Retrieve and save star catalogues for masking
+  if [ "$star_cat_for_mask" == "save" ]; then
+    #### For tiles
+    mkdir $SP_RUN/star_cat_tiles
+    command_sp "create_star_cat $SP_RUN/output/run_sp_GitFeGie_*/get_images_runner_run_1/output $SP_RUN/star_cat_tiles" "Save star cats for masking (tile)"
+
+    #### For single-exposures
+    mkdir $SP_RUN/star_cat_exp
+    command_sp "create_star_cat $SP_RUN/output/run_sp_GitFeGie_*/get_images_runner_run_2/output $SP_RUN/star_cat_exp exp" "Save star cats for masking (exp)"
+  fi
 
 fi
 
@@ -327,7 +358,7 @@ fi
 if [[ $do_job != 0 ]]; then
 
   ### Mask tiles and exposures
-  command_sp "shapepipe_run -c $SP_CONFIG/config_MaMa.ini" "Run shapepipe (mask)"
+  command_sp "shapepipe_run -c $SP_CONFIG/config_MaMa_$star_cat_for_mask.ini" "Run shapepipe (mask)"
 
 fi
 
