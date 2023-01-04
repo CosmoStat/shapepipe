@@ -8,6 +8,7 @@ dependencies:
   - automake==1.16.2
   - autoconf==2.69
   - cmake==3.19.6
+  - cs_util==0.0.4
   - galsim==2.2.5
   - joblib==1.1.0
   - libtool==2.4.6
