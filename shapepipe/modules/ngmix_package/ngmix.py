@@ -813,7 +813,6 @@ def do_ngmix_metacal(
 
         weight_map = np.copy(weights[n_e])
         weight_map[np.where(flags[n_e] != 0)] = 0.
-        weight_map[weight_map != 0] = 1
 
         psf_guess = np.array([0., 0., 0., 0., psf_T, 1.])
         try:
