@@ -361,7 +361,7 @@ class GetImages(object):
             sys.argv = None
 
             # Create symbolic link to downloaded file with
-            # link name in ShapePipe numbering format        
+            # link name in ShapePipe numbering format
             os.symlink(out_path_orig, out_path_renamed)
 
         elif self._retrieve_method == 'symlink':
