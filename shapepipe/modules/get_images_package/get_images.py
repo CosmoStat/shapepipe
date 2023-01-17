@@ -278,7 +278,11 @@ class GetImages(object):
             Output file paths, one list for each input file type
 
         """
-        for in_per_type, out_per_type_orig, out_per_type_renamed in zip(all_inputs, all_outputs_orig, all_outputs_renamed):
+        for in_per_type, out_per_type_orig, out_per_type_renamed in zip(
+            all_inputs,
+            all_outputs_orig,
+            all_outputs_renamed
+        ):
             for idx in range(len(in_per_type)):
                 if self._check_existing_dir:
                     out_base = os.path.basename(out_per_type_orig[idx])
@@ -305,7 +309,11 @@ class GetImages(object):
                             + f' {self._check_existing_dir},'
                             + ' downloading images'
                         )
-                self.retrieve_one(in_per_type[idx], out_per_type_orig[idx], out_per_type_renamed[idx])
+                self.retrieve_one(
+                    in_per_type[idx],
+                    out_per_type_orig[idx],
+                    out_per_type_renamed[idx]
+                )
 
     def retrieve_one(self, in_path, out_path_orig, out_path_renamed):
         """Retrieve One.
@@ -333,6 +341,7 @@ class GetImages(object):
             vcp = vosHandler('vcp')
             self._w_log.info(log_cmd)
 
+            # Download file from VOSpace
             attempt = 0
             while attempt < self._n_try:
                 try:
@@ -351,6 +360,8 @@ class GetImages(object):
 
             sys.argv = None
 
+            # Create symbolic link to downloaded file with
+            # link name in ShapePipe numbering format        
             os.symlink(out_path_orig, out_path_renamed)
 
         elif self._retrieve_method == 'symlink':
