@@ -62,7 +62,8 @@ def in2out_pattern(number):
 
     # remove letters in number
     number_final = re.sub('[a-zA-Z]', '', number_final)
-
+    # make robust for more generalized file names
+    number_final = re.sub(r'_', '', number_final)
     return number_final
 
 
