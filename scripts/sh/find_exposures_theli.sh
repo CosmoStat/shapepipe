@@ -54,14 +54,17 @@ for dir in ${theli_dir}/CFIS*;
                 echo $(basename $file C.sub.fits)
                 ln -s ${single_dir}/${base}C.sub.fits ${output_dir}/exposures
                 ln -s ${single_dir}/${base}C.weight.fits.gz ${output_dir}/exposures
-                ln -s ${header_dir}/${base}.head ${output_dir}/exposures/headers
+                # remove header line 2 which has french accents that cause problems with astropy, change wcs keys
+                awk 'NR!~/^(2)$/ {sub(/TAN/,"TPV"); print}' ${header_dir}/${base}.head > ${output_dir}/exposures/headers/${base}.head
+                
             fi
          fi 
          done >> ${output_dir}/tiles/exposure_lists/exp_numbers-$num.txt
-    #list=$(find ${single_dir}/*.sub.fits | awk -F/ '{print substr($NF,1,8)}'|uniq)
+   
+     #list=$(find ${single_dir}/*.sub.fits | awk -F/ '{print substr($NF,1,8)}'|uniq)
     #echo "${list}">exposure_lists/$num.txt
      
     done
 
    #uncompress step 
-   #gunzip -f ${output_dir}/exposures/*.gz
+   gunzip -f ${output_dir}/exposures/*.gz
