@@ -2,7 +2,7 @@
 
 This package contains the module for ``merge_headers``.
 
-:Author: Axel Guinot
+:Author: Axel Guinot, Lucie Baumont
 
 :Parent module: ``split_exp_runner``
 
