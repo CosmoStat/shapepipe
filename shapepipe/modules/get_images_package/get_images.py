@@ -59,7 +59,8 @@ def in2out_pattern(number):
     # replace dots ('.') with dashes ('-') to avoid confusion
     # with file extension delimiters
     number_final = re.sub(r'\.', '-', number)
-
+    # replace underscore with dashes
+    number_final = re.sub(r'_', '-', number_final)
     # remove letters in number
     number_final = re.sub('[a-zA-Z]', '', number_final)
     return number_final
@@ -233,12 +234,11 @@ class GetImages(object):
                 if use_output_file_pattern:
                     # Transform input to output number patterns
                     number_final = in2out_pattern(number)
-                    # shapepipe extensions can only be .fits or .fitsfz
+                    # remove leading suffix from suffix.fits files
                     x = re.sub(r'.+(?=\b.fits\b)','',in_ext)
-                    ext_final=re.sub(r'\.(?!fits)','',x)
-                    #x = in_ext[1:]
-                    #x2 = re.sub(r'\.', '', x)
-                    #ext_final = in_ext[0] + x2
+                    # remove all but leading .
+                    ext_final='.'+re.sub(r'\.','',x)
+                   
                     fbase = (
                         f'{self._output_file_pattern[idx]}{number_final}'
                     )
