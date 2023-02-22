@@ -16,7 +16,7 @@ from sqlitedict import SqliteDict
 from astropy.io.fits import Header
 from astropy.wcs import WCS
 
-def merge_headers(input_exposure_paths, output_dir, ext_header, nhdu):
+def merge_headers(input_file_list, output_dir, pattern, ext_header, n_hdu):
     """Merge Headers.
 
     This function opens the files in the input file list and merges them into
@@ -24,13 +24,15 @@ def merge_headers(input_exposure_paths, output_dir, ext_header, nhdu):
 
     Parameters
     ----------
-    input_exposure_paths : list
+    input_file_list : list
         List of input files
     output_dir : str
         Output path
-    ext_header: bool
+    pattern : str
+        File pattern
+    ext_header : bool
         Use external scamp header if ``True``
-    n_hdu: int
+    n_hdu : int
         number of ccds
     Raises
     ------
@@ -49,7 +51,6 @@ def merge_headers(input_exposure_paths, output_dir, ext_header, nhdu):
     # define file properties for bookkeeping
     header_dir = os.path.split(input_file_list[0][0])[0]
     ext = os.path.splitext(input_file_list[0][0])[1]
-    pattern = 'headers-'
     keys = unique_exposure_list(input_file_list, header_dir, pattern, ext, ext_header)
        
     for key in keys:
@@ -70,21 +71,21 @@ def unique_exposure_list(input_file_list, header_dir, file_pattern, ext, ext_hea
 
     Parameters
     ----------
-    input_file_list: list
+    input_file_list : list
         list of input files
-    header_dir: str
+    header_dir : str
         directory of headers
-    file_pattern: str
+    file_pattern : str
         text in filename 
-    ext: str
+    ext : str
         file extension, eg .npy, .head
-    ext_header: bool
+    ext_header : bool
         Uses external scamp header if ``True`` 
 
     Returns
     -------
-        list
-            List of unique exposure numbers
+    list
+        List of unique exposure numbers
     """
     file_list = []
     if ext_header:
@@ -94,7 +95,7 @@ def unique_exposure_list(input_file_list, header_dir, file_pattern, ext, ext_hea
         file_path_scalar = file[0]
         file_name = os.path.split(file_path_scalar)[1]
         root = re.split(ext, file_name)[0]
-        pattern_split = re.split(pattern, file_base_name)
+        pattern_split = re.split(file_pattern, root)
         if len(pattern_split) < 2:
             raise IndexError(
                 f'Regex "{pattern}" not found in base name "{file_base_name}".'
@@ -107,32 +108,32 @@ def unique_exposure_list(input_file_list, header_dir, file_pattern, ext, ext_hea
 
     return unique_keys
 
-    def create_joint_header(n_hdu, key, header_dir, pattern, ext):
+def create_joint_header(n_hdu, key, header_dir, pattern, ext):
     """create_joint_header.
 
     Packages scamp headers for ccds into a numpy array per exposure.
      
     Parameters
     ----------
-    n_hdu: int
+    n_hdu : int
         total number of ccds
-    key: str
+    key : str
         exposure number
-    header_dir: str
+    header_dir : str
         directory where headers are stored
-    pattern: str
+    pattern : str
         file pattern, e.g. headers-
-    ext: str
+    ext : str
         header extension 
     Returns
     -------
-        list
-            compilation of headers corresponding to exposure number
+    list
+        compilation of headers corresponding to exposure number
     """
 
     header_file = np.zeros(n_hdu, dtype='O')
     for idx in range(1, n_hdu + 1):
-        filepath= filedir+pattern+key+'-'+str(n_hdu)+ext
+        filepath= header_dir+pattern+key+'-'+str(n_hdu)+ext
         # check for file                                                
         if os.path.exists(filepath):
             h=Header.fromfile(filepath,sep='\n',endcard=False,padding=False)

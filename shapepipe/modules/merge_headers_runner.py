@@ -20,8 +20,6 @@ from shapepipe.modules.module_decorator import module_runner
 )
 def merge_headers_runner(
     input_file_list,
-    n_hdu,
-    ext_header,
     run_dirs,
     file_number_string,
     config,
@@ -33,12 +31,14 @@ def merge_headers_runner(
     output_dir = run_dirs['output']
     if config.has_option(module_config_sec, 'OUTPUT_PATH'):
         output_dir = config.getexpanded(module_config_sec, 'OUTPUT_PATH')
-
+    file_pattern = config.get(module_config_sec, 'FILE_PATTERN')
+    ext_header = config.get(module_config_sec, 'EXT_HEADER')
+    n_hdu = int(config.get(module_config_sec, 'N_HDU'))
     # Log output directory
     w_log.info(f'output_dir = {output_dir}')
 
     # Merge header files
-    merge_headers(input_file_list, output_dir, ext_header, n_hdu)
+    merge_headers(input_file_list, output_dir, file_pattern, ext_header, n_hdu)
 
     # No return objects
     return None, None
