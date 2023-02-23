@@ -133,7 +133,8 @@ def create_joint_header(n_hdu, key, header_dir, pattern, ext):
 
     header_file = np.zeros(n_hdu, dtype='O')
     for idx in range(1, n_hdu + 1):
-        filepath= header_dir+pattern+key+'-'+str(n_hdu)+ext
+        filepath= header_dir+'/'+pattern+key+'-'+str(idx)+ext
+        print(filepath)
         # check for file                                                
         if os.path.exists(filepath):
             h=Header.fromfile(filepath,sep='\n',endcard=False,padding=False)
