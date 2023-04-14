@@ -26,7 +26,7 @@ job=255
 config_dir=$VM_HOME/shapepipe/example/cfis
 psf='mccd'
 retrieve='vos'
-star_cat_for_mask='save'
+star_cat_for_mask='onthefly'
 results='cosmostat/kilbinger/results_v1'
 nsh_step=-1
 nsh_max=-1
@@ -50,19 +50,20 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    -r, --retrieve METHOD\n
-   \tmethod to retrieve images, one in ['vos'|'symlink]', default='$retrieve'\n
+   \tmethod to retrieve images, allowed are 'vos', 'symlink', default='$retrieve'\n
    -s, --star_cat_for_mask\n
-   \tcatalogue for masking bright stars, allowed are 'onthefly' (default), 'save'\n
+   \tcatalogue for masking bright stars, allowed are 'onthefly', 'save',\n
+   \tdefault is '${star_cat_for_mask}'\n
    -o, --output_dir\n
    \toutput (upload) directory on vos:cfis, default='$results'\n
    --nsh_jobs NJOB\n
    \tnumber of shape measurement parallel jobs, default=$nsh_jobs\n
    --nsh_step NSTEP\n
    \tnumber of objects per parallel shape module call, \n
-   \t default: optimal number is computed\n
+   \tdefault: optimal number is computed\n
    --nsh_max NMAX\n
    \tmax number of objects per parallel shape module call, \n
-   \t default: unlimited; has precedent over --nsh_step\n
+   \tdefault: unlimited; has precedent over --nsh_step\n
    TILE_ID_i\n
    \ttile ID(s), e.g. 283.247 214.242\n
 "
@@ -326,7 +327,7 @@ if [[ $do_job != 0 ]]; then
   fi
 
   ### Retrieve files
-  #command_sp "shapepipe_run -c $SP_CONFIG/config_GitFeGie_$retrieve.ini" "Retrieve images"
+  command_sp "shapepipe_run -c $SP_CONFIG/config_GitFeGie_$retrieve.ini" "Retrieve images"
 
   ### Retrieve and save star catalogues for masking
   if [ "$star_cat_for_mask" == "save" ]; then
