@@ -37,7 +37,9 @@ PREFIX : str or list
     Output file name prefix(es)
 ME_IMAGE_DIR : list
     Input directories for single-exposure flags, images, weights, and
-    SExtractor background images, for multi-epoch processing
+    SExtractor background images, for multi-epoch processing.
+    Provide a list of directories, one for each image matching
+    ME_IMAGE_PATTERN, or one single directory for all images.
 ME_IMAGE_PATTERN : list
     Input file name patterns for flag, image, weight, and SExtractor background
     files, for multi-epoch processing
