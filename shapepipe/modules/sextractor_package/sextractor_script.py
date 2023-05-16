@@ -10,6 +10,7 @@ import re
 
 import numpy as np
 from astropy.io import fits
+from astropy.io import ascii
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
@@ -482,3 +483,22 @@ class SExtractorCaller():
             stderr2 = stdout
 
         return stdout, stderr2
+
+    def read_from_ascii(self):
+
+       data = ascii.read(self.path_input_files[0])
+
+       return data
+
+    def write_to_fits(self, data):
+
+        # Write FITS file
+        out_cat = file_io.FITSCatalogue(
+            self._path_output_file,
+            SEx_catalogue=True,
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
+        )
+        out_cat.save_as_fits(
+            data=data,
+            ext_name='LDAC_OBJECTS',
+        )
