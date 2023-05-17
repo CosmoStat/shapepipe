@@ -78,7 +78,8 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
 
     """
     cat = file_io.FITSCatalogue(
-        cat_path, SEx_catalogue=True,
+        cat_path,
+        SEx_catalogue=True,
         open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
     )
     cat.open()
@@ -486,19 +487,55 @@ class SExtractorCaller():
 
     def read_from_ascii(self):
 
-       data = ascii.read(self.path_input_files[0])
+       data = ascii.read(self._all_input_path[1])
 
        return data
 
     def write_to_fits(self, data):
 
+        # Open image to get header information
+        hdu_list = fits.open(self._meas_img_path)
+
+        # Convert to char data
+        hdu_out_ldac = convert_hdu_to_ldac(hdu_list[0])
+
+        # Get catalogue data
+        cols = []
+        #for key in data.keys():
+        formats = ['E', 'E', 'E']
+        for idx, key in enumerate(['NUMBER','MAGERR_AUTO', 'MAG_AUTO']):
+            cols.append(fits.Column(name=key, array=float(data[key]), format=formats[idx]))
+        hdu_data = fits.BinTableHDU.from_columns(fits.ColDefs(cols))
+
+        hdu_out_primary = fits.PrimaryHDU()
+        hdu_out_list = fits.HDUList([hdu_out_primary, hdu_out_ldac, hdu_data])
+
         # Write FITS file
-        out_cat = file_io.FITSCatalogue(
-            self._path_output_file,
-            SEx_catalogue=True,
-            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-        )
-        out_cat.save_as_fits(
-            data=data,
-            ext_name='LDAC_OBJECTS',
-        )
+        hdu_out_list.writeto(self.path_output_file)
+
+
+def convert_hdu_to_ldac(hdu):
+    """
+    Convert an hdu table to a fits_ldac table (format used by astromatic suite)
+
+    Parameters
+    ----------
+    hdu: `astropy.io.fits.BinTableHDU` or `astropy.io.fits.TableHDU`
+        HDUList to convert to fits_ldac HDUList
+
+    Returns
+    -------
+    tbl1: `astropy.io.fits.BinTableHDU`
+        Header info for fits table (LDAC_IMHEAD)
+    tbl2: `astropy.io.fits.BinTableHDU`
+        Data table (LDAC_OBJECTS)
+    """
+    from astropy.io import fits
+    import numpy as np
+    tblhdr = np.array([hdu.header.tostring(',')])
+    col1 = fits.Column(name='Field Header Card', array=tblhdr, format='13200A')
+    cols = fits.ColDefs([col1])
+    tbl1 = fits.BinTableHDU.from_columns(cols)
+    tbl1.header['TDIM1'] = '(80, {0})'.format(len(hdu.header))
+    tbl1.header['EXTNAME'] = 'LDAC_IMHEAD'
+    return tbl1

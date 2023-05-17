@@ -104,23 +104,25 @@ def sextractor_runner(
     else:
 
         # Read input catalogue
-        ss_inst = ss.SextractorCaller(
+        check_image = ['']
+        ss_inst = ss.SExtractorCaller(
             input_file_list,
             run_dirs['output'],
             file_number_string,
             None,
             None,
             None,
-            None,
-            None,
-            None,
-            None,
-            None,
+            True,
             False,
             False,
+            False,
+            False,
+            False,
+            False,
+            check_image=check_image,
         )
-        data = ss.read_from_ascii()
-        ss.write_to_fits(data)
+        data = ss_inst.read_from_ascii()
+        ss_inst.write_to_fits(data)
 
     # Run sextractor post processing
     if config.getboolean(module_config_sec, 'MAKE_POST_PROCESS'):
