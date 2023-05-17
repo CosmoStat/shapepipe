@@ -503,8 +503,15 @@ class SExtractorCaller():
         cols = []
         #for key in data.keys():
         formats = ['E', 'E', 'E']
-        for idx, key in enumerate(['NUMBER','MAGERR_AUTO', 'MAG_AUTO']):
-            cols.append(fits.Column(name=key, array=float(data[key]), format=formats[idx]))
+        for idx, key in enumerate(['X_IMAGE','MAGERR_AUTO', 'MAG_AUTO']):
+            array = np.array(data[key], dtype=data[key].dtype)
+            #import pdb
+            #pdb.set_trace()
+            #array = np.array(data[key], dtype='float64')
+            print(key, data[key].dtype, formats[idx], array[:5])
+            cols.append(fits.Column(name=key, array=array, format=formats[idx]))
+        array = np.arange(len(data['X_IMAGE']), dtype='float64')
+        cols.append(fits.Column(name='NUMBER', array=array, format='E'))
         hdu_data = fits.BinTableHDU.from_columns(fits.ColDefs(cols))
 
         hdu_out_primary = fits.PrimaryHDU()
