@@ -23,7 +23,6 @@ dependencies:
     - reproject==0.8
     - sip_tpv==1.1
     - sf_tools==2.0.4
-    - skymapper==0.4.3
     - sqlitedict==2.0.0
     - termcolor==1.1.0
     - tqdm==4.63.0
