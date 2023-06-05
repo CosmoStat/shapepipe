@@ -10,7 +10,6 @@ import re
 
 import numpy as np
 from astropy.io import fits
-from astropy.io import ascii
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
@@ -201,6 +200,7 @@ class SExtractorCaller():
             use_psf,
             use_detection_image,
             use_detection_weight,
+            use_association_cat,
             use_zero_point,
             use_background,
             zero_point_key=None,
@@ -223,8 +223,14 @@ class SExtractorCaller():
         self._path_dot_param = path_dot_param
         self._path_dot_conv = path_dot_conv
 
-        self.set_input_files(use_weight, use_flag, use_psf,
-                             use_detection_image, use_detection_weight)
+        self.set_input_files(
+            use_weight,
+            use_flag,
+            use_psf,
+            use_detection_image,
+            use_detection_weight,
+            use_association_cat,
+        )
 
         # Collect optional arguments for SExtractor
         self.get_zero_point(use_zero_point, zero_point_key)
@@ -267,6 +273,7 @@ class SExtractorCaller():
             use_psf,
             use_detect_img,
             use_detect_weight,
+            use_association_cat,
     ):
         """Set Input Files.
 
@@ -284,6 +291,8 @@ class SExtractorCaller():
             Specify if a detection image is provided
         use_detect_weight: bool
             Specify if a detection weight is provided
+        use_association_cat: bool
+            Specify an association catalogue for matching
 
         Raises
         ------
@@ -348,6 +357,14 @@ class SExtractorCaller():
             )
         else:
             self._cmd_line_extra += ' -WEIGHT_TYPE None'
+
+        # Check for association catalogue to match detections
+        if use_association_cat:
+            self._cmd_line_extra += (
+                ' -ASSOC_NAME '
+                + f'{self._all_input_path[extra]}'
+            )
+            extra += 1
 
         if extra != len(self._all_input_path):
             raise ValueError(
@@ -484,65 +501,3 @@ class SExtractorCaller():
             stderr2 = stdout
 
         return stdout, stderr2
-
-    def read_from_ascii(self):
-
-       data = ascii.read(self._all_input_path[1])
-
-       return data
-
-    def write_to_fits(self, data):
-
-        # Open image to get header information
-        hdu_list = fits.open(self._meas_img_path)
-
-        # Convert to char data
-        hdu_out_ldac = convert_hdu_to_ldac(hdu_list[0])
-
-        # Get catalogue data
-        cols = []
-        #for key in data.keys():
-        formats = ['E', 'E', 'E']
-        for idx, key in enumerate(['X_IMAGE','MAGERR_AUTO', 'MAG_AUTO']):
-            array = np.array(data[key], dtype=data[key].dtype)
-            #import pdb
-            #pdb.set_trace()
-            #array = np.array(data[key], dtype='float64')
-            print(key, data[key].dtype, formats[idx], array[:5])
-            cols.append(fits.Column(name=key, array=array, format=formats[idx]))
-        array = np.arange(len(data['X_IMAGE']), dtype='float64')
-        cols.append(fits.Column(name='NUMBER', array=array, format='E'))
-        hdu_data = fits.BinTableHDU.from_columns(fits.ColDefs(cols))
-
-        hdu_out_primary = fits.PrimaryHDU()
-        hdu_out_list = fits.HDUList([hdu_out_primary, hdu_out_ldac, hdu_data])
-
-        # Write FITS file
-        hdu_out_list.writeto(self.path_output_file)
-
-
-def convert_hdu_to_ldac(hdu):
-    """
-    Convert an hdu table to a fits_ldac table (format used by astromatic suite)
-
-    Parameters
-    ----------
-    hdu: `astropy.io.fits.BinTableHDU` or `astropy.io.fits.TableHDU`
-        HDUList to convert to fits_ldac HDUList
-
-    Returns
-    -------
-    tbl1: `astropy.io.fits.BinTableHDU`
-        Header info for fits table (LDAC_IMHEAD)
-    tbl2: `astropy.io.fits.BinTableHDU`
-        Data table (LDAC_OBJECTS)
-    """
-    from astropy.io import fits
-    import numpy as np
-    tblhdr = np.array([hdu.header.tostring(',')])
-    col1 = fits.Column(name='Field Header Card', array=tblhdr, format='13200A')
-    cols = fits.ColDefs([col1])
-    tbl1 = fits.BinTableHDU.from_columns(cols)
-    tbl1.header['TDIM1'] = '(80, {0})'.format(len(hdu.header))
-    tbl1.header['EXTNAME'] = 'LDAC_IMHEAD'
-    return tbl1

@@ -45,6 +45,7 @@ def sextractor_runner(
     psf_file = config.getboolean(module_config_sec, 'PSF_FILE')
     detection_image = config.getboolean(module_config_sec, 'DETECTION_IMAGE')
     detection_weight = config.getboolean(module_config_sec, 'DETECTION_WEIGHT')
+    association_cat = config.getboolean(module_config_sec, "ASSOC_CAT")
 
     zp_from_header = config.getboolean(module_config_sec, 'ZP_FROM_HEADER')
     if zp_from_header:
@@ -81,6 +82,7 @@ def sextractor_runner(
         psf_file,
         detection_image,
         detection_weight,
+        association_cat,
         zp_from_header,
         bkg_from_header,
         zero_point_key=zp_key,
