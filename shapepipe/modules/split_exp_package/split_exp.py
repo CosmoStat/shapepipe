@@ -93,7 +93,7 @@ class SplitExposures(object):
         output_suffix : str
             Suffix for the output file
         transf_coord : bool
-            Transform the WCS (``pv`` to ``sip``) if ``True``
+            Transform the WCS (``TAN`` to ``TPV``) if ``True``
         transf_int : bool
             Set data types to int if ``True``
         save_header : bool
@@ -103,11 +103,11 @@ class SplitExposures(object):
         header_file = np.zeros(self._n_hdu, dtype='O')
 
         for idx in range(1, self._n_hdu + 1):
-
             h = fits.getheader(exp_path, idx)
             if transf_coord:
-                stp.pv_to_sip(h)
-
+                # correct WCS convention so astropy can read PVs
+                h['CTYPE1']='RA--TPV'
+                h['CTYPE2']='RA--TPV' 
             d = fits.getdata(exp_path, idx)
             if transf_int:
                 d = d.astype(np.int16)

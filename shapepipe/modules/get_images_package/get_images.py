@@ -59,10 +59,10 @@ def in2out_pattern(number):
     # replace dots ('.') with dashes ('-') to avoid confusion
     # with file extension delimiters
     number_final = re.sub(r'\.', '-', number)
-
+    # replace underscore with dashes
+    number_final = re.sub(r'_', '-', number_final)
     # remove letters in number
     number_final = re.sub('[a-zA-Z]', '', number_final)
-
     return number_final
 
 
@@ -233,16 +233,17 @@ class GetImages(object):
 
             list_files_per_type = []
             for number in image_number_list:
-
+            # find all files with exposure number and extension with glob
+            # loop over this list, make sure it is robust for a single exposure
+            # allow for prefix
                 if use_output_file_pattern:
                     # Transform input to output number patterns
-
                     number_final = in2out_pattern(number)
-
-                    # Keep initial dot in extension
-                    x = in_ext[1:]
-                    x2 = re.sub(r'\.', '', x)
-                    ext_final = in_ext[0] + x2
+                    # remove leading suffix from suffix.fits files
+                    x = re.sub(r'.+(?=\b.fits\b)','',in_ext)
+                    # remove all but leading .
+                    ext_final='.'+re.sub(r'\.','',x)
+                   
                     fbase = (
                         f'{self._output_file_pattern[idx]}{number_final}'
                     )

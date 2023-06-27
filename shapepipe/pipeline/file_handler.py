@@ -986,6 +986,7 @@ class FileHandler(object):
             )
 
         # Save file list
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
         np.save(output_file, np.array(final_file_list))
 
         del true_file_list, final_file_list

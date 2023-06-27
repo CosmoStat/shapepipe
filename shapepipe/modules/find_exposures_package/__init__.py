@@ -14,8 +14,8 @@ Description
 ===========
 
 Identify the exposure images that were co-added to produce the tiles
-(stacked image). The image names are listed in the tile FITS header,
-which is read by this module to extract the names.
+(stacked image). The image names are listed in the megapipe tile FITS 
+header,which is read by this module to extract the names.
 
 The output ASCII file contains the image base names (without file extension).
 
