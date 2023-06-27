@@ -28,12 +28,13 @@ class FindExposures():
 
     """
 
-    def __init__(self, img_tile_path, output_path, w_log, colnum):
+    def __init__(self, img_tile_path, output_path, w_log, colnum, prefix):
 
         self._img_tile_path = img_tile_path
         self._output_path = output_path
         self._w_log = w_log
         self._colnum = colnum
+        self.prefix = prefix
 
     def process(self):
         """Process.
@@ -92,7 +93,7 @@ class FindExposures():
                 )
 
             exp_name = pattern_match.group(1)
-
+            exp_name = exp_name.removeprefix(self.prefix)
             # LSB exposure names have 's', header still says 'p'
             # exp_name = re.sub(r'p', 's', exp_name)
 
