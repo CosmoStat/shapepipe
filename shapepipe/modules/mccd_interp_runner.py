@@ -53,7 +53,6 @@ def mccd_interp_runner(
             module_config_sec,
             'PSF_MODEL_SEPARATOR'
         )
-        # psfcat_path, galcat_path = input_file_list
         galcat_path = input_file_list[0]
 
         # verify that the MCCD model exists
