@@ -25,7 +25,10 @@ class FindExposures():
         Output file path
     w_log : logging.Logger
         Log file
-
+    colnum: int
+        column number for exposure name in fits header
+    prefix: str
+        prefix for exposures
     """
 
     def __init__(self, img_tile_path, output_path, w_log, colnum, prefix):
