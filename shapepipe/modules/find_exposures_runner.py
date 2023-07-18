@@ -35,12 +35,15 @@ def find_exposures_runner(
     # Give clumn number for exposure name in fits header
     colnum = config.getint(module_config_sec, 'COLNUM')
 
+    # Give the prefix of exposures
+    exp_prefix = config.get(module_config_sec, 'EXP_PREFIX')
     # Create find exposures class instance
     find_exp_inst = find_exposures.FindExposures(
         input_file_name,
         output_path,
         w_log,
         colnum,
+        exp_prefix,
     )
 
     # Run processing
