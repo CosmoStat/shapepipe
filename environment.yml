@@ -4,6 +4,7 @@ channels:
 dependencies:
   - python=3.9
   - pip>=21.2.4
+  - numpy==1.21.6
   - astropy==5.0
   - automake==1.16.2
   - autoconf==2.69

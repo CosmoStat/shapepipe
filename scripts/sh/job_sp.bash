@@ -11,6 +11,9 @@
 # Date: v1.0 11/2020
 #       v1.1 01/2021
 
+# MKDEBUG TODO:
+# Option to change SMP_BATCH_SIZE, not for MPI
+
 
 # VM home, required for canfar run.
 ## On other machines set to $HOME
@@ -28,6 +31,7 @@ psf='mccd'
 retrieve='vos'
 star_cat_for_mask='onthefly'
 results='cosmostat/kilbinger/results_v1'
+n_smp=-1
 nsh_step=-1
 nsh_max=-1
 nsh_jobs=8
@@ -56,9 +60,11 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    \tdefault is '${star_cat_for_mask}'\n
    -o, --output_dir\n
    \toutput (upload) directory on vos:cfis, default='$results'\n
+   -n, --n_smp\n
+   \tnumber of jobs (SMP mode only), default from original config files\n
+   --nsh_step NSTEP\n
    --nsh_jobs NJOB\n
    \tnumber of shape measurement parallel jobs, default=$nsh_jobs\n
-   --nsh_step NSTEP\n
    \tnumber of objects per parallel shape module call, \n
    \tdefault: optimal number is computed\n
    --nsh_max NMAX\n
@@ -104,6 +110,10 @@ while [ $# -gt 0 ]; do
       ;;
     -o|--output_dir)
       results="$2"
+      shift
+      ;;
+    -n|--n_smp)
+      n_smp="$2"
       shift
       ;;
     --nsh_max)
@@ -232,16 +242,25 @@ function command () {
          fi
       fi
    fi
-
-   #return $res
 }
 
 # Run shapepipe command. If error occurs, upload sp log files before stopping script.
-command_sp() {
-   cmd=$1
-   str=$2
+function command_sp() {
+   local cmd=$1
+   local str=$2
 
    command "$1" "$2"
+}
+
+# Set up config file and call shapepipe_run
+function command_cfg_shapepipe() {
+    local config_name=$1
+    local str=$2
+    local _n_smp=$3 
+
+    config_upd=$(set_config_n_smp $config_name $_n_smp)
+    local cmd="shapepipe_run -c $config_upd"
+    command_sp "$cmd" "$str"
 }
 
 # Tar and upload files to vos
@@ -292,6 +311,35 @@ function print_env() {
    echo "***"
 }
 
+function set_config_n_smp() {
+  local config_name=$1
+  local _n_smp=$2
+
+  local config_orig="$SP_CONFIG/$config_name"
+
+  if [[ $_n_smp != -1 ]]; then
+    # Update SMP batch size
+    local config_upd="$SP_CONFIG_MOD/$config_name"
+    update_config $config_orig $config_upd "SMP_BATCH_SIZE" $_n_smp
+  else
+    # Keep original config file
+    local config_upd=$config_orig
+  fi
+
+  # Set "return" value (stdout)
+  echo "$config_upd"
+}
+
+# Update config file
+function update_config() {
+  local config_orig=$1
+  local config_upd=$2
+  local key=$3
+  local val_upd=$4
+
+  cat $config_orig \
+    | perl -ane 's/'$key'\s+=.+/'$key' = '$val_upd'/; print' > $config_upd
+}
 
 ### Start ###
 
@@ -303,6 +351,7 @@ echo "Processing $n_tile tile(s)"
 mkdir -p $SP_RUN
 cd $SP_RUN
 mkdir -p $OUTPUT
+mkdir -p $SP_CONFIG_MOD
 
 # Processing
 
@@ -347,19 +396,19 @@ fi
 if [[ $do_job != 0 ]]; then
 
   ### Uncompress tile weights
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Uz.ini" "Run shapepipe (uncompress tile weights)"
+  command_cfg_shapepipe "config_tile_Uz.ini" "Run shapepipe (uncompress tile weights)" $n_smp
 
   ### Split images into single-HDU files, merge headers for WCS info
-  command_sp "shapepipe_run -c $SP_CONFIG/config_exp_SpMh.ini" "Run shapepipe (split images, merge headers)"
+  command_cfg_shapepipe "config_exp_SpMh.ini" "Run shapepipe (split images, merge headers)" $n_smp
 
 fi
 
-## Mask tiles and exposures: add star, halo, and Messier object masks (online)
+## Mask tiles and exposures: add star, halo, and Messier object masks (online if "star_cat_for_mask" is "onthefly")
 (( do_job= $job & 4 ))
 if [[ $do_job != 0 ]]; then
 
   ### Mask tiles and exposures
-  command_sp "shapepipe_run -c $SP_CONFIG/config_MaMa_$star_cat_for_mask.ini" "Run shapepipe (mask)"
+  command_cfg_shapepipe "config_MaMa_$star_cat_for_mask.ini" "Run shapepipe (mask)" $n_smp
 
 fi
 
@@ -392,7 +441,6 @@ fi
 if [[ $do_job != 0 ]]; then
 
   ### Prepare config files
-  mkdir -p $SP_CONFIG_MOD
   n_min=0
   if [[ $nsh_step == -1 ]]; then
     n_obj=`get_number_objects.py`
