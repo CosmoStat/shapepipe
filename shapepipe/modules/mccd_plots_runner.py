@@ -70,6 +70,32 @@ def mccd_plots_runner(
 
     # Get parameters for meanshapes plots
     psf_model_type = config.get(module_config_sec, 'PSF')
+
+    if config.has_option(module_config_sec, 'MAX_E'):
+        max_e = config.getfloat(module_config_sec, "MAX_E")
+    else:
+        max_e = None
+
+    if config.has_option(module_config_sec, 'MAX_DE'):
+        max_de = config.getfloat(module_config_sec, "MAX_DE")
+    else:
+        max_de = None
+
+    if config.has_option(module_config_sec, 'MIN_R2'):
+        min_r2 = config.getfloat(module_config_sec, "MIN_R2")
+    else:
+        min_r2 = None
+
+    if config.has_option(module_config_sec, 'MAX_R2'):
+        max_r2 = config.getfloat(module_config_sec, "MAX_R2")
+    else:
+        max_r2 = None
+
+    if config.has_option(module_config_sec, 'MAX_DR2'):
+        max_dr2 = config.getfloat(module_config_sec, "MAX_DR2")
+    else:
+        max_dr2 = None
+
     x_nb_bins = config.getint(module_config_sec, 'X_GRID')
     y_nb_bins = config.getint(module_config_sec, 'Y_GRID')
     remove_outliers = config.getboolean(module_config_sec, 'REMOVE_OUTLIERS')
@@ -107,6 +133,11 @@ def mccd_plots_runner(
                 plot_meanshapes=plot_meanshapes,
                 plot_histograms=plot_histograms,
                 psf_model_type=psf_model_type,
+                max_e=max_e,
+                max_de=max_de,
+                min_r2=min_r2,
+                max_r2=max_r2,
+                max_dr2=max_dr2,
             )
         else:
             msg = (
