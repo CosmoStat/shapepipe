@@ -93,7 +93,7 @@ class FileHandler(object):
     @run_dir.setter
     def run_dir(self, value):
 
-        self._run_dir = self.check_dir(value, check_exists=True)
+        self._run_dir = self.check_dir(value, check_exists=False)
 
     @property
     def _input_dir(self):
@@ -188,7 +188,7 @@ class FileHandler(object):
             Directory name with full path
 
         """
-        cls.check_dir(dir_name, check_exists=True)
+        cls.check_dir(dir_name, check_exists=False)
         mkdir(dir_name)
 
     @staticmethod
@@ -376,6 +376,7 @@ class FileHandler(object):
         This method creates the pipeline output directories for a given run.
 
         """
+        # MKDEBUG: Error occured here
         self.run_dir = self.setpath(self._output_dir, self._run_name)
         self._log_dir = self.setpath(self.run_dir, 'logs')
         self._tmp_dir = self.setpath(self.run_dir, 'tmp')
@@ -386,6 +387,7 @@ class FileHandler(object):
             self.run_dir,
         )
 
+        # MKDBUG: Error occured here
         self.mkdir(self.run_dir)
         self.mkdir(self._log_dir)
         self.mkdir(self._tmp_dir)

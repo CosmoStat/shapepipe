@@ -809,6 +809,8 @@ def do_ngmix_metacal(
 
         psf_obs = Observation(psfs[n_e], jacobian=psf_jacob)
 
+        ## MKDEBUG TODO usg sigma_to_...
+        ##
         psf_T = psfs_sigma[n_e] * 1.17741 * pixel_scale
 
         weight_map = np.copy(weights[n_e])

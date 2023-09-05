@@ -6,6 +6,8 @@ This file is the pipeline fit and validation runner for the MCCD package.
 
 """
 
+import os
+
 import mccd
 
 from shapepipe.modules.mccd_package import shapepipe_auxiliary_mccd as aux_mccd
@@ -50,6 +52,16 @@ def mccd_fit_val_runner(
 
     if mccd_mode == 'FIT_VALIDATION':
 
+        # Fitted model is found in the output directory
+        mccd_model_path = output_dir + fit_saving_name + file_number_string \
+            + '.npy'
+
+        if os.path.exists(mccd_model_path):
+            w_log.info(
+                f"output file {mccd_model_path} already exists, skipping"
+            )
+            return None, None
+
         aux_mccd.mccd_fit_pipeline(
             trainstar_path=trainstar_path,
             file_number_string=file_number_string,
@@ -59,10 +71,6 @@ def mccd_fit_val_runner(
             saving_name=fit_saving_name,
             w_log=w_log,
         )
-
-        # Fitted model is found in the output directory
-        mccd_model_path = output_dir + fit_saving_name + file_number_string \
-            + '.npy'
 
         aux_mccd.mccd_validation_pipeline(
             teststar_path=teststar_path,
