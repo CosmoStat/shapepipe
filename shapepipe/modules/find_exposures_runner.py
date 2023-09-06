@@ -32,7 +32,7 @@ def find_exposures_runner(
     # Create output ascii file name
     output_path = f'{run_dirs["output"]}/exp_numbers{file_number_string}.txt'
 
-    # Give clumn number for exposure name in fits header
+    # Give column number for exposure name in fits header
     colnum = config.getint(module_config_sec, 'COLNUM')
 
     # Give the prefix of exposures
