@@ -12,7 +12,7 @@ import re
 import sys
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.utilities.canfar import vosHandler
+from cs_util.canfar import vosHandler
 
 
 # pragma: no cover
