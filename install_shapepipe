@@ -200,26 +200,28 @@ check_conda() {
     echo -ne "${RED}ERROR: Found Conda version $CONDA_VERSION but require 4.0.0 or greater.${NC}\n"
     exit 1
   fi
-  # Check Conda minor version
-  if [ "$CONDA_VERSION_MINOR" -gt 4 ]
+  # Look for conda.sh file
+  if [ -f "$CONDA_PREFIX_1$CONDA_SH" ]
   then
-    if [ -f "$CONDA_PREFIX_1$CONDA_SH" ]
-    then
-      source "$CONDA_PREFIX_1$CONDA_SH"
-    elif [ -f "$CONDA_PREFIX$CONDA_SH" ]
-    then
-      source "$CONDA_PREFIX$CONDA_SH"
-    else
-      echo -ne "${RED}ERROR: Could not find $CONDA_SH in \$CONDA_PREFIX.${NC}\n"
-      echo -ne "${RED}Activate the base/root Conda environment and try again.${NC}\n"
-      exit 1
-    fi
-    CONDA_ACTIVATE="conda activate"
-    CONDA_DEACTIVATE="conda deactivate"
+    source "$CONDA_PREFIX_1$CONDA_SH"
+  elif [ -f "$CONDA_PREFIX$CONDA_SH" ]
+  then
+    source "$CONDA_PREFIX$CONDA_SH"
   else
+    echo -ne "${RED}ERROR: Could not find $CONDA_SH in \$CONDA_PREFIX.${NC}\n"
+    echo -ne "${RED}Activate the base/root Conda environment and try again.${NC}\n"
+    exit 1
+  fi
+  # Set environment activation command
+  if [ "$USE_CONDA_SOURCE" == TRUE ]
+  then
     CONDA_ACTIVATE="source activate"
     CONDA_DEACTIVATE="source deactivate"
+  else
+    CONDA_ACTIVATE="conda activate"
+    CONDA_DEACTIVATE="conda deactivate"
   fi
+
 }
 
 # Check if a binary executable is already installed in the conda environment
@@ -464,6 +466,7 @@ Options:\n
 \t--pipe-dir\t set the path to the ShapePipe base directory (default is \$PWD)\n
 \t--build-dir\t set the path to the ShapePipe build (default is \$PWD/build)\n
 \t--env-name\t set the name of the conda environment (default is shapepipe)\n
+\t--use-conda-source\t use conda source instead of the default conda activate to activate the shapepipe environment\n
 \t--develop\t option to install additional development packages\n
 \t--vos\t\t option to install virtual observatory software\n
 \t--no-env\t do not build Conda environment\n
@@ -523,6 +526,10 @@ case $i in
     ;;
     --env-name=*)
     ENV_NAME="${i#*=}"
+    shift
+    ;;
+    --use-conda-source)
+    USE_CONDA_SOURCE=TRUE
     shift
     ;;
     --develop)
