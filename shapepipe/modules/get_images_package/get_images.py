@@ -12,7 +12,7 @@ import re
 import sys
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.utilities.canfar import vosHandler
+from cs_util.canfar import vosHandler
 
 
 # pragma: no cover
@@ -62,7 +62,8 @@ def in2out_pattern(number):
 
     # remove letters in number
     number_final = re.sub('[a-zA-Z]', '', number_final)
-
+    # make robust for more generalized file names
+    number_final = re.sub(r'_', '', number_final)
     return number_final
 
 
