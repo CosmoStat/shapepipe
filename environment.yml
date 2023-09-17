@@ -4,6 +4,7 @@ channels:
 dependencies:
   - python=3.9
   - pip>=21.2.4
+  - numpy==1.21.6
   - astropy==5.0
   - automake==1.16.2
   - autoconf==2.69
@@ -15,7 +16,7 @@ dependencies:
   - numba==0.54.1
   - pandas==1.4.1
   - pip:
-    - cs_util==0.0.4
+    - cs_util==0.0.5
     - mccd==1.2.3
     - modopt==1.6.0
     - PyQt5==5.15.6
