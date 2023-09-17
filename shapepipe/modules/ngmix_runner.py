@@ -52,21 +52,28 @@ def ngmix_runner(
     id_obj_min = config.getint(module_config_sec, 'ID_OBJ_MIN')
     id_obj_max = config.getint(module_config_sec, 'ID_OBJ_MAX')
 
-    # Initialise class instance
-    ngmix_inst = Ngmix(
-        input_file_list,
-        run_dirs['output'],
-        file_number_string,
-        zero_point,
-        pixel_scale,
-        f_wcs_path,
-        w_log,
-        id_obj_min=id_obj_min,
-        id_obj_max=id_obj_max,
+    output_path = (
+        f"{run_dirs['output'}/ngmix{file_number_string}.fits"
     )
+    if os.path.exists(output_path):
+        w_log.info(
+            f"output file {output_path} already exists, skipping"
+        )
+    else:
+        # Initialise class instance
+        ngmix_inst = Ngmix(
+            input_file_list,
+            output_path,
+            zero_point,
+            pixel_scale,
+            f_wcs_path,
+            w_log,
+            id_obj_min=id_obj_min,
+            id_obj_max=id_obj_max,
+        )
 
-    # Process ngmix shape measurement and metacalibration
-    ngmix_inst.process()
+        # Process ngmix shape measurement and metacalibration
+        ngmix_inst.process()
 
     # No return objects
     return None, None

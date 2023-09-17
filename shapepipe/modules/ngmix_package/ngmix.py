@@ -30,10 +30,8 @@ class Ngmix(object):
     ----------
     input_file_list : list
         Input files
-    output_dir : str
-        Output directory
-    file_number_string : str
-        File numbering scheme
+    output_path : str
+        Output file path
     zero_point : float
         Photometric zero point
     pixel_scale : float
@@ -59,7 +57,7 @@ class Ngmix(object):
     def __init__(
         self,
         input_file_list,
-        output_dir,
+        output_path,
         file_number_string,
         zero_point,
         pixel_scale,
@@ -82,8 +80,7 @@ class Ngmix(object):
         self._weight_vignet_path = input_file_list[4]
         self._flag_vignet_path = input_file_list[5]
 
-        self._output_dir = output_dir
-        self._file_number_string = file_number_string
+        self._output_path = output_path
 
         self._zero_point = zero_point
         self._pixel_scale = pixel_scale
@@ -94,8 +91,8 @@ class Ngmix(object):
 
         self._w_log = w_log
 
-        # Initiatlise random generator
-        seed = int(''.join(re.findall(r'\d+', self._file_number_string)))
+        # Initiatlise random generator using image ID number
+        seed = int(''.join(re.findall(r'\d+', self._output_path)))
         np.random.seed(seed)
         self._w_log.info(f'Random generator initialisation seed = {seed}')
 
@@ -314,12 +311,8 @@ class Ngmix(object):
             Dictionary containing the results
 
         """
-        output_name = (
-            f'{self._output_dir}/ngmix{self._file_number_string}.fits'
-        )
-
         f = file_io.FITSCatalogue(
-            output_name,
+            self._output_path,
             open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
         )
 
