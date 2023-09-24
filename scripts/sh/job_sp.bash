@@ -464,7 +464,7 @@ if [[ $do_job != 0 ]]; then
   ### Shapes, run $nsh_jobs parallel processes
   VERBOSE=0
   for k in $(seq 1 $nsh_jobs); do
-      command_sp "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" "Run shapepipe (tile: ngmix+galsim $k)" &
+      command_sp "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" "Run shapepipe (tile: ngmix $k)" &
   done
   wait
   VERBOSE=1
