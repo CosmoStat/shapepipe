@@ -394,6 +394,7 @@ class MCCDinterpolator(object):
         cat.open()
 
         all_id = np.copy(cat.get_data()['NUMBER'])
+        key_ne = 'N_EPOCH'
         if key_ne not in cat.get_data().dtype.names:
             raise KeyError(
                 f'Key {key_ne} not found in input galaxy catalogue, needed for'

@@ -58,7 +58,6 @@ class Ngmix(object):
         self,
         input_file_list,
         output_path,
-        file_number_string,
         zero_point,
         pixel_scale,
         f_wcs_path,

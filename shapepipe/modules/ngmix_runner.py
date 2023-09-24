@@ -6,6 +6,8 @@ Module runner for ``ngmix``.
 
 """
 
+import os
+
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.ngmix_package.ngmix import Ngmix
 
@@ -53,7 +55,7 @@ def ngmix_runner(
     id_obj_max = config.getint(module_config_sec, 'ID_OBJ_MAX')
 
     output_path = (
-        f"{run_dirs['output'}/ngmix{file_number_string}.fits"
+        f"{run_dirs['output']}/ngmix{file_number_string}.fits"
     )
     if os.path.exists(output_path):
         w_log.info(

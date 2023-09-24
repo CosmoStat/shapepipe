@@ -807,16 +807,22 @@ class FileHandler(object):
         if not isinstance(match_pattern, str):
             TypeError('Match pattern must be a string.')
 
-        chars = [char for char in match_pattern if not char.isalnum()]
-        split_pattern = '|'.join(chars).replace('.', r'\.')
-        chars = [f'\\{char}' for char in chars] + ['']
-        num_length = [
-            f'\\d{{{len(digits)}}}'
-            for digits in re.split(split_pattern, match_pattern)
-        ]
-        re_pattern = r''.join(
-            [a for b in zip(num_length, chars) for a in b]
-        ).replace('{1}', '+')
+        if re.search("\\\\", match_pattern) is not None:
+            # Regular expression on input: Use pattern
+            re_pattern = match_pattern
+        else:
+            # Generate pattern from input
+            chars = [char for char in match_pattern if not char.isalnum()]
+            split_pattern = '|'.join(chars).replace('.', r'\.')
+            chars = [f'\\{char}' for char in chars] + ['']
+            digit_list = re.split(split_pattern, match_pattern)
+            num_length = [
+                f'\\d{{{len(digits)}}}'
+                for digits in re.split(split_pattern, match_pattern)
+            ]
+            re_pattern = r''.join(
+                [a for b in zip(num_length, chars) for a in b]
+            ).replace('{1}', '+')
 
         return re.compile(re_pattern)
 
@@ -972,10 +978,11 @@ class FileHandler(object):
 
         if not found_match:
             raise RuntimeError(
-                f'Could not match numbering scheme "{self._numbering_scheme}" '
+                f'Could not match numbering scheme "{re_pattern}" '
                 + f'to any of the input files matching "{pattern}" and '
                 + f'"{ext}" in the directories {dir_list}.'
             )
+
 
         elem = shared.check_duplicate(final_file_list)
         if elem != '':
