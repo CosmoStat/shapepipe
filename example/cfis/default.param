@@ -1,69 +1,56 @@
 NUMBER                   #Running object number                                    
-EXT_NUMBER               #FITS extension number                                    
 
-FLUX_AUTO                #Flux within a Kron-like elliptical aperture               [count]
+X_IMAGE                #Object position along x                                    [pixel]
+Y_IMAGE                #Object position along y                                    [pixel]
+ALPHA_J2000            #Right ascension of barycenter (J2000)                      [deg]
+DELTA_J2000            #Declination of barycenter (J2000)                          [deg]
+MAG_AUTO               #Kron-like elliptical aperture magnitude                    [mag]
+MAGERR_AUTO            #RMS error for AUTO magnitude                               [mag]
+MAG_BEST               #Best of MAG_AUTO and MAG_ISOCOR                            [mag]
+MAGERR_BEST            #RMS error for MAG_BEST                                     [mag]
+MAG_APER               #Fixed aperture magnitude vector                            [mag]
+MAGERR_APER            #RMS error vector for fixed aperture mag.                   [mag]
+A_WORLD                #Profile RMS along major axis (world units)                 [deg]
+ERRA_WORLD             #World RMS position error along major axis                  [deg]
+B_WORLD                #Profile RMS along minor axis (world units)                 [deg]
+ERRB_WORLD             #World RMS position error along minor axis                  [deg]
+THETA_J2000            #Position angle (east of north) (J2000)                     [deg]
+ERRTHETA_J2000         #J2000 error ellipse pos. angle (east of north)             [deg]
+ISOAREA_IMAGE          #Isophotal area above Analysis threshold                    [pixel**2]
+MU_MAX                 #Peak surface brightness above background                   [mag * arcsec**(-2)]
+FLUX_RADIUS            #Fraction-of-light radii                                    [pixel]
+
 FLUXERR_AUTO             #RMS error for AUTO flux                                   [count]
-MAG_AUTO                 #Kron-like elliptical aperture magnitude                   [mag]
-MAGERR_AUTO              #RMS error for AUTO magnitude                              [mag]
 FLUX_WIN                 #Gaussian-weighted flux                                    [count]
 FLUXERR_WIN              #RMS error for WIN flux                                    [count]
 MAG_WIN                  #Gaussian-weighted magnitude                               [mag]
 MAGERR_WIN               #RMS error for MAG_WIN                                     [mag]
-FLUX_APER(1)
-FLUXERR_APER(1)
-
-FLUX_RADIUS              #Fraction-of-light radii                                   [pixel]
-
-SNR_WIN                  #Gaussian-weighted SNR                                    
-
-BACKGROUND               #Background at centroid position                           [count]
-THRESHOLD                #Detection threshold above background                      [count]
-
-X_IMAGE                  #Object position along x                                   [pixel]
-Y_IMAGE                  #Object position along y                                   [pixel]
-
-X_WORLD                  #Barycenter position along world x axis                    [deg]
-Y_WORLD                  #Barycenter position along world y axis                    [deg]
-
-X2_IMAGE                 #Variance along x                                          [pixel**2]
-Y2_IMAGE                 #Variance along y                                          [pixel**2]
-XY_IMAGE                 #Covariance between x and y                                [pixel**2]
-ERRX2_IMAGE              #Variance of position along x                              [pixel**2]
-ERRY2_IMAGE              #Variance of position along y                              [pixel**2]
-ERRXY_IMAGE              #Covariance of position between x and y                    [pixel**2]
-
+FLUX_APER(1)                                                                    
+FLUXERR_APER(1)                                                                 
+                                                                                
+SNR_WIN                  #Gaussian-weighted SNR                                 
+                                                                                
 XWIN_IMAGE               #Windowed position estimate along x                        [pixel]
 YWIN_IMAGE               #Windowed position estimate along y                        [pixel]
-
+                                                                                
 XWIN_WORLD               #Windowed position along world x axis                      [deg]
 YWIN_WORLD               #Windowed position along world y axis                      [deg]
-
+                                                                                
 X2WIN_IMAGE              #Windowed variance along x                                 [pixel**2]
 Y2WIN_IMAGE              #Windowed variance along y                                 [pixel**2]
 XYWIN_IMAGE              #Windowed covariance between x and y                       [pixel**2]
 ERRX2WIN_IMAGE           #Variance of windowed pos along x                          [pixel**2]
 ERRY2WIN_IMAGE           #Variance of windowed pos along y                          [pixel**2]
 ERRXYWIN_IMAGE           #Covariance of windowed pos between x and y                [pixel**2]
-              
-MU_THRESHOLD             #Analysis threshold above background                       [mag * arcsec**(-2)]
+
+FWHM_IMAGE
+FLUX_AUTO
+                                                                                
 MU_MAX                   #Peak surface brightness above background                  [mag * arcsec**(-2)]
+                                                                                
+FLAGS
+FLAGS_WIN                #Flags for WINdowed parameters                         
+                                                                                
+IMAFLAGS_ISO             #FLAG-image flags OR'ed over the iso. profile ```
 
-FLAGS                    #Extraction flags                            
-FLAGS_WIN                #Flags for WINdowed parameters                
-
-#!!! REQUIRE FLAG_IMAGE !!!
-IMAFLAGS_ISO             #FLAG-image flags OR'ed over the iso. profile  !!! REQUIRE FLAG_IMAGE !!!            
-
-FWHM_IMAGE               #FWHM assuming a gaussian core                             [pixel]
-FWHM_WORLD               #FWHM assuming a gaussian core                             [deg]
-ELONGATION               #A_IMAGE/B_IMAGE                                          
-ELLIPTICITY              #1 - B_IMAGE/A_IMAGE                                      
-
-VIGNET(51,51)            #Pixel data around detection                               [count]
-
-#VECTOR_ASSOC             #ASSOCiated parameter vector                              
-#NUMBER_ASSOC             #Number of ASSOCiated IDs                                 
-
-#SPREAD_MODEL
-#SPREADERR_MODEL
-#FWHMPSF_IMAGE
+VIGNET(51,51)

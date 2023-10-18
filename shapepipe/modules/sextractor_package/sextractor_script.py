@@ -77,7 +77,8 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
 
     """
     cat = file_io.FITSCatalogue(
-        cat_path, SEx_catalogue=True,
+        cat_path,
+        SEx_catalogue=True,
         open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
     )
     cat.open()
@@ -199,6 +200,7 @@ class SExtractorCaller():
             use_psf,
             use_detection_image,
             use_detection_weight,
+            use_association_cat,
             use_zero_point,
             use_background,
             zero_point_key=None,
@@ -221,8 +223,14 @@ class SExtractorCaller():
         self._path_dot_param = path_dot_param
         self._path_dot_conv = path_dot_conv
 
-        self.set_input_files(use_weight, use_flag, use_psf,
-                             use_detection_image, use_detection_weight)
+        self.set_input_files(
+            use_weight,
+            use_flag,
+            use_psf,
+            use_detection_image,
+            use_detection_weight,
+            use_association_cat,
+        )
 
         # Collect optional arguments for SExtractor
         self.get_zero_point(use_zero_point, zero_point_key)
@@ -265,6 +273,7 @@ class SExtractorCaller():
             use_psf,
             use_detect_img,
             use_detect_weight,
+            use_association_cat,
     ):
         """Set Input Files.
 
@@ -282,6 +291,8 @@ class SExtractorCaller():
             Specify if a detection image is provided
         use_detect_weight: bool
             Specify if a detection weight is provided
+        use_association_cat: bool
+            Specify an association catalogue for matching
 
         Raises
         ------
@@ -346,6 +357,14 @@ class SExtractorCaller():
             )
         else:
             self._cmd_line_extra += ' -WEIGHT_TYPE None'
+
+        # Check for association catalogue to match detections
+        if use_association_cat:
+            self._cmd_line_extra += (
+                ' -ASSOC_NAME '
+                + f'{self._all_input_path[extra]}'
+            )
+            extra += 1
 
         if extra != len(self._all_input_path):
             raise ValueError(

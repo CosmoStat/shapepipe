@@ -355,8 +355,9 @@ mkdir -p $SP_CONFIG_MOD
 
 # Processing
 
-## Retrieve config files and images (online if retrieve=vos)
-## Retrieve and save star catalogues for masking (if star_cat_for_mask=save)
+## Retrieve config files and images (requires internet access if retrieve=vos)
+## Retrieve and save star catalogues for masking (if star_cat_for_mask=save,
+## in which case internet access is required)
 (( do_job= $job & 1 ))
 if [[ $do_job != 0 ]]; then
 
@@ -391,7 +392,7 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
-## Prepare images (offline)
+## Prepare images
 (( do_job= $job & 2 ))
 if [[ $do_job != 0 ]]; then
 
@@ -403,7 +404,8 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
-## Mask tiles and exposures: add star, halo, and Messier object masks (online if "star_cat_for_mask" is "onthefly")
+## Mask tiles and exposures: add star, halo, and Messier object masks.
+## Requires internet access if star_cat_for_mask=onthefly.
 (( do_job= $job & 4 ))
 if [[ $do_job != 0 ]]; then
 
@@ -413,7 +415,7 @@ if [[ $do_job != 0 ]]; then
 fi
 
 
-## Remaining exposure processing (offline)
+## Tile detection and remaining exposure processing
 (( do_job= $job & 8 ))
 if [[ $do_job != 0 ]]; then
 
@@ -425,7 +427,8 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
-## Process tiles up to shape measurement
+## Tile PSF interpolation and postage stamp extraction, processing of tiles
+## up to shape measurement
 (( do_job= $job & 16 ))
 if [[ $do_job != 0 ]]; then
 
@@ -436,7 +439,7 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
-## Shape measurement (offline)
+## Shape measurement
 (( do_job= $job & 32 ))
 if [[ $do_job != 0 ]]; then
 
@@ -471,7 +474,7 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
-## Create final catalogues (offline)
+## Create final catalogues
 (( do_job= $job & 64 ))
 if [[ $do_job != 0 ]]; then
 
@@ -488,7 +491,7 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
-## Upload results (online)
+## Upload results (requires internet access)
 (( do_job= $job & 128 ))
 if [[ $do_job != 0 ]]; then
 
