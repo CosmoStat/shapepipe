@@ -28,6 +28,8 @@ Module-specific config file entries
 COLNUM : int
    Column number to find exposure in fits header of tile image for the HISTORY
    string
+EXP_PREFIX: str
+   Prefix of exposures 
 """
 
 __all__ = ['find_exposures.py']

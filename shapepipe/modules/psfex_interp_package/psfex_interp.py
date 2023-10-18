@@ -551,6 +551,11 @@ class PSFExInterpolator(object):
 
         Interpolate PSFs for multi-epoch run.
 
+        Raises
+        ------
+        KeyError
+            If 'N_EPOCH' key not in input catalogue
+
         Returns
         -------
         dict
@@ -562,7 +567,14 @@ class PSFExInterpolator(object):
         cat.open()
 
         all_id = np.copy(cat.get_data()['NUMBER'])
-        n_epoch = np.copy(cat.get_data()['N_EPOCH'])
+        key_ne = 'N_EPOCH'
+        if key_ne not in cat.get_data():
+            raise KeyError(
+                f'Key {key_ne} not found in input galaxy catalogue, needed for'
+                + ' PSF interpolation to multi-epoch data; run previous module'
+                + ' (SExtractor) in multi-epoch mode'
+            )
+        n_epoch = np.copy(cat.get_data()[key_me])
 
         list_ext_name = cat.get_ext_name()
         hdu_ind = [
