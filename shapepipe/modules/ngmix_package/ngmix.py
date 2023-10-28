@@ -91,7 +91,8 @@ class Ngmix(object):
         self._w_log = w_log
 
         # Initiatlise random generator using image ID number
-        seed = int(''.join(re.findall(r'\d+', self._output_path)))
+        #seed = int(''.join(re.findall(r'\d+', self._output_path)))
+        seed = 6121975
         np.random.seed(seed)
         self._w_log.info(f'Random generator initialisation seed = {seed}')
 

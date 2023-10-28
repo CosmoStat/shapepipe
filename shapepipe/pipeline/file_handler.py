@@ -1186,10 +1186,13 @@ class FileHandler(object):
             run_method,
         )
 
+        print("MKDEBUG save process mmap", self.process_mmap)
         np.save(self.process_mmap, np.array(process_list))
         del process_list
 
+        print("MKDEBUG load process mmap", self.process_mmap)
         self.process_list = np.load(self.process_mmap, mmap_mode='r')
+        print("MKDEBUG load process mmap done")
 
         self.missed = []
 
