@@ -7,7 +7,6 @@ This module contains a class for ngmix shape measurement.
 """
 
 import re
-import os
 
 import galsim
 import ngmix
@@ -31,8 +30,10 @@ class Ngmix(object):
     ----------
     input_file_list : list
         Input files
-    output_path : str
-        Output file path
+    output_dir : str
+        Output directory
+    file_number_string : str
+        File numbering scheme
     zero_point : float
         Photometric zero point
     pixel_scale : float
@@ -58,7 +59,8 @@ class Ngmix(object):
     def __init__(
         self,
         input_file_list,
-        output_path,
+        output_dir,
+        file_number_string,
         zero_point,
         pixel_scale,
         f_wcs_path,
@@ -80,7 +82,8 @@ class Ngmix(object):
         self._weight_vignet_path = input_file_list[4]
         self._flag_vignet_path = input_file_list[5]
 
-        self._output_path = output_path
+        self._output_dir = output_dir
+        self._file_number_string = file_number_string
 
         self._zero_point = zero_point
         self._pixel_scale = pixel_scale
@@ -91,13 +94,8 @@ class Ngmix(object):
 
         self._w_log = w_log
 
-        # Initiatlise random generator using image ID number
-        basename = os.path.basename(self._output_path)
-        print("MKDEBUG output_path basename ", basename)
-        print(''.join(re.findall(r'\d+', basename)))
-        seed = int(''.join(re.findall(r'\d+', basename)))
-        print(seed)
-        #seed = 6121975
+        # Initiatlise random generator
+        seed = int(''.join(re.findall(r'\d+', self._file_number_string)))
         np.random.seed(seed)
         self._w_log.info(f'Random generator initialisation seed = {seed}')
 
@@ -316,10 +314,12 @@ class Ngmix(object):
             Dictionary containing the results
 
         """
-        if os.path.exists(self._output_path):
-            raise IOError(f"Output file {self._output_path} already exists")
+        output_name = (
+            f'{self._output_dir}/ngmix{self._file_number_string}.fits'
+        )
+
         f = file_io.FITSCatalogue(
-            self._output_path,
+            output_name,
             open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
         )
 
@@ -809,8 +809,6 @@ def do_ngmix_metacal(
 
         psf_obs = Observation(psfs[n_e], jacobian=psf_jacob)
 
-        ## MKDEBUG TODO usg sigma_to_...
-        ##
         psf_T = psfs_sigma[n_e] * 1.17741 * pixel_scale
 
         weight_map = np.copy(weights[n_e])
