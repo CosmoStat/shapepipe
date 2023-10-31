@@ -27,7 +27,6 @@ export SPENV="$HOME/.conda/envs/shapepipe"
 export SPDIR="$HOME/shapepipe"
 
 # Load modules
-module remove gcc
 module load gcc/9.3.0
 module load intelpython/3-2023.1.0
 module load openmpi/5.0.0
@@ -42,12 +41,20 @@ if [ -f "$PBS_NODEFILE" ]; then
   NSLOTS=`cat $PBS_NODEFILE | wc -l`
   echo "Using $NSLOTS CPUs from PBS_NODEFILE $PBS_NODEFILE"
 else
-  NSLOTS=8
+  NSLOTS=4
   echo "Using $NSLOTS CPUs set by hand"
 fi
 
-/softs/openmpi/5.0.0-torque-CentOS7/bin/mpirun -np $NSLOTS hostname
-/softs/openmpi/5.0.0-torque-CentOS7/bin/mpirun -np $NSLOTS $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
+# Creates #node output dirs
+MPI_CMD=/softs/openmpi/5.0.0-torque-CentOS7/bin/mpirun
+MPI_ARGS="-np $NSLOTS"
+
+#MPI_CMD=$SPENV/bin/mpiexec
+#MPI_CMD=$HOME/bin/mpiexec
+#MPI_ARGS=-map-by
+
+${MPI_CMD} ${MPI_ARGS} hostname
+${MPI_CMD} ${MPI_ARGS} $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
 
 # Return exit code
 exit 0
