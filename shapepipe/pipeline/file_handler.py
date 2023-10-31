@@ -18,6 +18,10 @@ from shapepipe.pipeline.run_log import RunLog, get_list, get_all, get_last
 from shapepipe.pipeline import shared
 from shapepipe.utilities.file_system import mkdir
 
+from mpi4py import MPI                                                           
+import datetime
+import time
+
 
 class FileHandler(object):
     """File Handler.
@@ -930,6 +934,7 @@ class FileHandler(object):
                 del file_list
                 break
 
+        print("MKDEBUG save_num_pattern: path = ", path)
         if not true_file_list:
             raise RuntimeError(
                 f'No files found matching "{pattern}" and "{ext}" in the '
@@ -995,6 +1000,11 @@ class FileHandler(object):
             )
 
         # Save file list
+        comm = MPI.COMM_WORLD
+        rank = comm.Get_rank()
+        size = comm.Get_size()
+        now = datetime.datetime.now()
+        print(f"MKDEBUG save_num_patterns: save file list {output_file}, rank={rank}, size={size} time={now.time()}")
         np.save(output_file, np.array(final_file_list))
 
         del true_file_list, final_file_list
@@ -1015,7 +1025,21 @@ class FileHandler(object):
             List of memory maps
 
         """
-        num_pattern_list = [np.load(mmap, mmap_mode='r') for mmap in mmap_list]
+        #num_pattern_list = [np.load(mmap, mmap_mode='r') for mmap in mmap_list]
+        num_pattern_list = []
+        comm = MPI.COMM_WORLD                                                    
+        rank = comm.Get_rank()                                                   
+        size = comm.Get_size() 
+        for mmap in mmap_list:
+            now = datetime.datetime.now()
+            print(f"MKDEBUG load mmap {mmap}, rank={rank}, size={size} time={now.time()}")
+            if not os.path.exists(mmap):
+                n_sec = 5
+                print(f"MKDEBUG waiting {n_sec}...")
+                time.sleep(n_sec)
+            if not os.path.exists(mmap):
+                print("MKDEBUG still not found")
+            num_pattern_list.append(np.load(mmap, mmap_mode="r"))
 
         np.save(
             output_file,
@@ -1223,6 +1247,8 @@ class FileHandler(object):
         num_scheme = self._module_dict[module][run_name]['numbering_scheme']
         run_method = self._module_dict[module][run_name]['run_method']
 
+        print("MKDEBUG call _save_process_list, dir_list =", dir_list)
+        print("MKDEBUG tmp dir = ", self._tmp_dir, os.path.exists(self._tmp_dir))
         self._save_process_list(
             dir_list,
             pattern_list,
@@ -1273,6 +1299,7 @@ class FileHandler(object):
         self._set_module_properties(module, run_name)
         self._create_module_run_dirs(module, run_name)
         self._set_module_input_dir(module, run_name)
+        print("MKDEBUG call _get_module_input_files")
         self._get_module_input_files(module, run_name)
 
     def get_worker_log_name(self, module, file_number_string):

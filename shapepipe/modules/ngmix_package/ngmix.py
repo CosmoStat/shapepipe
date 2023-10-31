@@ -7,6 +7,7 @@ This module contains a class for ngmix shape measurement.
 """
 
 import re
+import os
 
 import galsim
 import ngmix
@@ -91,8 +92,12 @@ class Ngmix(object):
         self._w_log = w_log
 
         # Initiatlise random generator using image ID number
-        #seed = int(''.join(re.findall(r'\d+', self._output_path)))
-        seed = 6121975
+        basename = os.path.basename(self._output_path)
+        print("MKDEBUG output_path basename ", basename)
+        print(''.join(re.findall(r'\d+', basename)))
+        seed = int(''.join(re.findall(r'\d+', basename)))
+        print(seed)
+        #seed = 6121975
         np.random.seed(seed)
         self._w_log.info(f'Random generator initialisation seed = {seed}')
 
@@ -311,6 +316,8 @@ class Ngmix(object):
             Dictionary containing the results
 
         """
+        if os.path.exists(self._output_path):
+            raise IOError(f"Output file {self._output_path} already exists")
         f = file_io.FITSCatalogue(
             self._output_path,
             open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite

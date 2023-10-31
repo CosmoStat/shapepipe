@@ -18,7 +18,7 @@
 #PBS -l walltime=00:05:00
 
 # Request number of cores (e.g. 2 from 2 different machines)
-#PBS -l nodes=4:ppn=2
+#PBS -l nodes=2:ppn=2
 
 # Full path to environment
 export SPENV="$HOME/.conda/envs/shapepipe"
@@ -50,9 +50,14 @@ fi
 # Only version 5.0.0 downloaded from the web recognised the --mca argument
 #/home/mkilbing/bin/mpirun -np $NSLOTS --mca pml ob1 --mca btl ^openib --mca orte_base_help_aggregate 0 --mca plm_tm_verbose 1 hostname
 
-/softs/openmpi/5.0.0-torque-CentOS7/bin/mpirun -map-by $NSLOTS --mca pml ob1 --mca btl ^openib --mca orte_base_help_aggregate 0 --mca plm_tm_verbose 1 hostname
-/softs/openmpi/5.0.0-torque-CentOS7/bin/mpirun -map-by $NSLOTS $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
+#/softs/openmpi/5.0.0-torque-CentOS7/bin/mpirun -map-by node --mca pml ob1 --mca btl ^openib --mca orte_base_help_aggregate 0 --mca plm_tm_verbose 1 hostname
+#/softs/openmpi/5.0.0-torque-CentOS7/bin/mpirun -map-by node $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
+#/home/mkilbing/bin/mpirun -map-by node $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
+#/home/mkilbing/bin/mpirun -n $NSLOTS --mca pml ob1 --mca btl ^openib --mca orte_base_help_aggregate 0 --mca plm_tm_verbose 1 $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
+#$SPENV/bin/mpiexec -n $NSLOTS $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
 #/softs/openmpi/5.0.0-torque-CentOS7/bin/mpirun -np $NSLOTS --mca pml ob1 --mca btl ^openib --mca orte_base_help_aggregate 0 --mca plm_tm_verbose 1 $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
+/softs/openmpi/5.0.0-torque-CentOS7/bin/mpirun -np $NSLOTS hostname
+/softs/openmpi/5.0.0-torque-CentOS7/bin/mpirun -np $NSLOTS $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
 
 #/home/mkilbing/bin/mpirun -np $NSLOTS --mca pml ob1 --mca btl ^openib --mca orte_base_help_aggregate 0 --mca plm_tm_verbose 1 $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
 

@@ -15,6 +15,7 @@ from modopt.interface.errors import warn
 
 from shapepipe.pipeline.worker_handler import WorkerHandler
 
+from mpi4py import MPI
 
 class JobHandler(object):
     """Job Handler.
@@ -78,6 +79,10 @@ class JobHandler(object):
         self._log_job_parameters()
 
         # Set up module in file handler
+        comm = MPI.COMM_WORLD
+        rank = comm.Get_rank()
+        size = comm.Get_size()
+        print(f"MKDEBUG set_up_module, rank = {rank}, size = {size}")
         self.filehd.set_up_module(self._module)
 
         # Set the total number of processes

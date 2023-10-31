@@ -63,6 +63,9 @@ def ngmix_runner(
         )
     else:
         # Initialise class instance
+        w_log.info(
+            f"Processing data for output file {output_path}"
+        )
         ngmix_inst = Ngmix(
             input_file_list,
             output_path,
