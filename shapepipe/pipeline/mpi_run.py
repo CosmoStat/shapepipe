@@ -36,7 +36,6 @@ def submit_mpi_jobs(
     timeout,
     run_dirs,
     module_runner,
-    module_config_sec,
     worker_log,
     verbose,
 ):
@@ -52,22 +51,12 @@ def submit_mpi_jobs(
         w_log_name = worker_log(module_runner.__name__, process[0])
 
         wh = WorkerHandler(verbose=verbose)
-        print("MKDEBUG in submit_mpi_job")
-        print("MKDEBUG process[1:] = ", process[1:])
-        print("MKDEBUG process[0] = ", process[0])
-        print("MKDEBUG w_log_name = ", w_log_name)
-        print("MKDEBUG run_dirs = ", run_dirs)
-        print("MKDEBUG config = ", config)
-        print("MKDEBUG timeout = ", timeout)
-        print("MKDEBUG module_runner = ", module_runner)
-        print("MKDEBUG module_config_sec = ", module_config_sec)
         result.append(wh.worker(
             process[1:],
             process[0],
             w_log_name,
             run_dirs,
             config,
-            module_config_sec,
             timeout,
             module_runner
         ))

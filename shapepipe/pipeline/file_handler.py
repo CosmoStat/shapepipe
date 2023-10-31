@@ -18,10 +18,6 @@ from shapepipe.pipeline.run_log import RunLog, get_list, get_all, get_last
 from shapepipe.pipeline import shared
 from shapepipe.utilities.file_system import mkdir
 
-from mpi4py import MPI                                                           
-import datetime
-import time
-
 
 class FileHandler(object):
     """File Handler.
@@ -97,7 +93,7 @@ class FileHandler(object):
     @run_dir.setter
     def run_dir(self, value):
 
-        self._run_dir = self.check_dir(value, check_exists=False)
+        self._run_dir = self.check_dir(value, check_exists=True)
 
     @property
     def _input_dir(self):
@@ -192,7 +188,7 @@ class FileHandler(object):
             Directory name with full path
 
         """
-        cls.check_dir(dir_name, check_exists=False)
+        cls.check_dir(dir_name, check_exists=True)
         mkdir(dir_name)
 
     @staticmethod
@@ -380,7 +376,6 @@ class FileHandler(object):
         This method creates the pipeline output directories for a given run.
 
         """
-        # MKDEBUG: Error occured here
         self.run_dir = self.setpath(self._output_dir, self._run_name)
         self._log_dir = self.setpath(self.run_dir, 'logs')
         self._tmp_dir = self.setpath(self.run_dir, 'tmp')
@@ -391,7 +386,6 @@ class FileHandler(object):
             self.run_dir,
         )
 
-        # MKDBUG: Error occured here
         self.mkdir(self.run_dir)
         self.mkdir(self._log_dir)
         self.mkdir(self._tmp_dir)
@@ -811,22 +805,16 @@ class FileHandler(object):
         if not isinstance(match_pattern, str):
             TypeError('Match pattern must be a string.')
 
-        if re.search("\\\\", match_pattern) is not None:
-            # Regular expression on input: Use pattern
-            re_pattern = match_pattern
-        else:
-            # Generate pattern from input
-            chars = [char for char in match_pattern if not char.isalnum()]
-            split_pattern = '|'.join(chars).replace('.', r'\.')
-            chars = [f'\\{char}' for char in chars] + ['']
-            digit_list = re.split(split_pattern, match_pattern)
-            num_length = [
-                f'\\d{{{len(digits)}}}'
-                for digits in re.split(split_pattern, match_pattern)
-            ]
-            re_pattern = r''.join(
-                [a for b in zip(num_length, chars) for a in b]
-            ).replace('{1}', '+')
+        chars = [char for char in match_pattern if not char.isalnum()]
+        split_pattern = '|'.join(chars).replace('.', r'\.')
+        chars = [f'\\{char}' for char in chars] + ['']
+        num_length = [
+            f'\\d{{{len(digits)}}}'
+            for digits in re.split(split_pattern, match_pattern)
+        ]
+        re_pattern = r''.join(
+            [a for b in zip(num_length, chars) for a in b]
+        ).replace('{1}', '+')
 
         return re.compile(re_pattern)
 
@@ -934,7 +922,6 @@ class FileHandler(object):
                 del file_list
                 break
 
-        print("MKDEBUG save_num_pattern: path = ", path)
         if not true_file_list:
             raise RuntimeError(
                 f'No files found matching "{pattern}" and "{ext}" in the '
@@ -983,11 +970,10 @@ class FileHandler(object):
 
         if not found_match:
             raise RuntimeError(
-                f'Could not match numbering scheme "{re_pattern}" '
+                f'Could not match numbering scheme "{self._numbering_scheme}" '
                 + f'to any of the input files matching "{pattern}" and '
                 + f'"{ext}" in the directories {dir_list}.'
             )
-
 
         elem = shared.check_duplicate(final_file_list)
         if elem != '':
@@ -1000,11 +986,6 @@ class FileHandler(object):
             )
 
         # Save file list
-        comm = MPI.COMM_WORLD
-        rank = comm.Get_rank()
-        size = comm.Get_size()
-        now = datetime.datetime.now()
-        print(f"MKDEBUG save_num_patterns: save file list {output_file}, rank={rank}, size={size} time={now.time()}")
         np.save(output_file, np.array(final_file_list))
 
         del true_file_list, final_file_list
@@ -1025,21 +1006,7 @@ class FileHandler(object):
             List of memory maps
 
         """
-        #num_pattern_list = [np.load(mmap, mmap_mode='r') for mmap in mmap_list]
-        num_pattern_list = []
-        comm = MPI.COMM_WORLD                                                    
-        rank = comm.Get_rank()                                                   
-        size = comm.Get_size() 
-        for mmap in mmap_list:
-            now = datetime.datetime.now()
-            print(f"MKDEBUG load mmap {mmap}, rank={rank}, size={size} time={now.time()}")
-            if not os.path.exists(mmap):
-                n_sec = 5
-                print(f"MKDEBUG waiting {n_sec}...")
-                time.sleep(n_sec)
-            if not os.path.exists(mmap):
-                print("MKDEBUG still not found")
-            num_pattern_list.append(np.load(mmap, mmap_mode="r"))
+        num_pattern_list = [np.load(mmap, mmap_mode='r') for mmap in mmap_list]
 
         np.save(
             output_file,
@@ -1210,13 +1177,10 @@ class FileHandler(object):
             run_method,
         )
 
-        print("MKDEBUG save process mmap", self.process_mmap)
         np.save(self.process_mmap, np.array(process_list))
         del process_list
 
-        print("MKDEBUG load process mmap", self.process_mmap)
         self.process_list = np.load(self.process_mmap, mmap_mode='r')
-        print("MKDEBUG load process mmap done")
 
         self.missed = []
 
@@ -1247,8 +1211,6 @@ class FileHandler(object):
         num_scheme = self._module_dict[module][run_name]['numbering_scheme']
         run_method = self._module_dict[module][run_name]['run_method']
 
-        print("MKDEBUG call _save_process_list, dir_list =", dir_list)
-        print("MKDEBUG tmp dir = ", self._tmp_dir, os.path.exists(self._tmp_dir))
         self._save_process_list(
             dir_list,
             pattern_list,
@@ -1299,7 +1261,6 @@ class FileHandler(object):
         self._set_module_properties(module, run_name)
         self._create_module_run_dirs(module, run_name)
         self._set_module_input_dir(module, run_name)
-        print("MKDEBUG call _get_module_input_files")
         self._get_module_input_files(module, run_name)
 
     def get_worker_log_name(self, module, file_number_string):

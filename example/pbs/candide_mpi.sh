@@ -46,20 +46,8 @@ else
   echo "Using $NSLOTS CPUs set by hand"
 fi
 
-# Test: print hostname.
-# Only version 5.0.0 downloaded from the web recognised the --mca argument
-#/home/mkilbing/bin/mpirun -np $NSLOTS --mca pml ob1 --mca btl ^openib --mca orte_base_help_aggregate 0 --mca plm_tm_verbose 1 hostname
-
-#/softs/openmpi/5.0.0-torque-CentOS7/bin/mpirun -map-by node --mca pml ob1 --mca btl ^openib --mca orte_base_help_aggregate 0 --mca plm_tm_verbose 1 hostname
-#/softs/openmpi/5.0.0-torque-CentOS7/bin/mpirun -map-by node $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
-#/home/mkilbing/bin/mpirun -map-by node $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
-#/home/mkilbing/bin/mpirun -n $NSLOTS --mca pml ob1 --mca btl ^openib --mca orte_base_help_aggregate 0 --mca plm_tm_verbose 1 $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
-#$SPENV/bin/mpiexec -n $NSLOTS $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
-#/softs/openmpi/5.0.0-torque-CentOS7/bin/mpirun -np $NSLOTS --mca pml ob1 --mca btl ^openib --mca orte_base_help_aggregate 0 --mca plm_tm_verbose 1 $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
 /softs/openmpi/5.0.0-torque-CentOS7/bin/mpirun -np $NSLOTS hostname
 /softs/openmpi/5.0.0-torque-CentOS7/bin/mpirun -np $NSLOTS $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
-
-#/home/mkilbing/bin/mpirun -np $NSLOTS --mca pml ob1 --mca btl ^openib --mca orte_base_help_aggregate 0 --mca plm_tm_verbose 1 $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
 
 # Return exit code
 exit 0
