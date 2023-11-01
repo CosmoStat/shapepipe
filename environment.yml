@@ -15,6 +15,7 @@ dependencies:
   - numba==0.54.1
   - pandas==1.4.1
   - pip:
+    - jupyter
     - mccd==1.2.3
     - modopt==1.6.0
     - PyQt5==5.15.6

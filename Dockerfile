@@ -14,7 +14,12 @@ RUN apt-get update --allow-releaseinfo-change && \
     apt-get install gcc-9 g++-9 -y && \
     apt-get install locales -y && \
     apt install libgl1-mesa-glx -y && \
+    apt-get install xterm -y && \
     apt-get clean
+
+RUN apt-get install acl -y && \
+    apt-get install sssd -y
+ADD nsswitch.conf /etc/
 
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
     locale-gen
@@ -25,3 +30,9 @@ ENV LC_ALL en_US.UTF-8
 COPY . /home
 
 RUN ./install_shapepipe --develop --vos
+
+# Create entrypoint script for desktop
+RUN mkdir /skaha
+COPY xterm_start.sh /skaha/init.sh
+
+ENTRYPOINT [ "/skaha/init.sh" ]
