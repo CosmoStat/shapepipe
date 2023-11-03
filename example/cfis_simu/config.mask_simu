@@ -1,0 +1,86 @@
+# Mask module configuration file for single-exposure images
+
+## Paths to executables
+[PROGRAM_PATH]
+
+WW_PATH = ww
+WW_CONFIG_FILE = $SP_CONFIG/mask_default/default.ww
+
+# Indicate cds client executable if no external star catalogue is available
+# (e.g. no internet access on run nodes)
+CDSCLIENT_PATH = findgsc2.2
+
+
+## Border mask
+[BORDER_PARAMETERS]
+
+BORDER_MAKE = True
+
+BORDER_WIDTH = 50
+BORDER_FLAG_VALUE = 4
+
+
+## Halo mask
+[HALO_PARAMETERS]
+
+HALO_MAKE = False
+
+HALO_MASKMODEL_PATH = $SP_CONFIG/mask_default/halo_mask.reg
+HALO_MAG_LIM = 13.
+HALO_SCALE_FACTOR = 0.05
+HALO_MAG_PIVOT = 13.8
+HALO_FLAG_VALUE = 2
+HALO_REG_FILE = halo.reg
+
+
+## Diffraction spike mask
+[SPIKE_PARAMETERS]
+
+SPIKE_MAKE = False
+
+SPIKE_MASKMODEL_PATH = $SP_CONFIG/mask_default/MEGAPRIME_star_i_13.8.reg
+SPIKE_MAG_LIM = 18.
+SPIKE_SCALE_FACTOR = 0.3
+SPIKE_MAG_PIVOT = 13.8
+SPIKE_FLAG_VALUE = 128
+SPIKE_REG_FILE = spike.reg
+
+
+## Messier mask
+[MESSIER_PARAMETERS]
+
+MESSIER_MAKE = False
+
+MESSIER_CAT_PATH = $SP_CONFIG/mask_default/Messier_catalog_updated.fits
+MESSIER_SIZE_PLUS = 0.
+MESSIER_FLAG_VALUE = 16
+
+
+## NGC mask
+[NGC_PARAMETERS]
+
+NGC_MAKE = False
+
+NGC_CAT_PATH = $SP_CONFIG/mask_default/ngc_cat.fits
+NGC_SIZE_PLUS = 0.
+NGC_FLAG_VALUE = 32
+
+
+
+## Missing data parameters
+[MD_PARAMETERS]
+
+MD_MAKE = False
+
+MD_THRESH_FLAG = 0.3
+MD_THRESH_REMOVE = 0.75
+MD_REMOVE = False
+
+
+## Other parameters
+[OTHER]
+
+TEMP_DIRECTORY = .temp
+
+KEEP_REG_FILE = False
+KEEP_INDIVIDUAL_MASK = False

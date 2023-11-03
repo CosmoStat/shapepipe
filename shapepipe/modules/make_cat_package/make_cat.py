@@ -16,6 +16,7 @@ from astropy.wcs import WCS
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
+from shapepipe.utitities import galaxy
 
 
 def prepare_final_cat_file(output_path, file_number_string):
@@ -556,7 +557,9 @@ class SaveCatalogue:
                 )
                 self._add2dict(f'PSF_ELL_{epoch + 1}', e_psf, idx)
 
-                psf_fwhm = gpc_data['SHAPES']['SIGMA_PSF_HSM'] * 2.355
+                psf_fwhm = galaxy.sigma_to_fwhm(
+                    gpc_data['SHAPES']['SIGMA_PSF_HSM']
+                )
                 self._add2dict(f'PSF_FWHM_{epoch + 1}', psf_fwhm, idx)
 
                 flag_psf = gpc_data['SHAPES']['FLAG_PSF_HSM']

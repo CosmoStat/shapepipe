@@ -83,7 +83,7 @@ At this step all required `ShapePipe` resulting output files are available in th
    A. Analyse psf validation files
    
       ```bash
-      psf_residuals -p PSF
+      prepare_star_cat -p PSF
       ```
       with options as for `post_proc_sp`.
       This script identifies all psf validation files (from all processed tiles downloaded to `pwd`), creates symbolic links,
