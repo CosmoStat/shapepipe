@@ -18,9 +18,6 @@ from shapepipe.pipeline.run_log import RunLog, get_list, get_all, get_last
 from shapepipe.pipeline import shared
 from shapepipe.utilities.file_system import mkdir
 
-from mpi4py import MPI                                                           
-import datetime
-import time
 
 
 class FileHandler(object):
@@ -1000,11 +997,6 @@ class FileHandler(object):
             )
 
         # Save file list
-        comm = MPI.COMM_WORLD
-        rank = comm.Get_rank()
-        size = comm.Get_size()
-        now = datetime.datetime.now()
-        print(f"MKDEBUG save_num_patterns: save file list {output_file}, rank={rank}, size={size} time={now.time()}")
         np.save(output_file, np.array(final_file_list))
 
         del true_file_list, final_file_list
@@ -1027,15 +1019,9 @@ class FileHandler(object):
         """
         #num_pattern_list = [np.load(mmap, mmap_mode='r') for mmap in mmap_list]
         num_pattern_list = []
-        comm = MPI.COMM_WORLD                                                    
-        rank = comm.Get_rank()                                                   
-        size = comm.Get_size() 
         for mmap in mmap_list:
-            now = datetime.datetime.now()
-            print(f"MKDEBUG load mmap {mmap}, rank={rank}, size={size} time={now.time()}")
             if not os.path.exists(mmap):
                 n_sec = 5
-                print(f"MKDEBUG waiting {n_sec}...")
                 time.sleep(n_sec)
             if not os.path.exists(mmap):
                 print("MKDEBUG still not found")
