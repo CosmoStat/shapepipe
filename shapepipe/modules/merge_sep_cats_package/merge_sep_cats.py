@@ -93,7 +93,7 @@ class MergeSep(object):
             if len(list_ext_name) != 6:
                 msg = f"Number of HDUs is {len(list_ext_name)}, expected 6"
                 #raise ValueError(msg)
-                print(f"MKDEBUG warning: {msg}; setting to 6")
+                print(f"warning: {msg}; setting to 6")
                 list_ext_name = list_ext_name[:6]
                 list_col_name = list_col_name[:6]
 
