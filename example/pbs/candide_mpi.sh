@@ -49,10 +49,6 @@ fi
 MPI_CMD=/softs/openmpi/5.0.0-torque-CentOS7/bin/mpirun
 MPI_ARGS="-np $NSLOTS"
 
-#MPI_CMD=$SPENV/bin/mpiexec
-#MPI_CMD=$HOME/bin/mpiexec
-#MPI_ARGS=-map-by
-
 ${MPI_CMD} ${MPI_ARGS} hostname
 ${MPI_CMD} ${MPI_ARGS} $SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_mpi.ini
 
