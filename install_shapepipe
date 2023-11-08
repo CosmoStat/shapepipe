@@ -81,6 +81,8 @@ NC='\033[0m'
 PIPE_DIR=$PWD
 BUILD_DIR=$PIPE_DIR/build
 ENV_NAME='shapepipe'
+ENV_DEV=FALSE
+USE_CONDA_SOURCE=FALSE
 BUILD_ENV=TRUE
 DEVELOP=FALSE
 VOS=FALSE
@@ -258,6 +260,14 @@ check_binary2() {
   echo ""
 }
 
+# Check the environment name
+check_env_name() {
+if [ "$ENV_DEV" == TRUE ]
+then
+  ENV_NAME='shapepipe-dev'
+fi
+}
+
 # Check if a python site-package is installed correctly in the conda environment
 check_site_pkg() {
   if compgen -G "$CONDA_PREFIX/lib/python3.*/site-packages/$1*" > /dev/null
@@ -343,7 +353,9 @@ package_report() {
   echo 'Package Report'
   echo ''
   packages
-  python -m piplist
+  echo 'Python Package Check List:'
+  echo ''
+  site-packages
   echo ''
   exit_code
 }
@@ -410,6 +422,7 @@ astromatic_setup() {
 
 # Function to uninstall ShapePipe and dependencies
 uninstall() {
+  check_env_name
   read -p "Uninstall $ENV_NAME environment [y/N]: " response
   response=${response:-n}
   if [ $response == "y" ]
@@ -465,8 +478,9 @@ Options:\n
 \t--uninstall\t uninstall ShapePipe\n
 \t--pipe-dir\t set the path to the ShapePipe base directory (default is \$PWD)\n
 \t--build-dir\t set the path to the ShapePipe build (default is \$PWD/build)\n
-\t--env-name\t set the name of the conda environment (default is shapepipe)\n
-\t--use-conda-source\t use conda source instead of the default conda activate to activate the shapepipe environment\n
+\t--env-name\t set the name of the Conda environment (default is shapepipe)\n
+\t--env-dev\t use the developers Conda environment instead of the standard production environment\n
+\t--use-conda-source\t use 'conda source' instead of the default 'conda activate' to activate the shapepipe environment\n
 \t--develop\t option to install additional development packages\n
 \t--vos\t\t option to install virtual observatory software\n
 \t--no-env\t do not build Conda environment\n
@@ -526,6 +540,10 @@ case $i in
     ;;
     --env-name=*)
     ENV_NAME="${i#*=}"
+    shift
+    ;;
+    --env-dev)
+    ENV_DEV=TRUE
     shift
     ;;
     --use-conda-source)
@@ -620,6 +638,9 @@ start
 # Check if conda is installed
 check_conda
 
+# Check the Conda environment name
+check_env_name
+
 # Find the operating system
 case "$OSTYPE" in
   darwin*)
@@ -652,7 +673,12 @@ setup
 if [ "$BUILD_ENV" == TRUE ]
 then
   report_progress 'ShapePipe Environment'
-  conda env create -f environment.yml -n $ENV_NAME
+  if [ "$ENV_DEV" == TRUE ]
+  then
+    conda env create -f environment-dev.yml -n $ENV_NAME
+  else
+    conda env create -f environment.yml -n $ENV_NAME
+  fi
 fi
 
 # Activate conda environment
