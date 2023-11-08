@@ -3,8 +3,6 @@ name: CI
 on:
   pull_request:
     branches:
-     - main
-     - master
      - develop
 
 jobs:
@@ -42,7 +40,7 @@ jobs:
       - name: Install package
         shell: bash -l {0}
         run: |
-          ./install_shapepipe --develop
+          ./install_shapepipe --env-dev --develop
 
       - name: Run tests
         shell: bash -l {0}
