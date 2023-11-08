@@ -15,6 +15,7 @@ RUN apt-get update --allow-releaseinfo-change && \
     apt-get install locales -y && \
     apt install libgl1-mesa-glx -y && \
     apt-get install xterm -y && \
+    apt-get install cmake protobuf-compiler -y && \
     apt-get clean
 
 RUN apt-get install acl -y && \
@@ -27,12 +28,22 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-COPY . /home
+FROM python:3.10-buster
 
-RUN ./install_shapepipe --develop --vos
+RUN pip install poetry==1.7.0
 
-# Create entrypoint script for desktop
-RUN mkdir /skaha
-COPY xterm_start.sh /skaha/init.sh
+ENV POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=1 \
+    POETRY_VIRTUALENVS_CREATE=1 \
+    POETRY_CACHE_DIR=/tmp/poetry_cache
 
-ENTRYPOINT [ "/skaha/init.sh" ]
+COPY . /
+
+COPY pyproject.toml poetry.lock README.rst ./
+RUN touch README.md
+
+RUN poetry install --without dev --no-root && rm -rf $POETRY_CACHE_DIR
+
+COPY shapepipe ./
+
+RUN poetry install --without dev
