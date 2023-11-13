@@ -67,7 +67,7 @@ def mkdir(dir_name, check_created=True, exist_ok=True):
         If directory not properly created
 
     """
-    os.makedirs(dir_name, exist_ok=exist_ok)
+    os.makedirs(dir_name, exist_ok=True)
 
     if check_created and not check_dir(dir_name):
         raise FileSystemError(

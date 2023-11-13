@@ -21,7 +21,7 @@
 #PBS -l nodes=2:ppn=2
 
 # Full path to environment
-export SPENV="$HOME/.conda/envs/shapepipe"
+export SPENV="$HOME/.conda/envs/shapepipe_mpi"
 
 # Full path to example config file and input data
 export SPDIR="$HOME/shapepipe"

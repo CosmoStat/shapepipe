@@ -477,14 +477,12 @@ def run(*args):
 
         if import_mpi:
             comm = MPI.COMM_WORLD
-            print(f"MKDEBUG comm = {comm}")
             master = comm.rank == 0
         else:
             master = True
 
         if master:
             pipe = ShapePipe()
-            print("MKDEBUG set_up (-> mkdir out)")
             pipe.set_up()
             mode = pipe.mode
         else:
