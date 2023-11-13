@@ -377,12 +377,16 @@ def plot_meanshapes(
 
         xs_loc, ys_loc = all_X[ccd_mask] - x_shift, all_Y[ccd_mask] - y_shift
 
-        # swap axes to match CCD orientation and origin convention
-        ys_loc = loc2glob.y_npix - ys_loc + 1
+        if psf_model_type == 'mccd':
+            # swap axes to match CCD orientation and origin convention
+            ys_loc = loc2glob.y_npix - ys_loc + 1
 
         # digitalize into bins
         xbins = np.digitize(xs_loc, grid[0])
         ybins = np.digitize(ys_loc, grid[1])
+
+        if psf_model_type == 'psfex':
+            xbins, ybins = megacam_flip(xbins, ybins, ccd_nb, nb_pixel)
 
         for xb in range(nb_pixel[0]):
             for yb in range(nb_pixel[1]):
@@ -518,7 +522,7 @@ def plot_meanshapes(
         if max_r2:
             vmax = max_r2
         else:
-            vmax = nanmax(ccd_maps[:, :, 2])
+            vmax = np.nanmax(ccd_maps[:, :, 2])
         wind = [vmin, vmax]
         colorbar_ampl = 1
         title = (
