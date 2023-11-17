@@ -1,4 +1,4 @@
-name: shapepipe2
+name: shapepipe
 channels:
   - conda-forge
 dependencies:
