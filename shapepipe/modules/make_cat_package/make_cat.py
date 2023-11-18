@@ -16,7 +16,7 @@ from astropy.wcs import WCS
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
-from shapepipe.utitities import galaxy
+from shapepipe.utilities import galaxy
 
 
 def prepare_final_cat_file(output_path, file_number_string):

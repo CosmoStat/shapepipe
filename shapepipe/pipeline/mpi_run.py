@@ -36,6 +36,7 @@ def submit_mpi_jobs(
     timeout,
     run_dirs,
     module_runner,
+    module_config_sec,
     worker_log,
     verbose,
 ):
@@ -57,6 +58,7 @@ def submit_mpi_jobs(
             w_log_name,
             run_dirs,
             config,
+            module_config_sec,
             timeout,
             module_runner
         ))
