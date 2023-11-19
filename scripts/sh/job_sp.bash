@@ -420,7 +420,7 @@ if [[ $do_job != 0 ]]; then
   ### Star detection, selection, PSF model. setools can exit with an error for CCD with insufficient stars,
   ### the script should continue
   STOP=0
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Sx_exp_${psf}.ini" "Run shapepipe (tile detection, exp $psf)"
+  command_cfg_shapepipe "config_tile_Sx_exp_${psf}.ini" "Run shapepipe (tile detection, exp $psf)" $n_smp
   STOP=1
 
 fi
