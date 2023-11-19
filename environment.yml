@@ -4,7 +4,8 @@ channels:
 dependencies:
   - python=3.9
   - pip>=21.2.4
-  - numpy==1.21.6
+  - astromatic-psfex==3.21.1
+  - astromatic-source-extractor==2.25.0
   - astropy==5.1
   - automake
   - autoconf
@@ -14,6 +15,7 @@ dependencies:
   - libtool
   - matplotlib
   - numba
+  - numpy==1.21.6
   - pip:
     - cs_util
     - modopt
