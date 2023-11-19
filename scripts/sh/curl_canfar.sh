@@ -1,11 +1,12 @@
 #!/usr/bin/bash
 
 # Usage
-~/astro/repositories/github/shapepipe/scripts/sh/curl_canfar.sh 0.7 shapepipe/scripts/sh/init_canfar.sh 000.000
+# ~/astro/repositories/github/shapepipe/scripts/sh/curl_canfar.sh 0.7 shapepipe/scripts/sh/init_canfar.sh 000.000
 
 SSL=~/.ssl/cadcproxy.pem
 NCORE=16
-SESSION=https://ws-uv.canfar.net/skaha/v0/session?ram=16&cores=$NCORE
+SESSION=https://ws-uv.canfar.net/skaha/v0/session
+RESOURCES="ram=16&cores=$NCORE"
 IMAGE=images.canfar.net/unions/shapepipe
 NAME=shapepipe
 
@@ -24,7 +25,7 @@ arg_an=X
 echo
 echo "Start headless container"
 echo "========================"
-ID=`curl -E $SSL $SESSION -d "image=$IMAGE:$version" -d "name=${NAME}${arg_an}" -d "cmd=$cmd" --data-urlencode "args=$arg"`
+ID=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}${arg_an}" -d "cmd=$cmd" --data-urlencode "args=$arg"`
 echo $ID
 
 echo
