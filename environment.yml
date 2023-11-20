@@ -3,9 +3,10 @@ channels:
   - conda-forge
 dependencies:
   - python=3.9
-  - pip
-  - numpy
-  - astropy
+  - pip>=21.2.4
+  - astromatic-psfex==3.21.1
+  - astromatic-source-extractor==2.25.0
+  - astropy==5.1
   - automake
   - autoconf
   - cmake
@@ -14,9 +15,8 @@ dependencies:
   - libtool
   - matplotlib
   - numba
-  - pandas
+  - numpy
   - pip:
-    - jupyter
     - cs_util
     - modopt
     - PyQt5
