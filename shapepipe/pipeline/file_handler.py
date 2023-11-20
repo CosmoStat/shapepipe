@@ -985,8 +985,6 @@ class FileHandler(object):
                 + 'directory is used.'
             )
 
-        print("MKDEBUG elem", elem)
-
         # Save file list
         np.save(output_file, np.array(final_file_list))
 
