@@ -9,8 +9,10 @@ echo "start init run tile canfar"
 
 conda activate shapepipe
 
-basedir=cosmostat/P3_v2/psfex 
+basedir=cosmostat/P3_v2/psfex
 cd $basedir
+
+cd tile_runs
 
 tile_ID=$1
 n_SMP=$2
@@ -26,7 +28,12 @@ for dir in $basedir/run_sp_*; do
 done
 cd ..
 
-job_sp $tile_ID -p psfex -j 16 -n $n_SMP
+export SP_RUN=.
+export SP_CONFIG=$basedir/cfis
+#shapepipe_run -c $SP_CONFIG/config_tile_Ma.ini
+shapepipe_run -c $SP_CONFIG/config_tile_Sx.iniig_tile_Sx.ini
+
+cd $basedir
 
 echo "end init run tile canfar"
 
