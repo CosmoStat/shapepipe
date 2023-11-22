@@ -15,7 +15,7 @@ dependencies:
   - libtool
   - matplotlib
   - numba
-  - numpy
+  - numpy==1.21.6
   - pip:
     - cs_util
     - modopt
