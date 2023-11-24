@@ -49,5 +49,5 @@ RUN conda env create --file environment.yml
 COPY shapepipe ./shapepipe
 COPY scripts ./scripts
 
-#RUN ./scripts/sh/init_canfar.sh
+# Activate conda environment using "source"
 RUN source activate shapepipe
