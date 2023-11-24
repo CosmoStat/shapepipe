@@ -2,8 +2,8 @@
 
 echo "start init canfar"
 
-#echo init_canfar > ~/init_canfar.log
-#date >> ~/init_canfar.log
+echo init_canfar > ~/init_canfar.log
+date >> ~/init_canfar.log
 
 . /opt/conda/etc/profile.d/conda.sh
 
