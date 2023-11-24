@@ -39,6 +39,8 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
+SHELL ["/bin/bash", "--login", "-c"]
+
 COPY ./environment.yml ./
 COPY install_shapepipe README.rst setup.py setup.cfg ./
 RUN touch ./README.md
@@ -50,4 +52,6 @@ COPY shapepipe ./shapepipe
 COPY scripts ./scripts
 
 # Activate conda environment using "source"
-RUN source activate shapepipe
+#RUN . /opt/conda/etc/profile.d/conda.sh
+#RUN conda init bash
+RUN conda activate shapepipe
