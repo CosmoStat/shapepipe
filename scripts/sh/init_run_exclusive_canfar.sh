@@ -33,9 +33,9 @@ cd ..
 
 #export SP_RUN=.
 #export SP_CONFIG=$HOME/shapepipe/example/cfis
-#shapepipe_run -c $SP_CONFIG/config_tile_Ma.ini
 #shapepipe_run -c $SP_CONFIG/config_tile_Sx.ini -e $ID
-job_sp_canfar.bash -p psfex -j 32 -e $ID
+
+job_sp_canfar.bash -p psfex -j 32 -e $ID -n $n_SMP
 
 cd $basedir
 
