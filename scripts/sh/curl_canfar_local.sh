@@ -22,25 +22,6 @@ ID=$3
 # command line arguments
 arg="$ID $NCORE exp"
 
-#arg_an=`echo "$arg" | tr '_' 'X' | tr '.' 'X'`
-
 echo
-echo "Start headless container"
-echo "========================"
 ID=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd" --data-urlencode "args=$arg"`
-echo $ID
-
-echo
-echo "Events (incl. errors)"
-echo "====================="
-cmd="curl -E $SSL $SESSION/$ID?view=events"
-echo $cmd
-$cmd
-
-echo
-echo "Logs (incl. stdout)"
-echo "==================="
-cmd="curl -E $SSL $SESSION/$ID?view=logs"
-echo $cmd
-$cmd
-
+echo $ID >> IDs.txt
