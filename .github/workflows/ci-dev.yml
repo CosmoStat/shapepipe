@@ -46,6 +46,6 @@ jobs:
       - name: Run tests
         shell: bash -l {0}
         run: |
-          conda activate shapepipe
+          conda activate shapepipe-dev
           python setup.py test
           shapepipe_run -c example/config.ini
