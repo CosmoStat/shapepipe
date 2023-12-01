@@ -7,7 +7,15 @@ echo "start init canfar"
 
 . /opt/conda/etc/profile.d/conda.sh
 
-source activate shapepipe
+conda activate shapepipe
+
+cd cosmostat/P3_v2/psfex 
+
+tile_ID=$1
+n_SMP=$2
+echo "tile_ID=$tile_ID n_SMP=$n_SMP"
+
+job_sp $tile_ID -p psfex -j 8 -n $n_SMP
 
 echo "end init canfar"
 

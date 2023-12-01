@@ -22,11 +22,14 @@ RUN apt-get update --allow-releaseinfo-change && \
     apt-get install libgl1-mesa-glx -y && \
     apt-get install xterm -y && \
     apt-get install cmake protobuf-compiler -y && \
+<<<<<<< HEAD
+=======
     apt-get install libtool libtool-bin libtool-doc -y && \
     apt-get install libfftw3-bin libfftw3-dev -y && \
     apt-get install libatlas-base-dev liblapack-dev libblas-dev -y && \
     apt-get install vim -y && \
     apt-get install locate -y && \
+>>>>>>> origin/exclusive
     apt-get clean
 
 RUN apt-get install acl -y && \

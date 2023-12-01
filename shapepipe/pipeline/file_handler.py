@@ -1113,11 +1113,16 @@ class FileHandler(object):
                     + f'numbering scheme "{num_scheme}".'
                 )
 
+            # If "exclusive" options is set: discard all non-matching IDs
             if self._exclusive is not None:
-                if re.search(number, self._exclusive) is not None:
-                    print(f"Using exclusive number {self._exclusive}")
+                id_to_test = f"-{self._exclusive.replace('.', '-')}"
+                if number == id_to_test:
+                    if self._verbose:
+                        print(f"Using exclusive number {self._exclusive} ({id_to_test})")
                 else:
-                    print(f"Skipping {number}, not equal to {self._exclusive}")
+                    if self._verbose:
+                        #print(f"Skipping {number}, not equal to {self._exclusive} ({id_to_test})")
+                        pass
                     continue
 
             if run_method == 'serial':
