@@ -1,8 +1,9 @@
+import re
 import sys
 import os
 
 # TODO: move to cs_util
-def matching_subdirs(base_dir, pattern, where="start", tail=False):                                         
+def matching_subdirs(base_dir, pattern, tail=False):                                         
                                                                                  
     # Find all matching subdirectories                                           
     subdirs = []                                                                 
@@ -12,18 +13,19 @@ def matching_subdirs(base_dir, pattern, where="start", tail=False):
             found = False
 
             # Look for pattern at start or end
-            if where == "start" and entry.startswith(pattern):               
-                found = True
-            if where == "end" and entry.endswith(pattern):
-                found = True
+            if pattern in entry:               
 
-            # Append for return
-            if found:
+                # Get full path or last part ("tail")
                 if not tail:
                     path = full_path
                 else:
                     head, tail = os.path.split(full_path) 
                     path = tail
+
+                # Remove postfix in case of multiple runs of same module
+                path = re.sub("_run_.\d?", "", path)
+
+                # Append to result
                 subdirs.append(path)
                                                                                  
     # Sort according to creation date                                            
@@ -37,7 +39,7 @@ def get_module_runs(subdirs):
 
     all_runs = {}
     for subdir in subdirs:
-        runs = matching_subdirs(subdir, "_runner", where="end", tail=True)
+        runs = matching_subdirs(subdir, "_runner", tail=True)
         all_runs[subdir] = runs
 
     return all_runs
