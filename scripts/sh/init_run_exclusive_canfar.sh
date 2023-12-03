@@ -20,22 +20,25 @@ echo "ID=$ID n_SMP=$n_SMP type=$typ"
 
 cd ${typ}_runs
 
-mkdir $ID
+#mkdir $ID
+
 cd $ID
-mkdir output
-cd output
-cp $basedir/output/log_run_sp.txt .
-ln -s $basedir/output/log_exp_headers.sqlite
-for dir in $basedir/output/run_sp_*; do
-	ln -s $dir
-done
-cd ..
 
-#export SP_RUN=.
-#export SP_CONFIG=$HOME/shapepipe/example/cfis
-#shapepipe_run -c $SP_CONFIG/config_tile_Sx.ini -e $ID
+#mkdir output
+#cd output
+pwd
+#cp $basedir/output/log_run_sp.txt .
+#ln -s $basedir/output/log_exp_headers.sqlite
+#for dir in $basedir/output/run_sp_*; do
+	#ln -s $dir
+#done
+#cd ..
 
-job_sp_canfar.bash -p psfex -j 32 -e $ID -n $n_SMP
+export SP_RUN=.
+export SP_CONFIG=$HOME/shapepipe/example/cfis
+shapepipe_run -c $SP_CONFIG/config_exp_Pi.ini -e $ID
+
+#job_sp_canfar.bash -p psfex -j 32 -e $ID -n $n_SMP
 
 cd $basedir
 
