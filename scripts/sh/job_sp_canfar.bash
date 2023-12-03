@@ -421,7 +421,7 @@ if [[ $do_job != 0 ]]; then
   ### PSF model letter: 'P' (psfex) or 'M' (mccd)
   letter=${psf:0:1}
   Letter=${letter^}
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_${Letter}iViSmVi.ini" "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)"
+  command_cfg_shapepipe "config_tile_${Letter}iViSmVi_canfar.ini" "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)" $n_smp $exclusive
 
 fi
 
