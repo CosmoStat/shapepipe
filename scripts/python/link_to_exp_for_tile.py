@@ -160,6 +160,7 @@ def update_param(p_def, options):
     return param
 
 
+# TODO: move to cs_util                                                          
 def matching_subdirs(base_dir, pattern):
 
     # Find all matching subdirectories
