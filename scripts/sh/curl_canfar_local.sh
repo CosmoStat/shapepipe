@@ -4,7 +4,7 @@
 # ~/astro/repositories/github/shapepipe/scripts/sh/curl_canfar.sh 0.8 shapepipe/scripts/sh/init_run_exlusive_canfar.sh ID exp NCORE
 
 SSL=~/.ssl/cadcproxy.pem
-NCORE=1
+NCORE=2
 SESSION=https://ws-uv.canfar.net/skaha/v0/session
 RESOURCES="ram=4&cores=$NCORE"
 IMAGE=images.canfar.net/unions/shapepipe
