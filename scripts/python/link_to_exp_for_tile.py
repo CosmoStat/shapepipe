@@ -218,14 +218,14 @@ def get_exp_single_HDU_IDs(exp_IDs, n_CPU):
     return exp_shdu_IDs
 
     
-def get_paths(exp_base_dir, exp_shdu_IDs):
+def get_paths(exp_base_dir, exp_shdu_IDs, pattern):
 
     number = {}
     paths = []
     for exp_shdu_ID in exp_shdu_IDs:
         name = f"{exp_base_dir}/{exp_shdu_ID}/output"
         path = os.path.abspath(name)
-        subdirs = matching_subdirs(path, "run_sp_exp_SxSePsf")
+        subdirs = matching_subdirs(path, pattern)
         n_subdirs = len(subdirs)
 
         if n_subdirs not in number:
@@ -253,23 +253,10 @@ def create_links_paths(tile_base_dir, tile_ID, paths):
         src = path
         dst = f"{tile_out_dir}/{tail}"
         if os.path.exists(dst):
-            print("Warning: {dst} already exists, no link created")
+            print(f"Warning: {dst} already exists, no link created")
         else:
             print(f"ln -s {src} {dst}")
             os.symlink(src, dst)
-
-
-def update_log_files(tile_base_dir, tile_ID, paths):
-
-   tile_out_dir = get_tile_out_dir(tile_base_dir, tile_ID)
-
-   for path in paths:
-
-        head, tail = os.path.split(path)
-        src = path
-        dst = f"{tile_out_dir}/{tail}"
-            os.symlink(src, dst)
-
 
 
 def main(argv=None):
@@ -293,10 +280,13 @@ def main(argv=None):
 
     exp_IDs = get_exp_IDs(tile_base_dir, tile_ID, verbose=verbose)
     exp_shdu_IDs = get_exp_single_HDU_IDs(exp_IDs, n_CPU)
-    paths, number = get_paths(exp_base_dir, exp_shdu_IDs)
-    print(number)
 
-    create_links_paths(tile_base_dir, tile_ID, paths)
+    patterns = ["run_sp_exp_SxSePsf", "run_sp_exp_Pi"]
+    for pattern in patterns:
+        paths, number = get_paths(exp_base_dir, exp_shdu_IDs, pattern)
+        print(number)
+
+        create_links_paths(tile_base_dir, tile_ID, paths)
 
 
     return 0

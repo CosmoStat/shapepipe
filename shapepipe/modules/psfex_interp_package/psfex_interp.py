@@ -568,13 +568,15 @@ class PSFExInterpolator(object):
 
         all_id = np.copy(cat.get_data()['NUMBER'])
         key_ne = 'N_EPOCH'
-        if key_ne not in cat.get_data():
+        if key_ne not in cat.get_data().dtype.names:
+            print("MKDEBUG ", cat.get_data())
             raise KeyError(
-                f'Key {key_ne} not found in input galaxy catalogue, needed for'
+                f'Key {key_ne} not found in input galaxy catalogue'
+                + f'{self._galcat_path}, needed for'
                 + ' PSF interpolation to multi-epoch data; run previous module'
                 + ' (SExtractor) in multi-epoch mode'
             )
-        n_epoch = np.copy(cat.get_data()[key_me])
+        n_epoch = np.copy(cat.get_data()[key_ne])
 
         list_ext_name = cat.get_ext_name()
         hdu_ind = [

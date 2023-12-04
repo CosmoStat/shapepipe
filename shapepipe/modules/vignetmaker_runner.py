@@ -93,8 +93,10 @@ def vignetmaker_runner(
             modules = config.getlist(module_config_sec, 'ME_IMAGE_DIR')
             image_dir = []
             for module in modules:
-                last_dir = get_last_dir(run_dirs['run_log'], module)
-                image_dir.append(last_dir)
+                #last_dir = get_last_dir(run_dirs['run_log'], module)
+                all_dirs = get_all_dirs(run_dirs['run_log'], module)
+                for my_dir in all_dirs:
+                    image_dir.append(my_dir)
             image_pattern = config.getlist(
                 module_config_sec,
                 'ME_IMAGE_PATTERN',

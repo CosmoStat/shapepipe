@@ -1118,7 +1118,7 @@ class FileHandler(object):
                 id_to_test = f"-{self._exclusive.replace('.', '-')}"
                 if number == id_to_test:
                     if self._verbose:
-                        print(f"Using exclusive number {self._exclusive} ({id_to_test})")
+                        print(f"-- Using exclusive number {self._exclusive} ({id_to_test})")
                 else:
                     if self._verbose:
                         #print(f"Skipping {number}, not equal to {self._exclusive} ({id_to_test})")
