@@ -259,19 +259,6 @@ def create_links_paths(tile_base_dir, tile_ID, paths):
             os.symlink(src, dst)
 
 
-def update_log_files(tile_base_dir, tile_ID, paths):
-
-   tile_out_dir = get_tile_out_dir(tile_base_dir, tile_ID)
-
-   for path in paths:
-
-        head, tail = os.path.split(path)
-        src = path
-        dst = f"{tile_out_dir}/{tail}"
-            os.symlink(src, dst)
-
-
-
 def main(argv=None):
 
     # Set default parameters

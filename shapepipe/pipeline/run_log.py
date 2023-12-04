@@ -191,7 +191,10 @@ def get_all_dirs(run_log_file, module):
     runs = get_list(run_log_file)
     all_runs = get_all(runs, module)
 
-    all_dirs = [f"{run}/{module}/output" for run in all_runs[0].split(" ")]
+    all_dirs = []
+    for run in all_runs:
+        dir_name = run.split(" ")[0]
+        all_dirs.append(f"{dir_name}/{module}/output")
  
     return all_dirs
 
