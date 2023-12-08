@@ -54,4 +54,6 @@ COPY scripts ./scripts
 # Activate conda environment using "source"
 #RUN . /opt/conda/etc/profile.d/conda.sh
 #RUN conda init bash
-RUN conda activate shapepipe
+RUN ./scripts/sh/init_canfar.sh
+RUN source activate shapepipe
+RUN pip install jupyter
