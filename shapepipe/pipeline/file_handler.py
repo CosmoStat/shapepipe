@@ -1135,6 +1135,9 @@ class FileHandler(object):
             ])
             process_list.append(process_items)
 
+        if len(process_list) == 0:
+            raise ValueError("Empty process list")
+
         return process_list
 
     def _save_process_list(
