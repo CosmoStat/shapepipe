@@ -24,21 +24,29 @@ cd ${typ}_runs
 
 cd $ID
 
-#mkdir output
-#cd output
-pwd
-#cp $basedir/output/log_run_sp.txt .
-#ln -s $basedir/output/log_exp_headers.sqlite
-#for dir in $basedir/output/run_sp_*; do
-	#ln -s $dir
-#done
-#cd ..
+if [ ! -d "output" ]; then
+  mkdir output
+fi
 
-export SP_RUN=.
-export SP_CONFIG=$HOME/shapepipe/example/cfis
-shapepipe_run -c $SP_CONFIG/config_exp_Pi.ini -e $ID
+  cd output
+  #ln -s $basedir/output/log_exp_headers.sqlite
+  # Remove potentially obsolete link
+  rm run_sp_exp_SpMh*
+  for dir in $basedir/output/run_sp_*; do
+	  ln -s $dir
+  done
+  rm  run_sp_MaMa_*
+  ln -s $basedir/output/run_sp_combined_flag
+  cd ..
+  update_runs_log_file.py
 
-#job_sp_canfar.bash -p psfex -j 32 -e $ID -n $n_SMP
+  pwd
+
+#export SP_RUN=.
+#export SP_CONFIG=$HOME/shapepipe/example/cfis
+#shapepipe_run -c $SP_CONFIG/config_exp_Pi.ini -e $ID
+
+job_sp_canfar.bash -p psfex -j 32 -e $ID -n $n_SMP
 
 cd $basedir
 

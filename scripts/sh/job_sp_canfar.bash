@@ -388,7 +388,7 @@ fi
 if [[ $do_job != 0 ]]; then
 
   ### Mask exposures
-  command_cfg_shapepipe "config_ext_Ma_$star_cat_for_mask.ini" "Run shapepipe (mask exposures)" $n_smp $exclusive
+  command_cfg_shapepipe "config_exp_Ma_$star_cat_for_mask.ini" "Run shapepipe (mask exposures)" $n_smp $exclusive
 
 fi
 
