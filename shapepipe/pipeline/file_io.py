@@ -526,7 +526,7 @@ class FITSCatalogue(BaseCatalogue):
             )
         else:
             raise BaseCatalogue.catalogueFileNotFound(self.fullpath)
-
+            
     def create(self, ext_name=None, s_hdu=True, sex_cat_path=None):
         """Create.
 
@@ -1139,11 +1139,11 @@ class FITSCatalogue(BaseCatalogue):
         Parameters
         ----------
         hdu_no : int
-            HDU index
+            HDU index    
 
         Returns
         -------
-        astropy.io.fits.header
+        dict
             FITS header
 
         Notes
@@ -1154,10 +1154,58 @@ class FITSCatalogue(BaseCatalogue):
         if self._cat_data is not None:
             if hdu_no is None:
                 hdu_no = self.hdu_no
-            return dict(self._cat_data[hdu_no].header.items())
+            if self._SEx_catalogue:
+                astropy_header = _fits_header_from_fits_LDAC(self.fullpath)
+                return dict(astropy_header.items())
+            else:        
+                return dict(self._cat_data[hdu_no].header.items())
         else:
             raise BaseCatalogue.catalogueNotOpen(self.fullpath)
 
+        
+    def _fits_header_from_fits_LDAC(SEx_catalogue_path):
+        """Fits header from a fits-ldac catalog.
+
+        Creates a fits header from a sextractor fits-LDAC field header.
+        
+        Parameters
+        ----------
+        SEx_catalogue_path : str
+            Path to SEXtractor catalogue
+
+        Returns
+        -------
+        astropy.io.fits.Header    
+        """
+        # open file and get data
+        cat = fits.open(SEx_catalogue_path)
+        field_cards = cat[1].data
+        
+        # initialize empty header
+        header = fits.Header(cards=[])
+
+        for i in np.arange(len(field_cards['Field Header Card'][0])):
+            card=field_cards['Field Header Card'][0][i].split('=')
+            if 'HISTORY' not in card[0] and 'COMMENT' not in card[0] and 'END' not in card[0]:
+                # this isn't perfect, but mostly works
+                card_vals = card[1].rsplit('/',1)
+                # remove annoying whitespace
+                card_vals[0]=card_vals[0].lstrip()
+                card_vals[-1]=card_vals[-1].rstrip()
+                # add to card
+                full_card = ( card[0], *card_vals )
+                header.append( card=full_card )
+            elif 'COMMENT' in card[0]:
+                comment = card.split('COMMENT')[1]
+                header.add_comment(comment)
+            elif 'HISTORY' in card[0]:
+                history = card.split('HISTORY')[1] 
+                header.add_history(history)
+        header.append('END')
+        cat.close() 
+
+        return header
+        
     def get_header_value(self, request, hdu_no=None):
         """Get Header Value.
 
