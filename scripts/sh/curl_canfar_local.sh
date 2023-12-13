@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 # Usage
-# ~/astro/repositories/github/shapepipe/scripts/sh/curl_canfar.sh 0.8 shapepipe/scripts/sh/init_run_exlusive_canfar.sh ID exp NCORE
+# ~/astro/repositories/github/shapepipe/scripts/sh/curl_canfar.sh 0.9 shapepipe/scripts/sh/init_run_exlusive_canfar.sh ID ind
 
 SSL=~/.ssl/cadcproxy.pem
 NCORE=2
@@ -16,12 +16,15 @@ version=$1
 # command on canfar, e.g. shapepipe/scripts/sh/init_run_exclusive_canfar.sh
 cmd=$2
 
-# Image ID
-ID=$3
+# Kind ("tile" or "exp")
+kind=$3
+
+# Image ID; has to be last argument to work with xargs
+ID=$4
+
 
 # command line arguments
-arg="$ID $NCORE exp"
+arg="$ID $NCORE $kind"
 
-echo
 ID=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd" --data-urlencode "args=$arg"`
 echo $ID >> IDs.txt
