@@ -165,10 +165,13 @@ def matching_subdirs(base_dir, pattern):
 
     # Find all matching subdirectories
     subdirs = []
-    for entry in os.listdir(base_dir):
-        full_path = os.path.join(base_dir, entry)
-        if os.path.isdir(full_path) and entry.startswith(pattern):
-            subdirs.append(full_path)
+    if os.path.exists(base_dir):
+        for entry in os.listdir(base_dir):
+            full_path = os.path.join(base_dir, entry)
+            if os.path.isdir(full_path) and entry.startswith(pattern):
+                subdirs.append(full_path)
+    else:
+        print(f"Warning: {base_dir} does not exist, continuing...")
 
     # Sort according to creation date
     subdirs.sort(key=os.path.getctime)
@@ -189,6 +192,8 @@ def get_exp_IDs(tile_base_dir, tile_ID, verbose=False):
 
     subdirs = matching_subdirs(tile_out_dir, "run_sp_GitFeGie")
 
+    if len(subdirs) == 0:
+        raise IOError(f"No matching directory '{pattern}' in {tile_out_dir} found")
     if len(subdirs) != 1:
         raise IOError(f"Exactly one matching directory in {tile_out_dir} expected, not {len(subdirs)}")
 
@@ -253,9 +258,24 @@ def create_links_paths(tile_base_dir, tile_ID, paths):
         src = path
         dst = f"{tile_out_dir}/{tail}"
         if os.path.exists(dst):
-            print(f"Warning: {dst} already exists, no link created")
+            src_ex = os.readlink(dst)
+            if src_ex == src:
+                print(f"Warning: {dst} already exists, no link created")
+                continue
+            else:
+                idx = 1
+                dst_orig = dst
+                while True:
+                    dst = f"{dst_orig}_{idx}"
+                    if os.path.exists(dst):
+                        idx += 1
+                    else:
+                        #print("MKDEBUG new ", dst)
+                        #print(f"ln -s {src} {dst}")
+                        os.symlink(src, dst)
+                        break
         else:
-            print(f"ln -s {src} {dst}")
+            #print(f"ln -s {src} {dst}")
             os.symlink(src, dst)
 
 
