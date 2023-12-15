@@ -5,8 +5,8 @@
 # Command line arguments
 ## Default values
 job=-1
-exclusive=-1
-n_smp=1
+ID=-1
+n_SMP=1
 kind=-1
 
 ## Help string
@@ -14,12 +14,13 @@ usage="Usage: $(basename "$0") -j JOB -e ID  -k KIND [OPTIONS]
 \n\nOptions:\n
    -h\tthis message\n
    -j, --job JOB\tRUnning JOB, bit-coded\n
-   -e, --exclusive ID\timage ID\n
+   -e, --exclusive ID
+    \timage ID\n
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    -k, --kind KIND\n
     \timage kind, allowed are 'tile' and 'exp'\n
-   -n, --n_smp N_SMOp\n
+   -n, --n_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default from original config files\n
 "
 
@@ -41,11 +42,15 @@ while [ $# -gt 0 ]; do
       shift                                                                     
       ;; 
     -e|--exclusive)                                                             
-      exclusive="$2"                                                            
+      ID="$2"                                                            
       shift                                                                     
       ;;
-    -n|--n_smp)                                                                 
-      n_smp="$2"                                                                
+    -n|--n_SMP)                                                                 
+      n_SMP="$2"                                                                
+      shift                                                                     
+      ;;                                                                        
+    -k|--kind)                                                                 
+      kind="$2"                                                                
       shift                                                                     
       ;;                                                                        
   esac                                                                          
@@ -81,6 +86,7 @@ cd $basedir
 echo "ID=$ID n_SMP=$n_SMP kind=$kind"
 
 if [ "$kind" == "tile" ]; then
+  rm -rf tile_runs/$ID/output/run_exp_SxSePsf*
   link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs
 fi
 
@@ -96,33 +102,40 @@ if [ ! -d "output" ]; then
   mkdir output
 fi
 
-if [ "1" == "1" ]; then
-  cd output
+cd output
 
-  if [ ! -f log_exp_headers.sqlite ]; then
-    ln -s $basedir/output/log_exp_headers.sqlite
-  fi
-
-  # Remove potentially obsolete link
-  #rm run_sp_exp_SpMh*
-  #rm  run_sp_MaMa_*
-
-  for dir in $basedir/output/run_sp_*; do
-	  ln -sf $dir
-  done
-  ln -s $basedir/output/run_sp_combined_flag
-
-  cd ..
-  update_runs_log_file.py
-
-  pwd
+if [ ! -f log_exp_headers.sqlite ]; then
+  ln -s $basedir/output/log_exp_headers.sqlite
 fi
+
+# Remove potentially obsolete link
+#rm run_sp_exp_SpMh*
+#rm  run_sp_MaMa_*
+
+for dir in $basedir/output/run_sp_*; do
+ ln -sf $dir
+done
+if [ ! -e run_sp_combined_flag ]; then
+  ln -s $basedir/output/run_sp_combined_flag
+fi
+
+cd ..
+update_runs_log_file.py
+
+echo -n "pwd: "
+pwd
 
 #export SP_RUN=.
 #export SP_CONFIG=$HOME/shapepipe/example/cfis
 #shapepipe_run -c $SP_CONFIG/config_exp_Pi.ini -e $ID
 
-job_sp_canfar.bash -p psfex -j 64 -e $ID -n $n_SMP
+echo -n "environment: "
+echo $CONDA_PREFIX
+
+cmd="job_sp_canfar.bash -p psfex -j $job -e $ID -n $n_SMP"
+echo "Running commnd $cmd ..."
+
+$cmd
 
 cd $basedir
 

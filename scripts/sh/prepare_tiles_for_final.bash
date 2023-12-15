@@ -90,7 +90,11 @@ if [ "$cat" == "final" ]; then
   )
 elif [ "$cat" == "flag" ]; then
   DIRS=(
+<<<<<<< HEAD
 	  "mask_runner_run_1"
+=======
+	  "mask_runner_run_2"
+>>>>>>> bd82f95ae96043c2de6ac577dae311c74a03e133
   )
   PATTERNS=(
 	  "pipeline_flag-*"

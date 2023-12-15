@@ -52,7 +52,7 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    \texclusive input filer number string ID (default: None)\n
    -o, --output_dir\n
    \toutput (upload) directory on vos:cfis, default='$results'\n
-   -n, --n_smp\n
+   -n, --n_smp N_SMP\n
    \tnumber of jobs (SMP mode only), default from original config files\n
    --nsh_step NSTEP\n
    --nsh_jobs NJOB\n

@@ -47,8 +47,8 @@ def replace_dot_dash(numbers):
 
 def replace_dash_dot_if_tile(numbers):
 
-    pattern = re.compile(r"(?<!\d{3}-\d{3})-")
-    results = [pattern.sub(".", number) for number in numbers]
+    pattern = re.compile(r"(\d{3})-(\d{3})")
+    results = [pattern.sub(r"\1.\2", number) for number in numbers]
     
     return results
 
@@ -333,26 +333,39 @@ class job_data(object):
         return names_unique
 
     def output_missing(
-        self, module, key_expected, names_in_dir, n_mult, par_runtime=None
+        self, module, key_expected, names_in_dir, paths_in_dir, n_mult, par_runtime=None
     ):
         output_path = f"missing_job_{self._bit}_{module}.txt"
 
         list_expected = get_par_runtime(par_runtime, key_expected, kind="list")
+        
+        # Count image IDs in names that were found earlier
 
-        pattern = re.compile(r"\d+[\d-]+")
+        ## Extract image IDs from names
         IDs = []
-        for name in names_in_dir:
+        pattern = re.compile(r"(?:\d{3}-\d{3}|\d{7}-\d+)")
+        for name, path in zip(names_in_dir, paths_in_dir):
             match = pattern.search(name)
             if match:
                 IDs.append(match.group())
+
+                if match.group() == '2079613-1':
+                    print(name, path)
             else:
                 raise ValueError(f"No ID found in {name}")
 
+
+        ## Count occurences
         ID_counts = Counter(IDs)
-        missing_IDs = [
-            ID for ID, count in ID_counts.items()
-            if count < n_mult
-        ]
+
+        #import pdb
+        #pdb.set_trace()
+
+        ## Add to missing if ocurence less than n_mult
+        missing_IDs = []
+        for ID in list_expected:
+            if ID_counts[ID] < n_mult:
+                missing_IDs.append(ID)
 
         n_all = len(missing_IDs)
         missing_IDs_unique = self.get_unique(missing_IDs)
@@ -425,10 +438,9 @@ class job_data(object):
                     if module == "setools_runner":
                         directory = f"{directory}/rand_split"
 
-                    #if os.path.exists(directory):
-                    try:
+                    # os.path.whether exists is twice faster than try/except
+                    if os.path.exists(directory):
                         with os.scandir(directory) as entries2:
-                            # if entry2.is_file()
                             files = [
                                 entry2.name
                                 for entry2 in entries2
@@ -439,10 +451,6 @@ class job_data(object):
                                 [os.path.join(directory, file)
                                 for file in files]
                             )
-                    except FileNotFoundError:
-                        pass
-                    except Exeption as e:
-                        print(f"Unknown error {e}")
 
         return names_in_dir, paths_in_dir
 
@@ -531,6 +539,7 @@ class job_data(object):
                     module,
                     self._key_expected[idx],
                     names_in_dir,
+                    paths_in_dir,
                     self._n_mult[idx],
                     par_runtime=par_runtime,
                 )
@@ -643,7 +652,6 @@ def main(argv=None):
         verbose=verbose,
     )
 
-    # TODO: rename run dirs to run_sp_tile_Ma, run_sp_exp_Ma
     jobs["4"] = job_data(
         4,
         "run_sp_combined_flag",
@@ -673,7 +681,7 @@ def main(argv=None):
         verbose=verbose,
     )
 
-    # TODO setools_runner output/mask
+    # TODO setools_runner output/rand_split
     jobs["32"] = job_data(
         32,
         [
