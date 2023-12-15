@@ -165,10 +165,13 @@ def matching_subdirs(base_dir, pattern):
 
     # Find all matching subdirectories
     subdirs = []
-    for entry in os.listdir(base_dir):
-        full_path = os.path.join(base_dir, entry)
-        if os.path.isdir(full_path) and entry.startswith(pattern):
-            subdirs.append(full_path)
+    if os.path.exists(base_dir):
+        for entry in os.listdir(base_dir):
+            full_path = os.path.join(base_dir, entry)
+            if os.path.isdir(full_path) and entry.startswith(pattern):
+                subdirs.append(full_path)
+    else:
+        print(f"Warning: {base_dir} does not exist, continuing...")
 
     # Sort according to creation date
     subdirs.sort(key=os.path.getctime)
@@ -187,14 +190,25 @@ def get_exp_IDs(tile_base_dir, tile_ID, verbose=False):
 
     tile_out_dir = get_tile_out_dir(tile_base_dir, tile_ID)
 
-    subdirs = matching_subdirs(tile_out_dir, "run_sp_GitFeGie")
+    pattern = "run_sp_GitFeGie"
+    subdirs = matching_subdirs(tile_out_dir, pattern)
 
+    if len(subdirs) == 0:
+        raise IOError(
+            f"No matching directory '{pattern}' in {tile_out_dir} found"
+        )
     if len(subdirs) != 1:
-        raise IOError(f"Exactly one matching directory in {tile_out_dir} expected, not {len(subdirs)}")
+        raise IOError(
+            f"Exactly one directory natching {pattern} in {tile_out_dir} "
+            + f"expected, not {len(subdirs)}"
+        )
 
     # Replace dot with dash in tile ID
     tile_ID_sp = re.sub(r"\.", "-", tile_ID)
-    exp_ID_file = f"{subdirs[0]}/find_exposures_runner/output/exp_numbers-{tile_ID_sp}.txt"
+    exp_ID_file = (
+        f"{subdirs[0]}/find_exposures_runner/output/"
+        + f"exp_numbers-{tile_ID_sp}.txt"
+    )
 
     exp_IDs = []
     with open(exp_ID_file) as f_in:
@@ -234,7 +248,10 @@ def get_paths(exp_base_dir, exp_shdu_IDs, pattern):
             number[n_subdirs] += 1
 
         if n_subdirs != 1:
-            msg = f"Exactly one matching directory in {path} expected, not {n_subdirs}"
+            msg = (
+                f"Exactly on directory matching {pattern} in {path} expected,"
+                + f"  not {n_subdirs}"
+            )
             print(msg)
             if n_subdirs == 0:
                 continue
@@ -253,9 +270,26 @@ def create_links_paths(tile_base_dir, tile_ID, paths):
         src = path
         dst = f"{tile_out_dir}/{tail}"
         if os.path.exists(dst):
-            print(f"Warning: {dst} already exists, no link created")
+            src_existing = os.readlink(dst)
+            if src_existing == src:
+                print(src, dst)
+                    #f"Warning: {src} <- {dst} already exists, no link created"
+                #)
+                continue
+            else:
+                idx = 1
+                dst_orig = dst
+                while True:
+                    dst = f"{dst_orig}_{idx}"
+                    if os.path.exists(dst):
+                        idx += 1
+                    else:
+                        #print("MKDEBUG new ", dst)
+                        #print(f"ln -s {src} {dst}")
+                        os.symlink(src, dst)
+                        break
         else:
-            print(f"ln -s {src} {dst}")
+            #print(f"ln -s {src} {dst}")
             os.symlink(src, dst)
 
 
@@ -285,6 +319,10 @@ def main(argv=None):
     for pattern in patterns:
         paths, number = get_paths(exp_base_dir, exp_shdu_IDs, pattern)
         print(number)
+        if "2159307-31" in paths:
+            print("found")
+        else:
+            print("not found")
 
         create_links_paths(tile_base_dir, tile_ID, paths)
 

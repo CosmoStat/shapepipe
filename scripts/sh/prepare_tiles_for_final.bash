@@ -70,7 +70,7 @@ if [ "$cat" == "final" ]; then
   INPUT="$pwd/$out_base/run_sp_Mc_*"
 elif [ "$cat" == "flag" ]; then
   run_dir="run_sp_combined_flag"
-  INPUT="$pwd/$out_base/run_sp_tile_Ma_*"
+  INPUT="$pwd/$out_base/run_sp_MaMa_*/mask_runner_run_1"
 else
   run_dir="run_sp_combined_image"
   INPUT="$pwd/$out_base/run_sp_Git_*"
@@ -90,7 +90,11 @@ if [ "$cat" == "final" ]; then
   )
 elif [ "$cat" == "flag" ]; then
   DIRS=(
+<<<<<<< HEAD
+	  "mask_runner_run_1"
+=======
 	  "mask_runner_run_2"
+>>>>>>> bd82f95ae96043c2de6ac577dae311c74a03e133
   )
   PATTERNS=(
 	  "pipeline_flag-*"
