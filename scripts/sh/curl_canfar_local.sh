@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 # Usage
-# ~/astro/repositories/github/shapepipe/scripts/sh/curl_canfar.sh 0.9 shapepipe/scripts/sh/init_run_exlusive_canfar.sh ID ind
+# ~/astro/repositories/github/shapepipe/scripts/sh/curl_canfar.sh 0.9 shapepipe/scripts/sh/init_run_exlusive_canfar.sh ID kind job
 
 SSL=~/.ssl/cadcproxy.pem
 N_SMP=2
@@ -19,12 +19,16 @@ cmd=$2
 # Kind ("tile" or "exp")
 kind=$3
 
+# Job number
+job=$4
+
 # Image ID; has to be last argument to work with xargs
-ID=$4
+ID=$5
 
 # command line arguments for remote script:
 # collect into string
-arg="-j $JOB -e $ID -n $N_SMP -k $kind"
+arg="-j $job -e $ID -n $N_SMP -k $kind"
 
+echo curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd" --data-urlencode "args=$arg"
 ID=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd" --data-urlencode "args=$arg"`
 echo $ID >> IDs.txt
