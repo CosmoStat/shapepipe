@@ -23,5 +23,8 @@ ID=$3
 arg="$ID $NCORE exp"
 
 echo
-ID=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd" --data-urlencode "args=$arg"`
+curl_cmd="curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d kcmd=$cmd\" --data-urlencode \"args=$arg\""
+echo $curl_cmd
+ID=`$curl_cmd`
+#ID=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd" --data-urlencode "args=$arg"`
 echo $ID >> IDs.txt
