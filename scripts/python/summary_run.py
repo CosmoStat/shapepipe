@@ -206,12 +206,13 @@ class job_data(object):
         case it is set to 1
     pattern: list, optional
         if not None, file pattern to match; defafult is `None`
-    output_dir: str, optional
-        output directory, defaul is "./output"
+    path_lef: str, optional
+        left (first) part of output directory, defaul is "./output"
     output_subdirs: str, optional
         output subdirectories if not `None`; default is `None`
-    output_subdirs_suffix: str, optional
-        output subdir suffix if not `None`; default is `None`
+    path_right: str, optional
+        right (last) part of output subdir suffix if not `None`;
+        default is `None`
     verbose: bool, optional
         verbose output if True; default is False
 
@@ -224,9 +225,9 @@ class job_data(object):
         key_expected,
         n_mult=None,
         pattern=None,
-        output_dir="./output",
+        path_left="./output",
         output_subdirs=None,
-        output_subdirs_suffix=None,
+        path_right=None,
         verbose=False,
     ):
         self._bit = bit
@@ -235,10 +236,10 @@ class job_data(object):
         self._key_expected = set_as_list(item=key_expected, n=len(modules))
         self._n_mult = set_as_list(item=n_mult, n=len(modules))
         self._pattern = set_as_list(item=pattern, n=len(modules), default="")
-        self._output_dir = output_dir
+        self._path_left = path_left
         self._output_subdirs = output_subdirs or [""]
-        self._output_subdirs_suffix = set_as_list(
-            output_subdirs_suffix, len(modules), default="."
+        self._path_right = set_as_list(
+            path_right, len(modules), default="."
         )
         self._verbose = verbose
 
@@ -333,7 +334,13 @@ class job_data(object):
         return names_unique
 
     def output_missing(
-        self, module, key_expected, names_in_dir, paths_in_dir, n_mult, par_runtime=None
+        self,
+        module,
+        key_expected,
+        names_in_dir,
+        paths_in_dir,
+        n_mult,
+        par_runtime=None,
     ):
         output_path = f"missing_job_{self._bit}_{module}.txt"
 
@@ -348,18 +355,12 @@ class job_data(object):
             match = pattern.search(name)
             if match:
                 IDs.append(match.group())
-
-                if match.group() == '2079613-1':
-                    print(name, path)
             else:
                 raise ValueError(f"No ID found in {name}")
 
 
         ## Count occurences
         ID_counts = Counter(IDs)
-
-        #import pdb
-        #pdb.set_trace()
 
         ## Add to missing if ocurence less than n_mult
         missing_IDs = []
@@ -379,10 +380,10 @@ class job_data(object):
 
         return missing_IDs_unique
 
-    def output_missing_job(self, missing_IDs):
+    def output_missing_job(self):
         output_path = f"missing_job_{self._bit}_all.txt"
 
-        missing_IDs_all = set(missing_IDs)
+        missing_IDs_all = set(self._missing_IDs_job)
 
         if len(missing_IDs_all) > 0:
             with open(output_path, "w") as f_out:
@@ -390,6 +391,42 @@ class job_data(object):
                     print(ID, file=f_out)
         else:
             logging.warning("no missing IDs in output_missing_job")
+
+    @classmethod
+    def get_last_full_path(self, base_and_subdir, matches):
+        """Get Last Full Path
+
+        Return full path of last file in list.
+
+        """
+        # Sort according to creation time
+        matches_sorted = sorted(
+            matches,
+            key=lambda entry: entry.name,
+        )
+
+        # Get most recent one
+        last = matches_sorted[-1]
+
+        # Get full path
+        full_path = os.path.join(base_and_subdir, last.name)
+
+        return full_path
+
+    @classmethod
+    def get_module_output_dir(self, full_path, module):
+        """Get Module Output Dir.
+
+        Return output directory name for given module.
+
+        """
+        directory = f"{full_path}/{module}/output"
+
+        # Some modules have special requirements 
+        if module == "setools_runner":
+            directory = f"{directory}/rand_split"
+
+        return directory
 
     def get_names_in_dir(self, iterable, module, idx):
 
@@ -400,8 +437,8 @@ class job_data(object):
         # Loop over subdirs
         for jdx, subdir in enumerate(iterable):
             base_and_subdir = (
-                f"{self._output_dir}/{subdir}/"
-                + f"{self._output_subdirs_suffix[idx]}"
+                f"{self._path_left}/{subdir}/"
+                + f"{self._path_right[idx]}"
             )
             if os.path.isdir(base_and_subdir):
 
@@ -419,25 +456,16 @@ class job_data(object):
                     if not matches:
                         continue
 
-                    # Sort according to creation time
-                    matches_sorted = sorted(
-                        matches,
-                        key=lambda entry: entry.name,
+                    full_path = self.get_last_full_path(
+                        base_and_subdir, matches
                     )
 
-                    # Get most recent one
-                    last = matches_sorted[-1]
-
-                    # Get full path
-                    full_path = os.path.join(base_and_subdir, last.name)
-
                     # Get module output directory
-                    directory = f"{full_path}/{module}/output"
+                    directory = self.get_module_output_dir(
+                        full_path, module
+                    )
 
-                    # Some modules have special requirements 
-                    if module == "setools_runner":
-                        directory = f"{directory}/rand_split"
-
+                    # Look over files
                     # os.path.whether exists is twice faster than try/except
                     if os.path.exists(directory):
                         with os.scandir(directory) as entries2:
@@ -446,6 +474,8 @@ class job_data(object):
                                 for entry2 in entries2
                                 if entry2.name.startswith(self._pattern[idx])
                             ]
+
+                            # Append matching files
                             names_in_dir.extend(files)
                             paths_in_dir.extend(
                                 [os.path.join(directory, file)
@@ -453,6 +483,17 @@ class job_data(object):
                             )
 
         return names_in_dir, paths_in_dir
+
+    def update_subdirs(self, par_runtime):
+        """Update Subdirs.
+
+        Update subdir names with runtime information if required.
+
+        """
+        if not isinstance(self._output_subdirs, list):
+            self._output_subdirs = get_par_runtime(
+                par_runtime, self._output_subdirs, kind="list"
+            )
 
     def check_numbers(self, par_runtime=None, indices=None):
         """Check Numbers.
@@ -469,14 +510,11 @@ class job_data(object):
 
         """
         # Update subdirs if not already set as list
-        if not isinstance(self._output_subdirs, list):
-            self._output_subdirs = get_par_runtime(
-                par_runtime, self._output_subdirs, kind="list"
-            )
+        self.update_subdirs(par_runtime)
 
+        # Initialise variables
         self._paths_in_dir = {}
-        self._missing_IDs_unique = []
-
+        self._missing_IDs_job = []
         n_missing_job = 0
 
         # Loop over modules
@@ -513,8 +551,8 @@ class job_data(object):
             n_missing = n_expected - n_found
 
             n_missing_explained = 0
-            if False and n_missing > 0:
-                if module == "setools_runner":
+            if n_missing > 0:
+                if False and module == "setools_runner":
                     (
                         paths_in_dir,
                         names_in_dir,
@@ -535,7 +573,7 @@ class job_data(object):
 
             # Write missing IDs for module to file
             if n_missing > 0:
-                missing_IDs_unique = self.output_missing(
+                missing_IDs = self.output_missing(
                     module,
                     self._key_expected[idx],
                     names_in_dir,
@@ -544,11 +582,11 @@ class job_data(object):
                     par_runtime=par_runtime,
                 )
                 n_missing_job += n_missing
-                self._missing_IDs_unique.extend(missing_IDs_unique)
+                self._missing_IDs_job.extend(missing_IDs)
 
         # Write missing IDs for entire job to file
         if n_missing_job > 0:
-            self.output_missing_job(self._missing_IDs_unique)
+            self.output_missing_job()
 
 
 def get_par_runtime(par_runtime, key, kind="n"):
@@ -638,7 +676,7 @@ def main(argv=None):
         ["tile_IDs", "tile_IDs", "exposures"],
         pattern=["CFIS_", "", ""],
         n_mult=[1 * n_link, 1, 3],
-        output_dir=f"{main_dir}/output",
+        path_left=f"{main_dir}/output",
         verbose=verbose,
     )
 
@@ -648,7 +686,7 @@ def main(argv=None):
         ["uncompress_fits_runner", "merge_headers_runner", "split_exp_runner"],
         ["tile_IDs", 0, "3*n_shdus+n_exposures"],
         n_mult=[1, 1, 1],
-        output_dir=f"{main_dir}/output",
+        path_left=f"{main_dir}/output",
         verbose=verbose,
     )
 
@@ -657,7 +695,7 @@ def main(argv=None):
         "run_sp_combined_flag",
         ["mask_runner_run_1"],
         ["tile_IDs"],
-        output_dir=f"{main_dir}/output",
+        path_left=f"{main_dir}/output",
         verbose=verbose,
     )
 
@@ -666,7 +704,7 @@ def main(argv=None):
         "run_sp_combined_flag",
         ["mask_runner_run_2"],
         ["shdus"],
-        output_dir=f"{main_dir}/output",
+        path_left=f"{main_dir}/output",
         verbose=verbose,
     )
 
@@ -676,7 +714,7 @@ def main(argv=None):
         ["sextractor_runner"],
         ["tile_IDs"],
         n_mult=2,
-        output_dir=f"{main_dir}/tile_runs",
+        path_left=f"{main_dir}/tile_runs",
         output_subdirs=[f"{tile_ID}/output" for tile_ID in list_tile_IDs_dot],
         verbose=verbose,
     )
@@ -696,9 +734,9 @@ def main(argv=None):
         ],  # "psfex_interp_runner"],
         "shdus",
         n_mult=[2, 2, 2],  # 1],
-        output_dir=f"{main_dir}/exp_runs",
+        path_left=f"{main_dir}/exp_runs",
         output_subdirs="shdus",
-        output_subdirs_suffix="output",
+        path_right="output",
         verbose=verbose,
     )
 
@@ -713,7 +751,17 @@ def main(argv=None):
         ],
         "tile_IDs",
         n_mult=[1, 1, 1, 4],
-        output_dir=f"{main_dir}/tile_runs",
+        path_left=f"{main_dir}/tile_runs",
+        output_subdirs=[f"{tile_ID}/output" for tile_ID in list_tile_IDs_dot],
+        verbose=verbose,
+    )
+
+    jobs["128"] = job_data(
+        "128",
+        "run_sp_tile_ngmix_Ng1u",
+        ["ngmix_runner"],
+        "tile_IDs",
+        path_left=f"{main_dir}/tile_runs",
         output_subdirs=[f"{tile_ID}/output" for tile_ID in list_tile_IDs_dot],
         verbose=verbose,
     )
@@ -739,8 +787,8 @@ def main(argv=None):
 
     print_par_runtime(par_runtime, verbose=verbose)
 
-    #for key in ["2", "4", "8", "16", "32", "64"]:
-    for key in ["32", "64"]:
+    for key in ["2", "4", "8", "16", "32", "64", "128"]:
+    #for key in ["128"]:
         job = jobs[key]
         job.print_intro()
         job.check_numbers(par_runtime=par_runtime)

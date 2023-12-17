@@ -55,8 +55,8 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    -n, --n_smp N_SMP\n
    \tnumber of jobs (SMP mode only), default from original config files\n
    --nsh_step NSTEP\n
-   --nsh_jobs NJOB\n
    \tnumber of shape measurement parallel jobs, default=$nsh_jobs\n
+   --nsh_jobs NJOB\n
    \tnumber of objects per parallel shape module call, \n
    \tdefault: optimal number is computed\n
    --nsh_max NMAX\n
@@ -432,7 +432,7 @@ if [[ $do_job != 0 ]]; then
   ### Prepare config files
   n_min=0
   if [[ $nsh_step == -1 ]]; then
-    n_obj=`get_number_objects.py`
+    n_obj=`get_number_objects`
     nsh_step=`echo "$(($n_obj/$nsh_jobs))"`
   fi
 

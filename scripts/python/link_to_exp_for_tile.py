@@ -218,6 +218,8 @@ def get_exp_IDs(tile_base_dir, tile_ID, verbose=False):
             ID = re.sub("[a-zA-Z]", "", name) 
             exp_IDs.append(ID)
 
+    if verbose:
+        print("Exposures: ", exp_IDs)
     return exp_IDs
 
 
@@ -237,6 +239,7 @@ def get_paths(exp_base_dir, exp_shdu_IDs, pattern):
     number = {}
     paths = []
     for exp_shdu_ID in exp_shdu_IDs:
+
         name = f"{exp_base_dir}/{exp_shdu_ID}/output"
         path = os.path.abspath(name)
         subdirs = matching_subdirs(path, pattern)
@@ -253,14 +256,18 @@ def get_paths(exp_base_dir, exp_shdu_IDs, pattern):
                 + f"  not {n_subdirs}"
             )
             print(msg)
+            # More than one match: sort according to name = creation time 
+            subdirs = sorted(subdirs)
             if n_subdirs == 0:
                 continue
-        paths.append(f"{subdirs[0]}")
+
+        # Append matching subdir; if more than one append newest
+        paths.append(f"{subdirs[-1]}")
 
     return paths, number
 
 
-def create_links_paths(tile_base_dir, tile_ID, paths):
+def create_links_paths(tile_base_dir, tile_ID, paths, verbose=False):
 
     tile_out_dir = get_tile_out_dir(tile_base_dir, tile_ID)
 
@@ -272,8 +279,9 @@ def create_links_paths(tile_base_dir, tile_ID, paths):
         if os.path.exists(dst):
             src_existing = os.readlink(dst)
             if src_existing == src:
-                print(src, dst)
-                    #f"Warning: {src} <- {dst} already exists, no link created"
+                if verbose:
+                    #print("link {src} <- {dst}")
+                    f"Warning: {src} <- {dst} already exists, no link created"
                 #)
                 continue
             else:
@@ -284,12 +292,13 @@ def create_links_paths(tile_base_dir, tile_ID, paths):
                     if os.path.exists(dst):
                         idx += 1
                     else:
-                        #print("MKDEBUG new ", dst)
-                        #print(f"ln -s {src} {dst}")
+                        if verbose:
+                            print(f"link {src} <- {dst}")
                         os.symlink(src, dst)
                         break
         else:
-            #print(f"ln -s {src} {dst}")
+            if verbose:
+                print(f"link {src} <- {dst}")
             os.symlink(src, dst)
 
 
@@ -319,12 +328,8 @@ def main(argv=None):
     for pattern in patterns:
         paths, number = get_paths(exp_base_dir, exp_shdu_IDs, pattern)
         print(number)
-        if "2159307-31" in paths:
-            print("found")
-        else:
-            print("not found")
 
-        create_links_paths(tile_base_dir, tile_ID, paths)
+        create_links_paths(tile_base_dir, tile_ID, paths, verbose=verbose)
 
 
     return 0
