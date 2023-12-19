@@ -9,6 +9,7 @@ ID=-1
 N_SMP=1
 kind=-1
 dry_run=0
+nsh_jobs=8
 
 ## Help string
 usage="Usage: $(basename "$0") -j JOB -e ID  -k KIND [OPTIONS]
@@ -130,12 +131,33 @@ if [ "$dry_run" == "0" ]; then
     ln -s $basedir/output/run_sp_combined_flag
   fi
 
-  # Remove unfinished ngmix dirs
-  if [ -e "run_sp_tile_ngmix_Ng1u/ngmix_runner" ]; then
-    echo "previous empty ngmix run found, removing"
-    n_out=`ls -rlt run_sp_tile_ngmix_Ng7u/ngmix_runner/output | wc -l`
-    if [ "$n_out" == "1" ]; then
-      rm -rf run_sp_tile_ngmix_Ng*u
+  # Indentify and remove unfinished ngmix dirs
+  min_n_out=2
+  for k in $(seq 1 $nsh_jobs); do
+    ngmix_run="run_sp_tile_ngmix_Ng${k}u/ngmix_runner"
+    if [ -e "$ngmix_run" ]; then
+      ngmix_out="$ngmix_run/output"
+      n_out=`ls -rlt $ngmix_out | wc -l`
+      if [ "$n_out" -lt "$min_n_out" ]; then
+          min_n_out=$n_out
+      fi
+      #echo $k $n_out $min_n_out
+    else
+      echo "ngmix separated run #$k not found"
+      min_n_out=0
+    fi
+  done
+  if [ "$min_n_out" -lt "2" ]; then
+    echo "At least one ngmix separated run no output files"
+    for k in $(seq 1 $nsh_jobs); do
+      cmd="rm -rf run_sp_tile_ngmix_Ng${k}u"
+      echo $cmd
+      `$cmd`
+    done
+  else
+    if [ "$job" == "128" ]; then
+      echo "ngmix found complete, all is well, exiting"
+      exit 0
     fi
   fi
 

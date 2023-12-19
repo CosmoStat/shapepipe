@@ -3,6 +3,7 @@
 import sys
 import os
 import re
+import fnmatch
 
 import logging
 
@@ -336,12 +337,14 @@ class job_data(object):
     def output_missing(
         self,
         module,
-        key_expected,
-        names_in_dir,
-        paths_in_dir,
-        n_mult,
+        idx,
         par_runtime=None,
     ):
+        key_expected = self._key_expected[idx]
+        names_in_dir = self._names_in_dir[idx]
+        paths_in_dir = self._paths_in_dir[idx]
+        n_mult = self._n_mult[idx]
+
         output_path = f"missing_job_{self._bit}_{module}.txt"
 
         list_expected = get_par_runtime(par_runtime, key_expected, kind="list")
@@ -428,11 +431,46 @@ class job_data(object):
 
         return directory
 
+    def get_matches_final(self, directory, idx):
+
+        # Look over files
+        # os.path.whether exists is twice faster than try/except
+
+        if os.path.exists(directory):
+            pattern =  f"{self._pattern[idx]}*"
+            for entry2 in os.scandir(directory):
+                if (
+                    entry2.is_file()
+                    and (
+                        fnmatch.fnmatch(entry2.name, pattern)
+                    )
+                ):
+                    # Append matching files
+                    self._names_in_dir[idx].append(entry2.name)
+                    self._paths_in_dir[idx].append(
+                        os.path.join(directory, entry2.name)
+                    )
+
+        #if os.path.exists(directory):
+            #with os.scandir(directory) as entries2:
+                #files = [
+                    #entry2.name
+                    #for entry2 in entries2
+                    #if entry2.name.startswith(self._pattern[idx])
+                #]
+
+                ## Append matching files
+                #self._names_in_dir[idx].extend(files)
+                #self._paths_in_dir[idx].extend(
+                    #[os.path.join(directory, file)
+                    #for file in files]
+                #)
+
     def get_names_in_dir(self, iterable, module, idx):
 
-        # Initialise output file names
-        names_in_dir = []
-        paths_in_dir = []
+        # Initialise output file names and paths
+        self._names_in_dir[idx] = []
+        self._paths_in_dir[idx] = []
 
         # Loop over subdirs
         for jdx, subdir in enumerate(iterable):
@@ -465,24 +503,8 @@ class job_data(object):
                         full_path, module
                     )
 
-                    # Look over files
-                    # os.path.whether exists is twice faster than try/except
-                    if os.path.exists(directory):
-                        with os.scandir(directory) as entries2:
-                            files = [
-                                entry2.name
-                                for entry2 in entries2
-                                if entry2.name.startswith(self._pattern[idx])
-                            ]
-
-                            # Append matching files
-                            names_in_dir.extend(files)
-                            paths_in_dir.extend(
-                                [os.path.join(directory, file)
-                                for file in files]
-                            )
-
-        return names_in_dir, paths_in_dir
+                    # Find matching file names and paths
+                    self.get_matches_final(directory, idx)
 
     def update_subdirs(self, par_runtime):
         """Update Subdirs.
@@ -513,6 +535,7 @@ class job_data(object):
         self.update_subdirs(par_runtime)
 
         # Initialise variables
+        self._names_in_dir = {}
         self._paths_in_dir = {}
         self._missing_IDs_job = []
         n_missing_job = 0
@@ -528,13 +551,11 @@ class job_data(object):
                 iterable = tqdm(iterable, desc="subdirs", leave=True)
 
             # Get output file names and paths
-            names_in_dir, paths_in_dir = self.get_names_in_dir(
+            self.get_names_in_dir(
                 iterable,
                 module,
                 idx,
             )
-
-            self._paths_in_dir[idx] = paths_in_dir
 
             # If expected is string: Update parameter with runtime value
             # and set as integer
@@ -546,16 +567,18 @@ class job_data(object):
                 n_expected_base = self._key_expected[idx]
 
             # Get some numbers
-            n_found = len(names_in_dir)
+            n_found = len(self._names_in_dir[idx])
             n_expected = n_expected_base * self._n_mult[idx]
             n_missing = n_expected - n_found
 
             n_missing_explained = 0
             if n_missing > 0:
+                # TODO: make check_special class function, deal with
+                # paths, names in dir
                 if False and module == "setools_runner":
                     (
-                        paths_in_dir,
-                        names_in_dir,
+                        self._paths_in_dir[idx],
+                        self._names_in_dir[idx],
                         n_missing_explained,
                     ) = check_special(module, paths_in_dir, names_in_dir)
 
@@ -575,10 +598,7 @@ class job_data(object):
             if n_missing > 0:
                 missing_IDs = self.output_missing(
                     module,
-                    self._key_expected[idx],
-                    names_in_dir,
-                    paths_in_dir,
-                    self._n_mult[idx],
+                    idx,
                     par_runtime=par_runtime,
                 )
                 n_missing_job += n_missing
