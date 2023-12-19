@@ -6,8 +6,9 @@
 ## Default values
 job=-1
 ID=-1
-n_SMP=1
+N_SMP=1
 kind=-1
+dry_run=0
 
 
 # TODO: psf
@@ -23,8 +24,10 @@ usage="Usage: $(basename "$0") -j JOB -e ID  -k KIND [OPTIONS]
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    -k, --kind KIND\n
     \timage kind, allowed are 'tile' and 'exp'\n
-   -n, --n_SMP N_SMOp\n
+   -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default from original config files\n
+   -n, --dry_run\n
+    \tdry run, no actuall processing\n
 "
 
 ## Help if no arguments                                                         
@@ -48,7 +51,7 @@ while [ $# -gt 0 ]; do
       ID="$2"                                                            
       shift                                                                     
       ;;
-    -n|--n_SMP)                                                                 
+    -N|--N_SMP)                                                                 
       n_SMP="$2"                                                                
       shift                                                                     
       ;;                                                                        
@@ -56,6 +59,9 @@ while [ $# -gt 0 ]; do
       kind="$2"                                                                
       shift                                                                     
       ;;                                                                        
+    -n|--dry_run)
+      dry_run=1
+      ;;
   esac                                                                          
   shift                                                                         
 done
@@ -78,6 +84,10 @@ fi
 
 echo "start init_run_exclusive_canfar"
 
+if [ "$dry_run" == 1 ]; then
+  echo "in dry run mode"
+fi
+
 . /opt/conda/etc/profile.d/conda.sh
 
 conda activate shapepipe
@@ -86,47 +96,59 @@ basedir=$HOME/cosmostat/P3_v2/psfex
 cd $basedir
 
 
-echo "ID=$ID n_SMP=$n_SMP kind=$kind"
+if [ "$dry_run" == "0" ]; then
 
-if [ "$kind" == "tile" ]; then
-  rm -rf tile_runs/$ID/output/run_exp_SxSePsf*
-  link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs
+  if [ "$kind" == "tile" ]; then
+    rm -rf tile_runs/$ID/output/run_exp_SxSePsf*
+    link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs
+  fi
+
+  cd ${kind}_runs
+
+  if [ ! -d "$ID" ]; then
+    mkdir $ID
+  fi
+
+  cd $ID
+  pwd
+
+  if [ ! -d "output" ]; then
+    mkdir output
+  fi
+
+  cd output
+
+  if [ ! -f log_exp_headers.sqlite ]; then
+    ln -s $basedir/output/log_exp_headers.sqlite
+  fi
+
+  # Remove potentially obsolete link
+  #rm run_sp_exp_SpMh*
+  #rm  run_sp_MaMa_*
+
+  for dir in $basedir/output/run_sp_*; do
+  ln -sf $dir
+  done
+  if [ ! -e run_sp_combined_flag ]; then
+    ln -s $basedir/output/run_sp_combined_flag
+  fi
+
+  # Remove unfinished ngmix dirs
+  if [ -e "run_sp_tile_ngmix_Ng1u/ngmix_runner" ]; then
+    echo "previous empty ngmix run found, removing"
+    n_out=`ls -rlt run_sp_tile_ngmix_Ng7u/ngmix_runner/output | wc -l`
+    if [ "$n_out" == "1" ]; then
+      rm -rf run_sp_tile_ngmix_Ng*u
+    fi
+  fi
+
+  cd ..
+  update_runs_log_file.py
+
+  echo -n "pwd: "
+  pwd
+
 fi
-
-cd ${kind}_runs
-
-if [ ! -d "$ID" ]; then
-  mkdir $ID
-fi
-
-cd $ID
-
-if [ ! -d "output" ]; then
-  mkdir output
-fi
-
-cd output
-
-if [ ! -f log_exp_headers.sqlite ]; then
-  ln -s $basedir/output/log_exp_headers.sqlite
-fi
-
-# Remove potentially obsolete link
-#rm run_sp_exp_SpMh*
-#rm  run_sp_MaMa_*
-
-for dir in $basedir/output/run_sp_*; do
- ln -sf $dir
-done
-if [ ! -e run_sp_combined_flag ]; then
-  ln -s $basedir/output/run_sp_combined_flag
-fi
-
-cd ..
-update_runs_log_file.py
-
-echo -n "pwd: "
-pwd
 
 #export SP_RUN=.
 #export SP_CONFIG=$HOME/shapepipe/example/cfis
@@ -135,10 +157,15 @@ pwd
 echo -n "environment: "
 echo $CONDA_PREFIX
 
-cmd="job_sp_canfar.bash -p psfex -j $job -e $ID -n $n_SMP"
-echo "Running commnd $cmd ..."
+cmd="job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP"
+echo -n "Running commnd '$cmd' ..."
 
-$cmd
+if [ "$dry_run" == 1 ]; then
+  echo " dry run"
+else
+  echo
+  $cmd
+fi
 
 cd $basedir
 
