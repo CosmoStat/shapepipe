@@ -11,6 +11,9 @@ kind=-1
 dry_run=0
 nsh_jobs=8
 
+
+# TODO: psf
+
 ## Help string
 usage="Usage: $(basename "$0") -j JOB -e ID  -k KIND [OPTIONS]
 \n\nOptions:\n
@@ -80,7 +83,7 @@ if [ "kind" == "-1" ]; then
   exit 4
 fi
 
-echo "start init run exclusive canfar"
+echo "start init_run_exclusive_canfar"
 
 if [ "$dry_run" == 1 ]; then
   echo "in dry run mode"
