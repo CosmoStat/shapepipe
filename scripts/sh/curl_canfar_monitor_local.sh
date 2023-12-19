@@ -16,8 +16,8 @@ type=$1
 echo "type=$type"
 
 while [ 1 ]; do
-  ID=`tail -n 1 IDs.txt`
-  cmd="curl -E $SSL $SESSION/$ID?view=$type"
+  session_ID=`tail -n 1 session_IDs.txt`
+  cmd="curl -E $SSL $SESSION/$session_ID?view=$type"
   echo $cmd
   $cmd
 done

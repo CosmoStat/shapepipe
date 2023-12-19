@@ -9,6 +9,9 @@ ID=-1
 n_SMP=1
 kind=-1
 
+
+# TODO: psf
+
 ## Help string
 usage="Usage: $(basename "$0") -j JOB -e ID  -k KIND [OPTIONS]
 \n\nOptions:\n
@@ -73,7 +76,7 @@ if [ "kind" == "-1" ]; then
   exit 4
 fi
 
-echo "start init run exclusive canfar"
+echo "start init_run_exclusive_canfar"
 
 . /opt/conda/etc/profile.d/conda.sh
 
