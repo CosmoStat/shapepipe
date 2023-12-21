@@ -312,15 +312,6 @@ class Mask(object):
             f'{self._img_prefix}'
             + f'{self._outname_base}{self._img_number}.fits'
         )
-        if (
-            os.path.exists(f"output/run_sp_MaMa_2023-11-21_06-11-21/mask_runner_run_1/output/{output_file_name}")
-            or os.path.exists(f"output/run_sp_MaMa_2023-11-21_06-11-21/mask_runner_run_2/output/{output_file_name}")
-        ):
-            print("MKDEBUG skipping ", output_file_name)
-            return None, None
-        else:
-            print("MKDEBUG processing ", output_file_name)
-
 
         if self._config['MD']['make']:
             self.missing_data()
