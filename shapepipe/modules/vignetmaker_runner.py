@@ -2,14 +2,14 @@
 
 Module runner for ``vignetmaker``.
 
-:Author: Axel Guinot
+:Authors: Axel Guinot, Martin Kilbinger
 
 """
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.vignetmaker_package import vignetmaker as vm
 
-from shapepipe.pipeline.run_log import get_last_dir
+from shapepipe.pipeline.run_log import get_last_dir, get_all_dirs
 
 
 @module_runner(
@@ -91,10 +91,19 @@ def vignetmaker_runner(
         elif mode == 'MULTI-EPOCH':
             # Fetch image directory and patterns
             modules = config.getlist(module_config_sec, 'ME_IMAGE_DIR')
-            image_dir = []
+            image_dirs = []
             for module in modules:
-                last_dir = get_last_dir(run_dirs['run_log'], module)
-                image_dir.append(last_dir)
+                module_name = module.split(":")[-1]
+                if "last" in module:
+                    dirs = [get_last_dir(run_dirs['run_log'], module_name)]
+                elif "all" in module:
+                    dirs = get_all_dirs(run_dirs['run_log'], module_name)
+                else:
+                    raise ValueError(
+                        "Expected qualifier 'last:' or 'all' before module"
+                        + f" '{module}' in config entry 'ME_IMAGE_DIR'")
+                image_dirs.append(dirs)
+
             image_pattern = config.getlist(
                 module_config_sec,
                 'ME_IMAGE_PATTERN',
@@ -103,7 +112,7 @@ def vignetmaker_runner(
             f_wcs_path = config.getexpanded(module_config_sec, 'ME_LOG_WCS')
 
             # Process inputs
-            vm_inst.process_me(image_dir, image_pattern, f_wcs_path, radius)
+            vm_inst.process_me(image_dirs, image_pattern, f_wcs_path, radius)
 
         # Invalid mode
         else:

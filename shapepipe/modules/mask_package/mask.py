@@ -113,6 +113,7 @@ class Mask(object):
         # Set error flag
         self._err = False
 
+
     def _get_config(self):
         """Get Config.
 

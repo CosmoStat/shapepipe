@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Name: job_sp.bash
+# Name: job_sp_canfar.bash
 # Description: General script to process one or more tiles
 #              with all contributing exposures.
 #              This works as job submission script for
@@ -10,40 +10,35 @@
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
 
-# VM home, required for canfar run.
-## On other machines set to $HOME
-export VM_HOME=/home/ubuntu
-if [ ! -d "$VM_HOME" ]; then
-    export VM_HOME=$HOME
-fi
-
 # Command line arguments
 ## Default values
 job=255
-#config_dir='vos:cfis/cosmostat/kilbinger/cfis'
-config_dir=$VM_HOME/shapepipe/example/cfis
+config_dir=$HOME/shapepipe/example/cfis
 psf='mccd'
 retrieve='vos'
 star_cat_for_mask='onthefly'
-results='cosmostat/kilbinger/results_v1'
+exclusive=''
+results='cosmostat/kilbinger/results_v2'
 n_smp=-1
 nsh_step=-1
 nsh_max=-1
 nsh_jobs=8
 
 ## Help string
-usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
+usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
 \n\nOptions:\n
    -h\tthis message\n
    -j, --job JOB\tRunning JOB, bit-coded\n
    \t   1: retrieve images (online if method=vos)\n
    \t   2: prepare images (offline)\n
-   \t   4: mask (online)\n
-   \t   8: detection of galaxies on tiles; processing of stars on exposures (offline)\n
-   \t  16: galaxy selection on tiles (offline)\n
-   \t  32: shapes and morphology (offline)\n
-   \t  64: paste catalogues (offline)\n
-   \t 128: upload results (online)\n
+   \t   4: mask tiles (online if star_cat_for_mask=onthefly)\n
+   \t   8: mask exposures (online if star_cat_for_mask=onthefly)\n
+   \t  16: detection of galaxies on tiles (offline)\n
+   \t  32: processing of stars on exposures (offline)\n
+   \t  64: galaxy selection on tiles (offline)\n
+   \t 128: shapes and morphology (offline)\n
+   \t 256: paste catalogues (offline)\n
+   \t 512: upload results (online)\n
    -c, --config_dir DIR\n
    \t config file directory, default='$config_dir'\n
    -p, --psf MODEL\n
@@ -53,13 +48,15 @@ usage="Usage: $(basename "$0") [OPTIONS] TILE_ID_1 [TILE_ID_2 [...]]
    -s, --star_cat_for_mask\n
    \tcatalogue for masking bright stars, allowed are 'onthefly', 'save',\n
    \tdefault is '${star_cat_for_mask}'\n
+   -e, --exclusive ID\n
+   \texclusive input filer number string ID (default: None)\n
    -o, --output_dir\n
    \toutput (upload) directory on vos:cfis, default='$results'\n
-   -n, --n_smp\n
+   -n, --n_smp N_SMP\n
    \tnumber of jobs (SMP mode only), default from original config files\n
    --nsh_step NSTEP\n
-   --nsh_jobs NJOB\n
    \tnumber of shape measurement parallel jobs, default=$nsh_jobs\n
+   --nsh_jobs NJOB\n
    \tnumber of objects per parallel shape module call, \n
    \tdefault: optimal number is computed\n
    --nsh_max NMAX\n
@@ -76,7 +73,6 @@ if [ -z $1 ]; then
 fi
 
 ## Parse command line
-TILE_ARR=()
 while [ $# -gt 0 ]; do
   case "$1" in
     -h)
@@ -103,7 +99,11 @@ while [ $# -gt 0 ]; do
       star_cat_for_mask="$2"
       shift
       ;;
-    -o|--output_dir)
+    -e|--exclusive)
+      exclusive="$2"
+      shift
+      ;;
+     -o|--output_dir)
       results="$2"
       shift
       ;;
@@ -122,9 +122,6 @@ while [ $# -gt 0 ]; do
     --nsh_jobs)
       nsh_jobs="$2"
       shift
-      ;;
-    *)
-      TILE_ARR+=("$1")
       ;;
   esac
   shift
@@ -146,23 +143,14 @@ if [ "$retrieve" != "vos" ] && [ "$retrieve" != "symlink" ]; then
   exit 5
 fi
 
-n_tile=${#TILE_ARR[@]}
-if [ "$n_tile" == "0" ]; then
-  echo "No tile ID given"
-  exit 3
-fi
-
 if [ $nsh_max != -1 ]; then
   nsh_step=$nsh_max
 fi
 
-# For tar archives. Should be unique to each job
-export ID=`echo ${TILE_ARR[@]} | tr ' ' '_'`
+# For tar archives. TODO: Should be unique to each job
+export ID="test"
 
 ## Paths
-
-# SExtractor library bug work-around
-export PATH="$PATH:$VM_HOME/bin"
 
 ## Path variables used in shapepipe config files
 
@@ -191,7 +179,7 @@ STOP=1
 VERBOSE=1
 
 # VCP options
-export CERTFILE=$VM_HOME/.ssl/cadcproxy.pem
+export CERTFILE=$HOME/.ssl/cadcproxy.pem
 export VCP="vcp --certfile=$CERTFILE"
 
 
@@ -252,9 +240,16 @@ function command_cfg_shapepipe() {
     local config_name=$1
     local str=$2
     local _n_smp=$3 
+    local _exclusive=$4
+
+    if [ "$exclusive" != "" ]; then
+      exclusive_flag="-e $_exclusive"
+    else
+      exclusive_flag=""
+    fi
 
     config_upd=$(set_config_n_smp $config_name $_n_smp)
-    local cmd="shapepipe_run -c $config_upd"
+    local cmd="shapepipe_run -c $config_upd $exclusive_flag"
     command_sp "$cmd" "$str"
 }
 
@@ -321,9 +316,7 @@ function update_config() {
 
 ### Start ###
 
-echo "Start"
-
-echo "Processing $n_tile tile(s)"
+echo "Start processing"
 
 # Create input and output directories
 mkdir -p $SP_RUN
@@ -333,25 +326,25 @@ mkdir -p $SP_CONFIG_MOD
 
 # Processing
 
+## Check for input tile list
+#if [ ! -e $TILE_NUMBERS_PATH ]; then
+  #echo "Tile numbers file $TILE_NUMBERS_PATH not found, exiting"
+#fi
+
+### Retrieve config files
+if [[ $config_dir == *"vos:"* ]]; then
+  command_sp "$VCP $config_dir ." "Retrieve shapepipe config files"
+else
+  if [[ ! -L cfis ]]; then
+    command_sp "ln -s $config_dir cfis" "Retrieve shapepipe config files"
+  fi
+fi
+
+
 ## Retrieve config files and images (online if retrieve=vos)
 ## Retrieve and save star catalogues for masking (if star_cat_for_mask=save)
 (( do_job= $job & 1 ))
 if [[ $do_job != 0 ]]; then
-
-  # Write tile numbers to ASCII input file
-  rm -rf $TILE_NUMBERS_PATH
-  for TILE in ${TILE_ARR[@]}; do
-    echo $TILE >> $TILE_NUMBERS_PATH
-  done
-
-  ### Retrieve config files
-  if [[ $config_dir == *"vos:"* ]]; then
-    command_sp "$VCP $config_dir ." "Retrieve shapepipe config files"
-  else
-    if [[ ! -L cfis ]]; then
-      command_sp "ln -s $config_dir cfis" "Retrieve shapepipe config files"
-    fi
-  fi
 
   ### Retrieve files
   command_sp "shapepipe_run -c $SP_CONFIG/config_GitFeGie_$retrieve.ini" "Retrieve images"
@@ -374,54 +367,72 @@ fi
 if [[ $do_job != 0 ]]; then
 
   ### Uncompress tile weights
-  command_cfg_shapepipe "config_tile_Uz.ini" "Run shapepipe (uncompress tile weights)" $n_smp
+  command_cfg_shapepipe "config_tile_Uz.ini" "Run shapepipe (uncompress tile weights)" $n_smp $exclusive
 
   ### Split images into single-HDU files, merge headers for WCS info
-  command_cfg_shapepipe "config_exp_SpMh.ini" "Run shapepipe (split images, merge headers)" $n_smp
+  command_cfg_shapepipe "config_exp_SpMh.ini" "Run shapepipe (split images, merge headers)" $n_smp $exclusive
 
 fi
 
-## Mask tiles and exposures: add star, halo, and Messier object masks (online if "star_cat_for_mask" is "onthefly")
+## Mask tiles: add star, halo, and Messier object masks (online if "star_cat_for_mask" is "onthefly")
 (( do_job= $job & 4 ))
 if [[ $do_job != 0 ]]; then
 
-  ### Mask tiles and exposures
-  command_cfg_shapepipe "config_MaMa_$star_cat_for_mask.ini" "Run shapepipe (mask)" $n_smp
+  ### Mask tiles
+  command_cfg_shapepipe "config_tile_Ma_$star_cat_for_mask.ini" "Run shapepipe (mask tiles)" $n_smp $exclusive
+
+fi
+
+## Mask exposures: add star, halo, and Messier object masks (online if "star_cat_for_mask" is "onthefly")
+(( do_job= $job & 8 ))
+if [[ $do_job != 0 ]]; then
+
+  ### Mask exposures
+  command_cfg_shapepipe "config_exp_Ma_$star_cat_for_mask.ini" "Run shapepipe (mask exposures)" $n_smp $exclusive
 
 fi
 
 
 ## Remaining exposure processing (offline)
-(( do_job= $job & 8 ))
+(( do_job= $job & 16 ))
+if [[ $do_job != 0 ]]; then
+
+  ### Object detection on tiles
+  command_cfg_shapepipe "config_tile_Sx.ini" "Run shapepipe (tile detection)" $n_smp $exclusive
+
+fi
+
+## Exposure processing (offline)
+(( do_job= $job & 32 ))
 if [[ $do_job != 0 ]]; then
 
   ### Star detection, selection, PSF model. setools can exit with an error for CCD with insufficient stars,
   ### the script should continue
   STOP=0
-  command_cfg_shapepipe "config_tile_Sx_exp_${psf}.ini" "Run shapepipe (tile detection, exp $psf)" $n_smp
+  command_cfg_shapepipe "config_exp_${psf}.ini" "Run shapepipe (exp $psf)" $n_smp $exclusive
   STOP=1
 
 fi
 
 ## Process tiles up to shape measurement
-(( do_job= $job & 16 ))
+(( do_job= $job & 64 ))
 if [[ $do_job != 0 ]]; then
 
   ### PSF model letter: 'P' (psfex) or 'M' (mccd)
   letter=${psf:0:1}
   Letter=${letter^}
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_${Letter}iViSmVi.ini" "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)"
+  command_cfg_shapepipe "config_tile_${Letter}iViSmVi_canfar.ini" "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)" $n_smp $exclusive
 
 fi
 
 ## Shape measurement (offline)
-(( do_job= $job & 32 ))
+(( do_job= $job & 128 ))
 if [[ $do_job != 0 ]]; then
 
   ### Prepare config files
   n_min=0
   if [[ $nsh_step == -1 ]]; then
-    n_obj=`get_number_objects.py`
+    n_obj=`get_number_objects`
     nsh_step=`echo "$(($n_obj/$nsh_jobs))"`
   fi
 
@@ -450,7 +461,7 @@ if [[ $do_job != 0 ]]; then
 fi
 
 ## Create final catalogues (offline)
-(( do_job= $job & 64 ))
+(( do_job= $job & 256 ))
 if [[ $do_job != 0 ]]; then
 
   cat $SP_CONFIG/config_merge_sep_cats_template.ini | \
@@ -467,7 +478,7 @@ if [[ $do_job != 0 ]]; then
 fi
 
 ## Upload results (online)
-(( do_job= $job & 128 ))
+(( do_job= $job & 512 ))
 if [[ $do_job != 0 ]]; then
 
   ### module and pipeline log files
