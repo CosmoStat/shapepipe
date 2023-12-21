@@ -27,6 +27,7 @@ RUN apt-get update --allow-releaseinfo-change && \
     apt-get install libatlas-base-dev liblapack-dev libblas-dev -y && \
     apt-get install vim -y && \
     apt-get install locate -y && \
+    apt-get install curl -y && \
     apt-get clean
 
 RUN apt-get install acl -y && \
