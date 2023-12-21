@@ -42,7 +42,8 @@ def get_module_runs(subdirs):
     all_runs = {}
     for subdir in subdirs:
         runs = matching_subdirs(subdir, "_runner", tail=True)
-        all_runs[subdir] = runs
+        if len(runs) > 0:
+            all_runs[subdir] = runs
 
     return all_runs
 
