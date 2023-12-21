@@ -308,11 +308,6 @@ class Mask(object):
         Main function to create the mask.
 
         """
-        output_file_name = (
-            f'{self._img_prefix}'
-            + f'{self._outname_base}{self._img_number}.fits'
-        )
-
         if self._config['MD']['make']:
             self.missing_data()
 
