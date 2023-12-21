@@ -78,7 +78,7 @@ if [ "$exclusive" == "-1" ]; then
   exit 3
 fi
 
-if [ "kind" == "-1" ]; then
+if [ "$kind" == "-1" ]; then
   echo "No image kind indicated, use option -k"
   exit 4
 fi
@@ -99,6 +99,7 @@ cd $basedir
 
 if [ "$dry_run" == "0" ]; then
 
+  # Update links to exposure run directories
   if [ "$kind" == "tile" ]; then
     rm -rf tile_runs/$ID/output/run_exp_SxSePsf*
     link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs
@@ -127,42 +128,48 @@ if [ "$dry_run" == "0" ]; then
   #rm run_sp_exp_SpMh*
   #rm  run_sp_MaMa_*
 
+  # Update links to global run directories (GiFeGie, Uz, Ma?, combined_flag?)
   for dir in $basedir/output/run_sp_*; do
-  ln -sf $dir
+    ln -sf $dir
   done
   if [ ! -e run_sp_combined_flag ]; then
     ln -s $basedir/output/run_sp_combined_flag
   fi
 
-  # Indentify and remove unfinished ngmix dirs
-  min_n_out=2
-  for k in $(seq 1 $nsh_jobs); do
-    ngmix_run="run_sp_tile_ngmix_Ng${k}u/ngmix_runner"
-    if [ -e "$ngmix_run" ]; then
-      ngmix_out="$ngmix_run/output"
-      n_out=`ls -rlt $ngmix_out | wc -l`
-      if [ "$n_out" -lt "$min_n_out" ]; then
-          min_n_out=$n_out
-      fi
-      #echo $k $n_out $min_n_out
-    else
-      echo "ngmix separated run #$k not found"
-      min_n_out=0
-    fi
-  done
-  if [ "$min_n_out" -lt "2" ]; then
-    echo "At least one ngmix separated run no output files"
+  (( do_job= $job & 128 ))
+  if [[ $do_job != 0 ]]; then
+
+    # Indentify and remove unfinished ngmix dirs
+    min_n_out=2
     for k in $(seq 1 $nsh_jobs); do
-      cmd="rm -rf run_sp_tile_ngmix_Ng${k}u"
-      echo $cmd
-      `$cmd`
+      ngmix_run="run_sp_tile_ngmix_Ng${k}u/ngmix_runner"
+      if [ -e "$ngmix_run" ]; then
+        ngmix_out="$ngmix_run/output"
+        n_out=`ls -rlt $ngmix_out | wc -l`
+        if [ "$n_out" -lt "$min_n_out" ]; then
+            min_n_out=$n_out
+        fi
+        #echo $k $n_out $min_n_out
+      else
+        echo "ngmix separated run #$k not found"
+        min_n_out=0
+      fi
     done
-  else
-    if [ "$job" == "128" ]; then
-      echo "ngmix found complete, all is well, exiting"
-      exit 0
+    if [ "$min_n_out" -lt "2" ]; then
+      echo "At least one ngmix separated run no output files"
+      for k in $(seq 1 $nsh_jobs); do
+        cmd="rm -rf run_sp_tile_ngmix_Ng${k}u"
+        echo $cmd
+        `$cmd`
+      done
+    else
+      if [ "$job" == "128" ]; then
+        echo "ngmix found complete, all is well, exiting"
+        exit 0
+      fi
     fi
-  fi
+
+  fi 
 
   cd ..
   update_runs_log_file.py
@@ -171,10 +178,6 @@ if [ "$dry_run" == "0" ]; then
   pwd
 
 fi
-
-#export SP_RUN=.
-#export SP_CONFIG=$HOME/shapepipe/example/cfis
-#shapepipe_run -c $SP_CONFIG/config_exp_Pi.ini -e $ID
 
 echo -n "environment: "
 echo $CONDA_PREFIX
