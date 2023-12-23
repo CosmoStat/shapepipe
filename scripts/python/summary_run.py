@@ -24,7 +24,7 @@ def main(argv=None):
     list_tile_IDs_dot = get_IDs_from_file(tile_ID_path)
 
     # tile IDs with dashes
-    list_tile_IDs = replace_dot_dash(list_tile_IDs_dot)
+    list_tile_IDs = job_data.replace_dot_dash(list_tile_IDs_dot)
     n_tile_IDs = len(list_tile_IDs)
     n_CCD = 40
 
@@ -168,8 +168,8 @@ def main(argv=None):
 
     print_par_runtime(par_runtime, verbose=verbose)
 
-    #for key in ["2", "4", "8", "16", "32", "64", "128"]:
-    for key in ["128"]:
+    for key in ["2", "4", "8", "16", "32", "64", "128"]:
+    #for key in ["128"]:
         job = jobs[key]
         job.print_intro()
         job.check_numbers(par_runtime=par_runtime)

@@ -1,10 +1,4 @@
-#!/usr/bin/bash
-
-# --false-start --tcp-fastopen  faster
-
-# --http2   slower
-# --tlsv1.2 slower?
-# --insecure ?
+#!/usr/bin/env bash
 
 # -H "Accept-Encoding: gzip"    faster?
 
