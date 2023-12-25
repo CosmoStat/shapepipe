@@ -8,7 +8,7 @@ catalogue_, containing all required information to create a calibrated shear
 catalogue via _metacalibration_), a joint star catalogue, and PSF diagnostic plots.
 
 If main ShapePipe processing happened at the old canfar VM system (e.g. CFIS v0 and v1), go
-[here|vos_retrieve.md] for details how to retrieve the ShapePipe output files.
+[here](vos_retrieve.md) for details how to retrieve the ShapePipe output files.
 
 Some of the following steps pertain specifically to runs carried out on [canfar](https://www.canfar.net/en),
 but most are general.
