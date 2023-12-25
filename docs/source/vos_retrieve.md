@@ -47,3 +47,5 @@ on canfar. This system was used for the CFIS v0 and v1 runs, and is now obsolete
       untar_results -p PSF
       ```
       On success, `ShapePipe` output `fits` and `log` files will be now in various subdirs of the `output` directory.
+
+At this step all required `ShapePipe` resulting output files are available in the current working directory.
