@@ -158,24 +158,29 @@ fi
 
 cd output
 
-if [ ! -f log_exp_headers.sqlite ]; then
-  command "ln -s $basedir/output/log_exp_headers.sqlite" $dry_run
-fi
+if [ 0 == 1 ]; then
 
-# Remove potentially obsolete link
-#rm run_sp_exp_SpMh*
-#rm  run_sp_MaMa_*
+  if [ ! -f log_exp_headers.sqlite ]; then
+    command "ln -s $basedir/output/log_exp_headers.sqlite" $dry_run
+  fi
 
-# Update links to global run directories (GiFeGie, Uz, Ma?, combined_flag?)
-for dir in $basedir/output/run_sp_*; do
-  command "ln -sf $dir" $dry_run
-done
-if [ ! -e run_sp_combined_flag ]; then
-  command "ln -s $basedir/output/run_sp_combined_flag" $dry_run
+  # Remove potentially obsolete link
+  #rm run_sp_exp_SpMh*
+  #rm  run_sp_MaMa_*
+
+  # Update links to global run directories (GiFeGie, Uz, Ma?, combined_flag?)
+  for dir in $basedir/output/run_sp_*; do
+    command "ln -sf $dir" $dry_run
+  done
+  if [ ! -e run_sp_combined_flag ]; then
+    command "ln -s $basedir/output/run_sp_combined_flag" $dry_run
+  fi
+
 fi
 
 (( do_job= $job & 128 ))
 #if [[ $do_job != 0 ]]; then
+# The following is now dealt with in job_sh_canar.bash
 if [ 0 == 1 ]; then
 
   # Indentify and remove unfinished ngmix dirs
@@ -217,7 +222,10 @@ pwd
 echo -n "environment: "
 echo $CONDA_PREFIX
 
-command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP" $dry_run
+#command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP" $dry_run
+
+export SP_RUN=.
+command "shapepipe_run -c $HOME/shapepipe/example/cfis/config_exp_Pi.ini" $dry_run
 
 cd $basedir
 

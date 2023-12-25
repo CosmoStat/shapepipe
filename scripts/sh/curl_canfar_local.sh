@@ -14,7 +14,7 @@ job=-1
 ID=-1
 N_SMP=1
 kind=-1
-version=0.9
+version=1.0
 cmd_remote="shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
 dry_run=0
 
