@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Name: prepare_tiles_for_final.bash
+# Name: combine_runs.bash
 # Description: Create new shapepipe run directory with
 #              links to source files from combined existing runs
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
@@ -94,30 +94,27 @@ out_base="output"
 ## module: source input module runner sub-directory
 ## pattern: source file pattern
 
+run_out="run_sp_combined_$cat"
+
 if [ "$cat" == "final" ]; then
 
-  run_out="run_sp_combined"
   run_in="$pwd/$out_base/run_sp_Mc_*"
   module="make_catalog_runner"
   pattern="final_cat-*"
 
 elif [ "$cat" == "flag" ]; then
 
-  run_out="run_sp_combined_flag"
   run_in="$pwd/$out_base/run_sp_MaMa_*/mask_runner_run_1"
   module="mask_runner_run_1"
   pattenr="pipeline_flag-*"
 
 elif [ "$cat" == "image" ]; then
 
-  run_out="run_sp_combined_image"
   run_in="$pwd/$out_base/run_sp_Git_*"
   module="get_images_runner"
   pattern="CFIS_image-*"
 
 elif [ "$cat" == "psf" ]; then
-
-  run_out="run_sp_combined_psf"
 
   #MKDEBUG TODO: add option
   # v1
@@ -141,6 +138,7 @@ else
 
 fi
 
+
 OUTPUT="$pwd/$out_base/$run_out"
 mkdir -p $OUTPUT
 
@@ -152,20 +150,23 @@ outdir=$OUTPUT/$module/output
 mkdir -p $outdir
 
 ## identify source files
+
+# The following can result in an "Argument list too long" error
 #FILES=(`find $run_in -type f -name "$pattern" -print0 | xargs -0 echo`)
-#n_files=${#FILES[@]}
 
-## Look over source files
 i=0
-#for file in ${FILES[@]}; do
+for dir in $run_in; do
+  FILES=(`find $dir -type f -name "$pattern" -print0 | xargs -0 echo`)
 
-find $run_in -type f -name "$pattern" | while IFS= read -r file; do
+  ## Look over source files
+  for file in ${FILES[@]}; do
 
+  target=$file
+  link_name=$outdir/`basename $file`
+  link_s $target $link_name
+  ((i=i+1))
 
- target=$file
- link_name=$outdir/`basename $file`
- link_s $target $link_name
- ((i=i+1))
+  done
 
 done
 

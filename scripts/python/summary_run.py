@@ -147,6 +147,16 @@ def main(argv=None):
         verbose=verbose,
     )
 
+
+    jobs["1024"] = job_data(
+        "1024",
+        "run_sp_combined_psf",
+        ["psfex_interp_runner"],
+        "shdus",
+        path_left=f"{main_dir}/output",
+        verbose=verbose
+    )
+
     job_data.print_stats_header()
 
     for key in "1":
@@ -168,8 +178,8 @@ def main(argv=None):
 
     print_par_runtime(par_runtime, verbose=verbose)
 
-    for key in ["2", "4", "8", "16", "32", "64", "128"]:
-    #for key in ["128"]:
+    #for key in ["2", "4", "8", "16", "32", "64", "128"]:
+    for key in ["1024"]:
         job = jobs[key]
         job.print_intro()
         job.check_numbers(par_runtime=par_runtime)
