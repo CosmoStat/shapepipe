@@ -123,7 +123,7 @@ elif [ "$cat" == "psf" ]; then
   # v1
   #run_in="$pwf/$out_base/run_sp_exp_Pi_*"
   # v2
-  run_in="exp_runs/*/$out_base/"
+  run_in="$pwd/exp_runs/*/$out_base/"
 
   pattern="validation_psf-*"
   if [ "$psf" == "psfex" ]; then
@@ -152,12 +152,15 @@ outdir=$OUTPUT/$module/output
 mkdir -p $outdir
 
 ## identify source files
-FILES=(`find $run_in -name "$pattern"`)
-n_files=${#FILES[@]}
+#FILES=(`find $run_in -type f -name "$pattern" -print0 | xargs -0 echo`)
+#n_files=${#FILES[@]}
 
 ## Look over source files
 i=0
-for file in ${FILES[@]}; do
+#for file in ${FILES[@]}; do
+
+find $run_in -type f -name "$pattern" | while IFS= read -r file; do
+
 
  target=$file
  link_name=$outdir/`basename $file`
@@ -166,7 +169,8 @@ for file in ${FILES[@]}; do
 
 done
 
-echo " $n_files target files, $i links created/skipped"
+#echo " $n_files target files, $i links created/skipped"
+echo " $i total, "n_skipped skipped, "n_created links created"
 
 # Update log file
 update_runs_log_file.py
