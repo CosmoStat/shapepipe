@@ -6,7 +6,7 @@
 rm -f session_IDs.txt session_image_IDs.txt
 
 #script_local=$HOME/astro/repositories/github/shapepipe/scripts/sh/curl_canfar_local.sh
-script_local=./curl_canfar_local.sh
+script_local=curl_canfar_local.sh
 version="0.9"
 cmd_remote="shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
 kind="$1"
