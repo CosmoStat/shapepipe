@@ -9,6 +9,6 @@ on canfar. This system was used for the CFIS v0 and v1 runs, and is now obsolete
 
   In the specific case of canfar_avail_results.py, this is done as follows.
 
-    A. Check availability of results
+  A. Check availability of results
 
-      A canfar job can submit a large number of tiles, whose processing time can vary a lot. We assume that the submitted tile ID list is available locally via the ascii file tile_numbers.txt. To check which tiles have finished running, and whose results have been uploaded, use
+    A canfar job can submit a large number of tiles, whose processing time can vary a lot. We assume that the submitted tile ID list is available locally via the ascii file tile_numbers.txt. To check which tiles have finished running, and whose results have been uploaded, use
