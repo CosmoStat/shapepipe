@@ -36,7 +36,7 @@ on canfar. This system was used for the CFIS v0 and v1 runs, and is now obsolete
       script `canfar_avail_results`, but this time with `.` as input path:
       ```bash
       canfar_avail_results -i tile_numbers.txt --input_path . -p PSF -v -o missing.txt
-      '''
+      ```
       Then, download only the missing files with
       ```bash
       canfar_download_results -i missing.txt --input_vos cosmostat/kilbinger/results_mccd_oc2 -p mccd -v
