@@ -3,9 +3,12 @@
 This page shows all required steps of post-processing the results from one or
 more `ShapePipe` runs. Post-processing combines various individual `ShapePipe`
 output files, and creates joint results, for example combining individual tile
-catalogues in a large sky area. The output of post-processing is a joint _shape
+catalogues into a large sky area. The output of post-processing is a joint _shape
 catalogue_, containing all required information to create a calibrated shear
 catalogue via _metacalibration_), a joint star catalogue, and PSF diagnostic plots.
+
+If main ShapePipe processing happened at the old canfar VM system (e.g. CFIS v0 and v1), go
+[here|vos_retrieve.md] for details how to retrieve the ShapePipe output files.
 
 Some of the following steps pertain specifically to runs carried out on [canfar](https://www.canfar.net/en),
 but most are general.
