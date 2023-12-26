@@ -161,10 +161,10 @@ export SP_RUN=`pwd`
 export SP_CONFIG=$SP_RUN/cfis
 export SP_CONFIG_MOD=$SP_RUN/cfis_mod
 
-## Other variables
+# To find ssl certificate
+export VM_HOME=$HOME
 
-# Input tile numbers ASCII file
-export TILE_NUMBERS_PATH=tile_numbers.txt
+## Other variables
 
 # Output
 OUTPUT=$SP_RUN/output
@@ -325,11 +325,6 @@ mkdir -p $OUTPUT
 mkdir -p $SP_CONFIG_MOD
 
 # Processing
-
-## Check for input tile list
-#if [ ! -e $TILE_NUMBERS_PATH ]; then
-  #echo "Tile numbers file $TILE_NUMBERS_PATH not found, exiting"
-#fi
 
 ### Retrieve config files
 if [[ $config_dir == *"vos:"* ]]; then

@@ -502,7 +502,6 @@ class job_data(object):
                 f"{self._path_left}/{subdir}/"
                 + f"{self._path_right[idx]}"
             )
-            print("MKDEBUG ", base_and_subdir)
             if os.path.isdir(base_and_subdir):
 
                 matches = []
@@ -511,10 +510,8 @@ class job_data(object):
                 with os.scandir(base_and_subdir) as entries:
                     for entry in entries:
 
-                        print("MKDEBUG ", entry, self._run_dir[idx])
                         # Append directory name if matches module
                         if entry.name.startswith(self._run_dir[idx]):
-                            print("MKDEBUG matches")
                             matches.append(entry)
 
                     # This entry does not match module -> next
@@ -529,7 +526,6 @@ class job_data(object):
                     directory = self.get_module_output_dir(
                         full_path, module
                     )
-                    print("MKDEBUG ", directory)
 
                     # Find matching file names and paths
                     self.get_matches_final(directory, idx)
