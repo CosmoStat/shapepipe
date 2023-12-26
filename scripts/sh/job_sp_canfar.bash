@@ -161,10 +161,10 @@ export SP_RUN=`pwd`
 export SP_CONFIG=$SP_RUN/cfis
 export SP_CONFIG_MOD=$SP_RUN/cfis_mod
 
-## Other variables
+# To find ssl certificate
+export VM_HOME=$HOME
 
-# Input tile numbers ASCII file
-export TILE_NUMBERS_PATH=tile_numbers.txt
+## Other variables
 
 # Output
 OUTPUT=$SP_RUN/output
@@ -326,11 +326,6 @@ mkdir -p $SP_CONFIG_MOD
 
 # Processing
 
-## Check for input tile list
-#if [ ! -e $TILE_NUMBERS_PATH ]; then
-  #echo "Tile numbers file $TILE_NUMBERS_PATH not found, exiting"
-#fi
-
 ### Retrieve config files
 if [[ $config_dir == *"vos:"* ]]; then
   command_sp "$VCP $config_dir ." "Retrieve shapepipe config files"
@@ -453,7 +448,21 @@ if [[ $do_job != 0 ]]; then
   ### Shapes, run $nsh_jobs parallel processes
   VERBOSE=0
   for k in $(seq 1 $nsh_jobs); do
-      command_sp "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" "Run shapepipe (tile: ngmix+galsim $k)" &
+
+      # if output dir for subrun exists but no output: re-run
+      ngmix_run=$OUTPUT/"run_sp_tile_ngmix_Ng${k}u/ngmix_runner"
+      if [ -e "$ngmix_run" ]; then
+        ngmix_out="$ngmix_run/output"
+        n_out=`ls -rlt $ngmix_out | wc -l`
+        if [ "$n_out" -lt 2 ]; then
+          command "rm -rf $OUTPUT/run_sp_tile_ngmix_Ng${k}u" "Re-running existing empty ngmix subrun $k"
+          command_sp "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" "Run shapepipe (tile: ngmix $k)" &
+        else
+          echo "Skipping existing non-empty ngmix subrun $k"
+        fi
+      else
+        command_sp "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" "Run shapepipe (tile: ngmix $k)" &
+      fi
   done
   wait
   VERBOSE=1

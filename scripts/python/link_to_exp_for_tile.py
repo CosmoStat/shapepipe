@@ -327,7 +327,7 @@ def main(argv=None):
     patterns = ["run_sp_exp_SxSePsf", "run_sp_exp_Pi"]
     for pattern in patterns:
         paths, number = get_paths(exp_base_dir, exp_shdu_IDs, pattern)
-        print(number)
+        #print(number)
 
         create_links_paths(tile_base_dir, tile_ID, paths, verbose=verbose)
 

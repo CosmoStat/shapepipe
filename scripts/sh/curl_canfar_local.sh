@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 # Usage
 # ~/astro/repositories/github/shapepipe/scripts/sh/curl_canfar.sh 0.9 shapepipe/scripts/sh/init_run_exlusive_canfar.sh ID kind job
@@ -14,7 +14,7 @@ job=-1
 ID=-1
 N_SMP=1
 kind=-1
-version=0.9
+version=1.0
 cmd_remote="shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
 dry_run=0
 

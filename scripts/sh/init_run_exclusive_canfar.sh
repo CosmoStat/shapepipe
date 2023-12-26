@@ -10,6 +10,7 @@ N_SMP=1
 kind=-1
 dry_run=0
 nsh_jobs=8
+VERBOSE=1
 
 
 # TODO: psf
@@ -83,6 +84,44 @@ if [ "$kind" == "-1" ]; then
   exit 4
 fi
 
+# Functions
+
+## Print string, executes command, and prints return value.
+function command () {
+   cmd=$1
+   dry_run=$2
+
+   RED='\033[0;31m'
+   GREEN='\033[0;32m'
+   NC='\033[0m' # No Color
+   # Color escape characters show up in log files
+   #RED=''
+   #GREEN=''
+   #NC=''
+
+   if [ $VERBOSE == 1 ]; then
+        echo "running '$cmd' (dry run=$dry_run)"
+   fi
+   if [ "$dry_run" == "0" ]; then
+        $cmd
+        res=$?
+
+        if [ $VERBOSE == 1 ]; then
+            if [ $res == 0 ]; then
+              echo -e "${GREEN}success, return value = $res${NC}"
+            else
+              echo -e "${RED}error, return value = $res${NC}"
+              if [ $STOP == 1 ]; then
+                  echo "${RED}exiting  $(basename "$0")', error in command '$cmd'${NC}"
+                  exit $res
+              else
+                  echo "${RED}continuing '$(basename "$0")', error in command '$cmd'${NC}"
+              fi
+            fi
+        fi
+   fi
+}
+
 echo "start init_run_exclusive_canfar"
 
 if [ "$dry_run" == 1 ]; then
@@ -97,31 +136,32 @@ basedir=$HOME/cosmostat/P3_v2/psfex
 cd $basedir
 
 
-if [ "$dry_run" == "0" ]; then
+# Update links to exposure run directories
+if [ "$kind" == "tile" ]; then
+  command "rm -rf tile_runs/$ID/output/run_exp_SxSePsf*" $dry_run
+  command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs" $dry_run
+fi
 
-  # Update links to exposure run directories
-  if [ "$kind" == "tile" ]; then
-    rm -rf tile_runs/$ID/output/run_exp_SxSePsf*
-    link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs
-  fi
 
-  cd ${kind}_runs
+cd ${kind}_runs
 
-  if [ ! -d "$ID" ]; then
-    mkdir $ID
-  fi
+if [ ! -d "$ID" ]; then
+  command "mkdir $ID" $dry_run
+fi
 
-  cd $ID
-  pwd
+cd $ID
+pwd
 
-  if [ ! -d "output" ]; then
-    mkdir output
-  fi
+if [ ! -d "output" ]; then
+  command "mkdir output" $dry_run
+fi
 
-  cd output
+cd output
+
+if [ 0 == 1 ]; then
 
   if [ ! -f log_exp_headers.sqlite ]; then
-    ln -s $basedir/output/log_exp_headers.sqlite
+    command "ln -s $basedir/output/log_exp_headers.sqlite" $dry_run
   fi
 
   # Remove potentially obsolete link
@@ -130,67 +170,62 @@ if [ "$dry_run" == "0" ]; then
 
   # Update links to global run directories (GiFeGie, Uz, Ma?, combined_flag?)
   for dir in $basedir/output/run_sp_*; do
-    ln -sf $dir
+    command "ln -sf $dir" $dry_run
   done
   if [ ! -e run_sp_combined_flag ]; then
-    ln -s $basedir/output/run_sp_combined_flag
+    command "ln -s $basedir/output/run_sp_combined_flag" $dry_run
   fi
 
-  (( do_job= $job & 128 ))
-  if [[ $do_job != 0 ]]; then
-
-    # Indentify and remove unfinished ngmix dirs
-    min_n_out=2
-    for k in $(seq 1 $nsh_jobs); do
-      ngmix_run="run_sp_tile_ngmix_Ng${k}u/ngmix_runner"
-      if [ -e "$ngmix_run" ]; then
-        ngmix_out="$ngmix_run/output"
-        n_out=`ls -rlt $ngmix_out | wc -l`
-        if [ "$n_out" -lt "$min_n_out" ]; then
-            min_n_out=$n_out
-        fi
-        #echo $k $n_out $min_n_out
-      else
-        echo "ngmix separated run #$k not found"
-        min_n_out=0
-      fi
-    done
-    if [ "$min_n_out" -lt "2" ]; then
-      echo "At least one ngmix separated run no output files"
-      for k in $(seq 1 $nsh_jobs); do
-        cmd="rm -rf run_sp_tile_ngmix_Ng${k}u"
-        echo $cmd
-        `$cmd`
-      done
-    else
-      if [ "$job" == "128" ]; then
-        echo "ngmix found complete, all is well, exiting"
-        exit 0
-      fi
-    fi
-
-  fi 
-
-  cd ..
-  update_runs_log_file.py
-
-  echo -n "pwd: "
-  pwd
-
 fi
+
+(( do_job= $job & 128 ))
+#if [[ $do_job != 0 ]]; then
+# The following is now dealt with in job_sh_canar.bash
+if [ 0 == 1 ]; then
+
+  # Indentify and remove unfinished ngmix dirs
+  min_n_out=2
+  for k in $(seq 1 $nsh_jobs); do
+    ngmix_run="run_sp_tile_ngmix_Ng${k}u/ngmix_runner"
+    if [ -e "$ngmix_run" ]; then
+      ngmix_out="$ngmix_run/output"
+      n_out=`ls -rlt $ngmix_out | wc -l`
+      if [ "$n_out" -lt "$min_n_out" ]; then
+          min_n_out=$n_out
+      fi
+      #echo $k $n_out $min_n_out
+    else
+      echo "ngmix separated run #$k not found"
+      min_n_out=0
+    fi
+  done
+  if [ "$min_n_out" -lt "2" ]; then
+    echo "At least one ngmix separated run no output files"
+    for k in $(seq 1 $nsh_jobs); do
+      command "rm -rf run_sp_tile_ngmix_Ng${k}u" $dry_run
+    done
+  else
+    if [ "$job" == "128" ]; then
+      echo "ngmix found complete, all is well, exiting"
+      exit 0
+    fi
+  fi
+
+fi 
+
+cd ..
+command update_runs_log_file.py $dry_run
+
+echo -n "pwd: "
+pwd
 
 echo -n "environment: "
 echo $CONDA_PREFIX
 
-cmd="job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP"
-echo -n "Running commnd '$cmd' ..."
+#command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP" $dry_run
 
-if [ "$dry_run" == 1 ]; then
-  echo " dry run"
-else
-  echo
-  $cmd
-fi
+export SP_RUN=.
+command "shapepipe_run -c $HOME/shapepipe/example/cfis/config_exp_Pi.ini" $dry_run
 
 cd $basedir
 
