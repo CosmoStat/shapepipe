@@ -2,7 +2,7 @@
 
 This module computes the PSFs from a PSFEx model at several galaxy positions.
 
-:Authors: Morgan Schmitz and Axel Guinot
+:Authors: Morgan Schmitz, Axel Guinot, Martin Kilbinger
 
 """
 
@@ -115,7 +115,7 @@ class PSFExInterpolator(object):
     Parameters
     ----------
     dotpsf_path : str
-        Path to PSFEx output file
+        Path to PSFEx output file; can be `None` in multi-epoch mode
     galcat_path : str
         Path to SExtractor-like galaxy catalogue
     output_path : str
@@ -151,18 +151,19 @@ class PSFExInterpolator(object):
     ):
 
         # Path to PSFEx output file
+        self._dotpsf_path = dotpsf_path
         if (
-            isinstance(dotpsf_path, type(None))
-            or os.path.isfile(dotpsf_path)
+            not isinstance(dotpsf_path, type(None))
+            and not os.path.isfile(dotpsf_path)
         ):
-            self._dotpsf_path = dotpsf_path
-        else:
             raise ValueError(f'Cound not find file {dotpsf_path}.')
+
         # Path to catalogue containing galaxy positions
         if os.path.isfile(galcat_path):
             self._galcat_path = galcat_path
         else:
             raise ValueError(f'Cound not find file {galcat_path}.')
+
         # Path to output file to be written
         self._output_path = output_path + '/galaxy_psf'
         # Path to output file to be written for validation
@@ -512,25 +513,28 @@ class PSFExInterpolator(object):
 
         output.save_as_fits(data, sex_cat_path=self._galcat_path)
 
-    def process_me(self, dot_psf_dir, dot_psf_pattern, f_wcs_path):
+    def process_me(self, dot_psf_dirs, dot_psf_pattern, f_wcs_path):
         """Process Multi-Epoch.
 
-        Process the multi-epoch.
+        Process multi-epoc PSF interpolation.
 
         Parameters
         ----------
-        dot_psf_dir : str
-            Path to the directory containing the ``.psf`` files
+        dot_psf_dirs : list
+            Paths to the directory containing the ``.psf`` files
         dot_psf_pattern : str
             Common pattern of the ``.psf`` files
         f_wcs_path : str
             Path to the log file containing the WCS for each CCDs
 
         """
-        if os.path.exists(dot_psf_dir):
-            self._dot_psf_dir = dot_psf_dir
-        else:
-            raise ValueError(f'Cound not find directory {dot_psf_dir}.')
+        if not any(
+             os.path.exists(dot_psf_dir)
+             for dot_psf_dir in dot_psf_dirs
+        ):
+            raise ValueError('Cound not find any dot psf directory.')
+
+        self._dot_psf_dirs = dot_psf_dirs
 
         self._dot_psf_pattern = dot_psf_pattern
 
@@ -569,7 +573,6 @@ class PSFExInterpolator(object):
         all_id = np.copy(cat.get_data()['NUMBER'])
         key_ne = 'N_EPOCH'
         if key_ne not in cat.get_data().dtype.names:
-            print("MKDEBUG ", cat.get_data())
             raise KeyError(
                 f'Key {key_ne} not found in input galaxy catalogue'
                 + f'{self._galcat_path}, needed for'
@@ -595,10 +598,18 @@ class PSFExInterpolator(object):
             for ccd in ccd_list:
                 if ccd == -1:
                     continue
-                dot_psf_path = (
-                    f'{self._dot_psf_dir}/{self._dot_psf_pattern}-{exp_name}'
-                    + f'-{ccd}.psf'
-                )
+                found = False
+                for dot_psf_dir in self._dot_psf_dirs:
+                    dot_psf_path = (
+                        f'{dot_psf_dir}/{self._dot_psf_pattern}-{exp_name}'
+                        + f'-{ccd}.psf'
+                    )
+                    if os.path.exists(dot_psf_path):
+                        found = True
+                        break
+                if not found:
+                    raise ValueError("No dot psf file found")
+
                 ind_obj = np.where(cat.get_data(hdu_index)['CCD_N'] == ccd)[0]
                 obj_id = all_id[ind_obj]
                 gal_pos = np.array(
@@ -641,7 +652,7 @@ class PSFExInterpolator(object):
                     and self.interp_PSFs == FILE_NOT_FOUND
                 ):
                     self._w_log.info(
-                        f'Psf model file {self._dotpsf_path} not found. '
+                        f'Psf model file {dot_psf_path} not found. '
                         + 'Object inside this ccd will lose an epoch.'
                     )
                     continue
