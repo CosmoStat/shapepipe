@@ -13,7 +13,7 @@ dependencies:
   - joblib==1.1.0
   - libtool==2.4.6
   - matplotlib==3.5.1
-  - numba==0.54.1
+  - numba==0.58.1
   - pandas==1.4.1
   - pip:
     - cs_util==0.0.5
