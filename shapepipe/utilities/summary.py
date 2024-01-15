@@ -189,8 +189,10 @@ class job_data(object):
         case it is set to 1
     pattern: list, optional
         if not None, file pattern to match; defafult is `None`
-    path_lef: str, optional
-        left (first) part of output directory, defaul is "./output"
+    path_main: str, optional
+        main (left-most) part of output directory, default is "."       
+    path_left: str, optional
+        left (first) part of output directory, default is "./output"
     output_subdirs: str, optional
         output subdirectories if not `None`; default is `None`
     path_right: str, optional
@@ -211,7 +213,8 @@ class job_data(object):
         key_expected,
         n_mult=None,
         pattern=None,
-        path_left="./output",
+        path_main=".",
+        path_left="output",
         output_subdirs=None,
         path_right=None,
         output_path_missing_IDs=None,
@@ -223,6 +226,7 @@ class job_data(object):
         self._key_expected = set_as_list(item=key_expected, n=len(modules))
         self._n_mult = set_as_list(item=n_mult, n=len(modules))
         self._pattern = set_as_list(item=pattern, n=len(modules), default="")
+        self._path_main = path_main
         self._path_left = path_left
         self._output_subdirs = output_subdirs or [""]
         self._path_right = set_as_list(
@@ -377,7 +381,9 @@ class job_data(object):
 
         ## Extract image IDs from names
         IDs = []
-        pattern = re.compile(r"(?:\d{3}-\d{3}|\d{7}-\d+)")
+        pattern = re.compile(
+            r"(?:\d{3}-\d{3}|\d{7}-\d+|\d{7})"
+        )
         for name, path in zip(names_in_dir, paths_in_dir):
             match = pattern.search(name)
             if match:
@@ -401,7 +407,9 @@ class job_data(object):
 
         if n_unique > 0:
             if not self._output_path_missing_IDs:
-                output_path = f"missing_job_{self._bit}_{module}.txt"
+                output_path = (
+                    f"{self._path_main}/summary/missing_job_{self._bit}_{module}.txt"
+                )
             else:
                 output_path = self._output_path_missing_IDs[idx]
 
@@ -499,7 +507,8 @@ class job_data(object):
         # Loop over subdirs
         for jdx, subdir in enumerate(iterable):
             base_and_subdir = (
-                f"{self._path_left}/{subdir}/"
+                f"{self._path_main}/"
+                + f"{self._path_left}/{subdir}/"
                 + f"{self._path_right[idx]}"
             )
             if os.path.isdir(base_and_subdir):
@@ -530,7 +539,8 @@ class job_data(object):
                     # Find matching file names and paths
                     self.get_matches_final(directory, idx)
             else:
-                print(f"Directory base_and_subdir {base_and_subdir} not found")
+                #print(f"Directory base_and_subdir {base_and_subdir} not found")
+                pass
 
     def update_subdirs(self, par_runtime):
         """Update Subdirs.
@@ -571,10 +581,16 @@ class job_data(object):
             if indices is not None and idx not in indices:
                 continue
 
+            if self._verbose:
+                print(f"** module {module}")
+
             # Look over subdirs
             iterable = self._output_subdirs
             if len(iterable) > 1 and self._verbose:
                 iterable = tqdm(iterable, desc="subdirs", leave=False)
+
+            if self._verbose:
+                print(f"*** subdirs {self._output_subdirs}")
 
             # Get output file names and paths
             self.get_names_in_dir(
@@ -649,6 +665,13 @@ def get_par_runtime(par_runtime, key, kind="n"):
 
     """
     combined_key = f"{kind}_{key}"
+    if (
+        combined_key == "list_3*n_shdus+n_exposures"
+        and combined_key not in par_runtime
+    ):
+        print("{combined_key} not set, TBD")
+        return []
+
     return par_runtime[combined_key]
 
 
@@ -663,6 +686,6 @@ def print_par_runtime(par_runtime, verbose=True):
             if not key.startswith("list"):
                 logging.info(f"{key:30s} {value:6d}")
             else:
-                logging.info(f"{key:29s} [{len(value):6d}]")
+                logging.info(f"{key:29s} {len(value):6d} entries")
         logging.info("===========")
         logging.info("")
