@@ -324,10 +324,9 @@ def main(argv=None):
     exp_IDs = get_exp_IDs(tile_base_dir, tile_ID, verbose=verbose)
     exp_shdu_IDs = get_exp_single_HDU_IDs(exp_IDs, n_CPU)
 
-    patterns = ["run_sp_exp_SxSePsf", "run_sp_exp_Pi"]
+    patterns = ["run_sp_exp_SxSePsf"] #, "run_sp_exp_Pi"]
     for pattern in patterns:
         paths, number = get_paths(exp_base_dir, exp_shdu_IDs, pattern)
-        #print(number)
 
         create_links_paths(tile_base_dir, tile_ID, paths, verbose=verbose)
 
