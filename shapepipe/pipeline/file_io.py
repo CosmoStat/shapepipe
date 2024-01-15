@@ -71,7 +71,7 @@ class BaseCatalogue(object):
         """Format.
 
         Get the default input/output format of the catalogue
-        (e.g. Text, SExtractor, FITS)
+        (e.g. Text, SExtractor_ascii, FITS_LDAC, FITS)
 
         """
         return self._format
@@ -163,7 +163,7 @@ class BaseCatalogue(object):
 
         Undefined = 0
         TabulatedText = 1
-        SExtractor = 2
+        SExtractor_ascii = 2
         FITS = 4
         FITS_LDAC = 5
 
@@ -420,8 +420,8 @@ class FITSCatalogue(BaseCatalogue):
         File opening mode
     memmap : Bool
         Option to use memory mapping
-    SEx_catalogue : bool
-        Option to specify if the input is a SExtractor catalogue
+    fits_ldac : bool
+        Option to specify if the input is a FITS_LDAC catalogue
 
     """
 
@@ -431,7 +431,7 @@ class FITSCatalogue(BaseCatalogue):
         hdu_no=None,
         open_mode=BaseCatalogue.OpenMode.ReadOnly,
         memmap=False,
-        SEx_catalogue=False,
+        fits_ldac=False,
     ):
         BaseCatalogue.__init__(self, fullpath)
 
@@ -440,12 +440,12 @@ class FITSCatalogue(BaseCatalogue):
 
         # opening mode (see FITSCatalogue.OpenMode)
         self._open_mode = open_mode
-        # Work with SExtractor fits format or not
-        self._SEx_catalogue = SEx_catalogue
+        # Work with SExtractor fits-ldac format or not
+        self._fits_ldac = fits_ldac
         # HDU number of the underlying .FITS table
         if hdu_no is None:
             # Default is 1 (or 2 if you are using )
-            if SEx_catalogue:
+            if fits_ldac:
                 self._hdu_no = 2
             else:
                 self._hdu_no = 1
@@ -522,7 +522,7 @@ class FITSCatalogue(BaseCatalogue):
         else:
             raise BaseCatalogue.catalogueFileNotFound(self.fullpath)
 
-    def create(self, ext_name=None, s_hdu=True, sex_cat_path=None):
+    def create(self, ext_name=None, s_hdu=True, ldac_cat_path=None):
         """Create.
 
         Create an empty catalogue in FITS format.
@@ -533,27 +533,27 @@ class FITSCatalogue(BaseCatalogue):
             Extension name or number
         s_hdu : bool
             If true add a secondary HDU
-        sex_cat_path : str
-            Path to SEXtractor catalogue
+        ldac_cat_path : str
+            Path to SEXtractor fits-ldac catalogue
 
         """
         primary_hdu = fits.PrimaryHDU()
-        if self._SEx_catalogue:
-            if sex_cat_path is not None:
-                if self._file_exists(sex_cat_path):
-                    sex_cat = FITSCatalogue(sex_cat_path, hdu_no=1)
-                    sex_cat.open()
-                    secondary_hdu = sex_cat._cat_data[1]
+        if self._fits_ldac:
+            if ldac_cat_path is not None:
+                if self._file_exists(ldac_cat_path):
+                    ldac_cat = FITSCatalogue(ldac_cat_path, hdu_no=1)
+                    ldac_cat.open()
+                    secondary_hdu = ldac_cat._cat_data[1]
                     self._cat_data = fits.HDUList([primary_hdu, secondary_hdu])
                     self._cat_data.writeto(self.fullpath, overwrite=True)
-                    sex_cat.close()
-                    del sex_cat
+                    ldac_cat.close()
+                    del ldac_cat
                 else:
-                    raise BaseCatalogue.catalogueFileNotFound(sex_cat_path)
+                    raise BaseCatalogue.catalogueFileNotFound(ldac_cat_path)
             else:
                 raise ValueError(
-                    "sex_cat_path needs to be provided to create a "
-                    + "SEXtractor catalogue"
+                    "ldac_cat_path needs to be provided to create a "
+                    + "SEXtractor fits-ldac catalogue"
                 )
         elif s_hdu:
             secondary_hdu = fits.BinTableHDU(data=None, header=None, name=ext_name,)
@@ -652,7 +652,7 @@ class FITSCatalogue(BaseCatalogue):
         data=None,
         names=None,
         ext_name=None,
-        sex_cat_path=None,
+        ldac_cat_path=None,
         image=False,
         image_header=None,
         overwrite=False,
@@ -676,8 +676,8 @@ class FITSCatalogue(BaseCatalogue):
             List of column names
         ext_name : str
             Name of the HDU where data are stored
-        sex_cat_path : str
-            Path of the existing SExtractor catalogue to mimic
+        ldac_cat_path : str
+            Path of the existing SExtractor fits-ldac catalogue to mimic
         image : bool
             If true create a fits image
         image_header : astropy.io.fits.header
@@ -688,8 +688,8 @@ class FITSCatalogue(BaseCatalogue):
 
         Notes
         -----
-        To create a SExtractor-like FITS file you need to specify
-        ``SEx_catalogue=True`` when declaring the FITSCatalogue object.
+        To create a SExtractor-like FITS-LDAC file you need to specify
+        ``fits_ldac=True`` when declaring the FITSCatalogue object.
 
         """
         if self.open_mode != FITSCatalogue.OpenMode.ReadWrite:
@@ -710,18 +710,18 @@ class FITSCatalogue(BaseCatalogue):
                 else:
                     data = [np.array(data[i]) for i in names]
                 self._save_to_fits(
-                    data, names, it, ext_name, sex_cat_path, overwrite=overwrite,
+                    data, names, it, ext_name, ldac_cat_path, overwrite=overwrite,
                 )
 
             elif type(data) is np.recarray:
                 names = list(data.dtype.names)
                 it = names
                 self._save_to_fits(
-                    data, names, it, ext_name, sex_cat_path, overwrite=overwrite,
+                    data, names, it, ext_name, ldac_cat_path, overwrite=overwrite,
                 )
 
             elif type(data) is fits.fitsrec.FITS_rec:
-                self._save_from_recarray(data, ext_name, sex_cat_path)
+                self._save_from_recarray(data, ext_name, ldac_cat_path)
 
             elif type(data) is np.ndarray:
                 if names is None:
@@ -733,7 +733,7 @@ class FITSCatalogue(BaseCatalogue):
                 else:
                     it = range(len(names))
                 self._save_to_fits(
-                    data, names, it, ext_name, sex_cat_path, overwrite=overwrite,
+                    data, names, it, ext_name, ldac_cat_path, overwrite=overwrite,
                 )
 
             elif type(data) is list:
@@ -742,7 +742,7 @@ class FITSCatalogue(BaseCatalogue):
                 it = range(len(names))
                 data = np.asarray(data)
                 self._save_to_fits(
-                    data, names, it, ext_name, sex_cat_path, overwrite=overwrite,
+                    data, names, it, ext_name, ldac_cat_path, overwrite=overwrite,
                 )
 
             elif type(data) is Table:
@@ -750,7 +750,7 @@ class FITSCatalogue(BaseCatalogue):
                     raise ValueError("Names not provided")
                 it = names
                 self._save_to_fits(
-                    data, names, it, ext_name, sex_cat_path, overwrite=overwrite,
+                    data, names, it, ext_name, ldac_cat_path, overwrite=overwrite,
                 )
 
         else:
@@ -1074,54 +1074,22 @@ class FITSCatalogue(BaseCatalogue):
 
         else:
             raise BaseCatalogue.catalogueNotOpen(self.fullpath)
-
-    def get_header(self, hdu_no=None):
-        """Get Header.
-
-        Return the catalogue header as a list of dictionaries.
-
-        Parameters
-        ----------
-        hdu_no : int
-            HDU index    
-
-        Returns
-        -------
-        dict
-            FITS header
-
-        Notes
-        -----
-        See astropy documentation
-
-        """
-        if self._cat_data is not None:
-            if hdu_no is None:
-                hdu_no = self.hdu_no
-            if self._SEx_catalogue:
-                astropy_header = _fits_header_from_fits_LDAC(self.fullpath)
-                return dict(astropy_header.items())
-            else:
-                return dict(self._cat_data[hdu_no].header.items())
-        else:
-            raise BaseCatalogue.catalogueNotOpen(self.fullpath)
-
-    def _fits_header_from_fits_LDAC(SEx_catalogue_path):
+    def _fits_header_from_fits_LDAC(ldac_catalogue_path):
         """Fits header from a fits-ldac catalog.
 
         Creates a fits header from a sextractor fits-LDAC field header.
         
         Parameters
         ----------
-        SEx_catalogue_path : str
-            Path to SEXtractor catalogue
+        ldac_catalogue_path : str
+            Path to SEXtractor fits-ldac catalogue
 
         Returns
         -------
         astropy.io.fits.Header    
         """
         # open file and get data
-        cat = fits.open(SEx_catalogue_path)
+        cat = fits.open(ldac_catalogue_path)
         field_cards = cat[1].data
 
         # initialize empty header
@@ -1152,6 +1120,37 @@ class FITSCatalogue(BaseCatalogue):
         cat.close()
 
         return header
+
+    def get_header(self, hdu_no=None):
+        """Get Header.
+
+        Return the catalogue header as a list of dictionaries.
+
+        Parameters
+        ----------
+        hdu_no : int
+            HDU index    
+
+        Returns
+        -------
+        dict
+            FITS header
+
+        Notes
+        -----
+        See astropy documentation
+
+        """
+        if self._cat_data is not None:
+            if hdu_no is None:
+                hdu_no = self.hdu_no
+            if self._fits_ldac:
+                astropy_header = _fits_header_from_fits_LDAC(self.fullpath)
+                return dict(astropy_header.items())
+            else:
+                return dict(self._cat_data[hdu_no].header.items())
+        else:
+            raise BaseCatalogue.catalogueNotOpen(self.fullpath)
 
     def get_header_value(self, request, hdu_no=None):
         """Get Header Value.
@@ -1233,26 +1232,6 @@ class FITSCatalogue(BaseCatalogue):
         card = tuple(card)
 
         self._cat_data[hdu_no].header.append(card, end=True)
-
-    def get_headers(self):
-        """Get Headers.
-
-        Return the catalogue header as a list of dictionaries.
-
-        Returns
-        -------
-        list
-            list of headers
-
-        """
-        headers = []
-        try:
-            for hdu in self._cat_data:
-                headers.append(dict(hdu.header.items()))
-        except Exception:
-            pass
-
-        return headers
 
     def get_comments(self, hdu_no=None):
         """Get Comments.
@@ -1579,7 +1558,7 @@ class FITSCatalogue(BaseCatalogue):
         return pcol_type
 
     def _save_to_fits(
-        self, data, names, it, ext_name=None, sex_cat_path=None, overwrite=False,
+        self, data, names, it, ext_name=None, ldac_cat_path=None, overwrite=False,
     ):
         """Save to FITS.
 
@@ -1592,11 +1571,11 @@ class FITSCatalogue(BaseCatalogue):
         names : list
             List of the column names
         it : iterator
-            ?
+            Number of HDUs
         ext_name : str
             Name of the HDU where data are stored
-        sex_cat_path : str
-            Path of the existing SExtractor catalogue to mimic
+        ldac_cat_path : str
+            Path of the existing SExtractor fits-ldac catalogue to mimic
         overwrite : bool
             Option to overwrite an existing catalogue
 
@@ -1610,8 +1589,8 @@ class FITSCatalogue(BaseCatalogue):
             if ext_name is None:
                 ext_name = "new"
         else:
-            if self._SEx_catalogue:
-                self.create(s_hdu=False, sex_cat_path=sex_cat_path)
+            if self._fits_ldac:
+                self.create(s_hdu=False, ldac_cat_path=ldac_cat_path)
                 self.open()
                 if ext_name is None:
                     ext_name = "LDAC_OBJECTS"
@@ -1660,7 +1639,7 @@ class FITSCatalogue(BaseCatalogue):
         self.close()
 
     def _save_from_recarray(
-        self, data=None, ext_name=None, sex_cat_path=None, overwrite=False,
+        self, data=None, ext_name=None, ldac_cat_path=None, overwrite=False,
     ):
         """Save From Record Array.
 
@@ -1673,8 +1652,8 @@ class FITSCatalogue(BaseCatalogue):
             Array with the data
         ext_name : str
             Name of the HDU where data are stored
-        sex_cat_path : str
-            Path of the existing SExtractor catalogue to mimic
+        ldac_cat_path : str
+            Path of the existing SExtractor fits-ldac catalogue to mimic
         overwrite : bool
             Option to overwrite an existing catalogue
 
@@ -1690,8 +1669,8 @@ class FITSCatalogue(BaseCatalogue):
             self._cat_data.append(fits.BinTableHDU(data, name=ext_name))
             self.close()
         else:
-            if self._SEx_catalogue:
-                self.create(s_hdu=False, sex_cat_path=sex_cat_path)
+            if self._fits_ldac:
+                self.create(s_hdu=False, ldac_cat_path=ldac_cat_path)
                 self.open()
                 if ext_name is None:
                     ext_name = "LDAC_OBJECTS"
