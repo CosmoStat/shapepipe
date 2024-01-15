@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 
-# Usage
-# ~/astro/repositories/github/shapepipe/scripts/sh/curl_canfar.sh 0.9 shapepipe/scripts/sh/init_run_exlusive_canfar.sh ID kind job
-
-# Command line arguments
-## Default values
+# Global variables
 SSL=~/.ssl/cadcproxy.pem
 SESSION=https://ws-uv.canfar.net/skaha/v0/session
 IMAGE=images.canfar.net/unions/shapepipe
 NAME=shapepipe
 
+
+# Command line arguments
+
+## Default values
 job=-1
 ID=-1
+file_IDs=-1
 N_SMP=1
 kind=-1
 version=1.0
@@ -21,12 +22,14 @@ dry_run=0
 # TODO psf
 
 ## Help string
-usage="Usage: $(basename "$0") -j JOB -e ID  -k KIND [OPTIONS]
+usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
 \n\nOptions:\n
    -h\tthis message\n
    -j, --job JOB\tRUnning JOB, bit-coded\n
    -e, --exclusive ID
     \timage ID\n
+   -f, --file_IDs path
+    \tfile containing IDs\n
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    -k, --kind KIND\n
@@ -62,6 +65,10 @@ while [ $# -gt 0 ]; do
       ID="$2"
       shift
       ;;
+    -f|--file_IDs)
+      file_IDs="$2"
+      shift
+      ;;
     -N|--N_SMP)
       n_SMP="$2"
       shift
@@ -84,8 +91,8 @@ if [ "$job" == "-1" ]; then
   exit 2                                                                        
 fi                                                                              
                                                                                 
-if [ "$exclusive" == "-1" ]; then                                               
-  echo "No image ID indicated, use option -e"                                   
+if [ "$ID" == "-1" ] && [ "$file_IDs" == "-1" ]; then                                               
+  echo "No image ID(s) indicated, use option -e ID or -f file_IDs"                                   
   exit 3                                                                        
 fi                                                                              
                                                                                 
@@ -109,14 +116,48 @@ else
 fi
 
 RESOURCES="ram=4&cores=$N_SMP"
-arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run"
+
+# TODO: dir as command line argument to this script
+dir=`pwd`
+arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run -d $dir"
 
 
 if [ "$dry_run" == 2 ]; then
+
   echo "Running command dry run:"
-  echo curl -E $SSL $SESSION?$RESOURCES -d \"image=$IMAGE:$version\" -d \"name=${NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
+
+  if [ "$ID" == "-1" ]; then
+
+    for ID in `cat $file_IDs`; do
+      arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run -d $dir"
+      echo curl -E $SSL $SESSION?$RESOURCES -d \"image=$IMAGE:$version\" -d \"name=${NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
+    done
+
+  else
+
+    arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run -d $dir"
+    echo curl -E $SSL $SESSION?$RESOURCES -d \"image=$IMAGE:$version\" -d \"name=${NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
+
+  fi
+
 else
-  session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg"`
-  echo $session >> session_IDs.txt
-  echo "$session $ID" >> session_image_IDs.txt
+
+  if [ "$ID" == "-1" ]; then
+
+    for ID in `cat $file_IDs`; do
+      arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run -d $dir"
+      session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg"`
+      echo $session >> session_IDs.txt
+      echo "$session $ID" >> session_image_IDs.txt
+    done
+
+  else
+
+    arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run -d $dir"
+    session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg"`
+    echo $session >> session_IDs.txt
+    echo "$session $ID" >> session_image_IDs.txt
+
+  fi
+
 fi
