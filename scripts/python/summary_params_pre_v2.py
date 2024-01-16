@@ -39,10 +39,10 @@ def set_jobs_v2_pre_v2(patch, retrieve, verbose):
     print(f"Set job info for patch {patch}")
 
     # Main input and output directory
-    main_dir = f"{os.environ['HOME']}/cosmostat/v2/pre_v2/psfex/{patch}"
+    path_main = f"{os.environ['HOME']}/cosmostat/v2/pre_v2/psfex/{patch}"
 
     # Logging
-    path = f"{main_dir}/summary"
+    path = f"{path_main}/summary"
     if not os.path.isdir(path):
         os.mkdir(path)
     log_file_name = f"{path}/summary_log.txt"
@@ -51,7 +51,7 @@ def set_jobs_v2_pre_v2(patch, retrieve, verbose):
         level=logging.INFO, format="%(message)s", handlers=handlers
     )
 
-    logging.info(f"Checking main directory = {main_dir}")
+    logging.info(f"Checking main directory = {path_main}")
 
     # Number of links created for retrieved images
     if retrieve == "vos":
@@ -60,7 +60,7 @@ def set_jobs_v2_pre_v2(patch, retrieve, verbose):
         n_link = 1
 
     # Tile IDs
-    tile_ID_path = f"{main_dir}/tile_numbers.txt"
+    tile_ID_path = f"{path_main}/tile_numbers.txt"
 
     ## Tile IDs with dots
     list_tile_IDs_dot = get_IDs_from_file(tile_ID_path)
@@ -80,7 +80,8 @@ def set_jobs_v2_pre_v2(patch, retrieve, verbose):
         ["tile_IDs", "tile_IDs", "exposures"],
         pattern=["CFIS_", "", ""],
         n_mult=[1 * n_link, 1, 3],
-        path_left=f"{main_dir}/output",
+        path_main=path_main,
+        path_left="output",
         verbose=verbose,
     )
 
@@ -90,13 +91,14 @@ def set_jobs_v2_pre_v2(patch, retrieve, verbose):
         ["uncompress_fits_runner", "merge_headers_runner", "split_exp_runner"],
         ["tile_IDs", 0, "3*n_shdus+n_exposures"],
         n_mult=[1, 1, 1],
-        path_left=f"{main_dir}/output",
+        path_main=path_main,
+        path_left="output",
         verbose=verbose,
     )
 
-    if patch == "P3":
+    if patch == "PX":
         run_dir_mask_tiles = "run_sp_combined_flag"
-        run_dir_maks_exp = run_dir_tiles
+        run_dir_mask_exp = run_dir_mask_tiles
         mask_module_tiles = "mask_runner_run_1"
         mask_module_exp = "mask_runner_run_2"
     else:
@@ -110,7 +112,8 @@ def set_jobs_v2_pre_v2(patch, retrieve, verbose):
         run_dir_mask_tiles,
         [mask_module_tiles],
         ["tile_IDs"],
-        path_left=f"{main_dir}/output",
+        path_main=path_main,
+        path_left="output",
         verbose=verbose,
     )
 
@@ -119,7 +122,8 @@ def set_jobs_v2_pre_v2(patch, retrieve, verbose):
         run_dir_mask_exp,
         [mask_module_exp],
         ["shdus"],
-        path_left=f"{main_dir}/output",
+        path_main=path_main,
+        path_left="output",
         verbose=verbose,
     )
 
@@ -129,7 +133,8 @@ def set_jobs_v2_pre_v2(patch, retrieve, verbose):
         ["sextractor_runner"],
         ["tile_IDs"],
         n_mult=2,
-        path_left=f"{main_dir}/tile_runs",
+        path_main=path_main,
+        path_left="tile_runs",
         output_subdirs=[f"{tile_ID}/output" for tile_ID in list_tile_IDs_dot],
         verbose=verbose,
     )
@@ -150,7 +155,8 @@ def set_jobs_v2_pre_v2(patch, retrieve, verbose):
         ],  # "psfex_interp_runner"],
         "shdus",
         n_mult=[2, 2, 2],  # 1],
-        path_left=f"{main_dir}/exp_runs",
+        path_main=path_main,
+        path_left="exp_runs",
         output_subdirs="shdus",
         path_right="output",
         verbose=verbose,
@@ -162,7 +168,8 @@ def set_jobs_v2_pre_v2(patch, retrieve, verbose):
         "run_sp_exp_Pi",
         ["psfex_interp_runner"],
         "shdus",
-        path_left=f"{main_dir}/exp_runs",
+        path_main=path_main,
+        path_left="exp_runs",
         output_subdirs="shdus",
         path_right="output",
         verbose=verbose,
@@ -179,7 +186,8 @@ def set_jobs_v2_pre_v2(patch, retrieve, verbose):
         ],
         "tile_IDs",
         n_mult=[1, 1, 1, 4],
-        path_left=f"{main_dir}/tile_runs",
+        path_main=path_main,
+        path_left="tile_runs",
         output_subdirs=[f"{tile_ID}/output" for tile_ID in list_tile_IDs_dot],
         verbose=verbose,
     )
@@ -187,14 +195,15 @@ def set_jobs_v2_pre_v2(patch, retrieve, verbose):
     n_sh = 8
     run_dirs = [f"run_sp_tile_ngmix_Ng{idx+1}u" for idx in range(n_sh)]
     output_path_missing_IDs = [
-        f"missing_job_128_ngmix_runner_{idx+1}.txt" for idx in range(n_sh)
+        f"{path_main}/summary/missing_job_128_ngmix_runner_{idx+1}.txt" for idx in range(n_sh)
     ]
     jobs["128"] = job_data(
         "128",
         run_dirs,
         ["ngmix_runner"] * 8,
         "tile_IDs",
-        path_left=f"{main_dir}/tile_runs",
+        path_main=path_main,
+        path_left="tile_runs",
         output_subdirs=[f"{tile_ID}/output" for tile_ID in list_tile_IDs_dot],
         output_path_missing_IDs=output_path_missing_IDs,
         verbose=verbose,
@@ -205,7 +214,8 @@ def set_jobs_v2_pre_v2(patch, retrieve, verbose):
         ["run_sp_Ms", "run_sp_Mc"],
         ["merge_sep_cats_runner", "make_cat_runner"],
         "tile_IDs",
-        path_left=f"{main_dir}/tile_runs",
+        path_main=path_main,
+        path_left="tile_runs",
         output_subdirs=[f"{tile_ID}/output" for tile_ID in list_tile_IDs_dot],
         verbose=verbose,
     )
@@ -216,7 +226,8 @@ def set_jobs_v2_pre_v2(patch, retrieve, verbose):
         "run_sp_combined_psf",
         ["psfex_interp_runner"],
         "shdus",
-        path_left=f"{main_dir}/output",
+        path_main=path_main,
+        path_left="output",
         verbose=verbose,
     )
     

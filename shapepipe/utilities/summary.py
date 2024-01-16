@@ -160,7 +160,7 @@ def check_special(module, paths_in_dir, names_in_dir):
                             print(f"b stars = {value}, not special")
                         break
 
-        print(inds_special)
+        #print(inds_special)
         for idx in inds_special:
             paths_in_dir.pop(idx)
             names_in_dir.pop(idx)
@@ -418,7 +418,7 @@ class job_data(object):
         return missing_IDs_unique
 
     def output_missing_job(self):
-        output_path = f"missing_job_{self._bit}_all.txt"
+        output_path = f"{self._path_main}/summary/missing_job_{self._bit}_all.txt"
 
         missing_IDs_all = set(self._missing_IDs_job)
 
@@ -511,6 +511,9 @@ class job_data(object):
                 + f"{self._path_left}/{subdir}/"
                 + f"{self._path_right[idx]}"
             )
+            if self._verbose:
+                print(f"**** base_and_subdir {base_and_subdir}")
+
             if os.path.isdir(base_and_subdir):
 
                 matches = []
@@ -527,6 +530,9 @@ class job_data(object):
                     if not matches:
                         continue
 
+                    if self._verbose:
+                        print("Matching entries: ", matches)
+
                     full_path = self.get_last_full_path(
                         base_and_subdir, matches
                     )
@@ -539,8 +545,8 @@ class job_data(object):
                     # Find matching file names and paths
                     self.get_matches_final(directory, idx)
             else:
-                #print(f"Directory base_and_subdir {base_and_subdir} not found")
-                pass
+                if self._verbose:
+                    print(f"Directory {base_and_subdir} not found")
 
     def update_subdirs(self, par_runtime):
         """Update Subdirs.

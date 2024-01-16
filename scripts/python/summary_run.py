@@ -11,7 +11,7 @@ def main(argv=None):
     patch = argv[1]
 
     retrieve = "vos"
-    verbose = True
+    verbose = False
     
     import summary_params_pre_v2 as params
 
