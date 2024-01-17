@@ -252,7 +252,7 @@ def get_paths(exp_base_dir, exp_shdu_IDs, pattern):
 
         if n_subdirs != 1:
             msg = (
-                f"Exactly on directory matching {pattern} in {path} expected,"
+                f"Exactly one directory matching {pattern} in {path} expected,"
                 + f"  not {n_subdirs}"
             )
             print(msg)
@@ -324,10 +324,10 @@ def main(argv=None):
     exp_IDs = get_exp_IDs(tile_base_dir, tile_ID, verbose=verbose)
     exp_shdu_IDs = get_exp_single_HDU_IDs(exp_IDs, n_CPU)
 
-    patterns = ["run_sp_exp_SxSePsf", "run_sp_exp_Pi"]
+    # Note: psfex P3 is mostly run_sp_exp_SxSePsf
+    patterns = ["run_sp_exp_SxSePsfPi"] #, "run_sp_exp_Pi"]
     for pattern in patterns:
         paths, number = get_paths(exp_base_dir, exp_shdu_IDs, pattern)
-        #print(number)
 
         create_links_paths(tile_base_dir, tile_ID, paths, verbose=verbose)
 

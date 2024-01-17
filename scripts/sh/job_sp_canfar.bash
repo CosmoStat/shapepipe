@@ -38,7 +38,6 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    \t  64: galaxy selection on tiles (offline)\n
    \t 128: shapes and morphology (offline)\n
    \t 256: paste catalogues (offline)\n
-   \t 512: upload results (online)\n
    -c, --config_dir DIR\n
    \t config file directory, default='$config_dir'\n
    -p, --psf MODEL\n
@@ -483,62 +482,5 @@ if [[ $do_job != 0 ]]; then
 
   ### Merge all relevant information into final catalogue
   command_sp "shapepipe_run -c $SP_CONFIG/config_make_cat_$psf.ini" "Run shapepipe (tile: create final cat $psf)" "$VERBOSE" "$ID"
-
-fi
-
-## Upload results (online)
-(( do_job= $job & 512 ))
-if [[ $do_job != 0 ]]; then
-
-  ### module and pipeline log files
-  upload_logs "$ID" "$VERBOSE"
-
-  ### Final shape catalog
-  ### pipeline_flags are the tile masks, for random cats
-  ### SETools masks (selection), stats and plots
-  ### ${psf}_interp_exp for diagnostics, validation with leakage,
-  ### validation with residuals, rho stats
-
-  NAMES=(
-    "final_cat"
-    "pipeline_flag"
-    "setools_mask"
-    "setools_stat"
-    "setools_plot"
-  )
-  DIRS=(
-    "*/make_cat_runner/output"
-    "*/mask_runner_run_1/output"
-    "*/setools_runner/output/mask"
-    "*/setools_runner/output/stat"
-    "*/setools_runner/output/plot"
-  )
-  PATTERNS=(
-    "final_cat-*"
-    "pipeline_flag-???-???*"
-    "*"
-    "*"
-    "*"
-  )
-
-  # PSF validation
-  pattern="validation_psf-*"
-  if [ "$psf" == "psfex" ]; then
-    name="psfex_interp_exp"
-    dir="*/psfex_interp_runner/output"
-  else
-    name="mccd_fit_val_runner"
-    dir="*/mccd_fit_val_runner/output"
-  fi
-  upl=$output_rel/$dir/$pattern
-  upload "$name" "$ID" "$VERBOSE" "${upl[@]}"
-
-  for n in "${!NAMES[@]}"; do
-      name=${NAMES[$n]}
-      dir=${DIRS[$n]}
-      pattern=${PATTERNS[$n]}
-      upl=$output_rel/$dir/$pattern
-      upload "$name" "$ID" "$VERBOSE" "${upl[@]}"
-  done
 
 fi

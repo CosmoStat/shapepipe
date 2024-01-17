@@ -10,6 +10,7 @@ N_SMP=1
 kind=-1
 dry_run=0
 nsh_jobs=8
+dir=`pwd`
 VERBOSE=1
 
 
@@ -28,6 +29,8 @@ usage="Usage: $(basename "$0") -j JOB -e ID  -k KIND [OPTIONS]
     \timage kind, allowed are 'tile' and 'exp'\n
    -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default from original config files\n
+   -d, --directory\n
+    \trun directory, default is pwd ($dir)\n
    -n, --dry_run\n
     \tdry run, no actuall processing\n
 "
@@ -61,6 +64,10 @@ while [ $# -gt 0 ]; do
       kind="$2"                                                                
       shift                                                                     
       ;;                                                                        
+    -d|--directory)
+      dir="$2"
+      shift
+      ;;
     -n|--dry_run)
       dry_run=1
       ;;
@@ -132,14 +139,11 @@ fi
 
 conda activate shapepipe
 
-basedir=$HOME/cosmostat/P3_v2/psfex
-cd $basedir
+cd $dir
+echo $pwd
 
-
-# Update links to exposure run directories
-if [ "$kind" == "tile" ]; then
-  command "rm -rf tile_runs/$ID/output/run_exp_SxSePsf*" $dry_run
-  command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs" $dry_run
+if [ ! -d ${kind}_runs ]; then
+  command "mkdir ${kind}_runs" $dry_run
 fi
 
 
@@ -158,62 +162,38 @@ fi
 
 cd output
 
-if [ 0 == 1 ]; then
-
-  if [ ! -f log_exp_headers.sqlite ]; then
-    command "ln -s $basedir/output/log_exp_headers.sqlite" $dry_run
-  fi
-
-  # Remove potentially obsolete link
-  #rm run_sp_exp_SpMh*
-  #rm  run_sp_MaMa_*
-
-  # Update links to global run directories (GiFeGie, Uz, Ma?, combined_flag?)
-  for dir in $basedir/output/run_sp_*; do
-    command "ln -sf $dir" $dry_run
-  done
-  if [ ! -e run_sp_combined_flag ]; then
-    command "ln -s $basedir/output/run_sp_combined_flag" $dry_run
-  fi
-
+if [ ! -f log_exp_headers.sqlite ]; then
+  command "ln -s $dir/output/log_exp_headers.sqlite" $dry_run
 fi
 
-(( do_job= $job & 128 ))
-#if [[ $do_job != 0 ]]; then
-# The following is now dealt with in job_sh_canar.bash
-if [ 0 == 1 ]; then
 
-  # Indentify and remove unfinished ngmix dirs
-  min_n_out=2
-  for k in $(seq 1 $nsh_jobs); do
-    ngmix_run="run_sp_tile_ngmix_Ng${k}u/ngmix_runner"
-    if [ -e "$ngmix_run" ]; then
-      ngmix_out="$ngmix_run/output"
-      n_out=`ls -rlt $ngmix_out | wc -l`
-      if [ "$n_out" -lt "$min_n_out" ]; then
-          min_n_out=$n_out
-      fi
-      #echo $k $n_out $min_n_out
-    else
-      echo "ngmix separated run #$k not found"
-      min_n_out=0
-    fi
-  done
-  if [ "$min_n_out" -lt "2" ]; then
-    echo "At least one ngmix separated run no output files"
-    for k in $(seq 1 $nsh_jobs); do
-      command "rm -rf run_sp_tile_ngmix_Ng${k}u" $dry_run
-    done
-  else
-    if [ "$job" == "128" ]; then
-      echo "ngmix found complete, all is well, exiting"
-      exit 0
+# Update links to global run directories (GiFeGie, Uz, Ma?, combined_flag?)
+for dir in $dir/output/run_sp_*; do
+  command "ln -sf $dir" $dry_run
+done
+
+# Update links to exposure run directories, which were created in job 32
+(( do_job= $job & 64 ))
+if [[ $do_job != 0 ]]; then
+  if [ "$kind" == "tile" ]; then
+    cd ../../..
+    #command "rm -rf tile_runs/$ID/output/run_exp_SxSePsf*" $dry_run
+    command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs" $dry_run
+    cd ${kind}_runs/$ID/output
+
+    # Remove duplicate job-32 runs (tile detection)
+    n_16=`ls -rt1d run_sp_tile_Sx_* | wc -l`
+    if [ "$n_16" != "1" ]; then
+      n_remove="$(($n_16-1))"
+      echo "removing $n_remove duplicate old job-32 runs"
+      rm -rf `ls -rt1d run_sp_tile_Sx_* | head -$n_remove`
     fi
   fi
-
-fi 
+fi
 
 cd ..
+
+# Update log file
 command update_runs_log_file.py $dry_run
 
 echo -n "pwd: "
@@ -222,12 +202,8 @@ pwd
 echo -n "environment: "
 echo $CONDA_PREFIX
 
-#command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP" $dry_run
+command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP" $dry_run
 
-export SP_RUN=.
-command "shapepipe_run -c $HOME/shapepipe/example/cfis/config_exp_Pi.ini" $dry_run
-
-cd $basedir
+cd $dir
 
 echo "end init run tile canfar"
-
