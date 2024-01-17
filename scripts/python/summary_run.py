@@ -10,12 +10,11 @@ def main(argv=None):
 
     patch = argv[1]
 
-    retrieve = "vos"
     verbose = False
     
     import summary_params_pre_v2 as params
 
-    jobs, list_tile_IDs_dot = params.set_jobs_v2_pre_v2(patch, retrieve, verbose)
+    jobs, list_tile_IDs_dot = params.set_jobs_v2_pre_v2(patch, verbose)
     
     list_tile_IDs = job_data.replace_dot_dash(list_tile_IDs_dot)
     

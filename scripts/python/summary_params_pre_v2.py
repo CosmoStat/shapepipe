@@ -32,7 +32,7 @@ def update_par_runtime_after_find_exp(par_runtime, all_exposures):
     return par_runtime
 
 
-def set_jobs_v2_pre_v2(patch, retrieve, verbose):
+def set_jobs_v2_pre_v2(patch, verbose):
     """ Return information about shapepipe jobs
     
     """
@@ -53,12 +53,6 @@ def set_jobs_v2_pre_v2(patch, retrieve, verbose):
 
     logging.info(f"Checking main directory = {path_main}")
 
-    # Number of links created for retrieved images
-    if retrieve == "vos":
-        n_link = 2
-    else:
-        n_link = 1
-
     # Tile IDs
     tile_ID_path = f"{path_main}/tile_numbers.txt"
 
@@ -67,8 +61,14 @@ def set_jobs_v2_pre_v2(patch, retrieve, verbose):
 
     jobs = {}
 
-#        "run_sp_GitFeGie_",
     # Set the first job (retrieve images)
+    
+    # With "CFIS_" only the linked images are counted. The original
+    # ones do not match the IDdash pattern.
+    # If images were downloaded in several runs:
+    # - Only copy original images, then (re-)set links in SP numbering format
+    # - get_images_runner_run_[12] consistent
+    # - remove previous output dirs since only last is searched
     jobs["1"] = job_data(
         1,
          "run_sp_Git",
@@ -79,33 +79,27 @@ def set_jobs_v2_pre_v2(patch, retrieve, verbose):
         ],
         ["tile_IDs", "tile_IDs", "exposures"],
         pattern=["CFIS_", "", ""],
-        n_mult=[1 * n_link, 1, 3],
+        n_mult=[2, 1, 3],
         path_main=path_main,
         path_left="output",
         verbose=verbose,
     )
 
+    #        n_mult=[1, 1, 1],
     jobs["2"] = job_data(
         2,
         ["run_sp_Uz", "run_sp_exp_SpMh", "run_sp_exp_SpMh_2023-12"],
         ["uncompress_fits_runner", "merge_headers_runner", "split_exp_runner"],
         ["tile_IDs", 0, "3*n_shdus+n_exposures"],
-        n_mult=[1, 1, 1],
         path_main=path_main,
         path_left="output",
         verbose=verbose,
     )
 
-    if patch == "PX":
-        run_dir_mask_tiles = "run_sp_combined_flag"
-        run_dir_mask_exp = run_dir_mask_tiles
-        mask_module_tiles = "mask_runner_run_1"
-        mask_module_exp = "mask_runner_run_2"
-    else:
-        run_dir_mask_tiles = "run_sp_tile_Ma"
-        run_dir_mask_exp = "run_sp_exp_Ma"
-        mask_module_tiles = "mask_runner"
-        mask_module_exp = "mask_runner"
+    run_dir_mask_tiles = "run_sp_tile_Ma"
+    run_dir_mask_exp = "run_sp_exp_Ma"
+    mask_module_tiles = "mask_runner"
+    mask_module_exp = "mask_runner"
 
     jobs["4"] = job_data(
         4,
