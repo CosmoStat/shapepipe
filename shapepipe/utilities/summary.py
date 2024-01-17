@@ -412,8 +412,7 @@ class job_data(object):
                 )
             else:
                 output_path = self._output_path_missing_IDs[idx]
-
-        self.write_IDs_to_file(output_path, missing_IDs_unique)
+            self.write_IDs_to_file(output_path, missing_IDs_unique)
 
         return missing_IDs_unique
 
@@ -541,6 +540,8 @@ class job_data(object):
                     directory = self.get_module_output_dir(
                         full_path, module
                     )
+                    if self._verbose:
+                        print(f"**** Output dir = {directory}")
 
                     # Find matching file names and paths
                     self.get_matches_final(directory, idx)
