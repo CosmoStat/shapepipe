@@ -142,6 +142,8 @@ if [ "$dry_run" == 2 ]; then
 
 else
 
+  rm -rf session_IDs.txt session_image_IDs.txt
+
   if [ "$ID" == "-1" ]; then
 
     for ID in `cat $file_IDs`; do
