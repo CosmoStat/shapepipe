@@ -1,5 +1,12 @@
+# Running `shapepipe` on the canfar science portal
 
-Steps from testing to parallel running:
+## Introduction
+
+## Steps from testing to parallel running
+
+Before starting a batch remote session job on a large number of images (step 6.),
+it is recommended to perform some or all of the testing steps (1. - 5.).
+
 
 1. In ID directory, run shapepipe with config file
 
