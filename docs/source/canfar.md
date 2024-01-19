@@ -8,13 +8,19 @@ Before starting a batch remote session job on a large number of images (step 6.)
 it is recommended to perform some or all of the testing steps (1. - 5.).
 
 
-1. In ID directory, run shapepipe with config file
+1. Run the basic `shapepipe` runner script to test (one or several) modules in question, specified by a given config file, on one image.
+   This step has to be run in the image run directory. The command is
+   ```bash
+   shapepipe_run -c config.ini
+   ```
 
-2. In ID directory, run job
+2. Run the job script to test the job management, on one image.
+   This step has to be run in the image run directory. The command is
+   ```bash
+   job_sp_canfar -j JOB [OPTIONS]
+   ```
 
-   job_sp_canfar -j JOB
-
-3. In base directory, run single image
+5. In base directory, run single image
 
   First in dry mode
 
