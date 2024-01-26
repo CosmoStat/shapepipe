@@ -119,46 +119,114 @@ RESOURCES="ram=4&cores=$N_SMP"
 
 # TODO: dir as command line argument to this script
 dir=`pwd`
-arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run -d $dir"
+#arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run -d $dir"
+
+
+# Return argument for local script to be called via curl
+function set_arg() {
+  my_arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run -d $dir"
+  echo $my_arg
+}
+
+
+function call_curl() {
+  my_arg=$1
+
+}
+
+function update_session_logs() {
+  echo $my_session >> session_IDs.txt
+  echo "$my_session $ID" >> session_image_IDs.txt
+
+}
+
+function submit_batch() {
+  path=$1
+
+  for ID in `cat $path`; do
+    my_arg=$(set_arg)
+    my_session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$my_arg"`
+    update_session_logs
+  done
+
+}
+
+n_max=200
+batch=20
+sleep=300
+
+((n_thresh=n_max- batch))
 
 
 if [ "$dry_run" == 2 ]; then
 
+  # Do not call curl (dry run = 2)
   echo "Running command dry run:"
 
   if [ "$ID" == "-1" ]; then
 
+    # Submit file (dry run = 2)
     for ID in `cat $file_IDs`; do
-      arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run -d $dir"
+      arg=$(set_arg)
       echo curl -E $SSL $SESSION?$RESOURCES -d \"image=$IMAGE:$version\" -d \"name=${NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
     done
 
   else
 
-    arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run -d $dir"
+    # Submit image (dry run = 2)
+    arg=$(set_arg)
     echo curl -E $SSL $SESSION?$RESOURCES -d \"image=$IMAGE:$version\" -d \"name=${NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
 
   fi
 
 else
 
+  # Call curl
   rm -rf session_IDs.txt session_image_IDs.txt
 
   if [ "$ID" == "-1" ]; then
 
-    for ID in `cat $file_IDs`; do
-      arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run -d $dir"
-      session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg"`
-      echo $session >> session_IDs.txt
-      echo "$session $ID" >> session_image_IDs.txt
-    done
+    # Submit file
+    n_jobs=`cat $file_IDs | wc -l`
+    if [ "$n_jobs" -gt "$n_max" ]; then
+
+      # Split into batches 
+      prefix="${file_IDs}_split_"
+      split -d -l $batch $file_IDs $prefix
+      n_split=`ls -l $prefix* | wc -l`
+      echo "Split '$file_IDs' into $n_split batches of size $batch"
+
+      count=1
+      for batch in $prefix*; do
+        echo "Number of running jobs = $n_running"
+        echo "Submitting batch $batch ($count/$n_split)"
+        submit_batch $batch
+        ((count=count+1))
+
+        n_running=`stats_headless_canfar.py`
+
+        while [ "$n_running" -gt "$n_thresh" ]; do
+          echo "Wait for #jobs = $n_running jobs to go < $n_thresh ..."
+          sleep $sleep
+          n_running=`stats_headless_canfar.py`
+        done
+
+      done
+
+    else
+
+      # Submit entire file (single batch)
+      echo "Submit '$file_IDs' in single batch"
+      submit_batch $file_IDs
+
+    fi
 
   else
 
-    arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run -d $dir"
+    # Submit image
+    arg=$(set_arg)
     session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg"`
-    echo $session >> session_IDs.txt
-    echo "$session $ID" >> session_image_IDs.txt
+    update_session_logs
 
   fi
 
