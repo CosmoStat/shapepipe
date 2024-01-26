@@ -141,12 +141,14 @@ def set_jobs_v2_pre_v2(patch, verbose):
             "run_sp_exp_SxSePsf",
             "run_sp_exp_SxSePsf",
             "run_sp_exp_SxSePsf",
-        ],  # "run_sp_exp_Pi"],
+            #"run_sp_exp_Pi"
+        ],
         [
             "sextractor_runner",
             "setools_runner",
             "psfex_runner",
-        ],  # "psfex_interp_runner"],
+            # "psfex_interp_runner"],
+        ],
         "shdus",
         n_mult=[2, 2, 2],  # 1],
         path_main=path_main,

@@ -464,7 +464,7 @@ class job_data(object):
 
     def get_matches_final(self, directory, idx):
 
-        # Look over files
+        # Loop over files
         # os.path.whether exists is twice faster than try/except
 
         if os.path.exists(directory):
@@ -475,6 +475,7 @@ class job_data(object):
                     and (
                         fnmatch.fnmatch(entry2.name, pattern)
                     )
+                    and entry2.stat().st_size > 0
                 ):
                     # Append matching files
                     self._names_in_dir[idx].append(entry2.name)
@@ -530,7 +531,9 @@ class job_data(object):
                         continue
 
                     if self._verbose:
-                        print("Matching entries: ", matches)
+                        print("**** Matching entries: ", end="")
+                        for match in matches:
+                            print(match.name)
 
                     full_path = self.get_last_full_path(
                         base_and_subdir, matches
