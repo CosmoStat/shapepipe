@@ -22,6 +22,7 @@ dependencies:
     - PyQt5
     - pyqtgraph
     - reproject
+    - skaha
     - sip_tpv
     - sf_tools
     - sqlitedict
