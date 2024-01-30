@@ -28,10 +28,10 @@ RUN apt-get update --allow-releaseinfo-change && \
     apt-get install vim -y && \
     apt-get install locate -y && \
     apt-get install curl -y && \
+    apt-get install acl -y && \
+    apt-get install sssd -y && \
     apt-get clean
 
-RUN apt-get install acl -y && \
-    apt-get install sssd -y
 ADD nsswitch.conf /etc/
 
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
@@ -52,9 +52,6 @@ RUN conda env create --file environment.yml
 COPY shapepipe ./shapepipe
 COPY scripts ./scripts
 
-# Activate conda environment using "source"
-#RUN . /opt/conda/etc/profile.d/conda.sh
-#RUN conda init bash
-RUN ./scripts/sh/init_canfar.sh
-RUN source activate shapepipe
+# Make RUN commands use the new environment:
+SHELL ["conda", "run", "-n", "shapepipe", "/bin/bash", "-c"]
 RUN pip install jupyter
