@@ -17,6 +17,7 @@ N_SMP=1
 kind=-1
 version=1.0
 cmd_remote="shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
+batch_max=200
 dry_run=0
 
 # TODO psf
@@ -40,6 +41,8 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
     \tversion of docker image, default='$version'\n
    -C, --command_remote\n
     \tremote command to run on canfar, default='$cmd_remote'\n
+   -b, --batch_max\n
+    \tmaximum batch size = number of jobs run simultaneously\n
    -n, --dry_run LEVEL\n
     \tdry run, from LEVEL=2 (no processing) to 0 (full run)\n
 "
@@ -70,11 +73,15 @@ while [ $# -gt 0 ]; do
       shift
       ;;
     -N|--N_SMP)
-      n_SMP="$2"
+      N_SMP="$2"
       shift
       ;;
     -k|--kind)
       kind="$2"
+      shift
+      ;;
+    -b|--batch_max)
+      batch_max="$2"
       shift
       ;;
     -n|--dry_run)
@@ -151,11 +158,10 @@ function submit_batch() {
 
 }
 
-n_max=200
 batch=20
-sleep=300
+sleep=600
 
-((n_thresh=n_max- batch))
+((n_thresh=batch_max-batch))
 
 
 if [ "$dry_run" == 2 ]; then
@@ -188,7 +194,7 @@ else
 
     # Submit file
     n_jobs=`cat $file_IDs | wc -l`
-    if [ "$n_jobs" -gt "$n_max" ]; then
+    if [ "$n_jobs" -gt "$batch_max" ]; then
 
       # Split into batches 
       prefix="${file_IDs}_split_"
