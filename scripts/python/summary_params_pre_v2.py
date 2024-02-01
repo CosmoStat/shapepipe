@@ -88,7 +88,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
     #        n_mult=[1, 1, 1],
     jobs["2"] = job_data(
         2,
-        ["run_sp_Uz", "run_sp_exp_SpMh", "run_sp_exp_SpMh_2023-12"],
+        ["run_sp_Uz", "run_sp_exp_SpMh", "run_sp_exp_SpMh"],
         ["uncompress_fits_runner", "merge_headers_runner", "split_exp_runner"],
         ["tile_IDs", 0, "3*n_shdus+n_exposures"],
         path_main=path_main,
