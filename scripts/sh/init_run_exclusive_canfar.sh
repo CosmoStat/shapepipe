@@ -57,7 +57,7 @@ while [ $# -gt 0 ]; do
       shift                                                                     
       ;;
     -N|--N_SMP)                                                                 
-      n_SMP="$2"                                                                
+      N_SMP="$2"                                                                
       shift                                                                     
       ;;                                                                        
     -k|--kind)                                                                 
@@ -177,7 +177,6 @@ done
 if [[ $do_job != 0 ]]; then
   if [ "$kind" == "tile" ]; then
     cd ../../..
-    #command "rm -rf tile_runs/$ID/output/run_exp_SxSePsf*" $dry_run
     command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs" $dry_run
     cd ${kind}_runs/$ID/output
 
@@ -188,6 +187,9 @@ if [[ $do_job != 0 ]]; then
       echo "removing $n_remove duplicate old job-32 runs"
       rm -rf `ls -rt1d run_sp_tile_Sx_* | head -$n_remove`
     fi
+
+    # Remove previous runs of this job
+    rm -rf run_sp_tile_PsViSmVi*
   fi
 fi
 
