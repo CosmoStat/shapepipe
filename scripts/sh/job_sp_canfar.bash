@@ -160,9 +160,6 @@ export SP_RUN=`pwd`
 export SP_CONFIG=$SP_RUN/cfis
 export SP_CONFIG_MOD=$SP_RUN/cfis_mod
 
-# To find ssl certificate
-export VM_HOME=$HOME
-
 ## Other variables
 
 # Output
@@ -341,17 +338,31 @@ fi
 if [[ $do_job != 0 ]]; then
 
   ### Retrieve files
-  command_sp "shapepipe_run -c $SP_CONFIG/config_GitFeGie_$retrieve.ini" "Retrieve images"
+  command_cfg_shapepipe \
+    "config_GitFeGie_$retrieve.ini" \
+     "Retrieve images" \
+     -1 \
+     $exclusive
+
+  #if [[ ! -d "data_tiles" ]]; then
+    #echo "Directory or link 'data_tiles' does not exist, exiting"
+    #exit 1
+  #fi
+  #command_cfg_shapepipe "config_Git_vos.ini" "Retrieve tiles" -1 $n_exclusive
 
   ### Retrieve and save star catalogues for masking
   if [ "$star_cat_for_mask" == "save" ]; then
     #### For tiles
     mkdir $SP_RUN/star_cat_tiles
-    command_sp "create_star_cat $SP_RUN/output/run_sp_GitFeGie_*/get_images_runner_run_1/output $SP_RUN/star_cat_tiles" "Save star cats for masking (tile)"
+    command_sp \
+      "create_star_cat $SP_RUN/output/run_sp_GitFeGie_*/get_images_runner_run_1/output $SP_RUN/star_cat_tiles" \
+      "Save star cats for masking (tile)"
 
     #### For single-exposures
     mkdir $SP_RUN/star_cat_exp
-    command_sp "create_star_cat $SP_RUN/output/run_sp_GitFeGie_*/get_images_runner_run_2/output $SP_RUN/star_cat_exp exp" "Save star cats for masking (exp)"
+    command_sp \
+      "create_star_cat $SP_RUN/output/run_sp_GitFeGie_*/get_images_runner_run_2/output $SP_RUN/star_cat_exp exp" \
+      "Save star cats for masking (exp)"
   fi
 
 fi
@@ -364,7 +375,11 @@ if [[ $do_job != 0 ]]; then
   command_cfg_shapepipe "config_tile_Uz.ini" "Run shapepipe (uncompress tile weights)" $n_smp $exclusive
 
   ### Split images into single-HDU files, merge headers for WCS info
-  command_cfg_shapepipe "config_exp_SpMh.ini" "Run shapepipe (split images, merge headers)" $n_smp $exclusive
+  command_cfg_shapepipe \
+    "config_exp_SpMh.ini" \
+    "Run shapepipe (split images, merge headers)" \
+    $n_smp \
+    $exclusive
 
 fi
 
@@ -373,7 +388,11 @@ fi
 if [[ $do_job != 0 ]]; then
 
   ### Mask tiles
-  command_cfg_shapepipe "config_tile_Ma_$star_cat_for_mask.ini" "Run shapepipe (mask tiles)" $n_smp $exclusive
+  command_cfg_shapepipe \
+    "config_tile_Ma_$star_cat_for_mask.ini" \
+    "Run shapepipe (mask tiles)" \
+    $n_smp \
+    $exclusive
 
 fi
 
@@ -382,7 +401,11 @@ fi
 if [[ $do_job != 0 ]]; then
 
   ### Mask exposures
-  command_cfg_shapepipe "config_exp_Ma_$star_cat_for_mask.ini" "Run shapepipe (mask exposures)" $n_smp $exclusive
+  command_cfg_shapepipe \
+    "config_exp_Ma_$star_cat_for_mask.ini" \
+    "Run shapepipe (mask exposures)" \
+    $n_smp \
+    $exclusive
 
 fi
 
@@ -392,7 +415,11 @@ fi
 if [[ $do_job != 0 ]]; then
 
   ### Object detection on tiles
-  command_cfg_shapepipe "config_tile_Sx.ini" "Run shapepipe (tile detection)" $n_smp $exclusive
+  command_cfg_shapepipe \
+    "config_tile_Sx.ini" \
+    "Run shapepipe (tile detection)" \
+    $n_smp \
+    $exclusive
 
 fi
 
@@ -403,7 +430,11 @@ if [[ $do_job != 0 ]]; then
   ### Star detection, selection, PSF model. setools can exit with an error for CCD with insufficient stars,
   ### the script should continue
   STOP=0
-  command_cfg_shapepipe "config_exp_${psf}.ini" "Run shapepipe (exp $psf)" $n_smp $exclusive
+  command_cfg_shapepipe \
+    "config_exp_${psf}.ini" \
+    "Run shapepipe (exp $psf)" \
+    $n_smp \
+    $exclusive
   STOP=1
 
 fi
@@ -415,7 +446,11 @@ if [[ $do_job != 0 ]]; then
   ### PSF model letter: 'P' (psfex) or 'M' (mccd)
   letter=${psf:0:1}
   Letter=${letter^}
-  command_cfg_shapepipe "config_tile_${Letter}iViSmVi_canfar.ini" "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)" $n_smp $exclusive
+  command_cfg_shapepipe \
+    "config_tile_${Letter}iViSmVi_canfar.ini" \
+    "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)" \
+    $n_smp \
+    $exclusive
 
 fi
 
@@ -454,13 +489,19 @@ if [[ $do_job != 0 ]]; then
         ngmix_out="$ngmix_run/output"
         n_out=`ls -rlt $ngmix_out | wc -l`
         if [ "$n_out" -lt 2 ]; then
-          command "rm -rf $OUTPUT/run_sp_tile_ngmix_Ng${k}u" "Re-running existing empty ngmix subrun $k"
-          command_sp "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" "Run shapepipe (tile: ngmix $k)" &
+          command \
+            "rm -rf $OUTPUT/run_sp_tile_ngmix_Ng${k}u" \
+            "Re-running existing empty ngmix subrun $k"
+          command_sp \
+            "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" \
+            "Run shapepipe (tile: ngmix $k)" &
         else
           echo "Skipping existing non-empty ngmix subrun $k"
         fi
       else
-        command_sp "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" "Run shapepipe (tile: ngmix $k)" &
+        command_sp \
+          "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" \
+          "Run shapepipe (tile: ngmix $k)" &
       fi
   done
   wait
@@ -478,9 +519,17 @@ if [[ $do_job != 0 ]]; then
       > $SP_CONFIG_MOD/config_merge_sep_cats.ini
  
   ### Merge separated shapes catalogues
-  command_sp "shapepipe_run -c $SP_CONFIG_MOD/config_merge_sep_cats.ini" "Run shapepipe (tile: merge sep cats)" "$VERBOSE" "$ID"
+  command_sp \
+    "shapepipe_run -c $SP_CONFIG_MOD/config_merge_sep_cats.ini" \
+    "Run shapepipe (tile: merge sep cats)" \
+    "$VERBOSE" \
+    "$ID"
 
   ### Merge all relevant information into final catalogue
-  command_sp "shapepipe_run -c $SP_CONFIG/config_make_cat_$psf.ini" "Run shapepipe (tile: create final cat $psf)" "$VERBOSE" "$ID"
+  command_sp \
+    "shapepipe_run -c $SP_CONFIG/config_make_cat_$psf.ini" \
+    "Run shapepipe (tile: create final cat $psf)" \
+    "$VERBOSE" \
+    "$ID"
 
 fi

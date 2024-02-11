@@ -56,16 +56,28 @@ it is recommended to perform some or all of the testing steps (1. - 4.).
 
 ## Monitoring
 
+
+### Status and output of submitted job 
+
 Monitoring of the currently active remote session can be performed using the session IDs `session_IDs.txt` written by the
 remote session script `curl_canfar_local.sh`. In the patch main directory, run
 ```bash
-curl_canfar_monitor.sh logs
-```
-to print `stdout` of the remotely run pipeline script, and
-```bash
 curl_canfar_monitor.sh events
 ```
-to display the remotely started docker image status.
+to display the remotely started docker image status, and
+```bash
+curl_canfar_monitor.sh logs
+```
+to print `stdout` of the remotely run pipeline script.
+
+### Number of submitted running jobs
+
+The script
+```bash
+stats_headless_canfar.py
+```
+returns the number of actively running headless jobs.
+
 
 ## Post-hoc summary
 
@@ -74,3 +86,9 @@ In the patch main directory, run
 summary_run PATCH
 ```
 to print a summary with missing image IDs per job and module.
+
+## Deleting jobs
+
+```bash
+ for id in `cat session_IDs.txt`; do echo $id; curl -X DELETE -E /arc/home/kilbinger/.ssl/cadcproxy.pem https://ws-uv.canfar.net/skaha/v0/session/$id;  done
+ ```

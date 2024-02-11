@@ -46,7 +46,10 @@ def set_jobs_v2_pre_v2(patch, verbose):
     if not os.path.isdir(path):
         os.mkdir(path)
     log_file_name = f"{path}/summary_log.txt"
-    handlers = [logging.FileHandler(log_file_name), logging.StreamHandler()]
+    handlers = [
+        logging.FileHandler(log_file_name, mode="w"),
+        logging.StreamHandler()
+    ]
     logging.basicConfig(
         level=logging.INFO, format="%(message)s", handlers=handlers
     )
@@ -88,7 +91,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
     #        n_mult=[1, 1, 1],
     jobs["2"] = job_data(
         2,
-        ["run_sp_Uz", "run_sp_exp_SpMh", "run_sp_exp_SpMh_2023-12"],
+        ["run_sp_Uz", "run_sp_exp_SpMh", "run_sp_exp_SpMh"],
         ["uncompress_fits_runner", "merge_headers_runner", "split_exp_runner"],
         ["tile_IDs", 0, "3*n_shdus+n_exposures"],
         path_main=path_main,
@@ -141,12 +144,14 @@ def set_jobs_v2_pre_v2(patch, verbose):
             "run_sp_exp_SxSePsf",
             "run_sp_exp_SxSePsf",
             "run_sp_exp_SxSePsf",
-        ],  # "run_sp_exp_Pi"],
+            #"run_sp_exp_Pi"
+        ],
         [
             "sextractor_runner",
             "setools_runner",
             "psfex_runner",
-        ],  # "psfex_interp_runner"],
+            # "psfex_interp_runner"],
+        ],
         "shdus",
         n_mult=[2, 2, 2],  # 1],
         path_main=path_main,
@@ -157,17 +162,17 @@ def set_jobs_v2_pre_v2(patch, verbose):
     )
 
     # For P3
-    jobs["33"] = job_data(
-        33,
-        "run_sp_exp_Pi",
-        ["psfex_interp_runner"],
-        "shdus",
-        path_main=path_main,
-        path_left="exp_runs",
-        output_subdirs="shdus",
-        path_right="output",
-        verbose=verbose,
-    )
+    #jobs["33"] = job_data(
+    #    33,
+    #    "run_sp_exp_Pi",
+    #    ["psfex_interp_runner"],
+    #    "shdus",
+    #    path_main=path_main,
+    #    path_left="exp_runs",
+    #    output_subdirs="shdus",
+    #    path_right="output",
+    #    verbose=verbose,
+    #)
 
     jobs["64"] = job_data(
         "64",

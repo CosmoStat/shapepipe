@@ -15,6 +15,8 @@ from collections import Counter
 
 from tqdm import tqdm
 
+print("summaary v1.0")
+
 
 def get_IDs_from_file(path):
     """Get IDs From File.
@@ -408,16 +410,20 @@ class job_data(object):
         if n_unique > 0:
             if not self._output_path_missing_IDs:
                 output_path = (
-                    f"{self._path_main}/summary/missing_job_{self._bit}_{module}.txt"
+                    f"{self._path_main}/summary/missing_job_{self._bit}"
+                    + f"_{module}.txt"
                 )
             else:
                 output_path = self._output_path_missing_IDs[idx]
+            #print("MKDEBUG", missing_IDs_unique)
             self.write_IDs_to_file(output_path, missing_IDs_unique)
 
         return missing_IDs_unique
 
     def output_missing_job(self):
-        output_path = f"{self._path_main}/summary/missing_job_{self._bit}_all.txt"
+        output_path = (
+            f"{self._path_main}/summary/missing_job_{self._bit}_all.txt"
+        )
 
         missing_IDs_all = set(self._missing_IDs_job)
 
@@ -464,7 +470,7 @@ class job_data(object):
 
     def get_matches_final(self, directory, idx):
 
-        # Look over files
+        # Loop over files
         # os.path.whether exists is twice faster than try/except
 
         if os.path.exists(directory):
@@ -475,27 +481,13 @@ class job_data(object):
                     and (
                         fnmatch.fnmatch(entry2.name, pattern)
                     )
+                    and entry2.stat().st_size > 0
                 ):
                     # Append matching files
                     self._names_in_dir[idx].append(entry2.name)
                     self._paths_in_dir[idx].append(
                         os.path.join(directory, entry2.name)
                     )
-
-        #if os.path.exists(directory):
-            #with os.scandir(directory) as entries2:
-                #files = [
-                    #entry2.name
-                    #for entry2 in entries2
-                    #if entry2.name.startswith(self._pattern[idx])
-                #]
-
-                ## Append matching files
-                #self._names_in_dir[idx].extend(files)
-                #self._paths_in_dir[idx].extend(
-                    #[os.path.join(directory, file)
-                    #for file in files]
-                #)
 
     def get_names_in_dir(self, iterable, module, idx):
 
@@ -530,7 +522,9 @@ class job_data(object):
                         continue
 
                     if self._verbose:
-                        print("Matching entries: ", matches)
+                        print("**** Matching entries: ", end="")
+                        for match in matches:
+                            print(match.name)
 
                     full_path = self.get_last_full_path(
                         base_and_subdir, matches
@@ -684,7 +678,7 @@ def get_par_runtime(par_runtime, key, kind="n"):
 
 def print_par_runtime(par_runtime, verbose=True):
     # Print runtime parameter values
-    if verbose:
+    if True:
         logging.info("")
         logging.info("===========")
         logging.info("par_runtime")
