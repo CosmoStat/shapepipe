@@ -15,6 +15,8 @@ from collections import Counter
 
 from tqdm import tqdm
 
+print("summaary v1.0")
+
 
 def get_IDs_from_file(path):
     """Get IDs From File.
@@ -408,16 +410,20 @@ class job_data(object):
         if n_unique > 0:
             if not self._output_path_missing_IDs:
                 output_path = (
-                    f"{self._path_main}/summary/missing_job_{self._bit}_{module}.txt"
+                    f"{self._path_main}/summary/missing_job_{self._bit}"
+                    + f"_{module}.txt"
                 )
             else:
                 output_path = self._output_path_missing_IDs[idx]
+            #print("MKDEBUG", missing_IDs_unique)
             self.write_IDs_to_file(output_path, missing_IDs_unique)
 
         return missing_IDs_unique
 
     def output_missing_job(self):
-        output_path = f"{self._path_main}/summary/missing_job_{self._bit}_all.txt"
+        output_path = (
+            f"{self._path_main}/summary/missing_job_{self._bit}_all.txt"
+        )
 
         missing_IDs_all = set(self._missing_IDs_job)
 
@@ -482,21 +488,6 @@ class job_data(object):
                     self._paths_in_dir[idx].append(
                         os.path.join(directory, entry2.name)
                     )
-
-        #if os.path.exists(directory):
-            #with os.scandir(directory) as entries2:
-                #files = [
-                    #entry2.name
-                    #for entry2 in entries2
-                    #if entry2.name.startswith(self._pattern[idx])
-                #]
-
-                ## Append matching files
-                #self._names_in_dir[idx].extend(files)
-                #self._paths_in_dir[idx].extend(
-                    #[os.path.join(directory, file)
-                    #for file in files]
-                #)
 
     def get_names_in_dir(self, iterable, module, idx):
 
@@ -687,7 +678,7 @@ def get_par_runtime(par_runtime, key, kind="n"):
 
 def print_par_runtime(par_runtime, verbose=True):
     # Print runtime parameter values
-    if verbose:
+    if True:
         logging.info("")
         logging.info("===========")
         logging.info("par_runtime")

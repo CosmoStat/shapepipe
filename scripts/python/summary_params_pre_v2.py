@@ -46,7 +46,10 @@ def set_jobs_v2_pre_v2(patch, verbose):
     if not os.path.isdir(path):
         os.mkdir(path)
     log_file_name = f"{path}/summary_log.txt"
-    handlers = [logging.FileHandler(log_file_name), logging.StreamHandler()]
+    handlers = [
+        logging.FileHandler(log_file_name, mode="w"),
+        logging.StreamHandler()
+    ]
     logging.basicConfig(
         level=logging.INFO, format="%(message)s", handlers=handlers
     )
@@ -159,17 +162,17 @@ def set_jobs_v2_pre_v2(patch, verbose):
     )
 
     # For P3
-    jobs["33"] = job_data(
-        33,
-        "run_sp_exp_Pi",
-        ["psfex_interp_runner"],
-        "shdus",
-        path_main=path_main,
-        path_left="exp_runs",
-        output_subdirs="shdus",
-        path_right="output",
-        verbose=verbose,
-    )
+    #jobs["33"] = job_data(
+    #    33,
+    #    "run_sp_exp_Pi",
+    #    ["psfex_interp_runner"],
+    #    "shdus",
+    #    path_main=path_main,
+    #    path_left="exp_runs",
+    #    output_subdirs="shdus",
+    #    path_right="output",
+    #    verbose=verbose,
+    #)
 
     jobs["64"] = job_data(
         "64",
