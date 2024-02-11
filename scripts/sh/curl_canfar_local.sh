@@ -26,7 +26,7 @@ dry_run=0
 usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
 \n\nOptions:\n
    -h\tthis message\n
-   -j, --job JOB\tRUnning JOB, bit-coded\n
+   -j, --job JOB\tRunning JOB, bit-coded\n
    -e, --exclusive ID
     \timage ID\n
    -f, --file_IDs path
@@ -42,7 +42,7 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
    -C, --command_remote\n
     \tremote command to run on canfar, default='$cmd_remote'\n
    -b, --batch_max\n
-    \tmaximum batch size = number of jobs run simultaneously\n
+    \tmaximum batch size = number of jobs run simultaneously, default=$batch_max\n
    -n, --dry_run LEVEL\n
     \tdry run, from LEVEL=2 (no processing) to 0 (full run)\n
 "
@@ -159,7 +159,7 @@ function submit_batch() {
 }
 
 batch=20
-sleep=600
+sleep=300
 
 ((n_thresh=batch_max-batch))
 
@@ -206,6 +206,7 @@ else
       for batch in $prefix*; do
         echo "Number of running jobs = $n_running"
         echo "Submitting batch $batch ($count/$n_split)"
+        echo -ne "\033]0;curl patch=$patch job=$job $count/$n_split\007"
         submit_batch $batch
         ((count=count+1))
 
