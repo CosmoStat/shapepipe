@@ -175,7 +175,7 @@ for dir in $run_in; do
 done
 
 #echo " $n_files target files, $i links created/skipped"
-echo " $i total, "n_skipped skipped, "n_created links created"
+echo " $i total, "$n_skipped skipped, "$n_created links created"
 
 # Update log file
 update_runs_log_file.py
