@@ -4,30 +4,30 @@ channels:
 dependencies:
   - python=3.9
   - pip>=21.2.4
-  - numpy==1.21.6
-  - astropy==5.0
-  - automake==1.16.2
-  - autoconf==2.69
-  - cmake==3.19.6
-  - galsim==2.2.5
-  - joblib==1.1.0
-  - libtool==2.4.6
-  - matplotlib==3.5.1
-  - numba==0.54.1
-  - pandas==1.4.1
+  - astromatic-psfex==3.21.1
+  - astromatic-source-extractor==2.25.0
+  - astropy==5.1
+  - automake
+  - autoconf
+  - cmake
+  - galsim
+  - joblib
+  - libtool
+  - matplotlib
+  - numba
+  - numpy==1.22
   - pip:
-    - cs_util==0.0.5
-    - mccd==1.2.3
-    - modopt==1.6.0
-    - PyQt5==5.15.6
-    - pyqtgraph==0.12.4
-    - python-pysap==0.0.6
-    - reproject==0.8
-    - sip_tpv==1.1
-    - sf_tools==2.0.4
-    - sqlitedict==2.0.0
-    - termcolor==1.1.0
-    - tqdm==4.63.0
-    - treecorr==4.2.6
+    - cs_util
+    - modopt
+    - PyQt5
+    - pyqtgraph
+    - reproject
+    - skaha
+    - sip_tpv
+    - sf_tools
+    - sqlitedict
+    - termcolor
+    - tqdm
+    - treecorr
     - git+https://github.com/aguinot/ngmix@stable_version
     - git+https://github.com/tobias-liaudat/Stile@v0.1

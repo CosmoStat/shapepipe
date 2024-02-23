@@ -20,8 +20,6 @@ import copy
 
 from optparse import OptionParser
 
-from tqdm import tqdm
-
 from shapepipe.utilities import cfis
 
 
