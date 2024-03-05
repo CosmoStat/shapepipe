@@ -17,9 +17,10 @@ usage="Usage: $(basename "$0") [OPTIONS]
 \n\nOptions:\n
    -h\tthis message\n
    -p, --psf MODEL\n
-    \tPSF model, one in ['psfex'|'mccd'|'setools'], default='$psf'\n
+    \tPSF model, allowed are 'psfex', 'mccd', 'setools', default='$psf'\n
    -c, --cat TYPE\n
-    \tCatalogue type, one in ['final'|'flag'|'psf'|'image'], default='$cat'\n
+    \tCatalogue type, allowed are 'final', 'flag_tile', 'flag_exp', \n
+    \t'psf', 'image', default='$cat'\n
 "
 
 ## Parse command line
@@ -48,10 +49,11 @@ done
 
 ## Check options
 if [ "$cat" != "final" ] \
-  && [ "$cat" != "flag" ] \
+  && [ "$cat" != "flag_tile" ] \
+  && [ "$cat" != "flag_exp" ] \
   && [ "$cat" != "psf" ] \
   && [ "$cat" != "image" ]; then
-  echo "cat (option -c) needs to be 'final', 'flag', 'psf', or 'image'"
+  echo "cat (option -c) needs to be 'final', 'flag_tile', 'flag_exp', 'psf', or 'image'"
   exit 2
 fi
 
@@ -106,11 +108,27 @@ if [ "$cat" == "final" ]; then
   module="make_catalog_runner"
   pattern="final_cat-*"
 
-elif [ "$cat" == "flag" ]; then
+elif [ "$cat" == "flag_tile" ]; then
 
-  run_in="$pwd/$out_base/run_sp_MaMa_*/mask_runner_run_1"
-  module="mask_runner_run_1"
-  pattenr="pipeline_flag-*"
+  # v1
+  #run_in="$pwd/$out_base/run_sp_MaMa_*/mask_runner_run_1"
+  # v2
+  run_in="$pwd/$out_base/run_sp_tile_Ma_*"
+  run_out="run_sp_tile_Ma"
+
+  module="mask_runner"
+  pattern="pipeline_flag-*"
+
+elif [ "$cat" == "flag_exp" ]; then
+
+  # v1
+  #run_in="$pwd/$out_base/run_sp_MaMa_*/mask_runner_run_2"
+  # v2
+  run_in="$pwd/$out_base/run_sp_exp_Ma_*"
+  run_out="run_sp_exp_Ma"
+
+  module="mask_runner"
+  pattern="pipeline_flag-*"
 
 elif [ "$cat" == "image" ]; then
 
@@ -162,13 +180,15 @@ i=0
 for dir in $run_in; do
   FILES=(`find $dir -type f -name "$pattern" -print0 | xargs -0 echo`)
 
+  echo "$dir $pattern"
+
   ## Look over source files
   for file in ${FILES[@]}; do
 
-  target=$file
-  link_name=$outdir/`basename $file`
-  link_s $target $link_name
-  ((i=i+1))
+    target=$file
+    link_name=$outdir/`basename $file`
+    link_s $target $link_name
+    ((i=i+1))
 
   done
 
