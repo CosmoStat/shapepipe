@@ -62,7 +62,7 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    \tmax number of objects per parallel shape module call, \n
    \tdefault: unlimited; has precedent over --nsh_step\n
    TILE_ID_i\n
-   \ttile ID(s), e.g. 283.247 214.242\n
+   \ttile ID(s), e.g. 283.247 214.242, only with '-j 1'\n
 "
 
 ## Help if no arguments
