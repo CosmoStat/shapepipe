@@ -2,7 +2,10 @@
 
 # -*- coding: utf-8 -*-
 
-"""Script link_to_esp_for_tile.py
+"""Script link_to_exp_for_tile.py
+
+:Description: Link to exposure and PSF catalogue
+ for a given tile.
 
 :Author: Martin Kilbinger
 
