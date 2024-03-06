@@ -52,6 +52,5 @@ RUN conda env create --file environment.yml
 COPY shapepipe ./shapepipe
 COPY scripts ./scripts
 
-# Make RUN commands use the new environment:
-SHELL ["conda", "run", "-n", "shapepipe", "/bin/bash", "-c"]
-RUN pip install jupyter
+RUN source activate shapepipe
+#RUN pip install jupyter
