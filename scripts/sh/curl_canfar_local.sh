@@ -205,7 +205,6 @@ else
       echo "Split '$file_IDs' into $n_split batches of size $batch"
 
       count=1
-      #n_running=`stats_headless_canfar.py`
       n_running=`stats_jobs_canfar.sh`
       for batch in $prefix*; do
         echo "Number of running jobs = $n_running"
@@ -214,13 +213,11 @@ else
         submit_batch $batch
         ((count=count+1))
 
-        #n_running=`stats_headless_canfar.py`
         n_running=`stats_jobs_canfar.sh`
 
         while [ "$n_running" -gt "$n_thresh" ]; do
           echo "Wait for #jobs = $n_running jobs to go < $n_thresh ..."
           sleep $sleep
-          #n_running=`stats_headless_canfar.py`
           n_running=`stats_jobs_canfar.sh`
         done
 
