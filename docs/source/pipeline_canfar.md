@@ -53,6 +53,10 @@ job_sp_canfar.bash -p $psf -n $N_SMP -j 2
 # Mask tiles
 job_sp_canfar.bash -p $psf -n $N_SMP -j 4
 
+# If not finshed:
+combine_runs.bash -p psfex -c flag
+mv output/run_sp_combined_flag output/run_sp_exp_Ma
+
 # Mask exposures
 job_sp_canfar.bash -p $psf -n $N_SMP -j 8
 
