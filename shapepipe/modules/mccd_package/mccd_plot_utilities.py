@@ -206,7 +206,12 @@ def plot_meanshapes(
     remove_outliers=False,
     plot_meanshapes=True,
     plot_histograms=True,
-    psf_model_type='mccd'
+    psf_model_type='mccd',
+    max_e=None,
+    max_de=None,
+    min_r2=None,
+    max_r2=None,
+    max_dr2=None,
 ):
     """Plot Mean Shapes.
 
@@ -234,6 +239,21 @@ def plot_meanshapes(
         default is ``True``
     psf_model_type : str, optional
         PSF model type, options are ``mccd`` or ``psfex``; defualt is ``mccd``
+    max_e : float, optional
+        maximum value for focal plane ellipticity plots; default is ``None``,
+        set according to from data
+    max_de : float, optional
+        maximum value for focal plane residual ellipticity plots; default is
+        ``None``, set according to from data
+    min_r2 : float, optional
+        minimum value for focal plane size plots, default is ``None``; set
+        according to data
+    max_r2 : float, optional
+        maximum value for focal plane size plots, default is ``None``; set
+        according to data
+    max_dr2 : float, optional
+        maximum value for focal plane residual size plots, default is ``None``;
+        set according to data
 
     """
     # READ FULL STARCAT
@@ -357,12 +377,16 @@ def plot_meanshapes(
 
         xs_loc, ys_loc = all_X[ccd_mask] - x_shift, all_Y[ccd_mask] - y_shift
 
-        # swap axes to match CCD orientation and origin convention
-        ys_loc = loc2glob.y_npix - ys_loc + 1
+        if psf_model_type == 'mccd':
+            # swap axes to match CCD orientation and origin convention
+            ys_loc = loc2glob.y_npix - ys_loc + 1
 
         # digitalize into bins
         xbins = np.digitize(xs_loc, grid[0])
         ybins = np.digitize(ys_loc, grid[1])
+
+        if psf_model_type == 'psfex':
+            xbins, ybins = megacam_flip(xbins, ybins, ccd_nb, nb_pixel)
 
         for xb in range(nb_pixel[0]):
             for yb in range(nb_pixel[1]):
@@ -378,8 +402,13 @@ def plot_meanshapes(
 
     if plot_meanshapes:
         # e_1
-        vmax = max(np.nanmax(ccd_maps[:, :, 0]),
-                   np.abs(np.nanmin(ccd_maps[:, :, 0])))
+        if max_e:
+            vmax = max_e
+        else:
+            vmax = max(
+                np.nanmax(ccd_maps[:, :, 0]),
+                np.abs(np.nanmin(ccd_maps[:, :, 0]))
+            )
         vmin = -vmax
         wind = [vmin, vmax]
         title = (
@@ -410,7 +439,10 @@ def plot_meanshapes(
         e1_res = e1_res[~np.isnan(e1_res)]
         rmse_e1 = np.sqrt(np.mean(e1_res ** 2))
         w_log.info(f'Bins: e1 residual RMSE: {rmse_e1:.6f}\n')
-        vmax = np.nanmax(abs(ccd_maps[:, 0, 0] - ccd_maps[:, 1, 0]))
+        if max_de:
+            vmax = max_de
+        else:
+            vmax = np.nanmax(abs(ccd_maps[:, 0, 0] - ccd_maps[:, 1, 0]))
         vmin = -vmax
         wind = [vmin, vmax]
         title = (
@@ -426,10 +458,13 @@ def plot_meanshapes(
         )
 
         # e_2
-        vmax = max(
-            np.nanmax(ccd_maps[:, :, 1]),
-            np.abs(np.nanmin(ccd_maps[:, :, 1]))
-        )
+        if max_e:
+            vmax = max_e
+        else:
+            vmax = max(
+                np.nanmax(ccd_maps[:, :, 1]),
+                np.abs(np.nanmin(ccd_maps[:, :, 1]))
+            )
         vmin = -vmax
         wind = [vmin, vmax]
         title = (
@@ -461,7 +496,10 @@ def plot_meanshapes(
         e2_res = e2_res[~np.isnan(e2_res)]
         rmse_e2 = np.sqrt(np.mean(e2_res ** 2))
         w_log.info(f'Bins: e2 residual RMSE: {rmse_e2:.6f}\n')
-        vmax = np.nanmax(abs(ccd_maps[:, 0, 1] - ccd_maps[:, 1, 1]))
+        if max_de:
+            vmax = max_de
+        else:
+            vmax = np.nanmax(abs(ccd_maps[:, 0, 1] - ccd_maps[:, 1, 1]))
         vmin = -vmax
         wind = [vmin, vmax]
         title = (
@@ -477,7 +515,15 @@ def plot_meanshapes(
         )
 
         # R^2
-        wind = [0, np.nanmax(ccd_maps[:, :, 2])]
+        if min_r2:
+            vmin = min_r2
+        else:
+            vmin = 0
+        if max_r2:
+            vmax = max_r2
+        else:
+            vmax = np.nanmax(ccd_maps[:, :, 2])
+        wind = [vmin, vmax]
         colorbar_ampl = 1
         title = (
             f'R_2 (stars), std={np.nanstd(ccd_maps[:, 0, 2]):.5e}\n'
@@ -514,8 +560,14 @@ def plot_meanshapes(
         R2_res = R2_res[~np.isnan(R2_res)]
         rmse_r2 = np.sqrt(np.mean(R2_res ** 2))
         w_log.info(f"Bins: R2 residual RMSE: {rmse_r2:.6f}\n")
-        vmax = np.nanmax(
-            abs((ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) / ccd_maps[:, 0, 2]))
+        if max_dr2:
+            vmax = max_dr2
+        else:
+            vmax = np.nanmax(
+                abs(
+                    (ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) / ccd_maps[:, 0, 2]
+                )
+            )
         wind = [0, vmax]
         std_title = np.nanstd(
             (ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) / ccd_maps[:, 0, 2]
