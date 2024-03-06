@@ -435,8 +435,6 @@ class MCCDinterpolator(object):
                 ).T
 
                 self.interp_PSFs = interp_MCCD(mccd_model_path, gal_pos, ccd)
-                # self.interp_PSFs = interpsfex(
-                # dot_psf_path, gal_pos, self._star_thresh, self._chi2_thresh)
 
                 if (
                     isinstance(self.interp_PSFs, str)

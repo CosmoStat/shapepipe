@@ -45,6 +45,8 @@ class Mask(object):
         Path to external flag file, default is ``None`` (not used)
     outname_base : str, optional
        Output file name base, default is ``flag``
+    check_existing_dir : str, optional
+        If not ``None`` (default), search path for existing mask files
     star_cat_path : str, optional
         Path to external star catalogue, default is ``None`` (not used;
         instead the star catalogue is produced on the fly at run time)
@@ -64,6 +66,7 @@ class Mask(object):
         w_log,
         path_external_flag=None,
         outname_base='flag',
+        check_existing_dir=None,
         star_cat_path=None,
         hdu=0,
     ):
@@ -98,6 +101,9 @@ class Mask(object):
         # Output file base name
         self._outname_base = outname_base
 
+        # Search path for existing mask files
+        self._check_existing_dir = check_existing_dir
+
         # Set external star catalogue path if given
         if star_cat_path is not None:
             self._star_cat_path = star_cat_path
@@ -112,6 +118,7 @@ class Mask(object):
 
         # Set error flag
         self._err = False
+
 
     def _get_config(self):
         """Get Config.
@@ -307,6 +314,16 @@ class Mask(object):
         Main function to create the mask.
 
         """
+        output_file_name = (
+            f'{self._img_prefix}'
+            + f'{self._outname_base}{self._img_number}.fits'
+        )
+        if (
+            os.path.exists(f"{self._check_existing_dir}//{output_file_name}")
+        ):
+            print("MKDEBUG skipping ", output_file_name)
+            return None, None
+
         if self._config['MD']['make']:
             self.missing_data()
 

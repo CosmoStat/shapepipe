@@ -27,10 +27,11 @@ RUN apt-get update --allow-releaseinfo-change && \
     apt-get install libatlas-base-dev liblapack-dev libblas-dev -y && \
     apt-get install vim -y && \
     apt-get install locate -y && \
+    apt-get install curl -y && \
+    apt-get install acl -y && \
+    apt-get install sssd -y && \
     apt-get clean
 
-RUN apt-get install acl -y && \
-    apt-get install sssd -y
 ADD nsswitch.conf /etc/
 
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
@@ -38,6 +39,8 @@ RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
+
+SHELL ["/bin/bash", "--login", "-c"]
 
 COPY ./environment.yml ./
 COPY install_shapepipe README.rst setup.py setup.cfg ./
@@ -49,5 +52,5 @@ RUN conda env create --file environment.yml
 COPY shapepipe ./shapepipe
 COPY scripts ./scripts
 
-#RUN ./scripts/sh/init_canfar.sh
 RUN source activate shapepipe
+#RUN pip install jupyter
