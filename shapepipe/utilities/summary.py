@@ -431,7 +431,8 @@ class job_data(object):
             self.write_IDs_to_file(output_path, missing_IDs_all)
         else:
             #logging.warning("no missing IDs in output_missing_job")
-            os.unlink(output_path)
+            if os.path.exists(output_path):
+                os.unlink(output_path)
 
     @classmethod
     def get_last_full_path(self, base_and_subdir, matches):
