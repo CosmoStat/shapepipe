@@ -205,7 +205,6 @@ else
       echo "Split '$file_IDs' into $n_split batches of size $batch"
 
       count=1
-      #n_running=`stats_headless_canfar.py`
       n_running=`stats_jobs_canfar.sh`
       for batch in $prefix*; do
         echo "Number of running jobs = $n_running"
