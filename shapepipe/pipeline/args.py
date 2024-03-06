@@ -131,7 +131,7 @@ def create_arg_parser():
     optional.add_argument(
         '-e',
         '--exclusive',
-        help='exclusive input filer number string',
+        help='exclusive input file number string',
     )
     # Return parser
     return parser.parse_args()
