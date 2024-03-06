@@ -74,7 +74,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
     # - remove previous output dirs since only last is searched
     jobs["1"] = job_data(
         1,
-         "run_sp_Git",
+         "run_sp_GitFeGie",
        [
             "get_images_runner_run_1",
             "find_exposures_runner",
@@ -220,6 +220,16 @@ def set_jobs_v2_pre_v2(patch, verbose):
     )
 
     # Post-processing
+    jobs["512"] = job_data(
+        "512",
+        ["run_sp_combined_final"],
+        ["make_cat_runner"],
+        "tile_IDs",
+        path_main=path_main,
+        path_left="output",
+        verbose=verbose,
+    )
+
     jobs["1024"] = job_data(
         "1024",
         "run_sp_combined_psf",

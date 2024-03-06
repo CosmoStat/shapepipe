@@ -15,7 +15,7 @@ ID=-1
 file_IDs=-1
 N_SMP=1
 kind=-1
-version=1.0
+version="1.1"
 cmd_remote="shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
 batch_max=200
 dry_run=0
@@ -92,7 +92,7 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-# Check options                                                                 
+## Check options                                                                 
 if [ "$job" == "-1" ]; then                                                     
   echo "No job indicated, use option -j"                                        
   exit 2                                                                        
@@ -136,11 +136,13 @@ function set_arg() {
 }
 
 
+# MKDEBUG TODO
 function call_curl() {
   my_arg=$1
 
 }
 
+# Add session and image IDs to log files
 function update_session_logs() {
   echo $my_session >> session_IDs.txt
   echo "$my_session $ID" >> session_image_IDs.txt
@@ -152,7 +154,7 @@ function submit_batch() {
 
   for ID in `cat $path`; do
     my_arg=$(set_arg)
-    my_session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$my_arg"`
+    my_session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$my_arg" &> /dev/null`
     update_session_logs
   done
 
@@ -203,6 +205,7 @@ else
       echo "Split '$file_IDs' into $n_split batches of size $batch"
 
       count=1
+      n_running=`stats_jobs_canfar.sh`
       for batch in $prefix*; do
         echo "Number of running jobs = $n_running"
         echo "Submitting batch $batch ($count/$n_split)"
@@ -210,12 +213,12 @@ else
         submit_batch $batch
         ((count=count+1))
 
-        n_running=`stats_headless_canfar.py`
+        n_running=`stats_jobs_canfar.sh`
 
         while [ "$n_running" -gt "$n_thresh" ]; do
           echo "Wait for #jobs = $n_running jobs to go < $n_thresh ..."
           sleep $sleep
-          n_running=`stats_headless_canfar.py`
+          n_running=`stats_jobs_canfar.sh`
         done
 
       done
@@ -232,7 +235,7 @@ else
 
     # Submit image
     arg=$(set_arg)
-    session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg"`
+    session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg" &> /dev/null`
     update_session_logs
 
   fi

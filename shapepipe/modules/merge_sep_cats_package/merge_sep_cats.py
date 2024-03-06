@@ -87,6 +87,12 @@ class MergeSep(object):
             cat0.open()
             list_ext_name = cat0.get_ext_name()
             list_col_name = cat0.get_col_names()
+            # MKDEBUG: Some input ngmix catalogues have multiple of 5 HDUs
+            # if reprocessed and not deleted but appended
+            if len(list_ext_name) > 6:
+                wmsg = f"Cropping input HDUs from {len(list_ext_name)} to 5"
+                self._w_log.info(wmsg)
+                list_ext_name = list_ext_name[:6]
             cat0.close()
 
             # Create empty dictionary
