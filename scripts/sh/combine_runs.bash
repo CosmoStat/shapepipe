@@ -114,7 +114,7 @@ elif [ "$cat" == "flag_tile" ]; then
   #run_in="$pwd/$out_base/run_sp_MaMa_*/mask_runner_run_1"
   # v2
   run_in="$pwd/$out_base/run_sp_tile_Ma_*"
-  run_out="run_sp_tile_Ma"
+  run_out="run_sp_Ma_tile"
 
   module="mask_runner"
   pattern="pipeline_flag-*"
@@ -125,7 +125,7 @@ elif [ "$cat" == "flag_exp" ]; then
   #run_in="$pwd/$out_base/run_sp_MaMa_*/mask_runner_run_2"
   # v2
   run_in="$pwd/$out_base/run_sp_exp_Ma_*"
-  run_out="run_sp_exp_Ma"
+  run_out="run_sp_Ma_exp"
 
   module="mask_runner"
   pattern="pipeline_flag-*"
