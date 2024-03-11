@@ -2,7 +2,7 @@
 
 This file contains methods for file I/O handling.
 
-:Author: Marc Gentile and Axel Guinot
+:Author: Marc Gentile and Axel Guinot and Lucie Baumont
 
 """
 
@@ -522,10 +522,10 @@ class FITSCatalogue(BaseCatalogue):
         else:
             raise BaseCatalogue.catalogueFileNotFound(self.fullpath)
 
-    def create(self, ext_name=None, s_hdu=True, ldac_cat_path=None):
+    def create(self, ext_name=None, s_hdu=True, ldac_header_path=None):
         """Create.
 
-        Create an empty catalogue in FITS format.
+        Create an empty catalogue in FITS format. For fits_ldac catalogs, one can inherit the ldac_imhead from an external catalog or create a blank one. 
 
         Parameters
         ----------
@@ -533,28 +533,28 @@ class FITSCatalogue(BaseCatalogue):
             Extension name or number
         s_hdu : bool
             If true add a secondary HDU
-        ldac_cat_path : str
-            Path to SEXtractor fits-ldac catalogue
+        ldac_header_path : str
+            Path to SEXtractor fits-ldac catalogue from which we will "borrow" a ldac-imhead.  A basic LDAC-IMHEAD will be created as default.
 
         """
         primary_hdu = fits.PrimaryHDU()
         if self._fits_ldac:
-            if ldac_cat_path is not None:
-                if self._file_exists(ldac_cat_path):
-                    ldac_cat = FITSCatalogue(ldac_cat_path, hdu_no=1)
+            if ldac_header_path is not None:
+                if self._file_exists(ldac_header_path):
+                    ldac_cat = FITSCatalogue(ldac_header_path, hdu_no=1)
                     ldac_cat.open()
-                    secondary_hdu = ldac_cat._cat_data[1]
-                    self._cat_data = fits.HDUList([primary_hdu, secondary_hdu])
+                    imhead_hdu = ldac_cat._cat_data[1]
+                    self._cat_data = fits.HDUList([primary_hdu, imhead_hdu])
                     self._cat_data.writeto(self.fullpath, overwrite=True)
                     ldac_cat.close()
                     del ldac_cat
                 else:
-                    raise BaseCatalogue.catalogueFileNotFound(ldac_cat_path)
-            else:
-                raise ValueError(
-                    "ldac_cat_path needs to be provided to create a "
-                    + "SEXtractor fits-ldac catalogue"
-                )
+                    raise BaseCatalogue.catalogueFileNotFound(ldac_header_path)
+            else:    
+                imhead_hdu = self._create_ldac_imhead(fits.PrimaryHDU.header())
+                self._cat_data = fits.HDUList([primary_hdu, imhead_hdu])
+                self._cat_data.writeto(self.fullpath, overwrite=True)
+                ldac_cat.close()
         elif s_hdu:
             secondary_hdu = fits.BinTableHDU(data=None, header=None, name=ext_name,)
             self._cat_data = fits.HDUList([primary_hdu, secondary_hdu])
@@ -562,6 +562,28 @@ class FITSCatalogue(BaseCatalogue):
         else:
             self._cat_data = fits.HDUList([primary_hdu])
             self._cat_data.writeto(self.fullpath, overwrite=True)
+
+    def _create_ldac_imhead(external_header):
+        """Creates ldac imhead.
+
+        Creates an ldac imhead from an astropy header
+
+        Parameters
+        ----------
+        header : astropy.io.fits.header
+            astropy fits header
+        
+        Returns
+        -------
+        astropy.io.fits.BinTableHDU
+        """
+        tblhdr = np.array([external_header.tostring(',')])
+        col1 = fits.Column(name='Field Header Card', array=tblhdr, format='13200A')
+        cols = fits.ColDefs([col1])
+        tbl = fits.BinTableHDU.from_columns(cols)
+        tbl.header['TDIM1'] = '(80, {0})'.format(len(external_header))
+        tbl.header['EXTNAME'] = 'LDAC_IMHEAD'
+        return tbl
 
     def copy_hdu(self, fits_file=None, hdu_no=None, hdu_name=None):
         """Copy HDU.
@@ -646,15 +668,158 @@ class FITSCatalogue(BaseCatalogue):
             )
         else:
             raise TypeError("Mask type must be of type int or bool")
+        
+    def _dict_to_astropy(self, data,header=None,ext_name=None):
+        """Dictionary to astropy.
+
+        Coverts a dictionary to astropy hdus
+
+        Parameters
+        ----------
+        data : dict
+            Data to be stored
+        header : astropy.io.fits.header
+            External header
+        
+        Returns
+        -------
+        astropy.io.fits.HDUList
+        """                
+        if type(data) is not dict:
+            raise TypeError("Data needs to be a dict")
+        
+        names = list(data.keys())
+        it = list(range(len(names)))
+        if len(names) == 1:
+            data = np.array(data[names[0]])
+        else:
+            data = [np.array(data[i]) for i in names]
+        
+        astropy_data=self._ndarray_to_astropy(data, it, header, names, ext_name)
+
+        return astropy_data
+     
+    def _list_to_astropy(self, data, it, header=None, names=None, ext_name=None):
+        """list to astropy.
+
+        Coverts a list to astropy hdus
+
+        Parameters
+        ----------
+        data : list
+            Data to be stored
+        header : astropy.io.fits.header
+            External header
+        names : List of column names
+        it : str
+            iterator
+        ext_name: str
+            Name of the HDU where data are stored
+
+        Returns
+        -------
+        astropy.io.fits.HDUList
+        """
+        if names is None:
+            raise ValueError("Names not provided")
+        
+        it = range(len(names))
+        data = np.asarray(data)
+        astropy_data = self._ndarray_to_astropy(
+            self, data, it, header, names, ext_name
+            )
+        return astropy_data
+
+    def _ndarray_to_astropy(
+            self, data, it, header=None, names=None, ext_name=None
+            ):
+        """ndarray to astropy.
+
+        Coverts a ndarray to astropy hdus
+
+        Parameters
+        ----------
+        data : numpy.ndarray
+            Data to be stored
+        header : astropy.io.fits.header
+            External header
+        names : List of column names
+        it : str
+            iterator
+        ext_name: str
+            Name of the HDU where data are stored
+
+        Returns
+        -------
+        astropy.io.fits.HDUList
+        """
+        # check that data is okay                
+        if type(data) is not np.ndarray:
+            raise TypeError("Data needs to be a numpy.ndarray")
+        # use names in array if not otherwise specified
+        if names is None:
+            if data.dtype.names is not None:
+                names = data.dtype.names
+                it = names
+            else:
+                raise ValueError("Names not provided")
+        else:
+            it = range(len(names))
+        # this step seems really dumb
+        if len(names) == 1:
+            data = np.array([data])
+        # define columns
+        col_list = []
+        for idx in it:
+            data_shape = data[idx].shape[1:]
+            dim = str(tuple(data_shape))
+            name = names[it.index(idx)]
+            data_type = self._get_fits_col_type(data[idx])
+            mem_size = 1
+            if len(data_shape) != 0:
+                for shape in data_shape:
+                    mem_size *= shape
+                data_format = f"{mem_size}{data_type}"
+                col_list.append(
+                    fits.Column(
+                        name=name, format=data_format, array=data[idx], dim=dim,
+                    )
+                )
+            elif data_type == "A":
+                mem_size *= len(max(data[idx], key=len))
+                data_format = f"{mem_size}{data_type}"
+                col_list.append(
+                    fits.Column(
+                        name=name,
+                        format=data_format,
+                        array=data[idx],
+                        dim=str((mem_size,)),
+                    )
+                )
+            else:
+                data_format = f"{mem_size}{data_type}"
+                col_list.append(
+                    fits.Column(name=name, format=data_format, array=data[idx],)
+                )
+
+        astropy_hdu = fits.BinTableHDU.from_columns(
+            col_list, 
+            header=header, 
+            name=ext_name
+        )
+        
+        return astropy_hdu
+
 
     def save_as_fits(
         self,
         data=None,
         names=None,
         ext_name=None,
+        fits_ldac=False,
         ldac_cat_path=None,
         image=False,
-        image_header=None,
+        header=None,
         overwrite=False,
     ):
         """Save as FITS.
@@ -670,17 +835,19 @@ class FITSCatalogue(BaseCatalogue):
 
         Parameters
         ----------
-        data : numpy.ndarray
+        data : numpy.ndarray, dict, recarray, fits.fitsrec.FITS_rec, list, astropy.table.Table 
             Data to be stored
         names : list
             List of column names
         ext_name : str
             Name of the HDU where data are stored
+        fits_ldac : bool
+            True if output will be in fits_ldac format    
         ldac_cat_path : str
-            Path of the existing SExtractor fits-ldac catalogue to mimic
+            Path of existing SExtractor fits-ldac catalogue from which to copy imhead
         image : bool
             If true create a fits image
-        image_header : astropy.io.fits.header
+        header : astropy.io.fits.header
             Header to use when saving an image
         overwrite : bool
             Option to overwrite an existing image, only used when creating a
@@ -697,54 +864,48 @@ class FITSCatalogue(BaseCatalogue):
                 open_mode=self.open_mode,
                 open_mode_needed=FITSCatalogue.OpenMode.ReadWrite,
             )
+        # handle ldac header, if external, get it
 
         if data is None:
             raise ValueError("Data not provided")
-
+        # convert all data types to astropy
         if not image:
             if type(data) is dict:
-                names = list(data.keys())
-                it = list(range(len(names)))
-                if len(names) == 1:
-                    data = np.array(data[names[0]])
-                else:
-                    data = [np.array(data[i]) for i in names]
-                self._save_to_fits(
-                    data, names, it, ext_name, ldac_cat_path, overwrite=overwrite,
-                )
+                astropy_data = self._dict_to_astropy(
+                    data,header=header, ext_name=ext_name
+                    )
+                self._save_to_fits(astropy_data,fits_ldac=fits_ldac,overwrite=overwrite)
+
+            elif type(data) is list:
+                astropy_data=self._list_to_astropy(
+                    data, header=header, names=names, ext_name=ext_name
+                    )
+                self._save_to_fits(astropy_data,fits_ldac=fits_ldac,overwrite=overwrite)
 
             elif type(data) is np.recarray:
                 names = list(data.dtype.names)
                 it = names
+                astropy_data=self._ndarray_to_astropy(
+                    data, it, header=header,names=names, ext_name=ext_name
+                    )
                 self._save_to_fits(
-                    data, names, it, ext_name, ldac_cat_path, overwrite=overwrite,
-                )
+                    astropy_data,fits_ldac=fits_ldac,overwrite=overwrite
+                    )
+                
 
             elif type(data) is fits.fitsrec.FITS_rec:
-                self._save_from_recarray(data, ext_name, ldac_cat_path)
-
+                astropy_data = fits.BinTableHDU(data, name=ext_name)
+                self._save_to_fits(astropy_data,fits_ldac=fits_ldac,overwrite=overwrite)
+               
             elif type(data) is np.ndarray:
-                if names is None:
-                    if data.dtype.names is not None:
-                        names = data.dtype.names
-                        it = names
-                    else:
-                        raise ValueError("Names not provided")
-                else:
-                    it = range(len(names))
+                astropy_data=self._ndarray_to_astropy(
+                    data, it, header=header, names=names, ext_name=ext_name
+                    )
                 self._save_to_fits(
-                    data, names, it, ext_name, ldac_cat_path, overwrite=overwrite,
-                )
+                    astropy_data,fits_ldac=fits_ldac,overwrite=overwrite
+                    )
 
-            elif type(data) is list:
-                if names is None:
-                    raise ValueError("Names not provided")
-                it = range(len(names))
-                data = np.asarray(data)
-                self._save_to_fits(
-                    data, names, it, ext_name, ldac_cat_path, overwrite=overwrite,
-                )
-
+            # FIX THIS    
             elif type(data) is Table:
                 if names is None:
                     raise ValueError("Names not provided")
@@ -756,58 +917,37 @@ class FITSCatalogue(BaseCatalogue):
         else:
             if type(data) is np.ndarray:
                 self._save_image(
-                    data=data, header=image_header, overwrite=overwrite,
+                    data=data, header=header, overwrite=overwrite,
                 )
             else:
                 raise TypeError("Data need to be a numpy.ndarray")
+      
 
-    def create_from_numpy(
-        self, matrix, col_names, ext_name=None, ext_ver=None, header=None,
-    ):
-        """Create from Numpy.
+    def _header_from_dict( self, header_dict=None):
+        """Create astropy header from dictionary.
 
         Create a new catalogue from a two-dimensional numpy array.
 
         Parameters
         ----------
-        matrix : numpy.ndarray
-            Two-dimensional numpy array
-        col_names : list
-            List of column names to use as the header
-        ext_name : str
-            Extension name or number
-        ext_ver : str
-            Extension version
-        header : list
-            List of dictionaries with keys: 'card', name', 'value',
-            'value_orig', 'comment'
-
+        header_dict : dict
+            dictionary that will be converted to astropy.io.fits.header
+        
+        Returns
+        -------
+        astropy.io.fits.header
         """
-        col_list = []
-        for col_name in col_names:
-            icol = col_names.index(col_name)
-            col_type = self._get_fits_col_type(matrix[:, icol])
-            col_data = fits.Column(
-                name=col_name, format=col_type, array=np.ravel(matrix[:, icol]),
-            )
-            col_list.append(col_data)
+        fits_header = fits.Header()
+        
+        for (k, v) in dict.items():
+            fits_header[k] = v 
 
-        fits_header = None
-        if header is not None:
-            fits_header = fits.Header()
-            for (k, v) in header.items():
-                fits_header[k] = v
-
-        primary_hdu = fits.PrimaryHDU()
-        secondary_hdu = fits.BinTableHDU.from_columns(col_list, header=fits_header,)
-        if ext_name is not None:
-            secondary_hdu.name = ext_name
-
-        self._cat_data = fits.HDUList(hdus=[primary_hdu, secondary_hdu])
-        self._cat_data.writeto(self.fullpath, overwrite=True)
+        return fits_header
 
     def close(self):
-        """Close."""
+        """Close.
+        Appends or overwrites data and prevents further writing.
+        """
         if self._cat_data is not None:
             if self.open_mode == FITSCatalogue.OpenMode.ReadWrite:
                 self.save()
@@ -818,7 +958,9 @@ class FITSCatalogue(BaseCatalogue):
             raise BaseCatalogue.catalogueNotOpen(self.fullpath)
 
     def save(self):
-        """Save."""
+        """Save.
+        Appends or overwrites data.
+        """
         if self.open_mode == FITSCatalogue.OpenMode.ReadWrite:
             self._cat_data.flush()
         else:
@@ -1074,7 +1216,8 @@ class FITSCatalogue(BaseCatalogue):
 
         else:
             raise BaseCatalogue.catalogueNotOpen(self.fullpath)
-    def _fits_header_from_fits_LDAC(ldac_catalogue_path):
+        
+    def _fits_header_from_fits_LDAC(self, ldac_catalogue_path):
         """Fits header from a fits-ldac catalog.
 
         Creates a fits header from a sextractor fits-LDAC field header.
@@ -1090,33 +1233,17 @@ class FITSCatalogue(BaseCatalogue):
         """
         # open file and get data
         cat = fits.open(ldac_catalogue_path)
-        field_cards = cat[1].data
+        header_hdu_no = self.hdu_no - 1
+        field_cards = cat[header_hdu_no].data
 
         # initialize empty header
         header = fits.Header(cards=[])
 
         for i in np.arange(len(field_cards["Field Header Card"][0])):
-            card = field_cards["Field Header Card"][0][i].split("=")
-            if (
-                "HISTORY" not in card[0]
-                and "COMMENT" not in card[0]
-                and "END" not in card[0]
-            ):
-                # this isn't perfect, but mostly works
-                card_vals = card[1].rsplit("/", 1)
-                # remove annoying whitespace
-                card_vals[0] = card_vals[0].lstrip()
-                card_vals[-1] = card_vals[-1].rstrip()
-                # add to card
-                full_card = (card[0], *card_vals)
-                header.append(card=full_card)
-            elif "COMMENT" in card[0]:
-                comment = card.split("COMMENT")[1]
-                header.add_comment(comment)
-            elif "HISTORY" in card[0]:
-                history = card.split("HISTORY")[1]
-                header.add_history(history)
-        header.append("END")
+            cardstring = field_cards["Field Header Card"][0][i]
+            card = fits.Card.fromstring(cardstring)
+            header.append(card)
+
         cat.close()
 
         return header
@@ -1134,7 +1261,7 @@ class FITSCatalogue(BaseCatalogue):
         Returns
         -------
         dict
-            FITS header
+            FITS header in dictionary format
 
         Notes
         -----
@@ -1144,8 +1271,9 @@ class FITSCatalogue(BaseCatalogue):
         if self._cat_data is not None:
             if hdu_no is None:
                 hdu_no = self.hdu_no
+
             if self._fits_ldac:
-                astropy_header = _fits_header_from_fits_LDAC(self.fullpath)
+                astropy_header = self._fits_header_from_fits_LDAC(self.fullpath)
                 return dict(astropy_header.items())
             else:
                 return dict(self._cat_data[hdu_no].header.items())
@@ -1219,19 +1347,11 @@ class FITSCatalogue(BaseCatalogue):
             raise ValueError("key not provided")
         else:
             card.append(key)
-
-        if value is not None:
             card.append(value)
-        else:
-            if comment is not None:
-                card.append("")
-
-        if comment is not None:
             card.append(comment)
 
-        card = tuple(card)
-
-        self._cat_data[hdu_no].header.append(card, end=True)
+            card = tuple(card)
+            self._cat_data[hdu_no].header.append(card, end=True)
 
     def get_comments(self, hdu_no=None):
         """Get Comments.
@@ -1509,22 +1629,27 @@ class FITSCatalogue(BaseCatalogue):
             Column FITS data type
 
         """
+        type_mapping = {
+            type(None): "D",
+            np.int16: "I",
+            np.int32: "J",
+            int: "K",
+            np.int64: "K",
+            float: "D",
+            np.float16: "D",
+            np.float32: "D",
+            np.float64: "D",
+            bool: "L",
+            str: "A",
+            np.str: "A",
+            np.str_: "A",
+            np.str0: "A"
+        }
+
         if col_data is None or len(col_data) == 0:
             col_type = "D"
-        elif type(col_data[0]) in [np.int16]:
-            col_type = "I"
-        elif type(col_data[0]) in [np.int32]:
-            col_type = "J"
-        elif type(col_data[0]) in [int, np.int64]:
-            col_type = "K"
-        elif type(col_data[0]) in [float, np.float16, np.float32, np.float64]:
-            col_type = "D"
-        elif type(col_data[0]) is bool:
-            col_type = "L"
-        elif type(col_data[0]) in [str, np.str, np.str_, np.str0]:
-            col_type = "A"
         else:
-            col_type = "D"
+            col_type = type_mapping.get(type(col_data[0]), "D")
 
         return col_type
 
@@ -1544,40 +1669,34 @@ class FITSCatalogue(BaseCatalogue):
             Column Python data type
 
         """
-        if col_type in ["B", "I", "J", "K"]:
-            pcol_type = "%d"
-        elif col_type in ["D", "E"]:
-            pcol_type = "%f"
-        elif col_type in ["A", "C", "M"]:
-            pcol_type = "%s"
-        elif col_type == "L":
-            pcol_type = "%s"
-        else:
-            pcol_type = "%f"
+        type_mapping = {
+            "B": "%d",
+            "I": "%d",
+            "J": "%d",
+            "K": "%d",
+            "D": "%f",
+            "E": "%f",
+            "A": "%s",
+            "C": "%s",
+            "M": "%s",
+            "L": "%s"
+        }
 
-        return pcol_type
+        return type_mapping.get(col_type, "%f")
 
-    def _save_to_fits(
-        self, data, names, it, ext_name=None, ldac_cat_path=None, overwrite=False,
-    ):
+    def _save_to_fits(self, data, fits_ldac=False, overwrite=False):
         """Save to FITS.
 
-        Save array of data as fits with their associated column names.
+        Save and close after adding data in form of astropy HDYlist. Can save as as fits or fits_ldac. (do we want to have this option here?)
 
         Parameters
         ----------
-        data : numpy.ndarray
-            Array with the data
-        names : list
-            List of the column names
-        it : iterator
-            Number of HDUs
-        ext_name : str
-            Name of the HDU where data are stored
-        ldac_cat_path : str
-            Path of the existing SExtractor fits-ldac catalogue to mimic
+        data : astropy.io.HDUlist
+            Astropy data 
+        fits_ldac : bool
+            save as fits_ldac format if True
         overwrite : bool
-            Option to overwrite an existing catalogue
+            Option to overwrite an existing catalogue, otherwise new extension will be added
 
         """
         if data is None:
@@ -1589,100 +1708,25 @@ class FITSCatalogue(BaseCatalogue):
             if ext_name is None:
                 ext_name = "new"
         else:
-            if self._fits_ldac:
-                self.create(s_hdu=False, ldac_cat_path=ldac_cat_path)
+            if self.fits_ldac:
+                self.create(s_hdu=False)  
                 self.open()
+                header = data.header() 
+                #this will be present in data.header
+                ldac_imhead = self._create_ldac_imhead(header)
+                self._cat_data.append(ldac_imhead)
                 if ext_name is None:
                     ext_name = "LDAC_OBJECTS"
+
+               
             else:
                 self.create(s_hdu=False)
                 self.open()
                 if ext_name is None:
                     ext_name = "new"
 
-        if len(names) == 1:
-            data = np.array([data])
-        col_list = []
-        for idx in it:
-            data_shape = data[idx].shape[1:]
-            dim = str(tuple(data_shape))
-            name = names[it.index(idx)]
-            data_type = self._get_fits_col_type(data[idx])
-            mem_size = 1
-            if len(data_shape) != 0:
-                for shape in data_shape:
-                    mem_size *= shape
-                data_format = f"{mem_size}{data_type}"
-                col_list.append(
-                    fits.Column(
-                        name=name, format=data_format, array=data[idx], dim=dim,
-                    )
-                )
-            elif data_type == "A":
-                mem_size *= len(max(data[idx], key=len))
-                data_format = f"{mem_size}{data_type}"
-                col_list.append(
-                    fits.Column(
-                        name=name,
-                        format=data_format,
-                        array=data[idx],
-                        dim=str((mem_size,)),
-                    )
-                )
-            else:
-                data_format = f"{mem_size}{data_type}"
-                col_list.append(
-                    fits.Column(name=name, format=data_format, array=data[idx],)
-                )
-
-        self._cat_data.append(fits.BinTableHDU.from_columns(col_list, name=ext_name))
+        self._cat_data.append(data)
         self.close()
-
-    def _save_from_recarray(
-        self, data=None, ext_name=None, ldac_cat_path=None, overwrite=False,
-    ):
-        """Save From Record Array.
-
-        Save a numpy.recarray or astropy.io.fits.fitsrec.FITS_rec into a FITS
-        file.
-
-        Parameters
-        ----------
-        data : numpy.ndarray
-            Array with the data
-        ext_name : str
-            Name of the HDU where data are stored
-        ldac_cat_path : str
-            Path of the existing SExtractor fits-ldac catalogue to mimic
-        overwrite : bool
-            Option to overwrite an existing catalogue
-
-        """
-        if data is None:
-            raise ValueError("Data not provided")
-
-        if self._file_exists(self.fullpath) and not overwrite:
-            if self._cat_data is None:
-                self.open()
-            if ext_name is None:
-                ext_name = "new"
-            self._cat_data.append(fits.BinTableHDU(data, name=ext_name))
-            self.close()
-        else:
-            if self._fits_ldac:
-                self.create(s_hdu=False, ldac_cat_path=ldac_cat_path)
-                self.open()
-                if ext_name is None:
-                    ext_name = "LDAC_OBJECTS"
-                self._cat_data.append(fits.BinTableHDU(data, name=ext_name))
-                self.close()
-            else:
-                self.create(s_hdu=False)
-                self.open()
-                if ext_name is None:
-                    ext_name = "new"
-                self._cat_data.append(fits.BinTableHDU(data, name=ext_name))
-                self.close()
 
     def _save_image(self, data=None, header=None, overwrite=False):
         """Save Image.
@@ -1810,7 +1854,7 @@ def get_unit_from_fits_header(header, key):
     Parameters
     ----------
     header : FITS header
-        Header information
+        Header information (dict? or astropy object???)
     key : str
         Column name
 
