@@ -87,6 +87,16 @@ class MergeSep(object):
             cat0.open()
             list_ext_name = cat0.get_ext_name()
             list_col_name = cat0.get_col_names()
+
+
+            # Inupt ngmix files sometimes have not all sheared versions
+            # (HDUs 1 - 5 = 1M, 1P, 2M, 2P, NOSHEAR) due to IO errors
+            if len(list_ext_name) < 6:
+                raise IndexError(
+                    f"Input ngmix catalogue {input_file} has only"
+                    + f" {len(list_ext_name)} HDUs, required are 6"
+                )
+
             # MKDEBUG: Some input ngmix catalogues have multiple of 5 HDUs
             # if reprocessed and not deleted but appended
             if len(list_ext_name) > 6:
