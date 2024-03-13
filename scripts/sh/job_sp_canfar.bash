@@ -20,8 +20,6 @@ star_cat_for_mask='onthefly'
 exclusive=''
 results='cosmostat/kilbinger/results_v2'
 n_smp=-1
-nsh_step=-1
-nsh_max=-1
 nsh_jobs=8
 
 ## Help string
@@ -53,14 +51,9 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    \toutput (upload) directory on vos:cfis, default='$results'\n
    -n, --n_smp N_SMP\n
    \tnumber of jobs (SMP mode only), default from original config files\n
-   --nsh_step NSTEP\n
-   \tnumber of shape measurement parallel jobs, default=$nsh_jobs\n
    --nsh_jobs NJOB\n
    \tnumber of objects per parallel shape module call, \n
    \tdefault: optimal number is computed\n
-   --nsh_max NMAX\n
-   \tmax number of objects per parallel shape module call, \n
-   \tdefault: unlimited; has precedent over --nsh_step\n
    TILE_ID_i\n
    \ttile ID(s), e.g. 283.247 214.242\n
 "
@@ -110,14 +103,6 @@ while [ $# -gt 0 ]; do
       n_smp="$2"
       shift
       ;;
-    --nsh_max)
-      nsh_max="$2"
-      shift
-      ;;
-    --nsh_step)
-      nsh_step="$2"
-      shift
-      ;;
     --nsh_jobs)
       nsh_jobs="$2"
       shift
@@ -140,10 +125,6 @@ fi
 if [ "$retrieve" != "vos" ] && [ "$retrieve" != "symlink" ]; then
   echo "method to retrieve images (option -r) needs to be 'vos' or 'symlink'"
   exit 5
-fi
-
-if [ $nsh_max != -1 ]; then
-  nsh_step=$nsh_max
 fi
 
 # For tar archives. TODO: Should be unique to each job
@@ -460,10 +441,8 @@ if [[ $do_job != 0 ]]; then
 
   ### Prepare config files
   n_min=0
-  if [[ $nsh_step == -1 ]]; then
-    n_obj=`get_number_objects`
-    nsh_step=`echo "$(($n_obj/$nsh_jobs))"`
-  fi
+  n_obj=`get_number_objects`
+  nsh_step=`echo "$(($n_obj/$nsh_jobs))"`
 
   n_max=$((nsh_step - 1))
   for k in $(seq 1 $nsh_jobs); do
@@ -472,7 +451,7 @@ if [[ $do_job != 0 ]]; then
         's/(ID_OBJ_MIN =) X/$1 '$n_min'/; s/(ID_OBJ_MAX =) X/$1 '$n_max'/; s/NgXu/Ng'$k'u/; s/X_interp/'$psf'_interp/g; print' \
         > $SP_CONFIG_MOD/config_tile_Ng${k}u.ini
     n_min=$((n_min + nsh_step))
-    if [ "$k" == $((nsh_jobs - 1)) ] && [ $nsh_max == -1 ]; then
+    if [ "$k" == $((nsh_jobs - 1)) ];  then
       n_max=-1
     else
       n_max=$((n_min + nsh_step - 1))
