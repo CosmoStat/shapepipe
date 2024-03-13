@@ -181,9 +181,9 @@ if [[ $do_job != 0 ]]; then
     cd ${kind}_runs/$ID/output
 
     # Remove duplicate job-32 runs (tile detection)
-    n_16=`ls -rt1d run_sp_tile_Sx_* | wc -l`
-    if [ "$n_16" != "1" ]; then
-      n_remove="$(($n_16-1))"
+    n_32=`ls -rt1d run_sp_tile_Sx_* | wc -l`
+    if [ "$n_32" != "1" ]; then
+      n_remove="$(($n_32-1))"
       echo "removing $n_remove duplicate old job-32 runs"
       rm -rf `ls -rt1d run_sp_tile_Sx_* | head -$n_remove`
     fi
@@ -191,6 +191,15 @@ if [[ $do_job != 0 ]]; then
     # Remove previous runs of this job
     rm -rf run_sp_tile_PsViSmVi*
   fi
+fi
+
+(( do_job= $job & 256 ))
+if [[ $do_job != 0 ]]; then
+
+  # Remove previous runs of this job
+  rm -rf run_sp_Ms_20??_*
+  rm -rf run_sp_Mc_20??_*
+
 fi
 
 cd ..
