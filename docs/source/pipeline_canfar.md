@@ -79,13 +79,13 @@ curl_canfar_local.sh -j 64 -f tile_numbers.txt -k tile -p $psf -N $N_SMP
 curl_canfar_local.sh -j 128 -f tile_numbers.txt -k tile -p $psf -N 8
 
 # Merge subcatalogues, and create final cat
-job_sp_canfar.bash -p $psf -n 1 -j 256
+curl_canfar_local.sh -j 256 -f tile_numbers.txt -k tile -p $psf -N $N_SMP
 
 # Combine all final cats in common output dir as links
 combine_runs.bash -c final -p psfex
 
 # Merge all final cats
-# (use 192GB RAM)
+# (W3: 140GB RAM)
 merge_final_cat -i output/run_sp_combined_final/make_catalog_runner/output -p cfis/final_cat.param -v
 
 
