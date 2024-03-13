@@ -88,7 +88,6 @@ def set_jobs_v2_pre_v2(patch, verbose):
         verbose=verbose,
     )
 
-    #        n_mult=[1, 1, 1],
     jobs["2"] = job_data(
         2,
         ["run_sp_Uz", "run_sp_exp_SpMh", "run_sp_exp_SpMh"],
@@ -223,7 +222,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
     jobs["512"] = job_data(
         "512",
         ["run_sp_combined_final"],
-        ["make_cat_runner"],
+        ["make_catalog_runner"],
         "tile_IDs",
         path_main=path_main,
         path_left="output",

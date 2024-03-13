@@ -15,7 +15,7 @@ from collections import Counter
 
 from tqdm import tqdm
 
-print("summaary v1.0")
+print("summaary v1.1")
 
 
 def get_IDs_from_file(path):
@@ -243,7 +243,7 @@ class job_data(object):
         Print header line for job statistics.
 
         """
-        logging.info(f" (Job {self._bit})")
+        logging.info(f" # Job {self._bit}:")
 
     @classmethod
     def print_stats_header(self):
@@ -648,6 +648,9 @@ class job_data(object):
                 )
                 n_missing_job += n_missing
                 self._missing_IDs_job.extend(missing_IDs)
+
+        # Empty line after job
+        logging.info("")
 
         # Write missing IDs for entire job to file
         #if n_missing_job > 0:
