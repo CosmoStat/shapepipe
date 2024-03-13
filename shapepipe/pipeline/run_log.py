@@ -170,6 +170,35 @@ def get_last(runs, module):
     return last_run.split(' ')[0]
 
 
+def get_all_dirs(run_log_file, module):
+    """Get All Dirs.
+
+    Return directory paths corresponding to all runs of given module.
+
+    Parameters
+    ----------
+    run_log_file : str
+        Run log file name
+    module : str
+        Module name
+
+    Returns
+    -------
+    list
+        Directory names of all module runs
+
+    """
+    runs = get_list(run_log_file)
+    all_runs = get_all(runs, module)
+
+    all_dirs = []
+    for run in all_runs:
+        dir_name = run.split(" ")[0]
+        all_dirs.append(f"{dir_name}/{module}/output")
+ 
+    return all_dirs
+
+
 def get_last_dir(run_log_file, module):
     """Get Last Dir.
 
@@ -188,9 +217,10 @@ def get_last_dir(run_log_file, module):
         Directory name of last module run
 
     """
-    runs = get_list(run_log_file)
-    all_runs = get_all(runs, module)
-    last_run = all_runs[0].split(' ')[0]
-    last_dir = f'{last_run}/{module}/output'
+    all_dirs = get_all_dirs(run_log_file, module)
+    last_dir = all_dirs[0]
 
     return last_dir
+
+
+

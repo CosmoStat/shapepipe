@@ -17,7 +17,7 @@ import glob
 from optparse import OptionParser                                               
 from astropy.io import fits
 
-from shapepipe.pipeline.run_log import get_last_dir                             
+from shapepipe.pipeline.run_log import get_last_dir, get_all_dirs
 from shapepipe.utilities import cfis                                            
 
 
@@ -281,10 +281,21 @@ def main(argv=None):
     # Save command line arguments to log file
     f_log = cfis.log_command(argv, close_no_return=False)
 
-    module = 'sextractor_runner_run_1'
     pattern = 'sexcat'
     run_log_file = 'output/log_run_sp.txt'
-    last_dir = get_last_dir(run_log_file, module)
+
+    # For v1
+    #module = 'sextractor_runner_run_1'
+
+    # For v2
+    module = "sextractor_runner"
+    all_dir = get_all_dirs(run_log_file, module)
+    paths = []
+    for path in all_dir:
+        if "run_sp_tile_Sx" in path:
+            paths.append(path)
+    paths = sorted(paths)
+    last_dir = paths[-1]
 
     file_list = glob.glob(f'{last_dir}/{pattern}*.fits')
     if len(file_list) == 0:

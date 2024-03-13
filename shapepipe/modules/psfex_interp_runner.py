@@ -2,14 +2,14 @@
 
 Module runner for ``psfex_interp``.
 
-:Author: Axel Guinot
+:Author: Axel Guinot, Martin Kilbinger
 
 """
 
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.psfex_interp_package import psfex_interp
 
-from shapepipe.pipeline.run_log import get_last_dir
+from shapepipe.pipeline.run_log import get_last_dir, get_all_dirs
 
 
 @module_runner(
@@ -66,7 +66,16 @@ def psfex_interp_runner(
             module_config_sec,
             'ME_DOT_PSF_DIR',
         )
-        dot_psf_dir = get_last_dir(run_dirs['run_log'], module)
+        module_name = module.split(":")[-1]
+        if "last" in module:
+            dot_psf_dirs = [get_last_dir(run_dirs['run_log'], module_name)]
+        elif "all" in module:
+            dot_psf_dirs = get_all_dirs(run_dirs["run_log"], module_name)
+        else:
+            raise ValueError(
+                "Expected qualifier 'last:' or 'all' before module"
+               + f" '{module}' in config entry 'ME_DOT_PSF_DIR'")
+
         dot_psf_pattern = config.get(
             module_config_sec,
             'ME_DOT_PSF_PATTERN',
@@ -90,7 +99,7 @@ def psfex_interp_runner(
         )
 
         # Process inputs multi-epoch
-        psfex_interp_inst.process_me(dot_psf_dir, dot_psf_pattern, f_wcs_path)
+        psfex_interp_inst.process_me(dot_psf_dirs, dot_psf_pattern, f_wcs_path)
 
     # Run in VALIDATION mode
     elif mode == 'VALIDATION':

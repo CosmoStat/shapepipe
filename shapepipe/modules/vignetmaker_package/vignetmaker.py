@@ -7,6 +7,7 @@ This module contains a class to create postage stamps from images.
 """
 
 import re
+import os
 
 import numpy as np
 from astropy.wcs import WCS
@@ -183,22 +184,22 @@ class VignetMaker(object):
 
         return vign
 
-    def _get_stamp_me(self, image_dir, image_pattern):
+    def _get_stamp_me(self, image_dirs, image_pattern):
         """Get Stamp Multi-Epoch.
 
         Get stamps for multi-epoch data.
 
         Parameters
         ----------
-        image_dir : str
-            Path to the directory where the images are
+        image_dirs : list
+            Path to directories to search for input images
         image_pattern : str
             Common part of the file names
 
         Returns
         -------
         dict
-            Directory containing object id and vignets for each epoch
+            Dictionary containing object id and vignets for each epoch
 
         """
         cat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
@@ -226,10 +227,19 @@ class VignetMaker(object):
                 if ccd == -1:
                     continue
 
-                img_path = (
-                    image_dir + '/' + image_pattern + '-'
-                    + exp_name + '-' + str(ccd) + '.fits'
-                )
+                # Look for input image
+                found = False
+                image_name = f"{image_pattern}-{exp_name}-{ccd}.fits"
+                for image_dir in image_dirs:
+                    img_path = f"{image_dir}/{image_name}"
+                    if os.path.exists(img_path):
+                        found = True
+                        break
+                if not found:
+                    raise FileNotFoundError(
+                        f"Could not find image {image_name}"
+                    )
+
                 ind_obj = np.where(cat.get_data(hdu_index)['CCD_N'] == ccd)[0]
                 obj_id = all_id[ind_obj]
 
@@ -292,23 +302,23 @@ class VignetMaker(object):
 
         return output_dict
 
-    def process_me(self, image_dir, image_pattern, f_wcs_path, rad):
+    def process_me(self, image_dirs, image_pattern, f_wcs_path, rad):
         """Process Multi-Epoch.
 
         Main function to create the stamps in the multi-epoch case.
 
         Parameters
         ----------
-        image_dir : list
-            List of directories where the image are; ff ``len(image_dir) == 1``
-            -> all images are in the same directory, else ``len(image_dir)``
-            must match ``len(image_pattern)``
+        image_dirs : list
+            Directories of image locations.
+            Each list item contains sublist in which images are searched.
+            Length of outer list has to match image_pattern, or be single item.
         image_pattern : list
             Common part of each kind of file names
         f_wcs_path : str
             Path to the log file containing the WCS for each CCDs
         rad : int
-            Radius of the stamp, must be odd
+            Radius of the stamp, must be an odd integer
 
         """
         self._f_wcs_file = SqliteDict(f_wcs_path)
@@ -316,17 +326,15 @@ class VignetMaker(object):
 
         for idx in range(len(image_pattern)):
 
-            if len(image_dir) != len(image_pattern):
-                output_dict = self._get_stamp_me(
-                    image_dir[0],
-                    image_pattern[idx],
-                )
-
+            if len(image_dirs) != len(image_pattern):
+                index = 0
             else:
-                output_dict = self._get_stamp_me(
-                    image_dir[idx],
-                    image_pattern[idx],
-                )
+                index = idx
+
+            output_dict = self._get_stamp_me(
+                image_dirs[index],
+                image_pattern[idx],
+            )
 
             self._save_vignet_me(output_dict, image_pattern[idx])
 

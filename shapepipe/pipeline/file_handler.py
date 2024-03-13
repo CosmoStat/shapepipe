@@ -32,12 +32,14 @@ class FileHandler(object):
         List of modules to be run
     config : CustomParser
         Configuaration parser instance
+    exclusive : str, optional
+        Run this file number string exclusively if given, the default is None
     verbose : bool, optional
         Verbose setting, default is True
 
     """
 
-    def __init__(self, run_name, modules, config, verbose=True):
+    def __init__(self, run_name, modules, config, exclusive=None, verbose=True):
 
         self._run_name = run_name
 
@@ -46,6 +48,7 @@ class FileHandler(object):
             raise ValueError('Invalid module list, check for a trailing comma')
 
         self._config = config
+        self._exclusive = exclusive
         self._verbose = verbose
 
         self.module_runners = get_module_runners(self._module_list)
@@ -1110,6 +1113,18 @@ class FileHandler(object):
                     + f'numbering scheme "{num_scheme}".'
                 )
 
+            # If "exclusive" options is set: discard all non-matching IDs
+            if self._exclusive is not None:
+                id_to_test = f"-{self._exclusive.replace('.', '-')}"
+                if number == id_to_test:
+                    if self._verbose:
+                        print(f"-- Using exclusive number {self._exclusive} ({id_to_test})")
+                else:
+                    if self._verbose:
+                        #print(f"Skipping {number}, not equal to {self._exclusive} ({id_to_test})")
+                        pass
+                    continue
+
             if run_method == 'serial':
                 process_items = []
             else:
@@ -1119,6 +1134,9 @@ class FileHandler(object):
                 for path, fp, ext in zip(path_list, pattern_list, ext_list)
             ])
             process_list.append(process_items)
+
+        if len(process_list) == 0:
+            raise ValueError("Empty process list")
 
         return process_list
 

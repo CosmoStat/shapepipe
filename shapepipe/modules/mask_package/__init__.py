@@ -63,6 +63,9 @@ PREFIX : str, optional
     Prefix to be appended to output file name ``flag``;
     helps to distinguish the file patterns of newly created and external
     mask files
+CHECK_EXISTING_DIR : str, optional
+    If given, search this directory for existing mask files; the
+    corresponding images will then not be processed
 
 Mask config file
 ================

@@ -58,7 +58,10 @@ class SETools(object):
                 SEx_catalogue=True,
             )
             cat_file.open()
-            self._data = cat_file.get_data()
+            try:
+                self._data = cat_file.get_data()
+            except:
+                raise IOError(f"Could not load catalogue data from {cat}")
             cat_file.close()
 
         else:

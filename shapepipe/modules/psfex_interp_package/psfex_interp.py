@@ -2,7 +2,7 @@
 
 This module computes the PSFs from a PSFEx model at several galaxy positions.
 
-:Authors: Morgan Schmitz and Axel Guinot
+:Authors: Morgan Schmitz, Axel Guinot, Martin Kilbinger
 
 """
 
@@ -29,82 +29,6 @@ BAD_CHI2 = 'Fail_chi2'
 FILE_NOT_FOUND = 'File_not_found'
 
 
-def interpsfex(dotpsfpath, pos, thresh_star, thresh_chi2):
-    """Interpolate PSFEx.
-
-    Use PSFEx generated model to perform spatial PSF interpolation.
-
-    Parameters
-    ----------
-    dotpsfpath : str
-        Path to ``.psf`` file (PSFEx output)
-    pos : numpy.ndarray
-        Positions where the PSF model should be evaluated
-    thresh_star : int
-        Threshold of stars under which the PSF is not interpolated
-    thresh_chi2 : int
-        Threshold for chi squared
-
-    Returns
-    -------
-    numpy.ndarray
-        Array of PSFs, each row is the PSF image at the corresponding position
-        requested
-
-    """
-    if not os.path.exists(dotpsfpath):
-        return FILE_NOT_FOUND
-
-    # read PSF model and extract basis and polynomial degree and scale position
-    PSF_model = fits.open(dotpsfpath)[1]
-
-    # Check number of stars used to compute the PSF
-    if PSF_model.header['ACCEPTED'] < thresh_star:
-        return NOT_ENOUGH_STARS
-    if PSF_model.header['CHI2'] > thresh_chi2:
-        return BAD_CHI2
-
-    PSF_basis = np.array(PSF_model.data)[0][0]
-    try:
-        deg = PSF_model.header['POLDEG1']
-    except KeyError:
-        # constant PSF model
-        return PSF_basis[0, :, :]
-
-    # scale coordinates
-    x_interp, x_scale = (
-        PSF_model.header['POLZERO1'],
-        PSF_model.header['POLSCAL1']
-    )
-    y_interp, y_scale = (
-        PSF_model.header['POLZERO2'],
-        PSF_model.header['POLSCAL2']
-
-    )
-    xs, ys = (pos[:, 0] - x_interp) / x_scale, (pos[:, 1] - y_interp) / y_scale
-
-    # compute polynomial coefficients
-    coeffs = np.array([[x ** idx for idx in range(deg + 1)] for x in xs])
-    cross_coeffs = np.array([
-        np.concatenate([
-            [(x ** idx_j) * (y ** idx_i) for idx_j in range(deg - idx_i + 1)]
-            for idx_i in range(1, deg + 1)
-        ])
-        for x, y in zip(xs, ys)
-    ])
-    coeffs = np.hstack((coeffs, cross_coeffs))
-
-    # compute interpolated PSF
-    PSFs = np.array([
-        np.sum(
-            [coeff * atom for coeff, atom in zip(coeffs_posi, PSF_basis)],
-            axis=0,
-        )
-        for coeffs_posi in coeffs
-    ])
-
-    return PSFs
-
 
 class PSFExInterpolator(object):
     """The PSFEx Interpolator Class.
@@ -115,7 +39,7 @@ class PSFExInterpolator(object):
     Parameters
     ----------
     dotpsf_path : str
-        Path to PSFEx output file
+        Path to PSFEx output file; can be `None` in multi-epoch mode
     galcat_path : str
         Path to SExtractor-like galaxy catalogue
     output_path : str
@@ -151,18 +75,19 @@ class PSFExInterpolator(object):
     ):
 
         # Path to PSFEx output file
+        self._dotpsf_path = dotpsf_path
         if (
-            isinstance(dotpsf_path, type(None))
-            or os.path.isfile(dotpsf_path)
+            not isinstance(dotpsf_path, type(None))
+            and not os.path.isfile(dotpsf_path)
         ):
-            self._dotpsf_path = dotpsf_path
-        else:
             raise ValueError(f'Cound not find file {dotpsf_path}.')
+
         # Path to catalogue containing galaxy positions
         if os.path.isfile(galcat_path):
             self._galcat_path = galcat_path
         else:
             raise ValueError(f'Cound not find file {galcat_path}.')
+
         # Path to output file to be written
         self._output_path = output_path + '/galaxy_psf'
         # Path to output file to be written for validation
@@ -280,6 +205,88 @@ class PSFExInterpolator(object):
             raise KeyError(pos_param_err)
         galcat.close()
 
+
+    def interpsfex(self, dotpsfpath, pos):
+        """Interpolate PSFEx.
+
+        Use PSFEx generated model to perform spatial PSF interpolation.
+
+        Parameters
+        ----------
+        dotpsfpath : str
+            Path to ``.psf`` file (PSFEx output)
+        pos : numpy.ndarray
+            Positions where the PSF model should be evaluated
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of PSFs, each row is the PSF image at the corresponding position
+            requested
+    
+        """
+        if not os.path.exists(dotpsfpath):
+            return FILE_NOT_FOUND
+
+        # read PSF model and extract basis and polynomial degree and scale position
+        try:
+            PSF_model = fits.open(dotpsfpath)[1]
+        except OSError as err:
+            msg = f"Psf model file {dotpsfpath} empty or corrupt."
+            self._w_log.info(msg)
+            self._w_log.info(f"Error: {err=}, {type(err)=}")
+            raise
+
+        # Check number of stars used to compute the PSF
+        thresh_star = self._star_thresh
+        thresh_chi2 = self._chi2_thresh
+
+        if PSF_model.header['ACCEPTED'] < thresh_star:
+            return NOT_ENOUGH_STARS
+        if PSF_model.header['CHI2'] > thresh_chi2:
+            return BAD_CHI2
+
+        PSF_basis = np.array(PSF_model.data)[0][0]
+        try:
+            deg = PSF_model.header['POLDEG1']
+        except KeyError:
+            # constant PSF model
+            return PSF_basis[0, :, :]
+
+        # scale coordinates
+        x_interp, x_scale = (
+            PSF_model.header['POLZERO1'],
+            PSF_model.header['POLSCAL1']
+        )
+        y_interp, y_scale = (
+            PSF_model.header['POLZERO2'],
+            PSF_model.header['POLSCAL2']
+
+        )
+        xs, ys = (pos[:, 0] - x_interp) / x_scale, (pos[:, 1] - y_interp) / y_scale
+
+        # compute polynomial coefficients
+        coeffs = np.array([[x ** idx for idx in range(deg + 1)] for x in xs])
+        cross_coeffs = np.array([
+            np.concatenate([
+                [(x ** idx_j) * (y ** idx_i) for idx_j in range(deg - idx_i + 1)]
+                for idx_i in range(1, deg + 1)
+            ])
+            for x, y in zip(xs, ys)
+        ])
+        coeffs = np.hstack((coeffs, cross_coeffs))
+
+        # compute interpolated PSF
+        PSFs = np.array([
+            np.sum(
+                [coeff * atom for coeff, atom in zip(coeffs_posi, PSF_basis)],
+                axis=0,
+            )
+            for coeffs_posi in coeffs
+        ])
+
+        return PSFs
+
     def _interpolate(self):
         """Interpolate.
 
@@ -287,11 +294,9 @@ class PSFExInterpolator(object):
         positions.
 
         """
-        self.interp_PSFs = interpsfex(
+        self.interp_PSFs = self.interpsfex(
             self._dotpsf_path,
             self.gal_pos,
-            self._star_thresh,
-            self._chi2_thresh,
         )
 
     def _get_psfshapes(self):
@@ -512,25 +517,28 @@ class PSFExInterpolator(object):
 
         output.save_as_fits(data, sex_cat_path=self._galcat_path)
 
-    def process_me(self, dot_psf_dir, dot_psf_pattern, f_wcs_path):
+    def process_me(self, dot_psf_dirs, dot_psf_pattern, f_wcs_path):
         """Process Multi-Epoch.
 
-        Process the multi-epoch.
+        Process multi-epoc PSF interpolation.
 
         Parameters
         ----------
-        dot_psf_dir : str
-            Path to the directory containing the ``.psf`` files
+        dot_psf_dirs : list
+            Paths to the directory containing the ``.psf`` files
         dot_psf_pattern : str
             Common pattern of the ``.psf`` files
         f_wcs_path : str
             Path to the log file containing the WCS for each CCDs
 
         """
-        if os.path.exists(dot_psf_dir):
-            self._dot_psf_dir = dot_psf_dir
-        else:
-            raise ValueError(f'Cound not find directory {dot_psf_dir}.')
+        if not any(
+             os.path.exists(dot_psf_dir)
+             for dot_psf_dir in dot_psf_dirs
+        ):
+            raise ValueError('Cound not find any dot psf directory.')
+
+        self._dot_psf_dirs = dot_psf_dirs
 
         self._dot_psf_pattern = dot_psf_pattern
 
@@ -568,13 +576,14 @@ class PSFExInterpolator(object):
 
         all_id = np.copy(cat.get_data()['NUMBER'])
         key_ne = 'N_EPOCH'
-        if key_ne not in cat.get_data():
+        if key_ne not in cat.get_data().dtype.names:
             raise KeyError(
-                f'Key {key_ne} not found in input galaxy catalogue, needed for'
+                f'Key {key_ne} not found in input galaxy catalogue'
+                + f'{self._galcat_path}, needed for'
                 + ' PSF interpolation to multi-epoch data; run previous module'
                 + ' (SExtractor) in multi-epoch mode'
             )
-        n_epoch = np.copy(cat.get_data()[key_me])
+        n_epoch = np.copy(cat.get_data()[key_ne])
 
         list_ext_name = cat.get_ext_name()
         hdu_ind = [
@@ -593,10 +602,22 @@ class PSFExInterpolator(object):
             for ccd in ccd_list:
                 if ccd == -1:
                     continue
-                dot_psf_path = (
-                    f'{self._dot_psf_dir}/{self._dot_psf_pattern}-{exp_name}'
-                    + f'-{ccd}.psf'
-                )
+                found = False
+                for dot_psf_dir in self._dot_psf_dirs:
+                    dot_psf_path = (
+                        f'{dot_psf_dir}/{self._dot_psf_pattern}-{exp_name}'
+                        + f'-{ccd}.psf'
+                    )
+                    if os.path.exists(dot_psf_path):
+                        found = True
+                        break
+                if not found:
+                    self._w_log.info(
+                        f"No .psf file found for exposure {exp_name} and"
+                        + f" ccd {ccd}"
+                    )
+                    continue
+
                 ind_obj = np.where(cat.get_data(hdu_index)['CCD_N'] == ccd)[0]
                 obj_id = all_id[ind_obj]
                 gal_pos = np.array(
@@ -607,11 +628,9 @@ class PSFExInterpolator(object):
                     )
                 ).T
 
-                self.interp_PSFs = interpsfex(
+                self.interp_PSFs = self.interpsfex(
                     dot_psf_path,
                     gal_pos,
-                    self._star_thresh,
-                    self._chi2_thresh,
                 )
 
                 if (
@@ -619,7 +638,7 @@ class PSFExInterpolator(object):
                     and self.interp_PSFs == NOT_ENOUGH_STARS
                 ):
                     self._w_log.info(
-                        f'Not enough stars find in the ccd {ccd} of the '
+                        f'Not enough stars found on ccd {ccd} of '
                         + f'exposure {exp_name}. Object inside this ccd will '
                         + 'lose an epoch.'
                     )
@@ -639,7 +658,7 @@ class PSFExInterpolator(object):
                     and self.interp_PSFs == FILE_NOT_FOUND
                 ):
                     self._w_log.info(
-                        f'Psf model file {self._dotpsf_path} not found. '
+                        f'Psf model file {dot_psf_path} not found. '
                         + 'Object inside this ccd will lose an epoch.'
                     )
                     continue

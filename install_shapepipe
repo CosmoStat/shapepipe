@@ -25,20 +25,6 @@ libpng_ver="1.6.37"
 mpi4py_ver="3.1.3"
 openblas_ver="0.3.18"
 
-# SExtractor Package
-sex_url="https://github.com/astromatic/sextractor/archive/2.25.0.tar.gz"
-sex_tar="2.25.0.tar.gz"
-sex_dir="sextractor-2.25.0"
-sex_bin="sex"
-sex_version=TRUE
-
-# PSFEx Package
-psfex_url="https://github.com/astromatic/psfex/archive/3.21.1.tar.gz"
-psfex_tar="3.21.1.tar.gz"
-psfex_dir="psfex-3.21.1"
-psfex_bin="psfex"
-psfex_version=TRUE
-
 # WeightWatcher Package
 ww_url="http://snapshot.debian.org/archive/debian/20171211T160522Z/pool/main/w/weightwatcher/weightwatcher_1.12.orig.tar.gz"
 ww_tar="weightwatcher_1.12.orig.tar.gz"
@@ -84,8 +70,6 @@ ENV_NAME='shapepipe'
 BUILD_ENV=TRUE
 DEVELOP=FALSE
 VOS=FALSE
-INSTALL_SEX=TRUE
-INSTALL_PSFEX=TRUE
 INSTALL_WW=TRUE
 INSTALL_CDSCLIENT=TRUE
 ATLAS_SEARCH=FALSE
@@ -103,66 +87,6 @@ download_package() {
   wget --no-check-certificate $1
   tar -xzf $2
   rm $2
-}
-
-# Function to build SExtractor with OpenBLAS
-build_sex_blas() {
-  astromatic_setup
-  cd $BUILD_DIR/$1
-  ./autogen.sh
-  ./configure --prefix=$CONDA_PREFIX --enable-openblas --with-fftw-libdir=$FFTW_LIB \
-  --with-fftw-incdir=$FFTW_INC --with-openblas-libdir=$BLAS_LIB \
-  --with-openblas-incdir=$BLAS_INC --quiet
-  make -j --quiet
-  make install
-}
-
-# Function to build SExtractor with ATLAS
-build_sex_atlas() {
-  astromatic_setup
-  cd $BUILD_DIR/$1
-  ./autogen.sh
-  if [ "$ATLAS_SEARCH" == TRUE ]
-  then
-    ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$FFTW_LIB \
-    --with-fftw-incdir=$FFTW_INC --quiet
-  else
-    ./configure --prefix=$CONDA_PREFIX --with-fftw-libdir=$FFTW_LIB \
-    --with-fftw-incdir=$FFTW_INC --with-atlas-libdir=$ATLAS_LIB \
-    --with-atlas-incdir=$ATLAS_INC --quiet
-  fi
-  make -j --quiet
-  make install
-}
-
-# Function to build PSFEx with OpenBLAS
-build_psfex_blas() {
-  astromatic_setup
-  cd $BUILD_DIR/$1
-  ./autogen.sh
-  ./configure --prefix=$CONDA_PREFIX --enable-openblas --enable-plplot=no \
-  --with-fftw-libdir=$FFTW_LIB --with-fftw-incdir=$FFTW_INC \
-  --with-openblas-libdir=$BLAS_LIB --with-openblas-incdir=$BLAS_INC --quiet
-  make -j --quiet
-  make install
-}
-
-# Function to build PSFEx with ATLAS
-build_psfex_atlas() {
-  astromatic_setup
-  cd $BUILD_DIR/$1
-  ./autogen.sh
-  if [ "$ATLAS_SEARCH" == TRUE ]
-  then
-    ./configure --prefix=$CONDA_PREFIX --enable-plplot=no \
-    --with-fftw-libdir=$FFTW_LIB --with-fftw-incdir=$FFTW_INC --quiet
-  else
-    ./configure --prefix=$CONDA_PREFIX --enable-plplot=no \
-    --with-fftw-libdir=$FFTW_LIB --with-fftw-incdir=$FFTW_INC \
-    --with-atlas-libdir=$ATLAS_LIB --with-atlas-incdir=$ATLAS_INC --quiet
-  fi
-  make -j --quiet
-  make install
 }
 
 # Function to build a standard package
@@ -193,7 +117,7 @@ check_conda() {
   CONDA_VERSION_MAJOR=$(cut -d'.' -f1 <<<$CONDA_VERSION)
   CONDA_VERSION_MINOR=$(cut -d'.' -f2 <<<$CONDA_VERSION)
   CONDA_VERSION_PATCH=$(cut -d'.' -f3 <<<$CONDA_VERSION)
-  CONDA_SH=/etc/profile.d/conda.sh
+  CONDA_SH=/opt/conda/etc/profile.d/conda.sh
   # Check Conda major version
   if [ "$CONDA_VERSION_MAJOR" -lt 4 ]
   then
@@ -290,8 +214,6 @@ start() {
 
 # Function to report package versions
 packages() {
-  check_binary2 $sex_bin "SExtractor" $sex_version $INSTALL_SEX
-  check_binary2 $psfex_bin "PSFEx" $psfex_version $INSTALL_PSFEX
   check_binary2 $ww_bin "WeightWatcher" $ww_version $INSTALL_WW
   check_binary2 $cdsclient_bin "CDSclient" $cdsclient_version $INSTALL_CDSCLIENT
   check_binary2 $mpi_bin "MPI" $mpi_version $USE_MPI $MPI_ROOT
@@ -332,8 +254,6 @@ package_report() {
   then
     activate_shapepipe
   fi
-  INSTALL_SEX=FALSE
-  INSTALL_PSFEX=FALSE
   INSTALL_WW=FALSE
   INSTALL_CDSCLIENT=FALSE
   USE_MPI=FALSE
@@ -381,8 +301,6 @@ setup() {
   check_status 'Operating System:' $SYSOS
   check_status 'Conda Version:' $CONDA_VERSION
   check_status 'Build Conda Environment:' $BUILD_ENV $ENV_NAME
-  check_status 'Install SExtractor:' $INSTALL_SEX
-  check_status 'Install PSFEx:' $INSTALL_PSFEX
   check_status 'Install WeightWatcher:' $INSTALL_WW
   check_status 'Install CDSclient:' $INSTALL_CDSCLIENT
   check_status 'Use MPI:' $USE_MPI $MPI_ROOT
@@ -467,8 +385,6 @@ Options:\n
 \t--develop\t option to install additional development packages\n
 \t--vos\t\t option to install virtual observatory software\n
 \t--no-env\t do not build Conda environment\n
-\t--no-sex\t do not build SExtractor\n
-\t--no-psfex\t do not build PSFEx\n
 \t--no-ww\t\t do not build WeightWatcher\n
 \t--no-cds\t do not build CDSclient\n
 \t--no-exe\t do not build any system executables\n\n
@@ -537,14 +453,6 @@ case $i in
     BUILD_ENV=FALSE
     shift
     ;;
-    --no-sex)
-    INSTALL_SEX=FALSE
-    shift
-    ;;
-    --no-psfex)
-    INSTALL_PSFEX=FALSE
-    shift
-    ;;
     --no-ww)
     INSTALL_WW=FALSE
     shift
@@ -590,8 +498,6 @@ case $i in
     shift
     ;;
     --no-exe)
-    INSTALL_SEX=FALSE
-    INSTALL_PSFEX=FALSE
     INSTALL_WW=FALSE
     INSTALL_CDSCLIENT=FALSE
     shift
@@ -715,37 +621,6 @@ fi
 ##############################################################################
 # BUILD EXTERNAL EXECUTABLES
 ##############################################################################
-
-# Build SExtractor
-if [ "$INSTALL_SEX" == TRUE ] && check_binary $sex_bin
-then
-  report_progress 'SExtractor'
-  conda install -n $ENV_NAME -c conda-forge "fftw==${fftw_ver}" -y
-  download_package $sex_url $sex_tar
-  if [ "$use_atlas" == TRUE ]
-  then
-    build_sex_atlas $sex_dir
-  else
-    conda install -n $ENV_NAME -c conda-forge "openblas==${openblas_ver}" -y
-    build_sex_blas $sex_dir
-  fi
-fi
-
-# Build PSFEx
-if [ "$INSTALL_PSFEX" == TRUE ] && check_binary $psfex_bin
-then
-  report_progress 'PSFEx'
-  conda install "libpng==${libpng_ver}" -y
-  conda install -n $ENV_NAME -c conda-forge "fftw==${fftw_ver}" -y
-  download_package $psfex_url $psfex_tar
-  if [ "$use_atlas" == TRUE ]
-  then
-    build_psfex_atlas $psfex_dir
-  else
-    conda install -n $ENV_NAME -c conda-forge "openblas==${openblas_ver}" -y
-    build_psfex_blas $psfex_dir
-  fi
-fi
 
 # Build WeightWatcher
 if [ "$INSTALL_WW" == TRUE ] && check_binary $ww_bin
