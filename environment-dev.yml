@@ -8,29 +8,29 @@ name: shapepipe-dev
 channels:
   - conda-forge
 dependencies:
-  - python=3.11
-  - pip>=21.2.4
-  - astropy>=5.0
+  - python>=3.9.18
+  - pip>=23.3.1
+  - astropy>=5.1.1
   - autoconf>=2.71
-  - automake>=1.16
-  - cmake>=3.27
-  - galsim>=2.5
-  - joblib>=1.3
+  - automake>=1.16.5
+  - cmake>=3.27.7
+  - galsim>=2.5.1
+  - joblib>=1.3.2
   - libtool>=2.4
-  - matplotlib>=3.8
-  - numba>=0.57
+  - matplotlib>=3.8.1
+  - numba>=0.58.1
   - pandas>=2.1
-  - pyqt5-sip>=12.12
-  - pyqtgraph>=0.13
+  - pyqt5-sip>=12.13
+  - pyqtgraph>=0.13.3
   - reproject>=0.12
   - sqlitedict>=2.1
   - termcolor>=2.3
-  - tqdm>=4.66
-  - treecorr>=4.3
+  - tqdm>=4.66.1
+  - treecorr>=4.3.3
   - pip:
     - cs_util==0.0.5
-    - mccd==1.2.3
-    - modopt==1.6.0
+    - mccd==1.2.4
+    - modopt==1.6.1
     - sip_tpv==1.1
     - sf_tools==2.0.4
     - git+https://github.com/CEA-COSMIC/pysap@develop
