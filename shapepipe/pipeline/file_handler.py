@@ -1136,7 +1136,11 @@ class FileHandler(object):
             process_list.append(process_items)
 
         if len(process_list) == 0:
-            raise ValueError("Empty process list")
+            msg = "Empty process list"
+            if self._exclusive is not None:
+                if len(number_list) > 0:
+                    msg = f"{msg}. No input file found matching exclusive ID"
+            raise ValueError(msg
 
         return process_list
 
