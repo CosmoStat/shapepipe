@@ -1140,7 +1140,7 @@ class FileHandler(object):
             if self._exclusive is not None:
                 if len(number_list) > 0:
                     msg = f"{msg}. No input file found matching exclusive ID"
-            raise ValueError(msg
+            raise ValueError(msg)
 
         return process_list
 
