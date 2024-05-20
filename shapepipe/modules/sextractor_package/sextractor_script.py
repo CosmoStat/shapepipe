@@ -105,6 +105,12 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
     for idx, exp in enumerate(exp_list):
         pos_tmp = np.ones(len(obj_id), dtype='int32') * -1
         for idx_j in range(n_hdu):
+            if exp not in f_wcs:
+                raise KeyError(
+                    f"Exposure {exp} used in image {cat_path} but not"
+                    + f" found in header file {f_wcs_path. Make sure this"
+                    + " file is complete."
+                )
             w = f_wcs[exp][idx_j]['WCS']
             pix_tmp = w.all_world2pix(
                 cat.get_data()[pos_params[0]],

@@ -122,10 +122,22 @@ class MergeSep(object):
                     cat = file_io.FITSCatalogue(cat_path, SEx_catalogue=True)
                     cat.open()
 
+                    list_ext_name_n = cat.get_ext_name()
+                    if len(list_ext_name_n) < 6:
+                        raise IndexError(
+                            f"Input ngmix catalogue {cat_path} has only"
+                            + f" {len(list_ext_name_n)} HDUs, required are 6"
+                        )
                     for hdu_ind, ext_name in enumerate(list_ext_name):
                         if ext_name == 'PRIMARY':
                             continue
+                        if not ext_name in data:
+                            raise IndexError(
+                                f"Extension {ext_name} not found in file "
+                                + f"{cat_path}"
+                            )
                         for col_name in list_col_name:
+                            #print("MKDEBUG ", cat_path, ext_name, col_name)
                             data[ext_name][col_name] += list(
                                 cat.get_data(hdu_ind)[col_name]
                             )
