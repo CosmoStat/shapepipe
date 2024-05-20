@@ -325,12 +325,6 @@ if [[ $do_job != 0 ]]; then
      -1 \
      $exclusive
 
-  #if [[ ! -d "data_tiles" ]]; then
-    #echo "Directory or link 'data_tiles' does not exist, exiting"
-    #exit 1
-  #fi
-  #command_cfg_shapepipe "config_Git_vos.ini" "Retrieve tiles" -1 $n_exclusive
-
   ### Retrieve and save star catalogues for masking
   if [ "$star_cat_for_mask" == "save" ]; then
     #### For tiles

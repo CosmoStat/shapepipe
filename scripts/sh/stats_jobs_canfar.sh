@@ -22,7 +22,7 @@ SESSION=https://ws-uv.canfar.net/skaha/v0/session
 mode="count"
 
 ## Help string
-usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
+usage="Usage: $(basename "$0") [OPTIONS]
 \n\nOptions:\n
    -h\tthis message\n
    -m, --mode MODE\n
@@ -87,4 +87,4 @@ fi
 
 
 # Remove temporary files
-rm -f $tmpfile_jobs $tmpfile_ids
+#rm -f $tmpfile_jobs $tmpfile_ids

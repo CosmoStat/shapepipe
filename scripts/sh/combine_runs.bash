@@ -142,7 +142,8 @@ elif [ "$cat" == "psf" ]; then
   # v1
   #run_in="$pwf/$out_base/run_sp_exp_Pi_*"
   # v2
-  run_in="$pwd/exp_runs/*/$out_base/run_sp_exp_Pi_*"
+  #run_in="$pwd/exp_runs/*/$out_base/run_sp_exp_Pi_*"
+  run_in="$pwd/exp_runs/*/$out_base/run_sp_exp_SxSePsfPi_*"
 
   pattern="validation_psf-*"
   if [ "$psf" == "psfex" ]; then

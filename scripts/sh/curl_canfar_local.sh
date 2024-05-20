@@ -36,7 +36,7 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
    -k, --kind KIND\n
     \timage kind, allowed are 'tile' and 'exp'\n
    -N, --N_SMP N_SMOp\n
-    \tnumber of jobs (SMP mode only), default from original config files\n
+    \tnumber of jobs (SMP mode only), default=$N_SMP\n
    -V, --version\n
     \tversion of docker image, default='$version'\n
    -C, --command_remote\n
@@ -144,6 +144,7 @@ function call_curl() {
 
 # Add session and image IDs to log files
 function update_session_logs() {
+  #echo "MKDEBUG $my_session $ID"
   echo $my_session >> session_IDs.txt
   echo "$my_session $ID" >> session_image_IDs.txt
 
@@ -161,7 +162,7 @@ function submit_batch() {
 }
 
 batch=20
-sleep=300
+sleep=150
 
 ((n_thresh=batch_max-batch))
 
@@ -176,7 +177,7 @@ if [ "$dry_run" == 2 ]; then
     # Submit file (dry run = 2)
     for ID in `cat $file_IDs`; do
       arg=$(set_arg)
-      echo curl -E $SSL $SESSION?$RESOURCES -d \"image=$IMAGE:$version\" -d \"name=${NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
+      echo curl -b -E $SSL $SESSION?$RESOURCES -d \"image=$IMAGE:$version\" -d \"name=${NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
     done
 
   else
@@ -235,7 +236,8 @@ else
 
     # Submit image
     arg=$(set_arg)
-    session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg" &> /dev/null`
+    my_session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg" &> /dev/null`
+    echo curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg"
     update_session_logs
 
   fi
