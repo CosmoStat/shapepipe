@@ -321,7 +321,6 @@ class Mask(object):
         if (
             os.path.exists(f"{self._check_existing_dir}//{output_file_name}")
         ):
-            print("MKDEBUG skipping ", output_file_name)
             return None, None
 
         if self._config['MD']['make']:
