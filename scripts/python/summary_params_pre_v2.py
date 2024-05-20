@@ -92,21 +92,18 @@ def set_jobs_v2_pre_v2(patch, verbose):
         2,
         ["run_sp_Uz", "run_sp_exp_SpMh", "run_sp_exp_SpMh"],
         ["uncompress_fits_runner", "merge_headers_runner", "split_exp_runner"],
-        ["tile_IDs", 0, "3*n_shdus+n_exposures"],
+        #["tile_IDs", 0, "3*n_shdus+n_exposures"],
+        ["tile_IDs", 0, "exposures"],
+        n_mult=[1, 1, 121],
         path_main=path_main,
         path_left="output",
         verbose=verbose,
     )
 
-    run_dir_mask_tiles = "run_sp_tile_Ma"
-    run_dir_mask_exp = "run_sp_exp_Ma"
-    mask_module_tiles = "mask_runner"
-    mask_module_exp = "mask_runner"
-
     jobs["4"] = job_data(
         4,
-        run_dir_mask_tiles,
-        [mask_module_tiles],
+        ["run_sp_Ma_tile"],
+        ["mask_runner"],
         ["tile_IDs"],
         path_main=path_main,
         path_left="output",
@@ -115,8 +112,8 @@ def set_jobs_v2_pre_v2(patch, verbose):
 
     jobs["8"] = job_data(
         8,
-        run_dir_mask_exp,
-        [mask_module_exp],
+        ["run_sp_Ma_exp"],
+        ["mask_runner"],
         ["shdus"],
         path_main=path_main,
         path_left="output",

@@ -12,6 +12,11 @@ def main(argv=None):
 
     patch = argv[1]
 
+    if len(argv) == 3:
+        job_exclusive = argv[2]
+    else:
+        job_exclusive = None
+
     verbose = False
 
     jobs, list_tile_IDs_dot = set_jobs_v2_pre_v2(patch, verbose)
@@ -27,7 +32,10 @@ def main(argv=None):
         jobs[key].print_intro()
         jobs[key].check_numbers(par_runtime=par_runtime, indices=[0, 1])
 
-        all_exposures = get_all_exposures(jobs[key]._paths_in_dir[1], verbose=True)
+        all_exposures = get_all_exposures(
+            jobs[key]._paths_in_dir[1],
+            verbose=True
+        )
         par_runtime["n_exposures"] = len(all_exposures)
         par_runtime["list_exposures"] = all_exposures
 
@@ -43,6 +51,8 @@ def main(argv=None):
     _ = keys.pop(0)
 
     for key in keys:
+        if job_exclusive and key != job_exclusive:
+            continue
         jobs[key].print_intro()
         jobs[key].check_numbers(par_runtime=par_runtime)
 
