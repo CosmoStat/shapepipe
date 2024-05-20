@@ -252,8 +252,11 @@ class job_data(object):
         Print overall header information for stats output.
 
         """
+        #logging.info(
+            #"module                          expected     found   miss_expl"
+            #+ " missing uniq_miss  fr_found"
         logging.info(
-            "module                          expected     found   miss_expl"
+            "module                          expected     found"
             + " missing uniq_miss  fr_found"
         )
         logging.info("=" * 100)
@@ -297,7 +300,7 @@ class job_data(object):
 
         logging.info(
             f"{module:30s} {n_expected:9d} {n_found:9d}"
-            + f" {n_missing_explained:9d} {n_missing:9d}"
+            + f" {n_missing:9d}"
             + f" {n_missing_per_mult:9.1f} {fraction_found:9.1%}"
         )
 
@@ -357,9 +360,16 @@ class job_data(object):
 
         """
         IDs_dot = self.replace_dash_dot_if_tile(IDs)
-        with open(output_path, "w") as f_out:
-            for ID in IDs_dot:
-                print(ID, file=f_out)
+        if len(IDs_dot) > 0:
+            #print("MKDEBUG writing", output_path, len(IDs_dot))
+            # Write IDs to file
+            with open(output_path, "w") as f_out:
+                for ID in IDs_dot:
+                    print(ID, file=f_out)
+        elif os.path.exists(output_path):
+            # Remove preivous obsolete ID file
+            #print("MKDEBUG removing ", output_path)
+            os.unlink(output_path)
 
     def output_missing(
         self,
@@ -404,19 +414,20 @@ class job_data(object):
                 missing_IDs.append(ID)
 
         n_all = len(missing_IDs)
+        #print("MKDEBUG ", module, len(IDs), n_all, len(list_expected))
         missing_IDs_unique = self.get_unique(missing_IDs)
-        n_unique = len(missing_IDs_unique)
 
-        if n_unique > 0:
-            if not self._output_path_missing_IDs:
-                output_path = (
-                    f"{self._path_main}/summary/missing_job_{self._bit}"
-                    + f"_{module}.txt"
-                )
-            else:
-                output_path = self._output_path_missing_IDs[idx]
-            #print("MKDEBUG", missing_IDs_unique)
-            self.write_IDs_to_file(output_path, missing_IDs_unique)
+        if not self._output_path_missing_IDs:
+            # Default name using bit and module
+            output_path = (
+                f"{self._path_main}/summary/missing_job_{self._bit}"
+                + f"_{module}.txt"
+            )
+        else:
+            # User-defined name (e.g. ngmix_runner_X)
+            output_path = self._output_path_missing_IDs[idx]
+        #print("MKDEBUG output_missing", module, output_path, len(missing_IDs_unique))
+        self.write_IDs_to_file(output_path, missing_IDs_unique)
 
         return missing_IDs_unique
 
@@ -427,12 +438,7 @@ class job_data(object):
 
         missing_IDs_all = set(self._missing_IDs_job)
 
-        if len(missing_IDs_all) > 0:
-            self.write_IDs_to_file(output_path, missing_IDs_all)
-        else:
-            #logging.warning("no missing IDs in output_missing_job")
-            if os.path.exists(output_path):
-                os.unlink(output_path)
+        self.write_IDs_to_file(output_path, missing_IDs_all)
 
     @classmethod
     def get_last_full_path(self, base_and_subdir, matches):
@@ -675,7 +681,7 @@ def get_par_runtime(par_runtime, key, kind="n"):
         combined_key == "list_3*n_shdus+n_exposures"
         and combined_key not in par_runtime
     ):
-        print("{combined_key} not set, TBD")
+        print(f"{combined_key} not set, TBD")
         return []
 
     return par_runtime[combined_key]
@@ -692,6 +698,7 @@ def print_par_runtime(par_runtime, verbose=True):
             if not key.startswith("list"):
                 logging.info(f"{key:30s} {value:6d}")
             else:
-                logging.info(f"{key:29s} {len(value):6d} entries")
+                #logging.info(f"{key:30s} {len(value):6d} entries")
+                pass
         logging.info("===========")
         logging.info("")

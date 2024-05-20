@@ -21,6 +21,8 @@ ln -s ~/shapepipe/auxdir/CFIS/tiles_202106/tiles_$patch.txt tile_numbers.txt
 ### Create and link to central image storage directory
 mkdir -p ~/cosmostat/v2/data_tiles/$patch
 ln -s ~/cosmostat/v2/data_tiles/$patch data_tiles
+mkdir -p ~/cosmostat/v2/data_exp/$patch
+ln -s ~/cosmostat/v2/data_tiles/$patch data_exp
 
 ### Download and move tiles 
 ln -s ~/shapepipe/example/cfis
@@ -28,9 +30,8 @@ mkdir -p output
 export SP_RUN=`pwd`
 
 shapepipe_run -c cfis/config_Git_vos.ini
-mv -i output/run_sp_Git_*/get_images_runner/output/CFIS.???.???.*fits* data_tiles
-rm -rf output/run_sp_tiles_Git_*
-update_run_log_file.py
+ls -l data_tiles/ | wc; mv -i output/run_sp_Git_*/get_images_runner/output/CFIS.???.???.*fits* data_tiles; ls -l data_tiles/ | wc
+rm -rf output/run_sp_Git_*; update_run_log_file.py
 # repeat the above block
 
 ### Find exposures; this run can be stopped after Fe
@@ -42,7 +43,8 @@ shapepipe_run -c cfis/config_Gie_vos.ini
 mv -i output/run_sp_Gie_*/get_images_runner/output/*.fits*fz data_exp
 rm -rf  output/run_sp_Gie_*
 update_run_log_file.py
-# repeat the above
+# repeat the above; or:
+while true; do shapepipe_run -c cfis/config_Gie_vos.ini; ls -l data_exp/ | wc; mv -i output/run_sp_Gie_*/get_images_runner/output/*.fits*fz data_exp;  ls -l data_exp/ | wc; rm -rf output/run_sp_Git_*; update_run_log_file.py; done
 
 ### Create links (and re-run Fe, not necessary)
 job_sp_canfar.bash -p $psf `cat tile_numbers.txt` -j 1 -r symlink
@@ -51,14 +53,20 @@ job_sp_canfar.bash -p $psf `cat tile_numbers.txt` -j 1 -r symlink
 job_sp_canfar.bash -p $psf -n $N_SMP -j 2
 
 # Mask tiles
+
+## Run repeatedly if necessary
 job_sp_canfar.bash -p $psf -n $N_SMP -j 4
 
-# If not finshed:
-combine_runs.bash -p psfex -c flag
-mv output/run_sp_combined_flag output/run_sp_exp_Ma
+## Combine all runs
+combine_runs.bash -c flag_tile
 
 # Mask exposures
+
+## Run repeatedly if necessary
 job_sp_canfar.bash -p $psf -n $N_SMP -j 8
+
+# Combine all runs
+combine_runs.bash -c flag_exp
 
 
 # Tile detection
@@ -89,7 +97,15 @@ combine_runs.bash -c final -p psfex
 merge_final_cat -i output/run_sp_combined_final/make_catalog_runner/output -p cfis/final_cat.param -v
 
 
+# Star catalogue
+combine_runs.bash  -p $psf -c psf
+shapepipe_run -c $SP_CONFIG/config_MsPl_$psf.ini
+
 # Delete jobs
 SSL=~/.ssl/cadcproxy.pem
 SESSION=https://ws-uv.canfar.net/skaha/v0/session
 for ID in `cat session_IDs.txt`; do echo $ID; curl -X DELETE -E $SSL $SESSION/$ID; done
+
+# Run in terminal in parallel (-e needs to be last arg)
+cat all.txt | xargs -P 16 -n 1  init_run_exclusive_canfar.sh -j 64 -p psfex -k tile -f summary/missing_job_64_all.txt -n -e
+
