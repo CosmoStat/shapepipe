@@ -102,13 +102,31 @@ class SplitExposures(object):
         """
         header_file = np.zeros(self._n_hdu, dtype='O')
 
+        hdu_list = fits.open(exp_path)
+        if len(hdu_list) != self._n_hdu + 1:
+            raise ValueError(
+                f"Image {exp_path} has {len(hdu_list)} + 1 HDUs,"
+                + " expected were {self._n_hdu} + 1"
+            )
+
         for idx in range(1, self._n_hdu + 1):
 
-            h = fits.getheader(exp_path, idx)
+            #h = fits.getheader(exp_path, idx)
+            h = hdu_list[idx].header
             if transf_coord:
                 stp.pv_to_sip(h)
 
-            d = fits.getdata(exp_path, idx)
+            #d = fits.getdata(exp_path, idx)
+            try:
+                d = hdu_list[idx].data
+            except TypeError as e:
+                msg = (
+                    f"Error retrieving data of HDU #{idx} of image {exp_path}."
+                    + f" Check if image file is complete."
+                )
+                print(msg, e)
+                raise
+
             if transf_int:
                 d = d.astype(np.int16)
 
@@ -130,6 +148,7 @@ class SplitExposures(object):
                     print(f'WCS error for file {exp_path}')
                     raise
                 header_file[idx - 1] = {'WCS': w, 'header': h.tostring()}
+
 
         if save_header:
             file_name = (
