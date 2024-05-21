@@ -22,13 +22,6 @@ def update_par_runtime_after_find_exp(par_runtime, all_exposures):
     par_runtime["n_shdus"] = get_par_runtime(par_runtime, "exposures") * n_CCD
     par_runtime["list_shdus"] = get_all_shdus(all_exposures, n_CCD)
 
-    ## For split_exposure_runner, the output is image, weight,flag per single-HDU image
-    ## and a header per exposure.
-    par_runtime["n_3*n_shdus+n_exposures"] = (
-        3 * get_par_runtime(par_runtime, "shdus")
-        + get_par_runtime(par_runtime, "exposures")
-    )
-    
     return par_runtime
 
 
@@ -92,7 +85,6 @@ def set_jobs_v2_pre_v2(patch, verbose):
         2,
         ["run_sp_Uz", "run_sp_exp_SpMh", "run_sp_exp_SpMh"],
         ["uncompress_fits_runner", "merge_headers_runner", "split_exp_runner"],
-        #["tile_IDs", 0, "3*n_shdus+n_exposures"],
         ["tile_IDs", 0, "exposures"],
         n_mult=[1, 1, 121],
         path_main=path_main,

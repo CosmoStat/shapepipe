@@ -15,7 +15,7 @@ from collections import Counter
 
 from tqdm import tqdm
 
-print("summaary v1.1")
+print("summaary v1.2")
 
 
 def get_IDs_from_file(path):
@@ -361,14 +361,12 @@ class job_data(object):
         """
         IDs_dot = self.replace_dash_dot_if_tile(IDs)
         if len(IDs_dot) > 0:
-            #print("MKDEBUG writing", output_path, len(IDs_dot))
             # Write IDs to file
             with open(output_path, "w") as f_out:
                 for ID in IDs_dot:
                     print(ID, file=f_out)
         elif os.path.exists(output_path):
             # Remove preivous obsolete ID file
-            #print("MKDEBUG removing ", output_path)
             os.unlink(output_path)
 
     def output_missing(
@@ -393,16 +391,22 @@ class job_data(object):
 
         ## Extract image IDs from names
         IDs = []
-        pattern = re.compile(
-            r"(?:\d{3}-\d{3}|\d{7}-\d+|\d{7})"
-        )
+        if module != "split_exp_runner":
+            pattern = re.compile(
+                r"(?:\d{3}-\d{3}|\d{7}-\d+|\d{7})"
+            )
+        else:
+            # split_exp_runner: input is exp, output is shdu (images) and exp
+            # (header); ignore hdu number
+            pattern = re.compile(
+                r"(?:\d{3}-\d{3}|\d{7})"
+            )
         for name, path in zip(names_in_dir, paths_in_dir):
             match = pattern.search(name)
             if match:
                 IDs.append(match.group())
             else:
                 raise ValueError(f"No ID found in {name}")
-
 
         ## Count occurences
         ID_counts = Counter(IDs)
@@ -414,7 +418,6 @@ class job_data(object):
                 missing_IDs.append(ID)
 
         n_all = len(missing_IDs)
-        #print("MKDEBUG ", module, len(IDs), n_all, len(list_expected))
         missing_IDs_unique = self.get_unique(missing_IDs)
 
         if not self._output_path_missing_IDs:
@@ -426,7 +429,6 @@ class job_data(object):
         else:
             # User-defined name (e.g. ngmix_runner_X)
             output_path = self._output_path_missing_IDs[idx]
-        #print("MKDEBUG output_missing", module, output_path, len(missing_IDs_unique))
         self.write_IDs_to_file(output_path, missing_IDs_unique)
 
         return missing_IDs_unique
@@ -677,12 +679,6 @@ def get_par_runtime(par_runtime, key, kind="n"):
 
     """
     combined_key = f"{kind}_{key}"
-    if (
-        combined_key == "list_3*n_shdus+n_exposures"
-        and combined_key not in par_runtime
-    ):
-        print(f"{combined_key} not set, TBD")
-        return []
 
     return par_runtime[combined_key]
 
