@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 import sys
 import os
 import re
@@ -109,7 +111,8 @@ class Convert(object):
             patch_nums = ["3", "4"]
         else:
             n_patch = 7                                                             
-            patch_nums = [idx for idx in np.arange(n_patch) + 1]
+            #patch_nums = [idx for idx in np.arange(n_patch) + 1]
+            patch_nums = [1, 3]
 
         do_parallel = True
 
@@ -127,7 +130,8 @@ class Convert(object):
             exp_run_dirs = glob.glob(subdirs)
             n_exp_runs = len(exp_run_dirs)
             print(
-                f"Found {n_exp_runs} input single-exposure runs for patch"
+                pl = 's' if n_exp_runs > 1 else ''
+                f"Found {n_exp_runs} input single-exposure run{pl} for patch"
                 + f" {patch_dir} ({subdirs})"
             )
 
@@ -175,7 +179,8 @@ class Convert(object):
         try:
             all_files = os.listdir(mccd_dir)
             if self._params["verbose"]:
-                print(f"Found {len(all_files)} files in {mccd_dir}")
+                pl = "s" if len(all_files) > 1 else ""
+                print(f"Found {len(all_files)} file{pl} in {mccd_dir}")
         except Exception:
             if self._params["verbose"]:
                 print(f"Found zero PSFEx files in {mccd_dir}, skipping")
