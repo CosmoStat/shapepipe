@@ -38,5 +38,7 @@ def merge_headers_runner(
     # Merge header files
     merge_headers(input_file_list, output_dir)
 
+    w_log.info(f"Merged {len(input_file_list)} input file headers")
+
     # No return objects
     return None, None

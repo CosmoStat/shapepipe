@@ -579,7 +579,7 @@ class PSFExInterpolator(object):
         if key_ne not in cat.get_data().dtype.names:
             raise KeyError(
                 f'Key {key_ne} not found in input galaxy catalogue'
-                + f'{self._galcat_path}, needed for'
+                + f' {self._galcat_path}, needed for'
                 + ' PSF interpolation to multi-epoch data; run previous module'
                 + ' (SExtractor) in multi-epoch mode'
             )

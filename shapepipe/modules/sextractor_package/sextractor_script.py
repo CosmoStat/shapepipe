@@ -108,7 +108,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
             if exp not in f_wcs:
                 raise KeyError(
                     f"Exposure {exp} used in image {cat_path} but not"
-                    + f" found in header file {f_wcs_path. Make sure this"
+                    + f" found in header file {f_wcs_path}. Make sure this"
                     + " file is complete."
                 )
             w = f_wcs[exp][idx_j]['WCS']
