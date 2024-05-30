@@ -18,6 +18,31 @@ from tqdm import tqdm
 print("summaary v1.2")
 
 
+def init_par_runtime(list_tile_IDs):
+
+    # Numbers updated at runtime
+    par_runtime = {}
+
+    par_runtime["n_tile_IDs"] = len(list_tile_IDs)
+    par_runtime["list_tile_IDs"] = list_tile_IDs
+
+    return par_runtime
+
+
+def update_par_runtime_after_find_exp(par_runtime, all_exposures):
+
+    # Single-exposure images
+    par_runtime["n_exposures"] = len(all_exposures)
+    par_runtime["list_exposures"] = all_exposures
+
+    # Single-HDU single exposure images
+    n_CCD = 40
+    par_runtime["n_shdus"] = get_par_runtime(par_runtime, "exposures") * n_CCD
+    par_runtime["list_shdus"] = get_all_shdus(all_exposures, n_CCD)
+
+    return par_runtime
+
+
 def get_IDs_from_file(path):
     """Get IDs From File.
 
@@ -257,7 +282,7 @@ class job_data(object):
             #+ " missing uniq_miss  fr_found"
         logging.info(
             "module                          expected     found"
-            + " missing uniq_miss  fr_found"
+            + "   missing uniq_miss  fr_found"
         )
         logging.info("=" * 100)
 

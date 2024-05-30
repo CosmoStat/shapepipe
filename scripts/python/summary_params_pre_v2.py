@@ -3,27 +3,6 @@
 import os
 from shapepipe.utilities.summary import *
 
-def init_par_runtime(list_tile_IDs):
-    
-    # Numbers updated at runtime 
-    par_runtime = {}
-
-    par_runtime["n_tile_IDs"] = len(list_tile_IDs)
-    par_runtime["list_tile_IDs"] = list_tile_IDs
-
-    return par_runtime
-
-
-def update_par_runtime_after_find_exp(par_runtime, all_exposures):
-    
-    n_CCD = 40
-    
-    # Single-HDU single exposure images
-    par_runtime["n_shdus"] = get_par_runtime(par_runtime, "exposures") * n_CCD
-    par_runtime["list_shdus"] = get_all_shdus(all_exposures, n_CCD)
-
-    return par_runtime
-
 
 def set_jobs_v2_pre_v2(patch, verbose):
     """ Return information about shapepipe jobs
@@ -198,8 +177,19 @@ def set_jobs_v2_pre_v2(patch, verbose):
 
     jobs["256"] = job_data(
         "256",
-        ["run_sp_Ms", "run_sp_Mc"],
-        ["merge_sep_cats_runner", "make_cat_runner"],
+        ["run_sp_Ms"],
+        ["merge_sep_cats_runner"],
+        "tile_IDs",
+        path_main=path_main,
+        path_left="tile_runs",
+        output_subdirs=[f"{tile_ID}/output" for tile_ID in list_tile_IDs_dot],
+        verbose=verbose,
+    )
+
+    jobs["512"] = job_data(
+        "512",
+        ["run_sp_Mc"],
+        ["make_cat_runner"],
         "tile_IDs",
         path_main=path_main,
         path_left="tile_runs",
@@ -208,8 +198,8 @@ def set_jobs_v2_pre_v2(patch, verbose):
     )
 
     # Post-processing
-    jobs["512"] = job_data(
-        "512",
+    jobs["1024"] = job_data(
+        "1024",
         ["run_sp_combined_final"],
         ["make_catalog_runner"],
         "tile_IDs",
@@ -218,8 +208,8 @@ def set_jobs_v2_pre_v2(patch, verbose):
         verbose=verbose,
     )
 
-    jobs["1024"] = job_data(
-        "1024",
+    jobs["2048"] = job_data(
+        "2048",
         "run_sp_combined_psf",
         ["psfex_interp_runner"],
         "shdus",

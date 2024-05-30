@@ -86,8 +86,13 @@ curl_canfar_local.sh -j 64 -f tile_numbers.txt -k tile -p $psf -N $N_SMP
 # Tile shape measurement
 curl_canfar_local.sh -j 128 -f tile_numbers.txt -k tile -p $psf -N 8
 
-# Merge subcatalogues, and create final cat
+# Merge subcatalogues
 curl_canfar_local.sh -j 256 -f tile_numbers.txt -k tile -p $psf -N $N_SMP
+
+# Create final cat
+curl_canfar_local.sh -j 512 -f tile_numbers.txt -k tile -p $psf -N $N_SMP
+# Run in parallel
+cat mc.txt | xargs -I {} -P 16 bash -c 'init_run_exclusive_canfar.sh -p psfex -j 512 -e {} --n_smp 1 -k tile'
 
 # Combine all final cats in common output dir as links
 combine_runs.bash -c final -p psfex
