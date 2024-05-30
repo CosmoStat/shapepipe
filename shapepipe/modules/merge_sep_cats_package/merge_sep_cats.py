@@ -86,8 +86,6 @@ class MergeSep(object):
             cat0 = file_io.FITSCatalogue(input_file, SEx_catalogue=True)
             cat0.open()
             list_ext_name = cat0.get_ext_name()
-            list_col_name = cat0.get_col_names()
-
 
             # Inupt ngmix files sometimes have not all sheared versions
             # (HDUs 1 - 5 = 1M, 1P, 2M, 2P, NOSHEAR) due to IO errors
@@ -97,8 +95,12 @@ class MergeSep(object):
                     + f" {len(list_ext_name)} HDUs, required are 6"
                 )
 
-            # MKDEBUG: Some input ngmix catalogues have multiple of 5 HDUs
-            # if reprocessed and not deleted but appended
+            list_col_name = cat0.get_col_names()
+
+            # Some older input ngmix catalogues have multiple of 5 HDUs
+            # if reprocessed and not deleted but appended.
+            # The following log message should be replaced by raising
+            # and error in future
             if len(list_ext_name) > 6:
                 wmsg = f"Cropping input HDUs from {len(list_ext_name)} to 5"
                 self._w_log.info(wmsg)
