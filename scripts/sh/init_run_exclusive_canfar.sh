@@ -11,13 +11,17 @@ kind=-1
 dry_run=0
 nsh_jobs=8
 dir=`pwd`
+
+# mh_local is 0 (1) if merge_header_runner is run on all exposures,
+# which is standard so far (run on exposures of given tile only; new)
+mh_local=1
 VERBOSE=1
 
 
 # TODO: psf
 
 ## Help string
-usage="Usage: $(basename "$0") -j JOB -e ID  -k KIND [OPTIONS]
+usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
 \n\nOptions:\n
    -h\tthis message\n
    -j, --job JOB\tRUnning JOB, bit-coded\n
@@ -162,8 +166,22 @@ fi
 
 cd output
 
-if [ ! -f log_exp_headers.sqlite ]; then
-  command "ln -s $dir/output/log_exp_headers.sqlite" $dry_run
+if [ "$mh_local" == "1" ]; then
+  if [ -L log_exp_headers.sqlite ]; then
+    # Local Mh and symlink -> remove previous link to
+    # (potentially incomplete) global mh file
+    command "rm log_exp_headers.sqlite" $dry_run
+    #echo "MKDEBUG not rm hm file"
+    ls -l log_exp_headers.sqlite
+  else
+    echo "no mh link found"
+  fi
+else
+  if [ ! -f log_exp_headers.sqlite ]; then
+    # Global Mh and file does not exist -> symlink to
+    # gllobal mh file
+    command "ln -s $dir/output/log_exp_headers.sqlite" $dry_run
+  fi
 fi
 
 
@@ -172,8 +190,41 @@ for dir in $dir/output/run_sp_*; do
   command "ln -sf $dir" $dry_run
 done
 
+(( do_job = $job & 16 ))
+if [ "$mh_local" == "1" ] && [ $do_job != 0 ]; then
+
+  if [ "$ID" == "-1" ]; then
+    echo "ID needs to be given (option -e) for mh_local and job&16"
+    exit 6 
+  fi
+
+  echo "Creating local mh file"
+
+  # Remove previous Sextractor run and (local) split_exp dir
+  command "rm -rf run_sp_tile_Sx_*" $dry_run
+  command "rm -rf run_sp_exp_Sp" $dry_run
+
+  # Create new split exp run dir
+  new_dir="run_sp_exp_Sp//split_exp_runner/output"
+  command "mkdir -p $new_dir" $dry_run
+
+  # Link to all header files of exposures used for the current tile
+  IDs=`echo $ID | tr "." "-"`
+  for exp_ID in `cat run_sp_GitFeGie_*/find_exposures_runner/output/exp_numbers-$IDs.txt` ; do
+    x=`echo $exp_ID | tr -d p `
+    command "ln -s ../../../run_sp_exp_SpMh_2024-01-28_07-40-12/split_exp_runner/output/headers-$x.npy $new_dir/headers-$x.npy" $dry_run
+  done
+
+  # Run merge_headers_runner on local exposure selection
+  cd ..
+  command "update_runs_log_file.py" $dry_run
+  export SP_RUN=`pwd`
+  command "shapepipe_run -c cfis/config_exp_Mh.ini" $dry_run
+  cd output
+fi
+
 # Update links to exposure run directories, which were created in job 32
-(( do_job= $job & 64 ))
+(( do_job = $job & 64 ))
 if [[ $do_job != 0 ]]; then
   if [ "$kind" == "tile" ]; then
     cd ../../..
@@ -193,14 +244,22 @@ if [[ $do_job != 0 ]]; then
   fi
 fi
 
-(( do_job= $job & 256 ))
+(( do_job = $job & 256 ))
 if [[ $do_job != 0 ]]; then
 
   # Remove previous runs of this job
   rm -rf run_sp_Ms_20??_*
+
+fi
+
+(( do_job = $job & 512 ))
+if [[ $do_job != 0 ]]; then
+
+  # Remove previous runs of this job
   rm -rf run_sp_Mc_20??_*
 
 fi
+
 
 cd ..
 
