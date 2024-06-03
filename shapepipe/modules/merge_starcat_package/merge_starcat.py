@@ -560,9 +560,21 @@ class MergeStarCatPSFEX(object):
             flag_star += list(data_j['FLAG_STAR_HSM'])
 
             # misc
-            mag += list(data_j['MAG'])
-            snr += list(data_j['SNR'])
-            psfex_acc += list(data_j['ACCEPTED'])
+
+            # MKDEBUG: The following columns do not exist (yet)
+            # for psf converted (pix2wcs) files.
+            try:
+                mag += list(data_j['MAG'])
+            except:
+                mag += list(np.zeros_like(data_j["X"]))
+            try:
+                snr += list(data_j['SNR'])
+            except:
+                snr += list(np.zeros_like(data_j["X"]))
+            try:
+                psfex_acc += list(data_j['ACCEPTED'])
+            except:
+                psfex_acc += list(np.zeros_like(data_j["X"]))
 
             # CCD number
             ccd_nb += [

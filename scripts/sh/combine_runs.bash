@@ -20,7 +20,7 @@ usage="Usage: $(basename "$0") [OPTIONS]
     \tPSF model, allowed are 'psfex', 'mccd', 'setools', default='$psf'\n
    -c, --cat TYPE\n
     \tCatalogue type, allowed are 'final', 'flag_tile', 'flag_exp', \n
-    \t'psf', 'image', default='$cat'\n
+    \t'psf', 'psf_conv', 'image', default='$cat'\n
 "
 
 ## Parse command line
@@ -52,8 +52,9 @@ if [ "$cat" != "final" ] \
   && [ "$cat" != "flag_tile" ] \
   && [ "$cat" != "flag_exp" ] \
   && [ "$cat" != "psf" ] \
+  && [ "$cat" != "psf_conv" ] \
   && [ "$cat" != "image" ]; then
-  echo "cat (option -c) needs to be 'final', 'flag_tile', 'flag_exp', 'psf', or 'image'"
+  echo "cat (option -c) needs to be 'final', 'flag_tile', 'flag_exp', 'psf', 'psf_conv' or 'image'"
   exit 2
 fi
 
@@ -153,6 +154,12 @@ elif [ "$cat" == "psf" ]; then
   else
     module="mccd_interp_runner"
   fi
+
+elif [ "$cat" == "psf_conv" ]; then
+
+  run_in="$pwd/psf_conv_all/P?"
+  pattern="validation_psf_conv-*"
+  module="psfex_interp_runner"
 
 else
 

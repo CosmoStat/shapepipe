@@ -59,7 +59,7 @@ class Convert(object):
 
         self._params = {
             "input_base_dir": ".",
-            "output_base_dir": "./star_cat",
+            "output_base_dir": "./psf_conv_all",
             "mode": "merge",
             "sub_dir_pattern" : "run_sp_exp_202",
             "file_pattern_psfint": "validation_psf",
@@ -150,12 +150,12 @@ class Convert(object):
                         disable=self._params["verbose"],
                 ):
                     self.transform_exposure(
-                        output_dir, idx_exp, exp_run_dir
+                        output_dir, patch, idx_exp, exp_run_dir
                     )
             else:
                 res = Parallel(n_jobs=-1, backend="loky")(
                     delayed(self.transform_exposure)(
-                        output_dir, idx_exp, exp_run_dir
+                        output_dir, patch, idx_exp, exp_run_dir
                     )
                     for idx_exp, exp_run_dir in tqdm(
                             enumerate(exp_run_dirs),
@@ -164,13 +164,13 @@ class Convert(object):
                     )
                 )
 
-    def transform_exposure(self, output_dir, idx, exp_run_dir):
+    def transform_exposure(self, output_dir, patch, idx, exp_run_dir):
         """Transform exposures.
 
         Transform shapes for exposures for a given run (input exp run dir).
 
         """
-        output_path = f"{output_dir}/psf_cat_{idx}.fits"
+        output_path = f"{output_dir}/validation_psf-{patch}-{idx}.fits"
         if os.path.exists(output_path):
             print(f"Skipping transform_exposure, file {output_path} exists")
             return
