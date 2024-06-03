@@ -272,6 +272,9 @@ pwd
 echo -n "environment: "
 echo $CONDA_PREFIX
 
+# To avoid (new?) qt error with setools (-j 32)
+export DISPLAY=:1.0
+
 command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP" $dry_run
 
 cd $dir
