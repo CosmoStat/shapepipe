@@ -34,7 +34,11 @@ def main(argv=None):
         all_exposures = get_IDs_from_file(exp_IDs_path)
         par_runtime = update_par_runtime_after_find_exp(par_runtime, all_exposures)
 
-    if not os.path.exists(exp_IDs_path) or not job_exclusive or job_exclusive == "1":
+    if (
+        not os.path.exists(exp_IDs_path)
+        or not job_exclusive
+        or int(job_exclusive) & 1
+    ):
         # Run job 1 if exposure ID list file does not exist or
         # job_exclusive is 1 or not set
         key = "1"
@@ -59,7 +63,7 @@ def main(argv=None):
     _ = keys.pop(0)
 
     for key in keys:
-        if job_exclusive and key != job_exclusive:
+        if job_exclusive and not int(key) & int(job_exclusive):
             continue
         jobs[key].print_intro()
         jobs[key].check_numbers(par_runtime=par_runtime)
