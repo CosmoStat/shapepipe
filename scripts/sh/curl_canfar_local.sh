@@ -155,7 +155,8 @@ function submit_batch() {
 
   for ID in `cat $path`; do
     my_arg=$(set_arg)
-    my_session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$my_arg" &> /dev/null`
+    MY_NAME="SP_P${patch}_J${job}_${ID}"
+    my_session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${MY_NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$my_arg" &> /dev/null`
     update_session_logs
   done
 
@@ -174,17 +175,19 @@ if [ "$dry_run" == 2 ]; then
 
   if [ "$ID" == "-1" ]; then
 
+    MY_NAME="SP_P${patch}_J${job}_${ID}"
+
     # Submit file (dry run = 2)
     for ID in `cat $file_IDs`; do
       arg=$(set_arg)
-      echo curl -b -E $SSL $SESSION?$RESOURCES -d \"image=$IMAGE:$version\" -d \"name=${NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
+      echo curl -b -E $SSL $SESSION?$RESOURCES -d \"image=$IMAGE:$version\" -d \"name=${MY_NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
     done
 
   else
 
     # Submit image (dry run = 2)
     arg=$(set_arg)
-    echo curl -E $SSL $SESSION?$RESOURCES -d \"image=$IMAGE:$version\" -d \"name=${NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
+    echo curl -E $SSL $SESSION?$RESOURCES -d \"image=$IMAGE:$version\" -d \"name=${MY_NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
 
   fi
 
@@ -236,8 +239,9 @@ else
 
     # Submit image
     arg=$(set_arg)
-    my_session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg" &> /dev/null`
-    echo curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg"
+    MY_NAME="SP_P${patch}_J${job}_${ID}"
+    my_session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${MY_NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg" &> /dev/null`
+    echo curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${MY_NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg"
     update_session_logs
 
   fi
