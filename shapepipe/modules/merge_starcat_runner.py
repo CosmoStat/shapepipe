@@ -37,6 +37,12 @@ def merge_starcat_runner(
             + f'needs to be one of {allowed_psf_models}'
         )
 
+    # Get input catalogue HDU number
+    if config.has_option(module_config_sec, 'HDU'):
+        hdu = config.getint(module_config_sec, 'HDU')
+    else:
+        hdu = 1
+
     # Set output directory
     output_dir = run_dirs['output']
 
@@ -49,7 +55,7 @@ def merge_starcat_runner(
         MSC = merge_starcat.MergeStarCatSetools
 
     # Create instance of merge class
-    merge_inst = MSC(input_file_list, output_dir, w_log)
+    merge_inst = MSC(input_file_list, output_dir, w_log, hdu_table=hdu)
 
     # Run processing
     merge_inst.process()
