@@ -7,7 +7,6 @@
 job=-1
 ID=-1
 N_SMP=1
-kind=-1
 dry_run=0
 nsh_jobs=8
 dir=`pwd`
@@ -29,8 +28,6 @@ usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
     \timage ID\n
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
-   -k, --kind KIND\n
-    \timage kind, allowed are 'tile' and 'exp'\n
    -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default from original config files\n
    -d, --directory\n
@@ -41,8 +38,8 @@ usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
 
 ## Help if no arguments                                                         
 if [ -z $1 ]; then                                                              
-        echo -ne $usage                                                         
-        exit 1                                                                  
+  echo -ne $usage                                                         
+  exit 1                                                                  
 fi 
 
 ## Parse command line                                                           
@@ -62,10 +59,6 @@ while [ $# -gt 0 ]; do
       ;;
     -N|--N_SMP)                                                                 
       N_SMP="$2"                                                                
-      shift                                                                     
-      ;;                                                                        
-    -k|--kind)                                                                 
-      kind="$2"                                                                
       shift                                                                     
       ;;                                                                        
     -d|--directory)
@@ -88,11 +81,6 @@ fi
 if [ "$exclusive" == "-1" ]; then
   echo "No image ID indicated, use option -e"
   exit 3
-fi
-
-if [ "$kind" == "-1" ]; then
-  echo "No image kind indicated, use option -k"
-  exit 4
 fi
 
 # Functions
@@ -135,6 +123,46 @@ function command () {
 
 echo "start init_run_exclusive_canfar"
 
+# Set kind
+job_to_test=16
+kind="none"
+
+# loop over possible job numbers
+while  [ $job_to_test -le 1024 ]; do
+
+  (( do_job = $job & $job_to_test ))
+  if [[ $do_job != 0 ]]; then
+    
+      if [ $job_to_test == 32 ]; then
+        if [ "$kind" == "tile" ]; then
+          echo "Error: Invalid job $job. mixing tile and exp kinds"
+          exit 6
+        fi
+
+        # job=32 -> set kind to exp
+        kind="exp"
+      else
+        if [ "$kind" == "exp" ]; then
+          echo "Error: Invalid job $job. mixing tile and exp kinds"
+          exit 6
+        fi
+
+        # job != 32 -> set kind to tile
+        kind="tile"
+      fi
+
+  fi
+
+  # Multiply job number by two to get next biwise number
+  job_to_test=$((job_to_test * 2))
+done
+
+if [ "$kind" == "none" ]; then
+  echo "Error: invalid job $job"
+  exit 5
+fi
+
+
 if [ "$dry_run" == 1 ]; then
   echo "in dry run mode"
 fi
@@ -160,23 +188,14 @@ fi
 cd $ID
 pwd
 
+
 if [ ! -d "output" ]; then
   command "mkdir output" $dry_run
 fi
 
 cd output
 
-if [ "$mh_local" == "1" ]; then
-  if [ -L log_exp_headers.sqlite ]; then
-    # Local Mh and symlink -> remove previous link to
-    # (potentially incomplete) global mh file
-    command "rm log_exp_headers.sqlite" $dry_run
-    #echo "MKDEBUG not rm hm file"
-    ls -l log_exp_headers.sqlite
-  else
-    echo "no mh link found"
-  fi
-else
+if [ "$mh_local" == "0" ]; then
   if [ ! -f log_exp_headers.sqlite ]; then
     # Global Mh and file does not exist -> symlink to
     # gllobal mh file
@@ -185,17 +204,35 @@ else
 fi
 
 
-# Update links to global run directories (GiFeGie, Uz, Ma?, combined_flag?)
-for dir in $dir/output/run_sp_*; do
-  command "ln -sf $dir" $dry_run
+# Update links to global run directories (GiFeGie, Uz)
+for my_dir in $dir/output/run_sp_[GU]*; do
+  command "ln -sf $my_dir" $dry_run
 done
+# Combined flags
+command "ln -sf $dir/output/run_sp_Ma_tile" $dry_run
+command "ln -sf $dir/output/run_sp_Ma_exp" $dry_run
+# exp Sp
+command "ln -sf $dir/output/run_sp_exp_SpMh" $dry_run
+
 
 (( do_job = $job & 16 ))
 if [ "$mh_local" == "1" ] && [ $do_job != 0 ]; then
 
+  # Remove previous Sx runs
+  command "rm -rf $dir/output/run_tile_Sx_*" $dry_run
+
   if [ "$ID" == "-1" ]; then
     echo "ID needs to be given (option -e) for mh_local and job&16"
     exit 6 
+  fi
+
+  if [ -L log_exp_headers.sqlite ]; then
+    # Local Mh and symlink -> remove previous link to
+    # (potentially incomplete) global mh file
+    echo "Removing previous mh sym link"
+    command "rm log_exp_headers.sqlite" $dry_run
+  else
+    echo "no mh link found"
   fi
 
   echo "Creating local mh file"
@@ -212,7 +249,7 @@ if [ "$mh_local" == "1" ] && [ $do_job != 0 ]; then
   IDs=`echo $ID | tr "." "-"`
   for exp_ID in `cat run_sp_GitFeGie_*/find_exposures_runner/output/exp_numbers-$IDs.txt` ; do
     x=`echo $exp_ID | tr -d p `
-    command "ln -s ../../../run_sp_exp_SpMh_2024-01-28_07-40-12/split_exp_runner/output/headers-$x.npy $new_dir/headers-$x.npy" $dry_run
+    command "ln -s $dir/output/run_sp_exp_SpMh/split_exp_runner/output/headers-$x.npy $new_dir/headers-$x.npy" $dry_run
   done
 
   # Run merge_headers_runner on local exposure selection
@@ -236,7 +273,7 @@ if [[ $do_job != 0 ]]; then
     if [ "$n_32" != "1" ]; then
       n_remove="$(($n_32-1))"
       echo "removing $n_remove duplicate old job-32 runs"
-      rm -rf `ls -rt1d run_sp_tile_Sx_* | head -$n_remove`
+      command "rm -rf `ls -rt1d run_sp_tile_Sx_* | head -$n_remove`" $dry_run
     fi
 
     # Remove previous runs of this job

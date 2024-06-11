@@ -14,7 +14,6 @@ job=-1
 ID=-1
 file_IDs=-1
 N_SMP=1
-kind=-1
 version="1.1"
 cmd_remote="shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
 batch_max=200
@@ -33,8 +32,6 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
     \tfile containing IDs\n
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
-   -k, --kind KIND\n
-    \timage kind, allowed are 'tile' and 'exp'\n
    -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default=$N_SMP\n
    -V, --version\n
@@ -49,8 +46,8 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
 
 ## Help if no arguments
 if [ -z $1 ]; then
-        echo -ne $usage
-        exit 1
+  echo -ne $usage
+  exit 1
 fi
 
 ## Parse command line
@@ -76,10 +73,6 @@ while [ $# -gt 0 ]; do
       N_SMP="$2"
       shift
       ;;
-    -k|--kind)
-      kind="$2"
-      shift
-      ;;
     -b|--batch_max)
       batch_max="$2"
       shift
@@ -103,11 +96,6 @@ if [ "$ID" == "-1" ] && [ "$file_IDs" == "-1" ]; then
   exit 3                                                                        
 fi                                                                              
                                                                                 
-if [ "kind" == "-1" ]; then                                                     
-  echo "No image kind indicated, use option -k"                                 
-  exit 4                                                                        
-fi
-
 if [ "$dry_run" != 0 ] && [ "$dry_run" != 1 ] && [ "$dry_run" != 2 ]; then
   echo "Invalid dry_run option, allowed are 0, 1, and 2"
   exit 5
@@ -123,15 +111,11 @@ else
 fi
 
 RESOURCES="ram=4&cores=$N_SMP"
-
-# TODO: dir as command line argument to this script
 dir=`pwd`
-#arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run -d $dir"
-
 
 # Return argument for local script to be called via curl
 function set_arg() {
-  my_arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run -d $dir"
+  my_arg="-j $job -e $ID -N $N_SMP $arg_dry_run -d $dir"
   echo $my_arg
 }
 
@@ -155,8 +139,9 @@ function submit_batch() {
 
   for ID in `cat $path`; do
     my_arg=$(set_arg)
-    MY_NAME="SP_P${patch}_J${job}_${ID}"
-    my_session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${MY_NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$my_arg" &> /dev/null`
+    IDt=`echo $ID | tr "." "-"`
+    MY_NAME="SP-${patch}-J${job}-${IDt}"
+    my_session=`curl -E $SSL "$SESSION?$RESOURCES" -d "image=$IMAGE:$version" -d "name=${MY_NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$my_arg" &> /dev/null`
     update_session_logs
   done
 
@@ -175,19 +160,22 @@ if [ "$dry_run" == 2 ]; then
 
   if [ "$ID" == "-1" ]; then
 
-    MY_NAME="SP_P${patch}_J${job}_${ID}"
 
     # Submit file (dry run = 2)
     for ID in `cat $file_IDs`; do
+      IDt=`echo $ID | tr "." "-"`
+      MY_NAME="SP-${patch}-J${job}-${IDt}"
       arg=$(set_arg)
-      echo curl -b -E $SSL $SESSION?$RESOURCES -d \"image=$IMAGE:$version\" -d \"name=${MY_NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
+      echo curl -E $SSL \"$SESSION?$RESOURCES\" -d \"image=$IMAGE:$version\" -d \"name=${MY_NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
     done
 
   else
 
     # Submit image (dry run = 2)
     arg=$(set_arg)
-    echo curl -E $SSL $SESSION?$RESOURCES -d \"image=$IMAGE:$version\" -d \"name=${MY_NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
+    IDt=`echo $ID | tr "." "-"`
+    MY_NAME="SP-${patch}-J${job}-${IDt}"
+    echo curl -E $SSL "$SESSION?$RESOURCES" -d \"image=$IMAGE:$version\" -d \"name=${MY_NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
 
   fi
 
@@ -239,9 +227,10 @@ else
 
     # Submit image
     arg=$(set_arg)
-    MY_NAME="SP_P${patch}_J${job}_${ID}"
-    my_session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${MY_NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg" &> /dev/null`
-    echo curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${MY_NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg"
+    IDt=`echo $ID | tr "." "-"`
+    MY_NAME="SP-${patch}-J${job}-${IDt}"
+    my_session=`curl -E $SSL "$SESSION?$RESOURCES" -d "image=$IMAGE:$version" -d "name=${MY_NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg" &> /dev/null`
+    echo curl -E $SSL "$SESSION?$RESOURCES" -d "image=$IMAGE:$version" -d "name=${MY_NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg"
     update_session_logs
 
   fi
