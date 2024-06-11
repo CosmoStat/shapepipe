@@ -59,7 +59,7 @@ class Convert(object):
 
         self._params = {
             "input_base_dir": ".",
-            "output_base_dir": "./psf_conv_all",
+            "output_base_dir": ".",
             "mode": "merge",
             "sub_dir_pattern" : "run_sp_exp_202",
             "file_pattern_psfint": "validation_psf",
@@ -112,7 +112,7 @@ class Convert(object):
         else:
             n_patch = 7                                                             
             #patch_nums = [idx for idx in np.arange(n_patch) + 1]
-            patch_nums = [1, 3]
+            patch_nums = [1, 3, 4]
 
         do_parallel = True
 
@@ -130,8 +130,7 @@ class Convert(object):
             exp_run_dirs = glob.glob(subdirs)
             n_exp_runs = len(exp_run_dirs)
             print(
-                pl = 's' if n_exp_runs > 1 else ''
-                f"Found {n_exp_runs} input single-exposure run{pl} for patch"
+                f"Found {n_exp_runs} input single-exposure run(s) for patch"
                 + f" {patch_dir} ({subdirs})"
             )
 
@@ -170,7 +169,10 @@ class Convert(object):
         Transform shapes for exposures for a given run (input exp run dir).
 
         """
-        output_path = f"{output_dir}/validation_psf-{patch}-{idx}.fits"
+        output_path = (
+            f"{output_dir}/{self._params['file_pattern_psfint']}_conv"
+            + f"-{patch}-{idx}.fits"
+        )
         if os.path.exists(output_path):
             print(f"Skipping transform_exposure, file {output_path} exists")
             return
@@ -179,8 +181,7 @@ class Convert(object):
         try:
             all_files = os.listdir(mccd_dir)
             if self._params["verbose"]:
-                pl = "s" if len(all_files) > 1 else ""
-                print(f"Found {len(all_files)} file{pl} in {mccd_dir}")
+                print(f"Found {len(all_files)} file(s) in {mccd_dir}")
         except Exception:
             if self._params["verbose"]:
                 print(f"Found zero PSFEx files in {mccd_dir}, skipping")
