@@ -106,11 +106,29 @@ merge_final_cat -i output/run_sp_combined_final/make_catalog_runner/output -p cf
 combine_runs.bash  -p $psf -c psf
 shapepipe_run -c $SP_CONFIG/config_MsPl_$psf.ini
 
-# Delete jobs
+# Convert star cat to WCS
+## Convert all input validation psf files and create directories par patch
+## psf_conv_all/P?
+cd star_cat
+convert_psf_pix2world.py -i .. -s run_sp_combined_psf
+
+# Combine previously created files within one SP run dir
+combine_runs.bash -p psfex -c psf_conv
+
+# Merge all converted star catalogues and create final-starcat.fits
+shapepipe_run -c ~/shapepipe/example/cfis/config_Ms_psfex_conv.ini
+
+
+# Extra stuff
+
+## Delete jobs
 SSL=~/.ssl/cadcproxy.pem
 SESSION=https://ws-uv.canfar.net/skaha/v0/session
 for ID in `cat session_IDs.txt`; do echo $ID; curl -X DELETE -E $SSL $SESSION/$ID; done
 
-# Run in terminal in parallel (-e needs to be last arg)
+## Run in terminal in parallel (-e needs to be last arg)
 cat all.txt | xargs -P 16 -n 1  init_run_exclusive_canfar.sh -j 64 -p psfex -k tile -f summary/missing_job_64_all.txt -n -e
 
+## Get missing jobs that are not currently running
+stats_jobs_canfar.sh
+grep -F -v -f jobs_running.txt summary/missing_job_128_ngmix_runner_3.txt | wc > all3.txt
