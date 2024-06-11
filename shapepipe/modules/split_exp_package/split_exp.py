@@ -106,7 +106,7 @@ class SplitExposures(object):
         if len(hdu_list) != self._n_hdu + 1:
             raise ValueError(
                 f"Image {exp_path} has {len(hdu_list)} + 1 HDUs,"
-                + " expected were {self._n_hdu} + 1"
+                + f" expected were {self._n_hdu} + 1"
             )
 
         for idx in range(1, self._n_hdu + 1):

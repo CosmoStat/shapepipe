@@ -582,10 +582,11 @@ class MergeStarCatPSFEX(object):
             ] * len(data_j['RA'])
 
         # Prepare output FITS catalogue
+        # MKDEBUG: SEx_cat=True -> False
         output = file_io.FITSCatalogue(
             f'{self._output_dir}/full_starcat-0000000.fits',
             open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-            SEx_catalogue=True
+            SEx_catalogue=False,
         )
 
         # Collect columns
@@ -610,11 +611,13 @@ class MergeStarCatPSFEX(object):
         }
 
         # Write file
+        # MKDEBUG for psf conv (pix2WCS) files do not write as SExtractorCat;
+        # we do not want to copy the first input data content to HDU #1.
         output.save_as_fits(
             data,
             overwrite=True,
-            sex_cat_path=self._input_file_list[0][0],
         )
+            #sex_cat_path=self._input_file_list[0][0],
 
 
 class MergeStarCatSetools(object):
