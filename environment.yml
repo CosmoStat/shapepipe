@@ -17,7 +17,7 @@ dependencies:
   - numba
   - numpy==1.22
   - pip:
-    - cs_util
+    - cs_util==0.1
     - modopt
     - PyQt5
     - pyqtgraph

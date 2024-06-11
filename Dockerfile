@@ -18,6 +18,7 @@ RUN apt-get update --allow-releaseinfo-change && \
     apt-get install automake -y && \
     apt-get install autoconf -y && \
     apt-get install gcc-9 g++-9 -y && \
+    apt-get install gfortran -y && \
     apt-get install locales -y && \
     apt-get install libgl1-mesa-glx -y && \
     apt-get install xterm -y && \
