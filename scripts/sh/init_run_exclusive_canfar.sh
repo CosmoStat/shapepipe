@@ -13,11 +13,9 @@ dir=`pwd`
 
 # mh_local is 0 (1) if merge_header_runner is run on all exposures,
 # which is standard so far (run on exposures of given tile only; new)
-mh_local=1
+mh_local=0
 VERBOSE=1
 
-
-# TODO: psf
 
 ## Help string
 usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
@@ -28,6 +26,8 @@ usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
     \timage ID\n
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
+   -m, --mh_local MH\n
+   \tmerged header file local (MH=0) or global (MH=1); default is $MH\n
    -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default from original config files\n
    -d, --directory\n
@@ -57,6 +57,14 @@ while [ $# -gt 0 ]; do
       ID="$2"                                                            
       shift                                                                     
       ;;
+    -p|--psf)                                                                   
+      psf="$2"                                                                  
+      shift                                                                     
+      ;; 
+    -m|--mh_local)                                                                   
+      mh_local="$2"                                                                  
+      shift                                                                     
+      ;; 
     -N|--N_SMP)                                                                 
       N_SMP="$2"                                                                
       shift                                                                     
@@ -72,7 +80,7 @@ while [ $# -gt 0 ]; do
   shift                                                                         
 done
 
-# Check options
+## Check options
 if [ "$job" == "-1" ]; then
   echo "No job indicated, use option -j"
   exit 2
@@ -81,6 +89,16 @@ fi
 if [ "$exclusive" == "-1" ]; then
   echo "No image ID indicated, use option -e"
   exit 3
+fi
+
+if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
+  echo "PSF (option -p) needs to be 'psfex' or 'mccd'"
+  exit 4
+fi
+
+if [ "$mh_local" != "0" ] && [ "$mh_local" != "1" ]; then
+  echo "MH (option -m) needs to be 0 or 1"
+  exit 5
 fi
 
 # Functions
@@ -237,8 +255,7 @@ if [ "$mh_local" == "1" ] && [ $do_job != 0 ]; then
 
   echo "Creating local mh file"
 
-  # Remove previous Sextractor run and (local) split_exp dir
-  command "rm -rf run_sp_tile_Sx_*" $dry_run
+  # Remove previous (local) split_exp dir
   command "rm -rf run_sp_exp_Sp" $dry_run
 
   # Create new split exp run dir
@@ -258,6 +275,9 @@ if [ "$mh_local" == "1" ] && [ $do_job != 0 ]; then
   export SP_RUN=`pwd`
   command "shapepipe_run -c cfis/config_exp_Mh.ini" $dry_run
   cd output
+
+  # Remove previous Sextractor run
+  command "rm -rf run_sp_tile_Sx_*" $dry_run
 fi
 
 # Update links to exposure run directories, which were created in job 32

@@ -11,6 +11,7 @@ NAME=shapepipe
 
 ## Default values
 job=-1
+psf="psfex"
 ID=-1
 file_IDs=-1
 N_SMP=1
@@ -18,8 +19,6 @@ version="1.1"
 cmd_remote="shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
 batch_max=200
 dry_run=0
-
-# TODO psf
 
 ## Help string
 usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
@@ -61,6 +60,10 @@ while [ $# -gt 0 ]; do
       job="$2"
       shift
       ;;
+    -p|--psf)
+      job="$2"
+      shift
+      ;;
     -e|--exclusive)
       ID="$2"
       shift
@@ -95,6 +98,11 @@ if [ "$ID" == "-1" ] && [ "$file_IDs" == "-1" ]; then
   echo "No image ID(s) indicated, use option -e ID or -f file_IDs"                                   
   exit 3                                                                        
 fi                                                                              
+
+if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
+  echo "PSF (option -p) needs to be 'psfex' or 'mccd'"
+  exit 4
+fi
                                                                                 
 if [ "$dry_run" != 0 ] && [ "$dry_run" != 1 ] && [ "$dry_run" != 2 ]; then
   echo "Invalid dry_run option, allowed are 0, 1, and 2"
@@ -115,7 +123,7 @@ dir=`pwd`
 
 # Return argument for local script to be called via curl
 function set_arg() {
-  my_arg="-j $job -e $ID -N $N_SMP $arg_dry_run -d $dir"
+  my_arg="-j $job -p $psf -e $ID -N $N_SMP $arg_dry_run -d $dir"
   echo $my_arg
 }
 

@@ -164,6 +164,7 @@ export VCP="vcp --certfile=$CERTFILE"
 
 # Print string, executes command, and prints return value.
 function command () {
+   echo "MKDEBUG job_sp_canfar command ($1)"
    cmd=$1
    str=$2
 
