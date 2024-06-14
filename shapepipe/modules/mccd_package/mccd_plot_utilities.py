@@ -1496,23 +1496,30 @@ def rho_stats(
 
     rho_stats_fun = None
 
+    if len(starcat) <= hdu_no:
+        raise IndexError(
+            f"Input file {starcat_path} does not have HDU #{hdu_no}"
+        )
+    data = starcat[hdu_no].data
+
     # Convert HSM flags to 0/1 weights
-    star_flags = starcat[hdu_no].data['FLAG_STAR_HSM']
-    psf_flags = starcat[hdu_no].data['FLAG_PSF_HSM']
+    star_flags = data['FLAG_STAR_HSM']
+    psf_flags = data['FLAG_PSF_HSM']
     w = np.abs(star_flags - 1) * np.abs(psf_flags - 1)
+
 
     # Convert to Stile-compatible and change sigmas to R^2 (up to constant)
     stilecat = np.rec.fromarrays(
         [
             w,
-            starcat[hdu_no].data['RA'],
-            starcat[hdu_no].data['DEC'],
-            starcat[hdu_no].data['E1_STAR_HSM'],
-            starcat[hdu_no].data['E2_STAR_HSM'],
-            starcat[hdu_no].data['SIGMA_STAR_HSM'] ** 2,
-            starcat[hdu_no].data['E1_PSF_HSM'],
-            starcat[hdu_no].data['E2_PSF_HSM'],
-            starcat[hdu_no].data['SIGMA_PSF_HSM'] ** 2
+            data['RA'],
+            data['DEC'],
+            data['E1_STAR_HSM'],
+            data['E2_STAR_HSM'],
+            data['SIGMA_STAR_HSM'] ** 2,
+            data['E1_PSF_HSM'],
+            data['E2_PSF_HSM'],
+            data['SIGMA_PSF_HSM'] ** 2
         ],
         names=[
             'w',

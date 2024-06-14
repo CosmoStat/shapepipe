@@ -152,11 +152,9 @@ def mccd_plots_runner(
     if plot_rho_stats:
         if has_stile is False or has_treecorr is False:
             msg = (
-                '[!] In order to calculate the Rho stats the packages '
-                + '_stile_ and _treecorr_ have to be correctly imported.'
-                + ' This was not the case, so the rho stat calculation is'
-                + 'aborted. For the next time make sure both of the'
-                + 'packages are installed.'
+                '[!] To calculate the rho stats the packages '
+                + 'stile and treecorr are required. However, '
+                + f' treecorr: {has_treecorr}, stile: {has_stile}.'
             )
             warnings.warn(msg)
             w_log.info(msg)
