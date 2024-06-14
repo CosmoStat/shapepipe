@@ -70,7 +70,7 @@ combine_runs.bash -c flag_exp
 
 
 # Tile detection
-curl_canfar_local.sh -j 16 -f tile_numbers.txt -k tile -p $psf -N $N_SMP
+curl_canfar_local.sh -j 16 -f tile_numbers.txt -p $psf -N $N_SMP
 
 
 # Exposure detection
@@ -78,21 +78,21 @@ curl_canfar_local.sh -j 16 -f tile_numbers.txt -k tile -p $psf -N $N_SMP
 ~/shapepipe/scripts/python/summary_run.py
 
 cp summary/missing_job_32_sextractor.txt all.txt
-curl_canfar_local.sh -j 32 -f all.txt -k exp -p $psf -N $N_SMP
+curl_canfar_local.sh -j 32 -f all.txt -p $psf -N $N_SMP
 
 # Tile preparation
-curl_canfar_local.sh -j 64 -f tile_numbers.txt -k tile -p $psf -N $N_SMP
+curl_canfar_local.sh -j 64 -f tile_numbers.txt -p $psf -N $N_SMP
 
 # Tile shape measurement
-curl_canfar_local.sh -j 128 -f tile_numbers.txt -k tile -p $psf -N 8
+curl_canfar_local.sh -j 128 -f tile_numbers.txt -p $psf -N 8
 
 # Merge subcatalogues
-curl_canfar_local.sh -j 256 -f tile_numbers.txt -k tile -p $psf -N $N_SMP
+curl_canfar_local.sh -j 256 -f tile_numbers.txt -p $psf -N $N_SMP
 
 # Create final cat
-curl_canfar_local.sh -j 512 -f tile_numbers.txt -k tile -p $psf -N $N_SMP
+curl_canfar_local.sh -j 512 -f tile_numbers.txt -p $psf -N $N_SMP
 # Run in parallel
-cat mc.txt | xargs -I {} -P 16 bash -c 'init_run_exclusive_canfar.sh -p psfex -j 512 -e {} --n_smp 1 -k tile'
+cat mc.txt | xargs -I {} -P 16 bash -c 'init_run_exclusive_canfar.sh -p psfex -j 512 -e {} --n_smp 1'
 
 # Combine all final cats in common output dir as links
 combine_runs.bash -c final -p psfex
@@ -127,8 +127,8 @@ SESSION=https://ws-uv.canfar.net/skaha/v0/session
 for ID in `cat session_IDs.txt`; do echo $ID; curl -X DELETE -E $SSL $SESSION/$ID; done
 
 ## Run in terminal in parallel (-e needs to be last arg)
-cat all.txt | xargs -P 16 -n 1  init_run_exclusive_canfar.sh -j 64 -p psfex -k tile -f summary/missing_job_64_all.txt -n -e
+cat all.txt | xargs -P 16 -n 1  init_run_exclusive_canfar.sh -j 64 -p psfex -f summary/missing_job_64_all.txt -n -e
 
 ## Get missing jobs that are not currently running
 stats_jobs_canfar.sh
-grep -F -v -f jobs_running.txt summary/missing_job_128_ngmix_runner_3.txt | wc > all3.txt
+grep -F -v -f jobs_running.txt summary/missing_job_128_ngmix_runner_3.txt > all3.txt
