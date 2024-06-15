@@ -5,7 +5,7 @@ catalogues. It plots the Mean shape plots for the merged validation catalogue.
 It can also plot the rho statistics provided that the required packages are
 installed.
 
-:Author: Tobias Liaudat
+:Authors: Tobias Liaudat, Martin Kilbinger
 
 """
 
@@ -1448,9 +1448,6 @@ def get_params_rho():
 
     params["ra_col"] = "RA"
     params["dec_col"] = "DEC"
-
-    pass
-    # params["dec_col"] = "DEC"
     params["e1_PSF_col"] = "E1_PSF_HSM"
     params["e2_PSF_col"] = "E2_PSF_HSM"
     params["e1_star_col"] = "E1_STAR_HSM"
@@ -1556,19 +1553,21 @@ def rho_stats(
         ]
     elif rho_def == "UNIONS":
         rho_stat_handler = RhoStat(
-            output=out_path,
+            output=output_path,
             treecorr_config=TreeCorrConfig,
-            verbose=True,
+            verbose=False,
         )
 
         # Set parameters
         params = get_params_rho()
-        rho_stat_handler.catalogs.set_params(params, out_path)
+        rho_stat_handler.catalogs.set_params(params, output_path)
 
         # Build catalogues
         mask = True
         square_size = True
         ver = "id"
+        out_base = f"rho_stats_{ver}.fits"
+        # TODO: deal with flags 
         rho_stat_handler.build_cat_to_compute_rho(
             starcat_path,
             catalog_id=ver,
@@ -1583,6 +1582,15 @@ def rho_stats(
 
         rho_stat_handler.compute_rho_stats(
             ver, out_base, save_cov=True, func=only_p, var_method="bootstrap"
+        )
+
+        rho_stat_handler.plot_rho_stats(
+            [out_base],
+            ["b"],
+            [ver],
+            abs=False,
+            savefig='rho_stats.png',
+            legend="outside",
         )
 
     if rho_def == "UNIONS":

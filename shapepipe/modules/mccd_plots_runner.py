@@ -158,10 +158,10 @@ def mccd_plots_runner(
             )
             warnings.warn(msg)
             w_log.info(msg)
-        elif rho_stat_plot_style != 'HSC' and rho_stat_plot_style != 'DES':
+        elif rho_stat_plot_style not in ("HSC", "DES", "UNIONS"):
             msg = (
-                'The rho stat definition should be HSC or DES. An unknown'
-                + ' definition was used. Rho stat calculation aborted.'
+                f"Invalid flag RHO_STAT_STYLE={rho_stat_plot_style}, allowed"
+                + " are 'HSC', 'DES', 'UNIONS'."
             )
             warnings.warn(msg)
             w_log.info(msg)
