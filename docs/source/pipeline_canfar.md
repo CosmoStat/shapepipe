@@ -104,7 +104,8 @@ merge_final_cat -i output/run_sp_combined_final/make_catalog_runner/output -p cf
 
 # Star catalogue
 combine_runs.bash  -p $psf -c psf
-shapepipe_run -c $SP_CONFIG/config_MsPl_$psf.ini
+shapepipe_run -c $SP_CONFIG/config_Ms_$psf.ini
+shapepipe_run -c $SP_CONFIG/config_Pl_$psf.ini
 
 # Convert star cat to WCS
 ## Convert all input validation psf files and create directories par patch
