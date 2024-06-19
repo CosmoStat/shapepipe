@@ -39,7 +39,7 @@ class PSFExCaller:
         psfex_config_file,
         output_dir,
         outcatalog_name,
-        check_image_list
+        check_image_list,
     ):
         self.psfex_executable_path = psfex_executable_path
         self.input_file_path = input_file_path
@@ -61,19 +61,16 @@ class PSFExCaller:
         """
         # Prepare command line
         command_line = (
-            f'{self.psfex_executable_path} '
-            + f'{self.input_file_path} '
-            + f'-c {self.psfex_config_file} '
-            + f'-PSF_DIR {self.output_dir} '
-            + f'-OUTCAT_NAME {self.outcatalog_name}'
+            f"{self.psfex_executable_path} "
+            + f"{self.input_file_path} "
+            + f"-c {self.psfex_config_file} "
+            + f"-PSF_DIR {self.output_dir} "
+            + f"-OUTCAT_NAME {self.outcatalog_name}"
         )
 
-        if (
-            (len(self.check_image_list) == 1)
-            & (self.check_image_list[0] == '')
-        ):
-            check_type_list = ['NONE']
-            check_name_list = ['none']
+        if (len(self.check_image_list) == 1) & (self.check_image_list[0] == ""):
+            check_type_list = ["NONE"]
+            check_name_list = ["none"]
         else:
             # Get pattern for filenaming from file in list
             input_file_name = os.path.split(input_file_path)[-1]
@@ -85,10 +82,10 @@ class PSFExCaller:
             for check_image in self.check_image_list:
                 check_type_list.append(check_image.upper())
                 check_name_list.append(
-                    f'{output_dir}'
-                    + f'/{suffix}'
-                    + f'{check_image.lower()}'
-                    + f'{file_number_string}.fits'
+                    f"{output_dir}"
+                    + f"/{suffix}"
+                    + f"{check_image.lower()}"
+                    + f"{file_number_string}.fits"
                 )
 
         # Add checks to command line
@@ -120,11 +117,11 @@ class PSFExCaller:
             Updated standard output and error
 
         """
-        check_error = re.findall('error', stdout.lower())
-        check_error2 = re.findall('all done', stdout.lower())
+        check_error = re.findall("error", stdout.lower())
+        check_error2 = re.findall("all done", stdout.lower())
 
         if check_error == []:
-            stderr2 = ''
+            stderr2 = ""
         else:
             stderr2 = stdout
 

@@ -13,13 +13,13 @@ from shapepipe.modules.module_decorator import module_runner
 
 
 @module_runner(
-    version='1.1',
-    input_module=['mccd_preprocessing_runner'],
-    file_pattern=['train_star_selection'],
-    file_ext=['.fits'],
-    numbering_scheme='-0000000',
-    depends=['numpy', 'mccd', 'galsim'],
-    run_method='parallel',
+    version="1.1",
+    input_module=["mccd_preprocessing_runner"],
+    file_pattern=["train_star_selection"],
+    file_ext=[".fits"],
+    numbering_scheme="-0000000",
+    depends=["numpy", "mccd", "galsim"],
+    run_method="parallel",
 )
 def mccd_fit_runner(
     input_file_list,
@@ -31,9 +31,9 @@ def mccd_fit_runner(
 ):
     """Define The MCCD Fit Runner."""
     # Recover the MCCD config file and its params
-    config_file_path = config.getexpanded(module_config_sec, 'CONFIG_PATH')
-    mccd_mode = config.get(module_config_sec, 'MODE')
-    verbose = config.getboolean(module_config_sec, 'VERBOSE')
+    config_file_path = config.getexpanded(module_config_sec, "CONFIG_PATH")
+    mccd_mode = config.get(module_config_sec, "MODE")
+    verbose = config.getboolean(module_config_sec, "VERBOSE")
 
     # Parse MCCD config file
     mccd_parser = mccd.auxiliary_fun.MCCDParamsParser(config_file_path)
@@ -41,10 +41,10 @@ def mccd_fit_runner(
 
     # Prepare inputs to run the main fit function
     trainstar_path = input_file_list[0]
-    output_dir = run_dirs['output'] + '/'
-    saving_name = 'fitted_model'
+    output_dir = run_dirs["output"] + "/"
+    saving_name = "fitted_model"
 
-    if mccd_mode == 'FIT':
+    if mccd_mode == "FIT":
         aux_mccd.mccd_fit_pipeline(
             trainstar_path=trainstar_path,
             file_number_string=file_number_string,

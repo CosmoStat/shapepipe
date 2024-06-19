@@ -1567,7 +1567,7 @@ def rho_stats(
         square_size = True
         ver = "id"
         out_base = f"rho_stats_{ver}.fits"
-        # TODO: deal with flags 
+        # TODO: deal with flags
         rho_stat_handler.build_cat_to_compute_rho(
             starcat_path,
             catalog_id=ver,
@@ -1589,7 +1589,7 @@ def rho_stats(
             ["b"],
             [ver],
             abs=False,
-            savefig='rho_stats.png',
+            savefig="rho_stats.png",
             legend="outside",
         )
 

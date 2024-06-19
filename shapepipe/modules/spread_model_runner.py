@@ -11,16 +11,16 @@ from shapepipe.modules.spread_model_package.spread_model import SpreadModel
 
 
 @module_runner(
-    version='1.1',
+    version="1.1",
     input_module=[
-        'sextractor_runner',
-        'psfex_interp_runner',
-        'vignetmaker_runner'
+        "sextractor_runner",
+        "psfex_interp_runner",
+        "vignetmaker_runner",
     ],
-    file_pattern=['sexcat', 'galaxy_psf', 'weight_vign'],
-    file_ext=['.fits', '.sqlite', '.fits'],
-    depends=['numpy', 'galsim'],
-    run_method='parallel',
+    file_pattern=["sexcat", "galaxy_psf", "weight_vign"],
+    file_ext=[".fits", ".sqlite", ".fits"],
+    depends=["numpy", "galsim"],
+    run_method="parallel",
 )
 def spread_model_runner(
     input_file_list,
@@ -35,21 +35,21 @@ def spread_model_runner(
     sex_cat_path, psf_cat_path, weight_cat_path = input_file_list
 
     # Get file prefix (optional)
-    if config.has_option(module_config_sec, 'PREFIX'):
-        prefix = config.get(module_config_sec, 'PREFIX')
-        if (prefix.lower() != 'none') & (prefix != ''):
-            prefix = prefix + '_'
+    if config.has_option(module_config_sec, "PREFIX"):
+        prefix = config.get(module_config_sec, "PREFIX")
+        if (prefix.lower() != "none") & (prefix != ""):
+            prefix = prefix + "_"
         else:
-            prefix = ''
+            prefix = ""
     else:
-        prefix = ''
+        prefix = ""
 
     # Get pixel scale and output mode
-    pixel_scale = config.getfloat(module_config_sec, 'PIXEL_SCALE')
-    output_mode = config.get(module_config_sec, 'OUTPUT_MODE')
+    pixel_scale = config.getfloat(module_config_sec, "PIXEL_SCALE")
+    output_mode = config.get(module_config_sec, "OUTPUT_MODE")
 
     # Set output file path
-    file_name = f'{prefix}sexcat_sm{file_number_string}.fits'
+    file_name = f"{prefix}sexcat_sm{file_number_string}.fits"
     output_path = f'{run_dirs["output"]}/{file_name}'
 
     # Create spread model class instance

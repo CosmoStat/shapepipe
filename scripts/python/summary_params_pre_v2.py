@@ -5,9 +5,7 @@ from shapepipe.utilities.summary import *
 
 
 def set_jobs_v2_pre_v2(patch, verbose):
-    """ Return information about shapepipe jobs
-    
-    """
+    """Return information about shapepipe jobs"""
     print(f"Set job info for patch {patch}")
 
     # Main input and output directory
@@ -20,7 +18,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
     log_file_name = f"{path}/summary_log.txt"
     handlers = [
         logging.FileHandler(log_file_name, mode="w"),
-        logging.StreamHandler()
+        logging.StreamHandler(),
     ]
     logging.basicConfig(
         level=logging.INFO, format="%(message)s", handlers=handlers
@@ -37,7 +35,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
     jobs = {}
 
     # Set the first job (retrieve images)
-    
+
     # With "CFIS_" only the linked images are counted. The original
     # ones do not match the IDdash pattern.
     # If images were downloaded in several runs:
@@ -46,8 +44,8 @@ def set_jobs_v2_pre_v2(patch, verbose):
     # - remove previous output dirs since only last is searched
     jobs["1"] = job_data(
         1,
-         "run_sp_GitFeGie",
-       [
+        "run_sp_GitFeGie",
+        [
             "get_images_runner_run_1",
             "find_exposures_runner",
             "get_images_runner_run_2",
@@ -111,7 +109,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
             "run_sp_exp_SxSePsf",
             "run_sp_exp_SxSePsf",
             "run_sp_exp_SxSePsf",
-            #"run_sp_exp_Pi"
+            # "run_sp_exp_Pi"
         ],
         [
             "sextractor_runner",
@@ -129,7 +127,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
     )
 
     # For P3
-    #jobs["33"] = job_data(
+    # jobs["33"] = job_data(
     #    33,
     #    "run_sp_exp_Pi",
     #    ["psfex_interp_runner"],
@@ -139,7 +137,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
     #    output_subdirs="shdus",
     #    path_right="output",
     #    verbose=verbose,
-    #)
+    # )
 
     jobs["64"] = job_data(
         "64",
@@ -161,7 +159,8 @@ def set_jobs_v2_pre_v2(patch, verbose):
     n_sh = 8
     run_dirs = [f"run_sp_tile_ngmix_Ng{idx+1}u" for idx in range(n_sh)]
     output_path_missing_IDs = [
-        f"{path_main}/summary/missing_job_128_ngmix_runner_{idx+1}.txt" for idx in range(n_sh)
+        f"{path_main}/summary/missing_job_128_ngmix_runner_{idx+1}.txt"
+        for idx in range(n_sh)
     ]
     jobs["128"] = job_data(
         "128",
@@ -217,5 +216,5 @@ def set_jobs_v2_pre_v2(patch, verbose):
         path_left="output",
         verbose=verbose,
     )
-    
+
     return jobs, list_tile_IDs_dot

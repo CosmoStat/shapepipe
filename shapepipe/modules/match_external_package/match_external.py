@@ -175,14 +175,14 @@ class MatchCats(object):
             self._external_col_match[0],
             self._external_col_match[1],
         )
-        external_coord = SkyCoord(ra=external_ra, dec=external_dec, unit='deg')
+        external_coord = SkyCoord(ra=external_ra, dec=external_dec, unit="deg")
 
         data, col_names, ext_names = get_data(
             self._input_file_list[0],
             self._hdu_no,
         )
         ra, dec = get_ra_dec(data, self._col_match[0], self._col_match[1])
-        coord = SkyCoord(ra=ra, dec=dec, unit='deg')
+        coord = SkyCoord(ra=ra, dec=dec, unit="deg")
 
         # Match objects in external cat to internal cat. indices=indices to
         # external object for each object in internal cat e.g.
@@ -198,17 +198,20 @@ class MatchCats(object):
 
         if not any(indices_close):
             self._w_log.info(
-                f'No match for {self._input_file_list[0]} with distance < '
-                + f'{self._tolerance} arcsec found, no output created.'
+                f"No match for {self._input_file_list[0]} with distance < "
+                + f"{self._tolerance} arcsec found, no output created."
             )
 
         else:
             # Get indices in internal and external catalogues of pair-wise
             # matches
-            w = np.array([
-                (idx, ide) for (idx, ide) in enumerate(indices)
-                if indices_close[idx]
-            ])
+            w = np.array(
+                [
+                    (idx, ide)
+                    for (idx, ide) in enumerate(indices)
+                    if indices_close[idx]
+                ]
+            )
             id_sub = w[:, 0]
             id_ext_sub = w[:, 1]
             id_all = np.arange(len(indices))
@@ -223,7 +226,7 @@ class MatchCats(object):
                 id_ext = id_ext_sub
 
             self._w_log.info(
-                f'{len(id_sub)} objects matched out of {len(indices)}.'
+                f"{len(id_sub)} objects matched out of {len(indices)}."
             )
 
             # Copy matched objects from internal catalogue to output data
@@ -242,7 +245,7 @@ class MatchCats(object):
             # Output distance if desired
             if self._output_distance:
                 # Output distance in arcsec
-                matched['distance'] = d2d[id_data].to('arcsec').value
+                matched["distance"] = d2d[id_data].to("arcsec").value
 
             # Write FITS file
             out_cat = file_io.FITSCatalogue(
@@ -252,14 +255,13 @@ class MatchCats(object):
             )
             out_cat.save_as_fits(
                 data=matched,
-                ext_name='MATCHED',
+                ext_name="MATCHED",
             )
 
             # Write all extensions if in multi-epoch mode
-            if self._mode == 'MULTI-EPOCH':
+            if self._mode == "MULTI-EPOCH":
                 hdu_me_list = [
-                    idx for idx, name in enumerate(ext_names)
-                    if 'EPOCH' in name
+                    idx for idx, name in enumerate(ext_names) if "EPOCH" in name
                 ]
                 for hdu_me in hdu_me_list:
                     data_me, col_names_me, dummy = get_data(

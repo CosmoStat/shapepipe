@@ -1,4 +1,4 @@
-name: shapepipe
+name: shapepipe_v1.4
 channels:
   - conda-forge
 dependencies:

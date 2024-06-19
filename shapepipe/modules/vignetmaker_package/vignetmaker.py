@@ -72,14 +72,14 @@ class VignetMaker(object):
         for _prefix, img in zip(prefix, image_path_list):
             image_path = img
 
-            if self._pos_type == 'PIX':
+            if self._pos_type == "PIX":
                 pos = self._pos
-            elif self._pos_type == 'SPHE':
+            elif self._pos_type == "SPHE":
                 pos = convert_pos(image_path)
             else:
                 raise ValueError(
-                    'Coordinates type must be in : PIX (pixel), '
-                    + 'SPHE (spherical).'
+                    "Coordinates type must be in : PIX (pixel), "
+                    + "SPHE (spherical)."
                 )
 
             vign = self._get_stamp(image_path, pos - 1, rad)
@@ -205,19 +205,18 @@ class VignetMaker(object):
         cat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
         cat.open()
 
-        all_id = np.copy(cat.get_data()['NUMBER'])
-        n_epoch = np.copy(cat.get_data()['N_EPOCH'])
+        all_id = np.copy(cat.get_data()["NUMBER"])
+        n_epoch = np.copy(cat.get_data()["N_EPOCH"])
 
         list_ext_name = cat.get_ext_name()
         hdu_ind = [
-            i for i in range(len(list_ext_name))
-            if 'EPOCH' in list_ext_name[i]
+            i for i in range(len(list_ext_name)) if "EPOCH" in list_ext_name[i]
         ]
 
         final_list = []
         for hdu_index in hdu_ind:
-            exp_name = cat.get_data(hdu_index)['EXP_NAME'][0]
-            ccd_list = list(set(cat.get_data(hdu_index)['CCD_N']))
+            exp_name = cat.get_data(hdu_index)["EXP_NAME"][0]
+            ccd_list = list(set(cat.get_data(hdu_index)["CCD_N"]))
             array_vign = None
             array_id = None
             array_exp_name = None
@@ -240,15 +239,17 @@ class VignetMaker(object):
                         f"Could not find image {image_name}"
                     )
 
-                ind_obj = np.where(cat.get_data(hdu_index)['CCD_N'] == ccd)[0]
+                ind_obj = np.where(cat.get_data(hdu_index)["CCD_N"] == ccd)[0]
                 obj_id = all_id[ind_obj]
 
-                wcs_file = self._f_wcs_file[exp_name][ccd]['WCS']
-                pos = np.array(wcs_file.all_world2pix(
-                    self._pos[:, 1][ind_obj],
-                    self._pos[:, 0][ind_obj],
-                    1,
-                )).T
+                wcs_file = self._f_wcs_file[exp_name][ccd]["WCS"]
+                pos = np.array(
+                    wcs_file.all_world2pix(
+                        self._pos[:, 1][ind_obj],
+                        self._pos[:, 0][ind_obj],
+                        1,
+                    )
+                ).T
                 pos[:, [0, 1]] = pos[:, [1, 0]]
 
                 tmp_vign = self._get_stamp(img_path, pos - 1, self._rad)
@@ -256,9 +257,7 @@ class VignetMaker(object):
                 if array_vign is None:
                     array_vign = np.copy(tmp_vign)
                 else:
-                    array_vign = np.concatenate(
-                        (array_vign, np.copy(tmp_vign))
-                    )
+                    array_vign = np.concatenate((array_vign, np.copy(tmp_vign)))
 
                 if array_id is None:
                     array_id = np.copy(obj_id)
@@ -266,7 +265,7 @@ class VignetMaker(object):
                     array_id = np.concatenate((array_id, np.copy(obj_id)))
 
                 exp_name_tmp = np.array(
-                    [exp_name + '-' + str(ccd) for i in range(len(obj_id))]
+                    [exp_name + "-" + str(ccd) for i in range(len(obj_id))]
                 )
                 if array_exp_name is None:
                     array_exp_name = exp_name_tmp
@@ -289,16 +288,16 @@ class VignetMaker(object):
 
                 where_res = np.where(final_list[j][0] == id_tmp)[0]
 
-                if (len(where_res) != 0):
+                if len(where_res) != 0:
                     index = final_list[j][2][where_res[0]]
                     output_dict[id_tmp][index] = {}
-                    output_dict[id_tmp][index]['VIGNET'] = (
-                        final_list[j][1][where_res[0]]
-                    )
+                    output_dict[id_tmp][index]["VIGNET"] = final_list[j][1][
+                        where_res[0]
+                    ]
                     counter += 1
 
             if counter == 0:
-                output_dict[id_tmp] = 'empty'
+                output_dict[id_tmp] = "empty"
 
         return output_dict
 
@@ -353,8 +352,8 @@ class VignetMaker(object):
             Prefix to use for the output file name
 
         """
-        output_name = f'{self._output_dir}/{prefix}_vignet{self._image_num}'
-        output_file = SqliteDict(output_name + '.sqlite')
+        output_name = f"{self._output_dir}/{prefix}_vignet{self._image_num}"
+        output_file = SqliteDict(output_name + ".sqlite")
 
         for _index in output_dict.keys():
             output_file[str(_index)] = output_dict[_index]
@@ -382,7 +381,7 @@ def get_original_vignet(galcat_path):
     file = file_io.FITSCatalogue(galcat_path, SEx_catalogue=True)
     file.open()
 
-    vignet = file.get_data()['VIGNET']
+    vignet = file.get_data()["VIGNET"]
 
     file.close()
 
@@ -433,7 +432,7 @@ def save_vignet(vignet, sexcat_path, output_dir, prefix, image_num):
         Image numbering
 
     """
-    output_name = f'{output_dir}/{prefix}_vignet{image_num}.fits'
+    output_name = f"{output_dir}/{prefix}_vignet{image_num}.fits"
 
     file = file_io.FITSCatalogue(
         output_name,
@@ -441,4 +440,4 @@ def save_vignet(vignet, sexcat_path, output_dir, prefix, image_num):
         open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
     )
 
-    file.save_as_fits(vignet, names=['VIGNET'], sex_cat_path=sexcat_path)
+    file.save_as_fits(vignet, names=["VIGNET"], sex_cat_path=sexcat_path)

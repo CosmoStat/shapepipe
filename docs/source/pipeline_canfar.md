@@ -111,7 +111,7 @@ shapepipe_run -c $SP_CONFIG/config_Pl_$psf.ini
 ## Convert all input validation psf files and create directories par patch
 ## psf_conv_all/P?
 cd star_cat
-convert_psf_pix2world.py -i .. -s run_sp_combined_psf
+convert_psf_pix2world.py -i .. -v -p mccd
 
 # Combine previously created files within one SP run dir
 combine_runs.bash -p psfex -c psf_conv
