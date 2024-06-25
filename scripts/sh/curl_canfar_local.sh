@@ -155,8 +155,8 @@ function submit_batch() {
 
 }
 
-batch=20
-sleep=150
+batch=50
+sleep=75
 
 ((n_thresh=batch_max-batch))
 
