@@ -111,20 +111,24 @@ def set_jobs_v2_pre_v2(patch, verbose):
             "run_sp_exp_SxSePsf",
             "run_sp_exp_SxSePsf",
             "run_sp_exp_SxSePsf",
+            "run_sp_exp_SxSePsf",
             #"run_sp_exp_Pi"
         ],
         [
             "sextractor_runner",
             "setools_runner",
+            "setools_runner",
             "psfex_runner",
             # "psfex_interp_runner"],
         ],
         "shdus",
-        n_mult=[2, 2, 2],  # 1],
+        n_mult=[2, 2, 1, 2],  # 1],
         path_main=path_main,
         path_left="exp_runs",
         output_subdirs="shdus",
         path_right="output",
+        path_output=["output", "output/rand_split", "output/stat", "output"],
+        special=[False, False, True, False],
         verbose=verbose,
     )
 
