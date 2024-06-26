@@ -19,6 +19,7 @@ version="1.1"
 cmd_remote="shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
 batch_max=200
 dry_run=0
+mh_local=0
 
 ## Help string
 usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
@@ -31,6 +32,8 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
     \tfile containing IDs\n
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
+   -m, --mh_local MH\n
+    \tmerged header file local (MH=0) or global (MH=1); default is $mh_local\n
    -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default=$N_SMP\n
    -V, --version\n
@@ -62,6 +65,10 @@ while [ $# -gt 0 ]; do
       ;;
     -p|--psf)
       job="$2"
+      shift
+      ;;
+    -m|--mh_local)
+      mh_local="$2"
       shift
       ;;
     -e|--exclusive)
@@ -123,7 +130,7 @@ dir=`pwd`
 
 # Return argument for local script to be called via curl
 function set_arg() {
-  my_arg="-j $job -p $psf -e $ID -N $N_SMP $arg_dry_run -d $dir"
+  my_arg="-j $job -p $psf -e $ID -N $N_SMP $arg_dry_run -d $dir -m $mh_local"
   echo $my_arg
 }
 

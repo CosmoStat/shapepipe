@@ -27,7 +27,7 @@ usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    -m, --mh_local MH\n
-   \tmerged header file local (MH=0) or global (MH=1); default is $MH\n
+   \tmerged header file local (MH=0) or global (MH=1); default is $mh_local\n
    -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default from original config files\n
    -d, --directory\n
@@ -97,7 +97,7 @@ if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
 fi
 
 if [ "$mh_local" != "0" ] && [ "$mh_local" != "1" ]; then
-  echo "MH (option -m) needs to be 0 or 1"
+  echo "mh_local (option -m) needs to be 0 or 1"
   exit 5
 fi
 
@@ -233,8 +233,9 @@ command "ln -sf $dir/output/run_sp_Ma_exp" $dry_run
 command "ln -sf $dir/output/run_sp_exp_SpMh" $dry_run
 
 
-(( do_job = $job & 16 ))
-if [ "$mh_local" == "1" ] && [ $do_job != 0 ]; then
+#(( do_job = $job & 16 ))
+#&& [ $do_job != 0 ]; then
+if [ "$mh_local" == "1" ]; then
 
   # Remove previous Sx runs
   command "rm -rf $dir/output/run_tile_Sx_*" $dry_run
@@ -277,7 +278,7 @@ if [ "$mh_local" == "1" ] && [ $do_job != 0 ]; then
   cd output
 
   # Remove previous Sextractor run
-  command "rm -rf run_sp_tile_Sx_*" $dry_run
+  #command "rm -rf run_sp_tile_Sx_*" $dry_run
 fi
 
 # Update links to exposure run directories, which were created in job 32
