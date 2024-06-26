@@ -20,19 +20,21 @@ def main(argv=None):
     verbose = False
 
     jobs, list_tile_IDs_dot = set_jobs_v2_pre_v2(patch, verbose)
-    
+
     list_tile_IDs = job_data.replace_dot_dash(list_tile_IDs_dot)
-    
+
     # Numbers updated at runtime
     par_runtime = init_par_runtime(list_tile_IDs)
-    
+
     job_data.print_stats_header()
 
     exp_IDs_path = "exp_numbers.txt"
     if os.path.exists(exp_IDs_path):
         # Read exposure ID list if file exists
         all_exposures = get_IDs_from_file(exp_IDs_path)
-        par_runtime = update_par_runtime_after_find_exp(par_runtime, all_exposures)
+        par_runtime = update_par_runtime_after_find_exp(
+            par_runtime, all_exposures
+        )
 
     if (
         not os.path.exists(exp_IDs_path)
@@ -46,17 +48,17 @@ def main(argv=None):
         jobs[key].check_numbers(par_runtime=par_runtime, indices=[0, 1])
 
         all_exposures = get_all_exposures(
-            jobs[key]._paths_in_dir[1],
-            verbose=True
+            jobs[key]._paths_in_dir[1], verbose=True
         )
-        par_runtime = update_par_runtime_after_find_exp(par_runtime, all_exposures)
+        par_runtime = update_par_runtime_after_find_exp(
+            par_runtime, all_exposures
+        )
 
         jobs[key].write_IDs_to_file("exp_numbers.txt", all_exposures)
 
         jobs[key].check_numbers(par_runtime, indices=[2])
 
     print_par_runtime(par_runtime, verbose=verbose)
-
 
     # Get all keys after "1"
     keys = sorted(jobs.keys(), key=int)

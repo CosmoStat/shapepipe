@@ -28,4 +28,4 @@ HDU : int, optional
 
 """
 
-__all__ = ['merge_starcat']
+__all__ = ["merge_starcat"]

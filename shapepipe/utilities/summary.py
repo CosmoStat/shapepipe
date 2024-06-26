@@ -70,7 +70,6 @@ def get_IDs_from_file(path):
     return numbers
 
 
-
 def get_all_exposures(exp_number_file_list, verbose=False):
     """Get All Exposures.
 
@@ -202,7 +201,7 @@ class job_data(object):
     pattern: list, optional
         if not None, file pattern to match; defafult is `None`
     path_main: str, optional
-        main (left-most) part of output directory, default is "."       
+        main (left-most) part of output directory, default is "."
     path_left: str, optional
         left (first) part of output directory, default is "./output"
     output_subdirs: str, optional
@@ -222,6 +221,7 @@ class job_data(object):
         verbose output if True; default is False
 
     """
+
     def __init__(
         self,
         bit,
@@ -264,6 +264,8 @@ class job_data(object):
             len(modules),
             default=False,
         )
+        self._path_right = set_as_list(path_right, len(modules), default=".")
+        self._output_path_missing_IDs = output_path_missing_IDs
         self._verbose = verbose
 
     def print_intro(self):
@@ -358,7 +360,7 @@ class job_data(object):
 
         pattern = re.compile(r"(\d{3})-(\d{3})")
         results = [pattern.sub(r"\1.\2", number) for number in numbers]
-    
+
         return results
 
     @classmethod
@@ -438,14 +440,12 @@ class job_data(object):
         n_mult = self._n_mult[idx]
 
         list_expected = get_par_runtime(par_runtime, key_expected, kind="list")
-        
+
         # Count image IDs in names that were found earlier
 
         # Get file name pattern
         if module != "split_exp_runner":
-            pattern = re.compile(
-                r"(?:\d{3}-\d{3}|\d{7}-\d+|\d{7})"
-            )
+            pattern = re.compile(r"(?:\d{3}-\d{3}|\d{7}-\d+|\d{7})")
         else:
             # split_exp_runner: input is exp, output is shdu (images) and exp
             # (header); ignore hdu number
@@ -537,13 +537,11 @@ class job_data(object):
         # os.path.whether exists is twice faster than try/except
 
         if os.path.exists(directory):
-            pattern =  f"{self._pattern[idx]}*"
+            pattern = f"{self._pattern[idx]}*"
             for entry2 in os.scandir(directory):
                 if (
                     entry2.is_file()
-                    and (
-                        fnmatch.fnmatch(entry2.name, pattern)
-                    )
+                    and (fnmatch.fnmatch(entry2.name, pattern))
                     and entry2.stat().st_size > 0
                 ):
                     # Append matching files
@@ -709,7 +707,7 @@ class job_data(object):
         logging.info("")
 
         # Write missing IDs for entire job to file
-        #if n_missing_job > 0:
+        # if n_missing_job > 0:
         self.output_missing_job()
 
 
@@ -742,7 +740,7 @@ def print_par_runtime(par_runtime, verbose=True):
             if not key.startswith("list"):
                 logging.info(f"{key:30s} {value:6d}")
             else:
-                #logging.info(f"{key:30s} {len(value):6d} entries")
+                # logging.info(f"{key:30s} {len(value):6d} entries")
                 pass
         logging.info("===========")
         logging.info("")

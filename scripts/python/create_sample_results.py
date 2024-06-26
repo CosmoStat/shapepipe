@@ -34,9 +34,7 @@ def params_default():
         parameter values
     """
 
-    p_def = cfis.param(
-        psf = 'mccd'
-    )
+    p_def = cfis.param(psf="mccd")
 
     return p_def
 
@@ -57,49 +55,49 @@ def parse_options(p_def):
         Command line string
     """
 
-    usage  = "%prog [OPTIONS]"
+    usage = "%prog [OPTIONS]"
     parser = OptionParser(usage=usage)
 
     # I/O
     parser.add_option(
-        '',
-        '--input_IDs',
-        dest='input_IDs',
-        type='string',
-        help='input tile ID file specifying sample'
+        "",
+        "--input_IDs",
+        dest="input_IDs",
+        type="string",
+        help="input tile ID file specifying sample",
     )
     parser.add_option(
-        '-i',
-        '--input_dir',
-        dest='input_dir',
-        type='string',
-        help='input directory name'
+        "-i",
+        "--input_dir",
+        dest="input_dir",
+        type="string",
+        help="input directory name",
     )
     parser.add_option(
-        '-o',
-        '--output_dir',
-        dest='output_dir',
-        type='string',
-        help='output directory name'
+        "-o",
+        "--output_dir",
+        dest="output_dir",
+        type="string",
+        help="output directory name",
     )
 
     # Misc
     parser.add_option(
-        '-p',
-        '--psf',
-        dest='psf',
-        type='string',
+        "-p",
+        "--psf",
+        dest="psf",
+        type="string",
         default=p_def.psf,
-        help=f'PSF model, one in [\'psfex\'|\'mccd\'], default=\'{p_def.psf}\''
+        help=f"PSF model, one in ['psfex'|'mccd'], default='{p_def.psf}'",
     )
 
     # Control
     parser.add_option(
-        '-v',
-        '--verbose',
-        dest='verbose',
-        action='store_true',
-        help='verbose output'
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+        help="verbose output",
     )
 
     options, args = parser.parse_args()
@@ -122,13 +120,13 @@ def check_options(options):
     """
 
     if options.input_IDs is None:
-        print('No input ID file list given (option \'--input_IDs\')')
+        print("No input ID file list given (option '--input_IDs')")
         return False
     if options.input_dir is None:
-        print('No input directory name given (option \'--input_dir\')')
+        print("No input directory name given (option '--input_dir')")
         return False
     if options.output_dir is None:
-        print('No output directory name given (option \'--output_dir\')')
+        print("No output directory name given (option '--output_dir')")
         return False
 
     return True
@@ -184,7 +182,7 @@ def read_ID_list(input_ID_path, verbose=False):
     """
 
     if verbose:
-        print('Reading input ID list...')
+        print("Reading input ID list...")
 
     input_IDs = []
     with open(input_ID_path) as f:
@@ -192,12 +190,14 @@ def read_ID_list(input_ID_path, verbose=False):
             input_IDs.append(line.rstrip())
 
     if verbose:
-        print('{} IDs found in input file'.format(len(input_IDs)))
+        print("{} IDs found in input file".format(len(input_IDs)))
 
     return input_IDs
 
 
-def create_links(input_dir, output_dir, input_IDs, result_base_names, verbose=False):
+def create_links(
+    input_dir, output_dir, input_IDs, result_base_names, verbose=False
+):
     """Create symbolic links to result files corresponding to (sub-)sample.
 
     Parameters
@@ -215,7 +215,7 @@ def create_links(input_dir, output_dir, input_IDs, result_base_names, verbose=Fa
     """
 
     if verbose:
-        print('Creating links...')
+        print("Creating links...")
 
     n_total = {}
     n_created = 0
@@ -223,16 +223,16 @@ def create_links(input_dir, output_dir, input_IDs, result_base_names, verbose=Fa
     for ID in input_IDs:
         n_total[ID] = 0
         for base in result_base_names:
-            name = '{}_{}.tgz'.format(base, ID)
-            src = '{}/{}'.format(os.path.abspath(input_dir), name)
-            link_name = '{}/{}'.format(output_dir, name)
+            name = "{}_{}.tgz".format(base, ID)
+            src = "{}/{}".format(os.path.abspath(input_dir), name)
+            link_name = "{}/{}".format(output_dir, name)
 
-            #if verbose:
-                #print('Creating link {} <- {}'.format(src, link_name))
+            # if verbose:
+            # print('Creating link {} <- {}'.format(src, link_name))
 
             if not os.path.exists(src):
-                #raise IOError('Source file \'{}\' does not exist'.format(src))
-                print('Source file \'{}\' does not exist, skipping'.format(src))
+                # raise IOError('Source file \'{}\' does not exist'.format(src))
+                print("Source file '{}' does not exist, skipping".format(src))
             elif not os.path.exists(link_name):
                 os.symlink(src, link_name)
                 n_created = n_created + 1
@@ -243,11 +243,15 @@ def create_links(input_dir, output_dir, input_IDs, result_base_names, verbose=Fa
 
     n_expected = len(input_IDs) * len(result_base_names)
     if verbose:
-        print('{:5d} links created'.format(n_created))
-        print('{:5d} links existed already'.format(n_existed))
-        print('{:5d}/{} links available now'.format(n_created + n_existed, n_expected))
+        print("{:5d} links created".format(n_created))
+        print("{:5d} links existed already".format(n_existed))
+        print(
+            "{:5d}/{} links available now".format(
+                n_created + n_existed, n_expected
+            )
+        )
         n_tot = sum(n_total.values())
-        print('{:5d} as cross-check'.format(n_tot))
+        print("{:5d} as cross-check".format(n_tot))
 
 
 def main(argv=None):
@@ -267,42 +271,50 @@ def main(argv=None):
     # Save calling command
     cfis.log_command(argv)
     if param.verbose:
-        cfis.log_command(argv, name='sys.stdout')
-
+        cfis.log_command(argv, name="sys.stdout")
 
     ### Start main program ###
 
     if param.verbose:
-        print('Start of program {}'.format(os.path.basename(argv[0])))
+        print("Start of program {}".format(os.path.basename(argv[0])))
 
     input_IDs = read_ID_list(param.input_IDs, verbose=param.verbose)
 
     result_base_names = [
-        'final_cat',
-        'logs',
-        'setools_mask',
-        'setools_stat',
-        'setools_plot',
-        'pipeline_flag',
+        "final_cat",
+        "logs",
+        "setools_mask",
+        "setools_stat",
+        "setools_plot",
+        "pipeline_flag",
     ]
-    if param.psf == 'psfex':
-        result_base_names.append('psfex_interp_exp')
-    elif param.psf == 'mccd':
-        result_base_names.append('mccd_fit_val_runner')
+    if param.psf == "psfex":
+        result_base_names.append("psfex_interp_exp")
+    elif param.psf == "mccd":
+        result_base_names.append("mccd_fit_val_runner")
 
     if os.path.isdir(param.output_dir):
         if param.verbose:
-            print('Directory {} already exists, continuing...'.format(param.output_dir))
+            print(
+                "Directory {} already exists, continuing...".format(
+                    param.output_dir
+                )
+            )
     else:
         mkdir(param.output_dir)
 
-    create_links(param.input_dir, param.output_dir, input_IDs, result_base_names, verbose=param.verbose)
-
+    create_links(
+        param.input_dir,
+        param.output_dir,
+        input_IDs,
+        result_base_names,
+        verbose=param.verbose,
+    )
 
     ### End main program
 
     if param.verbose:
-        print('End of program {}'.format(os.path.basename(argv[0])))
+        print("End of program {}".format(os.path.basename(argv[0])))
 
     return 0
 

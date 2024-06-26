@@ -24,9 +24,8 @@ from shapepipe.utilities import cfis
 
 
 class param:
-    """General class to store (default) variables
+    """General class to store (default) variables"""
 
-    """
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
 
@@ -39,7 +38,7 @@ class param:
 
 def params_default():
     """Params Default.
-    
+
     Set default parameter values.
 
     Returns
@@ -49,9 +48,9 @@ def params_default():
 
     """
     p_def = param(
-        input_path  = '.',
-        input_name_base = 'final_cat',
-        hdu_num = 1,
+        input_path=".",
+        input_name_base="final_cat",
+        hdu_num=1,
     )
 
     return p_def
@@ -59,7 +58,7 @@ def params_default():
 
 def parse_options(p_def):
     """Parse Options.
-    
+
     Parse command line options.
 
     Parameters
@@ -74,60 +73,60 @@ def parse_options(p_def):
         command line str
 
     """
-    usage  = "%prog [OPTIONS]"
+    usage = "%prog [OPTIONS]"
     parser = OptionParser(usage=usage)
 
     # IO
     parser.add_option(
-        '-i',
-        '--input_path',
-        dest='input_path',
-        type='string',
+        "-i",
+        "--input_path",
+        dest="input_path",
+        type="string",
         default=p_def.input_path,
-        help=f'input path, default=\'{p_def.input_path}\''
+        help=f"input path, default='{p_def.input_path}'",
     )
     parser.add_option(
-        '-n',
-        '--input_name_base',
-        dest='input_name_base',
-        type='string',
+        "-n",
+        "--input_name_base",
+        dest="input_name_base",
+        type="string",
         default=p_def.input_name_base,
-        help=f'input name base, default=\'{p_def.input_name_base}\''
+        help=f"input name base, default='{p_def.input_name_base}'",
     )
     parser.add_option(
-        '-l',
-        '--list_tile_ID_path',
-        dest='tile_ID_list_path',
-        type='string',
+        "-l",
+        "--list_tile_ID_path",
+        dest="tile_ID_list_path",
+        type="string",
         default=None,
-        help=f'tile ID list, default: Use all data in input files'
+        help=f"tile ID list, default: Use all data in input files",
     )
 
     # Control
     parser.add_option(
-        '-p',
-        '--param_path',
-        dest='param_path',
-        type='string',
+        "-p",
+        "--param_path",
+        dest="param_path",
+        type="string",
         default=None,
-        help='parameter file path, default=None'
+        help="parameter file path, default=None",
     )
 
     parser.add_option(
-        '',
-        '--hdu_num',
-        dest='hdu_num',
-        type='int',
+        "",
+        "--hdu_num",
+        dest="hdu_num",
+        type="int",
         default=p_def.hdu_num,
-        help=f'input HDU number, default=\'{p_def.hdu_num}\''
+        help=f"input HDU number, default='{p_def.hdu_num}'",
     )
 
     parser.add_option(
-        '-v',
-        '--verbose',
-        dest='verbose',
-        action='store_true',
-        help='verbose output'
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+        help="verbose output",
     )
 
     options, args = parser.parse_args()
@@ -137,7 +136,7 @@ def parse_options(p_def):
 
 def check_options(options):
     """Check Options.
-    
+
     Check command line options.
 
     Parameters
@@ -156,7 +155,7 @@ def check_options(options):
 
 def update_param(p_def, options):
     """Update Param.
-    
+
     Return default parameter, updated and complemented according to options.
 
     Parameters
@@ -191,7 +190,7 @@ def update_param(p_def, options):
 
 def read_param_file(path, verbose=False):
     """Read Param File.
-    
+
     Return parameter list read from file.
 
     Parameters
@@ -213,19 +212,19 @@ def read_param_file(path, verbose=False):
 
         with open(path) as f:
             for line in f:
-                if line.startswith('#'):
-                    continue 
+                if line.startswith("#"):
+                    continue
                 entry = line.rstrip()
-                if not entry or entry == '':
+                if not entry or entry == "":
                     continue
                 param_list.append(entry)
 
     if verbose:
-        if len(param_list) > 0: 
-            print(f'Copying {len(param_list)} columns', end='')
+        if len(param_list) > 0:
+            print(f"Copying {len(param_list)} columns", end="")
         else:
-            print('Copying all columns', end='')
-        print(' into merged catalogue')
+            print("Copying all columns", end="")
+        print(" into merged catalogue")
 
     # Check for multiples
     multiples = []
@@ -234,19 +233,22 @@ def read_param_file(path, verbose=False):
             multiples.append(param)
 
     if len(multiples) > 0:
-        print('The following parameters are more than one times '
-              'in the parameter file: ', end='')
+        print(
+            "The following parameters are more than one times "
+            "in the parameter file: ",
+            end="",
+        )
         for m in multiples:
-            print(m, end=' ')
+            print(m, end=" ")
         print()
-        raise ValueError('Multiple identical keys found')
+        raise ValueError("Multiple identical keys found")
 
     return param_list
-                            
+
 
 def get_data(path, hdu_num, param_list):
     """Get Data.
-    
+
     Return data of selected columns from FITS file.
 
     Parameters
@@ -271,7 +273,7 @@ def get_data(path, hdu_num, param_list):
     if param_list:
         cols = []
         for p in param_list:
-            cols.append(hdu.columns[p]) 
+            cols.append(hdu.columns[p])
         coldefs = fits.ColDefs(cols)
         hdu_new = fits.BinTableHDU.from_columns(coldefs)
         d = hdu_new.data
@@ -307,7 +309,7 @@ def main(argv=None):
 
     # find input catalogue FITS files
     l = os.listdir(path=path)
-    ext = 'fits'
+    ext = "fits"
     lpath = []
     for this_l in l:
 
@@ -316,22 +318,22 @@ def main(argv=None):
         # mark to add if correct extension, matches input pattern,
         if (
             this_l.endswith(ext)
-            and (f'{param.input_name_base}' in this_l)
-            and ('.npy' not in this_l)
+            and (f"{param.input_name_base}" in this_l)
+            and (".npy" not in this_l)
         ):
             add_this_l = True
 
             # unmark to add if no in (optional) input tile ID file
-            if param.tile_ID_list_path: 
+            if param.tile_ID_list_path:
                 nix, niy = cfis.get_tile_number(this_l)
-                tile_ID = f'{nix}.{niy}'
+                tile_ID = f"{nix}.{niy}"
                 if tile_ID not in tile_ID_list:
                     add_this_l = False
             if add_this_l:
                 lpath.append(os.path.join(path, this_l))
 
     if param.verbose:
-        print(f'{len(lpath)} files files to merge found')
+        print(f"{len(lpath)} files files to merge found")
 
     count = 0
 
@@ -342,7 +344,7 @@ def main(argv=None):
         d[key] = d_tmp[key]
     count = count + 1
     if param.verbose:
-        print(f'File \'{lpath[0]}\' copied ({count}/{len(lpath)})')
+        print(f"File '{lpath[0]}' copied ({count}/{len(lpath)})")
 
     # merge remaining catalogue files
     for fname in lpath[1:]:
@@ -356,21 +358,21 @@ def main(argv=None):
 
             count = count + 1
             if param.verbose:
-                print(f'File \'{fname}\' copied ({count}/{len(lpath)})')
+                print(f"File '{fname}' copied ({count}/{len(lpath)})")
 
             d = np.concatenate((d, dd))
         except:
             print(
-                f'Error while adding file \'{fname}\', {len(dd)} objects'
-                ' not in final cat'
+                f"Error while adding file '{fname}', {len(dd)} objects"
+                " not in final cat"
             )
 
     # Save merged catalogue as numpy binary file
     if param.verbose:
-        print('Saving merged catalogue')
-    np.save(f'{param.input_name_base}.npy', d)
+        print("Saving merged catalogue")
+    np.save(f"{param.input_name_base}.npy", d)
 
-    msg = f'{count} catalog files merged with success'
+    msg = f"{count} catalog files merged with success"
     if param.verbose:
         print(msg)
     print(msg, file=f_log)

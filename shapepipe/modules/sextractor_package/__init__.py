@@ -67,4 +67,4 @@ CCD_SIZE : list, optional
 
 """
 
-__all__ = ['sextractor_script']
+__all__ = ["sextractor_script"]

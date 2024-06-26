@@ -45,22 +45,22 @@ class GalaxyTestCase(TestCase):
         npt.assert_almost_equal(
             galaxy.sigma_to_fwhm(self.sigma_float),
             self.sigma_float_exp,
-            err_msg='sigma_to_fwhm gave invalid result for float input',
+            err_msg="sigma_to_fwhm gave invalid result for float input",
         )
 
         npt.assert_almost_equal(
             galaxy.sigma_to_fwhm(self.sigma_float, self.pixel_scale),
             self.sigma_float_ps_exp,
             err_msg=(
-                'sigma_to_fwhm gave invalid result for float input with '
-                + 'non-default pixel scale'
+                "sigma_to_fwhm gave invalid result for float input with "
+                + "non-default pixel scale"
             ),
         )
 
         npt.assert_allclose(
             galaxy.sigma_to_fwhm(self.sigma_array),
             self.sigma_array_exp,
-            err_msg='sigma_to_fwhm gave invalid result for array input',
+            err_msg="sigma_to_fwhm gave invalid result for array input",
         )
 
         npt.assert_raises(TypeError, galaxy.sigma_to_fwhm, self.sigma_int)
