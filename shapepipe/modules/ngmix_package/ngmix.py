@@ -323,6 +323,12 @@ class Ngmix(object):
             open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
         )
 
+        n_hdu = len(output_dict.keys())
+        if n_hdu != 8:
+            raise IndexError(
+                f"FITS output file data has {n_hdu} HDUs,"
+                + "expected are 8"
+            )
         for key in output_dict.keys():
             f.save_as_fits(output_dict[key], ext_name=key.upper())
 
