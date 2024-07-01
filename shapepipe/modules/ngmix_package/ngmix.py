@@ -313,10 +313,10 @@ class Ngmix(object):
         )
 
         n_hdu = len(output_dict.keys())
-        if n_hdu != 8:
+        if n_hdu != 5:
             raise IndexError(
                 f"FITS output file data has {n_hdu} HDUs,"
-                + "expected are 8"
+                + " expected are 5"
             )
         for key in output_dict.keys():
             f.save_as_fits(output_dict[key], ext_name=key.upper())
@@ -368,18 +368,21 @@ class Ngmix(object):
                 id_first = id_tmp
             id_last = id_tmp
 
-            count = count + 1
-
             gal_vign = []
             psf_vign = []
             sigma_psf = []
             weight_vign = []
             flag_vign = []
             jacob_list = []
-            if (psf_vign_cat[str(id_tmp)] == "empty") or (
-                gal_vign_cat[str(id_tmp)] == "empty"
-            ):
+            if psf_vign_cat[str(id_tmp)] == "empty":
+                self._w_log.info(f"Skipping object {id_tmp}: empty PSF vignet")
                 continue
+            if gal_vign_cat[str(id_tmp)] == "empty":
+                self._w_log.info(
+                    f"Skipping object {id_tmp}: empty galaxy vignet"
+                )
+                continue
+
             psf_expccd_name = list(psf_vign_cat[str(id_tmp)].keys())
             for expccd_name_tmp in psf_expccd_name:
                 exp_name, ccd_n = re.split("-", expccd_name_tmp)
@@ -457,12 +460,14 @@ class Ngmix(object):
                 )
                 continue
 
+            count = count + 1
+
             res["obj_id"] = id_tmp
             res["n_epoch_model"] = len(gal_vign)
             final_res.append(res)
 
         self._w_log.info(
-            f"ngmix loop over objects finished, processed {count} "
+            f"ngmix loop over objects finished, measured {count} "
             + f"objects, id first/last={id_first}/{id_last}"
         )
 
