@@ -32,4 +32,4 @@ EXT_NAME : list, optional
 
 """
 
-__all__ = ['pastecat']
+__all__ = ["pastecat"]

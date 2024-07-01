@@ -39,4 +39,4 @@ N_HDU : int
 
 """
 
-__all__ = ['split_exp.py']
+__all__ = ["split_exp.py"]

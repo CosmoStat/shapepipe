@@ -7,17 +7,18 @@
 job=-1
 ID=-1
 N_SMP=1
-kind=-1
 dry_run=0
 nsh_jobs=8
 dir=`pwd`
+
+# mh_local is 0 (1) if merge_header_runner is run on all exposures,
+# which is standard so far (run on exposures of given tile only; new)
+mh_local=0
 VERBOSE=1
 
 
-# TODO: psf
-
 ## Help string
-usage="Usage: $(basename "$0") -j JOB -e ID  -k KIND [OPTIONS]
+usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
 \n\nOptions:\n
    -h\tthis message\n
    -j, --job JOB\tRUnning JOB, bit-coded\n
@@ -25,8 +26,8 @@ usage="Usage: $(basename "$0") -j JOB -e ID  -k KIND [OPTIONS]
     \timage ID\n
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
-   -k, --kind KIND\n
-    \timage kind, allowed are 'tile' and 'exp'\n
+   -m, --mh_local MH\n
+   \tmerged header file local (MH=0) or global (MH=1); default is $mh_local\n
    -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default from original config files\n
    -d, --directory\n
@@ -37,8 +38,8 @@ usage="Usage: $(basename "$0") -j JOB -e ID  -k KIND [OPTIONS]
 
 ## Help if no arguments                                                         
 if [ -z $1 ]; then                                                              
-        echo -ne $usage                                                         
-        exit 1                                                                  
+  echo -ne $usage                                                         
+  exit 1                                                                  
 fi 
 
 ## Parse command line                                                           
@@ -56,12 +57,16 @@ while [ $# -gt 0 ]; do
       ID="$2"                                                            
       shift                                                                     
       ;;
+    -p|--psf)                                                                   
+      psf="$2"                                                                  
+      shift                                                                     
+      ;; 
+    -m|--mh_local)                                                                   
+      mh_local="$2"                                                                  
+      shift                                                                     
+      ;; 
     -N|--N_SMP)                                                                 
       N_SMP="$2"                                                                
-      shift                                                                     
-      ;;                                                                        
-    -k|--kind)                                                                 
-      kind="$2"                                                                
       shift                                                                     
       ;;                                                                        
     -d|--directory)
@@ -75,7 +80,7 @@ while [ $# -gt 0 ]; do
   shift                                                                         
 done
 
-# Check options
+## Check options
 if [ "$job" == "-1" ]; then
   echo "No job indicated, use option -j"
   exit 2
@@ -86,9 +91,14 @@ if [ "$exclusive" == "-1" ]; then
   exit 3
 fi
 
-if [ "$kind" == "-1" ]; then
-  echo "No image kind indicated, use option -k"
+if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
+  echo "PSF (option -p) needs to be 'psfex' or 'mccd'"
   exit 4
+fi
+
+if [ "$mh_local" != "0" ] && [ "$mh_local" != "1" ]; then
+  echo "mh_local (option -m) needs to be 0 or 1"
+  exit 5
 fi
 
 # Functions
@@ -131,6 +141,46 @@ function command () {
 
 echo "start init_run_exclusive_canfar"
 
+# Set kind
+job_to_test=16
+kind="none"
+
+# loop over possible job numbers
+while  [ $job_to_test -le 1024 ]; do
+
+  (( do_job = $job & $job_to_test ))
+  if [[ $do_job != 0 ]]; then
+    
+      if [ $job_to_test == 32 ]; then
+        if [ "$kind" == "tile" ]; then
+          echo "Error: Invalid job $job. mixing tile and exp kinds"
+          exit 6
+        fi
+
+        # job=32 -> set kind to exp
+        kind="exp"
+      else
+        if [ "$kind" == "exp" ]; then
+          echo "Error: Invalid job $job. mixing tile and exp kinds"
+          exit 6
+        fi
+
+        # job != 32 -> set kind to tile
+        kind="tile"
+      fi
+
+  fi
+
+  # Multiply job number by two to get next biwise number
+  job_to_test=$((job_to_test * 2))
+done
+
+if [ "$kind" == "none" ]; then
+  echo "Error: invalid job $job"
+  exit 5
+fi
+
+
 if [ "$dry_run" == 1 ]; then
   echo "in dry run mode"
 fi
@@ -156,24 +206,83 @@ fi
 cd $ID
 pwd
 
+
 if [ ! -d "output" ]; then
   command "mkdir output" $dry_run
 fi
 
 cd output
 
-if [ ! -f log_exp_headers.sqlite ]; then
-  command "ln -s $dir/output/log_exp_headers.sqlite" $dry_run
+if [ "$mh_local" == "0" ]; then
+  if [ ! -f log_exp_headers.sqlite ]; then
+    # Global Mh and file does not exist -> symlink to
+    # gllobal mh file
+    command "ln -s $dir/output/log_exp_headers.sqlite" $dry_run
+  fi
 fi
 
 
-# Update links to global run directories (GiFeGie, Uz, Ma?, combined_flag?)
-for dir in $dir/output/run_sp_*; do
-  command "ln -sf $dir" $dry_run
+# Update links to global run directories (GiFeGie, Uz)
+for my_dir in $dir/output/run_sp_[GU]*; do
+  command "ln -sf $my_dir" $dry_run
 done
+# Combined flags
+command "ln -sf $dir/output/run_sp_Ma_tile" $dry_run
+command "ln -sf $dir/output/run_sp_Ma_exp" $dry_run
+# exp Sp
+command "ln -sf $dir/output/run_sp_exp_SpMh" $dry_run
+
+
+#(( do_job = $job & 16 ))
+#&& [ $do_job != 0 ]; then
+if [ "$mh_local" == "1" ]; then
+
+  # Remove previous Sx runs
+  command "rm -rf $dir/output/run_tile_Sx_*" $dry_run
+
+  if [ "$ID" == "-1" ]; then
+    echo "ID needs to be given (option -e) for mh_local and job&16"
+    exit 6 
+  fi
+
+  if [ -L log_exp_headers.sqlite ]; then
+    # Local Mh and symlink -> remove previous link to
+    # (potentially incomplete) global mh file
+    echo "Removing previous mh sym link"
+    command "rm log_exp_headers.sqlite" $dry_run
+  else
+    echo "no mh link found"
+  fi
+
+  echo "Creating local mh file"
+
+  # Remove previous (local) split_exp dir
+  command "rm -rf run_sp_exp_Sp" $dry_run
+
+  # Create new split exp run dir
+  new_dir="run_sp_exp_Sp//split_exp_runner/output"
+  command "mkdir -p $new_dir" $dry_run
+
+  # Link to all header files of exposures used for the current tile
+  IDs=`echo $ID | tr "." "-"`
+  for exp_ID in `cat run_sp_GitFeGie_*/find_exposures_runner/output/exp_numbers-$IDs.txt` ; do
+    x=`echo $exp_ID | tr -d p `
+    command "ln -s $dir/output/run_sp_exp_SpMh/split_exp_runner/output/headers-$x.npy $new_dir/headers-$x.npy" $dry_run
+  done
+
+  # Run merge_headers_runner on local exposure selection
+  cd ..
+  command "update_runs_log_file.py" $dry_run
+  export SP_RUN=`pwd`
+  command "shapepipe_run -c cfis/config_exp_Mh.ini" $dry_run
+  cd output
+
+  # Remove previous Sextractor run
+  #command "rm -rf run_sp_tile_Sx_*" $dry_run
+fi
 
 # Update links to exposure run directories, which were created in job 32
-(( do_job= $job & 64 ))
+(( do_job = $job & 64 ))
 if [[ $do_job != 0 ]]; then
   if [ "$kind" == "tile" ]; then
     cd ../../..
@@ -185,7 +294,7 @@ if [[ $do_job != 0 ]]; then
     if [ "$n_32" != "1" ]; then
       n_remove="$(($n_32-1))"
       echo "removing $n_remove duplicate old job-32 runs"
-      rm -rf `ls -rt1d run_sp_tile_Sx_* | head -$n_remove`
+      command "rm -rf `ls -rt1d run_sp_tile_Sx_* | head -$n_remove`" $dry_run
     fi
 
     # Remove previous runs of this job
@@ -193,14 +302,22 @@ if [[ $do_job != 0 ]]; then
   fi
 fi
 
-(( do_job= $job & 256 ))
+(( do_job = $job & 256 ))
 if [[ $do_job != 0 ]]; then
 
   # Remove previous runs of this job
   rm -rf run_sp_Ms_20??_*
+
+fi
+
+(( do_job = $job & 512 ))
+if [[ $do_job != 0 ]]; then
+
+  # Remove previous runs of this job
   rm -rf run_sp_Mc_20??_*
 
 fi
+
 
 cd ..
 
@@ -212,6 +329,9 @@ pwd
 
 echo -n "environment: "
 echo $CONDA_PREFIX
+
+# To avoid (new?) qt error with setools (-j 32)
+export DISPLAY=:1.0
 
 command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP" $dry_run
 

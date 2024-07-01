@@ -61,32 +61,32 @@ def sigma_to_fwhm(sigma, pixel_scale=1.0):
     """
     if not isinstance(sigma, (np.ndarray, float)):
         raise TypeError(
-            f'Sigma must be of type numpy array or float, not {type(sigma)}.'
+            f"Sigma must be of type numpy array or float, not {type(sigma)}."
         )
     elif isinstance(sigma, np.ndarray) and sigma.dtype != np.float64:
         raise TypeError(
-            f'Sigma array values must be of type float, not {sigma.dtype}.'
+            f"Sigma array values must be of type float, not {sigma.dtype}."
         )
 
     if not isinstance(pixel_scale, float):
         raise TypeError(
-            f'The pixel scale must of type float, not {type(pixel_scale)}.'
+            f"The pixel scale must of type float, not {type(pixel_scale)}."
         )
 
     if isinstance(sigma, np.ndarray) and np.any(sigma <= 0.0):
         raise ValueError(
-            f'Found {sigma[sigma <=0].size} invalid standard deviation array '
-            + 'values, all elements must to be greater than 0.0.'
+            f"Found {sigma[sigma <=0].size} invalid standard deviation array "
+            + "values, all elements must to be greater than 0.0."
         )
     elif isinstance(sigma, float) and sigma <= 0.0:
         raise ValueError(
-            f'Invalid standard deviation {sigma}, needs to be greater than '
-            + '0.0.'
+            f"Invalid standard deviation {sigma}, needs to be greater than "
+            + "0.0."
         )
 
     if pixel_scale <= 0.0:
         raise ValueError(
-            f'Invalid pixel scale {pixel_scale}, needs to be greater than 0.0.'
+            f"Invalid pixel scale {pixel_scale}, needs to be greater than 0.0."
         )
 
     cst = 2.35482004503

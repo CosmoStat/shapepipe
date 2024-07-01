@@ -11,16 +11,15 @@ NAME=shapepipe
 
 ## Default values
 job=-1
+psf="psfex"
 ID=-1
 file_IDs=-1
 N_SMP=1
-kind=-1
 version="1.1"
 cmd_remote="shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
 batch_max=200
 dry_run=0
-
-# TODO psf
+mh_local=0
 
 ## Help string
 usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
@@ -33,8 +32,8 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
     \tfile containing IDs\n
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
-   -k, --kind KIND\n
-    \timage kind, allowed are 'tile' and 'exp'\n
+   -m, --mh_local MH\n
+    \tmerged header file local (MH=0) or global (MH=1); default is $mh_local\n
    -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default=$N_SMP\n
    -V, --version\n
@@ -49,8 +48,8 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
 
 ## Help if no arguments
 if [ -z $1 ]; then
-        echo -ne $usage
-        exit 1
+  echo -ne $usage
+  exit 1
 fi
 
 ## Parse command line
@@ -64,6 +63,14 @@ while [ $# -gt 0 ]; do
       job="$2"
       shift
       ;;
+    -p|--psf)
+      job="$2"
+      shift
+      ;;
+    -m|--mh_local)
+      mh_local="$2"
+      shift
+      ;;
     -e|--exclusive)
       ID="$2"
       shift
@@ -74,10 +81,6 @@ while [ $# -gt 0 ]; do
       ;;
     -N|--N_SMP)
       N_SMP="$2"
-      shift
-      ;;
-    -k|--kind)
-      kind="$2"
       shift
       ;;
     -b|--batch_max)
@@ -102,12 +105,12 @@ if [ "$ID" == "-1" ] && [ "$file_IDs" == "-1" ]; then
   echo "No image ID(s) indicated, use option -e ID or -f file_IDs"                                   
   exit 3                                                                        
 fi                                                                              
-                                                                                
-if [ "kind" == "-1" ]; then                                                     
-  echo "No image kind indicated, use option -k"                                 
-  exit 4                                                                        
-fi
 
+if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
+  echo "PSF (option -p) needs to be 'psfex' or 'mccd'"
+  exit 4
+fi
+                                                                                
 if [ "$dry_run" != 0 ] && [ "$dry_run" != 1 ] && [ "$dry_run" != 2 ]; then
   echo "Invalid dry_run option, allowed are 0, 1, and 2"
   exit 5
@@ -123,15 +126,11 @@ else
 fi
 
 RESOURCES="ram=4&cores=$N_SMP"
-
-# TODO: dir as command line argument to this script
 dir=`pwd`
-#arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run -d $dir"
-
 
 # Return argument for local script to be called via curl
 function set_arg() {
-  my_arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run -d $dir"
+  my_arg="-j $job -p $psf -e $ID -N $N_SMP $arg_dry_run -d $dir -m $mh_local"
   echo $my_arg
 }
 
@@ -155,14 +154,16 @@ function submit_batch() {
 
   for ID in `cat $path`; do
     my_arg=$(set_arg)
-    my_session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$my_arg" &> /dev/null`
+    IDt=`echo $ID | tr "." "-"`
+    MY_NAME="SP-${patch}-J${job}-${IDt}"
+    my_session=`curl -E $SSL "$SESSION?$RESOURCES" -d "image=$IMAGE:$version" -d "name=${MY_NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$my_arg" &> /dev/null`
     update_session_logs
   done
 
 }
 
-batch=20
-sleep=150
+batch=50
+sleep=75
 
 ((n_thresh=batch_max-batch))
 
@@ -174,17 +175,22 @@ if [ "$dry_run" == 2 ]; then
 
   if [ "$ID" == "-1" ]; then
 
+
     # Submit file (dry run = 2)
     for ID in `cat $file_IDs`; do
+      IDt=`echo $ID | tr "." "-"`
+      MY_NAME="SP-${patch}-J${job}-${IDt}"
       arg=$(set_arg)
-      echo curl -b -E $SSL $SESSION?$RESOURCES -d \"image=$IMAGE:$version\" -d \"name=${NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
+      echo curl -E $SSL \"$SESSION?$RESOURCES\" -d \"image=$IMAGE:$version\" -d \"name=${MY_NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
     done
 
   else
 
     # Submit image (dry run = 2)
     arg=$(set_arg)
-    echo curl -E $SSL $SESSION?$RESOURCES -d \"image=$IMAGE:$version\" -d \"name=${NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
+    IDt=`echo $ID | tr "." "-"`
+    MY_NAME="SP-${patch}-J${job}-${IDt}"
+    echo curl -E $SSL "$SESSION?$RESOURCES" -d \"image=$IMAGE:$version\" -d \"name=${MY_NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
 
   fi
 
@@ -236,8 +242,10 @@ else
 
     # Submit image
     arg=$(set_arg)
-    my_session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg" &> /dev/null`
-    echo curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg"
+    IDt=`echo $ID | tr "." "-"`
+    MY_NAME="SP-${patch}-J${job}-${IDt}"
+    my_session=`curl -E $SSL "$SESSION?$RESOURCES" -d "image=$IMAGE:$version" -d "name=${MY_NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg" &> /dev/null`
+    echo curl -E $SSL "$SESSION?$RESOURCES" -d "image=$IMAGE:$version" -d "name=${MY_NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg"
     update_session_logs
 
   fi

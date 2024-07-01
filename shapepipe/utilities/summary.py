@@ -15,7 +15,32 @@ from collections import Counter
 
 from tqdm import tqdm
 
-print("summaary v1.1")
+print("summaary v1.2")
+
+
+def init_par_runtime(list_tile_IDs):
+
+    # Numbers updated at runtime
+    par_runtime = {}
+
+    par_runtime["n_tile_IDs"] = len(list_tile_IDs)
+    par_runtime["list_tile_IDs"] = list_tile_IDs
+
+    return par_runtime
+
+
+def update_par_runtime_after_find_exp(par_runtime, all_exposures):
+
+    # Single-exposure images
+    par_runtime["n_exposures"] = len(all_exposures)
+    par_runtime["list_exposures"] = all_exposures
+
+    # Single-HDU single exposure images
+    n_CCD = 40
+    par_runtime["n_shdus"] = get_par_runtime(par_runtime, "exposures") * n_CCD
+    par_runtime["list_shdus"] = get_all_shdus(all_exposures, n_CCD)
+
+    return par_runtime
 
 
 def get_IDs_from_file(path):
@@ -43,7 +68,6 @@ def get_IDs_from_file(path):
             numbers.append(number)
 
     return numbers
-
 
 
 def get_all_exposures(exp_number_file_list, verbose=False):
@@ -133,41 +157,26 @@ def set_as_list(item=None, n=None, default=1):
     return result
 
 
-def check_special(module, paths_in_dir, names_in_dir):
+def check_special_one(module, path):
 
-    if module == "setools_runner":
-        inds_special = []
-        for idx in range(len(paths_in_dir)):
-            base_path = paths_in_dir[idx].replace(names_in_dir[idx], "")
+    with open(path) as f_in:
+        lines = f_in.readlines()
+        for line in lines:
+            entry = line.rstrip()
 
-            stats_dir = f"{base_path}/../stat"
-            stats_files = os.listdir(stats_dir)
-            if len(stats_files) != 1:
-                raise ValueError(
-                    f"Expected exactly one stats file in {stats_dir}, not"
-                    + f" {len(stats_files)}"
-                )
+            if module == "setools_runner":
+                m = re.search("Nb stars = (\S*)", line)
+                if m:
+                    value = int(m[1])
+                    if value < 2:
+                        msg = f"Not enough stars for random split: #stars = {value}"
+                        return msg
+                    else:
+                        pass
+                    break
 
-            stats_path = os.path.join(stats_dir, stats_files[0])
-            with open(stats_path) as f_in:
-                lines = f_in.readlines()
-                for line in lines:
-                    entry = line.rstrip()
-                    m = re.search(line, "Nb stars = (\S*)")
-                    if m:
-                        value = int(m[2])
-                        if value == 0:
-                            inds_special.append(idx)
-                        else:
-                            print(f"b stars = {value}, not special")
-                        break
-
-        #print(inds_special)
-        for idx in inds_special:
-            paths_in_dir.pop(idx)
-            names_in_dir.pop(idx)
-
-        return paths_in_dir, names_in_dir, len(inds_special)
+    return None
+ 
 
 
 class job_data(object):
@@ -192,7 +201,7 @@ class job_data(object):
     pattern: list, optional
         if not None, file pattern to match; defafult is `None`
     path_main: str, optional
-        main (left-most) part of output directory, default is "."       
+        main (left-most) part of output directory, default is "."
     path_left: str, optional
         left (first) part of output directory, default is "./output"
     output_subdirs: str, optional
@@ -200,13 +209,19 @@ class job_data(object):
     path_right: str, optional
         right (last) part of output subdir suffix if not `None`;
         default is `None`
+    path_output: str, optional
+        module output path, default is "output"
     output_path_missing_IDs: list, optional
         output path of missing ID, if `None` (default) will be
         given by job bit and module.
+    special: bool, optional
+        if True check output file content for special messages;
+        default is False
     verbose: bool, optional
         verbose output if True; default is False
 
     """
+
     def __init__(
         self,
         bit,
@@ -219,7 +234,9 @@ class job_data(object):
         path_left="output",
         output_subdirs=None,
         path_right=None,
+        path_output="output",
         output_path_missing_IDs=None,
+        special=False,
         verbose=False,
     ):
         self._bit = bit
@@ -232,9 +249,23 @@ class job_data(object):
         self._path_left = path_left
         self._output_subdirs = output_subdirs or [""]
         self._path_right = set_as_list(
-            path_right, len(modules), default="."
+            path_right,
+            len(modules),
+            default=".",
+        )
+        self._path_output = set_as_list(
+            path_output,
+            len(modules),
+            default="output",
         )
         self._output_path_missing_IDs=output_path_missing_IDs
+        self._special = set_as_list(
+            special,
+            len(modules),
+            default=False,
+        )
+        self._path_right = set_as_list(path_right, len(modules), default=".")
+        self._output_path_missing_IDs = output_path_missing_IDs
         self._verbose = verbose
 
     def print_intro(self):
@@ -252,16 +283,15 @@ class job_data(object):
         Print overall header information for stats output.
 
         """
-        #logging.info(
-            #"module                          expected     found   miss_expl"
-            #+ " missing uniq_miss  fr_found"
         logging.info(
-            "module                          expected     found"
+            "module                          expected     found   miss_expl"
             + " missing uniq_miss  fr_found"
+        #logging.info(
+            #"module                          expected     found"
+            #+ "   missing uniq_miss  fr_found"
         )
         logging.info("=" * 100)
 
-    @classmethod
     def print_stats(
         self,
         module,
@@ -269,7 +299,7 @@ class job_data(object):
         n_found,
         n_missing_explained,
         n_missing,
-        n_mult,
+        idx,
     ):
         """Print Stats.
 
@@ -287,8 +317,8 @@ class job_data(object):
             number of missing but explained files
         n_missing: int
             number of missing files
-        n_mult: int
-            multipicity
+        idx: int
+            module index
 
         """
         if n_expected > 0:
@@ -296,10 +326,15 @@ class job_data(object):
         else:
             fraction_found = 1
 
-        n_missing_per_mult = n_missing / n_mult
+        n_missing_per_mult = n_missing / self._n_mult[idx]
+
+        module_str = module
+        if self._special[idx]:
+            module_str = f"{module_str} (special)"
 
         logging.info(
-            f"{module:30s} {n_expected:9d} {n_found:9d}"
+            f"{module_str:30s} {n_expected:9d} {n_found:9d}"
+            + f" {n_missing_explained:9d}"
             + f" {n_missing:9d}"
             + f" {n_missing_per_mult:9.1f} {fraction_found:9.1%}"
         )
@@ -308,9 +343,6 @@ class job_data(object):
     def is_ID_in_str(self, ID, path):
         if ID in path:
             return True
-        #if re.sub("\.", "-", ID) in path:
-            #return True
-        #return False
 
     @classmethod
     def is_not_in_any(self, ID, list_str):
@@ -328,7 +360,7 @@ class job_data(object):
 
         pattern = re.compile(r"(\d{3})-(\d{3})")
         results = [pattern.sub(r"\1.\2", number) for number in numbers]
-    
+
         return results
 
     @classmethod
@@ -361,15 +393,35 @@ class job_data(object):
         """
         IDs_dot = self.replace_dash_dot_if_tile(IDs)
         if len(IDs_dot) > 0:
-            #print("MKDEBUG writing", output_path, len(IDs_dot))
             # Write IDs to file
             with open(output_path, "w") as f_out:
                 for ID in IDs_dot:
                     print(ID, file=f_out)
         elif os.path.exists(output_path):
             # Remove preivous obsolete ID file
-            #print("MKDEBUG removing ", output_path)
             os.unlink(output_path)
+
+    def check_special(self, module, idx):
+
+        messages = []
+        if self._special[idx]:
+            for name, path in zip(self._names_in_dir[idx], self._paths_in_dir[idx]):
+
+                msg = check_special_one(module, path)
+                if msg:
+                    messages.append(f"{name} {msg}")
+    
+
+            if messages:
+                output_path = (
+                    f"{self._path_main}/summary/special_job_{self._bit}"
+                    + f"_{module}.txt"
+                )
+                with open(output_path, "w") as f_out:
+                    for msg in messages:
+                        print(msg, file=f_out)
+
+        return len(messages)
 
     def output_missing(
         self,
@@ -388,18 +440,27 @@ class job_data(object):
         n_mult = self._n_mult[idx]
 
         list_expected = get_par_runtime(par_runtime, key_expected, kind="list")
-        
+
         # Count image IDs in names that were found earlier
+
+        # Get file name pattern
+        if module != "split_exp_runner":
+            pattern = re.compile(r"(?:\d{3}-\d{3}|\d{7}-\d+|\d{7})")
+        else:
+            # split_exp_runner: input is exp, output is shdu (images) and exp
+            # (header); ignore hdu number
+            pattern = re.compile(
+                r"(?:\d{3}-\d{3}|\d{7})"
+            )
 
         ## Extract image IDs from names
         IDs = []
-        pattern = re.compile(
-            r"(?:\d{3}-\d{3}|\d{7}-\d+|\d{7})"
-        )
         for name, path in zip(names_in_dir, paths_in_dir):
+
             match = pattern.search(name)
             if match:
-                IDs.append(match.group())
+                ID = match.group()
+                IDs.append(ID)
             else:
                 raise ValueError(f"No ID found in {name}")
 
@@ -414,7 +475,6 @@ class job_data(object):
                 missing_IDs.append(ID)
 
         n_all = len(missing_IDs)
-        #print("MKDEBUG ", module, len(IDs), n_all, len(list_expected))
         missing_IDs_unique = self.get_unique(missing_IDs)
 
         if not self._output_path_missing_IDs:
@@ -426,7 +486,6 @@ class job_data(object):
         else:
             # User-defined name (e.g. ngmix_runner_X)
             output_path = self._output_path_missing_IDs[idx]
-        #print("MKDEBUG output_missing", module, output_path, len(missing_IDs_unique))
         self.write_IDs_to_file(output_path, missing_IDs_unique)
 
         return missing_IDs_unique
@@ -462,17 +521,13 @@ class job_data(object):
         return full_path
 
     @classmethod
-    def get_module_output_dir(self, full_path, module):
+    def get_module_output_dir(self, full_path, module, path_output):
         """Get Module Output Dir.
 
         Return output directory name for given module.
 
         """
-        directory = f"{full_path}/{module}/output"
-
-        # Some modules have special requirements 
-        if module == "setools_runner":
-            directory = f"{directory}/rand_split"
+        directory = f"{full_path}/{module}/{path_output}"
 
         return directory
 
@@ -482,13 +537,11 @@ class job_data(object):
         # os.path.whether exists is twice faster than try/except
 
         if os.path.exists(directory):
-            pattern =  f"{self._pattern[idx]}*"
+            pattern = f"{self._pattern[idx]}*"
             for entry2 in os.scandir(directory):
                 if (
                     entry2.is_file()
-                    and (
-                        fnmatch.fnmatch(entry2.name, pattern)
-                    )
+                    and (fnmatch.fnmatch(entry2.name, pattern))
                     and entry2.stat().st_size > 0
                 ):
                     # Append matching files
@@ -535,12 +588,15 @@ class job_data(object):
                             print(match.name)
 
                     full_path = self.get_last_full_path(
-                        base_and_subdir, matches
+                        base_and_subdir,
+                        matches,
                     )
 
                     # Get module output directory
                     directory = self.get_module_output_dir(
-                        full_path, module
+                        full_path,
+                        module,
+                        self._path_output[idx],
                     )
                     if self._verbose:
                         print(f"**** Output dir = {directory}")
@@ -622,18 +678,10 @@ class job_data(object):
             n_expected = n_expected_base * self._n_mult[idx]
             n_missing = n_expected - n_found
 
-            n_missing_explained = 0
-            if n_missing > 0:
-                # TODO: make check_special class function, deal with
-                # paths, names in dir
-                if False and module == "setools_runner":
-                    (
-                        self._paths_in_dir[idx],
-                        self._names_in_dir[idx],
-                        n_missing_explained,
-                    ) = check_special(module, paths_in_dir, names_in_dir)
-
-                n_missing = n_missing - n_missing_explained
+            n_missing_explained = self.check_special(
+                module,
+                idx,
+            )
 
             # Print statistics
             self.print_stats(
@@ -642,7 +690,7 @@ class job_data(object):
                 n_found,
                 n_missing_explained,
                 n_missing,
-                self._n_mult[idx],
+                idx,
             )
 
             # Write missing IDs for module to file
@@ -659,7 +707,7 @@ class job_data(object):
         logging.info("")
 
         # Write missing IDs for entire job to file
-        #if n_missing_job > 0:
+        # if n_missing_job > 0:
         self.output_missing_job()
 
 
@@ -677,12 +725,6 @@ def get_par_runtime(par_runtime, key, kind="n"):
 
     """
     combined_key = f"{kind}_{key}"
-    if (
-        combined_key == "list_3*n_shdus+n_exposures"
-        and combined_key not in par_runtime
-    ):
-        print(f"{combined_key} not set, TBD")
-        return []
 
     return par_runtime[combined_key]
 
@@ -698,7 +740,7 @@ def print_par_runtime(par_runtime, verbose=True):
             if not key.startswith("list"):
                 logging.info(f"{key:30s} {value:6d}")
             else:
-                #logging.info(f"{key:30s} {len(value):6d} entries")
+                # logging.info(f"{key:30s} {len(value):6d} entries")
                 pass
         logging.info("===========")
         logging.info("")

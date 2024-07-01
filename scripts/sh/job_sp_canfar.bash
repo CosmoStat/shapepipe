@@ -315,7 +315,7 @@ fi
 
 ## Retrieve config files and images (online if retrieve=vos)
 ## Retrieve and save star catalogues for masking (if star_cat_for_mask=save)
-(( do_job= $job & 1 ))
+(( do_job = $job & 1 ))
 if [[ $do_job != 0 ]]; then
 
   ### Retrieve files
@@ -343,7 +343,7 @@ if [[ $do_job != 0 ]]; then
 fi
 
 ## Prepare images (offline)
-(( do_job= $job & 2 ))
+(( do_job = $job & 2 ))
 if [[ $do_job != 0 ]]; then
 
   ### Uncompress tile weights
@@ -359,7 +359,7 @@ if [[ $do_job != 0 ]]; then
 fi
 
 ## Mask tiles: add star, halo, and Messier object masks (online if "star_cat_for_mask" is "onthefly")
-(( do_job= $job & 4 ))
+(( do_job = $job & 4 ))
 if [[ $do_job != 0 ]]; then
 
   ### Mask tiles
@@ -372,7 +372,7 @@ if [[ $do_job != 0 ]]; then
 fi
 
 ## Mask exposures: add star, halo, and Messier object masks (online if "star_cat_for_mask" is "onthefly")
-(( do_job= $job & 8 ))
+(( do_job = $job & 8 ))
 if [[ $do_job != 0 ]]; then
 
   ### Mask exposures
@@ -386,7 +386,7 @@ fi
 
 
 ## Remaining exposure processing (offline)
-(( do_job= $job & 16 ))
+(( do_job = $job & 16 ))
 if [[ $do_job != 0 ]]; then
 
   ### Object detection on tiles
@@ -399,7 +399,7 @@ if [[ $do_job != 0 ]]; then
 fi
 
 ## Exposure processing (offline)
-(( do_job= $job & 32 ))
+(( do_job = $job & 32 ))
 if [[ $do_job != 0 ]]; then
 
   ### Star detection, selection, PSF model. setools can exit with an error for CCD with insufficient stars,
@@ -415,7 +415,7 @@ if [[ $do_job != 0 ]]; then
 fi
 
 ## Process tiles up to shape measurement
-(( do_job= $job & 64 ))
+(( do_job = $job & 64 ))
 if [[ $do_job != 0 ]]; then
 
   ### PSF model letter: 'P' (psfex) or 'M' (mccd)
@@ -430,7 +430,7 @@ if [[ $do_job != 0 ]]; then
 fi
 
 ## Shape measurement (offline)
-(( do_job= $job & 128 ))
+(( do_job = $job & 128 ))
 if [[ $do_job != 0 ]]; then
 
   ### Prepare config files
@@ -483,7 +483,7 @@ if [[ $do_job != 0 ]]; then
 fi
 
 ## Create final catalogues (offline)
-(( do_job= $job & 256 ))
+(( do_job = $job & 256 ))
 if [[ $do_job != 0 ]]; then
 
   cat $SP_CONFIG/config_merge_sep_cats_template.ini | \
@@ -497,12 +497,28 @@ if [[ $do_job != 0 ]]; then
     "Run shapepipe (tile: merge sep cats)" \
     "$VERBOSE" \
     "$ID"
+fi
+
+(( do_job = $job & 512 ))
+if [[ $do_job != 0 ]]; then
 
   ### Merge all relevant information into final catalogue
-  command_sp \
-    "shapepipe_run -c $SP_CONFIG/config_make_cat_$psf.ini" \
+  command_cfg_shapepipe \
+    "config_make_cat_$psf.ini" \
     "Run shapepipe (tile: create final cat $psf)" \
-    "$VERBOSE" \
-    "$ID"
+    $n_smp \
+    $exclusive
+
+fi
+
+# MKDEBUG: Putting Mh at the end for now, could be integrated before 16.
+(( do_job = $job & 1024 ))
+if [[ $do_job != 0 ]]; then
+
+  command_cfg_shapepipe \
+    "config_exp_Mh.ini" \
+    "Run shapepipe (merge exp headers)" \
+    $n_smp \
+    $exclusive
 
 fi

@@ -28,9 +28,10 @@ def with_timeout(timeout, log_file):
         For process exceeding timeout limit
 
     """
+
     def handler(signum, frame):
         raise TimeoutError(
-            f'The process time exceeded {timeout}s in {log_file}'
+            f"The process time exceeded {timeout}s in {log_file}"
         )
 
     def decorator(decorated):

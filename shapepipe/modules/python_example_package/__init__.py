@@ -27,4 +27,4 @@ MESSAGE : str
 
 """
 
-__all__ = ['python_example']
+__all__ = ["python_example"]

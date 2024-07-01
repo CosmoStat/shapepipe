@@ -23,9 +23,9 @@ else:
     import_fail = False
 
 
-NOT_ENOUGH_STARS = 'Fail_stars'
-BAD_CHI2 = 'Fail_chi2'
-FILE_NOT_FOUND = 'File_not_found'
+NOT_ENOUGH_STARS = "Fail_stars"
+BAD_CHI2 = "Fail_chi2"
+FILE_NOT_FOUND = "File_not_found"
 
 
 def interp_MCCD(mccd_model_path, positions, ccd):
@@ -62,10 +62,12 @@ def interp_MCCD(mccd_model_path, positions, ccd):
 
     # Positions to global coordinates
     loc2glob = mccd.mccd_utils.Loc2Glob()
-    glob_pos = np.array([
-        loc2glob.loc2glob_img_coord(_ccd, _pos[0], _pos[1])
-        for _ccd, _pos in zip(ccd_list, positions)
-    ])
+    glob_pos = np.array(
+        [
+            loc2glob.loc2glob_img_coord(_ccd, _pos[0], _pos[1])
+            for _ccd, _pos in zip(ccd_list, positions)
+        ]
+    )
 
     # Interpolate the model
     PSFs = mccd_instance.interpolate_psf_pipeline(glob_pos, ccd)
@@ -116,16 +118,16 @@ class MCCDinterpolator(object):
         img_number,
         w_log,
         pos_params=None,
-        get_shapes=True
+        get_shapes=True,
     ):
         # Path to PSFEx output file
         self._dotpsf_path = dotpsf_path
         # Path to catalogue containing galaxy positions
         self._galcat_path = galcat_path
         # Path to output file to be written
-        self._output_path = output_path + '/galaxy_psf'
+        self._output_path = output_path + "/galaxy_psf"
         # Path to output file to be written for validation
-        self._output_path_validation = output_path + '/validation_psf'
+        self._output_path_validation = output_path + "/validation_psf"
         # if required, compute and save shapes
         self._compute_shape = get_shapes
 
@@ -142,8 +144,8 @@ class MCCDinterpolator(object):
         if pos_params:
             if not len(pos_params) == 2:
                 raise ValueError(
-                    f'{len(pos_params)} position parameters were passed on;'
-                    + f' there should be exactly two.'
+                    f"{len(pos_params)} position parameters were passed on;"
+                    + f" there should be exactly two."
                 )
             self._pos_params = pos_params
         else:
@@ -162,8 +164,8 @@ class MCCDinterpolator(object):
         dotpsf = file_io.FITSCatalogue(self._dotpsf_path)
         dotpsf.open()
         self._pos_params = [
-            dotpsf.get_header()['POLNAME1'],
-            dotpsf.get_header()['POLNAME2']
+            dotpsf.get_header()["POLNAME1"],
+            dotpsf.get_header()["POLNAME2"],
         ]
         dotpsf.close()
 
@@ -180,20 +182,23 @@ class MCCDinterpolator(object):
         galcat.open()
         try:
             self.gal_pos = np.array(
-                [[x, y] for x, y in zip(
-                    galcat.get_data()[self._pos_params[0]],
-                    galcat.get_data()[self._pos_params[1]]
-                )]
+                [
+                    [x, y]
+                    for x, y in zip(
+                        galcat.get_data()[self._pos_params[0]],
+                        galcat.get_data()[self._pos_params[1]],
+                    )
+                ]
             )
 
         except KeyError as detail:
             # extract erroneous position parameter from original exception
             err_pos_param = detail.args[0][4:-15]
             pos_param_err = (
-                f'Required position parameter {err_pos_param}'
-                + 'was not found in galaxy catalog. Leave '
-                + 'pos_params (or EXTRA_CODE_OPTION) blank to '
-                + 'read them from .psf file.'
+                f"Required position parameter {err_pos_param}"
+                + "was not found in galaxy catalog. Leave "
+                + "pos_params (or EXTRA_CODE_OPTION) blank to "
+                + "read them from .psf file."
             )
             raise KeyError(pos_param_err)
         galcat.close()
@@ -205,22 +210,24 @@ class MCCDinterpolator(object):
 
         """
         if import_fail:
-            raise ImportError('Galsim is required to get shapes information')
+            raise ImportError("Galsim is required to get shapes information")
 
         psf_moms = [
             hsm.FindAdaptiveMom(Image(psf), strict=False)
             for psf in self.interp_PSFs
         ]
 
-        self.psf_shapes = np.array([
+        self.psf_shapes = np.array(
             [
-                moms.observed_shape.g1,
-                moms.observed_shape.g2,
-                moms.moments_sigma,
-                int(bool(moms.error_message))
+                [
+                    moms.observed_shape.g1,
+                    moms.observed_shape.g2,
+                    moms.moments_sigma,
+                    int(bool(moms.error_message)),
+                ]
+                for moms in psf_moms
             ]
-            for moms in psf_moms
-        ])
+        )
 
     def _write_output(self):
         """Write Output.
@@ -229,21 +236,21 @@ class MCCDinterpolator(object):
 
         """
         output = file_io.FITSCatalogue(
-            self._output_path + self._img_number + '.fits',
+            self._output_path + self._img_number + ".fits",
             open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-            SEx_catalogue=True
+            SEx_catalogue=True,
         )
 
         if self._compute_shape:
             data = {
-                'VIGNET': self.interp_PSFs,
-                'E1_PSF_HSM': self.psf_shapes[:, 0],
-                'E2_PSF_HSM': self.psf_shapes[:, 1],
-                'SIGMA_PSF_HSM': self.psf_shapes[:, 2],
-                'FLAG_PSF_HSM': self.psf_shapes[:, 3].astype(int)
+                "VIGNET": self.interp_PSFs,
+                "E1_PSF_HSM": self.psf_shapes[:, 0],
+                "E2_PSF_HSM": self.psf_shapes[:, 1],
+                "SIGMA_PSF_HSM": self.psf_shapes[:, 2],
+                "FLAG_PSF_HSM": self.psf_shapes[:, 3].astype(int),
             }
         else:
-            data = {'VIGNET': self.interp_PSFs}
+            data = {"VIGNET": self.interp_PSFs}
         output.save_as_fits(data, sex_cat_path=self._galcat_path)
 
     def _get_starshapes(self, star_vign):
@@ -258,27 +265,27 @@ class MCCDinterpolator(object):
 
         """
         if import_fail:
-            raise ImportError('Galsim is required to get shapes information')
+            raise ImportError("Galsim is required to get shapes information")
 
         masks = np.zeros_like(star_vign)
         masks[np.where(star_vign == -1e30)] = 1
 
-        star_moms = [hsm.FindAdaptiveMom(
-            Image(star),
-            badpix=Image(mask),
-            strict=False)
+        star_moms = [
+            hsm.FindAdaptiveMom(Image(star), badpix=Image(mask), strict=False)
             for star, mask in zip(star_vign, masks)
         ]
 
-        self.star_shapes = np.array([
+        self.star_shapes = np.array(
             [
-                moms.observed_shape.g1,
-                moms.observed_shape.g2,
-                moms.moments_sigma,
-                int(bool(moms.error_message))
+                [
+                    moms.observed_shape.g1,
+                    moms.observed_shape.g2,
+                    moms.moments_sigma,
+                    int(bool(moms.error_message)),
+                ]
+                for moms in star_moms
             ]
-            for moms in star_moms
-        ])
+        )
 
     def _get_psfexcatdict(self, psfex_cat_path):
         """Get PSFEx Catalogue Dictionary.
@@ -300,13 +307,16 @@ class MCCDinterpolator(object):
         psfex_cat.open()
 
         psfex_cat_dict = {}
-        psfex_cat_dict['SOURCE_NUMBER'] = np.copy(
-            psfex_cat.get_data()['SOURCE_NUMBER'])
-        psfex_cat_dict['DELTAX_IMAGE'] = np.copy(
-            psfex_cat.get_data()['DELTAX_IMAGE'])
-        psfex_cat_dict['DELTAY_IMAGE'] = np.copy(
-            psfex_cat.get_data()['DELTAY_IMAGE'])
-        psfex_cat_dict['CHI2_PSF'] = np.copy(psfex_cat.get_data()['CHI2_PSF'])
+        psfex_cat_dict["SOURCE_NUMBER"] = np.copy(
+            psfex_cat.get_data()["SOURCE_NUMBER"]
+        )
+        psfex_cat_dict["DELTAX_IMAGE"] = np.copy(
+            psfex_cat.get_data()["DELTAX_IMAGE"]
+        )
+        psfex_cat_dict["DELTAY_IMAGE"] = np.copy(
+            psfex_cat.get_data()["DELTAY_IMAGE"]
+        )
+        psfex_cat_dict["CHI2_PSF"] = np.copy(psfex_cat.get_data()["CHI2_PSF"])
 
         return psfex_cat_dict
 
@@ -324,28 +334,29 @@ class MCCDinterpolator(object):
 
         """
         output = file_io.FITSCatalogue(
-            self._output_path_validation + self._img_number + '.fits',
+            self._output_path_validation + self._img_number + ".fits",
             open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-            SEx_catalogue=True)
+            SEx_catalogue=True,
+        )
 
         data = {
-            'E1_PSF_HSM': self.psf_shapes[:, 0],
-            'E2_PSF_HSM': self.psf_shapes[:, 1],
-            'SIGMA_PSF_HSM': self.psf_shapes[:, 2],
-            'FLAG_PSF_HSM': self.psf_shapes[:, 3].astype(int),
-            'E1_STAR_HSM': self.star_shapes[:, 0],
-            'E2_STAR_HSM': self.star_shapes[:, 1],
-            'SIGMA_STAR_HSM': self.star_shapes[:, 2],
-            'FLAG_STAR_HSM': self.star_shapes[:, 3].astype(int)
+            "E1_PSF_HSM": self.psf_shapes[:, 0],
+            "E2_PSF_HSM": self.psf_shapes[:, 1],
+            "SIGMA_PSF_HSM": self.psf_shapes[:, 2],
+            "FLAG_PSF_HSM": self.psf_shapes[:, 3].astype(int),
+            "E1_STAR_HSM": self.star_shapes[:, 0],
+            "E2_STAR_HSM": self.star_shapes[:, 1],
+            "SIGMA_STAR_HSM": self.star_shapes[:, 2],
+            "FLAG_STAR_HSM": self.star_shapes[:, 3].astype(int),
         }
         data = {**data, **star_dict}
 
-        data['ACCEPTED'] = np.ones_like(data['NUMBER'], dtype='int16')
-        star_used = psfex_cat_dict.pop('SOURCE_NUMBER')
+        data["ACCEPTED"] = np.ones_like(data["NUMBER"], dtype="int16")
+        star_used = psfex_cat_dict.pop("SOURCE_NUMBER")
 
-        for i in range(len(data['NUMBER'])):
+        for i in range(len(data["NUMBER"])):
             if i + 1 not in star_used:
-                data['ACCEPTED'][i] = 0
+                data["ACCEPTED"][i] = 0
 
         output.save_as_fits(data, sex_cat_path=self._galcat_path)
 
@@ -393,24 +404,25 @@ class MCCDinterpolator(object):
         cat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
         cat.open()
 
-        all_id = np.copy(cat.get_data()['NUMBER'])
-        key_ne = 'N_EPOCH'
+        all_id = np.copy(cat.get_data()["NUMBER"])
+        key_ne = "N_EPOCH"
         if key_ne not in cat.get_data():
             raise KeyError(
-                f'Key {key_ne} not found in input galaxy catalogue, needed for'
-                + ' PSF interpolation to multi-epoch data; run previous module'
-                + ' (SExtractor) in multi-epoch mode'
+                f"Key {key_ne} not found in input galaxy catalogue, needed for"
+                + " PSF interpolation to multi-epoch data; run previous module"
+                + " (SExtractor) in multi-epoch mode"
             )
         n_epoch = np.copy(cat.get_data()[key_ne])
 
         list_ext_name = cat.get_ext_name()
-        hdu_ind = [i for i in range(len(list_ext_name)) if
-                   'EPOCH' in list_ext_name[i]]
+        hdu_ind = [
+            i for i in range(len(list_ext_name)) if "EPOCH" in list_ext_name[i]
+        ]
 
         final_list = []
         for hdu_index in hdu_ind:
-            exp_name = cat.get_data(hdu_index)['EXP_NAME'][0]
-            ccd_list = list(set(cat.get_data(hdu_index)['CCD_N']))
+            exp_name = cat.get_data(hdu_index)["EXP_NAME"][0]
+            ccd_list = list(set(cat.get_data(hdu_index)["CCD_N"]))
             array_psf = None
             array_id = None
             array_shape = None
@@ -421,51 +433,54 @@ class MCCDinterpolator(object):
                 # dot_psf_path = self._dot_psf_dir + '/' +\
                 # self._dot_psf_pattern + '-' + exp_name + '-' + str(ccd) +\
                 # '.psf'
-                mccd_model_path = self._dot_psf_dir + '/' +\
-                    self._dot_psf_pattern + '-' + exp_name + '.npy'
+                mccd_model_path = (
+                    self._dot_psf_dir
+                    + "/"
+                    + self._dot_psf_pattern
+                    + "-"
+                    + exp_name
+                    + ".npy"
+                )
 
-                ind_obj = np.where(cat.get_data(hdu_index)['CCD_N'] == ccd)[0]
+                ind_obj = np.where(cat.get_data(hdu_index)["CCD_N"] == ccd)[0]
                 obj_id = all_id[ind_obj]
                 gal_pos = np.array(
-                    self._f_wcs_file[exp_name][ccd]['WCS'].all_world2pix(
+                    self._f_wcs_file[exp_name][ccd]["WCS"].all_world2pix(
                         self.gal_pos[:, 0][ind_obj],
                         self.gal_pos[:, 1][ind_obj],
-                        0
+                        0,
                     )
                 ).T
 
                 self.interp_PSFs = interp_MCCD(mccd_model_path, gal_pos, ccd)
 
-                if (
-                    isinstance(self.interp_PSFs, str)
-                    and (self.interp_PSFs == NOT_ENOUGH_STARS)
+                if isinstance(self.interp_PSFs, str) and (
+                    self.interp_PSFs == NOT_ENOUGH_STARS
                 ):
                     self._w_log.info(
-                        f'Not enough stars find in the ccd {ccd} of the'
-                        + f' exposure {exp_name}. Object inside this '
-                        + f'ccd will lose an epoch.'
+                        f"Not enough stars find in the ccd {ccd} of the"
+                        + f" exposure {exp_name}. Object inside this "
+                        + f"ccd will lose an epoch."
                     )
                     continue
 
-                if (
-                    isinstance(self.interp_PSFs, str)
-                    and (self.interp_PSFs == BAD_CHI2)
+                if isinstance(self.interp_PSFs, str) and (
+                    self.interp_PSFs == BAD_CHI2
                 ):
                     self._w_log.info(
-                        f'Bad chi2 for the psf model in the ccd {ccd} of the'
-                        + f' exposure {exp_name}. Object inside this ccd'
-                        + f' will lose an epoch.'
+                        f"Bad chi2 for the psf model in the ccd {ccd} of the"
+                        + f" exposure {exp_name}. Object inside this ccd"
+                        + f" will lose an epoch."
                     )
 
                     continue
 
-                if (
-                    isinstance(self.interp_PSFs, str)
-                    and (self.interp_PSFs == FILE_NOT_FOUND)
+                if isinstance(self.interp_PSFs, str) and (
+                    self.interp_PSFs == FILE_NOT_FOUND
                 ):
                     self._w_log.info(
-                        f'Psf model file {self._dotpsf_path} not found.'
-                        + f' Object inside this ccd will lose an epoch.'
+                        f"Psf model file {self._dotpsf_path} not found."
+                        + f" Object inside this ccd will lose an epoch."
                     )
                     continue
 
@@ -473,7 +488,8 @@ class MCCDinterpolator(object):
                     array_psf = np.copy(self.interp_PSFs)
                 else:
                     array_psf = np.concatenate(
-                        (array_psf, np.copy(self.interp_PSFs)))
+                        (array_psf, np.copy(self.interp_PSFs))
+                    )
 
                 if array_id is None:
                     array_id = np.copy(obj_id)
@@ -486,20 +502,24 @@ class MCCDinterpolator(object):
                         array_shape = np.copy(self.psf_shapes)
                     else:
                         array_shape = np.concatenate(
-                            (array_shape, np.copy(self.psf_shapes)))
+                            (array_shape, np.copy(self.psf_shapes))
+                        )
                 else:
                     array_shape = None
 
                 exp_name_tmp = np.array(
-                    [exp_name + '-' + str(ccd) for i in range(len(obj_id))])
+                    [exp_name + "-" + str(ccd) for i in range(len(obj_id))]
+                )
                 if array_exp_name is None:
                     array_exp_name = exp_name_tmp
                 else:
                     array_exp_name = np.concatenate(
-                        (array_exp_name, exp_name_tmp))
+                        (array_exp_name, exp_name_tmp)
+                    )
 
             final_list.append(
-                [array_id, array_psf, array_shape, array_exp_name])
+                [array_id, array_psf, array_shape, array_exp_name]
+            )
 
         self._f_wcs_file.close()
         cat.close()
@@ -513,22 +533,28 @@ class MCCDinterpolator(object):
                 if len(where_res) != 0:
                     output_dict[id_tmp][final_list[j][3][where_res[0]]] = {}
                     output_dict[id_tmp][final_list[j][3][where_res[0]]][
-                        'VIGNET'] = final_list[j][1][where_res[0]]
+                        "VIGNET"
+                    ] = final_list[j][1][where_res[0]]
                     if self._compute_shape:
                         shape_dict = {}
-                        shape_dict['E1_PSF_HSM'] = \
-                            final_list[j][2][where_res[0]][0]
-                        shape_dict['E2_PSF_HSM'] = \
-                            final_list[j][2][where_res[0]][1]
-                        shape_dict['SIGMA_PSF_HSM'] = \
-                            final_list[j][2][where_res[0]][2]
-                        shape_dict['FLAG_PSF_HSM'] = \
-                            final_list[j][2][where_res[0]][3]
+                        shape_dict["E1_PSF_HSM"] = final_list[j][2][
+                            where_res[0]
+                        ][0]
+                        shape_dict["E2_PSF_HSM"] = final_list[j][2][
+                            where_res[0]
+                        ][1]
+                        shape_dict["SIGMA_PSF_HSM"] = final_list[j][2][
+                            where_res[0]
+                        ][2]
+                        shape_dict["FLAG_PSF_HSM"] = final_list[j][2][
+                            where_res[0]
+                        ][3]
                         output_dict[id_tmp][final_list[j][3][where_res[0]]][
-                            'SHAPES'] = shape_dict
+                            "SHAPES"
+                        ] = shape_dict
                     counter += 1
             if counter == 0:
-                output_dict[id_tmp] = 'empty'
+                output_dict[id_tmp] = "empty"
 
         return output_dict
 
@@ -546,7 +572,8 @@ class MCCDinterpolator(object):
         # np.save(self._output_path+self._img_number, output_dict)
 
         output_file = SqliteDict(
-            self._output_path + self._img_number + '.sqlite')
+            self._output_path + self._img_number + ".sqlite"
+        )
         for i in output_dict.keys():
             output_file[str(i)] = output_dict[i]
         output_file.commit()

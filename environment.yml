@@ -1,4 +1,4 @@
-name: shapepipe
+name: shapepipe_v1.4
 channels:
   - conda-forge
 dependencies:
@@ -6,22 +6,23 @@ dependencies:
   - pip>=21.2.4
   - astromatic-psfex==3.21.1
   - astromatic-source-extractor==2.25.0
-  - astropy==5.1
+  - astropy==5.2
   - automake
   - autoconf
   - cmake
   - galsim
   - joblib
   - libtool
-  - matplotlib
-  - numba
-  - numpy==1.22
+  - matplotlib==3.8.4
+  - numba==0.58.1
+  - numpy==1.26.4
   - pip:
     - cs_util==0.1
     - modopt
     - PyQt5
     - pyqtgraph
     - reproject
+    - shear_psf_leakage
     - skaha
     - sip_tpv
     - sf_tools
