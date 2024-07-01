@@ -281,6 +281,12 @@ if [ "$mh_local" == "1" ]; then
   #command "rm -rf run_sp_tile_Sx_*" $dry_run
 fi
 
+(( do_job = $job & 16 ))
+if [[ $do_job != 0 ]]; then
+  # Remove previous Sx runs
+  command "rm -rf $dir/output/run_tile_Sx_*" $dry_run
+fi
+
 # Update links to exposure run directories, which were created in job 32
 (( do_job = $job & 64 ))
 if [[ $do_job != 0 ]]; then

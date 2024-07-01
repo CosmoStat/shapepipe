@@ -40,10 +40,12 @@ shapepipe_run -c cfis/config_GitFe_symlink.ini
 
 shapepipe_run -c cfis/config_Gie_vos.ini
 mv -i output/run_sp_Gie_*/get_images_runner/output/*.fits*fz data_exp
-rm -rf  output/run_sp_Gie_*
+rm -rf output/run_sp_Gie_*
 update_run_log_file.py
 # repeat the above; or:
 while true; do shapepipe_run -c cfis/config_Gie_vos.ini; ls -l data_exp/ | wc; mv -i output/run_sp_Gie_*/get_images_runner/output/*.fits*fz data_exp;  ls -l data_exp/ | wc; rm -rf output/run_sp_Git_*; update_run_log_file.py; done
+# Make sure that after all images are downloaded there is no Gie run. This would
+# mess up later modules since last:get_image_runner could point to this run.
 
 ### Create links (and re-run Fe, not necessary)
 job_sp_canfar.bash -p $psf `cat tile_numbers.txt` -j 1 -r symlink
