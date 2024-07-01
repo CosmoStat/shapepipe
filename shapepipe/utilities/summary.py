@@ -169,11 +169,17 @@ def check_special_one(module, path):
                 if m:
                     value = int(m[1])
                     if value < 2:
-                        msg = f"Not enough stars for random split: #stars = {value}"
+                        msg = (
+                            f"Not enough stars for random split:"
+                            + f"  #stars = {value}"
+                        )
                         return msg
-                    else:
-                        pass
                     break
+                m = re.search("Mode computation failed", line)
+                if m:
+                    msg = "Mode computation of stellar locus failed"
+                    return msg
+
 
     return None
  
