@@ -8,13 +8,15 @@ job=-1
 ID=-1
 N_SMP=1
 dry_run=0
-nsh_jobs=8
 dir=`pwd`
+debug_out=-1
 
 # mh_local is 0 (1) if merge_header_runner is run on all exposures,
 # which is standard so far (run on exposures of given tile only; new)
 mh_local=0
 VERBOSE=1
+
+pat="-- "
 
 
 ## Help string
@@ -34,6 +36,8 @@ usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
     \trun directory, default is pwd ($dir)\n
    -n, --dry_run\n
     \tdry run, no actuall processing\n
+   --debug_out PATH\n
+   \tdebug output file PATH, default not used\n
 "
 
 ## Help if no arguments                                                         
@@ -76,6 +80,10 @@ while [ $# -gt 0 ]; do
     -n|--dry_run)
       dry_run=1
       ;;
+    --debug_out)
+      debug_out="$2"
+      shift
+      ;;
   esac                                                                          
   shift                                                                         
 done
@@ -116,12 +124,21 @@ function command () {
    #GREEN=''
    #NC=''
 
+   msg="running '$cmd' (dry run=$dry_run)"
    if [ $VERBOSE == 1 ]; then
-        echo "running '$cmd' (dry run=$dry_run)"
+        echo $msg
    fi
+   if [ "$debug_out" != "-1" ]; then
+        echo ${pat}$msg >> $debug_out
+   fi
+
    if [ "$dry_run" == "0" ]; then
         $cmd
         res=$?
+    
+        if [ "$debug_out" != "-1" ]; then
+          echo "${pat}exit code = $res" >> $debug_out
+        fi
 
         if [ $VERBOSE == 1 ]; then
             if [ $res == 0 ]; then
@@ -139,7 +156,12 @@ function command () {
    fi
 }
 
-echo "start init_run_exclusive_canfar"
+msg="Starting $(basename "$0")"
+echo $msg
+if [ "$debug_out" != "-1" ]; then
+  echo $pat$msg >> $debug_out
+  echo ${pat}`date` >> $debug_out
+fi
 
 # Set kind
 job_to_test=16
@@ -185,9 +207,18 @@ if [ "$dry_run" == 1 ]; then
   echo "in dry run mode"
 fi
 
-. /opt/conda/etc/profile.d/conda.sh
-
-conda activate shapepipe
+#. /opt/conda/etc/profile.d/conda.sh
+# the following line will look for /opt/...
+#conda activate shapepipe
+#conda activate $HOME/.conda/envs/shapepipe
+#CONDA_PREFIX=$HOME/.conda/envs/shapepipe
+CONDA_PREFIX=/arc/home/kilbinger/.conda/envs/shapepipe
+PATH=$PATH:$CONDA_PREFIX/bin
+if [ "$debug_out"  != "-1" ]; then
+    echo "${pat}conda prefix = ${CONDA_PREFIX}" >> $debug_out
+    echo "${pat}HOME = ${HOME}" >> $debug_out
+    echo "${pat}path = ${PATH}" >> $debug_out
+fi
 
 cd $dir
 echo $pwd
@@ -232,13 +263,10 @@ command "ln -sf $dir/output/run_sp_Ma_exp" $dry_run
 # exp Sp
 command "ln -sf $dir/output/run_sp_exp_SpMh" $dry_run
 
-
-#(( do_job = $job & 16 ))
-#&& [ $do_job != 0 ]; then
 if [ "$mh_local" == "1" ]; then
 
   # Remove previous Sx runs
-  command "rm -rf $dir/output/run_tile_Sx_*" $dry_run
+  command "rm -rf run_sp_tile_Sx_*" $dry_run
 
   if [ "$ID" == "-1" ]; then
     echo "ID needs to be given (option -e) for mh_local and job&16"
@@ -277,14 +305,12 @@ if [ "$mh_local" == "1" ]; then
   command "shapepipe_run -c cfis/config_exp_Mh.ini" $dry_run
   cd output
 
-  # Remove previous Sextractor run
-  #command "rm -rf run_sp_tile_Sx_*" $dry_run
 fi
 
 (( do_job = $job & 16 ))
 if [[ $do_job != 0 ]]; then
   # Remove previous Sx runs
-  command "rm -rf $dir/output/run_tile_Sx_*" $dry_run
+  command "rm -rf run_sp_tile_Sx_*" $dry_run
 fi
 
 # Update links to exposure run directories, which were created in job 32
@@ -295,17 +321,24 @@ if [[ $do_job != 0 ]]; then
     command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs" $dry_run
     cd ${kind}_runs/$ID/output
 
-    # Remove duplicate job-32 runs (tile detection)
-    n_32=`ls -rt1d run_sp_tile_Sx_* | wc -l`
-    if [ "$n_32" != "1" ]; then
-      n_remove="$(($n_32-1))"
-      echo "removing $n_remove duplicate old job-32 runs"
+    # Remove duplicate job-16 runs (tile detection)
+    n_16=`ls -rt1d run_sp_tile_Sx_* | wc -l`
+    if [ "$n_16" != "1" ]; then
+      n_remove="$(($n_16-1))"
+      echo "removing $n_remove duplicate old job-16 runs"
       command "rm -rf `ls -rt1d run_sp_tile_Sx_* | head -$n_remove`" $dry_run
     fi
 
     # Remove previous runs of this job
     rm -rf run_sp_tile_PsViSmVi*
   fi
+fi
+
+(( do_job = $job & 256 ))
+if [[ $do_job != 0 ]]; then
+  # Remove previous runs of this job
+  rm -rf run_sp_tile_??ViSmVi_20??_*
+
 fi
 
 (( do_job = $job & 256 ))
@@ -339,8 +372,12 @@ echo $CONDA_PREFIX
 # To avoid (new?) qt error with setools (-j 32)
 export DISPLAY=:1.0
 
-command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP" $dry_run
+command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP --nsh_jobs $N_SMP --debug_out $debug_out" $dry_run
 
 cd $dir
 
-echo "end init run tile canfar"
+msg="End $(basename "$0")"
+echo $msg
+if [ "$debug_out" != "-1" ]; then
+  echo $pat$msg >> $debug_out-
+fi

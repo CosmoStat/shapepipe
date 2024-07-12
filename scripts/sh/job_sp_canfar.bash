@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # Name: job_sp_canfar.bash
 # Description: General script to process one or more tiles
@@ -21,6 +21,9 @@ exclusive=''
 results='cosmostat/kilbinger/results_v2'
 n_smp=-1
 nsh_jobs=8
+debug_out=-1
+
+pat="--- "
 
 ## Help string
 usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
@@ -54,6 +57,8 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    --nsh_jobs NJOB\n
    \tnumber of objects per parallel shape module call, \n
    \tdefault: optimal number is computed\n
+   --debug_out PATH\n
+   \tdebug output file PATH, default not used\n
    TILE_ID_i\n
    \ttile ID(s), e.g. 283.247 214.242\n
 "
@@ -107,6 +112,10 @@ while [ $# -gt 0 ]; do
       nsh_jobs="$2"
       shift
       ;;
+    --debug_out)
+      debug_out="$2"
+      shift
+      ;;
   esac
   shift
 done
@@ -126,6 +135,14 @@ if [ "$retrieve" != "vos" ] && [ "$retrieve" != "symlink" ]; then
   echo "method to retrieve images (option -r) needs to be 'vos' or 'symlink'"
   exit 5
 fi
+
+if [ "$debug_out" != "-1" ]; then
+  echo $pat`date` >> $debug_out
+  echo "${pat}Starting $(basename "$0")" >> $debug_out
+fi
+
+CONDA_PREFIX=/arc/home/kilbinger/.conda/envs/shapepipe
+PATH=$PATH:$CONDA_PREFIX/bin
 
 # For tar archives. TODO: Should be unique to each job
 export ID="test"
@@ -164,7 +181,7 @@ export VCP="vcp --certfile=$CERTFILE"
 
 # Print string, executes command, and prints return value.
 function command () {
-   cmd=$1
+  cmd=$1
    str=$2
 
    RED='\033[0;31m'
@@ -176,18 +193,39 @@ function command () {
    #NC=''
 
 
+   if [ "$debug_out" != "-1" ]; then
+      echo "${pat}pwd = `pwd`" >> $debug_out
+      echo "${pat}SP_RUN = $SP_RUN" >> $debug_out
+      echo "${pat}SP_CONFIG = $SP_CONFIG" >> $ddebug_out
+    fi
+
    if [ $# == 2 ]; then
       if [ $VERBOSE == 1 ]; then
            echo "$str: running '$cmd'"
       fi
+      if [ "$debug_out" != "-1" ]; then
+          echo "${pat}Running $cmd" >> $debug_out
+      fi
+
       $cmd
+      
    else
       if [ $VERBOSE == 1 ]; then
          echo "$str: running '$cmd $4 \"$5 $6\"'"
       fi
+      if [ "$debug_out" != "-1" ]; then
+          echo "${pat}Running $cmd $4 \"$5 $6\"" >> $debug_out
+      fi
+
       $cmd $4 "$5 $6"
+
    fi	
+
    res=$?
+
+   if [ "$debug_out" != "-1" ]; then
+       echo "${pat}exit code = $res" >> $debug_out
+   fi
 
    if [ $VERBOSE == 1 ]; then
       if [ $res == 0 ]; then
@@ -226,6 +264,7 @@ function command_cfg_shapepipe() {
     fi
 
     config_upd=$(set_config_n_smp $config_name $_n_smp)
+    #local cmd="/arc/home/kilbinger/.conda/envs/shapepipe/bin/shapepipe_run -c $config_upd $exclusive_flag"
     local cmd="shapepipe_run -c $config_upd $exclusive_flag"
     command_sp "$cmd" "$str"
 }
@@ -302,6 +341,7 @@ mkdir -p $OUTPUT
 mkdir -p $SP_CONFIG_MOD
 
 # Processing
+
 
 ### Retrieve config files
 if [[ $config_dir == *"vos:"* ]]; then
@@ -521,4 +561,8 @@ if [[ $do_job != 0 ]]; then
     $n_smp \
     $exclusive
 
+fi
+
+if [ "$debug_out" != "-1" ]; then
+  echo "${pat}End $(basename "$0")" >> $debug_out
 fi
