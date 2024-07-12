@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/arc/home/kilbinger/.conda/envs/shapepipe/bin/python
 
 """SHAPEPIPE RUN SCRIPT
 
