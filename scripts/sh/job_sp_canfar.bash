@@ -196,7 +196,7 @@ function command () {
    if [ "$debug_out" != "-1" ]; then
       echo "${pat}pwd = `pwd`" >> $debug_out
       echo "${pat}SP_RUN = $SP_RUN" >> $debug_out
-      echo "${pat}SP_CONFIG = $SP_CONFIG" >> $ddebug_out
+      echo "${pat}SP_CONFIG = $SP_CONFIG" >> $debug_out
     fi
 
    if [ $# == 2 ]; then

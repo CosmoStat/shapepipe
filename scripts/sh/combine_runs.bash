@@ -50,11 +50,12 @@ done
 ## Check options
 if [ "$cat" != "final" ] \
   && [ "$cat" != "flag_tile" ] \
+  && [ "$cat" != "tile_detection" ] \
   && [ "$cat" != "flag_exp" ] \
   && [ "$cat" != "psf" ] \
   && [ "$cat" != "psf_conv" ] \
   && [ "$cat" != "image" ]; then
-  echo "cat (option -c) needs to be 'final', 'flag_tile', 'flag_exp', 'psf', 'psf_conv' or 'image'"
+  echo "cat (option -c) needs to be 'final', 'tile_detection', 'flag_tile', 'flag_exp', 'psf', 'psf_conv' or 'image'"
   exit 2
 fi
 
@@ -108,6 +109,12 @@ if [ "$cat" == "final" ]; then
 
   module="make_catalog_runner"
   pattern="final_cat-*"
+
+elif [ "$cat" == "tile_detection" ]; then
+
+  run_in="$pwd/P?/tile_runs/*/$out_base/run_sp_tile_Sx_*"
+  module="sextractor_runner"
+  pattern="sexcat-*"
 
 elif [ "$cat" == "flag_tile" ]; then
 

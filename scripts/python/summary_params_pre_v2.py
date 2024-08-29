@@ -168,7 +168,10 @@ def set_jobs_v2_pre_v2(patch, verbose):
         verbose=verbose,
     )
 
-    n_sh = 8
+    if patch == 2:
+        n_sh = 1
+    else:
+        n_sh = 8
     run_dirs = [f"run_sp_tile_ngmix_Ng{idx+1}u" for idx in range(n_sh)]
     output_path_missing_IDs = [
         f"{path_main}/summary/missing_job_128_ngmix_runner_{idx+1}.txt"

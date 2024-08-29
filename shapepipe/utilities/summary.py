@@ -15,7 +15,7 @@ from collections import Counter
 
 from tqdm import tqdm
 
-print("summaary v1.2")
+print("summaary v1.4")
 
 
 def init_par_runtime(list_tile_IDs):
@@ -169,20 +169,20 @@ def check_special_one(module, path):
                 if m:
                     value = int(m[1])
                     if value < 2:
+                        code = 0
                         msg = (
                             f"Not enough stars for random split:"
                             + f"  #stars = {value}"
                         )
-                        return msg
+                        return msg, code
                     break
                 m = re.search("Mode computation failed", line)
                 if m:
+                    code = 1
                     msg = "Mode computation of stellar locus failed"
-                    return msg
+                    return msg, code
 
-
-    return None
- 
+    return None, None 
 
 
 class job_data(object):
@@ -290,11 +290,8 @@ class job_data(object):
 
         """
         logging.info(
-            "module                          expected     found   miss_expl"
-            + " missing uniq_miss  fr_found"
-        #logging.info(
-            #"module                          expected     found"
-            #+ "   missing uniq_miss  fr_found"
+            "module                          expected     found"
+            + "   missing uniq_miss  fr_found"
         )
         logging.info("=" * 100)
 
@@ -303,7 +300,7 @@ class job_data(object):
         module,
         n_expected,
         n_found,
-        n_missing_explained,
+        n_special,
         n_missing,
         idx,
     ):
@@ -319,28 +316,34 @@ class job_data(object):
             number of expected files
         n_found: int
             number of found files
-        n_missing_explained: int
-            number of missing but explained files
+        n_special: int
+            number of special cases
         n_missing: int
             number of missing files
         idx: int
             module index
 
         """
-        if n_expected > 0:
-            fraction_found = n_found / n_expected
-        else:
-            fraction_found = 1
-
-        n_missing_per_mult = n_missing / self._n_mult[idx]
-
         module_str = module
-        if self._special[idx]:
+        
+        if not self._special[idx]:
+            if n_expected > 0:
+                fraction_found = n_found / n_expected
+            else:
+                fraction_found = 1
+                
+            n_missing_per_mult = n_missing / self._n_mult[idx]
+            
+        else:
             module_str = f"{module_str} (special)"
+            n_found = n_special
+            n_missing = -1
+            n_missing_per_mult = -1
+            fraction_found = n_found / n_expected
+            n_expected = -1
 
         logging.info(
             f"{module_str:30s} {n_expected:9d} {n_found:9d}"
-            + f" {n_missing_explained:9d}"
             + f" {n_missing:9d}"
             + f" {n_missing_per_mult:9.1f} {fraction_found:9.1%}"
         )
@@ -409,26 +412,40 @@ class job_data(object):
 
     def check_special(self, module, idx):
 
-        messages = []
+        messages = {}
+        
         if self._special[idx]:
+            
+            # Loop over input file names and paths
             for name, path in zip(self._names_in_dir[idx], self._paths_in_dir[idx]):
 
-                msg = check_special_one(module, path)
+                # Check if special case is found
+                msg, code = check_special_one(module, path)
                 if msg:
-                    messages.append(f"{name} {msg}")
-    
+                    # First time occurance: create empty list for this code 
+                    if code not in messages:
+                        messages[code] = [msg]
+                    else:
+                        # Append file name, message, and code 
+                        messages[code].append(f"{name} {code} {msg}")
 
-            if messages:
-                output_path = (
-                    f"{self._path_main}/summary/special_job_{self._bit}"
-                    + f"_{module}.txt"
-                )
-                with open(output_path, "w") as f_out:
-                    for msg in messages:
-                        print(msg, file=f_out)
+            if len(messages) > 0:
+                # Loop over codes = key in messages dict
+                for code in messages:
+                    # Create output file for this code
+                    output_path = (
+                        f"{self._path_main}/summary/special_job_{self._bit}"
+                        + f"_{module}_{code}.txt"
+                    )
+                    # Write all messages
+                    with open(output_path, "w") as f_out:
+                        for msg in messages[code]:
+                            print(msg, file=f_out)
 
-        return len(messages)
-
+        # Count all special cases = sum of cases over all codes 
+        n_all = sum([len(messages[code]) for code in messages])
+        return n_all
+        
     def output_missing(
         self,
         module,
@@ -684,7 +701,7 @@ class job_data(object):
             n_expected = n_expected_base * self._n_mult[idx]
             n_missing = n_expected - n_found
 
-            n_missing_explained = self.check_special(
+            n_special = self.check_special(
                 module,
                 idx,
             )
@@ -694,7 +711,7 @@ class job_data(object):
                 module,
                 n_expected,
                 n_found,
-                n_missing_explained,
+                n_special,
                 n_missing,
                 idx,
             )

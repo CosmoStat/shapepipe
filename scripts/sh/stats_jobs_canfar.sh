@@ -63,10 +63,12 @@ esac
 curl -E $SSL $SESSION &> /dev/null > $tmpfile_jobs
 
 # Get headless job IDs
-cat $tmpfile_jobs | grep headless -B 4 -A 12 | grep \"id | perl -F\" -ane 'print "$F[3]\n"' > $tmpfile_ids
+#cat $tmpfile_jobs | grep headless -B 4 -A 12 | grep \"id | perl -F\" -ane 'print "$F[3]\n"' > $tmpfile_ids
+cat $tmpfile_jobs | grep headless -B 4 -A 2 | grep Running -A 1 > $tmpfile_ids
+
 
 # Get running job info
-cat $tmpfile_jobs | grep Running -A 1 | grep name | perl -F\- -ane 'chomp; $F[4] =~ s/[",]//g; print "$F[3].$F[4]"' > $tmpfile_running
+cat $tmpfile_ids | grep name | perl -F\- -ane 'chomp; $F[4] =~ s/[",]//g; print "$F[3].$F[4]"' > $tmpfile_running
 
 # Number of jobs
 n_headless=`cat $tmpfile_ids | wc -l`

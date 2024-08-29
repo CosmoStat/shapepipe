@@ -30,7 +30,7 @@ export SP_RUN=`pwd`
 
 shapepipe_run -c cfis/config_Git_vos.ini
 ls -l data_tiles/ | wc; mv -i output/run_sp_Git_*/get_images_runner/output/CFIS.???.???.*fits* data_tiles; ls -l data_tiles/ | wc
-rm -rf output/run_sp_Git_*; update_run_log_file.py
+rm -rf output/run_sp_Git_*; update_runs_log_file.py
 # repeat the above block
 
 ### Find exposures; this run can be stopped after Fe
@@ -41,9 +41,9 @@ shapepipe_run -c cfis/config_GitFe_symlink.ini
 shapepipe_run -c cfis/config_Gie_vos.ini
 mv -i output/run_sp_Gie_*/get_images_runner/output/*.fits*fz data_exp
 rm -rf output/run_sp_Gie_*
-update_run_log_file.py
+update_runs_log_file.py
 # repeat the above; or:
-while true; do shapepipe_run -c cfis/config_Gie_vos.ini; ls -l data_exp/ | wc; mv -i output/run_sp_Gie_*/get_images_runner/output/*.fits*fz data_exp;  ls -l data_exp/ | wc; rm -rf output/run_sp_Git_*; update_run_log_file.py; done
+while true; do shapepipe_run -c cfis/config_Gie_vos.ini; ls -l data_exp/ | wc; mv -i output/run_sp_Gie_*/get_images_runner/output/*.fits*fz data_exp;  ls -l data_exp/ | wc; rm -rf output/run_sp_Git_*; update_runs_log_file.py; done
 # Make sure that after all images are downloaded there is no Gie run. This would
 # mess up later modules since last:get_image_runner could point to this run.
 

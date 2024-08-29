@@ -69,7 +69,7 @@ while [ $# -gt 0 ]; do
       shift
       ;;
     -p|--psf)
-      job="$2"
+      psf="$2"
       shift
       ;;
     -m|--mh_local)
@@ -148,6 +148,7 @@ fi
 RESOURCES="ram=4&cores=$N_SMP"
 dir=`pwd`
 
+
 # Return argument for local script to be called via curl
 function set_arg() {
   my_arg="-j $job -p $psf -e $ID -N $N_SMP $arg_dry_run -d $dir -m $mh_local --debug_out $debug_out"
@@ -172,7 +173,7 @@ function call_curl() {
 
   if [ "$debug_out" != "=1" ]; then
     echo "${pat}call_curl $my_name $my_arg" >> $debug_out
-    echo "Running ${cmd[@]} (dry_run=$dry_run)" >> $debug_out
+    echo "${pat}Running ${cmd[@]} (dry_run=$dry_run)" >> $debug_out
   fi
   echo "${cmd[@]} (dry_run=$dry_run)"
 
