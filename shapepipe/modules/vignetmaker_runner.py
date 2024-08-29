@@ -31,14 +31,16 @@ def vignetmaker_runner(
     # Get path to galaxy catalogue
     galcat_path = input_file_list[0]
 
-    # Check if masking should be performed
-    # With masking
+    # Check whether mask is to be created
     if config.getboolean(module_config_sec, "MASKING"):
-        # Fetch the mask value
+
+        # Get the mask value
         mask_value = config.getfloat(module_config_sec, "MASK_VALUE")
-        # Make a mask
+
+        # Create a mask postage stamp
         vignet = vm.make_mask(galcat_path=galcat_path, mask_value=mask_value)
-        # Save the vignet
+
+        # Save the mask postage stamp vignet
         vm.save_vignet(
             vignet=vignet,
             sexcat_path=galcat_path,
@@ -47,20 +49,28 @@ def vignetmaker_runner(
             image_num=file_number_string,
         )
 
-    # Without masking
     else:
-        # Fetch stamp size
+
+        # Get stamp size
         stamp_size = config.getint(module_config_sec, "STAMP_SIZE") - 1
-        # Check stamp size
+
+        # Make sure stamp size is odd number
         if stamp_size % 2 != 0:
-            raise ValueError("The STAMP_SIZE must be odd")
+            raise ValueError(
+                f"Found even value {stamp_size} for postage stame size (STAMP"
+                + f"_SIZE entry in config file), must be odd"
+            )
+
         # Set radius
         radius = int(stamp_size / 2)
 
-        # Fetch position type and values
+        # Get position type; allowed are "PIX" and "SPHE"
         pos_type = config.get(module_config_sec, "COORD")
+
+        # Get position column names for x and y / ra and dec
         pos_params = config.getlist(module_config_sec, "POSITION_PARAMS")
-        # Fetch vignet run mode
+
+        # Get vignet run mode; allowed are "CLASSIC", "MULTI-EPOCH"
         mode = config.get(module_config_sec, "MODE")
 
         # Create instance of VignetMaker
@@ -72,11 +82,14 @@ def vignetmaker_runner(
             image_num=file_number_string,
         )
 
-        # Run in CLASSIC mode
+        # Process module according to mode
         if mode == "CLASSIC":
-            # Fetch prefix
+            # Classsic mode = Single exposures
+
+            # Get file name prefix
             prefix = config.getlist(module_config_sec, "PREFIX")
-            # Check prefix
+
+            # Make sure number of prefixes match input files
             if len(prefix) != len(input_file_list[1:]):
                 raise ValueError(
                     f"The number of prefixes ({len(prefix)}) has to be "
@@ -87,9 +100,10 @@ def vignetmaker_runner(
             # Process inputs
             vm_inst.process(input_file_list[1:], radius, prefix)
 
-        # Run in MULTI-EPOCH mode
         elif mode == "MULTI-EPOCH":
-            # Fetch image directory and patterns
+            # Multi-epoch exposures
+
+            # Get input image directory and file patterns
             modules = config.getlist(module_config_sec, "ME_IMAGE_DIR")
             image_dirs = []
             for module in modules:
@@ -109,16 +123,15 @@ def vignetmaker_runner(
                 module_config_sec,
                 "ME_IMAGE_PATTERN",
             )
-            # Fetch WCS log path
+
+            # Get WCS log file path
             f_wcs_path = config.getexpanded(module_config_sec, "ME_LOG_WCS")
 
             # Process inputs
             vm_inst.process_me(image_dirs, image_pattern, f_wcs_path, radius)
 
-        # Invalid mode
         else:
-            # Raise error for invalid run mode
+
             raise ValueError(f"Invalid MODE='{mode}'")
 
-    # No return objects
     return None, None

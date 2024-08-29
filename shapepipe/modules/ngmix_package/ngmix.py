@@ -321,6 +321,16 @@ class Ngmix(object):
         for key in output_dict.keys():
             f.save_as_fits(output_dict[key], ext_name=key.upper())
 
+
+    @classmethod
+    def check_key(self, expccd_name_tmp, vign_cat[str_id_tmp], path):
+        if expccd_name_tmp not in vign_cat[str_id_tmp]:
+            raise KeyError(
+                "Key '{expccd_name_tmp}' (exposure CCD ID from PSF postage stamp list)" +
+                + " not found in postage stamp database" +
+                + f" file '{self._vignet_path}'"
+            )
+
     def process(self):
         """Process.
 
@@ -367,6 +377,7 @@ class Ngmix(object):
             if id_first == -1:
                 id_first = id_tmp
             id_last = id_tmp
+            str_id_tmp = str(id_tmp)
 
             gal_vign = []
             psf_vign = []
@@ -385,15 +396,21 @@ class Ngmix(object):
 
             psf_expccd_name = list(psf_vign_cat[str(id_tmp)].keys())
             for expccd_name_tmp in psf_expccd_name:
+
+                check_key(expccd_name_tmp, gal_vign_cat[str_id_tmp], self._gal_vignet_path)
+                check_key(expccd_name_tmp, bkg_vign_cat[str_id_tmp], self._bkg_vignet_path)
+                check_key(expccd_name_tmp, flag_vign_cat[str_id_tmp], self._flag_vignet_path)
+                check_key(expccd_name_tmp, weight_vign_cat[str_id_tmp], self._weight_vignet_path)
+
                 exp_name, ccd_n = re.split("-", expccd_name_tmp)
 
-                gal_vign_tmp = gal_vign_cat[str(id_tmp)][expccd_name_tmp][
+                gal_vign_tmp = gal_vign_cat[str_id_tmp][expccd_name_tmp][
                     "VIGNET"
                 ]
                 if len(np.where(gal_vign_tmp.ravel() == 0)[0]) != 0:
                     continue
 
-                bkg_vign_tmp = bkg_vign_cat[str(id_tmp)][expccd_name_tmp][
+                bkg_vign_tmp = bkg_vign_cat[str_id_tmp][expccd_name_tmp][
                     "VIGNET"
                 ]
                 gal_vign_sub_bkg = gal_vign_tmp - bkg_vign_tmp
@@ -402,7 +419,7 @@ class Ngmix(object):
                     np.copy(tile_vign[i_tile]), int(ccd_n)
                 )
 
-                flag_vign_tmp = flag_vign_cat[str(id_tmp)][expccd_name_tmp][
+                flag_vign_tmp = flag_vign_cat[str_id_tmp][expccd_name_tmp][
                     "VIGNET"
                 ]
                 flag_vign_tmp[np.where(tile_vign_tmp == -1e30)] = 2**10
@@ -410,7 +427,7 @@ class Ngmix(object):
                 if len(np.where(v_flag_tmp != 0)[0]) / (51 * 51) > 1 / 3.0:
                     continue
 
-                weight_vign_tmp = weight_vign_cat[str(id_tmp)][expccd_name_tmp][
+                weight_vign_tmp = weight_vign_cat[str_id_tmp][expccd_name_tmp][
                     "VIGNET"
                 ]
 
@@ -430,10 +447,10 @@ class Ngmix(object):
 
                 gal_vign.append(gal_vign_scaled)
                 psf_vign.append(
-                    psf_vign_cat[str(id_tmp)][expccd_name_tmp]["VIGNET"]
+                    psf_vign_cat[str_id_tmp][expccd_name_tmp]["VIGNET"]
                 )
                 sigma_psf.append(
-                    psf_vign_cat[str(id_tmp)][expccd_name_tmp]["SHAPES"][
+                    psf_vign_cat[str_id_tmp][expccd_name_tmp]["SHAPES"][
                         "SIGMA_PSF_HSM"
                     ]
                 )
