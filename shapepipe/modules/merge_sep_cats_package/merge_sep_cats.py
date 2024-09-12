@@ -89,6 +89,14 @@ class MergeSep(object):
             list_col_name = cat0.get_col_names()
             cat0.close()
 
+            # Check that exactly 6 (1 primary + secondary HDUs) exist
+            if len(list_ext_name) != 6:
+                msg = f"Number of HDUs is {len(list_ext_name)}, expected 6"
+                #raise ValueError(msg)
+                print(f"warning: {msg}; setting to 6")
+                list_ext_name = list_ext_name[:6]
+                list_col_name = list_col_name[:6]
+
             # Create empty dictionary
             # data dimension = n_extension x n_column x n_obj
             data = {}

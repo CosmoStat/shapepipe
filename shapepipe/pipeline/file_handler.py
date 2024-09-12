@@ -10,6 +10,7 @@ import os
 import re
 from functools import partial, reduce
 from shutil import copyfile
+import time
 
 import numpy as np
 
@@ -93,7 +94,7 @@ class FileHandler(object):
     @run_dir.setter
     def run_dir(self, value):
 
-        self._run_dir = self.check_dir(value, check_exists=True)
+        self._run_dir = self.check_dir(value, check_exists=False)
 
     @property
     def _input_dir(self):
@@ -188,7 +189,7 @@ class FileHandler(object):
             Directory name with full path
 
         """
-        cls.check_dir(dir_name, check_exists=True)
+        cls.check_dir(dir_name, check_exists=False)
         mkdir(dir_name)
 
     @staticmethod
@@ -1006,7 +1007,14 @@ class FileHandler(object):
             List of memory maps
 
         """
-        num_pattern_list = [np.load(mmap, mmap_mode='r') for mmap in mmap_list]
+        num_pattern_list = []
+        for mmap in mmap_list:
+            if not os.path.exists(mmap):
+                n_sec = 5
+                time.sleep(n_sec)
+            if not os.path.exists(mmap):
+                print("MKDEBUG still not found")
+            num_pattern_list.append(np.load(mmap, mmap_mode="r"))
 
         np.save(
             output_file,
