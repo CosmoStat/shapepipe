@@ -91,8 +91,8 @@ class FindExposures():
             pattern_match = re.search(pattern, temp[self._colnum])
             if not pattern_match:
                 raise IndexError(
-                    f're match \'{pattern}\' failed for filename'
-                    + f' \'{temp[self._colnum]}\''
+                    f"re match '{pattern}' in 'HISTORY' FITS header"
+                    + " keyword column f" '{temp[self._colnum]}' failed"
                 )
 
             exp_name = pattern_match.group(1)
