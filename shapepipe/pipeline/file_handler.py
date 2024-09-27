@@ -93,7 +93,7 @@ class FileHandler(object):
     @run_dir.setter
     def run_dir(self, value):
 
-        self._run_dir = self.check_dir(value, check_exists=True)
+        self._run_dir = self.check_dir(value, check_exists=False)
 
     @property
     def _input_dir(self):
@@ -158,7 +158,8 @@ class FileHandler(object):
 
         """
         if check_exists and os.path.isdir(dir_name):
-            raise OSError(f'Directory {dir_name} already exists.')
+            #raise OSError(f'Directory {dir_name} already exists.')
+            print(f'Warning: Directory {dir_name} already exists.')
 
         return cls.strip_slash(dir_name)
 
@@ -188,8 +189,9 @@ class FileHandler(object):
             Directory name with full path
 
         """
-        cls.check_dir(dir_name, check_exists=True)
-        mkdir(dir_name)
+        cls.check_dir(dir_name, check_exists=False)
+        if not os.path.isdir(dir_name):
+            mkdir(dir_name)
 
     @staticmethod
     def setpath(path, name, ext=''):
@@ -386,9 +388,12 @@ class FileHandler(object):
             self.run_dir,
         )
 
-        self.mkdir(self.run_dir)
-        self.mkdir(self._log_dir)
-        self.mkdir(self._tmp_dir)
+        if not os.path.exists(self.run_dir):
+            self.mkdir(self.run_dir)
+        if not os.path.exists(self._log_dir):
+            self.mkdir(self._log_dir)
+        if not os.path.exists(self._tmp_dir):
+            self.mkdir(self._tmp_dir)
 
         self._get_input_dir()
         self._copy_config_to_log()
@@ -648,9 +653,12 @@ class FileHandler(object):
             )
         )
 
-        self.mkdir(self._module_dict[module][run_name]['run_dir'])
-        self.mkdir(self._module_dict[module][run_name]['log_dir'])
-        self.mkdir(self._module_dict[module][run_name]['output_dir'])
+        if not os.path.exists(self._module_dict[module][run_name]['run_dir']):
+            self.mkdir(self._module_dict[module][run_name]['run_dir'])
+        if not os.path.exists(self._module_dict[module][run_name]['log_dir']):
+            self.mkdir(self._module_dict[module][run_name]['log_dir'])
+        if not os.path.exists(self._module_dict[module][run_name]['output_dir']):
+            self.mkdir(self._module_dict[module][run_name]['output_dir'])
 
         # Set current output directory to module output directory
         self.output_dir = self._module_dict[module][run_name]['output_dir']

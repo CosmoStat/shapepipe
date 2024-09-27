@@ -22,7 +22,6 @@ from shapepipe.modules.python_example_package import python_example
         'mccd',
         'ngmix',
         'pandas',
-        'pysap',
         'scipy',
         'sf_tools',
         'sip_tpv',
