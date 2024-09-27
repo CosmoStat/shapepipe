@@ -25,6 +25,9 @@ SPREADERR_MODEL
 N_EPOCH
 NGMIX_N_EPOCH
 
+# General SExtractor parameters
+FLUX_RADIUS
+
 ## Shape measurement outputs
 ## Ngmix: model fitting
 
