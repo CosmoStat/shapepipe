@@ -182,6 +182,23 @@ def check_special_one(module, path):
                     msg = "Mode computation of stellar locus failed"
                     return msg, code
 
+            if module == "psfex_interp_runner":
+                m = re.search("Key N_EPOCH not found", line)
+                if m:
+                    code = 2
+                    msg = "N_EPOCH not in SEx cat, rerun job 16"
+                    return msg, code
+
+                m = re.search(
+                    "ValueError: cannot reshape array of size 0 into shape",
+                    line,
+                )
+                if m:
+                    code = 3
+                    msg = "found array of size 0"
+                    return msg, code
+
+
     return None, None 
 
 
@@ -485,7 +502,9 @@ class job_data(object):
                 ID = match.group()
                 IDs.append(ID)
             else:
-                raise ValueError(f"No ID found in {name}")
+                msg = f"No ID found in {name}"
+                #raise ValueError(msg)
+                print(f"Warning: msg, continuing")
 
 
         ## Count occurences
