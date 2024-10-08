@@ -323,12 +323,12 @@ class Ngmix(object):
 
 
     @classmethod
-    def check_key(self, expccd_name_tmp, vign_cat[str_id_tmp], path):
-        if expccd_name_tmp not in vign_cat[str_id_tmp]:
+    def check_key(self, expccd_name_tmp, vign_cat, vignet_path):
+        if expccd_name_tmp not in vign_cat:
             raise KeyError(
-                "Key '{expccd_name_tmp}' (exposure CCD ID from PSF postage stamp list)" +
-                + " not found in postage stamp database" +
-                + f" file '{self._vignet_path}'"
+                f"Key '{expccd_name_tmp}' (exposure CCD ID from PSF postage stamp list)"
+                + " not found in postage stamp database"
+                + f" file '{vignet_path}'"
             )
 
     def process(self):
@@ -367,6 +367,7 @@ class Ngmix(object):
         id_first = -1
         id_last = -1
 
+        self._w_log.info(f"Processing objects # {self._id_obj_min} ... {self._id_obj_max}")
         for i_tile, id_tmp in enumerate(obj_id):
 
             if self._id_obj_min > 0 and id_tmp < self._id_obj_min:
@@ -385,10 +386,15 @@ class Ngmix(object):
             weight_vign = []
             flag_vign = []
             jacob_list = []
-            if psf_vign_cat[str(id_tmp)] == "empty":
+            if psf_vign_cat[str_id_tmp] == "empty":
                 self._w_log.info(f"Skipping object {id_tmp}: empty PSF vignet")
                 continue
-            if gal_vign_cat[str(id_tmp)] == "empty":
+
+            self.check_key(str_id_tmp, gal_vign_cat, self._gal_vignet_path)
+            self.check_key(str_id_tmp, bkg_vign_cat, self._bkg_vignet_path)
+            self.check_key(str_id_tmp, flag_vign_cat, self._flag_vignet_path)
+            self.check_key(str_id_tmp, weight_vign_cat, self._weight_vignet_path)
+            if gal_vign_cat[str_id_tmp] == "empty":
                 self._w_log.info(
                     f"Skipping object {id_tmp}: empty galaxy vignet"
                 )
@@ -397,10 +403,10 @@ class Ngmix(object):
             psf_expccd_name = list(psf_vign_cat[str(id_tmp)].keys())
             for expccd_name_tmp in psf_expccd_name:
 
-                check_key(expccd_name_tmp, gal_vign_cat[str_id_tmp], self._gal_vignet_path)
-                check_key(expccd_name_tmp, bkg_vign_cat[str_id_tmp], self._bkg_vignet_path)
-                check_key(expccd_name_tmp, flag_vign_cat[str_id_tmp], self._flag_vignet_path)
-                check_key(expccd_name_tmp, weight_vign_cat[str_id_tmp], self._weight_vignet_path)
+                self.check_key(expccd_name_tmp, gal_vign_cat[str_id_tmp], self._gal_vignet_path)
+                self.check_key(expccd_name_tmp, bkg_vign_cat[str_id_tmp], self._bkg_vignet_path)
+                self.check_key(expccd_name_tmp, flag_vign_cat[str_id_tmp], self._flag_vignet_path)
+                self.check_key(expccd_name_tmp, weight_vign_cat[str_id_tmp], self._weight_vignet_path)
 
                 exp_name, ccd_n = re.split("-", expccd_name_tmp)
 
@@ -408,6 +414,9 @@ class Ngmix(object):
                     "VIGNET"
                 ]
                 if len(np.where(gal_vign_tmp.ravel() == 0)[0]) != 0:
+                    self._w_log.info(
+                        f"Skipping exp {expccd_name_tmp} for object {id_tmp}: zero-length galaxy vignet"
+                    )
                     continue
 
                 bkg_vign_tmp = bkg_vign_cat[str_id_tmp][expccd_name_tmp][
@@ -425,6 +434,9 @@ class Ngmix(object):
                 flag_vign_tmp[np.where(tile_vign_tmp == -1e30)] = 2**10
                 v_flag_tmp = flag_vign_tmp.ravel()
                 if len(np.where(v_flag_tmp != 0)[0]) / (51 * 51) > 1 / 3.0:
+                    self._w_log.info(
+                        f"Skipping exp {expccd_name_tmp} for object {id_tmp}: mask > 1/3"
+                    )
                     continue
 
                 weight_vign_tmp = weight_vign_cat[str_id_tmp][expccd_name_tmp][
@@ -459,6 +471,9 @@ class Ngmix(object):
                 jacob_list.append(jacob_tmp)
 
             if len(gal_vign) == 0:
+                self._w_log.info(
+                    f"Skipping object {id_tmp}: no exposure vignets added"
+                )
                 continue
             try:
                 res = do_ngmix_metacal(

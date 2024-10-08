@@ -66,7 +66,9 @@ def ngmix_runner(
     )
 
     # Process ngmix shape measurement and metacalibration
+    w_log.info("ngmix processing start")
     ngmix_inst.process()
+    w_log.info("ngmix end")
 
     # No return objects
     return None, None

@@ -235,13 +235,14 @@ class MergeStarCatMCCD(object):
         my_mask[inside_circle] = True
 
         for name in self._input_file_list:
-            starcat_j = fits.open(name[0], memmap=False)
-
             try:
-                stars = np.copy(starcat_j[self._hdu_table].data["VIGNET_LIST"])
+                starcat_j = fits.open(name[0], memmap=False, ignore_missing_simple=True)
             except ValueError:
                 print(f"Error for file {name[0]}, check FITS file integrity")
-                raise
+                #raise
+                continue
+
+            stars = np.copy(starcat_j[self._hdu_table].data["VIGNET_LIST"])
             stars[stars < -1e6] = 0
             psfs = np.copy(starcat_j[self._hdu_table].data["PSF_VIGNET_LIST"])
 
@@ -542,7 +543,12 @@ class MergeStarCatPSFEX(object):
         )
 
         for name in self._input_file_list:
-            starcat_j = fits.open(name[0], memmap=False)
+            try:
+                starcat_j = fits.open(name[0], memmap=False, ignore_missing_simple=True)
+            except OSError as e:
+                print(f"Error while opening file '{name[0]}'")
+                #raise
+                continue
 
             data_j = starcat_j[self._hdu_table].data
 

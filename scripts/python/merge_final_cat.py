@@ -285,6 +285,7 @@ def get_data(path, hdu_num, param_list):
 
 def main(argv=None):
 
+
     # Set default parameters
     p_def = params_default()
 
@@ -296,18 +297,26 @@ def main(argv=None):
 
     param = update_param(p_def, options)
 
+    if param.verbose:
+        print("Start")
+
     # Save command line arguments to log file
     f_log = cfis.log_command(argv, close_no_return=False)
 
     path = param.input_path
 
+    if param.verbose:
+        print("Read parameter file")
     param.param_list = read_param_file(param.param_path, verbose=param.verbose)
 
     # read (optional) input tile ID file
     if param.tile_ID_list_path:
+        if param.verbose:
+            print("Read tile ID list")
         tile_ID_list = cfis.read_list(param.tile_ID_list_path)
 
-    # find input catalogue FITS files
+    if param.verbose:
+        print("Find input catalogue FITS files")
     l = os.listdir(path=path)
     ext = "fits"
     lpath = []
