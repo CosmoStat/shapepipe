@@ -20,7 +20,7 @@ cmd_remote="$HOME/shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
 batch_max=200
 dry_run=0
 mh_local=0
-debug_out=-1
+debug_out="-1"
 
 pat="- "
 
@@ -163,19 +163,20 @@ function call_curl() {
   my_arg=$(set_arg)
 
   if [ "$dry_run" == "0" ]; then
-  
-    my_session=`curl -E $SSL "$SESSION?$RESOURCES" -d "image=$IMAGE:$version" -d "name=${my_name}" -d "cmd=$cmd_remote" --data-urlencode "args=${my_arg[@]}"`
-    # &> /dev/null`
+
+    cp ~/sicher.pem ~/.ssl/cadcproxy.pem 
+    my_session=`curl -E $SSL "$SESSION?$RESOURCES" -d "image=$IMAGE:$version" -d "name=${my_name}" -d "cmd=$cmd_remote" --data-urlencode "args=${my_arg[@]}" &> /dev/null`
   fi
 
 
   cmd=("curl" "-E" "$SSL" "$SESSION?$RESOURCES" "-d" "image=$IMAGE:$version" "-d" "name=${my_name}" "-d" "cmd=$cmd_remote" "--data-urlencode" "args=\"${my_arg}\"")
 
-  if [ "$debug_out" != "=1" ]; then
+  if [ "$debug_out" != "-1" ]; then
     echo "${pat}call_curl $my_name $my_arg" >> $debug_out
     echo "${pat}Running ${cmd[@]} (dry_run=$dry_run)" >> $debug_out
   fi
   echo "${cmd[@]} (dry_run=$dry_run)"
+  cp ~/sicher.pem ~/.ssl/cadcproxy.pem 
 
 
   # Running $cmd does not work due to unknown problems with passing of args
@@ -287,6 +288,8 @@ else
   fi
 
 fi
+
+echo "Done $(basename "$0")" 
 
 if [ "$debug_out" != "-1" ]; then
   echo "${pat}End $(basename "$0")" >> $debug_out
