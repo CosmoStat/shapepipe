@@ -181,7 +181,7 @@ export VCP="vcp --certfile=$CERTFILE"
 
 # Print string, executes command, and prints return value.
 function command () {
-  cmd=$1
+   cmd=$1
    str=$2
 
    RED='\033[0;31m'
