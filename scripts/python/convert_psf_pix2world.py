@@ -379,6 +379,7 @@ class Convert(object):
             "input_base_dir": ".",
             "output_base_dir": ".",
             "mode": "merge",
+            "patches": "",
             "psf": "psfex",
             "file_pattern_psfint": "validation_psf",
         }
@@ -387,6 +388,7 @@ class Convert(object):
             "input_base_dir": "-i",
             "mode": "-m",
             "psf": "-p",
+            "patches": "-P",
         }
 
         self._types = {}
@@ -401,6 +403,7 @@ class Convert(object):
                 "run mode, allowed are 'merge', 'test'; default is" + " '{}'"
             ),
             "psf": "PSF model, allowed are 'psfex' and 'mccd'; default is {}",
+            "patches": "(list of) input patches",
         }
 
         # Output column names with types
@@ -432,7 +435,8 @@ class Convert(object):
 
         """
         if self._params["psf"] == "psfex":
-            self._params["sub_dir_pattern"] = "run_sp_exp_202"
+            #self._params["sub_dir_pattern"] = "run_sp_exp_202"
+            self._params["sub_dir_pattern"] = "run_sp_combined_psf"
             self._params["sub_dir_psfint"] = "psfex_interp_runner"
         elif self._params["psf"] == "mccd":
             self._params["sub_dir_pattern"] = "run_sp_exp_SxSePsf_202"
@@ -453,9 +457,7 @@ class Convert(object):
         if self._params["mode"] == "test":
             patch_nums = ["3", "4"]
         else:
-            n_patch = 7
-            # patch_nums = [idx for idx in np.arange(n_patch) + 1]
-            patch_nums = [1, 3, 4]
+            patch_nums = cs_args.my_string_split(self._params["patches"])
 
         do_parallel = True
 
