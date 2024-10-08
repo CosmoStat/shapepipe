@@ -60,6 +60,7 @@ esac
 # Main program
 
 # Get all instances
+echo curl -E $SSL $SESSION
 curl -E $SSL $SESSION &> /dev/null > $tmpfile_jobs
 
 # Get headless job IDs
@@ -71,7 +72,7 @@ cat $tmpfile_jobs | grep headless -B 4 -A 2 | grep Running -A 1 > $tmpfile_ids
 cat $tmpfile_ids | grep name | perl -F\- -ane 'chomp; $F[4] =~ s/[",]//g; print "$F[3].$F[4]"' > $tmpfile_running
 
 # Number of jobs
-n_headless=`cat $tmpfile_ids | wc -l`
+n_headless=`cat $tmpfile_ids | grep Running | wc -l`
 
 if [ "$mode" == "count" ]; then
 
@@ -82,10 +83,13 @@ elif [ "$mode" == "delete" ]; then
   echo -n "Delete $n_headless jobs? [y|n] "
   read answer
   if [ "$answer" == "y" ]; then
+    cat $tmpfile_jobs | grep headless -B 34 -A 6 | grep Running -A 34 | grep id | grep -v user | perl -F\"  -ane 'print "$F[3]\n"' > $tmpfile_ids
     for ID in `cat $tmpfile_ids`; do
       echo $ID
       # Delete headless jobs
-      #curl -X DELETE -E $SSL $SESSION/$ID
+      echo "curl -X DELETE -E $SSL $SESSION/$ID"
+      curl -X DELETE -E $SSL $SESSION/$ID
+      echo $?
     done
   fi
 
