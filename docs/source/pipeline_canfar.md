@@ -111,13 +111,15 @@ shapepipe_run -c $SP_CONFIG/config_Pl_$psf.ini
 # Convert star cat to WCS
 ## Convert all input validation psf files and create directories par patch
 ## psf_conv_all/P?
-cd star_cat
-convert_psf_pix2world.py -i .. -v -p mccd
+cd ../star_cat
+ ~/shapepipe/scripts/python/convert_psf_pix2world.py -i ../ -P $patch -v
 
 # Combine previously created files within one SP run dir
+cd P$patch
 combine_runs.bash -p psfex -c psf_conv
 
 # Merge all converted star catalogues and create final-starcat.fits
+export SP_RUN=`pwd`
 shapepipe_run -c ~/shapepipe/example/cfis/config_Ms_psfex_conv.ini
 
 
