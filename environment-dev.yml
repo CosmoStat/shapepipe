@@ -28,11 +28,11 @@ dependencies:
   - tqdm>=4.66
   - treecorr>=4.3
   - pip:
-    - cs_util==0.0.5
-    - mccd==1.2.3
-    - modopt==1.6.0
-    - sip_tpv==1.1
-    - sf_tools==2.0.4
+    - cs_util>=0.0.5
+    - mccd>=1.2.3
+    - modopt>=1.6
+    - sip_tpv>=1.1
+    - sf_tools>=2.0.4
     - git+https://github.com/CEA-COSMIC/pysap@develop
     - git+https://github.com/aguinot/ngmix@stable_version
     - git+https://github.com/tobias-liaudat/Stile@v0.1
