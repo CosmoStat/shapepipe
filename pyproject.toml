@@ -1,0 +1,29 @@
+[project]
+name = "shapepipe"
+version = "1.0.2"
+description = "Galaxy shape measurement pipeline."
+authors = [
+    { name = "Samuel Farrens", email = "samuel.farrens@cea.fr" },
+    { name = "Axel Guinot", email = "axel.guinot@cea.fr" },
+    { name = "Martin Kilbinger", email = "martin.kilbinger@cea.fr" }
+]
+dependencies = [
+    "joblib>=0.13",
+    "modopt>=1.2",
+    "numpy>=1.14"
+]
+
+[project.optional-dependencies]
+testing = [
+    "pytest",
+    "pytest-cov",
+    "pytest-pycodestyle",
+    "pytest-pydocstyle"
+]
+
+[project.scripts]
+shapepipe_run = "shapepipe.shapepipe_run:main"
+
+[tool.pytest.ini_options]
+addopts = "--verbose --cov=shapepipe"
+testpaths = ["shapepipe"]
