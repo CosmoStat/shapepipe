@@ -22,22 +22,22 @@ last_update="13/10/24"
 # Conda package versions
 fftw_ver="3.3.10"
 libpng_ver="1.6.37"
-mpi4py_ver="3.1.3"
+mpi4py_ver="4.0.1"
 openblas_ver="0.3.18"
 
 # Source Extractor 
 se_bin="sex"
 
 # PSFEx Package
-psfex_url="https://github.com/astromatic/psfex/archive/3.21.1.tar.gz"
-psfex_tar="3.21.1.tar.gz"
-psfex_dir="psfex-3.21.1"
+psfex_url="https://github.com/astromatic/psfex/archive/3.24.1.tar.gz"
+psfex_tar="3.24.1.tar.gz"
+psfex_dir="psfex-3.24.1"
 psfex_bin="psfex"
 psfex_version=TRUE
 
 # WeightWatcher Package
-ww_url="http://snapshot.debian.org/archive/debian/20171211T160522Z/pool/main/w/weightwatcher/weightwatcher_1.12.orig.tar.gz"
-ww_tar="weightwatcher_1.12.orig.tar.gz"
+ww_url="https://github.com/astromatic/weightwatcher/archive/refs/tags/1.12.tar.gz"
+ww_tar="1.12.tar.gz"
 ww_dir="weightwatcher-1.12"
 ww_bin="ww"
 ww_version=TRUE
@@ -55,13 +55,6 @@ mpi_tar="${mpi4py_ver}.tar.gz"
 mpi_dir="mpi4py-${mpi4py_ver}"
 mpi_bin="mpiexec"
 mpi_version=TRUE
-
-# Allowed script extensions
-script_ext=(
-  .py
-  .sh
-  .bash
-)
 
 # Divider line
 line="########################################################################"
@@ -390,7 +383,7 @@ uninstall() {
   response=${response:-n}
   if [ $response == "y" ]
   then
-    rm -r build dist *.egg-info .eggs
+    rm -r build dist src/*.egg-info .eggs
     deactivate_shapepipe
     conda remove -n $ENV_NAME --all -y
     echo "Finished uninstalling $ENV_NAME"
@@ -419,13 +412,27 @@ deactivate_shapepipe() {
   eval $CONDA_DEACTIVATE
 }
 
-# Build symbolic links for scripts
 build_symlinks() {
-  for ext in ${script_ext[@]}; do
-    for script in $CONDA_PREFIX/bin/*$ext; do
-      link_name=`basename $script $ext`
-      ln -s $script $CONDA_PREFIX/bin/$link_name
-    done
+  echo "Creating symbolic links for scripts"
+  script_dirs=("scripts/python" "scripts/sh")
+  for dir in "${script_dirs[@]}"; do
+      for script in "$dir"/*; do
+          if [[ "$script" == *".sh" ]]; then
+              base_name=$(basename "$script" ".sh")
+          elif [[ "$script" == *".bash" ]]; then
+              base_name=$(basename "$script" ".bash")
+          elif [[ "$script" == *".py" ]]; then
+              base_name=$(basename "$script" ".py")
+          else
+              echo -ne "$2: ${YELLOW}WARNING:${NC}\n"
+              echo "Unknown script extension for $script."
+              continue
+          fi
+          # Create symbolic link inside $CONDA_PREFIX/bin without extension
+          ln -sf "$(pwd)/$script" "$CONDA_PREFIX/bin/$base_name"
+          # Make the symbolic link executable
+          chmod +x "$CONDA_PREFIX/bin/$base_name"
+      done
   done
 }
 
@@ -647,18 +654,6 @@ if [ -z "$BLAS_LIB" ]; then BLAS_LIB=$CONDA_PREFIX/lib; fi
 if [ -z "$BLAS_INC" ]; then BLAS_INC=$CONDA_PREFIX/include; fi
 
 ##############################################################################
-# INSTALL DEVELOPER PACKAGES
-##############################################################################
-
-# Install development packages
-if [ "$DEVELOP" == TRUE ]
-then
-  report_progress 'Developer Packages'
-  python -m pip install -r develop.txt
-  python -m pip install -r docs/requirements.txt
-fi
-
-##############################################################################
 # INSTALL THE VOS LIBRARY
 ##############################################################################
 
@@ -677,7 +672,7 @@ fi
 if [ "$SYSOS" == "macOS" ]
 then
   report_progress 'macOS Requirements'
-  conda install -n $ENV_NAME wget -y
+  echo "Setting C compiler flags"
   export C_INCLUDE_PATH=$CONDA_PREFIX/include
   export CFLAGS="-Wl,-rpath,$CONDA_PREFIX/lib"
   export CPPFLAGS="-Wno-everything"
@@ -695,7 +690,12 @@ then
   report_progress 'MPI'
   if [ -z "$MPI_ROOT" ]
   then
-    conda install -n $ENV_NAME -c conda-forge "mpi4py==${mpi4py_ver}" -y
+    if [ "$ENV_DEV" == TRUE ]
+    then
+      conda install -n $ENV_NAME -c conda-forge "mpi4py" -y
+    else
+      conda install -n $ENV_NAME -c conda-forge "mpi4py==${mpi4py_ver}" -y
+    fi
   else
     download_package $mpi_url $mpi_tar
     build_mpi $mpi_dir
@@ -710,14 +710,23 @@ fi
 if [ "$INSTALL_PSFEX" == TRUE ] && check_binary $psfex_bin
 then
   report_progress 'PSFEx'
-  conda install "libpng==${libpng_ver}" -y
-  conda install -n $ENV_NAME -c conda-forge "fftw==${fftw_ver}" -y
+  if [ "$ENV_DEV" == TRUE ]
+  then
+    conda install -n $ENV_NAME -c conda-forge libpng fftw -y
+  else
+    conda install -n $ENV_NAME -c conda-forge "libpng==${libpng_ver}" "fftw==${fftw_ver}" -y
+  fi
   download_package $psfex_url $psfex_tar
   if [ "$use_atlas" == TRUE ]
   then
     build_psfex_atlas $psfex_dir
   else
-    conda install -n $ENV_NAME -c conda-forge "openblas==${openblas_ver}" -y
+    if [ "$ENV_DEV" == TRUE ]
+    then
+      conda install -n $ENV_NAME -c conda-forge "openblas" -y
+    else
+      conda install -n $ENV_NAME -c conda-forge "openblas==${openblas_ver}" -y
+    fi
     build_psfex_blas $psfex_dir
   fi
 fi
@@ -745,10 +754,18 @@ fi
 # Install ShapePipe package
 report_progress 'ShapePipe'
 cd $PIPE_DIR
-python -m pip install .
+
+if [ "$DEVELOP" == "TRUE" ] || [ "$ENV_DEV" == "TRUE" ] 
+then
+  echo "Installing ShapePipe package with developer tools"
+  python -m pip install ".[dev]"
+else 
+  echo "Installing ShapePipe package"
+  python -m pip install .
+fi
 
 # Create symbolic links to scripts
-# build_symlinks
+build_symlinks
 
 finish
 

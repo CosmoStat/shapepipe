@@ -14,12 +14,28 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-testing = [
+doc = [
+    "myst-parser",
+    "numpydoc",
+    "sphinx",
+    "sphinxcontrib-bibtex",
+    "sphinx-book-theme"
+]
+lint = [
+    "black",
+    "isort"
+]
+release = [
+    "build",
+    "twine",
+]
+test = [
     "pytest",
     "pytest-cov",
     "pytest-pycodestyle",
     "pytest-pydocstyle"
 ]
+dev = ["shapepipe[doc,lint,release,test]"]
 
 [project.scripts]
 shapepipe_run = "shapepipe.shapepipe_run:main"

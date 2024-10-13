@@ -29,6 +29,7 @@ dependencies:
   - termcolor>=2.3
   - tqdm>=4.66
   - treecorr>=4.3
+  - wget
   - pip:
     - cs_util>=0.0.5
     - mccd>=1.2.3
