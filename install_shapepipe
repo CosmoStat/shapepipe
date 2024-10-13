@@ -748,7 +748,7 @@ cd $PIPE_DIR
 python -m pip install .
 
 # Create symbolic links to scripts
-build_symlinks
+# build_symlinks
 
 finish
 
