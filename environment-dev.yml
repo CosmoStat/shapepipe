@@ -11,6 +11,7 @@ dependencies:
   - python=3.11
   - pip>=21.2.4
   - astropy>=5.0
+  - astromatic-source-extractor>=2.25.0
   - autoconf>=2.71
   - automake>=1.16
   - cmake>=3.27
@@ -19,6 +20,7 @@ dependencies:
   - libtool>=2.4
   - matplotlib>=3.8
   - numba>=0.57
+  - numpy>=1.22
   - pandas>=2.1
   - pyqt5-sip>=12.12
   - pyqtgraph>=0.13
