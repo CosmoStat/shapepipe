@@ -363,6 +363,8 @@ setup() {
 
 # Function to show the astromatic setup
 astromatic_setup() {
+  export LDFLAGS="-lpthread"
+  echo 'LDFLAGS:' $LDFLAGS
   echo 'FFTW Library Path:' $FFTW_LIB
   echo 'FFTW Include Path:' $FFTW_INC
   if [ "$use_atlas" == TRUE ]

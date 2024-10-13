@@ -2,16 +2,20 @@
 name = "shapepipe"
 version = "1.0.2"
 description = "Galaxy shape measurement pipeline."
+readme = "README.rst"
 authors = [
     { name = "Samuel Farrens", email = "samuel.farrens@cea.fr" },
     { name = "Axel Guinot", email = "axel.guinot@cea.fr" },
     { name = "Martin Kilbinger", email = "martin.kilbinger@cea.fr" }
 ]
+license = { "file" = "LICENSE" }
+requires-python = ">=3.11"
 dependencies = [
     "joblib>=0.13",
     "modopt>=1.2",
     "numpy>=1.14"
 ]
+
 
 [project.optional-dependencies]
 doc = [
