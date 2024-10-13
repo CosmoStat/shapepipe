@@ -18,7 +18,7 @@ jobs:
         python-version: [3.11]
 
     steps:
-      - uses: actions/checkout
+      - uses: actions/checkout@4
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
@@ -32,7 +32,7 @@ jobs:
           brew install bigmac libomp
 
       - name: Set up conda
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
