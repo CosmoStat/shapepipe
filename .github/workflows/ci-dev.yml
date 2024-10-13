@@ -29,7 +29,8 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew tap sfarrens/sf
-          brew install bigmac gfortran libomp
+          brew install bigmac libomp
+          brew reinstall gcc
 
       - name: Set up conda
         uses: conda-incubator/setup-miniconda@v3
