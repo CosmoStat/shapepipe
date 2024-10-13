@@ -738,6 +738,7 @@ if [ "$INSTALL_WW" == TRUE ] && check_binary $ww_bin
 then
   report_progress 'WeightWatcher'
   download_package $ww_url $ww_tar
+  export CXXFLAGS="-fcommon"
   build_standard $ww_dir
 fi
 
