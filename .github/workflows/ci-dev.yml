@@ -22,7 +22,9 @@ jobs:
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get install libopenblas-dev
+        run: |
+          sudo apt-get install libopenblas-dev gcc-9 g++-9
+
 
       - name: Install macOS Dependencies
         shell: bash -l {0}
@@ -40,10 +42,18 @@ jobs:
           auto-activate-base: true
           miniforge-version: latest
 
-      - name: Install package
+      - name: Install package (Linux)
         shell: bash -l {0}
-        run: |
-          ./install_shapepipe --env-dev --develop
+        env:
+          CC: gcc-9
+          CXX: g++-9
+        if: runner.os == 'Linux'
+        run: ./install_shapepipe --env-dev --develop
+
+      - name: Install package (macOS)
+        shell: bash -l {0}
+        if: runner.os == 'macOS'
+        run: ./install_shapepipe --env-dev --develop
 
       - name: Run tests
         shell: bash -l {0}
