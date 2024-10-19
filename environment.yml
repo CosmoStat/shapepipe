@@ -1,3 +1,9 @@
+# ShapePipe Production Environment
+# --------------------------------
+# This environment should be used for any production runs of ShapePipe 
+# (i.e. anything that could be published). All packages are pinned to
+# specific versions to maximise the reproducibility of the results.
+# This environment should be updated for each release of ShapePipe.
 name: shapepipe
 channels:
   - conda-forge

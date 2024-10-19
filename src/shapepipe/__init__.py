@@ -8,5 +8,8 @@ ShapePipe is a galaxy shape measurement pipeline.
 
 __all__ = ['modules', 'pipeline', 'utilities']
 
+from importlib.metadata import metadata, version
 from . import *
-from .info import __about__, __version__
+
+__version__ = version("shapepipe")
+__about__ = metadata("shapepipe").get("Summary")
