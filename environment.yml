@@ -18,9 +18,11 @@ dependencies:
   - numpy==1.26.4
   - pip:
     - cs_util==0.1
+    - mccd==1.2.4
     - modopt
     - PyQt5
     - pyqtgraph
+    - python-pysap=0.2.1
     - reproject
     - shear_psf_leakage
     - skaha
