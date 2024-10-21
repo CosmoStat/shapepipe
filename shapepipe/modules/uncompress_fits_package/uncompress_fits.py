@@ -35,7 +35,7 @@ class Uncompress(object):
         output_pattern_list,
         output_dir,
         file_number_string,
-        data_hdu
+        data_hdu,
     ):
 
         self._input_file_list = input_file_list
@@ -61,7 +61,7 @@ class Uncompress(object):
             hdu = fits.PrimaryHDU(data, header)
             hdul = fits.HDUList([hdu])
             hdul.writeto(
-                f'{self._output_dir}/'
-                + f'{self._output_pattern_list[idx]}'
-                + f'{self._file_number_string}.fits'
+                f"{self._output_dir}/"
+                + f"{self._output_pattern_list[idx]}"
+                + f"{self._file_number_string}.fits"
             )

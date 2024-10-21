@@ -31,10 +31,10 @@ class DependencyHandler(object):
 
         self.depend = dependencies
         self.execute = executables
-        self._greq = '>='
-        self._equal = '=='
-        self._great = '>'
-        self._less = '<'
+        self._greq = ">="
+        self._equal = "=="
+        self._great = ">"
+        self._less = "<"
         self.dependency_list = []
         self.executable_list = list(set(self.execute))
 
@@ -51,10 +51,10 @@ class DependencyHandler(object):
     def depend(self, value):
 
         if not isinstance(value, list):
-            raise TypeError('Input must be list type.')
+            raise TypeError("Input must be list type.")
 
         if not all(isinstance(x, str) for x in value):
-            raise ValueError('List elements must be strings.')
+            raise ValueError("List elements must be strings.")
 
         self._depend = value
 
@@ -67,10 +67,10 @@ class DependencyHandler(object):
     def execute(self, value):
 
         if not isinstance(value, list):
-            raise TypeError('Input must be list type.')
+            raise TypeError("Input must be list type.")
 
         if not all(isinstance(x, str) for x in value):
-            raise ValueError('List elements must be strings.')
+            raise ValueError("List elements must be strings.")
 
         self._execute = value
 
@@ -160,8 +160,7 @@ class DependencyHandler(object):
 
         """
         return [
-            index for index, element in enumerate(array)
-            if element == value
+            index for index, element in enumerate(array) if element == value
         ]
 
     @classmethod
@@ -210,7 +209,7 @@ class DependencyHandler(object):
 
         """
         if not isinstance(exe_name, str):
-            raise TypeError('Executable name must be a string.')
+            raise TypeError("Executable name must be a string.")
 
         def is_exe(fpath):
             return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
@@ -218,18 +217,20 @@ class DependencyHandler(object):
         fpath, fname = os.path.split(exe_name)
 
         if not fpath:
-            res = any([
-                is_exe(os.path.join(path, exe_name))
-                for path in os.environ['PATH'].split(os.pathsep)
-            ])
+            res = any(
+                [
+                    is_exe(os.path.join(path, exe_name))
+                    for path in os.environ["PATH"].split(os.pathsep)
+                ]
+            )
 
         else:
             res = is_exe(exe_name)
 
         if not res:
             raise IOError(
-                f'{exe_name} does not appear to be a valid executable on '
-                + 'this system.'
+                f"{exe_name} does not appear to be a valid executable on "
+                + "this system."
             )
 
     def _split_string(self, string):
@@ -249,19 +250,19 @@ class DependencyHandler(object):
 
         """
         if self._greq in string:
-            val = re.split(f'({self._greq})', string)
+            val = re.split(f"({self._greq})", string)
 
         elif self._equal in string:
-            val = re.split(f'({self._equal})', string)
+            val = re.split(f"({self._equal})", string)
 
         elif self._great in string:
-            val = re.split(f'({self._great})', string)
+            val = re.split(f"({self._great})", string)
 
         elif self._less in string:
             raise ValueError('"<" not permitted in package version string.')
 
         else:
-            val = [string, '', '']
+            val = [string, "", ""]
 
         return val
 
@@ -271,10 +272,12 @@ class DependencyHandler(object):
         This method splits the input dependency modules strings.
 
         """
-        self._depend_arr = list(map(
-            list,
-            zip(*[self._split_string(string) for string in self.depend])
-        ))
+        self._depend_arr = list(
+            map(
+                list,
+                zip(*[self._split_string(string) for string in self.depend]),
+            )
+        )
         self._dependency_set = set(self._depend_arr[0])
 
     def _unique_dependencies(self):
@@ -290,18 +293,18 @@ class DependencyHandler(object):
             if any(self._equal in element for element in subset):
                 subset = self._slice_col_val(subset, 1, self._equal)
 
-            if any([ver != '' for ver in subset[2]]):
-                subset = (self._slice_col_val(
+            if any([ver != "" for ver in subset[2]]):
+                subset = self._slice_col_val(
                     subset,
                     2,
-                    str(max(
-                        [self._convert_to_float(ver) for ver in subset[2]]
-                    ))
-                ))
+                    str(
+                        max([self._convert_to_float(ver) for ver in subset[2]])
+                    ),
+                )
 
             subset = [element[0] for element in self._slice_2d(subset, [0])]
 
-            self.dependency_list.append(''.join(subset))
+            self.dependency_list.append("".join(subset))
 
     def check_dependencies(self):
         """Check Dependencies.
@@ -322,23 +325,23 @@ class DependencyHandler(object):
                 package = importlib.import_module(dependency)
             except Exception:
                 raise ImportError(
-                    f'Could not import pipeline dependency {dependency}'
+                    f"Could not import pipeline dependency {dependency}"
                 )
 
-            if hasattr(package, '__version__'):
+            if hasattr(package, "__version__"):
                 version = package.__version__
             else:
-                version = 'N/A'
+                version = "N/A"
 
-            if hasattr(package, '__path__'):
+            if hasattr(package, "__path__"):
                 path = package.__path__[0]
-            elif hasattr(package, '__file__'):
+            elif hasattr(package, "__file__"):
                 path = package.__file__
             else:
-                path = 'N/A'
+                path = "N/A"
 
             dependency_status_list.append(
-                f' - {package.__name__} {version} {path}'
+                f" - {package.__name__} {version} {path}"
             )
 
         return dependency_status_list
@@ -361,7 +364,7 @@ class DependencyHandler(object):
             self._check_executable(executable)
 
             exe_path, err = subprocess.Popen(
-                f'which {executable}',
+                f"which {executable}",
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

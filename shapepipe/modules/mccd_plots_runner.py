@@ -19,6 +19,7 @@ try:
     import stile
     import stile.stile_utils
     from stile.sys_tests import BaseCorrelationFunctionSysTest
+
     has_stile = True
 
 except ImportError:
@@ -27,6 +28,7 @@ except ImportError:
 try:
     import treecorr
     from treecorr.corr2 import corr2_valid_params
+
     has_treecorr = True
 
 except ImportError:
@@ -37,7 +39,7 @@ try:
     import matplotlib.pyplot as plt
 
     # Define the backend for matplotlib
-    mpl.use('agg')
+    mpl.use("agg")
     has_mpl = True
 
 except ImportError:
@@ -45,13 +47,13 @@ except ImportError:
 
 
 @module_runner(
-    version='1.1',
-    input_module=['merge_starcat_runner'],
-    file_pattern=['full_starcat'],
-    file_ext=['.fits'],
-    numbering_scheme='-0000000',
-    depends=['numpy', 'mccd', 'astropy', 'matplotlib', 'stile', 'treecorr'],
-    run_method='serial',
+    version="1.1",
+    input_module=["merge_starcat_runner"],
+    file_pattern=["full_starcat"],
+    file_ext=[".fits"],
+    numbering_scheme="-0000000",
+    depends=["numpy", "mccd", "astropy", "matplotlib", "stile", "treecorr"],
+    run_method="serial",
 )
 def mccd_plots_runner(
     input_file_list,
@@ -63,63 +65,63 @@ def mccd_plots_runner(
 ):
     """Define The MCCD Plots Runner."""
     # Input parameters
-    if config.has_option(module_config_sec, 'HDU'):
-        hdu_no = config.getint(module_config_sec, 'HDU')
+    if config.has_option(module_config_sec, "HDU"):
+        hdu_no = config.getint(module_config_sec, "HDU")
     else:
         hdu_no = 2
 
     # Get parameters for meanshapes plots
-    psf_model_type = config.get(module_config_sec, 'PSF')
+    psf_model_type = config.get(module_config_sec, "PSF")
 
-    if config.has_option(module_config_sec, 'MAX_E'):
+    if config.has_option(module_config_sec, "MAX_E"):
         max_e = config.getfloat(module_config_sec, "MAX_E")
     else:
         max_e = None
 
-    if config.has_option(module_config_sec, 'MAX_DE'):
+    if config.has_option(module_config_sec, "MAX_DE"):
         max_de = config.getfloat(module_config_sec, "MAX_DE")
     else:
         max_de = None
 
-    if config.has_option(module_config_sec, 'MIN_R2'):
+    if config.has_option(module_config_sec, "MIN_R2"):
         min_r2 = config.getfloat(module_config_sec, "MIN_R2")
     else:
         min_r2 = None
 
-    if config.has_option(module_config_sec, 'MAX_R2'):
+    if config.has_option(module_config_sec, "MAX_R2"):
         max_r2 = config.getfloat(module_config_sec, "MAX_R2")
     else:
         max_r2 = None
 
-    if config.has_option(module_config_sec, 'MAX_DR2'):
+    if config.has_option(module_config_sec, "MAX_DR2"):
         max_dr2 = config.getfloat(module_config_sec, "MAX_DR2")
     else:
         max_dr2 = None
 
-    x_nb_bins = config.getint(module_config_sec, 'X_GRID')
-    y_nb_bins = config.getint(module_config_sec, 'Y_GRID')
-    remove_outliers = config.getboolean(module_config_sec, 'REMOVE_OUTLIERS')
-    plot_meanshapes = config.getboolean(module_config_sec, 'PLOT_MEANSHAPES')
-    plot_histograms = config.getboolean(module_config_sec, 'PLOT_HISTOGRAMS')
+    x_nb_bins = config.getint(module_config_sec, "X_GRID")
+    y_nb_bins = config.getint(module_config_sec, "Y_GRID")
+    remove_outliers = config.getboolean(module_config_sec, "REMOVE_OUTLIERS")
+    plot_meanshapes = config.getboolean(module_config_sec, "PLOT_MEANSHAPES")
+    plot_histograms = config.getboolean(module_config_sec, "PLOT_HISTOGRAMS")
 
     # Get parameters for rho stats plots
-    plot_rho_stats = config.getboolean(module_config_sec, 'PLOT_RHO_STATS')
-    rho_stat_plot_style = config.get(module_config_sec, 'RHO_STATS_STYLE')
+    plot_rho_stats = config.getboolean(module_config_sec, "PLOT_RHO_STATS")
+    rho_stat_plot_style = config.get(module_config_sec, "RHO_STATS_STYLE")
 
-    if config.has_option(module_config_sec, 'RHO_STATS_YLIM_L'):
-        str_list = config.getlist(module_config_sec, 'RHO_STATS_YLIM_L')
+    if config.has_option(module_config_sec, "RHO_STATS_YLIM_L"):
+        str_list = config.getlist(module_config_sec, "RHO_STATS_YLIM_L")
         ylim_l = [float(s) for s in str_list]
     else:
         ylim_l = None
-    if config.has_option(module_config_sec, 'RHO_STATS_YLIM_R'):
-        str_list = config.getlist(module_config_sec, 'RHO_STATS_YLIM_R')
+    if config.has_option(module_config_sec, "RHO_STATS_YLIM_R"):
+        str_list = config.getlist(module_config_sec, "RHO_STATS_YLIM_R")
         ylim_r = [float(s) for s in str_list]
     else:
         ylim_r = None
 
     nb_pixel = x_nb_bins, y_nb_bins
     starcat_path = input_file_list[0][0]
-    output_path = run_dirs['output'] + '/'
+    output_path = run_dirs["output"] + "/"
 
     if plot_meanshapes or plot_histograms:
         if has_mpl:
@@ -141,10 +143,10 @@ def mccd_plots_runner(
             )
         else:
             msg = (
-                '[!] In order to plot the Meanshapes the package '
-                + '_matplotlib_ has to be correctly imported. This was not'
-                + ' the case, so the task is aborted. For the next time make'
-                + ' sure the package is installed.'
+                "[!] In order to plot the Meanshapes the package "
+                + "_matplotlib_ has to be correctly imported. This was not"
+                + " the case, so the task is aborted. For the next time make"
+                + " sure the package is installed."
             )
             warnings.warn(msg)
             w_log.info(msg)
@@ -152,18 +154,16 @@ def mccd_plots_runner(
     if plot_rho_stats:
         if has_stile is False or has_treecorr is False:
             msg = (
-                '[!] In order to calculate the Rho stats the packages '
-                + '_stile_ and _treecorr_ have to be correctly imported.'
-                + ' This was not the case, so the rho stat calculation is'
-                + 'aborted. For the next time make sure both of the'
-                + 'packages are installed.'
+                "[!] To calculate the rho stats the packages "
+                + "stile and treecorr are required. However, "
+                + f" treecorr: {has_treecorr}, stile: {has_stile}."
             )
             warnings.warn(msg)
             w_log.info(msg)
-        elif rho_stat_plot_style != 'HSC' and rho_stat_plot_style != 'DES':
+        elif rho_stat_plot_style not in ("HSC", "DES", "UNIONS"):
             msg = (
-                'The rho stat definition should be HSC or DES. An unknown'
-                + ' definition was used. Rho stat calculation aborted.'
+                f"Invalid flag RHO_STAT_STYLE={rho_stat_plot_style}, allowed"
+                + " are 'HSC', 'DES', 'UNIONS'."
             )
             warnings.warn(msg)
             w_log.info(msg)

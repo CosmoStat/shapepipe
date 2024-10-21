@@ -39,7 +39,7 @@ class StrInterpreter(object):
     def __init__(self, string, catalogue, make_compare=False, mask_dict=None):
 
         if type(string) is not str:
-            raise ValueError('string has to be str type')
+            raise ValueError("string has to be str type")
         else:
             self._string = string
 
@@ -52,7 +52,7 @@ class StrInterpreter(object):
             else:
                 self._cat = catalogue
         else:
-            raise ValueError('catalogue not provided')
+            raise ValueError("catalogue not provided")
 
         self._make_compare = make_compare
 
@@ -61,12 +61,12 @@ class StrInterpreter(object):
 
         self._init_stat_function()
         self._comp_dict = {
-            '<': operator.lt,
-            '>': operator.gt,
-            '<=': operator.le,
-            '>=': operator.ge,
-            '==': operator.eq,
-            '!=': operator.ne,
+            "<": operator.lt,
+            ">": operator.gt,
+            "<=": operator.le,
+            ">=": operator.ge,
+            "==": operator.eq,
+            "!=": operator.ne,
         }
 
         self.result = self.interpret(self._string, self._make_compare)
@@ -107,7 +107,7 @@ class StrInterpreter(object):
             result = self._compare(string)
         else:
             if make_operate:
-                string_split = re.split(r'\*|\/|\-|\+\s*(?![^()]*\))', string)
+                string_split = re.split(r"\*|\/|\-|\+\s*(?![^()]*\))", string)
                 result = self._operate(string, string_split)
             else:
                 if make_func:
@@ -128,14 +128,14 @@ class StrInterpreter(object):
             strind containing the comparison.
 
         """
-        comp = '<|>|<=|>=|==|!='
+        comp = "<|>|<=|>=|==|!="
 
         if len(re.split(comp, string)) != 2:
             raise Exception(
-                'Only one comparison in [<, >, <=, >=, ==, !=] per line'
+                "Only one comparison in [<, >, <=, >=, ==, !=] per line"
             )
 
-        for operator in ['<=', '>=', '<', '>', '==', '!=']:
+        for operator in ["<=", ">=", "<", ">", "==", "!="]:
             terms = re.split(operator, string)
             if len(terms) == 2:
                 self._make_compare = False
@@ -158,7 +158,7 @@ class StrInterpreter(object):
             result of the function
 
         """
-        str_split = re.split(r'\(|\)', string)
+        str_split = re.split(r"\(|\)", string)
 
         if len(str_split) == 1:
             return self.interpret(
@@ -168,7 +168,7 @@ class StrInterpreter(object):
                 make_operate=False,
             )
         elif len(str_split) == 3:
-            str_split_2 = re.split(',', str_split[1])
+            str_split_2 = re.split(",", str_split[1])
             if len(str_split_2) > 1:
                 param = [
                     self.interpret(
@@ -176,7 +176,8 @@ class StrInterpreter(object):
                         self._make_compare,
                         make_func=False,
                         make_operate=True,
-                    ) for char in str_split_2
+                    )
+                    for char in str_split_2
                 ]
 
                 # Evaluate statistical function, raise error if failure
@@ -190,19 +191,21 @@ class StrInterpreter(object):
             else:
                 if str_split[0] not in self._stat_func:
                     raise KeyError(
-                        f'Invalid function \'{str_split[0]}\' in expression '
-                        + f'\'{string}\''
+                        f"Invalid function '{str_split[0]}' in expression "
+                        + f"'{string}'"
                     )
-                return self._stat_func[str_split[0]](self.interpret(
-                    str_split[1],
-                    self._make_compare,
-                    make_func=False,
-                    make_operate=True,
-                ))
+                return self._stat_func[str_split[0]](
+                    self.interpret(
+                        str_split[1],
+                        self._make_compare,
+                        make_func=False,
+                        make_operate=True,
+                    )
+                )
         else:
             raise Exception(
-                'Only one function can be applied. Problem with the '
-                + f'term: {string}'
+                "Only one function can be applied. Problem with the "
+                + f"term: {string}"
             )
 
     def _init_stat_function(self):
@@ -212,21 +215,21 @@ class StrInterpreter(object):
 
         """
         self._stat_func = {}
-        self._stat_func['mean'] = np.mean
-        self._stat_func['median'] = np.median
-        self._stat_func['mode'] = self._mode
-        self._stat_func['sqrt'] = np.sqrt
-        self._stat_func['pow'] = pow
-        self._stat_func['log'] = np.log
-        self._stat_func['log10'] = np.log10
-        self._stat_func['exp'] = np.exp
-        self._stat_func['std'] = np.std
-        self._stat_func['var'] = np.var
-        self._stat_func['sigma_mad'] = self._sigma_mad
-        self._stat_func['len'] = len
-        self._stat_func['min'] = min
-        self._stat_func['max'] = max
-        self._stat_func['homogen'] = self._test_homogeneity
+        self._stat_func["mean"] = np.mean
+        self._stat_func["median"] = np.median
+        self._stat_func["mode"] = self._mode
+        self._stat_func["sqrt"] = np.sqrt
+        self._stat_func["pow"] = pow
+        self._stat_func["log"] = np.log
+        self._stat_func["log10"] = np.log10
+        self._stat_func["exp"] = np.exp
+        self._stat_func["std"] = np.std
+        self._stat_func["var"] = np.var
+        self._stat_func["sigma_mad"] = self._sigma_mad
+        self._stat_func["len"] = len
+        self._stat_func["min"] = min
+        self._stat_func["max"] = max
+        self._stat_func["homogen"] = self._test_homogeneity
 
     def _mean(self, input):
         """Get Mean.
@@ -303,7 +306,7 @@ class StrInterpreter(object):
             iteration += 1
 
         if iteration == iter_max:
-            raise ValueError('Mode computation failed')
+            raise ValueError("Mode computation failed")
         else:
             mode = (b_min + b_max) / 2.0
             return mode
@@ -361,18 +364,18 @@ class StrInterpreter(object):
             n_cells = args[2]
         else:
             raise ValueError(
-                'Inputs should be param_1, param_2 [optional], n_cells'
+                "Inputs should be param_1, param_2 [optional], n_cells"
             )
 
         if n_param == 2:
             if len(param[0]) != len(param[1]):
                 raise ValueError(
-                    'Both param_1 and param_2 must have the same '
-                    + f'length : {len(param[0])}, {len(param[1])}'
+                    "Both param_1 and param_2 must have the same "
+                    + f"length : {len(param[0])}, {len(param[1])}"
                 )
 
         if np.sqrt(n_cells) % 1 != 0:
-            raise ValueError('N_cells must be a square number')
+            raise ValueError("N_cells must be a square number")
 
         n_tot = len(param[0])
         homo_ratio = float(n_tot) / float(n_cells)
@@ -380,37 +383,52 @@ class StrInterpreter(object):
         param_min = []
         param_max = []
         for idx in param:
-            step = (
-                (np.max(idx) - np.min(idx))
-                / pow(n_cells, 1.0 / float(n_param))
+            step = (np.max(idx) - np.min(idx)) / pow(
+                n_cells, 1.0 / float(n_param)
             )
             param_min.append(
                 [val for val in np.arange(np.min(idx), np.max(idx), step)]
             )
             param_max.append(
                 [
-                    val for val in
-                    np.arange(np.min(idx) + step, np.max(idx) + step, step)
+                    val
+                    for val in np.arange(
+                        np.min(idx) + step, np.max(idx) + step, step
+                    )
                 ]
             )
 
         if n_param == 1:
-            n_obj = np.asarray([
-                float(len(np.where(
-                    (param[0] >= param_min[0][idx])
-                    & (param[0] <= param_max[0][idx])
-                )[0])) for idx in range(int(n_cells))
-            ])
+            n_obj = np.asarray(
+                [
+                    float(
+                        len(
+                            np.where(
+                                (param[0] >= param_min[0][idx])
+                                & (param[0] <= param_max[0][idx])
+                            )[0]
+                        )
+                    )
+                    for idx in range(int(n_cells))
+                ]
+            )
         elif n_param == 2:
             it = itertools.product(range(int(np.sqrt(n_cells))), repeat=2)
-            n_obj = np.asarray([
-                float(len(np.where(
-                    (param[0] >= param_min[0][idx_i])
-                    & (param[0] <= param_max[0][idx_i])
-                    & (param[1] >= param_min[1][idx_j])
-                    & (param[1] <= param_max[1][idx_j])
-                )[0])) for idx_i, idx_j in it
-            ])
+            n_obj = np.asarray(
+                [
+                    float(
+                        len(
+                            np.where(
+                                (param[0] >= param_min[0][idx_i])
+                                & (param[0] <= param_max[0][idx_i])
+                                & (param[1] >= param_min[1][idx_j])
+                                & (param[1] <= param_max[1][idx_j])
+                            )[0]
+                        )
+                    )
+                    for idx_i, idx_j in it
+                ]
+            )
 
         actual_std = np.std(n_obj / homo_ratio)
 
@@ -442,47 +460,47 @@ class StrInterpreter(object):
         It's used as a recursive function
 
         """
-        op = r'\*|\/|\-|\+\s*(?![^()]*\))'
+        op = r"\*|\/|\-|\+\s*(?![^()]*\))"
         if string is None:
-            raise ValueError('Parameter not specified')
+            raise ValueError("Parameter not specified")
         if string_split is None:
-            raise ValueError('Parameters splited not specified')
+            raise ValueError("Parameters splited not specified")
 
         if len(re.split(op, string)) == 1:
             return self.interpret(string, make_operate=False)
 
         tmp = self._string_op_func(
-            re.split(r'\+\s*(?![^()]*\))', string),
+            re.split(r"\+\s*(?![^()]*\))", string),
             string_split,
             operator.add,
             0,
         )
-        if not np.isscalar(tmp) or tmp != 'pass':
+        if not np.isscalar(tmp) or tmp != "pass":
             return tmp
         else:
             tmp = self._string_op_func(
-                re.split(r'\-\s*(?![^()]*\))', string),
+                re.split(r"\-\s*(?![^()]*\))", string),
                 string_split,
                 operator.sub,
-                'init',
+                "init",
             )
-            if not np.isscalar(tmp) or tmp != 'pass':
+            if not np.isscalar(tmp) or tmp != "pass":
                 return tmp
             else:
                 tmp = self._string_op_func(
-                    re.split(r'\*\s*(?![^()]*\))', string),
+                    re.split(r"\*\s*(?![^()]*\))", string),
                     string_split,
                     operator.mul,
                     1,
                 )
-                if not np.isscalar(tmp) or tmp != 'pass':
+                if not np.isscalar(tmp) or tmp != "pass":
                     return tmp
                 else:
                     return self._string_op_func(
-                        re.split(r'\/\s*(?![^()]*\))', string),
+                        re.split(r"\/\s*(?![^()]*\))", string),
                         string_split,
                         operator.truediv,
-                        'init',
+                        "init",
                     )
 
     def _string_op_func(self, string_op, string_split, op, tmp):
@@ -512,7 +530,7 @@ class StrInterpreter(object):
         """
         if len(string_op) > 2:
             for operator in string_op:
-                if tmp == 'init':
+                if tmp == "init":
                     tmp = self._operate(operator, string_split)
                 else:
                     tmp = op(tmp, self._operate(operator, string_split))
@@ -528,7 +546,7 @@ class StrInterpreter(object):
                 second = self._operate(string_op[1], string_split)
             return op(first, second)
         else:
-            return 'pass'
+            return "pass"
 
     def _get_value(self, string):
         """Get Value.
@@ -558,28 +576,26 @@ class StrInterpreter(object):
             string_value = float(string)
             return string_value
         except Exception:
-            str_split = re.split(r'\{|\}', string)
+            str_split = re.split(r"\{|\}", string)
             if len(str_split) == 1:
                 try:
                     return self._cat[string]
                 except Exception:
                     raise ValueError(
-                        'String has to be a float or a catalogue parameter. '
-                        + f'{string} not found'
+                        "String has to be a float or a catalogue parameter. "
+                        + f"{string} not found"
                     )
             if len(str_split) == 3:
                 if str_split[1] in self._mask.keys():
                     try:
-                        return (
-                            self._cat[str_split[0]][self._mask[str_split[1]]]
-                        )
+                        return self._cat[str_split[0]][self._mask[str_split[1]]]
                     except Exception:
                         raise ValueError(
-                            'String has to be a catalogue parameter. '
-                            + f'{str_split[0]} not found'
+                            "String has to be a catalogue parameter. "
+                            + f"{str_split[0]} not found"
                         )
                 else:
                     raise ValueError(
-                        f'Mask has to be provided. {str_split[1]} not '
-                        + 'found in mask'
+                        f"Mask has to be provided. {str_split[1]} not "
+                        + "found in mask"
                     )
