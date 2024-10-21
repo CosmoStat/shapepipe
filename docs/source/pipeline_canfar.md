@@ -35,6 +35,7 @@ rm -rf output/run_sp_Git_*; update_runs_log_file.py
 
 ### Find exposures; this run can be stopped after Fe
 shapepipe_run -c cfis/config_GitFe_symlink.ini
+# You can also run Fe alone
 
 ### Download and move exposures
 
@@ -43,15 +44,15 @@ mv -i output/run_sp_Gie_*/get_images_runner/output/*.fits*fz data_exp
 rm -rf output/run_sp_Gie_*
 update_runs_log_file.py
 # repeat the above; or:
-while true; do shapepipe_run -c cfis/config_Gie_vos.ini; ls -l data_exp/ | wc; mv -i output/run_sp_Gie_*/get_images_runner/output/*.fits*fz data_exp;  ls -l data_exp/ | wc; rm -rf output/run_sp_Git_*; update_runs_log_file.py; done
+while true; do shapepipe_run -c cfis/config_Gie_vos.ini; ls -l data_exp/ | wc; mv -i output/run_sp_Gie_*/get_images_runner/output/*.fits*fz data_exp;  ls -l data_exp/ | wc; rm -rf output/run_sp_Gie_*; update_runs_log_file.py; done
 # Make sure that after all images are downloaded there is no Gie run. This would
 # mess up later modules since last:get_image_runner could point to this run.
 
 ### Create links (and re-run Fe, not necessary)
 job_sp_canfar.bash -p $psf `cat tile_numbers.txt` -j 1 -r symlink
 
-# Uncompress weights,  split exposures into single HDUs
-job_sp_canfar.bash -p $psf -n $OMP_NUM_THREADS -j 2
+# Get single-HDU single-exposure IDs file (from missing 32 job) 
+~/shapepipe/scripts/python/summary_run.py P$patch [32]
 
 # Mask tiles
 
@@ -61,6 +62,19 @@ job_sp_canfar.bash -p $psf -n $OMP_NUM_THREADS -j 4
 ## Combine all runs
 combine_runs.bash -c flag_tile
 
+# Tile detection
+curl_canfar_local.sh -j 16 -f tile_numbers.txt -p $psf -N $OMP_NUM_THREADS
+
+# Option 0, global split and exp masks: sp_local=0
+# Todo: split Uz and SpMh
+
+# For sp_local=- both mh_local (0, 1) are ok
+export mh_local=0
+#export mh_local=1
+
+## Uncompress weights,  split exposures into single HDUs
+job_sp_canfar.bash -p $psf -n $OMP_NUM_THREADS -j 2
+
 # Mask exposures
 
 ## Run repeatedly if necessary
@@ -69,17 +83,19 @@ job_sp_canfar.bash -p $psf -n $OMP_NUM_THREADS -j 8
 # Combine all runs
 combine_runs.bash -c flag_exp
 
+# Option 1: sp_local=1, local split and mask exp
+export mh_local=1
 
-# Tile detection
-curl_canfar_local.sh -j 16 -f tile_numbers.txt -p $psf -N $OMP_NUM_THREADS
+# Split exposures
+curl_canfar_local.sh -j 2 -f all.txt -p $psf -N $OMP_NUM_THREADS
 
+# Mask exposures
+curl_canfar_local.sh -j 8 -f all.txt -p $psf -N $OMP_NUM_THREADS
 
 # Exposure detection
-## Get single-HDU single-exposure IDs
-~/shapepipe/scripts/python/summary_run.py
 
 cp summary/missing_job_32_sextractor.txt all.txt
-curl_canfar_local.sh -j 32 -f all.txt -p $psf -N $OMP_NUM_THREADS
+curl_canfar_local.sh -j 32 -m $mh_local -f all.txt -p $psf -N $OMP_NUM_THREADS
 
 # Tile preparation
 curl_canfar_local.sh -j 64 -f tile_numbers.txt -p $psf -N $OMP_NUM_THREADS
