@@ -14,6 +14,10 @@ debug_out=-1
 # mh_local is 0 (1) if merge_header_runner is run on all exposures,
 # which is standard so far (run on exposures of given tile only; new)
 mh_local=0
+
+# sp_local is 0 (1) is split_headers_runner and mask_runner is run
+# on all exposures (locally). Not 100% automatic yet. 
+sp_local=1
 VERBOSE=1
 
 pat="-- "
@@ -164,7 +168,7 @@ if [ "$debug_out" != "-1" ]; then
 fi
 
 # Set kind
-job_to_test=16
+job_to_test=2
 kind="none"
 
 # loop over possible job numbers
@@ -180,6 +184,20 @@ while  [ $job_to_test -le 1024 ]; do
         fi
 
         # job=32 -> set kind to exp
+        kind="exp"
+      elif [ $job_to_test == 2 ]; then
+        if [ "$kind" == "tile" ]; then
+          echo "Error: Invalid job $job. mixing tile and exp kinds"
+          exit 6
+        fi
+
+        kind="exp"
+      elif [ $job_to_test == 8 ]; then
+        if [ "$kind" == "tile" ]; then
+          echo "Error: Invalid job $job. mixing tile and exp kinds"
+          exit 6
+        fi
+
         kind="exp"
       else
         if [ "$kind" == "exp" ]; then
@@ -207,11 +225,6 @@ if [ "$dry_run" == 1 ]; then
   echo "in dry run mode"
 fi
 
-#. /opt/conda/etc/profile.d/conda.sh
-# the following line will look for /opt/...
-#conda activate shapepipe
-#conda activate $HOME/.conda/envs/shapepipe
-#CONDA_PREFIX=$HOME/.conda/envs/shapepipe
 CONDA_PREFIX=/arc/home/kilbinger/.conda/envs/shapepipe
 PATH=$PATH:$CONDA_PREFIX/bin
 if [ "$debug_out"  != "-1" ]; then
@@ -257,11 +270,68 @@ fi
 for my_dir in $dir/output/run_sp_[GU]*; do
   command "ln -sf $my_dir" $dry_run
 done
+
 # Combined flags
+
+## Tiles
 command "ln -sf $dir/output/run_sp_Ma_tile" $dry_run
-command "ln -sf $dir/output/run_sp_Ma_exp" $dry_run
-# exp Sp
-command "ln -sf $dir/output/run_sp_exp_SpMh" $dry_run
+
+if [ "$sp_local" == "0" ]; then
+  # Exposures
+  command "ln -sf $dir/output/run_sp_Ma_exp" $dry_run
+else
+  command "rm -f $dir/output/run_sp_Ma_exp" $dry_run
+fi
+
+# Check for existing exp SpMh dir
+if [[ -d "$dir/output/run_sp_exp_SpMh" ]]; then
+  # create link
+  command "ln -sf $dir/output/run_sp_exp_SpMh" $dry_run
+else
+  echo "No global SpMh directory found"
+fi
+
+(( do_job = $job & 2 ))
+if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
+  # run local Sp; works only with mh_local=1; this step needs to be done
+  # before following mh_local=1 steps 
+  command "rm -rf run_sp_GitFeGie*" $dry_run
+  command "rm -rf run_sp_Gie*" $dry_run
+  command "rm -rf run_sp_exp_Sp*" $dry_run
+
+  # Create new get_image dir
+  new_dir="run_sp_Gie/get_images_runner_run_2/output"
+  command "rm -rf $new_dir" $dry_run
+  command "mkdir -p $new_dir" $dry_run
+
+  # Link to image, weight, and flag file of current exposure
+
+  # Remove HDU extension
+  command "cd $new_dir" $dry_run
+  exp_ID=$(echo "$ID" | sed 's/-[0-9]\{1,2\}//')
+  for file in $dir/output//run_sp_GitFeGie_20*/get_images_runner_run_2/output/*${exp_ID}* ; do
+    echo $file
+    command "ln -s $file" $dry_run
+  done
+  command "cd ../../.." $dry_run
+
+  # Run Sp
+  cd ..
+  command "update_runs_log_file.py" $dry_run
+  export SP_RUN=`pwd`
+  command "shapepipe_run -c cfis/config_exp_Sp.ini -e $exp_ID" $dry_run
+
+  # Only keep CCD of this ID 
+  command "mkdir -p output/run_sp_exp_Sp_shdu/split_exp_runner/output" $dry_run
+  command "mv output/run_sp_exp_Sp/split_exp_runner/output/*$ID* output/run_sp_exp_Sp_shdu/split_exp_runner/output" $dry_run
+  command "mv output/run_sp_exp_Sp/split_exp_runner/output/headers* output/run_sp_exp_Sp_shdu/split_exp_runner/output" $dry_run
+  command "rm -rf output/run_sp_exp_Sp" $dry_run
+  command "update_runs_log_file.py" $dry_run
+  cd output
+
+  # Exception: Do not carry out actual job call
+  exit 0
+fi
 
 if [ "$mh_local" == "1" ]; then
 
@@ -284,19 +354,19 @@ if [ "$mh_local" == "1" ]; then
 
   echo "Creating local mh file"
 
-  # Remove previous (local) split_exp dir
-  command "rm -rf run_sp_exp_Sp" $dry_run
+  ## Remove previous (local) split_exp dir
+  #command "rm -rf run_sp_exp_Sp" $dry_run
 
-  # Create new split exp run dir
-  new_dir="run_sp_exp_Sp//split_exp_runner/output"
-  command "mkdir -p $new_dir" $dry_run
+  ## Create new split exp run dir
+  #new_dir="run_sp_exp_Sp//split_exp_runner/output"
+  #command "mkdir -p $new_dir" $dry_run
 
-  # Link to all header files of exposures used for the current tile
-  IDs=`echo $ID | tr "." "-"`
-  for exp_ID in `cat run_sp_GitFeGie_*/find_exposures_runner/output/exp_numbers-$IDs.txt` ; do
-    x=`echo $exp_ID | tr -d p `
-    command "ln -s $dir/output/run_sp_exp_SpMh/split_exp_runner/output/headers-$x.npy $new_dir/headers-$x.npy" $dry_run
-  done
+  ## Link to all header files of exposures used for the current tile
+  #IDs=`echo $ID | tr "." "-"`
+  #for exp_ID in `cat run_sp_GitFeGie_*/find_exposures_runner/output/exp_numbers-$IDs.txt` ; do
+    #x=`echo $exp_ID | tr -d p `
+    #command "ln -s $dir/output/run_sp_exp_SpMh/split_exp_runner/output/headers-$x.npy $new_dir/headers-$x.npy" $dry_run
+  #done
 
   # Run merge_headers_runner on local exposure selection
   cd ..
@@ -305,6 +375,13 @@ if [ "$mh_local" == "1" ]; then
   command "shapepipe_run -c cfis/config_exp_Mh.ini" $dry_run
   cd output
 
+fi
+
+(( do_job = $job & 8 ))
+if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
+  # Remove previous local Ma runs
+  echo "cdsclient = $CDSCLIENT"
+  command "rm -rf run_sp_exp_Ma*" $dry_run
 fi
 
 (( do_job = $job & 16 ))
@@ -332,13 +409,6 @@ if [[ $do_job != 0 ]]; then
     # Remove previous runs of this job
     rm -rf run_sp_tile_PsViSmVi*
   fi
-fi
-
-(( do_job = $job & 256 ))
-if [[ $do_job != 0 ]]; then
-  # Remove previous runs of this job
-  rm -rf run_sp_tile_??ViSmVi_20??_*
-
 fi
 
 (( do_job = $job & 256 ))
