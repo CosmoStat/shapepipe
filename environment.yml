@@ -1,31 +1,42 @@
-name: shapepipe
+name: shapepipe_v1.4
+# ShapePipe Production Environment
+# --------------------------------
+# This environment should be used for any production runs of ShapePipe 
+# (i.e. anything that could be published). All packages are pinned to
+# specific versions to maximise the reproducibility of the results.
+# This environment should be updated for each release of ShapePipe.
 channels:
   - conda-forge
 dependencies:
   - python=3.9
   - pip>=21.2.4
-  - numpy==1.22
-  - astropy==5.0
-  - automake==1.16.2
-  - autoconf==2.69
-  - cmake==3.19.6
-  - galsim==2.2.5
-  - joblib==1.1.0
-  - libtool==2.4.6
-  - matplotlib==3.5.1
-  - numba==0.54.1
-  - pandas==1.4.1
+  - astromatic-psfex==3.21.1
+  - astromatic-source-extractor==2.25.0
+  - astropy==5.2
+  - automake
+  - autoconf
+  - cmake
+  - galsim
+  - joblib
+  - libtool
+  - matplotlib==3.8.4
+  - numba==0.58.1
+  - numpy==1.26.4
   - pip:
-    - cs_util==0.0.5
-    - modopt==1.6.0
-    - PyQt5==5.15.6
-    - pyqtgraph==0.12.4
-    - reproject==0.8
-    - sip_tpv==1.1
-    - sf_tools==2.0.4
-    - sqlitedict==2.0.0
-    - termcolor==1.1.0
-    - tqdm==4.63.0
-    - treecorr==4.2.6
+    - cs_util==0.1
+    - modopt
+    - PyQt5
+    - pyqtgraph
+    - python-pysap==0.2.1
+    - reproject
+    - shear_psf_leakage
+    - skaha
+    - sip_tpv
+    - sf_tools
+    - sqlitedict
+    - termcolor
+    - tqdm
+    - treecorr
+    - vos
     - git+https://github.com/aguinot/ngmix@stable_version
     - git+https://github.com/tobias-liaudat/Stile@v0.1

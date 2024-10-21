@@ -32,7 +32,7 @@ def execute(command_line):
 
     """
     if not isinstance(command_line, str):
-        raise TypeError('Command line must be a string.')
+        raise TypeError("Command line must be a string.")
 
     command = command_line.split()
     check_executable(command[0])
@@ -40,7 +40,7 @@ def execute(command_line):
     process = sp.Popen(command, stdout=sp.PIPE, stderr=sp.PIPE)
     stdout, stderr = process.communicate()
 
-    return stdout.decode('utf-8'), stderr.decode('utf-8')
+    return stdout.decode("utf-8"), stderr.decode("utf-8")
 
 
 def check_executable(exe_name):
@@ -62,7 +62,7 @@ def check_executable(exe_name):
 
     """
     if not isinstance(exe_name, str):
-        raise TypeError('Executable name must be a string.')
+        raise TypeError("Executable name must be a string.")
 
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
@@ -70,16 +70,18 @@ def check_executable(exe_name):
     fpath, fname = os.path.split(exe_name)
 
     if not fpath:
-        res = any([
-            is_exe(os.path.join(path, exe_name))
-            for path in os.environ['PATH'].split(os.pathsep)
-        ])
+        res = any(
+            [
+                is_exe(os.path.join(path, exe_name))
+                for path in os.environ["PATH"].split(os.pathsep)
+            ]
+        )
 
     else:
         res = is_exe(exe_name)
 
     if not res:
         raise OSError(
-            f'{exe_name} does not appear to be a valid executable on this '
-            + 'system.'
+            f"{exe_name} does not appear to be a valid executable on this "
+            + "system."
         )

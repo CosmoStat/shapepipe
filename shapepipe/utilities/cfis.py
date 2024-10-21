@@ -18,17 +18,17 @@ from astropy.io import ascii
 
 from shapepipe.utilities.file_system import mkdir
 
-unitdef = 'degree'
+unitdef = "degree"
 
 # Maybe define class for these constants?
 size = {}
-size['tile'] = 0.5
-size['weight'] = 0.5
-size['exposure'] = 1.0
+size["tile"] = 0.5
+size["weight"] = 0.5
+size["exposure"] = 1.0
 
 # Cut criteria for exposures
 exp_time_min = 95
-flag_valid = 'V'
+flag_valid = "V"
 
 
 class param:
@@ -60,7 +60,7 @@ class CfisError(Exception):
     pass
 
 
-class image():
+class image:
     """Image Class.
 
     Class to store and create image information.
@@ -80,7 +80,7 @@ class image():
 
     """
 
-    def __init__(self, name, ra, dec, exp_time=-1, valid='Unknown'):
+    def __init__(self, name, ra, dec, exp_time=-1, valid="Unknown"):
         self.name = name
         self.ra = ra
         self.dec = dec
@@ -89,7 +89,7 @@ class image():
         else:
             self.exp_time = exp_time
         if valid is None:
-            self.valid = 'Unknown'
+            self.valid = "Unknown"
         else:
             self.valid = valid
 
@@ -119,7 +119,7 @@ class image():
             return True
 
         # Cut if validation flag is not valid (and not unknown)
-        if self.valid != flag_valid and self.valid != 'Unknown':
+        if self.valid != flag_valid and self.valid != "Unknown":
             return True
 
         return False
@@ -140,18 +140,14 @@ class image():
             if name does not match to ID pattern
 
         """
-        m = re.search(r'(\d{3}).{1}(\d{3})', self.name)
+        m = re.search(r"(\d{3}).{1}(\d{3})", self.name)
         if m is None:
-            raise ValueError(f'No ID match in file name {name}')
+            raise ValueError(f"No ID match in file name {name}")
         else:
-            return f'{m[1]}.{m[2]}'
+            return f"{m[1]}.{m[2]}"
 
     def print(
-        self,
-        file=sys.stdout,
-        base_name=False,
-        name_only=True,
-        ID_only=False
+        self, file=sys.stdout, base_name=False, name_only=True, ID_only=False
     ):
         """Print.
 
@@ -180,21 +176,21 @@ class image():
             name = self.name
 
         if ID_only:
-            m = re.search(r'\d{3}.\d{3}', name)
+            m = re.search(r"\d{3}.\d{3}", name)
             if m is None:
-                raise ValueError(f'No ID match in file name {name}')
+                raise ValueError(f"No ID match in file name {name}")
             else:
                 name = m[0]
-        print(name, end='', file=file)
+        print(name, end="", file=file)
 
         if not name_only:
             if self.ra is not None:
                 ra_unit = getattr(self.ra, unitdef)
-                print(f' {ra_unit:10.2f}', end='', file=file)
+                print(f" {ra_unit:10.2f}", end="", file=file)
             if self.dec is not None:
                 dec_unit = getattr(self.dec, unitdef)
-                print(f' {dec_unit:10.2f}', end='', file=file)
-            print(f' {self.exp_time:5d} {self.valid:8s}', end='', file=file)
+                print(f" {dec_unit:10.2f}", end="", file=file)
+            print(f" {self.exp_time:5d} {self.valid:8s}", end="", file=file)
         print(file=file)
 
     def print_header(self, file=sys.stdout):
@@ -209,8 +205,8 @@ class image():
 
         """
         print(
-            f'#Name ra[{unitdef}] dec[{unitdef}] exp_time[s] validation',
-            file=file
+            f"#Name ra[{unitdef}] dec[{unitdef}] exp_time[s] validation",
+            file=file,
         )
 
 
@@ -237,30 +233,30 @@ def log_command(argv, name=None, close_no_return=True):
 
     """
     if name is None:
-        name = 'log_' + os.path.basename(argv[0])
+        name = "log_" + os.path.basename(argv[0])
 
-    if name == 'sys.stdout':
+    if name == "sys.stdout":
         f = sys.stdout
-    elif name == 'sys.stderr':
+    elif name == "sys.stderr":
         f = sys.stderr
     else:
-        f = open(name, 'w')
+        f = open(name, "w")
 
     for a in argv:
 
         # Quote argument if special characters
-        if ']' in a or ']' in a:
-            a = f'\"{a}\"'
+        if "]" in a or "]" in a:
+            a = f'"{a}"'
 
-        print(a, end='', file=f)
-        print(' ', end='', file=f)
+        print(a, end="", file=f)
+        print(" ", end="", file=f)
 
-    print('', file=f)
+    print("", file=f)
 
     if not close_no_return:
         return f
 
-    if name != 'sys.stdout' and name != 'sys.stderr':
+    if name != "sys.stdout" and name != "sys.stderr":
         f.close()
 
 
@@ -301,30 +297,30 @@ def my_string_split(string, num=-1, verbose=False, stop=False, sep=None):
         return None
 
     if sep is None:
-        has_space = string.find(' ')
-        has_underscore = string.find('_')
-        has_dot = string.find('.')
+        has_space = string.find(" ")
+        has_underscore = string.find("_")
+        has_dot = string.find(".")
 
         if has_space != -1:
-            my_sep = ' '
+            my_sep = " "
         elif has_underscore != -1:
-            my_sep = '_'
+            my_sep = "_"
         elif has_dot != -1:
-            my_sep = '.'
+            my_sep = "."
         else:
             # no separator found, does string consist of only one element?
             if num == -1 or num == 1:
                 my_sep = None
             else:
                 raise Valueerror(
-                    'No separator (\' \', \'_\', or \'.\') found in string'
-                    + f' \'{string}\', cannot split'
+                    "No separator (' ', '_', or '.') found in string"
+                    + f" '{string}', cannot split"
                 )
     else:
         if not string.find(sep):
             raise ValueError(
-                f'No separator \'{sep}\' found in string \'{string}\', '
-                + 'cannot split'
+                f"No separator '{sep}' found in string '{string}', "
+                + "cannot split"
             )
         my_sep = sep
 
@@ -332,7 +328,7 @@ def my_string_split(string, num=-1, verbose=False, stop=False, sep=None):
 
     if num != -1 and num != len(res) and stop:
         raise CfisError(
-            f'String \'{len(res)}\' has length {num}, required is {num}'
+            f"String '{len(res)}' has length {num}, required is {num}"
         )
 
     return res
@@ -364,46 +360,46 @@ def get_file_pattern(pattern, band, image_type, want_re=True, ext=True):
         output pattern
 
     """
-    if pattern == '':
+    if pattern == "":
         if image_type in (
-            'exposure',
-            'exposure_flag',
-            'exposure_flag.fz',
-            'exposure_weight',
-            'exposure_weight.fz'
+            "exposure",
+            "exposure_flag",
+            "exposure_flag.fz",
+            "exposure_weight",
+            "exposure_weight.fz",
         ):
-            pattern_base = r'\d{7}p'
+            pattern_base = r"\d{7}p"
         else:
-            pattern_base = rf'CFIS.*\.{band}'
+            pattern_base = rf"CFIS.*\.{band}"
     else:
         pattern_base = pattern
 
     if ext:
-        if image_type == 'exposure':
-            pattern_out = rf'{pattern_base}\.fits\.fz'
-        elif image_type == 'exposure_flag':
-            pattern_out = rf'{pattern_base}\.flag\.fits'
-        elif image_type == 'exposure_flag.fz':
-            pattern_out = rf'{pattern_base}\.flag\.fits\.fz'
-        elif image_type == 'exposure_weight':
-            pattern_out = rf'{pattern_base}\.weight\.fits'
-        elif image_type == 'exposure_weight.fz':
-            pattern_out = rf'{pattern_base}\.weight\.fits\.fz'
-        elif image_type == 'tile':
-            pattern_out = rf'{pattern_base}\.fits'
-        elif image_type == 'cat':
-            pattern_out = rf'{pattern_base}\.cat'
-        elif image_type == 'weight':
-            pattern_out = rf'{pattern_base}\.weight\.fits'
-        elif image_type == 'weight.fz':
-            pattern_out = rf'{pattern_base}\.weight\.fits\.fz'
+        if image_type == "exposure":
+            pattern_out = rf"{pattern_base}\.fits\.fz"
+        elif image_type == "exposure_flag":
+            pattern_out = rf"{pattern_base}\.flag\.fits"
+        elif image_type == "exposure_flag.fz":
+            pattern_out = rf"{pattern_base}\.flag\.fits\.fz"
+        elif image_type == "exposure_weight":
+            pattern_out = rf"{pattern_base}\.weight\.fits"
+        elif image_type == "exposure_weight.fz":
+            pattern_out = rf"{pattern_base}\.weight\.fits\.fz"
+        elif image_type == "tile":
+            pattern_out = rf"{pattern_base}\.fits"
+        elif image_type == "cat":
+            pattern_out = rf"{pattern_base}\.cat"
+        elif image_type == "weight":
+            pattern_out = rf"{pattern_base}\.weight\.fits"
+        elif image_type == "weight.fz":
+            pattern_out = rf"{pattern_base}\.weight\.fits\.fz"
         else:
-            raise CfisError(f'Invalid type \'{image_type}\'')
+            raise CfisError(f"Invalid type '{image_type}'")
     else:
         pattern_out = pattern_base
 
     if not want_re:
-        pattern_out = pattern_out.replace('\\', '')
+        pattern_out = pattern_out.replace("\\", "")
 
     return pattern_out
 
@@ -443,13 +439,13 @@ def get_tile_number_from_coord(ra, dec, return_type=str):
         xi = 0
 
     if return_type == str:
-        nix = f'{xi:03d}'
-        niy = f'{yi:03d}'
+        nix = f"{xi:03d}"
+        niy = f"{yi:03d}"
     elif return_type == int:
         nix = xi
         niy = yi
     else:
-        raise CfisError(f'Invalid return type {return_type}')
+        raise CfisError(f"Invalid return type {return_type}")
 
     return nix, niy
 
@@ -482,14 +478,14 @@ def get_tile_coord_from_nixy(nix, niy):
         yi = int(niy)
 
     d = yi / 2 - 90
-    dec = coords.Angle(d, unit='deg')
+    dec = coords.Angle(d, unit="deg")
     r = xi / 2 / np.cos(dec.radian)
-    ra = coords.Angle(r, unit='deg')
+    ra = coords.Angle(r, unit="deg")
 
     return ra, dec
 
 
-def get_tile_name(nix, niy, band, image_type='tile', input_format='full'):
+def get_tile_name(nix, niy, band, image_type="tile", input_format="full"):
     """Get Tile Name.
 
     Return tile name for given tile numbers.
@@ -519,29 +515,29 @@ def get_tile_name(nix, niy, band, image_type='tile', input_format='full'):
 
     """
     if type(nix) is int and type(niy) is int:
-        if input_format == 'ID_only':
-            tile_base = f'{nix:03d}.{niy:03d}'
+        if input_format == "ID_only":
+            tile_base = f"{nix:03d}.{niy:03d}"
         else:
-            tile_base = f'CFIS.{nix:03d}.{niy:03d}.{band}'
+            tile_base = f"CFIS.{nix:03d}.{niy:03d}.{band}"
     elif type(nix) is str and type(niy) is str:
-        if input_format == 'ID_only':
-            tile_base = f'{nix}.{niy}'
+        if input_format == "ID_only":
+            tile_base = f"{nix}.{niy}"
         else:
-            tile_base = f'CFIS.{nix}.{niy}.{band}'
+            tile_base = f"CFIS.{nix}.{niy}.{band}"
     else:
-        raise CfisError(f'Invalid type for input tile numbers {nix}, {niy}')
+        raise CfisError(f"Invalid type for input tile numbers {nix}, {niy}")
 
-    if input_format == 'ID_only':
+    if input_format == "ID_only":
         tile_name = tile_base
     else:
-        if image_type == 'tile':
-            tile_name = f'{tile_base}.fits'
-        elif image_type == 'weight':
-            tile_name = f'{tile_base}.weight.fits'
-        elif image_type == 'weight.fz':
-            tile_name = f'{tile_base}.weight.fits.fz'
+        if image_type == "tile":
+            tile_name = f"{tile_base}.fits"
+        elif image_type == "weight":
+            tile_name = f"{tile_base}.weight.fits"
+        elif image_type == "weight.fz":
+            tile_name = f"{tile_base}.weight.fits.fz"
         else:
-            raise CfisError(f'Invalid image type {image_type}')
+            raise CfisError(f"Invalid image type {image_type}")
 
     return tile_name
 
@@ -567,10 +563,10 @@ def get_tile_number(tile_name):
         tile number for x and tile number for y
 
     """
-    m = re.search(r'(\d{3})[\.-](\d{3})', tile_name)
+    m = re.search(r"(\d{3})[\.-](\d{3})", tile_name)
     if m is None or len(m.groups()) != 2:
         raise CfisError(
-            f'Image name \'{tile_name}\' does not match tile name syntax'
+            f"Image name '{tile_name}' does not match tile name syntax"
         )
 
     nix = m.groups()[0]
@@ -629,12 +625,12 @@ def get_log_file(path, verbose=False):
 
     """
     if not os.path.isfile(path):
-        raise CfisError(f'Log file \'{path}\' not found')
+        raise CfisError(f"Log file '{path}' not found")
 
-    f_log = open(path, 'r')
+    f_log = open(path, "r")
     log = f_log.readlines()
     if verbose:
-        print(f'Reading log file, {len(log)} lines found')
+        print(f"Reading log file, {len(log)} lines found")
     f_log.close()
 
     return log
@@ -663,7 +659,7 @@ def check_ra(ra):
     """
     print(ra.deg)
     if ra.deg < 0 or ra.deg > 360:
-        raise CfisError('Invalid ra, valid range is 0 < ra < 360 deg')
+        raise CfisError("Invalid ra, valid range is 0 < ra < 360 deg")
         return 1
 
     return 0
@@ -691,7 +687,7 @@ def check_dec(dec):
 
     """
     if dec.deg < -90 or dec.deg > 90:
-        raise CfisError('Invalid dec, valid range is -90 < dec < 90 deg')
+        raise CfisError("Invalid dec, valid range is -90 < dec < 90 deg")
         return 1
 
     return 0
@@ -744,10 +740,7 @@ def get_Angle_arr(str_coord, num=-1, wrap=True, verbose=False):
 
     """
     angles_mixed = my_string_split(
-        str_coord,
-        num=num,
-        verbose=verbose,
-        stop=True
+        str_coord, num=num, verbose=verbose, stop=True
     )
     n = len(angles_mixed)
     n = int(n / 2)
@@ -784,12 +777,13 @@ def read_list(fname, col=None):
 
     """
     if col is None:
-        f = open(fname, 'rU', encoding='latin1')
+        f = open(fname, "rU", encoding="latin1")
         file_list = [x.strip() for x in f.readlines()]
         f.close()
     else:
         import pandas as pd
-        dat = pd.read_csv(fname, sep=r'\s+', dtype='string', header=None)
+
+        dat = pd.read_csv(fname, sep=r"\s+", dtype="string", header=None)
         if col not in dat:
             col = int(col)
         file_list = dat[col]
@@ -827,17 +821,17 @@ def create_image_list(fname, ra, dec, exp_time=[], valid=[]):
     nr = len(ra)
     nd = len(dec)
     if nf == 0:
-        raise CfisError('No entries in file name list')
+        raise CfisError("No entries in file name list")
     if (nf != nr or nf != nd) and nr != 0 and nd != 0:
         raise CfisError(
-            f'Lists fname, ra, dec have not same length ({nf}, {nr}, {nd})'
+            f"Lists fname, ra, dec have not same length ({nf}, {nr}, {nd})"
         )
 
     images = []
     for i in range(nf):
         if nr > 0 and nd > 0:
-            r = Angle(f'{ra[i]} {unitdef}')
-            d = Angle(f'{dec[i]} {unitdef}')
+            r = Angle(f"{ra[i]} {unitdef}")
+            d = Angle(f"{dec[i]} {unitdef}")
         else:
             r = None
             d = None
@@ -856,12 +850,7 @@ def create_image_list(fname, ra, dec, exp_time=[], valid=[]):
 
 
 def get_image_list(
-    inp,
-    band,
-    image_type,
-    col=None,
-    input_format='full',
-    verbose=False
+    inp, band, image_type, col=None, input_format="full", verbose=False
 ):
     """Get Image List.
 
@@ -897,29 +886,29 @@ def get_image_list(
     if os.path.isdir(inp):
         if col is not None:
             raise CfisError(
-                'Column name (-c option) only valid if input is file'
+                "Column name (-c option) only valid if input is file"
             )
 
         # Read file names from directory listing
-        inp_type = 'dir'
-        file_list = glob.glob(f'{os.path.abspath(inp)}/*')
+        inp_type = "dir"
+        file_list = glob.glob(f"{os.path.abspath(inp)}/*")
 
     elif os.path.isfile(inp):
-        if image_type in ('tile', 'weight', 'weight.fz'):
+        if image_type in ("tile", "weight", "weight.fz"):
             # File names in single-column ascii file
-            inp_type = 'file'
+            inp_type = "file"
             file_list = read_list(inp, col=col)
-        elif image_type == 'exposure':
+        elif image_type == "exposure":
             # File names and coordinates in ascii file
-            inp_type = 'file'
+            inp_type = "file"
             dat = ascii.read(inp)
 
             if len(dat.keys()) == 3:
                 # File is exposure + coord list
                 # (obtained from get_coord_CFIS_pointings.py)
-                file_list = dat['Pointing']
-                ra_list = dat['R.A.[degree]']
-                dec_list = dat['Declination[degree]']
+                file_list = dat["Pointing"]
+                ra_list = dat["R.A.[degree]"]
+                dec_list = dat["Declination[degree]"]
             elif len(dat.keys()) == 12:
                 # File is log file, e.g. from
                 # http://www.cfht.hawaii.edu/Science/CFIS-DATA
@@ -927,41 +916,35 @@ def get_image_list(
                 # Default file separator is '|'
                 for d in dat:
                     file_list.append(f'd{d["col1"]}p.fits.fz')
-                    ra = re.split(r'\s*', d['col4'])[0]
-                    dec = re.split(r'\s*', d['col4'])[1]
-                    ang = coords.Angle('{ra} hours')
+                    ra = re.split(r"\s*", d["col4"])[0]
+                    dec = re.split(r"\s*", d["col4"])[1]
+                    ang = coords.Angle("{ra} hours")
                     ra_list.append(ang.degree)
                     dec_list.append(dec)
-                    exp_time = int(d['col5'])
+                    exp_time = int(d["col5"])
                     exp_time_list.append(exp_time)
-                    valid = re.split(r'\s*', d['col11'])[2]
+                    valid = re.split(r"\s*", d["col11"])[2]
                     valid_list.append(valid)
             else:
                 raise CfisError(
-                    f'Wrong file format, #columns={len(dat.keys())},'
-                    + f' has to be 3 or 12'
+                    f"Wrong file format, #columns={len(dat.keys())},"
+                    + f" has to be 3 or 12"
                 )
         else:
-            raise CfisError(f'Image type \'{image_type}\' not supported')
+            raise CfisError(f"Image type '{image_type}' not supported")
 
     # Create list of objects, coordinate lists can be empty
     image_list = create_image_list(
-        file_list,
-        ra_list,
-        dec_list,
-        exp_time=exp_time_list,
-        valid=valid_list
+        file_list, ra_list, dec_list, exp_time=exp_time_list, valid=valid_list
     )
 
     # Filter file list to match CFIS image pattern
     img_list = []
-    if input_format == 'ID_only':
-        pattern = get_file_pattern(r'\d{3}.\d{3}', band, image_type, ext=False)
+    if input_format == "ID_only":
+        pattern = get_file_pattern(r"\d{3}.\d{3}", band, image_type, ext=False)
     else:
         pattern = get_file_pattern(
-            rf'CFIS.\d{{3}}.\d{{3}}\.{band}',
-            band,
-            image_type
+            rf"CFIS.\d{{3}}.\d{{3}}\.{band}", band, image_type
         )
 
     for img in image_list:
@@ -979,9 +962,7 @@ def get_image_list(
             img_list.append(img)
 
     if verbose and len(img_list) > 0:
-        print(
-            f'{len(img_list)} image files found in input {inp_type} \'{inp}\''
-        )
+        print(f"{len(img_list)} image files found in input {inp_type} '{inp}'")
 
     return img_list
 
@@ -1013,8 +994,8 @@ def find_image_at_coord(
     band,
     image_type,
     no_cuts=False,
-    input_format='full',
-    verbose=False
+    input_format="full",
+    verbose=False,
 ):
     """Find Image At Coordinates.
 
@@ -1055,16 +1036,12 @@ def find_image_at_coord(
     ra, dec = get_Angle(coord)
 
     if verbose:
-        print(f'Looking for image at coordinates {ra}, {dec}')
+        print(f"Looking for image at coordinates {ra}, {dec}")
 
-    if image_type in ('tile', 'weight', 'weight.fz'):
+    if image_type in ("tile", "weight", "weight.fz"):
         nix, niy = get_tile_number_from_coord(ra, dec, return_type=int)
         tile_name = get_tile_name(
-            nix,
-            niy,
-            band,
-            image_type,
-            input_format=input_format
+            nix, niy, band, image_type, input_format=input_format
         )
 
         img_found = []
@@ -1074,9 +1051,9 @@ def find_image_at_coord(
                 ra_c, dec_c = get_tile_coord_from_nixy(nix, niy)
                 if img.ra is not None or img.dec is not None:
                     raise CfisError(
-                        'Coordinates in image are already '
-                        + f'set to {img.ra}, {img.rec}, '
-                        + f'cannot update to {ra_c}, {ra_dec}'
+                        "Coordinates in image are already "
+                        + f"set to {img.ra}, {img.rec}, "
+                        + f"cannot update to {ra_c}, {ra_dec}"
                     )
                 img.ra = ra_c
                 img.dec = dec_c
@@ -1086,12 +1063,12 @@ def find_image_at_coord(
             pass
         else:
             if verbose:
-                print(f'Tile with numbers ({nix}, {niy}) not found')
+                print(f"Tile with numbers ({nix}, {niy}) not found")
 
         if len(img_found) > 1:
-            raise CfisError(f'More than one tile ({img_found}) found')
+            raise CfisError(f"More than one tile ({img_found}) found")
 
-    elif image_type == 'exposure':
+    elif image_type == "exposure":
         sc_input = coords.SkyCoord(ra, dec)
 
         img_found = []
@@ -1112,21 +1089,16 @@ def find_image_at_coord(
             pass
         else:
             if verbose:
-                print('No exposure image found')
+                print("No exposure image found")
 
     else:
-        raise CfisError('Only implemented for image_type=tile')
+        raise CfisError("Only implemented for image_type=tile")
 
     return img_found
 
 
 def find_images_in_area(
-    images,
-    angles,
-    band,
-    image_type,
-    no_cuts=False,
-    verbose=False
+    images, angles, band, image_type, no_cuts=False, verbose=False
 ):
     """Fine Images In Area.
 
@@ -1164,22 +1136,22 @@ def find_images_in_area(
     if angles[1].ra > threesixty:
         ra_bounds = [
             [angles[0].ra, threesixty],
-            [coords.Angle(0, unitdef), angles[1].ra - threesixty]
+            [coords.Angle(0, unitdef), angles[1].ra - threesixty],
         ]
     else:
         ra_bounds = [[angles[0].ra, angles[1].ra]]
 
     if verbose:
         print(
-            'Looking for all images within rectangle, '
-            + f'dec=({angles[0].dec}, {angles[1].dec}), ',
-            end=''
+            "Looking for all images within rectangle, "
+            + f"dec=({angles[0].dec}, {angles[1].dec}), ",
+            end="",
         )
         for ra_min_max in ra_bounds:
-            print(f'ra=[({ra_min_max[0]}, {ra_min_max[1]}) ', end='')
+            print(f"ra=[({ra_min_max[0]}, {ra_min_max[1]}) ", end="")
         print()
 
-    if image_type in ('tile', 'weight', 'weight.fz'):
+    if image_type in ("tile", "weight", "weight.fz"):
         for img in images:
             nix, niy = get_tile_number(img.name)
             ra, dec = get_tile_coord_from_nixy(nix, niy)
@@ -1188,7 +1160,7 @@ def find_images_in_area(
                 within = False
 
                 # Check whether image is in any of the ra bound pairs
-                for (ra_min, ra_max) in ra_bounds:
+                for ra_min, ra_max in ra_bounds:
                     if ra.is_within_bounds(ra_min, ra_max):
                         within = True
                         break
@@ -1199,13 +1171,13 @@ def find_images_in_area(
 
                     found.append(img)
 
-    elif image_type == 'exposure':
+    elif image_type == "exposure":
         for img in images:
             if img.dec.is_within_bounds(angles[0].dec, angles[1].dec):
                 within = False
 
                 # Check whether image is in any of the ra bound pairs
-                for (ra_min, ra_max) in ra_bounds:
+                for ra_min, ra_max in ra_bounds:
                     if ra.is_within_bounds(ra_min, ra_max):
                         within = True
                         break
@@ -1214,10 +1186,10 @@ def find_images_in_area(
                         found.append(img)
 
     else:
-        raise CfisError(f'Image type \'{image_type}\' not implemented yet')
+        raise CfisError(f"Image type '{image_type}' not implemented yet")
 
     if verbose:
-        print(f'{len(found)} images found in area')
+        print(f"{len(found)} images found in area")
 
     return found
 
@@ -1235,9 +1207,9 @@ def plot_init():
     ax.yaxis.label.set_size(fs)
     ax.xaxis.label.set_size(fs)
 
-    plt.tick_params(axis='both', which='major', labelsize=fs)
+    plt.tick_params(axis="both", which="major", labelsize=fs)
 
-    plt.rcParams.update({'figure.autolayout': True})
+    plt.rcParams.update({"figure.autolayout": True})
 
     return ax
 
@@ -1255,7 +1227,7 @@ def plot_area(
     ax=None,
     lw=None,
     save=True,
-    dxy=0
+    dxy=0,
 ):
     """Plot Area.
 
@@ -1292,15 +1264,15 @@ def plot_area(
 
     """
     if outbase is None:
-        outname = 'plot.pdf'
+        outname = "plot.pdf"
     else:
-        outname = f'{outbase}.pdf'
+        outname = f"{outbase}.pdf"
 
     if not lw:
         my_lw = 0.1
     else:
         my_lw = lw
-    color = {'tile': 'b', 'exposure': 'g', 'weight': 'r'}
+    color = {"tile": "b", "exposure": "g", "weight": "r"}
 
     if not ax:
         ax = plot_init()
@@ -1322,16 +1294,16 @@ def plot_area(
         dy = abs(angles[0].dec - angles[1].dec)
         dx = getattr(dx, unitdef)
         dy = getattr(dy, unitdef)
-        radius = (
-            max(dx, dy) / 2 + (size['exposure'] + size['tile']) * np.sqrt(2)
+        radius = max(dx, dy) / 2 + (size["exposure"] + size["tile"]) * np.sqrt(
+            2
         )
         circle = plt.Circle(
             (ra_c.deg, dec_c.deg),
             radius,
-            color='r',
+            color="r",
             fill=False,
         )
-        plt.plot(ra_c, dec_c, 'or', mfc='none', ms=3)
+        plt.plot(ra_c, dec_c, "or", mfc="none", ms=3)
         ax.add_artist(circle)
     else:
         radius = 0
@@ -1349,24 +1321,24 @@ def plot_area(
             plt.text(
                 x,
                 y,
-                f'{nix}.{niy}',
+                f"{nix}.{niy}",
                 fontsize=3,
-                horizontalalignment='center',
-                verticalalignment='center'
+                horizontalalignment="center",
+                verticalalignment="center",
             )
 
         # Image boundary
         dx = size[image_type] / 2 / cos_dec_c
         dy = size[image_type] / 2
         cx, cy = square_from_centre(x, y, dx, dy, dxy=dxy)
-        ax.plot(cx, cy, '-', color=c, linewidth=my_lw)
+        ax.plot(cx, cy, "-", color=c, linewidth=my_lw)
 
     if show_area_border:
         cx, cy = square_from_corners(angles[0], angles[1])
-        ax.plot(cx, cy, 'r-.', linewidth=my_lw)
+        ax.plot(cx, cy, "r-.", linewidth=my_lw)
 
-    plt.xlabel('R.A. [degree]')
-    plt.ylabel('Declination [degree]')
+    plt.xlabel("R.A. [degree]")
+    plt.ylabel("Declination [degree]")
     if outbase is not None:
         plt.title(outbase)
 
@@ -1385,7 +1357,7 @@ def plot_area(
     plt.ylim(ym - lim / 2 - border, ym + lim / 2 + border)
 
     if save:
-        print(f'Saving plot to {outname}')
+        print(f"Saving plot to {outname}")
         plt.savefig(outname)
 
     if interactive:

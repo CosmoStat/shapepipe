@@ -40,9 +40,9 @@ def params_default():
     """
 
     p_def = cfis.param(
-        input_dir = '.',
-        output_dir = '.',
-        pattern = 'star_stat-',
+        input_dir=".",
+        output_dir=".",
+        pattern="star_stat-",
     )
 
     return p_def
@@ -64,23 +64,49 @@ def parse_options(p_def):
         Command line string
     """
 
-    usage  = "%prog [OPTIONS]"
+    usage = "%prog [OPTIONS]"
     parser = OptionParser(usage=usage)
 
     # I/O
-    parser.add_option('-i', '--input_dir', dest='input_dir', type='string', \
-         default=p_def.input_dir, \
-         help='input directory, default=\'{}\''.format(p_def.input_dir))
-    parser.add_option('-o', '--output_dir', dest='output_dir', type='string', \
-         default=p_def.output_dir, \
-         help='output directory, default=\'{}\''.format(p_def.output_dir))
-    parser.add_option('-c', '--config', dest='config', type='string', \
-         help='configuration file, default=none')
-    parser.add_option('-p', '--pattern', dest='pattern', type='string', \
-         default=p_def.pattern, \
-         help='input file pattern, default=\'{}\''.format(p_def.pattern))
+    parser.add_option(
+        "-i",
+        "--input_dir",
+        dest="input_dir",
+        type="string",
+        default=p_def.input_dir,
+        help="input directory, default='{}'".format(p_def.input_dir),
+    )
+    parser.add_option(
+        "-o",
+        "--output_dir",
+        dest="output_dir",
+        type="string",
+        default=p_def.output_dir,
+        help="output directory, default='{}'".format(p_def.output_dir),
+    )
+    parser.add_option(
+        "-c",
+        "--config",
+        dest="config",
+        type="string",
+        help="configuration file, default=none",
+    )
+    parser.add_option(
+        "-p",
+        "--pattern",
+        dest="pattern",
+        type="string",
+        default=p_def.pattern,
+        help="input file pattern, default='{}'".format(p_def.pattern),
+    )
 
-    parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
+    parser.add_option(
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+        help="verbose output",
+    )
 
     options, args = parser.parse_args()
 
@@ -106,14 +132,14 @@ def check_options(options):
 
 def update_param(p_def, options):
     """Return default parameter, updated and complemented according to options.
-    
+
     Parameters
     ----------
     p_def:  class param
         parameter values
     options: tuple
         command line options
-    
+
     Returns
     -------
     param: class param
@@ -152,8 +178,11 @@ def get_stats_file_list(param):
     """
 
     # Full paths
-    paths = glob.glob('{}/output/*/setools_runner/output/stat/{}*'.
-                      format(param.input_dir, param.pattern))
+    paths = glob.glob(
+        "{}/output/*/setools_runner/output/stat/{}*".format(
+            param.input_dir, param.pattern
+        )
+    )
 
     # File names w/o directories
     names = []
@@ -170,8 +199,11 @@ def get_stats_file_list(param):
             paths_unq.append(paths[i])
 
     if param.verbose:
-        print('{} files in total, {} unique files found'.
-              format(len(paths), len(paths_unq)))
+        print(
+            "{} files in total, {} unique files found".format(
+                len(paths), len(paths_unq)
+            )
+        )
 
     return paths_unq
 
@@ -196,11 +228,11 @@ def gather_values(paths, verbose=False):
     for path in paths:
         with open(path) as f:
             lines = f.readlines()
-        for line in lines: 
+        for line in lines:
             m = re.search("#", line)
             if m:
                 continue
-            m = re.search('(.*) = (\S*)', line)
+            m = re.search("(.*) = (\S*)", line)
             if m:
                 key = m[1]
                 val = float(m[2])
@@ -210,13 +242,14 @@ def gather_values(paths, verbose=False):
                     values[key].append(val)
                 else:
                     if verbose:
-                        print('NaN found in file \'{}\', key \'{}\''
-                              .format(path, key))
+                        print(
+                            "NaN found in file '{}', key '{}'".format(path, key)
+                        )
 
     if verbose:
-        print('{} keys created'.format(len(values)))
+        print("{} keys created".format(len(values)))
         for key in values:
-            print('#{{values[{}]}} = {}'.format(key, len(values[key])))
+            print("#{{values[{}]}} = {}".format(key, len(values[key])))
 
     return values
 
@@ -239,12 +272,12 @@ def compute_histograms(values, config=None, verbose=False):
         histograms for all keys
     """
 
-    if config and config.has_option('ALL', 'nbins'):
-        nbins_global = config.getint('ALL', 'nbins')
+    if config and config.has_option("ALL", "nbins"):
+        nbins_global = config.getint("ALL", "nbins")
     else:
         nbins_global = 50
 
-    print('nbins_global = {}'.format(nbins_global))
+    print("nbins_global = {}".format(nbins_global))
 
     hists = {}
     i = 0
@@ -252,22 +285,22 @@ def compute_histograms(values, config=None, verbose=False):
 
         si = str(i)
 
-        if config and config.has_option(si, 'nbins'):
-            nbins = config.getint(si, 'nbins')
+        if config and config.has_option(si, "nbins"):
+            nbins = config.getint(si, "nbins")
         else:
             nbins = nbins_global
 
         try:
             hists[key] = np.histogram(values[key], bins=nbins)
         except ValueError as err:
-            print('Skipping histogram #{}: {}'.format(i, err))
+            print("Skipping histogram #{}: {}".format(i, err))
 
         i = i + 1
 
     return hists
 
 
-def plot_histograms(hists, config=None, output_dir='.', verbose=False):
+def plot_histograms(hists, config=None, output_dir=".", verbose=False):
     """Create histogram plots.
 
     Parameters
@@ -285,9 +318,9 @@ def plot_histograms(hists, config=None, output_dir='.', verbose=False):
     fig, (ax) = plt.subplots()
     plt.tight_layout()
 
-    if config and config.has_option('ALL', 'fontsize'):
-        fontsize = config.getint('ALL', 'fontsize')
-        plt.rcParams.update({'font.size': fontsize})
+    if config and config.has_option("ALL", "fontsize"):
+        fontsize = config.getint("ALL", "fontsize")
+        plt.rcParams.update({"font.size": fontsize})
 
     xlim_fac = 0.05
 
@@ -296,11 +329,13 @@ def plot_histograms(hists, config=None, output_dir='.', verbose=False):
 
         si = str(i)
 
-        if config and \
-            config.has_option(si, 'plot') and \
-            config.getboolean(si, 'plot') == False:
+        if (
+            config
+            and config.has_option(si, "plot")
+            and config.getboolean(si, "plot") == False
+        ):
             if verbose:
-                print('Skipping histogram #{} {}'.format(i, key))
+                print("Skipping histogram #{} {}".format(i, key))
 
         else:
 
@@ -314,12 +349,12 @@ def plot_histograms(hists, config=None, output_dir='.', verbose=False):
 
             # Overwrite limits if found in config file.
             # If not stretch bin boundaries
-            if config and config.has_option(si, 'xmin'):
-                xmin = config.getfloat(si, 'xmin')
+            if config and config.has_option(si, "xmin"):
+                xmin = config.getfloat(si, "xmin")
             else:
                 xmin = min(bins)
-            if config and config.has_option(si, 'xmax'):
-                xmax = config.getfloat(si, 'xmax')
+            if config and config.has_option(si, "xmax"):
+                xmax = config.getfloat(si, "xmax")
             else:
                 xmax = max(bins)
 
@@ -327,19 +362,19 @@ def plot_histograms(hists, config=None, output_dir='.', verbose=False):
 
             # If limits from bin boundaries: extend by small
             # amount
-            if config and config.has_option(si, 'xmin'):
+            if config and config.has_option(si, "xmin"):
                 xxmin = xmin
             else:
                 xxmin = xmin - dx * xlim_fac
-            if config and config.has_option(si, 'xmax'):
+            if config and config.has_option(si, "xmax"):
                 xxmax = xmax
             else:
                 xxmax = xmax + dx * xlim_fac
 
             plt.xlim(xxmin, xxmax)
 
-            if config and config.has_option(si, 'xlabel'):
-                xlabel = config.get(si, 'xlabel')
+            if config and config.has_option(si, "xlabel"):
+                xlabel = config.get(si, "xlabel")
             else:
                 xlabel = key
             plt.xlabel(xlabel)
@@ -347,26 +382,31 @@ def plot_histograms(hists, config=None, output_dir='.', verbose=False):
             ymin = min(freq)
             ymax = max(freq)
             plt.ylim(ymin, ymax)
-            ylabel = 'frequency'
+            ylabel = "frequency"
             plt.ylabel(ylabel)
 
-            if config and config.has_option(si, 'title'):
-                plt.title(config.get(si, 'title'))
+            if config and config.has_option(si, "title"):
+                plt.title(config.get(si, "title"))
 
-            if config and config.has_option(si, 'fname'):
-                file_base = config.getexpanded(si, 'fname')
+            if config and config.has_option(si, "fname"):
+                file_base = config.getexpanded(si, "fname")
             else:
-                file_base = 'hist_{}'.format(i)
+                file_base = "hist_{}".format(i)
 
             if verbose:
-                print('Creating files \'{}.*\''.format(file_base))
+                print("Creating files '{}.*'".format(file_base))
 
-            plt.savefig('{}/{}.png'.format(output_dir, file_base), bbox_inches='tight')
-            np.savetxt('{}/{}.txt'.format(output_dir, file_base), np.transpose([bins, freq]),
-                       fmt='%10g', header='[{}] [{}]'.format(xlabel, ylabel)),
+            plt.savefig(
+                "{}/{}.png".format(output_dir, file_base), bbox_inches="tight"
+            )
+            np.savetxt(
+                "{}/{}.txt".format(output_dir, file_base),
+                np.transpose([bins, freq]),
+                fmt="%10g",
+                header="[{}] [{}]".format(xlabel, ylabel),
+            ),
 
         i = i + 1
-
 
 
 def get_config(config_path, verbose=False):
@@ -391,10 +431,12 @@ def get_config(config_path, verbose=False):
     from shapepipe.pipeline.config import CustomParser
 
     if verbose:
-        print('Reading configuration file \'{}\''.format(config_path))
+        print("Reading configuration file '{}'".format(config_path))
 
     if not os.path.exists(config_path):
-        raise OSError('Configuration file \'{}\' does not exist'.format(config_path))
+        raise OSError(
+            "Configuration file '{}' does not exist".format(config_path)
+        )
 
     conf = CustomParser()
     conf.read(config_path)
@@ -419,13 +461,12 @@ def main(argv=None):
     # Save calling command
     cfis.log_command(argv)
     if param.verbose:
-        cfis.log_command(argv, name='sys.stdout')
-
+        cfis.log_command(argv, name="sys.stdout")
 
     ### Start main program ###
 
     if param.verbose:
-        print('Start of program {}'.format(os.path.basename(argv[0])))
+        print("Start of program {}".format(os.path.basename(argv[0])))
 
     files = get_stats_file_list(param)
 
@@ -436,22 +477,23 @@ def main(argv=None):
     hists = compute_histograms(values, config=config, verbose=param.verbose)
 
     if os.path.isfile(param.output_dir):
-        raise OSError('Output path \'{}\' is a regular file'
-                      ''.format(param.output_dir))
+        raise OSError(
+            "Output path '{}' is a regular file" "".format(param.output_dir)
+        )
     if not os.path.isdir(param.output_dir):
         os.mkdir(param.output_dir)
 
-    plot_histograms(hists, config=config, output_dir=param.output_dir,
-                    verbose=param.verbose)
+    plot_histograms(
+        hists, config=config, output_dir=param.output_dir, verbose=param.verbose
+    )
 
     ### End main program
 
     if param.verbose:
-        print('End of program {}'.format(os.path.basename(argv[0])))
+        print("End of program {}".format(os.path.basename(argv[0])))
 
     return 0
 
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
-

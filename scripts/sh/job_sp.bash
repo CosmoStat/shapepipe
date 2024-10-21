@@ -8,11 +8,6 @@
 #              called in interactive mode on a virtual
 #              machine.
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
-# Date: v1.0 11/2020
-#       v1.1 01/2021
-
-# MKDEBUG TODO:
-# Option to change SMP_BATCH_SIZE, not for MPI
 
 
 # VM home, required for canfar run.
@@ -292,23 +287,6 @@ function upload_logs() {
 
    upl="$output_rel/*/*/logs $output_rel/*/logs"
    upload "logs" "$id" "$verbose" "${upl[@]}"
-}
-
-# Print script variables
-function print_env() {
-   echo "*** Environment ***"
-   echo "Data:"
-   echo " TILE_ARR=${TILE_ARR[@]}"
-   echo "Paths:"
-   echo " VM_HOME=$VM_HOME"
-   echo " SP_RUN=$SP_RUN"
-   echo " TILE_NUMBERS_PATH=$TILE_NUMBERS_PATH"
-   echo " OUTPUT=$OUTPUT"
-   echo " SP_CONFIG=$SP_CONFIG"
-   echo "Other variables:"
-   echo " VCP=$VCP"
-   echo " CERTFILE=$CERTFILE"
-   echo "***"
 }
 
 function set_config_n_smp() {
