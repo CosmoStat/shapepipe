@@ -27,6 +27,7 @@ dependencies:
     - modopt
     - PyQt5
     - pyqtgraph
+    - python-pysap==0.2.1
     - reproject
     - shear_psf_leakage
     - skaha
@@ -36,5 +37,6 @@ dependencies:
     - termcolor
     - tqdm
     - treecorr
+    - vos
     - git+https://github.com/aguinot/ngmix@stable_version
     - git+https://github.com/tobias-liaudat/Stile@v0.1
