@@ -41,4 +41,4 @@ ID_OBJ_MAX : int
 
 """
 
-__all__ = ['ngmix']
+__all__ = ["ngmix"]

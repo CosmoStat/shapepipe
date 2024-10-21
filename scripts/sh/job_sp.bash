@@ -8,11 +8,6 @@
 #              called in interactive mode on a virtual
 #              machine.
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
-# Date: v1.0 11/2020
-#       v1.1 01/2021
-
-# MKDEBUG TODO:
-# Option to change SMP_BATCH_SIZE, not for MPI
 
 
 # VM home, required for canfar run.
@@ -294,23 +289,6 @@ function upload_logs() {
    upload "logs" "$id" "$verbose" "${upl[@]}"
 }
 
-# Print script variables
-function print_env() {
-   echo "*** Environment ***"
-   echo "Data:"
-   echo " TILE_ARR=${TILE_ARR[@]}"
-   echo "Paths:"
-   echo " VM_HOME=$VM_HOME"
-   echo " SP_RUN=$SP_RUN"
-   echo " TILE_NUMBERS_PATH=$TILE_NUMBERS_PATH"
-   echo " OUTPUT=$OUTPUT"
-   echo " SP_CONFIG=$SP_CONFIG"
-   echo "Other variables:"
-   echo " VCP=$VCP"
-   echo " CERTFILE=$CERTFILE"
-   echo "***"
-}
-
 function set_config_n_smp() {
   local config_name=$1
   local _n_smp=$2
@@ -420,7 +398,7 @@ if [[ $do_job != 0 ]]; then
   ### Star detection, selection, PSF model. setools can exit with an error for CCD with insufficient stars,
   ### the script should continue
   STOP=0
-  command_sp "shapepipe_run -c $SP_CONFIG/config_tile_Sx_exp_${psf}.ini" "Run shapepipe (tile detection, exp $psf)"
+  command_cfg_shapepipe "config_tile_Sx_exp_${psf}.ini" "Run shapepipe (tile detection, exp $psf)" $n_smp
   STOP=1
 
 fi

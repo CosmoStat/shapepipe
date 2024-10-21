@@ -61,7 +61,7 @@ def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
     tnt = np.sum(t_v * noise_v * t_v * w_v)
     pnp = np.sum(psf_v * noise_v * psf_v * w_v)
     tnp = np.sum(t_v * noise_v * psf_v * w_v)
-    err = tnt * pg ** 2 + pnp * tg ** 2 - 2 * tnp * pg * tg
+    err = tnt * pg**2 + pnp * tg**2 - 2 * tnp * pg * tg
 
     # Compute spread model
     if pg > 0:
@@ -102,9 +102,7 @@ def get_model(sigma, flux, img_shape, pixel_scale=0.186):
 
     """
     # Get scale radius
-    scale_radius = (
-        1 / 16 * galaxy.sigma_to_fwhm(sigma, pixel_scale=pixel_scale)
-    )
+    scale_radius = 1 / 16 * galaxy.sigma_to_fwhm(sigma, pixel_scale=pixel_scale)
 
     # Get galaxy model
     gal_obj = galsim.Exponential(scale_radius=scale_radius, flux=flux)
@@ -117,15 +115,11 @@ def get_model(sigma, flux, img_shape, pixel_scale=0.186):
 
     # Draw galaxy and PSF on vignets
     gal_vign = gal_obj.drawImage(
-        nx=img_shape[0],
-        ny=img_shape[1],
-        scale=pixel_scale
+        nx=img_shape[0], ny=img_shape[1], scale=pixel_scale
     ).array
 
     psf_vign = psf_obj.drawImage(
-        nx=img_shape[0],
-        ny=img_shape[1],
-        scale=pixel_scale
+        nx=img_shape[0], ny=img_shape[1], scale=pixel_scale
     ).array
 
     return gal_vign, psf_vign
@@ -167,7 +161,7 @@ class SpreadModel(object):
         weight_cat_path,
         output_path,
         pixel_scale,
-        output_mode
+        output_mode,
     ):
 
         self._sex_cat_path = sex_cat_path
@@ -186,11 +180,11 @@ class SpreadModel(object):
         # Get data
         sex_cat = file_io.FITSCatalogue(self._sex_cat_path, SEx_catalogue=True)
         sex_cat.open()
-        obj_id = np.copy(sex_cat.get_data()['NUMBER'])
-        obj_vign = np.copy(sex_cat.get_data()['VIGNET'])
+        obj_id = np.copy(sex_cat.get_data()["NUMBER"])
+        obj_vign = np.copy(sex_cat.get_data()["VIGNET"])
         obj_mag = None
-        if self._output_mode == 'new':
-            obj_mag = np.copy(sex_cat.get_data()['MAG_AUTO'])
+        if self._output_mode == "new":
+            obj_mag = np.copy(sex_cat.get_data()["MAG_AUTO"])
         sex_cat.close()
 
         psf_cat = SqliteDict(self._psf_cat_path)
@@ -200,7 +194,7 @@ class SpreadModel(object):
             SEx_catalogue=True,
         )
         weight_cat.open()
-        weigh_vign = weight_cat.get_data()['VIGNET']
+        weigh_vign = weight_cat.get_data()["VIGNET"]
         weight_cat.close()
 
         # Get spread model
@@ -210,7 +204,7 @@ class SpreadModel(object):
         for idx, id_tmp in enumerate(obj_id):
             sigma_list = []
 
-            if psf_cat[str(id_tmp)] == 'empty':
+            if psf_cat[str(id_tmp)] == "empty":
                 spread_model_final.append(-1)
                 spread_model_err_final.append(1)
                 continue
@@ -219,44 +213,40 @@ class SpreadModel(object):
 
             for expccd_name_tmp in psf_expccd_name:
                 psf_cat_id_ccd = psf_cat[str(id_tmp)][expccd_name_tmp]
-                sigma_list.append(
-                    psf_cat_id_ccd['SHAPES']['SIGMA_PSF_HSM']
+                sigma_list.append(psf_cat_id_ccd["SHAPES"]["SIGMA_PSF_HSM"])
+
+            obj_sigma_tmp = np.mean(sigma_list)
+            if obj_sigma_tmp > 0:
+                obj_vign_tmp = obj_vign[idx]
+                obj_flux_tmp = 1.0
+                obj_weight_tmp = weigh_vign[idx]
+                obj_model_tmp, obj_psf_tmp = get_model(
+                    obj_sigma_tmp,
+                    obj_flux_tmp,
+                    obj_vign_tmp.shape,
+                    self._pixel_scale,
                 )
 
-            obj_vign_tmp = obj_vign[idx]
-            obj_flux_tmp = 1.
-            obj_sigma_tmp = np.mean(sigma_list)
-            obj_weight_tmp = weigh_vign[idx]
-            obj_model_tmp, obj_psf_tmp = get_model(
-                obj_sigma_tmp,
-                obj_flux_tmp,
-                obj_vign_tmp.shape,
-                self._pixel_scale
-            )
-
-            obj_sm, obj_sm_err = get_sm(
-                obj_vign_tmp,
-                obj_psf_tmp,
-                obj_model_tmp,
-                obj_weight_tmp
-            )
+                obj_sm, obj_sm_err = get_sm(
+                    obj_vign_tmp, obj_psf_tmp, obj_model_tmp, obj_weight_tmp
+                )
+            else:
+                # size < 0, something is not right with this object
+                obj_sm, obj_sm_err = -1.0, -1.0
 
             spread_model_final.append(obj_sm)
             spread_model_err_final.append(obj_sm_err)
 
-        spread_model_final = np.array(spread_model_final, dtype='float64')
+        spread_model_final = np.array(spread_model_final, dtype="float64")
         spread_model_err_final = np.array(
             spread_model_err_final,
-            dtype='float64',
+            dtype="float64",
         )
 
         psf_cat.close()
 
         self.save_results(
-            spread_model_final,
-            spread_model_err_final,
-            obj_mag,
-            obj_id
+            spread_model_final, spread_model_err_final, obj_mag, obj_id
         )
 
     def save_results(self, sm, sm_err, mag, number):
@@ -281,23 +271,22 @@ class SpreadModel(object):
             For incorrect output mode
 
         """
-        if self._output_mode == 'new':
+        if self._output_mode == "new":
             new_cat = file_io.FITSCatalogue(
                 self._output_path,
                 SEx_catalogue=True,
-                open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
+                open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
             )
             dict_data = {
-                'NUMBER': number,
-                'MAG': mag,
-                'SPREAD_MODEL': sm,
-                'SPREADERR_MODEL': sm_err
+                "NUMBER": number,
+                "MAG": mag,
+                "SPREAD_MODEL": sm,
+                "SPREADERR_MODEL": sm_err,
             }
             new_cat.save_as_fits(
-                data=dict_data,
-                sex_cat_path=self._sex_cat_path
+                data=dict_data, sex_cat_path=self._sex_cat_path
             )
-        elif self._output_mode == 'add':
+        elif self._output_mode == "add":
             ori_cat = file_io.FITSCatalogue(
                 self._sex_cat_path,
                 SEx_catalogue=True,
@@ -306,17 +295,14 @@ class SpreadModel(object):
             new_cat = file_io.FITSCatalogue(
                 self._output_path,
                 SEx_catalogue=True,
-                open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
+                open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
             )
             ori_cat.add_col(
-                'SPREAD_MODEL',
-                sm,
-                new_cat=True,
-                new_cat_inst=new_cat
+                "SPREAD_MODEL", sm, new_cat=True, new_cat_inst=new_cat
             )
             ori_cat.close()
             new_cat.open()
-            new_cat.add_col('SPREADERR_MODEL', sm_err)
+            new_cat.add_col("SPREADERR_MODEL", sm_err)
             new_cat.close()
         else:
-            raise ValueError('Mode must be in [new, add].')
+            raise ValueError("Mode must be in [new, add].")

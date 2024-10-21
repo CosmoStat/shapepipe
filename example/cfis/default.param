@@ -51,7 +51,7 @@ MU_MAX                   #Peak surface brightness above background              
 FLAGS                    #Extraction flags                            
 FLAGS_WIN                #Flags for WINdowed parameters                
 
-#!!! REQUIRE FLAG_IMAGE !!!
+# The following flag requires a flag image
 IMAFLAGS_ISO             #FLAG-image flags OR'ed over the iso. profile  !!! REQUIRE FLAG_IMAGE !!!            
 
 FWHM_IMAGE               #FWHM assuming a gaussian core                             [pixel]
@@ -61,9 +61,8 @@ ELLIPTICITY              #1 - B_IMAGE/A_IMAGE
 
 VIGNET(51,51)            #Pixel data around detection                               [count]
 
-#VECTOR_ASSOC             #ASSOCiated parameter vector                              
-#NUMBER_ASSOC             #Number of ASSOCiated IDs                                 
+# For GaaP photometry
+A_WORLD
+B_WORLD
+THETA_J2000
 
-#SPREAD_MODEL
-#SPREADERR_MODEL
-#FWHMPSF_IMAGE

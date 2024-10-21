@@ -21,8 +21,11 @@ Module-specific config file entries
 ===================================
 
 PSF_MODEL : str
-    PSF model used; options are ``psfex`` or ``mccd``
+    PSF model used; options are ``psfex`` or ``mccd``, ``setools''
+HDU : int, optional
+    HDU number of input catalogue table, default is ``1`` for ``mccd``
+    and ``2`` for ``psfex`` and ``setools``
 
 """
 
-__all__ = ['merge_starcat']
+__all__ = ["merge_starcat"]

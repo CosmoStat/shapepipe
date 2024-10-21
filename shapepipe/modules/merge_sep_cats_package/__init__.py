@@ -34,4 +34,4 @@ WARNING : str, optional
 
 """
 
-__all__ = ['merge_sep_cats.py']
+__all__ = ["merge_sep_cats.py"]

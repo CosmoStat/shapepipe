@@ -11,12 +11,12 @@ from shapepipe.modules.split_exp_package.split_exp import SplitExposures
 
 
 @module_runner(
-    version='1.1',
-    input_module='get_images_runner',
-    file_pattern=['image', 'weight', 'flag'],
-    file_ext=['.fz', '.fz', '.fz'],
-    depends=['numpy', 'astropy', 'sip_tpv'],
-    run_method='parallel',
+    version="1.1",
+    input_module="get_images_runner",
+    file_pattern=["image", "weight", "flag"],
+    file_ext=[".fz", ".fz", ".fz"],
+    depends=["numpy", "astropy", "sip_tpv"],
+    run_method="parallel",
 )
 def split_exp_runner(
     input_file_list,
@@ -28,17 +28,17 @@ def split_exp_runner(
 ):
     """Define The Split Exposures Runner."""
     # Get file suffix
-    output_suffix = config.getlist(module_config_sec, 'OUTPUT_SUFFIX')
+    output_suffix = config.getlist(module_config_sec, "OUTPUT_SUFFIX")
     # Get the number of HDUs
-    n_hdu = config.getint(module_config_sec, 'N_HDU')
+    n_hdu = config.getint(module_config_sec, "N_HDU")
 
     # Create split exposures class instance
     split_inst = SplitExposures(
         input_file_list,
-        run_dirs['output'],
+        run_dirs["output"],
         file_number_string,
         output_suffix,
-        n_hdu
+        n_hdu,
     )
 
     # Process splitting

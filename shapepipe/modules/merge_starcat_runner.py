@@ -11,13 +11,13 @@ from shapepipe.modules.module_decorator import module_runner
 
 
 @module_runner(
-    version='1.1',
-    input_module=['mccd_fit_val_runner'],
-    file_pattern=['validation_psf'],
-    file_ext=['.fits'],
-    numbering_scheme='-0000000',
-    depends=['numpy', 'astropy'],
-    run_method='serial',
+    version="1.1",
+    input_module=["mccd_fit_val_runner"],
+    file_pattern=["validation_psf"],
+    file_ext=[".fits"],
+    numbering_scheme="-0000000",
+    depends=["numpy", "astropy"],
+    run_method="serial",
 )
 def merge_starcat_runner(
     input_file_list,
@@ -29,27 +29,33 @@ def merge_starcat_runner(
 ):
     """Define The Merge Star Catalogues Runner."""
     # Read config file options
-    psf_model = config.get(module_config_sec, 'PSF_MODEL')
-    allowed_psf_models = ('psfex', 'mccd', 'setools')
+    psf_model = config.get(module_config_sec, "PSF_MODEL")
+    allowed_psf_models = ("psfex", "mccd", "setools")
     if psf_model not in allowed_psf_models:
         raise ValueError(
-            f'Invalid config entry PSF_MODEL={psf_model} found, '
-            + f'needs to be one of {allowed_psf_models}'
+            f"Invalid config entry PSF_MODEL={psf_model} found, "
+            + f"needs to be one of {allowed_psf_models}"
         )
 
+    # Get input catalogue HDU number
+    if config.has_option(module_config_sec, "HDU"):
+        hdu = config.getint(module_config_sec, "HDU")
+    else:
+        hdu = 1
+
     # Set output directory
-    output_dir = run_dirs['output']
+    output_dir = run_dirs["output"]
 
     # Set merge class to use
-    if psf_model == 'mccd':
+    if psf_model == "mccd":
         MSC = merge_starcat.MergeStarCatMCCD
-    elif psf_model == 'psfex':
+    elif psf_model == "psfex":
         MSC = merge_starcat.MergeStarCatPSFEX
-    elif psf_model == 'setools':
+    elif psf_model == "setools":
         MSC = merge_starcat.MergeStarCatSetools
 
     # Create instance of merge class
-    merge_inst = MSC(input_file_list, output_dir, w_log)
+    merge_inst = MSC(input_file_list, output_dir, w_log, hdu_table=hdu)
 
     # Run processing
     merge_inst.process()

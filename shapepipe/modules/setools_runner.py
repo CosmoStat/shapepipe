@@ -11,11 +11,11 @@ from shapepipe.modules.setools_package.setools import SETools
 
 
 @module_runner(
-    input_module='sextractor_runner',
-    version='1.1',
-    file_pattern=['sexcat'],
-    file_ext=['.fits'],
-    depends=['numpy', 'matplotlib'],
+    input_module="sextractor_runner",
+    version="1.1",
+    file_pattern=["sexcat"],
+    file_ext=[".fits"],
+    depends=["numpy", "matplotlib"],
 )
 def setools_runner(
     input_file_list,
@@ -27,12 +27,12 @@ def setools_runner(
 ):
     """Define The SETools Runner."""
     # Get path to setools configuration file
-    config_file = config.getexpanded(module_config_sec, 'SETOOLS_CONFIG_PATH')
+    config_file = config.getexpanded(module_config_sec, "SETOOLS_CONFIG_PATH")
 
     # Create instance of SETools
     se_inst = SETools(
         input_file_list[0],
-        run_dirs['output'],
+        run_dirs["output"],
         file_number_string,
         config_file,
     )

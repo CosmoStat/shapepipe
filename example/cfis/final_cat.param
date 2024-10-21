@@ -76,11 +76,22 @@ NGMIX_FLUX_ERR_2M
 NGMIX_FLUX_ERR_2P
 NGMIX_FLUX_ERR_NOSHEAR
 
-# magnitude, mainly for plots
+# magnitudes
 MAG_AUTO
+MAGERR_AUTO
+MAG_WIN
+MAGERR_WIN
+FLUX_AUTO
+FLUXERR_AUTO
+FLUX_APER
+FLUXERR_APER
+FLUX_RADIUS
 
-# SNR from SExtractor, used for cuts on GALSIM shapes
+# SNR from SExtractor
 SNR_WIN
+
+FWHM_IMAGE
+FWHM_WORLD
 
 # PSF size measured on original image
 NGMIX_T_PSFo_NOSHEAR
