@@ -60,7 +60,7 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    --debug_out PATH\n
    \tdebug output file PATH, default not used\n
    TILE_ID_i\n
-   \ttile ID(s), e.g. 283.247 214.242\n
+   \ttile ID(s), e.g. 283.247 214.242, only with '-j 1'\n
 "
 
 ## Help if no arguments

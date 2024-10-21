@@ -1,0 +1,688 @@
+#!/usr/bin/env bash
+export LC_ALL=en_US.UTF-8
+export LC_CTYPE=en_US.utf8
+
+##############################################################################
+# Install ShapePipe Executables
+#
+# This script can only be run after the ShapePipe environment has been
+# installed.
+#
+##############################################################################
+
+version="1.6"
+last_update="08/03/22"
+
+##############################################################################
+# EXTERNAL PACKAGES AND SCRIPTS
+##############################################################################
+
+# External packages
+
+# Conda package versions
+fftw_ver="3.3.10"
+libpng_ver="1.6.37"
+mpi4py_ver="3.1.3"
+openblas_ver="0.3.18"
+
+# WeightWatcher Package
+ww_url="http://snapshot.debian.org/archive/debian/20171211T160522Z/pool/main/w/weightwatcher/weightwatcher_1.12.orig.tar.gz"
+ww_tar="weightwatcher_1.12.orig.tar.gz"
+ww_dir="weightwatcher-1.12"
+ww_bin="ww"
+ww_version=TRUE
+
+# CDSclient Package (need Findgsc2.2)
+cdsclient_url="http://cdsarc.u-strasbg.fr/ftp/pub/sw/cdsclient.tar.gz"
+cdscleint_tar="cdsclient.tar.gz"
+cdsclient_dir="cdsclient-3.84"
+cdsclient_bin="findgsc2.2"
+cdsclient_version=FALSE
+
+# mpi4py Package
+mpi_url="https://github.com/mpi4py/mpi4py/archive/${mpi4py_ver}.tar.gz"
+mpi_tar="${mpi4py_ver}.tar.gz"
+mpi_dir="mpi4py-${mpi4py_ver}"
+mpi_bin="mpiexec"
+mpi_version=TRUE
+
+# Allowed script extensions
+script_ext=(
+  .py
+  .sh
+  .bash
+)
+
+# Divider line
+line="########################################################################"
+
+# Text colours
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# Set variable defaults
+PIPE_DIR=$PWD
+BUILD_DIR=$PIPE_DIR/build
+ENV_NAME='shapepipe'
+ENV_DEV=FALSE
+USE_CONDA_SOURCE=FALSE
+BUILD_ENV=TRUE
+DEVELOP=FALSE
+VOS=FALSE
+INSTALL_WW=TRUE
+INSTALL_CDSCLIENT=TRUE
+ATLAS_SEARCH=FALSE
+use_atlas=FALSE
+USE_MPI=TRUE
+ERROR=FALSE
+
+##############################################################################
+# SCRIPT FUNCTIONS
+##############################################################################
+
+# Function to download, and unzip and untar a package
+download_package() {
+  cd $BUILD_DIR
+  wget --no-check-certificate $1
+  tar -xzf $2
+  rm $2
+}
+
+# Function to build a standard package
+build_standard() {
+  cd $BUILD_DIR/$1
+  ./configure --prefix=$CONDA_PREFIX --quiet
+  make --quiet
+  make install
+}
+
+# Function to build mpi4pi using preinstalled MPI libraries
+build_mpi(){
+  cd $BUILD_DIR/$1
+  python setup.py build --mpicc=$MPI_ROOT
+  python setup.py install
+  ln -s $MPI_ROOT/bin/$mpi_bin $CONDA_PREFIX/bin/$mpi_bin
+}
+
+# Check the conda executable is available
+check_conda() {
+  if ! type -t "conda" > /dev/null
+  then
+    echo -ne "${RED}ERROR: Conda command not found, make sure it is installed before proceding.${NC}\n"
+    exit 1
+  fi
+  # Set Conda variables
+  CONDA_VERSION=$(conda -V | perl -pe '($_)=/([0-9]+([.][0-9]+)+)/' )
+  CONDA_VERSION_MAJOR=$(cut -d'.' -f1 <<<$CONDA_VERSION)
+  CONDA_VERSION_MINOR=$(cut -d'.' -f2 <<<$CONDA_VERSION)
+  CONDA_VERSION_PATCH=$(cut -d'.' -f3 <<<$CONDA_VERSION)
+  CONDA_SH=/etc/profile.d/conda.sh
+  # Check Conda major version
+  if [ "$CONDA_VERSION_MAJOR" -lt 4 ]
+  then
+    echo -ne "${RED}ERROR: Found Conda version $CONDA_VERSION but require 4.0.0 or greater.${NC}\n"
+    exit 1
+  fi
+  # Look for conda.sh file
+  if [ -f "/opt/conda/$CONDA_SH" ]
+  then
+    source "/opt/conda/$CONDA_SH"
+  elif [ -f "$CONDA_PREFIX$CONDA_SH" ]
+  then
+    source "$CONDA_PREFIX$CONDA_SH"
+  else
+    echo -ne "${RED}ERROR: Could not find $CONDA_SH in /opt/conda or \$CONDA_PREFIX.${NC}\n"
+    echo -ne "${RED}Activate the base/root Conda environment and try again.${NC}\n"
+    exit 1
+  fi
+  # Set environment activation command
+  if [ "$USE_CONDA_SOURCE" == TRUE ]
+  then
+    CONDA_ACTIVATE="source activate"
+    CONDA_DEACTIVATE="source deactivate"
+  else
+    CONDA_ACTIVATE="conda activate"
+    CONDA_DEACTIVATE="conda deactivate"
+  fi
+
+}
+
+# Check if a binary executable is already installed in the conda environment
+check_binary() {
+  if ! type -t "$CONDA_PREFIX/bin/$1" > /dev/null
+  then
+    return 0
+  else
+    echo "Executable '$1' is already installed, skipping."
+    echo ""
+    return 1
+  fi
+}
+
+# Check if a binary executable is already installed in the conda environment
+check_binary2() {
+  if type -t "$CONDA_PREFIX/bin/$1" > /dev/null
+  then
+    echo -ne "$2: ${GREEN}INSTALLED${NC}\n"
+    if [ "$3" == TRUE ]
+    then
+      "$CONDA_PREFIX/bin/$1" --version | head -n 2
+    fi
+  else
+    if [ "$4" == TRUE ]
+    then
+      echo -ne "$2: ${RED}INSTALLATION FAILED${NC}\n"
+      ERROR=TRUE
+    else
+      echo -ne "$2: ${YELLOW}NOT INSTALLED${NC}\n"
+    fi
+  fi
+
+  echo ""
+}
+
+# Check the environment name
+check_env_name() {
+if [ "$ENV_DEV" == TRUE ]
+then
+  ENV_NAME='shapepipe-dev'
+fi
+}
+
+# Check if a python site-package is installed correctly in the conda environment
+check_site_pkg() {
+  if compgen -G "$CONDA_PREFIX/lib/python3.*/site-packages/$1*" > /dev/null
+  then
+    echo -ne "   - $1:\t \xe2\x9c\x85\n"
+  else
+    echo -ne "   - $1:\t \xe2\x9d\x8c\n"
+  fi
+}
+
+# Function to report progress
+report_progress() {
+  echo ''
+  echo $line
+  echo -e "${CYAN}Installing $1${NC}"
+  echo $line
+  echo ''
+}
+
+# Function to start the script
+start() {
+  echo ''
+  echo $line
+  echo 'ShapePipe Installation Script'
+  echo ''
+  echo 'Author: Samuel Farrens'
+  echo 'Version:' $version
+  echo 'Last Update:' $last_update
+  echo $line
+  echo ''
+}
+
+# Function to report package versions
+packages() {
+  check_binary2 $ww_bin "WeightWatcher" $ww_version $INSTALL_WW
+  check_binary2 $cdsclient_bin "CDSclient" $cdsclient_version $INSTALL_CDSCLIENT
+  check_binary2 $mpi_bin "MPI" $mpi_version $USE_MPI $MPI_ROOT
+  check_binary2 "shapepipe_run" "ShapePipe_Run" TRUE TRUE
+}
+
+site-packages() {
+  check_site_pkg "shapepipe"
+  check_site_pkg "astropy"
+  check_site_pkg "galsim"
+  check_site_pkg "joblib"
+  check_site_pkg "mccd"
+  check_site_pkg "ngmix"
+  check_site_pkg "numpy"
+  check_site_pkg "pandas"
+  check_site_pkg "pysap"
+  check_site_pkg "scipy"
+  check_site_pkg "sf_tools"
+  check_site_pkg "sip_tpv"
+  check_site_pkg "sqlitedict"
+  check_site_pkg "treecorr"
+}
+
+# Function to return exit code
+exit_code() {
+  if [ "$ERROR" == TRUE ]
+  then
+    echo "ShapePipe installation failed as some packages were not properly installed."
+    exit 1
+  else
+    exit 0
+  fi
+}
+
+# Function to report package versions
+package_report() {
+  if [ "$CONDA_DEFAULT_ENV" != "$ENV_NAME" ]
+  then
+    activate_shapepipe
+  fi
+  INSTALL_WW=FALSE
+  INSTALL_CDSCLIENT=FALSE
+  USE_MPI=FALSE
+  start
+  echo 'Package Report'
+  echo ''
+  packages
+  echo 'Python Package Check List:'
+  echo ''
+  site-packages
+  echo ''
+  exit_code
+}
+
+# Function to end the script
+finish() {
+  echo $line
+  echo ''
+  echo $line
+  echo 'Installation Complete!'
+  echo ''
+  packages
+  echo 'Python Package Check List:'
+  echo ''
+  site-packages
+  echo ''
+  echo $line
+  echo ''
+  exit_code
+}
+
+check_status () {
+  if [ "$2" == FALSE ]
+  then
+    echo -ne "$1 ${YELLOW}$2${NC}"
+  elif [ "$2" == TRUE ]
+  then
+    echo -ne "$1 ${GREEN}$2${NC}"
+  else
+    echo -ne "$1 ${CYAN}$2${NC}"
+  fi
+  echo -ne " ${CYAN}$3${NC}\n"
+}
+
+# Function to show the installation setup
+setup() {
+  check_status 'Operating System:' $SYSOS
+  check_status 'Conda Version:' $CONDA_VERSION
+  check_status 'Build Conda Environment:' $BUILD_ENV $ENV_NAME
+  check_status 'Install WeightWatcher:' $INSTALL_WW
+  check_status 'Install CDSclient:' $INSTALL_CDSCLIENT
+  check_status 'Use MPI:' $USE_MPI $MPI_ROOT
+  check_status 'ShapePipe Directory:' $PIPE_DIR
+  check_status 'Build Directory:' $BUILD_DIR
+  echo ''
+}
+
+# Function to show the astromatic setup
+astromatic_setup() {
+  echo 'FFTW Library Path:' $FFTW_LIB
+  echo 'FFTW Include Path:' $FFTW_INC
+  if [ "$use_atlas" == TRUE ]
+  then
+    echo 'ATLAS Library Path:' $ATLAS_LIB
+    echo 'ATLAS Include Path:' $ATLAS_INC
+  else
+    echo 'OpenBLAS Library Path:' $BLAS_LIB
+    echo 'OpenBLAS Include Path:' $BLAS_INC
+  fi
+  echo ''
+}
+
+# Function to uninstall ShapePipe and dependencies
+uninstall() {
+  check_env_name
+  read -p "Uninstall $ENV_NAME environment [y/N]: " response
+  response=${response:-n}
+  if [ $response == "y" ]
+  then
+    rm -r build dist *.egg-info .eggs
+    deactivate_shapepipe
+    conda remove -n $ENV_NAME --all -y
+    echo "Finished uninstalling $ENV_NAME"
+  fi
+}
+
+# Function to activate ShapePipe environment
+activate_shapepipe() {
+  # Run activation command
+  echo -ne "Running ${CYAN}$CONDA_ACTIVATE $ENV_NAME${NC}\n"
+  eval "$CONDA_ACTIVATE $ENV_NAME"
+  # Check if the activation was successful
+  if [ "$?" -eq 0 ]
+  then
+    echo -ne "Successfully activated ShapePipe environment ${CYAN}$CONDA_PREFIX${NC}\n"
+    export LD_RUN_PATH=$CONDA_PREFIX/lib
+  else
+    echo -ne "${RED}ERROR: Could not activate ShapePipe environment.${NC}\n"
+    exit 1
+  fi
+}
+
+# Function to deactivate ShapePipe environment
+deactivate_shapepipe() {
+  # Run deactivation command
+  eval $CONDA_DEACTIVATE
+}
+
+# Build symbolic links for scripts
+build_symlinks() {
+  for ext in ${script_ext[@]}; do
+    for script in $CONDA_PREFIX/bin/*$ext; do
+      link_name=`basename $script $ext`
+      ln -s $script $CONDA_PREFIX/bin/$link_name
+    done
+  done
+}
+
+##############################################################################
+# SCRIPT OPTIONS
+##############################################################################
+
+help="$(basename "$0") [OPTIONS]\n\n
+Options:\n
+\t-h,--help\t show this help message and exit\n
+\t-v,--version\t print script version and exit\n
+\t-p,--packages\t print status of installed packages\n
+\t--uninstall\t uninstall ShapePipe\n
+\t--pipe-dir\t set the path to the ShapePipe base directory (default is \$PWD)\n
+\t--build-dir\t set the path to the ShapePipe build (default is \$PWD/build)\n
+\t--env-name\t set the name of the Conda environment (default is shapepipe)\n
+\t--env-dev\t use the developers Conda environment instead of the standard production environment\n
+\t--use-conda-source\t use 'conda source' instead of the default 'conda activate' to activate the shapepipe environment\n
+\t--develop\t option to install additional development packages\n
+\t--vos\t\t option to install virtual observatory software\n
+\t--no-env\t do not build Conda environment\n
+\t--no-ww\t\t do not build WeightWatcher\n
+\t--no-cds\t do not build CDSclient\n
+\t--no-exe\t do not build any system executables\n\n
+
+Executable Build Options:\n
+\t--fftw-lib\t path to FFTW library directory\n
+\t--fftw-inc\t path to FFTW include directory\n
+\t--blas-lib\t path to OpenBLAS library directory\n
+\t--blas-inc\t path to OpenBLAS include directory\n
+\t--atlas-lib\t path to ATLAS library directory\n
+\t--atlas-inc\t path to ATLAS include directory\n
+\t--atlas-search\t search system path for ATLAS directories\n\n
+
+MPI Build Options:\n
+\t--no-mpi\t do not use MPI\n
+\t--mpi-root\t path to MPI installation\n\n
+
+"
+
+# Parse command line options
+for i in "$@"
+do
+case $i in
+    -h|--help)
+    start
+    echo -ne $help
+    shift
+    exit
+    ;;
+    -v|--version)
+    echo $(basename "$0") $version
+    shift
+    exit
+    ;;
+    -p|--packages)
+    package_report
+    shift
+    exit
+    ;;
+    --uninstall)
+    uninstall
+    shift
+    exit
+    ;;
+    --pipe-dir=*)
+    PIPE_DIR="${i#*=}"
+    shift
+    ;;
+    --build-dir=*)
+    BUILD_DIR="${i#*=}"
+    shift
+    ;;
+    --env-name=*)
+    ENV_NAME="${i#*=}"
+    shift
+    ;;
+    --env-dev)
+    ENV_DEV=TRUE
+    shift
+    ;;
+    --use-conda-source)
+    USE_CONDA_SOURCE=TRUE
+    shift
+    ;;
+    --develop)
+    DEVELOP=TRUE
+    shift
+    ;;
+    --vos)
+    VOS=TRUE
+    shift
+    ;;
+    --no-env)
+    BUILD_ENV=FALSE
+    shift
+    ;;
+    --no-ww)
+    INSTALL_WW=FALSE
+    shift
+    ;;
+    --no-cds)
+    INSTALL_CDSCLIENT=FALSE
+    shift
+    ;;
+    --fftw-lib=*)
+    FFTW_LIB="${i#*=}"
+    shift
+    ;;
+    --fftw-inc=*)
+    FFTW_INC="${i#*=}"
+    shift
+    ;;
+    --blas-lib=*)
+    BLAS_LIB="${i#*=}"
+    shift
+    ;;
+    --blas-inc=*)
+    BLAS_INC="${i#*=}"
+    shift
+    ;;
+    --atlas-lib=*)
+    ATLAS_LIB="${i#*=}"
+    shift
+    ;;
+    --atlas-inc=*)
+    ATLAS_INC="${i#*=}"
+    shift
+    ;;
+    --atlas-search)
+    ATLAS_SEARCH=TRUE
+    shift
+    ;;
+    --no-mpi)
+    USE_MPI=FALSE
+    shift
+    ;;
+    --mpi-root=*)
+    MPI_ROOT="${i#*=}"
+    shift
+    ;;
+    --no-exe)
+    INSTALL_WW=FALSE
+    INSTALL_CDSCLIENT=FALSE
+    shift
+    ;;
+    *)
+    echo "Invalid option, see help!"
+    exit 1
+    ;;
+esac
+done
+
+##############################################################################
+# CREATE CONDA ENVIRONMENT
+##############################################################################
+
+# Start script
+start
+
+# Check if conda is installed
+check_conda
+
+# Check the Conda environment name
+check_env_name
+
+# Find the operating system
+case "$OSTYPE" in
+  darwin*)
+  SYSOS="macOS"
+  ;;
+  linux*)
+  SYSOS="LINUX"
+  ;;
+  *)
+  echo "unknown: $OSTYPE"
+  exit 1
+  ;;
+esac
+
+if [ ! -z "$ATLAS_LIB" ] || [ "$ATLAS_SEARCH" == TRUE ]
+then
+  use_atlas=TRUE
+fi
+
+# Create build directory if it does not already exist
+if [ ! -d "$BUILD_DIR" ]
+then
+  mkdir $BUILD_DIR
+fi
+
+# Print script set-up
+setup
+
+# Build conda environment
+if [ "$BUILD_ENV" == TRUE ]
+then
+  report_progress 'ShapePipe Environment'
+  if [ "$ENV_DEV" == TRUE ]
+  then
+    conda env create -f environment-dev.yml -n $ENV_NAME
+  else
+    conda env create -f environment.yml -n $ENV_NAME
+  fi
+fi
+
+# Activate conda environment
+activate_shapepipe
+
+if [ -z "$FFTW_LIB" ]; then FFTW_LIB=$CONDA_PREFIX/lib; fi
+if [ -z "$FFTW_INC" ]; then FFTW_INC=$CONDA_PREFIX/include; fi
+if [ -z "$BLAS_LIB" ]; then BLAS_LIB=$CONDA_PREFIX/lib; fi
+if [ -z "$BLAS_INC" ]; then BLAS_INC=$CONDA_PREFIX/include; fi
+
+##############################################################################
+# INSTALL DEVELOPER PACKAGES
+##############################################################################
+
+# Install development packages
+if [ "$DEVELOP" == TRUE ]
+then
+  report_progress 'Developer Packages'
+  python -m pip install -r develop.txt
+  python -m pip install -r docs/requirements.txt
+fi
+
+##############################################################################
+# INSTALL THE VOS LIBRARY
+##############################################################################
+
+# Install the vos library
+if [ "$VOS" == TRUE ]
+then
+  report_progress 'vos'
+  python -m pip install vos
+fi
+
+##############################################################################
+# INSTALL MACOS REQUIRMENTS
+##############################################################################
+
+# Set up macOS environment
+if [ "$SYSOS" == "macOS" ]
+then
+  report_progress 'macOS Requirements'
+  conda install -n $ENV_NAME wget -y
+  export C_INCLUDE_PATH=$CONDA_PREFIX/include
+  export CFLAGS="-Wl,-rpath,$CONDA_PREFIX/lib"
+  export CPPFLAGS="-Wno-everything"
+else
+  export CPPFLAGS="-w"
+fi
+
+##############################################################################
+# INSTALL MPI REQUIRMENTS
+##############################################################################
+
+# Install mpi4py
+if [ "$USE_MPI" == TRUE ]
+then
+  report_progress 'MPI'
+  if [ -z "$MPI_ROOT" ]
+  then
+    conda install -n $ENV_NAME -c conda-forge "mpi4py==${mpi4py_ver}" -y
+  else
+    download_package $mpi_url $mpi_tar
+    build_mpi $mpi_dir
+  fi
+fi
+
+##############################################################################
+# BUILD EXTERNAL EXECUTABLES
+##############################################################################
+
+# Build WeightWatcher
+if [ "$INSTALL_WW" == TRUE ] && check_binary $ww_bin
+then
+  report_progress 'WeightWatcher'
+  download_package $ww_url $ww_tar
+  build_standard $ww_dir
+fi
+
+# Build CDSclient
+if [ "$INSTALL_CDSCLIENT" == TRUE ] && check_binary $cdsclient_bin
+then
+  report_progress 'CDSclient'
+  download_package $cdsclient_url $cdscleint_tar
+  build_standard $cdsclient_dir
+fi
+
+##############################################################################
+# INSTALL SHAPEPIPE LIBRARY
+##############################################################################
+
+# Install ShapePipe package
+report_progress 'ShapePipe'
+cd $PIPE_DIR
+python -m pip install .
+
+# Create symbolic links to scripts
+build_symlinks
+
+finish
+
+##############################################################################
