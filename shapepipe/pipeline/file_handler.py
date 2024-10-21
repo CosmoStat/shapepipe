@@ -651,18 +651,12 @@ class FileHandler(object):
             "output",
         )
 
-<<<<<<< HEAD
         if not os.path.exists(self._module_dict[module][run_name]['run_dir']):
             self.mkdir(self._module_dict[module][run_name]['run_dir'])
         if not os.path.exists(self._module_dict[module][run_name]['log_dir']):
             self.mkdir(self._module_dict[module][run_name]['log_dir'])
         if not os.path.exists(self._module_dict[module][run_name]['output_dir']):
             self.mkdir(self._module_dict[module][run_name]['output_dir'])
-=======
-        self.mkdir(self._module_dict[module][run_name]["run_dir"])
-        self.mkdir(self._module_dict[module][run_name]["log_dir"])
-        self.mkdir(self._module_dict[module][run_name]["output_dir"])
->>>>>>> origin/v1.4
 
         # Set current output directory to module output directory
         self.output_dir = self._module_dict[module][run_name]["output_dir"]
