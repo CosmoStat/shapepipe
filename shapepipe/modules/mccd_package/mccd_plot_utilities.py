@@ -5,7 +5,7 @@ catalogues. It plots the Mean shape plots for the merged validation catalogue.
 It can also plot the rho statistics provided that the required packages are
 installed.
 
-:Author: Tobias Liaudat
+:Authors: Tobias Liaudat, Martin Kilbinger
 
 """
 
@@ -21,11 +21,13 @@ import treecorr
 from astropy.io import fits
 from stile.sys_tests import BaseCorrelationFunctionSysTest
 
+from shear_psf_leakage.rho_tau_stat import RhoStat
+
 # Define the backend for matplotlib
-mpl.use('agg')
+mpl.use("agg")
 
 # MegaCam -> plt.subplot correspondance, as given by:
-'''        'COMMENT Unique detector IDs for MegaCam',
+"""        'COMMENT Unique detector IDs for MegaCam',
            'COMMENT (North on top, East to the left)',
            'COMMENT    --------------------------',
            'COMMENT    ba ba ba ba ba ba ba ba ba',
@@ -40,7 +42,7 @@ mpl.use('agg')
            'COMMENT    27 28 29 30 31 32 33 34 35',
            'COMMENT    ab ab ab ab ab ab ab ab ab',
            'COMMENT    __________________________'
-'''
+"""
 
 
 def megacam_pos(index):
@@ -136,12 +138,7 @@ def megacam_flip_2(xbins, ybins, ccd_nb, nb_pixel):
 
 
 def mean_shapes_plot(
-    ccd_maps,
-    filename,
-    title='',
-    colorbar_ampl=1.0,
-    wind=None,
-    cmap='bwr'
+    ccd_maps, filename, title="", colorbar_ampl=1.0, wind=None, cmap="bwr"
 ):
     r"""Mean Shapes Plot.
 
@@ -166,8 +163,10 @@ def mean_shapes_plot(
     """
     # colorbar amplitude
     if wind is None:
-        vmax = max(
-            np.nanmax(ccd_maps), np.abs(np.nanmin(ccd_maps))) * colorbar_ampl
+        vmax = (
+            max(np.nanmax(ccd_maps), np.abs(np.nanmin(ccd_maps)))
+            * colorbar_ampl
+        )
         vmin = -vmax * colorbar_ampl
     else:
         vmin, vmax = wind[0] * colorbar_ampl, wind[1] * colorbar_ampl
@@ -176,24 +175,20 @@ def mean_shapes_plot(
     fig, axes = plt.subplots(nrows=4, ncols=11, figsize=(18, 12), dpi=400)
     # remove corner axes (above and below ears)
     for j in [0, 10, -1, -11]:
-        axes.flat[j].axis('off')
+        axes.flat[j].axis("off")
     for ccd_nb, ccd_map in enumerate(ccd_maps):
         ax = axes.flat[megacam_pos(ccd_nb)]
         im = ax.imshow(
-            ccd_map.T,
-            cmap=cmap,
-            interpolation='Nearest',
-            vmin=vmin,
-            vmax=vmax
+            ccd_map.T, cmap=cmap, interpolation="Nearest", vmin=vmin, vmax=vmax
         )
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.set_title(f'rmse={np.sqrt(np.nanmean(ccd_map ** 2)):.3e}', size=8)
+        ax.set_title(f"rmse={np.sqrt(np.nanmean(ccd_map ** 2)):.3e}", size=8)
     plt.suptitle(title, size=20)  # TODO: fix title
     fig.subplots_adjust(right=0.8)
     cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
     fig.colorbar(im, cax=cbar_ax)
-    plt.savefig(f'{filename}.png')
+    plt.savefig(f"{filename}.png")
     plt.close()
 
 
@@ -206,7 +201,7 @@ def plot_meanshapes(
     remove_outliers=False,
     plot_meanshapes=True,
     plot_histograms=True,
-    psf_model_type='mccd',
+    psf_model_type="mccd",
     max_e=None,
     max_de=None,
     min_r2=None,
@@ -260,38 +255,43 @@ def plot_meanshapes(
     starcat = fits.open(starcat_path, memmap=False)
 
     auto_colorbar = False
-    colorbar_ampl = 1.
+    colorbar_ampl = 1.0
     loc2glob = mccd_utils.Loc2Glob()
 
     # MegaCam: each CCD is 2048x4612
-    grid = np.linspace(0, loc2glob.x_npix, nb_pixel[0] + 1), \
-        np.linspace(0, loc2glob.y_npix, nb_pixel[1] + 1)
+    grid = np.linspace(0, loc2glob.x_npix, nb_pixel[0] + 1), np.linspace(
+        0, loc2glob.y_npix, nb_pixel[1] + 1
+    )
 
     # Flag mask
-    star_flags = starcat[hdu_no].data['FLAG_STAR_HSM']
-    psf_flags = starcat[hdu_no].data['FLAG_PSF_HSM']
+    star_flags = starcat[hdu_no].data["FLAG_STAR_HSM"]
+    psf_flags = starcat[hdu_no].data["FLAG_PSF_HSM"]
     flagmask = np.abs(star_flags - 1) * np.abs(psf_flags - 1)
 
     # convert sigma to R^2's
-    all_star_shapes = np.array([
-        starcat[hdu_no].data['E1_STAR_HSM'],
-        starcat[hdu_no].data['E2_STAR_HSM'],
-        2. * starcat[hdu_no].data['SIGMA_STAR_HSM'] ** 2
-    ])
-    all_psf_shapes = np.array([
-        starcat[hdu_no].data['E1_PSF_HSM'],
-        starcat[hdu_no].data['E2_PSF_HSM'],
-        2. * starcat[hdu_no].data['SIGMA_PSF_HSM'] ** 2
-    ])
-    all_CCDs = starcat[hdu_no].data['CCD_NB']
-    all_X = starcat[hdu_no].data['X']
-    all_Y = starcat[hdu_no].data['Y']
+    all_star_shapes = np.array(
+        [
+            starcat[hdu_no].data["E1_STAR_HSM"],
+            starcat[hdu_no].data["E2_STAR_HSM"],
+            2.0 * starcat[hdu_no].data["SIGMA_STAR_HSM"] ** 2,
+        ]
+    )
+    all_psf_shapes = np.array(
+        [
+            starcat[hdu_no].data["E1_PSF_HSM"],
+            starcat[hdu_no].data["E2_PSF_HSM"],
+            2.0 * starcat[hdu_no].data["SIGMA_PSF_HSM"] ** 2,
+        ]
+    )
+    all_CCDs = starcat[hdu_no].data["CCD_NB"]
+    all_X = starcat[hdu_no].data["X"]
+    all_Y = starcat[hdu_no].data["Y"]
 
     # Remove stars/PSFs where the measured size is zero
     # Sometimes the HSM shape measurement gives objects with measured
     # size equals to zero without an error Flag.
-    bad_stars = (abs(all_star_shapes[2, :]) < 0.1)
-    bad_psfs = (abs(all_psf_shapes[2, :]) < 0.1)
+    bad_stars = abs(all_star_shapes[2, :]) < 0.1
+    bad_psfs = abs(all_psf_shapes[2, :]) < 0.1
     size_mask = np.abs(bad_stars) * np.abs(bad_psfs)
     # Remove outlier stars/PSFs
     all_star_shapes = all_star_shapes[:, ~size_mask]
@@ -304,8 +304,8 @@ def plot_meanshapes(
     # Remove stars/PSFs where the measured size is zero
     # Sometimes the HSM shape measurement gives objects with measured
     # size equals to zero without an error Flag.
-    bad_stars = (abs(all_star_shapes[2, :]) < 0.1)
-    bad_psfs = (abs(all_psf_shapes[2, :]) < 0.1)
+    bad_stars = abs(all_star_shapes[2, :]) < 0.1
+    bad_psfs = abs(all_psf_shapes[2, :]) < 0.1
     size_mask = np.abs(bad_stars) * np.abs(bad_psfs)
     # Remove outlier stars/PSFs
     all_star_shapes = all_star_shapes[:, ~size_mask]
@@ -316,14 +316,13 @@ def plot_meanshapes(
     flagmask = flagmask[~size_mask]
 
     if remove_outliers:
-        shape_std_max = 5.
+        shape_std_max = 5.0
         # Outlier rejection based on the size
-        R2_thresh = (
-            shape_std_max * np.std(all_star_shapes[2, :])
-            + np.mean(all_star_shapes[2, :])
+        R2_thresh = shape_std_max * np.std(all_star_shapes[2, :]) + np.mean(
+            all_star_shapes[2, :]
         )
-        bad_stars = (abs(all_star_shapes[2, :]) > R2_thresh)
-        w_log.info(f'Nb of outlier stars: {np.sum(bad_stars):d}')
+        bad_stars = abs(all_star_shapes[2, :]) > R2_thresh
+        w_log.info(f"Nb of outlier stars: {np.sum(bad_stars):d}")
         # Remove outlier PSFs
         all_star_shapes = all_star_shapes[:, ~bad_stars]
         all_psf_shapes = all_psf_shapes[:, ~bad_stars]
@@ -351,17 +350,17 @@ def plot_meanshapes(
     for ccd_nb, ccd_map in enumerate(ccd_maps):
 
         # handle different input catalogue types
-        if psf_model_type == 'mccd':
+        if psf_model_type == "mccd":
 
-            ccd_mask = (
-                ((all_CCDs.astype(int) == ccd_nb) * flagmask).astype(bool)
+            ccd_mask = ((all_CCDs.astype(int) == ccd_nb) * flagmask).astype(
+                bool
             )
 
             # Calculate shift to go from global coordinates to local
             # coordinates
             x_shift, y_shift = loc2glob.shift_coord(ccd_nb)
 
-        elif psf_model_type == 'psfex':
+        elif psf_model_type == "psfex":
 
             ccd_mask = ((all_CCDs == str(ccd_nb)) * flagmask).astype(bool)
 
@@ -370,14 +369,14 @@ def plot_meanshapes(
 
         else:
 
-            raise ValueError(f'Invalid psf model type {psf_model_type}')
+            raise ValueError(f"Invalid psf model type {psf_model_type}")
 
         star_shapes = all_star_shapes[:, ccd_mask]
         psf_shapes = all_psf_shapes[:, ccd_mask]
 
         xs_loc, ys_loc = all_X[ccd_mask] - x_shift, all_Y[ccd_mask] - y_shift
 
-        if psf_model_type == 'mccd':
+        if psf_model_type == "mccd":
             # swap axes to match CCD orientation and origin convention
             ys_loc = loc2glob.y_npix - ys_loc + 1
 
@@ -385,7 +384,7 @@ def plot_meanshapes(
         xbins = np.digitize(xs_loc, grid[0])
         ybins = np.digitize(ys_loc, grid[1])
 
-        if psf_model_type == 'psfex':
+        if psf_model_type == "psfex":
             xbins, ybins = megacam_flip(xbins, ybins, ccd_nb, nb_pixel)
 
         for xb in range(nb_pixel[0]):
@@ -407,38 +406,32 @@ def plot_meanshapes(
         else:
             vmax = max(
                 np.nanmax(ccd_maps[:, :, 0]),
-                np.abs(np.nanmin(ccd_maps[:, :, 0]))
+                np.abs(np.nanmin(ccd_maps[:, :, 0])),
             )
         vmin = -vmax
         wind = [vmin, vmax]
         title = (
-            f'e_1 (stars), std={np.nanstd(ccd_maps[:, 0, 0]):.5e}\n'
-            + f'vmax={np.nanmax(abs(ccd_maps[:, 0, 0])):.4e}'
+            f"e_1 (stars), std={np.nanstd(ccd_maps[:, 0, 0]):.5e}\n"
+            + f"vmax={np.nanmax(abs(ccd_maps[:, 0, 0])):.4e}"
         )
         mean_shapes_plot(
-            ccd_maps[:, 0, 0],
-            output_path + 'e1s',
-            title,
-            wind=wind
+            ccd_maps[:, 0, 0], output_path + "e1s", title, wind=wind
         )
 
         title = (
-            f'e_1 (model), std={np.nanstd(ccd_maps[:, 1, 0]):.5e}\n'
-            + f'vmax={np.nanmax(abs(ccd_maps[:, 1, 0])):.4e}'
+            f"e_1 (model), std={np.nanstd(ccd_maps[:, 1, 0]):.5e}\n"
+            + f"vmax={np.nanmax(abs(ccd_maps[:, 1, 0])):.4e}"
         )
         mean_shapes_plot(
-            ccd_maps[:, 1, 0],
-            output_path + 'e1m',
-            title,
-            wind=wind
+            ccd_maps[:, 1, 0], output_path + "e1m", title, wind=wind
         )
 
         if auto_colorbar:
             wind = None
         e1_res = ccd_maps[:, 0, 0] - ccd_maps[:, 1, 0]
         e1_res = e1_res[~np.isnan(e1_res)]
-        rmse_e1 = np.sqrt(np.mean(e1_res ** 2))
-        w_log.info(f'Bins: e1 residual RMSE: {rmse_e1:.6f}\n')
+        rmse_e1 = np.sqrt(np.mean(e1_res**2))
+        w_log.info(f"Bins: e1 residual RMSE: {rmse_e1:.6f}\n")
         if max_de:
             vmax = max_de
         else:
@@ -446,15 +439,15 @@ def plot_meanshapes(
         vmin = -vmax
         wind = [vmin, vmax]
         title = (
-            f'e_1 res, rmse={rmse_e1:.5e}\nvmax={vmax:.4e} , '
-            + f'std={np.nanstd(ccd_maps[:, 0, 0] - ccd_maps[:, 1, 0]):.5e}'
+            f"e_1 res, rmse={rmse_e1:.5e}\nvmax={vmax:.4e} , "
+            + f"std={np.nanstd(ccd_maps[:, 0, 0] - ccd_maps[:, 1, 0]):.5e}"
         )
         mean_shapes_plot(
             ccd_maps[:, 0, 0] - ccd_maps[:, 1, 0],
-            output_path + 'e1res',
+            output_path + "e1res",
             title,
             wind=wind,
-            colorbar_ampl=colorbar_ampl
+            colorbar_ampl=colorbar_ampl,
         )
 
         # e_2
@@ -463,39 +456,33 @@ def plot_meanshapes(
         else:
             vmax = max(
                 np.nanmax(ccd_maps[:, :, 1]),
-                np.abs(np.nanmin(ccd_maps[:, :, 1]))
+                np.abs(np.nanmin(ccd_maps[:, :, 1])),
             )
         vmin = -vmax
         wind = [vmin, vmax]
         title = (
-            f'e_2 (stars), std={np.nanstd(ccd_maps[:, 0, 1]):.5e}\n'
-            + f'vmax={np.nanmax(abs(ccd_maps[:, 0, 1])):.4e}'
+            f"e_2 (stars), std={np.nanstd(ccd_maps[:, 0, 1]):.5e}\n"
+            + f"vmax={np.nanmax(abs(ccd_maps[:, 0, 1])):.4e}"
         )
         mean_shapes_plot(
-            ccd_maps[:, 0, 1],
-            output_path + 'e2s',
-            title,
-            wind=wind
+            ccd_maps[:, 0, 1], output_path + "e2s", title, wind=wind
         )
         title = (
-            f'e_2 (model), std={np.nanstd(ccd_maps[:, 1, 1]):.5e}\n'
-            + f'vmax={np.nanmax(abs(ccd_maps[:, 1, 1])):.4e}'
+            f"e_2 (model), std={np.nanstd(ccd_maps[:, 1, 1]):.5e}\n"
+            + f"vmax={np.nanmax(abs(ccd_maps[:, 1, 1])):.4e}"
         )
         mean_shapes_plot(
-            ccd_maps[:, 1, 1],
-            output_path + 'e2m',
-            title,
-            wind=wind
+            ccd_maps[:, 1, 1], output_path + "e2m", title, wind=wind
         )
 
         if auto_colorbar:
             wind = None
-            colorbar_ampl = 1.
+            colorbar_ampl = 1.0
 
         e2_res = ccd_maps[:, 0, 1] - ccd_maps[:, 1, 1]
         e2_res = e2_res[~np.isnan(e2_res)]
-        rmse_e2 = np.sqrt(np.mean(e2_res ** 2))
-        w_log.info(f'Bins: e2 residual RMSE: {rmse_e2:.6f}\n')
+        rmse_e2 = np.sqrt(np.mean(e2_res**2))
+        w_log.info(f"Bins: e2 residual RMSE: {rmse_e2:.6f}\n")
         if max_de:
             vmax = max_de
         else:
@@ -503,15 +490,15 @@ def plot_meanshapes(
         vmin = -vmax
         wind = [vmin, vmax]
         title = (
-            f'e_2 res, rmse={rmse_e2:.5e}\nvmax={vmax:.4e} , '
-            + f'std={np.nanstd(ccd_maps[:, 0, 1] - ccd_maps[:, 1, 1]):.5e}'
+            f"e_2 res, rmse={rmse_e2:.5e}\nvmax={vmax:.4e} , "
+            + f"std={np.nanstd(ccd_maps[:, 0, 1] - ccd_maps[:, 1, 1]):.5e}"
         )
         mean_shapes_plot(
             ccd_maps[:, 0, 1] - ccd_maps[:, 1, 1],
-            output_path + 'e2res',
+            output_path + "e2res",
             title,
             wind=wind,
-            colorbar_ampl=colorbar_ampl
+            colorbar_ampl=colorbar_ampl,
         )
 
         # R^2
@@ -526,47 +513,48 @@ def plot_meanshapes(
         wind = [vmin, vmax]
         colorbar_ampl = 1
         title = (
-            f'R_2 (stars), std={np.nanstd(ccd_maps[:, 0, 2]):.5e}\n'
-            + f'vmax={np.nanmax(abs(ccd_maps[:, 0, 2])):.4e}'
+            f"R_2 (stars), std={np.nanstd(ccd_maps[:, 0, 2]):.5e}\n"
+            + f"vmax={np.nanmax(abs(ccd_maps[:, 0, 2])):.4e}"
         )
         mean_shapes_plot(
             ccd_maps[:, 0, 2],
-            output_path + 'R2s',
+            output_path + "R2s",
             title,
             wind=wind,
-            cmap='Reds'
+            cmap="Reds",
         )
         title = (
-            f'R_2 (model), std={np.nanstd(ccd_maps[:, 1, 2]):.5e}\n'
-            + f'vmax={np.nanmax(abs(ccd_maps[:, 1, 2])):.4e}'
+            f"R_2 (model), std={np.nanstd(ccd_maps[:, 1, 2]):.5e}\n"
+            + f"vmax={np.nanmax(abs(ccd_maps[:, 1, 2])):.4e}"
         )
         mean_shapes_plot(
             ccd_maps[:, 1, 2],
-            output_path + 'R2m',
+            output_path + "R2m",
             title,
             wind=wind,
-            cmap='Reds'
+            cmap="Reds",
         )
 
         if auto_colorbar:
             wind = [
                 0,
-                np.nanmax(np.abs(
-                    (ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) / ccd_maps[:, 0, 2]
-                ))
+                np.nanmax(
+                    np.abs(
+                        (ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2])
+                        / ccd_maps[:, 0, 2]
+                    )
+                ),
             ]
-            colorbar_ampl = 1.
+            colorbar_ampl = 1.0
         R2_res = (ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) / ccd_maps[:, 0, 2]
         R2_res = R2_res[~np.isnan(R2_res)]
-        rmse_r2 = np.sqrt(np.mean(R2_res ** 2))
+        rmse_r2 = np.sqrt(np.mean(R2_res**2))
         w_log.info(f"Bins: R2 residual RMSE: {rmse_r2:.6f}\n")
         if max_dr2:
             vmax = max_dr2
         else:
             vmax = np.nanmax(
-                abs(
-                    (ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) / ccd_maps[:, 0, 2]
-                )
+                abs((ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) / ccd_maps[:, 0, 2])
             )
         wind = [0, vmax]
         std_title = np.nanstd(
@@ -580,26 +568,23 @@ def plot_meanshapes(
             title = "Outliers removed\n" + title
 
         mean_shapes_plot(
-            np.abs(
-                (ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2])
-                / ccd_maps[:, 0, 2]
-            ),
-            output_path + 'R2res',
+            np.abs((ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) / ccd_maps[:, 0, 2]),
+            output_path + "R2res",
             title,
             wind=wind,
             colorbar_ampl=colorbar_ampl,
-            cmap='Reds'
+            cmap="Reds",
         )
 
         # nstars
         wind = (0, np.max(ccd_maps[:, 0, 3]))
-        title = f'Number of stars\nTotal={np.nansum(ccd_maps[:, 0, 3]):.0f}'
+        title = f"Number of stars\nTotal={np.nansum(ccd_maps[:, 0, 3]):.0f}"
         mean_shapes_plot(
             ccd_maps[:, 0, 3],
-            f'{output_path}nstar',
+            f"{output_path}nstar",
             title,
             wind=wind,
-            cmap='magma'
+            cmap="magma",
         )
 
     # Histograms
@@ -610,19 +595,19 @@ def plot_meanshapes(
             all_star_shapes[0, :],
             bins=hist_bins,
             range=[-0.2, 0.2],
-            label='stars',
-            alpha=0.5
+            label="stars",
+            alpha=0.5,
         )
         plt.hist(
             all_psf_shapes[0, :],
             bins=hist_bins,
             range=[-0.2, 0.2],
-            label='PSFs',
-            alpha=0.5
+            label="PSFs",
+            alpha=0.5,
         )
-        plt.legend(loc='best', fontsize=16)
-        plt.title('e1', fontsize=24)
-        plt.savefig(f'{output_path}e1_hist.png')
+        plt.legend(loc="best", fontsize=16)
+        plt.title("e1", fontsize=24)
+        plt.savefig(f"{output_path}e1_hist.png")
         plt.close()
 
         plt.figure(figsize=(12, 6), dpi=300)
@@ -631,12 +616,12 @@ def plot_meanshapes(
             data_hist,
             bins=hist_bins,
             range=[np.min(data_hist), np.max(data_hist)],
-            label='err(star - psf)',
-            alpha=0.5
+            label="err(star - psf)",
+            alpha=0.5,
         )
-        plt.legend(loc='best', fontsize=16)
-        plt.title('e1 err', fontsize=24)
-        plt.savefig(output_path + 'err_e1_hist.png')
+        plt.legend(loc="best", fontsize=16)
+        plt.title("e1 err", fontsize=24)
+        plt.savefig(output_path + "err_e1_hist.png")
         plt.close()
 
         plt.figure(figsize=(12, 6), dpi=300)
@@ -644,19 +629,19 @@ def plot_meanshapes(
             all_star_shapes[1, :],
             bins=hist_bins,
             range=[-0.2, 0.2],
-            label='stars',
-            alpha=0.5
+            label="stars",
+            alpha=0.5,
         )
         plt.hist(
             all_psf_shapes[1, :],
             bins=hist_bins,
             range=[-0.2, 0.2],
-            label='PSFs',
-            alpha=0.5
+            label="PSFs",
+            alpha=0.5,
         )
-        plt.legend(loc='best', fontsize=16)
-        plt.title('e2', fontsize=24)
-        plt.savefig(output_path + 'e2_hist.png')
+        plt.legend(loc="best", fontsize=16)
+        plt.title("e2", fontsize=24)
+        plt.savefig(output_path + "e2_hist.png")
         plt.close()
 
         plt.figure(figsize=(12, 6), dpi=300)
@@ -665,12 +650,12 @@ def plot_meanshapes(
             data_hist,
             bins=hist_bins,
             range=[np.min(data_hist), np.max(data_hist)],
-            label='err(star - psf)',
-            alpha=0.5
+            label="err(star - psf)",
+            alpha=0.5,
         )
-        plt.legend(loc='best', fontsize=16)
-        plt.title('e2 err', fontsize=24)
-        plt.savefig(output_path + 'err_e2_hist.png')
+        plt.legend(loc="best", fontsize=16)
+        plt.title("e2 err", fontsize=24)
+        plt.savefig(output_path + "err_e2_hist.png")
         plt.close()
 
         plt.figure(figsize=(12, 6), dpi=300)
@@ -680,36 +665,35 @@ def plot_meanshapes(
             all_star_shapes[2, :],
             bins=hist_bins,
             range=wind,
-            label='stars',
-            alpha=0.5
+            label="stars",
+            alpha=0.5,
         )
         plt.hist(
             all_psf_shapes[2, :],
             bins=hist_bins,
             range=wind,
-            label='PSFs',
-            alpha=0.5
+            label="PSFs",
+            alpha=0.5,
         )
-        plt.legend(loc='best', fontsize=16)
-        plt.title('R2', fontsize=24)
-        plt.savefig(output_path + 'R2_hist.png')
+        plt.legend(loc="best", fontsize=16)
+        plt.title("R2", fontsize=24)
+        plt.savefig(output_path + "R2_hist.png")
         plt.close()
 
         plt.figure(figsize=(12, 6), dpi=300)
         data_hist = (
-            (all_star_shapes[2, :] - all_psf_shapes[2, :])
-            / all_star_shapes[2, :]
-        )
+            all_star_shapes[2, :] - all_psf_shapes[2, :]
+        ) / all_star_shapes[2, :]
         plt.hist(
             data_hist,
             bins=hist_bins,
             range=[np.min(data_hist), np.max(data_hist)],
-            label='err(star - psf)/star',
-            alpha=0.5
+            label="err(star - psf)/star",
+            alpha=0.5,
         )
-        plt.legend(loc='best', fontsize=16)
-        plt.title('R2 err', fontsize=24)
-        plt.savefig(output_path + 'err_R2_hist.png')
+        plt.legend(loc="best", fontsize=16)
+        plt.title("R2 err", fontsize=24)
+        plt.savefig(output_path + "err_R2_hist.png")
         plt.close()
 
     starcat.close()
@@ -720,15 +704,15 @@ def neg_dash(
     x_in,
     y_in,
     yerr_in,
-    plot_name='',
+    plot_name="",
     vertical_lines=True,
-    xlabel='',
-    ylabel='',
-    rho_nb='',
+    xlabel="",
+    ylabel="",
+    rho_nb="",
     ylim=None,
     semilogx=False,
     semilogy=False,
-    **kwargs
+    **kwargs,
 ):
     r"""Neg Dash.
 
@@ -770,14 +754,19 @@ def neg_dash(
     # catch and separate errorbar-specific keywords from Lines2D ones
     safekwargs = dict(kwargs)
     errbkwargs = dict()
-    if 'linestyle' in kwargs.keys():
+    if "linestyle" in kwargs.keys():
         print(
-            'Warning: linestyle was provided but that would kind of defeat'
-            + 'the purpose, so I will just ignore it. Sorry.'
+            "Warning: linestyle was provided but that would kind of defeat"
+            + "the purpose, so I will just ignore it. Sorry."
         )
-        del safekwargs['linestyle']
+        del safekwargs["linestyle"]
     for errorbar_kword in [
-        'fmt', 'ecolor', 'elinewidth', 'capsize', 'barsabove', 'errorevery'
+        "fmt",
+        "ecolor",
+        "elinewidth",
+        "capsize",
+        "barsabove",
+        "errorevery",
     ]:
         if errorbar_kword in kwargs.keys():
             # posfmt = '-'+kwargs['fmt']
@@ -795,7 +784,7 @@ def neg_dash(
                 x[:first_change],
                 y[:first_change],
                 yerr=yerr[:first_change],
-                linestyle='-',
+                linestyle="-",
                 **errbkwargs,
             )
             if vertical_lines:
@@ -803,14 +792,14 @@ def neg_dash(
                     x[first_change - 1],
                     0,
                     y[first_change - 1],
-                    linestyle='-',
+                    linestyle="-",
                     **safekwargs,
                 )
                 plt.vlines(
                     x[first_change],
                     0,
                     np.abs(y[first_change]),
-                    linestyle='--',
+                    linestyle="--",
                     **safekwargs,
                 )
         else:
@@ -818,7 +807,7 @@ def neg_dash(
                 x[:first_change],
                 np.abs(y[:first_change]),
                 yerr=yerr[:first_change],
-                linestyle='--',
+                linestyle="--",
                 **errbkwargs,
             )
             if vertical_lines:
@@ -826,14 +815,14 @@ def neg_dash(
                     x[first_change - 1],
                     0,
                     np.abs(y[first_change - 1]),
-                    linestyle='--',
+                    linestyle="--",
                     **safekwargs,
                 )
                 plt.vlines(
                     x[first_change],
                     0,
                     y[first_change],
-                    linestyle='-',
+                    linestyle="-",
                     **safekwargs,
                 )
         x = x[first_change:]
@@ -843,18 +832,19 @@ def neg_dash(
         first_change = np.argmax(current_sign * y < 0)
     # one last time when `first_change'==0 ie no more changes:
     if rho_nb:
-        lab = fr'$\rho_{rho_nb}(\theta)$'
+        lab = rf"$\rho_{rho_nb}(\theta)$"
     else:
-        lab = ''
+        lab = ""
     if current_sign > 0:
-        plt.errorbar(x, y, yerr=yerr, linestyle='-', label=lab, **errbkwargs)
+        plt.errorbar(x, y, yerr=yerr, linestyle="-", label=lab, **errbkwargs)
     else:
-        plt.errorbar(x, np.abs(y), yerr=yerr, linestyle='--', label=lab,
-                     **errbkwargs)
+        plt.errorbar(
+            x, np.abs(y), yerr=yerr, linestyle="--", label=lab, **errbkwargs
+        )
     if semilogx:
-        plt.xscale('log')
+        plt.xscale("log")
     if semilogy:
-        plt.yscale('log')
+        plt.yscale("log")
     if ylim is not None:
         plt.ylim(ylim)
     plt.xlabel(xlabel)
@@ -872,11 +862,7 @@ class new_BaseCorrelationFunctionSysTest(BaseCorrelationFunctionSysTest):
     """
 
     def make_catalogue(
-        self,
-        data,
-        config=None,
-        use_as_k=None,
-        use_chip_coords=False
+        self, data, config=None, use_as_k=None, use_chip_coords=False
     ):
         """Make Catalogue.
 
@@ -911,43 +897,45 @@ class new_BaseCorrelationFunctionSysTest(BaseCorrelationFunctionSysTest):
 
         catalog_kwargs = {}
         fields = data.dtype.names
-        if 'ra' in fields and 'dec' in fields:
+        if "ra" in fields and "dec" in fields:
             if not use_chip_coords:
-                catalog_kwargs['ra'] = data['ra']
-                catalog_kwargs['dec'] = data['dec']
-            elif 'x' in fields and 'y' in fields:
-                catalog_kwargs['x'] = data['x']
-                catalog_kwargs['y'] = data['y']
+                catalog_kwargs["ra"] = data["ra"]
+                catalog_kwargs["dec"] = data["dec"]
+            elif "x" in fields and "y" in fields:
+                catalog_kwargs["x"] = data["x"]
+                catalog_kwargs["y"] = data["y"]
             else:
                 raise ValueError(
                     "Chip coordinates requested, but 'x' and 'y' fields"
-                    "not found in data")
-        elif 'x' in fields and 'y' in fields:
-            catalog_kwargs['x'] = data['x']
-            catalog_kwargs['y'] = data['y']
+                    "not found in data"
+                )
+        elif "x" in fields and "y" in fields:
+            catalog_kwargs["x"] = data["x"]
+            catalog_kwargs["y"] = data["y"]
         else:
             raise ValueError(
                 "Data must contain (ra,dec) or (x,y) in order to do"
-                "correlation function tests.")
-        if 'g1' in fields and 'g2' in fields:
-            catalog_kwargs['g1'] = data['g1']
-            catalog_kwargs['g2'] = data['g2']
-        if 'w' in fields:
-            catalog_kwargs['w'] = data['w']
+                "correlation function tests."
+            )
+        if "g1" in fields and "g2" in fields:
+            catalog_kwargs["g1"] = data["g1"]
+            catalog_kwargs["g2"] = data["g2"]
+        if "w" in fields:
+            catalog_kwargs["w"] = data["w"]
         if use_as_k:
             if use_as_k in fields:
-                catalog_kwargs['k'] = data[use_as_k]
-        elif 'k' in fields:
-            catalog_kwargs['k'] = data['k']
+                catalog_kwargs["k"] = data[use_as_k]
+        elif "k" in fields:
+            catalog_kwargs["k"] = data["k"]
         # Quirk of length-1 formatted arrays: the fields will be floats, not
         # arrays, which would break the Catalog init.
         try:
             len(data)
         except Exception:
-            if not hasattr(data, 'len') and isinstance(data, np.ndarray):
+            if not hasattr(data, "len") and isinstance(data, np.ndarray):
                 for key in catalog_kwargs:
                     catalog_kwargs[key] = np.array([catalog_kwargs[key]])
-        catalog_kwargs['config'] = config
+        catalog_kwargs["config"] = config
         return treecorr.Catalog(**catalog_kwargs)
 
 
@@ -959,19 +947,13 @@ class Rho1SysTest(new_BaseCorrelationFunctionSysTest):
 
     """
 
-    short_name = 'rho1'
-    long_name = 'Rho1 statistics (Auto-correlation of star-PSF shapes)'
-    objects_list = ['star PSF']
-    required_quantities = [('ra', 'dec', 'g1', 'g2', 'psf_g1', 'psf_g2', 'w')]
+    short_name = "rho1"
+    long_name = "Rho1 statistics (Auto-correlation of star-PSF shapes)"
+    objects_list = ["star PSF"]
+    required_quantities = [("ra", "dec", "g1", "g2", "psf_g1", "psf_g2", "w")]
 
     def __call__(
-        self,
-        data,
-        data2=None,
-        random=None,
-        random2=None,
-        config=None,
-        **kwargs
+        self, data, data2=None, random=None, random2=None, config=None, **kwargs
     ):
         """Call Method.
 
@@ -996,28 +978,28 @@ class Rho1SysTest(new_BaseCorrelationFunctionSysTest):
 
         """
         new_data = data.copy()
-        new_data['g1'] = new_data['g1'] - new_data['psf_g1']
-        new_data['g2'] = new_data['g2'] - new_data['psf_g2']
+        new_data["g1"] = new_data["g1"] - new_data["psf_g1"]
+        new_data["g2"] = new_data["g2"] - new_data["psf_g2"]
         if data2 is not None:
             new_data2 = data2.copy()
-            new_data2['g1'] = new_data2['g1'] - new_data2['psf_g1']
-            new_data2['g2'] = new_data2['g2'] - new_data2['psf_g2']
+            new_data2["g1"] = new_data2["g1"] - new_data2["psf_g1"]
+            new_data2["g2"] = new_data2["g2"] - new_data2["psf_g2"]
         else:
             new_data2 = data2
         if random is not None:
             new_random = random.copy()
-            new_random['g1'] = new_random['g1'] - new_random['psf_g1']
-            new_random['g2'] = new_random['g2'] - new_random['psf_g2']
+            new_random["g1"] = new_random["g1"] - new_random["psf_g1"]
+            new_random["g2"] = new_random["g2"] - new_random["psf_g2"]
         else:
             new_random = random
         if random2 is not None:
             new_random2 = random2.copy()
-            new_random2['g1'] = new_random2['g1'] - new_random2['psf_g1']
-            new_random2['g2'] = new_random2['g2'] - new_random2['psf_g2']
+            new_random2["g1"] = new_random2["g1"] - new_random2["psf_g1"]
+            new_random2["g2"] = new_random2["g2"] - new_random2["psf_g2"]
         else:
             new_random2 = random2
         return self.getCF(
-            'gg',
+            "gg",
             new_data,
             new_data2,
             new_random,
@@ -1035,19 +1017,13 @@ class DESRho2SysTest(new_BaseCorrelationFunctionSysTest):
 
     """
 
-    short_name = 'rho2des'
-    long_name = 'Rho2 statistics (as defined in DES shape catalogue papers)'
-    objects_list = ['star PSF']
-    required_quantities = [('ra', 'dec', 'g1', 'g2', 'psf_g1', 'psf_g2', 'w')]
+    short_name = "rho2des"
+    long_name = "Rho2 statistics (as defined in DES shape catalogue papers)"
+    objects_list = ["star PSF"]
+    required_quantities = [("ra", "dec", "g1", "g2", "psf_g1", "psf_g2", "w")]
 
     def __call__(
-        self,
-        data,
-        data2=None,
-        random=None,
-        random2=None,
-        config=None,
-        **kwargs
+        self, data, data2=None, random=None, random2=None, config=None, **kwargs
     ):
         """Call Method.
 
@@ -1072,31 +1048,31 @@ class DESRho2SysTest(new_BaseCorrelationFunctionSysTest):
 
         """
         new_data = np.rec.fromarrays(
-            [data['ra'], data['dec'], data['g1'], data['g2'], data['w']],
-            names=['ra', 'dec', 'g1', 'g2', 'w'],
+            [data["ra"], data["dec"], data["g1"], data["g2"], data["w"]],
+            names=["ra", "dec", "g1", "g2", "w"],
         )
         if data2 is None:
             data2 = data
         new_data2 = np.rec.fromarrays(
             [
-                data2['ra'],
-                data2['dec'],
-                data2['g1'] - data2['psf_g1'],
-                data2['g2'] - data2['psf_g2'],
-                data2['w']
+                data2["ra"],
+                data2["dec"],
+                data2["g1"] - data2["psf_g1"],
+                data2["g2"] - data2["psf_g2"],
+                data2["w"],
             ],
-            names=['ra', 'dec', 'g1', 'g2', 'w'],
+            names=["ra", "dec", "g1", "g2", "w"],
         )
         if random is not None:
             new_random = np.rec.fromarrays(
                 [
-                    random['ra'],
-                    random['dec'],
-                    random['g1'],
-                    random['g2'],
-                    random['w']
+                    random["ra"],
+                    random["dec"],
+                    random["g1"],
+                    random["g2"],
+                    random["w"],
                 ],
-                names=['ra', 'dec', 'g1', 'g2', 'w'],
+                names=["ra", "dec", "g1", "g2", "w"],
             )
 
         else:
@@ -1106,24 +1082,24 @@ class DESRho2SysTest(new_BaseCorrelationFunctionSysTest):
         if random2 is not None:
             new_random2 = np.rec.fromarrays(
                 [
-                    data2['ra'],
-                    data2['dec'],
-                    data2['g1'] - data2['psf_g1'],
-                    data2['g2'] - data2['psf_g2'],
-                    data2['w']
+                    data2["ra"],
+                    data2["dec"],
+                    data2["g1"] - data2["psf_g1"],
+                    data2["g2"] - data2["psf_g2"],
+                    data2["w"],
                 ],
-                names=['ra', 'dec', 'g1', 'g2', 'w'],
+                names=["ra", "dec", "g1", "g2", "w"],
             )
         else:
             new_random2 = random2
         return self.getCF(
-            'gg',
+            "gg",
             new_data,
             new_data2,
             new_random,
             new_random2,
             config=config,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1134,24 +1110,16 @@ class DESRho3SysTest(new_BaseCorrelationFunctionSysTest):
 
     """
 
-    short_name = 'rho3'
+    short_name = "rho3"
     long_name = (
-        'Rho3 statistics (Auto-correlation of star shapes weighted by '
-        + 'the residual size)'
+        "Rho3 statistics (Auto-correlation of star shapes weighted by "
+        + "the residual size)"
     )
-    objects_list = ['star PSF']
-    required_quantities = [
-        ('ra', 'dec', 'sigma', 'g1', 'g2', 'psf_sigma', 'w')
-    ]
+    objects_list = ["star PSF"]
+    required_quantities = [("ra", "dec", "sigma", "g1", "g2", "psf_sigma", "w")]
 
     def __call__(
-        self,
-        data,
-        data2=None,
-        random=None,
-        random2=None,
-        config=None,
-        **kwargs
+        self, data, data2=None, random=None, random2=None, config=None, **kwargs
     ):
         """Call Method.
 
@@ -1176,24 +1144,33 @@ class DESRho3SysTest(new_BaseCorrelationFunctionSysTest):
 
         """
         new_data = np.rec.fromarrays(
-            [data['ra'], data['dec'],
-             data['g1'] * (data['sigma'] - data[
-                 'psf_sigma']) / data['sigma'],
-             data['g2'] * (data['sigma'] - data[
-                 'psf_sigma']) / data['sigma'],
-             data['w']],
-            names=['ra', 'dec', 'g1', 'g2', 'w']
+            [
+                data["ra"],
+                data["dec"],
+                data["g1"]
+                * (data["sigma"] - data["psf_sigma"])
+                / data["sigma"],
+                data["g2"]
+                * (data["sigma"] - data["psf_sigma"])
+                / data["sigma"],
+                data["w"],
+            ],
+            names=["ra", "dec", "g1", "g2", "w"],
         )
         if data2 is not None:
             new_data2 = np.rec.fromarrays(
                 [
-                    data2['ra'], data2['dec'],
-                    data2['g1'] * (data2['sigma'] - data2['psf_sigma'])
-                    / data2['sigma'],
-                    data2['g2'] * (data2['sigma'] - data2['psf_sigma'])
-                    / data2['sigma'],
-                    data2['w']],
-                names=['ra', 'dec', 'g1', 'g2', 'w']
+                    data2["ra"],
+                    data2["dec"],
+                    data2["g1"]
+                    * (data2["sigma"] - data2["psf_sigma"])
+                    / data2["sigma"],
+                    data2["g2"]
+                    * (data2["sigma"] - data2["psf_sigma"])
+                    / data2["sigma"],
+                    data2["w"],
+                ],
+                names=["ra", "dec", "g1", "g2", "w"],
             )
 
         else:
@@ -1201,14 +1178,17 @@ class DESRho3SysTest(new_BaseCorrelationFunctionSysTest):
         if random is not None:
             new_random = np.rec.fromarrays(
                 [
-                    random['ra'], random['dec'],
-                    random['g1'] * (random['sigma'] - random['psf_sigma'])
-                    / random['sigma'],
-                    random['g2'] * (random['sigma'] - random['psf_sigma'])
-                    / random['sigma'],
-                    random['w']
+                    random["ra"],
+                    random["dec"],
+                    random["g1"]
+                    * (random["sigma"] - random["psf_sigma"])
+                    / random["sigma"],
+                    random["g2"]
+                    * (random["sigma"] - random["psf_sigma"])
+                    / random["sigma"],
+                    random["w"],
                 ],
-                names=['ra', 'dec', 'g1', 'g2', 'w']
+                names=["ra", "dec", "g1", "g2", "w"],
             )
         else:
             new_random = random
@@ -1216,27 +1196,30 @@ class DESRho3SysTest(new_BaseCorrelationFunctionSysTest):
         if random2 is not None:
             new_random2 = np.rec.fromarrays(
                 [
-                    random2['ra'], random2['dec'],
-                    random2['g1'] * (random2['sigma'] - random2['psf_sigma'])
-                    / random2['sigma'],
-                    random2['g2'] * (random2['sigma'] - random2['psf_sigma'])
-                    / random2['sigma'],
-                    random2['w']
+                    random2["ra"],
+                    random2["dec"],
+                    random2["g1"]
+                    * (random2["sigma"] - random2["psf_sigma"])
+                    / random2["sigma"],
+                    random2["g2"]
+                    * (random2["sigma"] - random2["psf_sigma"])
+                    / random2["sigma"],
+                    random2["w"],
                 ],
-                names=['ra', 'dec', 'g1', 'g2', 'w']
+                names=["ra", "dec", "g1", "g2", "w"],
             )
 
         else:
             new_random2 = random2
 
         return self.getCF(
-            'gg',
+            "gg",
             new_data,
             new_data2,
             new_random,
             new_random2,
             config=config,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1247,24 +1230,18 @@ class DESRho4SysTest(new_BaseCorrelationFunctionSysTest):
 
     """
 
-    short_name = 'rho4'
+    short_name = "rho4"
     long_name = (
-        'Rho4 statistics (Correlation of residual star shapes weighted '
-        + 'by residual size)'
+        "Rho4 statistics (Correlation of residual star shapes weighted "
+        + "by residual size)"
     )
-    objects_list = ['star PSF']
-    required_quantities = [(
-        'ra', 'dec', 'g1', 'g2', 'sigma', 'psf_g1', 'psf_g2', 'psf_sigma', 'w'
-    )]
+    objects_list = ["star PSF"]
+    required_quantities = [
+        ("ra", "dec", "g1", "g2", "sigma", "psf_g1", "psf_g2", "psf_sigma", "w")
+    ]
 
     def __call__(
-        self,
-        data,
-        data2=None,
-        random=None,
-        random2=None,
-        config=None,
-        **kwargs
+        self, data, data2=None, random=None, random2=None, config=None, **kwargs
     ):
         """Call Method.
 
@@ -1290,38 +1267,40 @@ class DESRho4SysTest(new_BaseCorrelationFunctionSysTest):
         """
         new_data = np.rec.fromarrays(
             [
-                data['ra'],
-                data['dec'],
-                data['g1'] - data['psf_g1'],
-                data['g2'] - data['psf_g2'],
-                data['w']
+                data["ra"],
+                data["dec"],
+                data["g1"] - data["psf_g1"],
+                data["g2"] - data["psf_g2"],
+                data["w"],
             ],
-            names=['ra', 'dec', 'g1', 'g2', 'w'],
+            names=["ra", "dec", "g1", "g2", "w"],
         )
         if data2 is None:
             data2 = data
         new_data2 = np.rec.fromarrays(
             [
-                data2['ra'],
-                data2['dec'],
-                data2['g1'] * (data2['sigma'] - data2['psf_sigma'])
-                / data2['sigma'],
-                data2['g2'] * (data2['sigma'] - data2['psf_sigma'])
-                / data2['sigma'],
-                data2['w']
+                data2["ra"],
+                data2["dec"],
+                data2["g1"]
+                * (data2["sigma"] - data2["psf_sigma"])
+                / data2["sigma"],
+                data2["g2"]
+                * (data2["sigma"] - data2["psf_sigma"])
+                / data2["sigma"],
+                data2["w"],
             ],
-            names=['ra', 'dec', 'g1', 'g2', 'w'],
+            names=["ra", "dec", "g1", "g2", "w"],
         )
         if random is not None:
             new_random = np.rec.fromarrays(
                 [
-                    random['ra'],
-                    random['dec'],
-                    random['g1'] - random['psf_g1'],
-                    random['g2'] - random['psf_g2'],
-                    random['w']
+                    random["ra"],
+                    random["dec"],
+                    random["g1"] - random["psf_g1"],
+                    random["g2"] - random["psf_g2"],
+                    random["w"],
                 ],
-                names=['ra', 'dec', 'g1', 'g2', 'w'],
+                names=["ra", "dec", "g1", "g2", "w"],
             )
         else:
             new_random = random
@@ -1330,25 +1309,28 @@ class DESRho4SysTest(new_BaseCorrelationFunctionSysTest):
         if random2 is not None:
             new_random2 = np.rec.fromarrays(
                 [
-                    random2['ra'], random2['dec'],
-                    random2['g1'] * (random2['sigma'] - random2['psf_sigma'])
-                    / random2['sigma'],
-                    random2['g2'] * (random2['sigma'] - random2['psf_sigma'])
-                    / random2['sigma'],
-                    random2['w']
+                    random2["ra"],
+                    random2["dec"],
+                    random2["g1"]
+                    * (random2["sigma"] - random2["psf_sigma"])
+                    / random2["sigma"],
+                    random2["g2"]
+                    * (random2["sigma"] - random2["psf_sigma"])
+                    / random2["sigma"],
+                    random2["w"],
                 ],
-                names=['ra', 'dec', 'g1', 'g2', 'w']
+                names=["ra", "dec", "g1", "g2", "w"],
             )
         else:
             new_random2 = random2
         return self.getCF(
-            'gg',
+            "gg",
             new_data,
             new_data2,
             new_random,
             new_random2,
             config=config,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1359,24 +1341,16 @@ class DESRho5SysTest(new_BaseCorrelationFunctionSysTest):
 
     """
 
-    short_name = 'rho5'
+    short_name = "rho5"
     long_name = (
-        'Rho5 statistics (Correlation of star and PSF shapes weighted by '
-        'residual size)'
+        "Rho5 statistics (Correlation of star and PSF shapes weighted by "
+        "residual size)"
     )
-    objects_list = ['star PSF']
-    required_quantities = [
-        ('ra', 'dec', 'sigma', 'g1', 'g2', 'psf_sigma', 'w')
-    ]
+    objects_list = ["star PSF"]
+    required_quantities = [("ra", "dec", "sigma", "g1", "g2", "psf_sigma", "w")]
 
     def __call__(
-        self,
-        data,
-        data2=None,
-        random=None,
-        random2=None,
-        config=None,
-        **kwargs
+        self, data, data2=None, random=None, random2=None, config=None, **kwargs
     ):
         """Call Method.
 
@@ -1402,34 +1376,36 @@ class DESRho5SysTest(new_BaseCorrelationFunctionSysTest):
 
         """
         new_data = np.rec.fromarrays(
-            [data['ra'], data['dec'], data['g1'], data['g2'], data['w']],
-            names=['ra', 'dec', 'g1', 'g2', 'w'],
+            [data["ra"], data["dec"], data["g1"], data["g2"], data["w"]],
+            names=["ra", "dec", "g1", "g2", "w"],
         )
         if data2 is None:
             data2 = data
         new_data2 = np.rec.fromarrays(
             [
-                data2['ra'],
-                data2['dec'],
-                data2['g1'] * (data2['sigma'] - data2['psf_sigma'])
-                / data2['sigma'],
-                data2['g2'] * (data2['sigma'] - data2['psf_sigma'])
-                / data2['sigma'],
-                data2['w']
+                data2["ra"],
+                data2["dec"],
+                data2["g1"]
+                * (data2["sigma"] - data2["psf_sigma"])
+                / data2["sigma"],
+                data2["g2"]
+                * (data2["sigma"] - data2["psf_sigma"])
+                / data2["sigma"],
+                data2["w"],
             ],
-            names=['ra', 'dec', 'g1', 'g2', 'w'],
+            names=["ra", "dec", "g1", "g2", "w"],
         )
 
         if random is not None:
             new_random = np.rec.fromarrays(
                 [
-                    random['ra'],
-                    random['dec'],
-                    random['g1'],
-                    random['g2'],
-                    random['w']
+                    random["ra"],
+                    random["dec"],
+                    random["g1"],
+                    random["g2"],
+                    random["w"],
                 ],
-                names=['ra', 'dec', 'g1', 'g2', 'w'],
+                names=["ra", "dec", "g1", "g2", "w"],
             )
         else:
             new_random = random
@@ -1438,38 +1414,64 @@ class DESRho5SysTest(new_BaseCorrelationFunctionSysTest):
         if random2 is not None:
             new_random2 = np.rec.fromarrays(
                 [
-                    random2['ra'],
-                    random2['dec'],
-                    random2['g1'] * (random2['sigma'] - random2['psf_sigma'])
-                    / random2['sigma'],
-                    random2['g2'] * (random2['sigma'] - random2['psf_sigma'])
-                    / random2['sigma'],
-                    random2['w']
+                    random2["ra"],
+                    random2["dec"],
+                    random2["g1"]
+                    * (random2["sigma"] - random2["psf_sigma"])
+                    / random2["sigma"],
+                    random2["g2"]
+                    * (random2["sigma"] - random2["psf_sigma"])
+                    / random2["sigma"],
+                    random2["w"],
                 ],
-                names=['ra', 'dec', 'g1', 'g2', 'w'],
+                names=["ra", "dec", "g1", "g2", "w"],
             )
 
         else:
             new_random2 = random2
         return self.getCF(
-            'gg',
+            "gg",
             new_data,
             new_data2,
             new_random,
             new_random2,
             config=config,
-            **kwargs
+            **kwargs,
         )
+
+
+def get_params_rho():
+
+    params = {}
+
+    params["patch_number"] = 50
+
+    params["ra_col"] = "RA"
+    params["dec_col"] = "DEC"
+    params["e1_PSF_col"] = "E1_PSF_HSM"
+    params["e2_PSF_col"] = "E2_PSF_HSM"
+    params["e1_star_col"] = "E1_STAR_HSM"
+    params["e2_star_col"] = "E2_STAR_HSM"
+    params["PSF_size"] = "SIGMA_PSF_HSM"
+    params["star_size"] = "SIGMA_STAR_HSM"
+    params["PSF_flag"] = "FLAG_PSF_HSM"
+    params["star_flag"] = "FLAG_STAR_HSM"
+    params["ra_units"] = "deg"
+    params["dec_units"] = "deg"
+
+    params["w_col"] = None
+
+    return params
 
 
 def rho_stats(
     starcat_path,
     output_path,
-    rho_def='HSC',
+    rho_def="HSC",
     hdu_no=2,
     ylim_l=None,
     ylim_r=None,
-    print_fun=lambda x: print(x)
+    print_fun=lambda x: print(x),
 ):
     """Rho Statistics.
 
@@ -1491,58 +1493,57 @@ def rho_stats(
         Output message function; default is ``print``
 
     """
-    # Read starcat
-    starcat = fits.open(starcat_path, memmap=False)
+    if rho_def != "UNIONS":
+        # Read starcat
+        starcat = fits.open(starcat_path, memmap=False)
+        rho_stats_fun = None
+        # Convert HSM flags to 0/1 weights
+        star_flags = starcat[hdu_no].data["FLAG_STAR_HSM"]
+        psf_flags = starcat[hdu_no].data["FLAG_PSF_HSM"]
+        w = np.abs(star_flags - 1) * np.abs(psf_flags - 1)
 
-    rho_stats_fun = None
-
-    # Convert HSM flags to 0/1 weights
-    star_flags = starcat[hdu_no].data['FLAG_STAR_HSM']
-    psf_flags = starcat[hdu_no].data['FLAG_PSF_HSM']
-    w = np.abs(star_flags - 1) * np.abs(psf_flags - 1)
-
-    # Convert to Stile-compatible and change sigmas to R^2 (up to constant)
-    stilecat = np.rec.fromarrays(
-        [
-            w,
-            starcat[hdu_no].data['RA'],
-            starcat[hdu_no].data['DEC'],
-            starcat[hdu_no].data['E1_STAR_HSM'],
-            starcat[hdu_no].data['E2_STAR_HSM'],
-            starcat[hdu_no].data['SIGMA_STAR_HSM'] ** 2,
-            starcat[hdu_no].data['E1_PSF_HSM'],
-            starcat[hdu_no].data['E2_PSF_HSM'],
-            starcat[hdu_no].data['SIGMA_PSF_HSM'] ** 2
-        ],
-        names=[
-            'w',
-            'ra',
-            'dec',
-            'g1',
-            'g2',
-            'sigma',
-            'psf_g1',
-            'psf_g2',
-            'psf_sigma'
-        ],
-    )
+        # Convert to Stile-compatible and change sigmas to R^2 (up to constant)
+        stilecat = np.rec.fromarrays(
+            [
+                w,
+                starcat[hdu_no].data["RA"],
+                starcat[hdu_no].data["DEC"],
+                starcat[hdu_no].data["E1_STAR_HSM"],
+                starcat[hdu_no].data["E2_STAR_HSM"],
+                starcat[hdu_no].data["SIGMA_STAR_HSM"] ** 2,
+                starcat[hdu_no].data["E1_PSF_HSM"],
+                starcat[hdu_no].data["E2_PSF_HSM"],
+                starcat[hdu_no].data["SIGMA_PSF_HSM"] ** 2,
+            ],
+            names=[
+                "w",
+                "ra",
+                "dec",
+                "g1",
+                "g2",
+                "sigma",
+                "psf_g1",
+                "psf_g2",
+                "psf_sigma",
+            ],
+        )
 
     # TreeCorr config:
     TreeCorrConfig = {
-        'ra_units': 'degrees',
-        'dec_units': 'degrees',
-        'max_sep': 3e2,
-        'min_sep': 5e-1,
-        'sep_units': 'arcmin',
-        'nbins': 32
+        "ra_units": "degrees",
+        "dec_units": "degrees",
+        "max_sep": 3e2,
+        "min_sep": 5e-1,
+        "sep_units": "arcmin",
+        "nbins": 32,
     }
 
     # Ininitialize all 5 rho stats
-    if rho_def == 'HSC':
+    if rho_def == "HSC":
         rho_stats_fun = [
-            stile.CorrelationFunctionSysTest(f'Rho{j}') for j in range(1, 6)
+            stile.CorrelationFunctionSysTest(f"Rho{j}") for j in range(1, 6)
         ]
-    elif rho_def == 'DES':
+    elif rho_def == "DES":
         rho_stats_fun = [
             Rho1SysTest(),
             DESRho2SysTest(),
@@ -1550,36 +1551,79 @@ def rho_stats(
             DESRho4SysTest(),
             DESRho5SysTest(),
         ]
+    elif rho_def == "UNIONS":
+        rho_stat_handler = RhoStat(
+            output=output_path,
+            treecorr_config=TreeCorrConfig,
+            verbose=False,
+        )
+
+        # Set parameters
+        params = get_params_rho()
+        rho_stat_handler.catalogs.set_params(params, output_path)
+
+        # Build catalogues
+        mask = True
+        square_size = True
+        ver = "id"
+        out_base = f"rho_stats_{ver}.fits"
+        # TODO: deal with flags
+        rho_stat_handler.build_cat_to_compute_rho(
+            starcat_path,
+            catalog_id=ver,
+            square_size=square_size,
+            mask=mask,
+            hdu=hdu_no,
+        )
+
+        # Compute and save rho stats
+        def only_p(corrs):
+            return np.array([corr.xip for corr in corrs]).flatten()
+
+        rho_stat_handler.compute_rho_stats(
+            ver, out_base, save_cov=True, func=only_p, var_method="bootstrap"
+        )
+
+        rho_stat_handler.plot_rho_stats(
+            [out_base],
+            ["b"],
+            [ver],
+            abs=False,
+            savefig="rho_stats.png",
+            legend="outside",
+        )
+
+    if rho_def == "UNIONS":
+        return
 
     for rho in rho_stats_fun:
         print_fun(rho.required_quantities)
 
     # Compute them!
-    print_fun(' > Computing rho statistics...')
+    print_fun(" > Computing rho statistics...")
     start = time.time()
     rho_results = [
-        rho_stat(stilecat, config=TreeCorrConfig)
-        for rho_stat in rho_stats_fun
+        rho_stat(stilecat, config=TreeCorrConfig) for rho_stat in rho_stats_fun
     ]
-    print_fun(f' > Done in {time.time() - start}s.')
-    np.save(output_path + 'rho_stat_results.npy', np.array(rho_results))
+    print_fun(f" > Done in {time.time() - start}s.")
+    np.save(output_path + "rho_stat_results.npy", np.array(rho_results))
 
     # Plots
     ylims = [ylim_l, ylim_r, ylim_l, ylim_l, ylim_r]
-    colors = ['blue', 'red', 'green', 'orange', 'cyan']
-    markers = ['o', 'd', 'v', '^', 's']
+    colors = ["blue", "red", "green", "orange", "cyan"]
+    markers = ["o", "d", "v", "^", "s"]
 
-    xlabel = r'$\theta$ [arcmin]'
-    ylabel = r'$\rho$-statistics'
+    xlabel = r"$\theta$ [arcmin]"
+    ylabel = r"$\rho$-statistics"
     capsize = 3
     alpha = 0.7
 
     for j, rhores in enumerate(rho_results):
         neg_dash(
-            rhores['meanr'],
-            rhores['xip'],
-            rhores['sigma_xip'],
-            f'{output_path}/rho_{j+1}.png',
+            rhores["meanr"],
+            rhores["xip"],
+            rhores["sigma_xip"],
+            f"{output_path}/rho_{j+1}.png",
             semilogx=True,
             semilogy=True,
             color=colors[j],
@@ -1588,15 +1632,15 @@ def rho_stats(
             alpha=alpha,
             ylim=ylims[j],
             xlabel=xlabel,
-            ylabel=ylabel
+            ylabel=ylabel,
         )
 
     for j, rhores in enumerate(rho_results):
         if j in [0, 2, 3]:
             neg_dash(
-                rhores['meanr'],
-                rhores['xip'],
-                rhores['sigma_xip'],
+                rhores["meanr"],
+                rhores["xip"],
+                rhores["sigma_xip"],
                 semilogx=True,
                 semilogy=True,
                 rho_nb=j + 1,
@@ -1606,18 +1650,18 @@ def rho_stats(
                 alpha=alpha,
                 ylim=ylims[j],
                 xlabel=xlabel,
-                ylabel=ylabel
+                ylabel=ylabel,
             )
     plt.legend()
-    plt.savefig(f'{output_path}/lefthand_rhos.pdf')
+    plt.savefig(f"{output_path}/lefthand_rhos.pdf")
     plt.close()
 
     for j, rhores in enumerate(rho_results):
         if j in [1, 4]:
             neg_dash(
-                rhores['meanr'],
-                rhores['xip'],
-                rhores['sigma_xip'],
+                rhores["meanr"],
+                rhores["xip"],
+                rhores["sigma_xip"],
                 semilogx=True,
                 semilogy=True,
                 rho_nb=j + 1,
@@ -1627,10 +1671,10 @@ def rho_stats(
                 alpha=alpha,
                 ylim=ylims[j],
                 xlabel=xlabel,
-                ylabel=ylabel
+                ylabel=ylabel,
             )
     plt.legend()
-    plt.savefig(f'{output_path}/righthand_rhos.pdf')
+    plt.savefig(f"{output_path}/righthand_rhos.pdf")
     plt.close()
 
     starcat.close()

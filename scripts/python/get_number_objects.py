@@ -14,15 +14,16 @@ import sys
 import copy
 import glob
 
-from optparse import OptionParser                                               
+from optparse import OptionParser
 from astropy.io import fits
 
 from shapepipe.pipeline.run_log import get_last_dir, get_all_dirs
-from shapepipe.utilities import cfis                                            
+from shapepipe.utilities import cfis
 
 
 class param:
     """General class to store (default) variables"""
+
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
 
@@ -43,8 +44,8 @@ def params_default():
 
     """
     p_def = param(
-        input_path='.',
-        input_name_base='final_cat',
+        input_path=".",
+        input_name_base="final_cat",
         hdu_num=1,
     )
 
@@ -66,60 +67,60 @@ def parse_options(p_def):
         command line str
 
     """
-    usage  = "%prog [OPTIONS]"
+    usage = "%prog [OPTIONS]"
     parser = OptionParser(usage=usage)
 
     # IO
     parser.add_option(
-        '-i',
-        '--input_path',
-        dest='input_path',
-        type='string',
+        "-i",
+        "--input_path",
+        dest="input_path",
+        type="string",
         default=p_def.input_path,
-        help=f'input path, default=\'{p_def.input_path}\''
+        help=f"input path, default='{p_def.input_path}'",
     )
     parser.add_option(
-        '-n',
-        '--input_name_base',
-        dest='input_name_base',
-        type='string',
+        "-n",
+        "--input_name_base",
+        dest="input_name_base",
+        type="string",
         default=p_def.input_name_base,
-        help=f'input name base, default=\'{p_def.input_name_base}\''
+        help=f"input name base, default='{p_def.input_name_base}'",
     )
     parser.add_option(
-        '-l',
-        '--list_tile_ID_path',
-        dest='tile_ID_list_path',
-        type='string',
+        "-l",
+        "--list_tile_ID_path",
+        dest="tile_ID_list_path",
+        type="string",
         default=None,
-        help=f'tile ID list, default: Use all data in input files'
+        help=f"tile ID list, default: Use all data in input files",
     )
 
     # Control
     parser.add_option(
-        '-p',
-        '--param_path',
-        dest='param_path',
-        type='string',
+        "-p",
+        "--param_path",
+        dest="param_path",
+        type="string",
         default=None,
-        help='parameter file path, default=None'
+        help="parameter file path, default=None",
     )
 
     parser.add_option(
-        '',
-        '--hdu_num',
-        dest='hdu_num',
-        type='int',
+        "",
+        "--hdu_num",
+        dest="hdu_num",
+        type="int",
         default=p_def.hdu_num,
-        help=f'input HDU number, default=\'{p_def.hdu_num}\''
+        help=f"input HDU number, default='{p_def.hdu_num}'",
     )
 
     parser.add_option(
-        '-v',
-        '--verbose',
-        dest='verbose',
-        action='store_true',
-        help='verbose output'
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+        help="verbose output",
     )
 
     options, args = parser.parse_args()
@@ -193,11 +194,11 @@ def main(argv=None):
     # Save command line arguments to log file
     f_log = cfis.log_command(argv, close_no_return=False)
 
-    pattern = 'sexcat'
-    run_log_file = 'output/log_run_sp.txt'
+    pattern = "sexcat"
+    run_log_file = "output/log_run_sp.txt"
 
     # For v1
-    #module = 'sextractor_runner_run_1'
+    # module = 'sextractor_runner_run_1'
 
     # For v2
     module = "sextractor_runner"
@@ -215,10 +216,14 @@ def main(argv=None):
     # Get latest run
     last_dir = paths[-1]
 
+<<<<<<< HEAD
     # Get all output SExtractor catalogues
     file_list = glob.glob(f'{last_dir}/{pattern}*.fits')
+=======
+    file_list = glob.glob(f"{last_dir}/{pattern}*.fits")
+>>>>>>> origin/v1.4
     if len(file_list) == 0:
-        raise ValueError(f'No files {last_dir}/{pattern}*.fits found')
+        raise ValueError(f"No files {last_dir}/{pattern}*.fits found")
 
     # Add up number of objects over all catalogues
     n_obj = 0
@@ -226,7 +231,7 @@ def main(argv=None):
     for fpath in file_list:
         hdu_list = fits.open(fpath)
         header = hdu_list[-1].header
-        n_obj += int(header['NAXIS2'])
+        n_obj += int(header["NAXIS2"])
 
     # Compute average
     n_obj = int(n_obj / len(file_list))

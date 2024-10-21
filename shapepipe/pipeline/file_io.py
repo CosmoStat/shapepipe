@@ -87,7 +87,7 @@ class BaseCatalogue(object):
             Number of rows
 
         """
-        raise BaseCatalogue.FeatureNotImplemented('get_nb_rows()')
+        raise BaseCatalogue.FeatureNotImplemented("get_nb_rows()")
 
     def get_nb_cols(self):
         """Get Number of Columns.
@@ -111,7 +111,7 @@ class BaseCatalogue(object):
         list
             list of column names
         """
-        raise BaseCatalogue.FeatureNotImplemented('get_col_names()')
+        raise BaseCatalogue.FeatureNotImplemented("get_col_names()")
 
     def get_col_formats(self):
         """Get Column Formats.
@@ -119,7 +119,7 @@ class BaseCatalogue(object):
         Get the list of column formats in the order of columns
 
         """
-        raise BaseCatalogue.FeatureNotImplemented('get_col_names()')
+        raise BaseCatalogue.FeatureNotImplemented("get_col_names()")
 
     def add_col(
         self,
@@ -144,7 +144,7 @@ class BaseCatalogue(object):
             Column data as a numpy array
 
         """
-        raise BaseCatalogue.FeatureNotImplemented('add_col()')
+        raise BaseCatalogue.FeatureNotImplemented("add_col()")
 
     def _file_exists(self, filepath):
         """File Exists.
@@ -174,9 +174,9 @@ class BaseCatalogue(object):
     class OpenMode:
         """Supported input catalogue open modes."""
 
-        ReadOnly = 'readonly'
-        ReadWrite = 'update'
-        Append = 'append'
+        ReadOnly = "readonly"
+        ReadWrite = "update"
+        Append = "append"
 
     class Column(object):
         """Column.
@@ -194,7 +194,7 @@ class BaseCatalogue(object):
 
             Get the name of the column
             """
-            raise BaseCatalogue.FeatureNotImplemented('column.name')
+            raise BaseCatalogue.FeatureNotImplemented("column.name")
 
         @property
         def format(self):
@@ -203,7 +203,7 @@ class BaseCatalogue(object):
             Get the format of the column
 
             """
-            raise BaseCatalogue.FeatureNotImplemented('column.format')
+            raise BaseCatalogue.FeatureNotImplemented("column.format")
 
         @property
         def data(self):
@@ -212,7 +212,7 @@ class BaseCatalogue(object):
             Get the data associated with the column
 
             """
-            raise BaseCatalogue.FeatureNotImplemented('column.data')
+            raise BaseCatalogue.FeatureNotImplemented("column.data")
 
         def get_nb_rows(self):
             """Get Number of Rows.
@@ -220,7 +220,7 @@ class BaseCatalogue(object):
             Retrieve the number of rows of the column.
 
             """
-            raise BaseCatalogue.FeatureNotImplemented('get_nb_rows()')
+            raise BaseCatalogue.FeatureNotImplemented("get_nb_rows()")
 
         def get_info(self):
             """Get Information.
@@ -228,7 +228,7 @@ class BaseCatalogue(object):
             Retrieve information about the column.
 
             """
-            raise BaseCatalogue.FeatureNotImplemented('get_info()')
+            raise BaseCatalogue.FeatureNotImplemented("get_info()")
 
         def get_type(self):
             """Get Type.
@@ -236,7 +236,7 @@ class BaseCatalogue(object):
             Get the data type of the column
 
             """
-            raise BaseCatalogue.FeatureNotImplemented('get_type()')
+            raise BaseCatalogue.FeatureNotImplemented("get_type()")
 
     class FeatureNotImplemented(NotImplementedError):
         """Feature Not Implemented.
@@ -253,8 +253,8 @@ class BaseCatalogue(object):
 
         def __str__(self):
             return (
-                f'File IO *** ERROR ***: Feature: {self._msg} is not '
-                + 'implemented in this class'
+                f"File IO *** ERROR ***: Feature: {self._msg} is not "
+                + "implemented in this class"
             )
 
     class catalogueNotOpen(Exception):
@@ -274,8 +274,8 @@ class BaseCatalogue(object):
 
         def __str__(self):
             return (
-                f'File IO *** ERROR ***: catalogue: {self._filepath} '
-                + 'is not open'
+                f"File IO *** ERROR ***: catalogue: {self._filepath} "
+                + "is not open"
             )
 
     class DataNotFound(Exception):
@@ -298,8 +298,8 @@ class BaseCatalogue(object):
 
         def __str__(self):
             return (
-                f'File IO *** ERROR ***: File \'{self._filepath}\', '
-                + f'hdu={self._hdu}: data not found'
+                f"File IO *** ERROR ***: File '{self._filepath}', "
+                + f"hdu={self._hdu}: data not found"
             )
 
     class catalogueFileNotFound(Exception):
@@ -319,7 +319,7 @@ class BaseCatalogue(object):
 
         def __str__(self):
             """Set string representation of the exception object."""
-            return f'File IO *** ERROR ***: file {self._filepath} no found'
+            return f"File IO *** ERROR ***: file {self._filepath} no found"
 
     class ColumnNotFound(Exception):
         """Column Not Found.
@@ -338,7 +338,7 @@ class BaseCatalogue(object):
 
         def __str__(self):
             """Set string representation of the exception object."""
-            return f'File IO *** ERROR ***: column {self._col_name} no found'
+            return f"File IO *** ERROR ***: column {self._col_name} no found"
 
     class catalogueNotCreated(Exception):
         """Catalogue Not Created.
@@ -357,8 +357,8 @@ class BaseCatalogue(object):
 
         def __str__(self):
             return (
-                f'File IO *** ERROR ***: catalogue: {self._filepath} could '
-                + 'not be created'
+                f"File IO *** ERROR ***: catalogue: {self._filepath} could "
+                + "not be created"
             )
 
     class OpenModeNotSupported(Exception):
@@ -381,8 +381,8 @@ class BaseCatalogue(object):
 
         def __str__(self):
             return (
-                f'File IO *** ERROR ***: catalogue: {self._filepath} '
-                + 'Open Mode {self._open_mode} not supported'
+                f"File IO *** ERROR ***: catalogue: {self._filepath} "
+                + "Open Mode {self._open_mode} not supported"
             )
 
     class OpenModeConflict(Exception):
@@ -405,8 +405,8 @@ class BaseCatalogue(object):
 
         def __str__(self):
             return (
-                'File IO *** ERROR ***: catalogue has to be open as : '
-                + f'{self._open_mode_needed} , Mode used : {self._open_mode}'
+                "File IO *** ERROR ***: catalogue has to be open as : "
+                + f"{self._open_mode_needed} , Mode used : {self._open_mode}"
             )
 
 
@@ -419,14 +419,17 @@ class FITSCatalogue(BaseCatalogue):
     ----------
     fullpath : str
         Full path to file
-    hdu_no : int
-        HDU number
-    open_mode : OpenMode
-        File opening mode
-    memmap : Bool
-        Option to use memory mapping
-    SEx_catalogue : bool
-        Option to specify if the input is a SExtractor catalogue
+    hdu_no : int, optional
+        HDU number; default is ``None``, in which case
+        it will be set to 1 (2) if SEx_catalogue is ``False``
+        (``True``)
+    open_mode : OpenMode, optional
+        File opening mode, default is ``BaseCatalogue.OpenMode.ReadOnly``
+    memmap : bool, optional
+        Option to use memory mapping, default is ``False``
+    SEx_catalogue : bool, optional
+        Option to specify if the input is a SExtractor catalogue;
+        default is ``False``
 
     """
 
@@ -449,7 +452,7 @@ class FITSCatalogue(BaseCatalogue):
         self._SEx_catalogue = SEx_catalogue
         # HDU number of the underlying .FITS table
         if hdu_no is None:
-            # Default is 1 (or 2 if you are using )
+            # Set to default value if not given by user
             if SEx_catalogue:
                 self._hdu_no = 2
             else:
@@ -461,9 +464,9 @@ class FITSCatalogue(BaseCatalogue):
 
     def __str__(self):
         if self._cat_data is not None:
-            info = f'{self.get_info()}'
+            info = f"{self.get_info()}"
         else:
-            info = 'No information'
+            info = "No information"
         return info
 
     @property
@@ -557,8 +560,8 @@ class FITSCatalogue(BaseCatalogue):
                     raise BaseCatalogue.catalogueFileNotFound(sex_cat_path)
             else:
                 raise ValueError(
-                    'sex_cat_path needs to be provided to create a '
-                    + 'SEXtractor catalogue'
+                    "sex_cat_path needs to be provided to create a "
+                    + "SEXtractor catalogue"
                 )
         elif s_hdu:
             secondary_hdu = fits.BinTableHDU(
@@ -639,9 +642,9 @@ class FITSCatalogue(BaseCatalogue):
         if fits_file._cat_data is None:
             raise BaseCatalogue.catalogueNotOpen(fits_file.fullpath)
         if mask is None:
-            raise ValueError('Mask not provided')
+            raise ValueError("Mask not provided")
         if type(mask) is not np.ndarray:
-            raise TypeError('Mask need to be a numpy.ndarray')
+            raise TypeError("Mask need to be a numpy.ndarray")
         if hdu_no is None:
             hdu_no = fits_file.hdu_no
 
@@ -664,7 +667,7 @@ class FITSCatalogue(BaseCatalogue):
                 )
             )
         else:
-            raise TypeError('Mask type must be of type int or bool')
+            raise TypeError("Mask type must be of type int or bool")
 
     def save_as_fits(
         self,
@@ -718,7 +721,7 @@ class FITSCatalogue(BaseCatalogue):
             )
 
         if data is None:
-            raise ValueError('Data not provided')
+            raise ValueError("Data not provided")
 
         if not image:
             if type(data) is dict:
@@ -758,7 +761,7 @@ class FITSCatalogue(BaseCatalogue):
                         names = data.dtype.names
                         it = names
                     else:
-                        raise ValueError('Names not provided')
+                        raise ValueError("Names not provided")
                 else:
                     it = range(len(names))
                 self._save_to_fits(
@@ -772,7 +775,7 @@ class FITSCatalogue(BaseCatalogue):
 
             elif type(data) is list:
                 if names is None:
-                    raise ValueError('Names not provided')
+                    raise ValueError("Names not provided")
                 it = range(len(names))
                 data = np.asarray(data)
                 self._save_to_fits(
@@ -786,7 +789,7 @@ class FITSCatalogue(BaseCatalogue):
 
             elif type(data) is Table:
                 if names is None:
-                    raise ValueError('Names not provided')
+                    raise ValueError("Names not provided")
                 it = names
                 self._save_to_fits(
                     data,
@@ -805,7 +808,7 @@ class FITSCatalogue(BaseCatalogue):
                     overwrite=overwrite,
                 )
             else:
-                raise TypeError('Data need to be a numpy.ndarray')
+                raise TypeError("Data need to be a numpy.ndarray")
 
     def create_from_numpy(
         self,
@@ -848,7 +851,7 @@ class FITSCatalogue(BaseCatalogue):
         fits_header = None
         if header is not None:
             fits_header = fits.Header()
-            for (k, v) in header.items():
+            for k, v in header.items():
                 fits_header[k] = v
 
         primary_hdu = fits.PrimaryHDU()
@@ -1178,16 +1181,16 @@ class FITSCatalogue(BaseCatalogue):
 
         """
         if request is None:
-            raise ValueError('request not provided')
+            raise ValueError("request not provided")
         if type(request) is not str:
-            raise TypeError('request has to be a string')
+            raise TypeError("request has to be a string")
 
         if hdu_no is None:
             hdu_no = self._hdu_no
 
         header = self.get_header(hdu_no=hdu_no)
         if header is None:
-            raise ValueError(f'Empty header in the hdu : {hdu_no}')
+            raise ValueError(f"Empty header in the hdu : {hdu_no}")
 
         return interpreter(string=request, catalogue=header).result
 
@@ -1222,7 +1225,7 @@ class FITSCatalogue(BaseCatalogue):
 
         card = []
         if key is None:
-            raise ValueError('key not provided')
+            raise ValueError("key not provided")
         else:
             card.append(key)
 
@@ -1230,7 +1233,7 @@ class FITSCatalogue(BaseCatalogue):
             card.append(value)
         else:
             if comment is not None:
-                card.append('')
+                card.append("")
 
         if comment is not None:
             card.append(comment)
@@ -1305,12 +1308,12 @@ class FITSCatalogue(BaseCatalogue):
             if hdu_no is None:
                 hdu_no = self.hdu_no
             hdr_col_types = [
-                tt for tt in self._cat_data[hdu_no].header.keys()
-                if 'TTYPE' in tt
+                tt
+                for tt in self._cat_data[hdu_no].header.keys()
+                if "TTYPE" in tt
             ]
             return [
-                self._cat_data[hdu_no].header.comments[c]
-                for c in hdr_col_types
+                self._cat_data[hdu_no].header.comments[c] for c in hdr_col_types
             ]
         else:
             raise BaseCatalogue.catalogueNotOpen(self.fullpath)
@@ -1384,7 +1387,7 @@ class FITSCatalogue(BaseCatalogue):
             )
 
         if type(col_data) != np.ndarray:
-            TypeError('col_data must be a numpy.ndarray')
+            TypeError("col_data must be a numpy.ndarray")
 
         if hdu_no is None:
             hdu_no = self.hdu_no
@@ -1410,31 +1413,43 @@ class FITSCatalogue(BaseCatalogue):
         if len(data_shape) != 0:
             for k in data_shape:
                 mem_size *= k
-            data_format = f'{mem_size}{data_type}'
-            new_col = fits.ColDefs([fits.Column(
-                name=col_name,
-                format=data_format,
-                array=col_data,
-                dim=dim,
-            )])
+            data_format = f"{mem_size}{data_type}"
+            new_col = fits.ColDefs(
+                [
+                    fits.Column(
+                        name=col_name,
+                        format=data_format,
+                        array=col_data,
+                        dim=dim,
+                    )
+                ]
+            )
             col_list += new_col
-        elif data_type == 'A':
+        elif data_type == "A":
             mem_size *= len(max(col_data, key=len))
-            data_format = f'{mem_size}{data_type}'
-            new_col = fits.ColDefs([fits.Column(
-                name=col_name,
-                format=data_format,
-                array=col_data,
-                dim=str((mem_size,)),
-            )])
+            data_format = f"{mem_size}{data_type}"
+            new_col = fits.ColDefs(
+                [
+                    fits.Column(
+                        name=col_name,
+                        format=data_format,
+                        array=col_data,
+                        dim=str((mem_size,)),
+                    )
+                ]
+            )
             col_list += new_col
         else:
-            data_format = f'{mem_size}{data_type}'
-            new_col = fits.ColDefs([fits.Column(
-                name=col_name,
-                format=data_format,
-                array=col_data,
-            )])
+            data_format = f"{mem_size}{data_type}"
+            new_col = fits.ColDefs(
+                [
+                    fits.Column(
+                        name=col_name,
+                        format=data_format,
+                        array=col_data,
+                    )
+                ]
+            )
             col_list += new_col
 
         new_fits.append(fits.BinTableHDU.from_columns(col_list, name=ext_name))
@@ -1463,7 +1478,7 @@ class FITSCatalogue(BaseCatalogue):
             Index of the column to delete
 
         """
-        raise BaseCatalogue.FeatureNotImplemented('remove_col()')
+        raise BaseCatalogue.FeatureNotImplemented("remove_col()")
 
     def remove_named_col(self, col_name):
         """Remove Named Column.
@@ -1508,11 +1523,15 @@ class FITSCatalogue(BaseCatalogue):
             orig_table = fits.open(self.fullpath)[hdu_no].data
             orig_cols = orig_table.columns
 
-            new_col = fits.ColDefs([fits.Column(
-                name=column.name,
-                format=column.format,
-                array=np.zeros(len(orig_table)),
-            )])
+            new_col = fits.ColDefs(
+                [
+                    fits.Column(
+                        name=column.name,
+                        format=column.format,
+                        array=np.zeros(len(orig_table)),
+                    )
+                ]
+            )
             col_list = orig_cols + new_col
             hdu = fits.BinTableHDU.from_columns(col_list)
             hdu.data[column.name] = column.data
@@ -1538,21 +1557,21 @@ class FITSCatalogue(BaseCatalogue):
 
         """
         if col_data is None or len(col_data) == 0:
-            col_type = 'D'
+            col_type = "D"
         elif type(col_data[0]) in [np.int16]:
-            col_type = 'I'
+            col_type = "I"
         elif type(col_data[0]) in [np.int32]:
-            col_type = 'J'
+            col_type = "J"
         elif type(col_data[0]) in [int, np.int64]:
-            col_type = 'K'
+            col_type = "K"
         elif type(col_data[0]) in [float, np.float16, np.float32, np.float64]:
-            col_type = 'D'
+            col_type = "D"
         elif type(col_data[0]) is bool:
-            col_type = 'L'
+            col_type = "L"
         elif type(col_data[0]) in [str, np.str_, np.str0]:
-            col_type = 'A'
+            col_type = "A"
         else:
-            col_type = 'D'
+            col_type = "D"
 
         return col_type
 
@@ -1572,27 +1591,27 @@ class FITSCatalogue(BaseCatalogue):
             Column Python data type
 
         """
-        if col_type in ['B', 'I', 'J', 'K']:
-            pcol_type = '%d'
-        elif col_type in ['D', 'E']:
-            pcol_type = '%f'
-        elif col_type in ['A', 'C', 'M']:
-            pcol_type = '%s'
-        elif col_type == 'L':
-            pcol_type = '%s'
+        if col_type in ["B", "I", "J", "K"]:
+            pcol_type = "%d"
+        elif col_type in ["D", "E"]:
+            pcol_type = "%f"
+        elif col_type in ["A", "C", "M"]:
+            pcol_type = "%s"
+        elif col_type == "L":
+            pcol_type = "%s"
         else:
-            pcol_type = '%f'
+            pcol_type = "%f"
 
         return pcol_type
 
     def _save_to_fits(
-            self,
-            data,
-            names,
-            it,
-            ext_name=None,
-            sex_cat_path=None,
-            overwrite=False,
+        self,
+        data,
+        names,
+        it,
+        ext_name=None,
+        sex_cat_path=None,
+        overwrite=False,
     ):
         """Save to FITS.
 
@@ -1615,24 +1634,24 @@ class FITSCatalogue(BaseCatalogue):
 
         """
         if data is None:
-            raise ValueError('Data not provided')
+            raise ValueError("Data not provided")
 
         if self._file_exists(self.fullpath) and not overwrite:
             if self._cat_data is None:
                 self.open()
             if ext_name is None:
-                ext_name = 'new'
+                ext_name = "new"
         else:
             if self._SEx_catalogue:
                 self.create(s_hdu=False, sex_cat_path=sex_cat_path)
                 self.open()
                 if ext_name is None:
-                    ext_name = 'LDAC_OBJECTS'
+                    ext_name = "LDAC_OBJECTS"
             else:
                 self.create(s_hdu=False)
                 self.open()
                 if ext_name is None:
-                    ext_name = 'new'
+                    ext_name = "new"
 
         if len(names) == 1:
             data = np.array([data])
@@ -1646,29 +1665,35 @@ class FITSCatalogue(BaseCatalogue):
             if len(data_shape) != 0:
                 for shape in data_shape:
                     mem_size *= shape
-                data_format = f'{mem_size}{data_type}'
-                col_list.append(fits.Column(
-                    name=name,
-                    format=data_format,
-                    array=data[idx],
-                    dim=dim,
-                ))
-            elif data_type == 'A':
+                data_format = f"{mem_size}{data_type}"
+                col_list.append(
+                    fits.Column(
+                        name=name,
+                        format=data_format,
+                        array=data[idx],
+                        dim=dim,
+                    )
+                )
+            elif data_type == "A":
                 mem_size *= len(max(data[idx], key=len))
-                data_format = f'{mem_size}{data_type}'
-                col_list.append(fits.Column(
-                    name=name,
-                    format=data_format,
-                    array=data[idx],
-                    dim=str((mem_size,)),
-                ))
+                data_format = f"{mem_size}{data_type}"
+                col_list.append(
+                    fits.Column(
+                        name=name,
+                        format=data_format,
+                        array=data[idx],
+                        dim=str((mem_size,)),
+                    )
+                )
             else:
-                data_format = f'{mem_size}{data_type}'
-                col_list.append(fits.Column(
-                    name=name,
-                    format=data_format,
-                    array=data[idx],
-                ))
+                data_format = f"{mem_size}{data_type}"
+                col_list.append(
+                    fits.Column(
+                        name=name,
+                        format=data_format,
+                        array=data[idx],
+                    )
+                )
 
         self._cat_data.append(
             fits.BinTableHDU.from_columns(col_list, name=ext_name)
@@ -1700,13 +1725,13 @@ class FITSCatalogue(BaseCatalogue):
 
         """
         if data is None:
-            raise ValueError('Data not provided')
+            raise ValueError("Data not provided")
 
         if self._file_exists(self.fullpath) and not overwrite:
             if self._cat_data is None:
                 self.open()
             if ext_name is None:
-                ext_name = 'new'
+                ext_name = "new"
             self._cat_data.append(fits.BinTableHDU(data, name=ext_name))
             self.close()
         else:
@@ -1714,14 +1739,14 @@ class FITSCatalogue(BaseCatalogue):
                 self.create(s_hdu=False, sex_cat_path=sex_cat_path)
                 self.open()
                 if ext_name is None:
-                    ext_name = 'LDAC_OBJECTS'
+                    ext_name = "LDAC_OBJECTS"
                 self._cat_data.append(fits.BinTableHDU(data, name=ext_name))
                 self.close()
             else:
                 self.create(s_hdu=False)
                 self.open()
                 if ext_name is None:
-                    ext_name = 'new'
+                    ext_name = "new"
                 self._cat_data.append(fits.BinTableHDU(data, name=ext_name))
                 self.close()
 
@@ -1740,13 +1765,13 @@ class FITSCatalogue(BaseCatalogue):
             Option to overwrite an existing catalogue
 
         """
-        if (data is not None):
+        if data is not None:
             fits.PrimaryHDU(data, header).writeto(
                 self.fullpath,
                 overwrite=overwrite,
             )
         else:
-            raise ValueError('Data or names not provided')
+            raise ValueError("Data or names not provided")
 
     class Column(BaseCatalogue.Column):
         """Column.
@@ -1772,7 +1797,7 @@ class FITSCatalogue(BaseCatalogue):
             self._name = name
 
             if format is None:
-                format = 'D'
+                format = "D"
             self._format = format
 
             if comment is None:
@@ -1788,7 +1813,7 @@ class FITSCatalogue(BaseCatalogue):
                     self._data = data
 
         def __str__(self):
-            info = f'{self._cat_col}'
+            info = f"{self._cat_col}"
             return info
 
         @property
@@ -1871,7 +1896,7 @@ def get_unit_from_fits_header(header, key):
     idx = 1
     idx_found = -1
     while True:
-        ttype_idx = f'TTYPE{idx}'
+        ttype_idx = f"TTYPE{idx}"
         if ttype_idx not in header:
             # Reached beyond last column
             break
@@ -1883,14 +1908,13 @@ def get_unit_from_fits_header(header, key):
         idx += 1
 
     if idx_found == -1:
-        raise IndexError(f'Column \'{key}\' not found in FITS header')
+        raise IndexError(f"Column '{key}' not found in FITS header")
 
     # Extract coordinate unit string from header
-    tcunit_idx = f'TCUNI{idx}'
+    tcunit_idx = f"TCUNI{idx}"
     if tcunit_idx not in header:
         raise IndexError(
-            f'No coordinate unit found for column \'{key}\''
-            ' in FITS header'
+            f"No coordinate unit found for column '{key}'" " in FITS header"
         )
     unit_str = header[tcunit_idx]
 
