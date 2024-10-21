@@ -18,6 +18,7 @@ RUN apt-get update --allow-releaseinfo-change && \
     apt-get install automake -y && \
     apt-get install autoconf -y && \
     apt-get install gcc-9 g++-9 -y && \
+    apt-get install gfortran -y && \
     apt-get install locales -y && \
     apt-get install libgl1-mesa-glx -y && \
     apt-get install xterm -y && \
@@ -52,6 +53,5 @@ RUN conda env create --file environment.yml
 COPY shapepipe ./shapepipe
 COPY scripts ./scripts
 
-# Make RUN commands use the new environment:
-SHELL ["conda", "run", "-n", "shapepipe", "/bin/bash", "-c"]
-RUN pip install jupyter
+RUN source activate shapepipe
+#RUN pip install jupyter

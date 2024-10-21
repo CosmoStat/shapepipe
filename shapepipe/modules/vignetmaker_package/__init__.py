@@ -47,4 +47,4 @@ ME_LOG_WCS : str
 
 """
 
-__all__ = ['vignetmaker']
+__all__ = ["vignetmaker"]

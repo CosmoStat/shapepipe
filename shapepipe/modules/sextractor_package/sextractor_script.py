@@ -41,7 +41,7 @@ def get_header_value(image_path, key):
         val = float(val)
     except Exception:
         raise ValueError(
-            f'The key {key} does not return a float value. Got {val}'
+            f"The key {key} does not return a float value. Got {val}"
         )
 
     return val
@@ -77,7 +77,8 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
 
     """
     cat = file_io.FITSCatalogue(
-        cat_path, SEx_catalogue=True,
+        cat_path,
+        SEx_catalogue=True,
         open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
     )
     cat.open()
@@ -85,31 +86,35 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
     f_wcs = SqliteDict(f_wcs_path)
     key_list = list(f_wcs.keys())
     if len(key_list) == 0:
-        raise IOError(f'Could not read sql file \'{f_wcs_path}\'')
+        raise IOError(f"Could not read sql file '{f_wcs_path}'")
     n_hdu = len(f_wcs[key_list[0]])
 
     history = []
     for idx in cat.get_data(1)[0][0]:
-        if re.split('HISTORY', idx)[0] == '':
+        if re.split("HISTORY", idx)[0] == "":
             history.append(idx)
 
     exp_list = []
-    pattern = r'([0-9]*)p\.(.*)'
+    pattern = r"([0-9]*)p\.(.*)"
     for hist in history:
         m = re.search(pattern, hist)
         exp_list.append(m.group(1))
 
-    obj_id = np.copy(cat.get_data()['NUMBER'])
+    obj_id = np.copy(cat.get_data()["NUMBER"])
 
-    n_epoch = np.zeros(len(obj_id), dtype='int32')
+    n_epoch = np.zeros(len(obj_id), dtype="int32")
     for idx, exp in enumerate(exp_list):
-        pos_tmp = np.ones(len(obj_id), dtype='int32') * -1
+        pos_tmp = np.ones(len(obj_id), dtype="int32") * -1
         for idx_j in range(n_hdu):
-            w = f_wcs[exp][idx_j]['WCS']
+            if exp not in f_wcs:
+                raise KeyError(
+                    f"Exposure {exp} used in image {cat_path} but not"
+                    + f" found in header file {f_wcs_path}. Make sure this"
+                    + " file is complete."
+                )
+            w = f_wcs[exp][idx_j]["WCS"]
             pix_tmp = w.all_world2pix(
-                cat.get_data()[pos_params[0]],
-                cat.get_data()[pos_params[1]],
-                0
+                cat.get_data()[pos_params[0]], cat.get_data()[pos_params[1]], 0
             )
             ind = (
                 (pix_tmp[0] > int(ccd_size[0]))
@@ -126,22 +131,22 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
                 for ii in range(len(exp_name))
             ],
             dtype=[
-                ('NUMBER', obj_id.dtype),
-                ('EXP_NAME', exp_name.dtype),
-                ('CCD_N', pos_tmp.dtype)
-            ]
+                ("NUMBER", obj_id.dtype),
+                ("EXP_NAME", exp_name.dtype),
+                ("CCD_N", pos_tmp.dtype),
+            ],
         )
-        cat.save_as_fits(data=a, ext_name=f'EPOCH_{idx}')
+        cat.save_as_fits(data=a, ext_name=f"EPOCH_{idx}")
         cat.open()
 
     f_wcs.close()
 
-    cat.add_col('N_EPOCH', n_epoch)
+    cat.add_col("N_EPOCH", n_epoch)
 
     cat.close()
 
 
-class SExtractorCaller():
+class SExtractorCaller:
     """The SExtractor Caller.
 
     This class constructs the command line to call SExtractor based on the
@@ -187,28 +192,28 @@ class SExtractorCaller():
     """
 
     def __init__(
-            self,
-            path_input_files,
-            path_output_dir,
-            number_string,
-            path_dot_sex,
-            path_dot_param,
-            path_dot_conv,
-            use_weight,
-            use_flag,
-            use_psf,
-            use_detection_image,
-            use_detection_weight,
-            use_zero_point,
-            use_background,
-            zero_point_key=None,
-            background_key=None,
-            check_image=None,
-            output_prefix=None,
+        self,
+        path_input_files,
+        path_output_dir,
+        number_string,
+        path_dot_sex,
+        path_dot_param,
+        path_dot_conv,
+        use_weight,
+        use_flag,
+        use_psf,
+        use_detection_image,
+        use_detection_weight,
+        use_zero_point,
+        use_background,
+        zero_point_key=None,
+        background_key=None,
+        check_image=None,
+        output_prefix=None,
     ):
 
-        self.cmd_line = ''
-        self._cmd_line_extra = ''
+        self.cmd_line = ""
+        self._cmd_line_extra = ""
 
         self._meas_img_path = path_input_files[0]
         self._all_input_path = path_input_files
@@ -221,8 +226,13 @@ class SExtractorCaller():
         self._path_dot_param = path_dot_param
         self._path_dot_conv = path_dot_conv
 
-        self.set_input_files(use_weight, use_flag, use_psf,
-                             use_detection_image, use_detection_weight)
+        self.set_input_files(
+            use_weight,
+            use_flag,
+            use_psf,
+            use_detection_image,
+            use_detection_weight,
+        )
 
         # Collect optional arguments for SExtractor
         self.get_zero_point(use_zero_point, zero_point_key)
@@ -246,25 +256,25 @@ class SExtractorCaller():
 
         """
         if isinstance(output_prefix, type(None)):
-            self.prefix = ''
+            self.prefix = ""
         else:
-            if (output_prefix.lower() is not None) & (output_prefix != ''):
-                self.prefix = output_prefix + '_'
+            if (output_prefix.lower() is not None) & (output_prefix != ""):
+                self.prefix = output_prefix + "_"
             else:
-                self.prefix = ''
+                self.prefix = ""
 
-        output_file_name = self.prefix + f'sexcat{self._num_str}.fits'
-        output_file_path = f'{self._path_output_dir}/{output_file_name}'
+        output_file_name = self.prefix + f"sexcat{self._num_str}.fits"
+        output_file_path = f"{self._path_output_dir}/{output_file_name}"
 
         return output_file_path
 
     def set_input_files(
-            self,
-            use_weight,
-            use_flag,
-            use_psf,
-            use_detect_img,
-            use_detect_weight,
+        self,
+        use_weight,
+        use_flag,
+        use_psf,
+        use_detect_img,
+        use_detect_weight,
     ):
         """Set Input Files.
 
@@ -297,15 +307,13 @@ class SExtractorCaller():
 
         if use_flag:
             self._cmd_line_extra += (
-                ' -FLAG_IMAGE '
-                + f'{self._all_input_path[extra]}'
+                " -FLAG_IMAGE " + f"{self._all_input_path[extra]}"
             )
             extra += 1
 
         if use_psf:
             self._cmd_line_extra += (
-                ' -PSF_NAME '
-                + f'{self._all_input_path[extra]}'
+                " -PSF_NAME " + f"{self._all_input_path[extra]}"
             )
             extra += 1
 
@@ -314,13 +322,12 @@ class SExtractorCaller():
         # First, consistency checks
         if use_detect_weight and not use_detect_img:
             raise ValueError(
-                'DETECTION_WEIGHT cannot be True '
-                + 'if DETECTION_IMAGE is False'
+                "DETECTION_WEIGHT cannot be True "
+                + "if DETECTION_IMAGE is False"
             )
         if use_detect_weight and not use_weight:
             raise ValueError(
-                'DETECTION_WEIGHT cannot be True '
-                + 'if WEIGHT_FILE is False'
+                "DETECTION_WEIGHT cannot be True " + "if WEIGHT_FILE is False"
             )
 
         # Check for separate image file for detection and measurement
@@ -341,18 +348,17 @@ class SExtractorCaller():
             else:
                 detect_weight_path = weight_image
             self._cmd_line_extra += (
-                f' -WEIGHT_IMAGE {detect_weight_path}'
-                + f',{weight_image}'
+                f" -WEIGHT_IMAGE {detect_weight_path}" + f",{weight_image}"
             )
         else:
-            self._cmd_line_extra += ' -WEIGHT_TYPE None'
+            self._cmd_line_extra += " -WEIGHT_TYPE None"
 
         if extra != len(self._all_input_path):
             raise ValueError(
-                'Incoherence between input file number and keys '
-                + f'related to extra files: 1 regular + {extra-1} extra '
-                + 'files not compatible with total file list '
-                + f'length of {len(self._all_input_path)}'
+                "Incoherence between input file number and keys "
+                + f"related to extra files: 1 regular + {extra-1} extra "
+                + "files not compatible with total file list "
+                + f"length of {len(self._all_input_path)}"
             )
 
     def get_zero_point(self, use_zp, zp_key=None):
@@ -370,7 +376,7 @@ class SExtractorCaller():
         """
         if use_zp and not isinstance(zp_key, type(None)):
             zp_value = get_header_value(self._meas_img_path, zp_key)
-            self._cmd_line_extra += f' -MAG_ZEROPOINT {zp_value}'
+            self._cmd_line_extra += f" -MAG_ZEROPOINT {zp_value}"
 
     def get_background(self, use_bkg, bkg_key=None):
         """Get Background.
@@ -388,7 +394,7 @@ class SExtractorCaller():
         if use_bkg and not isinstance(bkg_key, type(None)):
             bkg_value = get_header_value(self._meas_img_path, bkg_key)
             self._cmd_line_extra += (
-                f' -BACK_TYPE MANUAL -BACK_VALUE {bkg_value}'
+                f" -BACK_TYPE MANUAL -BACK_VALUE {bkg_value}"
             )
 
     def get_check_image(self, check_image):
@@ -402,18 +408,21 @@ class SExtractorCaller():
             List of SExtractor keys corresponding to check images
 
         """
-        if (len(check_image) == 1) & (check_image[0] == ''):
-            check_type = ['NONE']
-            check_name = ['none']
+        if (len(check_image) == 1) & (check_image[0] == ""):
+            check_type = ["NONE"]
+            check_name = ["none"]
         else:
             check_type = []
             check_name = []
             for key in check_image:
                 check_type.append(key.upper())
                 check_name.append(
-                    self._path_output_dir + '/' + self.prefix
+                    self._path_output_dir
+                    + "/"
+                    + self.prefix
                     + key.lower()
-                    + self._num_str + '.fits'
+                    + self._num_str
+                    + ".fits"
                 )
 
         self._cmd_line_extra += (
@@ -439,14 +448,14 @@ class SExtractorCaller():
         """
         # Base arguments for SExtractor
         command_line_base = (
-            f'{exec_path} {self._detect_img_path},{self._meas_img_path} '
-            + f'-c {self._path_dot_sex} '
-            + f'-PARAMETERS_NAME {self._path_dot_param} '
-            + f'-FILTER_NAME {self._path_dot_conv} '
-            + f'-CATALOG_NAME {self.path_output_file}'
+            f"{exec_path} {self._detect_img_path},{self._meas_img_path} "
+            + f"-c {self._path_dot_sex} "
+            + f"-PARAMETERS_NAME {self._path_dot_param} "
+            + f"-FILTER_NAME {self._path_dot_conv} "
+            + f"-CATALOG_NAME {self.path_output_file}"
         )
 
-        command_line = f'{command_line_base} {self._cmd_line_extra}'
+        command_line = f"{command_line_base} {self._cmd_line_extra}"
 
         return command_line
 
@@ -470,11 +479,11 @@ class SExtractorCaller():
             Updated standard output and error
 
         """
-        check_error = re.findall('error', stdout.lower())
-        check_error2 = re.findall('all done', stdout.lower())
+        check_error = re.findall("error", stdout.lower())
+        check_error2 = re.findall("all done", stdout.lower())
 
         if check_error == []:
-            stderr2 = ''
+            stderr2 = ""
         else:
             stderr2 = stdout
 

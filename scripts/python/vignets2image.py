@@ -35,48 +35,47 @@ def map_vignet(img_arr, dtype):
     ys = img_arr[0].shape[1]
 
     nx = int(np.sqrt(n_obj))
-    if nx*nx != n_obj:
+    if nx * nx != n_obj:
         nx += 1
     ny = nx
 
-    img_map=np.ones((xs*nx,ys*ny), dtype=dtype)
+    img_map = np.ones((xs * nx, ys * ny), dtype=dtype)
 
-    ii=0
-    jj=0
+    ii = 0
+    jj = 0
     for i in range(n_obj):
-        if jj>nx-1:
-            jj=0
-            ii+=1
-        img_map[ii*xs:(ii+1)*xs,jj*ys:(jj+1)*ys]=img_arr[i]
-        jj+=1
+        if jj > nx - 1:
+            jj = 0
+            ii += 1
+        img_map[ii * xs : (ii + 1) * xs, jj * ys : (jj + 1) * ys] = img_arr[i]
+        jj += 1
 
     return img_map, nx
 
 
-
 def main(argv=None):
 
-    path = '.'
-    pattern = 'UNIONS_'
-    prefix_out = 'img_'
+    path = "."
+    pattern = "UNIONS_"
+    prefix_out = "img_"
 
-    files = glob.glob('{}/{}*.fits'.format(path, pattern))
+    files = glob.glob("{}/{}*.fits".format(path, pattern))
 
     for input_path in files:
-        output_path = '{}{}'.format(prefix_out, os.path.basename(input_path))
+        output_path = "{}{}".format(prefix_out, os.path.basename(input_path))
 
         hdu = fits.open(input_path)
 
-        image, nx = map_vignet(hdu[2].data['VIGNET'], 'float32')
-        print('file = {}, nx = {}'.format(input_path, nx))
+        image, nx = map_vignet(hdu[2].data["VIGNET"], "float32")
+        print("file = {}, nx = {}".format(input_path, nx))
 
-        fout = io.FITSCatalog(output_path, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+        fout = io.FITSCatalog(
+            output_path, open_mode=io.BaseCatalog.OpenMode.ReadWrite
+        )
         fout.save_as_fits(image, image=True)
 
     return 0
 
 
-
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
-
