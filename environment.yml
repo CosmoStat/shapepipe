@@ -22,6 +22,7 @@ dependencies:
   - matplotlib==3.8.4
   - numba==0.58.1
   - numpy==1.26.4
+  - pandas
   - pip:
     - cs_util==0.1
     - mccd==1.2.4
