@@ -10,7 +10,7 @@ export LC_CTYPE=en_US.utf8
 #
 ##############################################################################
 
-version="1.7"
+version="1.8"
 last_update="13/10/24"
 
 ##############################################################################
@@ -181,7 +181,6 @@ check_conda() {
     CONDA_ACTIVATE="conda activate"
     CONDA_DEACTIVATE="conda deactivate"
   fi
-
 }
 
 # Check if a binary executable is already installed in the conda environment
@@ -298,8 +297,11 @@ exit_code() {
 
 # Function to report package versions
 package_report() {
+
+  check_env_name
   if [ "$CONDA_DEFAULT_ENV" != "$ENV_NAME" ]
   then
+    check_conda
     activate_shapepipe
   fi
   INSTALL_PSFEX=FALSE
@@ -451,9 +453,9 @@ Options:\n
 \t--pipe-dir\t set the path to the ShapePipe base directory (default is \$PWD)\n
 \t--build-dir\t set the path to the ShapePipe build (default is \$PWD/build)\n
 \t--env-name\t set the name of the Conda environment (default is shapepipe)\n
-\t--env-dev\t use the developers Conda environment instead of the standard production environment\n
+\t--env-dev\t use the developer's Conda environment instead of the standard production environment\n
 \t--use-conda-source\t use 'conda source' instead of the default 'conda activate' to activate the shapepipe environment\n
-\t--develop\t option to install additional development packages\n
+\t--develop\t option to install additional development packages (included by default in --env-dev)\n
 \t--vos\t\t option to install virtual observatory software\n
 \t--no-env\t do not build Conda environment\n
 \t--no-psfex\t do not build PSFEx\n

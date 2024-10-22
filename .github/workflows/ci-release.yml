@@ -3,8 +3,7 @@ name: CI
 on:
   pull_request:
     branches:
-     - main
-     - master
+     - develop
 
 jobs:
 
@@ -12,40 +11,52 @@ jobs:
     name: Full Test Suite
     runs-on: ${{ matrix.os }}
 
-    defaults:
-      run:
-        shell: bash -l {0}
-
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: [3.9]
+        python-version: [3.11]
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get install libopenblas-dev
+        run: |
+          sudo apt-get install libopenblas-dev gcc-9 g++-9
 
       - name: Install macOS Dependencies
+        shell: bash -l {0}
         if: runner.os == 'macOS'
-        run: brew install libomp
+        run: |
+          brew tap sfarrens/sf
+          brew install bigmac libomp
+          brew reinstall gcc
 
       - name: Set up conda
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
           auto-activate-base: true
+          miniforge-version: latest
 
-      - name: Install package
+      - name: Install package (Linux)
+        shell: bash -l {0}
+        env:
+          CC: gcc-9
+          CXX: g++-9
+        if: runner.os == 'Linux'
+        run: ./install_shapepipe --develop
+
+      - name: Install package (macOS)
+        shell: bash -l {0}
+        if: runner.os == 'macOS'
         run: ./install_shapepipe --develop
 
       - name: Run tests
+        shell: bash -l {0}
         run: |
-          conda activate shapepipe
-          python setup.py test
+          conda activate shapepipe-dev
+          pytest
           shapepipe_run -c example/config.ini
