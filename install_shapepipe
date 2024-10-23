@@ -45,7 +45,7 @@ ww_version=TRUE
 # CDSclient Package (need Findgsc2.2)
 cdsclient_url="http://cdsarc.u-strasbg.fr/ftp/pub/sw/cdsclient.tar.gz"
 cdscleint_tar="cdsclient.tar.gz"
-cdsclient_dir="cdsclient-3.84"
+cdsclient_dir="cdsclient-4.07"
 cdsclient_bin="findgsc2.2"
 cdsclient_version=FALSE
 
