@@ -11,22 +11,22 @@ from shapepipe.modules.ngmix_package.ngmix import Ngmix
 
 
 @module_runner(
-    version='0.0.1',
+    version="0.0.1",
     input_module=[
-        'sextractor_runner',
-        'psfex_interp_runner',
-        'vignetmaker_runner'
+        "sextractor_runner",
+        "psfex_interp_runner",
+        "vignetmaker_runner",
     ],
     file_pattern=[
-        'tile_sexcat',
-        'image',
-        'exp_background',
-        'galaxy_psf',
-        'weight',
-        'flag'
+        "tile_sexcat",
+        "image",
+        "exp_background",
+        "galaxy_psf",
+        "weight",
+        "flag",
     ],
-    file_ext=['.fits', '.sqlite', '.sqlite', '.sqlite', '.sqlite', '.sqlite'],
-    depends=['numpy', 'ngmix', 'galsim', 'sqlitedict', 'astropy'],
+    file_ext=[".fits", ".sqlite", ".sqlite", ".sqlite", ".sqlite", ".sqlite"],
+    depends=["numpy", "ngmix", "galsim", "sqlitedict", "astropy"],
 )
 def ngmix_runner(
     input_file_list,
@@ -40,22 +40,22 @@ def ngmix_runner(
     # Read config file entries
 
     # Photometric zero point
-    zero_point = config.getfloat(module_config_sec, 'MAG_ZP')
+    zero_point = config.getfloat(module_config_sec, "MAG_ZP")
 
     # Pixel scale
-    pixel_scale = config.getfloat(module_config_sec, 'PIXEL_SCALE')
+    pixel_scale = config.getfloat(module_config_sec, "PIXEL_SCALE")
 
     # Path to merged single-exposure single-HDU headers
-    f_wcs_path = config.getexpanded(module_config_sec, 'LOG_WCS')
+    f_wcs_path = config.getexpanded(module_config_sec, "LOG_WCS")
 
     # First and last galaxy ID to process
-    id_obj_min = config.getint(module_config_sec, 'ID_OBJ_MIN')
-    id_obj_max = config.getint(module_config_sec, 'ID_OBJ_MAX')
+    id_obj_min = config.getint(module_config_sec, "ID_OBJ_MIN")
+    id_obj_max = config.getint(module_config_sec, "ID_OBJ_MAX")
 
     # Initialise class instance
     ngmix_inst = Ngmix(
         input_file_list,
-        run_dirs['output'],
+        run_dirs["output"],
         file_number_string,
         zero_point,
         pixel_scale,
@@ -66,7 +66,9 @@ def ngmix_runner(
     )
 
     # Process ngmix shape measurement and metacalibration
+    w_log.info("ngmix processing start")
     ngmix_inst.process()
+    w_log.info("ngmix end")
 
     # No return objects
     return None, None

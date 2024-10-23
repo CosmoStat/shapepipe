@@ -3,39 +3,9 @@
 import os
 from shapepipe.utilities.summary import *
 
-def init_par_runtime(list_tile_IDs):
-    
-    # Numbers updated at runtime 
-    par_runtime = {}
-
-    par_runtime["n_tile_IDs"] = len(list_tile_IDs)
-    par_runtime["list_tile_IDs"] = list_tile_IDs
-
-    return par_runtime
-
-
-def update_par_runtime_after_find_exp(par_runtime, all_exposures):
-    
-    n_CCD = 40
-    
-    # Single-HDU single exposure images
-    par_runtime["n_shdus"] = get_par_runtime(par_runtime, "exposures") * n_CCD
-    par_runtime["list_shdus"] = get_all_shdus(all_exposures, n_CCD)
-
-    ## For split_exposure_runner, the output is image, weight,flag per single-HDU image
-    ## and a header per exposure.
-    par_runtime["n_3*n_shdus+n_exposures"] = (
-        3 * get_par_runtime(par_runtime, "shdus")
-        + get_par_runtime(par_runtime, "exposures")
-    )
-    
-    return par_runtime
-
 
 def set_jobs_v2_pre_v2(patch, verbose):
-    """ Return information about shapepipe jobs
-    
-    """
+    """Return information about shapepipe jobs"""
     print(f"Set job info for patch {patch}")
 
     # Main input and output directory
@@ -48,7 +18,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
     log_file_name = f"{path}/summary_log.txt"
     handlers = [
         logging.FileHandler(log_file_name, mode="w"),
-        logging.StreamHandler()
+        logging.StreamHandler(),
     ]
     logging.basicConfig(
         level=logging.INFO, format="%(message)s", handlers=handlers
@@ -65,7 +35,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
     jobs = {}
 
     # Set the first job (retrieve images)
-    
+
     # With "CFIS_" only the linked images are counted. The original
     # ones do not match the IDdash pattern.
     # If images were downloaded in several runs:
@@ -74,8 +44,8 @@ def set_jobs_v2_pre_v2(patch, verbose):
     # - remove previous output dirs since only last is searched
     jobs["1"] = job_data(
         1,
-         "run_sp_GitFeGie",
-       [
+        "run_sp_GitFeGie",
+        [
             "get_images_runner_run_1",
             "find_exposures_runner",
             "get_images_runner_run_2",
@@ -92,21 +62,17 @@ def set_jobs_v2_pre_v2(patch, verbose):
         2,
         ["run_sp_Uz", "run_sp_exp_SpMh", "run_sp_exp_SpMh"],
         ["uncompress_fits_runner", "merge_headers_runner", "split_exp_runner"],
-        ["tile_IDs", 0, "3*n_shdus+n_exposures"],
+        ["tile_IDs", 0, "exposures"],
+        n_mult=[1, 1, 121],
         path_main=path_main,
         path_left="output",
         verbose=verbose,
     )
 
-    run_dir_mask_tiles = "run_sp_tile_Ma"
-    run_dir_mask_exp = "run_sp_exp_Ma"
-    mask_module_tiles = "mask_runner"
-    mask_module_exp = "mask_runner"
-
     jobs["4"] = job_data(
         4,
-        run_dir_mask_tiles,
-        [mask_module_tiles],
+        ["run_sp_Ma_tile"],
+        ["mask_runner"],
         ["tile_IDs"],
         path_main=path_main,
         path_left="output",
@@ -115,8 +81,8 @@ def set_jobs_v2_pre_v2(patch, verbose):
 
     jobs["8"] = job_data(
         8,
-        run_dir_mask_exp,
-        [mask_module_exp],
+        ["run_sp_Ma_exp"],
+        ["mask_runner"],
         ["shdus"],
         path_main=path_main,
         path_left="output",
@@ -143,25 +109,37 @@ def set_jobs_v2_pre_v2(patch, verbose):
             "run_sp_exp_SxSePsf",
             "run_sp_exp_SxSePsf",
             "run_sp_exp_SxSePsf",
+            "run_sp_exp_SxSePsf",
+            "run_sp_exp_SxSePsf",
             #"run_sp_exp_Pi"
         ],
         [
             "sextractor_runner",
             "setools_runner",
+            "setools_runner",
+            "setools_runner",
             "psfex_runner",
             # "psfex_interp_runner"],
         ],
         "shdus",
-        n_mult=[2, 2, 2],  # 1],
+        n_mult=[2, 2, 1, 1, 2],
         path_main=path_main,
         path_left="exp_runs",
         output_subdirs="shdus",
         path_right="output",
+        path_output=[
+            "output",
+            "output/rand_split",
+            "output/stat",
+            "logs",
+            "output",
+        ],
+        special=[False, False, True, True, False],
         verbose=verbose,
     )
 
     # For P3
-    #jobs["33"] = job_data(
+    # jobs["33"] = job_data(
     #    33,
     #    "run_sp_exp_Pi",
     #    ["psfex_interp_runner"],
@@ -171,34 +149,41 @@ def set_jobs_v2_pre_v2(patch, verbose):
     #    output_subdirs="shdus",
     #    path_right="output",
     #    verbose=verbose,
-    #)
+    # )
 
     jobs["64"] = job_data(
         "64",
         "run_sp_tile_PsViSmVi",
         [
             "psfex_interp_runner",
+            "psfex_interp_runner",
             "vignetmaker_runner_run_1",
             "spread_model_runner",
             "vignetmaker_runner_run_2",
         ],
         "tile_IDs",
-        n_mult=[1, 1, 1, 4],
+        n_mult=[1, 1, 1, 1, 4],
         path_main=path_main,
         path_left="tile_runs",
         output_subdirs=[f"{tile_ID}/output" for tile_ID in list_tile_IDs_dot],
+        path_output=["output", "logs", "output", "output", "output"],
+        special=[False, True, False, False, False],
         verbose=verbose,
     )
 
-    n_sh = 8
+    if patch in ("P2", "P5"):
+        n_sh = 1
+    else:
+        n_sh = 8
     run_dirs = [f"run_sp_tile_ngmix_Ng{idx+1}u" for idx in range(n_sh)]
     output_path_missing_IDs = [
-        f"{path_main}/summary/missing_job_128_ngmix_runner_{idx+1}.txt" for idx in range(n_sh)
+        f"{path_main}/summary/missing_job_128_ngmix_runner_{idx+1}.txt"
+        for idx in range(n_sh)
     ]
     jobs["128"] = job_data(
         "128",
         run_dirs,
-        ["ngmix_runner"] * 8,
+        ["ngmix_runner"] * n_sh,
         "tile_IDs",
         path_main=path_main,
         path_left="tile_runs",
@@ -209,8 +194,19 @@ def set_jobs_v2_pre_v2(patch, verbose):
 
     jobs["256"] = job_data(
         "256",
-        ["run_sp_Ms", "run_sp_Mc"],
-        ["merge_sep_cats_runner", "make_cat_runner"],
+        ["run_sp_Ms"],
+        ["merge_sep_cats_runner"],
+        "tile_IDs",
+        path_main=path_main,
+        path_left="tile_runs",
+        output_subdirs=[f"{tile_ID}/output" for tile_ID in list_tile_IDs_dot],
+        verbose=verbose,
+    )
+
+    jobs["512"] = job_data(
+        "512",
+        ["run_sp_Mc"],
+        ["make_cat_runner"],
         "tile_IDs",
         path_main=path_main,
         path_left="tile_runs",
@@ -219,8 +215,8 @@ def set_jobs_v2_pre_v2(patch, verbose):
     )
 
     # Post-processing
-    jobs["512"] = job_data(
-        "512",
+    jobs["1024"] = job_data(
+        "1024",
         ["run_sp_combined_final"],
         ["make_catalog_runner"],
         "tile_IDs",
@@ -229,8 +225,8 @@ def set_jobs_v2_pre_v2(patch, verbose):
         verbose=verbose,
     )
 
-    jobs["1024"] = job_data(
-        "1024",
+    jobs["2048"] = job_data(
+        "2048",
         "run_sp_combined_psf",
         ["psfex_interp_runner"],
         "shdus",
@@ -238,5 +234,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
         path_left="output",
         verbose=verbose,
     )
-    
+
     return jobs, list_tile_IDs_dot
+
+

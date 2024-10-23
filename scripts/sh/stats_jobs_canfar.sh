@@ -10,6 +10,7 @@
 ## Temporary files
 tmpfile_jobs="jobinfo.txt"
 tmpfile_ids="ids.txt"
+tmpfile_running="jobs_running.txt"
 
 ## curl options
 SSL=~/.ssl/cadcproxy.pem
@@ -22,7 +23,7 @@ SESSION=https://ws-uv.canfar.net/skaha/v0/session
 mode="count"
 
 ## Help string
-usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
+usage="Usage: $(basename "$0") [OPTIONS]
 \n\nOptions:\n
    -h\tthis message\n
    -m, --mode MODE\n
@@ -59,13 +60,26 @@ esac
 # Main program
 
 # Get all instances
+#echo curl -E $SSL $SESSION
 curl -E $SSL $SESSION &> /dev/null > $tmpfile_jobs
+res=$?
+
+if [ "$res" == "0" ]; then
+  # Number of jobs
+  n_headless=`cat $tmpfile_ids | grep Running | wc -l`
+else
+    # Failure: set to very high number
+    n_headless=10000
+fi
 
 # Get headless job IDs
-cat $tmpfile_jobs | grep headless -B 4 -A 12 | grep \"id | perl -F\" -ane 'print "$F[3]\n"' > $tmpfile_ids
+#cat $tmpfile_jobs | grep headless -B 4 -A 12 | grep \"id | perl -F\" -ane 'print "$F[3]\n"' > $tmpfile_ids
+cat $tmpfile_jobs | grep headless -B 4 -A 2 | grep Running -A 1 > $tmpfile_ids
 
-# Number of jobs
-n_headless=`cat $tmpfile_ids | wc -l`
+
+# Get running job info
+cat $tmpfile_ids | grep name | perl -F\- -ane 'chomp; $F[4] =~ s/[",]//g; print "$F[3].$F[4]"' > $tmpfile_running
+
 
 if [ "$mode" == "count" ]; then
 
@@ -76,10 +90,13 @@ elif [ "$mode" == "delete" ]; then
   echo -n "Delete $n_headless jobs? [y|n] "
   read answer
   if [ "$answer" == "y" ]; then
+    cat $tmpfile_jobs | grep headless -B 34 -A 6 | grep Running -A 34 | grep id | grep -v user | perl -F\"  -ane 'print "$F[3]\n"' > $tmpfile_ids
     for ID in `cat $tmpfile_ids`; do
       echo $ID
       # Delete headless jobs
-      #curl -X DELETE -E $SSL $SESSION/$ID
+      echo "curl -X DELETE -E $SSL $SESSION/$ID"
+      curl -X DELETE -E $SSL $SESSION/$ID
+      echo $?
     done
   fi
 
@@ -87,4 +104,4 @@ fi
 
 
 # Remove temporary files
-rm -f $tmpfile_jobs $tmpfile_ids
+#rm -f $tmpfile_jobs $tmpfile_ids

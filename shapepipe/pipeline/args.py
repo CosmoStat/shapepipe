@@ -42,16 +42,24 @@ def print_message(message):
         Custom action class object
 
     """
+
     class customAction(ap.Action):
 
-        def __init__(self, option_strings, version=None, dest=ap.SUPPRESS,
-                     default=ap.SUPPRESS, help=help):
+        def __init__(
+            self,
+            option_strings,
+            version=None,
+            dest=ap.SUPPRESS,
+            default=ap.SUPPRESS,
+            help=help,
+        ):
             super(customAction, self).__init__(
                 option_strings=option_strings,
                 dest=dest,
                 default=default,
                 nargs=0,
-                help=help)
+                help=help,
+            )
 
         def __call__(self, parser, args, values, option_string=None):
             print(message)
@@ -71,10 +79,10 @@ def module_str():
         Formatted string of module names
 
     """
-    string = ''
+    string = ""
 
     for module in __module_list__:
-        string += f' - {module}\n'
+        string += f" - {module}\n"
 
     return string
 
@@ -92,46 +100,44 @@ def create_arg_parser():
     """
     # Create parser
     parser = ap.ArgumentParser(
-        add_help=False, description=shapepipe_logo(),
+        add_help=False,
+        description=shapepipe_logo(),
         formatter_class=cutomFormatter,
     )
-    optional = parser.add_argument_group('Optional Arguments')
+    optional = parser.add_argument_group("Optional Arguments")
 
     # Add arguments
     optional.add_argument(
-        '-h',
-        '--help',
-        action='help',
-        help='show this help message and exit',
+        "-h",
+        "--help",
+        action="help",
+        help="show this help message and exit",
     )
 
     optional.add_argument(
-        '-v',
-        '--version',
-        action='version',
-        version=f'%(prog)s v{__version__}'
+        "-v", "--version", action="version", version=f"%(prog)s v{__version__}"
     )
 
     optional.add_argument(
-        '-l',
-        '--list_modules',
+        "-l",
+        "--list_modules",
         action=print_message(
-            f'ShapePipe modules currently available:\n{module_str()}'
+            f"ShapePipe modules currently available:\n{module_str()}"
         ),
-        help='list modules currently available and exit',
+        help="list modules currently available and exit",
     )
 
     optional.add_argument(
-        '-c',
-        '--config',
-        default='config.ini',
-        help='configuration file name',
+        "-c",
+        "--config",
+        default="config.ini",
+        help="configuration file name",
     )
 
     optional.add_argument(
-        '-e',
-        '--exclusive',
-        help='exclusive input file number string',
+        "-e",
+        "--exclusive",
+        help="exclusive input file number string",
     )
     # Return parser
     return parser.parse_args()

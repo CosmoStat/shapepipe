@@ -51,7 +51,7 @@ class MergeSep(object):
         output_dir,
         n_split_max,
         warning,
-        w_log
+        w_log,
     ):
 
         self._input_file_list = input_file_list
@@ -79,15 +79,13 @@ class MergeSep(object):
             input_path_n = []
             input_path_n.append(input_file)
             for n in range(2, self._n_split_max + 1):
-                res = re.sub('1', str(n), input_file, 1)
+                res = re.sub("1", str(n), input_file, 1)
                 input_path_n.append(res)
 
             # Open first catalogue, read number of extensions and columns
             cat0 = file_io.FITSCatalogue(input_file, SEx_catalogue=True)
             cat0.open()
             list_ext_name = cat0.get_ext_name()
-            list_col_name = cat0.get_col_names()
-
 
             # Inupt ngmix files sometimes have not all sheared versions
             # (HDUs 1 - 5 = 1M, 1P, 2M, 2P, NOSHEAR) due to IO errors
@@ -97,8 +95,12 @@ class MergeSep(object):
                     + f" {len(list_ext_name)} HDUs, required are 6"
                 )
 
-            # MKDEBUG: Some input ngmix catalogues have multiple of 5 HDUs
-            # if reprocessed and not deleted but appended
+            list_col_name = cat0.get_col_names()
+
+            # Some older input ngmix catalogues have multiple of 5 HDUs
+            # if reprocessed and not deleted but appended.
+            # The following log message should be replaced by raising
+            # and error in future
             if len(list_ext_name) > 6:
                 wmsg = f"Cropping input HDUs from {len(list_ext_name)} to 5"
                 self._w_log.info(wmsg)
@@ -109,7 +111,7 @@ class MergeSep(object):
             # data dimension = n_extension x n_column x n_obj
             data = {}
             for hdu_ind, ext_name in enumerate(list_ext_name):
-                if ext_name == 'PRIMARY':
+                if ext_name == "PRIMARY":
                     continue
                 data[ext_name] = {}
                 for col_name in list_col_name:
@@ -122,38 +124,47 @@ class MergeSep(object):
                     cat = file_io.FITSCatalogue(cat_path, SEx_catalogue=True)
                     cat.open()
 
+                    list_ext_name_n = cat.get_ext_name()
+                    if len(list_ext_name_n) < 6:
+                        raise IndexError(
+                            f"Input ngmix catalogue {cat_path} has only"
+                            + f" {len(list_ext_name_n)} HDUs, required are 6"
+                        )
                     for hdu_ind, ext_name in enumerate(list_ext_name):
-                        if ext_name == 'PRIMARY':
+                        if ext_name == "PRIMARY":
                             continue
+                        if not ext_name in data:
+                            raise IndexError(
+                                f"Extension {ext_name} not found in file "
+                                + f"{cat_path}"
+                            )
                         for col_name in list_col_name:
+                            # print("MKDEBUG ", cat_path, ext_name, col_name)
                             data[ext_name][col_name] += list(
                                 cat.get_data(hdu_ind)[col_name]
                             )
 
                     cat.close()
                 else:
-                    msg = f'Input catalogue \'{cat_path}\' not found'
+                    msg = f"Input catalogue '{cat_path}' not found"
                     warnings.warn(msg)
-                    wmsg = f'Warning: {msg}'
+                    wmsg = f"Warning: {msg}"
                     self._w_log.info(wmsg)
                     print(wmsg)
 
             # Save combined catalogue
             output_name = (
-                f'{self._output_dir}/{self._file_pattern[idx]}'
-                + f'{self._file_number_string}{self._file_ext[idx]}'
+                f"{self._output_dir}/{self._file_pattern[idx]}"
+                + f"{self._file_number_string}{self._file_ext[idx]}"
             )
             output = file_io.FITSCatalogue(
-                output_name,
-                open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
+                output_name, open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
             )
             for hdu_ind, ext_name in enumerate(list_ext_name):
-                if ext_name == 'PRIMARY':
+                if ext_name == "PRIMARY":
                     continue
                 output.save_as_fits(
-                    data[ext_name],
-                    names=list_col_name,
-                    ext_name=ext_name
+                    data[ext_name], names=list_col_name, ext_name=ext_name
                 )
 
         return None, None

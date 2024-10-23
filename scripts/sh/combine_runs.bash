@@ -20,7 +20,7 @@ usage="Usage: $(basename "$0") [OPTIONS]
     \tPSF model, allowed are 'psfex', 'mccd', 'setools', default='$psf'\n
    -c, --cat TYPE\n
     \tCatalogue type, allowed are 'final', 'flag_tile', 'flag_exp', \n
-    \t'psf', 'image', default='$cat'\n
+    \t'psf', 'psf_conv', 'image', default='$cat'\n
 "
 
 ## Parse command line
@@ -50,10 +50,12 @@ done
 ## Check options
 if [ "$cat" != "final" ] \
   && [ "$cat" != "flag_tile" ] \
+  && [ "$cat" != "tile_detection" ] \
   && [ "$cat" != "flag_exp" ] \
   && [ "$cat" != "psf" ] \
+  && [ "$cat" != "psf_conv" ] \
   && [ "$cat" != "image" ]; then
-  echo "cat (option -c) needs to be 'final', 'flag_tile', 'flag_exp', 'psf', or 'image'"
+  echo "cat (option -c) needs to be 'final', 'tile_detection', 'flag_tile', 'flag_exp', 'psf', 'psf_conv' or 'image'"
   exit 2
 fi
 
@@ -108,6 +110,12 @@ if [ "$cat" == "final" ]; then
   module="make_catalog_runner"
   pattern="final_cat-*"
 
+elif [ "$cat" == "tile_detection" ]; then
+
+  run_in="$pwd/P?/tile_runs/*/$out_base/run_sp_tile_Sx_*"
+  module="sextractor_runner"
+  pattern="sexcat-*"
+
 elif [ "$cat" == "flag_tile" ]; then
 
   # v1
@@ -142,7 +150,8 @@ elif [ "$cat" == "psf" ]; then
   # v1
   #run_in="$pwf/$out_base/run_sp_exp_Pi_*"
   # v2
-  run_in="$pwd/exp_runs/*/$out_base/run_sp_exp_Pi_*"
+  #run_in="$pwd/exp_runs/*/$out_base/run_sp_exp_Pi_*"
+  run_in="$pwd/exp_runs/*/$out_base/run_sp_exp_SxSePsfPi_*"
 
   pattern="validation_psf-*"
   if [ "$psf" == "psfex" ]; then
@@ -152,6 +161,12 @@ elif [ "$cat" == "psf" ]; then
   else
     module="mccd_interp_runner"
   fi
+
+elif [ "$cat" == "psf_conv" ]; then
+
+  run_in="$pwd/../P?"
+  pattern="validation_psf_conv-*"
+  module="psfex_interp_runner"
 
 else
 

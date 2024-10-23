@@ -11,16 +11,18 @@ NAME=shapepipe
 
 ## Default values
 job=-1
+psf="psfex"
 ID=-1
 file_IDs=-1
 N_SMP=1
-kind=-1
 version="1.1"
-cmd_remote="shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
+cmd_remote="$HOME/shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
 batch_max=200
 dry_run=0
+mh_local=0
+debug_out="-1"
 
-# TODO psf
+pat="- "
 
 ## Help string
 usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
@@ -33,24 +35,26 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
     \tfile containing IDs\n
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
-   -k, --kind KIND\n
-    \timage kind, allowed are 'tile' and 'exp'\n
+   -m, --mh_local MH\n
+    \tmerged header file local (MH=0) or global (MH=1); default is $mh_local\n
    -N, --N_SMP N_SMOp\n
-    \tnumber of jobs (SMP mode only), default from original config files\n
+    \tnumber of jobs (SMP mode only), default=$N_SMP\n
    -V, --version\n
     \tversion of docker image, default='$version'\n
    -C, --command_remote\n
     \tremote command to run on canfar, default='$cmd_remote'\n
    -b, --batch_max\n
     \tmaximum batch size = number of jobs run simultaneously, default=$batch_max\n
+   --debug_out PATH\n
+    \tdebug output file PATH, default not used\n
    -n, --dry_run LEVEL\n
     \tdry run, from LEVEL=2 (no processing) to 0 (full run)\n
 "
 
 ## Help if no arguments
 if [ -z $1 ]; then
-        echo -ne $usage
-        exit 1
+  echo -ne $usage
+  exit 1
 fi
 
 ## Parse command line
@@ -62,6 +66,14 @@ while [ $# -gt 0 ]; do
       ;;
     -j|--job)
       job="$2"
+      shift
+      ;;
+    -p|--psf)
+      psf="$2"
+      shift
+      ;;
+    -m|--mh_local)
+      mh_local="$2"
       shift
       ;;
     -e|--exclusive)
@@ -76,12 +88,12 @@ while [ $# -gt 0 ]; do
       N_SMP="$2"
       shift
       ;;
-    -k|--kind)
-      kind="$2"
-      shift
-      ;;
     -b|--batch_max)
       batch_max="$2"
+      shift
+      ;;
+    --debug_out)
+      debug_out="$2"
       shift
       ;;
     -n|--dry_run)
@@ -102,15 +114,26 @@ if [ "$ID" == "-1" ] && [ "$file_IDs" == "-1" ]; then
   echo "No image ID(s) indicated, use option -e ID or -f file_IDs"                                   
   exit 3                                                                        
 fi                                                                              
-                                                                                
-if [ "kind" == "-1" ]; then                                                     
-  echo "No image kind indicated, use option -k"                                 
-  exit 4                                                                        
-fi
 
+if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
+  echo "PSF (option -p) needs to be 'psfex' or 'mccd'"
+  exit 4
+fi
+                                                                                
 if [ "$dry_run" != 0 ] && [ "$dry_run" != 1 ] && [ "$dry_run" != 2 ]; then
   echo "Invalid dry_run option, allowed are 0, 1, and 2"
   exit 5
+fi
+
+if [ "$debug_out" != "-1" ]; then
+  echo "${pat}Starting $(basename "$0")" >> $debug_out
+  echo $pat`date`$ >> $debug_out
+fi
+
+. /opt/conda/etc/profile.d/conda.sh
+conda activate shapepipe
+if [ "$debug_out"  != "-1" ]; then
+    echo "${pat}conda prefix = ${CONDA_PREFIX}" >> $debug_out
 fi
 
 # command line arguments for remote script:
@@ -123,23 +146,42 @@ else
 fi
 
 RESOURCES="ram=4&cores=$N_SMP"
-
-# TODO: dir as command line argument to this script
 dir=`pwd`
-#arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run -d $dir"
 
 
 # Return argument for local script to be called via curl
 function set_arg() {
-  my_arg="-j $job -e $ID -N $N_SMP -k $kind $arg_dry_run -d $dir"
+  my_arg="-j $job -p $psf -e $ID -N $N_SMP $arg_dry_run -d $dir -m $mh_local --debug_out $debug_out"
   echo $my_arg
 }
 
 
-# MKDEBUG TODO
 function call_curl() {
-  my_arg=$1
+  my_name=$1
+  dry_run=$2
 
+  my_arg=$(set_arg)
+
+  if [ "$dry_run" == "0" ]; then
+
+    cp ~/sicher.pem ~/.ssl/cadcproxy.pem 
+    my_session=`curl -E $SSL "$SESSION?$RESOURCES" -d "image=$IMAGE:$version" -d "name=${my_name}" -d "cmd=$cmd_remote" --data-urlencode "args=${my_arg[@]}" &> /dev/null`
+  fi
+
+
+  cmd=("curl" "-E" "$SSL" "$SESSION?$RESOURCES" "-d" "image=$IMAGE:$version" "-d" "name=${my_name}" "-d" "cmd=$cmd_remote" "--data-urlencode" "args=\"${my_arg}\"")
+
+  if [ "$debug_out" != "-1" ]; then
+    echo "${pat}call_curl $my_name $my_arg" >> $debug_out
+    echo "${pat}Running ${cmd[@]} (dry_run=$dry_run)" >> $debug_out
+  fi
+  echo "${cmd[@]} (dry_run=$dry_run)"
+  cp ~/sicher.pem ~/.ssl/cadcproxy.pem 
+
+
+  # Running $cmd does not work due to unknown problems with passing of args
+
+  update_session_logs
 }
 
 # Add session and image IDs to log files
@@ -153,15 +195,17 @@ function submit_batch() {
   path=$1
 
   for ID in `cat $path`; do
-    my_arg=$(set_arg)
-    my_session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$my_arg" &> /dev/null`
-    update_session_logs
+    IDt=`echo $ID | tr "." "-"`
+    my_name="SP-${patch}-J${job}-${IDt}"
+
+    call_curl $my_name $dry_run
+
   done
 
 }
 
-batch=20
-sleep=300
+batch=50
+sleep=75
 
 ((n_thresh=batch_max-batch))
 
@@ -173,17 +217,20 @@ if [ "$dry_run" == 2 ]; then
 
   if [ "$ID" == "-1" ]; then
 
+
     # Submit file (dry run = 2)
     for ID in `cat $file_IDs`; do
-      arg=$(set_arg)
-      echo curl -E $SSL $SESSION?$RESOURCES -d \"image=$IMAGE:$version\" -d \"name=${NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
+      IDt=`echo $ID | tr "." "-"`
+      my_name="SP-${patch}-J${job}-${IDt}"
+      call_curl $my_name $dry_run
     done
 
   else
 
     # Submit image (dry run = 2)
-    arg=$(set_arg)
-    echo curl -E $SSL $SESSION?$RESOURCES -d \"image=$IMAGE:$version\" -d \"name=${NAME}\" -d \"cmd=$cmd_remote\" --data-urlencode \"args=$arg\"
+    IDt=`echo $ID | tr "." "-"`
+    my_name="SP-${patch}-J${job}-${IDt}"
+    call_curl $my_name $dry_run
 
   fi
 
@@ -234,10 +281,16 @@ else
   else
 
     # Submit image
-    arg=$(set_arg)
-    session=`curl -E $SSL $SESSION?$RESOURCES -d "image=$IMAGE:$version" -d "name=${NAME}" -d "cmd=$cmd_remote" --data-urlencode "args=$arg" &> /dev/null`
-    update_session_logs
+    IDt=`echo $ID | tr "." "-"`
+    my_name="SP-${patch}-J${job}-${IDt}"
+    call_curl $my_name $dry_run
 
   fi
 
+fi
+
+echo "Done $(basename "$0")" 
+
+if [ "$debug_out" != "-1" ]; then
+  echo "${pat}End $(basename "$0")" >> $debug_out
 fi

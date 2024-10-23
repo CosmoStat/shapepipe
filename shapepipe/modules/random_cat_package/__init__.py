@@ -34,4 +34,4 @@ HEALPIX_OUT_NSIDE : int, optional
 
 """
 
-__all__ = ['random_cat.py']
+__all__ = ["random_cat.py"]
