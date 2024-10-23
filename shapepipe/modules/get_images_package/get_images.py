@@ -12,7 +12,7 @@ import re
 import sys
 
 from shapepipe.modules.module_decorator import module_runner
-from shapepipe.utilities.canfar import vosHandler
+from cs_util.canfar import vosHandler
 
 
 # pragma: no cover
@@ -62,7 +62,8 @@ def in2out_pattern(number):
 
     # remove letters in number
     number_final = re.sub('[a-zA-Z]', '', number_final)
-
+    # make robust for more generalized file names
+    number_final = re.sub(r'_', '', number_final)
     return number_final
 
 
@@ -185,14 +186,19 @@ class GetImages(object):
             input_dir,
             use_output_file_pattern=False
         )
-        all_outputs = self.get_file_list(
+        all_outputs_orig = self.get_file_list(
+            image_number_list,
+            output_dir,
+            use_output_file_pattern=False
+        )
+        all_outputs_renamed = self.get_file_list(
             image_number_list,
             output_dir,
             use_output_file_pattern=True
         )
 
         # Retrieve files
-        self.retrieve(all_inputs, all_outputs)
+        self.retrieve(all_inputs, all_outputs_orig, all_outputs_renamed)
 
     def get_file_list(
         self,
@@ -260,7 +266,7 @@ class GetImages(object):
 
         return list_all_files
 
-    def retrieve(self, all_inputs, all_outputs):
+    def retrieve(self, all_inputs, all_outputs_orig, all_outputs_renamed):
         """Retrieve.
 
         Retrieve all files.
@@ -273,10 +279,14 @@ class GetImages(object):
             Output file paths, one list for each input file type
 
         """
-        for in_per_type, out_per_type in zip(all_inputs, all_outputs):
+        for in_per_type, out_per_type_orig, out_per_type_renamed in zip(
+            all_inputs,
+            all_outputs_orig,
+            all_outputs_renamed
+        ):
             for idx in range(len(in_per_type)):
                 if self._check_existing_dir:
-                    out_base = os.path.basename(out_per_type[idx])
+                    out_base = os.path.basename(out_per_type_orig[idx])
                     path = glob.glob(
                         f'{self._check_existing_dir}/**/{out_base}',
                         recursive=True,
@@ -300,9 +310,13 @@ class GetImages(object):
                             + f' {self._check_existing_dir},'
                             + ' downloading images'
                         )
-                self.retrieve_one(in_per_type[idx], out_per_type[idx])
+                self.retrieve_one(
+                    in_per_type[idx],
+                    out_per_type_orig[idx],
+                    out_per_type_renamed[idx]
+                )
 
-    def retrieve_one(self, in_path, out_path):
+    def retrieve_one(self, in_path, out_path_orig, out_path_renamed):
         """Retrieve One.
 
         Retrieve one file.
@@ -322,12 +336,13 @@ class GetImages(object):
                 for opt in self._retrieve_options.split(' '):
                     sys.argv.append(opt)
             sys.argv.append(in_path)
-            sys.argv.append(out_path)
+            sys.argv.append(out_path_orig)
 
             log_cmd = ' '.join(sys.argv)
             vcp = vosHandler('vcp')
             self._w_log.info(log_cmd)
 
+            # Download file from VOSpace
             attempt = 0
             while attempt < self._n_try:
                 try:
@@ -346,6 +361,10 @@ class GetImages(object):
 
             sys.argv = None
 
+            # Create symbolic link to downloaded file with
+            # link name in ShapePipe numbering format
+            os.symlink(out_path_orig, out_path_renamed)
+
         elif self._retrieve_method == 'symlink':
             src = in_path
 
@@ -356,7 +375,7 @@ class GetImages(object):
                     f'No input file found corresponding to \'{src}\''
                 )
 
-            dst = out_path
+            dst = out_path_renamed
             for src in all_src:
                 if os.path.isdir(dst):
                     # OUTPUT_FILE_PATTERN is '*', so dst is not regular file

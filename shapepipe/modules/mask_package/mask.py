@@ -1179,6 +1179,7 @@ class Mask(object):
             )
             external_flag.open()
             if final_mask is not None:
+                final_mask = final_mask.astype(np.int16, copy=False)
                 final_mask += external_flag.get_data()[:, :]
             else:
                 final_mask = external_flag.get_data()[:, :]
