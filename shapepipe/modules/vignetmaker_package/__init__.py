@@ -36,8 +36,9 @@ MODE : str
 PREFIX : str or list
     Output file name prefix(es)
 ME_IMAGE_DIR : list
-    Input directories for single-exposure flags, images, weights, and
-    SExtractor background images, for multi-epoch processing
+    Module names of last run producing single-exposure flags, images, weights,
+    and SExtractor background images, for multi-epoch processing. The specifier
+    "last:" is not required
 ME_IMAGE_PATTERN : list
     Input file name patterns for flag, image, weight, and SExtractor background
     files, for multi-epoch processing

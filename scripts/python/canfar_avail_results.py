@@ -19,7 +19,7 @@ from contextlib import redirect_stdout
 
 from optparse import OptionParser
 
-from shapepipe.utilities.canfar import dir_list
+from cs_util.canfar import dir_list
 
 from shapepipe.utilities import cfis
 
