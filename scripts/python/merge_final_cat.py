@@ -316,7 +316,6 @@ def main(argv=None):
         add_this_l = False
 
         # mark to add if correct extension, matches input pattern,
-        not `.npy` file
         if (
             this_l.endswith(ext)
             and (f'{param.input_name_base}' in this_l)

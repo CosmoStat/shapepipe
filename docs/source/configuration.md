@@ -200,6 +200,9 @@ where ``X`` is an integer greater than or equal to ``1``. This feature can be co
 
 ```ini
 
+[EXECUTION]
+MODULE = module_a_runner, module_b_runner, module_b_runner
+
 [MODULE_A_RUNNER_RUN_1]
 ...
 
