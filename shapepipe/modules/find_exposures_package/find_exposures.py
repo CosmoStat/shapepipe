@@ -25,14 +25,19 @@ class FindExposures():
         Output file path
     w_log : logging.Logger
         Log file
-
+    colnum: int
+        column number for exposure name in fits header
+    prefix: str
+        prefix for exposures
     """
 
-    def __init__(self, img_tile_path, output_path, w_log):
+    def __init__(self, img_tile_path, output_path, w_log, colnum, prefix):
 
         self._img_tile_path = img_tile_path
         self._output_path = output_path
         self._w_log = w_log
+        self._colnum = colnum
+        self.prefix = prefix
 
     def process(self):
         """Process.
@@ -83,14 +88,15 @@ class FindExposures():
             temp = _hist.split(' ')
 
             pattern = r'(.*)\.{1}.*'
-            pattern_match = re.search(pattern, temp[3])
+            pattern_match = re.search(pattern, temp[self._colnum])
             if not pattern_match:
                 raise IndexError(
-                    f're match \'{pattern}\' failed for filename \'{temp[3]}\''
+                    f're match \'{pattern}\' failed for filename'
+                    + f' \'{temp[self._colnum]}\''
                 )
 
             exp_name = pattern_match.group(1)
-
+            exp_name = exp_name.removeprefix(self.prefix)
             # LSB exposure names have 's', header still says 'p'
             # exp_name = re.sub(r'p', 's', exp_name)
 
