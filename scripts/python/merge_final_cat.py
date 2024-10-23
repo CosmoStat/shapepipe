@@ -4,12 +4,11 @@
 
 """Script merge_final_cat.py
 
-Merge all final catalogues, created by ShapePipe module 'make_catalogue_runner',
-into a joined numpy binary file.
+Merge all final catalogues, created by ShapePipe module
+``make_catalogue_runner``, into a joined numpy binary file.
 
 :Authors: Axel Guinot, Martin Kilbinger
 
-:Date: 2020
 """
 
 from astropy.io import fits
@@ -20,8 +19,6 @@ import re
 import copy
 
 from optparse import OptionParser
-
-from tqdm import tqdm
 
 from shapepipe.utilities import cfis
 
@@ -41,11 +38,9 @@ class param:
 
 
 def params_default():
-    """Set default parameter values.
-
-    Parameters
-    ----------
-    None
+    """Params Default.
+    
+    Set default parameter values.
 
     Returns
     -------
@@ -63,7 +58,9 @@ def params_default():
 
 
 def parse_options(p_def):
-    """Parse command line options.
+    """Parse Options.
+    
+    Parse command line options.
 
     Parameters
     ----------
@@ -139,7 +136,9 @@ def parse_options(p_def):
 
 
 def check_options(options):
-    """Check command line options.
+    """Check Options.
+    
+    Check command line options.
 
     Parameters
     ----------
@@ -156,7 +155,9 @@ def check_options(options):
 
 
 def update_param(p_def, options):
-    """Return default parameter, updated and complemented according to options.
+    """Update Param.
+    
+    Return default parameter, updated and complemented according to options.
 
     Parameters
     ----------
@@ -189,7 +190,9 @@ def update_param(p_def, options):
 
 
 def read_param_file(path, verbose=False):
-    """Return parameter list read from file
+    """Read Param File.
+    
+    Return parameter list read from file.
 
     Parameters
     ----------
@@ -242,7 +245,9 @@ def read_param_file(path, verbose=False):
                             
 
 def get_data(path, hdu_num, param_list):
-    """Return data of selected columns from FITS file.
+    """Get Data.
+    
+    Return data of selected columns from FITS file.
 
     Parameters
     ----------
@@ -355,7 +360,10 @@ def main(argv=None):
 
             d = np.concatenate((d, dd))
         except:
-            print(f'Error while adding file \'{fname}\', {len(dd)} objects not in final cat')
+            print(
+                f'Error while adding file \'{fname}\', {len(dd)} objects'
+                ' not in final cat'
+            )
 
     # Save merged catalogue as numpy binary file
     if param.verbose:

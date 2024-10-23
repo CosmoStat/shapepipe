@@ -7,6 +7,34 @@ possible applications of the package.
 Below will list the individuals who have contributed to the development of
 ShapePipe so far.
 
+```{figure} https://avatars.githubusercontent.com/u/6851839?v=4
+---
+figclass: margin
+alt: Samuel Farrens
+width: 25%
+target: https://github.com/sfarrens
+---
+Samuel Farrens
+```
+```{figure} https://avatars.githubusercontent.com/u/39480528?v=4
+---
+figclass: margin
+alt: Axel Guinot
+width: 25%
+target: https://github.com/aguinot
+---
+Axel Guinot
+```
+```{figure} https://avatars.githubusercontent.com/u/4549196?v=4
+---
+figclass: margin
+alt: Martin Kilbinger
+width: 25%
+target: https://github.com/martinkilbinger
+---
+Martin Kilbinger
+```
+
 ## Maintainers
 
 - [Samuel Farrens](https://github.com/sfarrens) : Development lead, core package developer, performance and debugging

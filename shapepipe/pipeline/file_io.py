@@ -10,6 +10,7 @@ import os
 
 import numpy as np
 from astropy.io import fits
+from astropy import units
 from astropy.table import Table
 
 
@@ -1548,7 +1549,7 @@ class FITSCatalogue(BaseCatalogue):
             col_type = 'D'
         elif type(col_data[0]) is bool:
             col_type = 'L'
-        elif type(col_data[0]) in [str, np.str, np.str_, np.str0]:
+        elif type(col_data[0]) in [str, np.str_, np.str0]:
             col_type = 'A'
         else:
             col_type = 'D'
@@ -1841,3 +1842,59 @@ class FITSCatalogue(BaseCatalogue):
         @data.setter
         def data(self, data):
             self._data = data
+
+
+def get_unit_from_fits_header(header, key):
+    """Get Unit From FITS Header.
+
+    Return coordinate unit corresponding to column with name ``key``.
+
+    Parameters
+    ----------
+    header : FITS header
+        Header information
+    key : str
+        Column name
+
+    Raises
+    ------
+    IndexError
+        If key not in header
+
+    Returns
+    -------
+    astropy.units.Unit
+        Unit object
+
+    """
+    # Loop over column names to find key
+    idx = 1
+    idx_found = -1
+    while True:
+        ttype_idx = f'TTYPE{idx}'
+        if ttype_idx not in header:
+            # Reached beyond last column
+            break
+        else:
+            if header[ttype_idx] == key:
+                # Found correct column
+                idx_found = idx
+                break
+        idx += 1
+
+    if idx_found == -1:
+        raise IndexError(f'Column \'{key}\' not found in FITS header')
+
+    # Extract coordinate unit string from header
+    tcunit_idx = f'TCUNI{idx}'
+    if tcunit_idx not in header:
+        raise IndexError(
+            f'No coordinate unit found for column \'{key}\''
+            ' in FITS header'
+        )
+    unit_str = header[tcunit_idx]
+
+    # Transform to Unit object
+    u = units.Unit(unit_str)
+
+    return u

@@ -26,7 +26,6 @@ import pylab as plt
 from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
 
 from astropy.io import fits
-from astropy.table import Table, Column
 from astropy import units
 from astropy.coordinates import Angle, SkyCoord
 

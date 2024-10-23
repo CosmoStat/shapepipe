@@ -14,13 +14,17 @@ This package contains the module for ``mask``.
 Description
 ===========
 
-This module creates masks for bright stars, diffraction spikes, Messier
-objects, borders, and other artifacts. If a flag file is given as input,
-for example from pre-processing, the mask that is created by this module
-is joined with the mask from this external flag file. In this case
-the config flag ``USE_EXT_FLAG`` needs to be set to ``True``. To distinguish
-the newly created output flag file from the input ones, a prefix can added as
-specificed by the config entry ``PREFIX``.
+This module creates masks for bright stars, diffraction spikes, deep sky
+objects (from the Messier and NGC catalogues), borders, and other artifacts. If
+a flag file is given as input, for example from pre-processing, the mask that
+is created by this module is joined with the mask from this external flag file.
+In this case the config flag ``USE_EXT_FLAG`` needs to be set to ``True``. To
+distinguish the newly created output flag file from the input ones, a prefix
+can added as specificed by the config entry ``PREFIX``.
+
+An NGC catalogue with positions, sizes, and types is provided with
+``shapepipe``,
+`source <http://www.klima-luft.de/steinicke/ngcic/rev2000/Explan.htm>`_.
 
 Masked pixels of different mask types are indicated by integers, which
 conveniently are powers of two such that they can be combined bit-wise.
@@ -59,6 +63,9 @@ PREFIX : str, optional
     Prefix to be appended to output file name ``flag``;
     helps to distinguish the file patterns of newly created and external
     mask files
+CHECK_EXISTING_DIR : str, optional
+    If given, search this directory for existing mask files; the
+    corresponding images will then not be processed
 
 Mask config file
 ================
@@ -136,6 +143,18 @@ MESSIER_SIZE_PLUS : float
     Fraction to increase Messier mask
 MESSIER_FLAG_VALUE : int
     Messier mask pixel value, power of 2
+
+[NGC_PARAMETERS]
+--------------------
+
+NGC_MAKE : bool
+    Create mask around NGC objects if ``True``
+NGC_CAT_PATH : str
+    Path to NGC catalogue
+NGC_SIZE_PLUS : float
+    Fraction to increase NGC mask
+NGC_FLAG_VALUE : int
+    NGC mask pixel value, power of 2
 
 [MD_PARAMETERS]
 ---------------

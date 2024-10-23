@@ -25,7 +25,7 @@ author = 'CosmoStat'
 # The short X.Y version
 version = '1.0'
 # The full version, including alpha/beta/rc tags
-release = '1.0.0'
+release = '1.0.1'
 
 
 # -- General configuration ---------------------------------------------------
@@ -113,7 +113,12 @@ html_theme_options = {
     'use_issues_button': True,
     'use_download_button': False,
     'use_fullscreen_button': False,
+    'use_edit_page_button': True,
+    'path_to_docs': 'docs/source',
+    'extra_navbar': "<p></p>",
 }
+html_collapsible_definitions = True
+html_awesome_headerlinks = True
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -153,4 +158,5 @@ intersphinx_mapping = {
 # -- BibTeX Setting  ----------------------------------------------
 
 bibtex_bibfiles = ['refs.bib']
-bibtex_default_style = 'alpha'
+bibtex_default_style = 'unsrt'
+bibtex_reference_style = 'author_year'

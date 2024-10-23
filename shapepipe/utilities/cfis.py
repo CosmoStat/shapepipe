@@ -6,19 +6,15 @@ CFIS module.
 
 """
 
-import errno
 import glob
 import os
 import re
-import shlex
 import sys
 
 import astropy.coordinates as coords
 import numpy as np
 import pylab as plt
-from astropy import units
 from astropy.io import ascii
-from astropy.wcs import WCS
 
 from shapepipe.utilities.file_system import mkdir
 
