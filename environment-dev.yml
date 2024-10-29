@@ -36,6 +36,6 @@ dependencies:
     - modopt>=1.6
     - sip_tpv>=1.1
     - sf_tools>=2.0.4
-    - git+https://github.com/CEA-COSMIC/pysap@develop
+    - python-pysap>=0.2.1
     - git+https://github.com/aguinot/ngmix@stable_version
     - git+https://github.com/tobias-liaudat/Stile@v0.1
