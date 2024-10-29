@@ -8,7 +8,8 @@ This module defines methods for handling the pipeline arguments.
 
 import argparse as ap
 
-from shapepipe.info import __version__, shapepipe_logo
+from shapepipe import __version__
+from shapepipe.info import shapepipe_logo
 from shapepipe.modules import __module_list__
 
 

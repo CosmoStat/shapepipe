@@ -8,12 +8,13 @@ This module sets up a given run of the shape measurement pipeline.
 
 import sys
 from datetime import datetime
+from importlib.metadata import requires
 
 from joblib import cpu_count
 from modopt.interface.errors import catch_error
 from modopt.interface.log import close_log, set_up_log
 
-from shapepipe.info import __installs__, line, shapepipe_logo
+from shapepipe.info import line, shapepipe_logo
 from shapepipe.pipeline.args import create_arg_parser
 from shapepipe.pipeline.config import create_config_parser
 from shapepipe.pipeline.dependency_handler import DependencyHandler
@@ -172,9 +173,9 @@ class ShapePipe():
         Check that all pipeline dependencies have been installed.
 
         """
-        module_dep = self._get_module_depends('depends') + __installs__
+        module_dep = self._get_module_depends('depends') + [dep.split()[0] for dep in requires("ShapePipe") if "extra ==" not in dep]
         module_exe = self._get_module_depends('executes')
-
+        
         module_dep += ['mpi4py'] if import_mpi else module_dep
 
         dh = DependencyHandler(module_dep, module_exe)
