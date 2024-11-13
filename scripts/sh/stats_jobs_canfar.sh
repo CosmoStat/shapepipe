@@ -21,6 +21,7 @@ SESSION=https://ws-uv.canfar.net/skaha/v0/session
 
 ## Default values
 mode="count"
+debug=0
 
 ## Help string
 usage="Usage: $(basename "$0") [OPTIONS]
@@ -28,6 +29,7 @@ usage="Usage: $(basename "$0") [OPTIONS]
    -h\tthis message\n
    -m, --mode MODE\n
    \tmode, allowed are 'count' (default), 'delete'\n
+   -d, --debug\n
 "
 
 ## Parse command line
@@ -40,6 +42,9 @@ while [ $# -gt 0 ]; do
     -m|--mode)
       mode="$2"
       shift
+      ;;
+    -d|--debug)
+      debug=1
       ;;
   esac
   shift
@@ -60,25 +65,31 @@ esac
 # Main program
 
 # Get all instances
-#echo curl -E $SSL $SESSION
-curl -E $SSL $SESSION &> /dev/null > $tmpfile_jobs
+if [ "$debug" == "1" ]; then
+  curl -E $SSL $SESSION
+  exit 0
+else
+  curl -E $SSL $SESSION &> /dev/null > $tmpfile_jobs
+fi
 res=$?
 
 if [ "$res" == "0" ]; then
+
+  # Get headless job IDs
+  cat $tmpfile_jobs | grep headless -B 4 -A 2 | grep Running -A 1 > $tmpfile_ids
+
   # Number of jobs
   n_headless=`cat $tmpfile_ids | grep Running | wc -l`
+
+  # Get running job info
+  cat $tmpfile_ids | grep name | perl -F\- -ane 'chomp; $F[4] =~ s/[",]//g; print "$F[3].$F[4]"' > $tmpfile_running
+
 else
-    # Failure: set to very high number
-    n_headless=10000
+
+  # Failure: set to very high number
+  n_headless=10000
+
 fi
-
-# Get headless job IDs
-#cat $tmpfile_jobs | grep headless -B 4 -A 12 | grep \"id | perl -F\" -ane 'print "$F[3]\n"' > $tmpfile_ids
-cat $tmpfile_jobs | grep headless -B 4 -A 2 | grep Running -A 1 > $tmpfile_ids
-
-
-# Get running job info
-cat $tmpfile_ids | grep name | perl -F\- -ane 'chomp; $F[4] =~ s/[",]//g; print "$F[3].$F[4]"' > $tmpfile_running
 
 
 if [ "$mode" == "count" ]; then
