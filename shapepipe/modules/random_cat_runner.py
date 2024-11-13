@@ -54,8 +54,8 @@ def random_cat_runner(
     )
     if save_mask_as_healpix:
         healpix_options = {}
-        for option_trunc in ["FILE_BASE", "NSIDE"]:
-            option = f"HEALPIX_OUT_{option_trunc}"
+        for option_trunc in ['FILE_BASE', 'OUT_NSIDE']:
+            option = f'HEALPIX_OUT_{option_trunc}'
             healpix_options[option_trunc] = config.get(
                 module_config_sec, option
             )

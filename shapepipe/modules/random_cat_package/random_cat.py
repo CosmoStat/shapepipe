@@ -72,16 +72,15 @@ class RandomCat:
         self._w_log = w_log
         self._healpix_options = healpix_options
 
-    def save_as_healpix(self, mask, header):
+    def save_as_healpix(self, hdu_mask, header):
         """Save As Healpix.
 
         Save mask as healpix FITS file.
 
         Parameters
         ----------
-        mask : numpy.ndarray
-            2D pixel mask image
-
+        hdu_mask : class HDUList
+            HDU with 2D pixel mask image
         header : class Header
             Image header with WCS information
 
@@ -89,25 +88,22 @@ class RandomCat:
         if not self._healpix_options:
             return
 
-        # Tranform config entry from str to int
-        nside = int(self._healpix_options["NSIDE"])
-
         mask_1d, footprint = reproject_to_healpix(
-            (mask, header),
-            "galactic",
-            nside=nside,
+            (hdu_mask, header),
+            'galactic',
+            nside=self._healpix_options['OUT_NSIDE']
         )
 
         t = Table()
-        t["flux"] = mask_1d
-        t.meta["ORDERING"] = "RING"
-        t.meta["COORDSYS"] = "G"
-        t.meta["NSIDE"] = nside
-        t.meta["INDXSCHM"] = "IMPLICIT"
+        t['flux'] = mask_1d
+        t.meta['ORDERING'] = 'RING'
+        t.meta['COORDSYS'] = 'G'
+        t.meta['NSIDE'] = self._healpix_options['OUT_NSIDE']
+        t.meta['INDXSCHM'] = 'IMPLICIT'
 
         output_path = (
-            f'{self._output_dir}/{self._healpix_options["FILE_BASE"]}-'
-            + f"{self._file_number_string}.fits"
+            f'{output_dir}/{self._healpix_options["FILE_BASE"]}-'
+            + f'{file_number_string}.fits'
         )
         t.write(output_path)
 
@@ -139,7 +135,7 @@ class RandomCat:
         mask = hdu_mask[0].data
 
         # Save mask in healpix format (if option is set)
-        self.save_as_healpix(mask, header)
+        self._save_as_healpix(hdu_mask, header)
 
         # Number of pixels
         n_pix_x = mask.data.shape[0]
@@ -215,8 +211,6 @@ class RandomCat:
         output_path = (
             f"{self._output_dir}/{self._output_file_pattern}-"
             + f"{self._file_number_string}.fits"
-        )
-        file_name = os.path.split(output_path)[1]
         file_base = os.path.splitext(file_name)[0]
         tile_ID_str = re.split("-", file_base)[1:]
         tile_id = float(".".join(tile_ID_str))
