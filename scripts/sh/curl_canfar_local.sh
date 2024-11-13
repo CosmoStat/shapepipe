@@ -6,6 +6,9 @@ SESSION=https://ws-uv.canfar.net/skaha/v0/session
 IMAGE=images.canfar.net/unions/shapepipe
 NAME=shapepipe
 
+# :TODO: Not working
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source $HOME/shapepipe/scripts/sh/functions.sh
 
 # Command line arguments
 
@@ -149,59 +152,24 @@ RESOURCES="ram=4&cores=$N_SMP"
 dir=`pwd`
 
 
-# Return argument for local script to be called via curl
-function set_arg() {
-  my_arg="-j $job -p $psf -e $ID -N $N_SMP $arg_dry_run -d $dir -m $mh_local --debug_out $debug_out"
-  echo $my_arg
-}
-
-
-function call_curl() {
-  my_name=$1
-  dry_run=$2
-
-  my_arg=$(set_arg)
-
-  if [ "$dry_run" == "0" ]; then
-
-    cp ~/sicher.pem ~/.ssl/cadcproxy.pem 
-    my_session=`curl -E $SSL "$SESSION?$RESOURCES" -d "image=$IMAGE:$version" -d "name=${my_name}" -d "cmd=$cmd_remote" --data-urlencode "args=${my_arg[@]}" &> /dev/null`
-  fi
-
-
-  cmd=("curl" "-E" "$SSL" "$SESSION?$RESOURCES" "-d" "image=$IMAGE:$version" "-d" "name=${my_name}" "-d" "cmd=$cmd_remote" "--data-urlencode" "args=\"${my_arg}\"")
-
-  if [ "$debug_out" != "-1" ]; then
-    echo "${pat}call_curl $my_name $my_arg" >> $debug_out
-    echo "${pat}Running ${cmd[@]} (dry_run=$dry_run)" >> $debug_out
-  fi
-  echo "${cmd[@]} (dry_run=$dry_run)"
-  cp ~/sicher.pem ~/.ssl/cadcproxy.pem 
-
-
-  # Running $cmd does not work due to unknown problems with passing of args
-
-  update_session_logs
-}
-
-# Add session and image IDs to log files
-function update_session_logs() {
-  echo $my_session >> session_IDs.txt
-  echo "$my_session $ID" >> session_image_IDs.txt
-
-}
-
 function submit_batch() {
   path=$1
+
+  # Paralle call of curl to speed up submission
+  #n_para=8
+  #cat $path | xargs -I {} -P $n_para bash -c '
+    #source $HOME/shapepipe/scripts/sh/functions.sh
+    #ID="{}"
+    #IDt=$(echo $ID | tr "." "-")
+    #my_name="SP-${patch}-J${job}-${IDt}"
+    #call_curl $my_name $dry_run $debug_out
+  #'
 
   for ID in `cat $path`; do
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-
-    call_curl $my_name $dry_run
-
+    call_curl $my_name $dry_run $debug_out
   done
-
 }
 
 batch=50
@@ -222,7 +190,7 @@ if [ "$dry_run" == 2 ]; then
     for ID in `cat $file_IDs`; do
       IDt=`echo $ID | tr "." "-"`
       my_name="SP-${patch}-J${job}-${IDt}"
-      call_curl $my_name $dry_run
+      call_curl $my_name $dry_run $debug_out
     done
 
   else
@@ -230,7 +198,7 @@ if [ "$dry_run" == 2 ]; then
     # Submit image (dry run = 2)
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $dry_run
+    call_curl $my_name $dry_run $debug_out
 
   fi
 
@@ -283,7 +251,7 @@ else
     # Submit image
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $dry_run
+    call_curl $my_name $dry_run $debug_out
 
   fi
 
