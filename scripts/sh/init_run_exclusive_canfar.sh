@@ -10,6 +10,7 @@ N_SMP=1
 dry_run=0
 dir=`pwd`
 debug_out=-1
+scratch=/scratch/`whoami`
 
 # mh_local is 0 (1) if merge_header_runner is run on all exposures,
 # which is standard so far (run on exposures of given tile only; new)
@@ -255,7 +256,10 @@ if [ ! -d "output" ]; then
   command "mkdir output" $dry_run
 fi
 
+ln -sf ~/shapepipe/example/cfis
+
 cd output
+
 
 if [ "$mh_local" == "0" ]; then
   if [ ! -f log_exp_headers.sqlite ]; then
@@ -300,7 +304,7 @@ if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
   command "rm -rf run_sp_exp_Sp*" $dry_run
 
   # Create new get_image dir
-  new_dir="run_sp_Gie/get_images_runner_run_2/output"
+  new_dir="run_sp_Gie/get_images_runner/output"
   command "rm -rf $new_dir" $dry_run
   command "mkdir -p $new_dir" $dry_run
 
@@ -309,28 +313,47 @@ if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
   # Remove HDU extension
   command "cd $new_dir" $dry_run
   exp_ID=$(echo "$ID" | sed 's/-[0-9]\{1,2\}//')
-  for file in $dir/output//run_sp_GitFeGie_20*/get_images_runner_run_2/output/*${exp_ID}* ; do
+  for file in $dir/output//run_sp_GitFeGie_20*/get_images_runner_run_2/output/*${exp_ID}.* ; do
     echo $file
     command "ln -s $file" $dry_run
   done
   command "cd ../../.." $dry_run
 
   # Run Sp
-  cd ..
+  command "cd .." $dry_run
+  if [ "$scratch" != "-1" ]; then
+    command "cd ../.." $dry_run
+    command "mkdir -p $scratch/exp_runs" $dry_run
+    pwd
+    command "cp -R exp_runs/$ID $scratch/exp_runs" $dry_run
+    command "cd $scratch/exp_runs/$ID" $dry_run
+  fi
   command "update_runs_log_file.py" $dry_run
   export SP_RUN=`pwd`
+
+
   command "shapepipe_run -c cfis/config_exp_Sp.ini -e $exp_ID" $dry_run
 
   # Only keep CCD of this ID 
   command "mkdir -p output/run_sp_exp_Sp_shdu/split_exp_runner/output" $dry_run
-  command "mv output/run_sp_exp_Sp/split_exp_runner/output/*$ID* output/run_sp_exp_Sp_shdu/split_exp_runner/output" $dry_run
+  command "mv output/run_sp_exp_Sp/split_exp_runner/output/*$ID.* output/run_sp_exp_Sp_shdu/split_exp_runner/output" $dry_run
   command "mv output/run_sp_exp_Sp/split_exp_runner/output/headers* output/run_sp_exp_Sp_shdu/split_exp_runner/output" $dry_run
   command "rm -rf output/run_sp_exp_Sp" $dry_run
+  if [ "$scratch" != "-1" ]; then
+    command "mv output/run_sp_exp_Sp_shdu $dir/exp_runs/$ID/output" $dry_run
+    command "cd .." $dry_run
+    command "rm -rf $ID" $dry_run
+    command "cd $dir" $dry_run
+  fi
   command "update_runs_log_file.py" $dry_run
   cd output
 
-  # Exception: Do not carry out actual job call
-  exit 0
+  if [ "$job" == "2" ]; then
+    exit 0
+  fi
+
+  # Revmove job=2 bit to avoid re-running of this job
+  job=$(( job & ~2 ))
 fi
 
 if [ "$mh_local" == "1" ]; then
