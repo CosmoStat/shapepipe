@@ -58,16 +58,42 @@ def set_jobs_v2_pre_v2(patch, verbose):
         verbose=verbose,
     )
 
-    jobs["2"] = job_data(
-        2,
-        ["run_sp_Uz", "run_sp_exp_SpMh", "run_sp_exp_SpMh"],
-        ["uncompress_fits_runner", "merge_headers_runner", "split_exp_runner"],
-        ["tile_IDs", 0, "exposures"],
-        n_mult=[1, 1, 121],
-        path_main=path_main,
-        path_left="output",
-        verbose=verbose,
-    )
+    if patch == "P8":
+        jobs["2"] = job_data(
+            2,
+            ["run_sp_Uz", "run_sp_exp_Sp_shdu"],
+            ["uncompress_fits_runner", "split_exp_runner"],
+            ["tile_IDs", "shdus"],
+            n_mult=[1, 3],
+            path_main=path_main,
+            path_left=["output", "exp_runs"],
+            output_subdirs=[None, "shdus"],
+            path_right=[None, "output"],
+            verbose=verbose,
+        )
+        jobs["4096"] = job_data(
+            4096,
+            ["run_sp_exp_Sp_shdu"],
+            ["split_exp_runner"],
+            ["shdus"],
+            n_mult=4,
+            path_main=path_main,
+            path_left="exp_runs",
+            output_subdirs="shdus",
+            path_right="output",
+            verbose=verbose,
+        )
+    else:
+        jobs["2"] = job_data(
+            2,
+            ["run_sp_Uz", "run_sp_exp_SpMh"],
+            ["uncompress_fits_runner",  "split_exp_runner"],
+            ["tile_IDs", "shdus"],
+            n_mult=[1,  121],
+            path_main=path_main,
+            path_left="output",
+            verbose=verbose,
+        )
 
     jobs["4"] = job_data(
         4,
@@ -79,15 +105,30 @@ def set_jobs_v2_pre_v2(patch, verbose):
         verbose=verbose,
     )
 
-    jobs["8"] = job_data(
-        8,
-        ["run_sp_Ma_exp"],
-        ["mask_runner"],
-        ["shdus"],
-        path_main=path_main,
-        path_left="output",
-        verbose=verbose,
-    )
+    if patch != "P8":
+        jobs["8"] = job_data(
+            8,
+            ["run_sp_Ma_exp"],
+            ["mask_runner"],
+            ["shdus"],
+            path_main=path_main,
+            path_left="output",
+            verbose=verbose,
+        )
+    else:
+        jobs["8"] = job_data(
+            8,
+            ["run_sp_exp_Ma"],
+            ["mask_runner"],
+            ["shdus"],
+            n_mult=[1],
+            path_main=path_main,
+            path_left="exp_runs",
+            output_subdirs= "shdus",
+            path_right="output",
+            verbose=verbose,
+        )
+
 
     jobs["16"] = job_data(
         16,
@@ -101,8 +142,6 @@ def set_jobs_v2_pre_v2(patch, verbose):
         verbose=verbose,
     )
 
-    # TODO 1 setools_runner output/rand_split
-    # TODO 2 add back Pi
     jobs["32"] = job_data(
         32,
         [
@@ -137,19 +176,6 @@ def set_jobs_v2_pre_v2(patch, verbose):
         special=[False, False, True, True, False],
         verbose=verbose,
     )
-
-    # For P3
-    # jobs["33"] = job_data(
-    #    33,
-    #    "run_sp_exp_Pi",
-    #    ["psfex_interp_runner"],
-    #    "shdus",
-    #    path_main=path_main,
-    #    path_left="exp_runs",
-    #    output_subdirs="shdus",
-    #    path_right="output",
-    #    verbose=verbose,
-    # )
 
     jobs["64"] = job_data(
         "64",

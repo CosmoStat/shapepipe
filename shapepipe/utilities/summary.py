@@ -484,11 +484,12 @@ class job_data(object):
         # Count image IDs in names that were found earlier
 
         # Get file name pattern
-        if module != "split_exp_runner":
+        if module != "split_exp_runner" or self._bit != "2":
             pattern = re.compile(r"(?:\d{3}-\d{3}|\d{7}-\d+|\d{7})")
         else:
-            # split_exp_runner: input is exp, output is shdu (images) and exp
-            # (header); ignore hdu number
+            # split_exp_runner with sp_local=0: input is exp, output is shdu
+            # (images) and exp (header); ignore hdu number.
+            # If sp_local=1 set bit to != 2
             pattern = re.compile(
                 r"(?:\d{3}-\d{3}|\d{7})"
             )
@@ -506,6 +507,8 @@ class job_data(object):
                 #raise ValueError(msg)
                 print(f"Warning: msg, continuing")
 
+        # For split_exp_runner P8, IDs now contain exps and sdus,
+        # not matching mult.
 
         ## Count occurences
         ID_counts = Counter(IDs)
