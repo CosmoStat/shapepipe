@@ -250,6 +250,9 @@ fi
 cd $ID
 pwd
 
+# Point cfis to local link, to be independent of platform
+ln -sf ~/shapepipe/examples/cfis
+
 
 if [ ! -d "output" ]; then
   command "mkdir output" $dry_run
