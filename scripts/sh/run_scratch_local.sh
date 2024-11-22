@@ -109,6 +109,16 @@ if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
 fi
 
 
+source $HOME/shapepipe/scripts/sh/functions.sh                                   
+
+
+kind=$(get_kind_from_job $job)
+echo $kind
+exit 0
+
+
+
+
 # Load common functions
 source $HOME/shapepipe/scripts/sh/functions.sh
 
@@ -123,7 +133,7 @@ if [ "$scratch" != "-1" ]; then
   if [ "$slurm" == "0" ]; then
     command "init_run_exclusive_canfar.sh -j $job -p $psf -m $mh_local -N $N_SMP -e $ID" $dry_run
   else
-    STATUS=$(sbatch --output=./sbatch-$ID.out --partition=comp --job-name="j${job}_${ID}" --ntasks-per-node=$N_SMP --time=4:00:00 --mem=64G $exec_path/init_run_exclusive_canfar.sh -j $job -p $psf -m $mh_local -N $N_SMP -e $ID)
+    STATUS=$(sbatch --output=./sbatch-$ID.out --partition=comp --job-name="j${job}_${ID}" --ntasks-per-node=$N_SMP --time=32:00:00 --mem=64G $exec_path/init_run_exclusive_canfar.sh -j $job -p $psf -m $mh_local -N $N_SMP -e $ID)
 
     JOB_ID=$(echo $STATUS | cut -d ' ' -f 4)
     echo "JOB_ID=$JOB_ID"
