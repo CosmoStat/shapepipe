@@ -34,7 +34,9 @@ usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    -m, --mh_local MH\n
-   \tmerged header file local (MH=0) or global (MH=1); default is $mh_local\n
+   \tmerge header file local (MH=1) or global (MH=0); default is $mh_local\n
+   -s, --sp_local SP\n
+   \tsplit local run local (SP=1) or global (SP=r0wwdefault is $sp_local\n
    -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default from original config files\n
    -d, --directory\n
@@ -74,6 +76,10 @@ while [ $# -gt 0 ]; do
       mh_local="$2"                                                                  
       shift                                                                     
       ;; 
+    -s|--sp_local)
+      sp_local="$2"
+      shift
+      ;;
     -N|--N_SMP)                                                                 
       N_SMP="$2"                                                                
       shift                                                                     
@@ -114,6 +120,11 @@ if [ "$mh_local" != "0" ] && [ "$mh_local" != "1" ]; then
   exit 5
 fi
 
+if [ "$sp_local" != "0" ] && [ "$sp_local" != "1" ]; then
+  echo "sp_local (option -m) needs to be 0 or 1"
+  exit 6
+fi
+
 
 # Start script
 
@@ -140,7 +151,7 @@ if [ "$dry_run" == 1 ]; then
   echo "in dry run mode"
 fi
 
-CONDA_PREFIX=/arc/home/kilbinger/.conda/envs/shapepipe
+CONDA_PREFIX=$HOME/.conda/envs/shapepipe
 PATH=$PATH:$CONDA_PREFIX/bin
 if [ "$debug_out"  != "-1" ]; then
     echo "${pat}conda prefix = ${CONDA_PREFIX}" >> $debug_out

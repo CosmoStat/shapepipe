@@ -133,3 +133,4 @@ dmypy.json
 # Ignore example output
 *shapepipe_run_*
 *shapepipe_runs*
+code

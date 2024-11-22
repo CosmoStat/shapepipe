@@ -216,12 +216,8 @@ def main(argv=None):
     # Get latest run
     last_dir = paths[-1]
 
-<<<<<<< HEAD
     # Get all output SExtractor catalogues
-    file_list = glob.glob(f'{last_dir}/{pattern}*.fits')
-=======
     file_list = glob.glob(f"{last_dir}/{pattern}*.fits")
->>>>>>> origin/v1.4
     if len(file_list) == 0:
         raise ValueError(f"No files {last_dir}/{pattern}*.fits found")
 

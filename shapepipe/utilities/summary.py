@@ -198,6 +198,13 @@ def check_special_one(module, path):
                     msg = "found array of size 0"
                     return msg, code
 
+            if module == "mask_runner":
+                m = re.search("Empty or corrupt FITS file", line)
+                if m:
+                    code = 4
+                    msg = "empty or corrult FITS file"
+                    return msg, code
+
 
     return None, None 
 
