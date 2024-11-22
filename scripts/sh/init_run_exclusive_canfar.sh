@@ -125,52 +125,11 @@ if [ "$sp_local" != "0" ] && [ "$sp_local" != "1" ]; then
   exit 6
 fi
 
-# Functions
 
-## Print string, executes command, and prints return value.
-function command () {
-   cmd=$1
-   dry_run=$2
+# Start script
 
-   RED='\033[0;31m'
-   GREEN='\033[0;32m'
-   NC='\033[0m' # No Color
-   # Color escape characters show up in log files
-   #RED=''
-   #GREEN=''
-   #NC=''
+source $HOME/shapepipe/scripts/sh/functions.sh                                   
 
-   msg="running '$cmd' (dry run=$dry_run)"
-   if [ $VERBOSE == 1 ]; then
-        echo $msg
-   fi
-   if [ "$debug_out" != "-1" ]; then
-        echo ${pat}$msg >> $debug_out
-   fi
-
-   if [ "$dry_run" == "0" ]; then
-        $cmd
-        res=$?
-    
-        if [ "$debug_out" != "-1" ]; then
-          echo "${pat}exit code = $res" >> $debug_out
-        fi
-
-        if [ $VERBOSE == 1 ]; then
-            if [ $res == 0 ]; then
-              echo -e "${GREEN}success, return value = $res${NC}"
-            else
-              echo -e "${RED}error, return value = $res${NC}"
-              if [ $STOP == 1 ]; then
-                  echo "${RED}exiting  $(basename "$0")', error in command '$cmd'${NC}"
-                  exit $res
-              else
-                  echo "${RED}continuing '$(basename "$0")', error in command '$cmd'${NC}"
-              fi
-            fi
-        fi
-   fi
-}
 
 msg="Starting $(basename "$0")"
 echo $msg
@@ -262,12 +221,13 @@ fi
 cd $ID
 pwd
 
+# Point cfis to local link, to be independent of platform
+ln -sf ~/shapepipe/example/cfis
+
 
 if [ ! -d "output" ]; then
   command "mkdir output" $dry_run
 fi
-
-ln -sf ~/shapepipe/example/cfis
 
 cd output
 
