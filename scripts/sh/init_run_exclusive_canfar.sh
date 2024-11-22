@@ -212,7 +212,7 @@ while  [ $job_to_test -le 1024 ]; do
 
   fi
 
-  # Multiply job number by two to get next biwise number
+  # Multiply job number by two to get next bitwise number
   job_to_test=$((job_to_test * 2))
 done
 
@@ -226,7 +226,7 @@ if [ "$dry_run" == 1 ]; then
   echo "in dry run mode"
 fi
 
-CONDA_PREFIX=/arc/home/kilbinger/.conda/envs/shapepipe
+CONDA_PREFIX=$HOME/.conda/envs/shapepipe
 PATH=$PATH:$CONDA_PREFIX/bin
 if [ "$debug_out"  != "-1" ]; then
     echo "${pat}conda prefix = ${CONDA_PREFIX}" >> $debug_out
