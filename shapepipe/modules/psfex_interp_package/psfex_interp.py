@@ -600,7 +600,22 @@ class PSFExInterpolator(object):
 
         final_list = []
         for hdu_index in hdu_ind:
-            exp_name = cat.get_data(hdu_index)["EXP_NAME"][0]
+            data = cat.get_data(hdu_index)
+            self._w_log.info(data)
+
+            # Read exposure name. Since each input HDU corresponds to one
+            # exposure, they are identical in each colum.
+            exp_names = data["EXP_NAME"]
+
+            # Continue if empty (no objected detected from this exposure)
+            if len(exp_names) == 0:
+                self._w_log.info(
+                    "No object detected from exp {exp_name}, hdu #{hdu_index}"
+                )
+                continue
+
+            exp_name = exp_names[0]
+            #exp_name = cat.get_data(hdu_index)["EXP_NAME"][0]
             ccd_list = list(set(cat.get_data(hdu_index)["CCD_N"]))
             array_psf = None
             array_id = None

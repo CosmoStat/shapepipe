@@ -34,7 +34,9 @@ usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
    -p, --psf MODEL\n
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    -m, --mh_local MH\n
-   \tmerged header file local (MH=0) or global (MH=1); default is $mh_local\n
+   \tmerge header file local (MH=1) or global (MH=0); default is $mh_local\n
+   -s, --sp_local SP\n
+   \tsplit local run local (SP=1) or global (SP=r0wwdefault is $sp_local\n
    -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default from original config files\n
    -d, --directory\n
@@ -74,6 +76,10 @@ while [ $# -gt 0 ]; do
       mh_local="$2"                                                                  
       shift                                                                     
       ;; 
+    -s|--sp_local)
+      sp_local="$2"
+      shift
+      ;;
     -N|--N_SMP)                                                                 
       N_SMP="$2"                                                                
       shift                                                                     
@@ -114,52 +120,16 @@ if [ "$mh_local" != "0" ] && [ "$mh_local" != "1" ]; then
   exit 5
 fi
 
-# Functions
+if [ "$sp_local" != "0" ] && [ "$sp_local" != "1" ]; then
+  echo "sp_local (option -m) needs to be 0 or 1"
+  exit 6
+fi
 
-## Print string, executes command, and prints return value.
-function command () {
-   cmd=$1
-   dry_run=$2
 
-   RED='\033[0;31m'
-   GREEN='\033[0;32m'
-   NC='\033[0m' # No Color
-   # Color escape characters show up in log files
-   #RED=''
-   #GREEN=''
-   #NC=''
+# Start script
 
-   msg="running '$cmd' (dry run=$dry_run)"
-   if [ $VERBOSE == 1 ]; then
-        echo $msg
-   fi
-   if [ "$debug_out" != "-1" ]; then
-        echo ${pat}$msg >> $debug_out
-   fi
+source $HOME/shapepipe/scripts/sh/functions.sh                                   
 
-   if [ "$dry_run" == "0" ]; then
-        $cmd
-        res=$?
-    
-        if [ "$debug_out" != "-1" ]; then
-          echo "${pat}exit code = $res" >> $debug_out
-        fi
-
-        if [ $VERBOSE == 1 ]; then
-            if [ $res == 0 ]; then
-              echo -e "${GREEN}success, return value = $res${NC}"
-            else
-              echo -e "${RED}error, return value = $res${NC}"
-              if [ $STOP == 1 ]; then
-                  echo "${RED}exiting  $(basename "$0")', error in command '$cmd'${NC}"
-                  exit $res
-              else
-                  echo "${RED}continuing '$(basename "$0")', error in command '$cmd'${NC}"
-              fi
-            fi
-        fi
-   fi
-}
 
 msg="Starting $(basename "$0")"
 echo $msg
@@ -251,12 +221,13 @@ fi
 cd $ID
 pwd
 
+# Point cfis to local link, to be independent of platform
+ln -sf ~/shapepipe/example/cfis
+
 
 if [ ! -d "output" ]; then
   command "mkdir output" $dry_run
 fi
-
-ln -sf ~/shapepipe/example/cfis
 
 cd output
 
