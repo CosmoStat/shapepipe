@@ -113,10 +113,6 @@ source $HOME/shapepipe/scripts/sh/functions.sh
 
 
 kind=$(get_kind_from_job $job)
-echo $kind
-exit 0
-
-
 
 
 # Load common functions
@@ -126,8 +122,9 @@ source $HOME/shapepipe/scripts/sh/functions.sh
 # Start script
 
 if [ "$scratch" != "-1" ]; then
-  command "mkdir -p $scratch/exp_runs" $dry_run
-  command "cp -R exp_runs/$ID $scratch/exp_runs" $dry_run                     
+
+  command "mkdir -p $scratch/${kind}_runs" $dry_run
+  command "cp -R ${kind}_runs/$ID $scratch/${kind}_runs" $dry_run                     
   command "cd $scratch" $dry_run
 
   if [ "$slurm" == "0" ]; then
@@ -154,13 +151,17 @@ if [ "$scratch" != "-1" ]; then
   fi
 
   if [ "$job" == "32" ]; then
-    command "mv exp_runs/$ID/output/run_sp_exp_SxSe* $dir/exp_runs/$ID/output" $dry_run
-    command "rm -rf exp_runs/$ID" $dry_run
-    command "cd $dir/exp_runs/$ID" $dry_run
-    # Gave Input/Output python error
-    #command "update_runs_log_file.py" $dry_run
-    command "cd $dir" $dry_run
+    command "mv ${kind}_runs/$ID/output/run_sp_exp_SxSe* $dir/${kind}_runs/$ID/output" $dry_run
+  elif [ "$job" == "64" ]; then
+    command "mv ${kind}_runs/$ID/output/run_sp_tile_PsViSm** $dir/${kind}_runs/$ID/output" $dry_run
   fi
+
+  command "rm -rf ${kind}_runs/$ID" $dry_run
+  command "cd $dir/${kind}_runs/$ID" $dry_run
+  # Gave Input/Output python error
+  #command "update_runs_log_file.py" $dry_run
+  command "cd $dir" $dry_run
+
 fi
 
 exit 0

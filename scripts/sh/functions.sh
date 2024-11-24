@@ -149,3 +149,4 @@ function get_kind_from_job() {
   done
 
   echo $kind
+}
