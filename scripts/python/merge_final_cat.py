@@ -188,6 +188,7 @@ def update_param(p_def, options):
     return param
 
 
+# MKDEBUG TODO: remove this function, duplicate in create_final_cat.py
 def read_param_file(path, verbose=False):
     """Read Param File.
 

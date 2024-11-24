@@ -295,32 +295,37 @@ class Ngmix(object):
 
         return output_dict
 
-    def save_results(self, output_dict):
+    def save_results(self, output_dict, f_out=None):
         """Save Results.
 
         Save the results into a FITS file.
 
         Parameters
         ----------
-        output_dict
+        output_dict: dict
             Dictionary containing the results
+        f_out: file handler, optional
+            Output file handler; if ``Null`` (default), open in write mode
 
         """
-        output_name = f"{self._output_dir}/ngmix{self._file_number_string}.fits"
-
-        f = file_io.FITSCatalogue(
-            output_name, open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
-        )
-
         n_hdu = len(output_dict.keys())
         if n_hdu != 5:
             raise IndexError(
                 f"FITS output file data has {n_hdu} HDUs,"
                 + " expected are 5"
             )
-        for key in output_dict.keys():
-            f.save_as_fits(output_dict[key], ext_name=key.upper())
 
+        if f_out is None:
+            output_name = (
+                f"{self._output_dir}/ngmix{self._file_number_string}.fits"
+            )
+            f_out = file_io.FITSCatalogue(
+                output_name, open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
+            )
+        for key in output_dict.keys():
+            f_out.save_as_fits(output_dict[key], ext_name=key.upper())
+
+        return f_out
 
     @classmethod
     def check_key(self, expccd_name_tmp, vign_cat, vignet_path):
@@ -366,6 +371,15 @@ class Ngmix(object):
         count = 0
         id_first = -1
         id_last = -1
+        save_batch = 1000
+        saved_batch_cumul = 0
+        count_batch = 0
+        f_out = None
+
+        if save_batch > 0:
+            self._w_log.info(f"Batch save mode, save every {save_batch} objectsa")
+        else:
+            self._w_log.info(f"No batch mode")
 
         self._w_log.info(f"Processing objects # {self._id_obj_min} ... {self._id_obj_max}")
         for i_tile, id_tmp in enumerate(obj_id):
@@ -493,10 +507,31 @@ class Ngmix(object):
                 continue
 
             count = count + 1
+            count_batch = count_batch + 1
+
 
             res["obj_id"] = id_tmp
             res["n_epoch_model"] = len(gal_vign)
             final_res.append(res)
+
+            if count_batch == save_batch:
+
+                # Put batch results together
+                res_dict = self.compile_results(final_res)
+                
+                # Save batch to disk
+                f_out = self.save_results(res_dict, f_out)
+
+                saved_batch_cumul += count_batch
+
+                self._w_log.info(
+                    f"Batch-saved {count_batch} ({len(res_dict}) objects to"
+                    + f" file, cumul={save_batch_cumul}"
+                )
+
+                # Reset for next batch
+                final_res = []
+                count_batch = 0
 
         self._w_log.info(
             f"ngmix loop over objects finished, measured {count} "
@@ -515,6 +550,10 @@ class Ngmix(object):
 
         # Save results
         self.save_results(res_dict)
+
+        self._w_log.info(
+            f"Saved {count} ({len(res_dict}) objects to file"
+        )
 
 
 def get_guess(

@@ -1188,7 +1188,15 @@ class Mask(object):
             external_flag.open()
             if final_mask is not None:
                 final_mask = final_mask.astype(np.int16, copy=False)
-                final_mask += external_flag.get_data()[:, :]
+                try:
+                    ext_flag = external_flag.get_data()
+                except:
+                    print(
+                        "Problem while getting external flag data. Check"
+                        + f" whether file {path_external_flag} is not corrupt"
+                    )
+                    raise
+                final_mask += ext_flag[:, :]
             else:
                 final_mask = external_flag.get_data()[:, :]
             external_flag.close()
