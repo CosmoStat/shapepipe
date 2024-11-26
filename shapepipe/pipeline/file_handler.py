@@ -996,12 +996,17 @@ class FileHandler(object):
         """
         num_pattern_list = [np.load(mmap, mmap_mode="r") for mmap in mmap_list]
 
-        np.save(
-            output_file,
-            reduce(
-                partial(np.intersect1d, assume_unique=True), num_pattern_list
-            ),
-        )
+        num_pattern_intersect = reduce(
+            partial(np.intersect1d, assume_unique=True), num_pattern_list
+         )
+        if len(num_pattern_intersect) == 0:
+            msg = (
+                "Found numbers corresponding to the different input patterns"
+                + f" do not intersect: {[n[0] for n in num_pattern_list]}"
+            )
+            raise ValueError(msg)
+
+        np.save(output_file, num_pattern_intersect)
 
         del num_pattern_list
 
@@ -1076,7 +1081,7 @@ class FileHandler(object):
 
         Returns
         -------
-        list
+
             List of processes
 
         """
@@ -1086,6 +1091,12 @@ class FileHandler(object):
             number_list = np.load(memory_map, mmap_mode="r")
         else:
             number_list = self._number_list
+
+        if len(number_list) == 0:
+            msg = "Empty number list"
+            msg = f"{msg}. Class variable self._number_list is None"
+            msg = f"{msg}. And memory map {memory_map} is empty."
+            raise ValueError(msg)
 
         process_list = []
 
