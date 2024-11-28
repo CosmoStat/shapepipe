@@ -480,7 +480,7 @@ if [[ $do_job != 0 ]]; then
 
   n_max=$((nsh_step - 1))
   for k in $(seq 1 $nsh_jobs); do
-    cat $SP_CONFIG/config_tile_Ng_template.ini | \
+    cat $SP_CONFIG/config_tile_Ng_template_batch.ini | \
       perl -ane \
         's/(ID_OBJ_MIN =) X/$1 '$n_min'/; s/(ID_OBJ_MAX =) X/$1 '$n_max'/; s/NgXu/Ng'$k'u/; s/X_interp/'$psf'_interp/g; print' \
         > $SP_CONFIG_MOD/config_tile_Ng${k}u.ini
