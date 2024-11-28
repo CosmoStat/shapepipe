@@ -10,7 +10,10 @@ N_SMP=1
 dry_run=0
 dir=`pwd`
 debug_out=-1
-scratch=/scratch/`whoami`
+scratch=-1
+fix=0
+# On canfar:
+#scratch=/scratch/`whoami`
 
 # mh_local is 0 (1) if merge_header_runner is run on all exposures,
 # which is standard so far (run on exposures of given tile only; new)
@@ -41,6 +44,10 @@ usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
     \tnumber of jobs (SMP mode only), default from original config files\n
    -d, --directory\n
     \trun directory, default is pwd ($dir)\n
+   -S, --scratch\n
+    \tprocessing scratch directory, default is None ($scratch)\n
+   -f, --fix\n
+    \tfix missing data (re-download tile, unzip)\
    -n, --dry_run\n
     \tdry run, no actuall processing\n
    --debug_out PATH\n
@@ -88,8 +95,15 @@ while [ $# -gt 0 ]; do
       dir="$2"
       shift
       ;;
+    -S|--scratch)
+      scratch="$2"
+      shift
+      ;;
     -n|--dry_run)
       dry_run=1
+      ;;
+    -f|--fix)
+      fix=1
       ;;
     --debug_out)
       debug_out="$2"
@@ -123,6 +137,15 @@ fi
 if [ "$sp_local" != "0" ] && [ "$sp_local" != "1" ]; then
   echo "sp_local (option -m) needs to be 0 or 1"
   exit 6
+fi
+
+if [ "$patch" != "P8" ] && [ "$sp_local" == "1" ]; then
+  echo "sp_local=1 only used for patch P8"
+  exit 7
+fi
+if [ "$patch" != "P8" ] && [ "$mh_local" == "1" ]; then
+  echo "mh_local=1 only used for patch P8"
+  exit 8
 fi
 
 
@@ -211,6 +234,56 @@ if [ ! -d ${kind}_runs ]; then
   command "mkdir ${kind}_runs" $dry_run
 fi
 
+if [ "$fix" == "1" ]; then
+  echo "Fixing missing data"
+
+  echo "Download tile images"
+  cd data_tiles
+  file_name=CFIS.$ID.r.fits
+  if [ ! -e $file_name ]; then
+    echo "Downloading $file_name"
+    vcp vos:cfis/tiles_DR5/$file_name .
+  else
+    echo "File $file_name exists, skipping"
+  fi
+  file_name=CFIS.$ID.r.weight.fits.fz
+  if [ ! -e $file_name ]; then
+    echo "Downloading $file_name"
+    vcp vos:cfis/tiles_DR5/$file_name .
+  else
+    echo "File $file_name exists, skipping"
+  fi
+  cd ..
+
+  echo "link to tiles"
+  cd output/run_sp_GitFeGie_202*/get_images_runner_run_1/output
+  IDt=`echo $ID | tr "." "-"`
+  path_tiles=/arc/home/kilbinger/cosmostat/v2/pre_v2/$psf/$patch/data_tiles
+  link_name=CFIS_image-$IDt.fits
+  if [ ! -e $link_name ]; then
+    echo "Creating link $link_name"
+    ln -s $path_tiles/CFIS.$ID.r.fits $link_name
+  else
+    echo "Link $link_name exists, skipping"
+  fi
+
+  link_name=CFIS_weight-$IDt.fitsfz
+  if [ ! -e $link_name ]; then
+    echo "Creating link $link_name"
+    ln -s $path_tiles/CFIS.$ID.r.weight.fits.fz $link_name
+  else
+    echo "Link $link_name exists, skipping"
+  fi
+
+  echo "Unzip weight"
+  cd ../../../..
+  cd  tile_runs/$ID
+  export SP_RUN=`pwd`
+  shapepipe_run -c cfis/config_tile_Uz.ini -e $ID
+
+  cd $dir
+fi
+
 
 cd ${kind}_runs
 
@@ -241,8 +314,9 @@ if [ "$mh_local" == "0" ]; then
 fi
 
 
-# Update links to global run directories (GiFeGie, Uz)
-for my_dir in $dir/output/run_sp_[GU]*; do
+# Update links to global run directories (GiFeGie)
+# New: 27/11/2024: Remove link to Uz, conflict with fix
+for my_dir in $dir/output/run_sp_[G]*; do
   command "ln -sf $my_dir" $dry_run
 done
 
@@ -301,8 +375,6 @@ if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
   fi
   command "update_runs_log_file.py" $dry_run
   export SP_RUN=`pwd`
-
-
   command "shapepipe_run -c cfis/config_exp_Sp.ini -e $exp_ID" $dry_run
 
   # Only keep CCD of this ID 
@@ -436,7 +508,31 @@ echo $CONDA_PREFIX
 # To avoid (new?) qt error with setools (-j 32)
 export DISPLAY=:1.0
 
+
+if [ "$scratch" != "-1" ]; then
+  # Copy inputs to scratch
+  command "mkdir -p $scratch/${kind}_runs" $dry_run
+  command "cp -R ${kind}_runs/$ID $scratch/${kind}_runs" $dry_run
+  command "cd $scratch" $dry_run
+fi
+
 command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP --nsh_jobs $N_SMP --debug_out $debug_out" $dry_run
+
+if [ "$scratch" != "-1" ]; then
+  if [ "$job" == "32" ]; then                                                   
+    command "mv ${kind}_runs/$ID/output/run_sp_exp_SxSe* $dir/${kind}_runs/$ID/output" $dry_run
+  elif [ "$job" == "64" ]; then                                                 
+    command "mv ${kind}_runs/$ID/output/run_sp_tile_PsViSm** $dir/${kind}_runs/$ID/output" $dry_run
+  else
+    echo "scratch mode with job=$job not implemented yet, exiting..."
+    exit 8
+  fi 
+
+  command "rm -rf ${kind}_runs/$ID" $dry_run
+  command "cd $dir/${kind}_runs/$ID" $dry_run
+  command "update_runs_log_file.py" $dry_run
+  command "cd $dir" $dry_run
+fi
 
 cd $dir
 
