@@ -7,10 +7,12 @@ This module contains a class for ngmix shape measurement.
 """
 
 import re
+import os
 
 import galsim
 import ngmix
 import numpy as np
+from shutil import copyfile
 from astropy.io import fits
 from modopt.math.stats import sigma_mad
 from ngmix.fitting import LMSimple
@@ -42,6 +44,11 @@ class Ngmix(object):
         Path to merged single-exposure single-HDU headers
     w_log : logging.Logger
         Logging instance
+    check_existing_dir : str, optional
+        Directory or previous run, default is ``None``
+    save_batch : int, optional
+        Save output catalogue in batches of this size; detaul is ``-1`` (no
+        batch save)
     id_obj_min : int, optional
         First galaxy ID to process, not used if the value is set to ``-1``;
         the default is ``-1``
@@ -65,6 +72,8 @@ class Ngmix(object):
         pixel_scale,
         f_wcs_path,
         w_log,
+        check_existing_dir=None,
+        save_batch=-1,
         id_obj_min=-1,
         id_obj_max=-1,
     ):
@@ -89,6 +98,9 @@ class Ngmix(object):
         self._pixel_scale = pixel_scale
 
         self._f_wcs_path = f_wcs_path
+
+        self._check_existing_dir = check_existing_dir
+        self._save_batch = save_batch
         self._id_obj_min = id_obj_min
         self._id_obj_max = id_obj_max
 
@@ -295,7 +307,72 @@ class Ngmix(object):
 
         return output_dict
 
-    def save_results(self, output_dict, f_out=None):
+    def get_output_path(self, directory):
+        """Get Output Path.
+
+        Return path of output ngmix catalogue file.
+
+        Parameters
+        ----------
+        directoy: str
+            directory name
+
+        Returns
+        -------
+        str
+            output path
+
+        """
+        return f"{directory}/ngmix{self._file_number_string}.fits"
+
+
+    def get_last_id(self, cat_path):
+        """Get Last ID.
+
+        Return ID of last projessed objects found in input catalogue file.
+
+        Parameters
+        ----------
+        cat_path: str
+            input catalogue file path
+
+        Returns
+        --------
+        int
+            object ID
+
+        """
+        cat = file_io.FITSCatalogue(
+            cat_path,
+            SEx_catalogue=True,
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadOnly,
+        )
+        cat.open()
+
+        if len(cat._cat_data) != 6:
+            raise IndexError(
+                f"Found {len(cat._cat_data)} HDUs instead of 6 in catalogue"
+                + f" {cat_path}"
+            )
+
+        ids = cat._cat_data[1].data["id"]
+
+        # No object foun
+        if len(ids) == 0:
+            return -1
+
+        id_last = ids[-1]
+        for hdu_no in range(2, 6):
+            if id_last != cat._cat_data[hdu_no].data["id"][-1]:
+                raise ValueError(
+                    "Last ID {cat._cat_data[hdu_no].data['id'][-1]} in HDU"
+                    + f" #{hdu_no} inconsistent with {id_las}"
+                )
+
+        return id_last
+
+
+    def save_results(self, output_dict):
         """Save Results.
 
         Save the results into a FITS file.
@@ -304,8 +381,6 @@ class Ngmix(object):
         ----------
         output_dict: dict
             Dictionary containing the results
-        f_out: file handler, optional
-            Output file handler; if ``Null`` (default), open in write mode
 
         """
         n_hdu = len(output_dict.keys())
@@ -315,17 +390,64 @@ class Ngmix(object):
                 + " expected are 5"
             )
 
-        if f_out is None:
-            output_name = (
-                f"{self._output_dir}/ngmix{self._file_number_string}.fits"
-            )
+        output_name = self.get_output_path(self._output_dir)
+        if not os.path.exists(output_name):
             f_out = file_io.FITSCatalogue(
                 output_name, open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
             )
-        for key in output_dict.keys():
-            f_out.save_as_fits(output_dict[key], ext_name=key.upper())
+            for key in output_dict.keys():
+                f_out.save_as_fits(output_dict[key], ext_name=key.upper())
+            return
 
-        return f_out
+        with fits.open(output_name, mode='update') as hdul:
+
+            # Iterate through HDUs (assuming they are Binary Table HDUs with data)
+            for idx, hdu in enumerate(hdul):
+                if isinstance(hdu, fits.BinTableHDU):  # Check for table data
+
+                    # HDU extension name
+                    ext_name = hdu.name.lower()
+                    if ext_name not in output_dict:
+                        raise ValueError(
+                            "HDU extension {ext_name} from existing FITS file"
+                            + f" not found in data"
+                        )
+
+                    # Existing data
+                    existing_data = hdu.data
+                    existing_dtype = hdu.data.dtype
+
+                    # New data
+                    new_data = output_dict[ext_name]
+
+                    # Verify that all column names in existing_data exist
+                    # in new_data_dict
+                    if not all(
+                        colname in new_data
+                        for colname in existing_dtype.names
+                    ):
+                        print("output_dict", [col for col in new_data])
+                        print("existing_da", existing_data.dtype.names)
+                        raise ValueError(
+                            "Mismatch between existing columns and new data columns."
+                        )
+
+                    # New data to be appended
+                    structured_data = np.zeros(
+                        len(next(iter(new_data.values()))),
+                        dtype=existing_data.dtype,
+                    )
+                    for colname in existing_data.dtype.names:
+                        structured_data[colname] = new_data[colname]
+
+                    # Combine existing and new data
+                    updated_data = np.append(existing_data, structured_data)
+
+                    # Update the data in the HDU
+                    hdu.data = updated_data
+
+            # Save changes to the FITS file
+            hdul.flush()
 
     @classmethod
     def check_key(self, expccd_name_tmp, vign_cat, vignet_path):
@@ -371,22 +493,46 @@ class Ngmix(object):
         count = 0
         id_first = -1
         id_last = -1
-        save_batch = 1000
+
         saved_batch_cumul = 0
         count_batch = 0
-        f_out = None
 
-        if save_batch > 0:
-            self._w_log.info(f"Batch save mode, save every {save_batch} objectsa")
+        if self._save_batch > 0:
+            self._w_log.info(
+                f"Batch save mode, save every {self._save_batch} objectsa"
+            )
         else:
             self._w_log.info(f"No batch mode")
 
-        self._w_log.info(f"Processing objects # {self._id_obj_min} ... {self._id_obj_max}")
+        id_last = -1
+        if self._check_existing_dir:
+            output_path_prev = self.get_output_path(self._check_existing_dir)
+            output_name_new = self.get_output_path(self._output_dir)
+            if os.path.exists(output_path_prev):
+                self._w_log.info(
+                    f"Copy previous cat {output_path_prev} to {output_name_new}"
+                )
+                copyfile(output_path_prev, output_name_new)
+                id_last = self.get_last_id(output_name_new)
+            else:
+                self._w_log.info(
+                    f"No previous cat found in {self._check_existing_dir},"
+                    + " starting from scratch"
+                )
+
+        self._w_log.info(
+            f"Processing objects # {self._id_obj_min} ... {self._id_obj_max}"
+        )
         for i_tile, id_tmp in enumerate(obj_id):
 
+            # Continue if ID outside range of predefined IDs (in config file)
             if self._id_obj_min > 0 and id_tmp < self._id_obj_min:
                 continue
             if self._id_obj_max > 0 and id_tmp > self._id_obj_max:
+                continue
+
+            # Continue if ID before last ID from previous run
+            if id_last > 0 and id_tmp < id_last:
                 continue
 
             if id_first == -1:
@@ -514,19 +660,19 @@ class Ngmix(object):
             res["n_epoch_model"] = len(gal_vign)
             final_res.append(res)
 
-            if count_batch == save_batch:
+            if count_batch == self._save_batch:
 
                 # Put batch results together
                 res_dict = self.compile_results(final_res)
                 
                 # Save batch to disk
-                f_out = self.save_results(res_dict, f_out)
+                self.save_results(res_dict)
 
                 saved_batch_cumul += count_batch
 
                 self._w_log.info(
-                    f"Batch-saved {count_batch} ({len(res_dict}) objects to"
-                    + f" file, cumul={save_batch_cumul}"
+                    f"Batch-saved {count_batch} ({len(res_dict)} valid) objects to"
+                    + f" file, cumul={saved_batch_cumul}"
                 )
 
                 # Reset for next batch
@@ -552,7 +698,7 @@ class Ngmix(object):
         self.save_results(res_dict)
 
         self._w_log.info(
-            f"Saved {count} ({len(res_dict}) objects to file"
+            f"Saved {count} ({len(res_dict)}) objects to file"
         )
 
 

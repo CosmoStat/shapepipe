@@ -48,6 +48,25 @@ def ngmix_runner(
     # Path to merged single-exposure single-HDU headers
     f_wcs_path = config.getexpanded(module_config_sec, "LOG_WCS")
 
+    # Input directory to check for already retrieved files
+    if config.has_option(module_config_sec, "CHECK_EXISTING_DIR"):
+        check_existing_dir = config.getexpanded(
+            module_config_sec,
+            "CHECK_EXISTING_DIR",
+        )
+    else:
+        check_existing_dir = None
+
+    # Batch save option
+    if config.has_option(module_config_sec, "SAVE_BATCH"):
+        save_batch = config.getint(
+            module_config_sec,
+            "SAVE_BATCH",
+        )
+    else:
+        # No batch saving
+        save_batch = -1
+
     # First and last galaxy ID to process
     id_obj_min = config.getint(module_config_sec, "ID_OBJ_MIN")
     id_obj_max = config.getint(module_config_sec, "ID_OBJ_MAX")
@@ -61,6 +80,8 @@ def ngmix_runner(
         pixel_scale,
         f_wcs_path,
         w_log,
+        check_existing_dir=check_existing_dir,
+        save_batch=save_batch,
         id_obj_min=id_obj_min,
         id_obj_max=id_obj_max,
     )
