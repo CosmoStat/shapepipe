@@ -257,7 +257,7 @@ def get_paths(exp_base_dir, exp_shdu_IDs, pattern):
                 f"Exactly one directory matching {pattern} in {path} expected,"
                 + f"  not {n_subdirs}"
             )
-            print(msg)
+            #print(msg)
             # More than one match: sort according to name = creation time
             subdirs = sorted(subdirs)
             if n_subdirs == 0:

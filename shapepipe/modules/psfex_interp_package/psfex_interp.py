@@ -600,8 +600,19 @@ class PSFExInterpolator(object):
 
         final_list = []
         for hdu_index in hdu_ind:
-            data = cat.get_data(hdu_index)
-            self._w_log.info(data)
+            # MKDEBUG: The following should be done within file_io, or better
+            # yet use astropy.io.fits
+            # Instead, file_io raises unusable error message.
+            try:
+                data = cat.get_data(hdu_index)
+            except:
+                msg = (
+                    f"Error while rading file {self._galcat_path} at HDU "
+                    + f" {hdu_index}. File might have been truncated."
+                )
+                print(msg)
+                self._w_log.info(msg)
+                raise
 
             # Read exposure name. Since each input HDU corresponds to one
             # exposure, they are identical in each colum.

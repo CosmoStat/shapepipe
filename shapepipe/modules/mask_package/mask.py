@@ -1191,7 +1191,7 @@ class Mask(object):
                 try:
                     ext_flag = external_flag.get_data()
                 except:
-                    print(
+                    self._w_log.info(
                         "Problem while getting external flag data. Check"
                         + f" whether file {path_external_flag} is not corrupt"
                     )
