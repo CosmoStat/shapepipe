@@ -205,6 +205,13 @@ def check_special_one(module, path):
                     msg = "empty or corrult FITS file"
                     return msg, code
 
+            if module == "sextractor_runner":
+                m = re.search("sextracted 0", line)
+                if m:
+                    code = 5
+                    msg = "No object detected (weight might be 0 everywhere)"
+                    return msg, code
+
 
     return None, None 
 
@@ -448,10 +455,10 @@ class job_data(object):
                 if msg:
                     # First time occurance: create empty list for this code 
                     if code not in messages:
-                        messages[code] = [msg]
-                    else:
-                        # Append file name, message, and code 
-                        messages[code].append(f"{name} {code} {msg}")
+                        messages[code] = []
+
+                    # Append file name, message, and code 
+                    messages[code].append(f"{name} {code} {msg}")
 
             if len(messages) > 0:
                 # Loop over codes = key in messages dict

@@ -16,6 +16,7 @@ dependencies:
   - automake
   - autoconf
   - cmake
+  - h5py
   - galsim
   - joblib
   - libtool

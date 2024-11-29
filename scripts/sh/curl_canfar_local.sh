@@ -130,6 +130,7 @@ fi
 
 if [ "$debug_out" != "-1" ]; then
   echo "${pat}Starting $(basename "$0")" >> $debug_out
+  echo "{$pat}curl ID=$ID" >> $debug_out
   echo $pat`date`$ >> $debug_out
 fi
 

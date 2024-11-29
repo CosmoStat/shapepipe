@@ -67,6 +67,7 @@ esac
 # Get all instances
 if [ "$debug" == "1" ]; then
   curl -E $SSL $SESSION
+  echo curl -E $SSL $SESSION
   exit 0
 else
   curl -E $SSL $SESSION &> /dev/null > $tmpfile_jobs

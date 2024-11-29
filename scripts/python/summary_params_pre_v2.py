@@ -133,12 +133,14 @@ def set_jobs_v2_pre_v2(patch, verbose):
     jobs["16"] = job_data(
         16,
         "run_sp_tile_Sx",
-        ["sextractor_runner"],
-        ["tile_IDs"],
-        n_mult=2,
+        ["sextractor_runner", "sextractor_runner"],
+        "tile_IDs",
+        n_mult=[2, 1],
         path_main=path_main,
         path_left="tile_runs",
+        path_output=["output", "logs"],
         output_subdirs=[f"{tile_ID}/output" for tile_ID in list_tile_IDs_dot],
+        special=[False, True],
         verbose=verbose,
     )
 

@@ -685,8 +685,9 @@ class FITSCatalogue(BaseCatalogue):
 
         Save data from dict, list, numpy.ndarray, numpy.recarray or
         astropy.io.fits.fitsrec.FITS_rec (data format in an astropy fits file)
-        When creating a new FITS to store BinTable data it create a PrimaryHDU.
-        When creating a new FITS to store Image there is no PrimaryHDU.
+        When writing a new FITS file to store BinTable data a PrimaryHDU is
+        created.
+        When wwriting a new FITS to store Image data, no PrimaryHDU is added.
         You can create a SExtractor format FITS by specifying a SExtractor
         catalogue from where data come from.
 
