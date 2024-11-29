@@ -163,52 +163,7 @@ if [ "$debug_out" != "-1" ]; then
 fi
 
 # Set kind
-job_to_test=2
-kind="none"
-
-# loop over possible job numbers
-while  [ $job_to_test -le 1024 ]; do
-
-  (( do_job = $job & $job_to_test ))
-  if [[ $do_job != 0 ]]; then
-    
-      if [ $job_to_test == 32 ]; then
-        if [ "$kind" == "tile" ]; then
-          echo "Error: Invalid job $job. mixing tile and exp kinds"
-          exit 6
-        fi
-
-        # job=32 -> set kind to exp
-        kind="exp"
-      elif [ $job_to_test == 2 ]; then
-        if [ "$kind" == "tile" ]; then
-          echo "Error: Invalid job $job. mixing tile and exp kinds"
-          exit 6
-        fi
-
-        kind="exp"
-      elif [ $job_to_test == 8 ]; then
-        if [ "$kind" == "tile" ]; then
-          echo "Error: Invalid job $job. mixing tile and exp kinds"
-          exit 6
-        fi
-
-        kind="exp"
-      else
-        if [ "$kind" == "exp" ]; then
-          echo "Error: Invalid job $job. mixing tile and exp kinds"
-          exit 6
-        fi
-
-        # job != 32 -> set kind to tile
-        kind="tile"
-      fi
-
-  fi
-
-  # Multiply job number by two to get next biwise number
-  job_to_test=$((job_to_test * 2))
-done
+kind=$(get_kind_from_job $job)
 
 if [ "$kind" == "none" ]; then
   echo "Error: invalid job $job"
@@ -220,7 +175,7 @@ if [ "$dry_run" == 1 ]; then
   echo "in dry run mode"
 fi
 
-CONDA_PREFIX=/arc/home/kilbinger/.conda/envs/shapepipe
+CONDA_PREFIX=$HOME/.conda/envs/shapepipe
 PATH=$PATH:$CONDA_PREFIX/bin
 if [ "$debug_out"  != "-1" ]; then
     echo "${pat}conda prefix = ${CONDA_PREFIX}" >> $debug_out

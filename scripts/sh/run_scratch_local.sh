@@ -109,6 +109,12 @@ if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
 fi
 
 
+source $HOME/shapepipe/scripts/sh/functions.sh                                   
+
+
+kind=$(get_kind_from_job $job)
+
+
 # Load common functions
 source $HOME/shapepipe/scripts/sh/functions.sh
 
@@ -116,14 +122,15 @@ source $HOME/shapepipe/scripts/sh/functions.sh
 # Start script
 
 if [ "$scratch" != "-1" ]; then
-  command "mkdir -p $scratch/exp_runs" $dry_run
-  command "cp -R exp_runs/$ID $scratch/exp_runs" $dry_run                     
+
+  command "mkdir -p $scratch/${kind}_runs" $dry_run
+  command "cp -R ${kind}_runs/$ID $scratch/${kind}_runs" $dry_run                     
   command "cd $scratch" $dry_run
 
   if [ "$slurm" == "0" ]; then
     command "init_run_exclusive_canfar.sh -j $job -p $psf -m $mh_local -N $N_SMP -e $ID" $dry_run
   else
-    STATUS=$(sbatch --output=./sbatch-$ID.out --partition=comp --job-name="j${job}_${ID}" --ntasks-per-node=$N_SMP --time=4:00:00 --mem=64G $exec_path/init_run_exclusive_canfar.sh -j $job -p $psf -m $mh_local -N $N_SMP -e $ID)
+    STATUS=$(sbatch --output=./sbatch-$ID.out --partition=comp --job-name="j${job}_${ID}" --ntasks-per-node=$N_SMP --time=32:00:00 --mem=64G $exec_path/init_run_exclusive_canfar.sh -j $job -p $psf -m $mh_local -N $N_SMP -e $ID)
 
     JOB_ID=$(echo $STATUS | cut -d ' ' -f 4)
     echo "JOB_ID=$JOB_ID"
@@ -144,13 +151,17 @@ if [ "$scratch" != "-1" ]; then
   fi
 
   if [ "$job" == "32" ]; then
-    command "mv exp_runs/$ID/output/run_sp_exp_SxSe* $dir/exp_runs/$ID/output" $dry_run
-    command "rm -rf exp_runs/$ID" $dry_run
-    command "cd $dir/exp_runs/$ID" $dry_run
-    # Gave Input/Output python error
-    #command "update_runs_log_file.py" $dry_run
-    command "cd $dir" $dry_run
+    command "mv ${kind}_runs/$ID/output/run_sp_exp_SxSe* $dir/${kind}_runs/$ID/output" $dry_run
+  elif [ "$job" == "64" ]; then
+    command "mv ${kind}_runs/$ID/output/run_sp_tile_PsViSm** $dir/${kind}_runs/$ID/output" $dry_run
   fi
+
+  command "rm -rf ${kind}_runs/$ID" $dry_run
+  command "cd $dir/${kind}_runs/$ID" $dry_run
+  # Gave Input/Output python error
+  #command "update_runs_log_file.py" $dry_run
+  command "cd $dir" $dry_run
+
 fi
 
 exit 0
