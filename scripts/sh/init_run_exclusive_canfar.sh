@@ -151,14 +151,15 @@ fi
 
 # Start script
 
-source $HOME/shapepipe/scripts/sh/functions.sh                                   
-
+source $HOME/shapepipe/scripts/sh/functions.sh
 
 msg="Starting $(basename "$0")"
 echo $msg
 if [ "$debug_out" != "-1" ]; then
   echo $pat$msg >> $debug_out
   echo ${pat}`date` >> $debug_out
+  echo "${pat}init ID=$ID" >> $debug_out
+
 fi
 
 # Set kind

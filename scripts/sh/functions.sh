@@ -39,10 +39,10 @@ function call_curl() {
 
   cmd=("curl" "-E" "$SSL" "$SESSION?$RESOURCES" "-d" "image=$IMAGE:$version" "-d" "name=${my_name}" "-d" "cmd=$cmd_remote" "--data-urlencode" "args=\"${my_arg}\"")
 
-  #if [ "$debug_out" != "-1" ]; then
-    #echo "${pat}call_curl $my_name $my_arg" >> $debug_out
-    #echo "${pat}Running ${cmd[@]} (dry_run=$dry_run)" >> $debug_out
-  #fi
+  if [ "$debug_out" != "-1" ]; then
+    echo "${pat}call_curl $my_name $my_arg" >> $debug_out
+    echo "${pat}Running ${cmd[@]} (dry_run=$dry_run)" >> $debug_out
+  fi
   echo "${cmd[@]} (dry_run=$dry_run)"
 
 
