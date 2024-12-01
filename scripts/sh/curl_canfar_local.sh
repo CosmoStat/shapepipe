@@ -18,6 +18,7 @@ psf="psfex"
 ID=-1
 file_IDs=-1
 N_SMP=1
+fix=0
 version="1.1"
 cmd_remote="$HOME/shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
 batch_max=200
@@ -40,8 +41,12 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
     \tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    -m, --mh_local MH\n
     \tmerged header file local (MH=0) or global (MH=1); default is $mh_local\n
+   -s, --sp_local SP\n
+    \tsplit local run local (SP=1) or global (SP=0); default is SP=$sp_local\n
    -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default=$N_SMP\n
+   -F, --fix\n
+    \tfix missing data (re-download tile, unzip)\
    -V, --version\n
     \tversion of docker image, default='$version'\n
    -C, --command_remote\n
@@ -79,6 +84,10 @@ while [ $# -gt 0 ]; do
       mh_local="$2"
       shift
       ;;
+    -s|--sp_local)
+      sp_local="$2"
+      shift
+      ;;
     -e|--exclusive)
       ID="$2"
       shift
@@ -90,6 +99,9 @@ while [ $# -gt 0 ]; do
     -N|--N_SMP)
       N_SMP="$2"
       shift
+      ;;
+    -F|--fix)
+      fix=1
       ;;
     -b|--batch_max)
       batch_max="$2"
@@ -130,8 +142,8 @@ fi
 
 if [ "$debug_out" != "-1" ]; then
   echo "${pat}Starting $(basename "$0")" >> $debug_out
-  echo "{$pat}curl ID=$ID" >> $debug_out
-  echo $pat`date`$ >> $debug_out
+  echo "${pat}curl ID=$ID" >> $debug_out
+  echo ${pat}`date` >> $debug_out
 fi
 
 . /opt/conda/etc/profile.d/conda.sh

@@ -21,7 +21,7 @@ mh_local=0
 
 # sp_local is 0 (1) is split_headers_runner and mask_runner is run
 # on all exposures (locally). Not 100% automatic yet. 
-sp_local=1
+sp_local=0
 VERBOSE=1
 
 pat="-- "
@@ -46,7 +46,7 @@ usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
     \trun directory, default is pwd ($dir)\n
    -S, --scratch\n
     \tprocessing scratch directory, default is None ($scratch)\n
-   -f, --fix\n
+   -F, --fix\n
     \tfix missing data (re-download tile, unzip)\
    -n, --dry_run\n
     \tdry run, no actuall processing\n
@@ -79,10 +79,10 @@ while [ $# -gt 0 ]; do
       psf="$2"                                                                  
       shift                                                                     
       ;; 
-    -m|--mh_local)                                                                   
-      mh_local="$2"                                                                  
-      shift                                                                     
-      ;; 
+    -m|--mh_local)
+      mh_local="$2"
+      shift
+      ;;
     -s|--sp_local)
       sp_local="$2"
       shift
@@ -102,7 +102,7 @@ while [ $# -gt 0 ]; do
     -n|--dry_run)
       dry_run=1
       ;;
-    -f|--fix)
+    -F|--fix)
       fix=1
       ;;
     --debug_out)
@@ -143,10 +143,10 @@ if [ "$patch" != "P8" ] && [ "$sp_local" == "1" ]; then
   echo "sp_local=1 only used for patch P8"
   exit 7
 fi
-if [ "$patch" != "P8" ] && [ "$mh_local" == "1" ]; then
-  echo "mh_local=1 only used for patch P8"
-  exit 8
-fi
+#if [ "$patch" != "P8" ] && [ "$mh_local" == "1" ]; then
+  #echo "mh_local=1 only used for patch P8"
+  #exit 8
+#fi
 
 
 # Start script
@@ -156,7 +156,7 @@ source $HOME/shapepipe/scripts/sh/functions.sh
 msg="Starting $(basename "$0")"
 echo $msg
 if [ "$debug_out" != "-1" ]; then
-  echo $pat$msg >> $debug_out
+  echo ${pat}$msg >> $debug_out
   echo ${pat}`date` >> $debug_out
   echo "${pat}init ID=$ID" >> $debug_out
 
@@ -218,7 +218,8 @@ if [ "$fix" == "1" ]; then
   link_name=CFIS_image-$IDt.fits
   if [ ! -e $link_name ]; then
     echo "Creating link $link_name"
-    ln -s $path_tiles/CFIS.$ID.r.fits $link_name
+    # force to overwrite broken link
+    ln -sf $path_tiles/CFIS.$ID.r.fits $link_name
   else
     echo "Link $link_name exists, skipping"
   fi
@@ -226,13 +227,14 @@ if [ "$fix" == "1" ]; then
   link_name=CFIS_weight-$IDt.fitsfz
   if [ ! -e $link_name ]; then
     echo "Creating link $link_name"
-    ln -s $path_tiles/CFIS.$ID.r.weight.fits.fz $link_name
+    ln -sf $path_tiles/CFIS.$ID.r.weight.fits.fz $link_name
   else
     echo "Link $link_name exists, skipping"
   fi
 
-  echo "Unzip weight"
   cd ../../../..
+
+  echo "Unzip weight"
   cd  tile_runs/$ID
   export SP_RUN=`pwd`
   shapepipe_run -c cfis/config_tile_Uz.ini -e $ID
@@ -355,50 +357,6 @@ if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
   job=$(( job & ~2 ))
 fi
 
-if [ "$mh_local" == "1" ]; then
-
-  # Remove previous Sx runs
-  command "rm -rf run_sp_tile_Sx_*" $dry_run
-
-  if [ "$ID" == "-1" ]; then
-    echo "ID needs to be given (option -e) for mh_local and job&16"
-    exit 6 
-  fi
-
-  if [ -L log_exp_headers.sqlite ]; then
-    # Local Mh and symlink -> remove previous link to
-    # (potentially incomplete) global mh file
-    echo "Removing previous mh sym link"
-    command "rm log_exp_headers.sqlite" $dry_run
-  else
-    echo "no mh link found"
-  fi
-
-  echo "Creating local mh file"
-
-  ## Remove previous (local) split_exp dir
-  #command "rm -rf run_sp_exp_Sp" $dry_run
-
-  ## Create new split exp run dir
-  #new_dir="run_sp_exp_Sp//split_exp_runner/output"
-  #command "mkdir -p $new_dir" $dry_run
-
-  ## Link to all header files of exposures used for the current tile
-  #IDs=`echo $ID | tr "." "-"`
-  #for exp_ID in `cat run_sp_GitFeGie_*/find_exposures_runner/output/exp_numbers-$IDs.txt` ; do
-    #x=`echo $exp_ID | tr -d p `
-    #command "ln -s $dir/output/run_sp_exp_SpMh/split_exp_runner/output/headers-$x.npy $new_dir/headers-$x.npy" $dry_run
-  #done
-
-  # Run merge_headers_runner on local exposure selection
-  cd ..
-  command "update_runs_log_file.py" $dry_run
-  export SP_RUN=`pwd`
-  command "shapepipe_run -c cfis/config_exp_Mh.ini" $dry_run
-  cd output
-
-fi
-
 (( do_job = $job & 8 ))
 if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
   # Remove previous local Ma runs
@@ -410,6 +368,32 @@ fi
 if [[ $do_job != 0 ]]; then
   # Remove previous Sx runs
   command "rm -rf run_sp_tile_Sx_*" $dry_run
+
+  if [ "$mh_local" == "1" ]; then
+
+    if [ "$ID" == "-1" ]; then
+      echo "ID needs to be given (option -e) for mh_local and job&16"
+      exit 6 
+    fi
+
+    if [ -L log_exp_headers.sqlite ]; then
+      # Local Mh and symlink -> remove previous link to
+      # (potentially incomplete) global mh file
+      echo "Removing previous mh sym link"
+      command "rm log_exp_headers.sqlite" $dry_run
+    else
+      echo "no mh link found"
+    fi
+
+    echo "Creating local mh file"
+
+    cd ..
+    command "update_runs_log_file.py" $dry_run
+    export SP_RUN=`pwd`
+    command "shapepipe_run -c cfis/config_exp_Mh.ini" $dry_run
+    cd output
+  fi
+
 fi
 
 # Update links to exposure run directories, which were created in job 32
@@ -472,7 +456,7 @@ if [ "$scratch" != "-1" ]; then
   command "cd $scratch" $dry_run
 fi
 
-command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP --nsh_jobs $N_SMP --debug_out $debug_out" $dry_run
+command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP --nsh_jobs $N_SMP --debug_out $debug_out " $dry_run
 
 if [ "$scratch" != "-1" ]; then
   if [ "$job" == "32" ]; then                                                   

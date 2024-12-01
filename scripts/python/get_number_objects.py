@@ -213,6 +213,10 @@ def main(argv=None):
             paths.append(path)
     paths = sorted(paths)
 
+    if len(paths) == 0:
+        # No previous tile SExtractor run found
+        return -1
+
     # Get latest run
     last_dir = paths[-1]
 
