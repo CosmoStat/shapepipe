@@ -80,6 +80,7 @@ def vignetmaker_runner(
             pos_params=pos_params,
             output_dir=run_dirs["output"],
             image_num=file_number_string,
+            w_log=w_log,
         )
 
         # Process module according to mode
