@@ -204,18 +204,24 @@ def set_jobs_v2_pre_v2(patch, verbose):
     else:
         n_sh = 8
     run_dirs = [f"run_sp_tile_ngmix_Ng{idx+1}u" for idx in range(n_sh)]
+
+    # Add special (unfinished run)
+    run_dirs.append("run_sp_tile_ngmix_Ng1u")
+
     output_path_missing_IDs = [
         f"{path_main}/summary/missing_job_128_ngmix_runner_{idx+1}.txt"
-        for idx in range(n_sh)
+        for idx in range(n_sh + 1)
     ]
     jobs["128"] = job_data(
         "128",
         run_dirs,
-        ["ngmix_runner"] * n_sh,
+        ["ngmix_runner"] * (n_sh + 1),
         "tile_IDs",
         path_main=path_main,
         path_left="tile_runs",
         output_subdirs=[f"{tile_ID}/output" for tile_ID in list_tile_IDs_dot],
+        path_output=["output"] * n_sh +  ["logs"],
+        special=[False] * n_sh + [True],
         output_path_missing_IDs=output_path_missing_IDs,
         verbose=verbose,
     )

@@ -159,6 +159,8 @@ def set_as_list(item=None, n=None, default=1):
 
 def check_special_one(module, path):
 
+    ngmix_finished = False
+
     with open(path) as f_in:
         lines = f_in.readlines()
         for line in lines:
@@ -211,6 +213,17 @@ def check_special_one(module, path):
                     code = 5
                     msg = "No object detected (weight might be 0 everywhere)"
                     return msg, code
+
+            if module == "ngmix_runner":
+                m = re.search("finished", line)
+                if m:
+                    ngmix_finished = True
+                    break
+
+    if module == "ngmix_runner" and not ngmix_finished:
+        code = 6
+        mgs = "ngmix incomplete"
+        return mgs, code
 
 
     return None, None 
@@ -295,7 +308,7 @@ class job_data(object):
             len(modules),
             default="output",
         )
-        self._output_path_missing_IDs=output_path_missing_IDs
+        self._output_path_missing_IDs = output_path_missing_IDs
         self._special = set_as_list(
             special,
             len(modules),
@@ -446,7 +459,7 @@ class job_data(object):
         messages = {}
         
         if self._special[idx]:
-            
+
             # Loop over input file names and paths
             for name, path in zip(self._names_in_dir[idx], self._paths_in_dir[idx]):
 
@@ -519,7 +532,7 @@ class job_data(object):
             else:
                 msg = f"No ID found in {name}"
                 #raise ValueError(msg)
-                print(f"Warning: msg, continuing")
+                print(f"Warning: {msg}, continuing")
 
         # For split_exp_runner P8, IDs now contain exps and sdus,
         # not matching mult.
