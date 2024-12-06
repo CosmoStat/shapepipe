@@ -12,8 +12,7 @@ dir=`pwd`
 debug_out=-1
 scratch=-1
 fix=0
-# On canfar:
-#scratch=/scratch/`whoami`
+test_only=0
 
 # mh_local is 0 (1) if merge_header_runner is run on all exposures,
 # which is standard so far (run on exposures of given tile only; new)
@@ -21,7 +20,7 @@ mh_local=0
 
 # sp_local is 0 (1) is split_headers_runner and mask_runner is run
 # on all exposures (locally). Not 100% automatic yet. 
-sp_local=1
+sp_local=0
 VERBOSE=1
 
 pat="-- "
@@ -46,12 +45,14 @@ usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
     \trun directory, default is pwd ($dir)\n
    -S, --scratch\n
     \tprocessing scratch directory, default is None ($scratch)\n
-   -f, --fix\n
-    \tfix missing data (re-download tile, unzip)\
-   -n, --dry_run\n
-    \tdry run, no actuall processing\n
+   -F, --fix FIX\n
+    \tfix missing data (re-download tile, unzip) for FIX=1; default is $FIX\n
+   -n, --dry_run LEVEL\n
+    \tdry run (LEVEL=1), no actual processing; default is $dry_run\n
    --debug_out PATH\n
    \tdebug output file PATH, default not used\n
+   --test\n
+   \ttest mode, no processind\n
 "
 
 ## Help if no arguments                                                         
@@ -79,10 +80,10 @@ while [ $# -gt 0 ]; do
       psf="$2"                                                                  
       shift                                                                     
       ;; 
-    -m|--mh_local)                                                                   
-      mh_local="$2"                                                                  
-      shift                                                                     
-      ;; 
+    -m|--mh_local)
+      mh_local="$2"
+      shift
+      ;;
     -s|--sp_local)
       sp_local="$2"
       shift
@@ -100,52 +101,79 @@ while [ $# -gt 0 ]; do
       shift
       ;;
     -n|--dry_run)
-      dry_run=1
+      dry_run="$2"
+      shift
       ;;
-    -f|--fix)
-      fix=1
+    -F|--fix)
+      fix="$2"
+      shift
       ;;
     --debug_out)
       debug_out="$2"
       shift
       ;;
+    --test)
+      test_only=1
+      ;;
   esac                                                                          
   shift                                                                         
 done
 
+
+# functions
+function message() {
+  msg=$1
+  my_debug_out=$2
+  my_exit=$3
+
+  echo $msg
+  if [ "$my_debug_out" != "-1" ]; then
+    echo ${pat}$msg >> $my_debug_out
+  fi
+
+  if [ "$my_exit" != "-1" ]; then
+    echo "${pat}exiting with code $my_exit" >> $my_debug_out
+    exit $my_exit
+  fi
+}
+
+
+# Init message
+if [ "$test_only" == "1" ]; then
+  msg="init_run_exclusive.py script test mode, exiting."
+  ex=0
+else
+  msg="init_run_exclusive.py script processing mode, starting."
+  ex=-1
+fi
+message "$msg" $debug_out $ex
+
+
 ## Check options
+message "checking options" $debug_out -1
+
 if [ "$job" == "-1" ]; then
-  echo "No job indicated, use option -j"
-  exit 2
+  message "No job indicated, use option -j" $debug_out 2
 fi
 
 if [ "$exclusive" == "-1" ]; then
-  echo "No image ID indicated, use option -e"
-  exit 3
+  message "No image ID indicated, use option -e" $debug_out 3
 fi
 
 if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
-  echo "PSF (option -p) needs to be 'psfex' or 'mccd'"
-  exit 4
+  message "PSF (option -p) needs to be 'psfex' or 'mccd'" $debug_out 4
 fi
 
 if [ "$mh_local" != "0" ] && [ "$mh_local" != "1" ]; then
-  echo "mh_local (option -m) needs to be 0 or 1"
-  exit 5
+  message "mh_local (option -m) needs to be 0 or 1" $debug_out 5
 fi
 
 if [ "$sp_local" != "0" ] && [ "$sp_local" != "1" ]; then
-  echo "sp_local (option -m) needs to be 0 or 1"
-  exit 6
+  message "sp_local (option -m) needs to be 0 or 1" $debug_out 6
 fi
 
-if [ "$patch" != "P8" ] && [ "$sp_local" == "1" ]; then
-  echo "sp_local=1 only used for patch P8"
-  exit 7
-fi
-if [ "$patch" != "P8" ] && [ "$mh_local" == "1" ]; then
-  echo "mh_local=1 only used for patch P8"
-  exit 8
+if [ "$dry_run" != "0" ] && [ "$dry_run" != 1 ]; then
+  message "dry_run must be 0 or 1, not $dry_run" $debug_out 8
 fi
 
 
@@ -154,90 +182,91 @@ fi
 source $HOME/shapepipe/scripts/sh/functions.sh
 
 msg="Starting $(basename "$0")"
-echo $msg
-if [ "$debug_out" != "-1" ]; then
-  echo $pat$msg >> $debug_out
-  echo ${pat}`date` >> $debug_out
-  echo "${pat}init ID=$ID" >> $debug_out
-
-fi
+message "$msg" $debug_out -1
+message "`date`" $debug_out -1
+message "ID=$ID" $debug_out -1
 
 # Set kind
 kind=$(get_kind_from_job $job)
 
 if [ "$kind" == "none" ]; then
-  echo "Error: invalid job $job"
-  exit 5
+  message "Error: invalid job $job" $debug_out 5
 fi
 
+message "kind=$kind" $debug_out -1
 
-if [ "$dry_run" == 1 ]; then
-  echo "in dry run mode"
+
+if [ "$dry_run" == "1" ]; then
+  message "running in dry run mode" $debug_out -1
+else
+  message "not running in dry run mode" $debug_out -1
 fi
 
 CONDA_PREFIX=$HOME/.conda/envs/shapepipe
 PATH=$PATH:$CONDA_PREFIX/bin
-if [ "$debug_out"  != "-1" ]; then
-    echo "${pat}conda prefix = ${CONDA_PREFIX}" >> $debug_out
-    echo "${pat}HOME = ${HOME}" >> $debug_out
-    echo "${pat}path = ${PATH}" >> $debug_out
-fi
+message "conda prefix = ${CONDA_PREFIX}" $debug_out -1
+message "HOME = ${HOME}" $debug_out -1
+message "path = ${PATH}" $debug_out -1
 
 cd $dir
-echo $pwd
+message "pwd=$pwd" $debug_out -1
 
 if [ ! -d ${kind}_runs ]; then
   command "mkdir ${kind}_runs" $dry_run
 fi
 
 if [ "$fix" == "1" ]; then
-  echo "Fixing missing data"
+  message "Fixing missing data" $debug_out -1
 
-  echo "Download tile images"
+  message "Download tile images" $debug_out -1
   cd data_tiles
   file_name=CFIS.$ID.r.fits
   if [ ! -e $file_name ]; then
-    echo "Downloading $file_name"
+    message "Downloading $file_name" $debug_out -1
     vcp vos:cfis/tiles_DR5/$file_name .
   else
-    echo "File $file_name exists, skipping"
+    message "File $file_name exists, skipping" $debug_out -1
   fi
   file_name=CFIS.$ID.r.weight.fits.fz
   if [ ! -e $file_name ]; then
-    echo "Downloading $file_name"
+    message "Downloading $file_name" $debug_out -1
     vcp vos:cfis/tiles_DR5/$file_name .
   else
-    echo "File $file_name exists, skipping"
+    message "File $file_name exists, skipping" $debug_out -1
   fi
   cd ..
 
-  echo "link to tiles"
+  message "link to tiles..." $debug_out -1
   cd output/run_sp_GitFeGie_202*/get_images_runner_run_1/output
   IDt=`echo $ID | tr "." "-"`
   path_tiles=/arc/home/kilbinger/cosmostat/v2/pre_v2/$psf/$patch/data_tiles
   link_name=CFIS_image-$IDt.fits
   if [ ! -e $link_name ]; then
-    echo "Creating link $link_name"
-    ln -s $path_tiles/CFIS.$ID.r.fits $link_name
+    message "Creating link $link_name" $debug_out -1
+    # force to overwrite broken link
+    ln -sf $path_tiles/CFIS.$ID.r.fits $link_name
   else
-    echo "Link $link_name exists, skipping"
+    message "Link $link_name exists, skipping" $debug_out -1
   fi
 
   link_name=CFIS_weight-$IDt.fitsfz
   if [ ! -e $link_name ]; then
-    echo "Creating link $link_name"
-    ln -s $path_tiles/CFIS.$ID.r.weight.fits.fz $link_name
+    message "Creating link $link_name" $debug_out -1
+    ln -sf $path_tiles/CFIS.$ID.r.weight.fits.fz $link_name
   else
-    echo "Link $link_name exists, skipping"
+    message "Link $link_name exists, skipping" $debug_out -1
   fi
 
-  echo "Unzip weight"
-  cd ../../../..
-  cd  tile_runs/$ID
+  command "cd ../../../.." $dry_run
+
+  message "Unzip weight ($dry_run)" $debug_out -1
+  command "cd tile_runs/$ID" $dry_run
   export SP_RUN=`pwd`
-  shapepipe_run -c cfis/config_tile_Uz.ini -e $ID
+  command "shapepipe_run -c cfis/config_tile_Uz.ini -e $ID" $dry_run
 
   cd $dir
+else
+  message "Not fixing missing data" $debug_out -1
 fi
 
 
@@ -261,20 +290,37 @@ fi
 cd output
 
 
-if [ "$mh_local" == "0" ]; then
-  if [ ! -f log_exp_headers.sqlite ]; then
-    # Global Mh and file does not exist -> symlink to
-    # gllobal mh file
-    command "ln -s $dir/output/log_exp_headers.sqlite" $dry_run
-  fi
-fi
-
-
 # Update links to global run directories (GiFeGie)
 # New: 27/11/2024: Remove link to Uz, conflict with fix
 for my_dir in $dir/output/run_sp_[G]*; do
   command "ln -sf $my_dir" $dry_run
 done
+
+# The following could be done also with fix=1
+if [ "$fix" == "0" ] && [ "$kind" == "tile" ]; then
+  if  [ ! -e "run_sp_Uz*" ]; then
+
+    message "previous uncompress run not found..." $debug_out -1
+
+    # Remove broken links
+    for my_dir in run_sp_Uz*; do
+      if  [ -L $my_dir ]; then
+        command "rm $my_dir" $dry_run
+        message "remove broken link $my_dir" $debug_out -1
+      fi
+    done
+
+    # Create working link
+    for my_dir in $dir/output/run_sp_Uz*; do
+      command "ln -sf $my_dir" $dry_run                                             
+      message "create valid link $my_dir" $debug_out -1
+    done
+    cd ..
+    command "update_runs_log_file.py" $dry_run
+    cd output
+  fi
+fi
+
 
 # Combined flags
 
@@ -284,23 +330,30 @@ command "ln -sf $dir/output/run_sp_Ma_tile" $dry_run
 if [ "$sp_local" == "0" ]; then
   # Exposures
   command "ln -sf $dir/output/run_sp_Ma_exp" $dry_run
-else
-  command "rm -f $dir/output/run_sp_Ma_exp" $dry_run
+#else
+  #command "rm -f $dir/output/run_sp_Ma_exp" $dry_run
 fi
 
 # Check for existing exp SpMh dir
-if [[ -d "$dir/output/run_sp_exp_SpMh" ]]; then
+dir_SpMh="run_sp_exp_SpMh"
+if [[ -d "$dir/output/$dir_SpMh" ]]; then
   # create link
-  command "ln -sf $dir/output/run_sp_exp_SpMh" $dry_run
+  command "ln -sf $dir/output/$dir_SpMh" $dry_run
 else
-  echo "No global SpMh directory found"
+  message "No global SpMh directory found" $debug_out -1
+  if [ -L "$dir_SpMh" ] && [ ! -e "$dir_SpMh" ]; then
+      message "Remove broken link $dir_SpMh" $debug_out -1
+      rm $dir_SpMh
+  fi
 fi
 
 (( do_job = $job & 2 ))
 if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
-  # run local Sp; works only with mh_local=1; this step needs to be done
+#if [ ! -e "run_exp_Sp_shdu" ] && [ "$sp_local" == "1" ]; then
+  # run local Sp if not done already; works only with mh_local=1; this step needs to be done
   # before following mh_local=1 steps 
-  command "rm -rf run_sp_GitFeGie*" $dry_run
+  message "run local sp" $debug_out -1
+  command "rm -rf run_sp_GitFeGie*/get_images_runner_run_2" $dry_run
   command "rm -rf run_sp_Gie*" $dry_run
   command "rm -rf run_sp_exp_Sp*" $dry_run
 
@@ -325,7 +378,6 @@ if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
   if [ "$scratch" != "-1" ]; then
     command "cd ../.." $dry_run
     command "mkdir -p $scratch/exp_runs" $dry_run
-    pwd
     command "cp -R exp_runs/$ID $scratch/exp_runs" $dry_run
     command "cd $scratch/exp_runs/$ID" $dry_run
   fi
@@ -351,58 +403,60 @@ if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
     exit 0
   fi
 
-  # Revmove job=2 bit to avoid re-running of this job
-  job=$(( job & ~2 ))
 fi
 
-if [ "$mh_local" == "1" ]; then
+if [ "$kind" == $tile ] && [ "$sp_local" == "1" ]; then
+  cd ../../..
+  command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs -s $sp_local" $dry_run
+  cd tile_runs/$ID
+  command "combine_runs.bash -p psfex -c shdu" $dry_run
+  cd output
+fi
 
-  # Remove previous Sx runs
-  command "rm -rf run_sp_tile_Sx_*" $dry_run
 
+if [ "$mh_local" == "0" ]; then
+  if [ ! -f log_exp_headers.sqlite ]; then
+    # Global Mh and file does not exist -> symlink to
+    # gllobal mh file
+    message "creating global link to exp headers (mh_local=0)" $debug_out -1
+    command "ln -s $dir/output/log_exp_headers.sqlite" $dry_run
+  else
+    message "global link to exp headers (mh_local=0) exists" $debug_out -1
+  fi
+else
+  # Local Mh
+  message "not creating global link to exp headers (mh_local=1)" $debug_out -1
   if [ "$ID" == "-1" ]; then
-    echo "ID needs to be given (option -e) for mh_local and job&16"
-    exit 6 
+    message "ID needs to be given (option -e) for mh_local" $debug_out 6
   fi
 
   if [ -L log_exp_headers.sqlite ]; then
     # Local Mh and symlink -> remove previous link to
     # (potentially incomplete) global mh file
-    echo "Removing previous mh sym link"
+    message "Removing previous mh sym link" $debug_out -1
     command "rm log_exp_headers.sqlite" $dry_run
   else
-    echo "no mh link found"
+    message "no mh link found" $debug_out -1
   fi
 
-  echo "Creating local mh file"
+  if [ ! -e log_exp_headers.sqlite ]; then
+    message "Creating local mh file" $debug_out -1
 
-  ## Remove previous (local) split_exp dir
-  #command "rm -rf run_sp_exp_Sp" $dry_run
-
-  ## Create new split exp run dir
-  #new_dir="run_sp_exp_Sp//split_exp_runner/output"
-  #command "mkdir -p $new_dir" $dry_run
-
-  ## Link to all header files of exposures used for the current tile
-  #IDs=`echo $ID | tr "." "-"`
-  #for exp_ID in `cat run_sp_GitFeGie_*/find_exposures_runner/output/exp_numbers-$IDs.txt` ; do
-    #x=`echo $exp_ID | tr -d p `
-    #command "ln -s $dir/output/run_sp_exp_SpMh/split_exp_runner/output/headers-$x.npy $new_dir/headers-$x.npy" $dry_run
-  #done
-
-  # Run merge_headers_runner on local exposure selection
-  cd ..
-  command "update_runs_log_file.py" $dry_run
-  export SP_RUN=`pwd`
-  command "shapepipe_run -c cfis/config_exp_Mh.ini" $dry_run
-  cd output
-
+    cd ..
+    command "update_runs_log_file.py" $dry_run
+    export SP_RUN=`pwd`
+    command "shapepipe_run -c cfis/config_exp_Mh.ini" $dry_run
+    cd output
+  else
+    message "Found local mh file, continuing" $debug_out -1
+  fi
 fi
+
 
 (( do_job = $job & 8 ))
 if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
   # Remove previous local Ma runs
-  echo "cdsclient = $CDSCLIENT"
+  message "cdsclient = $CDSCLIENT" $debug_out -1
   command "rm -rf run_sp_exp_Ma*" $dry_run
 fi
 
@@ -417,16 +471,17 @@ fi
 if [[ $do_job != 0 ]]; then
   if [ "$kind" == "tile" ]; then
     cd ../../..
-    command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs" $dry_run
+    command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs -s $sp_local" $dry_run
     cd ${kind}_runs/$ID/output
 
     # Remove duplicate job-16 runs (tile detection)
-    n_16=`ls -rt1d run_sp_tile_Sx_* | wc -l`
-    if [ "$n_16" != "1" ]; then
-      n_remove="$(($n_16-1))"
-      echo "removing $n_remove duplicate old job-16 runs"
-      command "rm -rf `ls -rt1d run_sp_tile_Sx_* | head -$n_remove`" $dry_run
-    fi
+    # New (P8) commented
+    #n_16=`ls -rt1d run_sp_tile_Sx_* | wc -l`
+    #if [ "$n_16" != "1" ]; then
+      #n_remove="$(($n_16-1))"
+      #echo "removing $n_remove duplicate old job-16 runs"
+      #command "rm -rf `ls -rt1d run_sp_tile_Sx_* | head -$n_remove`" $dry_run
+    #fi
 
     # Remove previous runs of this job
     rm -rf run_sp_tile_PsViSmVi*
@@ -468,17 +523,22 @@ export DISPLAY=:1.0
 if [ "$scratch" != "-1" ]; then
   # Copy inputs to scratch
   command "mkdir -p $scratch/${kind}_runs" $dry_run
+  cd ../..
+  command "pwd" $dry_run
   command "cp -R ${kind}_runs/$ID $scratch/${kind}_runs" $dry_run
-  command "cd $scratch" $dry_run
+  command "cd $scratch/${kind}_runs/$ID" $dry_run
 fi
 
-command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP --nsh_jobs $N_SMP --debug_out $debug_out" $dry_run
+command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP --nsh_jobs $N_SMP --debug_out $debug_out " $dry_run
 
 if [ "$scratch" != "-1" ]; then
+  cd ../..
   if [ "$job" == "32" ]; then                                                   
     command "mv ${kind}_runs/$ID/output/run_sp_exp_SxSe* $dir/${kind}_runs/$ID/output" $dry_run
   elif [ "$job" == "64" ]; then                                                 
     command "mv ${kind}_runs/$ID/output/run_sp_tile_PsViSm** $dir/${kind}_runs/$ID/output" $dry_run
+  elif [ "$job" == "128" ]; then
+    command "mv ${kind}_runs/$ID/output/run_sp_tile_ngmix* $dir/${kind}_runs/$ID/output" $dry_run
   else
     echo "scratch mode with job=$job not implemented yet, exiting..."
     exit 8

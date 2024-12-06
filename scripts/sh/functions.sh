@@ -6,15 +6,8 @@ NAME=shapepipe
 
 version="1.1"
 cmd_remote="$HOME/shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
-pat="- "
+pat="---- "
 STOP=0
-
-
-# Return argument for local script to be called via curl
-function set_arg() {
-  my_arg="-j $job -p $psf -e $ID -N $N_SMP $arg_dry_run -d $dir -m $mh_local --debug_out $debug_out"
-  echo $my_arg
-}
 
 
 # Add session and image IDs to log files
@@ -25,25 +18,33 @@ function update_session_logs() {
 
 function call_curl() {
   my_name=$1
-  dry_run=$2
-  debug_out=$3
+  my_job=$2
+  my_psf=$3
+  my_ID=$4
+  my_N_SMP=$5
+  my_dry_run=$6
+  my_dir=$7
+  my_mh_local=$8
+  my_sp_local=$9
+  my_debug_out=${10}
+  my_fix=${11}
+  my_scratch=${12}
+  my_test_arg=${13}
 
-  my_arg=$(set_arg)
+  my_arg="-j $my_job -p $my_psf -e $my_ID -N $my_N_SMP -n $my_dry_run -d $my_dir -m $my_mh_local -s $my_sp_local --debug_out $my_debug_out -F $my_fix -S $my_scratch $my_test_arg"
 
-  if [ "$dry_run" == "0" ]; then
+  if [ "$my_dry_run" == "0" ]; then
 
-    #my_session=`curl -E $SSL "$SESSION?$RESOURCES" -d "image=$IMAGE:$version" -d "name=${my_name}" -d "cmd=$cmd_remote" --data-urlencode "args=${my_arg[@]}" &> /dev/null`
     my_session=`curl -E $SSL "$SESSION?$RESOURCES" -d "image=$IMAGE:$version" -d "name=${my_name}" -d "cmd=$cmd_remote" --data-urlencode "args=${my_arg[@]}"`
   fi
 
-
   cmd=("curl" "-E" "$SSL" "$SESSION?$RESOURCES" "-d" "image=$IMAGE:$version" "-d" "name=${my_name}" "-d" "cmd=$cmd_remote" "--data-urlencode" "args=\"${my_arg}\"")
 
-  if [ "$debug_out" != "-1" ]; then
-    echo "${pat}call_curl $my_name $my_arg" >> $debug_out
-    echo "${pat}Running ${cmd[@]} (dry_run=$dry_run)" >> $debug_out
+  if [ "$my_debug_out" != "-1" ]; then
+    echo "${pat}call_curl $my_name $my_arg" >> $my_debug_out
+    echo "${pat}Running ${cmd[@]} (dry_run=$my_dry_run)" >> $my_debug_out
   fi
-  echo "${cmd[@]} (dry_run=$dry_run)"
+  echo "${cmd[@]} (dry_run=$my_dry_run)"
 
 
   # Running $cmd does not work due to unknown problems with passing of args
@@ -55,7 +56,7 @@ function call_curl() {
 ## Print string, executes command, and prints return value.
 function command () {
    cmd=$1
-   dry_run=$2
+   my_dry_run=$2
 
    RED='\033[0;31m'
    GREEN='\033[0;32m'
@@ -65,7 +66,7 @@ function command () {
    #GREEN=''
    #NC=''
 
-   msg="running '$cmd' (dry run=$dry_run)"
+   msg="running '$cmd' (dry run=$my_dry_run)"
    if [ $VERBOSE == 1 ]; then
         echo $msg
    fi
@@ -73,7 +74,7 @@ function command () {
         echo ${pat}$msg >> $debug_out
    fi
 
-   if [ "$dry_run" == "0" ]; then
+   if [ "$my_dry_run" == "0" ]; then
         $cmd
         res=$?
 

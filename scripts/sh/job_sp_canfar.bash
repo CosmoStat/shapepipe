@@ -476,6 +476,10 @@ if [[ $do_job != 0 ]]; then
   ### Prepare config files
   n_min=0
   n_obj=`get_number_objects`
+  if [ "$n_obj" == "-1" ]; then
+    echo "No tile SExtractor run found, exiting after et_number_objects call"
+    exit 10
+  fi
   nsh_step=`echo "$(($n_obj/$nsh_jobs))"`
 
   n_max=$((nsh_step - 1))
