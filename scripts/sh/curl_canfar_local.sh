@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 # Global variables
 SSL=~/.ssl/cadcproxy.pem
 SESSION=https://ws-uv.canfar.net/skaha/v0/session
@@ -24,7 +22,10 @@ cmd_remote="$HOME/shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
 batch_max=200
 dry_run=0
 mh_local=0
+sp_local=0
+test_only=0
 debug_out="-1"
+scratch="-1"
 
 pat="- "
 
@@ -45,18 +46,22 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
     \tsplit local run local (SP=1) or global (SP=0); default is SP=$sp_local\n
    -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default=$N_SMP\n
-   -F, --fix\n
-    \tfix missing data (re-download tile, unzip)\
+   -F, --fix FIX\n
+    \tfix missing data (re-download tile, unzip) for FIX=1; default is $fix\
    -V, --version\n
     \tversion of docker image, default='$version'\n
    -C, --command_remote\n
     \tremote command to run on canfar, default='$cmd_remote'\n
+   -S, --scratch\n
+    \tprocessing scratch directory, default is None ($scratch)\n
    -b, --batch_max\n
     \tmaximum batch size = number of jobs run simultaneously, default=$batch_max\n
    --debug_out PATH\n
     \tdebug output file PATH, default not used\n
    -n, --dry_run LEVEL\n
-    \tdry run, from LEVEL=2 (no processing) to 0 (full run)\n
+    \tdry run, from LEVEL=2 (no processing) to 0 (full run; default)\n
+   --test\n
+    \ttest mode, no processing\n
 "
 
 ## Help if no arguments
@@ -101,7 +106,12 @@ while [ $# -gt 0 ]; do
       shift
       ;;
     -F|--fix)
-      fix=1
+      fix="$2"
+      shift
+      ;;
+    -S|--scratch)
+      scratch="$2"
+      shift
       ;;
     -b|--batch_max)
       batch_max="$2"
@@ -115,11 +125,22 @@ while [ $# -gt 0 ]; do
       dry_run="$2"
       shift
       ;;
+    --test)
+      test_only=1
+      ;;
   esac
   shift
 done
 
+
 ## Check options                                                                 
+
+if [ "$test_only" == "1" ]; then
+  test_arg="--test"
+else
+  test_arg=""
+fi
+
 if [ "$job" == "-1" ]; then                                                     
   echo "No job indicated, use option -j"                                        
   exit 2                                                                        
@@ -134,7 +155,7 @@ if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
   echo "PSF (option -p) needs to be 'psfex' or 'mccd'"
   exit 4
 fi
-                                                                                
+
 if [ "$dry_run" != 0 ] && [ "$dry_run" != 1 ] && [ "$dry_run" != 2 ]; then
   echo "Invalid dry_run option, allowed are 0, 1, and 2"
   exit 5
@@ -155,11 +176,6 @@ fi
 # command line arguments for remote script:
 # collect into string
 
-if [ "$dry_run" == "1" ]; then
-  arg_dry_run="-n $dry_run"
-else
-  arg_dry_run=""
-fi
 
 RESOURCES="ram=4&cores=$N_SMP"
 dir=`pwd`
@@ -168,20 +184,10 @@ dir=`pwd`
 function submit_batch() {
   path=$1
 
-  # Paralle call of curl to speed up submission
-  #n_para=8
-  #cat $path | xargs -I {} -P $n_para bash -c '
-    #source $HOME/shapepipe/scripts/sh/functions.sh
-    #ID="{}"
-    #IDt=$(echo $ID | tr "." "-")
-    #my_name="SP-${patch}-J${job}-${IDt}"
-    #call_curl $my_name $dry_run $debug_out
-  #'
-
   for ID in `cat $path`; do
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $dry_run $debug_out
+    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $debug_out $fix $scratch $test_arg
   done
 }
 
@@ -203,7 +209,7 @@ if [ "$dry_run" == 2 ]; then
     for ID in `cat $file_IDs`; do
       IDt=`echo $ID | tr "." "-"`
       my_name="SP-${patch}-J${job}-${IDt}"
-      call_curl $my_name $dry_run $debug_out
+      call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $debug_out $fix $scratch $test_arg
     done
 
   else
@@ -211,7 +217,7 @@ if [ "$dry_run" == 2 ]; then
     # Submit image (dry run = 2)
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $dry_run $debug_out
+    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $debug_out $fix $scratch $test_arg
 
   fi
 
@@ -264,7 +270,7 @@ else
     # Submit image
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $dry_run $debug_out
+    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $debug_out $fix $scratch $test_arg
 
   fi
 
