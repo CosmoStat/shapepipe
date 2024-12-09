@@ -139,6 +139,7 @@ function message() {
 
 
 # Init message
+message "test=$test" $debug_out -1
 if [ "$test_only" == "1" ]; then
   msg="init_run_exclusive.py script test mode, exiting."
   ex=0
@@ -204,12 +205,8 @@ fi
 
 CONDA_PREFIX=$HOME/.conda/envs/shapepipe
 PATH=$PATH:$CONDA_PREFIX/bin
-message "conda prefix = ${CONDA_PREFIX}" $debug_out -1
-message "HOME = ${HOME}" $debug_out -1
-message "path = ${PATH}" $debug_out -1
 
 cd $dir
-message "pwd=$pwd" $debug_out -1
 
 if [ ! -d ${kind}_runs ]; then
   command "mkdir ${kind}_runs" $dry_run
@@ -405,7 +402,7 @@ if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
 
 fi
 
-if [ "$kind" == $tile ] && [ "$sp_local" == "1" ]; then
+if [ "$kind" == "tile" ] && [ "$sp_local" == "1" ]; then
   cd ../../..
   command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs -s $sp_local" $dry_run
   cd tile_runs/$ID
@@ -430,6 +427,7 @@ else
     message "ID needs to be given (option -e) for mh_local" $debug_out 6
   fi
 
+  # Check and remove symbolic (global) mh file link
   if [ -L log_exp_headers.sqlite ]; then
     # Local Mh and symlink -> remove previous link to
     # (potentially incomplete) global mh file
@@ -437,6 +435,17 @@ else
     command "rm log_exp_headers.sqlite" $dry_run
   else
     message "no mh link found" $debug_out -1
+  fi
+
+  # Check size of existing header file
+  if [ -e log_exp_headers.sqlite ]; then
+    size=$(stat -c %s log_exp_headers.sqlite)
+    if (( size > 15000 )); then
+      message "Found valid local mh file, continuing" $debug_out -1
+    else
+      message "Existing local mh file looks invalid, deleting" $debug_out -1
+      rm -f log_exp_headers.sqlite
+    fi
   fi
 
   if [ ! -e log_exp_headers.sqlite ]; then
@@ -533,7 +542,9 @@ command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP --nsh_jobs $N
 
 if [ "$scratch" != "-1" ]; then
   cd ../..
-  if [ "$job" == "32" ]; then                                                   
+  if [ "$job" == "16" ]; then                                                   
+    command "mv ${kind}_runs/$ID/output/run_sp_Sx_* $dir/${kind}_runs/$ID/output" $dry_run
+  elif [ "$job" == "32" ]; then                                                   
     command "mv ${kind}_runs/$ID/output/run_sp_exp_SxSe* $dir/${kind}_runs/$ID/output" $dry_run
   elif [ "$job" == "64" ]; then                                                 
     command "mv ${kind}_runs/$ID/output/run_sp_tile_PsViSm** $dir/${kind}_runs/$ID/output" $dry_run

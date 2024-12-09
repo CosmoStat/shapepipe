@@ -75,10 +75,10 @@ function link_s () {
     link_name=$2
 
     if [ -L "$link_name" ]; then
-        echo "link with name $link_name already exists, skipping..."
+        #echo "link with name $link_name already exists, skipping..."
         let "n_skipped+=1"
     else
-        echo "create link $target <- $link_name"
+        #echo "create link $target <- $link_name"
         ln -s $target $link_name
         let "n_created+=1"
     fi
