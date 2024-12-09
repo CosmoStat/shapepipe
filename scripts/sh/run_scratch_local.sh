@@ -153,7 +153,9 @@ if [ "$scratch" != "-1" ]; then
   if [ "$job" == "32" ]; then
     command "mv ${kind}_runs/$ID/output/run_sp_exp_SxSe* $dir/${kind}_runs/$ID/output" $dry_run
   elif [ "$job" == "64" ]; then
-    command "mv ${kind}_runs/$ID/output/run_sp_tile_PsViSm** $dir/${kind}_runs/$ID/output" $dry_run
+    command "mv ${kind}_runs/$ID/output/run_sp_tile_PsViSm* $dir/${kind}_runs/$ID/output" $dry_run
+  elif [ "$job" == "128" ]; then
+    command "mv ${kind}_runs/$ID/output/run_sp_tile_ngmix_* $dir/${kind}_runs/$ID/output" $dry_run
   fi
 
   command "rm -rf ${kind}_runs/$ID" $dry_run
