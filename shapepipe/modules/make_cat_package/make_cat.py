@@ -84,6 +84,11 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     remove_vignet : bool
         If ``True`` will not save the ``VIGNET`` field into the final catalogue
 
+    Returns
+    -------
+    int
+        Number of objects saved
+
     """
     sexcat_file = file_io.FITSCatalogue(sexcat_path, SEx_catalogue=True)
     sexcat_file.open()
@@ -109,6 +114,8 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
 
     sexcat_file.close()
 
+    return cat_size
+
 
 def save_sm_data(
     final_cat_file,
@@ -116,6 +123,7 @@ def save_sm_data(
     do_classif=True,
     star_thresh=0.003,
     gal_thresh=0.01,
+    n_obj=-1,
 ):
     r"""Save Spread-Model Data.
 
@@ -126,7 +134,8 @@ def save_sm_data(
     final_cat_file : file_io.FITSCatalogue
         Final catalogue
     sexcat_sm_path : str
-        Path to spread-model catalogue to save.
+        Path to spread-model catalogue to save. If ``None``, spread_model is
+        set to 99
     do_classif : bool
         If ``True`` objects will be classified into stars, galaxies, and other,
         using the classifier
@@ -137,17 +146,27 @@ def save_sm_data(
     gal_thresh : float
         Threshold for galaxy selection; object is classified as galaxy if
         :math:`{\rm class} >` ``gal_thresh``
+    nobj : int, optional
+        Number of objects, only used if sexcat_sm_path is ``None``
 
     """
     final_cat_file.open()
 
-    sexcat_sm_file = file_io.FITSCatalogue(sexcat_sm_path, SEx_catalogue=True)
-    sexcat_sm_file.open()
+    if sexcat_sm_path is not None:
+        sexcat_sm_file = file_io.FITSCatalogue(
+            sexcat_sm_path,
+            SEx_catalogue=True,
+        )
+        sexcat_sm_file.open()
 
-    sm = np.copy(sexcat_sm_file.get_data()["SPREAD_MODEL"])
-    sm_err = np.copy(sexcat_sm_file.get_data()["SPREADERR_MODEL"])
+        sm = np.copy(sexcat_sm_file.get_data()["SPREAD_MODEL"])
+        sm_err = np.copy(sexcat_sm_file.get_data()["SPREADERR_MODEL"])
 
-    sexcat_sm_file.close()
+        sexcat_sm_file.close()
+
+    else:
+        sm = np.ones(n_obj) * 99
+        sm_err = np.ones(n_obj) * 99
 
     final_cat_file.add_col("SPREAD_MODEL", sm)
     final_cat_file.add_col("SPREADERR_MODEL", sm_err)
