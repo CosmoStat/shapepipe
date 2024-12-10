@@ -139,7 +139,7 @@ function message() {
 
 
 # Init message
-message "test=$test" $debug_out -1
+message "test=$test_only" $debug_out -1
 if [ "$test_only" == "1" ]; then
   msg="init_run_exclusive.py script test mode, exiting."
   ex=0
@@ -350,7 +350,7 @@ if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
   # run local Sp if not done already; works only with mh_local=1; this step needs to be done
   # before following mh_local=1 steps 
   message "run local sp" $debug_out -1
-  command "rm -rf run_sp_GitFeGie*/get_images_runner_run_2" $dry_run
+  #command "rm -rf run_sp_GitFeGie*/get_images_runner_run_2" $dry_run
   command "rm -rf run_sp_Gie*" $dry_run
   command "rm -rf run_sp_exp_Sp*" $dry_run
 

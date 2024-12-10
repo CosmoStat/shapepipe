@@ -568,5 +568,5 @@ if [[ $do_job != 0 ]]; then
 fi
 
 if [ "$debug_out" != "-1" ]; then
-  echo "${pat}End $(basename "$0")" >> $debug_out
+  echo "${pat}End $(basename "$0") ID=$exclusive success" >> $debug_out
 fi
