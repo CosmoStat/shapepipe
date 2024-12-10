@@ -250,25 +250,25 @@ def set_jobs_v2_pre_v2(patch, verbose):
     )
 
     # Post-processing
-    jobs["1024"] = job_data(
-        "1024",
-        ["run_sp_combined_final"],
-        ["make_catalog_runner"],
-        "tile_IDs",
-        path_main=path_main,
-        path_left="output",
-        verbose=verbose,
-    )
+#    jobs["1024"] = job_data(
+#        "1024",
+#        ["run_sp_combined_final"],
+#        ["make_catalog_runner"],
+#        "tile_IDs",
+#        path_main=path_main,
+#        path_left="output",
+#        verbose=verbose,
+#    )
 
-    jobs["2048"] = job_data(
-        "2048",
-        "run_sp_combined_psf",
-        ["psfex_interp_runner"],
-        "shdus",
-        path_main=path_main,
-        path_left="output",
-        verbose=verbose,
-    )
+#    jobs["2048"] = job_data(
+#        "2048",
+#        "run_sp_combined_psf",
+#        ["psfex_interp_runner"],
+#        "shdus",
+#        path_main=path_main,
+#        path_left="output",
+#        verbose=verbose,
+#    )
 
     return jobs, list_tile_IDs_dot
 

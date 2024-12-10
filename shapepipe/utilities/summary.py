@@ -225,7 +225,7 @@ def check_special_one(module, path):
                     ngmix_finished = True
                     break
 
-            if modeul == "spread_model_runner":
+            if module == "spread_model_runner":
                 m = re.search("FFT that is too large", line)
                 if m:
                     code = 8
@@ -542,7 +542,7 @@ class job_data(object):
                 ID = match.group()
                 IDs.append(ID)
             else:
-                msg = f"No ID found in {name}"
+                msg = f"No ID found in {path}"
                 #raise ValueError(msg)
                 print(f"Warning: {msg}, continuing")
 
