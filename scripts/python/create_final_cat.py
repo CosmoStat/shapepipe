@@ -67,6 +67,7 @@ def params_default():
         "hdu_num": 1,
         "patch": "3",
         "list_only": False,
+        "output_summary": "n_tiles_final.txt",
     }
     _short_options = {                                                 
         "input_root_dir": "-i",                                           
@@ -74,6 +75,7 @@ def params_default():
         "param_path": "-p",
         "patch": "-P",
         "list_only": "-l",
+        "output_summary": "-o",
 
     }                                                                       
     _types = {                                                         
@@ -86,6 +88,8 @@ def params_default():
         "param_path": "parameter file path, if not given use all columns, default={}",
         "patch": "patch number, default={}",
         "list_only": "print list of patches and IDs only, default={}",
+        "output_summary": "output file for numbre of tiles",
+
     }
 
     return _params, _short_options, _types, _help_strings
@@ -148,12 +152,17 @@ def check_params(params):
 
 def print_list(params):
 
+    n_tiles = 0
     with h5py.File(params["merged_cat_path"], "a") as hdf5_file:
 
         for patch in hdf5_file["patches"]:
-            print(patch)
+            #print(patch)
             for id in hdf5_file[f"patches/{patch}"]:
-                print(f" {id}")
+                #print(f" {id}")
+                n_tiles += 1
+
+    with open(params["output_summary"], "w") as f_out:
+        print(n_tiles, file=f_out)
 
 
 def process(params):
@@ -174,34 +183,35 @@ def process(params):
 
         # Iterate over patches
         for patch in os.listdir(params["input_root_dir"]):
-            if not patch_pattern.fullmatch(patch):  # Skip non-matching entries
-                #if params["verbose"]:
-                    #print(f"Patch {patch} not found in {params['input_root_dir']}, skipping")
+
+            # Skip non-matching entries
+            if not patch_pattern.fullmatch(patch):
                 continue
-
+            
+            # Full path to patch
             patch_path = os.path.join(params["input_root_dir"], patch)
-
             if not os.path.isdir(patch_path):
                 if params["verbose"]:
                     print(f"Path {patch_path} not found, skipping")
                 continue
         
-            # Get or create a group for the patch
+            # Get hdf5 group for this patch
             if f"patches/{patch}" in hdf5_file:
                 if params["verbose"]:
                     print(f"Processing group {patch}")
                 patch_group = hdf5_file[f"patches/{patch}"]
             else:
+                # Create new group
                 if params["verbose"]:
                     print(f"Creating new group for patch {patch}")
                 patch_group = hdf5_file.create_group(f"patches/{patch}")
         
+            # Get paths to all tile IDs and loop
             tile_runs_path = os.path.join(patch_path, "tile_runs")
             subdirs = os.listdir(tile_runs_path)
-                
             for id in tqdm.tqdm(subdirs, total=len(subdirs)):
 
-                # Skip if the dataset already exists
+                # Skip if the patch/ID data already exists
                 if id in patch_group:
                     if params["verbose"]:
                         print(f"Skipping {id} (already processed)")
@@ -210,10 +220,26 @@ def process(params):
                 if id_pattern.match(id) and os.path.isdir(os.path.join(tile_runs_path, id)):
                     id_path = os.path.join(tile_runs_path, id)
                 
-                    output_path = os.path.join(id_path, "output", "run_sp_Mc_*", "make_cat_runner", "output", "*.fits")    
-                    fits_files = glob.glob(output_path, recursive=True)
-                    for fits_file in fits_files:
-                    
+                    base_pattern = os.path.join(id_path, "output", "run_sp_Mc_*")
+                    all_matches = [d for d in glob.glob(base_pattern) if os.path.isdir(d)]
+                    if not all_matches:
+                        if params["verbose"]:
+                            print(f"Final cat for {id} not found, continuing")
+                        continue
+                    newest_dir = max(all_matches, key=os.path.getmtime)
+
+                    #output_path = os.path.join(id_path, "output", "run_sp_Mc_*", "make_cat_runner", "output", "*.fits")    
+                    #fits_files = glob.glob(output_path, recursive=True)
+                    id_dash = re.sub("\.", "-", id)
+                    fits_file = f"{newest_dir}/make_cat_runner/output/final_cat-{id_dash}.fits"
+
+                    # Exclude unsuccessful run without output FITS file
+                    if not os.path.exists(fits_file):
+                        if params["verbose"]:
+                            print(f"Run without output file found for {id}, skipping")
+                            continue
+                        
+                    if True:
                         # Read data
                         with fits.open(fits_file) as hdul:
                             data = hdul[params["hdu_num"]].data
@@ -226,7 +252,7 @@ def process(params):
                                 extracted_data = {col: data[col] for col in params["param_list"]}
                                 dtype = data.dtype
                             except:
-                                print("Error for ID {id}")
+                                print(f"Error for ID {id}")
                                 for col in params["param_list"]:
                                     if col not in data:
                                         print(col, end=" ")
@@ -265,11 +291,15 @@ def process(params):
                                 structured_data[col] = extracted_data[col]
                         
                         # Create a new dataset
-                        patch_group.create_dataset(
-                            str(id),
-                            data=structured_data,
-                            dtype=dtype,
-                        )
+                        try:
+                            patch_group.create_dataset(
+                                str(id),
+                                data=structured_data,
+                                dtype=dtype,
+                            )
+                        except:
+                            print(f"Error for {id}")
+                            raise
 
 
 def main(argv=None):
@@ -280,20 +310,17 @@ def main(argv=None):
 
     check_params(params)
 
-    if params["list_only"]:
-        print_list(params)
-    else:
+    if params["list_only"] == False:
         params["param_list"] = read_param_file(
             params["param_path"],
             verbose=params["verbose"],
         )
         process(params)
+    
+    print_list(params)
 
     return 0
 
 
 if __name__ == "__main__":                                                      
     sys.exit(main(sys.argv))
-
-
-
