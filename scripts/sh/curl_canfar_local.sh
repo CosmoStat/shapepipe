@@ -192,6 +192,10 @@ function submit_batch() {
 }
 
 batch=50
+if [ "$batch" -ge "$batch_max" ]; then
+  ((batch=batch_max/2))
+  echo "Reducing batch size to $batch"
+fi
 sleep=75
 
 ((n_thresh=batch_max-batch))
@@ -239,20 +243,20 @@ else
       echo "Split '$file_IDs' into $n_split batches of size $batch"
 
       count=1
-      n_running=`stats_jobs_canfar.sh`
+      n_queued=`stats_jobs_canfar.sh -w all`
       for batch in $prefix*; do
-        echo "Number of running jobs = $n_running"
+        echo "Number of queued jobs = $n_queued"
         echo "Submitting batch $batch ($count/$n_split)"
         echo -ne "\033]0;curl patch=$patch job=$job $count/$n_split\007"
         submit_batch $batch
         ((count=count+1))
 
-        n_running=`stats_jobs_canfar.sh`
+        n_queued=`stats_jobs_canfar.sh -w all`
 
-        while [ "$n_running" -gt "$n_thresh" ]; do
-          echo "Wait for #jobs = $n_running jobs to go < $n_thresh ..."
+        while [ "$n_queued" -gt "$n_thresh" ]; do
+          echo "Wait for #jobs = $n_queued jobs to go < $n_thresh ..."
           sleep $sleep
-          n_running=`stats_jobs_canfar.sh`
+          n_queued=`stats_jobs_canfar.sh -w all`
         done
 
       done
