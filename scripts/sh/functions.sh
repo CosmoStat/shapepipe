@@ -26,12 +26,13 @@ function call_curl() {
   my_dir=$7
   my_mh_local=$8
   my_sp_local=$9
-  my_debug_out=${10}
-  my_fix=${11}
-  my_scratch=${12}
-  my_test_arg=${13}
+  my_sm=${10}
+  my_debug_out=${11}
+  my_fix=${12}
+  my_scratch=${13}
+  my_test_arg=${14}
 
-  my_arg="-j $my_job -p $my_psf -e $my_ID -N $my_N_SMP -n $my_dry_run -d $my_dir -m $my_mh_local -s $my_sp_local --debug_out $my_debug_out -F $my_fix -S $my_scratch $my_test_arg"
+  my_arg="-j $my_job -p $my_psf -e $my_ID -N $my_N_SMP -n $my_dry_run -d $my_dir -m $my_mh_local -s $my_sp_local --sm $my_sm --debug_out $my_debug_out -F $my_fix -S $my_scratch $my_test_arg"
 
   if [ "$my_dry_run" == "0" ]; then
     my_session=`curl -E $SSL "$SESSION?$RESOURCES" -d "image=$IMAGE:$version" -d "name=${my_name}" -d "cmd=$cmd_remote" --data-urlencode "args=${my_arg[@]}" &> /dev/null`
@@ -78,7 +79,7 @@ function command () {
         res=$?
 
         if [ "$debug_out" != "-1" ]; then
-          echo "${pat}ls = $res" >> $debug_out
+          echo "${pat}result=$res" >> $debug_out
         fi
 
         if [ $VERBOSE == 1 ]; then
@@ -88,6 +89,9 @@ function command () {
               echo -e "${RED}error, return value = $res${NC}"
               if [ $STOP == 1 ]; then
                   echo "${RED}exiting  $(basename "$0")', error in command '$cmd'${NC}"
+                  if [ "$debug_out" != "-1" ]; then
+                      echo "${pat}${RED}exiting  $(basename "$0")', error in command '$cmd'${NC}" >> $debug_out
+                  fi
                   exit $res
               else
                   echo "${RED}continuing '$(basename "$0")', error in command '$cmd'${NC}"

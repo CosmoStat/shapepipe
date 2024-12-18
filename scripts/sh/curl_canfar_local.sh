@@ -26,6 +26,7 @@ sp_local=0
 test_only=0
 debug_out="-1"
 scratch="-1"
+sm=1
 
 pat="- "
 
@@ -44,6 +45,8 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
     \tmerged header file local (MH=0) or global (MH=1); default is $mh_local\n
    -s, --sp_local SP\n
     \tsplit local run local (SP=1) or global (SP=0); default is SP=$sp_local\n
+   --sm SM\n
+    \tWith (SM=1; default) or without (SM=0) spread model input\n
    -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default=$N_SMP\n
    -F, --fix FIX\n
@@ -93,6 +96,10 @@ while [ $# -gt 0 ]; do
       sp_local="$2"
       shift
       ;;
+    --sm)
+      sm="$2"
+      shift
+      ;;  
     -e|--exclusive)
       ID="$2"
       shift
@@ -187,7 +194,7 @@ function submit_batch() {
   for ID in `cat $path`; do
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $debug_out $fix $scratch $test_arg
+    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $test_arg
   done
 }
 
@@ -213,7 +220,7 @@ if [ "$dry_run" == 2 ]; then
     for ID in `cat $file_IDs`; do
       IDt=`echo $ID | tr "." "-"`
       my_name="SP-${patch}-J${job}-${IDt}"
-      call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $debug_out $fix $scratch $test_arg
+      call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $test_arg
     done
 
   else
@@ -221,7 +228,7 @@ if [ "$dry_run" == 2 ]; then
     # Submit image (dry run = 2)
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $debug_out $fix $scratch $test_arg
+    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $test_arg
 
   fi
 
@@ -274,7 +281,7 @@ else
     # Submit image
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $debug_out $fix $scratch $test_arg
+    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $test_arg
 
   fi
 

@@ -22,6 +22,7 @@ results='cosmostat/kilbinger/results_v2'
 n_smp=-1
 nsh_jobs=8
 debug_out=-1
+sm=1
 
 pat="--- "
 
@@ -48,6 +49,8 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    -s, --star_cat_for_mask\n
    \tcatalogue for masking bright stars, allowed are 'onthefly', 'save',\n
    \tdefault is '${star_cat_for_mask}'\n
+   --sm SM\n
+   \tWith (SM=1; default) or without (SM=0) spread model input\n
    -e, --exclusive ID\n
    \texclusive input filer number string ID (default: None)\n
    -o, --output_dir\n
@@ -94,6 +97,10 @@ while [ $# -gt 0 ]; do
       ;;
     -s|--star_cat_for_mask)
       star_cat_for_mask="$2"
+      shift
+      ;;
+    --sm)
+      sm="$2"
       shift
       ;;
     -e|--exclusive)
@@ -546,9 +553,16 @@ fi
 (( do_job = $job & 512 ))
 if [[ $do_job != 0 ]]; then
 
+  # spread_model suffix for config file with or without SM input
+  if [ "$sm" == "0" ]; then
+    suff_sm="_nosm"
+  else
+    suff_sm=""
+  fi
+
   ### Merge all relevant information into final catalogue
   command_cfg_shapepipe \
-    "config_make_cat_$psf.ini" \
+    "config_make_cat_$psf${suff_sm}.ini" \
     "Run shapepipe (tile: create final cat $psf)" \
     $n_smp \
     $exclusive

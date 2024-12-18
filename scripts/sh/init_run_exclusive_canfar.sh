@@ -13,6 +13,7 @@ debug_out=-1
 scratch=-1
 fix=0
 test_only=0
+sm=1
 
 # mh_local is 0 (1) if merge_header_runner is run on all exposures,
 # which is standard so far (run on exposures of given tile only; new)
@@ -39,6 +40,8 @@ usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
    \tmerge header file local (MH=1) or global (MH=0); default is $mh_local\n
    -s, --sp_local SP\n
    \tsplit local run local (SP=1) or global (SP=r0wwdefault is $sp_local\n
+   --sm SM\n
+   \tWith (SM=1; default) or without (SM=0) spread model input\n
    -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default from original config files\n
    -d, --directory\n
@@ -86,6 +89,10 @@ while [ $# -gt 0 ]; do
       ;;
     -s|--sp_local)
       sp_local="$2"
+      shift
+      ;;
+    --sm)
+      sm="$2"
       shift
       ;;
     -N|--N_SMP)                                                                 
@@ -538,7 +545,7 @@ if [ "$scratch" != "-1" ]; then
   command "cd $scratch/${kind}_runs/$ID" $dry_run
 fi
 
-command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP --nsh_jobs $N_SMP --debug_out $debug_out " $dry_run
+command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP --nsh_jobs $N_SMP --debug_out $debug_out --sm $sm " $dry_run
 
 if [ "$scratch" != "-1" ]; then
   cd ../..
