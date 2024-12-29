@@ -10,7 +10,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
 
     # Main input and output directory
     path_main = f"{os.environ['HOME']}/cosmostat/v2/pre_v2/psfex/{patch}"
-    
+
     # Logging
     path = f"{path_main}/summary"
     if not os.path.isdir(path):
