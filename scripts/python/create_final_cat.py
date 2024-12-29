@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-# -*- coding: utf-8 -*-
-
 """Script create_final_cat.py
 
 Create and update hdf5 file of all final ShapePipe output FITS files, runs of
@@ -100,6 +98,7 @@ def params_default():
 
 def read_param_file(path, verbose=False):
     """Read Param File.
+    MKDEBUG TODO: Move to cs_util. Also used in sp_val/cat.py.
 
     Return parameter list read from file.
 
@@ -133,9 +132,9 @@ def read_param_file(path, verbose=False):
 
     if verbose:
         if len(param_list) > 0:
-            print(f"Copying {len(param_list)} columns", end="")
+            print(f"Read {len(param_list)} columns", end="")
         else:
-            print("Copying all columns", end="")
+            print("No parameters read", end="")
         print(" into merged catalogue")
 
     param_list_unique = list(set(param_list))
@@ -288,9 +287,43 @@ def read_data(fits_file, params):
             if col not in data:
                 print(col, end=" ")
             print()
-        continue
+            continue
 
     return extracted_data, dtype
+
+
+def copy_data(param_list, extracted_data, dtype):
+    """Copy Data.
+
+    """
+    # Initialize new data structure
+    structured_data = np.empty(
+        len(extracted_data[param_list[0]]),
+        dtype=dtype,
+    )
+
+    # Loop over parameters
+    for col in param_list:
+        if not col in extracted_data:
+            print(f"Column {col} not in file with ID {id}")
+        structured_data[col] = extracted_data[col]
+    
+    #if isinstance(extracted_data[col][0], (np.ndarray, tuple, list)):
+    if False:
+
+        # If multi-entry loop over entries
+        print(col)
+        num_elements = len(extracted_data[col][0])
+        for idx in range(num_elements):
+            new_col_name = f"{col}_{idx}"
+            dtype.append((new_col_name, extracted_data[col].dtype))
+            try:
+                structured_data[new_col_name] = [x[idx] for x in extracted_data[col]]
+            except:
+                print(f"Error for ID {id} for column {new_col_name}")
+                raise
+
+    return structured_data
 
 
 def process(params):
@@ -361,36 +394,8 @@ def process(params):
                         
                     if True:
                         extracted_data, dtype = read_data(fits_file, params)
-                        
-                        # Initialize new data structure
-                        structured_data = np.empty(
-                            len(extracted_data[params["param_list"][0]]),
-                            dtype=dtype,
-                        )
 
-                        # Loop over parameters
-                        for col in params["param_list"]:
-
-                            #if isinstance(extracted_data[col][0], (np.ndarray, tuple, list)):
-                            if False:
-
-                                continue
-                                # If multi-entry loop over entries
-                                print(col)
-                                num_elements = len(extracted_data[col][0])
-                                for idx in range(num_elements):
-                                    new_col_name = f"{col}_{idx}"
-                                    dtype.append((new_col_name, extracted_data[col].dtype))
-                                    try:
-                                        structured_data[new_col_name] = [x[idx] for x in extracted_data[col]]  # Extract element `idx`
-                                    except:
-                                        print(f"Error for ID {id} for column {new_col_name}")
-                                        raise
-                            else:
-                                # single entry
-                                if not col in extracted_data:
-                                    print(f"Column {col} not in file with ID {id}")
-                                structured_data[col] = extracted_data[col]
+                        structured_data = copy_data(params["param_list"], extracted_data, dtype)
                         
                         # Create a new dataset
                         try:
@@ -405,7 +410,46 @@ def process(params):
 
                         n_added += 1
 
-        return n_added
+        if params["verbose"]:
+            print(f"{n_added} tiles added")
+
+
+def single_action(params):
+    """Single Action.
+
+    Perform single-ID action.
+
+    Parameters
+    ----------
+    params : dict
+        parameter options)
+
+    Returns
+    -------
+    int
+        return value: 0 (success), 1 (failure), ``None`` (no action performed)
+
+    """
+    if params["single_op"] == "check":
+        # Check wheter ID is part of hdf5 file
+        found = check_ID(params["merged_cat_path"], params["ID"], verbose=params["verbose"])        
+        if found == "":
+            # ID not found
+            res = 1
+        # ID found
+        res = 0
+
+    elif params["single_op"] == "remove":
+        # Remove ID
+        remove_ID(params["merged_cat_path"], params["ID"], verbose=params["verbose"])
+        res = 0
+
+    else:
+
+        # No action performed
+        res = None
+
+    return res
 
 
 def main(argv=None):
@@ -416,19 +460,9 @@ def main(argv=None):
 
     check_params(params)
 
-    if params["single_op"] == "check":
-        # Check wheter ID is part of hdf5 file
-        found = check_ID(params["merged_cat_path"], params["ID"], verbose=params["verbose"])        
-        if found == "":
-            # ID not found
-            return 1
-        # ID found
-        return 0
-
-    elif params["single_op"] == "remove":
-        # Remove ID
-        remove_ID(params["merged_cat_path"], params["ID"], verbose=params["verbose"])
-        return 0
+    res = single_action(params)
+    if res is not None:
+        return res
 
     if params["list_only"] == False:
         params["param_list"] = read_param_file(
@@ -436,7 +470,7 @@ def main(argv=None):
             verbose=params["verbose"],
         )
         process(params)
-    
+
     print_list(params)
 
     return 0
