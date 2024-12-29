@@ -39,7 +39,8 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    \t  32: processing of stars on exposures (offline)\n
    \t  64: galaxy selection on tiles (offline)\n
    \t 128: shapes and morphology (offline)\n
-   \t 256: paste catalogues (offline)\n
+   \t 256: merge separate ngmix catalogues (offline)\n
+   \t 512: create joint catalogues (offline)\n
    -c, --config_dir DIR\n
    \t config file directory, default='$config_dir'\n
    -p, --psf MODEL\n
@@ -194,17 +195,12 @@ function command () {
    RED='\033[0;31m'
    GREEN='\033[0;32m'
    NC='\033[0m' # No Color
-   # Color escape characters show up in log files
-   #RED=''
-   #GREEN=''
-   #NC=''
-
 
    if [ "$debug_out" != "-1" ]; then
       echo "${pat}pwd = `pwd`" >> $debug_out
       echo "${pat}SP_RUN = $SP_RUN" >> $debug_out
       echo "${pat}SP_CONFIG = $SP_CONFIG" >> $debug_out
-    fi
+   fi
 
    if [ $# == 2 ]; then
       if [ $VERBOSE == 1 ]; then
@@ -225,7 +221,6 @@ function command () {
       fi
 
       $cmd $4 "$5 $6"
-
    fi	
 
    res=$?
@@ -249,29 +244,34 @@ function command () {
    fi
 }
 
-# Run shapepipe command. If error occurs, upload sp log files before stopping script.
-function command_sp() {
+
+# Run shapepipe command.
+function command_sp () {
    local cmd=$1
    local str=$2
+   local _exclusive=$3
 
-   command "$1" "$2"
+   if [ "$_exclusive" != "" ]; then
+     cmd="$cmd -e $_exclusive"
+   fi
+
+   command "$cmd" "$str"
 }
 
 # Set up config file and call shapepipe_run
-function command_cfg_shapepipe() {
+function command_cfg_shapepipe () {
     local config_name=$1
     local str=$2
     local _n_smp=$3 
     local _exclusive=$4
 
-    if [ "$exclusive" != "" ]; then
+    if [ "$_exclusive" != "" ]; then
       exclusive_flag="-e $_exclusive"
     else
       exclusive_flag=""
     fi
 
     config_upd=$(set_config_n_smp $config_name $_n_smp)
-    #local cmd="/arc/home/kilbinger/.conda/envs/shapepipe/bin/shapepipe_run -c $config_upd $exclusive_flag"
     local cmd="shapepipe_run -c $config_upd $exclusive_flag"
     command_sp "$cmd" "$str"
 }
@@ -346,8 +346,6 @@ mkdir -p $SP_RUN
 cd $SP_RUN
 mkdir -p $OUTPUT
 mkdir -p $SP_CONFIG_MOD
-
-# Processing
 
 
 ### Retrieve config files
@@ -509,6 +507,7 @@ if [[ $do_job != 0 ]]; then
 
       # if output dir for subrun exists but no output: re-run
       ngmix_run=$OUTPUT/"run_sp_tile_ngmix_Ng${k}u/ngmix_runner"
+      
       if [ -e "$ngmix_run" ]; then
         ngmix_out="$ngmix_run/output"
         n_out=`ls -rlt $ngmix_out | wc -l`
@@ -518,14 +517,16 @@ if [[ $do_job != 0 ]]; then
             "Re-running existing empty ngmix subrun $k"
           command_sp \
             "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" \
-            "Run shapepipe (tile: ngmix $k)" &
+            "Run shapepipe (tile: ngmix $k)" \
+            $exclusive &
         else
           echo "Skipping existing non-empty ngmix subrun $k"
         fi
       else
         command_sp \
           "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" \
-          "Run shapepipe (tile: ngmix $k)" &
+          "Run shapepipe (tile: ngmix $k)" \
+           $exclusive &
       fi
   done
   wait
@@ -543,11 +544,11 @@ if [[ $do_job != 0 ]]; then
       > $SP_CONFIG_MOD/config_merge_sep_cats.ini
  
   ### Merge separated shapes catalogues
-  command_sp \
+  command_cfg_shapepipe \
     "shapepipe_run -c $SP_CONFIG_MOD/config_merge_sep_cats.ini" \
     "Run shapepipe (tile: merge sep cats)" \
-    "$VERBOSE" \
-    "$ID"
+    $n_smp \
+    $exclusive
 fi
 
 (( do_job = $job & 512 ))

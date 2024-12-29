@@ -16,6 +16,7 @@ psf="psfex"
 ID=-1
 file_IDs=-1
 N_SMP=1
+RAM=4
 fix=0
 version="1.1"
 cmd_remote="$HOME/shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
@@ -47,8 +48,10 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
     \tsplit local run local (SP=1) or global (SP=0); default is SP=$sp_local\n
    --sm SM\n
     \tWith (SM=1; default) or without (SM=0) spread model input\n
-   -N, --N_SMP N_SMOp\n
+   -N, --N_SMP N_SMP\n
     \tnumber of jobs (SMP mode only), default=$N_SMP\n
+   -R, --RAM RAM\n
+    \tRAM in Gb, default=$RAM\n
    -F, --fix FIX\n
     \tfix missing data (re-download tile, unzip) for FIX=1; default is $fix\
    -V, --version\n
@@ -110,6 +113,10 @@ while [ $# -gt 0 ]; do
       ;;
     -N|--N_SMP)
       N_SMP="$2"
+      shift
+      ;;
+    -R|--RAM)
+      RAM="$2"
       shift
       ;;
     -F|--fix)
@@ -184,7 +191,7 @@ fi
 # collect into string
 
 
-RESOURCES="ram=4&cores=$N_SMP"
+RESOURCES="ram=${RAM}&cores=$N_SMP"
 dir=`pwd`
 
 
@@ -194,11 +201,11 @@ function submit_batch() {
   for ID in `cat $path`; do
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $test_arg
+    call_curl $my_name $job $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $version $cmd_remote $RESOURCES $test_arg
   done
 }
 
-batch=50
+batch=30
 if [ "$batch" -ge "$batch_max" ]; then
   ((batch=batch_max/2))
   echo "Reducing batch size to $batch"
@@ -220,7 +227,7 @@ if [ "$dry_run" == 2 ]; then
     for ID in `cat $file_IDs`; do
       IDt=`echo $ID | tr "." "-"`
       my_name="SP-${patch}-J${job}-${IDt}"
-      call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $test_arg
+      call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $version $cmd_remote $RESOURCES $test_arg
     done
 
   else
@@ -228,7 +235,7 @@ if [ "$dry_run" == 2 ]; then
     # Submit image (dry run = 2)
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $test_arg
+    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $version $cmd_remote $RESOURCES $test_arg
 
   fi
 
@@ -281,7 +288,7 @@ else
     # Submit image
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $test_arg
+    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $version $cmd_remote $RESOURCES $test_arg
 
   fi
 
