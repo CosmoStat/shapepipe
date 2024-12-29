@@ -9,9 +9,8 @@ def set_jobs_v2_pre_v2(patch, verbose):
     print(f"Set job info for patch {patch}")
 
     # Main input and output directory
-    #path_main = f"{os.environ['HOME']}/cosmostat/v2/pre_v2/psfex/{patch}"
-    path_main = f"{os.environ['HOME']}/astro/Runs/shapepipe/CFIS//v1/{patch}"
-
+    path_main = f"{os.environ['HOME']}/cosmostat/v2/pre_v2/psfex/{patch}"
+    
     # Logging
     path = f"{path_main}/summary"
     if not os.path.isdir(path):
