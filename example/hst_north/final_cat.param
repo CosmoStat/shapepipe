@@ -15,11 +15,11 @@ NGMIX_MCAL_FLAGS
 NGMIX_ELL_PSFo_NOSHEAR
 
 # spread class
-#SPREAD_CLASS
+SPREAD_CLASS
 
 # spread model flag and error
-#SPREAD_MODEL
-#SPREADERR_MODEL
+SPREAD_MODEL
+SPREADERR_MODEL
 
 # Number of epochs (exposures)
 N_EPOCH
@@ -78,20 +78,9 @@ NGMIX_FLUX_ERR_NOSHEAR
 
 # magnitude, mainly for plots
 MAG_AUTO
-MAGERR_AUTO
-MAG_WIN
-MAGERR_WIN
-FLUX_AUTO
-FLUXERR_AUTO
-FLUX_APER
-FLUXERR_APER
-FLUX_RADIUS
 
-# SNR from SExtractor
+# SNR from SExtractor, used for cuts on GALSIM shapes
 SNR_WIN
-
-FWHM_IMAGE
-FWHM_WORLD
 
 # PSF size measured on original image
 NGMIX_T_PSFo_NOSHEAR
