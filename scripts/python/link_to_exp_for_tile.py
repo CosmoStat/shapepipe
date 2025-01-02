@@ -173,12 +173,29 @@ def update_param(p_def, options):
 
 # TODO: move to cs_util
 def matching_subdirs(base_dir, pattern):
+    """Matching Subdirs.
 
-    # Find all matching subdirectories
+    Return all subdirectories whose name start with a given string pattern.
+
+    Parameters
+    ----------
+    base_dir: str
+        base directory
+    pattern: str
+        pattern to match beginning of subdir name
+
+    Returns
+    -------
+    list
+        matched subdirectory names
+
+    """
     subdirs = []
     if os.path.exists(base_dir):
+        # Loop over directory entries
         for entry in os.listdir(base_dir):
             full_path = os.path.join(base_dir, entry)
+            # Append if match
             if os.path.isdir(full_path) and entry.startswith(pattern):
                 subdirs.append(full_path)
     else:
@@ -191,19 +208,54 @@ def matching_subdirs(base_dir, pattern):
 
 
 def get_tile_out_dir(tile_base_dir, tile_ID):
+    """Get Tile Out Dir.
 
-    tile_out_dir = f"{tile_base_dir}/{tile_ID}/output"
+    Return output directory path for a given tile ID.
 
-    return tile_out_dir
+    Parameters
+    ----------
+    tile_base_dir: str
+        base directory of tile runs
+    tile_ID: str
+        tile ID
+
+    Returns
+    -------
+    str
+        path
+
+    """
+    return f"{tile_base_dir}/{tile_ID}/output"
 
 
 def get_exp_IDs(tile_base_dir, tile_ID, verbose=False):
+    """Get Exp IDs.
 
+    Return exposure IDs used for given tile.
+
+    Parameters
+    ----------
+    tile_base_dir: str
+        base directory of tile runs
+    tile_ID: str
+        tile ID
+    verbose: bool, optional
+        verbose output if ``True``; default is ``False``
+
+    Returns
+    -------
+    list
+        exposure IDs
+        
+    """
+    # Get tile output path
     tile_out_dir = get_tile_out_dir(tile_base_dir, tile_ID)
 
+    # Get subdirectories with runs "Fe" (find exposures)
     pattern = "run_sp_GitFeGie"
     subdirs = matching_subdirs(tile_out_dir, pattern)
 
+    # Raise error if not exactly one run
     if len(subdirs) == 0:
         raise IOError(
             f"No matching directory '{pattern}' in {tile_out_dir} found"
@@ -216,12 +268,14 @@ def get_exp_IDs(tile_base_dir, tile_ID, verbose=False):
 
     # Replace dot with dash in tile ID
     tile_ID_sp = re.sub(r"\.", "-", tile_ID)
-    exp_ID_file = (
+    # Get output file of find_exposure_runner for this tile ID
+    exp_ID_file = 
         f"{subdirs[0]}/find_exposures_runner/output/"
         + f"exp_numbers-{tile_ID_sp}.txt"
     )
 
     exp_IDs = []
+    # Read file to get exposure IDs
     with open(exp_ID_file) as f_in:
         for line in f_in:
             name = line.strip()
@@ -235,9 +289,27 @@ def get_exp_IDs(tile_base_dir, tile_ID, verbose=False):
 
 
 def get_exp_single_HDU_IDs(exp_IDs, n_CPU):
+    """Get Exp Single HDU IDs.
 
+    Return all single-HDU IDs for given exposures.
+
+    Parameters
+    ----------
+    exp_IDs: list
+        input exposure IDs, list of str
+    n_CPU: int
+        number of CPUs (=HDUs) of an exposure; n_CPU=40 for MegaCAM
+
+    Returns
+    -------
+    list
+        list of single-HDU exposure IDs
+
+    """
     exp_shdu_IDs = []
+    # Loop over input exposure IDs
     for exp_ID in exp_IDs:
+        # Append int up to n_CPU to each
         for idx in range(n_CPU):
             ID = f"{exp_ID}-{idx}"
             exp_shdu_IDs.append(ID)
@@ -246,68 +318,112 @@ def get_exp_single_HDU_IDs(exp_IDs, n_CPU):
 
 
 def get_paths(exp_base_dir, exp_shdu_IDs, pattern):
+    """Get Paths.
 
-    number = {}
+    Return (newest) subdirectory for each input single-exposure HDU ID that matches pattern.
+
+    Parameters
+    ----------
+    exp_base_dir: str
+        base directory for (single-HDU) exposure runs
+    exp_shdu_IDs: list
+        single-HDU exposure IDs; list of str
+    pattern: str
+        pattern to match beginning of subdir names
+    Returns
+    -------
+    list
+        matching paths; list of str, one entry for each input single-exp ID
+
+    """
     paths = []
+    # Loop over single-HDU exposure IDs
     for exp_shdu_ID in exp_shdu_IDs:
 
+        # output path of runs
         name = f"{exp_base_dir}/{exp_shdu_ID}/output"
         path = os.path.abspath(name)
+
+        # get matching subdirs
         subdirs = matching_subdirs(path, pattern)
         n_subdirs = len(subdirs)
-
-        if n_subdirs not in number:
-            number[n_subdirs] = 1
-        else:
-            number[n_subdirs] += 1
 
         if n_subdirs != 1:
             msg = (
                 f"Exactly one directory matching {pattern} in {path} expected,"
                 + f"  not {n_subdirs}"
             )
-            #print(msg)
-            # More than one match: sort according to name = creation time
+
+            # If more than one found: sort by name = sort by date
             subdirs = sorted(subdirs)
+
+            # No match
             if n_subdirs == 0:
                 continue
 
         # Append matching subdir; if more than one append newest
         paths.append(f"{subdirs[-1]}")
 
-    return paths, number
+    return paths
 
 
 def create_links_paths(tile_base_dir, tile_ID, paths, verbose=False):
+    """Create Links Paths.
 
+    Create links to paths.
+
+    Parameters
+    ----------
+    tile_base_dir: str
+        base directory for tile runs
+    tile_ID: str
+        tile ID
+    paths: list
+        paths; list of str
+    verbose: bool, optional
+        verbose output if ``True``; default is ``False``
+ 
+    """
+    # Get tile output path
     tile_out_dir = get_tile_out_dir(tile_base_dir, tile_ID)
 
+    # Loop over paths
     for path in paths:
 
+        # Get destination = tile output dir + path tail (part of path after last slash)
         head, tail = os.path.split(path)
         src = path
         dst = f"{tile_out_dir}/{tail}"
+        
         if os.path.exists(dst):
+            
             src_existing = os.readlink(dst)
             if src_existing == src:
+                # destination already points to source: skip
                 if verbose:
                     print(
                         f"Warning: {src} <- {dst} already exists, no link created"
                     )
                 continue
             else:
+                # destination points to different source: create links with added index to distinguish
+                # from existing one(s)
                 idx = 1
                 dst_orig = dst
                 while True:
+                    # Find destination name with lowest appended index that does not exist
                     dst = f"{dst_orig}_{idx}"
                     if os.path.exists(dst):
                         idx += 1
                     else:
+                        # Found: create new link
                         if verbose:
                             print(f"link {src} <- {dst}")
                         os.symlink(src, dst)
                         break
         else:
+
+            # destination does not exist: create link
             if verbose:
                 print(f"link {src} <- {dst}")
             os.symlink(src, dst)
@@ -340,7 +456,7 @@ def main(argv=None):
     if param.sp_local == 1:
         patterns.append("run_sp_exp_Sp_shdu")
     for pattern in patterns:
-        paths, number = get_paths(exp_base_dir, exp_shdu_IDs, pattern)
+        paths = get_paths(exp_base_dir, exp_shdu_IDs, pattern)
 
         create_links_paths(tile_base_dir, tile_ID, paths, verbose=verbose)
 

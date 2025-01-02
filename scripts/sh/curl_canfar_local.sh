@@ -20,6 +20,7 @@ RAM=4
 fix=0
 version="1.1"
 cmd_remote="$HOME/shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
+batch=30
 batch_max=200
 dry_run=0
 mh_local=0
@@ -53,13 +54,15 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
    -R, --RAM RAM\n
     \tRAM in Gb, default=$RAM\n
    -F, --fix FIX\n
-    \tfix missing data (re-download tile, unzip) for FIX=1; default is $fix\
+    \tfix missing data (re-download tile, unzip) for FIX=1; default is $fix\n
    -V, --version\n
     \tversion of docker image, default='$version'\n
    -C, --command_remote\n
     \tremote command to run on canfar, default='$cmd_remote'\n
    -S, --scratch\n
     \tprocessing scratch directory, default is None ($scratch)\n
+   -B, --batch\n
+    \tbatch size = size of subsamples if number of jobs > batch_max\n 
    -b, --batch_max\n
     \tmaximum batch size = number of jobs run simultaneously, default=$batch_max\n
    --debug_out PATH\n
@@ -125,6 +128,14 @@ while [ $# -gt 0 ]; do
       ;;
     -S|--scratch)
       scratch="$2"
+      shift
+      ;;
+    -V|--version)
+      version="$2"
+      shift
+      ;;
+    -B|--batch)
+      batch="$2"
       shift
       ;;
     -b|--batch_max)
@@ -205,7 +216,6 @@ function submit_batch() {
   done
 }
 
-batch=30
 if [ "$batch" -ge "$batch_max" ]; then
   ((batch=batch_max/2))
   echo "Reducing batch size to $batch"

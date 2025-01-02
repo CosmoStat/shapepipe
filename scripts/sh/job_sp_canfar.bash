@@ -200,6 +200,7 @@ function command () {
       echo "${pat}pwd = `pwd`" >> $debug_out
       echo "${pat}SP_RUN = $SP_RUN" >> $debug_out
       echo "${pat}SP_CONFIG = $SP_CONFIG" >> $debug_out
+      echo "${pat}pwd = `pwd`" >> $debug_out
    fi
 
    if [ $# == 2 ]; then
@@ -207,7 +208,7 @@ function command () {
            echo "$str: running '$cmd'"
       fi
       if [ "$debug_out" != "-1" ]; then
-          echo "${pat}Running $cmd" >> $debug_out
+          echo "${pat}Running[1] $cmd" >> $debug_out
       fi
 
       $cmd
@@ -217,7 +218,7 @@ function command () {
          echo "$str: running '$cmd $4 \"$5 $6\"'"
       fi
       if [ "$debug_out" != "-1" ]; then
-          echo "${pat}Running $cmd $4 \"$5 $6\"" >> $debug_out
+          echo "${pat}Running[2] $cmd $4 \"$5 $6\"" >> $debug_out
       fi
 
       $cmd $4 "$5 $6"
@@ -468,7 +469,7 @@ if [[ $do_job != 0 ]]; then
   Letter=${letter^}
   command_cfg_shapepipe \
     "config_tile_${Letter}iViSmVi_canfar.ini" \
-    "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)" \
+    "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix" \
     $n_smp \
     $exclusive
 
@@ -542,12 +543,11 @@ if [[ $do_job != 0 ]]; then
     perl -ane \
       's/(N_SPLIT_MAX =) X/$1 '$nsh_jobs'/; print' \
       > $SP_CONFIG_MOD/config_merge_sep_cats.ini
- 
+
   ### Merge separated shapes catalogues
-  command_cfg_shapepipe \
+  command_sp \
     "shapepipe_run -c $SP_CONFIG_MOD/config_merge_sep_cats.ini" \
     "Run shapepipe (tile: merge sep cats)" \
-    $n_smp \
     $exclusive
 fi
 

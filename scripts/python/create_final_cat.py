@@ -217,15 +217,27 @@ def check_ID(merged_cat_path, ID, verbose=False):
 
 
 def print_list(params):
+    """Print List.
 
+    Print number of tile IDs found in hdf5 file.
+
+    Parameters
+    ----------
+    params: dict
+        parameters
+
+    """
     n_tiles = 0
+    # Open hdf5 merge cat file
     with h5py.File(params["merged_cat_path"], "r") as hdf5_file:
 
+        # Loop over patches contained in hdf5 file
         for patch in hdf5_file["patches"]:
-            #print(patch)
+            # Count tiles summed over all patches
             for id in hdf5_file[f"patches/{patch}"]:
                 n_tiles += 1
 
+    # Write number of tiles to output file
     with open(params["output_summary"], "w") as f_out:
         print(n_tiles, file=f_out)
 
@@ -266,8 +278,26 @@ def get_patch_group(hdf5_file, patch, verbose=False):
 def read_data(fits_file, params):
     """Read Data.
 
+    Read data from final merge catalogue FITS file.
+
+    Parameters
+    ----------
+    fits_file: str
+        intput FITS file path
+    params: dict
+        parameters
+
+    Returns
+    -------
+    dict
+        data
+    list
+        dtypes of data columns
+
     """
+    # Open FITS file
     with fits.open(fits_file) as hdu_list:
+        # Get data of indicated HDU number
         try:
             data = hdu_list[params["hdu_num"]].data
         except:
@@ -278,6 +308,7 @@ def read_data(fits_file, params):
     if params["param_list"] is None:
         params["param_list"] = [col for col in data.keys()]
 
+    # Copy data to output dict; copy dtypes
     try:
         extracted_data = {col: data[col] for col in params["param_list"]}
         dtype = data.dtype
