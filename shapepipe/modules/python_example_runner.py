@@ -11,25 +11,25 @@ from shapepipe.modules.python_example_package import python_example
 
 
 @module_runner(
-    version='1.1',
-    file_pattern=['numbers', 'letters'],
-    file_ext='.txt',
+    version="1.1",
+    file_pattern=["numbers", "letters"],
+    file_ext=".txt",
     depends=[
-        'numpy',
-        'astropy',
-        'galsim',
-        'joblib',
-        'mccd',
-        'ngmix',
-        'pandas',
-        'pysap',
-        'scipy',
-        'sf_tools',
-        'sip_tpv',
-        'sqlitedict',
-        'treecorr',
+        "numpy",
+        "astropy",
+        "galsim",
+        "joblib",
+        "mccd",
+        "ngmix",
+        "pandas",
+        "pysap",
+        "scipy",
+        "sf_tools",
+        "sip_tpv",
+        "sqlitedict",
+        "treecorr",
     ],
-    run_method='parallel',
+    run_method="parallel",
 )
 def python_example_runner(
     input_file_list,
@@ -46,7 +46,7 @@ def python_example_runner(
     )
 
     # Retrieve log message from config file
-    message = config.get(module_config_sec, 'MESSAGE')
+    message = config.get(module_config_sec, "MESSAGE")
 
     # Create an instance of the Python example class
     py_ex_inst = python_example.PythonExample(0)

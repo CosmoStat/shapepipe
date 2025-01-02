@@ -30,7 +30,7 @@ class RunLog(object):
     def __init__(self, run_log_file, module_list, current_run):
 
         self.run_log_file = run_log_file
-        self._module_list = ','.join(module_list)
+        self._module_list = ",".join(module_list)
         self.current_run = current_run
         self._write()
         self._runs = get_list(run_log_file)
@@ -41,8 +41,8 @@ class RunLog(object):
         Write current run to the run log.
 
         """
-        with open(self.run_log_file, 'a') as run_log:
-            run_log.write(f'{self.current_run} {self._module_list}\n')
+        with open(self.run_log_file, "a") as run_log:
+            run_log.write(f"{self.current_run} {self._module_list}\n")
 
     def get_run(self, search_string):
         """Get Run.
@@ -71,16 +71,16 @@ class RunLog(object):
 
         if len(runs) < 1:
             raise RuntimeError(
-                f'No runs found matching search string \'{search_string}\'.'
+                f"No runs found matching search string '{search_string}'."
             )
 
         elif len(runs) > 1:
             raise RuntimeError(
-                'More than one run found matching search string '
-                + f'\'{search_string}\''
+                "More than one run found matching search string "
+                + f"'{search_string}'"
             )
 
-        return runs[0].split(' ')[0]
+        return runs[0].split(" ")[0]
 
 
 def get_list(run_log_file):
@@ -99,7 +99,7 @@ def get_list(run_log_file):
         Run log file entries
 
     """
-    with open(run_log_file, 'r') as run_log:
+    with open(run_log_file, "r") as run_log:
         lines = run_log.readlines()
 
     runs = [line.rstrip() for line in lines]
@@ -132,14 +132,9 @@ def get_all(runs, module):
     """
     module_base, _ = split_module_run(module)
 
-    all_runs = [
-        run for run in runs
-        if module_base in run.split()[1].split(',')
-    ]
+    all_runs = [run for run in runs if module_base in run.split()[1].split(",")]
     if len(all_runs) == 0:
-        raise RuntimeError(
-            f'No previous run of module \'{module_base}\' found'
-        )
+        raise RuntimeError(f"No previous run of module '{module_base}' found")
 
     all_runs = all_runs[::-1]
 
@@ -167,7 +162,36 @@ def get_last(runs, module):
     all_runs = get_all(runs, module)
     last_run = all_runs[0]
 
-    return last_run.split(' ')[0]
+    return last_run.split(" ")[0]
+
+
+def get_all_dirs(run_log_file, module):
+    """Get All Dirs.
+
+    Return directory paths corresponding to all runs of given module.
+
+    Parameters
+    ----------
+    run_log_file : str
+        Run log file name
+    module : str
+        Module name
+
+    Returns
+    -------
+    list
+        Directory names of all module runs
+
+    """
+    runs = get_list(run_log_file)
+    all_runs = get_all(runs, module)
+
+    all_dirs = []
+    for run in all_runs:
+        dir_name = run.split(" ")[0]
+        all_dirs.append(f"{dir_name}/{module}/output")
+
+    return all_dirs
 
 
 def get_last_dir(run_log_file, module):
@@ -188,9 +212,7 @@ def get_last_dir(run_log_file, module):
         Directory name of last module run
 
     """
-    runs = get_list(run_log_file)
-    all_runs = get_all(runs, module)
-    last_run = all_runs[0].split(' ')[0]
-    last_dir = f'{last_run}/{module}/output'
+    all_dirs = get_all_dirs(run_log_file, module)
+    last_dir = all_dirs[0]
 
     return last_dir

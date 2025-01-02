@@ -12,45 +12,41 @@ from shapepipe.pipeline.execute import execute
 
 
 @module_runner(
-    input_module='setools_runner',
-    version='1.0',
-    file_pattern=['star_selection'],
-    file_ext=['.fits'],
-    executes='psfex',
+    input_module="setools_runner",
+    version="1.0",
+    file_pattern=["star_selection"],
+    file_ext=[".fits"],
+    executes="psfex",
 )
 def psfex_runner(
-        input_file_list,
-        run_dirs,
-        file_number_string,
-        config,
-        module_config_sec,
-        w_log,
+    input_file_list,
+    run_dirs,
+    file_number_string,
+    config,
+    module_config_sec,
+    w_log,
 ):
     """Define The PSFEx Runner."""
     # Extract psfex run configurations
-    if config.has_option(module_config_sec, 'EXEC_PATH'):
+    if config.has_option(module_config_sec, "EXEC_PATH"):
         psfex_executable_path = config.getexpanded(
-            module_config_sec,
-            'EXEC_PATH'
+            module_config_sec, "EXEC_PATH"
         )
     else:
-        psfex_executable_path = 'psfex'
-    output_dir = run_dirs['output']
+        psfex_executable_path = "psfex"
+    output_dir = run_dirs["output"]
 
-    outcatalog_name = f'{output_dir}/psfex_cat{file_number_string}.cat'
+    outcatalog_name = f"{output_dir}/psfex_cat{file_number_string}.cat"
 
-    psfex_config_file = config.getexpanded(
-        module_config_sec,
-        'DOT_PSFEX_FILE'
-    )
+    psfex_config_file = config.getexpanded(module_config_sec, "DOT_PSFEX_FILE")
 
     input_file_path = input_file_list[0]
 
     # Check image options
-    if config.has_option(module_config_sec, 'CHECKIMAGE'):
-        check_image_list = config.getlist(module_config_sec, 'CHECKIMAGE')
+    if config.has_option(module_config_sec, "CHECKIMAGE"):
+        check_image_list = config.getlist(module_config_sec, "CHECKIMAGE")
     else:
-        check_image_list = ['']
+        check_image_list = [""]
 
     # Create psfex caller class instance
     psfex_inst = PSFExCaller(
@@ -64,7 +60,7 @@ def psfex_runner(
 
     # Generate psfex command line
     command_line = psfex_inst.generate_command()
-    w_log.info(f'Running command \'{command_line}\'')
+    w_log.info(f"Running command '{command_line}'")
 
     # Execute command line
     stderr, stdout = execute(command_line)

@@ -67,6 +67,12 @@ def example_module(*args):
 In the specific case of a module that executes an executable available on the
 system, the module runner should also import the `execute` function.
 
+```{note}
+:class: margin
+If no `stdout` or `stderr` are provided by the given module, the module
+runner should simply return `None, None`.
+```
+
 ```python
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.module_name_package.module_name import ...
@@ -84,10 +90,7 @@ def example_module(*args):
     return stdout, stderr
 ```
 
-```{note}
-If no `stdout` or `stderr` are provided by the given module, the the module
-runner should simply return `None, None`.
-```
+
 
 The module runner decorator takes the following keyword arguments:
 

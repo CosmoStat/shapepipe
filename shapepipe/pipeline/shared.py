@@ -33,10 +33,10 @@ def check_duplicate(input_list):
         else:
             input_set.add(elem)
 
-    return ''
+    return ""
 
 
-def find_files(path, pattern='*', ext='*'):
+def find_files(path, pattern="*", ext="*"):
     """Find Files.
 
     This method recursively retrieves file names from a given path that
@@ -66,8 +66,8 @@ def find_files(path, pattern='*', ext='*'):
         For invalid extension format
 
     """
-    dot = '.'
-    star = '*'
+    dot = "."
+    star = "*"
 
     if pattern != star and star in pattern:
         raise ValueError('Do not include "*" in pattern.')
@@ -81,7 +81,7 @@ def find_files(path, pattern='*', ext='*'):
     if ext != star and not ext.startswith(dot):
         ext = dot + ext
 
-    search_string = f'{path}/**/*{pattern}*{ext}'
+    search_string = f"{path}/**/*{pattern}*{ext}"
 
     return glob(search_string, recursive=True)
 
@@ -109,10 +109,10 @@ def split_module_run(module_str):
     """
     if not isinstance(module_str, str):
         raise TypeError(
-            f'Input module_str must be a string not {type(module_str)}.'
+            f"Input module_str must be a string not {type(module_str)}."
         )
 
-    run_split = '_run_'
+    run_split = "_run_"
     module_run = module_str
 
     if run_split in module_str:

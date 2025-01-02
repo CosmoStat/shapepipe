@@ -5,12 +5,12 @@ ShapePipe pipelines are launched and managed via the `shapepipe_run` script.
 A list of command line arguments can be displayed using the `--help`
 option:
 
+```{seealso}
+:class: margin
+The `shapepipe` environment will need to be built and activated in order to run this script (see [Installation](installation.md)).
+```
 ```bash
 shapepipe_run --help
-```
-
-```{warning}
-The `shapepipe` environment will need to be built and activated in order to run this script (see [Installation](installation.md)).
 ```
 
 The options for defining a pipeline are managed via a

@@ -11,11 +11,11 @@ from shapepipe.modules.random_cat_package.random_cat import RandomCat
 
 
 @module_runner(
-    version='1.1',
-    file_pattern=['image', 'pipeline_flag'],
-    file_ext=['.fits', 'fits'],
-    depends=['astropy'],
-    numbering_scheme='_0',
+    version="1.1",
+    file_pattern=["image", "pipeline_flag"],
+    file_ext=[".fits", "fits"],
+    depends=["astropy"],
+    numbering_scheme="_0",
 )
 def random_cat_runner(
     input_file_list,
@@ -31,33 +31,45 @@ def random_cat_runner(
     input_mask_name = input_file_list[1]
 
     # Set output file name
-    output_path = f'{run_dirs["output"]}/random_cat-{file_number_string}.fits'
+    if config.has_option(module_config_sec, "OUTPUT_FILE_PATTERN"):
+        output_file_pattern = config.get(
+            module_config_sec, "OUTPUT_FILE_PATTERN"
+        )
+    else:
+        output_file_pattern = "random_cat"
 
     # Get number of random objects requested on output
-    n_rand = config.getfloat(module_config_sec, 'N_RANDOM')
+    n_rand = config.getfloat(module_config_sec, "N_RANDOM")
 
     # Flag whether n_rand is total (DENSITY=False, default)
     # or per square degree (DENSITY=True)
-    if config.has_option(module_config_sec, 'DENSITY'):
-        density = config.getboolean(module_config_sec, 'DENSITY')
+    if config.has_option(module_config_sec, "DENSITY"):
+        density = config.getboolean(module_config_sec, "DENSITY")
     else:
         density = False
 
-    # Path to all tile ID, for overlap flagging
-    if config.has_option(module_config_sec, 'TILE_LIST'):
-        tile_list_path = config.getexpanded(module_config_sec, 'TILE_LIST')
-    else:
-        tile_list_path = None
-
+    # Get healpix output options
+    save_mask_as_healpix = config.getboolean(
+        module_config_sec, "SAVE_MASK_AS_HEALPIX"
+    )
+    if save_mask_as_healpix:
+        healpix_options = {}
+        for option_trunc in ['FILE_BASE', 'OUT_NSIDE']:
+            option = f'HEALPIX_OUT_{option_trunc}'
+            healpix_options[option_trunc] = config.get(
+                module_config_sec, option
+            )
     # Create rand cat class instance
     rand_cat_inst = RandomCat(
         input_image_name,
         input_mask_name,
-        output_path,
+        run_dirs["output"],
+        file_number_string,
+        output_file_pattern,
         n_rand,
         density,
         w_log,
-        tile_list_path=tile_list_path
+        healpix_options,
     )
 
     # Run processing

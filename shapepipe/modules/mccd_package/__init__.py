@@ -123,7 +123,8 @@ POSITION_PARAMS: (list) str
 GET_SHAPES: bool
     Calculate PSF model shapes and save to output if ``True``
 PSF_MODEL_DIR: str
-    Input directories for the fitted MCCD PSF model files
+    Module name of last run producing the fitted MCCD PSF model files.
+    The specifier "last:" is not required
 PSF_MODEL_PATTERN: str
     Pattern of the fitted PSF models
 PSF_MODEL_SEPARATOR: str
@@ -189,7 +190,7 @@ RHO_STATS_YLIM_R: tuple
 """
 
 __all__ = [
-    'shapepipe_auxiliary_mccd',
-    'mccd_interpolation_script',
-    'mccd_plot_utilities',
+    "shapepipe_auxiliary_mccd",
+    "mccd_interpolation_script",
+    "mccd_plot_utilities",
 ]

@@ -19,8 +19,8 @@ class GetImagesTestCase(TestCase):
 
     def setUp(self):
 
-        self.number_tile = '123.456'
-        self.number_exp = '2490092p'
+        self.number_tile = "123.456"
+        self.number_exp = "2490092p"
         self.number_int = 123456
 
     def tearDown(self):
@@ -32,13 +32,11 @@ class GetImagesTestCase(TestCase):
     def test_in2out_pattern(self):
 
         npt.assert_string_equal(
-            get_images.in2out_pattern(self.number_tile),
-            '123-456'
+            get_images.in2out_pattern(self.number_tile), "123-456"
         )
 
         npt.assert_string_equal(
-            get_images.in2out_pattern(self.number_exp),
-            '2490092'
+            get_images.in2out_pattern(self.number_exp), "2490092"
         )
 
         npt.assert_raises(

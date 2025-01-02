@@ -36,14 +36,14 @@ def merge_headers(input_file_list, output_dir):
     """
     if not isinstance(output_dir, str):
         raise TypeError(
-            'Output directory for merge headers must be a string '
-            + f'not {type(output_dir)}.'
+            "Output directory for merge headers must be a string "
+            + f"not {type(output_dir)}."
         )
 
     # Open SqliteDict file
-    final_file = SqliteDict(f'{output_dir}/log_exp_headers.sqlite')
+    final_file = SqliteDict(f"{output_dir}/log_exp_headers.sqlite")
     # Set matching pattern
-    pattern = 'headers-'
+    pattern = "headers-"
 
     for file_path in input_file_list:
         # Extract file path

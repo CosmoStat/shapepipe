@@ -37,7 +37,7 @@ class CustomParser(ConfigParser):
         """
         return self._get(section, os.path.expandvars, option)
 
-    def getlist(self, section, option, delimiter=','):
+    def getlist(self, section, option, delimiter=","):
         """Get List.
 
         This method retrieves a list of strings separated by a given
@@ -100,7 +100,7 @@ class SetUpParser(object):
     def file_name(self, value):
 
         if not os.path.exists(value):
-            raise IOError(f'Configuration file {value} does not exist.')
+            raise IOError(f"Configuration file {value} does not exist.")
 
         self._file_name = value
 
@@ -110,14 +110,14 @@ class SetUpParser(object):
         Set default configuration options.
 
         """
-        if not self.config.has_option('DEFAULT', 'RUN_NAME'):
-            self.config.set('DEFAULT', 'RUN_NAME', 'shapepipe_run')
+        if not self.config.has_option("DEFAULT", "RUN_NAME"):
+            self.config.set("DEFAULT", "RUN_NAME", "shapepipe_run")
 
-        if not self.config.has_option('DEFAULT', 'RUN_DATETIME'):
-            self.config.set('DEFAULT', 'RUN_DATETIME', 'True')
+        if not self.config.has_option("DEFAULT", "RUN_DATETIME"):
+            self.config.set("DEFAULT", "RUN_DATETIME", "True")
 
-        if not self.config.has_option('DEFAULT', 'VERBOSE'):
-            self.config.set('DEFAULT', 'VERBOSE', 'True')
+        if not self.config.has_option("DEFAULT", "VERBOSE"):
+            self.config.set("DEFAULT", "VERBOSE", "True")
 
     def _set_execution_options(self):
         """Set Execution Options.
@@ -132,11 +132,11 @@ class SetUpParser(object):
             For non-existent module runner
 
         """
-        if not self.config.has_option('EXECUTION', 'MODULE'):
-            raise RuntimeError('No module(s) specified')
+        if not self.config.has_option("EXECUTION", "MODULE"):
+            raise RuntimeError("No module(s) specified")
 
-        if not self.config.has_option('EXECUTION', 'MODE'):
-            self.config.set('EXECUTION', 'MODE', 'smp')
+        if not self.config.has_option("EXECUTION", "MODE"):
+            self.config.set("EXECUTION", "MODE", "smp")
 
     def _set_file_options(self):
         """Set File Options.
@@ -155,26 +155,26 @@ class SetUpParser(object):
             For non-existent output directory
 
         """
-        if not self.config.has_option('FILE', 'LOG_NAME'):
-            self.config.set('FILE', 'LOG_NAME', 'shapepipe')
+        if not self.config.has_option("FILE", "LOG_NAME"):
+            self.config.set("FILE", "LOG_NAME", "shapepipe")
 
-        if not self.config.has_option('FILE', 'RUN_LOG_NAME'):
-            self.config.set('FILE', 'RUN_LOG_NAME', 'shapepipe_runs')
+        if not self.config.has_option("FILE", "RUN_LOG_NAME"):
+            self.config.set("FILE", "RUN_LOG_NAME", "shapepipe_runs")
 
-        if not self.config.has_option('FILE', 'INPUT_DIR'):
-            raise RuntimeError('Not input directory specified')
+        if not self.config.has_option("FILE", "INPUT_DIR"):
+            raise RuntimeError("Not input directory specified")
 
-        if not self.config.has_option('FILE', 'OUTPUT_DIR'):
-            raise RuntimeError('Not output directory specified')
+        if not self.config.has_option("FILE", "OUTPUT_DIR"):
+            raise RuntimeError("Not output directory specified")
 
-        elif not os.path.isdir(self.config.getexpanded('FILE', 'OUTPUT_DIR')):
+        elif not os.path.isdir(self.config.getexpanded("FILE", "OUTPUT_DIR")):
             raise OSError(
                 f'Directory {self.config.getexpanded("FILE", "OUTPUT_DIR")} '
-                + 'not found.'
+                + "not found."
             )
 
-        if not self.config.has_option('FILE', 'CORRECT_FILE_PATTERN'):
-            self.config.set('FILE', 'CORRECT_FILE_PATTERN', 'True')
+        if not self.config.has_option("FILE", "CORRECT_FILE_PATTERN"):
+            self.config.set("FILE", "CORRECT_FILE_PATTERN", "True")
 
     def _set_worker_options(self):
         """Set Worker Options.
@@ -182,11 +182,11 @@ class SetUpParser(object):
         This module checks the worker options in the configuration file.
 
         """
-        if not self.config.has_section('WORKER'):
-            self.config.add_section('WORKER')
+        if not self.config.has_section("WORKER"):
+            self.config.add_section("WORKER")
 
-        if not self.config.has_option('WORKER', 'PROCESS_PRINT_LIMIT'):
-            self.config.set('WORKER', 'PROCESS_PRINT_LIMIT', '200')
+        if not self.config.has_option("WORKER", "PROCESS_PRINT_LIMIT"):
+            self.config.set("WORKER", "PROCESS_PRINT_LIMIT", "200")
 
     def get_parser(self):
         """Get Parser.

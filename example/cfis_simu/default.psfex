@@ -1,0 +1,85 @@
+# Default configuration file for PSFEx 3.17.1
+# EB 2017-11-30
+#
+
+#-------------------------------- PSF model ----------------------------------
+
+BASIS_TYPE      PIXEL           # NONE, PIXEL, GAUSS-LAGUERRE or FILE
+BASIS_NUMBER    20              # Basis number or parameter
+BASIS_NAME      basis.fits      # Basis filename (FITS data-cube)
+BASIS_SCALE     1.0             # Gauss-Laguerre beta parameter
+NEWBASIS_TYPE   NONE            # Create new basis: NONE, PCA_INDEPENDENT
+                                # or PCA_COMMON
+NEWBASIS_NUMBER 8               # Number of new basis vectors
+PSF_SAMPLING    1.              # Sampling step in pixel units (0.0 = auto)
+PSF_PIXELSIZE   1.0             # Effective pixel size in pixel step units
+PSF_ACCURACY    0.01            # Accuracy to expect from PSF "pixel" values
+PSF_SIZE        51,51           # Image size of the PSF model
+PSF_RECENTER    N               # Allow recentering of PSF-candidates Y/N ?
+MEF_TYPE        INDEPENDENT     # INDEPENDENT or COMMON
+
+#------------------------- Point source measurements -------------------------
+
+CENTER_KEYS     XWIN_IMAGE,YWIN_IMAGE # Catalogue parameters for source pre-centering
+PHOTFLUX_KEY    FLUX_AUTO    # Catalogue parameter for photometric norm.
+PHOTFLUXERR_KEY FLUXERR_AUTO # Catalogue parameter for photometric error
+
+#----------------------------- PSF variability -------------------------------
+
+PSFVAR_KEYS     XWIN_IMAGE,YWIN_IMAGE # Catalogue or FITS (preceded by :) params
+PSFVAR_GROUPS   1,1             # Group tag for each context key
+PSFVAR_DEGREES  2               # Polynom degree for each group
+PSFVAR_NSNAP    9               # Number of PSF snapshots per axis
+HIDDENMEF_TYPE  COMMON          # INDEPENDENT or COMMON
+STABILITY_TYPE  EXPOSURE        # EXPOSURE or SEQUENCE
+
+#----------------------------- Sample selection ------------------------------
+
+SAMPLE_AUTOSELECT  N            # Automatically select the FWHM (Y/N) ?
+
+BADPIXEL_FILTER    N            # Filter bad-pixels in samples (Y/N) ?
+BADPIXEL_NMAX      0            # Maximum number of bad pixels allowed
+
+#----------------------- PSF homogeneisation kernel --------------------------
+
+HOMOBASIS_TYPE     NONE         # NONE or GAUSS-LAGUERRE
+HOMOBASIS_NUMBER   10           # Kernel basis number or parameter
+HOMOBASIS_SCALE    1.0          # GAUSS-LAGUERRE beta parameter
+HOMOPSF_PARAMS     2.0, 3.0     # Moffat parameters of the idealised PSF
+HOMOKERNEL_DIR                  # Where to write kernels (empty=same as input)
+HOMOKERNEL_SUFFIX  .homo.fits   # Filename extension for homogenisation kernels
+
+#----------------------------- Output catalogs -------------------------------
+
+OUTCAT_TYPE        FITS_LDAC         # NONE, ASCII_HEAD, ASCII, FITS_LDAC
+
+#------------------------------- Check-plots ----------------------------------
+
+CHECKPLOT_DEV       PNG         # NULL, XWIN, TK, PS, PSC, XFIG, PNG,
+                                # JPEG, AQT, PDF or SVG
+CHECKPLOT_RES       0           # Check-plot resolution (0 = default)
+CHECKPLOT_ANTIALIAS Y           # Anti-aliasing using convert (Y/N) ?
+CHECKPLOT_TYPE      NONE        # FWHM,ELLIPTICITY,COUNTS, COUNT_FRACTION, CHI2, RESIDUALS
+CHECKPLOT_TYPE      FWHM,ELLIPTICITY,COUNTS, COUNT_FRACTION, CHI2, RESIDUALS
+                                # or NONE
+CHECKPLOT_NAME      fwhm, ellipticity, counts, countfrac, chi2, resi
+
+#------------------------------ Check-Images ---------------------------------
+
+# Note: Check-image types can be set the ShapePipe config file, psfex_runner section
+#######
+#CHECKIMAGE_TYPE     NONE            # CHI,PROTOTYPES,SAMPLES,RESIDUALS,SNAPSHOTS
+                                # or MOFFAT,-MOFFAT,-SYMMETRICAL
+#CHECKIMAGE_NAME chi.fits,proto.fits,samp.fits,resi.fits,snap.fits
+                                # Check-image filenames
+#CHECKIMAGE_CUBE N               # Save check-images as datacubes (Y/N) ?
+
+#----------------------------- Miscellaneous ---------------------------------
+
+PSF_SUFFIX      .psf            # Filename extension for output PSF filename
+VERBOSE_TYPE    NORMAL          # can be QUIET,NORMAL,LOG or FULL
+WRITE_XML       N               # Write XML file (Y/N)?
+
+NTHREADS        1               # Number of simultaneous threads for
+                                # the SMP version of PSFEx
+                                # 0 = automatic

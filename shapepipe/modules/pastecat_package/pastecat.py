@@ -49,7 +49,7 @@ class PasteCat(object):
         w_log,
         ext_name=None,
         check_col_name=None,
-        hdu_no=None
+        hdu_no=None,
     ):
 
         self._input_file_list = input_file_list
@@ -71,12 +71,12 @@ class PasteCat(object):
         # Create output catalogue
         pasted_cat = file_io.FITSCatalogue(
             self._output_path,
-            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
         )
 
         for idx, input_file in enumerate(self._input_file_list):
 
-            self._w_log.info(f'Pasting catalogue \'{input_file}\'')
+            self._w_log.info(f"Pasting catalogue '{input_file}'")
 
             # Read input data
             cat = file_io.FITSCatalogue(input_file)
@@ -90,18 +90,18 @@ class PasteCat(object):
                 if idx > 0:
                     if self._check_col_name not in col_names:
                         raise KeyError(
-                            f'CHECK_COL_NAME key \'{self._check_col_name}\''
-                            + 'not found in input catalogue'
+                            f"CHECK_COL_NAME key '{self._check_col_name}'"
+                            + "not found in input catalogue"
                         )
                     if not (
                         data[self._check_col_name]
                         == data_prev[self._check_col_name]
                     ).all():
                         raise Exception(
-                            f'Column check using key'
-                            + '\'{self._check_col_name}\''
-                            + 'failed for input catalogues '
-                            + f'#{idx - 1} and #{idx}'
+                            f"Column check using key"
+                            + "'{self._check_col_name}'"
+                            + "failed for input catalogues "
+                            + f"#{idx - 1} and #{idx}"
                         )
                 data_prev = data
 

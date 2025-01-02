@@ -17,7 +17,7 @@ from astropy.io import fits
 
 from shapepipe.pipeline import file_io
 
-NOT_ENOUGH_STARS = 'Not enough stars to train the model.'
+NOT_ENOUGH_STARS = "Not enough stars to train the model."
 
 
 def mccd_preprocessing_pipeline(
@@ -25,14 +25,14 @@ def mccd_preprocessing_pipeline(
     output_path,
     input_file_position=0,
     min_n_stars=20,
-    separator='-',
+    separator="-",
     CCD_id_filter_list=None,
-    outlier_std_max=100.,
+    outlier_std_max=100.0,
     save_masks=True,
-    save_name='train_star_selection',
-    save_extension='.fits',
+    save_name="train_star_selection",
+    save_extension=".fits",
     verbose=True,
-    print_fun=None
+    print_fun=None,
 ):
     r"""Preprocess Input Catalogue.
 
@@ -86,38 +86,55 @@ def mccd_preprocessing_pipeline(
 
     if verbose:
         if print_fun is None:
+
             def print_fun(x):
                 print(x)
+
     else:
+
         def print_fun(x):
             pass
 
-    print_fun('Processing dataset..')
+    print_fun("Processing dataset..")
     mccd_inputs = mccd.mccd_utils.MccdInputs(separator=separator)
     catalog_ids = mccd_inputs.proprocess_pipeline_data(
-        input_file_list,
-        element_position=input_file_position
+        input_file_list, element_position=input_file_position
     )
 
     # Loop over the catalogs
     for it in range(catalog_ids.shape[0]):
         # For each observation position
         catalog_id = catalog_ids[it]
-        star_list, pos_list, mask_list, ccd_list, SNR_list, RA_list, \
-            DEC_list = mccd_inputs.get_inputs(catalog_id)
+        (
+            star_list,
+            pos_list,
+            mask_list,
+            ccd_list,
+            SNR_list,
+            RA_list,
+            DEC_list,
+        ) = mccd_inputs.get_inputs(catalog_id)
 
-        star_list, pos_list, mask_list, ccd_list, SNR_list, RA_list, \
-            DEC_list, _ = mccd_inputs.outlier_rejection(
-                star_list,
-                pos_list,
-                mask_list,
-                ccd_list,
-                SNR_list,
-                RA_list,
-                DEC_list,
-                shape_std_max=outlier_std_max,
-                print_fun=print_fun
-            )
+        (
+            star_list,
+            pos_list,
+            mask_list,
+            ccd_list,
+            SNR_list,
+            RA_list,
+            DEC_list,
+            _,
+        ) = mccd_inputs.outlier_rejection(
+            star_list,
+            pos_list,
+            mask_list,
+            ccd_list,
+            SNR_list,
+            RA_list,
+            DEC_list,
+            shape_std_max=outlier_std_max,
+            print_fun=print_fun,
+        )
 
         mccd_star_list = []
         mccd_pos_list = []
@@ -163,13 +180,15 @@ def mccd_preprocessing_pipeline(
             # Concatenate, as fits can't handle list of numpy arrays and
             # turn into reg format
             mccd_stars = mccd.utils.reg_format(
-                np.concatenate(mccd_star_list, axis=2))
+                np.concatenate(mccd_star_list, axis=2)
+            )
             mccd_poss = np.concatenate(mccd_pos_list, axis=0)
             mccd_ccds = np.concatenate(mccd_ccd_list, axis=0)
 
             if save_masks is True:
                 mccd_masks = mccd.utils.reg_format(
-                    np.concatenate(mccd_mask_list, axis=2))
+                    np.concatenate(mccd_mask_list, axis=2)
+                )
             else:
                 # Send an array of False (None cannot be used in .fits)
                 mccd_masks = np.zeros((mccd_poss.shape[0]), dtype=bool)
@@ -191,20 +210,25 @@ def mccd_preprocessing_pipeline(
 
             # Save the fits file
             train_dic = {
-                'VIGNET_LIST': mccd_stars,
-                'GLOB_POSITION_IMG_LIST': mccd_poss,
-                'MASK_LIST': mccd_masks,
-                'CCD_ID_LIST': mccd_ccds,
-                'SNR_WIN_LIST': mccd_SNRs,
-                'RA_LIST': mccd_RAs,
-                'DEC_LIST': mccd_DECs
+                "VIGNET_LIST": mccd_stars,
+                "GLOB_POSITION_IMG_LIST": mccd_poss,
+                "MASK_LIST": mccd_masks,
+                "CCD_ID_LIST": mccd_ccds,
+                "SNR_WIN_LIST": mccd_SNRs,
+                "RA_LIST": mccd_RAs,
+                "DEC_LIST": mccd_DECs,
             }
 
-            saving_path = output_path + save_name + separator \
-                + catalog_id + save_extension
+            saving_path = (
+                output_path
+                + save_name
+                + separator
+                + catalog_id
+                + save_extension
+            )
             mccd.mccd_utils.save_to_fits(train_dic, saving_path)
 
-    print_fun('Finished the training dataset processing.')
+    print_fun("Finished the training dataset processing.")
     print_fun(f"Total stars processed = {mccd_star_nb:d}")
 
     return mccd_inputs
@@ -216,8 +240,8 @@ def mccd_fit_pipeline(
     mccd_parser,
     output_dir,
     verbose,
-    saving_name='fitted_model',
-    w_log=None
+    saving_name="fitted_model",
+    w_log=None,
 ):
     r"""Fit MCCD Model.
 
@@ -244,20 +268,20 @@ def mccd_fit_pipeline(
     # Extract the MCCD parameters from the parser
     mccd_inst_kw = mccd_parser.get_instance_kw()
     mccd_fit_kw = mccd_parser.get_fit_kw()
-    use_SNR_weight = mccd_parser.get_extra_kw('use_SNR_weight')
+    use_SNR_weight = mccd_parser.get_extra_kw("use_SNR_weight")
 
     # Print the model configuration so that it is saved in log files
-    w_log.info('MCCD configuration parameters:')
-    w_log.info('[INPUTS]')
-    inputs_dict_str = pprint.pformat({'use_SNR_weight': use_SNR_weight})
+    w_log.info("MCCD configuration parameters:")
+    w_log.info("[INPUTS]")
+    inputs_dict_str = pprint.pformat({"use_SNR_weight": use_SNR_weight})
     w_log.info(inputs_dict_str)
-    w_log.info('[INSTANCE]')
+    w_log.info("[INSTANCE]")
     inst_dict_str = pprint.pformat(mccd_inst_kw)
     w_log.info(inst_dict_str)
-    w_log.info('[FIT]')
+    w_log.info("[FIT]")
     fit_dict_str = pprint.pformat(mccd_fit_kw)
     w_log.info(fit_dict_str)
-    w_log.info('End of MCCD configuration parameters.')
+    w_log.info("End of MCCD configuration parameters.")
 
     # Open fits file
     starcat = fits.open(trainstar_path, memmap=False)
@@ -271,7 +295,7 @@ def mccd_fit_pipeline(
         sex_thresh=-1e5,
         use_SNR_weight=use_SNR_weight,
         verbose=verbose,
-        saving_name=saving_name
+        saving_name=saving_name,
     )
 
     starcat.close()
@@ -284,7 +308,7 @@ def mccd_validation_pipeline(
     output_dir,
     file_number_string,
     w_log,
-    val_saving_name
+    val_saving_name,
 ):
     r"""Validate MCCD Pipeline.
 
@@ -311,7 +335,7 @@ def mccd_validation_pipeline(
     w_log.info(f"Validating catalogue {file_number_string}..")
 
     # Get MCCD parameters
-    save_extension = '.fits'
+    save_extension = ".fits"
     mccd_val_kw = mccd_parser.get_val_kw()
     testcat = fits.open(teststar_path, memmap=False)
 
@@ -322,13 +346,14 @@ def mccd_validation_pipeline(
             mccd_model_path=mccd_model_path,
             testcat=testcat[1],
             **mccd_val_kw,
-            sex_thresh=-1e5
+            sex_thresh=-1e5,
         )
 
         testcat.close()
 
-        val_saving_path = output_dir + val_saving_name + \
-            file_number_string + save_extension
+        val_saving_path = (
+            output_dir + val_saving_name + file_number_string + save_extension
+        )
 
         # Save validation dictionary to fits file
         mccd.mccd_utils.save_to_fits(val_dict, val_saving_path)
@@ -343,12 +368,7 @@ def mccd_validation_pipeline(
 
 
 def mccd_interpolation_pipeline(
-    mccd_model_path,
-    galcat_path,
-    pos_params,
-    ccd_id,
-    saving_path,
-    get_shapes
+    mccd_model_path, galcat_path, pos_params, ccd_id, saving_path, get_shapes
 ):
     r"""Interpolate the MCCD Model.
 
@@ -395,22 +415,24 @@ def mccd_interpolation_pipeline(
                 for psf in interp_PSFs
             ]
 
-            PSF_shapes = np.array([
+            PSF_shapes = np.array(
                 [
-                    moms.observed_shape.g1,
-                    moms.observed_shape.g2,
-                    moms.moments_sigma,
-                    int(bool(moms.error_message))
+                    [
+                        moms.observed_shape.g1,
+                        moms.observed_shape.g2,
+                        moms.moments_sigma,
+                        int(bool(moms.error_message)),
+                    ]
+                    for moms in PSF_moms
                 ]
-                for moms in PSF_moms
-            ])
+            )
 
         shapepipe_write_output(
             saving_path=saving_path,
             example_fits_path=galcat_path,
             get_shapes=get_shapes,
             interp_PSFs=interp_PSFs,
-            PSF_shapes=PSF_shapes
+            PSF_shapes=PSF_shapes,
         )
 
         return None
@@ -419,11 +441,7 @@ def mccd_interpolation_pipeline(
 
 
 def shapepipe_write_output(
-    saving_path,
-    example_fits_path,
-    get_shapes,
-    interp_PSFs,
-    PSF_shapes=None
+    saving_path, example_fits_path, get_shapes, interp_PSFs, PSF_shapes=None
 ):
     r"""Write ShapePipe Output.
 
@@ -447,18 +465,18 @@ def shapepipe_write_output(
     output = file_io.FITSCatalogue(
         saving_path,
         open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-        SEx_catalogue=True
+        SEx_catalogue=True,
     )
 
     if get_shapes:
         data = {
-            'VIGNET': interp_PSFs,
-            'E1_PSF_HSM': PSF_shapes[:, 0],
-            'E2_PSF_HSM': PSF_shapes[:, 1],
-            'SIGMA_PSF_HSM': PSF_shapes[:, 2],
-            'FLAG_PSF_HSM': PSF_shapes[:, 3].astype(int)
+            "VIGNET": interp_PSFs,
+            "E1_PSF_HSM": PSF_shapes[:, 0],
+            "E2_PSF_HSM": PSF_shapes[:, 1],
+            "SIGMA_PSF_HSM": PSF_shapes[:, 2],
+            "FLAG_PSF_HSM": PSF_shapes[:, 3].astype(int),
         }
     else:
-        data = {'VIGNET': interp_PSFs}
+        data = {"VIGNET": interp_PSFs}
 
     output.save_as_fits(data, sex_cat_path=example_fits_path)

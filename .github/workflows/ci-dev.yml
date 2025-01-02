@@ -3,8 +3,6 @@ name: CI
 on:
   pull_request:
     branches:
-     - main
-     - master
      - develop
 
 jobs:
@@ -30,7 +28,8 @@ jobs:
         shell: bash -l {0}
         if: runner.os == 'macOS'
         run: |
-          brew install libomp
+          brew tap sfarrens/sf
+          brew install bigmac libomp
 
       - name: Set up conda
         uses: conda-incubator/setup-miniconda@v2
@@ -42,11 +41,11 @@ jobs:
       - name: Install package
         shell: bash -l {0}
         run: |
-          ./install_shapepipe --develop
+          ./install_shapepipe --env-dev --develop
 
       - name: Run tests
         shell: bash -l {0}
         run: |
-          conda activate shapepipe
+          conda activate shapepipe-dev
           python setup.py test
           shapepipe_run -c example/config.ini

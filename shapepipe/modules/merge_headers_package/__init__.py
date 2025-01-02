@@ -25,4 +25,4 @@ OUTPUT_PATH : str, optional
 
 """
 
-__all__ = ['merge_headers']
+__all__ = ["merge_headers"]

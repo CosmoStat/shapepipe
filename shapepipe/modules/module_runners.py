@@ -25,17 +25,19 @@ def get_module_runners(modules):
         Dictionary of module runners
 
     """
-    package = 'shapepipe.modules'
+    package = "shapepipe.modules"
 
-    module_runners = dict([
-        (
-            module,
-            getattr(
-                import_module(f'.{module}', package=package),
+    module_runners = dict(
+        [
+            (
                 module,
+                getattr(
+                    import_module(f".{module}", package=package),
+                    module,
+                ),
             )
-        )
-        for module in modules
-    ])
+            for module in modules
+        ]
+    )
 
     return module_runners

@@ -35,4 +35,4 @@ CHECKIMAGE : list, optional
 
 """
 
-__all__ = ['psfex_script']
+__all__ = ["psfex_script"]

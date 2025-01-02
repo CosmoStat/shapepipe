@@ -19,8 +19,7 @@ from optparse import OptionParser
 
 
 class param:
-    """General class to store (default) variables
-    """
+    """General class to store (default) variables"""
 
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
@@ -46,7 +45,7 @@ def params_default():
     """
 
     p_def = param(
-        input_job = 'job_tile.sh',
+        input_job="job_tile.sh",
     )
 
     return p_def
@@ -68,16 +67,33 @@ def parse_options(p_def):
         Command line string
     """
 
-    usage  = "%prog [OPTIONS]"
+    usage = "%prog [OPTIONS]"
     parser = OptionParser(usage=usage)
 
     # I/O
-    parser.add_option('-i', '--input_job', dest='input_job', type='string', default=p_def.input_job,
-         help='input job file, default=\'{}\''.format(p_def.input_job))
-    parser.add_option('-o', '--output_fail', dest='output_fail', type='string',
-         help='output file for failed jobs, none if not given')
+    parser.add_option(
+        "-i",
+        "--input_job",
+        dest="input_job",
+        type="string",
+        default=p_def.input_job,
+        help="input job file, default='{}'".format(p_def.input_job),
+    )
+    parser.add_option(
+        "-o",
+        "--output_fail",
+        dest="output_fail",
+        type="string",
+        help="output file for failed jobs, none if not given",
+    )
 
-    parser.add_option('-v', '--verbose', dest='verbose', action='store_true', help='verbose output')
+    parser.add_option(
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+        help="verbose output",
+    )
 
     options, args = parser.parse_args()
 
@@ -159,61 +175,83 @@ fail_transient = -18
 
 def get_status(tile_num):
 
-    base_name = 'log_canfar_sp_'
-    #base_name = 'log_sp_tile_'
+    base_name = "log_canfar_sp_"
+    # base_name = 'log_sp_tile_'
 
-    log_name = '{}{}.log'.format(base_name, tile_num)
-    out_name = '{}{}.out'.format(base_name, tile_num)
-    err_name = '{}{}.err'.format(base_name, tile_num)
+    log_name = "{}{}.log".format(base_name, tile_num)
+    out_name = "{}{}.out".format(base_name, tile_num)
+    err_name = "{}{}.err".format(base_name, tile_num)
 
-    status = res_unk, 'unknown status'
+    status = res_unk, "unknown status"
 
     if not os.path.exists(log_name):
-        status = res_wait,  'waiting for submission'
+        status = res_wait, "waiting for submission"
     else:
         if os.path.exists(out_name):
             final_cat_found = False
             with open(out_name) as out_file:
                 for line in out_file:
-                    m = re.match('Upload.*final_cat_*', line)
+                    m = re.match("Upload.*final_cat_*", line)
                     if m:
                         final_cat_found = True
-                        status = res_ok, 'successful upload of final_cat'
+                        status = res_ok, "successful upload of final_cat"
                         # TODO: check next line for upload success
 
             if final_cat_found == False:
-                status = res_unk, 'Failed before final_cat'
+                status = res_unk, "Failed before final_cat"
 
                 # Look for known errors in error log file
                 with open(err_name) as err_file:
                     for line_err in err_file:
-                        mm = re.search('NodeNotFound', line_err)
+                        mm = re.search("NodeNotFound", line_err)
                         if mm:
-                            status = status + (fail_vos_not_found, 'vos file not found')
+                            status = status + (
+                                fail_vos_not_found,
+                                "vos file not found",
+                            )
                             break
-                        mm = re.search('Empty or corrupt FITS file', line_err)
+                        mm = re.search("Empty or corrupt FITS file", line_err)
                         if mm:
-                            status = status + (fail_corrupt_fits, 'corrupt input FITS file')
+                            status = status + (
+                                fail_corrupt_fits,
+                                "corrupt input FITS file",
+                            )
                             break
-                        mm = re.search('ERROR:: HTTPSConnectionPool.*Max retries', line_err)
+                        mm = re.search(
+                            "ERROR:: HTTPSConnectionPool.*Max retries", line_err
+                        )
                         if mm:
-                            status = status + (fail_time_out, 'vos time out')
+                            status = status + (fail_time_out, "vos time out")
                             break
-                        mm = re.search('ERROR:: __str__ returned non-string', line_err)
+                        mm = re.search(
+                            "ERROR:: __str__ returned non-string", line_err
+                        )
                         if mm:
-                            status = status + (fail_connection, 'Connection/HTTP error')
+                            status = status + (
+                                fail_connection,
+                                "Connection/HTTP error",
+                            )
                             break
-                        mm = re.search('ERROR:: 503 Server Error', line_err)
+                        mm = re.search("ERROR:: 503 Server Error", line_err)
                         if mm:
-                            status = status + (fail_server, 'server connection error')
+                            status = status + (
+                                fail_server,
+                                "server connection error",
+                            )
                             break
-                        mm = re.search('ERROR:: \[Errno 14\] vos', line_err)
+                        mm = re.search("ERROR:: \[Errno 14\] vos", line_err)
                         if mm:
-                            status = status + (fail_transient, 'TransientException')
+                            status = status + (
+                                fail_transient,
+                                "TransientException",
+                            )
                             break
-                        mm = re.search('Connection aborted', line_err)
+                        mm = re.search("Connection aborted", line_err)
                         if mm:
-                            status = status + (fail_vos_no_resp, 'vos no response')
+                            status = status + (
+                                fail_vos_no_resp,
+                                "vos no response",
+                            )
                             break
 
                 if len(status) == 2:
@@ -222,53 +260,59 @@ def get_status(tile_num):
                     module_last = None
                     with open(out_name) as out_file:
                         for line in out_file:
-                            mmm = re.search('\- Module: (.*)', line)
+                            mmm = re.search("\- Module: (.*)", line)
                             if mmm:
                                 module_last = mmm[1]
-                            mmm = re.search('A total of (\d+) errors were recorded.', line)
+                            mmm = re.search(
+                                "A total of (\d+) errors were recorded.", line
+                            )
                             if mmm and int(mmm[1]) != 0:
-                                status = status + (fail_res_err_mod, '{} errors recorded, last module was {}'.format(mmm[1], module_last))
+                                status = status + (
+                                    fail_res_err_mod,
+                                    "{} errors recorded, last module was {}".format(
+                                        mmm[1], module_last
+                                    ),
+                                )
                                 break
 
                 if len(status) == 2:
-                    status = status + (fail_unknown, 'unknown error')
-
+                    status = status + (fail_unknown, "unknown error")
 
         else:
             log_file = open(log_name)
             lines = log_file.readlines()
             log_file.close()
             for line in lines:
-                if re.match('.*aborted', line):
-                    status = res_abort, 'job aborted by user'
+                if re.match(".*aborted", line):
+                    status = res_abort, "job aborted by user"
                     return status
             for line in lines:
-                if re.match('.*executing', line):
-                    status = res_wait, 'job running'
+                if re.match(".*executing", line):
+                    status = res_wait, "job running"
                     return status
-            status = res_subm, 'job submitted, not started yet'
+            status = res_subm, "job submitted, not started yet"
 
     return status
 
 
 def output(status):
 
-    print('## Issues')
+    print("## Issues")
     n_issue = 0
     for tile_num in sorted(status.keys()):
         if status[tile_num][0] == res_noout or status[tile_num][0] == res_unk:
-            print('   ', tile_num, status[tile_num])
+            print("   ", tile_num, status[tile_num])
             n_issue = n_issue + 1
     if n_issue == 0:
-        print('   none')
+        print("   none")
 
     hist = Counter(status.values())
-    print('## Summary')
-    print('# Nb: status (code)') 
+    print("## Summary")
+    print("# Nb: status (code)")
     for s in hist:
-        print('{:6d}: {} ({})'.format(hist[s], s[1], int(s[0])), end='')
+        print("{:6d}: {} ({})".format(hist[s], s[1], int(s[0])), end="")
         if len(s) == 4:
-            print('; {} ({})'.format(s[3], int(s[2])), end='')
+            print("; {} ({})".format(s[3], int(s[2])), end="")
         print()
 
 
@@ -276,11 +320,14 @@ def output_failed(output_fail, status):
 
     if output_fail:
 
-        with open(output_fail, 'w') as f_out:
+        with open(output_fail, "w") as f_out:
             for tile_num in status.keys():
-                if status[tile_num][0] == res_noout or status[tile_num][0] == res_unk:
+                if (
+                    status[tile_num][0] == res_noout
+                    or status[tile_num][0] == res_unk
+                ):
                     print(tile_num, file=f_out)
-            
+
 
 def main(argv=None):
 
@@ -295,7 +342,6 @@ def main(argv=None):
 
     param = update_param(p_def, options)
 
-
     ### Start main program ###
 
     job_tile_path = param.input_job
@@ -303,7 +349,7 @@ def main(argv=None):
     status = {}
     with open(job_tile_path) as job_file:
         for line in job_file:
-            m = re.match('(\d{3}\.\d{3})', line)
+            m = re.match("(\d{3}\.\d{3})", line)
             if m:
                 tile_num = m[0]
 

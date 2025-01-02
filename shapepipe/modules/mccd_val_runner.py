@@ -13,13 +13,13 @@ from shapepipe.modules.module_decorator import module_runner
 
 
 @module_runner(
-    version='1.1',
-    input_module=['mccd_preprocessing_runner'],
-    file_pattern=['fitted_model', 'test_star_selection'],
-    file_ext=['.npy', '.fits'],
-    numbering_scheme='-0000000',
-    depends=['numpy', 'mccd', 'galsim'],
-    run_method='parallel',
+    version="1.1",
+    input_module=["mccd_preprocessing_runner"],
+    file_pattern=["fitted_model", "test_star_selection"],
+    file_ext=[".npy", ".fits"],
+    numbering_scheme="-0000000",
+    depends=["numpy", "mccd", "galsim"],
+    run_method="parallel",
 )
 def mccd_val_runner(
     input_file_list,
@@ -31,24 +31,24 @@ def mccd_val_runner(
 ):
     """Define The MCCD Validation Runner."""
     # Recover the MCCD config file and its params
-    config_file_path = config.getexpanded(module_config_sec, 'CONFIG_PATH')
-    mccd_mode = config.get(module_config_sec, 'MODE')
-    verbose = config.getboolean(module_config_sec, 'VERBOSE')
+    config_file_path = config.getexpanded(module_config_sec, "CONFIG_PATH")
+    mccd_mode = config.get(module_config_sec, "MODE")
+    verbose = config.getboolean(module_config_sec, "VERBOSE")
 
     # Parse MCCD config file
     mccd_parser = mccd.auxiliary_fun.MCCDParamsParser(config_file_path)
     mccd_parser.parse_document()
 
     # Prepare inputs to run the main fit function
-    output_dir = run_dirs['output'] + '/'
-    val_saving_name = 'validation_psf'
+    output_dir = run_dirs["output"] + "/"
+    val_saving_name = "validation_psf"
 
     # Extract the MCCD model path
     mccd_model_path = input_file_list[0]
     # Validation stars are in the second position of the list
     teststar_path = input_file_list[1]
 
-    if mccd_mode == 'VALIDATION':
+    if mccd_mode == "VALIDATION":
 
         aux_mccd.mccd_validation_pipeline(
             teststar_path=teststar_path,
@@ -62,7 +62,7 @@ def mccd_val_runner(
 
     else:
         raise ValueError(
-            'The mccd_val_runner should only be called when the MODE is '
+            "The mccd_val_runner should only be called when the MODE is "
             + '"VALIDATION".'
         )
 

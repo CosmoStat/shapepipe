@@ -1,12 +1,13 @@
 # Understanding the API Documentation
 
-This page aims to help ShapePipe users and developers understand the
-Application Programming Interface (API) documentation.
-
 ```{note}
+:class: margin
 If you are already familiar with this type of documentation you can skip this
 page.
 ```
+
+This page aims to help ShapePipe users and developers understand the
+Application Programming Interface (API) documentation.
 
 ## What Are API Docs?
 
@@ -18,18 +19,19 @@ with three double quotes `"""`) written in the code.
 
 ## Standard API Docs
 
+```{note}
+:class: margin
+If an optional argument does not explicitly specify the default parameter value
+then the user should expect that this means the default will be `None`, `''`,
+`[]`, etc. depending on the input data type.
+```
+
 All the classes/functions include a short description of what they do. This is
 followed by a `Parameters` section containing a bullet point list of the
 expected input arguments. For each parameter you will see in brackets the
 expected input type (e.g. `int`, `float`, `list`, etc.) followed by a brief
 description of what the argument is for. Parameters listed as *optional* in the
 brackets do not need to be provided and will default to some predefined value.
-
-```{note}
-If an optional argument does not explicitly specify the default parameter value
-then the user should expect that this means the default will be `None`, `''`,
-`[]`, etc. depending on the input data type.
-```
 
 For functions that return objects a `Returns` section will follow the
 `Parameters` section. This will provide a brief description of what is provided
