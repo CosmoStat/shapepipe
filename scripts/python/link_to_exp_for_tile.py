@@ -269,7 +269,7 @@ def get_exp_IDs(tile_base_dir, tile_ID, verbose=False):
     # Replace dot with dash in tile ID
     tile_ID_sp = re.sub(r"\.", "-", tile_ID)
     # Get output file of find_exposure_runner for this tile ID
-    exp_ID_file = 
+    exp_ID_file = (
         f"{subdirs[0]}/find_exposures_runner/output/"
         + f"exp_numbers-{tile_ID_sp}.txt"
     )
