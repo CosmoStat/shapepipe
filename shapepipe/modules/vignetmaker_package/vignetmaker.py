@@ -190,8 +190,18 @@ class VignetMaker(object):
             Array containing the vignets
 
         """
-        img_file = file_io.FITSCatalogue(img_path)
-        img_file.open()
+        try:
+            img_file = file_io.FITSCatalogue(img_path)
+        except:
+            self._w_log.info(f"Error while getting file {img_path}")
+            raise
+
+        try:
+            img_file.open()
+        except:
+            self._w_log.info(f"Error while opening file {img_path}")
+            raise
+
         try:
             img = img_file.get_data(0)
         except:
