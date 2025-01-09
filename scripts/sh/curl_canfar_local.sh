@@ -30,6 +30,8 @@ debug_out="-1"
 scratch="-1"
 sm=1
 
+script_version=1.1
+
 pat="- "
 
 ## Help string
@@ -192,10 +194,11 @@ if [ "$debug_out" != "-1" ]; then
   echo ${pat}`date` >> $debug_out
 fi
 
-. /opt/conda/etc/profile.d/conda.sh
-conda activate shapepipe
+#. /opt/conda/etc/profile.d/conda.sh
+source activate shapepipe
 if [ "$debug_out"  != "-1" ]; then
     echo "${pat}conda prefix = ${CONDA_PREFIX}" >> $debug_out
+    echo "${pat}script version = ${script_version}" >> $debug_out
 fi
 
 # command line arguments for remote script:

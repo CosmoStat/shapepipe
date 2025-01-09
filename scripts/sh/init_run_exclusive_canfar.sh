@@ -210,6 +210,11 @@ else
   message "not running in dry run mode" $debug_out -1
 fi
 
+source activate shapepipe
+if [ "$debug_out"  != "-1" ]; then
+    echo "${pat}conda prefix = ${CONDA_PREFIX}" >> $debug_out
+fi
+
 CONDA_PREFIX=$HOME/.conda/envs/shapepipe
 PATH=$PATH:$CONDA_PREFIX/bin
 
@@ -410,6 +415,10 @@ if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
 fi
 
 if [ "$kind" == "tile" ] && [ "$sp_local" == "1" ]; then
+  # Link to exposure outputs (runs 2 and 32)
+
+  # Remove previous split exp dir
+rm -r run_sp_exp_Sp_shdu
   cd ../../..
   command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs -s $sp_local" $dry_run
   cd tile_runs/$ID
@@ -485,23 +494,58 @@ fi
 # Update links to exposure run directories, which were created in job 32
 (( do_job = $job & 64 ))
 if [[ $do_job != 0 ]]; then
-  if [ "$kind" == "tile" ]; then
-    cd ../../..
-    command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs -s $sp_local" $dry_run
-    cd ${kind}_runs/$ID/output
 
-    # Remove duplicate job-16 runs (tile detection)
-    # New (P8) commented
-    #n_16=`ls -rt1d run_sp_tile_Sx_* | wc -l`
-    #if [ "$n_16" != "1" ]; then
-      #n_remove="$(($n_16-1))"
-      #echo "removing $n_remove duplicate old job-16 runs"
-      #command "rm -rf `ls -rt1d run_sp_tile_Sx_* | head -$n_remove`" $dry_run
-    #fi
+  # MKDEBUG NEW (04/01/2025): this script was already run earlier with -s 1
+  #cd ../../..
+  #command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs -s $sp_local" $dry_run
+  #cd ${kind}_runs/$ID/output
 
-    # Remove previous runs of this job
-    rm -rf run_sp_tile_PsViSmVi*
-  fi
+  # Remove previous runs of this job
+  rm -rf run_sp_tile_PsViSmVi*
+fi
+
+(( do_job = $job & 128 ))
+if [[ $do_job != 0 ]]; then
+
+    echo
+    
+    cat_ngmix="run_sp_tile_ngmix_Ng1u/ngmix_runner/output/ngmix-*.fits"
+    dir_ngmix_prev="run_sp_tile_ngmix_Ng1u_prev/ngmix_runner/output"
+    cat_ngmix_prev="$dir_ngmix_prev/ngmix-*.fits"
+    
+    # Check whether ngmix output exists
+    if [ -e $cat_ngmix ]; then
+        message "ngmix output catalogue exists" $debug_out -1
+
+        # Check whether previous ngmix directory and output cat exist
+        exists="1"
+        if [ ! -d $dir_ngmix_prev ]; then
+            exists="0"
+        elif [ ! -e "$cat_ngmix_prev" ]; then
+            exists="1"
+        fi
+        if [ "$exists" == "0" ]; then
+            message "Moving to previous batch-save dir (does not exist yet)" $debug_out -1
+            command "mkdir -p $dir_ngmix_prev" $dry_run
+            command "mv $cat_ngmix $dir_ngmix_prev" $dry_run
+        else
+            # Compare file sizes
+            size_cat_ngmix=$(stat -c%s $cat_ngmix)
+            size_cat_ngmix_prev=$(stat -c%s $cat_ngmix_prev)
+            if [ "$size_cat_ngmix" -gt "$size_cat_ngmix_prev" ]; then
+                message "Moving to batch-save dir, overwriting smaller batch-save cat" $debug_out -1
+                command "mv $cat_ngmix $dir_ngmix_prev" $dry_run
+            else
+                message "Previous batch-save dir not smaller, removing ngmix output" $debug_out -1
+                command "rm $cat_ngmix" $dry_run
+            fi
+        fi
+    else
+        # Whether or not previous ngmix exists, job_sp_canfar will handle it
+        message "No ngmix output exists, continuing..." $debug_out -1
+    fi
+
+    echo
 fi
 
 (( do_job = $job & 256 ))
@@ -509,7 +553,6 @@ if [[ $do_job != 0 ]]; then
 
   # Remove previous runs of this job
   rm -rf run_sp_Ms_20??_*
-
 fi
 
 (( do_job = $job & 512 ))

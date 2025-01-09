@@ -1,4 +1,4 @@
-# Global variables
+    # Global variables
 SSL=~/.ssl/cadcproxy.pem
 SESSION=https://ws-uv.canfar.net/skaha/v0/session
 IMAGE=images.canfar.net/unions/shapepipe

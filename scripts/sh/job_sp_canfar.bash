@@ -149,7 +149,6 @@ if [ "$debug_out" != "-1" ]; then
   echo "${pat}Starting $(basename "$0")" >> $debug_out
 fi
 
-CONDA_PREFIX=/arc/home/kilbinger/.conda/envs/shapepipe
 PATH=$PATH:$CONDA_PREFIX/bin
 
 # For tar archives. TODO: Should be unique to each job
@@ -208,7 +207,7 @@ function command () {
            echo "$str: running '$cmd'"
       fi
       if [ "$debug_out" != "-1" ]; then
-          echo "${pat}Running[1] $cmd" >> $debug_out
+          echo "${pat}Running $cmd" >> $debug_out
       fi
 
       $cmd
@@ -231,7 +230,7 @@ function command () {
    fi
 
    if [ $VERBOSE == 1 ]; then
-      if [ $res == 0 ]; then
+      if [ "$res" == "0" ]; then
          echo -e "${GREEN}success, return value = $res${NC}"
       else
          echo -e "${RED}error, return value = $res${NC}"
@@ -340,6 +339,11 @@ function update_config() {
 
 ### Start ###
 
+command_sp "source activate shapepipe" "Activate conda shapepipe env"
+if [ "$debug_out"  != "-1" ]; then
+    echo "${pat}conda prefix = ${CONDA_PREFIX}" >> $debug_out
+fi
+CONDA_PREFIX=/arc/home/kilbinger/.conda/envs/shapepipe
 echo "Start processing"
 
 # Create input and output directories
@@ -509,7 +513,7 @@ if [[ $do_job != 0 ]]; then
       # if output dir for subrun exists but no output: re-run
       ngmix_run=$OUTPUT/"run_sp_tile_ngmix_Ng${k}u/ngmix_runner"
       
-      if [ -e "$ngmix_run" ]; then
+          if [ -e "$ngmix_run" ]; then
         ngmix_out="$ngmix_run/output"
         n_out=`ls -rlt $ngmix_out | wc -l`
         if [ "$n_out" -lt 2 ]; then
@@ -583,5 +587,5 @@ if [[ $do_job != 0 ]]; then
 fi
 
 if [ "$debug_out" != "-1" ]; then
-  echo "${pat}End $(basename "$0") ID=$exclusive success" >> $debug_out
+  echo "${pat}End $(basename "$0") ID=$exclusive" >> $debug_out
 fi
