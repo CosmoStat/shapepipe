@@ -118,7 +118,7 @@ combine_runs.bash -c final -p psfex
 # (W3: 140GB RAM)
 # in /path/to/$psf
 patchnum=`tr $patch P ''`
-create_final_cat.py -m /scratch/final_cat_$patch.hdf5 -i . -p $patch/cfis/final_cat.param -P $patchnum -o $patch/n_tiles_final.txt -v
+create_final_cat.py -m final_cat_$patch.hdf5 -i . -p $patch/cfis/final_cat.param -P $patchnum -o $patch/n_tiles_final.txt -v
 
 # Star catalogue
 combine_runs.bash  -p $psf -c psf
