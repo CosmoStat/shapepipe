@@ -2,7 +2,7 @@
 
 Module runner for ``sextractor``.
 
-:Author: Axel Guinot
+:Author:s Axel Guinot, Martin Kilbinger
 
 """
 

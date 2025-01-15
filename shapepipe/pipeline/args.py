@@ -128,5 +128,10 @@ def create_arg_parser():
         help='configuration file name',
     )
 
+    optional.add_argument(
+        '-e',
+        '--exclusive',
+        help='exclusive input file number string',
+    )
     # Return parser
     return parser.parse_args()
