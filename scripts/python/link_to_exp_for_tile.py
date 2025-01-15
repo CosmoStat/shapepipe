@@ -20,9 +20,8 @@ from optparse import OptionParser
 
 
 class param:
-    """General class to store (default) variables
+    """General class to store (default) variables"""
 
-    """
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
 
@@ -35,7 +34,7 @@ class param:
 
 def params_default():
     """Params Default.
-    
+
     Set default parameter values.
 
     Returns
@@ -45,8 +44,8 @@ def params_default():
 
     """
     p_def = param(
-        tile_base_dir  = '.',
-        exp_base_dir = '.',
+        tile_base_dir=".",
+        exp_base_dir=".",
     )
 
     return p_def
@@ -54,7 +53,7 @@ def params_default():
 
 def parse_options(p_def):
     """Parse Options.
-    
+
     Parse command line options.
 
     Parameters
@@ -69,39 +68,35 @@ def parse_options(p_def):
         command line str
 
     """
-    usage  = "%prog [OPTIONS]"
+    usage = "%prog [OPTIONS]"
     parser = OptionParser(usage=usage)
 
     # IO
     parser.add_option(
-        '-i',
-        '--input_tile_dir',
-        dest='tile_base_dir',
-        type='string',
+        "-i",
+        "--input_tile_dir",
+        dest="tile_base_dir",
+        type="string",
         default=p_def.tile_base_dir,
-        help=f'input tile base directory, default=\'{p_def.tile_base_dir}\''
+        help=f"input tile base directory, default='{p_def.tile_base_dir}'",
     )
     parser.add_option(
-        '-t',
-        '--tile_ID',
-        dest='tile_ID',
-        type='string',
+        "-t",
+        "--tile_ID",
+        dest="tile_ID",
+        type="string",
         help=f"input tile ID",
     )
     parser.add_option(
-        '-I',
-        '--input_exp_dir',
-        dest='exp_base_dir',
-        type='string',
+        "-I",
+        "--input_exp_dir",
+        dest="exp_base_dir",
+        type="string",
         default=p_def.exp_base_dir,
-        help=f'input exposure base directory, default=\'{p_def.exp_base_dir}\''
+        help=f"input exposure base directory, default='{p_def.exp_base_dir}'",
     )
     parser.add_option(
-        '-v',
-        '--verbose',
-        dest='verbose',
-        action='store_true',
-        help='verbose output'
+        "-v", "--verbose", dest="verbose", action="store_true", help="verbose output"
     )
 
     options, args = parser.parse_args()
@@ -111,7 +106,7 @@ def parse_options(p_def):
 
 def check_options(options):
     """Check Options.
-    
+
     Check command line options.
 
     Parameters
@@ -130,7 +125,7 @@ def check_options(options):
 
 def update_param(p_def, options):
     """Update Param.
-    
+
     Return default parameter, updated and complemented according to options.
 
     Parameters
@@ -163,7 +158,7 @@ def update_param(p_def, options):
     return param
 
 
-# TODO: move to cs_util                                                          
+# TODO: move to cs_util
 def matching_subdirs(base_dir, pattern):
 
     # Find all matching subdirectories
@@ -197,9 +192,7 @@ def get_exp_IDs(tile_base_dir, tile_ID, verbose=False):
     subdirs = matching_subdirs(tile_out_dir, pattern)
 
     if len(subdirs) == 0:
-        raise IOError(
-            f"No matching directory '{pattern}' in {tile_out_dir} found"
-        )
+        raise IOError(f"No matching directory '{pattern}' in {tile_out_dir} found")
     if len(subdirs) != 1:
         raise IOError(
             f"Exactly one directory natching {pattern} in {tile_out_dir} "
@@ -209,8 +202,7 @@ def get_exp_IDs(tile_base_dir, tile_ID, verbose=False):
     # Replace dot with dash in tile ID
     tile_ID_sp = re.sub(r"\.", "-", tile_ID)
     exp_ID_file = (
-        f"{subdirs[0]}/find_exposures_runner/output/"
-        + f"exp_numbers-{tile_ID_sp}.txt"
+        f"{subdirs[0]}/find_exposures_runner/output/" + f"exp_numbers-{tile_ID_sp}.txt"
     )
 
     exp_IDs = []
@@ -218,7 +210,7 @@ def get_exp_IDs(tile_base_dir, tile_ID, verbose=False):
         for line in f_in:
             name = line.strip()
             # Remove any letter
-            ID = re.sub("[a-zA-Z]", "", name) 
+            ID = re.sub("[a-zA-Z]", "", name)
             exp_IDs.append(ID)
 
     if verbose:
@@ -236,7 +228,7 @@ def get_exp_single_HDU_IDs(exp_IDs, n_CPU):
 
     return exp_shdu_IDs
 
-    
+
 def get_paths(exp_base_dir, exp_shdu_IDs, pattern):
 
     number = {}
@@ -259,7 +251,7 @@ def get_paths(exp_base_dir, exp_shdu_IDs, pattern):
                 + f"  not {n_subdirs}"
             )
             print(msg)
-            # More than one match: sort according to name = creation time 
+            # More than one match: sort according to name = creation time
             subdirs = sorted(subdirs)
             if n_subdirs == 0:
                 continue
@@ -283,9 +275,9 @@ def create_links_paths(tile_base_dir, tile_ID, paths, verbose=False):
             src_existing = os.readlink(dst)
             if src_existing == src:
                 if verbose:
-                    #print("link {src} <- {dst}")
+                    # print("link {src} <- {dst}")
                     f"Warning: {src} <- {dst} already exists, no link created"
-                #)
+                # )
                 continue
             else:
                 idx = 1
@@ -328,12 +320,11 @@ def main(argv=None):
     exp_shdu_IDs = get_exp_single_HDU_IDs(exp_IDs, n_CPU)
 
     # Note: psfex P3 is mostly run_sp_exp_SxSePsf
-    patterns = ["run_sp_exp_SxSePsfPi"] #, "run_sp_exp_Pi"]
+    patterns = ["run_sp_exp_SxSePsfPi"]  # , "run_sp_exp_Pi"]
     for pattern in patterns:
         paths, number = get_paths(exp_base_dir, exp_shdu_IDs, pattern)
 
         create_links_paths(tile_base_dir, tile_ID, paths, verbose=verbose)
-
 
     return 0
 

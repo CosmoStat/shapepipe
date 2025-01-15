@@ -55,8 +55,8 @@ class JobHandler(object):
         filehd,
         config,
         log,
-        job_type='parallel',
-        parallel_mode='smp',
+        job_type="parallel",
+        parallel_mode="smp",
         batch_size=None,
         backend=None,
         timeout=None,
@@ -108,9 +108,7 @@ class JobHandler(object):
     def config(self, value):
 
         if not isinstance(value, ConfigParser):
-            raise TypeError(
-                'config must be an instane of configparser.ConfigParser'
-            )
+            raise TypeError("config must be an instane of configparser.ConfigParser")
 
         self._config = value
 
@@ -132,7 +130,7 @@ class JobHandler(object):
     def log(self, value):
 
         if not isinstance(value, Logger):
-            raise TypeError('log must be an instance of logging.Logger.')
+            raise TypeError("log must be an instance of logging.Logger.")
 
         self._log = value
 
@@ -153,8 +151,8 @@ class JobHandler(object):
     @job_type.setter
     def job_type(self, value):
 
-        if value not in ('serial', 'parallel'):
-            raise TypeError(f'{value} is not a valid job type.')
+        if value not in ("serial", "parallel"):
+            raise TypeError(f"{value} is not a valid job type.")
 
         self._job_type = value
 
@@ -175,8 +173,8 @@ class JobHandler(object):
     @parallel_mode.setter
     def parallel_mode(self, value):
 
-        if value not in ('smp', 'mpi'):
-            raise TypeError(f'{value} is not a valid parallel mode.')
+        if value not in ("smp", "mpi"):
+            raise TypeError(f"{value} is not a valid parallel mode.")
 
         self._parallel_mode = value
 
@@ -197,20 +195,19 @@ class JobHandler(object):
     @batch_size.setter
     def batch_size(self, value):
 
-        if (
-            isinstance(value, type(None))
-            and self.config.has_option('JOB', 'SMP_BATCH_SIZE')
+        if isinstance(value, type(None)) and self.config.has_option(
+            "JOB", "SMP_BATCH_SIZE"
         ):
-            value = self.config.getint('JOB', 'SMP_BATCH_SIZE')
+            value = self.config.getint("JOB", "SMP_BATCH_SIZE")
 
         elif isinstance(value, type(None)):
             value = 1
 
         if not isinstance(value, int) or (value < 1):
-            raise ValueError('Batch size must be an integer >= 1.')
+            raise ValueError("Batch size must be an integer >= 1.")
 
         if value > cpu_count():
-            warn('Batch size exeeds the number of available CPUs.')
+            warn("Batch size exeeds the number of available CPUs.")
 
         self._batch_size = value
 
@@ -231,16 +228,15 @@ class JobHandler(object):
     @backend.setter
     def backend(self, value):
 
-        if (
-            isinstance(value, type(None))
-            and self.config.has_option('JOB', 'SMP_BACKEND')
+        if isinstance(value, type(None)) and self.config.has_option(
+            "JOB", "SMP_BACKEND"
         ):
-            value = self.config.get('JOB', 'SMP_BACKEND').lower()
+            value = self.config.get("JOB", "SMP_BACKEND").lower()
         elif isinstance(value, type(None)):
-            value = 'loky'
+            value = "loky"
 
-        if value not in ('loky', 'multiprocessing', 'threading'):
-            raise ValueError(f'{value} is not a valid joblib backend.')
+        if value not in ("loky", "multiprocessing", "threading"):
+            raise ValueError(f"{value} is not a valid joblib backend.")
 
         self._backend = value
 
@@ -263,15 +259,12 @@ class JobHandler(object):
     @timeout.setter
     def timeout(self, value):
 
-        if (
-            isinstance(value, type(None))
-            and self.config.has_option('JOB', 'TIMEOUT')
-        ):
-            value = self.config.get('JOB', 'TIMEOUT')
-            value = self.hms2sec(value) if ':' in value else int(value)
+        if isinstance(value, type(None)) and self.config.has_option("JOB", "TIMEOUT"):
+            value = self.config.get("JOB", "TIMEOUT")
+            value = self.hms2sec(value) if ":" in value else int(value)
 
         if not isinstance(value, (type(None), int)):
-            raise TypeError('Timeout must be None or an integer.')
+            raise TypeError("Timeout must be None or an integer.")
 
         self._timeout = value
 
@@ -283,12 +276,12 @@ class JobHandler(object):
         """
         self._check_for_errors()
         self._check_missed_processes()
-        self.log.info('All processes complete')
-        self.log.info('')
+        self.log.info("All processes complete")
+        self.log.info("")
 
         if self._verbose:
-            print('All processes complete')
-            print('')
+            print("All processes complete")
+            print("")
 
         collect()
 
@@ -300,7 +293,7 @@ class JobHandler(object):
         Submit jobs in serial or parallel.
 
         """
-        if self.job_type == 'serial':
+        if self.job_type == "serial":
             self.submit_serial_job()
         else:
             self._distribute_smp_jobs()
@@ -328,7 +321,7 @@ class JobHandler(object):
         Time strings should take the form 'HH:MM:SS'.
 
         """
-        h, m, s = time_str.split(':')
+        h, m, s = time_str.split(":")
 
         return int(h) * 3600 + int(m) * 60 + int(s)
 
@@ -338,16 +331,14 @@ class JobHandler(object):
         This method logs the job handler instance parameters.
 
         """
-        text = 'Starting job handler with:'
-        module_info = f' - Module: {self._module}'
-        job_prop_text = ' - Job Properties:'
-        job_type = f' -- Job Type: {self.job_type}'
-        batch_info = f' -- Batch size: {self.batch_size}'
-        time_info = f' -- Timeout Limit: {self.timeout}s'
+        text = "Starting job handler with:"
+        module_info = f" - Module: {self._module}"
+        job_prop_text = " - Job Properties:"
+        job_type = f" -- Job Type: {self.job_type}"
+        batch_info = f" -- Batch size: {self.batch_size}"
+        time_info = f" -- Timeout Limit: {self.timeout}s"
 
-        show_batch_into = (
-            self.job_type == 'parallel' and self.parallel_mode == 'smp'
-        )
+        show_batch_into = self.job_type == "parallel" and self.parallel_mode == "smp"
 
         self.log.info(text)
         self.log.info(module_info)
@@ -372,7 +363,7 @@ class JobHandler(object):
         This method logs the number of processes detected for a given module.
 
         """
-        proc_info = f' -- Total number of processes: {self._n_procs}'
+        proc_info = f" -- Total number of processes: {self._n_procs}"
 
         self.log.info(proc_info)
 
@@ -385,20 +376,18 @@ class JobHandler(object):
         This method distributes the jobs to the workers using SMP.
 
         """
-        result = (
-            Parallel(n_jobs=self.batch_size, backend=self.backend)(
-                delayed(WorkerHandler(verbose=self._verbose).worker)(
-                    process[1:],
-                    process[0],
-                    self.filehd.get_worker_log_name(self._module, process[0]),
-                    self.filehd.module_run_dirs,
-                    self.config,
-                    self.filehd.get_module_config_sec(self._module),
-                    self.timeout,
-                    self._module_runner
-                )
-                for process in self.filehd.process_list
+        result = Parallel(n_jobs=self.batch_size, backend=self.backend)(
+            delayed(WorkerHandler(verbose=self._verbose).worker)(
+                process[1:],
+                process[0],
+                self.filehd.get_worker_log_name(self._module, process[0]),
+                self.filehd.module_run_dirs,
+                self.config,
+                self.filehd.get_module_config_sec(self._module),
+                self.timeout,
+                self._module_runner,
             )
+            for process in self.filehd.process_list
         )
 
         self.worker_dicts = result
@@ -414,9 +403,10 @@ class JobHandler(object):
 
         result = wh.worker(
             process,
-            '',
-            self.filehd.get_worker_log_name(self._module, '_serial'),
-            self.filehd.module_run_dirs, self.config,
+            "",
+            self.filehd.get_worker_log_name(self._module, "_serial"),
+            self.filehd.module_run_dirs,
+            self.config,
             self.filehd.get_module_config_sec(self._module),
             self.timeout,
             self._module_runner,
@@ -442,7 +432,7 @@ class JobHandler(object):
 
         """
         for worker_dict in self.worker_dicts:
-            if worker_dict['exception']:
+            if worker_dict["exception"]:
                 self.log.info(
                     f'ERROR: {worker_dict["exception"]} recorded '
                     + f'in: {worker_dict["log"]}'
@@ -457,10 +447,8 @@ class JobHandler(object):
 
         """
         for worker_dict in self.worker_dicts:
-            if worker_dict['stderr']:
-                self.log.info(
-                    f'ERROR: stderr recorded in: {worker_dict["log"]}'
-                )
+            if worker_dict["stderr"]:
+                self.log.info(f'ERROR: stderr recorded in: {worker_dict["log"]}')
                 self.error_count += 1
 
     def _check_missed_processes(self):
@@ -470,18 +458,16 @@ class JobHandler(object):
         submitted.
 
         """
-        missed_txt = (
-            ' - The following processes were not submitted to workers:'
-        )
+        missed_txt = " - The following processes were not submitted to workers:"
 
         if self.filehd.missed:
 
             self.log.info(missed_txt)
-            self.log.info(f' - {self.filehd.missed}')
+            self.log.info(f" - {self.filehd.missed}")
 
             if self._verbose:
                 print(missed_txt)
-                print(f' - {self.filehd.missed}')
+                print(f" - {self.filehd.missed}")
 
     def clean_up(self):
         """Finish.

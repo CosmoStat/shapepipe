@@ -203,4 +203,4 @@ SCATTER : str, optional
 
 """
 
-__all__ = ['setools']
+__all__ = ["setools"]

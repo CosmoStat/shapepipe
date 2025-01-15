@@ -45,7 +45,6 @@ def get_IDs_from_file(path):
     return numbers
 
 
-
 def get_all_exposures(exp_number_file_list, verbose=False):
     """Get All Exposures.
 
@@ -162,7 +161,7 @@ def check_special(module, paths_in_dir, names_in_dir):
                             print(f"b stars = {value}, not special")
                         break
 
-        #print(inds_special)
+        # print(inds_special)
         for idx in inds_special:
             paths_in_dir.pop(idx)
             names_in_dir.pop(idx)
@@ -192,7 +191,7 @@ class job_data(object):
     pattern: list, optional
         if not None, file pattern to match; defafult is `None`
     path_main: str, optional
-        main (left-most) part of output directory, default is "."       
+        main (left-most) part of output directory, default is "."
     path_left: str, optional
         left (first) part of output directory, default is "./output"
     output_subdirs: str, optional
@@ -207,6 +206,7 @@ class job_data(object):
         verbose output if True; default is False
 
     """
+
     def __init__(
         self,
         bit,
@@ -231,10 +231,8 @@ class job_data(object):
         self._path_main = path_main
         self._path_left = path_left
         self._output_subdirs = output_subdirs or [""]
-        self._path_right = set_as_list(
-            path_right, len(modules), default="."
-        )
-        self._output_path_missing_IDs=output_path_missing_IDs
+        self._path_right = set_as_list(path_right, len(modules), default=".")
+        self._output_path_missing_IDs = output_path_missing_IDs
         self._verbose = verbose
 
     def print_intro(self):
@@ -305,9 +303,9 @@ class job_data(object):
     def is_ID_in_str(self, ID, path):
         if ID in path:
             return True
-        #if re.sub("\.", "-", ID) in path:
-            #return True
-        #return False
+        # if re.sub("\.", "-", ID) in path:
+        # return True
+        # return False
 
     @classmethod
     def is_not_in_any(self, ID, list_str):
@@ -325,7 +323,7 @@ class job_data(object):
 
         pattern = re.compile(r"(\d{3})-(\d{3})")
         results = [pattern.sub(r"\1.\2", number) for number in numbers]
-    
+
         return results
 
     @classmethod
@@ -378,21 +376,18 @@ class job_data(object):
         n_mult = self._n_mult[idx]
 
         list_expected = get_par_runtime(par_runtime, key_expected, kind="list")
-        
+
         # Count image IDs in names that were found earlier
 
         ## Extract image IDs from names
         IDs = []
-        pattern = re.compile(
-            r"(?:\d{3}-\d{3}|\d{7}-\d+|\d{7})"
-        )
+        pattern = re.compile(r"(?:\d{3}-\d{3}|\d{7}-\d+|\d{7})")
         for name, path in zip(names_in_dir, paths_in_dir):
             match = pattern.search(name)
             if match:
                 IDs.append(match.group())
             else:
                 raise ValueError(f"No ID found in {name}")
-
 
         ## Count occurences
         ID_counts = Counter(IDs)
@@ -415,22 +410,20 @@ class job_data(object):
                 )
             else:
                 output_path = self._output_path_missing_IDs[idx]
-            #print("MKDEBUG", missing_IDs_unique)
+            # print("MKDEBUG", missing_IDs_unique)
             self.write_IDs_to_file(output_path, missing_IDs_unique)
 
         return missing_IDs_unique
 
     def output_missing_job(self):
-        output_path = (
-            f"{self._path_main}/summary/missing_job_{self._bit}_all.txt"
-        )
+        output_path = f"{self._path_main}/summary/missing_job_{self._bit}_all.txt"
 
         missing_IDs_all = set(self._missing_IDs_job)
 
         if len(missing_IDs_all) > 0:
             self.write_IDs_to_file(output_path, missing_IDs_all)
         else:
-            #logging.warning("no missing IDs in output_missing_job")
+            # logging.warning("no missing IDs in output_missing_job")
             if os.path.exists(output_path):
                 os.unlink(output_path)
 
@@ -464,7 +457,7 @@ class job_data(object):
         """
         directory = f"{full_path}/{module}/output"
 
-        # Some modules have special requirements 
+        # Some modules have special requirements
         if module == "setools_runner":
             directory = f"{directory}/rand_split"
 
@@ -476,20 +469,16 @@ class job_data(object):
         # os.path.whether exists is twice faster than try/except
 
         if os.path.exists(directory):
-            pattern =  f"{self._pattern[idx]}*"
+            pattern = f"{self._pattern[idx]}*"
             for entry2 in os.scandir(directory):
                 if (
                     entry2.is_file()
-                    and (
-                        fnmatch.fnmatch(entry2.name, pattern)
-                    )
+                    and (fnmatch.fnmatch(entry2.name, pattern))
                     and entry2.stat().st_size > 0
                 ):
                     # Append matching files
                     self._names_in_dir[idx].append(entry2.name)
-                    self._paths_in_dir[idx].append(
-                        os.path.join(directory, entry2.name)
-                    )
+                    self._paths_in_dir[idx].append(os.path.join(directory, entry2.name))
 
     def get_names_in_dir(self, iterable, module, idx):
 
@@ -528,14 +517,10 @@ class job_data(object):
                         for match in matches:
                             print(match.name)
 
-                    full_path = self.get_last_full_path(
-                        base_and_subdir, matches
-                    )
+                    full_path = self.get_last_full_path(base_and_subdir, matches)
 
                     # Get module output directory
-                    directory = self.get_module_output_dir(
-                        full_path, module
-                    )
+                    directory = self.get_module_output_dir(full_path, module)
                     if self._verbose:
                         print(f"**** Output dir = {directory}")
 
@@ -653,7 +638,7 @@ class job_data(object):
         logging.info("")
 
         # Write missing IDs for entire job to file
-        #if n_missing_job > 0:
+        # if n_missing_job > 0:
         self.output_missing_job()
 
 
@@ -671,10 +656,7 @@ def get_par_runtime(par_runtime, key, kind="n"):
 
     """
     combined_key = f"{kind}_{key}"
-    if (
-        combined_key == "list_3*n_shdus+n_exposures"
-        and combined_key not in par_runtime
-    ):
+    if combined_key == "list_3*n_shdus+n_exposures" and combined_key not in par_runtime:
         print("{combined_key} not set, TBD")
         return []
 

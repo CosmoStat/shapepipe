@@ -19,13 +19,13 @@ class Dummy(object):
     def _read_file(self, file_name):
         """Read File."""
         with open(file_name) as data_file:
-            content = data_file.read().replace('\n', '')
+            content = data_file.read().replace("\n", "")
 
         return content
 
     def read_files(self, input_file_list):
         """Read Files."""
-        self.content = ''
+        self.content = ""
 
         for file_list in input_file_list:
             for file_name in file_list:
@@ -33,18 +33,18 @@ class Dummy(object):
 
     def write_file(self, file_name):
         """Write Files."""
-        text_file = open(file_name, 'w')
+        text_file = open(file_name, "w")
         text_file.write(self.content)
         text_file.close()
 
 
 @module_runner(
-    version='1.1',
-    input_module='python_example_runner',
-    file_pattern=['numbers', 'letters', 'pyex_output'],
-    file_ext=['.txt', '.txt', '.cat'],
-    depends='numpy',
-    run_method='serial',
+    version="1.1",
+    input_module="python_example_runner",
+    file_pattern=["numbers", "letters", "pyex_output"],
+    file_ext=[".txt", ".txt", ".cat"],
+    depends="numpy",
+    run_method="serial",
 )
 def serial_example_runner(
     input_file_list,
@@ -55,9 +55,7 @@ def serial_example_runner(
     w_log,
 ):
     """Define The Serial Example Runner."""
-    output_file_name = (
-        f'{run_dirs["output"]}/serial_outputfile_number_string.cat'
-    )
+    output_file_name = f'{run_dirs["output"]}/serial_outputfile_number_string.cat'
 
     inst = Dummy()
     inst.read_files(input_file_list)

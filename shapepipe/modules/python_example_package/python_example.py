@@ -60,7 +60,7 @@ class PythonExample:
 
         """
         with open(file_name) as data_file:
-            content = data_file.read().replace('\n', '')
+            content = data_file.read().replace("\n", "")
 
         return content
 
@@ -81,7 +81,7 @@ class PythonExample:
         content1 = self._read_file(file_name1)
         content2 = self._read_file(file_name2)
 
-        self.content = f'{content1} and {content2}'
+        self.content = f"{content1} and {content2}"
 
     def write_file(self, file_name, message):
         """Write File.
@@ -98,6 +98,6 @@ class PythonExample:
         """
         new_content = message + str(self.content)
 
-        text_file = open(file_name, 'w')
+        text_file = open(file_name, "w")
         text_file.write(new_content)
         text_file.close()

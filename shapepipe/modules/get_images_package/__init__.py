@@ -52,4 +52,4 @@ N_EXPECTED : int, optional
 
 """
 
-__all__ = ['get_images.py']
+__all__ = ["get_images.py"]

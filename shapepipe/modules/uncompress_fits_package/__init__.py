@@ -29,4 +29,4 @@ OUTPUT_PATTERN : str
 
 """
 
-__all__ = ['uncompress_fits']
+__all__ = ["uncompress_fits"]

@@ -15,12 +15,12 @@ def main(argv=None):
     verbose = False
 
     jobs, list_tile_IDs_dot = set_jobs_v2_pre_v2(patch, verbose)
-    
+
     list_tile_IDs = job_data.replace_dot_dash(list_tile_IDs_dot)
-    
+
     # Numbers updated at runtime
     par_runtime = init_par_runtime(list_tile_IDs)
-    
+
     job_data.print_stats_header()
 
     for key in "1":
@@ -34,9 +34,8 @@ def main(argv=None):
         jobs[key].check_numbers(par_runtime, indices=[2])
 
     par_runtime = update_par_runtime_after_find_exp(par_runtime, all_exposures)
-    
-    print_par_runtime(par_runtime, verbose=verbose)
 
+    print_par_runtime(par_runtime, verbose=verbose)
 
     # Get all keys after "1"
     keys = sorted(jobs.keys(), key=int)

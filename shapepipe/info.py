@@ -16,28 +16,24 @@ else:
 
 # Package Info
 version_info = (1, 0, 1)
-__version__ = '.'.join(str(c) for c in version_info)
-__name__ = 'shapepipe'
-__author__ = 'Samuel Farrens'
-__email__ = 'samuel.farrens@cea.fr'
+__version__ = ".".join(str(c) for c in version_info)
+__name__ = "shapepipe"
+__author__ = "Samuel Farrens"
+__email__ = "samuel.farrens@cea.fr"
 __about__ = (
-    'ShapePipe is a shape measurement pipeline developed with the'
-    + 'CosmoStat lab at CEA Paris-Saclay.'
+    "ShapePipe is a shape measurement pipeline developed with the"
+    + "CosmoStat lab at CEA Paris-Saclay."
 )
-__setups__ = ['pytest-runner']
-__installs__ = [
-    'joblib>=0.13',
-    'modopt>=1.2',
-    'numpy>=1.14'
-]
+__setups__ = ["pytest-runner"]
+__installs__ = ["joblib>=0.13", "modopt>=1.2", "numpy>=1.14"]
 __tests__ = [
-    'pytest',
-    'pytest-cov',
-    'pytest-pycodestyle',
-    'pytest-pydocstyle',
+    "pytest",
+    "pytest-cov",
+    "pytest-pycodestyle",
+    "pytest-pydocstyle",
 ]
-__scripts_dir__ = 'scripts'
-__scripts_ext__ = ('.py', '.sh', '.bash')
+__scripts_dir__ = "scripts"
+__scripts_ext__ = (".py", ".sh", ".bash")
 
 
 def shapepipe_logo(colour=False):
@@ -48,7 +44,7 @@ def shapepipe_logo(colour=False):
     str logo string
 
     """
-    shape = r'''
+    shape = r"""
  _______  __   __  _______  _______  _______  _______  ___   _______  _______
 |       ||  | |  ||   _   ||       ||       ||       ||   | |       ||       |
 |  _____||  |_|  ||  |_|  ||    _  ||    ___||    _  ||   | |    _  ||    ___|
@@ -56,12 +52,12 @@ def shapepipe_logo(colour=False):
 |_____  ||       ||       ||    ___||    ___||    ___||   | |    ___||    ___|
  _____| ||   _   ||   _   ||   |    |   |___ |   |    |   | |   |    |   |___
 |_______||__| |__||__| |__||___|    |_______||___|    |___| |___|    |_______|
-    '''
+    """
 
     if not import_fail and colour:
-        shape = colored(shape, 'cyan', attrs=['bold'])
+        shape = colored(shape, "cyan", attrs=["bold"])
 
-    logo = r'''
+    logo = r"""
 -------------------------------------------------------------------------------
 {}
 
@@ -82,7 +78,9 @@ def shapepipe_logo(colour=False):
     Version: {}
 
 -------------------------------------------------------------------------------
-    '''.format(shape, __version__)
+    """.format(
+        shape, __version__
+    )
 
     return logo
 
@@ -95,8 +93,8 @@ def line():
     str a horizontal line
 
     """
-    line = r'''
+    line = r"""
 -------------------------------------------------------------------------------
-    '''
+    """
 
     return line

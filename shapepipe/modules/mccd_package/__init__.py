@@ -190,7 +190,7 @@ RHO_STATS_YLIM_R: tuple
 """
 
 __all__ = [
-    'shapepipe_auxiliary_mccd',
-    'mccd_interpolation_script',
-    'mccd_plot_utilities',
+    "shapepipe_auxiliary_mccd",
+    "mccd_interpolation_script",
+    "mccd_plot_utilities",
 ]

@@ -43,4 +43,4 @@ ME_LOG_WCS : str
 
 """
 
-__all__ = ['psfex_interp']
+__all__ = ["psfex_interp"]
