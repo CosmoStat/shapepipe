@@ -572,8 +572,8 @@ class MergeStarCatPSFEX(object):
 
             # misc
 
-            # MKDEBUG: The following columns do not exist (yet)
-            # for psf converted (pix2wcs) files.
+            # The following columns do not exist (yet) for psf converted (pix2wcs) files.
+            # To work in both cases, use try/except for now.
             try:
                 mag += list(data_j["MAG"])
             except:
