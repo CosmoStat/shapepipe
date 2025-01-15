@@ -54,7 +54,14 @@ class Uncompress(object):
         for idx in range(len(self._input_file_list)):
 
             # Get data and header
-            data = fits.getdata(self._input_file_list[idx], self._data_hdu)
+            try:
+                data = fits.getdata(self._input_file_list[idx], self._data_hdu)
+            except Exception as e:
+                print(
+                    "Error while reading data from FITS image "
+                    + f"{self._input_file_list[idx]} at HDU {self._data_hdu}"
+                )
+                raise
             header = fits.getheader(self._input_file_list[idx], self._data_hdu)
 
             # Create and write new FITS file with that HDU only
