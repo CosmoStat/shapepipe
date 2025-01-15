@@ -11,7 +11,7 @@ def main(argv):
     n_CCD = 40
 
     n_patch = 7
-    patches = [f'P{x}' for x in np.arange(n_patch) + 1]
+    patches = [f"P{x}" for x in np.arange(n_patch) + 1]
 
     missing_CCDs = {}
     for patch in patches:
@@ -63,7 +63,9 @@ def main(argv):
 
     print("patch    missing      total       used")
     for patch in patches:
-        print(f"{patch:5s} {len(missing_CCDs[patch]):10d} {len(all_CCDs[patch]):10d} {len(used_CCDs[patch]):10d}")
+        print(
+            f"{patch:5s} {len(missing_CCDs[patch]):10d} {len(all_CCDs[patch]):10d} {len(used_CCDs[patch]):10d}"
+        )
 
     print(f"{'sum':5s} {n_missing:10d} {len(all_all):10d} {n_used:10d}")
     print(f"{'all':5s} {len(missing_all):10d} {n_all:10d} {len(used_all):10d}")

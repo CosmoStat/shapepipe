@@ -61,7 +61,7 @@ def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
     tnt = np.sum(t_v * noise_v * t_v * w_v)
     pnp = np.sum(psf_v * noise_v * psf_v * w_v)
     tnp = np.sum(t_v * noise_v * psf_v * w_v)
-    err = tnt * pg**2 + pnp * tg**2 - 2 * tnp * pg * tg
+    err = tnt * pg ** 2 + pnp * tg ** 2 - 2 * tnp * pg * tg
 
     # Compute spread model
     if pg > 0:
@@ -70,7 +70,7 @@ def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
         sm = 1
 
     if (pg > 0) & (err > 0):
-        sm_err = np.sqrt(err) / pg**2
+        sm_err = np.sqrt(err) / pg ** 2
     else:
         sm_err = 1
 
@@ -245,9 +245,7 @@ class SpreadModel(object):
 
         psf_cat.close()
 
-        self.save_results(
-            spread_model_final, spread_model_err_final, obj_mag, obj_id
-        )
+        self.save_results(spread_model_final, spread_model_err_final, obj_mag, obj_id)
 
     def save_results(self, sm, sm_err, mag, number):
         """Save Results.
@@ -283,9 +281,7 @@ class SpreadModel(object):
                 "SPREAD_MODEL": sm,
                 "SPREADERR_MODEL": sm_err,
             }
-            new_cat.save_as_fits(
-                data=dict_data, sex_cat_path=self._sex_cat_path
-            )
+            new_cat.save_as_fits(data=dict_data, sex_cat_path=self._sex_cat_path)
         elif self._output_mode == "add":
             ori_cat = file_io.FITSCatalogue(
                 self._sex_cat_path,
@@ -297,9 +293,7 @@ class SpreadModel(object):
                 SEx_catalogue=True,
                 open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
             )
-            ori_cat.add_col(
-                "SPREAD_MODEL", sm, new_cat=True, new_cat_inst=new_cat
-            )
+            ori_cat.add_col("SPREAD_MODEL", sm, new_cat=True, new_cat_inst=new_cat)
             ori_cat.close()
             new_cat.open()
             new_cat.add_col("SPREADERR_MODEL", sm_err)

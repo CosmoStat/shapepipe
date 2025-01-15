@@ -99,9 +99,7 @@ class Loc2Glob(object):
         'COMMENT    __________________________'
     """
 
-    def __init__(
-        self, x_gap=70, y_gap=425, x_npix=2048, y_npix=4612, ccd_tot=40
-    ):
+    def __init__(self, x_gap=70, y_gap=425, x_npix=2048, y_npix=4612, ccd_tot=40):
         r"""Initialize with instrument geometry."""
         self.x_gap = x_gap
         self.y_gap = y_gap
@@ -288,10 +286,7 @@ class Glob2CCD(object):
             )
 
         glob_corners = np.array(
-            [
-                self.loc2glob.loc2glob_img_coord(ccd_n, pos[0], pos[1])
-                for pos in corners
-            ]
+            [self.loc2glob.loc2glob_img_coord(ccd_n, pos[0], pos[1]) for pos in corners]
         )
 
         edge_xy = []
@@ -320,12 +315,7 @@ class Glob2CCD(object):
         edge_y: np.ndarray
             Edge defined as `np.array([min_y, max_y])`.
         """
-        if (
-            (x > edge_x[0])
-            and (x < edge_x[1])
-            and (y > edge_y[0])
-            and (y < edge_y[1])
-        ):
+        if (x > edge_x[0]) and (x < edge_x[1]) and (y > edge_y[0]) and (y < edge_y[1]):
             return True
         else:
             return False
@@ -349,7 +339,6 @@ class Glob2CCD(object):
 
 
 class Convert(object):
-
     def __init__(self):
 
         self.params_default()
@@ -399,9 +388,7 @@ class Convert(object):
                 + " <input_base_dir>/P<patch?>/output;"
                 " default is {}"
             ),
-            "mode": (
-                "run mode, allowed are 'merge', 'test'; default is" + " '{}'"
-            ),
+            "mode": ("run mode, allowed are 'merge', 'test'; default is" + " '{}'"),
             "psf": "PSF model, allowed are 'psfex' and 'mccd'; default is {}",
             "patches": "(list of) input patches",
         }
@@ -435,7 +422,7 @@ class Convert(object):
 
         """
         if self._params["psf"] == "psfex":
-            #self._params["sub_dir_pattern"] = "run_sp_exp_202"
+            # self._params["sub_dir_pattern"] = "run_sp_exp_202"
             self._params["sub_dir_pattern"] = "run_sp_combined_psf"
             self._params["sub_dir_psfint"] = "psfex_interp_runner"
         elif self._params["psf"] == "mccd":
@@ -444,9 +431,7 @@ class Convert(object):
             self._params["sub_dir_setools"] = "setools_runner/output/mask"
         else:
             raise ValueError(f"Invalid PSF model {self._params['psf']}")
-        self._params["sub_dir_psfint"] = (
-            f"{self._params['sub_dir_psfint']}/output"
-        )
+        self._params["sub_dir_psfint"] = f"{self._params['sub_dir_psfint']}/output"
 
     def run(self):
         """Run.
@@ -494,9 +479,7 @@ class Convert(object):
                     total=n_exp_runs,
                     disable=self._params["verbose"],
                 ):
-                    self.transform_exposures(
-                        output_dir, patch, idx_exp, exp_run_dir
-                    )
+                    self.transform_exposures(output_dir, patch, idx_exp, exp_run_dir)
             else:
                 res = Parallel(n_jobs=-1, backend="loky")(
                     delayed(self.transform_exposures)(
@@ -572,9 +555,7 @@ class Convert(object):
             new_sig_star = np.zeros_like(psf_file[mod])
 
             if self._params["psf"] == "psfex":
-                header = fits.Header.fromstring(
-                    "\n".join(header_file[0][0]), sep="\n"
-                )
+                header = fits.Header.fromstring("\n".join(header_file[0][0]), sep="\n")
                 wcs = galsim.AstropyWCS(header=header)
 
                 k = 0
@@ -636,8 +617,7 @@ class Convert(object):
                                     new_e2_star,
                                     new_sig_star,
                                     psf_file["FLAG_STAR_HSM"],
-                                    np.ones_like(psf_file["RA"], dtype=int)
-                                    * ccd_id,
+                                    np.ones_like(psf_file["RA"], dtype=int) * ccd_id,
                                 ]
                             ).T.tolist(),
                         )
@@ -673,12 +653,10 @@ class Convert(object):
                     x_shift, y_shift = l2g.shift_coord(ccd_id)
 
                     new_x[m_ccd_id] = (
-                        psf_file["GLOB_POSITION_IMG_LIST"][:, 0][m_ccd_id]
-                        - x_shift
+                        psf_file["GLOB_POSITION_IMG_LIST"][:, 0][m_ccd_id] - x_shift
                     )
                     new_y[m_ccd_id] = (
-                        psf_file["GLOB_POSITION_IMG_LIST"][:, 1][m_ccd_id]
-                        - y_shift
+                        psf_file["GLOB_POSITION_IMG_LIST"][:, 1][m_ccd_id] - y_shift
                     )
 
                     header_file_path = (
@@ -731,8 +709,8 @@ class Convert(object):
                         sig_psf_tmp_l.append(sig_psf_tmp)
                         flag_psf_tmp_l.append(obj["PSF_MOM_LIST"][3])
 
-                        g1_star_tmp, g2_star_tmp, sig_star_tmp = (
-                            transform_shape(obj["STAR_MOM_LIST"], jac)
+                        g1_star_tmp, g2_star_tmp, sig_star_tmp = transform_shape(
+                            obj["STAR_MOM_LIST"], jac
                         )
                         g1_star_tmp_l.append(g1_star_tmp)
                         g2_star_tmp_l.append(g2_star_tmp)

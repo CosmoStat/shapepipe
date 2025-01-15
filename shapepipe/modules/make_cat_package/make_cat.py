@@ -101,11 +101,7 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     cat_size = len(data)
 
     tile_id = float(
-        ".".join(
-            re.split("-", os.path.splitext(os.path.split(sexcat_path)[1])[0])[
-                1:
-            ]
-        )
+        ".".join(re.split("-", os.path.splitext(os.path.split(sexcat_path)[1])[0])[1:])
     )
     tile_id_array = np.ones(cat_size) * tile_id
 
@@ -254,10 +250,7 @@ class SaveCatalogue:
         """
         self._output_dict = {
             **self._output_dict,
-            **{
-                f"{key_string}{key_end}": np.copy(value)
-                for key_end in self._key_ends
-            },
+            **{f"{key_string}{key_end}": np.copy(value) for key_end in self._key_ends},
         }
 
     def _add2dict(self, key, value, index=None):
@@ -576,9 +569,7 @@ class SaveCatalogue:
                 )
                 self._add2dict(f"PSF_ELL_{epoch + 1}", e_psf, idx)
 
-                psf_fwhm = galaxy.sigma_to_fwhm(
-                    gpc_data["SHAPES"]["SIGMA_PSF_HSM"]
-                )
+                psf_fwhm = galaxy.sigma_to_fwhm(gpc_data["SHAPES"]["SIGMA_PSF_HSM"])
                 self._add2dict(f"PSF_FWHM_{epoch + 1}", psf_fwhm, idx)
 
                 flag_psf = gpc_data["SHAPES"]["FLAG_PSF_HSM"]

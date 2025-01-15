@@ -80,8 +80,7 @@ class Ngmix(object):
 
         if len(input_file_list) != 6:
             raise IndexError(
-                f"Input file list has length {len(input_file_list)},"
-                + " required is 6"
+                f"Input file list has length {len(input_file_list)}," + " required is 6"
             )
 
         self._tile_cat_path = input_file_list[0]
@@ -175,9 +174,7 @@ class Ngmix(object):
         F_prior = ngmix.priors.FlatPrior(Fminval, Fmaxval)
 
         # Joint prior, combine all individual priors
-        prior = ngmix.joint_prior.PriorSimpleSep(
-            cen_prior, g_prior, T_prior, F_prior
-        )
+        prior = ngmix.joint_prior.PriorSimpleSep(cen_prior, g_prior, T_prior, F_prior)
 
         return prior
 
@@ -235,10 +232,7 @@ class Ngmix(object):
         for idx in range(len(results)):
             for name in names:
 
-                mag = (
-                    -2.5 * np.log10(results[idx][name]["flux"])
-                    + self._zero_point
-                )
+                mag = -2.5 * np.log10(results[idx][name]["flux"]) + self._zero_point
                 mag_err = np.abs(
                     -2.5
                     * results[idx][name]["flux_err"]
@@ -246,19 +240,11 @@ class Ngmix(object):
                 )
 
                 output_dict[name]["id"].append(results[idx]["obj_id"])
-                output_dict[name]["n_epoch_model"].append(
-                    results[idx]["n_epoch_model"]
-                )
-                output_dict[name]["moments_fail"].append(
-                    results[idx]["moments_fail"]
-                )
+                output_dict[name]["n_epoch_model"].append(results[idx]["n_epoch_model"])
+                output_dict[name]["moments_fail"].append(results[idx]["moments_fail"])
                 output_dict[name]["ntry_fit"].append(results[idx][name]["ntry"])
-                output_dict[name]["g1_psfo_ngmix"].append(
-                    results[idx]["g_PSFo"][0]
-                )
-                output_dict[name]["g2_psfo_ngmix"].append(
-                    results[idx]["g_PSFo"][1]
-                )
+                output_dict[name]["g1_psfo_ngmix"].append(results[idx]["g_PSFo"][0])
+                output_dict[name]["g2_psfo_ngmix"].append(results[idx]["g_PSFo"][1])
                 output_dict[name]["g1_err_psfo_ngmix"].append(
                     results[idx]["g_err_PSFo"][0]
                 )
@@ -266,30 +252,18 @@ class Ngmix(object):
                     results[idx]["g_err_PSFo"][1]
                 )
                 output_dict[name]["T_psfo_ngmix"].append(results[idx]["T_PSFo"])
-                output_dict[name]["T_err_psfo_ngmix"].append(
-                    results[idx]["T_err_PSFo"]
-                )
+                output_dict[name]["T_err_psfo_ngmix"].append(results[idx]["T_err_PSFo"])
                 output_dict[name]["g1"].append(results[idx][name]["g"][0])
-                output_dict[name]["g1_err"].append(
-                    results[idx][name]["pars_err"][2]
-                )
+                output_dict[name]["g1_err"].append(results[idx][name]["pars_err"][2])
                 output_dict[name]["g2"].append(results[idx][name]["g"][1])
-                output_dict[name]["g2_err"].append(
-                    results[idx][name]["pars_err"][3]
-                )
+                output_dict[name]["g2_err"].append(results[idx][name]["pars_err"][3])
                 output_dict[name]["T"].append(results[idx][name]["T"])
                 output_dict[name]["T_err"].append(results[idx][name]["T_err"])
                 output_dict[name]["Tpsf"].append(results[idx][name]["Tpsf"])
-                output_dict[name]["g1_psf"].append(
-                    results[idx][name]["gpsf"][0]
-                )
-                output_dict[name]["g2_psf"].append(
-                    results[idx][name]["gpsf"][1]
-                )
+                output_dict[name]["g1_psf"].append(results[idx][name]["gpsf"][0])
+                output_dict[name]["g2_psf"].append(results[idx][name]["gpsf"][1])
                 output_dict[name]["flux"].append(results[idx][name]["flux"])
-                output_dict[name]["flux_err"].append(
-                    results[idx][name]["flux_err"]
-                )
+                output_dict[name]["flux_err"].append(results[idx][name]["flux_err"])
                 output_dict[name]["mag"].append(mag)
                 output_dict[name]["mag_err"].append(mag_err)
 
@@ -301,9 +275,7 @@ class Ngmix(object):
                     raise KeyError("No SNR key (s2n, s2n_r) found in results")
 
                 output_dict[name]["flags"].append(results[idx][name]["flags"])
-                output_dict[name]["mcal_flags"].append(
-                    results[idx]["mcal_flags"]
-                )
+                output_dict[name]["mcal_flags"].append(results[idx]["mcal_flags"])
 
         return output_dict
 
@@ -324,7 +296,6 @@ class Ngmix(object):
 
         """
         return f"{directory}/ngmix{self._file_number_string}.fits"
-
 
     def get_last_id(self, cat_path):
         """Get Last ID.
@@ -371,7 +342,6 @@ class Ngmix(object):
 
         return id_last
 
-
     def save_results(self, output_dict):
         """Save Results.
 
@@ -386,8 +356,7 @@ class Ngmix(object):
         n_hdu = len(output_dict.keys())
         if n_hdu != 5:
             raise IndexError(
-                f"FITS output file data has {n_hdu} HDUs,"
-                + " expected are 5"
+                f"FITS output file data has {n_hdu} HDUs," + " expected are 5"
             )
 
         output_name = self.get_output_path(self._output_dir)
@@ -399,7 +368,7 @@ class Ngmix(object):
                 f_out.save_as_fits(output_dict[key], ext_name=key.upper())
             return
 
-        with fits.open(output_name, mode='update') as hdul:
+        with fits.open(output_name, mode="update") as hdul:
 
             # Iterate through HDUs (assuming they are Binary Table HDUs with data)
             for idx, hdu in enumerate(hdul):
@@ -422,10 +391,7 @@ class Ngmix(object):
 
                     # Verify that all column names in existing_data exist
                     # in new_data_dict
-                    if not all(
-                        colname in new_data
-                        for colname in existing_dtype.names
-                    ):
+                    if not all(colname in new_data for colname in existing_dtype.names):
                         print("output_dict", [col for col in new_data])
                         print("existing_da", existing_data.dtype.names)
                         raise ValueError(
@@ -498,9 +464,7 @@ class Ngmix(object):
         count_batch = 0
 
         if self._save_batch > 0:
-            self._w_log.info(
-                f"Batch save mode, save every {self._save_batch} objectsa"
-            )
+            self._w_log.info(f"Batch save mode, save every {self._save_batch} objectsa")
         else:
             self._w_log.info(f"No batch mode")
 
@@ -555,43 +519,45 @@ class Ngmix(object):
             self.check_key(str_id_tmp, flag_vign_cat, self._flag_vignet_path)
             self.check_key(str_id_tmp, weight_vign_cat, self._weight_vignet_path)
             if gal_vign_cat[str_id_tmp] == "empty":
-                self._w_log.info(
-                    f"Skipping object {id_tmp}: empty galaxy vignet"
-                )
+                self._w_log.info(f"Skipping object {id_tmp}: empty galaxy vignet")
                 continue
 
             psf_expccd_name = list(psf_vign_cat[str(id_tmp)].keys())
             for expccd_name_tmp in psf_expccd_name:
 
-                self.check_key(expccd_name_tmp, gal_vign_cat[str_id_tmp], self._gal_vignet_path)
-                self.check_key(expccd_name_tmp, bkg_vign_cat[str_id_tmp], self._bkg_vignet_path)
-                self.check_key(expccd_name_tmp, flag_vign_cat[str_id_tmp], self._flag_vignet_path)
-                self.check_key(expccd_name_tmp, weight_vign_cat[str_id_tmp], self._weight_vignet_path)
+                self.check_key(
+                    expccd_name_tmp, gal_vign_cat[str_id_tmp], self._gal_vignet_path
+                )
+                self.check_key(
+                    expccd_name_tmp, bkg_vign_cat[str_id_tmp], self._bkg_vignet_path
+                )
+                self.check_key(
+                    expccd_name_tmp, flag_vign_cat[str_id_tmp], self._flag_vignet_path
+                )
+                self.check_key(
+                    expccd_name_tmp,
+                    weight_vign_cat[str_id_tmp],
+                    self._weight_vignet_path,
+                )
 
                 exp_name, ccd_n = re.split("-", expccd_name_tmp)
 
-                gal_vign_tmp = gal_vign_cat[str_id_tmp][expccd_name_tmp][
-                    "VIGNET"
-                ]
+                gal_vign_tmp = gal_vign_cat[str_id_tmp][expccd_name_tmp]["VIGNET"]
                 if len(np.where(gal_vign_tmp.ravel() == 0)[0]) != 0:
                     self._w_log.info(
                         f"Skipping exp {expccd_name_tmp} for object {id_tmp}: zero-length galaxy vignet"
                     )
                     continue
 
-                bkg_vign_tmp = bkg_vign_cat[str_id_tmp][expccd_name_tmp][
-                    "VIGNET"
-                ]
+                bkg_vign_tmp = bkg_vign_cat[str_id_tmp][expccd_name_tmp]["VIGNET"]
                 gal_vign_sub_bkg = gal_vign_tmp - bkg_vign_tmp
 
                 tile_vign_tmp = Ngmix.MegaCamFlip(
                     np.copy(tile_vign[i_tile]), int(ccd_n)
                 )
 
-                flag_vign_tmp = flag_vign_cat[str_id_tmp][expccd_name_tmp][
-                    "VIGNET"
-                ]
-                flag_vign_tmp[np.where(tile_vign_tmp == -1e30)] = 2**10
+                flag_vign_tmp = flag_vign_cat[str_id_tmp][expccd_name_tmp]["VIGNET"]
+                flag_vign_tmp[np.where(tile_vign_tmp == -1e30)] = 2 ** 10
                 v_flag_tmp = flag_vign_tmp.ravel()
                 if len(np.where(v_flag_tmp != 0)[0]) / (51 * 51) > 1 / 3.0:
                     self._w_log.info(
@@ -599,9 +565,7 @@ class Ngmix(object):
                     )
                     continue
 
-                weight_vign_tmp = weight_vign_cat[str_id_tmp][expccd_name_tmp][
-                    "VIGNET"
-                ]
+                weight_vign_tmp = weight_vign_cat[str_id_tmp][expccd_name_tmp]["VIGNET"]
 
                 jacob_tmp = get_jacob(
                     f_wcs_file[exp_name][int(ccd_n)]["WCS"],
@@ -615,25 +579,19 @@ class Ngmix(object):
                 Fscale = header_tmp["FSCALE"]
 
                 gal_vign_scaled = gal_vign_sub_bkg * Fscale
-                weight_vign_scaled = weight_vign_tmp * 1 / Fscale**2
+                weight_vign_scaled = weight_vign_tmp * 1 / Fscale ** 2
 
                 gal_vign.append(gal_vign_scaled)
-                psf_vign.append(
-                    psf_vign_cat[str_id_tmp][expccd_name_tmp]["VIGNET"]
-                )
+                psf_vign.append(psf_vign_cat[str_id_tmp][expccd_name_tmp]["VIGNET"])
                 sigma_psf.append(
-                    psf_vign_cat[str_id_tmp][expccd_name_tmp]["SHAPES"][
-                        "SIGMA_PSF_HSM"
-                    ]
+                    psf_vign_cat[str_id_tmp][expccd_name_tmp]["SHAPES"]["SIGMA_PSF_HSM"]
                 )
                 weight_vign.append(weight_vign_scaled)
                 flag_vign.append(flag_vign_tmp)
                 jacob_list.append(jacob_tmp)
 
             if len(gal_vign) == 0:
-                self._w_log.info(
-                    f"Skipping object {id_tmp}: no exposure vignets added"
-                )
+                self._w_log.info(f"Skipping object {id_tmp}: no exposure vignets added")
                 continue
             try:
                 res = do_ngmix_metacal(
@@ -647,14 +605,11 @@ class Ngmix(object):
                     self._pixel_scale,
                 )
             except Exception as ee:
-                self._w_log.info(
-                    f"ngmix failed for object ID={id_tmp}.\nMessage: {ee}"
-                )
+                self._w_log.info(f"ngmix failed for object ID={id_tmp}.\nMessage: {ee}")
                 continue
 
             count = count + 1
             count_batch = count_batch + 1
-
 
             res["obj_id"] = id_tmp
             res["n_epoch_model"] = len(gal_vign)
@@ -664,7 +619,7 @@ class Ngmix(object):
 
                 # Put batch results together
                 res_dict = self.compile_results(final_res)
-                
+
                 # Save batch to disk
                 self.save_results(res_dict)
 
@@ -697,9 +652,7 @@ class Ngmix(object):
         # Save results
         self.save_results(res_dict)
 
-        self._w_log.info(
-            f"Saved {count} ({len(res_dict)}) objects to file"
-        )
+        self._w_log.info(f"Saved {count} ({len(res_dict)}) objects to file")
 
 
 def get_guess(
@@ -760,14 +713,12 @@ def get_guess(
     error_msg = hsm_shape.error_message
 
     if error_msg != "":
-        raise galsim.hsm.GalSimHSMError(
-            f"Error in adaptive moments :\n{error_msg}"
-        )
+        raise galsim.hsm.GalSimHSMError(f"Error in adaptive moments :\n{error_msg}")
 
     if guess_flux_unit == "img":
         guess_flux = hsm_shape.moments_amp
     elif guess_flux_unit == "sky":
-        guess_flux = hsm_shape.moments_amp / pixel_scale**2
+        guess_flux = hsm_shape.moments_amp / pixel_scale ** 2
     else:
         raise ValueError(
             f"invalid guess_flux_unit '{guess_flux_unit}',"
@@ -1025,9 +976,7 @@ def do_ngmix_metacal(
 
         # Gal guess
         try:
-            gal_guess_tmp = get_guess(
-                gals[n_e], pixel_scale, guess_size_type="sigma"
-            )
+            gal_guess_tmp = get_guess(gals[n_e], pixel_scale, guess_size_type="sigma")
         except Exception:
             gal_guess_flag = False
             gal_guess_tmp = np.array([0.0, 0.0, 0.0, 0.0, 1, 100])
@@ -1057,7 +1006,7 @@ def do_ngmix_metacal(
         if len(np.where(weight_map == 0)[0]) != 0:
             gal_masked[weight_map == 0] = noise_img_gal[weight_map == 0]
 
-        weight_map *= 1 / sig_noise**2
+        weight_map *= 1 / sig_noise ** 2
 
         # Original PSF fit
         w_tmp = np.sum(weight_map)
@@ -1126,9 +1075,7 @@ def do_ngmix_metacal(
 
     for key in sorted(obs_dict_mcal):
 
-        fres = make_galsimfit(
-            obs_dict_mcal[key], gal_model, gal_pars, prior=prior
-        )
+        fres = make_galsimfit(obs_dict_mcal[key], gal_model, gal_pars, prior=prior)
 
         res["mcal_flags"] |= fres["flags"]
         tres = {}

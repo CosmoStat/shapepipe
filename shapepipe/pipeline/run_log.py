@@ -76,8 +76,7 @@ class RunLog(object):
 
         elif len(runs) > 1:
             raise RuntimeError(
-                "More than one run found matching search string "
-                + f"'{search_string}'"
+                "More than one run found matching search string " + f"'{search_string}'"
             )
 
         return runs[0].split(" ")[0]

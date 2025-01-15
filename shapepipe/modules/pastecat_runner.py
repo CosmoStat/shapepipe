@@ -64,9 +64,7 @@ def paste_cat_runner(
     file_ext = "fits"
 
     # Set output path
-    output_path = (
-        f'{run_dirs["output"]}/{prefix}' + f"{file_number_string}.{file_ext}"
-    )
+    output_path = f'{run_dirs["output"]}/{prefix}' + f"{file_number_string}.{file_ext}"
 
     # Create rand cat class instance
     paste_cat_inst = PasteCat(

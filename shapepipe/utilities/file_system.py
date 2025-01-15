@@ -36,9 +36,7 @@ def check_dir(dir_name):
 
     """
     if not isinstance(dir_name, str):
-        raise TypeError(
-            f"Directory name must be of type string, not {type(dir_name)}"
-        )
+        raise TypeError(f"Directory name must be of type string, not {type(dir_name)}")
 
     return os.path.isdir(dir_name)
 
@@ -70,6 +68,4 @@ def mkdir(dir_name, check_created=True, exist_ok=True):
     os.makedirs(dir_name, exist_ok=exist_ok)
 
     if check_created and not check_dir(dir_name):
-        raise FileSystemError(
-            f'Directory "{dir_name}" not found after mkdir command.'
-        )
+        raise FileSystemError(f'Directory "{dir_name}" not found after mkdir command.')

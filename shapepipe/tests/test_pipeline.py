@@ -15,7 +15,6 @@ from shapepipe.pipeline import *
 
 
 class ExecuteTestCase(TestCase):
-
     def setUp(self):
 
         self.command_line = "echo 1"

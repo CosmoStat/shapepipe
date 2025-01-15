@@ -55,9 +55,7 @@ def serial_example_runner(
     w_log,
 ):
     """Define The Serial Example Runner."""
-    output_file_name = (
-        f'{run_dirs["output"]}/serial_outputfile_number_string.cat'
-    )
+    output_file_name = f'{run_dirs["output"]}/serial_outputfile_number_string.cat'
 
     inst = Dummy()
     inst.read_files(input_file_list)

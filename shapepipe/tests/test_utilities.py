@@ -15,7 +15,6 @@ from shapepipe.utilities import galaxy
 
 
 class GalaxyTestCase(TestCase):
-
     def setUp(self):
 
         self.sigma_float = 5.5

@@ -286,7 +286,6 @@ def get_data(path, hdu_num, param_list):
 
 def main(argv=None):
 
-
     # Set default parameters
     p_def = params_default()
 

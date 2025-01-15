@@ -82,6 +82,5 @@ def check_executable(exe_name):
 
     if not res:
         raise OSError(
-            f"{exe_name} does not appear to be a valid executable on this "
-            + "system."
+            f"{exe_name} does not appear to be a valid executable on this " + "system."
         )

@@ -40,9 +40,7 @@ def get_header_value(image_path, key):
     try:
         val = float(val)
     except Exception:
-        raise ValueError(
-            f"The key {key} does not return a float value. Got {val}"
-        )
+        raise ValueError(f"The key {key} does not return a float value. Got {val}")
 
     return val
 
@@ -126,10 +124,7 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
             n_epoch[ind] += 1
         exp_name = np.array([exp_list[idx] for n in range(len(obj_id))])
         a = np.array(
-            [
-                (obj_id[ii], exp_name[ii], pos_tmp[ii])
-                for ii in range(len(exp_name))
-            ],
+            [(obj_id[ii], exp_name[ii], pos_tmp[ii]) for ii in range(len(exp_name))],
             dtype=[
                 ("NUMBER", obj_id.dtype),
                 ("EXP_NAME", exp_name.dtype),
@@ -306,15 +301,11 @@ class SExtractorCaller:
             extra += 1
 
         if use_flag:
-            self._cmd_line_extra += (
-                " -FLAG_IMAGE " + f"{self._all_input_path[extra]}"
-            )
+            self._cmd_line_extra += " -FLAG_IMAGE " + f"{self._all_input_path[extra]}"
             extra += 1
 
         if use_psf:
-            self._cmd_line_extra += (
-                " -PSF_NAME " + f"{self._all_input_path[extra]}"
-            )
+            self._cmd_line_extra += " -PSF_NAME " + f"{self._all_input_path[extra]}"
             extra += 1
 
         # Check for separate files for detection and measurement
@@ -322,8 +313,7 @@ class SExtractorCaller:
         # First, consistency checks
         if use_detect_weight and not use_detect_img:
             raise ValueError(
-                "DETECTION_WEIGHT cannot be True "
-                + "if DETECTION_IMAGE is False"
+                "DETECTION_WEIGHT cannot be True " + "if DETECTION_IMAGE is False"
             )
         if use_detect_weight and not use_weight:
             raise ValueError(
@@ -393,9 +383,7 @@ class SExtractorCaller:
         """
         if use_bkg and not isinstance(bkg_key, type(None)):
             bkg_value = get_header_value(self._meas_img_path, bkg_key)
-            self._cmd_line_extra += (
-                f" -BACK_TYPE MANUAL -BACK_VALUE {bkg_value}"
-            )
+            self._cmd_line_extra += f" -BACK_TYPE MANUAL -BACK_VALUE {bkg_value}"
 
     def get_check_image(self, check_image):
         """Get Check Image.

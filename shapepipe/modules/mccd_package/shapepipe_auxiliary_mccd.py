@@ -179,9 +179,7 @@ def mccd_preprocessing_pipeline(
             # If the list is not empty
             # Concatenate, as fits can't handle list of numpy arrays and
             # turn into reg format
-            mccd_stars = mccd.utils.reg_format(
-                np.concatenate(mccd_star_list, axis=2)
-            )
+            mccd_stars = mccd.utils.reg_format(np.concatenate(mccd_star_list, axis=2))
             mccd_poss = np.concatenate(mccd_pos_list, axis=0)
             mccd_ccds = np.concatenate(mccd_ccd_list, axis=0)
 
@@ -220,11 +218,7 @@ def mccd_preprocessing_pipeline(
             }
 
             saving_path = (
-                output_path
-                + save_name
-                + separator
-                + catalog_id
-                + save_extension
+                output_path + save_name + separator + catalog_id + save_extension
             )
             mccd.mccd_utils.save_to_fits(train_dic, saving_path)
 

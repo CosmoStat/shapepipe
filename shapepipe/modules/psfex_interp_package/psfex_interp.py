@@ -75,9 +75,7 @@ class PSFExInterpolator(object):
 
         # Path to PSFEx output file
         self._dotpsf_path = dotpsf_path
-        if not isinstance(dotpsf_path, type(None)) and not os.path.isfile(
-            dotpsf_path
-        ):
+        if not isinstance(dotpsf_path, type(None)) and not os.path.isfile(dotpsf_path):
             raise ValueError(f"Cound not find file {dotpsf_path}.")
 
         # Path to catalogue containing galaxy positions
@@ -128,10 +126,7 @@ class PSFExInterpolator(object):
         if self.interp_PSFs is None:
             self._interpolate()
 
-        if (
-            isinstance(self.interp_PSFs, str)
-            and self.interp_PSFs == NOT_ENOUGH_STARS
-        ):
+        if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGH_STARS:
             self._w_log.info(
                 "Not enough stars to interpolate the psf in the file "
                 + f"{self._dotpsf_path}."
@@ -140,10 +135,7 @@ class PSFExInterpolator(object):
             self._w_log.info(
                 f"Bad chi2 for the psf model in the file {self._dotpsf_path}."
             )
-        elif (
-            isinstance(self.interp_PSFs, str)
-            and self.interp_PSFs == FILE_NOT_FOUND
-        ):
+        elif isinstance(self.interp_PSFs, str) and self.interp_PSFs == FILE_NOT_FOUND:
             self._w_log.info(f"Psf model file {self._dotpsf_path} not found.")
         else:
             if self._compute_shape:
@@ -259,18 +251,16 @@ class PSFExInterpolator(object):
             PSF_model.header["POLZERO2"],
             PSF_model.header["POLSCAL2"],
         )
-        xs, ys = (pos[:, 0] - x_interp) / x_scale, (
-            pos[:, 1] - y_interp
-        ) / y_scale
+        xs, ys = (pos[:, 0] - x_interp) / x_scale, (pos[:, 1] - y_interp) / y_scale
 
         # compute polynomial coefficients
-        coeffs = np.array([[x**idx for idx in range(deg + 1)] for x in xs])
+        coeffs = np.array([[x ** idx for idx in range(deg + 1)] for x in xs])
         cross_coeffs = np.array(
             [
                 np.concatenate(
                     [
                         [
-                            (x**idx_j) * (y**idx_i)
+                            (x ** idx_j) * (y ** idx_i)
                             for idx_j in range(deg - idx_i + 1)
                         ]
                         for idx_i in range(1, deg + 1)
@@ -285,10 +275,7 @@ class PSFExInterpolator(object):
         PSFs = np.array(
             [
                 np.sum(
-                    [
-                        coeff * atom
-                        for coeff, atom in zip(coeffs_posi, PSF_basis)
-                    ],
+                    [coeff * atom for coeff, atom in zip(coeffs_posi, PSF_basis)],
                     axis=0,
                 )
                 for coeffs_posi in coeffs
@@ -319,8 +306,7 @@ class PSFExInterpolator(object):
             raise ImportError("Galsim is required to get shapes information")
 
         psf_moms = [
-            hsm.FindAdaptiveMom(Image(psf), strict=False)
-            for psf in self.interp_PSFs
+            hsm.FindAdaptiveMom(Image(psf), strict=False) for psf in self.interp_PSFs
         ]
 
         self.psf_shapes = np.array(
@@ -379,10 +365,7 @@ class PSFExInterpolator(object):
         if self.interp_PSFs is None:
             self._interpolate()
 
-        if (
-            isinstance(self.interp_PSFs, str)
-            and self.interp_PSFs == NOT_ENOUGH_STARS
-        ):
+        if isinstance(self.interp_PSFs, str) and self.interp_PSFs == NOT_ENOUGH_STARS:
             self._w_log.info(
                 "Not enough stars to interpolate the psf in the file "
                 + f"{self._dotpsf_path}."
@@ -391,10 +374,7 @@ class PSFExInterpolator(object):
             self._w_log.info(
                 f"Bad chi2 for the psf model in the file {self._dotpsf_path}."
             )
-        elif (
-            isinstance(self.interp_PSFs, str)
-            and self.interp_PSFs == FILE_NOT_FOUND
-        ):
+        elif isinstance(self.interp_PSFs, str) and self.interp_PSFs == FILE_NOT_FOUND:
             self._w_log.info(f"Psf model file {self._dotpsf_path} not found.")
         else:
             star_cat = file_io.FITSCatalogue(
@@ -473,15 +453,9 @@ class PSFExInterpolator(object):
         psfex_cat.open()
 
         psfex_cat_dict = {}
-        psfex_cat_dict["SOURCE_NUMBER"] = np.copy(
-            psfex_cat.get_data()["SOURCE_NUMBER"]
-        )
-        psfex_cat_dict["DELTAX_IMAGE"] = np.copy(
-            psfex_cat.get_data()["DELTAX_IMAGE"]
-        )
-        psfex_cat_dict["DELTAY_IMAGE"] = np.copy(
-            psfex_cat.get_data()["DELTAY_IMAGE"]
-        )
+        psfex_cat_dict["SOURCE_NUMBER"] = np.copy(psfex_cat.get_data()["SOURCE_NUMBER"])
+        psfex_cat_dict["DELTAX_IMAGE"] = np.copy(psfex_cat.get_data()["DELTAX_IMAGE"])
+        psfex_cat_dict["DELTAY_IMAGE"] = np.copy(psfex_cat.get_data()["DELTAY_IMAGE"])
         psfex_cat_dict["CHI2_PSF"] = np.copy(psfex_cat.get_data()["CHI2_PSF"])
 
         return psfex_cat_dict
@@ -593,9 +567,7 @@ class PSFExInterpolator(object):
 
         list_ext_name = cat.get_ext_name()
         hdu_ind = [
-            idx
-            for idx in range(len(list_ext_name))
-            if "EPOCH" in list_ext_name[idx]
+            idx for idx in range(len(list_ext_name)) if "EPOCH" in list_ext_name[idx]
         ]
 
         final_list = []
@@ -626,7 +598,7 @@ class PSFExInterpolator(object):
                 continue
 
             exp_name = exp_names[0]
-            #exp_name = cat.get_data(hdu_index)["EXP_NAME"][0]
+            # exp_name = cat.get_data(hdu_index)["EXP_NAME"][0]
             ccd_list = list(set(cat.get_data(hdu_index)["CCD_N"]))
             array_psf = None
             array_id = None
@@ -676,10 +648,7 @@ class PSFExInterpolator(object):
                         + "lose an epoch."
                     )
                     continue
-                if (
-                    isinstance(self.interp_PSFs, str)
-                    and self.interp_PSFs == BAD_CHI2
-                ):
+                if isinstance(self.interp_PSFs, str) and self.interp_PSFs == BAD_CHI2:
                     self._w_log.info(
                         f"Bad chi2 for the psf model in the ccd {ccd} of the "
                         + f"exposure {exp_name}. Object inside this ccd will "
@@ -699,9 +668,7 @@ class PSFExInterpolator(object):
                 if array_psf is None:
                     array_psf = np.copy(self.interp_PSFs)
                 else:
-                    array_psf = np.concatenate(
-                        (array_psf, np.copy(self.interp_PSFs))
-                    )
+                    array_psf = np.concatenate((array_psf, np.copy(self.interp_PSFs)))
 
                 if array_id is None:
                     array_id = np.copy(obj_id)
@@ -728,13 +695,9 @@ class PSFExInterpolator(object):
                 if array_exp_name is None:
                     array_exp_name = exp_name_tmp
                 else:
-                    array_exp_name = np.concatenate(
-                        (array_exp_name, exp_name_tmp)
-                    )
+                    array_exp_name = np.concatenate((array_exp_name, exp_name_tmp))
 
-            final_list.append(
-                [array_id, array_psf, array_shape, array_exp_name]
-            )
+            final_list.append([array_id, array_psf, array_shape, array_exp_name])
 
         self._f_wcs_file.close()
         cat.close()
@@ -753,18 +716,10 @@ class PSFExInterpolator(object):
                     ] = final_list[j][1][where_res[0]]
                     if self._compute_shape:
                         shape_dict = {}
-                        shape_dict["E1_PSF_HSM"] = final_list[j][2][
-                            where_res[0]
-                        ][0]
-                        shape_dict["E2_PSF_HSM"] = final_list[j][2][
-                            where_res[0]
-                        ][1]
-                        shape_dict["SIGMA_PSF_HSM"] = final_list[j][2][
-                            where_res[0]
-                        ][2]
-                        shape_dict["FLAG_PSF_HSM"] = final_list[j][2][
-                            where_res[0]
-                        ][3]
+                        shape_dict["E1_PSF_HSM"] = final_list[j][2][where_res[0]][0]
+                        shape_dict["E2_PSF_HSM"] = final_list[j][2][where_res[0]][1]
+                        shape_dict["SIGMA_PSF_HSM"] = final_list[j][2][where_res[0]][2]
+                        shape_dict["FLAG_PSF_HSM"] = final_list[j][2][where_res[0]][3]
                         output_dict[id_tmp][final_list[j][3][where_res[0]]][
                             "SHAPES"
                         ] = shape_dict
@@ -788,9 +743,7 @@ class PSFExInterpolator(object):
             Dictionnary of outputs to save
 
         """
-        output_file = SqliteDict(
-            self._output_path + self._img_number + ".sqlite"
-        )
+        output_file = SqliteDict(self._output_path + self._img_number + ".sqlite")
         for idx in output_dict.keys():
             output_file[str(idx)] = output_dict[idx]
         output_file.commit()

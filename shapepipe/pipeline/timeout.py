@@ -30,12 +30,9 @@ def with_timeout(timeout, log_file):
     """
 
     def handler(signum, frame):
-        raise TimeoutError(
-            f"The process time exceeded {timeout}s in {log_file}"
-        )
+        raise TimeoutError(f"The process time exceeded {timeout}s in {log_file}")
 
     def decorator(decorated):
-
         @wraps(decorated)
         def inner(*args, **kwargs):
             signal.signal(signal.SIGALRM, handler)

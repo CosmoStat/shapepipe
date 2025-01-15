@@ -153,9 +153,7 @@ class GetImages(object):
 
         # Get unique number list
         image_number_list = list(set(flat_list))
-        self._w_log.info(
-            f"Number of unique image IDs = {len(image_number_list)}"
-        )
+        self._w_log.info(f"Number of unique image IDs = {len(image_number_list)}")
 
         # Create array to make it compatible with input dir
         nitem = len(input_dir)
@@ -244,10 +242,7 @@ class GetImages(object):
                     fbase = re.sub(self._input_numbering, number, in_pattern)
                     ext_final = in_ext
 
-                if (
-                    use_output_file_pattern
-                    and self._output_file_pattern[idx] == "*"
-                ):
+                if use_output_file_pattern and self._output_file_pattern[idx] == "*":
                     # retrieve all input files to output dir, do not append
                     # extension
                     fpath = in_path
@@ -284,9 +279,7 @@ class GetImages(object):
                     )
                     if path:
                         if len(path) == self._n_expected:
-                            self._w_log.info(
-                                f"{path[0]} found, skipping download"
-                            )
+                            self._w_log.info(f"{path[0]} found, skipping download")
                             continue
                         else:
                             self._w_log.info(
@@ -346,8 +339,7 @@ class GetImages(object):
                 except Exception:
                     attempt += 1
                     self._w_log.info(
-                        "Error with command vcp, attempt "
-                        + f"{attempt}/{self._n_try}"
+                        "Error with command vcp, attempt " + f"{attempt}/{self._n_try}"
                     )
 
             sys.argv = None
@@ -362,9 +354,7 @@ class GetImages(object):
             # Get all input file names if INPUT_FILE_PATTERN contains '*'
             all_src = glob.glob(src)
             if len(all_src) == 0:
-                raise IndexError(
-                    f"No input file found corresponding to '{src}'"
-                )
+                raise IndexError(f"No input file found corresponding to '{src}'")
 
             dst = out_path_renamed
             for src in all_src:

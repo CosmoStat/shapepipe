@@ -461,9 +461,7 @@ class FileHandler(object):
         elif property in self._module_dict[module][run_name].keys():
             value = self._module_dict[module][run_name][property]
         else:
-            raise ValueError(
-                f"Property {property} not found for module {module}."
-            )
+            raise ValueError(f"Property {property} not found for module {module}.")
 
         return value
 
@@ -568,9 +566,7 @@ class FileHandler(object):
             prop_val = getattr(self.module_runners[module], property)
 
         else:
-            raise ValueError(
-                f"No value for {property} in {module} could be found."
-            )
+            raise ValueError(f"No value for {property} in {module} could be found.")
 
         # Look for additional module properties for list objects
         if isinstance(prop_val, list) and self.get_add_module_property(
@@ -715,9 +711,7 @@ class FileHandler(object):
             dir_set_by = f"{module}.py"
             # If so, loop through all the input modules defined for the current
             # module
-            for input_module in self._module_dict[module][run_name][
-                "input_module"
-            ]:
+            for input_module in self._module_dict[module][run_name]["input_module"]:
                 # Get the input module name and run
                 input_module, in_mod_run = shared.split_module_run(input_module)
                 # Check if the input module was part of the current pipeline
@@ -729,9 +723,7 @@ class FileHandler(object):
                     # Add the output directory of the input module to
                     # the list of input directories for the current module
                     input_dir.append(
-                        self._module_dict[input_module][in_mod_run][
-                            "output_dir"
-                        ]
+                        self._module_dict[input_module][in_mod_run]["output_dir"]
                     )
                 else:
                     # If not, add the last run of the input module to the
@@ -756,9 +748,7 @@ class FileHandler(object):
 
         # Add the input directories for the current module to the module
         # dictionary
-        self._module_dict[module][run_name]["input_dir"] = self.check_dirs(
-            input_dir
-        )
+        self._module_dict[module][run_name]["input_dir"] = self.check_dirs(input_dir)
         self._module_dict[module][run_name]["dir_set_by"] = dir_set_by
 
         # Log the input directories and how they were set
@@ -801,12 +791,11 @@ class FileHandler(object):
         split_pattern = "|".join(chars).replace(".", r"\.")
         chars = [f"\\{char}" for char in chars] + [""]
         num_length = [
-            f"\\d{{{len(digits)}}}"
-            for digits in re.split(split_pattern, match_pattern)
+            f"\\d{{{len(digits)}}}" for digits in re.split(split_pattern, match_pattern)
         ]
-        re_pattern = r"".join(
-            [a for b in zip(num_length, chars) for a in b]
-        ).replace("{1}", "+")
+        re_pattern = r"".join([a for b in zip(num_length, chars) for a in b]).replace(
+            "{1}", "+"
+        )
 
         return re.compile(re_pattern)
 
@@ -830,9 +819,7 @@ class FileHandler(object):
 
         """
         return [
-            file_name.replace(_dir + "/", "")
-            for _dir in dir_list
-            if _dir in file_name
+            file_name.replace(_dir + "/", "") for _dir in dir_list if _dir in file_name
         ][0]
 
     @classmethod
@@ -873,9 +860,7 @@ class FileHandler(object):
 
         return re_pattern
 
-    def _save_num_patterns(
-        self, dir_list, re_pattern, pattern, ext, output_file
-    ):
+    def _save_num_patterns(self, dir_list, re_pattern, pattern, ext, output_file):
         """Save Number Patterns.
 
         Save file number patterns to numpy binary, update file patterns and
@@ -949,8 +934,7 @@ class FileHandler(object):
 
                 if new_pattern != pattern:
                     print(
-                        f'Updating pattern from "{pattern}" to '
-                        + f'"{new_pattern}".'
+                        f'Updating pattern from "{pattern}" to ' + f'"{new_pattern}".'
                     )
                     print()
 
@@ -998,7 +982,7 @@ class FileHandler(object):
 
         num_pattern_intersect = reduce(
             partial(np.intersect1d, assume_unique=True), num_pattern_list
-         )
+        )
         if len(num_pattern_intersect) == 0:
             msg = (
                 "Found numbers corresponding to the different input patterns"
@@ -1178,9 +1162,7 @@ class FileHandler(object):
 
         temp = [
             self._save_num_patterns(dir_list, re_pattern, pattern, ext, np_mmap)
-            for pattern, ext, np_mmap in zip(
-                pattern_list, ext_list, np_mmap_list
-            )
+            for pattern, ext, np_mmap in zip(pattern_list, ext_list, np_mmap_list)
         ]
 
         self._save_match_patterns(match_mmap, np_mmap_list)

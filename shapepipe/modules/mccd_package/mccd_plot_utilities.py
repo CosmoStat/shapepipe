@@ -163,10 +163,7 @@ def mean_shapes_plot(
     """
     # colorbar amplitude
     if wind is None:
-        vmax = (
-            max(np.nanmax(ccd_maps), np.abs(np.nanmin(ccd_maps)))
-            * colorbar_ampl
-        )
+        vmax = max(np.nanmax(ccd_maps), np.abs(np.nanmin(ccd_maps))) * colorbar_ampl
         vmin = -vmax * colorbar_ampl
     else:
         vmin, vmax = wind[0] * colorbar_ampl, wind[1] * colorbar_ampl
@@ -331,15 +328,9 @@ def plot_meanshapes(
         all_Y = all_Y[~bad_stars]
         flagmask = flagmask[~bad_stars]
 
-    e1_res_rmse = np.sqrt(
-        np.mean((all_star_shapes[0, :] - all_psf_shapes[0, :]) ** 2)
-    )
-    e2_res_rmse = np.sqrt(
-        np.mean((all_star_shapes[1, :] - all_psf_shapes[1, :]) ** 2)
-    )
-    R2_res_rmse = np.sqrt(
-        np.mean((all_star_shapes[2, :] - all_psf_shapes[2, :]) ** 2)
-    )
+    e1_res_rmse = np.sqrt(np.mean((all_star_shapes[0, :] - all_psf_shapes[0, :]) ** 2))
+    e2_res_rmse = np.sqrt(np.mean((all_star_shapes[1, :] - all_psf_shapes[1, :]) ** 2))
+    R2_res_rmse = np.sqrt(np.mean((all_star_shapes[2, :] - all_psf_shapes[2, :]) ** 2))
     w_log.info(f"TOTAL e1 residual RMSE: {e1_res_rmse:.6e}\n")
     w_log.info(f"TOTAL e2 residual RMSE: {e2_res_rmse:.6e}\n")
     w_log.info(f"TOTAL R2 residual RMSE: {R2_res_rmse:.6e}\n")
@@ -352,9 +343,7 @@ def plot_meanshapes(
         # handle different input catalogue types
         if psf_model_type == "mccd":
 
-            ccd_mask = ((all_CCDs.astype(int) == ccd_nb) * flagmask).astype(
-                bool
-            )
+            ccd_mask = ((all_CCDs.astype(int) == ccd_nb) * flagmask).astype(bool)
 
             # Calculate shift to go from global coordinates to local
             # coordinates
@@ -389,12 +378,8 @@ def plot_meanshapes(
 
         for xb in range(nb_pixel[0]):
             for yb in range(nb_pixel[1]):
-                bin_star_shapes = star_shapes[
-                    :, (xbins == xb + 1) * (ybins == yb + 1)
-                ]
-                bin_psf_shapes = psf_shapes[
-                    :, (xbins == xb + 1) * (ybins == yb + 1)
-                ]
+                bin_star_shapes = star_shapes[:, (xbins == xb + 1) * (ybins == yb + 1)]
+                bin_psf_shapes = psf_shapes[:, (xbins == xb + 1) * (ybins == yb + 1)]
                 ccd_map[0, :3, xb, yb] = np.mean(bin_star_shapes, axis=1)
                 ccd_map[1, :3, xb, yb] = np.mean(bin_psf_shapes, axis=1)
                 ccd_map[:, 3, xb, yb] = bin_star_shapes.shape[1]
@@ -414,23 +399,19 @@ def plot_meanshapes(
             f"e_1 (stars), std={np.nanstd(ccd_maps[:, 0, 0]):.5e}\n"
             + f"vmax={np.nanmax(abs(ccd_maps[:, 0, 0])):.4e}"
         )
-        mean_shapes_plot(
-            ccd_maps[:, 0, 0], output_path + "e1s", title, wind=wind
-        )
+        mean_shapes_plot(ccd_maps[:, 0, 0], output_path + "e1s", title, wind=wind)
 
         title = (
             f"e_1 (model), std={np.nanstd(ccd_maps[:, 1, 0]):.5e}\n"
             + f"vmax={np.nanmax(abs(ccd_maps[:, 1, 0])):.4e}"
         )
-        mean_shapes_plot(
-            ccd_maps[:, 1, 0], output_path + "e1m", title, wind=wind
-        )
+        mean_shapes_plot(ccd_maps[:, 1, 0], output_path + "e1m", title, wind=wind)
 
         if auto_colorbar:
             wind = None
         e1_res = ccd_maps[:, 0, 0] - ccd_maps[:, 1, 0]
         e1_res = e1_res[~np.isnan(e1_res)]
-        rmse_e1 = np.sqrt(np.mean(e1_res**2))
+        rmse_e1 = np.sqrt(np.mean(e1_res ** 2))
         w_log.info(f"Bins: e1 residual RMSE: {rmse_e1:.6f}\n")
         if max_de:
             vmax = max_de
@@ -464,16 +445,12 @@ def plot_meanshapes(
             f"e_2 (stars), std={np.nanstd(ccd_maps[:, 0, 1]):.5e}\n"
             + f"vmax={np.nanmax(abs(ccd_maps[:, 0, 1])):.4e}"
         )
-        mean_shapes_plot(
-            ccd_maps[:, 0, 1], output_path + "e2s", title, wind=wind
-        )
+        mean_shapes_plot(ccd_maps[:, 0, 1], output_path + "e2s", title, wind=wind)
         title = (
             f"e_2 (model), std={np.nanstd(ccd_maps[:, 1, 1]):.5e}\n"
             + f"vmax={np.nanmax(abs(ccd_maps[:, 1, 1])):.4e}"
         )
-        mean_shapes_plot(
-            ccd_maps[:, 1, 1], output_path + "e2m", title, wind=wind
-        )
+        mean_shapes_plot(ccd_maps[:, 1, 1], output_path + "e2m", title, wind=wind)
 
         if auto_colorbar:
             wind = None
@@ -481,7 +458,7 @@ def plot_meanshapes(
 
         e2_res = ccd_maps[:, 0, 1] - ccd_maps[:, 1, 1]
         e2_res = e2_res[~np.isnan(e2_res)]
-        rmse_e2 = np.sqrt(np.mean(e2_res**2))
+        rmse_e2 = np.sqrt(np.mean(e2_res ** 2))
         w_log.info(f"Bins: e2 residual RMSE: {rmse_e2:.6f}\n")
         if max_de:
             vmax = max_de
@@ -539,16 +516,13 @@ def plot_meanshapes(
             wind = [
                 0,
                 np.nanmax(
-                    np.abs(
-                        (ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2])
-                        / ccd_maps[:, 0, 2]
-                    )
+                    np.abs((ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) / ccd_maps[:, 0, 2])
                 ),
             ]
             colorbar_ampl = 1.0
         R2_res = (ccd_maps[:, 0, 2] - ccd_maps[:, 1, 2]) / ccd_maps[:, 0, 2]
         R2_res = R2_res[~np.isnan(R2_res)]
-        rmse_r2 = np.sqrt(np.mean(R2_res**2))
+        rmse_r2 = np.sqrt(np.mean(R2_res ** 2))
         w_log.info(f"Bins: R2 residual RMSE: {rmse_r2:.6f}\n")
         if max_dr2:
             vmax = max_dr2
@@ -681,9 +655,9 @@ def plot_meanshapes(
         plt.close()
 
         plt.figure(figsize=(12, 6), dpi=300)
-        data_hist = (
-            all_star_shapes[2, :] - all_psf_shapes[2, :]
-        ) / all_star_shapes[2, :]
+        data_hist = (all_star_shapes[2, :] - all_psf_shapes[2, :]) / all_star_shapes[
+            2, :
+        ]
         plt.hist(
             data_hist,
             bins=hist_bins,
@@ -838,9 +812,7 @@ def neg_dash(
     if current_sign > 0:
         plt.errorbar(x, y, yerr=yerr, linestyle="-", label=lab, **errbkwargs)
     else:
-        plt.errorbar(
-            x, np.abs(y), yerr=yerr, linestyle="--", label=lab, **errbkwargs
-        )
+        plt.errorbar(x, np.abs(y), yerr=yerr, linestyle="--", label=lab, **errbkwargs)
     if semilogx:
         plt.xscale("log")
     if semilogy:
@@ -861,9 +833,7 @@ class new_BaseCorrelationFunctionSysTest(BaseCorrelationFunctionSysTest):
 
     """
 
-    def make_catalogue(
-        self, data, config=None, use_as_k=None, use_chip_coords=False
-    ):
+    def make_catalogue(self, data, config=None, use_as_k=None, use_chip_coords=False):
         """Make Catalogue.
 
         Parameters
@@ -1147,12 +1117,8 @@ class DESRho3SysTest(new_BaseCorrelationFunctionSysTest):
             [
                 data["ra"],
                 data["dec"],
-                data["g1"]
-                * (data["sigma"] - data["psf_sigma"])
-                / data["sigma"],
-                data["g2"]
-                * (data["sigma"] - data["psf_sigma"])
-                / data["sigma"],
+                data["g1"] * (data["sigma"] - data["psf_sigma"]) / data["sigma"],
+                data["g2"] * (data["sigma"] - data["psf_sigma"]) / data["sigma"],
                 data["w"],
             ],
             names=["ra", "dec", "g1", "g2", "w"],
@@ -1281,12 +1247,8 @@ class DESRho4SysTest(new_BaseCorrelationFunctionSysTest):
             [
                 data2["ra"],
                 data2["dec"],
-                data2["g1"]
-                * (data2["sigma"] - data2["psf_sigma"])
-                / data2["sigma"],
-                data2["g2"]
-                * (data2["sigma"] - data2["psf_sigma"])
-                / data2["sigma"],
+                data2["g1"] * (data2["sigma"] - data2["psf_sigma"]) / data2["sigma"],
+                data2["g2"] * (data2["sigma"] - data2["psf_sigma"]) / data2["sigma"],
                 data2["w"],
             ],
             names=["ra", "dec", "g1", "g2", "w"],
@@ -1385,12 +1347,8 @@ class DESRho5SysTest(new_BaseCorrelationFunctionSysTest):
             [
                 data2["ra"],
                 data2["dec"],
-                data2["g1"]
-                * (data2["sigma"] - data2["psf_sigma"])
-                / data2["sigma"],
-                data2["g2"]
-                * (data2["sigma"] - data2["psf_sigma"])
-                / data2["sigma"],
+                data2["g1"] * (data2["sigma"] - data2["psf_sigma"]) / data2["sigma"],
+                data2["g2"] * (data2["sigma"] - data2["psf_sigma"]) / data2["sigma"],
                 data2["w"],
             ],
             names=["ra", "dec", "g1", "g2", "w"],

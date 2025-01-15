@@ -223,9 +223,7 @@ def get_status(tile_num):
                         if mm:
                             status = status + (fail_time_out, "vos time out")
                             break
-                        mm = re.search(
-                            "ERROR:: __str__ returned non-string", line_err
-                        )
+                        mm = re.search("ERROR:: __str__ returned non-string", line_err)
                         if mm:
                             status = status + (
                                 fail_connection,
@@ -322,10 +320,7 @@ def output_failed(output_fail, status):
 
         with open(output_fail, "w") as f_out:
             for tile_num in status.keys():
-                if (
-                    status[tile_num][0] == res_noout
-                    or status[tile_num][0] == res_unk
-                ):
+                if status[tile_num][0] == res_noout or status[tile_num][0] == res_unk:
                     print(tile_num, file=f_out)
 
 

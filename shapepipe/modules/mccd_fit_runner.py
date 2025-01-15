@@ -56,9 +56,7 @@ def mccd_fit_runner(
         )
 
     else:
-        raise ValueError(
-            'mccd_fit_runner should be called when the MODE is "FIT".'
-        )
+        raise ValueError('mccd_fit_runner should be called when the MODE is "FIT".')
 
     # No return objects
     return None, None

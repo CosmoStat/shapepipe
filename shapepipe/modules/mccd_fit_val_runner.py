@@ -61,9 +61,7 @@ def mccd_fit_val_runner(
         )
 
         # Fitted model is found in the output directory
-        mccd_model_path = (
-            output_dir + fit_saving_name + file_number_string + ".npy"
-        )
+        mccd_model_path = output_dir + fit_saving_name + file_number_string + ".npy"
 
         aux_mccd.mccd_validation_pipeline(
             teststar_path=teststar_path,

@@ -111,9 +111,7 @@ class MergeStarCatMCCD(object):
             Root mean square error
 
         """
-        rmse = np.sqrt(
-            np.nansum(np.array(values) ** 2) / np.nansum(np.array(sizes))
-        )
+        rmse = np.sqrt(np.nansum(np.array(values) ** 2) / np.nansum(np.array(sizes)))
 
         return rmse
 
@@ -184,7 +182,7 @@ class MergeStarCatMCCD(object):
         """
         residual = val_ref - val_model
 
-        rmse = np.sqrt(np.mean(residual**2))
+        rmse = np.sqrt(np.mean(residual ** 2))
         mean = np.mean(residual)
         std_dev = np.std(residual)
 
@@ -239,7 +237,7 @@ class MergeStarCatMCCD(object):
                 starcat_j = fits.open(name[0], memmap=False, ignore_missing_simple=True)
             except ValueError:
                 print(f"Error for file {name[0]}, check FITS file integrity")
-                #raise
+                # raise
                 continue
 
             stars = np.copy(starcat_j[self._hdu_table].data["VIGNET_LIST"])
@@ -252,7 +250,7 @@ class MergeStarCatMCCD(object):
             masked_diffs = np.array(
                 [(_star - _psf)[my_mask] for _star, _psf in zip(stars, psfs)]
             )
-            masked_pix_val = np.sum(masked_diffs**2)
+            masked_pix_val = np.sum(masked_diffs ** 2)
             masked_pix_sum = np.sum(masked_diffs)
 
             # Star noise variance (using masked stars)
@@ -270,16 +268,14 @@ class MergeStarCatMCCD(object):
 
             # if pix_val < 1e20:
             # Normalised pixel mse calculation
-            stars_norm_vals = np.sqrt(np.sum(stars**2, axis=(1, 2)))
-            psfs_norm_vals = np.sqrt(np.sum(psfs**2, axis=(1, 2)))
+            stars_norm_vals = np.sqrt(np.sum(stars ** 2, axis=(1, 2)))
+            psfs_norm_vals = np.sqrt(np.sum(psfs ** 2, axis=(1, 2)))
             # Select non zero stars & psfs
             non_zero_elems = np.logical_and(
                 (psfs_norm_vals != 0), (stars_norm_vals != 0)
             )
             # Calculate the filtered mse calculation
-            pix_filt_val = np.sum(
-                (stars[non_zero_elems] - psfs[non_zero_elems]) ** 2
-            )
+            pix_filt_val = np.sum((stars[non_zero_elems] - psfs[non_zero_elems]) ** 2)
             # Calculate the normalized (& filtered) mse calculation
             stars_norm_vals = stars_norm_vals[non_zero_elems].reshape(-1, 1, 1)
             psfs_norm_vals = psfs_norm_vals[non_zero_elems].reshape(-1, 1, 1)
@@ -314,12 +310,8 @@ class MergeStarCatMCCD(object):
             model_var_size.append(model_var_val.size)
 
             # positions
-            x += list(
-                starcat_j[self._hdu_table].data["GLOB_POSITION_IMG_LIST"][:, 0]
-            )
-            y += list(
-                starcat_j[self._hdu_table].data["GLOB_POSITION_IMG_LIST"][:, 1]
-            )
+            x += list(starcat_j[self._hdu_table].data["GLOB_POSITION_IMG_LIST"][:, 0])
+            y += list(starcat_j[self._hdu_table].data["GLOB_POSITION_IMG_LIST"][:, 1])
 
             # RA and DEC positions
             try:
@@ -344,28 +336,16 @@ class MergeStarCatMCCD(object):
                 )
 
             # shapes (convert sigmas to R^2)
-            g1_psf += list(
-                starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 0]
-            )
-            g2_psf += list(
-                starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 1]
-            )
-            size_psf += list(
-                starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 2] ** 2
-            )
+            g1_psf += list(starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 0])
+            g2_psf += list(starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 1])
+            size_psf += list(starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 2] ** 2)
             g1 += list(starcat_j[self._hdu_table].data["STAR_MOM_LIST"][:, 0])
             g2 += list(starcat_j[self._hdu_table].data["STAR_MOM_LIST"][:, 1])
-            size += list(
-                starcat_j[self._hdu_table].data["STAR_MOM_LIST"][:, 2] ** 2
-            )
+            size += list(starcat_j[self._hdu_table].data["STAR_MOM_LIST"][:, 2] ** 2)
 
             # flags
-            flag_psf += list(
-                starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 3]
-            )
-            flag_star += list(
-                starcat_j[self._hdu_table].data["STAR_MOM_LIST"][:, 3]
-            )
+            flag_psf += list(starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 3])
+            flag_star += list(starcat_j[self._hdu_table].data["STAR_MOM_LIST"][:, 3])
 
             # ccd id list
             ccd_nb += list(starcat_j[self._hdu_table].data["CCD_ID_LIST"])
@@ -441,9 +421,7 @@ class MergeStarCatMCCD(object):
         )
 
         # Mask and transform to numpy arrays
-        flagmask = np.abs(np.array(flag_star) - 1) * np.abs(
-            np.array(flag_psf) - 1
-        )
+        flagmask = np.abs(np.array(flag_star) - 1) * np.abs(np.array(flag_psf) - 1)
         psf_e1 = np.array(g1_psf)[flagmask.astype(bool)]
         psf_e2 = np.array(g2_psf)[flagmask.astype(bool)]
         psf_r2 = np.array(size_psf)[flagmask.astype(bool)]
@@ -538,16 +516,14 @@ class MergeStarCatPSFEX(object):
         mag, snr, psfex_acc = [], [], []
         ccd_nb = []
 
-        self._w_log.info(
-            f"Merging {len(self._input_file_list)} star catalogues"
-        )
+        self._w_log.info(f"Merging {len(self._input_file_list)} star catalogues")
 
         for name in self._input_file_list:
             try:
                 starcat_j = fits.open(name[0], memmap=False, ignore_missing_simple=True)
             except OSError as e:
                 print(f"Error while opening file '{name[0]}'")
-                #raise
+                # raise
                 continue
 
             data_j = starcat_j[self._hdu_table].data
@@ -745,9 +721,7 @@ class MergeStarCatSetools(object):
         mag, snr = [], []
         ccd_nb = []
 
-        self._w_log.info(
-            f"Merging {len(self._input_file_list)} star catalogues"
-        )
+        self._w_log.info(f"Merging {len(self._input_file_list)} star catalogues")
 
         for name in self._input_file_list:
             starcat_j = fits.open(name[0], memmap=False)

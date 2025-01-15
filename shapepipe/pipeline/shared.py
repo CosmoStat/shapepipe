@@ -108,9 +108,7 @@ def split_module_run(module_str):
 
     """
     if not isinstance(module_str, str):
-        raise TypeError(
-            f"Input module_str must be a string not {type(module_str)}."
-        )
+        raise TypeError(f"Input module_str must be a string not {type(module_str)}.")
 
     run_split = "_run_"
     module_run = module_str

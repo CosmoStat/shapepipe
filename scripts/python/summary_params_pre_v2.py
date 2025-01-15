@@ -20,9 +20,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
         logging.FileHandler(log_file_name, mode="w"),
         logging.StreamHandler(),
     ]
-    logging.basicConfig(
-        level=logging.INFO, format="%(message)s", handlers=handlers
-    )
+    logging.basicConfig(level=logging.INFO, format="%(message)s", handlers=handlers)
 
     logging.info(f"Checking main directory = {path_main}")
 
@@ -87,9 +85,9 @@ def set_jobs_v2_pre_v2(patch, verbose):
         jobs["2"] = job_data(
             2,
             ["run_sp_Uz", "run_sp_exp_SpMh"],
-            ["uncompress_fits_runner",  "split_exp_runner"],
+            ["uncompress_fits_runner", "split_exp_runner"],
             ["tile_IDs", "shdus"],
-            n_mult=[1,  121],
+            n_mult=[1, 121],
             path_main=path_main,
             path_left="output",
             verbose=verbose,
@@ -124,11 +122,10 @@ def set_jobs_v2_pre_v2(patch, verbose):
             n_mult=[1],
             path_main=path_main,
             path_left="exp_runs",
-            output_subdirs= "shdus",
+            output_subdirs="shdus",
             path_right="output",
             verbose=verbose,
         )
-
 
     jobs["16"] = job_data(
         16,
@@ -152,7 +149,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
             "run_sp_exp_SxSePsf",
             "run_sp_exp_SxSePsf",
             "run_sp_exp_SxSePsf",
-            #"run_sp_exp_Pi"
+            # "run_sp_exp_Pi"
         ],
         [
             "sextractor_runner",
@@ -221,7 +218,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
         path_main=path_main,
         path_left="tile_runs",
         output_subdirs=[f"{tile_ID}/output" for tile_ID in list_tile_IDs_dot],
-        path_output=["output"] * n_sh +  ["logs"],
+        path_output=["output"] * n_sh + ["logs"],
         special=[False] * n_sh + [True],
         output_path_missing_IDs=output_path_missing_IDs,
         verbose=verbose,
@@ -250,26 +247,24 @@ def set_jobs_v2_pre_v2(patch, verbose):
     )
 
     # Post-processing
-#    jobs["1024"] = job_data(
-#        "1024",
-#        ["run_sp_combined_final"],
-#        ["make_catalog_runner"],
-#        "tile_IDs",
-#        path_main=path_main,
-#        path_left="output",
-#        verbose=verbose,
-#    )
+    #    jobs["1024"] = job_data(
+    #        "1024",
+    #        ["run_sp_combined_final"],
+    #        ["make_catalog_runner"],
+    #        "tile_IDs",
+    #        path_main=path_main,
+    #        path_left="output",
+    #        verbose=verbose,
+    #    )
 
-#    jobs["2048"] = job_data(
-#        "2048",
-#        "run_sp_combined_psf",
-#        ["psfex_interp_runner"],
-#        "shdus",
-#        path_main=path_main,
-#        path_left="output",
-#        verbose=verbose,
-#    )
+    #    jobs["2048"] = job_data(
+    #        "2048",
+    #        "run_sp_combined_psf",
+    #        ["psfex_interp_runner"],
+    #        "shdus",
+    #        path_main=path_main,
+    #        path_left="output",
+    #        verbose=verbose,
+    #    )
 
     return jobs, list_tile_IDs_dot
-
-

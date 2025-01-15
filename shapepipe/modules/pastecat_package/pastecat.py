@@ -94,8 +94,7 @@ class PasteCat(object):
                             + "not found in input catalogue"
                         )
                     if not (
-                        data[self._check_col_name]
-                        == data_prev[self._check_col_name]
+                        data[self._check_col_name] == data_prev[self._check_col_name]
                     ).all():
                         raise Exception(
                             f"Column check using key"

@@ -274,8 +274,7 @@ class BaseCatalogue(object):
 
         def __str__(self):
             return (
-                f"File IO *** ERROR ***: catalogue: {self._filepath} "
-                + "is not open"
+                f"File IO *** ERROR ***: catalogue: {self._filepath} " + "is not open"
             )
 
     class DataNotFound(Exception):
@@ -1309,13 +1308,9 @@ class FITSCatalogue(BaseCatalogue):
             if hdu_no is None:
                 hdu_no = self.hdu_no
             hdr_col_types = [
-                tt
-                for tt in self._cat_data[hdu_no].header.keys()
-                if "TTYPE" in tt
+                tt for tt in self._cat_data[hdu_no].header.keys() if "TTYPE" in tt
             ]
-            return [
-                self._cat_data[hdu_no].header.comments[c] for c in hdr_col_types
-            ]
+            return [self._cat_data[hdu_no].header.comments[c] for c in hdr_col_types]
         else:
             raise BaseCatalogue.catalogueNotOpen(self.fullpath)
 
@@ -1696,9 +1691,7 @@ class FITSCatalogue(BaseCatalogue):
                     )
                 )
 
-        self._cat_data.append(
-            fits.BinTableHDU.from_columns(col_list, name=ext_name)
-        )
+        self._cat_data.append(fits.BinTableHDU.from_columns(col_list, name=ext_name))
         self.close()
 
     def _save_from_recarray(

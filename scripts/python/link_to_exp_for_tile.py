@@ -205,9 +205,7 @@ def get_exp_IDs(tile_base_dir, tile_ID, verbose=False):
     subdirs = matching_subdirs(tile_out_dir, pattern)
 
     if len(subdirs) == 0:
-        raise IOError(
-            f"No matching directory '{pattern}' in {tile_out_dir} found"
-        )
+        raise IOError(f"No matching directory '{pattern}' in {tile_out_dir} found")
     if len(subdirs) != 1:
         raise IOError(
             f"Exactly one directory natching {pattern} in {tile_out_dir} "
@@ -217,8 +215,7 @@ def get_exp_IDs(tile_base_dir, tile_ID, verbose=False):
     # Replace dot with dash in tile ID
     tile_ID_sp = re.sub(r"\.", "-", tile_ID)
     exp_ID_file = (
-        f"{subdirs[0]}/find_exposures_runner/output/"
-        + f"exp_numbers-{tile_ID_sp}.txt"
+        f"{subdirs[0]}/find_exposures_runner/output/" + f"exp_numbers-{tile_ID_sp}.txt"
     )
 
     exp_IDs = []
@@ -266,7 +263,7 @@ def get_paths(exp_base_dir, exp_shdu_IDs, pattern):
                 f"Exactly one directory matching {pattern} in {path} expected,"
                 + f"  not {n_subdirs}"
             )
-            #print(msg)
+            # print(msg)
             # More than one match: sort according to name = creation time
             subdirs = sorted(subdirs)
             if n_subdirs == 0:
@@ -291,9 +288,7 @@ def create_links_paths(tile_base_dir, tile_ID, paths, verbose=False):
             src_existing = os.readlink(dst)
             if src_existing == src:
                 if verbose:
-                    print(
-                        f"Warning: {src} <- {dst} already exists, no link created"
-                    )
+                    print(f"Warning: {src} <- {dst} already exists, no link created")
                 continue
             else:
                 idx = 1

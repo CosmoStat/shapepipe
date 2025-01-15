@@ -83,9 +83,7 @@ def parse_options(p_def):
         dest="input_path",
         type="string",
         default=p_def.input_path,
-        help="input path, local or vos url, default='{}'".format(
-            p_def.input_path
-        ),
+        help="input path, local or vos url, default='{}'".format(p_def.input_path),
     )
     parser.add_option(
         "-o",
@@ -101,9 +99,7 @@ def parse_options(p_def):
         dest="psf",
         type="string",
         default=p_def.psf,
-        help="PSF model, one in ['psfex'|'mccd'], default='{}'".format(
-            p_def.psf
-        ),
+        help="PSF model, one in ['psfex'|'mccd'], default='{}'".format(p_def.psf),
     )
 
     parser.add_option(

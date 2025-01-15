@@ -235,8 +235,7 @@ def check_special_one(module, path):
         mgs = "ngmix incomplete"
         return mgs, code
 
-
-    return None, None 
+    return None, None
 
 
 class job_data(object):
@@ -379,15 +378,15 @@ class job_data(object):
 
         """
         module_str = module
-        
+
         if not self._special[idx]:
             if n_expected > 0:
                 fraction_found = n_found / n_expected
             else:
                 fraction_found = 1
-                
+
             n_missing_per_mult = n_missing / self._n_mult[idx]
-            
+
         else:
             module_str = f"{module_str} (special)"
             n_found = n_special
@@ -467,7 +466,7 @@ class job_data(object):
     def check_special(self, module, idx):
 
         messages = {}
-        
+
         if self._special[idx]:
 
             # Loop over input file names and paths
@@ -476,11 +475,11 @@ class job_data(object):
                 # Check if special case is found
                 msg, code = check_special_one(module, path)
                 if msg:
-                    # First time occurance: create empty list for this code 
+                    # First time occurance: create empty list for this code
                     if code not in messages:
                         messages[code] = []
 
-                    # Append file name, message, and code 
+                    # Append file name, message, and code
                     messages[code].append(f"{name} {code} {msg}")
 
             if len(messages) > 0:
@@ -496,10 +495,10 @@ class job_data(object):
                         for msg in messages[code]:
                             print(msg, file=f_out)
 
-        # Count all special cases = sum of cases over all codes 
+        # Count all special cases = sum of cases over all codes
         n_all = sum([len(messages[code]) for code in messages])
         return n_all
-        
+
     def output_missing(
         self,
         module,
@@ -527,9 +526,7 @@ class job_data(object):
             # split_exp_runner with sp_local=0: input is exp, output is shdu
             # (images) and exp (header); ignore hdu number.
             # If sp_local=1 set bit to != 2
-            pattern = re.compile(
-                r"(?:\d{3}-\d{3}|\d{7})"
-            )
+            pattern = re.compile(r"(?:\d{3}-\d{3}|\d{7})")
 
         ## Extract image IDs from names
         IDs = []
@@ -541,7 +538,7 @@ class job_data(object):
                 IDs.append(ID)
             else:
                 msg = f"No ID found in {path}"
-                #raise ValueError(msg)
+                # raise ValueError(msg)
                 print(f"Warning: {msg}, continuing")
 
         # For split_exp_runner P8, IDs now contain exps and sdus,
@@ -562,8 +559,7 @@ class job_data(object):
         if not self._output_path_missing_IDs:
             # Default name using bit and module
             output_path = (
-                f"{self._path_main}/summary/missing_job_{self._bit}"
-                + f"_{module}.txt"
+                f"{self._path_main}/summary/missing_job_{self._bit}" + f"_{module}.txt"
             )
         else:
             # User-defined name (e.g. ngmix_runner_X)
@@ -573,9 +569,7 @@ class job_data(object):
         return missing_IDs_unique
 
     def output_missing_job(self):
-        output_path = (
-            f"{self._path_main}/summary/missing_job_{self._bit}_all.txt"
-        )
+        output_path = f"{self._path_main}/summary/missing_job_{self._bit}_all.txt"
 
         missing_IDs_all = set(self._missing_IDs_job)
 
@@ -628,9 +622,7 @@ class job_data(object):
                 ):
                     # Append matching files
                     self._names_in_dir[idx].append(entry2.name)
-                    self._paths_in_dir[idx].append(
-                        os.path.join(directory, entry2.name)
-                    )
+                    self._paths_in_dir[idx].append(os.path.join(directory, entry2.name))
 
     def get_names_in_dir(self, iterable, module, idx):
 

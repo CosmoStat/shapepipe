@@ -195,9 +195,7 @@ def read_ID_list(input_ID_path, verbose=False):
     return input_IDs
 
 
-def create_links(
-    input_dir, output_dir, input_IDs, result_base_names, verbose=False
-):
+def create_links(input_dir, output_dir, input_IDs, result_base_names, verbose=False):
     """Create symbolic links to result files corresponding to (sub-)sample.
 
     Parameters
@@ -245,11 +243,7 @@ def create_links(
     if verbose:
         print("{:5d} links created".format(n_created))
         print("{:5d} links existed already".format(n_existed))
-        print(
-            "{:5d}/{} links available now".format(
-                n_created + n_existed, n_expected
-            )
-        )
+        print("{:5d}/{} links available now".format(n_created + n_existed, n_expected))
         n_tot = sum(n_total.values())
         print("{:5d} as cross-check".format(n_tot))
 
@@ -295,11 +289,7 @@ def main(argv=None):
 
     if os.path.isdir(param.output_dir):
         if param.verbose:
-            print(
-                "Directory {} already exists, continuing...".format(
-                    param.output_dir
-                )
-            )
+            print("Directory {} already exists, continuing...".format(param.output_dir))
     else:
         mkdir(param.output_dir)
 

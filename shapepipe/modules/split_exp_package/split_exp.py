@@ -57,9 +57,7 @@ class SplitExposures(object):
         Process the splitting of single-exposure images.
 
         """
-        for exp_path, output_suffix in zip(
-            self._input_file_list, self._output_suffix
-        ):
+        for exp_path, output_suffix in zip(self._input_file_list, self._output_suffix):
 
             transf_int = "flag" in output_suffix
             transf_coord = "image" in output_suffix
@@ -105,9 +103,9 @@ class SplitExposures(object):
         # Check completeness of HDUs
         if len(hdu_list) <= self._n_hdu:
             raise TypeError(
-                f'Only {len(hdu_list)} out of requested {self._n_hdu} HDUs '
-                + f'found in image {exp_path}. File might be corrupt or not '
-                'completely downloaded.'
+                f"Only {len(hdu_list)} out of requested {self._n_hdu} HDUs "
+                + f"found in image {exp_path}. File might be corrupt or not "
+                "completely downloaded."
             )
 
         # Loop over HDUs = CCDs
@@ -158,7 +156,5 @@ class SplitExposures(object):
 
         # Save header array if requested
         if save_header:
-            file_name = (
-                f"{self._output_dir}/headers{self._file_number_string}.npy"
-            )
+            file_name = f"{self._output_dir}/headers{self._file_number_string}.npy"
             np.save(file_name, header_file)

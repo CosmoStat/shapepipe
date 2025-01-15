@@ -4,7 +4,6 @@
 # from sqlite PSF interpolation information file.
 
 
-
 import os
 import sys
 import glob
@@ -14,19 +13,18 @@ from sqlitedict import SqliteDict
 
 
 def get_ccds_from_file(fname):
-    """Return set of CCD names from sqlite file.
-    """
+    """Return set of CCD names from sqlite file."""
 
     # Open sqlite file
     psf_vign_cat = SqliteDict(fname)
-    
+
     # Initialise set of CCD names
     ccds = set()
 
     # Lazy iteration (do not store list in variable).
     # Keys in postage stamp file are object (galaxy) IDs for which
     # the PSF postage stamp is used elsehere,
-    #for obj_ID in tqdm(psf_vign_cat.keys(), desc=f"Processing {fname}"):
+    # for obj_ID in tqdm(psf_vign_cat.keys(), desc=f"Processing {fname}"):
 
     keys = psf_vign_cat.keys()
     for obj_ID in tqdm(keys, desc=f"Processing {fname}"):
@@ -41,8 +39,7 @@ def get_ccds_from_file(fname):
 
 
 def get_all_ccds(filenames):
-    """Return set of CCD names from list of sqlite files.
-    """
+    """Return set of CCD names from list of sqlite files."""
 
     all_ccds = set()
     for fname in tqdm(filenames, desc="Overall progress"):
@@ -61,8 +58,8 @@ def main(argv):
     for ID in iterable:
         subdir = f"{ID.path}/output"
         if os.path.exists(subdir):
-            #iterable_sub = tqdm(iterable_sub, desc="module_outdirs", leave=False)
-            #with iterable_sub as entries:
+            # iterable_sub = tqdm(iterable_sub, desc="module_outdirs", leave=False)
+            # with iterable_sub as entries:
             with os.scandir(subdir) as entries:
                 for entry in entries:
                     if entry.name.startswith("run_sp_tile_PsViSmVi_20"):
@@ -83,5 +80,3 @@ def main(argv):
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
-    
-

@@ -195,9 +195,7 @@ class VignetMaker(object):
         try:
             img = img_file.get_data(0)
         except:
-            self._w_log.info(
-                f"Error while reading data from {img_path}"
-            )
+            self._w_log.info(f"Error while reading data from {img_path}")
             raise
         img_file.close()
 
@@ -233,9 +231,7 @@ class VignetMaker(object):
         n_epoch = np.copy(cat.get_data()["N_EPOCH"])
 
         list_ext_name = cat.get_ext_name()
-        hdu_ind = [
-            i for i in range(len(list_ext_name)) if "EPOCH" in list_ext_name[i]
-        ]
+        hdu_ind = [i for i in range(len(list_ext_name)) if "EPOCH" in list_ext_name[i]]
 
         final_list = []
         for hdu_index in hdu_ind:
@@ -259,9 +255,7 @@ class VignetMaker(object):
                         found = True
                         break
                 if not found:
-                    raise FileNotFoundError(
-                        f"Could not find image {image_name}"
-                    )
+                    raise FileNotFoundError(f"Could not find image {image_name}")
 
                 ind_obj = np.where(cat.get_data(hdu_index)["CCD_N"] == ccd)[0]
                 obj_id = all_id[ind_obj]
@@ -294,9 +288,7 @@ class VignetMaker(object):
                 if array_exp_name is None:
                     array_exp_name = exp_name_tmp
                 else:
-                    array_exp_name = np.concatenate(
-                        (array_exp_name, exp_name_tmp)
-                    )
+                    array_exp_name = np.concatenate((array_exp_name, exp_name_tmp))
 
             final_list.append([array_id, array_vign, array_exp_name])
 
