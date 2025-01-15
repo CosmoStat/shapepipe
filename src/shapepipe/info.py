@@ -12,8 +12,9 @@ except ImportError:
     import_fail = True
 else:
     import_fail = False
-    
+
 from shapepipe import __version__
+
 
 def shapepipe_logo(colour=False):
     """Get ShapePipe Logo.
@@ -23,7 +24,7 @@ def shapepipe_logo(colour=False):
     str logo string
 
     """
-    shape = r'''
+    shape = r"""
  _______  __   __  _______  _______  _______  _______  ___   _______  _______
 |       ||  | |  ||   _   ||       ||       ||       ||   | |       ||       |
 |  _____||  |_|  ||  |_|  ||    _  ||    ___||    _  ||   | |    _  ||    ___|
@@ -31,12 +32,12 @@ def shapepipe_logo(colour=False):
 |_____  ||       ||       ||    ___||    ___||    ___||   | |    ___||    ___|
  _____| ||   _   ||   _   ||   |    |   |___ |   |    |   | |   |    |   |___
 |_______||__| |__||__| |__||___|    |_______||___|    |___| |___|    |_______|
-    '''
+    """
 
     if not import_fail and colour:
-        shape = colored(shape, 'cyan', attrs=['bold'])
+        shape = colored(shape, "cyan", attrs=["bold"])
 
-    logo = r'''
+    logo = r"""
 -------------------------------------------------------------------------------
 {}
 
@@ -57,7 +58,9 @@ def shapepipe_logo(colour=False):
     Version: {}
 
 -------------------------------------------------------------------------------
-    '''.format(shape, __version__)
+    """.format(
+        shape, __version__
+    )
 
     return logo
 
@@ -70,8 +73,8 @@ def line():
     str a horizontal line
 
     """
-    line = r'''
+    line = r"""
 -------------------------------------------------------------------------------
-    '''
+    """
 
     return line

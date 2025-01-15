@@ -52,4 +52,4 @@ TILE_LIST : str, optional
 
 """
 
-__all__ = ['make_cat']
+__all__ = ["make_cat"]

@@ -12,7 +12,7 @@ import re
 import astropy.io.fits as fits
 
 
-class FindExposures():
+class FindExposures:
     """Find Exposures.
 
     This class finds exposures that are used for a given tile.
@@ -49,7 +49,7 @@ class FindExposures():
         exp_list_uniq = self.get_exposure_list()
 
         # Write list to output ascii file
-        f_out = open(self._output_path, 'w')
+        f_out = open(self._output_path, "w")
         if len(exp_list_uniq) > 0:
             for exp in exp_list_uniq:
                 print(exp, file=f_out)
@@ -70,13 +70,13 @@ class FindExposures():
         try:
             # Get history from tiles FITS header
             hdu = fits.open(self._img_tile_path)
-            hist = hdu[0].header['HISTORY']
+            hist = hdu[0].header["HISTORY"]
 
         except Exception:
             # Key word not found -> raise error
             self._w_log.info(
-                'Error while reading tile image FITS file '
-                + f'{self._img_tile_path}, continuing...'
+                "Error while reading tile image FITS file "
+                + f"{self._img_tile_path}, continuing..."
             )
 
         exp_list = []
@@ -85,14 +85,14 @@ class FindExposures():
         # History entries have format as the following example:
         # "input image 2243881p.fits 6 extension(s)"
         for _hist in hist:
-            temp = _hist.split(' ')
+            temp = _hist.split(" ")
 
-            pattern = r'(.*)\.{1}.*'
+            pattern = r"(.*)\.{1}.*"
             pattern_match = re.search(pattern, temp[self._colnum])
             if not pattern_match:
                 raise IndexError(
-                    f're match \'{pattern}\' failed for filename'
-                    + f' \'{temp[self._colnum]}\''
+                    f"re match '{pattern}' failed for filename"
+                    + f" '{temp[self._colnum]}'"
                 )
 
             exp_name = pattern_match.group(1)
@@ -108,7 +108,7 @@ class FindExposures():
         # For log output
         n_exp_uniq = len(exp_list_uniq)
         n_duplicate = len(exp_list) - n_exp_uniq
-        self._w_log.info(f'Found {n_exp_uniq} exposures used in tile')
-        self._w_log.info(f'{n_duplicate} duplicates were removed')
+        self._w_log.info(f"Found {n_exp_uniq} exposures used in tile")
+        self._w_log.info(f"{n_duplicate} duplicates were removed")
 
         return exp_list_uniq

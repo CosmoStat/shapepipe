@@ -6,7 +6,7 @@ ShapePipe is a galaxy shape measurement pipeline.
 
 """
 
-__all__ = ['modules', 'pipeline', 'utilities']
+__all__ = ["modules", "pipeline", "utilities"]
 
 from importlib.metadata import metadata, version
 from . import *

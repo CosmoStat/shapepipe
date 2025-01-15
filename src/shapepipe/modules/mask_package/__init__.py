@@ -179,4 +179,4 @@ KEEP_REG_FILE : bool
 
 """
 
-__all__ = ['mask']
+__all__ = ["mask"]

@@ -33,4 +33,4 @@ OUTPUT_MODE : str
 
 """
 
-__all__ = ['spread_model']
+__all__ = ["spread_model"]

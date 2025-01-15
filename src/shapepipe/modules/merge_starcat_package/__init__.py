@@ -25,4 +25,4 @@ PSF_MODEL : str
 
 """
 
-__all__ = ['merge_starcat']
+__all__ = ["merge_starcat"]

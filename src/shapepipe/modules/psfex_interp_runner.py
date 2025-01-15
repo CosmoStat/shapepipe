@@ -13,11 +13,11 @@ from shapepipe.pipeline.run_log import get_last_dir
 
 
 @module_runner(
-    version='1.1',
-    input_module=['psfex_runner', 'setools_runner'],
-    file_pattern=['star_selection', 'galaxy_selection'],
-    file_ext=['.psf', '.fits'],
-    depends=['numpy', 'astropy', 'galsim', 'sqlitedict'],
+    version="1.1",
+    input_module=["psfex_runner", "setools_runner"],
+    file_pattern=["star_selection", "galaxy_selection"],
+    file_ext=[".psf", ".fits"],
+    depends=["numpy", "astropy", "galsim", "sqlitedict"],
 )
 def psfex_interp_runner(
     input_file_list,
@@ -29,15 +29,15 @@ def psfex_interp_runner(
 ):
     """Define The PSFEx Interpolation Runner."""
     # Fetch interpolation run mode
-    mode = config.get(module_config_sec, 'MODE')
+    mode = config.get(module_config_sec, "MODE")
     # Fetch parameter values
-    pos_params = config.getlist(module_config_sec, 'POSITION_PARAMS')
-    get_shapes = config.getboolean(module_config_sec, 'GET_SHAPES')
-    star_thresh = config.getint(module_config_sec, 'STAR_THRESH')
-    chi2_thresh = config.getint(module_config_sec, 'CHI2_THRESH')
+    pos_params = config.getlist(module_config_sec, "POSITION_PARAMS")
+    get_shapes = config.getboolean(module_config_sec, "GET_SHAPES")
+    star_thresh = config.getint(module_config_sec, "STAR_THRESH")
+    chi2_thresh = config.getint(module_config_sec, "CHI2_THRESH")
 
     # Run in CLASSIC mode
-    if mode == 'CLASSIC':
+    if mode == "CLASSIC":
 
         # Set input paths
         psfcat_path, galcat_path = input_file_list
@@ -46,7 +46,7 @@ def psfex_interp_runner(
         pi_inst = psfex_interp.PSFExInterpolator(
             psfcat_path,
             galcat_path,
-            run_dirs['output'],
+            run_dirs["output"],
             file_number_string,
             w_log,
             pos_params,
@@ -59,19 +59,19 @@ def psfex_interp_runner(
         pi_inst.process()
 
     # Run in MULTI-EPOCH mode
-    elif mode == 'MULTI-EPOCH':
+    elif mode == "MULTI-EPOCH":
 
         # Fetch multi-epoch parameters
         module = config.getexpanded(
             module_config_sec,
-            'ME_DOT_PSF_DIR',
+            "ME_DOT_PSF_DIR",
         )
-        dot_psf_dir = get_last_dir(run_dirs['run_log'], module)
+        dot_psf_dir = get_last_dir(run_dirs["run_log"], module)
         dot_psf_pattern = config.get(
             module_config_sec,
-            'ME_DOT_PSF_PATTERN',
+            "ME_DOT_PSF_PATTERN",
         )
-        f_wcs_path = config.getexpanded(module_config_sec, 'ME_LOG_WCS')
+        f_wcs_path = config.getexpanded(module_config_sec, "ME_LOG_WCS")
 
         # Set input paths
         galcat_path = input_file_list[0]
@@ -80,7 +80,7 @@ def psfex_interp_runner(
         psfex_interp_inst = psfex_interp.PSFExInterpolator(
             None,
             galcat_path,
-            run_dirs['output'],
+            run_dirs["output"],
             file_number_string,
             w_log,
             pos_params,
@@ -93,7 +93,7 @@ def psfex_interp_runner(
         psfex_interp_inst.process_me(dot_psf_dir, dot_psf_pattern, f_wcs_path)
 
     # Run in VALIDATION mode
-    elif mode == 'VALIDATION':
+    elif mode == "VALIDATION":
 
         # Set input paths
         psfcat_path, galcat_path, psfex_cat_path = input_file_list
@@ -102,7 +102,7 @@ def psfex_interp_runner(
         psfex_interp_inst = psfex_interp.PSFExInterpolator(
             psfcat_path,
             galcat_path,
-            run_dirs['output'],
+            run_dirs["output"],
             file_number_string,
             w_log,
             pos_params,
@@ -116,7 +116,7 @@ def psfex_interp_runner(
 
     else:
         # Raise error for invalid run mode
-        ValueError('MODE has to be in : [CLASSIC, MULTI-EPOCH, VALIDATION]')
+        ValueError("MODE has to be in : [CLASSIC, MULTI-EPOCH, VALIDATION]")
 
     # No return objects
     return None, None

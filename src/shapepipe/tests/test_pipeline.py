@@ -18,8 +18,8 @@ class ExecuteTestCase(TestCase):
 
     def setUp(self):
 
-        self.command_line = 'echo 1'
-        self.output_tuple = ('1\n', '')
+        self.command_line = "echo 1"
+        self.output_tuple = ("1\n", "")
 
     def tearDown(self):
 
@@ -34,5 +34,5 @@ class ExecuteTestCase(TestCase):
     def test_check_executable(self):
 
         npt.assert_raises(TypeError, execute.check_executable, 1)
-        npt.assert_raises(OSError, execute.check_executable, '')
-        self.assertIsNone(execute.check_executable('/bin/ls'))
+        npt.assert_raises(OSError, execute.check_executable, "")
+        self.assertIsNone(execute.check_executable("/bin/ls"))

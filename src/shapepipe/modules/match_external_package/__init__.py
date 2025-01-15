@@ -46,4 +46,4 @@ OUTPUT_DISTANCE : bool, optional
 
 """
 
-__all__ = ['match_external']
+__all__ = ["match_external"]

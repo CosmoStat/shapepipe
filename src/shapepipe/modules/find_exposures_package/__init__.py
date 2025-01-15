@@ -32,4 +32,4 @@ EXP_PREFIX: str
    Prefix of exposures 
 """
 
-__all__ = ['find_exposures.py']
+__all__ = ["find_exposures.py"]
