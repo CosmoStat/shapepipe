@@ -100,4 +100,3 @@ RUN pip install --no-cache-dir -e . && \
     link_name=`basename $script $ext`; \
     ln -s $script /usr/local/bin/$link_name; \
     done; \
-    done
