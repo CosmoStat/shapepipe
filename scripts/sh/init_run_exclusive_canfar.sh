@@ -405,7 +405,7 @@ if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
 
 fi
 
-if [ "$kind" == $tile ] && [ "$sp_local" == "1" ]; then
+if [ "$kind" == "tile" ] && [ "$sp_local" == "1" ]; then
   cd ../../..
   command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs -s $sp_local" $dry_run
   cd tile_runs/$ID

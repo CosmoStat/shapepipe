@@ -38,7 +38,9 @@ usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
     \tnumber of jobs (SMP mode only), default from original config files\n       
    -d, --directory\n                                                             
     \trun directory, default is pwd ($dir)\n                                     
-   -n, --dry_run\n                                                               
+   -S, --scratch\n                                                               
+    \tprocessing scratch directory, default is $scratch\n
+   -n, --dry_run LEVEL\n                                                               
     \tdry run, no actuall processing\n                                           
    --debug_out PATH\n                                                            
    \tdebug output file PATH, default not used\n                                  
@@ -81,8 +83,13 @@ while [ $# -gt 0 ]; do
       dir="$2"                                                                   
       shift                                                                      
       ;;                                                                         
+    -S|--scratch)                                                                
+      scratch="$2"                                                               
+      shift                                                                      
+      ;;
     -n|--dry_run)                                                                
-      dry_run=1                                                                  
+      dry_run="$2"                                                                 
+      shift
       ;;                                                                         
     --debug_out)                                                                 
       debug_out="$2"                                                             
@@ -127,6 +134,8 @@ if [ "$scratch" != "-1" ]; then
   command "cp -R ${kind}_runs/$ID $scratch/${kind}_runs" $dry_run                     
   command "cd $scratch" $dry_run
 
+fi
+
   if [ "$slurm" == "0" ]; then
     command "init_run_exclusive_canfar.sh -j $job -p $psf -m $mh_local -N $N_SMP -e $ID" $dry_run
   else
@@ -150,6 +159,8 @@ if [ "$scratch" != "-1" ]; then
     echo "Job $JOB_ID has completed. Proceeding with the script..."
   fi
 
+if [ "$scratch" != "-1" ]; then
+
   if [ "$job" == "32" ]; then
     command "mv ${kind}_runs/$ID/output/run_sp_exp_SxSe* $dir/${kind}_runs/$ID/output" $dry_run
   elif [ "$job" == "64" ]; then
@@ -165,5 +176,3 @@ if [ "$scratch" != "-1" ]; then
   command "cd $dir" $dry_run
 
 fi
-
-exit 0
