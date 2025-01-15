@@ -133,12 +133,14 @@ def set_jobs_v2_pre_v2(patch, verbose):
     jobs["16"] = job_data(
         16,
         "run_sp_tile_Sx",
-        ["sextractor_runner"],
-        ["tile_IDs"],
-        n_mult=2,
+        ["sextractor_runner", "sextractor_runner"],
+        "tile_IDs",
+        n_mult=[2, 1],
         path_main=path_main,
         path_left="tile_runs",
+        path_output=["output", "logs"],
         output_subdirs=[f"{tile_ID}/output" for tile_ID in list_tile_IDs_dot],
+        special=[False, True],
         verbose=verbose,
     )
 
@@ -185,35 +187,42 @@ def set_jobs_v2_pre_v2(patch, verbose):
             "psfex_interp_runner",
             "vignetmaker_runner_run_1",
             "spread_model_runner",
+            "spread_model_runner",
             "vignetmaker_runner_run_2",
         ],
         "tile_IDs",
-        n_mult=[1, 1, 1, 1, 4],
+        n_mult=[1, 1, 1, 1, 1, 4],
         path_main=path_main,
         path_left="tile_runs",
         output_subdirs=[f"{tile_ID}/output" for tile_ID in list_tile_IDs_dot],
-        path_output=["output", "logs", "output", "output", "output"],
-        special=[False, True, False, False, False],
+        path_output=["output", "logs", "output", "output", "logs", "output"],
+        special=[False, True, False, False, True, False],
         verbose=verbose,
     )
 
-    if patch in ("P2", "P5"):
+    if patch in ("P2", "P5", "P8"):
         n_sh = 1
     else:
         n_sh = 8
     run_dirs = [f"run_sp_tile_ngmix_Ng{idx+1}u" for idx in range(n_sh)]
+
+    # Add special (unfinished run)
+    run_dirs.append("run_sp_tile_ngmix_Ng1u")
+
     output_path_missing_IDs = [
         f"{path_main}/summary/missing_job_128_ngmix_runner_{idx+1}.txt"
-        for idx in range(n_sh)
+        for idx in range(n_sh + 1)
     ]
     jobs["128"] = job_data(
         "128",
         run_dirs,
-        ["ngmix_runner"] * n_sh,
+        ["ngmix_runner"] * (n_sh + 1),
         "tile_IDs",
         path_main=path_main,
         path_left="tile_runs",
         output_subdirs=[f"{tile_ID}/output" for tile_ID in list_tile_IDs_dot],
+        path_output=["output"] * n_sh +  ["logs"],
+        special=[False] * n_sh + [True],
         output_path_missing_IDs=output_path_missing_IDs,
         verbose=verbose,
     )
@@ -241,25 +250,25 @@ def set_jobs_v2_pre_v2(patch, verbose):
     )
 
     # Post-processing
-    jobs["1024"] = job_data(
-        "1024",
-        ["run_sp_combined_final"],
-        ["make_catalog_runner"],
-        "tile_IDs",
-        path_main=path_main,
-        path_left="output",
-        verbose=verbose,
-    )
+#    jobs["1024"] = job_data(
+#        "1024",
+#        ["run_sp_combined_final"],
+#        ["make_catalog_runner"],
+#        "tile_IDs",
+#        path_main=path_main,
+#        path_left="output",
+#        verbose=verbose,
+#    )
 
-    jobs["2048"] = job_data(
-        "2048",
-        "run_sp_combined_psf",
-        ["psfex_interp_runner"],
-        "shdus",
-        path_main=path_main,
-        path_left="output",
-        verbose=verbose,
-    )
+#    jobs["2048"] = job_data(
+#        "2048",
+#        "run_sp_combined_psf",
+#        ["psfex_interp_runner"],
+#        "shdus",
+#        path_main=path_main,
+#        path_left="output",
+#        verbose=verbose,
+#    )
 
     return jobs, list_tile_IDs_dot
 

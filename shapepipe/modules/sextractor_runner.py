@@ -94,7 +94,12 @@ def sextractor_runner(
     w_log.info(f"Calling command: {command_line}")
 
     # Execute command line
-    stderr, stdout = execute(command_line)
+    stdout, stderr = execute(command_line)
+    w_log.info("stdout:")
+    w_log.info(stdout)
+    w_log.info("stderr")
+    w_log.info(stderr)
+    w_log.info("end")
 
     # Parse SExtractor errors
     stdout, stderr = ss_inst.parse_errors(stderr, stdout)

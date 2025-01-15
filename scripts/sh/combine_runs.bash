@@ -20,7 +20,7 @@ usage="Usage: $(basename "$0") [OPTIONS]
     \tPSF model, allowed are 'psfex', 'mccd', 'setools', default='$psf'\n
    -c, --cat TYPE\n
     \tCatalogue type, allowed are 'final', 'flag_tile', 'flag_exp', \n
-    \t'psf', 'psf_conv', 'image', default='$cat'\n
+    \t'psf', 'psf_conv', 'image', 'shdu', default='$cat'\n
 "
 
 ## Parse command line
@@ -54,8 +54,9 @@ if [ "$cat" != "final" ] \
   && [ "$cat" != "flag_exp" ] \
   && [ "$cat" != "psf" ] \
   && [ "$cat" != "psf_conv" ] \
-  && [ "$cat" != "image" ]; then
-  echo "cat (option -c) needs to be 'final', 'tile_detection', 'flag_tile', 'flag_exp', 'psf', 'psf_conv' or 'image'"
+  && [ "$cat" != "image" ] \
+  && [ "$cat" != "shdu" ]; then
+  echo "cat (option -c) needs to be 'final', 'tile_detection', 'flag_tile', 'flag_exp', 'psf', 'psf_conv', 'shdu', or 'image'"
   exit 2
 fi
 
@@ -74,10 +75,10 @@ function link_s () {
     link_name=$2
 
     if [ -L "$link_name" ]; then
-        echo "link with name $link_name already exists, skipping..."
+        #echo "link with name $link_name already exists, skipping..."
         let "n_skipped+=1"
     else
-        echo "create link $target <- $link_name"
+        #echo "create link $target <- $link_name"
         ln -s $target $link_name
         let "n_created+=1"
     fi
@@ -168,6 +169,12 @@ elif [ "$cat" == "psf_conv" ]; then
   pattern="validation_psf_conv-*"
   module="psfex_interp_runner"
 
+elif [ "$cat" == "shdu" ]; then
+
+  run_in="$pwd/$out_base/run_sp_exp_Sp_shdu_*"
+  module="split_exp_runner"
+  pattern="headers-*"
+
 else
 
   echo "Invalid catalogue type $cat"
@@ -193,9 +200,9 @@ mkdir -p $outdir
 
 i=0
 for dir in $run_in; do
-  FILES=(`find $dir -type f -name "$pattern" -print0 | xargs -0 echo`)
+  FILES=(`find -L $dir -type f -name "$pattern" -print0 | xargs -0 echo`)
 
-  echo "$dir $pattern"
+  #echo "$dir $pattern"
 
   ## Look over source files
   for file in ${FILES[@]}; do

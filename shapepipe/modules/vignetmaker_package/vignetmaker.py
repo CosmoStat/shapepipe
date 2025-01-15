@@ -46,11 +46,13 @@ class VignetMaker(object):
         pos_params,
         output_dir,
         image_num,
+        w_log,
     ):
 
         self._galcat_path = galcat_path
         self._output_dir = output_dir
         self._image_num = image_num
+        self._w_log = w_log
         self._pos = self.get_pos(pos_params)
         self._pos_type = pos_type
 
@@ -190,7 +192,13 @@ class VignetMaker(object):
         """
         img_file = file_io.FITSCatalogue(img_path)
         img_file.open()
-        img = img_file.get_data(0)
+        try:
+            img = img_file.get_data(0)
+        except:
+            self._w_log.info(
+                f"Error while reading data from {img_path}"
+            )
+            raise
         img_file.close()
 
         fs = FetchStamps(img, int(rad))

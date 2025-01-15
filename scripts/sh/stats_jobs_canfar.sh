@@ -21,6 +21,7 @@ SESSION=https://ws-uv.canfar.net/skaha/v0/session
 
 ## Default values
 mode="count"
+which="all"
 debug=0
 
 ## Help string
@@ -30,6 +31,8 @@ usage="Usage: $(basename "$0") [OPTIONS]
    -m, --mode MODE\n
    \tmode, allowed are 'count' (default), 'delete'\n
    -d, --debug\n
+   -w, --which\n
+   \tallowed are running, pending, all\n
 "
 
 ## Parse command line
@@ -41,6 +44,10 @@ while [ $# -gt 0 ]; do
       ;;
     -m|--mode)
       mode="$2"
+      shift
+      ;;
+    -w|--which)
+      which="$2"
       shift
       ;;
     -d|--debug)
@@ -67,21 +74,33 @@ esac
 # Get all instances
 if [ "$debug" == "1" ]; then
   curl -E $SSL $SESSION
+  echo
+  echo curl -E $SSL $SESSION
   exit 0
 else
   curl -E $SSL $SESSION &> /dev/null > $tmpfile_jobs
+  #curl -E $SSL $SESSION > $tmpfile_jobs
+  #curl -E $SSL $SESSION
+  #echo
+  #echo "curl -E $SSL $SESSION"
 fi
 res=$?
 
 if [ "$res" == "0" ]; then
 
   # Get headless job IDs
-  cat $tmpfile_jobs | grep headless -B 4 -A 2 | grep Running -A 1 > $tmpfile_ids
+  cat $tmpfile_jobs | grep headless -B 4 -A 2 | grep -E 'Running|Pending' -A 1 > $tmpfile_ids
 
   # Number of jobs
-  n_headless=`cat $tmpfile_ids | grep Running | wc -l`
+  if [ "$which" == "running" ]; then
+    n_headless=`cat $tmpfile_ids | grep Running | wc -l`
+  elif [ "$which" == "pending" ]; then
+    n_headless=`cat $tmpfile_ids | grep Pending | wc -l`
+  else
+    n_headless=`cat $tmpfile_ids | grep -E 'Running|Pending' | wc -l`
+  fi
 
-  # Get running job info
+  # Get running and pending job info
   cat $tmpfile_ids | grep name | perl -F\- -ane 'chomp; $F[4] =~ s/[",]//g; print "$F[3].$F[4]"' > $tmpfile_running
 
 else

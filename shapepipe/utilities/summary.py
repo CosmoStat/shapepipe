@@ -15,8 +15,6 @@ from collections import Counter
 
 from tqdm import tqdm
 
-print("summaary v1.4")
-
 
 def init_par_runtime(list_tile_IDs):
 
@@ -159,6 +157,8 @@ def set_as_list(item=None, n=None, default=1):
 
 def check_special_one(module, path):
 
+    ngmix_finished = False
+
     with open(path) as f_in:
         lines = f_in.readlines()
         for line in lines:
@@ -197,6 +197,43 @@ def check_special_one(module, path):
                     code = 3
                     msg = "found array of size 0"
                     return msg, code
+
+            if module == "mask_runner":
+                m = re.search("Empty or corrupt FITS file", line)
+                if m:
+                    code = 4
+                    msg = "empty or corrult FITS file"
+                    return msg, code
+
+            if module == "sextractor_runner":
+                m = re.search("sextracted 0", line)
+                if m:
+                    code = 5
+                    msg = "No object detected (weight might be 0 everywhere)"
+                    return msg, code
+                m = re.search("Could not read sql file", line)
+                if m:
+                    code = 7
+                    msg = "Invalid sql file"
+                    return msg, code
+
+            if module == "ngmix_runner":
+                m = re.search("finished", line)
+                if m:
+                    ngmix_finished = True
+                    break
+
+            if module == "spread_model_runner":
+                m = re.search("FFT that is too large", line)
+                if m:
+                    code = 8
+                    msg = "Catalogue too large for FFT"
+                    return msg, code
+
+    if module == "ngmix_runner" and not ngmix_finished:
+        code = 6
+        mgs = "ngmix incomplete"
+        return mgs, code
 
 
     return None, None 
@@ -281,7 +318,7 @@ class job_data(object):
             len(modules),
             default="output",
         )
-        self._output_path_missing_IDs=output_path_missing_IDs
+        self._output_path_missing_IDs = output_path_missing_IDs
         self._special = set_as_list(
             special,
             len(modules),
@@ -432,7 +469,7 @@ class job_data(object):
         messages = {}
         
         if self._special[idx]:
-            
+
             # Loop over input file names and paths
             for name, path in zip(self._names_in_dir[idx], self._paths_in_dir[idx]):
 
@@ -441,10 +478,10 @@ class job_data(object):
                 if msg:
                     # First time occurance: create empty list for this code 
                     if code not in messages:
-                        messages[code] = [msg]
-                    else:
-                        # Append file name, message, and code 
-                        messages[code].append(f"{name} {code} {msg}")
+                        messages[code] = []
+
+                    # Append file name, message, and code 
+                    messages[code].append(f"{name} {code} {msg}")
 
             if len(messages) > 0:
                 # Loop over codes = key in messages dict
@@ -503,9 +540,9 @@ class job_data(object):
                 ID = match.group()
                 IDs.append(ID)
             else:
-                msg = f"No ID found in {name}"
+                msg = f"No ID found in {path}"
                 #raise ValueError(msg)
-                print(f"Warning: msg, continuing")
+                print(f"Warning: {msg}, continuing")
 
         # For split_exp_runner P8, IDs now contain exps and sdus,
         # not matching mult.

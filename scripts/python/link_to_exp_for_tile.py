@@ -46,6 +46,7 @@ def params_default():
     p_def = param(
         tile_base_dir=".",
         exp_base_dir=".",
+        sp_local=0,
     )
 
     return p_def
@@ -94,6 +95,14 @@ def parse_options(p_def):
         type="string",
         default=p_def.exp_base_dir,
         help=f"input exposure base directory, default='{p_def.exp_base_dir}'",
+    )
+    parser.add_option(
+        "-s",
+        "--sp_local",
+        dest="sp_local",
+        type="int",
+        default=p_def.sp_local,
+        help=f"local runi of split_exposure_runner, default='{p_def.sp_local}'",
     )
     parser.add_option(
         "-v",
@@ -257,7 +266,7 @@ def get_paths(exp_base_dir, exp_shdu_IDs, pattern):
                 f"Exactly one directory matching {pattern} in {path} expected,"
                 + f"  not {n_subdirs}"
             )
-            print(msg)
+            #print(msg)
             # More than one match: sort according to name = creation time
             subdirs = sorted(subdirs)
             if n_subdirs == 0:
@@ -282,9 +291,9 @@ def create_links_paths(tile_base_dir, tile_ID, paths, verbose=False):
             src_existing = os.readlink(dst)
             if src_existing == src:
                 if verbose:
-                    # print("link {src} <- {dst}")
-                    f"Warning: {src} <- {dst} already exists, no link created"
-                # )
+                    print(
+                        f"Warning: {src} <- {dst} already exists, no link created"
+                    )
                 continue
             else:
                 idx = 1
@@ -328,6 +337,8 @@ def main(argv=None):
 
     # Note: psfex P3 is mostly run_sp_exp_SxSePsf
     patterns = ["run_sp_exp_SxSePsfPi"]  # , "run_sp_exp_Pi"]
+    if param.sp_local == 1:
+        patterns.append("run_sp_exp_Sp_shdu")
     for pattern in patterns:
         paths, number = get_paths(exp_base_dir, exp_shdu_IDs, pattern)
 
