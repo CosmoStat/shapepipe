@@ -130,7 +130,6 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-
 ## Check options
 if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
   echo "PSF (option -p) needs to be 'psfex' or 'mccd'"
@@ -171,8 +170,8 @@ export PATH="$PATH:$VM_HOME/bin"
 export SP_RUN=`pwd`
 
 # Config file path
-export SP_CONFIG=$SP_RUN/config_dir
-export SP_CONFIG_MOD=$SP_RUN/config_dir_mod
+export SP_CONFIG=$SP_RUN/cfis
+export SP_CONFIG_MOD=$SP_RUN/cfis_mod
 
 ## Other variables
 
@@ -349,8 +348,8 @@ if [[ $do_job != 0 ]]; then
   if [[ $config_dir == *"vos:"* ]]; then
     command_sp "$VCP $config_dir ." "Retrieve shapepipe config files"
   else
-    if [[ ! -L config_dir ]]; then
-      command_sp "ln -s $config_dir config_dir" "Retrieve shapepipe config files"
+    if [[ ! -L cfis ]]; then
+      command_sp "ln -s $config_dir cfis" "Retrieve shapepipe config files"
     fi
   fi
 

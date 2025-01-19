@@ -187,20 +187,19 @@ def set_jobs_v2_pre_v2(patch, verbose):
             "psfex_interp_runner",
             "vignetmaker_runner_run_1",
             "spread_model_runner",
-            "spread_model_runner",
             "vignetmaker_runner_run_2",
         ],
         "tile_IDs",
-        n_mult=[1, 1, 1, 1, 1, 4],
+        n_mult=[1, 1, 1, 1, 4],
         path_main=path_main,
         path_left="tile_runs",
         output_subdirs=[f"{tile_ID}/output" for tile_ID in list_tile_IDs_dot],
-        path_output=["output", "logs", "output", "output", "logs", "output"],
-        special=[False, True, False, False, True, False],
+        path_output=["output", "logs", "output", "output", "output"],
+        special=[False, True, False, False, False],
         verbose=verbose,
     )
 
-    if patch in ("P2", "P5", "P8"):
+    if patch in ("P2", "P5"):
         n_sh = 1
     else:
         n_sh = 8
@@ -250,25 +249,25 @@ def set_jobs_v2_pre_v2(patch, verbose):
     )
 
     # Post-processing
-#    jobs["1024"] = job_data(
-#        "1024",
-#        ["run_sp_combined_final"],
-#        ["make_catalog_runner"],
-#        "tile_IDs",
-#        path_main=path_main,
-#        path_left="output",
-#        verbose=verbose,
-#    )
+    jobs["1024"] = job_data(
+        "1024",
+        ["run_sp_combined_final"],
+        ["make_catalog_runner"],
+        "tile_IDs",
+        path_main=path_main,
+        path_left="output",
+        verbose=verbose,
+    )
 
-#    jobs["2048"] = job_data(
-#        "2048",
-#        "run_sp_combined_psf",
-#        ["psfex_interp_runner"],
-#        "shdus",
-#        path_main=path_main,
-#        path_left="output",
-#        verbose=verbose,
-#    )
+    jobs["2048"] = job_data(
+        "2048",
+        "run_sp_combined_psf",
+        ["psfex_interp_runner"],
+        "shdus",
+        path_main=path_main,
+        path_left="output",
+        verbose=verbose,
+    )
 
     return jobs, list_tile_IDs_dot
 

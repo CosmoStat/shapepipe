@@ -13,7 +13,6 @@ debug_out=-1
 scratch=-1
 fix=0
 test_only=0
-sm=1
 
 # mh_local is 0 (1) if merge_header_runner is run on all exposures,
 # which is standard so far (run on exposures of given tile only; new)
@@ -40,8 +39,6 @@ usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
    \tmerge header file local (MH=1) or global (MH=0); default is $mh_local\n
    -s, --sp_local SP\n
    \tsplit local run local (SP=1) or global (SP=r0wwdefault is $sp_local\n
-   --sm SM\n
-   \tWith (SM=1; default) or without (SM=0) spread model input\n
    -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default from original config files\n
    -d, --directory\n
@@ -89,10 +86,6 @@ while [ $# -gt 0 ]; do
       ;;
     -s|--sp_local)
       sp_local="$2"
-      shift
-      ;;
-    --sm)
-      sm="$2"
       shift
       ;;
     -N|--N_SMP)                                                                 
@@ -146,7 +139,6 @@ function message() {
 
 
 # Init message
-message "test=$test_only" $debug_out -1
 if [ "$test_only" == "1" ]; then
   msg="init_run_exclusive.py script test mode, exiting."
   ex=0
@@ -217,8 +209,12 @@ fi
 
 CONDA_PREFIX=$HOME/.conda/envs/shapepipe
 PATH=$PATH:$CONDA_PREFIX/bin
+message "conda prefix = ${CONDA_PREFIX}" $debug_out -1
+message "HOME = ${HOME}" $debug_out -1
+message "path = ${PATH}" $debug_out -1
 
 cd $dir
+message "pwd=$pwd" $debug_out -1
 
 if [ ! -d ${kind}_runs ]; then
   command "mkdir ${kind}_runs" $dry_run
@@ -362,7 +358,7 @@ if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
   # run local Sp if not done already; works only with mh_local=1; this step needs to be done
   # before following mh_local=1 steps 
   message "run local sp" $debug_out -1
-  #command "rm -rf run_sp_GitFeGie*/get_images_runner_run_2" $dry_run
+  command "rm -rf run_sp_GitFeGie*/get_images_runner_run_2" $dry_run
   command "rm -rf run_sp_Gie*" $dry_run
   command "rm -rf run_sp_exp_Sp*" $dry_run
 
@@ -443,7 +439,6 @@ else
     message "ID needs to be given (option -e) for mh_local" $debug_out 6
   fi
 
-  # Check and remove symbolic (global) mh file link
   if [ -L log_exp_headers.sqlite ]; then
     # Local Mh and symlink -> remove previous link to
     # (potentially incomplete) global mh file
@@ -451,17 +446,6 @@ else
     command "rm log_exp_headers.sqlite" $dry_run
   else
     message "no mh link found" $debug_out -1
-  fi
-
-  # Check size of existing header file
-  if [ -e log_exp_headers.sqlite ]; then
-    size=$(stat -c %s log_exp_headers.sqlite)
-    if (( size > 15000 )); then
-      message "Found valid local mh file, continuing" $debug_out -1
-    else
-      message "Existing local mh file looks invalid, deleting" $debug_out -1
-      rm -f log_exp_headers.sqlite
-    fi
   fi
 
   if [ ! -e log_exp_headers.sqlite ]; then
@@ -588,13 +572,11 @@ if [ "$scratch" != "-1" ]; then
   command "cd $scratch/${kind}_runs/$ID" $dry_run
 fi
 
-command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP --nsh_jobs $N_SMP --debug_out $debug_out --sm $sm " $dry_run
+command "job_sp_canfar.bash -p psfex -j $job -e $ID --n_smp $N_SMP --nsh_jobs $N_SMP --debug_out $debug_out " $dry_run
 
 if [ "$scratch" != "-1" ]; then
   cd ../..
-  if [ "$job" == "16" ]; then                                                   
-    command "mv ${kind}_runs/$ID/output/run_sp_Sx_* $dir/${kind}_runs/$ID/output" $dry_run
-  elif [ "$job" == "32" ]; then                                                   
+  if [ "$job" == "32" ]; then                                                   
     command "mv ${kind}_runs/$ID/output/run_sp_exp_SxSe* $dir/${kind}_runs/$ID/output" $dry_run
   elif [ "$job" == "64" ]; then                                                 
     command "mv ${kind}_runs/$ID/output/run_sp_tile_PsViSm** $dir/${kind}_runs/$ID/output" $dry_run

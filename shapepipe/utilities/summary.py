@@ -15,6 +15,8 @@ from collections import Counter
 
 from tqdm import tqdm
 
+print("summaary v1.4")
+
 
 def init_par_runtime(list_tile_IDs):
 
@@ -211,24 +213,12 @@ def check_special_one(module, path):
                     code = 5
                     msg = "No object detected (weight might be 0 everywhere)"
                     return msg, code
-                m = re.search("Could not read sql file", line)
-                if m:
-                    code = 7
-                    msg = "Invalid sql file"
-                    return msg, code
 
             if module == "ngmix_runner":
                 m = re.search("finished", line)
                 if m:
                     ngmix_finished = True
                     break
-
-            if module == "spread_model_runner":
-                m = re.search("FFT that is too large", line)
-                if m:
-                    code = 8
-                    msg = "Catalogue too large for FFT"
-                    return msg, code
 
     if module == "ngmix_runner" and not ngmix_finished:
         code = 6
@@ -540,7 +530,7 @@ class job_data(object):
                 ID = match.group()
                 IDs.append(ID)
             else:
-                msg = f"No ID found in {path}"
+                msg = f"No ID found in {name}"
                 #raise ValueError(msg)
                 print(f"Warning: {msg}, continuing")
 

@@ -22,7 +22,6 @@ results='cosmostat/kilbinger/results_v2'
 n_smp=-1
 nsh_jobs=8
 debug_out=-1
-sm=1
 
 pat="--- "
 
@@ -39,8 +38,7 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    \t  32: processing of stars on exposures (offline)\n
    \t  64: galaxy selection on tiles (offline)\n
    \t 128: shapes and morphology (offline)\n
-   \t 256: merge separate ngmix catalogues (offline)\n
-   \t 512: create joint catalogues (offline)\n
+   \t 256: paste catalogues (offline)\n
    -c, --config_dir DIR\n
    \t config file directory, default='$config_dir'\n
    -p, --psf MODEL\n
@@ -50,8 +48,6 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    -s, --star_cat_for_mask\n
    \tcatalogue for masking bright stars, allowed are 'onthefly', 'save',\n
    \tdefault is '${star_cat_for_mask}'\n
-   --sm SM\n
-   \tWith (SM=1; default) or without (SM=0) spread model input\n
    -e, --exclusive ID\n
    \texclusive input filer number string ID (default: None)\n
    -o, --output_dir\n
@@ -98,10 +94,6 @@ while [ $# -gt 0 ]; do
       ;;
     -s|--star_cat_for_mask)
       star_cat_for_mask="$2"
-      shift
-      ;;
-    --sm)
-      sm="$2"
       shift
       ;;
     -e|--exclusive)
@@ -194,6 +186,11 @@ function command () {
    RED='\033[0;31m'
    GREEN='\033[0;32m'
    NC='\033[0m' # No Color
+   # Color escape characters show up in log files
+   #RED=''
+   #GREEN=''
+   #NC=''
+
 
    if [ "$debug_out" != "-1" ]; then
       echo "${pat}pwd = `pwd`" >> $debug_out
@@ -221,6 +218,7 @@ function command () {
       fi
 
       $cmd $4 "$5 $6"
+
    fi	
 
    res=$?
@@ -244,34 +242,29 @@ function command () {
    fi
 }
 
-
-# Run shapepipe command.
-function command_sp () {
+# Run shapepipe command. If error occurs, upload sp log files before stopping script.
+function command_sp() {
    local cmd=$1
    local str=$2
-   local _exclusive=$3
 
-   if [ "$_exclusive" != "" ]; then
-     cmd="$cmd -e $_exclusive"
-   fi
-
-   command "$cmd" "$str"
+   command "$1" "$2"
 }
 
 # Set up config file and call shapepipe_run
-function command_cfg_shapepipe () {
+function command_cfg_shapepipe() {
     local config_name=$1
     local str=$2
     local _n_smp=$3 
     local _exclusive=$4
 
-    if [ "$_exclusive" != "" ]; then
+    if [ "$exclusive" != "" ]; then
       exclusive_flag="-e $_exclusive"
     else
       exclusive_flag=""
     fi
 
     config_upd=$(set_config_n_smp $config_name $_n_smp)
+    #local cmd="/arc/home/kilbinger/.conda/envs/shapepipe/bin/shapepipe_run -c $config_upd $exclusive_flag"
     local cmd="shapepipe_run -c $config_upd $exclusive_flag"
     command_sp "$cmd" "$str"
 }
@@ -351,6 +344,8 @@ mkdir -p $SP_RUN
 cd $SP_RUN
 mkdir -p $OUTPUT
 mkdir -p $SP_CONFIG_MOD
+
+# Processing
 
 
 ### Retrieve config files
@@ -513,8 +508,7 @@ if [[ $do_job != 0 ]]; then
 
       # if output dir for subrun exists but no output: re-run
       ngmix_run=$OUTPUT/"run_sp_tile_ngmix_Ng${k}u/ngmix_runner"
-      
-          if [ -e "$ngmix_run" ]; then
+      if [ -e "$ngmix_run" ]; then
         ngmix_out="$ngmix_run/output"
         n_out=`ls -rlt $ngmix_out | wc -l`
         if [ "$n_out" -lt 2 ]; then
@@ -523,16 +517,14 @@ if [[ $do_job != 0 ]]; then
             "Re-running existing empty ngmix subrun $k"
           command_sp \
             "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" \
-            "Run shapepipe (tile: ngmix $k)" \
-            $exclusive &
+            "Run shapepipe (tile: ngmix $k)" &
         else
           echo "Skipping existing non-empty ngmix subrun $k"
         fi
       else
         command_sp \
           "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" \
-          "Run shapepipe (tile: ngmix $k)" \
-           $exclusive &
+          "Run shapepipe (tile: ngmix $k)" &
       fi
   done
   wait
@@ -554,21 +546,16 @@ if [[ $do_job != 0 ]]; then
     "shapepipe_run -c $SP_CONFIG_MOD/config_merge_sep_cats.ini" \
     "Run shapepipe (tile: merge sep cats)" \
     $exclusive
+    "$VERBOSE" \
+    "$ID"
 fi
 
 (( do_job = $job & 512 ))
 if [[ $do_job != 0 ]]; then
 
-  # spread_model suffix for config file with or without SM input
-  if [ "$sm" == "0" ]; then
-    suff_sm="_nosm"
-  else
-    suff_sm=""
-  fi
-
   ### Merge all relevant information into final catalogue
   command_cfg_shapepipe \
-    "config_make_cat_$psf${suff_sm}.ini" \
+    "config_make_cat_$psf.ini" \
     "Run shapepipe (tile: create final cat $psf)" \
     $n_smp \
     $exclusive

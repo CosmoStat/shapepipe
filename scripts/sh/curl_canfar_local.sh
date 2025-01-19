@@ -16,7 +16,6 @@ psf="psfex"
 ID=-1
 file_IDs=-1
 N_SMP=1
-RAM=4
 fix=0
 version="1.1"
 cmd_remote="$HOME/shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
@@ -28,7 +27,6 @@ sp_local=0
 test_only=0
 debug_out="-1"
 scratch="-1"
-sm=1
 
 script_version=1.1
 
@@ -49,12 +47,8 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
     \tmerged header file local (MH=0) or global (MH=1); default is $mh_local\n
    -s, --sp_local SP\n
     \tsplit local run local (SP=1) or global (SP=0); default is SP=$sp_local\n
-   --sm SM\n
-    \tWith (SM=1; default) or without (SM=0) spread model input\n
-   -N, --N_SMP N_SMP\n
+   -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default=$N_SMP\n
-   -R, --RAM RAM\n
-    \tRAM in Gb, default=$RAM\n
    -F, --fix FIX\n
     \tfix missing data (re-download tile, unzip) for FIX=1; default is $fix\n
    -V, --version\n
@@ -104,10 +98,6 @@ while [ $# -gt 0 ]; do
       sp_local="$2"
       shift
       ;;
-    --sm)
-      sm="$2"
-      shift
-      ;;  
     -e|--exclusive)
       ID="$2"
       shift
@@ -118,10 +108,6 @@ while [ $# -gt 0 ]; do
       ;;
     -N|--N_SMP)
       N_SMP="$2"
-      shift
-      ;;
-    -R|--RAM)
-      RAM="$2"
       shift
       ;;
     -F|--fix)
@@ -205,7 +191,7 @@ fi
 # collect into string
 
 
-RESOURCES="ram=${RAM}&cores=$N_SMP"
+RESOURCES="ram=4&cores=$N_SMP"
 dir=`pwd`
 
 
@@ -215,7 +201,7 @@ function submit_batch() {
   for ID in `cat $path`; do
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $job $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $version $cmd_remote $RESOURCES $test_arg
+    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $debug_out $fix $scratch $test_arg
   done
 }
 
@@ -240,7 +226,7 @@ if [ "$dry_run" == 2 ]; then
     for ID in `cat $file_IDs`; do
       IDt=`echo $ID | tr "." "-"`
       my_name="SP-${patch}-J${job}-${IDt}"
-      call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $version $cmd_remote $RESOURCES $test_arg
+      call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $debug_out $fix $scratch $test_arg
     done
 
   else
@@ -248,7 +234,7 @@ if [ "$dry_run" == 2 ]; then
     # Submit image (dry run = 2)
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $version $cmd_remote $RESOURCES $test_arg
+    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $debug_out $fix $scratch $test_arg
 
   fi
 
@@ -270,20 +256,20 @@ else
       echo "Split '$file_IDs' into $n_split batches of size $batch"
 
       count=1
-      n_queued=`stats_jobs_canfar.sh -w all`
+      n_running=`stats_jobs_canfar.sh`
       for batch in $prefix*; do
-        echo "Number of queued jobs = $n_queued"
+        echo "Number of running jobs = $n_running"
         echo "Submitting batch $batch ($count/$n_split)"
         echo -ne "\033]0;curl patch=$patch job=$job $count/$n_split\007"
         submit_batch $batch
         ((count=count+1))
 
-        n_queued=`stats_jobs_canfar.sh -w all`
+        n_running=`stats_jobs_canfar.sh`
 
-        while [ "$n_queued" -gt "$n_thresh" ]; do
-          echo "Wait for #jobs = $n_queued jobs to go < $n_thresh ..."
+        while [ "$n_running" -gt "$n_thresh" ]; do
+          echo "Wait for #jobs = $n_running jobs to go < $n_thresh ..."
           sleep $sleep
-          n_queued=`stats_jobs_canfar.sh -w all`
+          n_running=`stats_jobs_canfar.sh`
         done
 
       done
@@ -301,7 +287,7 @@ else
     # Submit image
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $version $cmd_remote $RESOURCES $test_arg
+    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $debug_out $fix $scratch $test_arg
 
   fi
 
