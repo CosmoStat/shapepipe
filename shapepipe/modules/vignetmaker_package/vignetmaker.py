@@ -249,7 +249,19 @@ class VignetMaker(object):
 
         final_list = []
         for hdu_index in hdu_ind:
-            exp_name = cat.get_data(hdu_index)["EXP_NAME"][0]
+            try:
+                exp_names = cat.get_data(hdu_index)["EXP_NAME"]
+            except:
+                raise KeyError(
+                    f"Problem with key 'EXP_NAME' in file {self._galcat_path}"
+                    + f" HDU #{hdu_index}"
+                )
+            if len(exp_names) == 0:
+                raise IndexError(
+                    f"EXP_NAME list is empty in file {self._galcat_path}"     
+                    + f" HDU #{hdu_index}"                                      
+                )
+            exp_name = exp_names[0]
             ccd_list = list(set(cat.get_data(hdu_index)["CCD_N"]))
             array_vign = None
             array_id = None

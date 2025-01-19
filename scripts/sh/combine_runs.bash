@@ -165,7 +165,8 @@ elif [ "$cat" == "psf" ]; then
 
 elif [ "$cat" == "psf_conv" ]; then
 
-  run_in="$pwd/../P?"
+  #run_in="$pwd/../P?"
+  run_in="$pwd"
   pattern="validation_psf_conv-*"
   module="psfex_interp_runner"
 

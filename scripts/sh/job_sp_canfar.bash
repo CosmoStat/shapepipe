@@ -465,6 +465,7 @@ if [[ $do_job != 0 ]]; then
 fi
 
 ## Process tiles up to shape measurement
+## MKDEBUG new 14/01/25: remove spread_model_runner
 (( do_job = $job & 64 ))
 if [[ $do_job != 0 ]]; then
 
@@ -472,7 +473,7 @@ if [[ $do_job != 0 ]]; then
   letter=${psf:0:1}
   Letter=${letter^}
   command_cfg_shapepipe \
-    "config_tile_${Letter}iViSmVi_canfar.ini" \
+    "config_tile_${Letter}iViVi_canfar.ini" \
     "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix" \
     $n_smp \
     $exclusive

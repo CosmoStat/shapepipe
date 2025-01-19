@@ -129,9 +129,13 @@ shapepipe_run -c $SP_CONFIG/config_Pl_$psf.ini
 ## Convert all input validation psf files and create directories par patch
 ## psf_conv_all/P?
 cd ../star_cat
- ~/shapepipe/scripts/python/convert_psf_pix2world.py -i ../ -P $patch -v
 
-# Combine previously created files within one SP run dir
+# Create files validation_psf_conv-<patchnum>-<idx>.fits
+# (for the v1.4 setup only one file)
+ convert_psf_pix2world.py -i .. -P $patchnum -v
+
+# Combine previously created files as links within one SP run dir
+# (for the v1.4 setup only one link
 cd P$patch
 combine_runs.bash -p psfex -c psf_conv
 
