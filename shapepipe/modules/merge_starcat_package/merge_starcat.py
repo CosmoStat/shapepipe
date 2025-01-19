@@ -35,6 +35,9 @@ class MergeStarCatMCCD(object):
         Radius for mask, in pixels; default is ``10``
     hdu_table : int, optional
         HDU number; default is ``1``
+    input_cat_type : str, optional
+        Input catalogue type, added to outupt header; default is ``None``,
+        in which no key is added
 
     """
 
@@ -46,6 +49,7 @@ class MergeStarCatMCCD(object):
         stamp_size=51,
         rad=10,
         hdu_table=1,
+        input_cat_type=None,
     ):
 
         self._input_file_list = input_file_list
@@ -54,6 +58,7 @@ class MergeStarCatMCCD(object):
         self._stamp_size = stamp_size
         self._rad = rad
         self._hdu_table = hdu_table
+        self._input_cat_type = input_cat_type
 
     @staticmethod
     def rmse_calc(values, sizes):
@@ -498,6 +503,17 @@ class MergeStarCatMCCD(object):
 
         # Write file
         output.save_as_fits(data, sex_cat_path=self._input_file_list[0][0])
+        # MKDEBUG; Implement this in file_io
+        if self._input_cat_type:
+            with fits.open(out_path, mode="update") as hdu_list:
+                header = hdu_list[1].header
+    
+                # Add a new key-value pair
+                header['CATTYPE'] = (self._input_cat_type, "Input catalogue type")
+    
+                # Save changes to the FITS file
+                hdu_list.flush()
+
 
 
 class MergeStarCatPSFEX(object):
@@ -515,15 +531,25 @@ class MergeStarCatPSFEX(object):
         Logging instance
     hdu_table : int, optional
         HDU number; default is ``2``
+    input_cat_type : str, optional
+        Input catalogue type, added to outupt header; default is ``None``,
+        in which no key is added
 
     """
 
-    def __init__(self, input_file_list, output_dir, w_log, hdu_table=2):
-
+    def __init__(
+        self,
+        input_file_list,
+        output_dir,
+        w_log,
+        hdu_table=2,
+        input_cat_type=None,
+    ):
         self._input_file_list = input_file_list
         self._output_dir = output_dir
         self._w_log = w_log
         self._hdu_table = hdu_table
+        self._input_cat_type = input_cat_type
 
     def process(self):
         """Process.
@@ -594,8 +620,9 @@ class MergeStarCatPSFEX(object):
 
         # Prepare output FITS catalogue
         # MKDEBUG: SEx_cat=True -> False
+        out_path = f"{self._output_dir}/full_starcat-0000000.fits"
         output = file_io.FITSCatalogue(
-            f"{self._output_dir}/full_starcat-0000000.fits",
+            out_path,
             open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
             SEx_catalogue=False,
         )
@@ -624,11 +651,21 @@ class MergeStarCatPSFEX(object):
         # Write file
         # MKDEBUG for psf conv (pix2WCS) files do not write as SExtractorCat;
         # we do not want to copy the first input data content to HDU #1.
+        # sex_cat_path=self._input_file_list[0][0],
         output.save_as_fits(
             data,
             overwrite=True,
         )
-        # sex_cat_path=self._input_file_list[0][0],
+        # MKDEBUG; Implement this in file_io
+        if self._input_cat_type:
+            with fits.open(out_path, mode="update") as hdu_list:
+                header = hdu_list[1].header
+    
+                # Add a new key-value pair
+                header['CATTYPE'] = (self._input_cat_type, "Input catalogue type")
+    
+                # Save changes to the FITS file
+                hdu_list.flush()
 
 
 class MergeStarCatSetools(object):
