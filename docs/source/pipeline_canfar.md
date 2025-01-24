@@ -116,8 +116,9 @@ combine_runs.bash -c final -p psfex
 
 # Merge all final cats
 # (W3: 140GB RAM)
-merge_final_cat -i output/run_sp_combined_final/make_catalog_runner/output -p cfis/final_cat.param -v
-
+# in /path/to/$psf
+patchnum=`tr $patch P ''`
+create_final_cat.py -m final_cat_$patch.hdf5 -i . -p $patch/cfis/final_cat.param -P $patchnum -o $patch/n_tiles_final.txt -v
 
 # Star catalogue
 combine_runs.bash  -p $psf -c psf

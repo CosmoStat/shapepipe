@@ -545,7 +545,7 @@ if [[ $do_job != 0 ]]; then
   command_sp \
     "shapepipe_run -c $SP_CONFIG_MOD/config_merge_sep_cats.ini" \
     "Run shapepipe (tile: merge sep cats)" \
-    $exclusive
+    $exclusive \
     "$VERBOSE" \
     "$ID"
 fi

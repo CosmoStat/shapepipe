@@ -175,7 +175,7 @@ if [ "$dry_run" != 0 ] && [ "$dry_run" != 1 ] && [ "$dry_run" != 2 ]; then
 fi
 
 if [ "$debug_out" != "-1" ]; then
-  echo "${pat}Starting $(basename "$0")" >> $debug_out
+  echo "${pat}Starting $(basename "$0") $test_arg" >> $debug_out
   echo "${pat}curl ID=$ID" >> $debug_out
   echo ${pat}`date` >> $debug_out
 fi
@@ -201,7 +201,7 @@ function submit_batch() {
   for ID in `cat $path`; do
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $debug_out $fix $scratch $test_arg
+    call_curl $my_name $job $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $debug_out $fix $scratch $test_arg
   done
 }
 
@@ -296,5 +296,5 @@ fi
 echo "Done $(basename "$0")" 
 
 if [ "$debug_out" != "-1" ]; then
-  echo "${pat}End $(basename "$0")" >> $debug_out
+  echo "${pat}End $(basename "$0")" $test_arg >> $debug_out
 fi
