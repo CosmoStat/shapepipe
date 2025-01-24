@@ -199,7 +199,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
         verbose=verbose,
     )
 
-    if patch in ("P2", "P5"):
+    if patch in ("P2", "P5", "P8"):
         n_sh = 1
     else:
         n_sh = 8

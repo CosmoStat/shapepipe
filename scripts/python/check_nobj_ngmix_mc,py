@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+
+import os
+import glob
+from astropy.io import fits
+
+# Base directory for the tile runs
+tile_runs_dir = "tile_runs"
+
+def get_naxis2_value(file_path):
+    """Get the NAXIS2 value from HDU #1 of a FITS file."""
+    with fits.open(file_path) as hdul:
+        try:
+            return hdul[1].header.get('NAXIS2', None)
+        except:
+            raise IndexError(f"problem with {file_path} header")
+
+# Iterate through directories
+for ID in os.listdir(tile_runs_dir):
+    id_path = os.path.join(tile_runs_dir, ID, "output")
+
+    # Check if ID has the correct format
+    if not os.path.isdir(id_path) or not ID.replace('.', '', 1).isdigit():
+        continue
+
+    IDx = ID.replace('.', '-')
+
+    # Define file paths
+    ngmix_file_pattern = os.path.join(
+        id_path,
+        f"run_sp_Ms_202*/merge_sep_cats_runner/output/ngmix-{IDx}.fits",
+    )
+    mc_file_pattern = os.path.join(
+        id_path,
+        f"run_sp_Mc_202*/make_cat_runner/output/final_cat-{IDx}.fits",
+    )
+
+    # Resolve file names using glob to handle wildcard
+    ngmix_files = [f for f in glob.glob(ngmix_file_pattern)]
+    mc_files = [f for f in glob.glob(mc_file_pattern)]
+
+    if not ngmix_files:
+        print(f"{ID} -- ngmix cat {ngmix_file} not found")
+        continue
+    if not mc_files:
+        print(f"{ID} -- mc cats not found")
+        continue
+
+    ngmix_file = ngmix_files[-1]  # Use the last match if multiple exist
+    mc_file = mc_files[-1]  # Use the last match if multiple exist
+
+    # Get NAXIS2 values
+    ngmix_naxis2 = get_naxis2_value(ngmix_file)
+    mc_naxis2 = get_naxis2_value(mc_file)
+
+    if ngmix_naxis2 is None:
+        print(f"{ID} -- no NAXIS2 keyword found in ngmix cat {ngmix_file}")
+        continue
+    if mc_naxis2 is None:
+        print(f"{ID} -- no NAXIS2 keyword found in mc cat")
+        continue
+
+    # Compare values and output ID if they differ
+    if ngmix_naxis2 != mc_naxis2:
+        ratio = float(ngmix_naxis2) / float(mc_naxis2)
+        if ratio < 0.5:
+            print(f"{ID} -- NAXIS2 differ {ngmix_naxis2} / {mc_naxis2} = {ratio:.3f}")
+        else:
+            print(f"{ID} -- similar NAXIS2, {ngmix_naxis2} / {mc_naxis2} = {ratio:.3f}")
+    else:
+        print(f"{ID} -- identcal NAXIS2 {ngmix_naxis2} {mc_naxis2}")
+

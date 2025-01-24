@@ -159,7 +159,7 @@ def print_summary_patch(tiles, patch, n_final, keys, nform):
 
 def main(argv):
 
-    n_patch = 7
+    n_patch = 8
     patches = [f'P{x}' for x in np.arange(n_patch) + 1]
 
     keys = ["zero_weight", "aborted", "large_num_det"]
