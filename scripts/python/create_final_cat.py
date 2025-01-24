@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-# -*- coding: utf-8 -*-
-
 """Script create_final_cat.py
 
 Create and update hdf5 file of all final ShapePipe output FITS files, runs of
@@ -11,6 +9,8 @@ Usage: in parent dir of patches:
 create_final_cat.py -p ~/shapepipe/example/cfis/final_cat.param -i . -P 7 -v -m final_cat_P7.hdf5
 
 :Author: Martin Kilbinger
+
+:Date: 2025
 
 """
 
@@ -63,22 +63,37 @@ def params_default():
     """                                                                     
     _params = {                                                        
         "input_root_dir": ".",
-        "output_path": "final_cat.hdf5",
+        "merged_cat_path": "final_cat.hdf5",
         "param_path": None,
         "hdu_num": 1,
+        "patch": "3",
+        "list_only": False,
+        "output_summary": "n_tiles_final.txt",
+        "ID": None,
+        "single_op": None,
     }
     _short_options = {                                                 
         "input_root_dir": "-i",                                           
-        "output_path": "-o",                                                 
+        "merged_cat_path": "-m",
         "param_path": "-p",
+        "patch": "-P",
+        "list_only": "-l",
+        "output_summary": "-o",
+        "single_op": "-s",
     }                                                                       
-    _types = {                                                         
-        "hdu_num": "int",                                                   
+    _types = {                                     
+        "hdu_num": "int", 
+        "list_only": "bool",
     }                                                                       
     _help_strings = {                                                  
-        "input_root_dir": "input root_dir for tile catalogues",     
-        "output_path": "output path (hdf5 file)",
-        "param_path": "parameter file path, if not given use all columns",
+        "input_root_dir": "input root_dir for tile catalogues, default={}",
+        "merged_cat_path": "merged catalogue path (hdf5 file), default={}",
+        "param_path": "parameter file path, if not given use all columns, default={}",
+        "patch": "patch number, default={}",
+        "list_only": "print list of patches and IDs only, default={}",
+        "output_summary": "output file for numbre of tiles, default={}",
+        "ID": "ID for single-ID operation, default={}",
+        "single_op": "single ID operation, allowed are 'check', 'add', 'remove'; default={}",
     }
 
     return _params, _short_options, _types, _help_strings
@@ -86,6 +101,7 @@ def params_default():
 
 def read_param_file(path, verbose=False):
     """Read Param File.
+    MKDEBUG TODO: Move to cs_util. Also used in sp_val/cat.py.
 
     Return parameter list read from file.
 
@@ -119,9 +135,9 @@ def read_param_file(path, verbose=False):
 
     if verbose:
         if len(param_list) > 0:
-            print(f"Copying {len(param_list)} columns", end="")
+            print(f"Read {len(param_list)} columns", end="")
         else:
-            print("Copying all columns", end="")
+            print("No parameters read", end="")
         print(" into merged catalogue")
 
     param_list_unique = list(set(param_list))
@@ -137,7 +153,7 @@ def read_param_file(path, verbose=False):
 def check_params(params):
  
     if bool(params["ID"] is None) != bool(params["single_op"] is None):
-        print("Both or none of the options 'ID' and 'single_op' need to be specified")
+        print("Both or none of the ptions 'ID' and 'single_op' need to be specified")
         return False
 
     return True
@@ -204,27 +220,15 @@ def check_ID(merged_cat_path, ID, verbose=False):
 
 
 def print_list(params):
-    """Print List.
 
-    Print number of tile IDs found in hdf5 file.
-
-    Parameters
-    ----------
-    params: dict
-        parameters
-
-    """
     n_tiles = 0
-    # Open hdf5 merge cat file
     with h5py.File(params["merged_cat_path"], "r") as hdf5_file:
 
-        # Loop over patches contained in hdf5 file
         for patch in hdf5_file["patches"]:
-            # Count tiles summed over all patches
+            #print(patch)
             for id in hdf5_file[f"patches/{patch}"]:
                 n_tiles += 1
 
-    # Write number of tiles to output file
     with open(params["output_summary"], "w") as f_out:
         print(n_tiles, file=f_out)
 
@@ -265,26 +269,8 @@ def get_patch_group(hdf5_file, patch, verbose=False):
 def read_data(fits_file, params):
     """Read Data.
 
-    Read data from final merge catalogue FITS file.
-
-    Parameters
-    ----------
-    fits_file: str
-        intput FITS file path
-    params: dict
-        parameters
-
-    Returns
-    -------
-    dict
-        data
-    list
-        dtypes of data columns
-
     """
-    # Open FITS file
     with fits.open(fits_file) as hdu_list:
-        # Get data of indicated HDU number
         try:
             data = hdu_list[params["hdu_num"]].data
         except:
@@ -295,7 +281,6 @@ def read_data(fits_file, params):
     if params["param_list"] is None:
         params["param_list"] = [col for col in data.keys()]
 
-    # Copy data to output dict; copy dtypes
     try:
         extracted_data = {col: data[col] for col in params["param_list"]}
         dtype = data.dtype
@@ -326,105 +311,148 @@ def copy_data(param_list, extracted_data, dtype):
             print(f"Column {col} not in file with ID {id}")
         structured_data[col] = extracted_data[col]
     
-    return True
+    #if isinstance(extracted_data[col][0], (np.ndarray, tuple, list)):
+    if False:
+
+        # If multi-entry loop over entries
+        print(col)
+        num_elements = len(extracted_data[col][0])
+        for idx in range(num_elements):
+            new_col_name = f"{col}_{idx}"
+            dtype.append((new_col_name, extracted_data[col].dtype))
+            try:
+                structured_data[new_col_name] = [x[idx] for x in extracted_data[col]]
+            except:
+                print(f"Error for ID {id} for column {new_col_name}")
+                raise
+
+    return structured_data
 
 
 def process(params):
     
-    #patch_pattern = re.compile(r"P\d")  # Matches P followed by a single digit
-    patch_pattern = re.compile(r"P3")  # Matches P followed by a single digit
+    patch = rf"P{params['patch']}"
+    patch_pattern = re.compile(patch)
     
     # Define the nested path pattern for locating `.fits` files
     file_pattern = "output/run_sp_Mc_*/make_cat_runner/output/*.fits"
 
     # Regex pattern for tile IDs
     id_pattern = re.compile(r"^\d+\.\d+$")
+
+    n_added = 0
     
     # Open the HDF5 file (create it if it doesn't exist)
     if params["verbose"]:
-        print(f"Initializing file {params['output_path']}")
-    with h5py.File(params["output_path"], "a") as hdf5_file:
+        print(f"Initializing file {params['merged_cat_path']}")
+    with h5py.File(params["merged_cat_path"], "a") as hdf5_file:
 
         # Iterate over patches
         for patch in os.listdir(params["input_root_dir"]):
-            if not patch_pattern.fullmatch(patch):  # Skip non-matching entries
-                continue
 
+            # Skip non-matching entries
+            if not patch_pattern.fullmatch(patch):
+                continue
+            
+            # Full path to patch
             patch_path = os.path.join(params["input_root_dir"], patch)
-
             if not os.path.isdir(patch_path):
+                if params["verbose"]:
+                    print(f"Path {patch_path} not found, skipping")
                 continue
         
-            # Get or create a group for the patch
-            if f"patches/{patch}" in hdf5_file:
-                if params["verbose"]:
-                    print(f"Extending group for patch {patch}")
-                patch_group = hdf5_file[f"patches/{patch}"]
-            else:
-                if params["verbose"]:
-                    print(f"Creating new group for patch {patch}")
-                patch_group = hdf5_file.create_group(f"patches/{patch}")
-        
+            # Get hdf5 group for this patch
+            patch_group = get_patch_group(hdf5_file, patch, params["verbose"])
+
+            # Get paths to all tile IDs and loop
             tile_runs_path = os.path.join(patch_path, "tile_runs")
-            #if params["verbose"]:
-                #print(f"Loop over tile IDs in {tile_runs_path}...")
             subdirs = os.listdir(tile_runs_path)
-            #if params["verbose"]:
-                #print(f"{len(subdirs)} IDs found")
-                
             for id in tqdm.tqdm(subdirs, total=len(subdirs)):
+
+                # Skip if the patch/ID data already exists
+                if id in patch_group:
+                    if params["verbose"]:
+                        print(f"Skipping {id} (already processed)")
+                        continue
+
                 if id_pattern.match(id) and os.path.isdir(os.path.join(tile_runs_path, id)):
                     id_path = os.path.join(tile_runs_path, id)
                 
-                    output_path = os.path.join(id_path, "output", "run_sp_Mc_*", "make_cat_runner", "output", "*.fits")    
-                    fits_files = glob.glob(output_path, recursive=True)
-                    for fits_file in fits_files:
-                    
-                        # Skip if the dataset already exists
-                        if id in patch_group:
-                            if params["verbose"]:
-                                print(f"Skipping {id} (already processed)")
-                                continue
-                    
-                        #if params["verbose"]:
-                            #print(f"Reading file {fits_file}...")
-                        with fits.open(fits_file) as hdul:
-                            data = hdul[params["hdu_num"]].data
+                    base_pattern = os.path.join(id_path, "output", "run_sp_Mc_*")
+                    all_matches = [d for d in glob.glob(base_pattern) if os.path.isdir(d)]
+                    if not all_matches:
+                        if params["verbose"]:
+                            print(f"Final cat for {id} not found, continuing")
+                        continue
+                    newest_dir = max(all_matches, key=os.path.getmtime)
 
-                            # If columns not given on input: read all column names
-                            if params["param_list"] is None:
-                                params["param_list"] = [col for col in data.keys()]
+                    id_dash = re.sub("\.", "-", id)
+                    fits_file = f"{newest_dir}/make_cat_runner/output/final_cat-{id_dash}.fits"
 
-                            try:
-                                extracted_data = {col: data[col] for col in params["param_list"]}
-                            except:
-                                print("Error for ID {id}. Keys not found:")
-                                for col in params["param_list"]:
-                                    if col not in data:
-                                        print(col, end=" ")
-                                    print()
-                                continue
+                    # Exclude unsuccessful run without output FITS file
+                    if not os.path.exists(fits_file):
+                        if params["verbose"]:
+                            print(f"Run without output file found for {id}, skipping")
+                            continue
+                        
+                    if True:
+                        extracted_data, dtype = read_data(fits_file, params)
 
-                        # For columns with 2-entry quantities, ensure proper dtype
-                        dtype = []
-                        structured_data = np.empty(len(extracted_data[params["param_list"][0]]), dtype=dtype)
-                        for col in params["param_list"]:
-                            if isinstance(extracted_data[col][0], (np.ndarray, tuple, list)):
-                                num_elements = len(extracted_data[col][0])
-                                for idx in range(num_elements):
-                                    new_col_name = f"{col}_{idx}"
-                                    dtype.append((new_col_name, extracted_data[col].dtype))
-                                    structured_data[new_col_name] = [x[i] for x in extracted_data[col]]  # Extract element `i`
-                            else:
-                                dtype.append((col, extracted_data[col].dtype))
-                                structured_data[col] = extracted_data[col]
+                        structured_data = copy_data(params["param_list"], extracted_data, dtype)
                         
                         # Create a new dataset
-                        patch_group.create_dataset(
-                            str(id),
-                            data=structured_data,
-                            dtype=dtype,
-                        )
+                        try:
+                            patch_group.create_dataset(
+                                str(id),
+                                data=structured_data,
+                                dtype=dtype,
+                            )
+                        except:
+                            print(f"Error for {id}: Could not create dataset in group {patch}")
+                            raise
+
+                        n_added += 1
+
+        if params["verbose"]:
+            print(f"{n_added} tiles added")
+
+
+def single_action(params):
+    """Single Action.
+
+    Perform single-ID action.
+
+    Parameters
+    ----------
+    params : dict
+        parameter options)
+
+    Returns
+    -------
+    int
+        return value: 0 (success), 1 (failure), ``None`` (no action performed)
+
+    """
+    if params["single_op"] == "check":
+        # Check wheter ID is part of hdf5 file
+        found = check_ID(params["merged_cat_path"], params["ID"], verbose=params["verbose"])        
+        if found == "":
+            # ID not found
+            res = 1
+        # ID found
+        res = 0
+
+    elif params["single_op"] == "remove":
+        # Remove ID
+        remove_ID(params["merged_cat_path"], params["ID"], verbose=params["verbose"])
+        res = 0
+
+    else:
+
+        # No action performed
+        res = None
+
+    return res
 
 
 def main(argv=None):
@@ -435,15 +463,21 @@ def main(argv=None):
 
     check_params(params)
 
-    params["param_list"] = read_param_file(params["param_path"], verbose=params["verbose"])
+    res = single_action(params)
+    if res is not None:
+        return res
 
-    process(params)
+    if params["list_only"] == False:
+        params["param_list"] = read_param_file(
+            params["param_path"],
+            verbose=params["verbose"],
+        )
+        process(params)
+
+    print_list(params)
 
     return 0
 
 
 if __name__ == "__main__":                                                      
     sys.exit(main(sys.argv))
-
-
-
