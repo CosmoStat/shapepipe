@@ -153,8 +153,17 @@ def read_param_file(path, verbose=False):
 def check_params(params):
  
     if bool(params["ID"] is None) != bool(params["single_op"] is None):
-        print("Both or none of the ptions 'ID' and 'single_op' need to be specified")
+        print("Both or none of the options 'ID' and 'single_op' need to be specified")
         return False
+
+    if bool(params["single_op"] is not None):
+        allowed = ("check", "add", "remove")
+        if params["single_op"] not in allowed:
+            print(
+                f"Invalid single_op '{params['single_op']}', allowed are"
+                + f" {', '.join(allowed)}"
+            )
+            return False
 
     return True
 
@@ -216,6 +225,7 @@ def check_ID(merged_cat_path, ID, verbose=False):
                     return patch
     if verbose:
         print(f"ID {ID} not found")
+
     return ""
 
 
@@ -373,7 +383,7 @@ def process(params):
                 if id in patch_group:
                     if params["verbose"]:
                         print(f"Skipping {id} (already processed)")
-                        continue
+                    continue
 
                 if id_pattern.match(id) and os.path.isdir(os.path.join(tile_runs_path, id)):
                     id_path = os.path.join(tile_runs_path, id)
@@ -393,7 +403,7 @@ def process(params):
                     if not os.path.exists(fits_file):
                         if params["verbose"]:
                             print(f"Run without output file found for {id}, skipping")
-                            continue
+                        continue
                         
                     if True:
                         extracted_data, dtype = read_data(fits_file, params)
@@ -435,7 +445,8 @@ def single_action(params):
     """
     if params["single_op"] == "check":
         # Check wheter ID is part of hdf5 file
-        found = check_ID(params["merged_cat_path"], params["ID"], verbose=params["verbose"])        
+        found = check_ID(params["merged_cat_path"], params["ID"], verbose=True)
+
         if found == "":
             # ID not found
             res = 1
@@ -444,7 +455,7 @@ def single_action(params):
 
     elif params["single_op"] == "remove":
         # Remove ID
-        remove_ID(params["merged_cat_path"], params["ID"], verbose=params["verbose"])
+        remove_ID(params["merged_cat_path"], params["ID"], verbose=True)
         res = 0
 
     else:
@@ -461,7 +472,8 @@ def main(argv=None):
         argv = sys.argv[0:]
     params = set_params_from_command_line(argv)
 
-    check_params(params)
+    if check_params(params) == False:
+        return 1
 
     res = single_action(params)
     if res is not None:
