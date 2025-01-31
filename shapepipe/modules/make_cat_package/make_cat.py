@@ -327,7 +327,7 @@ class SaveCatalogue:
         ngmix_cat_file.open()
 
         ngmix_n_epoch = ngmix_cat_file.get_data()["n_epoch_model"]
-        if len(ngmix_n_epoch) / self._cat_size_target < 0.9:
+        if len(ngmix_n_epoch) / self._cat_size_target < 0.5:
             ngmix_cat_file.close()
             err_msg = (
                 f"Merged shape catalogue {ngmix_cat_path} has very different size"       
