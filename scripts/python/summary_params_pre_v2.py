@@ -152,7 +152,6 @@ def set_jobs_v2_pre_v2(patch, verbose):
             "run_sp_exp_SxSePsf",
             "run_sp_exp_SxSePsf",
             "run_sp_exp_SxSePsf",
-            #"run_sp_exp_Pi"
         ],
         [
             "sextractor_runner",
@@ -160,7 +159,6 @@ def set_jobs_v2_pre_v2(patch, verbose):
             "setools_runner",
             "setools_runner",
             "psfex_runner",
-            # "psfex_interp_runner"],
         ],
         "shdus",
         n_mult=[2, 2, 1, 1, 2],
@@ -228,19 +226,21 @@ def set_jobs_v2_pre_v2(patch, verbose):
 
     jobs["256"] = job_data(
         "256",
-        ["run_sp_Ms"],
-        ["merge_sep_cats_runner"],
+        "run_sp_Ms",
+        ["merge_sep_cats_runner"] * 2,
         "tile_IDs",
         path_main=path_main,
         path_left="tile_runs",
+        path_output=["output", "logs"],
+        special=[False, True],
         output_subdirs=[f"{tile_ID}/output" for tile_ID in list_tile_IDs_dot],
         verbose=verbose,
     )
 
     jobs["512"] = job_data(
         "512",
-        ["run_sp_Mc"],
-        ["make_cat_runner"],
+        "run_sp_Mc",
+        "make_cat_runner",
         "tile_IDs",
         path_main=path_main,
         path_left="tile_runs",

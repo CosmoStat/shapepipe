@@ -220,6 +220,13 @@ def check_special_one(module, path):
                     ngmix_finished = True
                     break
 
+            if module == "merge_sep_cats_runner":
+                m = re.search("Input catalogue", line)
+                if m:
+                    code = 7
+                    msg = "One or more ngmix catalogues not found for merge"
+                    return msg, code
+
     if module == "ngmix_runner" and not ngmix_finished:
         code = 6
         mgs = "ngmix incomplete"
