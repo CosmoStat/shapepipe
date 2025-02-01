@@ -119,7 +119,8 @@ def make_cat_runner(
 
 
         # If error message: delete (incomplete) output file and raise error
-        if err_msg is not None:
+        #if err_msg is not None:
+        if False:
             os.remove(
                 make_cat.get_output_name(
                     run_dirs["output"],

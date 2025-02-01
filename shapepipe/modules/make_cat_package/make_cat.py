@@ -320,6 +320,11 @@ class SaveCatalogue:
         ngmix_cat_path : str
             Path to NGMIX catalogue
 
+        Returns
+        -------
+        str
+            error or waning message
+
         """
         self._key_ends = ["1M", "1P", "2M", "2P", "NOSHEAR"]
 
@@ -328,13 +333,15 @@ class SaveCatalogue:
 
         ngmix_n_epoch = ngmix_cat_file.get_data()["n_epoch_model"]
         if len(ngmix_n_epoch) / self._cat_size_target < 0.5:
-            ngmix_cat_file.close()
+            #ngmix_cat_file.close()
             err_msg = (
                 f"Merged shape catalogue {ngmix_cat_path} has very different size"       
                 + f" ({len(ngmix_n_epoch)}) than target size"           
                 + f" {self._cat_size_target})"                             
             )
-            return err_msg
+            #return err_msg
+        else:
+            err_msg = None
 
         ngmix_mom_fail = ngmix_cat_file.get_data()["moments_fail"]
 
@@ -450,7 +457,7 @@ class SaveCatalogue:
 
         ngmix_cat_file.close()
 
-        return None
+        return err_msg
 
     def _save_galsim_shapes(self, galsim_cat_path):
         """Save GalSim Shapes.
