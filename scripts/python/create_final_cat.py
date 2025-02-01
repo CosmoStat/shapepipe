@@ -351,6 +351,7 @@ def process(params):
     id_pattern = re.compile(r"^\d+\.\d+$")
 
     n_added = 0
+    IDs_added = []
     
     # Open the HDF5 file (create it if it doesn't exist)
     if params["verbose"]:
@@ -422,9 +423,10 @@ def process(params):
                             raise
 
                         n_added += 1
+                        IDs_added.append(id)
 
         if params["verbose"]:
-            print(f"{n_added} tiles added")
+            print(f"{n_added} tiles added ({' '.join(IDs_added)})")
 
 
 def single_action(params):
