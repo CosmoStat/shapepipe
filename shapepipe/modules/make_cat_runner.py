@@ -2,11 +2,9 @@
 
 Module runner for ``make_cat``.
 
-:Authors: Axel Guinot, Martin Kilbinger
+:Author: Axel Guinot
 
 """
-
-import os
 
 from shapepipe.modules.make_cat_package import make_cat
 from shapepipe.modules.module_decorator import module_runner
@@ -85,14 +83,11 @@ def make_cat_runner(
 
     # Save SExtractor data
     w_log.info("Save SExtractor data")
-    cat_size_sextractor = make_cat.save_sextractor_data(
-        final_cat_file,
-        tile_sexcat_path
-    )
+    make_cat.save_sextractor_data(final_cat_file, tile_sexcat_path)
 
     # Save spread-model data
     w_log.info("Save spread-model data")
-    cat_size_sm = make_cat.save_sm_data(
+    make_cat.save_sm_data(
         final_cat_file,
         sexcat_sm_path,
         do_classif,
@@ -100,37 +95,17 @@ def make_cat_runner(
         gal_thresh,
     )
 
-    if cat_size_sextractor != cat_size_sm:
-        raise ValueError(
-            f"SExtractor catalogue {tile_sexcat_path} has different size"
-            + f" ({cat_size_sextractor} than spread_model catalogue"
-            + f" {sexcat_sm_path} ({cat_size_sm})"
-        )
-
     # Save shape data
-    sc_inst = make_cat.SaveCatalogue(final_cat_file, cat_size_sextractor)
+    sc_inst = make_cat.SaveCatalogue(final_cat_file, w_log)
     w_log.info("Save shape measurement data")
     for shape_type in shape_type_list:
         w_log.info(f"Save {shape_type.lower()} data")
         cat_path = (
             shape2_cat_path if shape_type == "galsim" else shape1_cat_path
         )
-        err_msg = sc_inst.process(shape_type.lower(), cat_path)
-
-
-        # If error message: delete (incomplete) output file and raise error
-        #if err_msg is not None:
-        if False:
-            os.remove(
-                make_cat.get_output_name(
-                    run_dirs["output"],
-                    file_number_string,
-                )
-            )
-            #raise ValueError(err_msg)
-            w_log.info(f"Warning: {err_msg}")
-
+        sc_inst.process(shape_type.lower(), cat_path)
     if save_psf:
-        err_msg = sc_inst.process("psf", galaxy_psf_path)
+        sc_inst.process("psf", galaxy_psf_path)
 
+    # No return objects
     return None, None
