@@ -12,6 +12,8 @@ create_final_cat.py -p ~/shapepipe/example/cfis/final_cat.param -i . -P 7 -v -m 
 
 :Author: Martin Kilbinger
 
+:Date: 2025
+
 """
 
 import sys
