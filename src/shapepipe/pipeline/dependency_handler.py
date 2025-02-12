@@ -159,7 +159,9 @@ class DependencyHandler(object):
             List of indices
 
         """
-        return [index for index, element in enumerate(array) if element == value]
+        return [
+            index for index, element in enumerate(array) if element == value
+        ]
 
     @classmethod
     def _slice_col_val(cls, array, col, value):
@@ -271,7 +273,10 @@ class DependencyHandler(object):
 
         """
         self._depend_arr = list(
-            map(list, zip(*[self._split_string(string) for string in self.depend]))
+            map(
+                list,
+                zip(*[self._split_string(string) for string in self.depend]),
+            )
         )
         self._dependency_set = set(self._depend_arr[0])
 
@@ -292,7 +297,9 @@ class DependencyHandler(object):
                 subset = self._slice_col_val(
                     subset,
                     2,
-                    str(max([self._convert_to_float(ver) for ver in subset[2]])),
+                    str(
+                        max([self._convert_to_float(ver) for ver in subset[2]])
+                    ),
                 )
 
             subset = [element[0] for element in self._slice_2d(subset, [0])]
@@ -317,7 +324,9 @@ class DependencyHandler(object):
             try:
                 package = importlib.import_module(dependency)
             except Exception:
-                raise ImportError(f"Could not import pipeline dependency {dependency}")
+                raise ImportError(
+                    f"Could not import pipeline dependency {dependency}"
+                )
 
             if hasattr(package, "__version__"):
                 version = package.__version__
@@ -331,7 +340,9 @@ class DependencyHandler(object):
             else:
                 path = "N/A"
 
-            dependency_status_list.append(f" - {package.__name__} {version} {path}")
+            dependency_status_list.append(
+                f" - {package.__name__} {version} {path}"
+            )
 
         return dependency_status_list
 

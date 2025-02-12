@@ -105,22 +105,35 @@ def mccd_preprocessing_pipeline(
     for it in range(catalog_ids.shape[0]):
         # For each observation position
         catalog_id = catalog_ids[it]
-        star_list, pos_list, mask_list, ccd_list, SNR_list, RA_list, DEC_list = (
-            mccd_inputs.get_inputs(catalog_id)
-        )
+        (
+            star_list,
+            pos_list,
+            mask_list,
+            ccd_list,
+            SNR_list,
+            RA_list,
+            DEC_list,
+        ) = mccd_inputs.get_inputs(catalog_id)
 
-        star_list, pos_list, mask_list, ccd_list, SNR_list, RA_list, DEC_list, _ = (
-            mccd_inputs.outlier_rejection(
-                star_list,
-                pos_list,
-                mask_list,
-                ccd_list,
-                SNR_list,
-                RA_list,
-                DEC_list,
-                shape_std_max=outlier_std_max,
-                print_fun=print_fun,
-            )
+        (
+            star_list,
+            pos_list,
+            mask_list,
+            ccd_list,
+            SNR_list,
+            RA_list,
+            DEC_list,
+            _,
+        ) = mccd_inputs.outlier_rejection(
+            star_list,
+            pos_list,
+            mask_list,
+            ccd_list,
+            SNR_list,
+            RA_list,
+            DEC_list,
+            shape_std_max=outlier_std_max,
+            print_fun=print_fun,
         )
 
         mccd_star_list = []
@@ -166,7 +179,9 @@ def mccd_preprocessing_pipeline(
             # If the list is not empty
             # Concatenate, as fits can't handle list of numpy arrays and
             # turn into reg format
-            mccd_stars = mccd.utils.reg_format(np.concatenate(mccd_star_list, axis=2))
+            mccd_stars = mccd.utils.reg_format(
+                np.concatenate(mccd_star_list, axis=2)
+            )
             mccd_poss = np.concatenate(mccd_pos_list, axis=0)
             mccd_ccds = np.concatenate(mccd_ccd_list, axis=0)
 
@@ -205,7 +220,11 @@ def mccd_preprocessing_pipeline(
             }
 
             saving_path = (
-                output_path + save_name + separator + catalog_id + save_extension
+                output_path
+                + save_name
+                + separator
+                + catalog_id
+                + save_extension
             )
             mccd.mccd_utils.save_to_fits(train_dic, saving_path)
 

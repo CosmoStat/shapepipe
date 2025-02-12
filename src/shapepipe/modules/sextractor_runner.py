@@ -104,7 +104,9 @@ def sextractor_runner(
         f_wcs_path = config.getexpanded(module_config_sec, "LOG_WCS")
         pos_params = config.getlist(module_config_sec, "WORLD_POSITION")
         ccd_size = config.getlist(module_config_sec, "CCD_SIZE")
-        ss.make_post_process(ss_inst.path_output_file, f_wcs_path, pos_params, ccd_size)
+        ss.make_post_process(
+            ss_inst.path_output_file, f_wcs_path, pos_params, ccd_size
+        )
 
     # Return stdout and stderr
     return stdout, stderr

@@ -10,7 +10,9 @@ import os
 
 from shapepipe.pipeline.run_log import get_last_dir
 
-from shapepipe.modules.mccd_package import mccd_interpolation_script as mccd_interp
+from shapepipe.modules.mccd_package import (
+    mccd_interpolation_script as mccd_interp,
+)
 from shapepipe.modules.mccd_package import shapepipe_auxiliary_mccd as aux_mccd
 from shapepipe.modules.module_decorator import module_runner
 

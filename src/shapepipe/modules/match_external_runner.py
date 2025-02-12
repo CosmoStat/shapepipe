@@ -41,7 +41,9 @@ def match_external_runner(
     mode = config.get(module_config_sec, "MODE")
     valid_modes = ("CLASSIC", "MULTI-EPOCH")
     if mode not in valid_modes:
-        raise ValueError(f"mode '{mode}' is invalid, must be one of {valid_modes}.")
+        raise ValueError(
+            f"mode '{mode}' is invalid, must be one of {valid_modes}."
+        )
 
     # External data
     external_cat_path = config.getexpanded(
@@ -89,7 +91,9 @@ def match_external_runner(
 
     # Set output file path
     file_ext = "fits"
-    output_path = f'{run_dirs["output"]}/{prefix}{file_number_string}.' + f"{file_ext}"
+    output_path = (
+        f'{run_dirs["output"]}/{prefix}{file_number_string}.' + f"{file_ext}"
+    )
 
     # Create instance of MatchCats
     match_cats_inst = MatchCats(

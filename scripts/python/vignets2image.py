@@ -69,7 +69,9 @@ def main(argv=None):
         image, nx = map_vignet(hdu[2].data["VIGNET"], "float32")
         print("file = {}, nx = {}".format(input_path, nx))
 
-        fout = io.FITSCatalog(output_path, open_mode=io.BaseCatalog.OpenMode.ReadWrite)
+        fout = io.FITSCatalog(
+            output_path, open_mode=io.BaseCatalog.OpenMode.ReadWrite
+        )
         fout.save_as_fits(image, image=True)
 
     return 0

@@ -32,11 +32,14 @@ def get_images_runner(
     retrieve_ok = ["vos", "symlink"]
     if retrieve_method not in retrieve_ok:
         raise ValueError(
-            f"key RETRIEVE={retrieve_method} is invalid, " + f"must be in {retrieve_ok}"
+            f"key RETRIEVE={retrieve_method} is invalid, "
+            + f"must be in {retrieve_ok}"
         )
 
     if config.has_option(module_config_sec, "RETRIEVE_OPTIONS"):
-        retrieve_options = config.getexpanded(module_config_sec, "RETRIEVE_OPTIONS")
+        retrieve_options = config.getexpanded(
+            module_config_sec, "RETRIEVE_OPTIONS"
+        )
     else:
         retrieve_options = None
 
@@ -49,7 +52,9 @@ def get_images_runner(
     input_dir = config.getlist(module_config_sec, "INPUT_PATH")
     input_file_pattern = config.getlist(module_config_sec, "INPUT_FILE_PATTERN")
     input_file_ext = config.getlist(module_config_sec, "INPUT_FILE_EXT")
-    output_file_pattern = config.getlist(module_config_sec, "OUTPUT_FILE_PATTERN")
+    output_file_pattern = config.getlist(
+        module_config_sec, "OUTPUT_FILE_PATTERN"
+    )
 
     input_numbering = config.get(module_config_sec, "INPUT_NUMBERING")
 
@@ -60,7 +65,9 @@ def get_images_runner(
 
     # Flags to check for already retrieved files
     if config.has_option(module_config_sec, "CHECK_EXISTING_DIR"):
-        check_existing_dir = config.getexpanded(module_config_sec, "CHECK_EXISTING_DIR")
+        check_existing_dir = config.getexpanded(
+            module_config_sec, "CHECK_EXISTING_DIR"
+        )
         if config.has_option(module_config_sec, "N_EXPECTED"):
             n_expected = config.getint(module_config_sec, "N_EXPECTED")
         else:

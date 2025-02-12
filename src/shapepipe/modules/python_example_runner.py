@@ -41,7 +41,9 @@ def python_example_runner(
 ):
     """Define The Python Example Runner."""
     # Set output file name
-    output_file_name = f'{run_dirs["output"]}/pyex_output{file_number_string}.cat'
+    output_file_name = (
+        f'{run_dirs["output"]}/pyex_output{file_number_string}.cat'
+    )
 
     # Retrieve log message from config file
     message = config.get(module_config_sec, "MESSAGE")

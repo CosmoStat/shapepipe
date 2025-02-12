@@ -131,7 +131,9 @@ class StrInterpreter(object):
         comp = "<|>|<=|>=|==|!="
 
         if len(re.split(comp, string)) != 2:
-            raise Exception("Only one comparison in [<, >, <=, >=, ==, !=] per line")
+            raise Exception(
+                "Only one comparison in [<, >, <=, >=, ==, !=] per line"
+            )
 
         for operator in ["<=", ">=", "<", ">", "==", "!="]:
             terms = re.split(operator, string)
@@ -361,7 +363,9 @@ class StrInterpreter(object):
             param = [args[0], args[1]]
             n_cells = args[2]
         else:
-            raise ValueError("Inputs should be param_1, param_2 [optional], n_cells")
+            raise ValueError(
+                "Inputs should be param_1, param_2 [optional], n_cells"
+            )
 
         if n_param == 2:
             if len(param[0]) != len(param[1]):
@@ -379,10 +383,19 @@ class StrInterpreter(object):
         param_min = []
         param_max = []
         for idx in param:
-            step = (np.max(idx) - np.min(idx)) / pow(n_cells, 1.0 / float(n_param))
-            param_min.append([val for val in np.arange(np.min(idx), np.max(idx), step)])
+            step = (np.max(idx) - np.min(idx)) / pow(
+                n_cells, 1.0 / float(n_param)
+            )
+            param_min.append(
+                [val for val in np.arange(np.min(idx), np.max(idx), step)]
+            )
             param_max.append(
-                [val for val in np.arange(np.min(idx) + step, np.max(idx) + step, step)]
+                [
+                    val
+                    for val in np.arange(
+                        np.min(idx) + step, np.max(idx) + step, step
+                    )
+                ]
             )
 
         if n_param == 1:

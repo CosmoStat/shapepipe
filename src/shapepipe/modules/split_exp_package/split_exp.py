@@ -37,7 +37,12 @@ class SplitExposures(object):
     """
 
     def __init__(
-        self, input_file_list, output_dir, file_number_string, output_suffix, n_hdu
+        self,
+        input_file_list,
+        output_dir,
+        file_number_string,
+        output_suffix,
+        n_hdu,
     ):
 
         self._input_file_list = input_file_list
@@ -52,7 +57,9 @@ class SplitExposures(object):
         Process the splitting of single-exposure images.
 
         """
-        for exp_path, output_suffix in zip(self._input_file_list, self._output_suffix):
+        for exp_path, output_suffix in zip(
+            self._input_file_list, self._output_suffix
+        ):
 
             transf_int = "flag" in output_suffix
             transf_coord = "image" in output_suffix
@@ -114,5 +121,7 @@ class SplitExposures(object):
                 header_file[idx - 1] = {"WCS": w, "header": h.tostring()}
 
         if save_header:
-            file_name = f"{self._output_dir}/headers{self._file_number_string}.npy"
+            file_name = (
+                f"{self._output_dir}/headers{self._file_number_string}.npy"
+            )
             np.save(file_name, header_file)

@@ -34,7 +34,11 @@ def split_exp_runner(
 
     # Create split exposures class instance
     split_inst = SplitExposures(
-        input_file_list, run_dirs["output"], file_number_string, output_suffix, n_hdu
+        input_file_list,
+        run_dirs["output"],
+        file_number_string,
+        output_suffix,
+        n_hdu,
     )
 
     # Process splitting

@@ -220,7 +220,10 @@ class SpreadModel(object):
             obj_sigma_tmp = np.mean(sigma_list)
             obj_weight_tmp = weigh_vign[idx]
             obj_model_tmp, obj_psf_tmp = get_model(
-                obj_sigma_tmp, obj_flux_tmp, obj_vign_tmp.shape, self._pixel_scale
+                obj_sigma_tmp,
+                obj_flux_tmp,
+                obj_vign_tmp.shape,
+                self._pixel_scale,
             )
 
             obj_sm, obj_sm_err = get_sm(
@@ -238,7 +241,9 @@ class SpreadModel(object):
 
         psf_cat.close()
 
-        self.save_results(spread_model_final, spread_model_err_final, obj_mag, obj_id)
+        self.save_results(
+            spread_model_final, spread_model_err_final, obj_mag, obj_id
+        )
 
     def save_results(self, sm, sm_err, mag, number):
         """Save Results.
@@ -274,7 +279,9 @@ class SpreadModel(object):
                 "SPREAD_MODEL": sm,
                 "SPREADERR_MODEL": sm_err,
             }
-            new_cat.save_as_fits(data=dict_data, sex_cat_path=self._sex_cat_path)
+            new_cat.save_as_fits(
+                data=dict_data, sex_cat_path=self._sex_cat_path
+            )
         elif self._output_mode == "add":
             ori_cat = file_io.FITSCatalogue(
                 self._sex_cat_path,
@@ -286,7 +293,9 @@ class SpreadModel(object):
                 SEx_catalogue=True,
                 open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
             )
-            ori_cat.add_col("SPREAD_MODEL", sm, new_cat=True, new_cat_inst=new_cat)
+            ori_cat.add_col(
+                "SPREAD_MODEL", sm, new_cat=True, new_cat_inst=new_cat
+            )
             ori_cat.close()
             new_cat.open()
             new_cat.add_col("SPREADERR_MODEL", sm_err)

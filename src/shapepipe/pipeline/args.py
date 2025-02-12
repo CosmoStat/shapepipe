@@ -122,7 +122,9 @@ def create_arg_parser():
     optional.add_argument(
         "-l",
         "--list_modules",
-        action=print_message(f"ShapePipe modules currently available:\n{module_str()}"),
+        action=print_message(
+            f"ShapePipe modules currently available:\n{module_str()}"
+        ),
         help="list modules currently available and exit",
     )
 

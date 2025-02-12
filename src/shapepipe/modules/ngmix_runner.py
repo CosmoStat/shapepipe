@@ -12,7 +12,11 @@ from shapepipe.modules.ngmix_package.ngmix import Ngmix
 
 @module_runner(
     version="0.0.1",
-    input_module=["sextractor_runner", "psfex_interp_runner", "vignetmaker_runner"],
+    input_module=[
+        "sextractor_runner",
+        "psfex_interp_runner",
+        "vignetmaker_runner",
+    ],
     file_pattern=[
         "tile_sexcat",
         "image",

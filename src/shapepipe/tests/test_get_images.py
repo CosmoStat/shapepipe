@@ -31,9 +31,13 @@ class GetImagesTestCase(TestCase):
 
     def test_in2out_pattern(self):
 
-        npt.assert_string_equal(get_images.in2out_pattern(self.number_tile), "123-456")
+        npt.assert_string_equal(
+            get_images.in2out_pattern(self.number_tile), "123-456"
+        )
 
-        npt.assert_string_equal(get_images.in2out_pattern(self.number_exp), "2490092")
+        npt.assert_string_equal(
+            get_images.in2out_pattern(self.number_exp), "2490092"
+        )
 
         npt.assert_raises(
             TypeError,
