@@ -19,6 +19,7 @@ N_SMP=1
 fix=0
 version="1.1"
 cmd_remote="$HOME/shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
+batch=30
 batch_max=200
 dry_run=0
 mh_local=0
@@ -50,7 +51,7 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
    -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default=$N_SMP\n
    -F, --fix FIX\n
-    \tfix missing data (re-download tile, unzip) for FIX=1; default is $fix\
+    \tfix missing data (re-download tile, unzip) for FIX=1; default is $fix\n
    -V, --version\n
     \tversion of docker image, default='$version'\n
    -C, --command_remote\n
@@ -120,6 +121,14 @@ while [ $# -gt 0 ]; do
       scratch="$2"
       shift
       ;;
+    -V|--version)
+      version="$2"
+      shift
+      ;;
+    -B|--batch)
+      batch="$2"
+      shift
+      ;;
     -b|--batch_max)
       batch_max="$2"
       shift
@@ -169,15 +178,15 @@ if [ "$dry_run" != 0 ] && [ "$dry_run" != 1 ] && [ "$dry_run" != 2 ]; then
 fi
 
 if [ "$debug_out" != "-1" ]; then
-  echo "${pat}Starting $(basename "$0")" >> $debug_out
+  echo "${pat}Starting $(basename "$0") $test_arg" >> $debug_out
   echo "${pat}curl ID=$ID" >> $debug_out
   echo ${pat}`date` >> $debug_out
 fi
 
-. /opt/conda/etc/profile.d/conda.sh
-conda activate shapepipe
+source activate shapepipe
 if [ "$debug_out"  != "-1" ]; then
     echo "${pat}conda prefix = ${CONDA_PREFIX}" >> $debug_out
+    echo "${pat}script version = ${script_version}" >> $debug_out
 fi
 
 # command line arguments for remote script:
@@ -194,7 +203,7 @@ function submit_batch() {
   for ID in `cat $path`; do
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $test_arg
+    call_curl $my_name $job $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $test_arg
   done
 }
 
@@ -290,5 +299,5 @@ fi
 echo "Done $(basename "$0")" 
 
 if [ "$debug_out" != "-1" ]; then
-  echo "${pat}End $(basename "$0")" >> $debug_out
+  echo "${pat}End $(basename "$0") $test_arg" >> $debug_out
 fi
