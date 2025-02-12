@@ -504,6 +504,50 @@ if [[ $do_job != 0 ]]; then
   fi
 fi
 
+(( do_job = $job & 128 ))
+if [[ $do_job != 0 ]]; then
+
+    echo
+
+    cat_ngmix="run_sp_tile_ngmix_Ng1u/ngmix_runner/output/ngmix-*.fits"
+    dir_ngmix_prev="run_sp_tile_ngmix_Ng1u_prev/ngmix_runner/output"
+    cat_ngmix_prev="$dir_ngmix_prev/ngmix-*.fits"
+
+    # Check whether ngmix output exists
+    if [ -e $cat_ngmix ]; then
+        message "ngmix output catalogue exists" $debug_out -1
+
+        # Check whether previous ngmix directory and output cat exist
+        exists="1"
+        if [ ! -d $dir_ngmix_prev ]; then
+            exists="0"
+        elif [ ! -e "$cat_ngmix_prev" ]; then
+            exists="1"
+        fi
+        if [ "$exists" == "0" ]; then
+            message "Moving to previous batch-save dir (does not exist yet)" $debug_out -1
+            command "mkdir -p $dir_ngmix_prev" $dry_run
+            command "mv $cat_ngmix $dir_ngmix_prev" $dry_run
+        else
+            # Compare file sizes
+            size_cat_ngmix=$(stat -c%s $cat_ngmix)
+            size_cat_ngmix_prev=$(stat -c%s $cat_ngmix_prev)
+            if [ "$size_cat_ngmix" -gt "$size_cat_ngmix_prev" ]; then
+                message "Moving to batch-save dir, overwriting smaller batch-save cat" $debug_out -1
+                command "mv $cat_ngmix $dir_ngmix_prev" $dry_run
+            else
+                message "Previous batch-save dir not smaller, removing ngmix output" $debug_out -1
+                command "rm $cat_ngmix" $dry_run
+            fi
+        fi
+    else
+        # Whether or not previous ngmix exists, job_sp_canfar will handle it
+        message "No ngmix output exists, continuing..." $debug_out -1
+    fi
+
+    echo
+fi
+
 (( do_job = $job & 256 ))
 if [[ $do_job != 0 ]]; then
 
