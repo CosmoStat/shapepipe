@@ -139,7 +139,8 @@ def make_cat_runner(
                     file_number_string,
                 )
             )
-            raise ValueError(err_msg)
+            #raise ValueError(err_msg)
+            w_log.info(err_msg)
 
     if save_psf:
         err_msg = sc_inst.process("psf", galaxy_psf_path)
