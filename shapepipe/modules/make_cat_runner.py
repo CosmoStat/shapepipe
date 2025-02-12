@@ -97,30 +97,31 @@ def make_cat_runner(
     # Save SExtractor data
     w_log.info("Save SExtractor data")
     n_obj = make_cat.save_sextractor_data(final_cat_file, tile_sexcat_path)
+    cat_size_sextractor = n_obj
 
     # Save spread-model data
-    w_log.info("Save spread-model data")
     if sexcat_sm_path is None:
         w_log.info("No sm cat input, setting spread model to 99")
-        n_obj
-    make_cat.save_sm_data(
-        final_cat_file,
-        sexcat_sm_path,
-        do_classif,
-        star_thresh,
-        gal_thresh,
-        n_obj=n_obj
-    )
-
-    if cat_size_sextractor != cat_size_sm:
-        raise ValueError(
-            f"SExtractor catalogue {tile_sexcat_path} has different size"
-            + f" ({cat_size_sextractor} than spread_model catalogue"
-            + f" {sexcat_sm_path} ({cat_size_sm})"
+    else:
+        w_log.info("Save spread-model data")
+        cat_size_sm = make_cat.save_sm_data(
+            final_cat_file,
+            sexcat_sm_path,
+            do_classif,
+            star_thresh,
+            gal_thresh,
+            n_obj=n_obj
         )
 
+        if cat_size_sextractor != cat_size_sm:
+            w_log(
+                f"Warnign: SExtractor catalogue {tile_sexcat_path} has different size"
+                + f" ({cat_size_sextractor} than spread_model catalogue"
+                + f" {sexcat_sm_path} ({cat_size_sm})"
+            )
+
     # Save shape data
-    sc_inst = make_cat.SaveCatalogue(final_cat_file, cat_size_sextractor)
+    sc_inst = make_cat.SaveCatalogue(final_cat_file, cat_size_sextractor, w_log)
     w_log.info("Save shape measurement data")
     for shape_type in shape_type_list:
         w_log.info(f"Save {shape_type.lower()} data")

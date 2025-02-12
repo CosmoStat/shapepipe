@@ -169,7 +169,7 @@ def save_sm_data(
         Threshold for galaxy selection; object is classified as galaxy if
         :math:`{\rm class} >` ``gal_thresh``
     nobj : int, optional
-        Number of objects, only used if sexcat_sm_path is ``None``
+        Number of objects, only used if sexcat_sm_path is ``-1``
 
     Returns
     -------
@@ -186,7 +186,7 @@ def save_sm_data(
         sexcat_sm_file.open()
 
         sm = np.copy(sexcat_sm_file.get_data()["SPREAD_MODEL"])
-        sm_err = np.copy(sexcat_sm_file.get_data()["SPREADERR_MODEL"]
+        sm_err = np.copy(sexcat_sm_file.get_data()["SPREADERR_MODEL"])
                          
         sexcat_sm_file.close()
 
@@ -207,7 +207,7 @@ def save_sm_data(
 
     final_cat_file.close()
 
-    return cat_size
+    return n_obj
 
 
 class SaveCatalogue:
@@ -221,13 +221,16 @@ class SaveCatalogue:
         Final catalogue file name
     cat_size_target : int
         target catalogue size
+    w_log : logging.Logger
+        Logging instance
 
     """
 
-    def __init__(self, final_cat_file, cat_size_target):
+    def __init__(self, final_cat_file, cat_size_target, w_log):
 
         self._final_cat_file = final_cat_file
         self._cat_size_target = cat_size_target
+        self._w_log = w_log
 
     def process(
         self,
@@ -321,7 +324,7 @@ class SaveCatalogue:
         else:
             self._output_dict[key] = value
 
-    def _save_ngmix_data(self, ngmix_cat_path, moments=False, w_log):
+    def _save_ngmix_data(self, ngmix_cat_path, moments=False):
         """Save NGMIX Data.
 
         Save the NGMIX catalogue into the final one.
@@ -374,7 +377,7 @@ class SaveCatalogue:
             f"{prefix}_FLAGS_",
             f"{prefix}_T_PSFo_",
         ):
-            self._update_dict(key_str, np.zeros(n_obj)
+            self._update_dict(key_str, np.zeros(n_obj))
         for key_str in (f"NGMIX{m}_FLUX_ERR_", f"NGMIX{m}_MAG_ERR_"):
             self._update_dict(key_str, np.ones(len(self._obj_id)) * -1)
         for key_str in (
