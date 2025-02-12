@@ -35,7 +35,7 @@ function call_curl() {
   my_arg="-j $my_job -p $my_psf -e $my_ID -N $my_N_SMP -n $my_dry_run -d $my_dir -m $my_mh_local -s $my_sp_local --sm $my_sm --debug_out $my_debug_out -F $my_fix -S $my_scratch $my_test_arg"
 
   if [ "$my_dry_run" == "0" ]; then
-    my_session=`curl -E $SSL "$SESSION?$RESOURCES" -d "image=$IMAGE:$version" -d "name=${my_name}" -d "cmd=$cmd_remote" --data-urlencode "args=${my_arg[@]}" &> /dev/null`
+    my_session=`curl -E $SSL "$SESSION?$RESOURCES" -d "image=$IMAGE:$version" -d "name=${my_name}" -d "cmd=$cmd_remote" --data-urlencode "args=${my_arg[@]}"`
   fi
 
   cmd=("curl" "-E" "$SSL" "$SESSION?$RESOURCES" "-d" "image=$IMAGE:$version" "-d" "name=${my_name}" "-d" "cmd=$cmd_remote" "--data-urlencode" "args=\"${my_arg}\"")
@@ -44,7 +44,7 @@ function call_curl() {
     echo "${pat}call_curl $my_name $my_arg" >> $my_debug_out
     echo "${pat}Running ${cmd[@]} (dry_run=$my_dry_run)" >> $my_debug_out
   fi
-  #echo "${cmd[@]} (dry_run=$my_dry_run)"
+  echo "${cmd[@]} (dry_run=$my_dry_run)"
 
 
   # Running $cmd does not work due to unknown problems with passing of args
@@ -79,7 +79,7 @@ function command () {
         res=$?
 
         if [ "$debug_out" != "-1" ]; then
-          echo "${pat}result=$res" >> $debug_out
+          echo "${pat}exit code=$res" >> $debug_out
         fi
 
         if [ $VERBOSE == 1 ]; then
@@ -89,6 +89,9 @@ function command () {
               echo -e "${RED}error, return value = $res${NC}"
               if [ $STOP == 1 ]; then
                   echo "${RED}exiting  $(basename "$0")', error in command '$cmd'${NC}"
+                  if [ "$debug_out" != "-1" ]; then
+                      echo "${pat}${RED}exiting  $(basename "$0")', error in command '$cmd'${NC}" >> $debug_out
+                  fi
                   if [ "$debug_out" != "-1" ]; then
                       echo "${pat}${RED}exiting  $(basename "$0")', error in command '$cmd'${NC}" >> $debug_out
                   fi
