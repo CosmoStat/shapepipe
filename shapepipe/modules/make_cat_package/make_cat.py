@@ -145,6 +145,7 @@ def save_sm_data(
     do_classif=True,
     star_thresh=0.003,
     gal_thresh=0.01,
+    n_obj=-1,
 ):
     r"""Save Spread-Model Data.
 
@@ -155,7 +156,8 @@ def save_sm_data(
     final_cat_file : file_io.FITSCatalogue
         Final catalogue
     sexcat_sm_path : str
-        Path to spread-model catalogue to save.
+        Path to spread-model catalogue to save. If ``None``, spread_model is
+        set to 99
     do_classif : bool
         If ``True`` objects will be classified into stars, galaxies, and other,
         using the classifier
@@ -166,6 +168,8 @@ def save_sm_data(
     gal_thresh : float
         Threshold for galaxy selection; object is classified as galaxy if
         :math:`{\rm class} >` ``gal_thresh``
+    nobj : int, optional
+        Number of objects, only used if sexcat_sm_path is ``None``
 
     Returns
     -------
@@ -174,14 +178,21 @@ def save_sm_data(
     """
     final_cat_file.open()
 
-    sexcat_sm_file = file_io.FITSCatalogue(sexcat_sm_path, SEx_catalogue=True)
-    sexcat_sm_file.open()
+    if sexcat_sm_path is not None:
+        sexcat_sm_file = file_io.FITSCatalogue(
+            sexcat_sm_path,
+            SEx_catalogue=True,
+        )
+        sexcat_sm_file.open()
 
-    sm = np.copy(sexcat_sm_file.get_data()["SPREAD_MODEL"])
-    sm_err = np.copy(sexcat_sm_file.get_data()["SPREADERR_MODEL"])
-    cat_size = len(sm)
+        sm = np.copy(sexcat_sm_file.get_data()["SPREAD_MODEL"])
+        sm_err = np.copy(sexcat_sm_file.get_data()["SPREADERR_MODEL"]
+                         
+        sexcat_sm_file.close()
 
-    sexcat_sm_file.close()
+    else:
+        sm = np.ones(n_obj) * 99
+        sm_err = np.ones(n_obj) * 99
 
     final_cat_file.add_col("SPREAD_MODEL", sm)
     final_cat_file.add_col("SPREADERR_MODEL", sm_err)
@@ -310,7 +321,7 @@ class SaveCatalogue:
         else:
             self._output_dict[key] = value
 
-    def _save_ngmix_data(self, ngmix_cat_path, moments=False):
+    def _save_ngmix_data(self, ngmix_cat_path, moments=False, w_log):
         """Save NGMIX Data.
 
         Save the NGMIX catalogue into the final one.
@@ -338,6 +349,9 @@ class SaveCatalogue:
 
         ngmix_mom_fail = ngmix_cat_file.get_data()["moments_fail"]
 
+        n_obj = len(self._obj_id)
+        self._w_log.info(f"writing ngmix info for {n_obj} objects")
+
         if moments:
             m = "m"
         else:
@@ -346,8 +360,8 @@ class SaveCatalogue:
             ngmix_mcal_flags = ngmix_cat_file.get_data()["mcal_flags"]
             ngmix_id = ngmix_cat_file.get_data()["id"]
 
-            self._add2dict("NGMIX_N_EPOCH", np.zeros(len(self._obj_id)))
-            self._add2dict("NGMIX_MOM_FAIL", np.zeros(len(self._obj_id)))
+            self._add2dict("NGMIX_N_EPOCH", np.zeros(n_obj))
+            self._add2dict("NGMIX_MOM_FAIL", np.zeros(n_obj))
 
         prefix = f"NGMIX{m}"
 
@@ -360,7 +374,7 @@ class SaveCatalogue:
             f"{prefix}_FLAGS_",
             f"{prefix}_T_PSFo_",
         ):
-            self._update_dict(key_str, np.zeros(len(self._obj_id)))
+            self._update_dict(key_str, np.zeros(n_obj)
         for key_str in (f"NGMIX{m}_FLUX_ERR_", f"NGMIX{m}_MAG_ERR_"):
             self._update_dict(key_str, np.ones(len(self._obj_id)) * -1)
         for key_str in (
@@ -478,7 +492,7 @@ class SaveCatalogue:
         ):
             self._update_dict(key_str, np.zeros(len(self._obj_id)))
         for key_str in ("GALSIM_FLUX_ERR_", "GALSIM_MAG_ERR_", "GALSIM_RES_"):
-            self._update_dict(key_str, np.ones(len(self._obj_id)) * -1)
+            self._update_dict(key_str, np.ones(n_obj) * -1)
         for key_str in (
             "GALSIM_GAL_ELL_",
             "GALSIM_GAL_ELL_ERR_",

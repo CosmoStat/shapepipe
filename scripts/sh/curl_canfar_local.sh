@@ -27,8 +27,7 @@ sp_local=0
 test_only=0
 debug_out="-1"
 scratch="-1"
-
-script_version=1.1
+sm=1
 
 pat="- "
 
@@ -47,6 +46,8 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
     \tmerged header file local (MH=0) or global (MH=1); default is $mh_local\n
    -s, --sp_local SP\n
     \tsplit local run local (SP=1) or global (SP=0); default is SP=$sp_local\n
+   --sm SM\n
+    \tWith (SM=1; default) or without (SM=0) spread model input\n
    -N, --N_SMP N_SMOp\n
     \tnumber of jobs (SMP mode only), default=$N_SMP\n
    -F, --fix FIX\n
@@ -57,8 +58,6 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
     \tremote command to run on canfar, default='$cmd_remote'\n
    -S, --scratch\n
     \tprocessing scratch directory, default is None ($scratch)\n
-   -B, --batch\n
-    \tbatch size = size of subsamples if number of jobs > batch_max\n 
    -b, --batch_max\n
     \tmaximum batch size = number of jobs run simultaneously, default=$batch_max\n
    --debug_out PATH\n
@@ -98,6 +97,10 @@ while [ $# -gt 0 ]; do
       sp_local="$2"
       shift
       ;;
+    --sm)
+      sm="$2"
+      shift
+      ;;  
     -e|--exclusive)
       ID="$2"
       shift
@@ -180,7 +183,6 @@ if [ "$debug_out" != "-1" ]; then
   echo ${pat}`date` >> $debug_out
 fi
 
-#. /opt/conda/etc/profile.d/conda.sh
 source activate shapepipe
 if [ "$debug_out"  != "-1" ]; then
     echo "${pat}conda prefix = ${CONDA_PREFIX}" >> $debug_out
@@ -201,10 +203,11 @@ function submit_batch() {
   for ID in `cat $path`; do
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $job $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $debug_out $fix $scratch $test_arg
+    call_curl $my_name $job $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $test_arg
   done
 }
 
+batch=50
 if [ "$batch" -ge "$batch_max" ]; then
   ((batch=batch_max/2))
   echo "Reducing batch size to $batch"
@@ -226,7 +229,7 @@ if [ "$dry_run" == 2 ]; then
     for ID in `cat $file_IDs`; do
       IDt=`echo $ID | tr "." "-"`
       my_name="SP-${patch}-J${job}-${IDt}"
-      call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $debug_out $fix $scratch $test_arg
+      call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $test_arg
     done
 
   else
@@ -234,7 +237,7 @@ if [ "$dry_run" == 2 ]; then
     # Submit image (dry run = 2)
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $debug_out $fix $scratch $test_arg
+    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $test_arg
 
   fi
 
@@ -256,20 +259,20 @@ else
       echo "Split '$file_IDs' into $n_split batches of size $batch"
 
       count=1
-      n_running=`stats_jobs_canfar.sh`
+      n_queued=`stats_jobs_canfar.sh -w all`
       for batch in $prefix*; do
-        echo "Number of running jobs = $n_running"
+        echo "Number of queued jobs = $n_queued"
         echo "Submitting batch $batch ($count/$n_split)"
         echo -ne "\033]0;curl patch=$patch job=$job $count/$n_split\007"
         submit_batch $batch
         ((count=count+1))
 
-        n_running=`stats_jobs_canfar.sh`
+        n_queued=`stats_jobs_canfar.sh -w all`
 
-        while [ "$n_running" -gt "$n_thresh" ]; do
-          echo "Wait for #jobs = $n_running jobs to go < $n_thresh ..."
+        while [ "$n_queued" -gt "$n_thresh" ]; do
+          echo "Wait for #jobs = $n_queued jobs to go < $n_thresh ..."
           sleep $sleep
-          n_running=`stats_jobs_canfar.sh`
+          n_queued=`stats_jobs_canfar.sh -w all`
         done
 
       done
@@ -287,7 +290,7 @@ else
     # Submit image
     IDt=`echo $ID | tr "." "-"`
     my_name="SP-${patch}-J${job}-${IDt}"
-    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $debug_out $fix $scratch $test_arg
+    call_curl $my_name $job  $psf $ID $N_SMP $dry_run $dir $mh_local $sp_local $sm $debug_out $fix $scratch $test_arg
 
   fi
 
@@ -296,5 +299,5 @@ fi
 echo "Done $(basename "$0")" 
 
 if [ "$debug_out" != "-1" ]; then
-  echo "${pat}End $(basename "$0")" $test_arg >> $debug_out
+  echo "${pat}End $(basename "$0") $test_arg" >> $debug_out
 fi
