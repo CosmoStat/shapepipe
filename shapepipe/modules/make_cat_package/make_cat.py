@@ -2,7 +2,7 @@
 
 This module contains a class to create a shear catalogue.
 
-:Author: Axel Guinot
+:Authors: Axel Guinot, Martin Kilbinger
 
 """
 
@@ -17,6 +17,27 @@ from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
 from shapepipe.utilities import galaxy
+
+
+def get_output_name(output_dir, file_number_string):
+    """Get Output Name.
+
+    Return output file name.
+
+    Parameters
+    ----------
+    output_dir : str
+        directory name
+    file_number_string : str
+        ShapePipe pipeline number string
+
+    Returns
+    -------
+    str
+        output path name
+
+    """
+    return f"{output_dir}/final_cat{file_number_string}.fits"
 
 
 def prepare_final_cat_file(output_path, file_number_string):
@@ -37,7 +58,8 @@ def prepare_final_cat_file(output_path, file_number_string):
         Output FITS file
 
     """
-    output_name = f"{output_path}/final_cat{file_number_string}.fits"
+
+    output_name = get_output_name(output_path, file_number_string)
 
     return file_io.FITSCatalogue(
         output_name,
@@ -149,6 +171,10 @@ def save_sm_data(
     nobj : int, optional
         Number of objects, only used if sexcat_sm_path is ``None``
 
+    Returns
+    -------
+    int
+        Number of objects saved
     """
     final_cat_file.open()
 
@@ -160,8 +186,8 @@ def save_sm_data(
         sexcat_sm_file.open()
 
         sm = np.copy(sexcat_sm_file.get_data()["SPREAD_MODEL"])
-        sm_err = np.copy(sexcat_sm_file.get_data()["SPREADERR_MODEL"])
-
+        sm_err = np.copy(sexcat_sm_file.get_data()["SPREADERR_MODEL"]
+                         
         sexcat_sm_file.close()
 
     else:
@@ -181,6 +207,8 @@ def save_sm_data(
 
     final_cat_file.close()
 
+    return cat_size
+
 
 class SaveCatalogue:
     """Save Catalogue.
@@ -191,13 +219,15 @@ class SaveCatalogue:
     ----------
     final_cat_file : str
         Final catalogue file name
+    cat_size_target : int
+        target catalogue size
 
     """
 
-    def __init__(self, final_cat_file, w_log):
+    def __init__(self, final_cat_file, cat_size_target):
 
-        self.final_cat_file = final_cat_file
-        self._w_log = w_log
+        self._final_cat_file = final_cat_file
+        self._cat_size_target = cat_size_target
 
     def process(
         self,
@@ -216,29 +246,39 @@ class SaveCatalogue:
         moments : bool
             Option to run ``ngmix`` mode with moments
 
+        Returns
+        --------
+        str
+            error message if failure; `None` if success
+
         """
         self._output_dict = {}
 
-        self.final_cat_file.open()
-        self._obj_id = np.copy(self.final_cat_file.get_data()["NUMBER"])
+        self._final_cat_file.open()
+        self._obj_id = np.copy(self._final_cat_file.get_data()["NUMBER"])
 
+        err_msg = None
         if mode == "ngmix":
-            self._save_ngmix_data(cat_path, moments)
+            err_msg = self._save_ngmix_data(cat_path, moments)
         elif mode == "galsim":
             self._save_galsim_shapes(cat_path)
         elif mode == "psf":
             self._save_psf_data(cat_path)
         else:
-            raise ValueError(
+            err_msg = (
                 f"Invalid process mode ({mode}) for "
                 + '``make_cat.Savecatalogue``. Options are "ngmix", '
                 + '"galsim" or "psf".'
             )
 
-        for key in self._output_dict.keys():
-            self.final_cat_file.add_col(key, self._output_dict[key])
+        if err_msg is None:
 
-        self.final_cat_file.close()
+            for key in self._output_dict.keys():
+                self._final_cat_file.add_col(key, self._output_dict[key])
+
+        self._final_cat_file.close()
+
+        return err_msg
 
     def _update_dict(self, key_string, value):
         """Update Dictionary.
@@ -298,6 +338,15 @@ class SaveCatalogue:
         ngmix_cat_file.open()
 
         ngmix_n_epoch = ngmix_cat_file.get_data()["n_epoch_model"]
+        if len(ngmix_n_epoch) / self._cat_size_target < 0.9:
+            ngmix_cat_file.close()
+            err_msg = (
+                f"Merged shape catalogue {ngmix_cat_path} has very different size"       
+                + f" ({len(ngmix_n_epoch)}) than target size"           
+                + f" {self._cat_size_target})"                             
+            )
+            return err_msg
+
         ngmix_mom_fail = ngmix_cat_file.get_data()["moments_fail"]
 
         n_obj = len(self._obj_id)
@@ -311,7 +360,7 @@ class SaveCatalogue:
             ngmix_mcal_flags = ngmix_cat_file.get_data()["mcal_flags"]
             ngmix_id = ngmix_cat_file.get_data()["id"]
 
-            self._add2dict("NGMIX_N_EPOCH", np.zeros(n_obj)
+            self._add2dict("NGMIX_N_EPOCH", np.zeros(n_obj))
             self._add2dict("NGMIX_MOM_FAIL", np.zeros(n_obj))
 
         prefix = f"NGMIX{m}"
@@ -327,18 +376,18 @@ class SaveCatalogue:
         ):
             self._update_dict(key_str, np.zeros(n_obj)
         for key_str in (f"NGMIX{m}_FLUX_ERR_", f"NGMIX{m}_MAG_ERR_"):
-            self._update_dict(key_str, np.ones(n_obj) * -1)
+            self._update_dict(key_str, np.ones(len(self._obj_id)) * -1)
         for key_str in (
             f"NGMIX{m}_ELL_",
             f"NGMIX{m}_ELL_ERR_",
             f"NGMIX{m}_ELL_PSFo_",
         ):
-            self._update_dict(key_str, np.ones((n_obj, 2)) * -10.0)
+            self._update_dict(key_str, np.ones((len(self._obj_id), 2)) * -10.0)
         self._update_dict(
             f"NGMIX{m}_T_ERR_",
             np.ones(len(self._obj_id)) * 1e30,
         )
-        self._add2dict(f"NGMIX{m}_MCAL_FLAGS", np.zeros(n_obj))
+        self._add2dict(f"NGMIX{m}_MCAL_FLAGS", np.zeros(len(self._obj_id)))
 
         for idx, _ in enumerate(self._obj_id):
             for key in self._key_ends:
@@ -415,6 +464,8 @@ class SaveCatalogue:
 
         ngmix_cat_file.close()
 
+        return None
+
     def _save_galsim_shapes(self, galsim_cat_path):
         """Save GalSim Shapes.
 
@@ -432,7 +483,6 @@ class SaveCatalogue:
         self._key_ends = galsim_cat_file.get_ext_name()[1:]
 
         galsim_id = galsim_cat_file.get_data()["id"]
-        n_obj = len(self._obj_id)
 
         for key_str in (
             "GALSIM_GAL_SIGMA_",
@@ -440,7 +490,7 @@ class SaveCatalogue:
             "GALSIM_FLUX_",
             "GALSIM_MAG_",
         ):
-            self._update_dict(key_str, np.zeros(n_obj))
+            self._update_dict(key_str, np.zeros(len(self._obj_id)))
         for key_str in ("GALSIM_FLUX_ERR_", "GALSIM_MAG_ERR_", "GALSIM_RES_"):
             self._update_dict(key_str, np.ones(n_obj) * -1)
         for key_str in (
@@ -449,10 +499,10 @@ class SaveCatalogue:
             "GALSIM_GAL_ELL_UNCORR_",
             "GALSIM_PSF_ELL_",
         ):
-            self._update_dict(key_str, np.ones((n_obj, 2)) * -10.0)
+            self._update_dict(key_str, np.ones((len(self._obj_id), 2)) * -10.0)
         self._update_dict(
             "GALSIM_FLAGS_",
-            np.ones(n_obj, dtype="int16"),
+            np.ones(len(self._obj_id), dtype="int16"),
         )
 
         for idx, id_tmp in enumerate(self._obj_id):
@@ -542,16 +592,16 @@ class SaveCatalogue:
         """
         galaxy_psf_cat = SqliteDict(galaxy_psf_path)
 
-        max_epoch = np.max(self.final_cat_file.get_data()["N_EPOCH"]) + 1
+        max_epoch = np.max(self._final_cat_file.get_data()["N_EPOCH"]) + 1
 
         self._output_dict = {
-            f"PSF_ELL_{idx + 1}": np.ones((n_obj, 2)) * -10.0
+            f"PSF_ELL_{idx + 1}": np.ones((len(self._obj_id), 2)) * -10.0
             for idx in range(max_epoch)
         }
         self._output_dict = {
             **self._output_dict,
             **{
-                f"PSF_FWHM_{idx + 1}": np.zeros(n_obj)
+                f"PSF_FWHM_{idx + 1}": np.zeros(len(self._obj_id))
                 for idx in range(max_epoch)
             },
         }

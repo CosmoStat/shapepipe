@@ -15,7 +15,7 @@ from collections import Counter
 
 from tqdm import tqdm
 
-print("summaary v1.4")
+print("summary v1.5")
 
 
 def init_par_runtime(list_tile_IDs):
@@ -654,7 +654,10 @@ class job_data(object):
                     for entry in entries:
 
                         # Append directory name if matches module
-                        if entry.name.startswith(self._run_dir[idx]):
+                        if (
+                            entry.name.startswith(self._run_dir[idx])
+                            and not entry.name.endswith("prev")
+                        ):
                             matches.append(entry)
 
                     # This entry does not match module -> next
