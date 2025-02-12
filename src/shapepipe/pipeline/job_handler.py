@@ -104,7 +104,9 @@ class JobHandler(object):
     def config(self, value):
 
         if not isinstance(value, ConfigParser):
-            raise TypeError("config must be an instane of configparser.ConfigParser")
+            raise TypeError(
+                "config must be an instane of configparser.ConfigParser"
+            )
 
         self._config = value
 
@@ -255,7 +257,9 @@ class JobHandler(object):
     @timeout.setter
     def timeout(self, value):
 
-        if isinstance(value, type(None)) and self.config.has_option("JOB", "TIMEOUT"):
+        if isinstance(value, type(None)) and self.config.has_option(
+            "JOB", "TIMEOUT"
+        ):
             value = self.config.get("JOB", "TIMEOUT")
             value = self.hms2sec(value) if ":" in value else int(value)
 
@@ -334,7 +338,9 @@ class JobHandler(object):
         batch_info = f" -- Batch size: {self.batch_size}"
         time_info = f" -- Timeout Limit: {self.timeout}s"
 
-        show_batch_into = self.job_type == "parallel" and self.parallel_mode == "smp"
+        show_batch_into = (
+            self.job_type == "parallel" and self.parallel_mode == "smp"
+        )
 
         self.log.info(text)
         self.log.info(module_info)
@@ -444,7 +450,9 @@ class JobHandler(object):
         """
         for worker_dict in self.worker_dicts:
             if worker_dict["stderr"]:
-                self.log.info(f'ERROR: stderr recorded in: {worker_dict["log"]}')
+                self.log.info(
+                    f'ERROR: stderr recorded in: {worker_dict["log"]}'
+                )
                 self.error_count += 1
 
     def _check_missed_processes(self):

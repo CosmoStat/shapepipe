@@ -96,7 +96,11 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     cat_size = len(data)
 
     tile_id = float(
-        ".".join(re.split("-", os.path.splitext(os.path.split(sexcat_path)[1])[0])[1:])
+        ".".join(
+            re.split("-", os.path.splitext(os.path.split(sexcat_path)[1])[0])[
+                1:
+            ]
+        )
     )
     tile_id_array = np.ones(cat_size) * tile_id
 
@@ -231,7 +235,10 @@ class SaveCatalogue:
         """
         self._output_dict = {
             **self._output_dict,
-            **{f"{key_string}{key_end}": np.copy(value) for key_end in self._key_ends},
+            **{
+                f"{key_string}{key_end}": np.copy(value)
+                for key_end in self._key_ends
+            },
         }
 
     def _add2dict(self, key, value, index=None):
@@ -298,7 +305,11 @@ class SaveCatalogue:
             self._update_dict(key_str, np.zeros(len(self._obj_id)))
         for key_str in (f"NGMIX{m}_FLUX_ERR_", f"NGMIX{m}_MAG_ERR_"):
             self._update_dict(key_str, np.ones(len(self._obj_id)) * -1)
-        for key_str in (f"NGMIX{m}_ELL_", f"NGMIX{m}_ELL_ERR_", f"NGMIX{m}_ELL_PSFo_"):
+        for key_str in (
+            f"NGMIX{m}_ELL_",
+            f"NGMIX{m}_ELL_ERR_",
+            f"NGMIX{m}_ELL_PSFo_",
+        ):
             self._update_dict(key_str, np.ones((len(self._obj_id), 2)) * -10.0)
         self._update_dict(
             f"NGMIX{m}_T_ERR_",
@@ -321,7 +332,10 @@ class SaveCatalogue:
                     ncf_data = ngmix_cat_file.get_data(key)
 
                     g = (ncf_data["g1"][ind[0]], ncf_data["g2"][ind[0]])
-                    g_err = (ncf_data["g1_err"][ind[0]], ncf_data["g2_err"][ind[0]])
+                    g_err = (
+                        ncf_data["g1_err"][ind[0]],
+                        ncf_data["g2_err"][ind[0]],
+                    )
 
                     self._add2dict(f"NGMIX{m}_ELL_{key}", g, idx)
                     self._add2dict(f"NGMIX{m}_ELL_ERR_{key}", g_err, idx)
@@ -437,7 +451,10 @@ class SaveCatalogue:
 
                     else:
 
-                        g = (gcf_data["gal_g1"][ind[0]], gcf_data["gal_g2"][ind[0]])
+                        g = (
+                            gcf_data["gal_g1"][ind[0]],
+                            gcf_data["gal_g2"][ind[0]],
+                        )
                         g_err = (
                             gcf_data["gal_g1_err"][ind[0]],
                             gcf_data["gal_g2_err"][ind[0]],
@@ -458,7 +475,10 @@ class SaveCatalogue:
                         sigma = gcf_data["gal_sigma"][ind[0]]
                         self._add2dict(f"GALSIM_GAL_SIGMA_{key}", sigma, idx)
 
-                        psf_g = (gcf_data["psf_g1"][ind[0]], gcf_data["psf_g2"][ind[0]])
+                        psf_g = (
+                            gcf_data["psf_g1"][ind[0]],
+                            gcf_data["psf_g2"][ind[0]],
+                        )
                         psf_sigma = gcf_data["psf_sigma"][ind[0]]
                         self._add2dict(f"GALSIM_PSF_ELL_{key}", psf_g, idx)
                         self._add2dict(
@@ -537,7 +557,9 @@ class SaveCatalogue:
                 )
                 self._add2dict(f"PSF_ELL_{epoch + 1}", e_psf, idx)
 
-                psf_fwhm = galaxy.sigma_to_fwhm(gpc_data["SHAPES"]["SIGMA_PSF_HSM"])
+                psf_fwhm = galaxy.sigma_to_fwhm(
+                    gpc_data["SHAPES"]["SIGMA_PSF_HSM"]
+                )
                 self._add2dict(f"PSF_FWHM_{epoch + 1}", psf_fwhm, idx)
 
                 flag_psf = gpc_data["SHAPES"]["FLAG_PSF_HSM"]

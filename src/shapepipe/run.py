@@ -111,7 +111,9 @@ class ShapePipe:
             plur = " was"
         else:
             plur = "s were"
-        final_error_count = f"A total of {self.error_count} error{plur} recorded."
+        final_error_count = (
+            f"A total of {self.error_count} error{plur} recorded."
+        )
         end_text = "Finishing ShapePipe Run"
 
         self.log.info(final_error_count)
@@ -172,7 +174,9 @@ class ShapePipe:
 
         """
         module_dep = self._get_module_depends("depends") + [
-            dep.split()[0] for dep in requires("ShapePipe") if "extra ==" not in dep
+            dep.split()[0]
+            for dep in requires("ShapePipe")
+            if "extra ==" not in dep
         ]
         module_exe = self._get_module_depends("executes")
 
@@ -227,7 +231,9 @@ class ShapePipe:
 
         for module in set(self.modules):
 
-            module_txt = f" - {module} {self.filehd.module_runners[module].version}"
+            module_txt = (
+                f" - {module} {self.filehd.module_runners[module].version}"
+            )
 
             self.log.info(module_txt)
             if self.verbose:
@@ -265,7 +271,9 @@ class ShapePipe:
 
         for module in self.modules:
 
-            self.run_method[module] = self.filehd.module_runners[module].run_method
+            self.run_method[module] = self.filehd.module_runners[
+                module
+            ].run_method
 
     def _prep_run(self):
         """Prepare Run.
@@ -409,7 +417,9 @@ def run_mpi(pipe, comm):
                 jobs = split_mpi_jobs(process_list, comm.size)
                 del process_list
         else:
-            job_type = module_runner = worker_log = timeout = jobs = run_dirs = None
+            job_type = module_runner = worker_log = timeout = jobs = (
+                run_dirs
+            ) = None
 
         # Broadcast job type to all nodes
         job_type = comm.bcast(job_type, root=0)
@@ -427,7 +437,13 @@ def run_mpi(pipe, comm):
             # Submit the MPI jobs and gather results
             results = comm.gather(
                 submit_mpi_jobs(
-                    jobs, config, timeout, run_dirs, module_runner, worker_log, verbose
+                    jobs,
+                    config,
+                    timeout,
+                    run_dirs,
+                    module_runner,
+                    worker_log,
+                    verbose,
                 ),
                 root=0,
             )

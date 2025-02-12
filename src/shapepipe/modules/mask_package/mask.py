@@ -146,7 +146,9 @@ class Mask(object):
         }
 
         if conf.has_option("PROGRAM_PATH", "WW_PATH"):
-            self._config["PATH"]["WW"] = conf.getexpanded("PROGRAM_PATH", "WW_PATH")
+            self._config["PATH"]["WW"] = conf.getexpanded(
+                "PROGRAM_PATH", "WW_PATH"
+            )
         else:
             self._config["PATH"]["WW"] = "ww"
         self._config["PATH"]["WW_configfile"] = conf.getexpanded(
@@ -253,7 +255,9 @@ class Mask(object):
             self._config["MD"]["thresh_remove"] = conf.getfloat(
                 "MD_PARAMETERS", "MD_THRESH_REMOVE"
             )
-            self._config["MD"]["remove"] = conf.getboolean("MD_PARAMETERS", "MD_REMOVE")
+            self._config["MD"]["remove"] = conf.getboolean(
+                "MD_PARAMETERS", "MD_REMOVE"
+            )
 
     def _set_image_coordinates(self):
         """Set Image Coordinates.
@@ -411,11 +415,15 @@ class Mask(object):
             general_stdout += f"\n\nrm reg file\n{self._rm_reg_stdout}"
             if self._rm_reg_stderr != "":
                 general_stderr += f"\n\nrm reg file\n{self._rm_reg_stderr}"
-        if hasattr(self, "_rm_fits1_stderr") or hasattr(self, "_rm_fits1_stdout"):
+        if hasattr(self, "_rm_fits1_stderr") or hasattr(
+            self, "_rm_fits1_stdout"
+        ):
             general_stdout += f"\n\nrm fits1 file\n{self._rm_fits1_stdout}"
             if self._rm_fits1_stderr != "":
                 general_stderr += f"\n\nrm fits1 file\n{self._rm_fits1_stderr}"
-        if hasattr(self, "_rm_fits2_stderr") or hasattr(self, "_rm_fits2_stdout"):
+        if hasattr(self, "_rm_fits2_stderr") or hasattr(
+            self, "_rm_fits2_stdout"
+        ):
             general_stdout += f"\n\nrm fits2 file\n{self._rm_fits2_stdout}"
             if self._rm_fits2_stderr != "":
                 general_stderr += f"\n\nrm fits2 file\n{self._rm_fits2_stderr}"
@@ -561,7 +569,9 @@ class Mask(object):
 
         """
         if size_plus < 0:
-            raise ValueError("deep-sky mask size increase variable cannot be negative")
+            raise ValueError(
+                "deep-sky mask size increase variable cannot be negative"
+            )
 
         if cat_path is None:
             raise ValueError("Path to deep-sky object catalogue not provided")
@@ -647,7 +657,9 @@ class Mask(object):
             # The following accounts for deep-sky centers outside of image,
             # without creating masks for coordinates out of range
             y_c, x_c = np.ogrid[0:ny, 0:nx]
-            mask_tmp = (x_c - m_center[0]) ** 2 + (y_c - m_center[1]) ** 2 <= r_pix**2
+            mask_tmp = (x_c - m_center[0]) ** 2 + (
+                y_c - m_center[1]
+            ) ** 2 <= r_pix**2
 
             flag[mask_tmp] = flag_value
 
@@ -714,7 +726,10 @@ class Mask(object):
             If input positions are not Numpy arrays
 
         """
-        if type(position1) is not np.ndarray or type(position2) is not np.ndarray:
+        if (
+            type(position1) is not np.ndarray
+            or type(position2) is not np.ndarray
+        ):
             raise ValueError("Object coordinates need to be a numpy.ndarray")
 
         p1 = (np.pi / 180.0) * np.hstack(
@@ -759,13 +774,17 @@ class Mask(object):
 
         """
         if center is None:
-            return self.sphere_dist(self._fieldcenter["pix"], np.zeros(2)) / 60.0
+            return (
+                self.sphere_dist(self._fieldcenter["pix"], np.zeros(2)) / 60.0
+            )
 
         else:
             if isinstance(center, np.ndarray):
                 return self.sphere_dist(center, np.zeros(2)) / 60.0
             else:
-                raise TypeError("Image center coordinates has to be a numpy.ndarray")
+                raise TypeError(
+                    "Image center coordinates has to be a numpy.ndarray"
+                )
 
     def _make_star_cat(self, CDSclient_output):
         """Make Star Catalogue.
@@ -867,7 +886,9 @@ class Mask(object):
         else:
             reg = self._config[types]["reg_file"]
 
-        mask_model = np.loadtxt(self._config[types]["maskmodel_path"]).transpose()
+        mask_model = np.loadtxt(
+            self._config[types]["maskmodel_path"]
+        ).transpose()
         mask_reg = open(reg, "w")
 
         stars_used = [[], [], []]
@@ -1000,7 +1021,10 @@ class Mask(object):
         elif types == "ALL":
 
             default_reg = [
-                (f'{self._config["PATH"]["temp_dir"]}' + f"halo{self._img_number}.reg"),
+                (
+                    f'{self._config["PATH"]["temp_dir"]}'
+                    + f"halo{self._img_number}.reg"
+                ),
                 (
                     f'{self._config["PATH"]["temp_dir"]}'
                     + f"spike{self._img_number}.reg"
@@ -1015,8 +1039,12 @@ class Mask(object):
                 reg = default_reg
 
                 for idx in range(2):
-                    if not (file_io.BaseCatalogue(reg[idx])._file_exists(reg[idx])):
-                        raise (file_io.BaseCatalogue.CatalogFileNotFound(reg[idx]))
+                    if not (
+                        file_io.BaseCatalogue(reg[idx])._file_exists(reg[idx])
+                    ):
+                        raise (
+                            file_io.BaseCatalogue.CatalogFileNotFound(reg[idx])
+                        )
 
                 cmd = (
                     f'{self._config["PATH"]["WW"]} '
@@ -1041,8 +1069,12 @@ class Mask(object):
                 ]
 
                 for idx in range(2):
-                    if not (file_io.BaseCatalogue(reg[idx])._file_exists(reg[idx])):
-                        raise (file_io.BaseCatalogue.CatalogFileNotFound(reg[idx]))
+                    if not (
+                        file_io.BaseCatalogue(reg[idx])._file_exists(reg[idx])
+                    ):
+                        raise (
+                            file_io.BaseCatalogue.CatalogFileNotFound(reg[idx])
+                        )
 
                 cmd = (
                     f'{self._config["PATH"]["WW"]} '

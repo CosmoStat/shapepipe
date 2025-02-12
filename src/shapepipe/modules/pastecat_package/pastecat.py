@@ -70,7 +70,8 @@ class PasteCat(object):
         """
         # Create output catalogue
         pasted_cat = file_io.FITSCatalogue(
-            self._output_path, open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite
+            self._output_path,
+            open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
         )
 
         for idx, input_file in enumerate(self._input_file_list):
@@ -93,7 +94,8 @@ class PasteCat(object):
                             + "not found in input catalogue"
                         )
                     if not (
-                        data[self._check_col_name] == data_prev[self._check_col_name]
+                        data[self._check_col_name]
+                        == data_prev[self._check_col_name]
                     ).all():
                         raise Exception(
                             f"Column check using key"

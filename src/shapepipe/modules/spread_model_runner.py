@@ -12,7 +12,11 @@ from shapepipe.modules.spread_model_package.spread_model import SpreadModel
 
 @module_runner(
     version="1.1",
-    input_module=["sextractor_runner", "psfex_interp_runner", "vignetmaker_runner"],
+    input_module=[
+        "sextractor_runner",
+        "psfex_interp_runner",
+        "vignetmaker_runner",
+    ],
     file_pattern=["sexcat", "galaxy_psf", "weight_vign"],
     file_ext=[".fits", ".sqlite", ".fits"],
     depends=["numpy", "galsim"],

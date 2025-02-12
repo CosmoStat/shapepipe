@@ -66,7 +66,9 @@ def mccd_preprocessing_runner(
         min_n_stars_list = [1]
 
     else:
-        raise ValueError("MODE should be in ['FIT',  FIT_VALIDATION', 'VALIDATION'].")
+        raise ValueError(
+            "MODE should be in ['FIT',  FIT_VALIDATION', 'VALIDATION']."
+        )
 
     # Use the outfile from the pipeline and ignore the output directory from
     # the MCCD config file

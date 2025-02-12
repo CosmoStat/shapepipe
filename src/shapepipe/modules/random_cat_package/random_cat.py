@@ -167,7 +167,9 @@ class RandomCat:
                 n_obj = self._n_rand
             else:
                 # Compute number of objects from density
-                n_obj = int(self._n_rand / area_deg2 * area_deg2_eff / area_deg2)
+                n_obj = int(
+                    self._n_rand / area_deg2 * area_deg2_eff / area_deg2
+                )
 
             # Check that a reasonably large number of pixels is not masked
             if n_unmasked < n_obj:
@@ -233,4 +235,6 @@ class RandomCat:
         # Write area information to log file
         self._w_log.info(f"Total area = {area_deg2:.4f} deg^2")
         self._w_log.info(f"Unmasked area = {area_deg2_eff:.4f} deg^2")
-        self._w_log.info(f"Ratio masked to total pixels = {n_unmasked / n_pix:.3f}")
+        self._w_log.info(
+            f"Ratio masked to total pixels = {n_unmasked / n_pix:.3f}"
+        )

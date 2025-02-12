@@ -77,7 +77,8 @@ class VignetMaker(object):
                 pos = convert_pos(image_path)
             else:
                 raise ValueError(
-                    "Coordinates type must be in : PIX (pixel), " + "SPHE (spherical)."
+                    "Coordinates type must be in : PIX (pixel), "
+                    + "SPHE (spherical)."
                 )
 
             vign = self._get_stamp(image_path, pos - 1, rad)
@@ -207,7 +208,9 @@ class VignetMaker(object):
         n_epoch = np.copy(cat.get_data()["N_EPOCH"])
 
         list_ext_name = cat.get_ext_name()
-        hdu_ind = [i for i in range(len(list_ext_name)) if "EPOCH" in list_ext_name[i]]
+        hdu_ind = [
+            i for i in range(len(list_ext_name)) if "EPOCH" in list_ext_name[i]
+        ]
 
         final_list = []
         for hdu_index in hdu_ind:
@@ -263,7 +266,9 @@ class VignetMaker(object):
                 if array_exp_name is None:
                     array_exp_name = exp_name_tmp
                 else:
-                    array_exp_name = np.concatenate((array_exp_name, exp_name_tmp))
+                    array_exp_name = np.concatenate(
+                        (array_exp_name, exp_name_tmp)
+                    )
 
             final_list.append([array_id, array_vign, array_exp_name])
 

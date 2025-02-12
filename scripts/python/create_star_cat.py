@@ -105,7 +105,9 @@ def SphereDist(position1, position2, wcs):
         distance (in degrees)
     """
 
-    if (type(position1) is not np.ndarray) & (type(position2) is not np.ndarray):
+    if (type(position1) is not np.ndarray) & (
+        type(position2) is not np.ndarray
+    ):
         raise ValueError("Positions need to be of type numpy.ndarray")
 
     rad2deg = np.pi / 180.0
@@ -192,7 +194,9 @@ def main(input_dir, output_dir, kind):
             img_shape = (h["NAXIS2"], h["NAXIS1"])
             img_center = np.array([img_shape[1] / 2.0, img_shape[0] / 2.0])
             wcs_center = w.all_pix2world([img_center], 1)[0]
-            astropy_center = SkyCoord(ra=wcs_center[0], dec=wcs_center[1], unit="deg")
+            astropy_center = SkyCoord(
+                ra=wcs_center[0], dec=wcs_center[1], unit="deg"
+            )
 
             rad = _get_image_radius(img_center, w)
 
