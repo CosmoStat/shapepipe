@@ -52,7 +52,7 @@ for ID in os.listdir(tile_runs_dir):
         print(f"{ID} -- ngmix cats {ngmix_file_pattern} not found")
         continue
     if not mc_files:
-        print(f"{ID} -- mc cats not {mc_file_pattern} found")
+        print(f"{ID} -- mc cats not found {mc_file_pattern}")
         continue
 
     # Get newest files
@@ -69,6 +69,8 @@ for ID in os.listdir(tile_runs_dir):
         f"run_sp_tile_ngmix_Ng*/ngmix_runner/output/ngmix-{IDx}.fits",
     )
     sep_ngmix_files = [f for f in glob.glob(sep_ngmix_file_pattern)]
+    sep_ngmix_file = max(sep_ngmix_files, key=lambda f: os.path.getmtime(f))
+
     if not sep_ngmix_files:
         raise ValueError(f"No separate ngmix files found for ID {ID}")
     sep_naxis2 = 0
@@ -82,20 +84,21 @@ for ID in os.listdir(tile_runs_dir):
         print(f"{ID} -- no NAXIS2 keyword found in mc cat")
         continue
 
-
-    # Check run tim of 256b and 512 jobs
-    if os.path.getmtime(ngmix_file) > os.path.getmtime(mc_file):
-        print(f"{ID} -- merged newer than mc {os.path.getmtime(ngmix_file)}"
-            + f" {os.path.getmtime(mc_file)}"
-        )
+    # Check run time of 128, 256, and 512 jobs
+    if (
+        os.path.getmtime(ngmix_file) > os.path.getmtime(mc_file)
+        or os.path.getmtime(mc_file) > os.path.getmtime(sep_ngmix_file)
+    ):
+        print("{ID} -- mc, sep, and/or merged ngmix file out of order")
 
     # Compare values and output ID if they differ
-    if ngmix_naxis2 != sep_naxis2:
+    elif ngmix_naxis2 != sep_naxis2:
         print(
             f"{ID} -- ngmix differ between sep {sep_naxis2} and merged"
             + f" {ngmix_naxis2}"
         )
-    if ngmix_naxis2 != mc_naxis2:
+
+    elif ngmix_naxis2 != mc_naxis2:
         ratio = float(ngmix_naxis2) / float(mc_naxis2)
         if ratio < 0.75:
 
