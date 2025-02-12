@@ -194,9 +194,10 @@ class SaveCatalogue:
 
     """
 
-    def __init__(self, final_cat_file):
+    def __init__(self, final_cat_file, w_log):
 
         self.final_cat_file = final_cat_file
+        self._w_log = w_log
 
     def process(
         self,
@@ -280,7 +281,7 @@ class SaveCatalogue:
         else:
             self._output_dict[key] = value
 
-    def _save_ngmix_data(self, ngmix_cat_path, moments=False):
+    def _save_ngmix_data(self, ngmix_cat_path, moments=False, w_log):
         """Save NGMIX Data.
 
         Save the NGMIX catalogue into the final one.
@@ -299,6 +300,9 @@ class SaveCatalogue:
         ngmix_n_epoch = ngmix_cat_file.get_data()["n_epoch_model"]
         ngmix_mom_fail = ngmix_cat_file.get_data()["moments_fail"]
 
+        n_obj = len(self._obj_id)
+        self._w_log.info(f"writing ngmix info for {n_obj} objects")
+
         if moments:
             m = "m"
         else:
@@ -307,8 +311,8 @@ class SaveCatalogue:
             ngmix_mcal_flags = ngmix_cat_file.get_data()["mcal_flags"]
             ngmix_id = ngmix_cat_file.get_data()["id"]
 
-            self._add2dict("NGMIX_N_EPOCH", np.zeros(len(self._obj_id)))
-            self._add2dict("NGMIX_MOM_FAIL", np.zeros(len(self._obj_id)))
+            self._add2dict("NGMIX_N_EPOCH", np.zeros(n_obj)
+            self._add2dict("NGMIX_MOM_FAIL", np.zeros(n_obj))
 
         prefix = f"NGMIX{m}"
 
@@ -321,20 +325,20 @@ class SaveCatalogue:
             f"{prefix}_FLAGS_",
             f"{prefix}_T_PSFo_",
         ):
-            self._update_dict(key_str, np.zeros(len(self._obj_id)))
+            self._update_dict(key_str, np.zeros(n_obj)
         for key_str in (f"NGMIX{m}_FLUX_ERR_", f"NGMIX{m}_MAG_ERR_"):
-            self._update_dict(key_str, np.ones(len(self._obj_id)) * -1)
+            self._update_dict(key_str, np.ones(n_obj) * -1)
         for key_str in (
             f"NGMIX{m}_ELL_",
             f"NGMIX{m}_ELL_ERR_",
             f"NGMIX{m}_ELL_PSFo_",
         ):
-            self._update_dict(key_str, np.ones((len(self._obj_id), 2)) * -10.0)
+            self._update_dict(key_str, np.ones((n_obj, 2)) * -10.0)
         self._update_dict(
             f"NGMIX{m}_T_ERR_",
             np.ones(len(self._obj_id)) * 1e30,
         )
-        self._add2dict(f"NGMIX{m}_MCAL_FLAGS", np.zeros(len(self._obj_id)))
+        self._add2dict(f"NGMIX{m}_MCAL_FLAGS", np.zeros(n_obj))
 
         for idx, _ in enumerate(self._obj_id):
             for key in self._key_ends:
@@ -428,6 +432,7 @@ class SaveCatalogue:
         self._key_ends = galsim_cat_file.get_ext_name()[1:]
 
         galsim_id = galsim_cat_file.get_data()["id"]
+        n_obj = len(self._obj_id)
 
         for key_str in (
             "GALSIM_GAL_SIGMA_",
@@ -435,19 +440,19 @@ class SaveCatalogue:
             "GALSIM_FLUX_",
             "GALSIM_MAG_",
         ):
-            self._update_dict(key_str, np.zeros(len(self._obj_id)))
+            self._update_dict(key_str, np.zeros(n_obj))
         for key_str in ("GALSIM_FLUX_ERR_", "GALSIM_MAG_ERR_", "GALSIM_RES_"):
-            self._update_dict(key_str, np.ones(len(self._obj_id)) * -1)
+            self._update_dict(key_str, np.ones(n_obj) * -1)
         for key_str in (
             "GALSIM_GAL_ELL_",
             "GALSIM_GAL_ELL_ERR_",
             "GALSIM_GAL_ELL_UNCORR_",
             "GALSIM_PSF_ELL_",
         ):
-            self._update_dict(key_str, np.ones((len(self._obj_id), 2)) * -10.0)
+            self._update_dict(key_str, np.ones((n_obj, 2)) * -10.0)
         self._update_dict(
             "GALSIM_FLAGS_",
-            np.ones(len(self._obj_id), dtype="int16"),
+            np.ones(n_obj, dtype="int16"),
         )
 
         for idx, id_tmp in enumerate(self._obj_id):
@@ -540,13 +545,13 @@ class SaveCatalogue:
         max_epoch = np.max(self.final_cat_file.get_data()["N_EPOCH"]) + 1
 
         self._output_dict = {
-            f"PSF_ELL_{idx + 1}": np.ones((len(self._obj_id), 2)) * -10.0
+            f"PSF_ELL_{idx + 1}": np.ones((n_obj, 2)) * -10.0
             for idx in range(max_epoch)
         }
         self._output_dict = {
             **self._output_dict,
             **{
-                f"PSF_FWHM_{idx + 1}": np.zeros(len(self._obj_id))
+                f"PSF_FWHM_{idx + 1}": np.zeros(n_obj)
                 for idx in range(max_epoch)
             },
         }
