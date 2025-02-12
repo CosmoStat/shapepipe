@@ -111,7 +111,7 @@ def make_cat_runner(
     )
 
     # Save shape data
-    sc_inst = make_cat.SaveCatalogue(final_cat_file)
+    sc_inst = make_cat.SaveCatalogue(final_cat_file, w_log)
     w_log.info("Save shape measurement data")
     for shape_type in shape_type_list:
         w_log.info(f"Save {shape_type.lower()} data")
