@@ -22,6 +22,7 @@ results='cosmostat/kilbinger/results_v2'
 n_smp=-1
 nsh_jobs=8
 debug_out=-1
+sm=1
 
 pat="--- "
 
@@ -48,6 +49,8 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    -s, --star_cat_for_mask\n
    \tcatalogue for masking bright stars, allowed are 'onthefly', 'save',\n
    \tdefault is '${star_cat_for_mask}'\n
+   --sm SM\n
+   \tWith (SM=1; default) or without (SM=0) spread model input\n
    -e, --exclusive ID\n
    \texclusive input filer number string ID (default: None)\n
    -o, --output_dir\n
@@ -96,6 +99,10 @@ while [ $# -gt 0 ]; do
       star_cat_for_mask="$2"
       shift
       ;;
+    --sm)
+      sm="$2"
+      shift
+      ;;
     -e|--exclusive)
       exclusive="$2"
       shift
@@ -141,6 +148,7 @@ if [ "$debug_out" != "-1" ]; then
   echo "${pat}Starting $(basename "$0")" >> $debug_out
 fi
 
+CONDA_PREFIX=/arc/home/kilbinger/.conda/envs/shapepipe
 PATH=$PATH:$CONDA_PREFIX/bin
 
 # For tar archives. TODO: Should be unique to each job
@@ -196,8 +204,7 @@ function command () {
       echo "${pat}pwd = `pwd`" >> $debug_out
       echo "${pat}SP_RUN = $SP_RUN" >> $debug_out
       echo "${pat}SP_CONFIG = $SP_CONFIG" >> $debug_out
-      echo "${pat}pwd = `pwd`" >> $debug_out
-   fi
+    fi
 
    if [ $# == 2 ]; then
       if [ $VERBOSE == 1 ]; then
@@ -214,7 +221,7 @@ function command () {
          echo "$str: running '$cmd $4 \"$5 $6\"'"
       fi
       if [ "$debug_out" != "-1" ]; then
-          echo "${pat}Running[2] $cmd $4 \"$5 $6\"" >> $debug_out
+          echo "${pat}Running $cmd $4 \"$5 $6\"" >> $debug_out
       fi
 
       $cmd $4 "$5 $6"
@@ -228,7 +235,7 @@ function command () {
    fi
 
    if [ $VERBOSE == 1 ]; then
-      if [ "$res" == "0" ]; then
+      if [ $res == 0 ]; then
          echo -e "${GREEN}success, return value = $res${NC}"
       else
          echo -e "${RED}error, return value = $res${NC}"
@@ -332,11 +339,6 @@ function update_config() {
 
 ### Start ###
 
-command_sp "source activate shapepipe" "Activate conda shapepipe env"
-if [ "$debug_out"  != "-1" ]; then
-    echo "${pat}conda prefix = ${CONDA_PREFIX}" >> $debug_out
-fi
-CONDA_PREFIX=/arc/home/kilbinger/.conda/envs/shapepipe
 echo "Start processing"
 
 # Create input and output directories
@@ -460,7 +462,6 @@ if [[ $do_job != 0 ]]; then
 fi
 
 ## Process tiles up to shape measurement
-## MKDEBUG new 14/01/25: remove spread_model_runner
 (( do_job = $job & 64 ))
 if [[ $do_job != 0 ]]; then
 
@@ -468,8 +469,8 @@ if [[ $do_job != 0 ]]; then
   letter=${psf:0:1}
   Letter=${letter^}
   command_cfg_shapepipe \
-    "config_tile_${Letter}iViVi_canfar.ini" \
-    "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix" \
+    "config_tile_${Letter}iViSmVi_canfar.ini" \
+    "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)" \
     $n_smp \
     $exclusive
 
@@ -540,12 +541,11 @@ if [[ $do_job != 0 ]]; then
     perl -ane \
       's/(N_SPLIT_MAX =) X/$1 '$nsh_jobs'/; print' \
       > $SP_CONFIG_MOD/config_merge_sep_cats.ini
-
+ 
   ### Merge separated shapes catalogues
   command_sp \
     "shapepipe_run -c $SP_CONFIG_MOD/config_merge_sep_cats.ini" \
     "Run shapepipe (tile: merge sep cats)" \
-    $exclusive \
     "$VERBOSE" \
     "$ID"
 fi
@@ -553,9 +553,16 @@ fi
 (( do_job = $job & 512 ))
 if [[ $do_job != 0 ]]; then
 
+  # spread_model suffix for config file with or without SM input
+  if [ "$sm" == "0" ]; then
+    suff_sm="_nosm"
+  else
+    suff_sm=""
+  fi
+
   ### Merge all relevant information into final catalogue
   command_cfg_shapepipe \
-    "config_make_cat_$psf.ini" \
+    "config_make_cat_$psf${suff_sm}.ini" \
     "Run shapepipe (tile: create final cat $psf)" \
     $n_smp \
     $exclusive
@@ -575,5 +582,5 @@ if [[ $do_job != 0 ]]; then
 fi
 
 if [ "$debug_out" != "-1" ]; then
-  echo "${pat}End $(basename "$0") ID=$exclusive" >> $debug_out
+  echo "${pat}End $(basename "$0") ID=$exclusive success" >> $debug_out
 fi

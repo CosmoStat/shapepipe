@@ -2,7 +2,7 @@
 
 Module runner for ``make_cat``.
 
-:Author: Axel Guinot
+:Author: Axel Guinot, Martin Kilbinger
 
 """
 
@@ -37,14 +37,25 @@ def make_cat_runner(
 ):
     """Define The Make Catalogue Runner."""
     # Set input file paths
-    (
-        tile_sexcat_path,
-        sexcat_sm_path,
-        galaxy_psf_path,
-        shape1_cat_path,
-    ) = input_file_list[0:4]
-    if len(input_file_list) == 5:
-        shape2_cat_path = input_file_list[4]
+    if len(input_file_list) == 3:
+        # No spread model input
+        (
+            tile_sexcat_path,
+            galaxy_psf_path,
+            shape1_cat_path,
+        ) = input_file_list
+        sexcat_sm_path = None
+    else:
+        # With spread model input
+        (
+            tile_sexcat_path,
+            sexcat_sm_path,
+            galaxy_psf_path,
+            shape1_cat_path,
+        ) = input_file_list[0:4]
+        if len(input_file_list) == 5:
+            # With second shape catalogue input
+            shape2_cat_path = input_file_list[4]
 
     # Fetch classification options
     do_classif = config.getboolean(
@@ -83,20 +94,24 @@ def make_cat_runner(
 
     # Save SExtractor data
     w_log.info("Save SExtractor data")
-    make_cat.save_sextractor_data(final_cat_file, tile_sexcat_path)
+    n_obj = make_cat.save_sextractor_data(final_cat_file, tile_sexcat_path)
 
     # Save spread-model data
     w_log.info("Save spread-model data")
+    if sexcat_sm_path is None:
+        w_log.info("No sm cat input, setting spread model to 99")
+        n_obj
     make_cat.save_sm_data(
         final_cat_file,
         sexcat_sm_path,
         do_classif,
         star_thresh,
         gal_thresh,
+        n_obj=n_obj
     )
 
     # Save shape data
-    sc_inst = make_cat.SaveCatalogue(final_cat_file, w_log)
+    sc_inst = make_cat.SaveCatalogue(final_cat_file)
     w_log.info("Save shape measurement data")
     for shape_type in shape_type_list:
         w_log.info(f"Save {shape_type.lower()} data")
