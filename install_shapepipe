@@ -25,16 +25,6 @@ libpng_ver="1.6.37"
 mpi4py_ver="4.0.1"
 openblas_ver="0.3.18"
 
-# Source Extractor 
-se_bin="sex"
-
-# PSFEx Package
-psfex_url="https://github.com/astromatic/psfex/archive/3.24.1.tar.gz"
-psfex_tar="3.24.1.tar.gz"
-psfex_dir="psfex-3.24.1"
-psfex_bin="psfex"
-psfex_version=TRUE
-
 # WeightWatcher Package
 ww_url="https://github.com/astromatic/weightwatcher/archive/refs/tags/1.12.tar.gz"
 ww_tar="1.12.tar.gz"
@@ -75,7 +65,6 @@ USE_CONDA_SOURCE=FALSE
 BUILD_ENV=TRUE
 DEVELOP=FALSE
 VOS=FALSE
-INSTALL_PSFEX=TRUE
 INSTALL_WW=TRUE
 INSTALL_CDSCLIENT=TRUE
 ATLAS_SEARCH=FALSE
@@ -93,36 +82,6 @@ download_package() {
   wget --no-check-certificate $1
   tar -xzf $2
   rm $2
-}
-
-# Function to build PSFEx with OpenBLAS
-build_psfex_blas() {
-  astromatic_setup
-  cd $BUILD_DIR/$1
-  ./autogen.sh
-  ./configure --prefix=$CONDA_PREFIX --enable-openblas --enable-plplot=no \
-  --with-fftw-libdir=$FFTW_LIB --with-fftw-incdir=$FFTW_INC \
-  --with-openblas-libdir=$BLAS_LIB --with-openblas-incdir=$BLAS_INC --quiet
-  make -j --quiet
-  make install
-}
-
-# Function to build PSFEx with ATLAS
-build_psfex_atlas() {
-  astromatic_setup
-  cd $BUILD_DIR/$1
-  ./autogen.sh
-  if [ "$ATLAS_SEARCH" == TRUE ]
-  then
-    ./configure --prefix=$CONDA_PREFIX --enable-plplot=no \
-    --with-fftw-libdir=$FFTW_LIB --with-fftw-incdir=$FFTW_INC --quiet
-  else
-    ./configure --prefix=$CONDA_PREFIX --enable-plplot=no \
-    --with-fftw-libdir=$FFTW_LIB --with-fftw-incdir=$FFTW_INC \
-    --with-atlas-libdir=$ATLAS_LIB --with-atlas-incdir=$ATLAS_INC --quiet
-  fi
-  make -j --quiet
-  make install
 }
 
 # Function to build a standard package
@@ -161,14 +120,14 @@ check_conda() {
     exit 1
   fi
   # Look for conda.sh file
-  if [ -f "$CONDA_PREFIX_1$CONDA_SH" ]
+  if [ -f "/opt/conda/$CONDA_SH" ]
   then
-    source "$CONDA_PREFIX_1$CONDA_SH"
+    source "/opt/conda/$CONDA_SH"
   elif [ -f "$CONDA_PREFIX$CONDA_SH" ]
   then
     source "$CONDA_PREFIX$CONDA_SH"
   else
-    echo -ne "${RED}ERROR: Could not find $CONDA_SH in \$CONDA_PREFIX.${NC}\n"
+    echo -ne "${RED}ERROR: Could not find $CONDA_SH in /opt/conda or \$CONDA_PREFIX.${NC}\n"
     echo -ne "${RED}Activate the base/root Conda environment and try again.${NC}\n"
     exit 1
   fi
@@ -181,6 +140,7 @@ check_conda() {
     CONDA_ACTIVATE="conda activate"
     CONDA_DEACTIVATE="conda deactivate"
   fi
+
 }
 
 # Check if a binary executable is already installed in the conda environment
@@ -259,8 +219,6 @@ start() {
 
 # Function to report package versions
 packages() {
-  check_binary2 $se_bin "Source Extractor" TRUE TRUE
-  check_binary2 $psfex_bin "PSFEx" $psfex_version $INSTALL_PSFEX
   check_binary2 $ww_bin "WeightWatcher" $ww_version $INSTALL_WW
   check_binary2 $cdsclient_bin "CDSclient" $cdsclient_version $INSTALL_CDSCLIENT
   check_binary2 $mpi_bin "MPI" $mpi_version $USE_MPI $MPI_ROOT
@@ -304,7 +262,6 @@ package_report() {
     check_conda
     activate_shapepipe
   fi
-  INSTALL_PSFEX=FALSE
   INSTALL_WW=FALSE
   INSTALL_CDSCLIENT=FALSE
   USE_MPI=FALSE
@@ -354,7 +311,6 @@ setup() {
   check_status 'Operating System:' $SYSOS
   check_status 'Conda Version:' $CONDA_VERSION
   check_status 'Build Conda Environment:' $BUILD_ENV $ENV_NAME
-  check_status 'Install PSFEx:' $INSTALL_PSFEX
   check_status 'Install WeightWatcher:' $INSTALL_WW
   check_status 'Install CDSclient:' $INSTALL_CDSCLIENT
   check_status 'Use MPI:' $USE_MPI $MPI_ROOT
@@ -453,12 +409,11 @@ Options:\n
 \t--pipe-dir\t set the path to the ShapePipe base directory (default is \$PWD)\n
 \t--build-dir\t set the path to the ShapePipe build (default is \$PWD/build)\n
 \t--env-name\t set the name of the Conda environment (default is shapepipe)\n
-\t--env-dev\t use the developer's Conda environment instead of the standard production environment\n
+\t--env-dev\t use the developers Conda environment instead of the standard production environment\n
 \t--use-conda-source\t use 'conda source' instead of the default 'conda activate' to activate the shapepipe environment\n
-\t--develop\t option to install additional development packages (included by default in --env-dev)\n
+\t--develop\t option to install additional development packages\n
 \t--vos\t\t option to install virtual observatory software\n
 \t--no-env\t do not build Conda environment\n
-\t--no-psfex\t do not build PSFEx\n
 \t--no-ww\t\t do not build WeightWatcher\n
 \t--no-cds\t do not build CDSclient\n
 \t--no-exe\t do not build any system executables\n\n
@@ -535,10 +490,6 @@ case $i in
     BUILD_ENV=FALSE
     shift
     ;;
-    --no-psfex)
-    INSTALL_PSFEX=FALSE
-    shift
-    ;;
     --no-ww)
     INSTALL_WW=FALSE
     shift
@@ -584,7 +535,6 @@ case $i in
     shift
     ;;
     --no-exe)
-    INSTALL_PSFEX=FALSE
     INSTALL_WW=FALSE
     INSTALL_CDSCLIENT=FALSE
     shift
@@ -709,31 +659,6 @@ fi
 ##############################################################################
 # BUILD EXTERNAL EXECUTABLES
 ##############################################################################
-
-# Build PSFEx
-if [ "$INSTALL_PSFEX" == TRUE ] && check_binary $psfex_bin
-then
-  report_progress 'PSFEx'
-  if [ "$ENV_DEV" == TRUE ]
-  then
-    conda install -n $ENV_NAME -c conda-forge libpng fftw -y
-  else
-    conda install -n $ENV_NAME -c conda-forge "libpng==${libpng_ver}" "fftw==${fftw_ver}" -y
-  fi
-  download_package $psfex_url $psfex_tar
-  if [ "$use_atlas" == TRUE ]
-  then
-    build_psfex_atlas $psfex_dir
-  else
-    if [ "$ENV_DEV" == TRUE ]
-    then
-      conda install -n $ENV_NAME -c conda-forge "openblas" -y
-    else
-      conda install -n $ENV_NAME -c conda-forge "openblas==${openblas_ver}" -y
-    fi
-    build_psfex_blas $psfex_dir
-  fi
-fi
 
 # Build WeightWatcher
 if [ "$INSTALL_WW" == TRUE ] && check_binary $ww_bin

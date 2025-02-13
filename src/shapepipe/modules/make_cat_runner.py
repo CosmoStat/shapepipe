@@ -2,9 +2,11 @@
 
 Module runner for ``make_cat``.
 
-:Author: Axel Guinot
+:Authors: Axel Guinot, Martin Kilbinger
 
 """
+
+import os
 
 from shapepipe.modules.make_cat_package import make_cat
 from shapepipe.modules.module_decorator import module_runner
@@ -37,14 +39,25 @@ def make_cat_runner(
 ):
     """Define The Make Catalogue Runner."""
     # Set input file paths
-    (
-        tile_sexcat_path,
-        sexcat_sm_path,
-        galaxy_psf_path,
-        shape1_cat_path,
-    ) = input_file_list[0:4]
-    if len(input_file_list) == 5:
-        shape2_cat_path = input_file_list[4]
+    if len(input_file_list) == 3:
+        # No spread model input
+        (
+            tile_sexcat_path,
+            galaxy_psf_path,
+            shape1_cat_path,
+        ) = input_file_list
+        sexcat_sm_path = None
+    else:
+        # With spread model input
+        (
+            tile_sexcat_path,
+            sexcat_sm_path,
+            galaxy_psf_path,
+            shape1_cat_path,
+        ) = input_file_list[0:4]
+        if len(input_file_list) == 5:
+            # With second shape catalogue input
+            shape2_cat_path = input_file_list[4]
 
     # Fetch classification options
     do_classif = config.getboolean(
@@ -65,7 +78,9 @@ def make_cat_runner(
     )
     for shape_type in shape_type_list:
         if shape_type.lower() not in ["ngmix", "galsim"]:
-            raise ValueError("SHAPE_MEASUREMENT_TYPE must be in [ngmix, galsim]")
+            raise ValueError(
+                "SHAPE_MEASUREMENT_TYPE must be in [ngmix, galsim]"
+            )
 
     # Fetch PSF data option
     if config.has_option(module_config_sec, "SAVE_PSF_DATA"):
@@ -81,27 +96,53 @@ def make_cat_runner(
 
     # Save SExtractor data
     w_log.info("Save SExtractor data")
-    make_cat.save_sextractor_data(final_cat_file, tile_sexcat_path)
+    n_obj = make_cat.save_sextractor_data(final_cat_file, tile_sexcat_path)
+    cat_size_sextractor = n_obj
 
     # Save spread-model data
-    w_log.info("Save spread-model data")
-    make_cat.save_sm_data(
-        final_cat_file,
-        sexcat_sm_path,
-        do_classif,
-        star_thresh,
-        gal_thresh,
-    )
+    if sexcat_sm_path is None:
+        w_log.info("No sm cat input, setting spread model to 99")
+    else:
+        w_log.info("Save spread-model data")
+        cat_size_sm = make_cat.save_sm_data(
+            final_cat_file,
+            sexcat_sm_path,
+            do_classif,
+            star_thresh,
+            gal_thresh,
+            n_obj=n_obj
+        )
+
+        if cat_size_sextractor != cat_size_sm:
+            w_log(
+                f"Warnign: SExtractor catalogue {tile_sexcat_path} has different size"
+                + f" ({cat_size_sextractor} than spread_model catalogue"
+                + f" {sexcat_sm_path} ({cat_size_sm})"
+            )
 
     # Save shape data
-    sc_inst = make_cat.SaveCatalogue(final_cat_file)
+    sc_inst = make_cat.SaveCatalogue(final_cat_file, cat_size_sextractor, w_log)
     w_log.info("Save shape measurement data")
     for shape_type in shape_type_list:
         w_log.info(f"Save {shape_type.lower()} data")
-        cat_path = shape2_cat_path if shape_type == "galsim" else shape1_cat_path
-        sc_inst.process(shape_type.lower(), cat_path)
-    if save_psf:
-        sc_inst.process("psf", galaxy_psf_path)
+        cat_path = (
+            shape2_cat_path if shape_type == "galsim" else shape1_cat_path
+        )
+        err_msg = sc_inst.process(shape_type.lower(), cat_path)
 
-    # No return objects
+
+        # If error message: delete (incomplete) output file and raise error
+        if err_msg is not None:
+            os.remove(
+                make_cat.get_output_name(
+                    run_dirs["output"],
+                    file_number_string,
+                )
+            )
+            #raise ValueError(err_msg)
+            w_log.info(err_msg)
+
+    if save_psf:
+        err_msg = sc_inst.process("psf", galaxy_psf_path)
+
     return None, None

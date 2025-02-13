@@ -32,7 +32,9 @@ def random_cat_runner(
 
     # Set output file name
     if config.has_option(module_config_sec, "OUTPUT_FILE_PATTERN"):
-        output_file_pattern = config.get(module_config_sec, "OUTPUT_FILE_PATTERN")
+        output_file_pattern = config.get(
+            module_config_sec, "OUTPUT_FILE_PATTERN"
+        )
     else:
         output_file_pattern = "random_cat"
 
@@ -47,12 +49,16 @@ def random_cat_runner(
         density = False
 
     # Get healpix output options
-    save_mask_as_healpix = config.getboolean(module_config_sec, "SAVE_MASK_AS_HEALPIX")
+    save_mask_as_healpix = config.getboolean(
+        module_config_sec, "SAVE_MASK_AS_HEALPIX"
+    )
     if save_mask_as_healpix:
         healpix_options = {}
-        for option_trunc in ["FILE_BASE", "NSIDE"]:
-            option = f"HEALPIX_OUT_{option_trunc}"
-            healpix_options[option_trunc] = config.get(module_config_sec, option)
+        for option_trunc in ['FILE_BASE', 'OUT_NSIDE']:
+            option = f'HEALPIX_OUT_{option_trunc}'
+            healpix_options[option_trunc] = config.get(
+                module_config_sec, option
+            )
     # Create rand cat class instance
     rand_cat_inst = RandomCat(
         input_image_name,

@@ -145,7 +145,9 @@ class WorkerHandler(object):
 
             print(f" - {job_name} PID: {pid} ", end="")
 
-            if process_size < self._config.getint("WORKER", "PROCESS_PRINT_LIMIT"):
+            if process_size < self._config.getint(
+                "WORKER", "PROCESS_PRINT_LIMIT"
+            ):
                 print(
                     f'processing {self.worker_dict["file_number_string"]} '
                     + f'{self.worker_dict["process"]}'
@@ -221,8 +223,12 @@ class WorkerHandler(object):
         This method logs the stdout and stderr output of the job.
 
         """
-        self.w_log.info(f"Process produced the following output: {self._stdout}")
+        self.w_log.info(
+            f"Process produced the following output: {self._stdout}"
+        )
 
         if self._stderr:
-            self.w_log.info(f"Process produced the following error(s): {self._stderr}")
+            self.w_log.info(
+                f"Process produced the following error(s): {self._stderr}"
+            )
             self.worker_dict["stderr"] = True

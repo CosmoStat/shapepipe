@@ -206,7 +206,11 @@ class MatchCats(object):
             # Get indices in internal and external catalogues of pair-wise
             # matches
             w = np.array(
-                [(idx, ide) for (idx, ide) in enumerate(indices) if indices_close[idx]]
+                [
+                    (idx, ide)
+                    for (idx, ide) in enumerate(indices)
+                    if indices_close[idx]
+                ]
             )
             id_sub = w[:, 0]
             id_ext_sub = w[:, 1]
@@ -221,7 +225,9 @@ class MatchCats(object):
                 id_data = id_sub
                 id_ext = id_ext_sub
 
-            self._w_log.info(f"{len(id_sub)} objects matched out of {len(indices)}.")
+            self._w_log.info(
+                f"{len(id_sub)} objects matched out of {len(indices)}."
+            )
 
             # Copy matched objects from internal catalogue to output data
             matched = {}

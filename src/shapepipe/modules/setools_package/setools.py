@@ -12,6 +12,9 @@ import os
 import re
 import string
 
+import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pylab as plt
 import numpy as np
 
@@ -58,7 +61,10 @@ class SETools(object):
                 SEx_catalogue=True,
             )
             cat_file.open()
-            self._data = cat_file.get_data()
+            try:
+                self._data = cat_file.get_data()
+            except:
+                raise IOError(f"Could not load catalogue data from {cat}")
             cat_file.close()
 
         else:
@@ -231,7 +237,9 @@ class SETools(object):
                     try:
                         rand_split_name = re.split(":", sec)[1]
                     except Exception:
-                        rand_split_name = f"rand_split_{len(self._rand_split) + 1}"
+                        rand_split_name = (
+                            f"rand_split_{len(self._rand_split) + 1}"
+                        )
                     self._rand_split[rand_split_name] = []
                 else:
                     raise ValueError(
@@ -567,7 +575,8 @@ class SETools(object):
                     self.plot[key][ss[0]][ss[1]] = s[1]
                 else:
                     raise ValueError(
-                        "Plot keyword not in correct format (key or key_i)" + f": {idx}"
+                        "Plot keyword not in correct format (key or key_i)"
+                        + f": {idx}"
                     )
 
     def _make_new_cat(self):
@@ -629,7 +638,9 @@ class SETools(object):
             for idx in self._rand_split[key]:
                 s = re.split("=", idx)
                 if len(s) != 2:
-                    raise ValueError(f"Not a valid format : {self._rand_split[key][0]}")
+                    raise ValueError(
+                        f"Not a valid format : {self._rand_split[key][0]}"
+                    )
                 if s[0] == "RATIO":
                     try:
                         ratio = float(s[1])
@@ -745,7 +756,12 @@ class SEPlot(object):
         elif self._plot["TYPE"]["0"] in ["scatter", "SCATTER"]:
             self._check_key_for_plot(["X", "Y"])
             self._make_scatter()
-        elif self._plot["TYPE"]["0"] in ["histogram", "hist", "HISTOGRAM", "HIST"]:
+        elif self._plot["TYPE"]["0"] in [
+            "histogram",
+            "hist",
+            "HISTOGRAM",
+            "HIST",
+        ]:
             self._check_key_for_plot(["Y"])
             self._make_hist()
         else:
@@ -1160,7 +1176,9 @@ class SEPlot(object):
                     bins = int(self._plot["BIN"][key])
                 except Exception:
                     if len(self._plot["BIN"]) == 1:
-                        bins = int(self._plot["BIN"][self._plot["BIN"].keys()[0]])
+                        bins = int(
+                            self._plot["BIN"][self._plot["BIN"].keys()[0]]
+                        )
             else:
                 bins = 50
             if "ALPHA" in self._plot.keys():

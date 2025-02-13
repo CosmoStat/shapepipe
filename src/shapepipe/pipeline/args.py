@@ -122,7 +122,9 @@ def create_arg_parser():
     optional.add_argument(
         "-l",
         "--list_modules",
-        action=print_message(f"ShapePipe modules currently available:\n{module_str()}"),
+        action=print_message(
+            f"ShapePipe modules currently available:\n{module_str()}"
+        ),
         help="list modules currently available and exit",
     )
 
@@ -133,5 +135,10 @@ def create_arg_parser():
         help="configuration file name",
     )
 
+    optional.add_argument(
+        "-e",
+        "--exclusive",
+        help="exclusive input file number string",
+    )
     # Return parser
     return parser.parse_args()

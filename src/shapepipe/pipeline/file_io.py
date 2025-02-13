@@ -274,7 +274,8 @@ class BaseCatalogue(object):
 
         def __str__(self):
             return (
-                f"File IO *** ERROR ***: catalogue: {self._filepath} " + "is not open"
+                f"File IO *** ERROR ***: catalogue: {self._filepath} "
+                + "is not open"
             )
 
     class DataNotFound(Exception):
@@ -418,14 +419,17 @@ class FITSCatalogue(BaseCatalogue):
     ----------
     fullpath : str
         Full path to file
-    hdu_no : int
-        HDU number
-    open_mode : OpenMode
-        File opening mode
-    memmap : Bool
-        Option to use memory mapping
-    SEx_catalogue : bool
-        Option to specify if the input is a SExtractor catalogue
+    hdu_no : int, optional
+        HDU number; default is ``None``, in which case
+        it will be set to 1 (2) if SEx_catalogue is ``False``
+        (``True``)
+    open_mode : OpenMode, optional
+        File opening mode, default is ``BaseCatalogue.OpenMode.ReadOnly``
+    memmap : bool, optional
+        Option to use memory mapping, default is ``False``
+    SEx_catalogue : bool, optional
+        Option to specify if the input is a SExtractor catalogue;
+        default is ``False``
 
     """
 
@@ -448,7 +452,7 @@ class FITSCatalogue(BaseCatalogue):
         self._SEx_catalogue = SEx_catalogue
         # HDU number of the underlying .FITS table
         if hdu_no is None:
-            # Default is 1 (or 2 if you are using )
+            # Set to default value if not given by user
             if SEx_catalogue:
                 self._hdu_no = 2
             else:
@@ -681,8 +685,9 @@ class FITSCatalogue(BaseCatalogue):
 
         Save data from dict, list, numpy.ndarray, numpy.recarray or
         astropy.io.fits.fitsrec.FITS_rec (data format in an astropy fits file)
-        When creating a new FITS to store BinTable data it create a PrimaryHDU.
-        When creating a new FITS to store Image there is no PrimaryHDU.
+        When writing a new FITS file to store BinTable data a PrimaryHDU is
+        created.
+        When wwriting a new FITS to store Image data, no PrimaryHDU is added.
         You can create a SExtractor format FITS by specifying a SExtractor
         catalogue from where data come from.
 
@@ -1304,7 +1309,12 @@ class FITSCatalogue(BaseCatalogue):
             if hdu_no is None:
                 hdu_no = self.hdu_no
             hdr_col_types = [
-                tt for tt in self._cat_data[hdu_no].header.keys() if "TTYPE" in tt
+                tt
+                for tt in self._cat_data[hdu_no].header.keys()
+                if "TTYPE" in tt
+            ]
+            return [
+                self._cat_data[hdu_no].header.comments[c] for c in hdr_col_types
             ]
             return [self._cat_data[hdu_no].header.comments[c] for c in hdr_col_types]
         else:

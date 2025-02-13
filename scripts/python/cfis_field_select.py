@@ -64,7 +64,9 @@ def get_images_used_in_tiles(images, band, image_type):
             m = re.search(pattern, temp[3])
             if not m:
                 raise cfis.CfisError(
-                    "re match '{}' failed for filename '{}'".format(pattern, temp[3])
+                    "re match '{}' failed for filename '{}'".format(
+                        pattern, temp[3]
+                    )
                 )
 
             exp_name = m.group(1)
@@ -75,7 +77,9 @@ def get_images_used_in_tiles(images, band, image_type):
     return exp_list_uniq
 
 
-def get_coord_at_image(number, band, image_type, images, no_cuts=False, verbose=False):
+def get_coord_at_image(
+    number, band, image_type, images, no_cuts=False, verbose=False
+):
     """Return coordinate of image with given number.
 
     Parameters
@@ -107,7 +111,9 @@ def get_coord_at_image(number, band, image_type, images, no_cuts=False, verbose=
 
         if verbose == True:
             print(
-                "Looking for coordinates for tile with numbers ({},{})".format(nix, niy)
+                "Looking for coordinates for tile with numbers ({},{})".format(
+                    nix, niy
+                )
             )
 
         ra, dec = cfis.get_tile_coord_from_nixy(nix, niy)
@@ -123,7 +129,9 @@ def get_coord_at_image(number, band, image_type, images, no_cuts=False, verbose=
                     img_found = img
 
     else:
-        raise cfis.CfisError("Image type '{}' not implemented yet".format(image_type))
+        raise cfis.CfisError(
+            "Image type '{}' not implemented yet".format(image_type)
+        )
 
     return img_found
 
@@ -319,7 +327,11 @@ def parse_options(p_def):
 
     # Monitoring
     parser.add_option(
-        "-v", "--verbose", dest="verbose", action="store_true", help="verbose output"
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+        help="verbose output",
     )
 
     options, args = parser.parse_args()
@@ -353,17 +365,23 @@ def check_options(options):
         )
 
     if options.image_type != "exposure" and options.no_cuts == True:
-        raise cfis.CfisError("option '--no_cuts' only possible for image_type=exposure")
+        raise cfis.CfisError(
+            "option '--no_cuts' only possible for image_type=exposure"
+        )
 
     if options.input in [
         "{}.txt".format(options.outbase),
         "{}.pdf",
         format(options.outbase),
     ]:
-        raise cfis.CfisError("Output base same as input, latter will be overwritten!")
+        raise cfis.CfisError(
+            "Output base same as input, latter will be overwritten!"
+        )
 
     if options.input_format not in ["full", "ID_only"]:
-        raise cfis.CfisError("input_format needs to be one of 'fulll', 'ID_only'")
+        raise cfis.CfisError(
+            "input_format needs to be one of 'fulll', 'ID_only'"
+        )
 
     see_help = "See option '-h' for help."
 
@@ -520,7 +538,9 @@ def run_mode(images, param):
     elif param.tile:
 
         # Search exposures used in input tile(s)
-        images_found = get_images_used_in_tiles(images, param.band, param.image_type)
+        images_found = get_images_used_in_tiles(
+            images, param.band, param.image_type
+        )
         if len(images_found) > 0:
             for img in images_found:
                 print(img, file=param.fout)
@@ -528,7 +548,8 @@ def run_mode(images, param):
 
     else:
         raise cfis.CfisError(
-            "One of '--coord', '--number', " "'--area', '--tile' needs to be specified"
+            "One of '--coord', '--number', "
+            "'--area', '--tile' needs to be specified"
         )
 
     return ex
@@ -582,7 +603,9 @@ def main(argv=None):
             )
         if len(images) == 0:
             raise cfis.CfisError(
-                "No corresponding image files found in input '{}'".format(param.input)
+                "No corresponding image files found in input '{}'".format(
+                    param.input
+                )
             )
 
     # Run

@@ -88,7 +88,11 @@ def parse_options(p_def):
     )
 
     parser.add_option(
-        "-v", "--verbose", dest="verbose", action="store_true", help="verbose output"
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+        help="verbose output",
     )
 
     options, args = parser.parse_args()
@@ -201,7 +205,10 @@ def get_status(tile_num):
                     for line_err in err_file:
                         mm = re.search("NodeNotFound", line_err)
                         if mm:
-                            status = status + (fail_vos_not_found, "vos file not found")
+                            status = status + (
+                                fail_vos_not_found,
+                                "vos file not found",
+                            )
                             break
                         mm = re.search("Empty or corrupt FITS file", line_err)
                         if mm:
@@ -216,21 +223,35 @@ def get_status(tile_num):
                         if mm:
                             status = status + (fail_time_out, "vos time out")
                             break
-                        mm = re.search("ERROR:: __str__ returned non-string", line_err)
+                        mm = re.search(
+                            "ERROR:: __str__ returned non-string", line_err
+                        )
                         if mm:
-                            status = status + (fail_connection, "Connection/HTTP error")
+                            status = status + (
+                                fail_connection,
+                                "Connection/HTTP error",
+                            )
                             break
                         mm = re.search("ERROR:: 503 Server Error", line_err)
                         if mm:
-                            status = status + (fail_server, "server connection error")
+                            status = status + (
+                                fail_server,
+                                "server connection error",
+                            )
                             break
                         mm = re.search("ERROR:: \[Errno 14\] vos", line_err)
                         if mm:
-                            status = status + (fail_transient, "TransientException")
+                            status = status + (
+                                fail_transient,
+                                "TransientException",
+                            )
                             break
                         mm = re.search("Connection aborted", line_err)
                         if mm:
-                            status = status + (fail_vos_no_resp, "vos no response")
+                            status = status + (
+                                fail_vos_no_resp,
+                                "vos no response",
+                            )
                             break
 
                 if len(status) == 2:
@@ -301,7 +322,10 @@ def output_failed(output_fail, status):
 
         with open(output_fail, "w") as f_out:
             for tile_num in status.keys():
-                if status[tile_num][0] == res_noout or status[tile_num][0] == res_unk:
+                if (
+                    status[tile_num][0] == res_noout
+                    or status[tile_num][0] == res_unk
+                ):
                     print(tile_num, file=f_out)
 
 

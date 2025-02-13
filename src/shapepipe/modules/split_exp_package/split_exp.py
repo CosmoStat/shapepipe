@@ -37,7 +37,12 @@ class SplitExposures(object):
     """
 
     def __init__(
-        self, input_file_list, output_dir, file_number_string, output_suffix, n_hdu
+        self,
+        input_file_list,
+        output_dir,
+        file_number_string,
+        output_suffix,
+        n_hdu,
     ):
 
         self._input_file_list = input_file_list
@@ -52,7 +57,9 @@ class SplitExposures(object):
         Process the splitting of single-exposure images.
 
         """
-        for exp_path, output_suffix in zip(self._input_file_list, self._output_suffix):
+        for exp_path, output_suffix in zip(
+            self._input_file_list, self._output_suffix
+        ):
 
             transf_int = "flag" in output_suffix
             transf_coord = "image" in output_suffix
@@ -85,13 +92,31 @@ class SplitExposures(object):
         """
         header_file = np.zeros(self._n_hdu, dtype="O")
 
+        hdu_list = fits.open(exp_path)
+        if len(hdu_list) != self._n_hdu + 1:
+            raise ValueError(
+                f"Image {exp_path} has {len(hdu_list)} + 1 HDUs,"
+                + f" expected were {self._n_hdu} + 1"
+            )
+
         for idx in range(1, self._n_hdu + 1):
 
-            h = fits.getheader(exp_path, idx)
+            # h = fits.getheader(exp_path, idx)
+            h = hdu_list[idx].header
             if transf_coord:
                 stp.pv_to_sip(h)
 
-            d = fits.getdata(exp_path, idx)
+            # d = fits.getdata(exp_path, idx)
+            try:
+                d = hdu_list[idx].data
+            except TypeError as e:
+                msg = (
+                    f"Error retrieving data of HDU #{idx} of image {exp_path}."
+                    + f" Check if image file is complete."
+                )
+                print(msg, e)
+                raise
+
             if transf_int:
                 d = d.astype(np.int16)
 
@@ -114,5 +139,7 @@ class SplitExposures(object):
                 header_file[idx - 1] = {"WCS": w, "header": h.tostring()}
 
         if save_header:
-            file_name = f"{self._output_dir}/headers{self._file_number_string}.npy"
+            file_name = (
+                f"{self._output_dir}/headers{self._file_number_string}.npy"
+            )
             np.save(file_name, header_file)
