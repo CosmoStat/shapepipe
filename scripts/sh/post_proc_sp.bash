@@ -70,7 +70,7 @@ SP_CONFIG=$SP_BASE/example/cfis
 # PSF
 
 ## Collect all psfinterp results 
-prepare_star_cat -p $psf
+combine_runs -p $psf -t psf
 
 ## Merge all psfinterp results and compute PSF residuals
 shapepipe_run -c $SP_CONFIG/config_MsPl_$psf.ini 
@@ -79,7 +79,7 @@ shapepipe_run -c $SP_CONFIG/config_MsPl_$psf.ini
 # Galaxies
 
 ## Prepare output directory with links to all 'final_cat' result files
-prepare_tiles_for_final
+combine_runs
 
 ## Merge final output files to single mother catalog
 input_final=output/run_sp_combined/make_catalog_runner/output

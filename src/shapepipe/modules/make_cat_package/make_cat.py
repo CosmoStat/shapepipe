@@ -2,7 +2,7 @@
 
 This module contains a class to create a shear catalogue.
 
-:Author: Axel Guinot
+:Authors: Axel Guinot, Martin Kilbinger
 
 """
 
@@ -17,6 +17,27 @@ from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
 from shapepipe.utilities import galaxy
+
+
+def get_output_name(output_dir, file_number_string):
+    """Get Output Name.
+
+    Return output file name.
+
+    Parameters
+    ----------
+    output_dir : str
+        directory name
+    file_number_string : str
+        ShapePipe pipeline number string
+
+    Returns
+    -------
+    str
+        output path name
+
+    """
+    return f"{output_dir}/final_cat{file_number_string}.fits"
 
 
 def prepare_final_cat_file(output_path, file_number_string):
@@ -37,7 +58,8 @@ def prepare_final_cat_file(output_path, file_number_string):
         Output FITS file
 
     """
-    output_name = f"{output_path}/final_cat{file_number_string}.fits"
+
+    output_name = get_output_name(output_path, file_number_string)
 
     return file_io.FITSCatalogue(
         output_name,
@@ -84,6 +106,11 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     remove_vignet : bool
         If ``True`` will not save the ``VIGNET`` field into the final catalogue
 
+    Returns
+    -------
+    int
+        Number of objects saved
+
     """
     sexcat_file = file_io.FITSCatalogue(sexcat_path, SEx_catalogue=True)
     sexcat_file.open()
@@ -96,7 +123,11 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
     cat_size = len(data)
 
     tile_id = float(
-        ".".join(re.split("-", os.path.splitext(os.path.split(sexcat_path)[1])[0])[1:])
+        ".".join(
+            re.split("-", os.path.splitext(os.path.split(sexcat_path)[1])[0])[
+                1:
+            ]
+        )
     )
     tile_id_array = np.ones(cat_size) * tile_id
 
@@ -105,6 +136,8 @@ def save_sextractor_data(final_cat_file, sexcat_path, remove_vignet=True):
 
     sexcat_file.close()
 
+    return cat_size
+
 
 def save_sm_data(
     final_cat_file,
@@ -112,6 +145,7 @@ def save_sm_data(
     do_classif=True,
     star_thresh=0.003,
     gal_thresh=0.01,
+    n_obj=-1,
 ):
     r"""Save Spread-Model Data.
 
@@ -122,7 +156,8 @@ def save_sm_data(
     final_cat_file : file_io.FITSCatalogue
         Final catalogue
     sexcat_sm_path : str
-        Path to spread-model catalogue to save.
+        Path to spread-model catalogue to save. If ``None``, spread_model is
+        set to 99
     do_classif : bool
         If ``True`` objects will be classified into stars, galaxies, and other,
         using the classifier
@@ -133,17 +168,31 @@ def save_sm_data(
     gal_thresh : float
         Threshold for galaxy selection; object is classified as galaxy if
         :math:`{\rm class} >` ``gal_thresh``
+    nobj : int, optional
+        Number of objects, only used if sexcat_sm_path is ``-1``
 
+    Returns
+    -------
+    int
+        Number of objects saved
     """
     final_cat_file.open()
 
-    sexcat_sm_file = file_io.FITSCatalogue(sexcat_sm_path, SEx_catalogue=True)
-    sexcat_sm_file.open()
+    if sexcat_sm_path is not None:
+        sexcat_sm_file = file_io.FITSCatalogue(
+            sexcat_sm_path,
+            SEx_catalogue=True,
+        )
+        sexcat_sm_file.open()
 
-    sm = np.copy(sexcat_sm_file.get_data()["SPREAD_MODEL"])
-    sm_err = np.copy(sexcat_sm_file.get_data()["SPREADERR_MODEL"])
+        sm = np.copy(sexcat_sm_file.get_data()["SPREAD_MODEL"])
+        sm_err = np.copy(sexcat_sm_file.get_data()["SPREADERR_MODEL"])
+                         
+        sexcat_sm_file.close()
 
-    sexcat_sm_file.close()
+    else:
+        sm = np.ones(n_obj) * 99
+        sm_err = np.ones(n_obj) * 99
 
     final_cat_file.add_col("SPREAD_MODEL", sm)
     final_cat_file.add_col("SPREADERR_MODEL", sm_err)
@@ -158,6 +207,8 @@ def save_sm_data(
 
     final_cat_file.close()
 
+    return n_obj
+
 
 class SaveCatalogue:
     """Save Catalogue.
@@ -168,12 +219,18 @@ class SaveCatalogue:
     ----------
     final_cat_file : str
         Final catalogue file name
+    cat_size_target : int
+        target catalogue size
+    w_log : logging.Logger
+        Logging instance
 
     """
 
-    def __init__(self, final_cat_file):
+    def __init__(self, final_cat_file, cat_size_target, w_log):
 
-        self.final_cat_file = final_cat_file
+        self._final_cat_file = final_cat_file
+        self._cat_size_target = cat_size_target
+        self._w_log = w_log
 
     def process(
         self,
@@ -192,29 +249,39 @@ class SaveCatalogue:
         moments : bool
             Option to run ``ngmix`` mode with moments
 
+        Returns
+        --------
+        str
+            error message if failure; `None` if success
+
         """
         self._output_dict = {}
 
-        self.final_cat_file.open()
-        self._obj_id = np.copy(self.final_cat_file.get_data()["NUMBER"])
+        self._final_cat_file.open()
+        self._obj_id = np.copy(self._final_cat_file.get_data()["NUMBER"])
 
+        err_msg = None
         if mode == "ngmix":
-            self._save_ngmix_data(cat_path, moments)
+            err_msg = self._save_ngmix_data(cat_path, moments)
         elif mode == "galsim":
             self._save_galsim_shapes(cat_path)
         elif mode == "psf":
             self._save_psf_data(cat_path)
         else:
-            raise ValueError(
+            err_msg = (
                 f"Invalid process mode ({mode}) for "
                 + '``make_cat.Savecatalogue``. Options are "ngmix", '
                 + '"galsim" or "psf".'
             )
 
-        for key in self._output_dict.keys():
-            self.final_cat_file.add_col(key, self._output_dict[key])
+        if err_msg is None:
 
-        self.final_cat_file.close()
+            for key in self._output_dict.keys():
+                self._final_cat_file.add_col(key, self._output_dict[key])
+
+        self._final_cat_file.close()
+
+        return err_msg
 
     def _update_dict(self, key_string, value):
         """Update Dictionary.
@@ -231,7 +298,10 @@ class SaveCatalogue:
         """
         self._output_dict = {
             **self._output_dict,
-            **{f"{key_string}{key_end}": np.copy(value) for key_end in self._key_ends},
+            **{
+                f"{key_string}{key_end}": np.copy(value)
+                for key_end in self._key_ends
+            },
         }
 
     def _add2dict(self, key, value, index=None):
@@ -271,7 +341,19 @@ class SaveCatalogue:
         ngmix_cat_file.open()
 
         ngmix_n_epoch = ngmix_cat_file.get_data()["n_epoch_model"]
+        if len(ngmix_n_epoch) / self._cat_size_target < 0.9:
+            ngmix_cat_file.close()
+            err_msg = (
+                f"Merged shape catalogue {ngmix_cat_path} has very different size"       
+                + f" ({len(ngmix_n_epoch)}) than target size"           
+                + f" {self._cat_size_target})"                             
+            )
+            return err_msg
+
         ngmix_mom_fail = ngmix_cat_file.get_data()["moments_fail"]
+
+        n_obj = len(self._obj_id)
+        self._w_log.info(f"writing ngmix info for {n_obj} objects")
 
         if moments:
             m = "m"
@@ -281,8 +363,8 @@ class SaveCatalogue:
             ngmix_mcal_flags = ngmix_cat_file.get_data()["mcal_flags"]
             ngmix_id = ngmix_cat_file.get_data()["id"]
 
-            self._add2dict("NGMIX_N_EPOCH", np.zeros(len(self._obj_id)))
-            self._add2dict("NGMIX_MOM_FAIL", np.zeros(len(self._obj_id)))
+            self._add2dict("NGMIX_N_EPOCH", np.zeros(n_obj))
+            self._add2dict("NGMIX_MOM_FAIL", np.zeros(n_obj))
 
         prefix = f"NGMIX{m}"
 
@@ -295,10 +377,14 @@ class SaveCatalogue:
             f"{prefix}_FLAGS_",
             f"{prefix}_T_PSFo_",
         ):
-            self._update_dict(key_str, np.zeros(len(self._obj_id)))
+            self._update_dict(key_str, np.zeros(n_obj))
         for key_str in (f"NGMIX{m}_FLUX_ERR_", f"NGMIX{m}_MAG_ERR_"):
             self._update_dict(key_str, np.ones(len(self._obj_id)) * -1)
-        for key_str in (f"NGMIX{m}_ELL_", f"NGMIX{m}_ELL_ERR_", f"NGMIX{m}_ELL_PSFo_"):
+        for key_str in (
+            f"NGMIX{m}_ELL_",
+            f"NGMIX{m}_ELL_ERR_",
+            f"NGMIX{m}_ELL_PSFo_",
+        ):
             self._update_dict(key_str, np.ones((len(self._obj_id), 2)) * -10.0)
         self._update_dict(
             f"NGMIX{m}_T_ERR_",
@@ -321,7 +407,10 @@ class SaveCatalogue:
                     ncf_data = ngmix_cat_file.get_data(key)
 
                     g = (ncf_data["g1"][ind[0]], ncf_data["g2"][ind[0]])
-                    g_err = (ncf_data["g1_err"][ind[0]], ncf_data["g2_err"][ind[0]])
+                    g_err = (
+                        ncf_data["g1_err"][ind[0]],
+                        ncf_data["g2_err"][ind[0]],
+                    )
 
                     self._add2dict(f"NGMIX{m}_ELL_{key}", g, idx)
                     self._add2dict(f"NGMIX{m}_ELL_ERR_{key}", g_err, idx)
@@ -378,6 +467,8 @@ class SaveCatalogue:
 
         ngmix_cat_file.close()
 
+        return None
+
     def _save_galsim_shapes(self, galsim_cat_path):
         """Save GalSim Shapes.
 
@@ -404,7 +495,7 @@ class SaveCatalogue:
         ):
             self._update_dict(key_str, np.zeros(len(self._obj_id)))
         for key_str in ("GALSIM_FLUX_ERR_", "GALSIM_MAG_ERR_", "GALSIM_RES_"):
-            self._update_dict(key_str, np.ones(len(self._obj_id)) * -1)
+            self._update_dict(key_str, np.ones(n_obj) * -1)
         for key_str in (
             "GALSIM_GAL_ELL_",
             "GALSIM_GAL_ELL_ERR_",
@@ -437,7 +528,10 @@ class SaveCatalogue:
 
                     else:
 
-                        g = (gcf_data["gal_g1"][ind[0]], gcf_data["gal_g2"][ind[0]])
+                        g = (
+                            gcf_data["gal_g1"][ind[0]],
+                            gcf_data["gal_g2"][ind[0]],
+                        )
                         g_err = (
                             gcf_data["gal_g1_err"][ind[0]],
                             gcf_data["gal_g2_err"][ind[0]],
@@ -458,7 +552,10 @@ class SaveCatalogue:
                         sigma = gcf_data["gal_sigma"][ind[0]]
                         self._add2dict(f"GALSIM_GAL_SIGMA_{key}", sigma, idx)
 
-                        psf_g = (gcf_data["psf_g1"][ind[0]], gcf_data["psf_g2"][ind[0]])
+                        psf_g = (
+                            gcf_data["psf_g1"][ind[0]],
+                            gcf_data["psf_g2"][ind[0]],
+                        )
                         psf_sigma = gcf_data["psf_sigma"][ind[0]]
                         self._add2dict(f"GALSIM_PSF_ELL_{key}", psf_g, idx)
                         self._add2dict(
@@ -498,7 +595,7 @@ class SaveCatalogue:
         """
         galaxy_psf_cat = SqliteDict(galaxy_psf_path)
 
-        max_epoch = np.max(self.final_cat_file.get_data()["N_EPOCH"]) + 1
+        max_epoch = np.max(self._final_cat_file.get_data()["N_EPOCH"]) + 1
 
         self._output_dict = {
             f"PSF_ELL_{idx + 1}": np.ones((len(self._obj_id), 2)) * -10.0
@@ -537,7 +634,9 @@ class SaveCatalogue:
                 )
                 self._add2dict(f"PSF_ELL_{epoch + 1}", e_psf, idx)
 
-                psf_fwhm = galaxy.sigma_to_fwhm(gpc_data["SHAPES"]["SIGMA_PSF_HSM"])
+                psf_fwhm = galaxy.sigma_to_fwhm(
+                    gpc_data["SHAPES"]["SIGMA_PSF_HSM"]
+                )
                 self._add2dict(f"PSF_FWHM_{epoch + 1}", psf_fwhm, idx)
 
                 flag_psf = gpc_data["SHAPES"]["FLAG_PSF_HSM"]

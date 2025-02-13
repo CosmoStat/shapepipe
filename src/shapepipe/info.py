@@ -13,7 +13,27 @@ except ImportError:
 else:
     import_fail = False
 
-from shapepipe import __version__
+
+# Package Info
+version_info = (1, 0, 1)
+__version__ = ".".join(str(c) for c in version_info)
+__name__ = "shapepipe"
+__author__ = "Samuel Farrens"
+__email__ = "samuel.farrens@cea.fr"
+__about__ = (
+    "ShapePipe is a shape measurement pipeline developed with the"
+    + "CosmoStat lab at CEA Paris-Saclay."
+)
+__setups__ = ["pytest-runner"]
+__installs__ = ["joblib>=0.13", "modopt>=1.2", "numpy>=1.14"]
+__tests__ = [
+    "pytest",
+    "pytest-cov",
+    "pytest-pycodestyle",
+    "pytest-pydocstyle",
+]
+__scripts_dir__ = "scripts"
+__scripts_ext__ = (".py", ".sh", ".bash")
 
 
 def shapepipe_logo(colour=False):

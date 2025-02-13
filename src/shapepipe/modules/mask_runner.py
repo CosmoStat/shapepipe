@@ -52,9 +52,9 @@ def mask_runner(
 
     # Set options for 4 inputs
     elif n_inputs == 4:
-        if config.getboolean(module_config_sec, "USE_EXT_FLAG") and config.getboolean(
-            module_config_sec, "USE_EXT_STAR"
-        ):
+        if config.getboolean(
+            module_config_sec, "USE_EXT_FLAG"
+        ) and config.getboolean(module_config_sec, "USE_EXT_STAR"):
             ext_flag_name = input_file_list[2]
             ext_star_cat = input_file_list[3]
         else:
@@ -90,6 +90,14 @@ def mask_runner(
 
     outname_base = "flag"
 
+    # Path to check for already created mask files
+    if config.has_option(module_config_sec, "CHECK_EXISTING_DIR"):
+        check_existing_dir = config.getexpanded(
+            module_config_sec, "CHECK_EXISTING_DIR"
+        )
+    else:
+        check_existing_dir = None
+
     # Create instance of Mask
     mask_inst = Mask(
         *input_file_list[:2],
@@ -100,6 +108,7 @@ def mask_runner(
         path_external_flag=ext_flag_name,
         outname_base=outname_base,
         star_cat_path=ext_star_cat,
+        check_existing_dir=check_existing_dir,
         hdu=hdu,
         w_log=w_log,
     )

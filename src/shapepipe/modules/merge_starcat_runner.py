@@ -37,6 +37,18 @@ def merge_starcat_runner(
             + f"needs to be one of {allowed_psf_models}"
         )
 
+    # Get input catalogue HDU number
+    if config.has_option(module_config_sec, "HDU"):
+        hdu = config.getint(module_config_sec, "HDU")
+    else:
+        hdu = 1
+
+    # Input star catalogue type, to be added to output header for information
+    if config.has_option(module_config_sec, "INPUT_CAT_TYPE"):
+        input_cat_type = config.get(module_config_sec, "INPUT_CAT_TYPE")
+    else:
+        input_cat_type = None
+
     # Set output directory
     output_dir = run_dirs["output"]
 
@@ -49,7 +61,7 @@ def merge_starcat_runner(
         MSC = merge_starcat.MergeStarCatSetools
 
     # Create instance of merge class
-    merge_inst = MSC(input_file_list, output_dir, w_log)
+    merge_inst = MSC(input_file_list, output_dir, w_log, hdu_table=hdu, input_cat_type=input_cat_type)
 
     # Run processing
     merge_inst.process()

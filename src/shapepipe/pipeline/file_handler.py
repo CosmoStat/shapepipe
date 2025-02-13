@@ -32,12 +32,14 @@ class FileHandler(object):
         List of modules to be run
     config : CustomParser
         Configuaration parser instance
+    exclusive : str, optional
+        Run this file number string exclusively if given, the default is None
     verbose : bool, optional
         Verbose setting, default is True
 
     """
 
-    def __init__(self, run_name, modules, config, verbose=True):
+    def __init__(self, run_name, modules, config, exclusive=None, verbose=True):
 
         self._run_name = run_name
 
@@ -46,6 +48,7 @@ class FileHandler(object):
             raise ValueError("Invalid module list, check for a trailing comma")
 
         self._config = config
+        self._exclusive = exclusive
         self._verbose = verbose
 
         self.module_runners = get_module_runners(self._module_list)
@@ -336,7 +339,8 @@ class FileHandler(object):
                 input_dir.extend(
                     [
                         self.setpath(
-                            self.setpath(run.split(" ")[0], module_run), "output"
+                            self.setpath(run.split(" ")[0], module_run),
+                            "output",
                         )
                         for run in all_runs
                     ]
@@ -457,7 +461,9 @@ class FileHandler(object):
         elif property in self._module_dict[module][run_name].keys():
             value = self._module_dict[module][run_name][property]
         else:
-            raise ValueError(f"Property {property} not found for module {module}.")
+            raise ValueError(
+                f"Property {property} not found for module {module}."
+            )
 
         return value
 
@@ -562,7 +568,9 @@ class FileHandler(object):
             prop_val = getattr(self.module_runners[module], property)
 
         else:
-            raise ValueError(f"No value for {property} in {module} could be found.")
+            raise ValueError(
+                f"No value for {property} in {module} could be found."
+            )
 
         # Look for additional module properties for list objects
         if isinstance(prop_val, list) and self.get_add_module_property(
@@ -707,7 +715,9 @@ class FileHandler(object):
             dir_set_by = f"{module}.py"
             # If so, loop through all the input modules defined for the current
             # module
-            for input_module in self._module_dict[module][run_name]["input_module"]:
+            for input_module in self._module_dict[module][run_name][
+                "input_module"
+            ]:
                 # Get the input module name and run
                 input_module, in_mod_run = shared.split_module_run(input_module)
                 # Check if the input module was part of the current pipeline
@@ -719,7 +729,9 @@ class FileHandler(object):
                     # Add the output directory of the input module to
                     # the list of input directories for the current module
                     input_dir.append(
-                        self._module_dict[input_module][in_mod_run]["output_dir"]
+                        self._module_dict[input_module][in_mod_run][
+                            "output_dir"
+                        ]
                     )
                 else:
                     # If not, add the last run of the input module to the
@@ -744,7 +756,9 @@ class FileHandler(object):
 
         # Add the input directories for the current module to the module
         # dictionary
-        self._module_dict[module][run_name]["input_dir"] = self.check_dirs(input_dir)
+        self._module_dict[module][run_name]["input_dir"] = self.check_dirs(
+            input_dir
+        )
         self._module_dict[module][run_name]["dir_set_by"] = dir_set_by
 
         # Log the input directories and how they were set
@@ -787,11 +801,12 @@ class FileHandler(object):
         split_pattern = "|".join(chars).replace(".", r"\.")
         chars = [f"\\{char}" for char in chars] + [""]
         num_length = [
-            f"\\d{{{len(digits)}}}" for digits in re.split(split_pattern, match_pattern)
+            f"\\d{{{len(digits)}}}"
+            for digits in re.split(split_pattern, match_pattern)
         ]
-        re_pattern = r"".join([a for b in zip(num_length, chars) for a in b]).replace(
-            "{1}", "+"
-        )
+        re_pattern = r"".join(
+            [a for b in zip(num_length, chars) for a in b]
+        ).replace("{1}", "+")
 
         return re.compile(re_pattern)
 
@@ -815,7 +830,9 @@ class FileHandler(object):
 
         """
         return [
-            file_name.replace(_dir + "/", "") for _dir in dir_list if _dir in file_name
+            file_name.replace(_dir + "/", "")
+            for _dir in dir_list
+            if _dir in file_name
         ][0]
 
     @classmethod
@@ -856,7 +873,9 @@ class FileHandler(object):
 
         return re_pattern
 
-    def _save_num_patterns(self, dir_list, re_pattern, pattern, ext, output_file):
+    def _save_num_patterns(
+        self, dir_list, re_pattern, pattern, ext, output_file
+    ):
         """Save Number Patterns.
 
         Save file number patterns to numpy binary, update file patterns and
@@ -976,10 +995,17 @@ class FileHandler(object):
         """
         num_pattern_list = [np.load(mmap, mmap_mode="r") for mmap in mmap_list]
 
-        np.save(
-            output_file,
-            reduce(partial(np.intersect1d, assume_unique=True), num_pattern_list),
-        )
+        num_pattern_intersect = reduce(
+            partial(np.intersect1d, assume_unique=True), num_pattern_list
+         )
+        if len(num_pattern_intersect) == 0:
+            msg = (
+                "Found numbers corresponding to the different input patterns"
+                + f" do not intersect: {[n[0] for n in num_pattern_list]}"
+            )
+            raise ValueError(msg)
+
+        np.save(output_file, num_pattern_intersect)
 
         del num_pattern_list
 
@@ -1054,7 +1080,7 @@ class FileHandler(object):
 
         Returns
         -------
-        list
+
             List of processes
 
         """
@@ -1065,6 +1091,12 @@ class FileHandler(object):
         else:
             number_list = self._number_list
 
+        if len(number_list) == 0:
+            msg = "Empty number list"
+            msg = f"{msg}. Class variable self._number_list is None"
+            msg = f"{msg}. And memory map {memory_map} is empty."
+            raise ValueError(msg)
+
         process_list = []
 
         for number in number_list:
@@ -1074,6 +1106,20 @@ class FileHandler(object):
                     f'The string "{number}" does not match the '
                     + f'numbering scheme "{num_scheme}".'
                 )
+
+            # If "exclusive" options is set: discard all non-matching IDs
+            if self._exclusive is not None:
+                id_to_test = f"-{self._exclusive.replace('.', '-')}"
+                if number == id_to_test:
+                    if self._verbose:
+                        print(
+                            f"-- Using exclusive number {self._exclusive} ({id_to_test})"
+                        )
+                else:
+                    if self._verbose:
+                        # print(f"Skipping {number}, not equal to {self._exclusive} ({id_to_test})")
+                        pass
+                    continue
 
             if run_method == "serial":
                 process_items = []
@@ -1086,6 +1132,13 @@ class FileHandler(object):
                 ]
             )
             process_list.append(process_items)
+
+        if len(process_list) == 0:
+            msg = "Empty process list"
+            if self._exclusive is not None:
+                if len(number_list) > 0:
+                    msg = f"{msg}. No input file found matching exclusive ID"
+            raise ValueError(msg)
 
         return process_list
 
@@ -1124,7 +1177,9 @@ class FileHandler(object):
 
         temp = [
             self._save_num_patterns(dir_list, re_pattern, pattern, ext, np_mmap)
-            for pattern, ext, np_mmap in zip(pattern_list, ext_list, np_mmap_list)
+            for pattern, ext, np_mmap in zip(
+                pattern_list, ext_list, np_mmap_list
+            )
         ]
 
         self._save_match_patterns(match_mmap, np_mmap_list)

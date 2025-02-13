@@ -7,6 +7,7 @@ This module contains a class to create postage stamps from images.
 """
 
 import re
+import os
 
 import numpy as np
 from astropy.wcs import WCS
@@ -45,11 +46,13 @@ class VignetMaker(object):
         pos_params,
         output_dir,
         image_num,
+        w_log,
     ):
 
         self._galcat_path = galcat_path
         self._output_dir = output_dir
         self._image_num = image_num
+        self._w_log = w_log
         self._pos = self.get_pos(pos_params)
         self._pos_type = pos_type
 
@@ -68,16 +71,24 @@ class VignetMaker(object):
             Prefix of the output file
 
         """
+        # Loop over input image files
         for _prefix, img in zip(prefix, image_path_list):
             image_path = img
 
+            # Set x and y positions according to input coordinate type
             if self._pos_type == "PIX":
+                # Cartesian pixel coordinates: leave as is
                 pos = self._pos
+
             elif self._pos_type == "SPHE":
+                # Spherical world coordinates: transform using image header WCS
                 pos = convert_pos(image_path)
+
             else:
                 raise ValueError(
-                    "Coordinates type must be in : PIX (pixel), " + "SPHE (spherical)."
+                    f"Invalid coordinates type {self._pos_type}; allowed are"
+                    + " 'PIX' (Cartesian pixel coordinates) and "
+                    + "'SPHE' (spherical world coordinates))"
                 )
 
             vign = self._get_stamp(image_path, pos - 1, rad)
@@ -93,13 +104,14 @@ class VignetMaker(object):
     def get_pos(self, pos_params):
         """Get Positions.
 
-        Get the positions of the given parameters from SExtractor catalogue.
+        Get the positions according to the position parameter column names
+        from the SExtractor cinput atalogue.
 
         Parameters
         ----------
         pos_params : list
-            List of string containing the SExtractor's parameters to use as
-            positions
+            column names (SExtractor output parameters) to use as
+            positions for x and y (ra and dec); length has to be 2
 
         Returns
         -------
@@ -121,7 +133,8 @@ class VignetMaker(object):
     def convert_pos(self, image_path):
         """Convert Position.
 
-        Convert positions from world coordinates to pixel coordinates.
+        Convert positions from world coordinates to pixel coordinates using
+        image header WCS.
 
         Parameters
         ----------
@@ -134,18 +147,25 @@ class VignetMaker(object):
             New positions in pixel coordinates
 
         """
+        # Get image header
         file = file_io.FITSCatalogue(image_path)
         file.open()
         head = file.get_header(0)
         file.close()
 
+        # Get WCS transformation matrix
         wcs = WCS(head)
 
+        # Create copy of input positions
         pos_tmp = np.copy(self._pos)
+
+        # Exchange x and y
         pos_tmp[:, [0, 1]] = pos_tmp[:, [1, 0]]
 
+        # Transform from world to pixel coordinates
         new_pos = wcs.all_world2pix(pos_tmp, 1)
 
+        # Exchange x and y back to original
         new_pos[:, [0, 1]] = new_pos[:, [1, 0]]
 
         return new_pos
@@ -170,9 +190,25 @@ class VignetMaker(object):
             Array containing the vignets
 
         """
-        img_file = file_io.FITSCatalogue(img_path)
-        img_file.open()
-        img = img_file.get_data(0)
+        try:
+            img_file = file_io.FITSCatalogue(img_path)
+        except:
+            self._w_log.info(f"Error while getting file {img_path}")
+            raise
+
+        try:
+            img_file.open()
+        except:
+            self._w_log.info(f"Error while opening file {img_path}")
+            raise
+
+        try:
+            img = img_file.get_data(0)
+        except:
+            self._w_log.info(
+                f"Error while reading data from {img_path}"
+            )
+            raise
         img_file.close()
 
         fs = FetchStamps(img, int(rad))
@@ -182,22 +218,22 @@ class VignetMaker(object):
 
         return vign
 
-    def _get_stamp_me(self, image_dir, image_pattern):
+    def _get_stamp_me(self, image_dirs, image_pattern):
         """Get Stamp Multi-Epoch.
 
         Get stamps for multi-epoch data.
 
         Parameters
         ----------
-        image_dir : str
-            Path to the directory where the images are
+        image_dirs : list
+            Path to directories to search for input images
         image_pattern : str
             Common part of the file names
 
         Returns
         -------
         dict
-            Directory containing object id and vignets for each epoch
+            Dictionary containing object id and vignets for each epoch
 
         """
         cat = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
@@ -207,11 +243,25 @@ class VignetMaker(object):
         n_epoch = np.copy(cat.get_data()["N_EPOCH"])
 
         list_ext_name = cat.get_ext_name()
-        hdu_ind = [i for i in range(len(list_ext_name)) if "EPOCH" in list_ext_name[i]]
+        hdu_ind = [
+            i for i in range(len(list_ext_name)) if "EPOCH" in list_ext_name[i]
+        ]
 
         final_list = []
         for hdu_index in hdu_ind:
-            exp_name = cat.get_data(hdu_index)["EXP_NAME"][0]
+            try:
+                exp_names = cat.get_data(hdu_index)["EXP_NAME"]
+            except:
+                raise KeyError(
+                    f"Problem with key 'EXP_NAME' in file {self._galcat_path}"
+                    + f" HDU #{hdu_index}"
+                )
+            if len(exp_names) == 0:
+                raise IndexError(
+                    f"EXP_NAME list is empty in file {self._galcat_path}"     
+                    + f" HDU #{hdu_index}"                                      
+                )
+            exp_name = exp_names[0]
             ccd_list = list(set(cat.get_data(hdu_index)["CCD_N"]))
             array_vign = None
             array_id = None
@@ -222,16 +272,19 @@ class VignetMaker(object):
                 if ccd == -1:
                     continue
 
-                img_path = (
-                    image_dir
-                    + "/"
-                    + image_pattern
-                    + "-"
-                    + exp_name
-                    + "-"
-                    + str(ccd)
-                    + ".fits"
-                )
+                # Look for input image
+                found = False
+                image_name = f"{image_pattern}-{exp_name}-{ccd}.fits"
+                for image_dir in image_dirs:
+                    img_path = f"{image_dir}/{image_name}"
+                    if os.path.exists(img_path):
+                        found = True
+                        break
+                if not found:
+                    raise FileNotFoundError(
+                        f"Could not find image {image_name}"
+                    )
+
                 ind_obj = np.where(cat.get_data(hdu_index)["CCD_N"] == ccd)[0]
                 obj_id = all_id[ind_obj]
 
@@ -292,23 +345,23 @@ class VignetMaker(object):
 
         return output_dict
 
-    def process_me(self, image_dir, image_pattern, f_wcs_path, rad):
+    def process_me(self, image_dirs, image_pattern, f_wcs_path, rad):
         """Process Multi-Epoch.
 
         Main function to create the stamps in the multi-epoch case.
 
         Parameters
         ----------
-        image_dir : list
-            List of directories where the image are; ff ``len(image_dir) == 1``
-            -> all images are in the same directory, else ``len(image_dir)``
-            must match ``len(image_pattern)``
+        image_dirs : list
+            Directories of image locations.
+            Each list item contains sublist in which images are searched.
+            Length of outer list has to match image_pattern, or be single item.
         image_pattern : list
             Common part of each kind of file names
         f_wcs_path : str
             Path to the log file containing the WCS for each CCDs
         rad : int
-            Radius of the stamp, must be odd
+            Radius of the stamp, must be an odd integer
 
         """
         self._f_wcs_file = SqliteDict(f_wcs_path)
@@ -316,17 +369,15 @@ class VignetMaker(object):
 
         for idx in range(len(image_pattern)):
 
-            if len(image_dir) != len(image_pattern):
-                output_dict = self._get_stamp_me(
-                    image_dir[0],
-                    image_pattern[idx],
-                )
-
+            if len(image_dirs) != len(image_pattern):
+                index = 0
             else:
-                output_dict = self._get_stamp_me(
-                    image_dir[idx],
-                    image_pattern[idx],
-                )
+                index = idx
+
+            output_dict = self._get_stamp_me(
+                image_dirs[index],
+                image_pattern[idx],
+            )
 
             self._save_vignet_me(output_dict, image_pattern[idx])
 

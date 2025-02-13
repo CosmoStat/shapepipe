@@ -15,15 +15,14 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: [3.11]
+        python-version: [3.8]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v2
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
-        run: |
-          sudo apt-get install libopenblas-dev gcc-9 g++-9
+        run: sudo apt-get install libopenblas-dev
 
       - name: Install macOS Dependencies
         shell: bash -l {0}
@@ -31,32 +30,22 @@ jobs:
         run: |
           brew tap sfarrens/sf
           brew install bigmac libomp
-          brew reinstall gcc
 
       - name: Set up conda
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
           auto-activate-base: true
-          miniforge-version: latest
 
-      - name: Install package (Linux)
+      - name: Install package
         shell: bash -l {0}
-        env:
-          CC: gcc-9
-          CXX: g++-9
-        if: runner.os == 'Linux'
-        run: ./install_shapepipe --env-dev
-
-      - name: Install package (macOS)
-        shell: bash -l {0}
-        if: runner.os == 'macOS'
-        run: ./install_shapepipe --env-dev
+        run: |
+          ./install_shapepipe --env-dev --develop
 
       - name: Run tests
         shell: bash -l {0}
         run: |
           conda activate shapepipe-dev
-          pytest
+          python setup.py test
           shapepipe_run -c example/config.ini

@@ -35,11 +35,21 @@ class MergeStarCatMCCD(object):
         Radius for mask, in pixels; default is ``10``
     hdu_table : int, optional
         HDU number; default is ``1``
+    input_cat_type : str, optional
+        Input catalogue type, added to outupt header; default is ``None``,
+        in which no key is added
 
     """
 
     def __init__(
-        self, input_file_list, output_dir, w_log, stamp_size=51, rad=10, hdu_table=1
+        self,
+        input_file_list,
+        output_dir,
+        w_log,
+        stamp_size=51,
+        rad=10,
+        hdu_table=1,
+        input_cat_type=None,
     ):
 
         self._input_file_list = input_file_list
@@ -48,6 +58,7 @@ class MergeStarCatMCCD(object):
         self._stamp_size = stamp_size
         self._rad = rad
         self._hdu_table = hdu_table
+        self._input_cat_type = input_cat_type
 
     @staticmethod
     def rmse_calc(values, sizes):
@@ -227,13 +238,14 @@ class MergeStarCatMCCD(object):
         my_mask[inside_circle] = True
 
         for name in self._input_file_list:
-            starcat_j = fits.open(name[0], memmap=False)
-
             try:
-                stars = np.copy(starcat_j[self._hdu_table].data["VIGNET_LIST"])
+                starcat_j = fits.open(name[0], memmap=False, ignore_missing_simple=True)
             except ValueError:
                 print(f"Error for file {name[0]}, check FITS file integrity")
-                raise
+                #raise
+                continue
+
+            stars = np.copy(starcat_j[self._hdu_table].data["VIGNET_LIST"])
             stars[stars < -1e6] = 0
             psfs = np.copy(starcat_j[self._hdu_table].data["PSF_VIGNET_LIST"])
 
@@ -303,8 +315,12 @@ class MergeStarCatMCCD(object):
             model_var_size.append(model_var_val.size)
 
             # positions
-            x += list(starcat_j[self._hdu_table].data["GLOB_POSITION_IMG_LIST"][:, 0])
-            y += list(starcat_j[self._hdu_table].data["GLOB_POSITION_IMG_LIST"][:, 1])
+            x += list(
+                starcat_j[self._hdu_table].data["GLOB_POSITION_IMG_LIST"][:, 0]
+            )
+            y += list(
+                starcat_j[self._hdu_table].data["GLOB_POSITION_IMG_LIST"][:, 1]
+            )
 
             # RA and DEC positions
             try:
@@ -329,16 +345,28 @@ class MergeStarCatMCCD(object):
                 )
 
             # shapes (convert sigmas to R^2)
-            g1_psf += list(starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 0])
-            g2_psf += list(starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 1])
-            size_psf += list(starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 2] ** 2)
+            g1_psf += list(
+                starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 0]
+            )
+            g2_psf += list(
+                starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 1]
+            )
+            size_psf += list(
+                starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 2] ** 2
+            )
             g1 += list(starcat_j[self._hdu_table].data["STAR_MOM_LIST"][:, 0])
             g2 += list(starcat_j[self._hdu_table].data["STAR_MOM_LIST"][:, 1])
-            size += list(starcat_j[self._hdu_table].data["STAR_MOM_LIST"][:, 2] ** 2)
+            size += list(
+                starcat_j[self._hdu_table].data["STAR_MOM_LIST"][:, 2] ** 2
+            )
 
             # flags
-            flag_psf += list(starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 3])
-            flag_star += list(starcat_j[self._hdu_table].data["STAR_MOM_LIST"][:, 3])
+            flag_psf += list(
+                starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 3]
+            )
+            flag_star += list(
+                starcat_j[self._hdu_table].data["STAR_MOM_LIST"][:, 3]
+            )
 
             # ccd id list
             ccd_nb += list(starcat_j[self._hdu_table].data["CCD_ID_LIST"])
@@ -414,7 +442,9 @@ class MergeStarCatMCCD(object):
         )
 
         # Mask and transform to numpy arrays
-        flagmask = np.abs(np.array(flag_star) - 1) * np.abs(np.array(flag_psf) - 1)
+        flagmask = np.abs(np.array(flag_star) - 1) * np.abs(
+            np.array(flag_psf) - 1
+        )
         psf_e1 = np.array(g1_psf)[flagmask.astype(bool)]
         psf_e2 = np.array(g2_psf)[flagmask.astype(bool)]
         psf_r2 = np.array(size_psf)[flagmask.astype(bool)]
@@ -469,6 +499,17 @@ class MergeStarCatMCCD(object):
 
         # Write file
         output.save_as_fits(data, sex_cat_path=self._input_file_list[0][0])
+        # MKDEBUG; Implement this in file_io
+        if self._input_cat_type:
+            with fits.open(out_path, mode="update") as hdu_list:
+                header = hdu_list[1].header
+    
+                # Add a new key-value pair
+                header['CATTYPE'] = (self._input_cat_type, "Input catalogue type")
+    
+                # Save changes to the FITS file
+                hdu_list.flush()
+
 
 
 class MergeStarCatPSFEX(object):
@@ -486,15 +527,25 @@ class MergeStarCatPSFEX(object):
         Logging instance
     hdu_table : int, optional
         HDU number; default is ``2``
+    input_cat_type : str, optional
+        Input catalogue type, added to outupt header; default is ``None``,
+        in which no key is added
 
     """
 
-    def __init__(self, input_file_list, output_dir, w_log, hdu_table=2):
-
+    def __init__(
+        self,
+        input_file_list,
+        output_dir,
+        w_log,
+        hdu_table=2,
+        input_cat_type=None,
+    ):
         self._input_file_list = input_file_list
         self._output_dir = output_dir
         self._w_log = w_log
         self._hdu_table = hdu_table
+        self._input_cat_type = input_cat_type
 
     def process(self):
         """Process.
@@ -509,10 +560,17 @@ class MergeStarCatPSFEX(object):
         mag, snr, psfex_acc = [], [], []
         ccd_nb = []
 
-        self._w_log.info(f"Merging {len(self._input_file_list)} star catalogues")
+        self._w_log.info(
+            f"Merging {len(self._input_file_list)} star catalogues"
+        )
 
         for name in self._input_file_list:
-            starcat_j = fits.open(name[0], memmap=False)
+            try:
+                starcat_j = fits.open(name[0], memmap=False, ignore_missing_simple=True)
+            except OSError as e:
+                print(f"Error while opening file '{name[0]}'")
+                #raise
+                continue
 
             data_j = starcat_j[self._hdu_table].data
 
@@ -535,9 +593,21 @@ class MergeStarCatPSFEX(object):
             flag_star += list(data_j["FLAG_STAR_HSM"])
 
             # misc
-            mag += list(data_j["MAG"])
-            snr += list(data_j["SNR"])
-            psfex_acc += list(data_j["ACCEPTED"])
+
+            # MKDEBUG: The following columns do not exist (yet)
+            # for psf converted (pix2wcs) files.
+            try:
+                mag += list(data_j["MAG"])
+            except:
+                mag += list(np.zeros_like(data_j["X"]))
+            try:
+                snr += list(data_j["SNR"])
+            except:
+                snr += list(np.zeros_like(data_j["X"]))
+            try:
+                psfex_acc += list(data_j["ACCEPTED"])
+            except:
+                psfex_acc += list(np.zeros_like(data_j["X"]))
 
             # CCD number
             ccd_nb += [re.split(r"\-([0-9]*)\-([0-9]+)\.", name[0])[-2]] * len(
@@ -545,10 +615,12 @@ class MergeStarCatPSFEX(object):
             )
 
         # Prepare output FITS catalogue
+        # MKDEBUG: SEx_cat=True -> False
+        out_path = f"{self._output_dir}/full_starcat-0000000.fits"
         output = file_io.FITSCatalogue(
-            f"{self._output_dir}/full_starcat-0000000.fits",
+            out_path,
             open_mode=file_io.BaseCatalogue.OpenMode.ReadWrite,
-            SEx_catalogue=True,
+            SEx_catalogue=False,
         )
 
         # Collect columns
@@ -573,11 +645,23 @@ class MergeStarCatPSFEX(object):
         }
 
         # Write file
+        # MKDEBUG for psf conv (pix2WCS) files do not write as SExtractorCat;
+        # we do not want to copy the first input data content to HDU #1.
+        # sex_cat_path=self._input_file_list[0][0],
         output.save_as_fits(
             data,
             overwrite=True,
-            sex_cat_path=self._input_file_list[0][0],
         )
+        # MKDEBUG; Implement this in file_io
+        if self._input_cat_type:
+            with fits.open(out_path, mode="update") as hdu_list:
+                header = hdu_list[1].header
+    
+                # Add a new key-value pair
+                header['CATTYPE'] = (self._input_cat_type, "Input catalogue type")
+    
+                # Save changes to the FITS file
+                hdu_list.flush()
 
 
 class MergeStarCatSetools(object):
@@ -694,7 +778,9 @@ class MergeStarCatSetools(object):
         mag, snr = [], []
         ccd_nb = []
 
-        self._w_log.info(f"Merging {len(self._input_file_list)} star catalogues")
+        self._w_log.info(
+            f"Merging {len(self._input_file_list)} star catalogues"
+        )
 
         for name in self._input_file_list:
             starcat_j = fits.open(name[0], memmap=False)

@@ -45,6 +45,8 @@ class Mask(object):
         Path to external flag file, default is ``None`` (not used)
     outname_base : str, optional
        Output file name base, default is ``flag``
+    check_existing_dir : str, optional
+        If not ``None`` (default), search path for existing mask files
     star_cat_path : str, optional
         Path to external star catalogue, default is ``None`` (not used;
         instead the star catalogue is produced on the fly at run time)
@@ -64,6 +66,7 @@ class Mask(object):
         w_log,
         path_external_flag=None,
         outname_base="flag",
+        check_existing_dir=None,
         star_cat_path=None,
         hdu=0,
     ):
@@ -97,6 +100,9 @@ class Mask(object):
 
         # Output file base name
         self._outname_base = outname_base
+
+        # Search path for existing mask files
+        self._check_existing_dir = check_existing_dir
 
         # Set external star catalogue path if given
         if star_cat_path is not None:
@@ -146,7 +152,9 @@ class Mask(object):
         }
 
         if conf.has_option("PROGRAM_PATH", "WW_PATH"):
-            self._config["PATH"]["WW"] = conf.getexpanded("PROGRAM_PATH", "WW_PATH")
+            self._config["PATH"]["WW"] = conf.getexpanded(
+                "PROGRAM_PATH", "WW_PATH"
+            )
         else:
             self._config["PATH"]["WW"] = "ww"
         self._config["PATH"]["WW_configfile"] = conf.getexpanded(
@@ -253,6 +261,9 @@ class Mask(object):
             self._config["MD"]["thresh_remove"] = conf.getfloat(
                 "MD_PARAMETERS", "MD_THRESH_REMOVE"
             )
+            self._config["MD"]["remove"] = conf.getboolean(
+                "MD_PARAMETERS", "MD_REMOVE"
+            )
             self._config["MD"]["remove"] = conf.getboolean("MD_PARAMETERS", "MD_REMOVE")
 
     def _set_image_coordinates(self):
@@ -298,6 +309,13 @@ class Mask(object):
         Main function to create the mask.
 
         """
+        output_file_name = (
+            f"{self._img_prefix}"
+            + f"{self._outname_base}{self._img_number}.fits"
+        )
+        if os.path.exists(f"{self._check_existing_dir}//{output_file_name}"):
+            return None, None
+
         if self._config["MD"]["make"]:
             self.missing_data()
 
@@ -411,11 +429,15 @@ class Mask(object):
             general_stdout += f"\n\nrm reg file\n{self._rm_reg_stdout}"
             if self._rm_reg_stderr != "":
                 general_stderr += f"\n\nrm reg file\n{self._rm_reg_stderr}"
-        if hasattr(self, "_rm_fits1_stderr") or hasattr(self, "_rm_fits1_stdout"):
+        if hasattr(self, "_rm_fits1_stderr") or hasattr(
+            self, "_rm_fits1_stdout"
+        ):
             general_stdout += f"\n\nrm fits1 file\n{self._rm_fits1_stdout}"
             if self._rm_fits1_stderr != "":
                 general_stderr += f"\n\nrm fits1 file\n{self._rm_fits1_stderr}"
-        if hasattr(self, "_rm_fits2_stderr") or hasattr(self, "_rm_fits2_stdout"):
+        if hasattr(self, "_rm_fits2_stderr") or hasattr(
+            self, "_rm_fits2_stdout"
+        ):
             general_stdout += f"\n\nrm fits2 file\n{self._rm_fits2_stdout}"
             if self._rm_fits2_stderr != "":
                 general_stderr += f"\n\nrm fits2 file\n{self._rm_fits2_stderr}"
@@ -561,7 +583,9 @@ class Mask(object):
 
         """
         if size_plus < 0:
-            raise ValueError("deep-sky mask size increase variable cannot be negative")
+            raise ValueError(
+                "deep-sky mask size increase variable cannot be negative"
+            )
 
         if cat_path is None:
             raise ValueError("Path to deep-sky object catalogue not provided")
@@ -647,7 +671,9 @@ class Mask(object):
             # The following accounts for deep-sky centers outside of image,
             # without creating masks for coordinates out of range
             y_c, x_c = np.ogrid[0:ny, 0:nx]
-            mask_tmp = (x_c - m_center[0]) ** 2 + (y_c - m_center[1]) ** 2 <= r_pix**2
+            mask_tmp = (x_c - m_center[0]) ** 2 + (
+                y_c - m_center[1]
+            ) ** 2 <= r_pix**2
 
             flag[mask_tmp] = flag_value
 
@@ -714,7 +740,10 @@ class Mask(object):
             If input positions are not Numpy arrays
 
         """
-        if type(position1) is not np.ndarray or type(position2) is not np.ndarray:
+        if (
+            type(position1) is not np.ndarray
+            or type(position2) is not np.ndarray
+        ):
             raise ValueError("Object coordinates need to be a numpy.ndarray")
 
         p1 = (np.pi / 180.0) * np.hstack(
@@ -759,13 +788,17 @@ class Mask(object):
 
         """
         if center is None:
-            return self.sphere_dist(self._fieldcenter["pix"], np.zeros(2)) / 60.0
+            return (
+                self.sphere_dist(self._fieldcenter["pix"], np.zeros(2)) / 60.0
+            )
 
         else:
             if isinstance(center, np.ndarray):
                 return self.sphere_dist(center, np.zeros(2)) / 60.0
             else:
-                raise TypeError("Image center coordinates has to be a numpy.ndarray")
+                raise TypeError(
+                    "Image center coordinates has to be a numpy.ndarray"
+                )
 
     def _make_star_cat(self, CDSclient_output):
         """Make Star Catalogue.
@@ -867,7 +900,9 @@ class Mask(object):
         else:
             reg = self._config[types]["reg_file"]
 
-        mask_model = np.loadtxt(self._config[types]["maskmodel_path"]).transpose()
+        mask_model = np.loadtxt(
+            self._config[types]["maskmodel_path"]
+        ).transpose()
         mask_reg = open(reg, "w")
 
         stars_used = [[], [], []]
@@ -1001,6 +1036,10 @@ class Mask(object):
 
             default_reg = [
                 (f'{self._config["PATH"]["temp_dir"]}' + f"halo{self._img_number}.reg"),
+                (
+                    f'{self._config["PATH"]["temp_dir"]}'
+                    + f"halo{self._img_number}.reg"
+                ),
                 (
                     f'{self._config["PATH"]["temp_dir"]}'
                     + f"spike{self._img_number}.reg"
@@ -1143,7 +1182,15 @@ class Mask(object):
             external_flag.open()
             if final_mask is not None:
                 final_mask = final_mask.astype(np.int16, copy=False)
-                final_mask += external_flag.get_data()[:, :]
+                try:
+                    ext_flag = external_flag.get_data()
+                except:
+                    self._w_log.info(
+                        "Problem while getting external flag data. Check"
+                        + f" whether file {path_external_flag} is not corrupt"
+                    )
+                    raise
+                final_mask += ext_flag[:, :]
             else:
                 final_mask = external_flag.get_data()[:, :]
             external_flag.close()

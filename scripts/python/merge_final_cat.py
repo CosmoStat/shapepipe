@@ -20,8 +20,6 @@ import copy
 
 from optparse import OptionParser
 
-from tqdm import tqdm
-
 from shapepipe.utilities import cfis
 
 
@@ -124,7 +122,11 @@ def parse_options(p_def):
     )
 
     parser.add_option(
-        "-v", "--verbose", dest="verbose", action="store_true", help="verbose output"
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+        help="verbose output",
     )
 
     options, args = parser.parse_args()
@@ -186,6 +188,7 @@ def update_param(p_def, options):
     return param
 
 
+# MKDEBUG TODO: remove this function, duplicate in create_final_cat.py
 def read_param_file(path, verbose=False):
     """Read Param File.
 
@@ -283,6 +286,7 @@ def get_data(path, hdu_num, param_list):
 
 def main(argv=None):
 
+
     # Set default parameters
     p_def = params_default()
 
@@ -294,18 +298,26 @@ def main(argv=None):
 
     param = update_param(p_def, options)
 
+    if param.verbose:
+        print("Start")
+
     # Save command line arguments to log file
     f_log = cfis.log_command(argv, close_no_return=False)
 
     path = param.input_path
 
+    if param.verbose:
+        print("Read parameter file")
     param.param_list = read_param_file(param.param_path, verbose=param.verbose)
 
     # read (optional) input tile ID file
     if param.tile_ID_list_path:
+        if param.verbose:
+            print("Read tile ID list")
         tile_ID_list = cfis.read_list(param.tile_ID_list_path)
 
-    # find input catalogue FITS files
+    if param.verbose:
+        print("Find input catalogue FITS files")
     l = os.listdir(path=path)
     ext = "fits"
     lpath = []
@@ -313,7 +325,7 @@ def main(argv=None):
 
         add_this_l = False
 
-        # mark to add if correct extension, matches input pattern,
+        # mark to add if correct extension, matches input pattern, not `.npy` file
         if (
             this_l.endswith(ext)
             and (f"{param.input_name_base}" in this_l)

@@ -101,7 +101,11 @@ def parse_options(p_def):
     )
 
     parser.add_option(
-        "-v", "--verbose", dest="verbose", action="store_true", help="verbose output"
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+        help="verbose output",
     )
 
     options, args = parser.parse_args()
@@ -238,7 +242,9 @@ def gather_values(paths, verbose=False):
                     values[key].append(val)
                 else:
                     if verbose:
-                        print("NaN found in file '{}', key '{}'".format(path, key))
+                        print(
+                            "NaN found in file '{}', key '{}'".format(path, key)
+                        )
 
     if verbose:
         print("{} keys created".format(len(values)))
@@ -390,7 +396,9 @@ def plot_histograms(hists, config=None, output_dir=".", verbose=False):
             if verbose:
                 print("Creating files '{}.*'".format(file_base))
 
-            plt.savefig("{}/{}.png".format(output_dir, file_base), bbox_inches="tight")
+            plt.savefig(
+                "{}/{}.png".format(output_dir, file_base), bbox_inches="tight"
+            )
             np.savetxt(
                 "{}/{}.txt".format(output_dir, file_base),
                 np.transpose([bins, freq]),
@@ -426,7 +434,9 @@ def get_config(config_path, verbose=False):
         print("Reading configuration file '{}'".format(config_path))
 
     if not os.path.exists(config_path):
-        raise OSError("Configuration file '{}' does not exist".format(config_path))
+        raise OSError(
+            "Configuration file '{}' does not exist".format(config_path)
+        )
 
     conf = CustomParser()
     conf.read(config_path)
@@ -467,7 +477,9 @@ def main(argv=None):
     hists = compute_histograms(values, config=config, verbose=param.verbose)
 
     if os.path.isfile(param.output_dir):
-        raise OSError("Output path '{}' is a regular file" "".format(param.output_dir))
+        raise OSError(
+            "Output path '{}' is a regular file" "".format(param.output_dir)
+        )
     if not os.path.isdir(param.output_dir):
         os.mkdir(param.output_dir)
 

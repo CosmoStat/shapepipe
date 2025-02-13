@@ -146,7 +146,9 @@ class image:
         else:
             return f"{m[1]}.{m[2]}"
 
-    def print(self, file=sys.stdout, base_name=False, name_only=True, ID_only=False):
+    def print(
+        self, file=sys.stdout, base_name=False, name_only=True, ID_only=False
+    ):
         """Print.
 
         Print image information as ascii Table column.
@@ -202,7 +204,10 @@ class image:
             output file handle
 
         """
-        print(f"#Name ra[{unitdef}] dec[{unitdef}] exp_time[s] validation", file=file)
+        print(
+            f"#Name ra[{unitdef}] dec[{unitdef}] exp_time[s] validation",
+            file=file,
+        )
 
 
 def log_command(argv, name=None, close_no_return=True):
@@ -314,14 +319,17 @@ def my_string_split(string, num=-1, verbose=False, stop=False, sep=None):
     else:
         if not string.find(sep):
             raise ValueError(
-                f"No separator '{sep}' found in string '{string}', " + "cannot split"
+                f"No separator '{sep}' found in string '{string}', "
+                + "cannot split"
             )
         my_sep = sep
 
     res = string.split(my_sep)
 
     if num != -1 and num != len(res) and stop:
-        raise CfisError(f"String '{len(res)}' has length {num}, required is {num}")
+        raise CfisError(
+            f"String '{len(res)}' has length {num}, required is {num}"
+        )
 
     return res
 
@@ -557,7 +565,9 @@ def get_tile_number(tile_name):
     """
     m = re.search(r"(\d{3})[\.-](\d{3})", tile_name)
     if m is None or len(m.groups()) != 2:
-        raise CfisError(f"Image name '{tile_name}' does not match tile name syntax")
+        raise CfisError(
+            f"Image name '{tile_name}' does not match tile name syntax"
+        )
 
     nix = m.groups()[0]
     niy = m.groups()[1]
@@ -729,7 +739,9 @@ def get_Angle_arr(str_coord, num=-1, wrap=True, verbose=False):
         array of sky coordinates (pairs ra, dec)
 
     """
-    angles_mixed = my_string_split(str_coord, num=num, verbose=verbose, stop=True)
+    angles_mixed = my_string_split(
+        str_coord, num=num, verbose=verbose, stop=True
+    )
     n = len(angles_mixed)
     n = int(n / 2)
 
@@ -811,7 +823,9 @@ def create_image_list(fname, ra, dec, exp_time=[], valid=[]):
     if nf == 0:
         raise CfisError("No entries in file name list")
     if (nf != nr or nf != nd) and nr != 0 and nd != 0:
-        raise CfisError(f"Lists fname, ra, dec have not same length ({nf}, {nr}, {nd})")
+        raise CfisError(
+            f"Lists fname, ra, dec have not same length ({nf}, {nr}, {nd})"
+        )
 
     images = []
     for i in range(nf):
@@ -835,7 +849,9 @@ def create_image_list(fname, ra, dec, exp_time=[], valid=[]):
     return images
 
 
-def get_image_list(inp, band, image_type, col=None, input_format="full", verbose=False):
+def get_image_list(
+    inp, band, image_type, col=None, input_format="full", verbose=False
+):
     """Get Image List.
 
     Return list of images.
@@ -869,7 +885,9 @@ def get_image_list(inp, band, image_type, col=None, input_format="full", verbose
 
     if os.path.isdir(inp):
         if col is not None:
-            raise CfisError("Column name (-c option) only valid if input is file")
+            raise CfisError(
+                "Column name (-c option) only valid if input is file"
+            )
 
         # Read file names from directory listing
         inp_type = "dir"
@@ -925,7 +943,9 @@ def get_image_list(inp, band, image_type, col=None, input_format="full", verbose
     if input_format == "ID_only":
         pattern = get_file_pattern(r"\d{3}.\d{3}", band, image_type, ext=False)
     else:
-        pattern = get_file_pattern(rf"CFIS.\d{{3}}.\d{{3}}\.{band}", band, image_type)
+        pattern = get_file_pattern(
+            rf"CFIS.\d{{3}}.\d{{3}}\.{band}", band, image_type
+        )
 
     for img in image_list:
 
@@ -969,7 +989,13 @@ def exclude(f, exclude_list):
 
 
 def find_image_at_coord(
-    images, coord, band, image_type, no_cuts=False, input_format="full", verbose=False
+    images,
+    coord,
+    band,
+    image_type,
+    no_cuts=False,
+    input_format="full",
+    verbose=False,
 ):
     """Find Image At Coordinates.
 
@@ -1014,7 +1040,9 @@ def find_image_at_coord(
 
     if image_type in ("tile", "weight", "weight.fz"):
         nix, niy = get_tile_number_from_coord(ra, dec, return_type=int)
-        tile_name = get_tile_name(nix, niy, band, image_type, input_format=input_format)
+        tile_name = get_tile_name(
+            nix, niy, band, image_type, input_format=input_format
+        )
 
         img_found = []
         for img in images:
@@ -1069,7 +1097,9 @@ def find_image_at_coord(
     return img_found
 
 
-def find_images_in_area(images, angles, band, image_type, no_cuts=False, verbose=False):
+def find_images_in_area(
+    images, angles, band, image_type, no_cuts=False, verbose=False
+):
     """Fine Images In Area.
 
     Return image list within coordinate area (rectangle)
@@ -1264,7 +1294,9 @@ def plot_area(
         dy = abs(angles[0].dec - angles[1].dec)
         dx = getattr(dx, unitdef)
         dy = getattr(dy, unitdef)
-        radius = max(dx, dy) / 2 + (size["exposure"] + size["tile"]) * np.sqrt(2)
+        radius = max(dx, dy) / 2 + (size["exposure"] + size["tile"]) * np.sqrt(
+            2
+        )
         circle = plt.Circle(
             (ra_c.deg, dec_c.deg),
             radius,

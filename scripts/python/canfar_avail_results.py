@@ -83,7 +83,9 @@ def parse_options(p_def):
         dest="input_path",
         type="string",
         default=p_def.input_path,
-        help="input path, local or vos url, default='{}'".format(p_def.input_path),
+        help="input path, local or vos url, default='{}'".format(
+            p_def.input_path
+        ),
     )
     parser.add_option(
         "-o",
@@ -99,7 +101,9 @@ def parse_options(p_def):
         dest="psf",
         type="string",
         default=p_def.psf,
-        help="PSF model, one in ['psfex'|'mccd'], default='{}'".format(p_def.psf),
+        help="PSF model, one in ['psfex'|'mccd'], default='{}'".format(
+            p_def.psf
+        ),
     )
 
     parser.add_option(
@@ -125,7 +129,11 @@ def parse_options(p_def):
         help=f"file extension, default='{p_def.extension}'",
     )
     parser.add_option(
-        "-v", "--verbose", dest="verbose", action="store_true", help="verbose output"
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+        help="verbose output",
     )
 
     options, args = parser.parse_args()
@@ -227,7 +235,12 @@ def read_input_files(input_path, verbose=False):
 
 
 def check_results(
-    ID_files, input_path, result_base_names, n_complete, extension, verbose=False
+    ID_files,
+    input_path,
+    result_base_names,
+    n_complete,
+    extension,
+    verbose=False,
 ):
     """Count the number of result files uploaded to vos for each input ID file.
 
@@ -314,7 +327,10 @@ def output_summary(n_found, n_IDs, n_complete):
         nf = sum(value == n_complete for value in n_found[ID_list].values())
         print(
             "{}: {}/{} ({:.1f}%) complete".format(
-                os.path.basename(ID_list), nf, n_IDs[ID_list], nf / n_IDs[ID_list] * 100
+                os.path.basename(ID_list),
+                nf,
+                n_IDs[ID_list],
+                nf / n_IDs[ID_list] * 100,
             )
         )
 

@@ -40,7 +40,9 @@ def get_header_value(image_path, key):
     try:
         val = float(val)
     except Exception:
-        raise ValueError(f"The key {key} does not return a float value. Got {val}")
+        raise ValueError(
+            f"The key {key} does not return a float value. Got {val}"
+        )
 
     return val
 
@@ -104,6 +106,12 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
     for idx, exp in enumerate(exp_list):
         pos_tmp = np.ones(len(obj_id), dtype="int32") * -1
         for idx_j in range(n_hdu):
+            if exp not in f_wcs:
+                raise KeyError(
+                    f"Exposure {exp} used in image {cat_path} but not"
+                    + f" found in header file {f_wcs_path}. Make sure this"
+                    + " file is complete."
+                )
             w = f_wcs[exp][idx_j]["WCS"]
             pix_tmp = w.all_world2pix(
                 cat.get_data()[pos_params[0]], cat.get_data()[pos_params[1]], 0
@@ -216,7 +224,11 @@ class SExtractorCaller:
         self._path_dot_conv = path_dot_conv
 
         self.set_input_files(
-            use_weight, use_flag, use_psf, use_detection_image, use_detection_weight
+            use_weight,
+            use_flag,
+            use_psf,
+            use_detection_image,
+            use_detection_weight,
         )
 
         # Collect optional arguments for SExtractor
@@ -291,11 +303,15 @@ class SExtractorCaller:
             extra += 1
 
         if use_flag:
-            self._cmd_line_extra += " -FLAG_IMAGE " + f"{self._all_input_path[extra]}"
+            self._cmd_line_extra += (
+                " -FLAG_IMAGE " + f"{self._all_input_path[extra]}"
+            )
             extra += 1
 
         if use_psf:
-            self._cmd_line_extra += " -PSF_NAME " + f"{self._all_input_path[extra]}"
+            self._cmd_line_extra += (
+                " -PSF_NAME " + f"{self._all_input_path[extra]}"
+            )
             extra += 1
 
         # Check for separate files for detection and measurement
@@ -303,7 +319,8 @@ class SExtractorCaller:
         # First, consistency checks
         if use_detect_weight and not use_detect_img:
             raise ValueError(
-                "DETECTION_WEIGHT cannot be True " + "if DETECTION_IMAGE is False"
+                "DETECTION_WEIGHT cannot be True "
+                + "if DETECTION_IMAGE is False"
             )
         if use_detect_weight and not use_weight:
             raise ValueError(
@@ -373,7 +390,9 @@ class SExtractorCaller:
         """
         if use_bkg and not isinstance(bkg_key, type(None)):
             bkg_value = get_header_value(self._meas_img_path, bkg_key)
-            self._cmd_line_extra += f" -BACK_TYPE MANUAL -BACK_VALUE {bkg_value}"
+            self._cmd_line_extra += (
+                f" -BACK_TYPE MANUAL -BACK_VALUE {bkg_value}"
+            )
 
     def get_check_image(self, check_image):
         """Get Check Image.
