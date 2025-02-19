@@ -7,8 +7,16 @@ catalogues into a large sky area. The output of post-processing is a joint _shap
 catalogue_, containing all required information to create a calibrated shear
 catalogue via _metacalibration_), a joint star catalogue, and PSF diagnostic plots.
 
+
+
+---
+
 If main ShapePipe processing happened at the old canfar VM system (e.g. CFIS v0 and v1), go
 [here](vos_retrieve.md) for details how to retrieve the ShapePipe output files.
+
+---
+
+The following steps are required for pre-v1.4 runs performed on the canfar VM system.
 
 1. Optional: Split output into sub-samples
 
