@@ -14,7 +14,7 @@ from joblib import cpu_count
 from modopt.interface.errors import catch_error
 from modopt.interface.log import close_log, set_up_log
 
-from shapepipe.info import line, shapepipe_logo
+from shapepipe.info import line, shapepipe_logo, __installs__
 from shapepipe.pipeline.args import create_arg_parser
 from shapepipe.pipeline.config import create_config_parser
 from shapepipe.pipeline.dependency_handler import DependencyHandler
