@@ -38,11 +38,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
           auto-activate-base: true
           miniconda-version: "latest"
+          activate-environment: shapepipe-dev
 
       - name: Install package
         shell: bash -l {0}
         run: |
-          conda activate test
+          conda activate shapepipe-dev
           ./install_shapepipe --env-dev --develop
 
       - name: Run tests
