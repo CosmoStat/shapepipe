@@ -76,7 +76,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pytest-cov==5.0.0 \
     pytest-pycodestyle==2.4.1 \
     pytest-pydocstyle==2.4.0 \
-    python-pysap==0.2.1 \
     reproject==0.14.1 \
     sf_tools==2.0.4 \
     sip_tpv==1.1 \
@@ -87,7 +86,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
     treecorr==4.2.6 \
     vos==3.6.1.1 \
     git+https://github.com/aguinot/ngmix@stable_version \
-    git+https://github.com/tobias-liaudat/Stile@v0.1
+    git+https://github.com/tobias-liaudat/Stile@v0.1 \ 
+    git+https://github.com/CEA-COSMIC/pysap@develop
 
 
 WORKDIR /app
