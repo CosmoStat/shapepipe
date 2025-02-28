@@ -6,7 +6,32 @@ are expected to install the full ShapePipe environment on the system(s) where
 data should be processed.
 ```
 
-## Standard Installation
+## Container Installation (Recommended)
+
+The easiest way to install ShapePipe is via a container. Docker images are automatically built and pushed to the [Github Container Registry (GHCR)](ghcr.io/cosmostat/shapepipe) for each release. This images can be installed and run on most systems (including clusters) with just a few lines of code.
+
+We recommend running the image with **Apptainer** (formerly Singularity) which is installed on most HPC clusters. To simply run the image, use the following command:
+```bash
+# build writeable "sandbox" container in the current directory
+# ./shapepipe will be a directory that functions like a vm
+apptainer build --sandbox shapepipe docker://ghcr.io/cosmostat/shapepipe:develop
+
+# open a shell in the container and run the example
+apptainer shell --writable shapepipe
+cd /app && shapepipe_run -c /app/example/config.ini
+```
+
+You can also run the image with **Docker**:
+
+```bash
+docker run --rm -it ghcr.io/cosmostat/shapepipe:develop shapepipe_run -c /app/example/config.ini  
+```
+
+```{attention}
+We do not currently build images for Apple Silicon/amr64; however the amd64 images should work on these systems, albeit with reduced performance.
+```
+
+## Conda Installation (Deprecated)
 
 ```{tip}
 :class: margin
