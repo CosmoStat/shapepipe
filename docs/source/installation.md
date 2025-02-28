@@ -11,6 +11,7 @@ data should be processed.
 The easiest way to install ShapePipe is via a container. Docker images are automatically built and pushed to the [Github Container Registry (GHCR)](ghcr.io/cosmostat/shapepipe) for each release. This images can be installed and run on most systems (including clusters) with just a few lines of code.
 
 We recommend running the image with **Apptainer** (formerly Singularity) which is installed on most HPC clusters. To simply run the image, use the following command:
+
 ```bash
 # build writeable "sandbox" container in the current directory
 # ./shapepipe will be a directory that functions like a vm
