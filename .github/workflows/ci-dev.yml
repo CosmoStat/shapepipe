@@ -32,11 +32,13 @@ jobs:
           brew install bigmac libomp
 
       - name: Set up conda
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
           auto-activate-base: true
+          activate-environment: ""
+          miniconda-version: "latest"
 
       - name: Install package
         shell: bash -l {0}
