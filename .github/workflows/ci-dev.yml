@@ -42,6 +42,7 @@ jobs:
       - name: Install package
         shell: bash -l {0}
         run: |
+          conda activate test
           ./install_shapepipe --env-dev --develop
 
       - name: Run tests
