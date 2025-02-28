@@ -65,7 +65,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     matplotlib==3.8.4 \
     mccd==1.2.4 \
     modopt==1.6.1 \
-    mpi4py==3.1.3 \
+    mpi4py \
     numba==0.58.1 \
     numpy==1.26.4 \
     numpydoc==1.2  \
@@ -77,7 +77,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pytest-pycodestyle==2.4.1 \
     pytest-pydocstyle==2.4.0 \
     python-pysap==0.2.1 \
-    reproject==0.8 \
+    reproject \
     sf_tools==2.0.4 \
     sip_tpv==1.1 \
     skaha==1.4.3 \
