@@ -36,3 +36,20 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+      
+  test-shapepipe-image:
+    runs-on: ubuntu-latest
+    needs: build-and-push-image
+    steps:
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull Docker Image
+        run: docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Test Shapepipe
+        run: docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest shapepipe_run -c /app/example/config.ini
