@@ -87,9 +87,9 @@ for ID in os.listdir(tile_runs_dir):
     # Check run time of 128, 256, and 512 jobs
     if (
         os.path.getmtime(ngmix_file) > os.path.getmtime(mc_file)
-        or os.path.getmtime(mc_file) > os.path.getmtime(sep_ngmix_file)
+        or os.path.getmtime(mc_file) < os.path.getmtime(sep_ngmix_file)
     ):
-        print("{ID} -- mc, sep, and/or merged ngmix file out of order")
+        print(f"{ID} -- mc, sep, and/or merged ngmix file out of order")
 
     # Compare values and output ID if they differ
     elif ngmix_naxis2 != sep_naxis2:
