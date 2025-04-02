@@ -15,8 +15,6 @@ from collections import Counter
 
 from tqdm import tqdm
 
-print("summary v1.5")
-
 
 def init_par_runtime(list_tile_IDs):
 
