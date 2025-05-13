@@ -2,7 +2,7 @@
 
 This module computes the PSFs from a PSFEx model at several galaxy positions.
 
-:Authors: Morgan Schmitz, Axel Guinot, Martin Kilbinger
+:Authors: Morgan Schmitz, Axel Guinot, Martin Kilbinger, Sacha Guerrini
 
 """
 
@@ -12,6 +12,7 @@ import re
 import numpy as np
 from astropy.io import fits
 from sqlitedict import SqliteDict
+import scipy.linalg as alg
 
 from shapepipe.pipeline import file_io
 
@@ -319,6 +320,47 @@ class PSFExInterpolator(object):
             hsm.FindAdaptiveMom(Image(psf), strict=False) for psf in self.interp_PSFs
         ]
 
+        #Compute the list of pq indexes
+        pqlist = [
+            [p, 4-p] for p in range(0, 5)
+        ]
+
+        #Compute the 4th order moments (Code taken from PSFHOME)
+        for psf, moms in zip(self.interp_PSFs, psf_moms):
+
+            #Compute the normalisation of the image
+            y, x = np.mgrid[:psf.shape[0], :psf.shape[1]]+1
+
+            M = np.zeros((2, 2))
+            e1 = moms.observed_shape.e1
+            e2 = moms.observed_shape.e2
+            sigma4 = moms.moments_sigma**4
+            c = (1+e1) / (1-e1)
+            M[1, 1] = np.sqrt(sigma4 / (c-0.25*e2**2*(1+c)**2))
+            M[0, 0] = c*M[1, 1]
+            M[0, 1] = 0.5*e2*(M[1, 1] + M[0, 0])
+            M[1, 0] = M[0, 1]
+
+            pos = np.array([x-moms.moments_centroid.x, y-moms.moments_centroid.y])
+            inv_M = np.linalg.inv(M)
+            sqrt_inv_M = alg.sqrtm(inv_M)
+            
+            std_pos = np.einsum('ij,jqp->iqp',sqrt_inv_M,pos)
+            weight = np.exp(-0.5* np.einsum('ijk,ijk->jk',std_pos,std_pos ))
+
+            std_x, std_y = std_pos[0],std_pos[1]
+
+            normalization = np.sum(psf*weight)
+            image_weight = weight*psf
+            
+            #Compute the 4th moment for each index
+            moms.fourth_order_moments = {}
+            for p,q in pqlist:
+                moms.fourth_order_moments.update({str(p)+str(q): np.sum(image_weight*std_x**p*std_y**q)/normalization})
+            
+            moms.fourth_moment_1 = moms.fourth_order_moments['40'] - moms.fourth_order_moments['04']
+            moms.fourth_moment_2 = 2*(moms.fourth_order_moments['13'] + moms.fourth_order_moments['31'])
+
         self.psf_shapes = np.array(
             [
                 [
@@ -326,6 +368,8 @@ class PSFExInterpolator(object):
                     moms.observed_shape.g2,
                     moms.moments_sigma,
                     int(bool(moms.error_message)),
+                    moms.fourth_moment_1,
+                    moms.fourth_moment_2,
                 ]
                 for moms in psf_moms
             ]
@@ -350,6 +394,8 @@ class PSFExInterpolator(object):
                 "E2_PSF_HSM": self.psf_shapes[:, 1],
                 "SIGMA_PSF_HSM": self.psf_shapes[:, 2],
                 "FLAG_PSF_HSM": self.psf_shapes[:, 3].astype(int),
+                "M_4_PSF_1": self.psf_shapes[:, 4],
+                "M_4_PSF_2": self.psf_shapes[:, 5],
             }
         else:
             data = {"VIGNET": self.interp_PSFs}
@@ -434,6 +480,49 @@ class PSFExInterpolator(object):
             for star, mask in zip(star_vign, masks)
         ]
 
+        #Compute the list of pq indexes
+        pqlist = [
+            [p, 4-p] for p in range(0, 5)
+        ]
+
+        #Compute the 4th order moments (Code taken from PSFHOME)
+        for star, mask, moms in zip(star_vign, masks, star_moms):
+            
+            star[mask == 1] = 0
+
+            #Compute the normalisation of the image
+            y, x = np.mgrid[:star.shape[0], :star.shape[1]]+1
+
+            M = np.zeros((2, 2))
+            e1 = moms.observed_shape.e1
+            e2 = moms.observed_shape.e2
+            sigma4 = moms.moments_sigma**4
+            c = (1+e1) / (1-e1)
+            M[1, 1] = np.sqrt(sigma4 / (c-0.25*e2**2*(1+c)**2))
+            M[0, 0] = c*M[1, 1]
+            M[0, 1] = 0.5*e2*(M[1, 1] + M[0, 0])
+            M[1, 0] = M[0, 1]
+
+            pos = np.array([x-moms.moments_centroid.x, y-moms.moments_centroid.y])
+            inv_M = np.linalg.inv(M)
+            sqrt_inv_M = alg.sqrtm(inv_M)
+            
+            std_pos = np.einsum('ij,jqp->iqp',sqrt_inv_M,pos)
+            weight = np.exp(-0.5* np.einsum('ijk,ijk->jk',std_pos,std_pos ))
+
+            std_x, std_y = std_pos[0],std_pos[1]
+
+            normalization = np.sum(star*weight)
+            image_weight = weight*star
+            
+            #Compute the 4th moment for each index
+            moms.fourth_order_moments = {}
+            for p,q in pqlist:
+                moms.fourth_order_moments.update({str(p)+str(q): np.sum(image_weight*std_x**p*std_y**q)/normalization})
+            
+            moms.fourth_moment_1 = moms.fourth_order_moments['40'] - moms.fourth_order_moments['04']
+            moms.fourth_moment_2 = 2*(moms.fourth_order_moments['13'] + moms.fourth_order_moments['31'])
+
         self.star_shapes = np.array(
             [
                 [
@@ -441,6 +530,8 @@ class PSFExInterpolator(object):
                     moms.observed_shape.g2,
                     moms.moments_sigma,
                     int(bool(moms.error_message)),
+                    moms.fourth_moment_1,
+                    moms.fourth_moment_2
                 ]
                 for moms in star_moms
             ]
@@ -503,10 +594,14 @@ class PSFExInterpolator(object):
             "E2_PSF_HSM": self.psf_shapes[:, 1],
             "SIGMA_PSF_HSM": self.psf_shapes[:, 2],
             "FLAG_PSF_HSM": self.psf_shapes[:, 3].astype(int),
+            "M_4_PSF_1": self.psf_shapes[:, 4],
+            "M_4_PSF_2": self.psf_shapes[:, 5],
             "E1_STAR_HSM": self.star_shapes[:, 0],
             "E2_STAR_HSM": self.star_shapes[:, 1],
             "SIGMA_STAR_HSM": self.star_shapes[:, 2],
             "FLAG_STAR_HSM": self.star_shapes[:, 3].astype(int),
+            "M_4_STAR_1": self.star_shapes[:, 4],
+            "M_4_STAR_2": self.star_shapes[:, 5],
         }
         data = {**data, **star_dict}
 
