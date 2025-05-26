@@ -248,14 +248,18 @@ def set_jobs_v2_pre_v2(patch, verbose):
         verbose=verbose,
     )
 
-    # Post-processing
+    # PSF validation
     jobs["1024"] = job_data(
-        "1024",
-        ["run_sp_combined_final"],
-        ["make_catalog_runner"],
-        "tile_IDs",
+        1024,
+        ["run_sp_exp_Pv"],
+        ["psfex_interp_runner"],
+        "shdus",
+        n_mult=[1],
         path_main=path_main,
-        path_left="output",
+        path_left="exp_runs",
+        output_subdirs="shdus",
+        path_right="output",
+        path_output="output",
         verbose=verbose,
     )
 
@@ -269,6 +273,6 @@ def set_jobs_v2_pre_v2(patch, verbose):
         verbose=verbose,
     )
 
-    return jobs, list_tile_IDs_dot
+    return jobs, list_tile_IDs_dot, path_main
 
 

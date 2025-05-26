@@ -9,7 +9,7 @@ authors = [
     { name = "Martin Kilbinger", email = "martin.kilbinger@cea.fr" }
 ]
 license = { "file" = "LICENSE" }
-requires-python = ">=3.11"
+requires-python = ">=3.9"
 dependencies = [
     "joblib>=0.13",
     "modopt>=1.2",
@@ -47,3 +47,19 @@ shapepipe_run = "shapepipe.shapepipe_run:main"
 [tool.pytest.ini_options]
 addopts = "--verbose --cov=shapepipe"
 testpaths = ["shapepipe"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.data-files]
+"bin" = [
+    "scripts/sh/job_sp_canfar.bash",
+    "scripts/sh/init_run_exclusive_canfar.sh",
+    "scripts/sh/curl_canfar_local.sh",
+    "scripts/sh/functions.sh",
+    "scripts/sh/stats_jobs_canfar.sh",
+    "scripts/python/update_runs_log_file.py",
+    "scripts/python/summary_run.py",
+    "scripts/python/summary_params_pre_v2.py",
+    "scripts/python/link_to_exp_for_tile.py",
+]

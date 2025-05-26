@@ -40,6 +40,7 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    \t  64: galaxy selection on tiles (offline)\n
    \t 128: shapes and morphology (offline)\n
    \t 256: paste catalogues (offline)\n
+   \t 512: create joint (ngmix+SExtr) catalogues (offline)\n
    -c, --config_dir DIR\n
    \t config file directory, default='$config_dir'\n
    -p, --psf MODEL\n
@@ -569,13 +570,12 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
-# MKDEBUG: Putting Mh at the end for now, could be integrated before 16.
 (( do_job = $job & 1024 ))
 if [[ $do_job != 0 ]]; then
 
   command_cfg_shapepipe \
-    "config_exp_Mh.ini" \
-    "Run shapepipe (merge exp headers)" \
+    "config_exp_psfex_validation.ini" \
+    "Run shapepipe (PSF validation only)" \
     $n_smp \
     $exclusive
 

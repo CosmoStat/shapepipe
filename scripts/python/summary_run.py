@@ -19,7 +19,7 @@ def main(argv=None):
 
     verbose = False
 
-    jobs, list_tile_IDs_dot = set_jobs_v2_pre_v2(patch, verbose)
+    jobs, list_tile_IDs_dot, path_main = set_jobs_v2_pre_v2(patch, verbose)
 
     list_tile_IDs = job_data.replace_dot_dash(list_tile_IDs_dot)
 
@@ -28,7 +28,7 @@ def main(argv=None):
 
     job_data.print_stats_header()
 
-    exp_IDs_path = "exp_numbers.txt"
+    exp_IDs_path = f"{path_main}/exp_numbers.txt"
     if os.path.exists(exp_IDs_path):
         # Read exposure ID list if file exists
         all_exposures = get_IDs_from_file(exp_IDs_path)
@@ -54,7 +54,7 @@ def main(argv=None):
             par_runtime, all_exposures
         )
 
-        jobs[key].write_IDs_to_file("exp_numbers.txt", all_exposures)
+        jobs[key].write_IDs_to_file(exp_IDs_path, all_exposures)
 
         jobs[key].check_numbers(par_runtime, indices=[2])
 

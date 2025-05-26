@@ -32,7 +32,7 @@ sm=1
 pat="- "
 
 ## Help string
-usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
+usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] [OPTIONS]
 \n\nOptions:\n
    -h\tthis message\n
    -j, --job JOB\tRunning JOB, bit-coded\n
@@ -58,6 +58,8 @@ usage="Usage: $(basename "$0") -j JOB -[e ID |-f file_IDs] -k KIND [OPTIONS]
     \tremote command to run on canfar, default='$cmd_remote'\n
    -S, --scratch\n
     \tprocessing scratch directory, default is None ($scratch)\n
+   -B, --batch\n
+    \tbatch size = number of jobs per iteration, default=$batch\n
    -b, --batch_max\n
     \tmaximum batch size = number of jobs run simultaneously, default=$batch_max\n
    --debug_out PATH\n

@@ -28,7 +28,7 @@ pat="-- "
 
 
 ## Help string
-usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
+usage="Usage: $(basename "$0") -j JOB -e ID [OPTIONS]
 \n\nOptions:\n
    -h\tthis message\n
    -j, --job JOB\tRUnning JOB, bit-coded\n
@@ -334,8 +334,6 @@ command "ln -sf $dir/output/run_sp_Ma_tile" $dry_run
 if [ "$sp_local" == "0" ]; then
   # Exposures
   command "ln -sf $dir/output/run_sp_Ma_exp" $dry_run
-#else
-  #command "rm -f $dir/output/run_sp_Ma_exp" $dry_run
 fi
 
 # Check for existing exp SpMh dir
@@ -353,11 +351,7 @@ fi
 
 (( do_job = $job & 2 ))
 if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
-#if [ ! -e "run_exp_Sp_shdu" ] && [ "$sp_local" == "1" ]; then
-  # run local Sp if not done already; works only with mh_local=1; this step needs to be done
-  # before following mh_local=1 steps 
   message "run local sp" $debug_out -1
-  #command "rm -rf run_sp_GitFeGie*/get_images_runner_run_2" $dry_run
   command "rm -rf run_sp_Gie*" $dry_run
   command "rm -rf run_sp_exp_Sp*" $dry_run
 
@@ -420,8 +414,7 @@ fi
 
 if [ "$mh_local" == "0" ]; then
   if [ ! -f log_exp_headers.sqlite ]; then
-    # Global Mh and file does not exist -> symlink to
-    # gllobal mh file
+    # Global Mh and file does not exist -> symlink to global mh file
     message "creating global link to exp headers (mh_local=0)" $debug_out -1
     command "ln -s $dir/output/log_exp_headers.sqlite" $dry_run
   else
@@ -490,15 +483,6 @@ if [[ $do_job != 0 ]]; then
     command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs -s $sp_local" $dry_run
     cd ${kind}_runs/$ID/output
 
-    # Remove duplicate job-16 runs (tile detection)
-    # New (P8) commented
-    #n_16=`ls -rt1d run_sp_tile_Sx_* | wc -l`
-    #if [ "$n_16" != "1" ]; then
-      #n_remove="$(($n_16-1))"
-      #echo "removing $n_remove duplicate old job-16 runs"
-      #command "rm -rf `ls -rt1d run_sp_tile_Sx_* | head -$n_remove`" $dry_run
-    #fi
-
     # Remove previous runs of this job
     rm -rf run_sp_tile_PsViSmVi*
   fi
@@ -562,6 +546,22 @@ if [[ $do_job != 0 ]]; then
   # Remove previous runs of this job
   rm -rf run_sp_Mc_20??_*
 
+fi
+
+(( do_job = $job & 1024 ))
+if [[ $do_job != 0 ]]; then
+
+  # Remove duplicate exp runs
+  n=`ls -rdtl run_sp_exp_SxSePsfPi* | wc -l`
+  if [ "$n" != "1" ]; then
+    n_remove=$((n-1))
+    echo "Remove ${n_remove} previous exp jobs"
+    rm -rf `ls -rdt1 run_sp_exp_SxSePsfPi* | head -n $n_remove`
+  fi
+
+  # Remove previous runs of this job
+  echo "Remove previous Pv jobs"
+  rm -rf run_sp_exp_Pv_20??_*
 fi
 
 

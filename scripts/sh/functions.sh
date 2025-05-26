@@ -131,6 +131,7 @@ function get_kind_from_job() {
             exit 6
           fi
 
+            # job=2 -> set kind to exp
           kind="exp"
         elif [ $job_to_test == 8 ]; then
           if [ "$kind" == "tile" ]; then
@@ -138,6 +139,16 @@ function get_kind_from_job() {
             exit 6
           fi
 
+          # job=8 -> set kind to exp
+          kind="exp"
+
+        elif [ $job_to_test == 1024 ]; then
+          if [ "$kind" == "tile" ]; then
+            echo "Error: Invalid job $job. mixing tile and exp kinds"
+            exit 6
+          fi
+
+          # job=1024 -> set kind to exp
           kind="exp"
         else
           if [ "$kind" == "exp" ]; then
@@ -145,13 +156,14 @@ function get_kind_from_job() {
             exit 6
           fi
 
-          # job != 32 -> set kind to tile
+          # job != 2, 8, 32, 1024 -> set kind to tile
           kind="tile"
         fi
 
     fi
 
     # Multiply job number by two to get next bitwise number
+
     job_to_test=$((job_to_test * 2))
   done
 
