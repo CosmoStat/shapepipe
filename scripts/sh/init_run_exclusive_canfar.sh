@@ -552,11 +552,11 @@ fi
 if [[ $do_job != 0 ]]; then
 
   # Remove duplicate exp runs
-  n=`ls -rdtl run_sp_exp_SxSePsfPi* | wc -l`
+  n=`ls -rdtl run_sp_exp_SxSePsf* | wc -l`
   if [ "$n" != "1" ]; then
     n_remove=$((n-1))
     echo "Remove ${n_remove} previous exp jobs"
-    rm -rf `ls -rdt1 run_sp_exp_SxSePsfPi* | head -n $n_remove`
+    rm -rf `ls -rdt1 run_sp_exp_SxSePsf* | head -n $n_remove`
   fi
 
   # Remove previous runs of this job
