@@ -58,6 +58,7 @@ include-package-data = true
     "scripts/sh/curl_canfar_local.sh",
     "scripts/sh/functions.sh",
     "scripts/sh/stats_jobs_canfar.sh",
+    "scripts/sh/combine_runs.sh",
     "scripts/python/update_runs_log_file.py",
     "scripts/python/summary_run.py",
     "scripts/python/summary_params_pre_v2.py",

@@ -251,15 +251,16 @@ def set_jobs_v2_pre_v2(patch, verbose):
     # PSF validation
     jobs["1024"] = job_data(
         1024,
-        ["run_sp_exp_Pv"],
-        ["psfex_interp_runner"],
+        "run_sp_exp_Pv",
+        ["psfex_interp_runner"] * 2,
         "shdus",
-        n_mult=[1],
+        n_mult=[1] * 2,
         path_main=path_main,
         path_left="exp_runs",
         output_subdirs="shdus",
         path_right="output",
-        path_output="output",
+        path_output=["output", "logs"],
+        special=[False, True],
         verbose=verbose,
     )
 

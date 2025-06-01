@@ -20,7 +20,7 @@ usage="Usage: $(basename "$0") [OPTIONS]
     \tPSF model, allowed are 'psfex', 'mccd', 'setools', default='$psf'\n
    -c, --cat TYPE\n
     \tCatalogue type, allowed are 'final', 'flag_tile', 'flag_exp', \n
-    \t'psf', 'psf_conv', 'image', 'shdu', default='$cat'\n
+    \t'psf', 'psf_val', 'psf_conv', 'image', 'shdu', default='$cat'\n
 "
 
 ## Parse command line
@@ -53,10 +53,11 @@ if [ "$cat" != "final" ] \
   && [ "$cat" != "tile_detection" ] \
   && [ "$cat" != "flag_exp" ] \
   && [ "$cat" != "psf" ] \
+  && [ "$cat" != "psf_val" ] \
   && [ "$cat" != "psf_conv" ] \
   && [ "$cat" != "image" ] \
   && [ "$cat" != "shdu" ]; then
-  echo "cat (option -c) needs to be 'final', 'tile_detection', 'flag_tile', 'flag_exp', 'psf', 'psf_conv', 'shdu', or 'image'"
+  echo "cat (option -c) needs to be 'final', 'tile_detection', 'flag_tile', 'flag_exp', 'psf', 'psf_val', 'psf_conv', 'shdu', or 'image'"
   exit 2
 fi
 
@@ -163,9 +164,14 @@ elif [ "$cat" == "psf" ]; then
     module="mccd_interp_runner"
   fi
 
+elif [ "$cat" == "psf_val" ]; then
+
+  run_in="$pwd/exp_runs/*/$out_base/run_sp_exp_Pv_*"
+  pattern="validation_psf-*"
+  module="psfex_interp_runner"
+
 elif [ "$cat" == "psf_conv" ]; then
 
-  #run_in="$pwd/../P?"
   run_in="$pwd"
   pattern="validation_psf_conv-*"
   module="psfex_interp_runner"

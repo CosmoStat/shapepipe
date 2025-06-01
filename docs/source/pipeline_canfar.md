@@ -125,6 +125,10 @@ combine_runs.bash  -p $psf -c psf
 shapepipe_run -c $SP_CONFIG/config_Ms_$psf.ini
 shapepipe_run -c $SP_CONFIG/config_Pl_$psf.ini
 
+# With fourth-order moment, additional psf interpol validation runs
+combine_runs.bash  -p $psf -c psf_val
+
+
 # Convert star cat to WCS
 ## Convert all input validation psf files and create directories par patch
 ## psf_conv_all/P?

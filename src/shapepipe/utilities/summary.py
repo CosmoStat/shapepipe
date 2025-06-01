@@ -198,6 +198,15 @@ def check_special_one(module, path):
                     msg = "found array of size 0"
                     return msg, code
 
+                m = re.search(
+                    "Not enough stars to interpolate the psf",
+                    line,
+                )
+                if m:
+                    code = 8
+                    msg = "not enough stars"
+                    return msg, code
+
             if module == "mask_runner":
                 m = re.search("Empty or corrupt FITS file", line)
                 if m:
