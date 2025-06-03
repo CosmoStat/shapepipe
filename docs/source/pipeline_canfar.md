@@ -122,11 +122,16 @@ create_final_cat.py -m final_cat_$patch.hdf5 -i . -p $patch/cfis/final_cat.param
 
 # Star catalogue
 combine_runs.bash  -p $psf -c psf
+
+## The following are not necessary, only to get merged catalogue with non-converted quantities
 shapepipe_run -c $SP_CONFIG/config_Ms_$psf.ini
 shapepipe_run -c $SP_CONFIG/config_Pl_$psf.ini
 
 # With fourth-order moment, additional psf interpol validation runs
 combine_runs.bash  -p $psf -c psf_val
+
+## The following are not necessary, only to get merged catalogue with non-converted quantities
+shapepipe_run -c $SP_CONFIG/config_Msval_$psf.ini
 
 
 # Convert star cat to WCS

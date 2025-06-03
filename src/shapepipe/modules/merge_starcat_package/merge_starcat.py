@@ -554,8 +554,8 @@ class MergeStarCatPSFEX(object):
 
         """
         x, y, ra, dec = [], [], [], []
-        g1_psf, g2_psf, size_psf = [], [], []
-        g1, g2, size = [], [], []
+        g1_psf, g2_psf, size_psf, m41_psf, m42_psf = [], [], [], [], []
+        g1, g2, size, m41, m42 = [], [], [], [], []
         flag_psf, flag_star = [], []
         mag, snr, psfex_acc = [], [], []
         ccd_nb = []
@@ -584,8 +584,12 @@ class MergeStarCatPSFEX(object):
             g1_psf += list(data_j["E1_PSF_HSM"])
             g2_psf += list(data_j["E2_PSF_HSM"])
             size_psf += list(data_j["SIGMA_PSF_HSM"] ** 2)
+            m41_psf += list(data_j["M_4_PSF_1"])
+            m42_psf += list(data_j["M_4_PSF_1"])
             g1 += list(data_j["E1_STAR_HSM"])
             g2 += list(data_j["E2_STAR_HSM"])
+            m41 += list(data_j["M_4_STAR_1"])
+            m42 += list(data_j["M_4_STAR_2"])
             size += list(data_j["SIGMA_STAR_HSM"] ** 2)
 
             # flags
@@ -633,9 +637,13 @@ class MergeStarCatPSFEX(object):
             "E1_PSF_HSM": g1_psf,
             "E2_PSF_HSM": g2_psf,
             "SIGMA_PSF_HSM": np.sqrt(size_psf),
+            "M_4_PSF_1": m41_psf,
+            "M_4_PSF_2": m42_psf,
             "E1_STAR_HSM": g1,
             "E2_STAR_HSM": g2,
             "SIGMA_STAR_HSM": np.sqrt(size),
+            "M_4_STAR_1": m41,
+            "M_4_STAR_2": m42,
             "FLAG_PSF_HSM": flag_psf,
             "FLAG_STAR_HSM": flag_star,
             "MAG": mag,

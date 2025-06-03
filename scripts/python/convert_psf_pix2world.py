@@ -16,7 +16,7 @@ from cs_util import args as cs_args
 from cs_util import logging
 
 
-def transform_shape(mom_list, jac):
+def transform_shape(mom_list, jac, rescale=False):
     """Transform Shape.
 
     Transform shape (ellipticity and size) using a Jacobian.
@@ -24,8 +24,53 @@ def transform_shape(mom_list, jac):
     Parameters
     ----------
     mom_list : list
-        input moment measurements; each list element contains
-        first and second ellipticity component and size
+        input "moment" measurements; each list element contains
+        first and second ellipticity components and size
+    jac : galsim.JacobianWCS
+        Jacobian transformation matrix information
+    rescale : bool, optional
+        rescale ellipticity to modulus if ``True``, to prevent
+        values outside [-1; 1]; default is ``False``
+
+    Returns
+    -------
+    list
+        transformed shape parameters, which are
+        first and second ellipticity components and size
+
+    """
+    scale, shear, theta, flip = jac.getDecomposition()
+
+    sig_tmp = mom_list[2] * scale
+
+    if rescale:
+        modulus = np.sqrt(mom_list[0] ** 2 + mom_list[1] ** 2) * 1.1
+    else:
+        modulus = 1
+
+    shape = galsim.Shear(g1=mom_list[0]/modulus, g2=mom_list[1]/modulus)
+
+    if flip:
+        print(f"g1 sign change, flip = {flip}")
+        shape = galsim.Shear(g1=-shape.g1, g2=shape.g2)
+
+    shape = galsim.Shear(g=shape.g, beta=shape.beta + theta)
+    shape = shear + shape
+
+    return shape.g1 * modulus, shape.g2 * modulus, sig_tmp
+
+
+def transform_shape_scale(mom_list, jac):
+    """Transform Shape.
+
+    Transform shape (ellipticity and size) using a Jacobian.
+    Input "ellipticities" can be outside [-1, 1].
+
+    Parameters
+    ----------
+    mom_list : list
+        input "moment" measurements; each list element contains
+        first and second ellipticity components
     jac : galsim.JacobianWCS
         Jacobian transformation matrix information
 
@@ -33,28 +78,32 @@ def transform_shape(mom_list, jac):
     -------
     list
         transformed shape parameters, which are
-        first and second ellipticity component and size
+        first and second "ellipticity" components
 
     """
-    scale, shear, theta, flip = jac.getDecomposition()
+    _, shear, theta, flip = jac.getDecomposition()
 
-    sig_tmp = mom_list[2] * scale
-    shape = galsim.Shear(g1=mom_list[0], g2=mom_list[1])
+    # Scale to within [-1, 1]
+    modulus = np.sqrt(mom_list[0] ** 2 + mom_list[1] ** 2) * 1.1
+    shape = galsim.Shear(g1=mom_list[0]/modulus, g2=mom_list[1]/modulus)
+
     if flip:
-        # The following output is not observed
-        print("FLIP!")
+        print(f"g1 sign change, flip = {flip}")
         shape = galsim.Shear(g1=-shape.g1, g2=shape.g2)
+
     shape = galsim.Shear(g=shape.g, beta=shape.beta + theta)
     shape = shear + shape
 
-    return shape.g1, shape.g2, sig_tmp
+    # Scale back to original modulus
+
+    return shape.g1 * modulus, shape.g2 * modulus
 
 
 class Loc2Glob(object):
     r"""Change from local to global coordinates.
 
     Class to pass from local coordinates to global coordinates under
-    CFIS (CFHT) MegaCam instrument. The geometrical informcation of the
+    CFIS (CFHT) MegaCam instrument. The geometrical information of the
     instrument is encoded in this function.
 
     Parameters
@@ -378,6 +427,7 @@ class Convert(object):
         self._params = {
             "input_base_dir": ".",
             "output_base_dir": ".",
+            "sub_dir_pattern": "run_sp_combined_psf",
             "mode": "merge",
             "patches": "",
             "psf": "psfex",
@@ -399,6 +449,7 @@ class Convert(object):
                 + " <input_base_dir>/P<patch?>/output;"
                 " default is {}"
             ),
+            "sub_dir_pattern": "run directory pattern, default is {}",
             "mode": (
                 "run mode, allowed are 'merge', 'test'; default is" + " '{}'"
             ),
@@ -415,10 +466,14 @@ class Convert(object):
             ("E1_PSF_HSM", float),
             ("E2_PSF_HSM", float),
             ("SIGMA_PSF_HSM", float),
+            ("M_4_PSF_1", float),
+            ("M_4_PSF_2", float),
             ("FLAG_PSF_HSM", float),
             ("E1_STAR_HSM", float),
             ("E2_STAR_HSM", float),
             ("SIGMA_STAR_HSM", float),
+            ("M_4_STAR_1", float),
+            ("M_4_STAR_2", float),
             ("FLAG_STAR_HSM", float),
             ("CCD_NB", int),
         ]
@@ -435,11 +490,8 @@ class Convert(object):
 
         """
         if self._params["psf"] == "psfex":
-            #self._params["sub_dir_pattern"] = "run_sp_exp_202"
-            self._params["sub_dir_pattern"] = "run_sp_combined_psf"
             self._params["sub_dir_psfint"] = "psfex_interp_runner"
         elif self._params["psf"] == "mccd":
-            self._params["sub_dir_pattern"] = "run_sp_exp_SxSePsf_202"
             self._params["sub_dir_psfint"] = "mccd_fit_val_runner"
             self._params["sub_dir_setools"] = "setools_runner/output/mask"
         else:
@@ -471,7 +523,7 @@ class Convert(object):
             print("Running patch:", patch)
 
             patch_dir = f"{self._params['input_base_dir']}/P{patch}/output/"
-            subdirs = f"{patch_dir}/{self._params['sub_dir_pattern']}*"
+            subdirs = f"{patch_dir}/{self._params['sub_dir_pattern']}"
             exp_run_dirs = glob.glob(subdirs)
             n_exp_runs = len(exp_run_dirs)
             print(
@@ -567,9 +619,13 @@ class Convert(object):
             new_e1_psf = np.zeros_like(psf_file[mod])
             new_e2_psf = np.zeros_like(psf_file[mod])
             new_sig_psf = np.zeros_like(psf_file[mod])
+            new_m41_psf = np.zeros_like(psf_file[mod])
+            new_m42_psf = np.zeros_like(psf_file[mod])
             new_e1_star = np.zeros_like(psf_file[mod])
             new_e2_star = np.zeros_like(psf_file[mod])
             new_sig_star = np.zeros_like(psf_file[mod])
+            new_m41_star = np.zeros_like(psf_file[mod])
+            new_m42_star = np.zeros_like(psf_file[mod])
 
             if self._params["psf"] == "psfex":
                 header = fits.Header.fromstring(
@@ -580,10 +636,6 @@ class Convert(object):
                 k = 0
                 for ind, obj in enumerate(psf_file):
                     try:
-                        # jac = wcs.jacobian(world_pos=galsim.CelestialCoord(
-                        #     ra=obj["RA"]*galsim.degrees,
-                        #     dec=obj["DEC"]*galsim.degrees
-                        # ))
                         jac = wcs.jacobian(
                             image_pos=galsim.PositionD(
                                 obj["X"],
@@ -592,6 +644,7 @@ class Convert(object):
                         )
                     except Exception:
                         continue
+
                     g1_psf_tmp, g2_psf_tmp, sig_psf_tmp = transform_shape(
                         [
                             obj["E1_PSF_HSM"],
@@ -600,10 +653,14 @@ class Convert(object):
                         ],
                         jac,
                     )
-
                     new_e1_psf[ind] = g1_psf_tmp
                     new_e2_psf[ind] = g2_psf_tmp
                     new_sig_psf[ind] = sig_psf_tmp
+                    new_m41_psf[ind], new_m42_psf[ind], _ = transform_shape(
+                        [obj["M_4_PSF_1"], obj["M_4_PSF_2"], 0],
+                        jac,
+                        rescale=True,
+                    )
 
                     g1_star_tmp, g2_star_tmp, sig_star_tmp = transform_shape(
                         [
@@ -616,6 +673,12 @@ class Convert(object):
                     new_e1_star[ind] = g1_star_tmp
                     new_e2_star[ind] = g2_star_tmp
                     new_sig_star[ind] = sig_star_tmp
+                    new_m41_star[ind], new_m42_star[ind], _ = transform_shape(
+                        [obj["M_4_STAR_1"], obj["M_4_STAR_2"], 0],
+                        jac,
+                        rescale=True,
+                    )
+
                     k += 1
 
                 exp_cat = np.array(
@@ -631,10 +694,14 @@ class Convert(object):
                                     new_e1_psf,
                                     new_e2_psf,
                                     new_sig_psf,
+                                    new_m41_psf,
+                                    new_m42_psf,
                                     psf_file["FLAG_PSF_HSM"],
                                     new_e1_star,
                                     new_e2_star,
                                     new_sig_star,
+                                    new_m41_star,
+                                    new_m42_star,
                                     psf_file["FLAG_STAR_HSM"],
                                     np.ones_like(psf_file["RA"], dtype=int)
                                     * ccd_id,
