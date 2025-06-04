@@ -536,7 +536,7 @@ fi
 if [[ $do_job != 0 ]]; then
 
   # Remove previous runs of this job
-  rm -rf run_sp_Ms_20??_*
+  rm -rf run_sp_Ms_20??-*
 
 fi
 
@@ -544,7 +544,7 @@ fi
 if [[ $do_job != 0 ]]; then
 
   # Remove previous runs of this job
-  rm -rf run_sp_Mc_20??_*
+  rm -rf run_sp_Mc_20??-*
 
 fi
 
@@ -561,7 +561,7 @@ if [[ $do_job != 0 ]]; then
 
   # Remove previous runs of this job
   echo "Remove previous Pv jobs"
-  rm -rf run_sp_exp_Pv_20??_*
+  rm -rf `pwd`/run_sp_exp_Pv_20??-*
 fi
 
 

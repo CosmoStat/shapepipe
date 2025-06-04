@@ -121,7 +121,7 @@ patchnum=`tr $patch P ''`
 create_final_cat.py -m final_cat_$patch.hdf5 -i . -p $patch/cfis/final_cat.param -P $patchnum -o $patch/n_tiles_final.txt -v
 
 # Star catalogue
-combine_runs.bash  -p $psf -c psf
+combine_runs.bash -p $psf -c psf
 
 ## The following are not necessary, only to get merged catalogue with non-converted quantities
 shapepipe_run -c $SP_CONFIG/config_Ms_$psf.ini
@@ -144,7 +144,7 @@ cd ../star_cat
  convert_psf_pix2world.py -i .. -P $patchnum -v
 
 # Combine previously created files as links within one SP run dir
-# (for the v1.4 setup only one link
+# (for the v1.4 setup only one link)
 cd P$patch
 combine_runs.bash -p psfex -c psf_conv
 
