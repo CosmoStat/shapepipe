@@ -71,6 +71,7 @@ def params_default():
         "output_summary": "n_tiles_final.txt",
         "ID": None,
         "single_op": None,
+        "version_cat": "1.4",
     }
     _short_options = {                                                 
         "input_root_dir": "-i",                                           
@@ -80,6 +81,7 @@ def params_default():
         "list_only": "-l",
         "output_summary": "-o",
         "single_op": "-s",
+        "version_cat": "-V",
     }                                                                       
     _types = {                                     
         "hdu_num": "int", 
@@ -94,6 +96,7 @@ def params_default():
         "output_summary": "output file for numbre of tiles, default={}",
         "ID": "ID for single-ID operation, default={}",
         "single_op": "single ID operation, allowed are 'check', 'add', 'remove'; default={}",
+        "version_cat": "catalogue version, allowed are 1.3, 1.4; default={}",
     }
 
     return _params, _short_options, _types, _help_strings
@@ -164,6 +167,9 @@ def check_params(params):
                 + f" {', '.join(allowed)}"
             )
             return False
+
+    if params["version_cat"] not in ("1.4", "1.3"):
+        print(f"Invalid catalogue version {params['version_cat']}")
 
     return True
 
@@ -347,8 +353,8 @@ def process(params):
     # Define the nested path pattern for locating `.fits` files
     file_pattern = "output/run_sp_Mc_*/make_cat_runner/output/*.fits"
 
-    # Regex pattern for tile IDs
-    id_pattern = re.compile(r"^\d+\.\d+$")
+    # For file tile IDs
+    id_file_pattern = re.compile(r"final_cat-(\d{3}\-\d{3})")
 
     n_added = 0
     IDs_added = []
@@ -376,54 +382,92 @@ def process(params):
             patch_group = get_patch_group(hdf5_file, patch, params["verbose"])
 
             # Get paths to all tile IDs and loop
-            tile_runs_path = os.path.join(patch_path, "tile_runs")
-            subdirs = os.listdir(tile_runs_path)
-            for id in tqdm.tqdm(subdirs, total=len(subdirs)):
 
-                # Skip if the patch/ID data already exists
-                if id in patch_group:
+            fits_file_arr = []
+            id_arr = []
+
+            if params["version_cat"] == "1.4":
+                tile_runs_path = os.path.join(patch_path, "tile_runs")
+                subdirs = os.listdir(tile_runs_path)
+                for id in tqdm.tqdm(subdirs, total=len(subdirs)):
+
+                    # Skip if the patch/ID data already exists
+                    if id in patch_group:
+                        if params["verbose"]:
+                            print(f"Skipping {id} (already processed)")
+                        continue
+
+                    if id_pattern.match(id) and os.path.isdir(os.path.join(tile_runs_path, id)):
+                        id_path = os.path.join(tile_runs_path, id)
+                
+                        base_pattern = os.path.join(id_path, "output", "run_sp_Mc_*")
+                        all_matches = [d for d in glob.glob(base_pattern) if os.path.isdir(d)]
+                        if not all_matches:
+                            if params["verbose"]:
+                                print(f"Final cat for {id} not found, continuing")
+                            continue
+                        newest_dir = max(all_matches, key=os.path.getmtime)
+
+                        id_dash = re.sub("\.", "-", id)
+                        fits_file = f"{newest_dir}/make_cat_runner/output/final_cat-{id_dash}.fits"
+                        fits_file_arr.append(fits_file)
+                        id_arr.append(id)
+
+            else:
+                tile_runs_path = patch_path
+                id = "all"
+                id_path = tile_runs_path
+
+                base_pattern = os.path.join(id_path, "output", "run_sp_Mc_*")
+                all_matches = [d for d in glob.glob(base_pattern) if os.path.isdir(d)]
+                if not all_matches:
                     if params["verbose"]:
-                        print(f"Skipping {id} (already processed)")
+                        print(f"Final cat for {id} not found, continuing")
                     continue
 
-                if id_pattern.match(id) and os.path.isdir(os.path.join(tile_runs_path, id)):
-                    id_path = os.path.join(tile_runs_path, id)
-                
-                    base_pattern = os.path.join(id_path, "output", "run_sp_Mc_*")
-                    all_matches = [d for d in glob.glob(base_pattern) if os.path.isdir(d)]
-                    if not all_matches:
+                # Look over run directories
+                for match in all_matches:
+                    all_fits_files = glob.glob(f"{match}/make_catalog_runner/output/final_cat-*.fits")
+                    if not all_fits_files:
                         if params["verbose"]:
-                            print(f"Final cat for {id} not found, continuing")
+                            print(f"Final cat in rundir {match} not found, continuing")
                         continue
-                    newest_dir = max(all_matches, key=os.path.getmtime)
+                    # match pattern to get ID 
+                    for fits_file in all_fits_files:
+                        m = re.search(r'(\d+-\d+)(?=\.fits$)', fits_file)
+                        if m:
+                            id = m.group(1)
+                            id_dash = re.sub("\.", "-", id)
+                            fits_file_arr.append(fits_file)
+                            id_arr.append(id)
+                        else:
+                            print(f"{fits_file} not matched")
 
-                    id_dash = re.sub("\.", "-", id)
-                    fits_file = f"{newest_dir}/make_cat_runner/output/final_cat-{id_dash}.fits"
+            for fits_file, id in tqdm.tqdm(zip(fits_file_arr, id_arr), total=len(fits_file_arr)): 
 
-                    # Exclude unsuccessful run without output FITS file
-                    if not os.path.exists(fits_file):
-                        if params["verbose"]:
-                            print(f"Run without output file found for {id}, skipping")
-                        continue
+                # Exclude unsuccessful run without output FITS file
+                if not os.path.exists(fits_file):
+                    if params["verbose"]:
+                        print(f"Run without output file found for {id}, skipping")
+                    continue
                         
-                    if True:
-                        extracted_data, dtype = read_data(fits_file, params)
+                extracted_data, dtype = read_data(fits_file, params)
 
-                        structured_data = copy_data(params["param_list"], extracted_data, dtype)
+                structured_data = copy_data(params["param_list"], extracted_data, dtype)
                         
-                        # Create a new dataset
-                        try:
-                            patch_group.create_dataset(
-                                str(id),
-                                data=structured_data,
-                                dtype=dtype,
-                            )
-                        except:
-                            print(f"Error for {id}: Could not create dataset in group {patch}")
-                            raise
+                # Create a new dataset
+                try:
+                    patch_group.create_dataset(
+                        str(id),
+                        data=structured_data,
+                        dtype=dtype,
+                    )
+                except:
+                    print(f"Error for {id}: Could not create dataset in group {patch}")
+                    raise
 
-                        n_added += 1
-                        IDs_added.append(id)
+                n_added += 1
+                IDs_added.append(id)
 
         if params["verbose"]:
             print(f"{n_added} tiles added ({' '.join(IDs_added)})")
