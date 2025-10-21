@@ -599,8 +599,8 @@ class Convert(object):
                 ccd_id = -1
 
             if self._params["verbose"]:
-                print("Match found ", exp_name, ccd_id)
-
+                #print("Match found ", exp_name, ccd_id)
+                pass
             psf_file_path = f"{psf_dir}/{file_name}"
 
             try:

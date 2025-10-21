@@ -121,36 +121,28 @@ patchnum=`tr $patch P ''`
 create_final_cat.py -m final_cat_$patch.hdf5 -i . -p $patch/cfis/final_cat.param -P $patchnum -o $patch/n_tiles_final.txt -v
 
 # Star catalogue
-combine_runs.bash -p $psf -c psf
 
-## The following are not necessary, only to get merged catalogue with non-converted quantities
-shapepipe_run -c $SP_CONFIG/config_Ms_$psf.ini
-shapepipe_run -c $SP_CONFIG/config_Pl_$psf.ini
-
-# With fourth-order moment, additional psf interpol validation runs
+## With fourth-order moment, combine additional psf interpol validation runs
 combine_runs.bash  -p $psf -c psf_val
-
-## The following are not necessary, only to get merged catalogue with non-converted quantities
-shapepipe_run -c $SP_CONFIG/config_Msval_$psf.ini
-
 
 # Convert star cat to WCS
 ## Convert all input validation psf files and create directories par patch
 ## psf_conv_all/P?
-cd ../star_cat
+cd ../star_cat_val
 
-# Create files validation_psf_conv-<patchnum>-<idx>.fits
-# (for the v1.4 setup only one file)
- convert_psf_pix2world.py -i .. -P $patchnum -v
+## Create files validation_psf_conv-<patchnum>-<idx>.fits
+## (for the v1.4 setup only one file)
+## previous convert_psf_pix2world.py -i .. -P $patchnum -v
+for p in 1 2 3 4 5 6 7; do
+   convert_psf_pix2world.py -i .. -P $p --sub_dir_pattern=run_sp_combined_psf_val -v
+done
 
-# Combine previously created files as links within one SP run dir
-# (for the v1.4 setup only one link)
-cd P$patch
+## Combine previously created files as links within one SP run dir
 combine_runs.bash -p psfex -c psf_conv
 
-# Merge all converted star catalogues and create final-starcat.fits
+## Merge all converted star catalogues and create final-starcat.fits
 export SP_RUN=`pwd`
-shapepipe_run -c ~/shapepipe/example/cfis/config_Ms_psfex_conv.ini
+shapepipe_run -c ~/shapepipe/example/cfis/config_Msval_psfex.ini
 
 
 # Extra stuff
