@@ -28,7 +28,7 @@ pat="-- "
 
 
 ## Help string
-usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
+usage="Usage: $(basename "$0") -j JOB -e ID [OPTIONS]
 \n\nOptions:\n
    -h\tthis message\n
    -j, --job JOB\tRUnning JOB, bit-coded\n
@@ -49,13 +49,13 @@ usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
    -S, --scratch\n
     \tprocessing scratch directory, default is None ($scratch)\n
    -F, --fix FIX\n
-    \tfix missing data (re-download tile, unzip) for FIX=1; default is $FIX\n
+    \tfix missing data (re-download tile, unzip) for FIX=1; default is $fix\n
    -n, --dry_run LEVEL\n
     \tdry run (LEVEL=1), no actual processing; default is $dry_run\n
    --debug_out PATH\n
    \tdebug output file PATH, default not used\n
    --test\n
-   \ttest mode, no processind\n
+   \ttest mode, no processing\n
 "
 
 ## Help if no arguments                                                         
@@ -148,6 +148,7 @@ function message() {
 # Init message
 message "test=$test_only" $debug_out -1
 if [ "$test_only" == "1" ]; then
+  echo "MKDEBUG test"
   msg="init_run_exclusive.py script test mode, exiting."
   ex=0
 else
