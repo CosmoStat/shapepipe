@@ -1,3 +1,7 @@
+# pipeline_canfar.md
+
+# Documentation to create SP output products for catalogues v1.4.x
+
 patch="P7"
 psf="psfex"
 
@@ -5,8 +9,9 @@ psf="psfex"
 echo -ne "\033]0;$patch\007"
 
 # Run directory
-dir=~/cosmostat/v2/pre_v2/$psf/$patch
-cd $dir
+#dir=~/cosmostat/v2/pre_v2/$psf/$patch
+#cd $dir
+patch P$patch
 
 # Get tile number list
 ln -s ~/shapepipe/auxdir/CFIS/tiles_202106/tiles_$patch.txt tile_numbers.txt
