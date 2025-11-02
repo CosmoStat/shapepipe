@@ -2,20 +2,26 @@
 
 # Documentation to create SP output products for catalogues v1.4.x
 
-patch="P7"
+# canfar login
+canfar auth login
+
+# Check; if not on "default", run canfar auth switch default
+canfar auth list
+
+# Set default PSF model
 psf="psfex"
 
 # Terminal title
 echo -ne "\033]0;$patch\007"
 
-# Run directory
-#dir=~/cosmostat/v2/pre_v2/$psf/$patch
-#cd $dir
-patch P$patch
+# Go to run directory
+patch P[1-9]
 
 # Get tile number list
 ln -s ~/shapepipe/auxdir/CFIS/tiles_202106/tiles_$patch.txt tile_numbers.txt
 
+# Create debug log directory
+mkdir debug
 
 # Get images
 
@@ -38,7 +44,7 @@ ls -l data_tiles/ | wc; mv -i output/run_sp_Git_*/get_images_runner/output/CFIS.
 rm -rf output/run_sp_Git_*; update_runs_log_file.py
 # repeat the above block
 
-### Find exposures; this run can be stopped after Fe
+### Find exposures
 shapepipe_run -c cfis/config_GitFe_symlink.ini
 # You can also run Fe alone
 
@@ -56,12 +62,14 @@ while true; do shapepipe_run -c cfis/config_Gie_vos.ini; ls -l data_exp/ | wc; m
 ### Create links (and re-run Fe, not necessary)
 job_sp_canfar.bash -p $psf `cat tile_numbers.txt` -j 1 -r symlink
 
-# Get single-HDU single-exposure IDs file (from missing 32 job) 
-~/shapepipe/scripts/python/summary_run.py P$patch [32]
+### Uncompress tile weights
+shapepipe_run -c cfis/config_tile_Uz.ini
 
 # Mask tiles
 
 ## Run repeatedly if necessary
+### If timeout, try different servers:
+export CDSCLIENT=cocat1.u-strasbg.fr [http, vizcat.cds.unistra.fr]
 job_sp_canfar.bash -p $psf -n $OMP_NUM_THREADS -j 4
 
 ## Combine all runs
@@ -70,15 +78,14 @@ combine_runs.bash -c flag_tile
 # Tile detection
 curl_canfar_local.sh -j 16 -f tile_numbers.txt -p $psf -N $OMP_NUM_THREADS
 
-# Option 0, global split and exp masks: sp_local=0
+
+# Exposure processing
+
+# Option 0, global split and exp masks: sp_local=0 (depreciated; only for earlier v1.x patch runs)
 # Todo: split Uz and SpMh
 
 # For sp_local=- both mh_local (0, 1) are ok
 export mh_local=0
-#export mh_local=1
-
-## Uncompress weights,  split exposures into single HDUs
-job_sp_canfar.bash -p $psf -n $OMP_NUM_THREADS -j 2
 
 # Mask exposures
 
@@ -89,10 +96,15 @@ job_sp_canfar.bash -p $psf -n $OMP_NUM_THREADS -j 8
 combine_runs.bash -c flag_exp
 
 # Option 1: sp_local=1, local split and mask exp
-export mh_local=1
+#export mh_local=1
+
+# Get single-HDU single-exposure IDs file (from missing 32 job) 
+~/shapepipe/scripts/python/summary_run.py P$patch [32]
+cp summary/missing_job_32_all.txt exp_shdu.txt
 
 # Split exposures
-curl_canfar_local.sh -j 2 -f all.txt -p $psf -N $OMP_NUM_THREADS
+#curl_canfar_local.sh -j 2 -f all.txt -p $psf -N $OMP_NUM_THREADS
+canfar_submit_job.py -j 2 -f exp_shdu.txt 
 
 # Mask exposures
 curl_canfar_local.sh -j 8 -f all.txt -p $psf -N $OMP_NUM_THREADS
