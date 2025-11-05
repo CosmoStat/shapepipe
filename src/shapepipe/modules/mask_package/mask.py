@@ -14,6 +14,8 @@ from astropy import units, wcs
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
 
+from astroquery.vizier import Vizier
+
 from shapepipe.pipeline import file_io
 from shapepipe.pipeline.config import CustomParser
 from shapepipe.pipeline.execute import execute
@@ -118,6 +120,16 @@ class Mask(object):
 
         # Set error flag
         self._err = False
+
+        # Guide Star Catalogue parameters
+        #self._CDS_cat_ID = "I/271/out"   # GSC 2.2, does not have Fmag
+        self._CDS_cat_ID = "I/305/out"  # GSC 2.3
+
+        # Keys in CDS astroquery result
+        self._cds_keys = ["GSC2.3", "RAJ2000", "DEJ2000", "Fmag", "jmag", "Vmag", "Nmag", "Class"]
+
+        # Minimal scaling for halo and spike polygon templates
+        self._scaling_min = 0.1
 
     def _get_config(self):
         """Get Config.
@@ -460,7 +472,7 @@ class Mask(object):
         Returns
         -------
         dict
-          Star dicotionnary for GSC objects in the field
+          Star dictionnary for GSC objects in the field
 
         Raises
         ------
@@ -468,37 +480,17 @@ class Mask(object):
             For invalid configuration options
 
         """
-        if "CDSclient" in self._config["PATH"]:
-            ra = position[0]
-            dec = position[1]
-
-            if dec > 0.0:
-                sign = "+"
-            else:
-                sign = ""
-
-            cmd_line = (
-                f'{self._config["PATH"]["CDSclient"]} {ra} {sign}{dec} '
-                + f"-r {radius} -n 1000000"
-            )
-
-            self._CDS_stdout, self._CDS_stderr = execute(cmd_line)
-
-        elif "star_cat" in self._config["PATH"]:
+        if "star_cat" in self._config["PATH"]:
             f = open(self._config["PATH"]["star_cat"], "r")
             self._CDS_stdout = f.read()
-            self._CDS_stderr = ""
             f.close()
-
         else:
-            raise ValueError(
-                "Either [PROGRAM_PATH]:CDSCLIENT_PATH in the mask config file "
-                + " or a star catalogue as module input needs to be present"
-            )
-
-        if self._CDS_stderr != "":
-            self._err = True
-            return None
+            Vizier.ROW_LIMIT = -1  # no row limit
+            coord = SkyCoord(ra=position[0] * units.deg, dec=position[1] * units.deg, frame="icrs")
+            result = Vizier.query_region(coord, radius=radius*units.arcmin, catalog=self._CDS_cat_ID)
+            self._CDS_stdout = result[0]
+        
+        self._CDS_stderr = ""
 
         return self._make_star_cat(self._CDS_stdout)
 
@@ -803,12 +795,12 @@ class Mask(object):
     def _make_star_cat(self, CDSclient_output):
         """Make Star Catalogue.
 
-        Make a dictionary from findgsc2.2 output.
+        Create a dictionary from an astroquery request.
 
         Parameters
         ----------
         CDSclient_output : str
-            Output of findgsc2.2
+            Output astroquery
 
         Returns
         -------
@@ -819,37 +811,8 @@ class Mask(object):
         header = []
         stars = {}
 
-        # get header
-        for key in CDSclient_output.splitlines()[3].split(" "):
-            if (key != "") and (key != ";"):
-                # cleaning output
-                key = key.replace(" ", "")
-                for key_split in re.split(",|#|;", key):
-                    if key_split != "":
-                        key = key_split
-                header.append(key)
-                stars[key] = []
-
-        # get data
-        for elem in range(4, len(CDSclient_output.splitlines()) - 5):
-            idx = 0
-            for key in CDSclient_output.splitlines()[elem].split(" "):
-                if (key != "") and (key != ";"):
-                    # cleaning output
-                    key = key.replace(" ", "")
-                    for key_split in re.split(",|#|;", key):
-                        if key_split != "":
-                            key = key_split
-                    # handle missing data
-                    try:
-                        key = float(key)
-                        stars[header[idx]].append(key)
-                    except Exception:
-                        if key == "---":
-                            stars[header[idx]].append(None)
-                        else:
-                            stars[header[idx]].append(key)
-                    idx += 1
+        for key in self._cds_keys:
+            stars[key] = CDSclient_output[key]
 
         return stars
 
@@ -907,6 +870,7 @@ class Mask(object):
 
         stars_used = [[], [], []]
 
+        """
         star_zip = zip(
             stars["RA(J2000)"],
             stars["Dec(J2000)"],
@@ -916,11 +880,17 @@ class Mask(object):
             stars["Nmag"],
             stars["Clas"],
         )
+        """
+
+        # Get keys without object name
+        keys_to_use = self._cds_keys[1:]
+        star_zip = zip(*(stars[k] for k in keys_to_use))
 
         for ra, dec, Fmag, Jmag, Vmag, Nmag, clas in star_zip:
             mag = 0.0
             idx = 0.0
 
+            # Compute mean magnitude
             if Fmag is not None:
                 mag += Fmag
                 idx += 1.0
@@ -946,6 +916,8 @@ class Mask(object):
             ):
                 if (mag < mag_limit) and (clas == 0):
                     scaling = 1.0 - scale_factor * (mag - mag_pivot)
+                    if scaling < self._scaling_min:
+                        scaling = self._scaling_min
                     pos = self._wcs.all_world2pix(ra, dec, 0)
                     stars_used[0].append(pos[0])
                     stars_used[1].append(pos[1])
@@ -1014,6 +986,7 @@ class Mask(object):
                 self._WW_stdout, self._WW_stderr = execute(cmd)
                 self._rm_reg_stdout, self._rm_reg_stderr = execute(f"rm {reg}")
 
+
             else:
                 reg = self._config[types]["reg_file"]
 
@@ -1032,10 +1005,10 @@ class Mask(object):
 
                 self._WW_stdout, self._WW_stderr = execute(cmd)
 
+
         elif types == "ALL":
 
             default_reg = [
-                (f'{self._config["PATH"]["temp_dir"]}' + f"halo{self._img_number}.reg"),
                 (
                     f'{self._config["PATH"]["temp_dir"]}'
                     + f"halo{self._img_number}.reg"
@@ -1072,7 +1045,6 @@ class Mask(object):
                 self._rm_reg_stdout, self._rm_reg_stderr = execute(
                     f"rm {reg[0]} {reg[1]}"
                 )
-
             else:
                 reg = [
                     self._config["HALO"]["reg_file"],

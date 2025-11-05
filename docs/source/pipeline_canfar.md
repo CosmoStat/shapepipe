@@ -68,8 +68,6 @@ shapepipe_run -c cfis/config_tile_Uz.ini
 # Mask tiles
 
 ## Run repeatedly if necessary
-### If timeout, try different servers:
-export CDSCLIENT=cocat1.u-strasbg.fr [http, vizcat.cds.unistra.fr]
 job_sp_canfar.bash -p $psf -n $OMP_NUM_THREADS -j 4
 
 ## Combine all runs
