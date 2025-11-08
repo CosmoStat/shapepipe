@@ -43,6 +43,9 @@ dev = ["shapepipe[doc,lint,release,test]"]
 
 [project.scripts]
 shapepipe_run = "shapepipe.shapepipe_run:main"
+summary_run = "shapepipe.summary_run:main"
+canfar_submit_job = "shapepipe.canfar_run:run_job"
+canfar_monitor = "shapepipe.canfar_run:run_log"
 
 [tool.pytest.ini_options]
 addopts = "--verbose --cov=shapepipe"

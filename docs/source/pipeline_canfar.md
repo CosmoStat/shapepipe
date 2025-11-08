@@ -102,7 +102,7 @@ cp summary/missing_job_32_all.txt exp_shdu.txt
 
 # Split exposures
 #curl_canfar_local.sh -j 2 -f all.txt -p $psf -N $OMP_NUM_THREADS
-canfar_submit_job.py -j 2 -f exp_shdu.txt 
+pip in-f exp_shdu.txt 
 
 # Mask exposures
 curl_canfar_local.sh -j 8 -f all.txt -p $psf -N $OMP_NUM_THREADS
