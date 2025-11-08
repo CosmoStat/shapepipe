@@ -47,22 +47,26 @@ class Log(object):
             "kind": "headless",
             "status": "all",
             "destroy": False,
+            "bulk": 1,
         }
 
         self._short_options = {
             "kind": "-k",
             "status": "-s",
             "destroy": "-d",
+            "bulk": "-b",
         }
 
         self._types = {
             "destroy": "bool",
+            "bulk": "int",
         }
 
         self._help_strings = {
             "kind": "session kind, allowed are all, headless, notebook, ...; default is {}",
             "status": "procesing status, allowed are Pending, Running, Completed, all; default is {}",
             "destroy": "if True, destroy all displayed jobs; default is {}",
+            "bulk": "destroy mode, allowed are 2, 1, 0; default is {}"
         }
 
     def update_params(self):
@@ -151,9 +155,9 @@ class Log(object):
 
     def destroy(self, df, session):
 
-        bulk = False
+        bulk = self._params["bulk"]
 
-        if bulk:
+        if bulk == 2:
             if self._params["kind"] != "all":
                 kind = self._params["kind"]
             else:
@@ -181,6 +185,17 @@ class Log(object):
         
             print("Success")
             return
+
+        elif bulk == 1:
+            # Recommended
+            ids = df['id'].tolist()
+            try:
+                result = session.destroy(ids)
+                print(f"{len(ids)} sessions done")
+            except Exception as e:
+                estr = f": {e}" if self._params["verbose"] else ""
+                print("failed{estr}")
+
         else:
             for _, row in df.iterrows():
                 session_id = row["id"]
@@ -192,6 +207,7 @@ class Log(object):
                 except Exception as e:
                     estr = f": {e}" if self._params["verbose"] else ""
                     print("failed{estr}")
+
 
     def get_session(self):
 
