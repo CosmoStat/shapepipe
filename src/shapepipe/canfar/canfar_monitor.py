@@ -47,22 +47,26 @@ class Log(object):
             "kind": "headless",
             "status": "all",
             "destroy": False,
+            "bulk": 1,
         }
 
         self._short_options = {
             "kind": "-k",
             "status": "-s",
             "destroy": "-d",
+            "bulk": "-b",
         }
 
         self._types = {
             "destroy": "bool",
+            "bulk": "int",
         }
 
         self._help_strings = {
             "kind": "session kind, allowed are all, headless, notebook, ...; default is {}",
             "status": "procesing status, allowed are Pending, Running, Completed, all; default is {}",
             "destroy": "if True, destroy all displayed jobs; default is {}",
+            "bulk": "destroy mode, allowed are 2, 1, 0; default is {}"
         }
 
     def update_params(self):
@@ -88,9 +92,13 @@ class Log(object):
 
         print("=" * len(header))
         print(f"{len(df)} jobs found")
+
     def filter(self):
 
         df = pd.DataFrame(self._info)
+
+        if len(self._info) == 0:
+            return df
 
         # Extract clean date/time
         try:
@@ -106,7 +114,7 @@ class Log(object):
         except KeyError:
             if self._params["verbose"]:
                 print(
-                    f"Column 'startTime' not found among {list(df.columns)},"
+                    f"Column 'startTime' not found among {df.columns.tolist()},"
                     + f" setting dummy columns for date and time."
                 )
             df['date'] = '1975-12-06'
@@ -118,6 +126,10 @@ class Log(object):
             ) from e
 
         # Select columns of interest
+        cols = ['type', 'status', 'date', 'time', 'name', 'id']
+        for col in cols:
+            if not col in df:
+                raise IndexError(f"Column {col} not in job info, which contains {df.columns.tolist()}") 
         df = df[['type', 'status', 'date', 'time', 'name', 'id']]
 
         # Get input status or None if missing
@@ -149,15 +161,25 @@ class Log(object):
         if self._params["destroy"]:
             self.destroy(df_filtered, session)
 
+    def get_kind(self):
+        """Get Kind.
+
+        Return kind for communication with canfar.
+        In particular, returns None if kind in parametesr is "all".
+
+        """
+        return (
+            self._params["kind"]
+            if self._params["kind"] != "all"
+            else None
+        )
+
     def destroy(self, df, session):
 
-        bulk = False
+        bulk = self._params["bulk"]
 
-        if bulk:
-            if self._params["kind"] != "all":
-                kind = self._params["kind"]
-            else:
-                kind = None
+        if bulk == 2:
+            kind = self._get_kind()
 
             if self._params["status"] != "all":
                 status = self._params["status"]
@@ -181,7 +203,20 @@ class Log(object):
         
             print("Success")
             return
+
+        elif bulk == 1:
+            # Recommended
+            ids = df['id'].tolist()
+            try:
+                print("List destroy")
+                result = session.destroy(ids)
+                print(f"{len(ids)} sessions done")
+            except Exception as e:
+                estr = f": {e}" if self._params["verbose"] else ""
+                print("failed{estr}")
+
         else:
+            print("Loop destroy")
             for _, row in df.iterrows():
                 session_id = row["id"]
                 name = row.get("name", "<unknown>")
@@ -192,6 +227,7 @@ class Log(object):
                 except Exception as e:
                     estr = f": {e}" if self._params["verbose"] else ""
                     print("failed{estr}")
+
 
     def get_session(self):
 
@@ -204,7 +240,11 @@ class Log(object):
                 f"Retreiving session info of kind={self._params['kind']},"
                 + f" status={self._params['status']}"
             )
-            self._info = session.fetch(kind=self._params["kind"])
+            kind = self.get_kind()
+            self._info = session.fetch(kind=kind)
+            if len(self._info) == 0:
+                print("No session fetched")
+                return []
         except ReadTimeout as e:
             estr = f": {e}" if self._params["verbose"] else ""
             raise ReadTimeout(
