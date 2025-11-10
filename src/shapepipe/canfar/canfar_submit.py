@@ -5,6 +5,7 @@
 import os
 import sys
 import asyncio
+import math
 from canfar.sessions import Session
 from canfar.sessions import AsyncSession
 from datetime import datetime
@@ -24,6 +25,11 @@ class Job(object):
         # Set job parameters
         version = "1.1"
         self._image = f"images.canfar.net/unions/shapepipe:{version}"
+
+        # Maximum replicas per batch (CANFAR limit is 512)
+        self._max_replicas_per_batch = 20
+        if self._max_replicas_per_batch != 512:
+            print(f"MKDEBUG: Setting max_replicas_per_batch to {self._max_replicas_per_batch}.")
 
 
     def set_params_from_command_line(self, args):
@@ -82,7 +88,7 @@ class Job(object):
             "dry_run": "dry run, no actual processing",
             "debug_out": "debug output file path, default:set automatically",
             "log": "output log file with job and tile IDs",
-            "test": "test run level (2, 1, 0: no test, default)",
+            "test": "test run level (>=2, 1, 0: no test, default)",
             "sync": "job submission mode, allowed are async, sync; default is {}",
         }
 
@@ -119,18 +125,14 @@ class Job(object):
         if self._params["test"] >= 2:
             opt["-dummy"] = "--dummy"
         else:
-            if self._params["test"] == 1:
+            if self._params["test"] != 0:
                 opt["h"] = "--test"
             else:
-
-                # Debug
-                opt["h"] = "--test"
-
                 # Options
                 opt["j"] = f"-j {self._params['job']}"
                 opt["p"] = f"-p {self._params['psf']}"
 
-                # Set identified for debug file name
+                # Set identifier for debug file name
                 if self._params["test"] == 2:
                     deb_ID = "test"
                 elif self._params["exclusive"]:
@@ -161,20 +163,22 @@ class Job(object):
 
         suf1 = suf.replace(".", "-")
         
-        job_name = f"sp-{self._patch}-{self._params['job']}-{suf1}"
+        job_name = f"sp-{self._patch}-j{self._params['job']}-{suf1}"
 
         if self._params["test"] == 1:
             job_name = f"{job_name}-test-1"
 
         return job_name
 
-    def set_command(self):
+    def set_command(self, mode):
 
         if self._params["test"] >= 2:
             self._cmd = f"{os.environ['HOME']}/test/test.sh"
-        elif self._params["sync"] == "async":
+        elif mode == "async_single":
             self._cmd = f"{os.environ['HOME']}/shapepipe/scripts/sh/canfar_async_job.sh"
-        else:
+        elif mode == "async_bulk":
+            self._cmd = f"{os.environ['HOME']}/shapepipe/scripts/python/distribute_tiles.py"
+        elif mode == "sync":
             self._cmd = f"{os.environ['HOME']}/shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
 
     def get_tile_IDs(self):
@@ -195,14 +199,33 @@ class Job(object):
     async def run_async(self):
         async with AsyncSession() as session:
 
-            _, n, suf = self.get_tile_IDs()
+            _, total_n, suf = self.get_tile_IDs()
 
-            print(f"Submitting {n} jobs to canfar queue")
+             # Calculate number of batches needed
+            num_batches = math.ceil(total_n / self._max_replicas_per_batch)
 
-            job_name = self.set_job_name(suf=suf)
-            options = self._options_base.lstrip()
-            print(f"Running async '[{self._cmd}] [{options}]'")
-            
+            if num_batches == 1:
+                # Submit single batch
+                self.set_command(mode="async_single")
+                print(f"Submitting {total_n} replicas in a single batch")
+                return await self._submit_single_batch(total_n)
+            else:
+                # Submit multiple batches as chunks
+                self.set_command(mode="async_bulk")
+                print(f"Splitting into {num_batches} batches (max {self._max_replicas_per_batch} replicas per batch)")
+                print(f"Using chunk() helper within each batch to distribute tiles")
+                return await self._submit_multiple_batches(total_n, num_batches)
+
+
+    async def _submit_single_batch(self, n):
+        """Submit a single batch of jobs."""
+        print(f"Submitting {n} jobs to canfar queue")
+
+        job_name = self.set_job_name(suf="")
+        options = self._options_base.lstrip()
+        print(f"Running single async '{self._cmd} {options}' with {n} jobs")
+
+        async with AsyncSession() as session:
             try:
                 sessions = await session.create(
                     name=job_name,
@@ -210,18 +233,73 @@ class Job(object):
                     cmd=self._cmd,
                     args=options,
                     replicas=n,
+                    cores=2,
+                    ram=4,  
                 )
-                print("Success? sessions = ", sessions)
+                print(f"✓ Batch submitted successfully: {len(sessions)} sessions created")
+                print("Sessions = ", sessions)
             except Exception as e:
                 print(f"❌ CANFAR session.create() failed: {type(e).__name__}: {e}")
                 raise
 
         return sessions
 
+    async def _submit_multiple_batches(self, total_n, num_batches):
+        """Submit multiple batches of jobs.
+        
+        Each batch still processes ALL tiles, but chunk() automatically 
+        distributes them based on replica index.
+        """
+        all_sessions = []
+        
+        async with AsyncSession() as session:
+            for batch_num in range(1, num_batches + 1):
+                # Calculate batch size
+                if batch_num < num_batches:
+                    batch_size = self._max_replicas_per_batch
+                else:
+                    # Last batch gets the remainder
+                    batch_size = total_n - (num_batches - 1) * self._max_replicas_per_batch
+                
+                print(f"\n--- Batch {batch_num}/{num_batches} ---")
+                print(f"Submitting {batch_size} replicas")
+                print(f"chunk() will distribute tiles across these replicas")
+                
+                job_name = self.set_job_name(suf=f"b{batch_num}")
+                options = self._options_base.lstrip()
+                print(f"Running chunk async '{self._cmd} {options}'")
+                
+                try:
+                    sessions = await session.create(
+                        name=job_name,
+                        image=self._image,
+                        cmd=self._cmd,
+                        args=options,
+                        replicas=batch_size,
+                    )
+                    print(f"✓ Batch {batch_num} submitted: {len(sessions)} sessions created")
+                    print(sessions)
+                    all_sessions.extend(sessions)
+                    
+                    # Small delay between batches to avoid overwhelming the system
+                    if batch_num < num_batches:
+                        await asyncio.sleep(2)
+                        
+                except Exception as e:
+                    print(f"❌ Batch {batch_num} failed: {type(e).__name__}: {e}")
+                    # Continue with other batches even if one fails
+                    continue
+        
+        print(f"\n=== Submission complete ===")
+        print(f"Total sessions created: {len(all_sessions)} (for {total_n} tiles)")
+        
+        return all_sessions
+
     def run_no_async(self):
 
-        # Initialize session manager
         session = Session()
+
+        self.set_command(mode="sync")
 
         tile_IDs, _, _ = self.get_tile_IDs()
 
@@ -235,7 +313,7 @@ class Job(object):
             # Remove leading whitespace, problem in passing args below
             options = options.lstrip()
 
-            print(f"Running '[{self._cmd}] [{options}]'")
+            print(f"Running '{self._cmd} {options}'")
 
             # Submit flexible job (default - auto-scaling)
             job_id = session.create(
@@ -273,7 +351,9 @@ class Job(object):
         obj.check_params()
 
         obj.set_options_base()
-        obj.set_command()
+
+        # Initialize session manager
+        self._session = Session()
 
         if obj._params["sync"] == "async":
             print("Async mode")

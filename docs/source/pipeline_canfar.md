@@ -101,8 +101,8 @@ combine_runs.bash -c flag_exp
 cp summary/missing_job_32_all.txt exp_shdu.txt
 
 # Split exposures
-#curl_canfar_local.sh -j 2 -f all.txt -p $psf -N $OMP_NUM_THREADS
-pip in-f exp_shdu.txt 
+# (Check missing with summary_run P$patch 4096)
+canfar_submit_job -j 2 -v -f exp_shdu.txt
 
 # Mask exposures
 curl_canfar_local.sh -j 8 -f all.txt -p $psf -N $OMP_NUM_THREADS

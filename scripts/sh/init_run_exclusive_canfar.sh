@@ -354,11 +354,7 @@ fi
 
 (( do_job = $job & 2 ))
 if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
-#if [ ! -e "run_exp_Sp_shdu" ] && [ "$sp_local" == "1" ]; then
-  # run local Sp if not done already; works only with mh_local=1; this step needs to be done
-  # before following mh_local=1 steps 
   message "run local sp" $debug_out -1
-  #command "rm -rf run_sp_GitFeGie*/get_images_runner_run_2" $dry_run
   command "rm -rf run_sp_Gie*" $dry_run
   command "rm -rf run_sp_exp_Sp*" $dry_run
 
