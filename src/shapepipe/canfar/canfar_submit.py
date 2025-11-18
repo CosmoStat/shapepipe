@@ -26,9 +26,6 @@ class Job(object):
         version = "1.1"
         self._image = f"images.canfar.net/unions/shapepipe:{version}"
 
-        self._cores = 2
-        self._ram = 4
-
         # Maximum replicas per batch (CANFAR limit is 512)
         self._max_replicas_per_batch = 512
         if self._max_replicas_per_batch != 512:
@@ -67,6 +64,10 @@ class Job(object):
             "test": 0,
             "log": "log_jobs.txt",
             "sync": "async",
+            "cores": 2,
+            "ram": 4,
+            "parallel_jobs": 1,
+            "jobs_per_session": 0,
         }
 
         self._short_options = {
@@ -77,10 +78,18 @@ class Job(object):
             "dry_run": "-n",
             "log": "-l",
             "sync": "-S",
+            "cores": "-c",
+            "ram": "-r",
+            "parallel_jobs": "-P",
+            "jobs_per_session": "-J",
         }
 
         self._types = {
             "test": "int",
+            "cores": "int",
+            "ram": "int",
+            "parallel_jobs": "int",
+            "jobs_per_session": "int",
         }
 
         self._help_strings = {
@@ -93,6 +102,10 @@ class Job(object):
             "log": "output log file with job and tile IDs",
             "test": "test run level (>=2, 1, 0: no test, default)",
             "sync": "job submission mode, allowed are async, sync; default is {}",
+            "cores": "number of CPU cores per replica; default is {}",
+            "ram": "RAM in GB per replica; default is {}",
+            "parallel_jobs": "number of tiles to process in parallel per replica; default is {}",
+            "jobs_per_session": "number of jobs (tiles) per session; if 0, create one session per job (default; value is {})",
         }
 
     def update_params(self):
@@ -152,6 +165,8 @@ class Job(object):
                 opt["m_s"] = "-m 1 -s 1" if self._patch in ("P8", "P9") else ""
                 if self._params["dry_run"] != 0:
                     opt["n"] = f"-n {self._params['dry_run']}"
+                if self._params["parallel_jobs"] > 1:
+                    opt["P"] = f"--parallel_jobs {self._params['parallel_jobs']}"
 
         options = ""
         for key in opt:
@@ -204,28 +219,44 @@ class Job(object):
 
             _, total_n, suf = self.get_tile_IDs()
 
-             # Calculate number of batches needed
-            num_batches = math.ceil(total_n / self._max_replicas_per_batch)
+            # Calculate number of replicas (sessions) based on jobs_per_session
+            if self._params["jobs_per_session"] > 0:
+                # Each replica processes multiple jobs
+                num_replicas = math.ceil(total_n / self._params["jobs_per_session"])
+                print(f"Distributing {total_n} jobs across {num_replicas} sessions")
+                print(f"Each session will process ~{self._params['jobs_per_session']} jobs")
+            else:
+                # Old behavior: one replica per job
+                num_replicas = total_n
+                print(f"Creating {num_replicas} sessions (one per job)")
+
+            # Calculate number of batches needed
+            num_batches = math.ceil(num_replicas / self._max_replicas_per_batch)
 
             if num_batches == 1:
                 # Submit single batch
-                self.set_command(mode="async_single")
-                print(f"Submitting {total_n} replicas in a single batch")
-                return await self._submit_single_batch(total_n)
+                self.set_command(mode="async_bulk")
+                print(f"Submitting {num_replicas} replicas in a single batch")
+                return await self._submit_single_batch(num_replicas, total_n)
             else:
                 # Submit multiple batches as chunks
                 self.set_command(mode="async_bulk")
-                print(f"chunk()-splitting into {num_batches} batches (max {self._max_replicas_per_batch} replicas per batch)")
-                return await self._submit_multiple_batches(total_n, num_batches)
+                print(f"Splitting into {num_batches} batches (max {self._max_replicas_per_batch} replicas per batch)")
+                return await self._submit_multiple_batches(num_replicas, total_n, num_batches)
 
 
-    async def _submit_single_batch(self, n):
-        """Submit a single batch of jobs."""
-        print(f"Submitting {n} jobs to canfar queue")
+    async def _submit_single_batch(self, num_replicas, total_n):
+        """Submit a single batch of jobs.
+
+        Args:
+            num_replicas: Number of replicas (sessions) to create
+            total_n: Total number of jobs (tiles) to process
+        """
+        print(f"Submitting {num_replicas} replicas to process {total_n} jobs")
 
         job_name = self.set_job_name(suf="")
         options = self._options_base.lstrip()
-        print(f"Running single async '{self._cmd} {options}' with {n} jobs")
+        print(f"Running '{self._cmd} {options}'")
 
         async with AsyncSession() as session:
             try:
@@ -234,11 +265,12 @@ class Job(object):
                     image=self._image,
                     cmd=self._cmd,
                     args=options,
-                    replicas=n,
-                    cores=self._cores,
-                    ram=self._ram,
+                    replicas=num_replicas,
+                    cores=self._params["cores"],
+                    ram=self._params["ram"],
                 )
                 print(f"✓ Batch submitted successfully: {len(sessions)} sessions created")
+                print(f"Each session will process ~{math.ceil(total_n / num_replicas)} jobs using chunk()")
                 print("Sessions = ", sessions)
             except Exception as e:
                 print(f"❌ CANFAR session.create() failed: {type(e).__name__}: {e}")
@@ -246,27 +278,33 @@ class Job(object):
 
         return sessions
 
-    async def _submit_multiple_batches(self, total_n, num_batches):
+    async def _submit_multiple_batches(self, num_replicas, total_n, num_batches):
         """Submit multiple batches of jobs.
-        
-        Each batch still processes ALL tiles, but chunk() automatically 
-        distributes them based on replica index.
+
+        Args:
+            num_replicas: Total number of replicas (sessions) to create
+            total_n: Total number of jobs (tiles) to process
+            num_batches: Number of batches to split replicas into
+
+        Each batch creates a subset of replicas. chunk() automatically
+        distributes all tiles across all replicas.
         """
         all_sessions = []
-        
+
         async with AsyncSession() as session:
             for batch_num in range(1, num_batches + 1):
-                # Calculate batch size
+                # Calculate batch size (number of replicas in this batch)
                 if batch_num < num_batches:
                     batch_size = self._max_replicas_per_batch
                 else:
                     # Last batch gets the remainder
-                    batch_size = total_n - (num_batches - 1) * self._max_replicas_per_batch
-                
+                    batch_size = num_replicas - (num_batches - 1) * self._max_replicas_per_batch
+
                 print(f"\n--- Batch {batch_num}/{num_batches} ---")
                 print(f"Submitting {batch_size} replicas")
-                print(f"chunk() will distribute tiles across these replicas")
-                
+                print(f"Total {num_replicas} replicas will process {total_n} jobs")
+                print(f"chunk() will distribute jobs across all replicas")
+
                 job_name = self.set_job_name(suf=f"b{batch_num}")
                 options = (
                     f"{self._options_base} --batch_num {batch_num}"
@@ -274,8 +312,8 @@ class Job(object):
                     + f" --batch_size {self._max_replicas_per_batch}"
                 )
                 options = options.lstrip()
-                print(f"Running chunk async '{self._cmd} {options}'")
-                
+                print(f"Running '{self._cmd} {options}'")
+
                 try:
                     sessions = await session.create(
                         name=job_name,
@@ -283,26 +321,27 @@ class Job(object):
                         cmd=self._cmd,
                         args=options,
                         replicas=batch_size,
-                        cores=self._cores,
-                        ram=self._ram,
+                        cores=self._params["cores"],
+                        ram=self._params["ram"],
 
                     )
                     print(f"✓ Batch {batch_num} submitted: {len(sessions)} sessions created")
                     print(sessions)
                     all_sessions.extend(sessions)
-                    
+
                     # Small delay between batches to avoid overwhelming the system
                     if batch_num < num_batches:
                         await asyncio.sleep(1)
-                        
+
                 except Exception as e:
                     print(f"❌ Batch {batch_num} failed: {type(e).__name__}: {e}")
                     # Continue with other batches even if one fails
                     continue
-        
+
         print(f"\n=== Submission complete ===")
-        print(f"Total sessions created: {len(all_sessions)} (for {total_n} tiles)")
-        
+        print(f"Total sessions created: {len(all_sessions)} replicas (for {total_n} jobs)")
+        print(f"Each replica will process ~{math.ceil(total_n / num_replicas)} jobs")
+
         return all_sessions
 
     def run_no_async(self):
