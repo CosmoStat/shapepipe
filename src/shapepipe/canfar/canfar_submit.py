@@ -26,8 +26,11 @@ class Job(object):
         version = "1.1"
         self._image = f"images.canfar.net/unions/shapepipe:{version}"
 
+        self._cores = 2
+        self._ram = 4
+
         # Maximum replicas per batch (CANFAR limit is 512)
-        self._max_replicas_per_batch = 20
+        self._max_replicas_per_batch = 512
         if self._max_replicas_per_batch != 512:
             print(f"MKDEBUG: Setting max_replicas_per_batch to {self._max_replicas_per_batch}.")
 
@@ -63,7 +66,7 @@ class Job(object):
             "dry_run": 0,
             "test": 0,
             "log": "log_jobs.txt",
-            "sync": "asnyc",
+            "sync": "async",
         }
 
         self._short_options = {
@@ -85,7 +88,7 @@ class Job(object):
             "exclusive": "Run exclusively given image",
             "file_IDs": "file containing IDs",
             "psf": "PSF model, allowed are 'psfex' and 'mccd'; default is {}",
-            "dry_run": "dry run, no actual processing",
+            "dry_run": "if dry run > 0 no actual processing; allowed are 2, 1, 0; default is {}",
             "debug_out": "debug output file path, default:set automatically",
             "log": "output log file with job and tile IDs",
             "test": "test run level (>=2, 1, 0: no test, default)",
@@ -212,8 +215,7 @@ class Job(object):
             else:
                 # Submit multiple batches as chunks
                 self.set_command(mode="async_bulk")
-                print(f"Splitting into {num_batches} batches (max {self._max_replicas_per_batch} replicas per batch)")
-                print(f"Using chunk() helper within each batch to distribute tiles")
+                print(f"chunk()-splitting into {num_batches} batches (max {self._max_replicas_per_batch} replicas per batch)")
                 return await self._submit_multiple_batches(total_n, num_batches)
 
 
@@ -233,8 +235,8 @@ class Job(object):
                     cmd=self._cmd,
                     args=options,
                     replicas=n,
-                    cores=2,
-                    ram=4,  
+                    cores=self._cores,
+                    ram=self._ram,
                 )
                 print(f"✓ Batch submitted successfully: {len(sessions)} sessions created")
                 print("Sessions = ", sessions)
@@ -266,7 +268,12 @@ class Job(object):
                 print(f"chunk() will distribute tiles across these replicas")
                 
                 job_name = self.set_job_name(suf=f"b{batch_num}")
-                options = self._options_base.lstrip()
+                options = (
+                    f"{self._options_base} --batch_num {batch_num}"
+                    + f" --batch_tot {num_batches}"
+                    + f" --batch_size {self._max_replicas_per_batch}"
+                )
+                options = options.lstrip()
                 print(f"Running chunk async '{self._cmd} {options}'")
                 
                 try:
@@ -276,6 +283,9 @@ class Job(object):
                         cmd=self._cmd,
                         args=options,
                         replicas=batch_size,
+                        cores=self._cores,
+                        ram=self._ram,
+
                     )
                     print(f"✓ Batch {batch_num} submitted: {len(sessions)} sessions created")
                     print(sessions)
@@ -283,7 +293,7 @@ class Job(object):
                     
                     # Small delay between batches to avoid overwhelming the system
                     if batch_num < num_batches:
-                        await asyncio.sleep(2)
+                        await asyncio.sleep(1)
                         
                 except Exception as e:
                     print(f"❌ Batch {batch_num} failed: {type(e).__name__}: {e}")
