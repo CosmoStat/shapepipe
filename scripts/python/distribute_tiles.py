@@ -9,6 +9,7 @@ across replicas, then processes each tile assigned to this replica.
 import os
 import sys
 import subprocess
+from multiprocessing import Pool
 from canfar.helpers.distributed import chunk
 
 
@@ -22,7 +23,8 @@ def parse_arguments(args):
     Returns:
         str or None: The value passed with -f, or None if not present
     """
-    parsed = {"dry_run": 0}
+    # Default values
+    parsed = {"dry_run": 0, "parallel_jobs": 1}
 
     i = 0
     while i < len(args):
@@ -40,6 +42,9 @@ def parse_arguments(args):
             i += 2
         elif args[i] in ('-n', '--dry_run') and i + 1 < len(args):
             parsed['dry_run'] = int(args[i + 1])
+            i += 2
+        elif args[i] == '--parallel_jobs' and i + 1 < len(args):
+            parsed['parallel_jobs'] = int(args[i + 1])
             i += 2
         else:
             i += 1
@@ -92,24 +97,24 @@ def get_tile_list(file_ids):
 def build_process_command(tile_id, original_args):
     """
     Build command for a single tile by replacing -f <file_ids> with -e <tile_id>.
-    
+
     Args:
         tile_id (str): Tile ID to process
         original_args (list of str): Original CLI arguments
-        
+
     Returns:
         list of str: Command ready for subprocess
     """
     cmd = [f"{os.environ['HOME']}/shapepipe/scripts/sh/init_run_exclusive_canfar.sh"]
-    
+
     # Transform arguments: replace -f <file_ids> with -e <tile_id>,
-    # skip batch arguments and dry_run if not 0, 1
+    # skip batch arguments, parallel_jobs, and dry_run if not 0, 1
     i = 0
     while i < len(original_args):
         if original_args[i] == '-f' and i + 1 < len(original_args):
             cmd.extend(['-e', tile_id])
             i += 2
-        elif original_args[i] in ('--batch_num', '--batch_tot', '--batch_size'):
+        elif original_args[i] in ('--batch_num', '--batch_tot', '--batch_size', '--parallel_jobs'):
             i += 2
         elif original_args[i] in ('-n', '--dry_run'):
             if original_args[i] in (0, 1):
@@ -117,9 +122,46 @@ def build_process_command(tile_id, original_args):
             i += 2
         else:
             cmd.append(original_args[i])
-            i += 1 
+            i += 1
 
     return cmd
+
+
+def process_single_tile(args_tuple):
+    """
+    Process a single tile (designed for multiprocessing).
+
+    Args:
+        args_tuple: Tuple of (tile_id, tile_num, total_tiles, original_args, dry_run, msg_batch)
+
+    Returns:
+        tuple: (tile_id, success, error_message)
+    """
+    tile_id, tile_num, total_tiles, original_args, dry_run, msg_batch = args_tuple
+
+    print(f"{'='*5} Processing {msg_batch}tile {tile_num}/{total_tiles}: {tile_id} {'='*5}")
+
+    # Build command
+    cmd = build_process_command(tile_id, original_args)
+    print(f"Command: {' '.join(cmd)}")
+
+    # Execute command
+    try:
+        if dry_run != 2:
+            result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+            print(f"✓ Successfully processed tile {tile_id}")
+            return (tile_id, True, None)
+        else:
+            print(f"Not running {cmd} (dry_run=2)")
+            return (tile_id, True, None)
+    except subprocess.CalledProcessError as e:
+        error_msg = f"Failed to process tile {tile_id}: {e}"
+        print(f"✗ {error_msg}", file=sys.stderr)
+        return (tile_id, False, error_msg)
+    except Exception as e:
+        error_msg = f"Unexpected error processing tile {tile_id}: {e}"
+        print(f"✗ {error_msg}", file=sys.stderr)
+        return (tile_id, False, error_msg)
 
 
 def main():
@@ -156,45 +198,46 @@ def main():
         msg_batch = ""
     
     print(f"This replica assigned {len(my_tile_list)} tiles")
-    
+    print(f"Parallel jobs: {args['parallel_jobs']}")
+
     if len(my_tile_list) > 0:
         print(f"First tile: {my_tile_list[0]}")
         if len(my_tile_list) > 1:
             print(f"Last tile: {my_tile_list[-1]}")
-    
+
     # Process each tile assigned to this replica
     success_count = 0
     failure_count = 0
-    
-    for i, tile_id in enumerate(my_tile_list, 1):
-        print(f"{'='*5} Processing {msg_batch}tile {i}/{len(my_tile_list)}: {tile_id} {'='*5}")
-        
-        # Build command
-        cmd = build_process_command(tile_id, sys.argv[1:])
-        print(f"Command: {' '.join(cmd)}")
-        
-        # Execute command
-        try:
-            if args["dry_run"] != 2:
-                result = subprocess.run(cmd, check=True)
-                print(f"✓ Successfully processed tile {tile_id}")
-            else:
-                print(f"Not running {cmd} (dry_run=2)")
+
+    # Prepare arguments for parallel processing
+    process_args = [
+        (tile_id, i, len(my_tile_list), sys.argv[1:], args["dry_run"], msg_batch)
+        for i, tile_id in enumerate(my_tile_list, 1)
+    ]
+
+    if args['parallel_jobs'] > 1:
+        # Parallel processing
+        print(f"Processing tiles in parallel with {args['parallel_jobs']} workers")
+        with Pool(processes=args['parallel_jobs']) as pool:
+            results = pool.map(process_single_tile, process_args)
+    else:
+        # Sequential processing (original behavior)
+        print("Processing tiles sequentially")
+        results = [process_single_tile(arg) for arg in process_args]
+
+    # Count successes and failures
+    for tile_id, success, error_msg in results:
+        if success:
             success_count += 1
-        except subprocess.CalledProcessError as e:
-            print(f"✗ Failed to process tile {tile_id}: {e}", file=sys.stderr)
+        else:
             failure_count += 1
-            # Continue processing other tiles even if one fails
-        except Exception as e:
-            print(f"✗ Unexpected error processing tile {tile_id}: {e}", file=sys.stderr)
-            failure_count += 1
-    
+
     # Summary
     print(
         f"{'='*5} Processing completed tot/suc/fail="
         + f"{len(my_tile_list)}/{success_count}/{failure_count}"
     )
- 
+
     # Exit with error if any failures
     if failure_count > 0:
         sys.exit(1)
