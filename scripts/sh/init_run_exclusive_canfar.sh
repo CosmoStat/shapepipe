@@ -190,10 +190,10 @@ fi
 
 source $HOME/shapepipe/scripts/sh/functions.sh
 
-msg="Starting $(basename "$0")"
+msg="Starting $(basename "$0") `date` ID=$ID"
 message "$msg" $debug_out -1
-message "`date`" $debug_out -1
-message "ID=$ID" $debug_out -1
+#message "`date`" $debug_out -1
+#message "ID=$ID" $debug_out -1
 
 # Set kind
 kind=$(get_kind_from_job $job)
@@ -401,7 +401,8 @@ if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
   cd output
 
   if [ "$job" == "2" ]; then
-    exit 0
+    msg="Finishing $(basename "$0") after job=2 `date` ID=$ID"
+    message "$msg" $debug_out 0
   fi
 
 fi
@@ -549,7 +550,7 @@ fi
 if [[ $do_job != 0 ]]; then
 
   # Remove previous runs of this job
-  rm -rf run_sp_Ms_20??_*
+  rm -rf run_sp_Ms_20??-*
 
 fi
 
@@ -557,7 +558,7 @@ fi
 if [[ $do_job != 0 ]]; then
 
   # Remove previous runs of this job
-  rm -rf run_sp_Mc_20??_*
+  rm -rf run_sp_Mc_20??-*
 
 fi
 
@@ -611,8 +612,7 @@ fi
 
 cd $dir
 
-msg="End $(basename "$0")"
-echo $msg
-if [ "$debug_out" != "-1" ]; then
-  echo $pat$msg >> $debug_out-
-fi
+#msg="End $(basename "$0")"
+
+msg="Finished $(basename "$0") `date` ID=$ID"
+message "$msg" $debug_out -1

@@ -522,6 +522,7 @@ class job_data(object):
             # split_exp_runner with sp_local=0: input is exp, output is shdu
             # (images) and exp (header); ignore hdu number.
             # If sp_local=1 set bit to != 2
+            # Update 11/2025: No longer working for P9 4096. Solution: set n_mult=3.
             pattern = re.compile(
                 r"(?:\d{3}-\d{3}|\d{7})"
             )

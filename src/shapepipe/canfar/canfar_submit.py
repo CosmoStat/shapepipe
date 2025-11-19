@@ -26,8 +26,10 @@ class Job(object):
         version = "1.1"
         self._image = f"images.canfar.net/unions/shapepipe:{version}"
 
-        self._cores = 2
-        self._ram = 4
+        self._cores = 4
+        self._ram = 16
+
+        print(f"#cores = {self._cores}, ram = {self._ram}")
 
         # Maximum replicas per batch (CANFAR limit is 512)
         self._max_replicas_per_batch = 512

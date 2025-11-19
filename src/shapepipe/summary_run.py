@@ -12,7 +12,7 @@ def run(*args):
 
     patch = args[0]
 
-    if len(args) == 2:
+    if len(args) >= 2:
         job_exclusive = args[1]
     else:
         job_exclusive = None
