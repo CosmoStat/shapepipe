@@ -516,7 +516,7 @@ class job_data(object):
         # Count image IDs in names that were found earlier
 
         # Get file name pattern
-        if module != "split_exp_runner" or self._bit != "2":
+        if module != "split_exp_runner" or (self._bit != 2 and self._bit != 4096):
             pattern = re.compile(r"(?:\d{3}-\d{3}|\d{7}-\d+|\d{7})")
         else:
             # split_exp_runner with sp_local=0: input is exp, output is shdu
