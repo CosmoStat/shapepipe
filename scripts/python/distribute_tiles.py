@@ -10,6 +10,7 @@ import os
 import sys
 import subprocess
 from multiprocessing import Pool
+import fcntl
 from canfar.helpers.distributed import chunk
 
 
@@ -46,6 +47,9 @@ def parse_arguments(args):
         elif args[i] == '--parallel_jobs' and i + 1 < len(args):
             parsed['parallel_jobs'] = int(args[i + 1])
             i += 2
+        elif args[i] == "--debug_out" and i + 1 < len(args):
+            parsed["debug_out"] = args[i + 1]
+            i += 2
         else:
             i += 1
 
@@ -71,7 +75,7 @@ def get_my_tiles(all_tiles, batch_num, batch_tot, batch_size):
       end_idx = min(batch_num * batch_size, len(all_tiles))
       
       batch_tiles = all_tiles[start_idx:end_idx]
-      print(f"Batch {batch_num}/{batch_tot}, Local replica {local_replica_id}/{batch_size}")
+      print(f"Batch {batch_num}/{batch_tot}, local replica {local_replica_id}/{batch_size}")
       print(f"Batch processes tiles {start_idx + 1} to {end_idx} ({len(batch_tiles)} tiles)")
       
       # Use chunk() to distribute this batch's tiles among local replicas
@@ -164,11 +168,36 @@ def process_single_tile(args_tuple):
         return (tile_id, False, error_msg)
 
 
+def print_debug(pat, tile_list, out_path, verbose=False):
+
+    local_replica_id = int(os.environ.get('REPLICA_ID', 1))
+
+    with open(out_path, "a") as f:
+        # Exclusive lock for save parallel use
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        try:
+            # Build output string
+            output = f"{pat} distribute_tiles {local_replica_id} "
+            output += " ".join(tile_list) + "\n"
+
+            # Write to file
+            f.write(output)
+
+            # Optionally write to stdout
+            if verbose:
+                print(output, end="")
+        finally:
+            # Unlock
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+
+
 def main():
+
+    # Debug file line pattern
+    pat = "- "
+
     # Parse arguments
     args = parse_arguments(sys.argv[1:])
-
-    print("MKDEBUG", args["dry_run"])
 
     if not "file_ids" in args:
         print("Error: -f <file_ids> must be provided", file=sys.stderr)
@@ -191,12 +220,16 @@ def main():
             args['batch_size']
         )
         msg_batch = f"batch {args['batch_num']}/{args['batch_tot']} "
+
     else:
         # Use chunk() to get tiles for this replica
         print("Using chunk() to determine tiles for this replica...")
         my_tile_list = list(chunk(all_tiles))
         msg_batch = ""
     
+    if "debug_out" in args:
+        print_debug(f"{pat}{msg_batch}", my_tile_list, args["debug_out"], verbose=True)
+
     print(f"This replica assigned {len(my_tile_list)} tiles")
     print(f"Parallel jobs: {args['parallel_jobs']}")
 
@@ -204,6 +237,8 @@ def main():
         print(f"First tile: {my_tile_list[0]}")
         if len(my_tile_list) > 1:
             print(f"Last tile: {my_tile_list[-1]}")
+        else:
+            print("Only one tile")
 
     # Process each tile assigned to this replica
     success_count = 0
