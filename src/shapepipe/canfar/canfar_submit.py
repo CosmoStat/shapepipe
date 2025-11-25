@@ -28,8 +28,9 @@ class Job(object):
 
         # Maximum replicas per batch (CANFAR limit is 512)
         self._max_replicas_per_batch = 512
-        if self._max_replicas_per_batch != 512:
-            print(f"MKDEBUG: Setting max_replicas_per_batch to {self._max_replicas_per_batch}.")
+
+        # Default number of cores, can be overwritten by -c or -P (parallel jobs) options
+        self._cores_default = 2
 
 
     def set_params_from_command_line(self, args):
@@ -61,7 +62,6 @@ class Job(object):
             "n": "0",
             "debug_out": None,
             "dry_run": 0,
-            "test": 0,
             "log": "log_jobs.txt",
             "sync": "async",
             "cores": 2,
@@ -85,7 +85,7 @@ class Job(object):
         }
 
         self._types = {
-            "test": "int",
+            "job": "int",
             "cores": "int",
             "ram": "int",
             "parallel_jobs": "int",
@@ -100,12 +100,14 @@ class Job(object):
             "dry_run": "if dry run > 0 no actual processing; allowed are 2, 1, 0; default is {}",
             "debug_out": "debug output file path, default:set automatically",
             "log": "output log file with job and tile IDs",
-            "test": "test run level (>=2, 1, 0: no test, default)",
             "sync": "job submission mode, allowed are async, sync; default is {}",
-            "cores": "number of CPU cores per replica; default is {}",
+            "cores": "number of CPU cores per replica; default is {} or overwritten by -P",
             "ram": "RAM in GB per replica; default is {}",
             "parallel_jobs": "number of tiles to process in parallel per replica; default is {}",
-            "jobs_per_session": "number of jobs (tiles) per session; if 0, create one session per job (default; value is {})",
+            "jobs_per_session": (
+                "number of jobs (tiles) per session; if 0, create one session per job (default is {});"
+                + " Number of replicas is #FILE_IDs / JOBS_PER_SESSSION"
+            ),
         }
 
     def update_params(self):
@@ -113,18 +115,24 @@ class Job(object):
 
         Update parameters.
         """
+
+        # If not given, set number of cores to number of parallel jobs;
+        # else set to default. 
+        if self._params["cores"] == -1:
+            if self._params["parallel_jobs"] != 1:
+                self._params["cores"] = self._params["parallel_jobs"]
+            else:
+                self._params["cores"] = self._cores_default
         pass
 
     def check_params(self):
 
+        if self._params["job"] == -1:
+            raise ValueError(f"need to specify job (option -j)")
+
         if self._params["sync"] == "async" and not self._params["file_IDs"]:
             raise ValueError("asynchronous mode only possible when tile_IDs file given (-f)")
 
-        if self._params["test"] >= 2:
-            return
-
-        if self._params["job"] == "-1":
-            raise ValueError("No job indicated, use option -j")
         if not self._params["exclusive"] and not self._params["file_IDs"]:
             raise ValueError("No image ID(s) indicated, use option -e ID or -f file_IDs")
 
@@ -138,35 +146,27 @@ class Job(object):
         if self._params["sync"] == "async":
             opt["-f"] = f"-f {cwd}/{self._params['file_IDs']}"
 
-        if self._params["test"] >= 2:
-            opt["-dummy"] = "--dummy"
+        # Options
+        opt["j"] = f"-j {self._params['job']}"
+        opt["p"] = f"-p {self._params['psf']}"
+
+        # Set identifier for debug file name
+        if self._params["exclusive"]:
+            deb_ID = self._params["exclusive"]
         else:
-            if self._params["test"] != 0:
-                opt["h"] = "--test"
-            else:
-                # Options
-                opt["j"] = f"-j {self._params['job']}"
-                opt["p"] = f"-p {self._params['psf']}"
-
-                # Set identifier for debug file name
-                if self._params["test"] == 2:
-                    deb_ID = "test"
-                elif self._params["exclusive"]:
-                    deb_ID = self._params["exclusive"]
-                else:
-                    deb_ID = self._params["file_IDs"]
+            deb_ID = self._params["file_IDs"]
       
-                if self._params['debug_out']:
-                    opt["debut_out"] = f"--debug_out {cwd}/debug/{self._params['debug_out']}"
-                else:
-                    opt["debut_out"] = f"--debug_out {cwd}/debug/debug_{deb_ID}.txt"
+        if self._params['debug_out']:
+            opt["debut_out"] = f"--debug_out {cwd}/debug/{self._params['debug_out']}"
+        else:
+            opt["debut_out"] = f"--debug_out {cwd}/debug/debug_{deb_ID}.txt"
 
-                opt["d"] = f"-d {cwd}"
-                opt["m_s"] = "-m 1 -s 1" if self._patch in ("P8", "P9") else ""
-                if self._params["dry_run"] != 0:
-                    opt["n"] = f"-n {self._params['dry_run']}"
-                if self._params["parallel_jobs"] > 1:
-                    opt["P"] = f"--parallel_jobs {self._params['parallel_jobs']}"
+        opt["d"] = f"-d {cwd}"
+        opt["m_s"] = "-m 1 -s 1" if self._patch in ("P8", "P9") else ""
+        if self._params["dry_run"] != 0:
+            opt["n"] = f"-n {self._params['dry_run']}"
+        if self._params["parallel_jobs"] > 1:
+            opt["P"] = f"--parallel_jobs {self._params['parallel_jobs']}"
 
         options = ""
         for key in opt:
@@ -183,16 +183,11 @@ class Job(object):
         
         job_name = f"sp-{self._patch}-j{self._params['job']}-{suf1}"
 
-        if self._params["test"] == 1:
-            job_name = f"{job_name}-test-1"
-
         return job_name
 
     def set_command(self, mode):
 
-        if self._params["test"] >= 2:
-            self._cmd = f"{os.environ['HOME']}/test/test.sh"
-        elif mode == "async_single":
+        if mode == "async_single":
             self._cmd = f"{os.environ['HOME']}/shapepipe/scripts/sh/canfar_async_job.sh"
         elif mode == "async_bulk":
             self._cmd = f"{os.environ['HOME']}/shapepipe/scripts/python/distribute_tiles.py"
@@ -201,10 +196,7 @@ class Job(object):
 
     def get_tile_IDs(self):
 
-        if self._params["test"] >= 2:
-            tile_IDs = [f"test-{i}" for i in range(self._params["test"])]
-            suf = "test"
-        elif self._params["exclusive"]:
+        if self._params["exclusive"]:
             tile_IDs = [self._params["exclusive"]]
             suf = None
         else:
