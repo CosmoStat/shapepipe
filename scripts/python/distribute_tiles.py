@@ -143,7 +143,7 @@ def process_single_tile(args_tuple):
     """
     tile_id, tile_num, total_tiles, original_args, dry_run, msg_batch = args_tuple
 
-    print(f"{'='*5} Processing {msg_batch}tile {tile_num}/{total_tiles}: {tile_id} {'='*5}")
+    print(f"{'='*5} Processing {msg_batch}tile num/total={tile_num}/{total_tiles}: ID={tile_id} {'='*5}")
 
     # Build command
     cmd = build_process_command(tile_id, original_args)
@@ -156,7 +156,7 @@ def process_single_tile(args_tuple):
             print(f"✓ Successfully processed tile {tile_id}")
             return (tile_id, True, None)
         else:
-            print(f"Not running {cmd} (dry_run=2)")
+            print(f"dry_run=2")
             return (tile_id, True, None)
     except subprocess.CalledProcessError as e:
         error_msg = f"Failed to process tile {tile_id}: {e}"
@@ -177,7 +177,7 @@ def print_debug(pat, tile_list, out_path, verbose=False):
         fcntl.flock(f.fileno(), fcntl.LOCK_EX)
         try:
             # Build output string
-            output = f"{pat} distribute_tiles {local_replica_id} "
+            output = f"{pat} distribute_tiles REPLICA_ID={local_replica_id}, tiles="
             output += " ".join(tile_list) + "\n"
 
             # Write to file
@@ -210,6 +210,9 @@ def main():
     all_tiles = get_tile_list(file_ids)
     print(f"Total tiles in file: {len(all_tiles)}")
     
+    print("REPLICA_ID, COUNT=", os.environ.get('REPLICA_ID'), os.environ.get('REPLICA_COUNT'))
+
+
     # Check if we're in multi-batch mode
     if "batch_num" in args and "batch_tot" in args and "batch_size" in args:
         # Multi-batch mode: calculate global distribution

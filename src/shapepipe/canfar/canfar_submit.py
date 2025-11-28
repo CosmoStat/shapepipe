@@ -27,7 +27,9 @@ class Job(object):
         self._image = f"images.canfar.net/unions/shapepipe:{version}"
 
         # Maximum replicas per batch (CANFAR limit is 512)
-        self._max_replicas_per_batch = 512
+        self._max_replicas_per_batch = 10
+        if self._max_replicas_per_batch != 512:
+            print(f"Setting the maximum number of replicas to the non-standard {self._max_replicas_per_batch}")
 
         # Default number of cores, can be overwritten by -c or -P (parallel jobs) options
         self._cores_default = 2
