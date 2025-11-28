@@ -1,5 +1,5 @@
 import sys
-from shapepipe.canfar import canfar_submit, canfar_monitor
+from shapepipe.canfar import canfar_submit, canfar_monitor, canfar_log_monitor
 
 def run_job(args=None):
 
@@ -18,6 +18,14 @@ def run_log(args=None):
     except ValueError as e:
         print(e)
         sys.exit(1)
+
+
+def run_monitor_log(args=None):
+
+    # Create instance
+    obj = canfar_log_monitor.LogMonitor()
+    obj.run(args=args)
+
 
 def main(argv=None):
     """Main

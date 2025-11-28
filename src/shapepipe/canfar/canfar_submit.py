@@ -309,7 +309,7 @@ class Job(object):
                 options = (
                     f"{self._options_base} --batch_num {batch_num}"
                     + f" --batch_tot {num_batches}"
-                    + f" --batch_size {self._max_replicas_per_batch}"
+                    + f" --batch_size {batch_size}"
                 )
                 options = options.lstrip()
                 print(f"Running '{self._cmd} {options}'")
