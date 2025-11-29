@@ -26,7 +26,7 @@ class LogMonitor:
         """Set default parameters."""
         self._params = {
             "status": "Running",
-            "interval": 60,
+            "interval": 180,
             "output_dir": "canfar_logs",
             "kind": "headless",
             "verbose": False,
@@ -192,19 +192,40 @@ class LogMonitor:
                             print("empty")
                             # Track that we've seen this job
                             if job_id not in self._tracked_jobs:
-                                self._tracked_jobs[job_id] = {"name": job_name, "has_logs": False}
+                                self._tracked_jobs[job_id] = {"name": job_name, "has_logs": False, "num_lines": 0}
                         else:
-                            print("has content!", end=" ")
+                            # Count number of lines in current log
+                            current_num_lines = len(log_content.strip().split('\n'))
 
-                            # Save the logs
-                            filepath = self.save_log(job_id, job_name, log_content)
-                            print(f"saved to {filepath}")
-
-                            # Update tracking
-                            if job_id not in self._tracked_jobs:
-                                self._tracked_jobs[job_id] = {"name": job_name, "has_logs": True}
+                            # Get previous number of lines
+                            if job_id in self._tracked_jobs:
+                                previous_num_lines = self._tracked_jobs[job_id].get("num_lines", 0)
                             else:
-                                self._tracked_jobs[job_id]["has_logs"] = True
+                                previous_num_lines = 0
+
+                            # Only save if there's new content
+                            if current_num_lines > previous_num_lines:
+                                print(f"has content! ({current_num_lines} lines, +{current_num_lines - previous_num_lines})", end=" ")
+
+                                # Save the logs
+                                filepath = self.save_log(job_id, job_name, log_content)
+                                print(f"saved to {filepath}")
+
+                                # Update tracking
+                                self._tracked_jobs[job_id] = {
+                                    "name": job_name,
+                                    "has_logs": True,
+                                    "num_lines": current_num_lines
+                                }
+                            else:
+                                print(f"no new content ({current_num_lines} lines)")
+                                # Update tracking even if no new content
+                                if job_id not in self._tracked_jobs:
+                                    self._tracked_jobs[job_id] = {
+                                        "name": job_name,
+                                        "has_logs": True,
+                                        "num_lines": current_num_lines
+                                    }
 
                 print()
                 time.sleep(self._params['interval'])
