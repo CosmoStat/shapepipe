@@ -17,11 +17,11 @@ sm=1
 
 # mh_local is 0 (1) if merge_header_runner is run on all exposures,
 # which is standard so far (run on exposures of given tile only; new)
-mh_local=0
+mh_local=1
 
 # sp_local is 0 (1) is split_headers_runner and mask_runner is run
 # on all exposures (locally). Not 100% automatic yet. 
-sp_local=0
+sp_local=1
 VERBOSE=1
 
 pat="-- "
@@ -39,7 +39,7 @@ usage="Usage: $(basename "$0") -j JOB -e ID [OPTIONS]
    -m, --mh_local MH\n
    \tmerge header file local (MH=1) or global (MH=0); default is $mh_local\n
    -s, --sp_local SP\n
-   \tsplit local run local (SP=1) or global (SP=r0wwdefault is $sp_local\n
+   \tsplit local run local (SP=1) or global (SP=0); default is $sp_local\n
    --sm SM\n
    \tWith (SM=1; default) or without (SM=0) spread model input\n
    -N, --N_SMP N_SMOp\n

@@ -37,12 +37,10 @@ class LogMonitor:
             "interval": "-i",
             "output_dir": "-o",
             "kind": "-k",
-            "verbose": "-v",
         }
 
         self._types = {
             "interval": "int",
-            "verbose": "bool",
         }
 
         self._help_strings = {
@@ -50,7 +48,6 @@ class LogMonitor:
             "interval": "polling interval in seconds; default is {}",
             "output_dir": "directory to save log files; default is {}",
             "kind": "session kind (headless, notebook, etc.); default is {}",
-            "verbose": "verbose output; default is {}",
         }
 
     def set_params_from_command_line(self, args):
@@ -209,7 +206,6 @@ class LogMonitor:
                             else:
                                 self._tracked_jobs[job_id]["has_logs"] = True
 
-                print(f"  Sleeping for {self._params['interval']} seconds...")
                 print()
                 time.sleep(self._params['interval'])
 

@@ -6,6 +6,7 @@ import os
 import sys
 import asyncio
 import math
+
 from canfar.sessions import Session
 from canfar.sessions import AsyncSession
 from datetime import datetime
@@ -27,7 +28,7 @@ class Job(object):
         self._image = f"images.canfar.net/unions/shapepipe:{version}"
 
         # Maximum replicas per batch (CANFAR limit is 512)
-        self._max_replicas_per_batch = 10
+        self._max_replicas_per_batch = 512
         if self._max_replicas_per_batch != 512:
             print(f"Setting the maximum number of replicas to the non-standard {self._max_replicas_per_batch}")
 
@@ -70,6 +71,7 @@ class Job(object):
             "ram": 4,
             "parallel_jobs": 1,
             "jobs_per_session": 0,
+            "stats": False,
         }
 
         self._short_options = {
@@ -84,6 +86,7 @@ class Job(object):
             "ram": "-r",
             "parallel_jobs": "-P",
             "jobs_per_session": "-J",
+            "stats": "-s",
         }
 
         self._types = {
@@ -92,6 +95,7 @@ class Job(object):
             "ram": "int",
             "parallel_jobs": "int",
             "jobs_per_session": "int",
+            "stats": "bool",
         }
 
         self._help_strings = {
@@ -110,6 +114,7 @@ class Job(object):
                 "number of jobs (tiles) per session; if 0, create one session per job (default is {});"
                 + " Number of replicas is #FILE_IDs / JOBS_PER_SESSSION"
             ),
+            "stats": "print stats of sessions/batches/replicas and exit",
         }
 
     def update_params(self):
@@ -383,6 +388,49 @@ class Job(object):
             for job_id, tile_ID in zip(job_ids, tile_IDs):
                 print(job_id, tile_ID, file=log)
 
+    def print_stats(self):
+
+        # Total number of jobs (= length of input ID file)
+        _, total_n, _ = self.get_tile_IDs()
+
+        if self._params["jobs_per_session"] == 0:
+            # Compute max jobs per session to fit in single batch
+            self._params["jobs_per_session"] = math.ceil(total_n / self._max_replicas_per_batch)
+            print(f"Max jobs per session = {self._params['jobs_per_session']}")
+
+        # Number of sessions
+        n_session = math.ceil(total_n / self._params["jobs_per_session"])
+
+        # Number of batches
+        n_batch = math.ceil(n_session / self._max_replicas_per_batch)
+
+        # Number of jobs per session
+        n_jobs = math.ceil(self._params["jobs_per_session"] / n_batch)
+        
+        n_jobs_serial = max(
+            math.ceil(n_jobs / self._params["parallel_jobs"]),
+            1,
+        )
+
+        print(
+            f"Number of jobs             = {total_n}\t\t(#{self._params['file_IDs']})")
+        print(
+            f"Number of sessions         = {n_session:5d}\t\t({total_n} /"
+            + f" {self._params['jobs_per_session']})"
+        )
+        print(
+            f"Number of batches          = {n_batch:5d}\t\t({n_session} /"
+            + f" {self._max_replicas_per_batch})"
+        )
+        print(
+            f"Number of jobs per session = {n_jobs:5d}"
+            + f"\t\t({self._params['jobs_per_session']} / {n_batch}"
+        )
+        print(
+            f"Number of serial jobs      = {n_jobs_serial:5d}\t\t({n_jobs}"
+            + f" / {self._params['parallel_jobs']})"
+        )
+
     def run(self, args=None):
 
         obj = self
@@ -394,6 +442,10 @@ class Job(object):
         obj.check_params()
 
         obj.set_options_base()
+
+        if self._params["stats"]:
+            obj.print_stats()
+            sys.exit(0)
 
         # Initialize session manager
         self._session = Session()
