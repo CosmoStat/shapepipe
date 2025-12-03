@@ -16,6 +16,7 @@ dependencies = [
     "numpy>=1.14",
     "pandas",
     "canfar",
+    "sf_tools",
 ]
 
 

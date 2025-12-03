@@ -485,8 +485,13 @@ class Mask(object):
             self._CDS_stdout = f.read()
             f.close()
         else:
+            # For some exposures, Vizier returned empty star list if input position
+            # is not single precision 
+            p = np.array(position, dtype='single')
+
+            coord = SkyCoord(ra=p[0] * units.deg, dec=p[1] * units.deg, frame="icrs")
+
             Vizier.ROW_LIMIT = -1  # no row limit
-            coord = SkyCoord(ra=position[0] * units.deg, dec=position[1] * units.deg, frame="icrs")
             result = Vizier.query_region(coord, radius=radius*units.arcmin, catalog=self._CDS_cat_ID)
             self._CDS_stdout = result[0]
         

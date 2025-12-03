@@ -102,15 +102,20 @@ cp summary/missing_job_32_all.txt exp_shdu.txt
 
 # Split exposures
 # (Check missing with summary_run P$patch 4096)
-canfar_submit_job -j 2 -v -f exp_shdu.txt
+# Get maximum jobs per session to fit in one batch (so to run many jobs per
+# replica instead of only one job per replica spread over many batches)
+canfar_submit_job -j 2 -v -f exp_shdu.txt -v -P 8 -s
+# Submit for real
+canfar_submit_job -j 2 -v -f exp_shdu.txt -v -P 8 -J job_per_session
 
 # Mask exposures
-curl_canfar_local.sh -j 8 -f all.txt -p $psf -N $OMP_NUM_THREADS
+canfar_submit_job -j 8 -f exp_shdu.txt -v -P 8 -J 137
 
 # Exposure detection
 
 cp summary/missing_job_32_sextractor.txt all.txt
-curl_canfar_local.sh -j 32 -m $mh_local -f all.txt -p $psf -N $OMP_NUM_THREADS
+canfar_submit_job -j 32 -f exp_shdu.txt -v -P 8 -J 137
+#curl_canfar_local.sh -j 32 -m $mh_local -f all.txt -p $psf -N $OMP_NUM_THREADS
 
 # Tile preparation
 curl_canfar_local.sh -j 64 -f tile_numbers.txt -p $psf -N $OMP_NUM_THREADS

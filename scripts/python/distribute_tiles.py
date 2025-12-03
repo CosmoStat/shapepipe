@@ -210,7 +210,11 @@ def main():
     all_tiles = get_tile_list(file_ids)
     print(f"Total tiles in file: {len(all_tiles)}")
     
-    print("REPLICA_ID, COUNT=", os.environ.get('REPLICA_ID'), os.environ.get('REPLICA_COUNT'))
+    print(
+        "REPLICA_ID, REPLICA_COUNT=",
+        os.environ.get('REPLICA_ID'),
+        os.environ.get('REPLICA_COUNT')
+    )
 
 
     # Check if we're in multi-batch mode

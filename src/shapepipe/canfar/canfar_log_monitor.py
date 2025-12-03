@@ -133,7 +133,7 @@ class LogMonitor:
 
         return False
 
-    def save_log(self, job_id, job_name, log_content):
+    def save_log(self, job_id, job_name, log_content, job_status=None):
         """Save log content to a file."""
         output_dir = Path(self._params["output_dir"])
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -150,6 +150,12 @@ class LogMonitor:
             f.write(f"# Job Name: {job_name}\n\n")
             f.write(log_content)
 
+            # Add status line if job is completed
+            if job_status == "Completed":
+            # Ensure there's a newline before the status line
+                if not log_content.endswith('\n'):
+                    f.write('\n')
+                    f.write('status=Completed\n')
         return filepath
 
     def monitor_loop(self):
