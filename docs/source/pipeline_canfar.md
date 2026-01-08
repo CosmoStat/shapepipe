@@ -74,7 +74,7 @@ job_sp_canfar.bash -p $psf -n $OMP_NUM_THREADS -j 4
 combine_runs.bash -c flag_tile
 
 # Tile detection
-curl_canfar_local.sh -j 16 -f tile_numbers.txt -p $psf -N $OMP_NUM_THREADS
+canfar_submit_job -j 16 -f tile_numbers.txt -v [-s | -J J]
 
 
 # Exposure processing
@@ -118,25 +118,27 @@ canfar_submit_job -j 32 -f exp_shdu.txt -v -P 8 -J 137
 #curl_canfar_local.sh -j 32 -m $mh_local -f all.txt -p $psf -N $OMP_NUM_THREADS
 
 # Tile preparation
-curl_canfar_local.sh -j 64 -f tile_numbers.txt -p $psf -N $OMP_NUM_THREADS
+canfar_submit_job -j 64 -f tile_numbers.txt
 
 # Tile shape measurement
-curl_canfar_local.sh -j 128 -f tile_numbers.txt -p $psf -N 8
+canfar_submit_job -j 128 -f tile_numbers.txt
 
 # Merge subcatalogues
-curl_canfar_local.sh -j 256 -f tile_numbers.txt -p $psf -N 8
+canfar_submit_job -j 256 -f tile_numbers.txt
 
 # Create final cat
-curl_canfar_local.sh -j 512 -f tile_numbers.txt -p $psf -N $OMP_NUM_THREADS
+canfar_submit_job -j 512 -f tile_numbers.txt
+
 # Run in parallel
-cat mc.txt | xargs -I {} -P 16 bash -c 'init_run_exclusive_canfar.sh -p psfex -j 512 -e {} --n_smp 1'
+cat IDs.txt | xargs -I {} -P 16 bash -c 'init_run_exclusive_canfar.sh -j 512 -e {}'
 
 # Combine all final cats in common output dir as links
-combine_runs.bash -c final -p psfex
+#combine_runs.bash -c final -p psfex
 
 # Merge all final cats
 # (W3: 140GB RAM)
-# in /path/to/$psf
+cd ..
+# to be in /path/to/$psf
 patchnum=`tr $patch P ''`
 create_final_cat.py -m final_cat_$patch.hdf5 -i . -p $patch/cfis/final_cat.param -P $patchnum -o $patch/n_tiles_final.txt -v
 
