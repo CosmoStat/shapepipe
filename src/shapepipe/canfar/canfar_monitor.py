@@ -48,6 +48,7 @@ class Log(object):
             "status": "all",
             "destroy": False,
             "bulk": 1,
+            "quiet": False,
         }
 
         self._short_options = {
@@ -55,18 +56,21 @@ class Log(object):
             "status": "-s",
             "destroy": "-d",
             "bulk": "-b",
+            "quiet": "-q",
         }
 
         self._types = {
             "destroy": "bool",
             "bulk": "int",
+            "quiet": "bool",
         }
 
         self._help_strings = {
             "kind": "session kind, allowed are all, headless, notebook, ...; default is {}",
             "status": "procesing status, allowed are Pending, Running, Completed, all; default is {}",
             "destroy": "if True, destroy all displayed jobs; default is {}",
-            "bulk": "destroy mode, allowed are 2, 1, 0; default is {}"
+            "bulk": "destroy mode, allowed are 2, 1, 0; default is {}",
+            "quiet": "quiet output",
         }
 
     def update_params(self):
@@ -81,16 +85,18 @@ class Log(object):
 
     def print_info(self, df):
 
-        # Prepare header and rows with left-justified formatting
-        header = f"{'type':<10} {'status':<10} {'date':<12} {'time':<10} {'name':<20} {'id':<10}"
-        print("=" * len(header))
-        print(header)
-        print("=" * len(header))
+        if not self._params["quiet"]:
+            # Prepare header and rows with left-justified formatting
+            header = f"{'type':<10} {'status':<10} {'date':<12} {'time':<10} {'name':<20} {'id':<10}"
+            print("=" * len(header))
+            print(header)
+            print("=" * len(header))
 
-        for _, row in df.iterrows():
-            print(f"{row['type']:<10} {row['status']:<10} {row['date']:<12} {row['time']:<10} {row['name']:<20} {row['id']:<10}")
+            for _, row in df.iterrows():
+                print(f"{row['type']:<10} {row['status']:<10} {row['date']:<12} {row['time']:<10} {row['name']:<20} {row['id']:<10}")
 
-        print("=" * len(header))
+            print("=" * len(header))
+
         print(f"{len(df)} jobs found")
 
     def filter(self):
@@ -236,10 +242,11 @@ class Log(object):
 
         # Fetch information
         try:
-            print(
-                f"Retreiving session info of kind={self._params['kind']},"
-                + f" status={self._params['status']}"
-            )
+            if not self._params["quiet"]:
+                print(
+                    f"Retreiving session info of kind={self._params['kind']},"
+                    + f" status={self._params['status']}"
+                )
             kind = self.get_kind()
             self._info = session.fetch(kind=kind)
             if len(self._info) == 0:
@@ -269,6 +276,7 @@ class Log(object):
                 sys.exit(2)
         else:
             # Runs only if no exception occurred
-            print(f"Successfully fetched kind '{self._params['kind']}'")
+            if not self._params["quiet"]:
+                print(f"Successfully fetched kind '{self._params['kind']}'")
 
         return session

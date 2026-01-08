@@ -161,7 +161,7 @@ class Job(object):
         if self._params["exclusive"]:
             deb_ID = self._params["exclusive"]
         else:
-            deb_ID = self._params["file_IDs"]
+            deb_ID = os.path.basename(self._params["file_IDs"])
       
         if self._params['debug_out']:
             opt["debut_out"] = f"--debug_out {cwd}/debug/{self._params['debug_out']}"
@@ -396,7 +396,7 @@ class Job(object):
         if self._params["jobs_per_session"] == 0:
             # Compute max jobs per session to fit in single batch
             self._params["jobs_per_session"] = math.ceil(total_n / self._max_replicas_per_batch)
-            print(f"Max jobs per session = {self._params['jobs_per_session']}")
+            print(f"Max jobs per session (-J) = {self._params['jobs_per_session']}")
 
         # Number of sessions
         n_session = math.ceil(total_n / self._params["jobs_per_session"])
