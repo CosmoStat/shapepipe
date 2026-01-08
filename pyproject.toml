@@ -17,6 +17,7 @@ dependencies = [
     "pandas",
     "canfar",
     "sf_tools",
+    "h5py",
 ]
 
 
