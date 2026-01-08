@@ -239,8 +239,8 @@ def set_jobs_v2_pre_v2(patch, verbose):
 
     jobs["512"] = job_data(
         "512",
-        "run_sp_Mc",
-        "make_cat_runner",
+        ["run_sp_Mc"],
+        ["make_cat_runner"],
         "tile_IDs",
         path_main=path_main,
         path_left="tile_runs",

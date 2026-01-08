@@ -341,11 +341,15 @@ class SaveCatalogue:
         ngmix_cat_file.open()
 
         ngmix_n_epoch = ngmix_cat_file.get_data()["n_epoch_model"]
-        if len(ngmix_n_epoch) / self._cat_size_target < 0.9:
+        # Low number of ngmix objects could be due to
+        # (1) shape measurement failures (e.g. missing PSF): ok, continue
+        # (2) previous processing errors, e.g. premature run of
+        # merge_sep_cats_runner: raise error
+        if len(ngmix_n_epoch) / self._cat_size_target < 0.0:
             ngmix_cat_file.close()
             err_msg = (
-                f"Merged shape catalogue {ngmix_cat_path} has very different size"       
-                + f" ({len(ngmix_n_epoch)}) than target size"           
+                f"Merged shape catalogue {ngmix_cat_path} has very different"       
+                + f" size ({len(ngmix_n_epoch)}) compared to target size"           
                 + f" {self._cat_size_target})"                             
             )
             return err_msg

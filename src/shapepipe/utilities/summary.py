@@ -211,6 +211,11 @@ def check_special_one(module, path):
                     code = 5
                     msg = "No object detected (weight might be 0 everywhere)"
                     return msg, code
+                m = re.search("astropy\.wcs\.wcs\.NoConvergence", line)
+                if m:
+                    code = 8
+                    msg = "WCS world2pix did not converge"
+                    return mgs, code
 
             if module == "ngmix_runner":
                 m = re.search("finished", line)
