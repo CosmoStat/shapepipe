@@ -211,6 +211,11 @@ def check_special_one(module, path):
                     code = 5
                     msg = "No object detected (weight might be 0 everywhere)"
                     return msg, code
+                m = re.search("astropy\.wcs\.wcs\.NoConvergence", line)
+                if m:
+                    code = 8
+                    msg = "WCS world2pix did not converge"
+                    return mgs, code
 
             if module == "ngmix_runner":
                 m = re.search("finished", line)
@@ -516,12 +521,13 @@ class job_data(object):
         # Count image IDs in names that were found earlier
 
         # Get file name pattern
-        if module != "split_exp_runner" or self._bit != "2":
+        if module != "split_exp_runner" or (self._bit != 2 and self._bit != 4096):
             pattern = re.compile(r"(?:\d{3}-\d{3}|\d{7}-\d+|\d{7})")
         else:
             # split_exp_runner with sp_local=0: input is exp, output is shdu
             # (images) and exp (header); ignore hdu number.
             # If sp_local=1 set bit to != 2
+            # Update 11/2025: No longer working for P9 4096. Solution: set n_mult=3.
             pattern = re.compile(
                 r"(?:\d{3}-\d{3}|\d{7})"
             )
