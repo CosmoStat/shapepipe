@@ -408,10 +408,11 @@ if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
 fi
 
 if [ "$kind" == "tile" ] && [ "$sp_local" == "1" ]; then
+  echo "New (for P9): skipping link_to_exp_for_tile.py" 
   cd ../../..
-  command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs -s $sp_local" $dry_run
+  #command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs -s $sp_local" $dry_run
   cd tile_runs/$ID
-  command "combine_runs.bash -p psfex -c shdu" $dry_run
+  #command "combine_runs.bash -p psfex -c shdu" $dry_run
   cd output
 fi
 
@@ -484,18 +485,6 @@ fi
 (( do_job = $job & 64 ))
 if [[ $do_job != 0 ]]; then
   if [ "$kind" == "tile" ]; then
-    cd ../../..
-    command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs -s $sp_local" $dry_run
-    cd ${kind}_runs/$ID/output
-
-    # Remove duplicate job-16 runs (tile detection)
-    # New (P8) commented
-    #n_16=`ls -rt1d run_sp_tile_Sx_* | wc -l`
-    #if [ "$n_16" != "1" ]; then
-      #n_remove="$(($n_16-1))"
-      #echo "removing $n_remove duplicate old job-16 runs"
-      #command "rm -rf `ls -rt1d run_sp_tile_Sx_* | head -$n_remove`" $dry_run
-    #fi
 
     # Remove previous runs of this job
     rm -rf run_sp_tile_PsViSmVi*
@@ -510,6 +499,16 @@ if [[ $do_job != 0 ]]; then
     cat_ngmix="run_sp_tile_ngmix_Ng1u/ngmix_runner/output/ngmix-*.fits"
     dir_ngmix_prev="run_sp_tile_ngmix_Ng1u_prev/ngmix_runner/output"
     cat_ngmix_prev="$dir_ngmix_prev/ngmix-*.fits"
+
+    # Remove if empty
+    if [ ! -s $cat_ngmix ]; then
+      echo "Removing empty file $cat_ngmix"
+      rm $cat_ngmix
+    fi
+    if [ ! -s $cat_ngmix_prev ]; then
+      echo "Removing empty file $cat_ngmix_prev"
+      rm $cat_ngmix_prev
+    fi
 
     # Check whether ngmix output exists
     if [ -e $cat_ngmix ]; then
