@@ -525,6 +525,7 @@ def main(argv=None):
     if res is not None:
         return res
 
+    print(params["list_only"])
     if params["list_only"] == False:
         params["param_list"] = read_param_file(
             params["param_path"],
