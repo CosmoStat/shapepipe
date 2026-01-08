@@ -187,7 +187,7 @@ def save_sm_data(
 
         sm = np.copy(sexcat_sm_file.get_data()["SPREAD_MODEL"])
         sm_err = np.copy(sexcat_sm_file.get_data()["SPREADERR_MODEL"])
-                         
+
         sexcat_sm_file.close()
 
     else:
@@ -348,9 +348,9 @@ class SaveCatalogue:
         if len(ngmix_n_epoch) / self._cat_size_target < 0.0:
             ngmix_cat_file.close()
             err_msg = (
-                f"Merged shape catalogue {ngmix_cat_path} has very different"       
-                + f" size ({len(ngmix_n_epoch)}) compared to target size"           
-                + f" {self._cat_size_target})"                             
+                f"Merged shape catalogue {ngmix_cat_path} has very different"
+                + f" size ({len(ngmix_n_epoch)}) compared to target size"
+                + f" {self._cat_size_target})"
             )
             return err_msg
 
