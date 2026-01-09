@@ -115,7 +115,6 @@ canfar_submit_job -j 8 -f exp_shdu.txt -v -P 8 -J 137
 
 cp summary/missing_job_32_sextractor.txt all.txt
 canfar_submit_job -j 32 -f exp_shdu.txt -v -P 8 -J 137
-#curl_canfar_local.sh -j 32 -m $mh_local -f all.txt -p $psf -N $OMP_NUM_THREADS
 
 # Tile preparation
 canfar_submit_job -j 64 -f tile_numbers.txt
@@ -154,7 +153,7 @@ cd ../star_cat
 
 # Create files validation_psf_conv-<patchnum>-<idx>.fits
 # (for the v1.4 setup only one file)
- convert_psf_pix2world.py -i .. -P $patchnum -v
+convert_psf_pix2world.py -i .. -P $patchnum -v
 
 # Combine previously created files as links within one SP run dir
 # (for the v1.4 setup only one link
@@ -164,6 +163,20 @@ combine_runs.bash -p psfex -c psf_conv
 # Merge all converted star catalogues and create final-starcat.fits
 export SP_RUN=`pwd`
 shapepipe_run -c ~/shapepipe/example/cfis/config_Ms_psfex_conv.ini
+
+# sp_validation, on candide
+## Extract information and create patch-wise comprehensive catalogues
+cp ~/astro/repositories/github/sp_validation/notebooks/params.py .
+ln -s ~/v1.3.x/final_cat_$patchnum3.hdf5 # not ../inal_cat_P$patchnum.hdf5 !
+ln -s output/run_sp_MsPl/mccd_merge_starcat_runner/output/full_starcat-0000000.fits
+ln -s ~/astro/repositories/github/shapepipe/example/cfis
+# Edit patch name; wrap_ra for P2
+# squeue
+python ~/astro/repositories/github/sp_validation/notebooks/extract_info.py
+
+## Create joint comprehensive catalogue
+# Edit py script to match catalogue name; check coverage mask input file
+python ~/astro/repositories/github/sp_validation/notebooks/demo_apply_hsp_masks.py
 
 
 # Extra stuff
