@@ -18,6 +18,8 @@ dependencies = [
     "canfar",
     "sf_tools",
     "h5py",
+    "healsparse",
+    "skyproj",
 ]
 
 
@@ -33,6 +35,10 @@ lint = [
     "black",
     "isort"
 ]
+plot = [
+    "skyproj",
+    "matplotlib"
+]
 release = [
     "build",
     "twine",
@@ -43,7 +49,7 @@ test = [
     "pytest-pycodestyle",
     "pytest-pydocstyle"
 ]
-dev = ["shapepipe[doc,lint,release,test]"]
+dev = ["shapepipe[doc,lint,plot,release,test]"]
 
 [project.scripts]
 shapepipe_run = "shapepipe.shapepipe_run:main"
@@ -52,6 +58,11 @@ canfar_submit_job = "shapepipe.canfar_run:run_job"
 canfar_monitor = "shapepipe.canfar_run:run_log"
 canfar_monitor_log = "shapepipe.canfar_run:run_monitor_log"
 get_ccd_with_psfs = "shapepipe.get_ccds_run:run_ccd_psf_handler"
+download_headers = "shapepipe.coverage_run:run_download_headers"
+extract_field_corners = "shapepipe.coverage_run:run_extract_corners"
+build_coverage_map = "shapepipe.coverage_run:run_build_coverage"
+plot_coverage_map = "shapepipe.coverage_run:run_plot_coverage"
+coverage_pipeline = "shapepipe.coverage_run:run_pipeline"
 
 [tool.pytest.ini_options]
 addopts = "--verbose --cov=shapepipe"
