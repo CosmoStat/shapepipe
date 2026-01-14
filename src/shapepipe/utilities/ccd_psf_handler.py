@@ -3,7 +3,7 @@
 Obtain list of CCDs (single-exposure single-HDU files) for which valid PSF
 information is available. This can serve to create a footprint coverage mask.
 
-Author: Martin Kilbinger <martin.kilbinger@cea.fr>
+Author: Mike Hudson, Martin Kilbinger <martin.kilbinger@cea.fr>
 
 """
 

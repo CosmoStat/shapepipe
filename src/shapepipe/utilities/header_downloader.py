@@ -2,7 +2,7 @@
 
 Download FITS headers from VOSpace for exposures listed in a CCD file.
 
-Author: Martin Kilbinger <martin.kilbinger@cea.fr>
+Author: Mike Hudson, Martin Kilbinger <martin.kilbinger@cea.fr>
 
 """
 

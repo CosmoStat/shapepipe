@@ -2,7 +2,7 @@
 
 Build HealSparse coverage maps from field corner coordinates.
 
-Author: Martin Kilbinger <martin.kilbinger@cea.fr>
+Author: Mike Hudson, Martin Kilbinger <martin.kilbinger@cea.fr>
 
 """
 

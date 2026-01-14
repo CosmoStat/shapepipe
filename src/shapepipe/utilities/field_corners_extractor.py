@@ -2,7 +2,7 @@
 
 Extract field corner coordinates from FITS headers.
 
-Author: Martin Kilbinger <martin.kilbinger@cea.fr>
+Author: Mike Hudson, Martin Kilbinger <martin.kilbinger@cea.fr>
 
 """
 

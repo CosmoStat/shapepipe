@@ -2,7 +2,7 @@
 
 Plot HealSparse coverage maps.
 
-Author: Martin Kilbinger <martin.kilbinger@cea.fr>
+Author: Mike Hudson, Martin Kilbinger <martin.kilbinger@cea.fr>
 
 """
 
