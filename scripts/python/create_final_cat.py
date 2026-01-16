@@ -290,7 +290,7 @@ def read_data(fits_file, params):
         try:
             data = hdu_list[params["hdu_num"]].data
         except:
-            print(f"Error with ID {id}, file{fits_file}")
+            print(f"Error with ID {id}, file {fits_file}")
             raise
 
     # If columns not given on input: read all column names
@@ -443,7 +443,13 @@ def process(params):
                         else:
                             print(f"{fits_file} not matched")
 
-            for fits_file, id in tqdm.tqdm(zip(fits_file_arr, id_arr), total=len(fits_file_arr)): 
+            for fits_file, id in tqdm.tqdm(zip(fits_file_arr, id_arr), total=len(fits_file_arr)):
+
+                # Skip if the patch/ID data already exists
+                if id in patch_group:
+                    if params["verbose"]:
+                        print(f"Skipping {id} (already processed)")
+                    continue
 
                 # Exclude unsuccessful run without output FITS file
                 if not os.path.exists(fits_file):
