@@ -35,6 +35,7 @@ class HeaderDownloader(object):
             "output_dir": "header",
             "vospace_path": "vos:cfis/pitcairn",
             "overwrite": False,
+            "dir_for_links": None,
         }
 
         self._short_options = {
@@ -42,6 +43,7 @@ class HeaderDownloader(object):
             "output_dir": "-o",
             "vospace_path": "-p",
             "overwrite": "-O",
+            "dir_for_links": "-d",
         }
 
         self._types = {
@@ -53,6 +55,7 @@ class HeaderDownloader(object):
             "output_dir": "output directory for headers; default is {}",
             "vospace_path": "VOSpace base path; default is {}",
             "overwrite": "overwrite existing header files; default is {}",
+            "dir_for_links": "directory to check for existing headers to link instead of download; default is {}",
         }
 
     def set_params_from_command_line(self, args):
@@ -98,6 +101,17 @@ class HeaderDownloader(object):
             raise FileNotFoundError(
                 f"Input file not found: {self._params['input_file']}"
             )
+
+        # Check if dir_for_links exists if specified
+        if self._params["dir_for_links"] is not None:
+            if not exists(self._params["dir_for_links"]):
+                raise FileNotFoundError(
+                    f"Directory for links not found: {self._params['dir_for_links']}"
+                )
+            if not os.path.isdir(self._params["dir_for_links"]):
+                raise ValueError(
+                    f"Path is not a directory: {self._params['dir_for_links']}"
+                )
 
         # Create output directory if it doesn't exist
         if not exists(self._params["output_dir"]):
@@ -151,7 +165,8 @@ class HeaderDownloader(object):
     def get_fits_header(self, expnum, client):
         """Get FITS Header.
 
-        Download FITS header from VOSpace.
+        Download FITS header from VOSpace, or create a symbolic link
+        if the header exists in dir_for_links.
 
         Parameters
         ----------
@@ -169,6 +184,7 @@ class HeaderDownloader(object):
         vospace_path = self._params["vospace_path"]
         output_dir = self._params["output_dir"]
         overwrite = self._params["overwrite"]
+        dir_for_links = self._params["dir_for_links"]
 
         source = f"{vospace_path}/{expnum:d}p.fits.fz"
         dest = f"{output_dir}/{expnum:d}.txt"
@@ -176,6 +192,22 @@ class HeaderDownloader(object):
         if exists(dest) and not overwrite:
             return True
 
+        # Check if header exists in dir_for_links
+        if dir_for_links is not None:
+            link_source = os.path.abspath(f"{dir_for_links}/{expnum:d}.txt")
+            if exists(link_source):
+                try:
+                    # Remove existing file/link if overwrite is True
+                    if exists(dest):
+                        os.remove(dest)
+                    # Create symbolic link
+                    os.symlink(link_source, dest)
+                    return True
+                except Exception as e:
+                    print(f"Could not create symlink from {link_source}: {e}")
+                    # Fall through to download if symlink fails
+
+        # Download from VOSpace
         try:
             client.copy(source, dest, head=True)
             return True
