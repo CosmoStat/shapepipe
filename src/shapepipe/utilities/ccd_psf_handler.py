@@ -7,7 +7,11 @@ Author: Mike Hudson, Martin Kilbinger <martin.kilbinger@cea.fr>
 
 """
 
+import glob
+import os
+import re
 import sys
+
 import numpy as np
 
 from cs_util import args as cs_args
@@ -48,6 +52,7 @@ class CcdPsfHandler(object):
 
         self._help_strings = {
             "version_cat": "catalogue major version, allowed are v1.3, v1.4, v1.5, v1.6; default is {}",
+
             "n_CCD": "number of CCDs per exposure; default is {}",
             "output": "output file path; default is ccds_with_psf_<version>.txt",
         }
@@ -231,6 +236,83 @@ class CcdPsfHandler(object):
 
         return exp_shdu_all
 
+    def get_ccds_with_psf_method_v1_3(self, patches, n_CCD=40):
+        """Get CCDs With PSF Method v1.3.
+
+        Return set of CCDs with valid PSF by scanning run directories.
+        Finds star_selection files and checks corresponding stat files
+        for valid (non-nan) FWHM values.
+
+        Parameters
+        ----------
+        patches : list
+            input patches
+        n_CCD : int
+            number of CCDs per exposure (unused, kept for API consistency)
+
+        Returns
+        -------
+        set
+           CCD IDs with valid PSF
+
+        """
+        exp_shdu_all = set()
+
+        for patch in patches:
+            # Find all star_selection files
+            mask_pattern = (
+                f"{patch}/output/run_sp_exp_SxSePs*/"
+                f"setools_runner/output/mask/star_selection-*.fits"
+            )
+            mask_files = glob.glob(mask_pattern)
+
+            print(
+                f"Patch {patch}: Found {len(mask_files)} star_selection FITS"
+                + " files"
+            )
+
+            for mask_file in mask_files:
+                # Extract exp_shdu from filename
+                basename = os.path.basename(mask_file)
+                match = re.match(r"star_selection-(.+)\.fits", basename)
+                if not match:
+                    print(f"Warning: Non-matching file name {basename}")
+                    continue
+                exp_shdu = match.group(1)
+
+                # Get corresponding stat file path
+                # Replace mask dir with stat/stat dir in the path
+                stat_file = mask_file.replace(
+                    "/mask/star_selection-",
+                    "/stat/star_stat-",
+                ).replace(".fits", ".txt")
+
+                #print("MKDEBUG ", exp_shdu, stat_file)
+
+                # Check if stat file exists and has valid FWHM
+                if not os.path.exists(stat_file):
+                    print("MKDEBUG stat file ", stat_file, " does not exist")
+                    continue
+
+                # Read stat file and check for nan in "Mean star fwhm selected"
+                has_nan = False
+                with open(stat_file) as f:
+                    for line in f:
+                        if "Mean star fwhm selected" in line:
+                            if "nan" in line.lower():
+                                has_nan = True
+                            break
+
+                if not has_nan:
+                    #print("MKDEBUG append", exp_shdu)
+                    exp_shdu_all.add(exp_shdu)
+
+            print(f"After patch {patch}: {len(exp_shdu_all)} CCDs with valid PSF") 
+
+        print(f"Found {len(exp_shdu_all)} CCDs with valid PSF")
+
+        return exp_shdu_all
+
     def save(self, IDs, path):
         """Save.
 
@@ -282,8 +364,12 @@ class CcdPsfHandler(object):
             f"=== get_ccds_with_psf for version {version}, patches {patches} ==="
         )
 
-        print("=== method 1: exp_list - missing === ")
-        exp_shdu_all = self.get_ccds_with_psf(patches, n_CCD)
+        if self._params["version_cat"] == "v1.3":
+            print("=== method for 1.3: exp with PSF star sample === ")
+            exp_shdu_all = self.get_ccds_with_psf_method_v1_3(patches, n_CCD)
+        else:
+            print("=== method for >= 1.4: exp_list - missing === ")
+            exp_shdu_all = self.get_ccds_with_psf(patches, n_CCD)
 
         self.save(exp_shdu_all, output)
 
