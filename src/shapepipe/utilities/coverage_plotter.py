@@ -256,6 +256,7 @@ class CoveragePlotter(object):
                 hsp_map,
                 ra_0=ra_0,
                 extend=extend,
+                vmin=vmin,
                 vmax=vmax,
                 outpath=output_file,
                 title=title,
