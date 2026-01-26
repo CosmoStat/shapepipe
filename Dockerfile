@@ -1,4 +1,4 @@
-FROM python:3.11-bookworm
+FROM python:3.12-slim-bookworm
 
 LABEL Description="Conda-Free ShapePipe Docker Image"
 ENV SHELL=/bin/bash
