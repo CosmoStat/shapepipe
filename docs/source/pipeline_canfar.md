@@ -456,6 +456,19 @@ ln -s ..//unions_shapepipe_comprehensive_struct_2024_v1.6.c.hdf5 unions_shapepip
 
 calibrate_comprehensive
 
+
+### Create matched star catalogue
+
+For diagnostics, a catalogue with multi-epoch shapes measured by ngmix matched with the validation star catalogue is used.
+This is created as follows:
+
+```bash
+cd /path/to/version
+merge_psf_cat.py [-V v1.6|-P P1+P2+...] -v
+```
+
+This creates the joint catalogue unions_shapepipe_star_2024_v1.6.a.fits .
+
 ### Create coverage mask
 
 First, on canfar, move to the directory that has the patch subdirectories.
