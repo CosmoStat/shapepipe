@@ -2,6 +2,7 @@ FROM python:3.12-slim-bookworm
 
 LABEL Description="Conda-Free ShapePipe Docker Image"
 ENV SHELL=/bin/bash
+ENV QT_QPA_PLATFORM=offscreen
 
 # Install system dependencies
 RUN apt-get update -y --quiet --fix-missing && \
