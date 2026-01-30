@@ -15,6 +15,7 @@ RUN apt-get update -y --quiet --fix-missing && \
     build-essential \
     cmake \
     curl \
+    wget \
     ffmpeg \
     g++ \
     gcc  \
