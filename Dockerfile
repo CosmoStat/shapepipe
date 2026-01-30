@@ -27,6 +27,7 @@ RUN apt-get update -y --quiet --fix-missing && \
     libfftw3-bin \
     libfftw3-dev \
     libgl1-mesa-glx \
+    libgsl-dev \
     libtool \
     libtool-bin \
     libtool-doc \
