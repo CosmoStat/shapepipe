@@ -72,9 +72,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
     numpy==1.26.4 \
     numpydoc==1.2  \
     pandas==2.2  \
-    PyQt5==5.15.11 \
-    python-pysap==0.3.0 \
-    pyqtgraph==0.12.4 \
     pytest==8.3.3 \
     pytest-cov==5.0.0 \
     pytest-pycodestyle==2.4.1 \
