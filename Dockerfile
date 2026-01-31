@@ -69,7 +69,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
     mccd==1.2.4 \
     modopt==1.6.1 \
     mpi4py==4.0.3 \
-    numba==0.60.0 \
     numpy==1.26.4 \
     numpydoc==1.2  \
     pandas==2.2  \
@@ -78,7 +77,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pytest-pycodestyle==2.4.1 \
     pytest-pydocstyle==2.4.0 \
     reproject==0.14.1 \
-    scikit-learn==1.5.2 \
     sf_tools==2.0.4 \
     sip_tpv==1.1 \
     skaha==1.7.0 \
