@@ -133,7 +133,7 @@ canfar_submit_job -j 512 -f tile_numbers.txt
 cat IDs.txt | xargs -I {} -P 16 bash -c 'init_run_exclusive_canfar.sh -j 512 -e {}'
 
 # Combine all final cats in common output dir as links
-#combine_runs.bash -c final -p psfex
+#combine_runs.bash -c final -p $psf
 
 # Merge all final cats
 # (W3: 140GB RAM)
@@ -158,12 +158,11 @@ cd ../star_cat
 
 # Combine previously created files as links within one SP run dir
 # (for the v1.4 setup only one link
-cd P$patch
-combine_runs.bash -p psfex -c psf_conv
+combine_runs.bash -p $psf -c psf_conv
 
 # Merge all converted star catalogues and create final-starcat.fits
 export SP_RUN=`pwd`
-shapepipe_run -c ~/shapepipe/example/cfis/config_Ms_psfex_conv.ini
+shapepipe_run -c ~/shapepipe/example/cfis/config_Ms_${psf}_conv.ini
 
 
 # Extra stuff
@@ -174,7 +173,7 @@ SESSION=https://ws-uv.canfar.net/skaha/v0/session
 for ID in `cat session_IDs.txt`; do echo $ID; curl -X DELETE -E $SSL $SESSION/$ID; done
 
 ## Run in terminal in parallel (-e needs to be last arg)
-cat all.txt | xargs -P 16 -n 1  init_run_exclusive_canfar.sh -j 64 -p psfex -n -e
+cat all.txt | xargs -P 16 -n 1  init_run_exclusive_canfar.sh -j 64 -p $psf -n -e
 
 ## Get missing jobs that are not currently running
 stats_jobs_canfar.sh

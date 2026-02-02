@@ -4,9 +4,13 @@ import sys
 import os
 import re
 import glob
+import warnings
 from tqdm import tqdm
+
+# Suppress astropy WCS warnings
+from astropy.wcs import FITSFixedWarning
+warnings.filterwarnings("ignore", category=FITSFixedWarning)
 from joblib import Parallel, delayed
-import gc
 
 import numpy as np
 from astropy.io import fits
@@ -48,6 +52,54 @@ def transform_shape(mom_list, jac):
     shape = shear + shape
 
     return shape.g1, shape.g2, sig_tmp
+
+
+def transform_shape_vectorized(e1, e2, sigma, scales, shear_g1, shear_g2, thetas, flips):
+    """Transform Shape (Vectorized).
+
+    Transform shapes (ellipticity and size) using Jacobian decomposition arrays.
+
+    Parameters
+    ----------
+    e1 : np.ndarray
+        First ellipticity component for each object
+    e2 : np.ndarray
+        Second ellipticity component for each object
+    sigma : np.ndarray
+        Size for each object
+    scales : np.ndarray
+        Scale factor from Jacobian decomposition for each object
+    shear_g1 : np.ndarray
+        First shear component from Jacobian for each object
+    shear_g2 : np.ndarray
+        Second shear component from Jacobian for each object
+    thetas : np.ndarray
+        Rotation angle from Jacobian for each object
+    flips : np.ndarray
+        Boolean flip flag from Jacobian for each object
+
+    Returns
+    -------
+    tuple of np.ndarray
+        Transformed (e1, e2, sigma) arrays
+
+    """
+    n = len(e1)
+    new_e1 = np.zeros(n)
+    new_e2 = np.zeros(n)
+    new_sigma = sigma * scales
+
+    for i in range(n):
+        shape = galsim.Shear(g1=e1[i], g2=e2[i])
+        if flips[i]:
+            shape = galsim.Shear(g1=-shape.g1, g2=shape.g2)
+        shape = galsim.Shear(g=shape.g, beta=shape.beta + thetas[i] * galsim.radians)
+        shear = galsim.Shear(g1=shear_g1[i], g2=shear_g2[i])
+        shape = shear + shape
+        new_e1[i] = shape.g1
+        new_e2[i] = shape.g2
+
+    return new_e1, new_e2, new_sigma
 
 
 class Loc2Glob(object):
@@ -347,6 +399,39 @@ class Glob2CCD(object):
         except Exception:
             return None
 
+    def get_ccd_n_vectorized(self, x, y):
+        """Returns CCD numbers for arrays of positions (x, y).
+
+        Vectorized version for processing many positions at once.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Array of horizontal positions in global coordinate system.
+        y : np.ndarray
+            Array of vertical positions in global coordinate system.
+
+        Returns
+        -------
+        np.ndarray
+            Array of CCD numbers. Returns -1 for positions not found.
+        """
+        x = np.atleast_1d(x)
+        y = np.atleast_1d(y)
+
+        # Shape: (n_points, n_ccds)
+        in_x = (x[:, None] > self.edge_x_list[:, 0]) & (
+            x[:, None] < self.edge_x_list[:, 1]
+        )
+        in_y = (y[:, None] > self.edge_y_list[:, 0]) & (
+            y[:, None] < self.edge_y_list[:, 1]
+        )
+        inside = in_x & in_y
+
+        # Return first matching CCD for each point (-1 if none found)
+        ccd_ids = np.where(inside.any(axis=1), inside.argmax(axis=1), -1)
+        return ccd_ids
+
 
 class Convert(object):
 
@@ -382,6 +467,7 @@ class Convert(object):
             "patches": "",
             "psf": "psfex",
             "file_pattern_psfint": "validation_psf",
+            "n_jobs": 8,
         }
 
         self._short_options = {
@@ -389,9 +475,12 @@ class Convert(object):
             "mode": "-m",
             "psf": "-p",
             "patches": "-P",
+            "n_jobs": "-j",
         }
 
-        self._types = {}
+        self._types = {
+            "n_jobs": "int",
+        }
 
         self._help_strings = {
             "input_base_dir": (
@@ -404,6 +493,7 @@ class Convert(object):
             ),
             "psf": "PSF model, allowed are 'psfex' and 'mccd'; default is {}",
             "patches": "(list of) input patches",
+            "n_jobs": "number of parallel jobs; default is {}",
         }
 
         # Output column names with types
@@ -442,6 +532,7 @@ class Convert(object):
             self._params["sub_dir_pattern"] = "run_sp_exp_SxSePsf_202"
             self._params["sub_dir_psfint"] = "mccd_fit_val_runner"
             self._params["sub_dir_setools"] = "setools_runner/output/mask"
+            self._params["file_pattern_setools"] = "star_selection"
         else:
             raise ValueError(f"Invalid PSF model {self._params['psf']}")
         self._params["sub_dir_psfint"] = (
@@ -459,53 +550,46 @@ class Convert(object):
         else:
             patch_nums = cs_args.my_string_split(self._params["patches"])
 
-        do_parallel = True
+        n_jobs = self._params["n_jobs"]
+        do_parallel = n_jobs != 1
+        print(f"n_jobs={n_jobs}, patches={patch_nums}")
 
-        # Loop over patches
         for patch in patch_nums:
 
             output_dir = f"{self._params['output_base_dir']}/P{patch}"
             if not os.path.isdir(output_dir):
                 os.makedirs(output_dir, exist_ok=False)
 
-            print("Running patch:", patch)
-
             patch_dir = f"{self._params['input_base_dir']}/P{patch}/output/"
             subdirs = f"{patch_dir}/{self._params['sub_dir_pattern']}*"
             exp_run_dirs = glob.glob(subdirs)
+            exp_run_dirs.sort()
             n_exp_runs = len(exp_run_dirs)
-            print(
-                f"Found {n_exp_runs} input single-exposure run(s) for patch"
-                + f" {patch_dir} ({subdirs})"
-            )
+            print(f"Patch {patch}: {n_exp_runs} exposure runs in {patch_dir}")
 
             if self._params["mode"] == "test":
                 exp_run_dirs = exp_run_dirs[:2]
                 n_exp_runs = len(exp_run_dirs)
-                print(
-                    f"test mode: only using {n_exp_runs} input single-exposure"
-                    + f" runs"
-                )
 
             # Loop over exposure runs
             if not do_parallel:
                 for idx_exp, exp_run_dir in tqdm(
                     enumerate(exp_run_dirs),
                     total=n_exp_runs,
-                    disable=self._params["verbose"],
+                    desc=f"Patch {patch}",
                 ):
                     self.transform_exposures(
                         output_dir, patch, idx_exp, exp_run_dir
                     )
             else:
-                res = Parallel(n_jobs=-1, backend="loky")(
+                res = Parallel(n_jobs=n_jobs, backend="threading")(
                     delayed(self.transform_exposures)(
                         output_dir, patch, idx_exp, exp_run_dir
                     )
                     for idx_exp, exp_run_dir in tqdm(
                         enumerate(exp_run_dirs),
                         total=n_exp_runs,
-                        disable=self._params["verbose"],
+                        desc=f"Patch {patch}",
                     )
                 )
 
@@ -515,25 +599,12 @@ class Convert(object):
         Transform shapes for exposure for a given run (input exp run dir).
 
         """
-        output_path = (
-            f"{output_dir}/{self._params['file_pattern_psfint']}_conv"
-            + f"-{patch}-{idx}.fits"
-        )
-        if os.path.exists(output_path):
-            print(f"Skipping transform_exposures, file {output_path} exists")
-            return
-
         psf_dir = f"{exp_run_dir}/{self._params['sub_dir_psfint']}"
         try:
             all_files = os.listdir(psf_dir)
-            if self._params["verbose"]:
-                print(f"Found {len(all_files)} file(s) in {psf_dir}")
         except Exception:
-            if self._params["verbose"]:
-                print(f"Found zero PSFEx files in {psf_dir}, skipping")
             return
 
-        cat_list = []
         for file_name in all_files:
             if self._params["file_pattern_psfint"] not in file_name:
                 continue
@@ -542,12 +613,25 @@ class Convert(object):
 
             if self._params["psf"] == "psfex":
                 exp_name, ccd_id = int(tmp[0]), int(tmp[1])
+
+                # Output path per input file, encoding exposure and CCD
+                output_path = (
+                    f"{output_dir}/{self._params['file_pattern_psfint']}_conv"
+                    f"-{exp_name}-{ccd_id}.fits"
+                )
+
             elif self._params["psf"] == "mccd":
                 exp_name = int(tmp[0])
-                ccd_id = -1
+                ccd_id = "all"
 
-            if self._params["verbose"]:
-                print("Match found ", exp_name, ccd_id)
+                # Output path per input file, encoding exposure (all CCDs in
+                # one file)
+                output_path = (
+                    f"{output_dir}/{self._params['file_pattern_psfint']}_conv"
+                    f"-{exp_name}.fits"
+            )
+            if os.path.exists(output_path):
+                continue
 
             psf_file_path = f"{psf_dir}/{file_name}"
 
@@ -580,10 +664,6 @@ class Convert(object):
                 k = 0
                 for ind, obj in enumerate(psf_file):
                     try:
-                        # jac = wcs.jacobian(world_pos=galsim.CelestialCoord(
-                        #     ra=obj["RA"]*galsim.degrees,
-                        #     dec=obj["DEC"]*galsim.degrees
-                        # ))
                         jac = wcs.jacobian(
                             image_pos=galsim.PositionD(
                                 obj["X"],
@@ -618,185 +698,202 @@ class Convert(object):
                     new_sig_star[ind] = sig_star_tmp
                     k += 1
 
-                exp_cat = np.array(
-                    list(
-                        map(
-                            tuple,
-                            np.array(
-                                [
-                                    psf_file["X"],
-                                    psf_file["Y"],
-                                    psf_file["RA"],
-                                    psf_file["DEC"],
-                                    new_e1_psf,
-                                    new_e2_psf,
-                                    new_sig_psf,
-                                    psf_file["FLAG_PSF_HSM"],
-                                    new_e1_star,
-                                    new_e2_star,
-                                    new_sig_star,
-                                    psf_file["FLAG_STAR_HSM"],
-                                    np.ones_like(psf_file["RA"], dtype=int)
-                                    * ccd_id,
-                                ]
-                            ).T.tolist(),
-                        )
-                    ),
-                    dtype=self._dt,
-                )
-                cat_list.append(exp_cat)
+                # Build output catalogue using direct structured array assignment
+                n_obj = len(psf_file)
+                exp_cat = np.empty(n_obj, dtype=self._dt)
+                exp_cat["X"] = psf_file["X"]
+                exp_cat["Y"] = psf_file["Y"]
+                exp_cat["RA"] = psf_file["RA"]
+                exp_cat["DEC"] = psf_file["DEC"]
+                exp_cat["E1_PSF_HSM"] = new_e1_psf
+                exp_cat["E2_PSF_HSM"] = new_e2_psf
+                exp_cat["SIGMA_PSF_HSM"] = new_sig_psf
+                exp_cat["FLAG_PSF_HSM"] = psf_file["FLAG_PSF_HSM"]
+                exp_cat["E1_STAR_HSM"] = new_e1_star
+                exp_cat["E2_STAR_HSM"] = new_e2_star
+                exp_cat["SIGMA_STAR_HSM"] = new_sig_star
+                exp_cat["FLAG_STAR_HSM"] = psf_file["FLAG_STAR_HSM"]
+                exp_cat["CCD_NB"] = ccd_id
+
+                # Write output file immediately
+                hdul = fits.HDUList()
+                hdul.append(fits.PrimaryHDU())
+                hdul.append(fits.BinTableHDU(exp_cat))
+                try:
+                    hdul.writeto(output_path, overwrite=True)
+                except (FileNotFoundError, OSError):
+                    pass  # Race condition with another thread
+                hdul.close()
 
             else:
+                # MCCD processing
                 l2g = Loc2Glob()
                 g2c = Glob2CCD(l2g)
-                new_ccd_id = np.array(
-                    [
-                        int(
-                            g2c.get_ccd_n(
-                                psf_file["GLOB_POSITION_IMG_LIST"][ii, 0],
-                                psf_file["GLOB_POSITION_IMG_LIST"][ii, 1],
-                            )
-                        )
-                        for ii in range(len(psf_file))
-                    ]
-                )
 
-                new_x = np.zeros_like(psf_file[mod])
-                new_y = np.zeros_like(psf_file[mod])
-                new_flag_psf = np.zeros_like(psf_file[mod])
-                new_flag_star = np.zeros_like(psf_file[mod])
+                n_obj = len(psf_file)
+                glob_x = psf_file["GLOB_POSITION_IMG_LIST"][:, 0]
+                glob_y = psf_file["GLOB_POSITION_IMG_LIST"][:, 1]
+
+                # Vectorized CCD lookup (replaces per-object loop)
+                new_ccd_id = g2c.get_ccd_n_vectorized(glob_x, glob_y)
+
+                # Pre-compute shifts for all CCDs (done once)
+                x_shift = np.zeros(40)
+                y_shift = np.zeros(40)
                 for ccd_id in range(40):
-                    m_ccd_id = new_ccd_id == ccd_id
-                    if sum(m_ccd_id) == 0:
+                    x_shift[ccd_id], y_shift[ccd_id] = l2g.shift_coord(ccd_id)
+
+                # Vectorized computation of local (x, y) from global coords
+                # Handle invalid CCD IDs (-1) by using CCD 0 temporarily
+                safe_ccd_id = np.where(new_ccd_id >= 0, new_ccd_id, 0)
+                new_x = glob_x - x_shift[safe_ccd_id]
+                new_y = glob_y - y_shift[safe_ccd_id]
+
+                # Pre-allocate output arrays
+                new_e1_psf = np.zeros(n_obj)
+                new_e2_psf = np.zeros(n_obj)
+                new_sig_psf = np.zeros(n_obj)
+                new_e1_star = np.zeros(n_obj)
+                new_e2_star = np.zeros(n_obj)
+                new_sig_star = np.zeros(n_obj)
+                new_flag_psf = np.zeros(n_obj)
+                new_flag_star = np.zeros(n_obj)
+
+                # Process by CCD (only load WCS for CCDs that have objects)
+                unique_ccds = np.unique(new_ccd_id)
+                setools_dir = f"{exp_run_dir}/{self._params['sub_dir_setools']}"
+                for ccd_id in unique_ccds:
+                    if ccd_id < 0:
+                        # Mark objects with invalid CCD as flagged
+                        mask = new_ccd_id == ccd_id
+                        new_flag_psf[mask] = 16
+                        new_flag_star[mask] = 16
                         continue
 
-                    x_shift, y_shift = l2g.shift_coord(ccd_id)
-
-                    new_x[m_ccd_id] = (
-                        psf_file["GLOB_POSITION_IMG_LIST"][:, 0][m_ccd_id]
-                        - x_shift
-                    )
-                    new_y[m_ccd_id] = (
-                        psf_file["GLOB_POSITION_IMG_LIST"][:, 1][m_ccd_id]
-                        - y_shift
-                    )
-
+                    # Load WCS only for this CCD (lazy loading)
                     header_file_path = (
-                        self._params["sub_dir_setools"]
-                        + self._params["file_pattern_psfint"]
-                        + f"{exp_name}-{ccd_id}.fits"
+                        f"{setools_dir}/{self._params['file_pattern_setools']}"
+                        f"-{exp_name}-{ccd_id}.fits"
                     )
                     try:
                         header_file = fits.getdata(header_file_path, 1)
+                        header = fits.Header.fromstring(
+                            "\n".join(header_file[0][0]), sep="\n"
+                        )
+                        this_wcs = galsim.AstropyWCS(header=header)
                     except Exception:
+                        mask = new_ccd_id == ccd_id
+                        new_flag_psf[mask] = 16
+                        new_flag_star[mask] = 16
                         continue
-                    header = fits.Header.fromstring(
-                        "\n".join(header_file[0][0]), sep="\n"
-                    )
-                    wcs = galsim.AstropyWCS(header=header)
 
-                    g1_psf_tmp_l = []
-                    g2_psf_tmp_l = []
-                    sig_psf_tmp_l = []
-                    g1_star_tmp_l = []
-                    g2_star_tmp_l = []
-                    sig_star_tmp_l = []
-                    flag_psf_tmp_l = []
-                    flag_star_tmp_l = []
+                    mask = new_ccd_id == ccd_id
+                    indices = np.where(mask)[0]
+                    n_ccd_obj = len(indices)
 
-                    for obj in psf_file[m_ccd_id]:
+                    # Extract data for this CCD's objects
+                    ra_batch = psf_file["RA_LIST"][mask]
+                    dec_batch = psf_file["DEC_LIST"][mask]
+                    psf_mom_batch = psf_file["PSF_MOM_LIST"][mask]
+                    star_mom_batch = psf_file["STAR_MOM_LIST"][mask]
+
+                    # Pre-allocate Jacobian decomposition arrays
+                    scales = np.zeros(n_ccd_obj)
+                    shear_g1 = np.zeros(n_ccd_obj)
+                    shear_g2 = np.zeros(n_ccd_obj)
+                    thetas = np.zeros(n_ccd_obj)
+                    flips = np.zeros(n_ccd_obj, dtype=bool)
+                    valid = np.ones(n_ccd_obj, dtype=bool)
+
+                    # Compute Jacobians for all objects in this CCD
+                    for i in range(n_ccd_obj):
                         try:
-                            jac = wcs.jacobian(
+                            jac = this_wcs.jacobian(
                                 world_pos=galsim.CelestialCoord(
-                                    ra=obj["RA_LIST"] * galsim.degrees,
-                                    dec=obj["DEC_LIST"] * galsim.degrees,
+                                    ra=ra_batch[i] * galsim.degrees,
+                                    dec=dec_batch[i] * galsim.degrees,
                                 )
                             )
+                            scale, shear, theta, flip = jac.getDecomposition()
+                            scales[i] = scale
+                            shear_g1[i] = shear.g1
+                            shear_g2[i] = shear.g2
+                            thetas[i] = theta.rad
+                            flips[i] = flip
                         except Exception:
-                            flag_star_tmp_l.append(16)
-                            flag_psf_tmp_l.append(16)
-                            g1_psf_tmp_l.append(0)
-                            g2_psf_tmp_l.append(0)
-                            sig_psf_tmp_l.append(0)
-                            g1_star_tmp_l.append(0)
-                            g2_star_tmp_l.append(0)
-                            sig_star_tmp_l.append(0)
-                            continue
-                        g1_psf_tmp, g2_psf_tmp, sig_psf_tmp = transform_shape(
-                            obj["PSF_MOM_LIST"], jac
+                            valid[i] = False
+
+                    # Apply vectorized shape transform for valid objects
+                    if valid.any():
+                        # PSF shapes
+                        e1_psf_v, e2_psf_v, sig_psf_v = transform_shape_vectorized(
+                            psf_mom_batch[valid, 0],
+                            psf_mom_batch[valid, 1],
+                            psf_mom_batch[valid, 2],
+                            scales[valid],
+                            shear_g1[valid],
+                            shear_g2[valid],
+                            thetas[valid],
+                            flips[valid],
+                        )
+                        # Star shapes
+                        e1_star_v, e2_star_v, sig_star_v = transform_shape_vectorized(
+                            star_mom_batch[valid, 0],
+                            star_mom_batch[valid, 1],
+                            star_mom_batch[valid, 2],
+                            scales[valid],
+                            shear_g1[valid],
+                            shear_g2[valid],
+                            thetas[valid],
+                            flips[valid],
                         )
 
-                        g1_psf_tmp_l.append(g1_psf_tmp)
-                        g2_psf_tmp_l.append(g2_psf_tmp)
-                        sig_psf_tmp_l.append(sig_psf_tmp)
-                        flag_psf_tmp_l.append(obj["PSF_MOM_LIST"][3])
+                        # Store results back using the original indices
+                        valid_indices = indices[valid]
+                        new_e1_psf[valid_indices] = e1_psf_v
+                        new_e2_psf[valid_indices] = e2_psf_v
+                        new_sig_psf[valid_indices] = sig_psf_v
+                        new_flag_psf[valid_indices] = psf_mom_batch[valid, 3]
+                        new_e1_star[valid_indices] = e1_star_v
+                        new_e2_star[valid_indices] = e2_star_v
+                        new_sig_star[valid_indices] = sig_star_v
+                        new_flag_star[valid_indices] = star_mom_batch[valid, 3]
 
-                        g1_star_tmp, g2_star_tmp, sig_star_tmp = (
-                            transform_shape(obj["STAR_MOM_LIST"], jac)
-                        )
-                        g1_star_tmp_l.append(g1_star_tmp)
-                        g2_star_tmp_l.append(g2_star_tmp)
-                        sig_star_tmp_l.append(sig_star_tmp)
-                        flag_star_tmp_l.append(obj["STAR_MOM_LIST"][3])
+                    # Flag invalid objects
+                    if not valid.all():
+                        invalid_indices = indices[~valid]
+                        new_flag_psf[invalid_indices] = 16
+                        new_flag_star[invalid_indices] = 16
 
-                    new_e1_psf[m_ccd_id] = g1_psf_tmp_l
-                    new_e2_psf[m_ccd_id] = g2_psf_tmp_l
-                    new_sig_psf[m_ccd_id] = sig_psf_tmp_l
-                    new_flag_psf[m_ccd_id] = flag_psf_tmp_l
-                    new_e1_star[m_ccd_id] = g1_star_tmp_l
-                    new_e2_star[m_ccd_id] = g2_star_tmp_l
-                    new_sig_star[m_ccd_id] = sig_star_tmp_l
-                    new_flag_star[m_ccd_id] = flag_star_tmp_l
+                # Build output catalogue using direct structured array assignment
+                exp_cat = np.empty(n_obj, dtype=self._dt_mccd)
+                exp_cat["X"] = new_x
+                exp_cat["Y"] = new_y
+                exp_cat["RA"] = psf_file["RA_LIST"]
+                exp_cat["DEC"] = psf_file["DEC_LIST"]
+                exp_cat["E1_PSF_HSM"] = new_e1_psf
+                exp_cat["E2_PSF_HSM"] = new_e2_psf
+                exp_cat["SIGMA_PSF_HSM"] = new_sig_psf
+                exp_cat["FLAG_PSF_HSM"] = new_flag_psf
+                exp_cat["E1_STAR_HSM"] = new_e1_star
+                exp_cat["E2_STAR_HSM"] = new_e2_star
+                exp_cat["SIGMA_STAR_HSM"] = new_sig_star
+                exp_cat["FLAG_STAR_HSM"] = new_flag_star
+                exp_cat["CCD_NB"] = new_ccd_id
+                exp_cat["GLOB_X"] = glob_x
+                exp_cat["GLOB_Y"] = glob_y
 
-                exp_cat = np.array(
-                    list(
-                        map(
-                            tuple,
-                            np.array(
-                                [
-                                    new_x,
-                                    new_y,
-                                    psf_file["RA_LIST"],
-                                    psf_file["DEC_LIST"],
-                                    new_e1_psf,
-                                    new_e2_psf,
-                                    new_sig_psf,
-                                    psf_file["PSF_MOM_LIST"][:, 3],
-                                    new_e1_star,
-                                    new_e2_star,
-                                    new_sig_star,
-                                    psf_file["STAR_MOM_LIST"][:, 3],
-                                    new_ccd_id,
-                                    psf_file["GLOB_POSITION_IMG_LIST"][:, 0],
-                                    psf_file["GLOB_POSITION_IMG_LIST"][:, 1],
-                                ]
-                            ).T.tolist(),
-                        )
-                    ),
-                    dtype=self._dt_mccd,
-                )
-                cat_list.append(exp_cat)
+                # Write output file immediately
+                hdul = fits.HDUList()
+                hdul.append(fits.PrimaryHDU())
+                hdul.append(fits.BinTableHDU(exp_cat))
+                try:
+                    hdul.writeto(output_path, overwrite=True)
+                except (FileNotFoundError, OSError):
+                    pass  # Race condition with another thread
+                hdul.close()
 
             del psf_file
-
-        if len(cat_list) == 0:
-            return
-
-        # Finalize catalogue
-        patch_cat = np.concatenate(cat_list)
-        hdul = fits.HDUList()
-        hdul.append(fits.PrimaryHDU())
-        hdul.append(fits.BinTableHDU(patch_cat))
-
-        # Write catalogue
-        hdul.writeto(
-            output_path,
-            overwrite=True,
-        )
-
-        del cat_list
-        del hdul
-        gc.collect()
 
 
 def run_convert(*args):
