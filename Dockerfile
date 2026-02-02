@@ -1,7 +1,8 @@
-FROM python:3.11-bookworm
+FROM python:3.12-slim-bookworm
 
 LABEL Description="Conda-Free ShapePipe Docker Image"
 ENV SHELL=/bin/bash
+ENV QT_QPA_PLATFORM=offscreen
 
 # Install system dependencies
 RUN apt-get update -y --quiet --fix-missing && \
@@ -14,6 +15,7 @@ RUN apt-get update -y --quiet --fix-missing && \
     build-essential \
     cmake \
     curl \
+    wget \
     ffmpeg \
     g++ \
     gcc  \
@@ -26,6 +28,7 @@ RUN apt-get update -y --quiet --fix-missing && \
     libfftw3-bin \
     libfftw3-dev \
     libgl1-mesa-glx \
+    libgsl-dev \
     libtool \
     libtool-bin \
     libtool-doc \
@@ -56,22 +59,19 @@ RUN cd /tmp && \
 # Install python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir \
-    astropy==5.2 \
-    cs_util==0.1.0 \
-    galsim==2.2.6 \
+    astropy==6.1.0 \
+    cs_util==0.1.9 \
+    galsim==2.5.3 \
     ipython==8.18.1 \
-    joblib==1.1.0 \
+    joblib==1.4.2 \
     jupyterlab==4.3.1 \
     matplotlib==3.8.4 \
     mccd==1.2.4 \
     modopt==1.6.1 \
     mpi4py==4.0.3 \
-    numba==0.58.1 \
     numpy==1.26.4 \
     numpydoc==1.2  \
     pandas==2.2  \
-    PyQt5==5.15.6 \
-    pyqtgraph==0.12.4 \
     pytest==8.3.3 \
     pytest-cov==5.0.0 \
     pytest-pycodestyle==2.4.1 \
@@ -79,16 +79,14 @@ RUN pip install --no-cache-dir --upgrade pip && \
     reproject==0.14.1 \
     sf_tools==2.0.4 \
     sip_tpv==1.1 \
-    skaha==1.4.3 \
+    skaha==1.7.0 \
     sqlitedict==2.0.0 \
     termcolor==1.1.0 \
     tqdm==4.63.0 \
     treecorr==5.1.1 \
     vos==3.6.1.1 \
     git+https://github.com/aguinot/ngmix@stable_version \
-    git+https://github.com/tobias-liaudat/Stile@v0.1 \ 
-    git+https://github.com/CEA-COSMIC/pysap@develop
-
+    git+https://github.com/tobias-liaudat/Stile@v0.1
 
 WORKDIR /app
 COPY . /app/.
