@@ -617,7 +617,7 @@ class MergeStarCatPSFEX(object):
             except:
                 # Hack for MCCD: for WCS-converted PSFs, the psfex class is
                 # used also for mccd
-                ccd_nb = -1
+                ccd_nb += [-1] * len(data_j["RA"])
 
         # Prepare output FITS catalogue
         # MKDEBUG: SEx_cat=True -> False
@@ -648,8 +648,6 @@ class MergeStarCatPSFEX(object):
             "ACCEPTED": psfex_acc,
             "CCD_NB": ccd_nb,
         }
-        print("MKDEBUG ", data["X"][:5], data["E1_PSF_HSM"][:5])
-        print("MKDEBUG ", len(data))
 
         # Write file
         # MKDEBUG for psf conv (pix2WCS) files do not write as SExtractorCat;
