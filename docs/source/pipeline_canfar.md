@@ -114,7 +114,7 @@ cat mc.txt | xargs -I {} -P 16 bash -c 'init_run_exclusive_canfar.sh -p psfex -j
 # Combine all final cats in common output dir as links
 combine_runs.bash -c final -p psfex
 
-# Merge all final cats
+# Merge all final cats per patch
 # (W3: 140GB RAM)
 # in /path/to/$psf
 patchnum=`tr $patch P ''`
