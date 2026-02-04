@@ -610,9 +610,14 @@ class MergeStarCatPSFEX(object):
                 psfex_acc += list(np.zeros_like(data_j["X"]))
 
             # CCD number
-            ccd_nb += [re.split(r"\-([0-9]*)\-([0-9]+)\.", name[0])[-2]] * len(
-                data_j["RA"]
-            )
+            try:
+                ccd_nb += [re.split(r"\-([0-9]*)\-([0-9]+)\.", name[0])[-2]] * len(
+                    data_j["RA"]
+                )
+            except:
+                # Hack for MCCD: for WCS-converted PSFs, the psfex class is
+                # used also for mccd
+                ccd_nb += [-1] * len(data_j["RA"])
 
         # Prepare output FITS catalogue
         # MKDEBUG: SEx_cat=True -> False

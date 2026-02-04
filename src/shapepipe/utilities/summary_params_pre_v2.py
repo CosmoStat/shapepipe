@@ -58,7 +58,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
         verbose=verbose,
     )
 
-    if patch == "P8":
+    if patch in ("P8", "P9"):
         jobs["2"] = job_data(
             2,
             ["run_sp_Uz", "run_sp_exp_Sp_shdu"],
@@ -105,7 +105,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
         verbose=verbose,
     )
 
-    if patch != "P8":
+    if patch not in ("P8", "P9"):
         jobs["8"] = job_data(
             8,
             ["run_sp_Ma_exp"],
@@ -197,7 +197,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
         verbose=verbose,
     )
 
-    if patch in ("P2", "P5", "P8"):
+    if patch in ("P2", "P5", "P8", "P9"):
         n_sh = 1
     else:
         n_sh = 8
@@ -239,8 +239,8 @@ def set_jobs_v2_pre_v2(patch, verbose):
 
     jobs["512"] = job_data(
         "512",
-        "run_sp_Mc",
-        "make_cat_runner",
+        ["run_sp_Mc"],
+        ["make_cat_runner"],
         "tile_IDs",
         path_main=path_main,
         path_left="tile_runs",

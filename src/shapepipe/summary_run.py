@@ -5,19 +5,22 @@ import os
 
 from shapepipe.utilities.summary import *
 
-from summary_params_pre_v2 import *
+from shapepipe.utilities.summary_params_pre_v2 import *
 
 
-def main(argv=None):
+def run(*args):
 
-    patch = argv[1]
+    patch = args[0]
 
-    if len(argv) == 3:
-        job_exclusive = argv[2]
+    if len(args) >= 2:
+        job_exclusive = args[1]
     else:
         job_exclusive = None
 
-    verbose = False
+    if len(args) == 3:
+        verbose = True
+    else:
+        verbose = False
 
     jobs, list_tile_IDs_dot = set_jobs_v2_pre_v2(patch, verbose)
 
@@ -73,5 +76,12 @@ def main(argv=None):
     return 0
 
 
+def main(args=None):
+
+    if args is None:
+        args = sys.argv[1:]  # skip script name
+    run(*args)
+
+
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    sys.exit(main())

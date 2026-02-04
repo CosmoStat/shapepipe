@@ -26,7 +26,7 @@ def matching_subdirs(base_dir, pattern, tail=False):
                     path = tail
 
                 # Remove postfix in case of multiple runs of same module
-                path = re.sub("_run_.\d?", "", path)
+                path = re.sub(r"_run_.\d?", "", path)
 
                 # Append to result
                 subdirs.append(path)

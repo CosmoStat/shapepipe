@@ -10,6 +10,49 @@ pat="---- "
 STOP=0
 
 
+get_line_from_file() {
+    local file=""
+    local OPTIND opt
+
+    # Parse options: look for -f <filename>
+    while getopts ":f:" opt; do
+        case $opt in
+            f)
+                file="$OPTARG"
+                ;;
+            \?)
+                echo "Unknown option: -$OPTARG", ", continuing"
+                #return 1
+                ;;
+            :)
+                echo "Option -$OPTARG requires an argument."
+                return 1
+                ;;
+        esac
+    done
+
+    # Check that file and REPLICA_ID are set
+    if [[ -z "$file" ]]; then
+        echo "Error: -f option not provided."
+        return 1
+    fi
+    if [[ -z "$REPLICA_ID" ]]; then
+        echo "Error: REPLICA_ID not set."
+        return 1
+    fi
+
+    # Check file exists
+    if [[ ! -f "$file" ]]; then
+        echo "Error: file '$file' not found."
+        return 1
+    fi
+
+    # Extract the line corresponding to REPLICA_ID (1-based index)
+    sed -n "${REPLICA_ID}p" "$file"
+}
+
+
+
 # Add session and image IDs to log files
 function update_session_logs() {
   echo $my_session >> session_IDs.txt

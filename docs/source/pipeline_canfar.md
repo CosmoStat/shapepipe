@@ -1,16 +1,27 @@
-patch="P7"
+# pipeline_canfar.md
+
+# Documentation to create SP output products for catalogues v1.4.x
+
+# canfar login
+canfar auth login
+
+# Check; if not on "default", run canfar auth switch default
+canfar auth list
+
+# Set default PSF model
 psf="psfex"
 
 # Terminal title
 echo -ne "\033]0;$patch\007"
 
-# Run directory
-dir=~/cosmostat/v2/pre_v2/$psf/$patch
-cd $dir
+# Go to run directory
+patch P[1-9]
 
 # Get tile number list
 ln -s ~/shapepipe/auxdir/CFIS/tiles_202106/tiles_$patch.txt tile_numbers.txt
 
+# Create debug log directory
+mkdir debug
 
 # Get images
 
@@ -33,7 +44,7 @@ ls -l data_tiles/ | wc; mv -i output/run_sp_Git_*/get_images_runner/output/CFIS.
 rm -rf output/run_sp_Git_*; update_runs_log_file.py
 # repeat the above block
 
-### Find exposures; this run can be stopped after Fe
+### Find exposures
 shapepipe_run -c cfis/config_GitFe_symlink.ini
 # You can also run Fe alone
 
@@ -51,8 +62,8 @@ while true; do shapepipe_run -c cfis/config_Gie_vos.ini; ls -l data_exp/ | wc; m
 ### Create links (and re-run Fe, not necessary)
 job_sp_canfar.bash -p $psf `cat tile_numbers.txt` -j 1 -r symlink
 
-# Get single-HDU single-exposure IDs file (from missing 32 job) 
-~/shapepipe/scripts/python/summary_run.py P$patch [32]
+### Uncompress tile weights
+shapepipe_run -c cfis/config_tile_Uz.ini
 
 # Mask tiles
 
@@ -63,17 +74,16 @@ job_sp_canfar.bash -p $psf -n $OMP_NUM_THREADS -j 4
 combine_runs.bash -c flag_tile
 
 # Tile detection
-curl_canfar_local.sh -j 16 -f tile_numbers.txt -p $psf -N $OMP_NUM_THREADS
+canfar_submit_job -j 16 -f tile_numbers.txt -v [-s | -J J]
 
-# Option 0, global split and exp masks: sp_local=0
+
+# Exposure processing
+
+# Option 0, global split and exp masks: sp_local=0 (depreciated; only for earlier v1.x patch runs)
 # Todo: split Uz and SpMh
 
 # For sp_local=- both mh_local (0, 1) are ok
 export mh_local=0
-#export mh_local=1
-
-## Uncompress weights,  split exposures into single HDUs
-job_sp_canfar.bash -p $psf -n $OMP_NUM_THREADS -j 2
 
 # Mask exposures
 
@@ -84,39 +94,51 @@ job_sp_canfar.bash -p $psf -n $OMP_NUM_THREADS -j 8
 combine_runs.bash -c flag_exp
 
 # Option 1: sp_local=1, local split and mask exp
-export mh_local=1
+#export mh_local=1
+
+# Get single-HDU single-exposure IDs file (from missing 32 job) 
+~/shapepipe/scripts/python/summary_run.py P$patch [32]
+cp summary/missing_job_32_all.txt exp_shdu.txt
 
 # Split exposures
-curl_canfar_local.sh -j 2 -f all.txt -p $psf -N $OMP_NUM_THREADS
+# (Check missing with summary_run P$patch 4096)
+# Get maximum jobs per session to fit in one batch (so to run many jobs per
+# replica instead of only one job per replica spread over many batches)
+canfar_submit_job -j 2 -v -f exp_shdu.txt -v -P 8 -s
+# Submit for real
+canfar_submit_job -j 2 -v -f exp_shdu.txt -v -P 8 -J job_per_session
 
 # Mask exposures
-curl_canfar_local.sh -j 8 -f all.txt -p $psf -N $OMP_NUM_THREADS
+canfar_submit_job -j 8 -f exp_shdu.txt -v -P 8 -J 137
 
 # Exposure detection
 
 cp summary/missing_job_32_sextractor.txt all.txt
-curl_canfar_local.sh -j 32 -m $mh_local -f all.txt -p $psf -N $OMP_NUM_THREADS
+canfar_submit_job -j 32 -f exp_shdu.txt -v -P 8 -J 137
+#curl_canfar_local.sh -j 32 -m $mh_local -f all.txt -p $psf -N $OMP_NUM_THREADS
 
 # Tile preparation
-curl_canfar_local.sh -j 64 -f tile_numbers.txt -p $psf -N $OMP_NUM_THREADS
+canfar_submit_job -j 64 -f tile_numbers.txt
 
 # Tile shape measurement
-curl_canfar_local.sh -j 128 -f tile_numbers.txt -p $psf -N 8
+canfar_submit_job -j 128 -f tile_numbers.txt
 
 # Merge subcatalogues
-curl_canfar_local.sh -j 256 -f tile_numbers.txt -p $psf -N 8
+canfar_submit_job -j 256 -f tile_numbers.txt
 
 # Create final cat
-curl_canfar_local.sh -j 512 -f tile_numbers.txt -p $psf -N $OMP_NUM_THREADS
+canfar_submit_job -j 512 -f tile_numbers.txt
+
 # Run in parallel
-cat mc.txt | xargs -I {} -P 16 bash -c 'init_run_exclusive_canfar.sh -p psfex -j 512 -e {} --n_smp 1'
+cat IDs.txt | xargs -I {} -P 16 bash -c 'init_run_exclusive_canfar.sh -j 512 -e {}'
 
 # Combine all final cats in common output dir as links
-combine_runs.bash -c final -p psfex
+#combine_runs.bash -c final -p $psf
 
 # Merge all final cats per patch
 # (W3: 140GB RAM)
-# in /path/to/$psf
+cd ..
+# to be in /path/to/$psf
 patchnum=`tr $patch P ''`
 create_final_cat.py -m final_cat_$patch.hdf5 -i . -p $patch/cfis/final_cat.param -P $patchnum -o $patch/n_tiles_final.txt -v
 
@@ -136,12 +158,11 @@ cd ../star_cat
 
 # Combine previously created files as links within one SP run dir
 # (for the v1.4 setup only one link
-cd P$patch
-combine_runs.bash -p psfex -c psf_conv
+combine_runs.bash -p $psf -c psf_conv
 
 # Merge all converted star catalogues and create final-starcat.fits
 export SP_RUN=`pwd`
-shapepipe_run -c ~/shapepipe/example/cfis/config_Ms_psfex_conv.ini
+shapepipe_run -c ~/shapepipe/example/cfis/config_Ms_${psf}_conv.ini
 
 
 # Extra stuff
@@ -152,7 +173,7 @@ SESSION=https://ws-uv.canfar.net/skaha/v0/session
 for ID in `cat session_IDs.txt`; do echo $ID; curl -X DELETE -E $SSL $SESSION/$ID; done
 
 ## Run in terminal in parallel (-e needs to be last arg)
-cat all.txt | xargs -P 16 -n 1  init_run_exclusive_canfar.sh -j 64 -p psfex -n -e
+cat all.txt | xargs -P 16 -n 1  init_run_exclusive_canfar.sh -j 64 -p $psf -n -e
 
 ## Get missing jobs that are not currently running
 stats_jobs_canfar.sh
