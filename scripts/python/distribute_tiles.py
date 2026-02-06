@@ -1,4 +1,4 @@
-#!/arc/home/kilbinger/.conda/envs/shapepipe/bin/python3.10
+#!/usr/bin/env python
 """
 distribute_tiles.py
 
@@ -121,7 +121,7 @@ def build_process_command(tile_id, original_args):
         elif original_args[i] in ('--batch_num', '--batch_tot', '--batch_size', '--parallel_jobs'):
             i += 2
         elif original_args[i] in ('-n', '--dry_run'):
-            if original_args[i] in (0, 1):
+            if original_args[i] in ("0", "1"):
                 cmd.extend(["-n", original_args[i]])
             i += 2
         else:

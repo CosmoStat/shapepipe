@@ -215,7 +215,7 @@ def check_special_one(module, path):
                 if m:
                     code = 8
                     msg = "WCS world2pix did not converge"
-                    return mgs, code
+                    return msg, code
 
             if module == "ngmix_runner":
                 m = re.search("finished", line)
@@ -232,8 +232,8 @@ def check_special_one(module, path):
 
     if module == "ngmix_runner" and not ngmix_finished:
         code = 6
-        mgs = "ngmix incomplete"
-        return mgs, code
+        msg = "ngmix incomplete"
+        return msg, code
 
 
     return None, None 

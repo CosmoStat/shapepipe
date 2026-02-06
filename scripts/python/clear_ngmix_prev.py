@@ -112,9 +112,9 @@ def main():
                 else:
                     n_objects, n_hdus = (-1, -1)
 
-                # File info of new
+                # File info of prev
                 prev_out_dir = prev_dir / "output"
-                fits_files = list(ngmix_out_dir.glob("ngmix-*.fits"))
+                fits_files = list(prev_out_dir.glob("ngmix-*.fits"))
                 if fits_files:
                     for fits_file in fits_files:
                         n_objects_prev, n_hdus_prev = get_fits_info(fits_file)

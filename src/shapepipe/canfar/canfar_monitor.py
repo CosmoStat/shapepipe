@@ -1,6 +1,6 @@
 # canfar_monitor.py
 
-# Montiot job submitted with the canfar client
+# Montior job submitted with the canfar client
 
 import os
 import sys
@@ -127,7 +127,7 @@ class Log(object):
             df['time'] = '12:04:00'
         except Exception as e:
             estr = f": {e}" if self._params["verbose"] else ""
-            raise RunTimeError(
+            raise RuntimeError(
                 f"An error occurred while processing dates: {estr}"
             ) from e
 
@@ -185,7 +185,7 @@ class Log(object):
         bulk = self._params["bulk"]
 
         if bulk == 2:
-            kind = self._get_kind()
+            kind = self.get_kind()
 
             if self._params["status"] != "all":
                 status = self._params["status"]
@@ -202,10 +202,6 @@ class Log(object):
             except Exception as e:
                 if self._params.get("verbose"):
                     print(f"Failed to destroy jobs: {e}")
-            else:
-                print("Failed to destroy jobs")
-                # Optionally exit or return gracefully
-                return False
         
             print("Success")
             return
@@ -219,7 +215,7 @@ class Log(object):
                 print(f"{len(ids)} sessions done")
             except Exception as e:
                 estr = f": {e}" if self._params["verbose"] else ""
-                print("failed{estr}")
+                print(f"failed{estr}")
 
         else:
             print("Loop destroy")
@@ -232,7 +228,7 @@ class Log(object):
                     print(f"{result[session_id]} done")
                 except Exception as e:
                     estr = f": {e}" if self._params["verbose"] else ""
-                    print("failed{estr}")
+                    print(f"failed{estr}")
 
 
     def get_session(self):
@@ -244,7 +240,7 @@ class Log(object):
         try:
             if not self._params["quiet"]:
                 print(
-                    f"Retreiving session info of kind={self._params['kind']},"
+                    f"Retrieving session info of kind={self._params['kind']},"
                     + f" status={self._params['status']}"
                 )
             kind = self.get_kind()

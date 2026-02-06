@@ -112,7 +112,7 @@ class Job(object):
             "parallel_jobs": "number of tiles to process in parallel per replica; default is {}",
             "jobs_per_session": (
                 "number of jobs (tiles) per session; if 0, create one session per job (default is {});"
-                + " Number of replicas is #FILE_IDs / JOBS_PER_SESSSION"
+                + " Number of replicas is #FILE_IDs / JOBS_PER_SESSION"
             ),
             "stats": "print stats of sessions/batches/replicas and exit",
         }
@@ -130,7 +130,6 @@ class Job(object):
                 self._params["cores"] = self._params["parallel_jobs"]
             else:
                 self._params["cores"] = self._cores_default
-        pass
 
     def check_params(self):
 
