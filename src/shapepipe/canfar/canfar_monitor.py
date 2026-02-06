@@ -1,6 +1,6 @@
 # canfar_monitor.py
 
-# Montior job submitted with the canfar client
+# Monitor job submitted with the canfar client
 
 import os
 import sys
@@ -202,8 +202,8 @@ class Log(object):
             except Exception as e:
                 if self._params.get("verbose"):
                     print(f"Failed to destroy jobs: {e}")
-        
-            print("Success")
+            else:
+                print("Success")
             return
 
         elif bulk == 1:

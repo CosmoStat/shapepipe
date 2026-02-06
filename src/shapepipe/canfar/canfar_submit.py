@@ -163,9 +163,9 @@ class Job(object):
             deb_ID = os.path.basename(self._params["file_IDs"])
       
         if self._params['debug_out']:
-            opt["debut_out"] = f"--debug_out {cwd}/debug/{self._params['debug_out']}"
+            opt["debug_out"] = f"--debug_out {cwd}/debug/{self._params['debug_out']}"
         else:
-            opt["debut_out"] = f"--debug_out {cwd}/debug/debug_{deb_ID}.txt"
+            opt["debug_out"] = f"--debug_out {cwd}/debug/debug_{deb_ID}.txt"
 
         opt["d"] = f"-d {cwd}"
         opt["m_s"] = "-m 1 -s 1" if self._patch in ("P8", "P9") else ""
