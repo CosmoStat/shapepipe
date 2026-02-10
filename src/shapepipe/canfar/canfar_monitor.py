@@ -17,6 +17,11 @@ from cs_util import logging
 
 
 class Log(object):
+    """Class Log.
+
+    Handles logging of jobs submitted with the canfar library. 
+
+    """
 
     def __init__(self):
 
@@ -24,6 +29,11 @@ class Log(object):
 
     def set_params_from_command_line(self, args):
         """Set Params From Command line.
+
+        Parameters
+        ----------
+        args: list
+            command line arguments
 
         Only use when calling using python from command line.
         Does not work from ipython or jupyter.
@@ -42,7 +52,11 @@ class Log(object):
         logging.log_command(args)
 
     def params_default(self):
+       """Params Default.
 
+        Set default parameters.
+
+        """
         self._params = {
             "kind": "headless",
             "status": "all",
@@ -73,18 +87,17 @@ class Log(object):
             "quiet": "quiet output",
         }
 
-    def update_params(self):
-        """Update Params.
-
-        Update parameters.
-        """
-        pass
-
-    def check_params(self):
-        pass
-
     def print_info(self, df):
+        """Print Info.
 
+        Print job information.
+
+        Parameters
+        ----------
+        df: pandas.dataframe
+            job information
+
+        """
         if not self._params["quiet"]:
             # Prepare header and rows with left-justified formatting
             header = f"{'type':<10} {'status':<10} {'date':<12} {'time':<10} {'name':<20} {'id':<10}"
@@ -100,7 +113,16 @@ class Log(object):
         print(f"{len(df)} jobs found")
 
     def filter(self):
+        """Filter.
 
+        Filter jobs for nicer printing
+
+        Returns
+        -------
+        pandas.dataframe
+            information of filtered jobs
+
+        """
         df = pd.DataFrame(self._info)
 
         if len(self._info) == 0:
@@ -148,15 +170,22 @@ class Log(object):
         return df
 
     def run(self, args=None):
+        """Run.
 
+        Run instance.
+
+        Parameters
+        ----------
+        args: list, optional
+            command line arguments, default is ``None``
+
+        """
         if args is None:
             args = sys.argv
 
         obj = self
    
         obj.set_params_from_command_line(args)
-        obj.update_params()
-        obj.check_params()
 
         session = self.get_session()
         
@@ -171,7 +200,11 @@ class Log(object):
         """Get Kind.
 
         Return kind for communication with canfar.
-        In particular, returns None if kind in parametesr is "all".
+
+        Returns
+        -------
+        str
+            kind; ``None`` if kind in parametesr is "all".
 
         """
         return (
@@ -181,7 +214,18 @@ class Log(object):
         )
 
     def destroy(self, df, session):
+        """Destroy.
 
+        Destroy = remove jobs from the canfar submission system.
+
+        Parameters
+        ----------
+        df: pandas.dataframe
+            jobe information
+        session:
+            canfar job session
+
+        """
         bulk = self._params["bulk"]
 
         if bulk == 2:
@@ -230,9 +274,15 @@ class Log(object):
                     estr = f": {e}" if self._params["verbose"] else ""
                     print(f"failed{estr}")
 
-
     def get_session(self):
+        """Get Session.
 
+        Returns
+        -------
+        canfar.Session
+            canfar session management client
+
+        """
         # Initialize session manager
         session = Session()
 

@@ -17,10 +17,7 @@ def run(*args):
     else:
         job_exclusive = None
 
-    if len(args) == 3:
-        verbose = True
-    else:
-        verbose = False
+    verbose = len(args) == 3:
 
     jobs, list_tile_IDs_dot = set_jobs_v2_pre_v2(patch, verbose)
 
