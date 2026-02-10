@@ -28,10 +28,6 @@ class Job(object):
 
         self._patch = os.environ["patch"] if "patch" in os.environ else "P0"
 
-        # Set job parameters
-        version = "1.1"
-        self._image = f"images.canfar.net/unions/shapepipe:{version}"
-
         # Maximum replicas per batch (CANFAR limit is 512)
         self._max_replicas_per_batch = 512
         if self._max_replicas_per_batch != 512:
@@ -81,6 +77,7 @@ class Job(object):
             "parallel_jobs": 1,
             "jobs_per_session": 0,
             "stats": False,
+            "version": "1.1",
         }
 
         self._short_options = {
@@ -96,6 +93,7 @@ class Job(object):
             "parallel_jobs": "-P",
             "jobs_per_session": "-J",
             "stats": "-s",
+            "version": "-V",
         }
 
         self._types = {
@@ -124,6 +122,7 @@ class Job(object):
                 + " Number of replicas is #FILE_IDs / JOBS_PER_SESSION"
             ),
             "stats": "print stats of sessions/batches/replicas and exit",
+            "version": "shapepipe image version; default is {}",
         }
 
     def update_params(self):
@@ -131,6 +130,10 @@ class Job(object):
 
         Update parameters.
         """
+
+        # Set version and image
+        version = self._params["version"]
+        self._image = f"images.canfar.net/unions/shapepipe:{version}"
 
         # If not given, set number of cores to number of parallel jobs;
         # else set to default. 
