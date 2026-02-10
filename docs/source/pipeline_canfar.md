@@ -396,7 +396,7 @@ the parameter file and set links to the catalogues and `ShapePipe` config direct
 ```bash
 cd /path/to/version/$patch
 cp ~/astro/repositories/github/sp_validation/notebooks/params.py .
-ln -s ~/v1.3.x/final_cat_$patchnum3.hdf5  # not ../final_cat_P$patchnum.hdf5 !
+ln -s /path/to/final_cat_$patchnum.hdf5  # not relative path ../final_cat_P$patchnum.hdf5 !
 ln -s output/run_sp_MsPl/mccd_merge_starcat_runner/output/full_starcat-0000000.fits
 ln -s ~/astro/repositories/github/shapepipe/example/cfis
 ```
