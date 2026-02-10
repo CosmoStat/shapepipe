@@ -1,4 +1,7 @@
-# Scripts to call canfar classes are created by pyproject.toml
+# canfar_run.py
+
+# Scripts of high-level functions that call canfar classes. The python
+# executables are created by pyproject.toml.
 
 import sys
 from shapepipe.canfar import canfar_submit, canfar_monitor, canfar_log_monitor
