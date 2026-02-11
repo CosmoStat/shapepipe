@@ -5,7 +5,7 @@ import os
 
 from shapepipe.utilities import summary
 
-from shapepipe.utilities impot summary_params_pre_v2 as summary_params
+from shapepipe.utilities import summary_params_pre_v2 as summary_params
 
 
 def run(*args):
@@ -17,7 +17,7 @@ def run(*args):
     else:
         job_exclusive = None
 
-    verbose = len(args) == 3:
+    verbose = len(args) == 3
 
     jobs, list_tile_IDs_dot = summary_params.set_jobs_v2_pre_v2(patch, verbose)
 
