@@ -12,6 +12,7 @@ from shapepipe.modules.uncompress_fits_package import uncompress_fits
 
 @module_runner(
     version="1.1",
+    input_module=["astropy","fitsio"],
     file_pattern=["image"],
     file_ext=[".fits"],
     numbering_scheme="_0",
