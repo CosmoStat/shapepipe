@@ -43,6 +43,7 @@ test = [
     "pytest-pycodestyle",
     "pytest-pydocstyle"
 ]
+fitsio = ["fitsio"]
 dev = ["shapepipe[doc,lint,release,test]"]
 
 [project.scripts]
