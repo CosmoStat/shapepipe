@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+
+# Name: init_run_v2.0.sh
+# Description: Initialise the directory structure for a v2.0 ShapePipe run.
+#              Creates tile and exposure staging directories, config symlinks,
+#              and a tile number list from the 202604 tile catalogue.
+# Author: Martin Kilbinger <martin.kilbinger@cea.fr>
+
+# Version
+version="2.0"
+
+# Default base run directory (permanent storage)
+base_dir="$HOME/cosmostat/v2/v${version}"
+
+# ShapePipe repository root (for config symlink and tile list)
+sp_root="$HOME/shapepipe"
+
+# Tile list source (full filenames, will be stripped to NNN.MMM)
+tiles_src="$sp_root/auxdir/CFIS/tiles_202604/tiles_r.txt"
+
+# Config directory (will be symlinked as $base_dir/cfis)
+config_dir="$sp_root/example/cfis"
+
+## Help string
+usage="Usage: $(basename "$0") [OPTIONS]
+\nOptions:\n
+   -h\t\tthis message\n
+   -d, --dir DIR\tbase run directory, default='$base_dir'\n
+"
+
+## Parse command line
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h)
+      echo -ne $usage
+      exit 0
+      ;;
+    -d|--dir)
+      base_dir="$2"
+      shift
+      ;;
+    *)
+      echo "Unknown option: $1"
+      echo -ne $usage
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+echo "Initialising ShapePipe v${version} run directory: $base_dir"
+echo ""
+
+# --- Base directory ---
+mkdir -p "$base_dir"
+cd "$base_dir"
+
+# --- Tile staging subdirectories ---
+# One subdir per unique 3-digit first coordinate, e.g. tiles/000/, tiles/001/, ...
+echo "Creating tile subdirectories..."
+tile_prefixes=$(sed 's/CFIS\.\([0-9]*\)\..*/\1/' "$tiles_src" | sort -u)
+n_tile_dirs=0
+for pfx in $tile_prefixes; do
+    mkdir -p "tiles/$pfx"
+    (( n_tile_dirs++ ))
+done
+echo "  Created $n_tile_dirs subdirectories under tiles/"
+
+# --- Exposure staging directory ---
+# Subdirectories will be created when exposures are downloaded (first 2 digits of 7-digit ID)
+echo "Creating exp/ staging directory..."
+mkdir -p exp
+echo "  exp/ created (subdirs e.g. exp/28/ added at download time)"
+
+# --- Output and working directories ---
+echo "Creating output and working directories..."
+mkdir -p output
+mkdir -p logs
+mkdir -p cfis_mod
+
+# --- Config symlink ---
+if [ -L cfis ]; then
+    echo "cfis symlink already exists, skipping"
+elif [ -d cfis ]; then
+    echo "WARNING: cfis/ exists as a directory, not creating symlink"
+else
+    ln -s "$config_dir" cfis
+    echo "Created symlink: cfis -> $config_dir"
+fi
+
+# --- Tile number list ---
+# Convert CFIS.NNN.MMM.r.fits  ->  NNN.MMM
+echo "Creating tile_numbers.txt..."
+sed 's/CFIS\.\([0-9]*\.[0-9]*\)\..*/\1/' "$tiles_src" > tile_numbers.txt
+n_tiles=$(wc -l < tile_numbers.txt)
+echo "  $n_tiles tile IDs written to tile_numbers.txt"
+
+echo ""
+echo "Done. Directory structure:"
+echo "  $base_dir/"
+echo "  ├── tiles/       ($n_tile_dirs prefix subdirs)"
+echo "  ├── exp/         (subdirs added at download time)"
+echo "  ├── output/"
+echo "  ├── logs/"
+echo "  ├── cfis_mod/"
+echo "  ├── cfis  ->  $config_dir"
+echo "  └── tile_numbers.txt  ($n_tiles tiles)"
