@@ -478,10 +478,11 @@ Now, create the list of CCDs that have PSF information with
 get_ccds_with_psf -v -V v1.6
 ```
 
-Next, download exposures headers
+Next, download exposures headers; indicate (with `-d`) a directory of already
+downloaded headers; those will be linked and duplicated download skipped.
 
 ```bash
-download_headers -i ccds_with_psfs_v1.6.txt -o headers_v1.6 -v
+download_headers -i ccds_with_psfs_v1.6.txt -o headers_v1.6 -d headers_v1.3 -v
 ```
 
 From the headers, the CCD corner coordinates are extracted with
@@ -491,10 +492,16 @@ extract_field_corners -i headers_v1.6 -v
 
 Then, build the healsparse coverage mask file as
 ```bash
-build_coverage_map
+build_coverage_map -i exp_ra_dec_v1.6 -o coverage_v1.6.x.hsp -c 128 -n 131072 -v
 ```
 
+The healsparse resolutions (128, 131072) match the bit masks.
+
+
 Use `plot_coverage_map` to create plots of the coverage mask.
+
+Building and plotting for a range of versions is done with
+`build_and_plot_coverage_maps.sh`.
 
 ## Extra Utilities
 
