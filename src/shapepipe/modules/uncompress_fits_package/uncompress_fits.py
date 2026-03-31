@@ -7,6 +7,7 @@ This module uncompresses FITS images and saves them as a single-HDU FITS file.
 """
 
 from astropy.io import fits
+import fitsio
 
 
 class Uncompress(object):
@@ -54,9 +55,29 @@ class Uncompress(object):
         for idx in range(len(self._input_file_list)):
 
             # Get data and header
-            data = fits.getdata(self._input_file_list[idx], self._data_hdu)
-            header = fits.getheader(self._input_file_list[idx], self._data_hdu)
+            # 2025: Bug while reading data (Invalid TFORM2: 1PE(625)
+            try:
+                data = fits.getdata(self._input_file_list[idx], self._data_hdu)
+                header = fits.getheader(self._input_file_list[idx], self._data_hdu)
+            except:
+                hdu = fitsio.FITS(self._input_file_list[idx])[self._data_hdu]
+                data = hdu.read()
+                header_fitsio = hdu.read_header()
 
+                # Transform header to astropy.io.fits
+                header = fits.Header()
+                for name in header_fitsio.keys():
+                    # Skip empty keys (padding in header)
+                    if name:
+                        value = header_fitsio[name]
+                        comment = header_fitsio.get_comment(name)
+
+                        # Optional: fix invalid TFORMn
+                        if name.startswith('TFORM') and isinstance(value, str) and 'PE' in value:
+                            value = '625E'
+
+                        header[name] = (value, comment)
+            
             # Create and write new FITS file with that HDU only
             hdu = fits.PrimaryHDU(data, header)
             hdul = fits.HDUList([hdu])

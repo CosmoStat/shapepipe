@@ -2,7 +2,7 @@
 
 Module runner for ``mask``.
 
-:Author: Axel Guinot
+:Author: Axel Guinot, Martin Kilbinger
 
 """
 
@@ -15,7 +15,7 @@ from shapepipe.modules.module_decorator import module_runner
     file_pattern=["image", "weight", "flag"],
     file_ext=[".fits", ".fits", ".fits"],
     depends=["numpy", "astropy"],
-    executes=["ww", "findgsc2.2"],
+    executes=["ww"],
     numbering_scheme="_0",
 )
 def mask_runner(

@@ -9,11 +9,15 @@ authors = [
     { name = "Martin Kilbinger", email = "martin.kilbinger@cea.fr" }
 ]
 license = { "file" = "LICENSE" }
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "joblib>=0.13",
     "modopt>=1.2",
-    "numpy>=1.14"
+    "numpy>=1.14",
+    "pandas",
+    "canfar",
+    "sf_tools",
+    "h5py",
 ]
 
 
@@ -39,10 +43,15 @@ test = [
     "pytest-pycodestyle",
     "pytest-pydocstyle"
 ]
+fitsio = ["fitsio"]
 dev = ["shapepipe[doc,lint,release,test]"]
 
 [project.scripts]
 shapepipe_run = "shapepipe.shapepipe_run:main"
+summary_run = "shapepipe.summary_run:main"
+canfar_submit_job = "shapepipe.canfar_run:run_job"
+canfar_monitor = "shapepipe.canfar_run:run_log"
+canfar_monitor_log = "shapepipe.canfar_run:run_monitor_log"
 
 [tool.pytest.ini_options]
 addopts = "--verbose --cov=shapepipe"
