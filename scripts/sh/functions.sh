@@ -4,8 +4,8 @@ SESSION=https://ws-uv.canfar.net/skaha/v0/session
 IMAGE=images.canfar.net/unions/shapepipe
 NAME=shapepipe
 
-version="1.1"
-cmd_remote="$HOME/shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
+version="2.0"
+cmd_remote="$HOME/shapepipe/scripts/sh/run_job_canfar_v2.0.sh"
 pat="---- "
 STOP=0
 
@@ -24,15 +24,11 @@ function call_curl() {
   my_N_SMP=$5
   my_dry_run=$6
   my_dir=$7
-  my_mh_local=$8
-  my_sp_local=$9
-  my_sm=${10}
-  my_debug_out=${11}
-  my_fix=${12}
-  my_scratch=${13}
-  my_test_arg=${14}
+  my_debug_out=$8
+  my_scratch=$9
+  my_test_arg=${10}
 
-  my_arg="-j $my_job -p $my_psf -e $my_ID -N $my_N_SMP -n $my_dry_run -d $my_dir -m $my_mh_local -s $my_sp_local --sm $my_sm --debug_out $my_debug_out -F $my_fix -S $my_scratch $my_test_arg"
+  my_arg="-j $my_job -p $my_psf -e $my_ID -N $my_N_SMP -n $my_dry_run -d $my_dir --debug_out $my_debug_out -S $my_scratch $my_test_arg"
 
   if [ "$my_dry_run" == "0" ]; then
     my_session=`curl -E $SSL "$SESSION?$RESOURCES" -d "image=$IMAGE:$version" -d "name=${my_name}" -d "cmd=$cmd_remote" --data-urlencode "args=${my_arg[@]}"`

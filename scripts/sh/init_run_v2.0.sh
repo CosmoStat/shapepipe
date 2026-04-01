@@ -89,11 +89,17 @@ else
 fi
 
 # --- Tile number list ---
-# Convert CFIS.NNN.MMM.r.fits  ->  NNN.MMM
-echo "Creating tile_numbers.txt..."
-sed 's/CFIS\.\([0-9]*\.[0-9]*\)\..*/\1/' "$tiles_src" > tile_numbers.txt
+echo "Creating tile_numbers.txt symlink..."
+if [ -L tile_numbers.txt ]; then
+    echo "  tile_numbers.txt symlink already exists, skipping"
+elif [ -f tile_numbers.txt ]; then
+    echo "  WARNING: tile_numbers.txt exists as a regular file, not creating symlink"
+else
+    ln -s "$tiles_src" tile_numbers.txt
+    echo "  Created symlink: tile_numbers.txt -> $tiles_src"
+fi
 n_tiles=$(wc -l < tile_numbers.txt)
-echo "  $n_tiles tile IDs written to tile_numbers.txt"
+echo "  $n_tiles tiles"
 
 echo ""
 echo "Done. Directory structure:"
@@ -104,4 +110,4 @@ echo "  ├── output/"
 echo "  ├── logs/"
 echo "  ├── cfis_mod/"
 echo "  ├── cfis  ->  $config_dir"
-echo "  └── tile_numbers.txt  ($n_tiles tiles)"
+echo "  └── tile_numbers.txt  ->  $tiles_src  ($n_tiles tiles)"

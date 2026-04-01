@@ -18,7 +18,6 @@ psf='mccd'
 retrieve='vos'
 star_cat_for_mask='onthefly'
 exclusive=''
-results='cosmostat/kilbinger/results_v2'
 n_smp=-1
 nsh_jobs=8
 debug_out=-1
@@ -53,8 +52,6 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    \tWith (SM=1; default) or without (SM=0) spread model input\n
    -e, --exclusive ID\n
    \texclusive input filer number string ID (default: None)\n
-   -o, --output_dir\n
-   \toutput (upload) directory on vos:cfis, default='$results'\n
    -n, --n_smp N_SMP\n
    \tnumber of jobs (SMP mode only), default from original config files\n
    --nsh_jobs NJOB\n
@@ -107,10 +104,6 @@ while [ $# -gt 0 ]; do
       exclusive="$2"
       shift
       ;;
-     -o|--output_dir)
-      results="$2"
-      shift
-      ;;
     -n|--n_smp)
       n_smp="$2"
       shift
@@ -148,12 +141,6 @@ if [ "$debug_out" != "-1" ]; then
   echo "${pat}Starting $(basename "$0")" >> $debug_out
 fi
 
-CONDA_PREFIX=/arc/home/kilbinger/.conda/envs/shapepipe
-PATH=$PATH:$CONDA_PREFIX/bin
-
-# For tar archives. TODO: Should be unique to each job
-export ID="test"
-
 ## Paths
 
 ## Path variables used in shapepipe config files
@@ -170,18 +157,11 @@ export SP_CONFIG_MOD=$SP_RUN/cfis_mod
 # Output
 OUTPUT=$SP_RUN/output
 
-# For tar archives
-output_rel=`realpath --relative-to=. $OUTPUT`
-
 # Stop on error, default=1
 STOP=1
 
 # Verbose mode (1: verbose, 0: quiet)
 VERBOSE=1
-
-# VCP options
-export CERTFILE=$HOME/.ssl/cadcproxy.pem
-export VCP="vcp --certfile=$CERTFILE"
 
 
 ## Functions
@@ -249,7 +229,7 @@ function command () {
    fi
 }
 
-# Run shapepipe command. If error occurs, upload sp log files before stopping script.
+# Run shapepipe command.
 function command_sp() {
    local cmd=$1
    local str=$2
@@ -274,37 +254,6 @@ function command_cfg_shapepipe() {
     #local cmd="/arc/home/kilbinger/.conda/envs/shapepipe/bin/shapepipe_run -c $config_upd $exclusive_flag"
     local cmd="shapepipe_run -c $config_upd $exclusive_flag"
     command_sp "$cmd" "$str"
-}
-
-# Tar and upload files to vos
-function upload() {
-   base=$1
-   shift
-   ID=$1
-   shift
-   verbose=$1
-   shift
-   upl=("$@")
-
-   echo "Counting upload files"
-   n_upl=(`ls -l ${upl[@]} | wc`)
-   if [ $n_upl == 0 ]; then
-      if [ $STOP == 1 ]; then
-         echo "Exiting script, no file found for '$base' tar ball"
-         exit 3
-      fi
-   fi
-   tar czf ${base}_${ID}.tgz ${upl[@]}
-   command "$VCP ${base}_${ID}.tgz vos:cfis/$results" "Upload tar ball"
-}
-
-# Upload log files
-function upload_logs() {
-   id=$1
-   verbose=$2
-
-   upl="$output_rel/*/*/logs $output_rel/*/logs"
-   upload "logs" "$id" "$verbose" "${upl[@]}"
 }
 
 function set_config_n_smp() {
@@ -351,23 +300,17 @@ mkdir -p $SP_CONFIG_MOD
 
 
 ### Retrieve config files
-if [[ $config_dir == *"vos:"* ]]; then
-  command_sp "$VCP $config_dir ." "Retrieve shapepipe config files"
-else
-  if [[ ! -L cfis ]]; then
-    command_sp "ln -s $config_dir cfis" "Retrieve shapepipe config files"
-  fi
-fi
+command_sp "ln -sf $config_dir cfis" "Retrieve shapepipe config files"
 
 
-## Retrieve config files and images (online if retrieve=vos)
+## Retrieve tile images (online if retrieve=vos)
 ## Retrieve and save star catalogues for masking (if star_cat_for_mask=save)
 (( do_job = $job & 1 ))
 if [[ $do_job != 0 ]]; then
 
   ### Retrieve files
   command_cfg_shapepipe \
-    "config_GitFeGie_$retrieve.ini" \
+    "config_Git_$retrieve.ini" \
      "Retrieve images" \
      -1 \
      $exclusive
@@ -396,6 +339,11 @@ if [[ $do_job != 0 ]]; then
   ### Uncompress tile weights
   command_cfg_shapepipe "config_tile_Uz.ini" "Run shapepipe (uncompress tile weights)" $n_smp $exclusive
 
+fi
+
+
+(( do_job = $job & 2048 ))
+if [[ $do_job != 0 ]]; then
   ### Split images into single-HDU files, merge headers for WCS info
   command_cfg_shapepipe \
     "config_exp_SpMh.ini" \
