@@ -1,3 +1,162 @@
+# Running `ShapePipe` processing and post-processing pipelines on CANFAR
+
+Documentation to create ShapePipe output products for catalogues v1.x.
+
+## Initial Setup
+
+### CANFAR Login
+
+Login to the canfar system with
+
+```bash
+canfar auth login
+```
+
+This can be done from at notebook or terminal within the canfar science portal,
+or any remote terminal that has the canfar library installed.
+
+Check authentication status with
+
+```bash
+canfar auth list
+```
+
+If not on "default", run
+
+```bash
+canfar auth switch default
+```
+
+### Set variables (optional)
+
+Set the current patch in the shell as
+
+```bash
+patch=P[1-9]
+```
+
+For convenience, the current PSF model can be set as environment variable, e.g.:
+
+```bash
+psf="psfex"
+```
+
+Allowed are `psfex` and `mccd`.
+
+Setting the terminal title to display the patch can be useful for long jobs, to keep track of which terminal
+runs which patch:
+
+```bash
+echo -ne "\033]0;$patch\007"
+```
+
+### Prepare run directory
+
+First, go to the dedicated directory with
+
+```bash
+cd /path/to/version/$patch
+```
+
+Next, set links to the tile number list and configuration directory:
+
+```bash
+ln -s ~/shapepipe/auxdir/CFIS/tiles_202106/tiles_$patch.txt tile_numbers.txt
+ln -s ~/shapepipe/example/cfis
+```
+
+Create output and debug log directories
+
+```bash
+mkdir -p output
+mkdir -p debug
+```
+
+Finally, create and link to central image storage directories for tiles and exposures:
+
+```bash
+mkdir -p ~/cosmostat/v2/data_tiles/$patch
+ln -s ~/cosmostat/v2/data_tiles/$patch data_tiles
+mkdir -p ~/cosmostat/v2/data_exp/$patch
+ln -s ~/cosmostat/v2/data_tiles/$patch data_exp
+```
+
+## `ShapePipe` processing
+
+Now, everything should be ready to start running `ShapePipe` for the weak lensing processing. The following
+details all necessary steps.
+
+### Get Images
+
+We first download images, and in a second run create symbolic links with the proper pipeine naming scheme.
+
+#### Download and move tiles
+
+When running the main `ShapePipe` script `shapepipe_run`, the following env variable needs to point
+to the current working directory
+
+```bash
+export SP_RUN=`pwd`
+```
+
+Now we run the first module (`get_images_runner`) to download the tile images together with the weight files.
+This run can get interrupted by VOSpace I/O or connection errors. In that case, 
+we move new files to the image storage directory, remove the previous (now void of images) run directory,
+and update the run log file. We also check the number of previous and new tiles.
+
+```bash
+shapepipe_run -c cfis/config_Git_vos.ini
+ls -l data_tiles/ | wc
+mv -i output/run_sp_Git_*/get_images_runner/output/CFIS.???.???.*fits* data_tiles
+ls -l data_tiles/ | wc
+rm -rf output/run_sp_Git_*
+update_runs_log_file.py
+```
+
+Repeat the above block as needed.
+
+### Find Exposures
+
+With all tile images (= stacks) downloaded, we can inquire their headers to identify the exposures that were used
+to create the stacks. This call to the pipeline also creates the symbolic links to the downloaded tile images.
+
+```bash
+shapepipe_run -c cfis/config_GitFe_symlink.ini
+```
+
+(One could also run `Fe` alone.)
+
+### Download and Move Exposures
+
+The last module create exposure lists on output. These are now used to download all exposures. As for the tile downloads,
+we have to account for VOSpace errors.
+
+```bash
+shapepipe_run -c cfis/config_Gie_vos.ini
+mv -i output/run_sp_Gie_*/get_images_runner/output/*.fits*fz data_exp
+rm -rf output/run_sp_Gie_*
+update_runs_log_file.py
+```
+
+Repeat the above by hand, or peform it in an automatic loop:
+
+export SP_RUN=`pwd`
+shapepipe_run -c ~/shapepipe/example/cfis/config_Ms_psfex_conv.ini
+
+
+# Extra stuff
+
+## Delete jobs
+SSL=~/.ssl/cadcproxy.pem
+SESSION=https://ws-uv.canfar.net/skaha/v0/session
+for ID in `cat session_IDs.txt`; do echo $ID; curl -X DELETE -E $SSL $SESSION/$ID; done
+
+## Run in terminal in parallel (-e needs to be last arg)
+cat all.txt | xargs -P 16 -n 1  init_run_exclusive_canfar.sh -j 64 -p psfex -n -e
+
+## Get missing jobs that are not currently running
+stats_jobs_canfar.sh
+grep -F -v -f jobs_running.txt summary/missing_job_128_ngmix_runner_3.txt > all3.txt
 patch="P7"
 psf="psfex"
 
@@ -157,3 +316,4 @@ cat all.txt | xargs -P 16 -n 1  init_run_exclusive_canfar.sh -j 64 -p psfex -n -
 ## Get missing jobs that are not currently running
 stats_jobs_canfar.sh
 grep -F -v -f jobs_running.txt summary/missing_job_128_ngmix_runner_3.txt > all3.txt
+
