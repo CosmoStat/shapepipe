@@ -187,7 +187,7 @@ def save_sm_data(
 
         sm = np.copy(sexcat_sm_file.get_data()["SPREAD_MODEL"])
         sm_err = np.copy(sexcat_sm_file.get_data()["SPREADERR_MODEL"])
-                         
+
         sexcat_sm_file.close()
 
     else:
@@ -341,14 +341,19 @@ class SaveCatalogue:
         ngmix_cat_file.open()
 
         ngmix_n_epoch = ngmix_cat_file.get_data()["n_epoch_model"]
-        if len(ngmix_n_epoch) / self._cat_size_target < 0.9:
-            ngmix_cat_file.close()
+        # Low number of ngmix objects could be due to
+        # (1) shape measurement failures (e.g. missing PSF): ok, continue
+        # (2) previous processing errors, e.g. premature run of
+        # merge_sep_cats_runner: raise error
+        if len(ngmix_n_epoch) / self._cat_size_target < 0.1:
             err_msg = (
-                f"Merged shape catalogue {ngmix_cat_path} has very different size"       
-                + f" ({len(ngmix_n_epoch)}) than target size"           
-                + f" {self._cat_size_target})"                             
+                f"Merged shape catalogue {ngmix_cat_path} has very different"
+                + f" size ({len(ngmix_n_epoch)}) compared to target size"
+                + f" {self._cat_size_target})"
             )
-            return err_msg
+            self._w_log.info(err_msg)
+            #ngmix_cat_file.close()
+            #return err_msg
 
         ngmix_mom_fail = ngmix_cat_file.get_data()["moments_fail"]
 

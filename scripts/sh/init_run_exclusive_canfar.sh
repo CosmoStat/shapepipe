@@ -17,18 +17,18 @@ sm=1
 
 # mh_local is 0 (1) if merge_header_runner is run on all exposures,
 # which is standard so far (run on exposures of given tile only; new)
-mh_local=0
+mh_local=1
 
 # sp_local is 0 (1) is split_headers_runner and mask_runner is run
 # on all exposures (locally). Not 100% automatic yet. 
-sp_local=0
+sp_local=1
 VERBOSE=1
 
 pat="-- "
 
 
 ## Help string
-usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
+usage="Usage: $(basename "$0") -j JOB -e ID [OPTIONS]
 \n\nOptions:\n
    -h\tthis message\n
    -j, --job JOB\tRUnning JOB, bit-coded\n
@@ -39,7 +39,7 @@ usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
    -m, --mh_local MH\n
    \tmerge header file local (MH=1) or global (MH=0); default is $mh_local\n
    -s, --sp_local SP\n
-   \tsplit local run local (SP=1) or global (SP=r0wwdefault is $sp_local\n
+   \tsplit local run local (SP=1) or global (SP=0); default is $sp_local\n
    --sm SM\n
    \tWith (SM=1; default) or without (SM=0) spread model input\n
    -N, --N_SMP N_SMOp\n
@@ -49,13 +49,13 @@ usage="Usage: $(basename "$0") -j JOB -e ID -k KIND [OPTIONS]
    -S, --scratch\n
     \tprocessing scratch directory, default is None ($scratch)\n
    -F, --fix FIX\n
-    \tfix missing data (re-download tile, unzip) for FIX=1; default is $FIX\n
+    \tfix missing data (re-download tile, unzip) for FIX=1; default is $fix\n
    -n, --dry_run LEVEL\n
     \tdry run (LEVEL=1), no actual processing; default is $dry_run\n
    --debug_out PATH\n
    \tdebug output file PATH, default not used\n
    --test\n
-   \ttest mode, no processind\n
+   \ttest mode, no processing\n
 "
 
 ## Help if no arguments                                                         
@@ -148,6 +148,7 @@ function message() {
 # Init message
 message "test=$test_only" $debug_out -1
 if [ "$test_only" == "1" ]; then
+  echo "MKDEBUG test"
   msg="init_run_exclusive.py script test mode, exiting."
   ex=0
 else
@@ -189,10 +190,10 @@ fi
 
 source $HOME/shapepipe/scripts/sh/functions.sh
 
-msg="Starting $(basename "$0")"
+msg="Starting $(basename "$0") `date` ID=$ID"
 message "$msg" $debug_out -1
-message "`date`" $debug_out -1
-message "ID=$ID" $debug_out -1
+#message "`date`" $debug_out -1
+#message "ID=$ID" $debug_out -1
 
 # Set kind
 kind=$(get_kind_from_job $job)
@@ -353,11 +354,7 @@ fi
 
 (( do_job = $job & 2 ))
 if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
-#if [ ! -e "run_exp_Sp_shdu" ] && [ "$sp_local" == "1" ]; then
-  # run local Sp if not done already; works only with mh_local=1; this step needs to be done
-  # before following mh_local=1 steps 
   message "run local sp" $debug_out -1
-  #command "rm -rf run_sp_GitFeGie*/get_images_runner_run_2" $dry_run
   command "rm -rf run_sp_Gie*" $dry_run
   command "rm -rf run_sp_exp_Sp*" $dry_run
 
@@ -404,16 +401,18 @@ if [ $do_job != 0 ] && [ "$sp_local" == "1" ]; then
   cd output
 
   if [ "$job" == "2" ]; then
-    exit 0
+    msg="Finishing $(basename "$0") after job=2 `date` ID=$ID"
+    message "$msg" $debug_out 0
   fi
 
 fi
 
 if [ "$kind" == "tile" ] && [ "$sp_local" == "1" ]; then
+  echo "New (for P9): skipping link_to_exp_for_tile.py" 
   cd ../../..
-  command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs -s $sp_local" $dry_run
+  #command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs -s $sp_local" $dry_run
   cd tile_runs/$ID
-  command "combine_runs.bash -p psfex -c shdu" $dry_run
+  #command "combine_runs.bash -p psfex -c shdu" $dry_run
   cd output
 fi
 
@@ -486,18 +485,6 @@ fi
 (( do_job = $job & 64 ))
 if [[ $do_job != 0 ]]; then
   if [ "$kind" == "tile" ]; then
-    cd ../../..
-    command "link_to_exp_for_tile.py -t $ID -i tile_runs -I exp_runs -s $sp_local" $dry_run
-    cd ${kind}_runs/$ID/output
-
-    # Remove duplicate job-16 runs (tile detection)
-    # New (P8) commented
-    #n_16=`ls -rt1d run_sp_tile_Sx_* | wc -l`
-    #if [ "$n_16" != "1" ]; then
-      #n_remove="$(($n_16-1))"
-      #echo "removing $n_remove duplicate old job-16 runs"
-      #command "rm -rf `ls -rt1d run_sp_tile_Sx_* | head -$n_remove`" $dry_run
-    #fi
 
     # Remove previous runs of this job
     rm -rf run_sp_tile_PsViSmVi*
@@ -512,6 +499,16 @@ if [[ $do_job != 0 ]]; then
     cat_ngmix="run_sp_tile_ngmix_Ng1u/ngmix_runner/output/ngmix-*.fits"
     dir_ngmix_prev="run_sp_tile_ngmix_Ng1u_prev/ngmix_runner/output"
     cat_ngmix_prev="$dir_ngmix_prev/ngmix-*.fits"
+
+    # Remove if empty
+    if [ ! -s $cat_ngmix ]; then
+      echo "Removing empty file $cat_ngmix"
+      rm $cat_ngmix
+    fi
+    if [ ! -s $cat_ngmix_prev ]; then
+      echo "Removing empty file $cat_ngmix_prev"
+      rm $cat_ngmix_prev
+    fi
 
     # Check whether ngmix output exists
     if [ -e $cat_ngmix ]; then
@@ -552,7 +549,7 @@ fi
 if [[ $do_job != 0 ]]; then
 
   # Remove previous runs of this job
-  rm -rf run_sp_Ms_20??_*
+  rm -rf run_sp_Ms_20??-*
 
 fi
 
@@ -560,7 +557,7 @@ fi
 if [[ $do_job != 0 ]]; then
 
   # Remove previous runs of this job
-  rm -rf run_sp_Mc_20??_*
+  rm -rf run_sp_Mc_20??-*
 
 fi
 
@@ -614,8 +611,7 @@ fi
 
 cd $dir
 
-msg="End $(basename "$0")"
-echo $msg
-if [ "$debug_out" != "-1" ]; then
-  echo $pat$msg >> $debug_out-
-fi
+#msg="End $(basename "$0")"
+
+msg="Finished $(basename "$0") `date` ID=$ID"
+message "$msg" $debug_out -1

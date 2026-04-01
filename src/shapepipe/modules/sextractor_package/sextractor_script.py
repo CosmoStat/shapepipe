@@ -114,7 +114,9 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
                 )
             w = f_wcs[exp][idx_j]["WCS"]
             pix_tmp = w.all_world2pix(
-                cat.get_data()[pos_params[0]], cat.get_data()[pos_params[1]], 0
+                cat.get_data()[pos_params[0]], cat.get_data()[pos_params[1]],
+                0,
+                quiet=True,
             )
             ind = (
                 (pix_tmp[0] > int(ccd_size[0]))
