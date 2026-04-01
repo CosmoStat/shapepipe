@@ -15,7 +15,8 @@ N_SMP=1
 dry_run=0
 dir=`pwd`
 debug_out=-1
-scratch="/scratch/$USER/shapepipe/v${version}"
+#scratch="/scratch/$USER/shapepipe/v${version}"
+scratch="-1"
 test_only=0
 VERBOSE=1
 
@@ -32,7 +33,7 @@ usage="Usage: $(basename "$0") -j JOB -e ID [OPTIONS]
    \t\t\tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    -N, --N_SMP N_SMP\tnumber of SMP jobs, default from original config files\n
    -d, --directory DIR\trun directory, default is pwd ($dir)\n
-   -S, --scratch DIR\tprocessing scratch directory, default='$scratch'\n
+   -S, --scratch DIR\tprocessing scratch directory, default='$scratch'; use -1 to disable\n
    -n, --dry_run\t\tdry run, no actual processing; default is $dry_run\n
    --debug_out PATH\tdebug output file PATH, default not used\n
    --test\t\ttest mode, no processing\n
@@ -190,7 +191,7 @@ export DISPLAY=:1.0
 # Run job — on scratch if available, otherwise in-place
 # Job 1: download tile images (config_Git_vos.ini)
 
-if [ "$scratch" != "" ]; then
+if [ "$scratch" != "-1" ]; then
   scratch_work="$scratch/tiles/$IDra/$ID"
   message "Copying work dir to scratch: $scratch_work" $debug_out -1
   command "mkdir -p $scratch/tiles/$IDra" $dry_run
@@ -201,7 +202,7 @@ fi
 echo "$(basename "$0") $@" > "$log_file"
 command "job_sp_canfar_v2.0.bash -p $psf -j $job --n_smp $N_SMP --nsh_jobs $N_SMP --debug_out $debug_out" $dry_run 2>&1 | tee -a "$log_file"
 
-if [ "$scratch" != "" ]; then
+if [ "$scratch" != "-1" ]; then
   message "Syncing output from scratch back to permanent dir" $debug_out -1
   command "rsync -a output/ $work_dir/output/" $dry_run
   command "cd $work_dir" $dry_run

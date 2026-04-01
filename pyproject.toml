@@ -10,6 +10,7 @@ authors = [
 ]
 license = { "file" = "LICENSE" }
 requires-python = ">=3.12"
+#"shear_psf_leakage",
 dependencies = [
     "joblib>=0.13",
     "modopt>=1.2",
@@ -18,6 +19,25 @@ dependencies = [
     "canfar",
     "sf_tools",
     "h5py",
+    "cs_util>=0.1",
+    "mccd>=1.2.4",
+    "PyQt5",
+    "pyqtgraph",
+    "python-pysap>=0.2.1",
+    "astropy>=5.2",
+    "astroquery",
+    "matplotlib>=3.8.4",
+    "numba>=0.58.1",
+    "reproject",
+    "skaha",
+    "sip_tpv",
+    "sqlitedict",
+    "termcolor",
+    "tqdm",
+    "treecorr",
+    "vos",
+    "ngmix @ git+https://github.com/aguinot/ngmix@stable_version",
+    "Stile @ git+https://github.com/tobias-liaudat/Stile@v0.1",
 ]
 
 

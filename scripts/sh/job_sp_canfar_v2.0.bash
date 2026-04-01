@@ -30,9 +30,9 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
 \n\nOptions:\n
    -h\tthis message\n
    -j, --job JOB\tRunning JOB, bit-coded\n
-   \t   1: retrieve images (online if method=vos)\n
-   \t   2: prepare images (offline)\n
-   \t   4: mask tiles (online if star_cat_for_mask=onthefly)\n
+   \t   1: retrieve tile images and weights (online if method=vos)\n
+   \t   2: uncompress weights (offline)\n
+   \t   4: find exposures tiles (offline)\n
    \t   8: mask exposures (online if star_cat_for_mask=onthefly)\n
    \t  16: detection of galaxies on tiles (offline)\n
    \t  32: processing of stars on exposures (offline)\n
@@ -341,6 +341,16 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
+## Find exposures
+(( do_job = $job & 4 ))
+if [[ $do_job != 0 ]]; then
+
+  ### Uncompress tile weights
+  command_cfg_shapepipe "config_Fe.ini" "Run shapepipe (find exposures)" $n_smp $exclusive
+
+fi
+
+
 
 (( do_job = $job & 2048 ))
 if [[ $do_job != 0 ]]; then
@@ -354,7 +364,7 @@ if [[ $do_job != 0 ]]; then
 fi
 
 ## Mask tiles: add star, halo, and Messier object masks (online if "star_cat_for_mask" is "onthefly")
-(( do_job = $job & 4 ))
+(( do_job = $job & 4049 ))
 if [[ $do_job != 0 ]]; then
 
   ### Mask tiles
