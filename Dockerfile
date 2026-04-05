@@ -50,14 +50,6 @@ RUN apt-get update -y --quiet --fix-missing && \
     apt-get autoremove --purge --quiet -y && \
     rm -rf /var/lib/apt/lists/* /var/tmp/*
 
-# Install CDS client by hand
-RUN cd /tmp && \
-    curl -O http://cdsarc.u-strasbg.fr/ftp/pub/sw/cdsclient.tar.gz && \
-    tar xvfz cdsclient.tar.gz \ 
-    && cd cdsclient-* \
-    && ./configure && make && make install \
-    && rm -rf /tmp/*
-
 # Install python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir \

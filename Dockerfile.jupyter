@@ -1,0 +1,68 @@
+# Dockerfile for CANFAR Jupyter notebook deployment of ShapePipe
+# Uses the official CANFAR SKA‑HA notebook base image and adds ShapePipe code & deps.
+
+FROM images.canfar.net/skaha/astroml:latest
+
+# Metadata required by CANFAR registry
+LABEL maintainer="you@org.edu"
+LABEL description="ShapePipe Jupyter notebook image for CANFAR"
+LABEL version="1.0.0"
+
+# Install additional system packages needed by ShapePipe (same as original Dockerfile)
+RUN echo "nameserver 1.1.1.1" > /etc/resolv.conf && \
+    apt-get update -y --quiet && \
+    apt-get install -y --quiet git-lfs && \
+    apt-get clean -y && \
+    rm -rf /var/lib/apt/lists/* /var/tmp/*
+
+# Install Python dependencies (including Jupyter Lab)
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \
+        astropy==6.1.0 \
+        cs_util==0.1.9 \
+        galsim==2.5.3 \
+        ipython==8.18.1 \
+        joblib==1.4.2 \
+        jupyterlab==4.3.1 \
+        matplotlib==3.8.4 \
+        mccd==1.2.4 \
+        modopt==1.6.1 \
+        mpi4py==4.0.3 \
+        numpy==1.26.4 \
+        numpydoc==1.2 \
+        pandas==2.2 \
+        pytest==8.3.3 \
+        pytest-cov==5.0.0 \
+        pytest-pycodestyle==2.4.1 \
+        pytest-pydocstyle==2.4.0 \
+        reproject==0.14.1 \
+        sf_tools==2.0.4 \
+        sip_tpv==1.1 \
+        skaha==1.7.0 \
+        sqlitedict==2.0.0 \
+        termcolor==1.1.0 \
+        tqdm==4.63.0 \
+        treecorr==5.1.1 \
+        vos==3.6.1.1 \
+        git+https://github.com/aguinot/ngmix@stable_version \
+        git+https://github.com/tobias-liaudat/Stile@v0.1
+
+# Set working directory, copy the ShapePipe source
+WORKDIR /app
+COPY . /app/.
+
+# Install ShapePipe in editable mode and expose scripts
+RUN pip install --no-cache-dir -e . && \
+    for ext in .py .sh .bash; do \
+        for script in /app/scripts/*/*$ext; do \
+            link_name=$(basename $script $ext); \
+            ln -s $script /usr/local/bin/$link_name; \
+        done; \
+    done
+
+# Environment variables that CANFAR may expect (adjust as needed)
+ENV XRAY_TOOLS_PATH=/opt/custom-tools
+ENV PYTHONPATH=${PYTHONPATH}:/opt/custom-tools
+
+# Default command starts Jupyter Lab – can be overridden at runtime if needed
+ENTRYPOINT ["jupyter","lab","--ip=0.0.0.0","--port=8888","--no-browser","--allow-root"]
