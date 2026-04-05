@@ -33,8 +33,9 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    \t   1: retrieve tile images and weights (online if method=vos)\n
    \t   2: uncompress weights (offline)\n
    \t   4: find exposures tiles (offline)\n
-   \t   8: mask exposures (online if star_cat_for_mask=onthefly)\n
-   \t  16: detection of galaxies on tiles (offline)\n
+   \t   8: retrieve exposures tiles (online if method=vos)\n
+   \t  16: split exposures, get WCS header (offline)\n
+   \t  16: mask exposures (online if star_cat_for_mask=onthefly)\n
    \t  32: processing of stars on exposures (offline)\n
    \t  64: galaxy selection on tiles (offline)\n
    \t 128: shapes and morphology (offline)\n
@@ -320,14 +321,11 @@ if [[ $do_job != 0 ]]; then
     #### For tiles
     mkdir $SP_RUN/star_cat_tiles
     command_sp \
-      "create_star_cat $SP_RUN/output/run_sp_GitFeGie_*/get_images_runner_run_1/output $SP_RUN/star_cat_tiles" \
+      "create_star_cat $SP_RUN/output/run_sp_Git_*/get_images_runner_run/output $SP_RUN/star_cat_tiles" \
       "Save star cats for masking (tile)"
 
     #### For single-exposures
-    mkdir $SP_RUN/star_cat_exp
-    command_sp \
-      "create_star_cat $SP_RUN/output/run_sp_GitFeGie_*/get_images_runner_run_2/output $SP_RUN/star_cat_exp exp" \
-      "Save star cats for masking (exp)"
+    # TODO
   fi
 
 fi
@@ -350,10 +348,22 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
-
-
-(( do_job = $job & 2048 ))
+## Retrieve exposure images (online, vos)
+(( do_job = $job & 8 ))
 if [[ $do_job != 0 ]]; then
+
+  ### Retrieve exposure images
+  command_cfg_shapepipe \
+    "config_Gie_vos.ini" \
+    "Run shapepipe (get exposure images)" \
+    $n_smp \
+    $exclusive
+
+fi
+
+(( do_job = $job & 16 ))
+if [[ $do_job != 0 ]]; then
+
   ### Split images into single-HDU files, merge headers for WCS info
   command_cfg_shapepipe \
     "config_exp_SpMh.ini" \
@@ -363,41 +373,13 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
-## Mask tiles: add star, halo, and Messier object masks (online if "star_cat_for_mask" is "onthefly")
-(( do_job = $job & 4049 ))
-if [[ $do_job != 0 ]]; then
-
-  ### Mask tiles
-  command_cfg_shapepipe \
-    "config_tile_Ma_$star_cat_for_mask.ini" \
-    "Run shapepipe (mask tiles)" \
-    $n_smp \
-    $exclusive
-
-fi
-
-## Mask exposures: add star, halo, and Messier object masks (online if "star_cat_for_mask" is "onthefly")
-(( do_job = $job & 8 ))
+(( do_job = $job & 32 ))
 if [[ $do_job != 0 ]]; then
 
   ### Mask exposures
   command_cfg_shapepipe \
-    "config_exp_Ma_$star_cat_for_mask.ini" \
+    "config_exp_Ma_${star_cat_for_mask}.ini" \
     "Run shapepipe (mask exposures)" \
-    $n_smp \
-    $exclusive
-
-fi
-
-
-## Remaining exposure processing (offline)
-(( do_job = $job & 16 ))
-if [[ $do_job != 0 ]]; then
-
-  ### Object detection on tiles
-  command_cfg_shapepipe \
-    "config_tile_Sx.ini" \
-    "Run shapepipe (tile detection)" \
     $n_smp \
     $exclusive
 
