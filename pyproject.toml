@@ -30,6 +30,7 @@ dependencies = [
     "numba>=0.58.1",
     "reproject",
     "skaha",
+    "setuptools<81",
     "sip_tpv",
     "sqlitedict",
     "termcolor",
