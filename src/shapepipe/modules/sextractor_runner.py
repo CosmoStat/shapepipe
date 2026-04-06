@@ -18,7 +18,7 @@ from shapepipe.pipeline.execute import execute
     input_module="mask_runner",
     file_pattern=["image", "weight", "flag"],
     file_ext=[".fits", ".fits", ".fits"],
-    executes=["sex"],
+    executes=["source-extractor"],
     depends=["numpy"],
 )
 def sextractor_runner(
