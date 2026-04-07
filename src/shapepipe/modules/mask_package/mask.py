@@ -7,12 +7,15 @@ This module contains a class to create star mask for an image.
 """
 
 import os
+import random
 import re
+import time
 
 import numpy as np
 from astropy import units, wcs
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
+from astropy.table import Table
 
 from astroquery.vizier import Vizier
 
@@ -481,18 +484,36 @@ class Mask(object):
 
         """
         if "star_cat" in self._config["PATH"]:
-            f = open(self._config["PATH"]["star_cat"], "r")
-            self._CDS_stdout = f.read()
-            f.close()
+            self._CDS_stdout = Table.read(self._config["PATH"]["star_cat"])
         else:
             # For some exposures, Vizier returned empty star list if input position
-            # is not single precision 
-            p = np.array(position, dtype='single')
+            # is not single (? or double) precision 
+            p = np.array(position, dtype='double')
 
             coord = SkyCoord(ra=p[0] * units.deg, dec=p[1] * units.deg, frame="icrs")
 
-            Vizier.ROW_LIMIT = -1  # no row limit
-            result = Vizier.query_region(coord, radius=radius*units.arcmin, catalog=self._CDS_cat_ID)
+            time.sleep(random.uniform(0, 5))
+            servers = [
+                "vizier.cds.unistra.fr",
+                "vizier.cfa.harvard.edu",
+                "vizier.iucaa.in",
+            ]
+            timeouts = [10, 20, 40]
+            result = []
+            for attempt, timeout in enumerate(timeouts):
+                for server in servers:
+                    v = Vizier(row_limit=-1, timeout=timeout)
+                    v.SERVER = server
+                    result = v.query_region(coord, radius=radius*units.arcmin, catalog=self._CDS_cat_ID)
+                    if len(result) > 0:
+                        break
+                    print(f"Vizier returned empty list at {coord}, {radius}, server={server}, timeout={timeout}s")
+                if len(result) > 0:
+                    break
+                if attempt < len(timeouts) - 1:
+                    wait = 10 * 2**attempt
+                    print(f"All servers failed, retrying in {wait}s (attempt {attempt+1}/{len(timeouts)}, next timeout={timeouts[attempt+1]}s)")
+                    time.sleep(wait)
             if len(result) == 0:
                 raise IndexError(
                     f"Vizier astroquery returned empty list at {coord}, {radius}"

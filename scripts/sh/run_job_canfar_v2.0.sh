@@ -275,6 +275,10 @@ if [ "$dry_run" == "1" ]; then
   message "running in dry run mode" $debug_out -1
 fi
 
+### PSF model letter: 'P' (psfex) or 'M' (mccd)
+letter=${psf:0:1}
+Letter=${letter^}
+
 CONDA_PREFIX=$HOME/.conda/envs/shapepipe
 PATH=$PATH:$CONDA_PREFIX/bin
 
@@ -334,7 +338,12 @@ elif [ "$job" == "16" ]; then
 elif [ "$job" == "32" ]; then
 
   # Job 32: mask exposures (config_exp_Ma_onthefly.ini)
-  run_job_exp $job "exp_Ma" "mask_runner:4"
+  run_job_exp $job "exp_Ma" "mask_runner:40"
+
+elif [ "$job" == "64" ]; then
+
+  # Job 32: process  exposures (config_exp_<psf}.ini)
+  run_job_exp $job "exp_SxSePsf{Letter}i" "sextractor_runner:4"
 
 else
 

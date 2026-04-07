@@ -35,8 +35,8 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    \t   4: find exposures tiles (offline)\n
    \t   8: retrieve exposures tiles (online if method=vos)\n
    \t  16: split exposures, get WCS header (offline)\n
-   \t  16: mask exposures (online if star_cat_for_mask=onthefly)\n
-   \t  32: processing of stars on exposures (offline)\n
+   \t  32: mask exposures (online if star_cat_for_mask=onthefly)\n
+   \t  64: processing of stars on exposures (offline)\n
    \t  64: galaxy selection on tiles (offline)\n
    \t 128: shapes and morphology (offline)\n
    \t 256: paste catalogues (offline)\n
@@ -386,7 +386,7 @@ if [[ $do_job != 0 ]]; then
 fi
 
 ## Exposure processing (offline)
-(( do_job = $job & 32 ))
+(( do_job = $job & 64 ))
 if [[ $do_job != 0 ]]; then
 
   ### Star detection, selection, PSF model. setools can exit with an error for CCD with insufficient stars,
@@ -402,7 +402,7 @@ if [[ $do_job != 0 ]]; then
 fi
 
 ## Process tiles up to shape measurement
-(( do_job = $job & 64 ))
+(( do_job = $job & 1024 ))
 if [[ $do_job != 0 ]]; then
 
   ### PSF model letter: 'P' (psfex) or 'M' (mccd)
