@@ -1,7 +1,9 @@
 # Parameters for summary run
 
+import logging
 import os
-from shapepipe.utilities.summary import *
+
+from shapepipe.utilities import summary
 
 
 def set_jobs_v2_pre_v2(patch, verbose):
@@ -30,7 +32,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
     tile_ID_path = f"{path_main}/tile_numbers.txt"
 
     ## Tile IDs with dots
-    list_tile_IDs_dot = get_IDs_from_file(tile_ID_path)
+    list_tile_IDs_dot = summary.get_IDs_from_file(tile_ID_path)
 
     jobs = {}
 
@@ -42,7 +44,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
     # - Only copy original images, then (re-)set links in SP numbering format
     # - get_images_runner_run_[12] consistent
     # - remove previous output dirs since only last is searched
-    jobs["1"] = job_data(
+    jobs["1"] = summary.job_data(
         1,
         "run_sp_GitFeGie",
         [
@@ -59,7 +61,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
     )
 
     if patch in ("P8", "P9"):
-        jobs["2"] = job_data(
+        jobs["2"] = summary.job_data(
             2,
             ["run_sp_Uz", "run_sp_exp_Sp_shdu"],
             ["uncompress_fits_runner", "split_exp_runner"],
@@ -71,7 +73,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
             path_right=[None, "output"],
             verbose=verbose,
         )
-        jobs["4096"] = job_data(
+        jobs["4096"] = summary.job_data(
             4096,
             ["run_sp_exp_Sp_shdu"],
             ["split_exp_runner"],
@@ -84,7 +86,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
             verbose=verbose,
         )
     else:
-        jobs["2"] = job_data(
+        jobs["2"] = summary.job_data(
             2,
             ["run_sp_Uz", "run_sp_exp_SpMh"],
             ["uncompress_fits_runner",  "split_exp_runner"],
@@ -95,7 +97,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
             verbose=verbose,
         )
 
-    jobs["4"] = job_data(
+    jobs["4"] = summary.job_data(
         4,
         ["run_sp_Ma_tile"],
         ["mask_runner"],
@@ -106,7 +108,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
     )
 
     if patch not in ("P8", "P9"):
-        jobs["8"] = job_data(
+        jobs["8"] = summary.job_data(
             8,
             ["run_sp_Ma_exp"],
             ["mask_runner"],
@@ -116,7 +118,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
             verbose=verbose,
         )
     else:
-        jobs["8"] = job_data(
+        jobs["8"] = summary.job_data(
             8,
             ["run_sp_exp_Ma"],
             ["mask_runner"],
@@ -130,7 +132,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
         )
 
 
-    jobs["16"] = job_data(
+    jobs["16"] = summary.job_data(
         16,
         "run_sp_tile_Sx",
         ["sextractor_runner", "sextractor_runner"],
@@ -144,7 +146,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
         verbose=verbose,
     )
 
-    jobs["32"] = job_data(
+    jobs["32"] = summary.job_data(
         32,
         [
             "run_sp_exp_SxSePsf",
@@ -177,7 +179,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
         verbose=verbose,
     )
 
-    jobs["64"] = job_data(
+    jobs["64"] = summary.job_data(
         "64",
         "run_sp_tile_PsViSmVi",
         [
@@ -210,7 +212,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
         f"{path_main}/summary/missing_job_128_ngmix_runner_{idx+1}.txt"
         for idx in range(n_sh + 1)
     ]
-    jobs["128"] = job_data(
+    jobs["128"] = summary.job_data(
         "128",
         run_dirs,
         ["ngmix_runner"] * (n_sh + 1),
@@ -224,7 +226,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
         verbose=verbose,
     )
 
-    jobs["256"] = job_data(
+    jobs["256"] = summary.job_data(
         "256",
         "run_sp_Ms",
         ["merge_sep_cats_runner"] * 2,
@@ -237,7 +239,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
         verbose=verbose,
     )
 
-    jobs["512"] = job_data(
+    jobs["512"] = summary.job_data(
         "512",
         ["run_sp_Mc"],
         ["make_cat_runner"],
@@ -249,7 +251,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
     )
 
     # Post-processing
-    jobs["1024"] = job_data(
+    jobs["1024"] = summary.job_data(
         "1024",
         ["run_sp_combined_final"],
         ["make_catalog_runner"],
@@ -259,7 +261,7 @@ def set_jobs_v2_pre_v2(patch, verbose):
         verbose=verbose,
     )
 
-    jobs["2048"] = job_data(
+    jobs["2048"] = summary.job_data(
         "2048",
         "run_sp_combined_psf",
         ["psfex_interp_runner"],

@@ -495,9 +495,7 @@ class Mask(object):
             result = Vizier.query_region(coord, radius=radius*units.arcmin, catalog=self._CDS_cat_ID)
             if len(result) == 0:
                 raise IndexError(
-                    "Vizier astroquer returned empty list at ",
-                    coord,
-                    radius
+                    f"Vizier astroquery returned empty list at {coord}, {radius}"
                 )
             self._CDS_stdout = result[0]
         
