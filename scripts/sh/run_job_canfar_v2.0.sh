@@ -110,7 +110,11 @@ function message() {
   fi
 
   if [ "$my_exit" != "-1" ]; then
-    echo "${pat}exiting with code $my_exit" >> $my_debug_out
+    if [ "$my_debug_out" != "-1" ]; then
+      echo "${pat}exiting with code $my_exit" >> $my_debug_out
+    else
+      echo "${pat}exiting with code $my_exit"
+    fi
     exit $my_exit
   fi
 }
@@ -222,9 +226,11 @@ function run_job_exp() {
     command "update_runs_log_file.py" $dry_run
 
     echo "$(basename "$0") -j $exp_job -e $exp_id" > "$exp_log_file"
+    echo "pwd=`pwd`"
     command "job_sp_canfar_v2.0.bash -p $psf -j $exp_job --n_smp $N_SMP --nsh_jobs $N_SMP --debug_out $debug_out" $dry_run 2>&1 | tee -a "$exp_log_file"
+    echo "Done with job_sp_canfar_v2.0.bash"
 
-    cd "$dir"
+    #cd "$dir"
 
   done < "$exp_numbers_file"
 
@@ -294,7 +300,7 @@ log_file="$work_dir/job_sp_canfar_v2.0.log"
 cd $work_dir
 
 # Config symlink
-ln -sf ~/shapepipe/example/cfis
+#ln -sf ~/shapepipe/example/cfis
 
 # Write ID to first input
 if [ ! -e tile_numbers.txt ]; then
@@ -325,6 +331,7 @@ fi
 
 IDdec=${ID##*.}
 
+# Exposure runs: call run_job_exp
 if [ "$job" == "8" ]; then
 
   # Job 8: retrieve exposure images (config_Gie_vos.ini)
@@ -332,8 +339,8 @@ if [ "$job" == "8" ]; then
 
 elif [ "$job" == "16" ]; then
 
-  # Job 16: split images and merge headers (config_exp_SpMh.ini)
-  run_job_exp $job "exp_SpMh" "split_exp_runner:120 merge_headers_runner:1"
+  # Job 16: split images (config_exp_Sp.ini)
+  run_job_exp $job "exp_Sp" "split_exp_runner:121"
 
 elif [ "$job" == "32" ]; then
 
@@ -343,9 +350,15 @@ elif [ "$job" == "32" ]; then
 elif [ "$job" == "64" ]; then
 
   # Job 32: process  exposures (config_exp_<psf}.ini)
-  run_job_exp $job "exp_SxSePsf{Letter}i" "sextractor_runner:4"
+  run_job_exp $job "exp_SxSePsf${Letter}i" "sextractor_runner:80 psfex_runner:80 psfex_interp_runner:40 "
 
 else
+
+  # Tile run:
+  # 1: download
+  # 2: uncompress
+  # 4: find exposures
+  # 128: select objects
 
   echo "$(basename "$0") $@" > "$log_file"
   command "job_sp_canfar_v2.0.bash -p $psf -j $job --n_smp $N_SMP --nsh_jobs $N_SMP --debug_out $debug_out" $dry_run 2>&1 | tee -a "$log_file"

@@ -55,7 +55,7 @@ OUTCAT_TYPE        FITS_LDAC         # NONE, ASCII_HEAD, ASCII, FITS_LDAC
 
 #------------------------------- Check-plots ----------------------------------
 
-CHECKPLOT_DEV       PNG         # NULL, XWIN, TK, PS, PSC, XFIG, PNG,
+CHECKPLOT_DEV       NULL         # NULL, XWIN, TK, PS, PSC, XFIG, PNG,
                                 # JPEG, AQT, PDF or SVG
 CHECKPLOT_RES       0           # Check-plot resolution (0 = default)
 CHECKPLOT_ANTIALIAS Y           # Anti-aliasing using convert (Y/N) ?
@@ -68,7 +68,7 @@ CHECKPLOT_NAME      fwhm, ellipticity, counts, countfrac, chi2, resi
 
 # Note: Check-image types can be set the ShapePipe config file, psfex_runner section
 #######
-#CHECKIMAGE_TYPE     NONE            # CHI,PROTOTYPES,SAMPLES,RESIDUALS,SNAPSHOTS
+CHECKIMAGE_TYPE     NONE            # CHI,PROTOTYPES,SAMPLES,RESIDUALS,SNAPSHOTS
                                 # or MOFFAT,-MOFFAT,-SYMMETRICAL
 #CHECKIMAGE_NAME chi.fits,proto.fits,samp.fits,resi.fits,snap.fits
                                 # Check-image filenames

@@ -37,9 +37,8 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    \t  16: split exposures, get WCS header (offline)\n
    \t  32: mask exposures (online if star_cat_for_mask=onthefly)\n
    \t  64: processing of stars on exposures (offline)\n
-   \t  64: galaxy selection on tiles (offline)\n
-   \t 128: shapes and morphology (offline)\n
-   \t 256: paste catalogues (offline)\n
+   \t 128: object selection on tiles (online if external cat)\n
+   \t 256: tile postage stamp extraction (offline)\n
    -c, --config_dir DIR\n
    \t config file directory, default='$config_dir'\n
    -p, --psf MODEL\n
@@ -401,15 +400,35 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
+(( do_job = $job & 128 ))
+if [[ $do_job != 0 ]]; then
+
+  ### Masking on tiles (TODO: revisit)
+  #command_cfg_shapepipe \
+    #"config_tile_Ma_onthefly.ini" \
+    #"Run shapepipe (tile masking)" \
+    #$n_smp \
+    #$exclusive
+
+
+  ### Object detection on tiles
+  command_cfg_shapepipe \
+    "config_tile_Sx.ini" \
+    "Run shapepipe (tile detection)" \
+    $n_smp \
+    $exclusive
+
+fi
+
 ## Process tiles up to shape measurement
-(( do_job = $job & 1024 ))
+(( do_job = $job & 256 ))
 if [[ $do_job != 0 ]]; then
 
   ### PSF model letter: 'P' (psfex) or 'M' (mccd)
   letter=${psf:0:1}
   Letter=${letter^}
   command_cfg_shapepipe \
-    "config_tile_${Letter}iViSmVi_canfar.ini" \
+    "config_tile_${Letter}iViVi_canfar.ini" \
     "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)" \
     $n_smp \
     $exclusive
@@ -417,7 +436,7 @@ if [[ $do_job != 0 ]]; then
 fi
 
 ## Shape measurement (offline)
-(( do_job = $job & 128 ))
+(( do_job = $job & 1024 ))
 if [[ $do_job != 0 ]]; then
 
   ### Prepare config files
@@ -474,7 +493,7 @@ if [[ $do_job != 0 ]]; then
 fi
 
 ## Create final catalogues (offline)
-(( do_job = $job & 256 ))
+(( do_job = $job & 1024 ))
 if [[ $do_job != 0 ]]; then
 
   cat $SP_CONFIG/config_merge_sep_cats_template.ini | \

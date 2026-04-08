@@ -76,7 +76,7 @@ echo "  exp/ created (subdirs e.g. exp/28/ added at download time)"
 echo "Creating output and working directories..."
 mkdir -p output
 mkdir -p logs
-mkdir -p cfis_mod
+mkdir -p debug
 
 # --- Config symlink ---
 if [ -L cfis ]; then
@@ -104,10 +104,8 @@ echo "  $n_tiles tiles"
 echo ""
 echo "Done. Directory structure:"
 echo "  $base_dir/"
-echo "  ├── tiles/       ($n_tile_dirs prefix subdirs)"
-echo "  ├── exp/         (subdirs added at download time)"
-echo "  ├── output/"
+echo "  ├── tiles/"
+echo "  ├── exp/
 echo "  ├── logs/"
-echo "  ├── cfis_mod/"
 echo "  ├── cfis  ->  $config_dir"
 echo "  └── tile_numbers.txt  ->  $tiles_src  ($n_tiles tiles)"
