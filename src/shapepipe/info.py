@@ -69,11 +69,8 @@ def shapepipe_logo(colour=False):
              Martin Kilbinger <martin.kilbinger@cea.fr>
 
     Main Contributors:
-            Lucie Baumont
             Cail Daley
             Fabian Hervas Peters
-            Tobias Liaudat
-            Morgan Schmitz
 
     Version: {}
 
