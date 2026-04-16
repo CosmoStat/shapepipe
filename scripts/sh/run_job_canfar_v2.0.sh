@@ -11,6 +11,7 @@ version="2.0"
 job=-1
 ID=-1
 psf='psfex'
+tile_det='sx'
 N_SMP=1
 dry_run=0
 dir=`pwd`
@@ -32,6 +33,7 @@ usage="Usage: $(basename "$0") -j JOB -e ID [OPTIONS]
    -e, --exclusive ID\timage ID\n
    -p, --psf MODEL\n
    \t\t\tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
+   --tile_det DET\t\ttile detection mode, one in ['sx'|'ext_cat'], default='$tile_det'\n
    -N, --N_SMP N_SMP\tnumber of SMP jobs, default from original config files\n
    -d, --directory DIR\trun directory, default is pwd ($dir)\n
    -S, --scratch DIR\tprocessing scratch directory, default='$scratch'; use -1 to disable\n
@@ -64,6 +66,10 @@ while [ $# -gt 0 ]; do
       ;;
     -p|--psf)
       psf="$2"
+      shift
+      ;;
+    --tile_det)
+      tile_det="$2"
       shift
       ;;
     -N|--N_SMP)
@@ -175,6 +181,7 @@ function run_job_exp() {
     # exp_id e.g. "2182795p": ab = first 2 chars, abcdefg = all but last char
     local exp_prefix="${exp_id:0:2}"
     local exp_base="${exp_id%?}"
+    local exp_id_disp="${exp_prefix}/${exp_base}"
     local exp_work_dir="$HOME/v${version}/exp/$exp_prefix/$exp_base"
     local exp_log_file="$exp_work_dir/job_sp_canfar_v2.0.log"
 
@@ -186,11 +193,25 @@ function run_job_exp() {
     local is_complete=1
     local check_desc=""
     for check_pair in $complete_checks; do
-      local subdir="${check_pair%:*}"
-      local n_threshold="${check_pair##*:}"
+      local subdir="${check_pair%%:*}"
+      local rest="${check_pair#*:}"
+      local n_threshold="${rest%%:*}"
+      local rest2="${rest#*:}"
+      local subpath=""
+      local warn_only=0
+      if [[ "$rest" == *:* ]]; then
+        subpath="${rest2%%:*}"
+        if [[ "$rest2" == *:* ]]; then
+          [ "${rest2#*:}" == "warn" ] && warn_only=1
+        fi
+      fi
       local n_out=0
 
-      out_dir="$run_dir/${subdir}/output"
+      if [ -n "$subpath" ]; then
+        out_dir="$run_dir/${subdir}/output/${subpath}"
+      else
+        out_dir="$run_dir/${subdir}/output"
+      fi
 
       # Remove broken symlinks in module output dir
       for f in "$out_dir"/*; do
@@ -202,11 +223,18 @@ function run_job_exp() {
 
       [ -n "$run_dir" ] && n_out=$(ls "$out_dir/" 2>/dev/null | wc -l)
       check_desc+="${subdir}:${n_out}/${n_threshold} "
-      [ "$n_out" -lt "$n_threshold" ] && is_complete=0
+      if [ "$n_out" -lt "$n_threshold" ]; then
+        if [ "$warn_only" == "1" ]; then
+          #message "WARNING: ${subdir}: only $n_out/$n_threshold files" $debug_out -1
+          : # do nothing
+        else
+          is_complete=0
+        fi
+      fi
     done
 
     if [ "$is_complete" == "1" ]; then
-      message "Skipping $exp_id: run_sp_${run_prefix} complete ( $check_desc)" $debug_out -1
+      message "Complete $exp_id_disp: run_sp_${run_prefix} ( $check_desc)" $debug_out -1
       (( n_complete++ ))
       continue
     fi
@@ -214,9 +242,9 @@ function run_job_exp() {
     # Report incomplete/missing in check mode; in run mode handle and proceed
     if [ "$check" == "1" ]; then
       if [ -n "$run_dir" ]; then
-        message "  incomplete: $exp_id ($check_desc)" $debug_out -1
+        message "  Benign incomplete: $exp_id_disp ($check_desc)" $debug_out -1
       else
-        message "  missing: $exp_id" $debug_out -1
+        message "  missing: $exp_id_disp" $debug_out -1
       fi
       (( n_incomplete++ ))
       continue
@@ -227,7 +255,7 @@ function run_job_exp() {
 
     echo "$(basename "$0") -j $exp_job -e $exp_id" > "$exp_log_file"
     echo "pwd=`pwd`"
-    command "job_sp_canfar_v2.0.bash -p $psf -j $exp_job --n_smp $N_SMP --nsh_jobs $N_SMP --debug_out $debug_out" $dry_run 2>&1 | tee -a "$exp_log_file"
+    command "job_sp_canfar_v2.0.bash -p $psf --tile_det $tile_det -j $exp_job --n_smp $N_SMP --nsh_jobs $N_SMP --debug_out $debug_out" $dry_run 2>&1 | tee -a "$exp_log_file"
     echo "Done with job_sp_canfar_v2.0.bash"
 
     #cd "$dir"
@@ -350,7 +378,11 @@ elif [ "$job" == "32" ]; then
 elif [ "$job" == "64" ]; then
 
   # Job 32: process  exposures (config_exp_<psf}.ini)
-  run_job_exp $job "exp_SxSePsf${Letter}i" "sextractor_runner:80 psfex_runner:80 psfex_interp_runner:40 "
+  if [ "$psf" == "psfex" ]; then
+    run_job_exp $job "exp_SxSePsf${Letter}i" "sextractor_runner:80 psfex_runner:80 psfex_interp_runner:40::warn setools_runner:80:rand_split"
+  else
+    message "MCCD not implemented yet for v2.0" $debug_out 10
+  fi
 
 else
 
@@ -361,7 +393,7 @@ else
   # 128: select objects
 
   echo "$(basename "$0") $@" > "$log_file"
-  command "job_sp_canfar_v2.0.bash -p $psf -j $job --n_smp $N_SMP --nsh_jobs $N_SMP --debug_out $debug_out" $dry_run 2>&1 | tee -a "$log_file"
+  command "job_sp_canfar_v2.0.bash -p $psf --tile_det $tile_det -j $job --n_smp $N_SMP --nsh_jobs $N_SMP --debug_out $debug_out" $dry_run 2>&1 | tee -a "$log_file"
 
 fi
 

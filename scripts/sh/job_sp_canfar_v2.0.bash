@@ -17,6 +17,7 @@ config_dir=$HOME/shapepipe/example/cfis
 psf='mccd'
 retrieve='vos'
 star_cat_for_mask='onthefly'
+tile_det='sx'
 exclusive=''
 n_smp=-1
 nsh_jobs=8
@@ -48,6 +49,10 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    -s, --star_cat_for_mask\n
    \tcatalogue for masking bright stars, allowed are 'onthefly', 'save',\n
    \tdefault is '${star_cat_for_mask}'\n
+   --tile_det DET\n
+   \ttile object detection mode, one in ['sx'|'ext_cat'], default='${tile_det}'\n
+   \t  sx: run SExtractor on tile image\n
+   \t  ext_cat: use external catalogue (downloads cat from vos)\n
    --sm SM\n
    \tWith (SM=1; default) or without (SM=0) spread model input\n
    -e, --exclusive ID\n
@@ -96,6 +101,10 @@ while [ $# -gt 0 ]; do
       star_cat_for_mask="$2"
       shift
       ;;
+    --tile_det)
+      tile_det="$2"
+      shift
+      ;;
     --sm)
       sm="$2"
       shift
@@ -134,6 +143,11 @@ fi
 if [ "$retrieve" != "vos" ] && [ "$retrieve" != "symlink" ]; then
   echo "method to retrieve images (option -r) needs to be 'vos' or 'symlink'"
   exit 5
+fi
+
+if [ "$tile_det" != "sx" ] && [ "$tile_det" != "ext_cat" ]; then
+  echo "tile detection mode (option --tile_det) needs to be 'sx' or 'ext_cat'"
+  exit 6
 fi
 
 if [ "$debug_out" != "-1" ]; then
@@ -403,20 +417,32 @@ fi
 (( do_job = $job & 128 ))
 if [[ $do_job != 0 ]]; then
 
-  ### Masking on tiles (TODO: revisit)
-  #command_cfg_shapepipe \
-    #"config_tile_Ma_onthefly.ini" \
-    #"Run shapepipe (tile masking)" \
-    #$n_smp \
-    #$exclusive
+  if [ "$tile_det" == "ext_cat" ]; then
 
+    ### Download external catalogue from vos
+    #command_cfg_shapepipe \
+      #"config_Git_cat_vos.ini" \
+      #"Run shapepipe (download external tile catalogue)" \
+      #-1 \
+      #$exclusive
 
-  ### Object detection on tiles
-  command_cfg_shapepipe \
-    "config_tile_Sx.ini" \
-    "Run shapepipe (tile detection)" \
-    $n_smp \
-    $exclusive
+    ### Object selection from external catalogue
+    command_cfg_shapepipe \
+      "config_tile_Ec.ini" \
+      "Run shapepipe (tile object selection, external catalogue)" \
+      $n_smp \
+      $exclusive
+
+  else
+
+    ### Object detection on tiles with SExtractor
+    command_cfg_shapepipe \
+      "config_tile_Sx.ini" \
+      "Run shapepipe (tile detection, SExtractor)" \
+      $n_smp \
+      $exclusive
+
+  fi
 
 fi
 
