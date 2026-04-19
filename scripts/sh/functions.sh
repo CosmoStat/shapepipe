@@ -5,7 +5,7 @@ IMAGE=images.canfar.net/unions/shapepipe
 NAME=shapepipe
 
 version="2.0"
-cmd_remote="$HOME/shapepipe/scripts/sh/run_job_canfar_v2.0.sh"
+cmd_remote="$HOME/shapepipe/scripts/sh/run_job_sp_canfar_v2.0.bash"
 pat="---- "
 STOP=0
 
@@ -79,7 +79,7 @@ function call_curl() {
 
   cmd=("curl" "-E" "$SSL" "$SESSION?$RESOURCES" "-d" "image=$IMAGE:$version" "-d" "name=${my_name}" "-d" "cmd=$cmd_remote" "--data-urlencode" "args=\"${my_arg}\"")
 
-  if [ "$my_debug_out" != "-1" ]; then
+  if [ -n "$my_debug_out" ]; then
     echo "${pat}call_curl $my_name $my_arg" >> $my_debug_out
     echo "${pat}Running ${cmd[@]} (dry_run=$my_dry_run)" >> $my_debug_out
   fi
@@ -109,7 +109,7 @@ function command () {
    if [ $VERBOSE == 1 ]; then
         echo $msg
    fi
-   if [ "$debug_out" != "-1" ]; then
+   if [ -n "$debug_out" ]; then
         echo ${pat}$msg >> $debug_out
    fi
 
@@ -117,7 +117,7 @@ function command () {
         $cmd
         res=$?
 
-        if [ "$debug_out" != "-1" ]; then
+        if [ -n "$debug_out" ]; then
           echo "${pat}exit code=$res" >> $debug_out
         fi
 
@@ -128,10 +128,10 @@ function command () {
               echo -e "${RED}error, return value = $res${NC}"
               if [ $STOP == 1 ]; then
                   echo "${RED}exiting  $(basename "$0")', error in command '$cmd'${NC}"
-                  if [ "$debug_out" != "-1" ]; then
+                  if [ -n "$debug_out" ]; then
                       echo "${pat}${RED}exiting  $(basename "$0")', error in command '$cmd'${NC}" >> $debug_out
                   fi
-                  if [ "$debug_out" != "-1" ]; then
+                  if [ -n "$debug_out" ]; then
                       echo "${pat}${RED}exiting  $(basename "$0")', error in command '$cmd'${NC}" >> $debug_out
                   fi
                   exit $res
