@@ -16,16 +16,17 @@ from cs_util import logging
 
 
 class Job(object):
+    """Class Job.
+
+    Handles job submission with the canfar system.
+
+    """
 
     def __init__(self):
 
         self.params_default()
 
         self._patch = os.environ["patch"] if "patch" in os.environ else "P0"
-
-        # Set job parameters
-        version = "1.1"
-        self._image = f"images.canfar.net/unions/shapepipe:{version}"
 
         # Maximum replicas per batch (CANFAR limit is 512)
         self._max_replicas_per_batch = 512
@@ -56,7 +57,11 @@ class Job(object):
         logging.log_command(args)
 
     def params_default(self):
+        """Params Default.
 
+        Set default parameters.
+
+        """
         self._params = {
             "job": -1,
             "exclusive": None,
@@ -72,6 +77,7 @@ class Job(object):
             "parallel_jobs": 1,
             "jobs_per_session": 0,
             "stats": False,
+            "version": "1.1",
         }
 
         self._short_options = {
@@ -87,6 +93,7 @@ class Job(object):
             "parallel_jobs": "-P",
             "jobs_per_session": "-J",
             "stats": "-s",
+            "version": "-V",
         }
 
         self._types = {
@@ -112,9 +119,10 @@ class Job(object):
             "parallel_jobs": "number of tiles to process in parallel per replica; default is {}",
             "jobs_per_session": (
                 "number of jobs (tiles) per session; if 0, create one session per job (default is {});"
-                + " Number of replicas is #FILE_IDs / JOBS_PER_SESSSION"
+                + " Number of replicas is #FILE_IDs / JOBS_PER_SESSION"
             ),
             "stats": "print stats of sessions/batches/replicas and exit",
+            "version": "shapepipe image version; default is {}",
         }
 
     def update_params(self):
@@ -123,6 +131,10 @@ class Job(object):
         Update parameters.
         """
 
+        # Set version and image
+        version = self._params["version"]
+        self._image = f"images.canfar.net/unions/shapepipe:{version}"
+
         # If not given, set number of cores to number of parallel jobs;
         # else set to default. 
         if self._params["cores"] == -1:
@@ -130,10 +142,18 @@ class Job(object):
                 self._params["cores"] = self._params["parallel_jobs"]
             else:
                 self._params["cores"] = self._cores_default
-        pass
 
     def check_params(self):
+        """Check Params.
 
+        Check command line arguments and parameters.
+
+        Returns
+        -------
+        bool
+            status of checks; True (False) if passed (failed)
+
+        """
         if self._params["job"] == -1:
             raise ValueError(f"need to specify job (option -j)")
 
@@ -144,7 +164,11 @@ class Job(object):
             raise ValueError("No image ID(s) indicated, use option -e ID or -f file_IDs")
 
     def set_options_base(self):
+        """Set Options Base.
 
+        Set basic options from command line options and parameters.
+
+        """
         opt = {}
 
         cwd = os.getcwd()
@@ -164,9 +188,9 @@ class Job(object):
             deb_ID = os.path.basename(self._params["file_IDs"])
       
         if self._params['debug_out']:
-            opt["debut_out"] = f"--debug_out {cwd}/debug/{self._params['debug_out']}"
+            opt["debug_out"] = f"--debug_out {cwd}/debug/{self._params['debug_out']}"
         else:
-            opt["debut_out"] = f"--debug_out {cwd}/debug/debug_{deb_ID}.txt"
+            opt["debug_out"] = f"--debug_out {cwd}/debug/debug_{deb_ID}.txt"
 
         opt["d"] = f"-d {cwd}"
         opt["m_s"] = "-m 1 -s 1" if self._patch in ("P8", "P9") else ""
@@ -182,7 +206,16 @@ class Job(object):
         self._options_base = options
 
     def set_job_name(self, suf=None):
+        """Set Job Name.
 
+        Set job name as it will appear on the canfar submission system.
+
+        Parameters
+        ----------
+        suf : str, optional
+            suffix, default is ``None``
+
+        """
         if suf is None:
             suf = self._params["exclusive"]
 
@@ -193,7 +226,18 @@ class Job(object):
         return job_name
 
     def set_command(self, mode):
+        """Set Command.
 
+        Set shell command to run.
+
+        Parameters
+        ----------
+        mode: str
+            job submission mode, allowed are "async_single" (for asynchronous
+            submission of single job), "async_bulk" (asynchronous submission of many jobs),
+            "sync" (synchronous submission of one or more jobs)
+
+        """
         if mode == "async_single":
             self._cmd = f"{os.environ['HOME']}/shapepipe/scripts/sh/canfar_async_job.sh"
         elif mode == "async_bulk":
@@ -202,7 +246,20 @@ class Job(object):
             self._cmd = f"{os.environ['HOME']}/shapepipe/scripts/sh/init_run_exclusive_canfar.sh"
 
     def get_tile_IDs(self):
+        """Get Tile IDs.
 
+        Return tile ID information.
+
+        Returns
+        -------
+        str
+            tile_ID(s)
+        int
+            length of tile ID list
+        str
+            suffix
+
+        """
         if self._params["exclusive"]:
             tile_IDs = [self._params["exclusive"]]
             suf = None
@@ -214,6 +271,11 @@ class Job(object):
         return tile_IDs, len(tile_IDs), suf
 
     async def run_async(self):
+        """Run Async.
+
+        Run asynchronous job submission.
+
+        """
         async with AsyncSession() as session:
 
             _, total_n, suf = self.get_tile_IDs()
@@ -243,13 +305,22 @@ class Job(object):
                 print(f"Splitting into {num_batches} batches (max {self._max_replicas_per_batch} replicas per batch)")
                 return await self._submit_multiple_batches(num_replicas, total_n, num_batches)
 
-
     async def _submit_single_batch(self, num_replicas, total_n):
-        """Submit a single batch of jobs.
+        """Submit Single Batch.
 
-        Args:
-            num_replicas: Number of replicas (sessions) to create
-            total_n: Total number of jobs (tiles) to process
+        Submit a single batch of jobs.
+
+        Parameters
+        ----------
+        num_replicas: int
+            number of replicas (sessions) to create
+        total_n: int
+            total number of jobs (tiles) to process
+
+        Returns
+        -------
+        list
+            IDs of submitted sessions
         """
         print(f"Submitting {num_replicas} replicas to process {total_n} jobs")
 
@@ -278,15 +349,27 @@ class Job(object):
         return sessions
 
     async def _submit_multiple_batches(self, num_replicas, total_n, num_batches):
-        """Submit multiple batches of jobs.
+        """Submit Multiple Batches.
 
-        Args:
-            num_replicas: Total number of replicas (sessions) to create
-            total_n: Total number of jobs (tiles) to process
-            num_batches: Number of batches to split replicas into
+        Submit multiple batches of jobs.
+
+        Parameters
+        ----------
+        num_replicas: int
+            total number of replicas (sessions) to create
+        total_n: int
+            total number of jobs (tiles) to process
+        num_batches: int
+            number of batches to split replicas into
 
         Each batch creates a subset of replicas. chunk() automatically
         distributes all tiles across all replicas.
+
+        Returns
+        -------
+        list
+            IDs of submitted sessions
+
         """
         all_sessions = []
 
@@ -344,7 +427,16 @@ class Job(object):
         return all_sessions
 
     def run_no_async(self):
+        """Run No Async.
 
+        Run synchronous job submission.
+
+        Returns
+        -------
+        list
+            IDs of submitted jobs
+
+        """
         session = Session()
 
         self.set_command(mode="sync")
@@ -377,7 +469,16 @@ class Job(object):
         return job_ids
 
     def write_job_tile_IDs(self, job_ids):
+        """Write Job Tile IDs
 
+        Write tile IDs of jobs to log file.
+
+        Parameters
+        ----------
+        jobs_ids: list
+            IDs of submitted jobs.
+
+        """
         tile_IDs, _, _ = self.get_tile_IDs()
 
         cwd = os.getcwd()
@@ -389,7 +490,12 @@ class Job(object):
                 print(job_id, tile_ID, file=log)
 
     def print_stats(self):
+        """Print Stats.
 
+        Print statistics of (to be submitted) jobs, helpfule to fine-tune parameters
+        before the actual submission.
+
+        """
         # Total number of jobs (= length of input ID file)
         _, total_n, _ = self.get_tile_IDs()
 
@@ -432,7 +538,16 @@ class Job(object):
         )
 
     def run(self, args=None):
+        """Run.
 
+        Run instance.
+
+        Parameters
+        ----------
+        args: list, optional
+            command line arguments, default is ``None``
+
+        """
         obj = self
 
         if args is None:

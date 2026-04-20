@@ -72,11 +72,11 @@ class Uncompress(object):
                         value = header_fitsio[name]
                         comment = header_fitsio.get_comment(name)
 
-                    # Optional: fix invalid TFORMn
-                    if name.startswith('TFORM') and isinstance(value, str) and 'PE' in value:
-                        value = '625E'
+                        # Optional: fix invalid TFORMn
+                        if name.startswith('TFORM') and isinstance(value, str) and 'PE' in value:
+                            value = '625E'
 
-                    header[name] = (value, comment)
+                        header[name] = (value, comment)
             
             # Create and write new FITS file with that HDU only
             hdu = fits.PrimaryHDU(data, header)

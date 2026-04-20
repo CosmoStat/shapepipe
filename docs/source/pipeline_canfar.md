@@ -396,7 +396,7 @@ the parameter file and set links to the catalogues and `ShapePipe` config direct
 ```bash
 cd /path/to/version/$patch
 cp ~/astro/repositories/github/sp_validation/notebooks/params.py .
-ln -s ~/v1.3.x/final_cat_$patchnum3.hdf5  # not ../final_cat_P$patchnum.hdf5 !
+ln -s /path/to/final_cat_$patchnum.hdf5  # not relative path ../final_cat_P$patchnum.hdf5 !
 ln -s output/run_sp_MsPl/mccd_merge_starcat_runner/output/full_starcat-0000000.fits
 ln -s ~/astro/repositories/github/shapepipe/example/cfis
 ```
@@ -456,6 +456,19 @@ ln -s ..//unions_shapepipe_comprehensive_struct_2024_v1.6.c.hdf5 unions_shapepip
 
 calibrate_comprehensive
 
+
+### Create matched star catalogue
+
+For diagnostics, a catalogue with multi-epoch shapes measured by ngmix matched with the validation star catalogue is used.
+This is created as follows:
+
+```bash
+cd /path/to/version
+merge_psf_cat.py [-V v1.6|-P P1+P2+...] -v
+```
+
+This creates the joint catalogue unions_shapepipe_star_2024_v1.6.a.fits .
+
 ### Create coverage mask
 
 First, on canfar, move to the directory that has the patch subdirectories.
@@ -502,6 +515,7 @@ Use `plot_coverage_map` to create plots of the coverage mask.
 
 Building and plotting for a range of versions is done with
 `build_and_plot_coverage_maps.sh`.
+
 
 ## Extra Utilities
 

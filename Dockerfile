@@ -37,6 +37,8 @@ RUN apt-get update -y --quiet --fix-missing && \
     make \
     openmpi-bin \
     libopenmpi-dev \
+    libproj-dev \
+    proj-bin \
     pkg-config \
     protobuf-compiler \
     psfex=3.21.1-1 \
