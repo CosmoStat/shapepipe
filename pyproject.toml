@@ -74,4 +74,4 @@ canfar_monitor_log = "shapepipe.canfar_run:run_monitor_log"
 
 [tool.pytest.ini_options]
 addopts = "--verbose --cov=shapepipe"
-testpaths = ["shapepipe"]
+testpaths = ["tests", "src/shapepipe/tests"]

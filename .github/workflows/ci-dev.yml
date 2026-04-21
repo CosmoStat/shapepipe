@@ -1,0 +1,35 @@
+name: CI (develop)
+
+# Lightweight PR-time test suite that actually gates merges into develop.
+# Runs the unit tests under tests/ inside the published shapepipe container
+# — no conda bootstrap, no multi-OS matrix. Complements ci-release.yml
+# (which is a heavier conda-based suite gating main/master).
+
+on:
+  pull_request:
+    branches:
+      - develop
+  push:
+    branches:
+      - develop
+
+jobs:
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/cosmostat/shapepipe:develop
+      options: --user root
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reinstall shapepipe from the checkout
+        # The container ships a snapshot of the repo under /app. Replace it
+        # with the PR's checkout so tests run against the proposed code.
+        run: |
+          pip install --no-deps --force-reinstall -e .
+
+      - name: Run unit tests
+        run: |
+          pytest tests/unit/ -v --no-cov -p no:warnings
