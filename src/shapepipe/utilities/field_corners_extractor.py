@@ -131,8 +131,8 @@ class FieldCornersExtractor(object):
         path, verbose = path_and_verbose
 
         # Extract exposure number from filename
-        end = path.find(".txt")
-        expnum = int(path[end - 6 : end])
+        match = re.search(r'(\d+)\.txt')
+        expnum = int(match.group(1)) if match else None
 
         try:
             # Parse header and extract WCS
