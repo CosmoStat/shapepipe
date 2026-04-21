@@ -1,7 +1,7 @@
 # Dockerfile for ShapePipe Jupyter Lab
 # Uses the shared base image
 
-FROM shapepipe-base
+FROM ghcr.io/martinkilbinger/shapepipe-1:v2.0
 
 # Default command starts Jupyter Lab
 ENTRYPOINT ["jupyter","lab","--ip=0.0.0.0","--port=8888","--no-browser","--allow-root"]
