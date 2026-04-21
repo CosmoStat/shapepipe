@@ -16,7 +16,6 @@ import hpgeom as hpg
 from cs_util import args as cs_args
 from cs_util import logging
 
-from shapepipe.utilities.coverage_plotter import CoveragePlotter
 
 
 class CoverageMapBuilder(object):
@@ -308,6 +307,7 @@ class CoverageMapBuilder(object):
                 print(f"Creating plot of coverage map")
 
             try:
+                from shapepipe.utilities.coverage_plotter import CoveragePlotter
                 plotter = CoveragePlotter()
                 plotter.plot_coverage_map(
                     m,
@@ -320,6 +320,6 @@ class CoverageMapBuilder(object):
                 print(f"Plot saved to {plot_output}")
             except ImportError as e:
                 print(f"Warning: Could not create plot: {e}")
-                print("Install sp_validation package for plotting support: pip install -e /path/to/sp_validation")
+                print("Install te cs_util package for plotting support.")
 
         return 0
