@@ -33,7 +33,7 @@ class HeaderDownloader(object):
         self._params = {
             "input_file": None,
             "output_dir": "header",
-            "vospace_path": "vos:cfis/pitcairn",
+            "vospace_path": "vos:cfis/pitcairn", # Default UNIONS exposure path
             "overwrite": False,
             "dir_for_links": None,
         }
