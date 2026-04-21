@@ -9,6 +9,8 @@
 #              machine.
 # Author: Martin Kilbinger <martin.kilbinger@cea.fr>
 
+# Shared job-list description
+source $HOME/shapepipe/scripts/sh/job_list_help.bash
 
 # Command line arguments
 ## Default values
@@ -17,11 +19,12 @@ config_dir=$HOME/shapepipe/example/cfis
 psf='mccd'
 retrieve='vos'
 star_cat_for_mask='onthefly'
+tile_det='sx'
+tile_mask=0
 exclusive=''
 n_smp=-1
 nsh_jobs=8
-debug_out=-1
-sm=1
+debug_out=""
 
 pat="--- "
 
@@ -30,15 +33,7 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
 \n\nOptions:\n
    -h\tthis message\n
    -j, --job JOB\tRunning JOB, bit-coded\n
-   \t   1: retrieve tile images and weights (online if method=vos)\n
-   \t   2: uncompress weights (offline)\n
-   \t   4: find exposures tiles (offline)\n
-   \t   8: retrieve exposures tiles (online if method=vos)\n
-   \t  16: split exposures, get WCS header (offline)\n
-   \t  32: mask exposures (online if star_cat_for_mask=onthefly)\n
-   \t  64: processing of stars on exposures (offline)\n
-   \t 128: object selection on tiles (online if external cat)\n
-   \t 256: tile postage stamp extraction (offline)\n
+${JOB_LIST_HELP}
    -c, --config_dir DIR\n
    \t config file directory, default='$config_dir'\n
    -p, --psf MODEL\n
@@ -48,8 +43,12 @@ usage="Usage: $(basename "$0") [OPTIONS] [TILE_ID]
    -s, --star_cat_for_mask\n
    \tcatalogue for masking bright stars, allowed are 'onthefly', 'save',\n
    \tdefault is '${star_cat_for_mask}'\n
-   --sm SM\n
-   \tWith (SM=1; default) or without (SM=0) spread model input\n
+   --tile_det DET\n
+   \ttile object detection mode, one in ['sx'|'uc'], default='${tile_det}'\n
+   --tile_mask MASK\n
+   \ttile masking, default='${tile_mask}'\n
+   \t  sx: run SExtractor on tile image\n
+   \t  uc: use UNIONS catalogue (Stephen Gwyn)\n
    -e, --exclusive ID\n
    \texclusive input filer number string ID (default: None)\n
    -n, --n_smp N_SMP\n
@@ -96,8 +95,12 @@ while [ $# -gt 0 ]; do
       star_cat_for_mask="$2"
       shift
       ;;
-    --sm)
-      sm="$2"
+    --tile_det)
+      tile_det="$2"
+      shift
+      ;;
+    --tile_mask)
+      tile_mask="$2"
       shift
       ;;
     -e|--exclusive)
@@ -136,7 +139,17 @@ if [ "$retrieve" != "vos" ] && [ "$retrieve" != "symlink" ]; then
   exit 5
 fi
 
-if [ "$debug_out" != "-1" ]; then
+if [ "$tile_det" != "sx" ] && [ "$tile_det" != "uc" ]; then
+  echo "tile detection mode (option --tile_det) needs to be 'sx' or 'uc'"
+  exit 6
+fi
+
+if [ "$tile_mask" != 1 ] && [ "$tile_mask" != 0 ]; then
+  echo "tile mask needs to be 0 or 1"
+  exit 7
+fi
+
+if [ -n "$debug_out" ]; then
   echo $pat`date` >> $debug_out
   echo "${pat}Starting $(basename "$0")" >> $debug_out
 fi
@@ -151,6 +164,10 @@ export SP_RUN=`pwd`
 # Config file path
 export SP_CONFIG=$SP_RUN/cfis
 export SP_CONFIG_MOD=$SP_RUN/cfis_mod
+
+# Root directory for per-exposure work directories: sibling of tiles/ at the
+# same v2.0 level (SP_RUN = .../v2.0/tiles/IDra/ID, so three levels up + exp)
+export SP_EXP=$(realpath "$SP_RUN/../../../exp")
 
 ## Other variables
 
@@ -180,7 +197,7 @@ function command () {
    #NC=''
 
 
-   if [ "$debug_out" != "-1" ]; then
+   if [ -n "$debug_out" ]; then
       echo "${pat}pwd = `pwd`" >> $debug_out
       echo "${pat}SP_RUN = $SP_RUN" >> $debug_out
       echo "${pat}SP_CONFIG = $SP_CONFIG" >> $debug_out
@@ -190,7 +207,7 @@ function command () {
       if [ $VERBOSE == 1 ]; then
            echo "$str: running '$cmd'"
       fi
-      if [ "$debug_out" != "-1" ]; then
+      if [ -n "$debug_out" ]; then
           echo "${pat}Running $cmd" >> $debug_out
       fi
 
@@ -200,7 +217,7 @@ function command () {
       if [ $VERBOSE == 1 ]; then
          echo "$str: running '$cmd $4 \"$5 $6\"'"
       fi
-      if [ "$debug_out" != "-1" ]; then
+      if [ -n "$debug_out" ]; then
           echo "${pat}Running $cmd $4 \"$5 $6\"" >> $debug_out
       fi
 
@@ -210,7 +227,7 @@ function command () {
 
    res=$?
 
-   if [ "$debug_out" != "-1" ]; then
+   if [ -n "$debug_out" ]; then
        echo "${pat}exit code = $res" >> $debug_out
    fi
 
@@ -297,10 +314,6 @@ mkdir -p $OUTPUT
 mkdir -p $SP_CONFIG_MOD
 
 # Processing
-
-
-### Retrieve config files
-command_sp "ln -sf $config_dir cfis" "Retrieve shapepipe config files"
 
 
 ## Retrieve tile images (online if retrieve=vos)
@@ -403,25 +416,70 @@ fi
 (( do_job = $job & 128 ))
 if [[ $do_job != 0 ]]; then
 
-  ### Masking on tiles (TODO: revisit)
-  #command_cfg_shapepipe \
-    #"config_tile_Ma_onthefly.ini" \
-    #"Run shapepipe (tile masking)" \
-    #$n_smp \
-    #$exclusive
-
-
-  ### Object detection on tiles
+  ### Merge single-exposure WCS headers into tile-level sqlite log.
+  ### Must run before object detection/selection (make_post_process needs it).
   command_cfg_shapepipe \
-    "config_tile_Sx.ini" \
-    "Run shapepipe (tile detection)" \
+    "config_exp_Mh.ini" \
+    "Run shapepipe (merge exp headers)" \
     $n_smp \
     $exclusive
 
 fi
 
-## Process tiles up to shape measurement
 (( do_job = $job & 256 ))
+if [[ $do_job != 0 ]]; then
+
+  if [ "$tile_det" == "uc" ]; then
+
+    ### Download external catalogue from vos
+    command_cfg_shapepipe \
+      "config_Git_cat_vos.ini" \
+      "Run shapepipe (download external tile catalogue)" \
+      -1 \
+      $exclusive
+
+    ### Object selection from external catalogue
+    command_cfg_shapepipe \
+      "config_tile_Uc.ini" \
+      "Run shapepipe (tile object selection, external catalogue)" \
+      $n_smp \
+      $exclusive
+
+  else
+
+    if [ "$tile_mask" == 0 ]; then
+
+      ### Object detection on tiles with SExtractor
+      command_cfg_shapepipe \
+        "config_tile_Sx_nomask.ini" \
+        "Run shapepipe (tile detection, SExtractor without input flags)" \
+        $n_smp \
+        $exclusive
+
+    else
+
+      ### Tile masking
+      command_cfg_shapepipe \
+        "config_tile_Ma_${star_cat_for_mask}.ini" \
+        "Run shapepipe (tile detection, SExtractor with input flags)" \
+        $n_smp \
+        $exclusive
+
+    ### Object detection on tiles with SExtractor
+      command_cfg_shapepipe \
+        "config_tile_Sx.ini" \
+        "Run shapepipe (tile detection, SExtractor with input flags)" \
+        $n_smp \
+        $exclusive
+
+    fi
+
+  fi
+
+fi
+
+## Process tiles up to shape measurement
+(( do_job = $job & 1024 ))
 if [[ $do_job != 0 ]]; then
 
   ### PSF model letter: 'P' (psfex) or 'M' (mccd)
@@ -429,66 +487,9 @@ if [[ $do_job != 0 ]]; then
   Letter=${letter^}
   command_cfg_shapepipe \
     "config_tile_${Letter}iViVi_canfar.ini" \
-    "Run shapepipe (tile PsfInterp=$Letter}: up to ngmix+galsim)" \
+    "Run shapepipe (tile PsfInterp=${Letter}: up to ngmix+galsim)" \
     $n_smp \
     $exclusive
-
-fi
-
-## Shape measurement (offline)
-(( do_job = $job & 1024 ))
-if [[ $do_job != 0 ]]; then
-
-  ### Prepare config files
-  n_min=0
-  n_obj=`get_number_objects`
-  if [ "$n_obj" == "-1" ]; then
-    echo "No tile SExtractor run found, exiting after et_number_objects call"
-    exit 10
-  fi
-  nsh_step=`echo "$(($n_obj/$nsh_jobs))"`
-
-  n_max=$((nsh_step - 1))
-  for k in $(seq 1 $nsh_jobs); do
-    cat $SP_CONFIG/config_tile_Ng_template_batch.ini | \
-      perl -ane \
-        's/(ID_OBJ_MIN =) X/$1 '$n_min'/; s/(ID_OBJ_MAX =) X/$1 '$n_max'/; s/NgXu/Ng'$k'u/; s/X_interp/'$psf'_interp/g; print' \
-        > $SP_CONFIG_MOD/config_tile_Ng${k}u.ini
-    n_min=$((n_min + nsh_step))
-    if [ "$k" == $((nsh_jobs - 1)) ];  then
-      n_max=-1
-    else
-      n_max=$((n_min + nsh_step - 1))
-    fi
-  done
-
-  ### Shapes, run $nsh_jobs parallel processes
-  VERBOSE=0
-  for k in $(seq 1 $nsh_jobs); do
-
-      # if output dir for subrun exists but no output: re-run
-      ngmix_run=$OUTPUT/"run_sp_tile_ngmix_Ng${k}u/ngmix_runner"
-      if [ -e "$ngmix_run" ]; then
-        ngmix_out="$ngmix_run/output"
-        n_out=`ls -rlt $ngmix_out | wc -l`
-        if [ "$n_out" -lt 2 ]; then
-          command \
-            "rm -rf $OUTPUT/run_sp_tile_ngmix_Ng${k}u" \
-            "Re-running existing empty ngmix subrun $k"
-          command_sp \
-            "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" \
-            "Run shapepipe (tile: ngmix $k)" &
-        else
-          echo "Skipping existing non-empty ngmix subrun $k"
-        fi
-      else
-        command_sp \
-          "shapepipe_run -c $SP_CONFIG_MOD/config_tile_Ng${k}u.ini" \
-          "Run shapepipe (tile: ngmix $k)" &
-      fi
-  done
-  wait
-  VERBOSE=1
 
 fi
 
@@ -512,12 +513,7 @@ fi
 (( do_job = $job & 512 ))
 if [[ $do_job != 0 ]]; then
 
-  # spread_model suffix for config file with or without SM input
-  if [ "$sm" == "0" ]; then
-    suff_sm="_nosm"
-  else
-    suff_sm=""
-  fi
+  suff_sm="_nosm"
 
   ### Merge all relevant information into final catalogue
   command_cfg_shapepipe \
@@ -528,18 +524,6 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
-# MKDEBUG: Putting Mh at the end for now, could be integrated before 16.
-(( do_job = $job & 1024 ))
-if [[ $do_job != 0 ]]; then
-
-  command_cfg_shapepipe \
-    "config_exp_Mh.ini" \
-    "Run shapepipe (merge exp headers)" \
-    $n_smp \
-    $exclusive
-
-fi
-
-if [ "$debug_out" != "-1" ]; then
+if [ -n "$debug_out" ]; then
   echo "${pat}End $(basename "$0") ID=$exclusive success" >> $debug_out
 fi

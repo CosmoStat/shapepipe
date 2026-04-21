@@ -23,7 +23,6 @@ FWHM_IMAGE <= mode(FWHM_IMAGE{preselect}) + 0.2
 FWHM_IMAGE >= mode(FWHM_IMAGE{preselect}) - 0.2
 FLAGS == 0
 IMAFLAGS_ISO == 0
-#CLASS_STAR != 0
 
 [MASK:fwhm_mag_cut]
 FWHM_IMAGE > 0
