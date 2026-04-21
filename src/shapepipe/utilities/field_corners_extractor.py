@@ -145,7 +145,7 @@ class FieldCornersExtractor(object):
                     h1 = Header.fromstring(tokens[i] + tokens[i + 1], sep="\n")
                     w.append(wcs.WCS(h1))
 
-            # Calculate field corners
+            # Calculate field corners; hard-coded values for MegaCAM
             tl = w[0].pixel_to_world(2079, 0)
             tr = w[8].pixel_to_world(32, 0)
             br = w[35].pixel_to_world(2079, 0)
