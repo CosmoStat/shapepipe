@@ -20,6 +20,14 @@ import pytest
 KNOWN_XFAIL = {
     "summary_run":
         "treats '-h' as the 'patch' positional arg, tries to mkdir '-h'",
+    # All three import shapepipe.canfar_run, which fails with
+    # IndentationError in canfar_monitor.py:55.
+    "canfar_submit_job":
+        "IndentationError in canfar_monitor.py:55 (transitive)",
+    "canfar_monitor":
+        "IndentationError in canfar_monitor.py:55 (transitive)",
+    "canfar_monitor_log":
+        "IndentationError in canfar_monitor.py:55 (transitive)",
 }
 
 

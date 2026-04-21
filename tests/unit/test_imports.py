@@ -20,6 +20,12 @@ import shapepipe
 # lands green but the failure is discoverable and auto-notifies (via
 # ``strict=True``) once the upstream fix lands.
 KNOWN_XFAIL = {
+    # IndentationError at canfar_monitor.py:55 (docstring/body mismatch).
+    "shapepipe.canfar.canfar_monitor":
+        "IndentationError in canfar_monitor.py:55",
+    "shapepipe.canfar_run":
+        "IndentationError in canfar_monitor.py:55 (transitive)",
+    # stile v0.1 hard-imports treecorr.corr2, which newer treecorr removed.
     "shapepipe.modules.mccd_package.mccd_plot_utilities":
         "stile v0.1 imports removed treecorr.corr2",
     "shapepipe.modules.mccd_plots_runner":
@@ -28,6 +34,25 @@ KNOWN_XFAIL = {
         "stile v0.1 imports removed treecorr.corr2",
     "shapepipe.modules.random_cat_runner":
         "stile v0.1 imports removed treecorr.corr2",
+    # Modules added in v1.x Dockerfile rewrites that import deps not in
+    # the develop image (astroquery, numba, fitsio) or removed from
+    # stdlib/setuptools (pkg_resources).
+    "shapepipe.modules.mask_package.mask":
+        "astroquery not in develop Docker image",
+    "shapepipe.modules.mask_runner":
+        "astroquery not in develop Docker image (transitive)",
+    "shapepipe.modules.ngmix_package.ngmix":
+        "numba not in develop Docker image",
+    "shapepipe.modules.ngmix_runner":
+        "numba not in develop Docker image (transitive)",
+    "shapepipe.modules.split_exp_package.split_exp":
+        "uses deprecated pkg_resources (setuptools>=68)",
+    "shapepipe.modules.split_exp_runner":
+        "uses deprecated pkg_resources (transitive)",
+    "shapepipe.modules.uncompress_fits_package.uncompress_fits":
+        "fitsio not installed (declared as optional extra)",
+    "shapepipe.modules.uncompress_fits_runner":
+        "fitsio not installed (transitive)",
 }
 
 

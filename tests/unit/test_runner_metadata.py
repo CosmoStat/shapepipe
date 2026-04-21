@@ -34,11 +34,20 @@ REQUIRED_ATTRS = (
 # Modules imported here but broken upstream — tracked separately.
 # Mapping: module name → xfail reason.
 KNOWN_XFAIL = {
-    # Both reach stile, which imports treecorr.corr2 (removed in treecorr 5.x).
+    # Transitive failures: the runner's own import chain breaks before
+    # we can check metadata. Root causes tracked in test_imports.py.
     "shapepipe.modules.mccd_plots_runner":
         "stile v0.1 imports removed treecorr.corr2",
     "shapepipe.modules.random_cat_runner":
         "stile v0.1 imports removed treecorr.corr2",
+    "shapepipe.modules.mask_runner":
+        "astroquery not in develop Docker image",
+    "shapepipe.modules.ngmix_runner":
+        "numba not in develop Docker image",
+    "shapepipe.modules.split_exp_runner":
+        "uses deprecated pkg_resources (setuptools>=68)",
+    "shapepipe.modules.uncompress_fits_runner":
+        "fitsio not installed (declared as optional extra)",
 }
 
 
