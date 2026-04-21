@@ -5,12 +5,18 @@ LABEL maintainer="martin.kilbinger@cea.fr"
 LABEL description="ShapePipe base image with common dependencies"
 
 # Install system dependencies needed for ShapePipe and WeightWatcher
-RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf && \
-    apt-get update -o Acquire::ForceIPv4=true -y --quiet && \
+RUN apt-get update -o Acquire::ForceIPv4=true -y --quiet && \
     apt-get install -y --no-install-recommends \
-        psfex source-extractor \
-        libproj-dev proj-bin && \
+    psfex source-extractor \
+    libproj-dev proj-bin && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
+
+#RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf && \
+    #apt-get update -o Acquire::ForceIPv4=true -y --quiet && \
+    #apt-get install -y --no-install-recommends \
+        #psfex source-extractor \
+        #libproj-dev proj-bin && \
+    #apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Build and install WeightWatcher from source
 ARG WW_VERSION=1.12
