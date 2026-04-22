@@ -239,14 +239,6 @@ function command () {
    fi
 }
 
-# Run shapepipe command.
-function command_sp() {
-   local cmd=$1
-   local str=$2
-
-   command "$1" "$2"
-}
-
 # Set up config file and call shapepipe_run
 function command_cfg_shapepipe() {
     local config_name=$1
@@ -263,7 +255,7 @@ function command_cfg_shapepipe() {
     config_upd=$(set_config_n_smp $config_name $_n_smp)
     #local cmd="/arc/home/kilbinger/.conda/envs/shapepipe/bin/shapepipe_run -c $config_upd $exclusive_flag"
     local cmd="shapepipe_run -c $config_upd $exclusive_flag"
-    command_sp "$cmd" "$str"
+    command "$cmd" "$str"
 }
 
 function set_config_n_smp() {
@@ -325,7 +317,7 @@ if [[ $do_job != 0 ]]; then
   if [ "$star_cat_for_mask" == "save" ]; then
     #### For tiles
     mkdir $SP_RUN/star_cat_tiles
-    command_sp \
+    command \
       "create_star_cat $SP_RUN/output/run_sp_tile_Git_*/get_images_runner_run/output $SP_RUN/star_cat_tiles" \
       "Save star cats for masking (tile)"
 
@@ -496,7 +488,7 @@ if [[ $do_job != 0 ]]; then
       > $SP_CONFIG_MOD/config_merge_sep_cats.ini
  
   ### Merge separated shapes catalogues
-  command_sp \
+  command \
     "shapepipe_run -c $SP_CONFIG_MOD/config_tile_merge_sep_cats.ini" \
     "Run shapepipe (tile: merge sep cats)"
 fi
