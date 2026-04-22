@@ -44,6 +44,7 @@ class CoverageMapBuilder(object):
             "create_plot": False,
             "plot_output": None,
             "plot_region": None,
+            "verbose": False,
         }
 
         self._short_options = {
@@ -69,6 +70,7 @@ class CoverageMapBuilder(object):
             "create_boolean": "bool",
             "boolean_threshold": "int",
             "create_plot": "bool",
+            "verbose": "bool",
         }
 
         self._help_strings = {
@@ -171,7 +173,7 @@ class CoverageMapBuilder(object):
         """
         nside = hsp_map.nside_sparse
 
-        new_hsp = hsp_map + 0
+        new_hsp = hsp_map.copy()
         pixs = hsp_map.valid_pixels
         n = hpg.neighbors(nside, pixs)
         n = np.where(n >= 0, n, 0)
@@ -320,6 +322,6 @@ class CoverageMapBuilder(object):
                 print(f"Plot saved to {plot_output}")
             except ImportError as e:
                 print(f"Warning: Could not create plot: {e}")
-                print("Install te cs_util package for plotting support.")
+                print("Install the cs_util package for plotting support.")
 
         return 0
