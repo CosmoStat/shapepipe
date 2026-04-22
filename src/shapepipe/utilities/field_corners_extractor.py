@@ -20,6 +20,45 @@ from astropy.io.fits import Header
 from cs_util import args as cs_args
 from cs_util import logging
 
+# Filename suffix convention for header files: <6+ digit exposure number>.txt
+_EXPNUM_RE = re.compile(r'(\d+)\.txt$')
+
+
+def _expnum_from_path(path):
+    """Extract exposure number from a header filename like ``1234567.txt``."""
+    match = _EXPNUM_RE.search(path)
+    if match is None:
+        raise ValueError(f"Could not extract exposure number from {path!r}")
+    return int(match.group(1))
+
+
+def _parse_header_to_wcs(path):
+    """Parse a multi-HDU header text file and return one WCS per HDU."""
+    with open(path, "r") as f:
+        string = f.read()
+    tokens = re.split(r"^(END\s+)", string, flags=re.MULTILINE)
+    return [
+        wcs.WCS(Header.fromstring(tokens[i] + tokens[i + 1], sep="\n"))
+        for i in range(2, len(tokens) - 1, 2)
+    ]
+
+
+def _megacam_field_corners(w):
+    """Return (ra, dec) of the 4 MegaCam field corners.
+
+    The hard-coded CCD indices (0, 8, 35, 27) and pixel coords
+    (2079/32, 0) are the MegaCam corner convention; CCDs are flipped so
+    the nominal bottom-right CCD reports the top-left sky corner, etc.
+    """
+    tl = w[0].pixel_to_world(2079, 0)
+    tr = w[8].pixel_to_world(32, 0)
+    br = w[35].pixel_to_world(2079, 0)
+    bl = w[27].pixel_to_world(32, 0)
+    return (
+        [tl.ra.deg, tr.ra.deg, br.ra.deg, bl.ra.deg],
+        [tl.dec.deg, tr.dec.deg, br.dec.deg, bl.dec.deg],
+    )
+
 
 class FieldCornersExtractor(object):
     """Field Corners Extractor Class.
@@ -39,6 +78,7 @@ class FieldCornersExtractor(object):
             "output_file": "exp_ra_dec.txt",
             "resume": False,
             "n_processes": 1,
+            "verbose": False,
         }
 
         self._short_options = {
@@ -51,6 +91,7 @@ class FieldCornersExtractor(object):
         self._types = {
             "resume": "bool",
             "n_processes": "int",
+            "verbose": "bool",
         }
 
         self._help_strings = {
@@ -129,98 +170,16 @@ class FieldCornersExtractor(object):
 
         """
         path, verbose = path_and_verbose
-
-        # Extract exposure number from filename
-        match = re.search(r'(\d+)\.txt')
-        expnum = int(match.group(1)) if match else None
+        expnum = _expnum_from_path(path)
 
         try:
-            # Parse header and extract WCS
-            with open(path, "r") as f:
-                string = f.read()
-                tokens = re.split(r"^(END\s+)", string, flags=re.MULTILINE)
-                n = len(tokens)
-                w = []
-                for i in range(2, n - 1, 2):
-                    h1 = Header.fromstring(tokens[i] + tokens[i + 1], sep="\n")
-                    w.append(wcs.WCS(h1))
-
-            # Calculate field corners; hard-coded values for MegaCAM
-            tl = w[0].pixel_to_world(2079, 0)
-            tr = w[8].pixel_to_world(32, 0)
-            br = w[35].pixel_to_world(2079, 0)
-            bl = w[27].pixel_to_world(32, 0)
-
-            ra = [tl.ra.deg, tr.ra.deg, br.ra.deg, bl.ra.deg]
-            dec = [tl.dec.deg, tr.dec.deg, br.dec.deg, bl.dec.deg]
-
+            w = _parse_header_to_wcs(path)
+            ra, dec = _megacam_field_corners(w)
             return (expnum, ra, dec)
-
         except Exception as e:
             if verbose:
                 print(f"Failed to process {expnum}: {e}")
             return None
-
-    def get_wcs_from_header(self, ftext):
-        """Get WCS From Header.
-
-        Parse header text file and extract WCS for all HDUs.
-
-        Parameters
-        ----------
-        ftext : str
-            path to header text file
-
-        Returns
-        -------
-        list or None
-            list of WCS objects, one per HDU, or None if parsing failed
-
-        """
-        try:
-            with open(ftext, "r") as f:
-                string = f.read()
-                tokens = re.split(r"^(END\s+)", string, flags=re.MULTILINE)
-                n = len(tokens)
-                h = []
-                w = []
-                for i in range(2, n - 1, 2):
-                    h1 = Header.fromstring(tokens[i] + tokens[i + 1], sep="\n")
-                    h.append(h1)
-                    w.append(wcs.WCS(h1))
-            return w
-        except Exception as e:
-            if self._params["verbose"]:
-                print(f"Problem opening {ftext}: {e}")
-            return None
-
-    def get_megacam_field(self, w):
-        """Get MegaCam Field.
-
-        Calculate RA/Dec of the 4 corners of a MegaCam field.
-
-        Parameters
-        ----------
-        w : list
-            list of WCS objects for all CCDs
-
-        Returns
-        -------
-        tuple
-            (ra_list, dec_list) where each is a list of 4 corner coordinates
-
-        """
-        # MegaCam field corners from specific chips and pixels
-        # Note: chips are flipped, so bottom right becomes top left, etc.
-        tl = w[0].pixel_to_world(2079, 0)  # top left
-        tr = w[8].pixel_to_world(32, 0)  # top right
-        br = w[35].pixel_to_world(2079, 0)  # bottom right
-        bl = w[27].pixel_to_world(32, 0)  # bottom left
-
-        return (
-            [tl.ra.deg, tr.ra.deg, br.ra.deg, bl.ra.deg],
-            [tl.dec.deg, tr.dec.deg, br.dec.deg, bl.dec.deg],
-        )
 
     def get_done_exposures(self):
         """Get Done Exposures.
@@ -293,12 +252,7 @@ class FieldCornersExtractor(object):
             print(f"{len(done)} already done")
 
         # Build todo list
-        todo = []
-        for p in paths:
-            end = p.find(".txt")
-            expnum = int(p[end - 6 : end])
-            if expnum not in done:
-                todo.append(p)
+        todo = [p for p in paths if _expnum_from_path(p) not in done]
 
         n_todo = len(todo)
         print(f"{n_todo} to process")
