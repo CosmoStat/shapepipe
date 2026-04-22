@@ -7,9 +7,7 @@ This module contains a class to create star mask for an image.
 """
 
 import os
-import random
 import re
-import time
 
 import numpy as np
 from astropy import units, wcs
@@ -17,12 +15,11 @@ from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.table import Table
 
-from astroquery.vizier import Vizier
-
 from shapepipe.pipeline import file_io
 from shapepipe.pipeline.config import CustomParser
 from shapepipe.pipeline.execute import execute
 from shapepipe.utilities.file_system import mkdir
+from shapepipe.utilities.vizier import query_vizier
 
 
 class Mask(object):
@@ -492,32 +489,7 @@ class Mask(object):
 
             coord = SkyCoord(ra=p[0] * units.deg, dec=p[1] * units.deg, frame="icrs")
 
-            time.sleep(random.uniform(0, 5))
-            servers = [
-                "vizier.cds.unistra.fr",
-                "vizier.cfa.harvard.edu",
-                "vizier.iucaa.in",
-            ]
-            timeouts = [10, 20, 40]
-            result = []
-            for attempt, timeout in enumerate(timeouts):
-                for server in servers:
-                    v = Vizier(row_limit=-1, timeout=timeout, vizier_server=server)
-                    result = v.query_region(coord, radius=radius*units.arcmin, catalog=self._CDS_cat_ID)
-                    if len(result) > 0:
-                        break
-                    print(f"Vizier returned empty list at {coord}, {radius}, server={server}, timeout={timeout}s")
-                if len(result) > 0:
-                    break
-                if attempt < len(timeouts) - 1:
-                    wait = 10 * 2**attempt
-                    print(f"All servers failed, retrying in {wait}s (attempt {attempt+1}/{len(timeouts)}, next timeout={timeouts[attempt+1]}s)")
-                    time.sleep(wait)
-            if len(result) == 0:
-                raise IndexError(
-                    f"Vizier astroquery returned empty list at {coord}, {radius}"
-                )
-            self._CDS_stdout = result[0]
+            self._CDS_stdout = query_vizier(p[0], p[1], radius, self._CDS_cat_ID)
         
         self._CDS_stderr = ""
 

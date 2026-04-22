@@ -13,10 +13,8 @@ bright star halos and diffraction spikes
 
 
 import os
-import random
 import re
 import sys
-import time
 
 from cs_util import args as cs_args
 from cs_util import logging as cs_logging
@@ -29,19 +27,11 @@ from astropy.io import fits
 from astropy import units as u
 from astropy.table import Table
 
-from astroquery.vizier import Vizier
+from shapepipe.utilities.vizier import query_vizier as _query_vizier
 
 
 # GSC 2.3 catalog ID
 CDS_CAT_ID = "I/305/out"
-
-VIZIER_SERVERS = [
-    "vizier.cds.unistra.fr",
-    "vizier.cfa.harvard.edu",
-    "vizier.iucaa.in",
-]
-
-VIZIER_TIMEOUTS = [10, 20, 40]
 
 
 def _get_wcs(header):
@@ -125,59 +115,7 @@ def _focal_plane_center_and_radius(f, n_ccd=40):
 
 
 def query_vizier(ra, dec, radius_arcmin):
-    """Query Vizier (GSC 2.3) with retries over timeouts and servers.
-
-    Parameters
-    ----------
-    ra : float
-        Right ascension in degrees
-    dec : float
-        Declination in degrees
-    radius_arcmin : float
-        Search radius in arcminutes
-
-    Returns
-    -------
-    astropy.table.Table
-        Star catalog table
-
-    """
-    p = np.array([ra, dec], dtype="single")
-    coord = SkyCoord(ra=p[0] * u.deg, dec=p[1] * u.deg, frame="icrs")
-
-    time.sleep(random.uniform(0, 5))
-
-    result = []
-    for attempt, timeout in enumerate(VIZIER_TIMEOUTS):
-        for server in VIZIER_SERVERS:
-            v = Vizier(row_limit=-1, timeout=timeout, vizier_server=server)
-            result = v.query_region(
-                coord, radius=radius_arcmin * u.arcmin, catalog=CDS_CAT_ID
-            )
-            if len(result) > 0:
-                break
-            print(
-                f"Vizier returned empty list at {coord}, {radius_arcmin:.2f} arcmin, "
-                f"server={server}, timeout={timeout}s"
-            )
-        if len(result) > 0:
-            print("Vizier query successful")
-            break
-        if attempt < len(VIZIER_TIMEOUTS) - 1:
-            wait = 10 * 2**attempt
-            print(
-                f"All servers failed, retrying in {wait}s "
-                f"(attempt {attempt+1}/{len(VIZIER_TIMEOUTS)}, "
-                f"next timeout={VIZIER_TIMEOUTS[attempt+1]}s)"
-            )
-            time.sleep(wait)
-
-    if len(result) == 0:
-        raise RuntimeError(
-            f"Vizier astroquery returned empty list at {coord}, {radius_arcmin:.2f} arcmin"
-        )
-
-    return result[0]
+    return _query_vizier(ra, dec, radius_arcmin, CDS_CAT_ID)
 
 
 def main(input_dir, output_dir, kind):

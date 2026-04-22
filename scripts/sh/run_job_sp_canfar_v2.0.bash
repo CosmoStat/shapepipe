@@ -527,7 +527,7 @@ fi
 if [[ $do_job != 0 ]]; then
   # Job 256: object selection on tiles
   if [ "$tile_det" == "uc" ]; then
-    run_tile_job 256 "Uc" "read_ext_cat_runner:1"
+    run_tile_job 256 "Uc" "read_ext_sexcat_runner:1"
   else
     run_tile_job 256 "Sx" "sextractor_runner:1"
   fi

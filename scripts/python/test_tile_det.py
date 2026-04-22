@@ -170,7 +170,7 @@ def find_sexcat(tile_dir, mode):
     else:
         pattern = os.path.join(
             tile_dir, "output", "run_sp_tile_Uc*",
-            "read_ext_cat_runner", "output", "sexcat-*.fits",
+            "read_ext_sexcat_runner", "output", "sexcat-*.fits",
         )
     matches = sorted(glob.glob(pattern))
     if not matches:
