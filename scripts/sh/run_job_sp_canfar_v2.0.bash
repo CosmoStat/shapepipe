@@ -428,9 +428,6 @@ fi
 letter=${psf:0:1}
 Letter=${letter^}
 
-CONDA_PREFIX=$HOME/.conda/envs/shapepipe
-PATH=$PATH:$CONDA_PREFIX/bin
-
 cd $dir
 
 # Derive tile path components from ID (e.g. "000.227" -> IDra="000")
