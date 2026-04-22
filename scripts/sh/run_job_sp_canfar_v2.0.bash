@@ -147,7 +147,7 @@ function message() {
 function init_exp_work_dir() {
   local exp_id=$1
   local exp_work_dir=$2
-  local fe_output="$exp_work_dir/output/run_sp_Fe/find_exposures_runner/output"
+  local fe_output="$exp_work_dir/output/run_sp_tile_Fe/find_exposures_runner/output"
 
   [ ! -d "$fe_output" ] && command "mkdir -p $fe_output" $dry_run
   [ ! -d "$exp_work_dir/output" ] && command "mkdir -p $exp_work_dir/output" $dry_run
@@ -172,7 +172,7 @@ function run_exp_job() {
   local run_prefix=$2
   local complete_checks=$3
 
-  exp_numbers_file=$(ls -t "$work_dir/output/run_sp_Fe"*/find_exposures_runner/output/"exp_numbers-${IDra}-${IDdec}.txt" 2>/dev/null | head -1)
+  exp_numbers_file=$(ls -t "$work_dir/output/run_sp_tile_Fe"*/find_exposures_runner/output/"exp_numbers-${IDra}-${IDdec}.txt" 2>/dev/null | head -1)
 
   if [ -z "$exp_numbers_file" ]; then
     message "Exposure numbers file exp_numbers-${IDra}-${IDdec}.txt not found in $work_dir/output" "$debug_out" 10
@@ -205,7 +205,7 @@ function run_exp_job() {
     # --force: remove all existing run directories for this prefix before running
     if [ "$force" == "1" ]; then
       local dirs_to_remove
-      dirs_to_remove=$(ls -d "$exp_work_dir/output/run_sp_${run_prefix}"* 2>/dev/null)
+      dirs_to_remove=$(ls -d "$exp_work_dir/output/run_sp_exp_${run_prefix}"* 2>/dev/null)
       if [ -n "$dirs_to_remove" ]; then
         for d in $dirs_to_remove; do
           message "Force-removing $d" "$debug_out" -1
@@ -215,7 +215,7 @@ function run_exp_job() {
     fi
 
     # Check completeness of existing run output
-    local run_dir=$(ls -dt "$exp_work_dir/output/run_sp_${run_prefix}"* 2>/dev/null | head -1)
+    local run_dir=$(ls -dt "$exp_work_dir/output/run_sp_exp_${run_prefix}"* 2>/dev/null | head -1)
     local is_complete=1
     local check_desc=""
     for check_pair in $complete_checks; do
@@ -260,7 +260,7 @@ function run_exp_job() {
     done
 
     if [ "$is_complete" == "1" ]; then
-      message "Complete $exp_id_disp: run_sp_${run_prefix} ( $check_desc)" "$debug_out" -1
+      message "Complete $exp_id_disp: run_sp_exp_${run_prefix} ( $check_desc)" "$debug_out" -1
       (( n_complete++ ))
       continue
     fi
@@ -312,7 +312,7 @@ function run_tile_job() {
   # --force: remove all existing run directories for this prefix before running
   if [ "$force" == "1" ]; then
     local dirs_to_remove
-    dirs_to_remove=$(ls -d "$work_dir/output/run_sp_${run_prefix}"* 2>/dev/null)
+    dirs_to_remove=$(ls -d "$work_dir/output/run_sp_tile_${run_prefix}"* 2>/dev/null)
     if [ -n "$dirs_to_remove" ]; then
       for d in $dirs_to_remove; do
         message "Force-removing $d" "$debug_out" -1
@@ -323,7 +323,7 @@ function run_tile_job() {
 
   # Locate most recent existing run directory for this prefix
   local run_dir
-  run_dir=$(ls -dt "$work_dir/output/run_sp_${run_prefix}"* 2>/dev/null | head -1)
+  run_dir=$(ls -dt "$work_dir/output/run_sp_tile_${run_prefix}"* 2>/dev/null | head -1)
 
   local is_complete=1
   local check_desc=""
@@ -358,15 +358,15 @@ function run_tile_job() {
   fi
 
   if [ "$is_complete" == "1" ] && [ -n "$complete_checks" ]; then
-    message "Complete: run_sp_${run_prefix} ( $check_desc)" "$debug_out" -1
+    message "Complete: run_sp_tile_${run_prefix} ( $check_desc)" "$debug_out" -1
     return 0
   fi
 
   if [ "$check" == "1" ]; then
     if [ -n "$run_dir" ]; then
-      message "Incomplete: run_sp_${run_prefix} ($check_desc)" "$debug_out" -1
+      message "Incomplete: run_sp_tile_${run_prefix} ($check_desc)" "$debug_out" -1
     else
-      message "Missing: run_sp_${run_prefix}" "$debug_out" -1
+      message "Missing: run_sp_tile_${run_prefix}" "$debug_out" -1
     fi
     return 0
   fi
@@ -374,6 +374,10 @@ function run_tile_job() {
   # Build optional --debug_out flag (omit entirely when debug_out is empty)
   local debug_flag=""
   [ -n "$debug_out" ] && debug_flag="--debug_out $debug_out"
+
+  if [ ! -e "cfis" ]; then
+    ln -sf ~/shapepipe/example/cfis "cfis"
+  fi
 
   # Run job script
   command "job_sp_canfar_v2.0.bash -p $psf --tile_det $tile_det --tile_mask $tile_mask -j $tile_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$log_file"
@@ -455,7 +459,7 @@ export DISPLAY=:1.0
 
 
 # Run job — on scratch if available, otherwise in-place
-# Job 1: download tile images (config_Git_vos.ini)
+# Job 1: download tile images (config_tile_Git_vos.ini)
 
 if [ -n "$scratch" ]; then
   scratch_work="$scratch/tiles/$IDra/$ID"
@@ -494,20 +498,20 @@ fi
 (( do_job = job & 16 ))
 if [[ $do_job != 0 ]]; then
   # Job 16: split exposures, get WCS headers
-  run_exp_job 16 "exp_Sp" "split_exp_runner:121"
+  run_exp_job 16 "Sp" "split_exp_runner:121"
 fi
 
 (( do_job = job & 32 ))
 if [[ $do_job != 0 ]]; then
   # Job 32: mask exposures
-  run_exp_job 32 "exp_Ma" "mask_runner:40"
+  run_exp_job 32 "Ma" "mask_runner:40"
 fi
 
 (( do_job = job & 64 ))
 if [[ $do_job != 0 ]]; then
   # Job 64: process stars on exposures, PSF model
   if [ "$psf" == "psfex" ]; then
-    run_exp_job 64 "exp_SxSePsf${Letter}i" "sextractor_runner:80 psfex_runner:80 psfex_interp_runner:40::warn setools_runner:80:rand_split"
+    run_exp_job 64 "SxSePsf${Letter}i" "sextractor_runner:80 psfex_runner:80 psfex_interp_runner:40::warn setools_runner:80:rand_split"
   else
     message "MCCD not implemented yet for v2.0" "$debug_out" 10
   fi
@@ -523,9 +527,9 @@ fi
 if [[ $do_job != 0 ]]; then
   # Job 256: object selection on tiles
   if [ "$tile_det" == "uc" ]; then
-    run_tile_job 256 "tile_Uc" "read_ext_cat_runner:1"
+    run_tile_job 256 "Uc" "read_ext_cat_runner:1"
   else
-    run_tile_job 256 "tile_Sx" "sextractor_runner:1"
+    run_tile_job 256 "Sx" "sextractor_runner:1"
   fi
 fi
 

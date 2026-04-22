@@ -134,8 +134,9 @@ if [ "$star_cat_for_mask" != "onthefly" ] && [ "$star_cat_for_mask" != "save" ];
   exit 4
 fi
 
-if [ "$retrieve" != "vos" ] && [ "$retrieve" != "symlink" ]; then
-  echo "method to retrieve images (option -r) needs to be 'vos' or 'symlink'"
+#if [ "$retrieve" != "vos" ] && [ "$retrieve" != "symlink" ]; then
+if [ "$retrieve" != "vos" ]; then
+  echo "method to retrieve images (option -r) needs to be 'vos' for v2.0"
   exit 5
 fi
 
@@ -323,7 +324,7 @@ if [[ $do_job != 0 ]]; then
 
   ### Retrieve files
   command_cfg_shapepipe \
-    "config_Git_$retrieve.ini" \
+    "config_tile_Git_$retrieve.ini" \
      "Retrieve images" \
      -1 \
      $exclusive
@@ -333,7 +334,7 @@ if [[ $do_job != 0 ]]; then
     #### For tiles
     mkdir $SP_RUN/star_cat_tiles
     command_sp \
-      "create_star_cat $SP_RUN/output/run_sp_Git_*/get_images_runner_run/output $SP_RUN/star_cat_tiles" \
+      "create_star_cat $SP_RUN/output/run_sp_tile_Git_*/get_images_runner_run/output $SP_RUN/star_cat_tiles" \
       "Save star cats for masking (tile)"
 
     #### For single-exposures
@@ -356,7 +357,7 @@ fi
 if [[ $do_job != 0 ]]; then
 
   ### Uncompress tile weights
-  command_cfg_shapepipe "config_Fe.ini" "Run shapepipe (find exposures)" $n_smp $exclusive
+  command_cfg_shapepipe "config_tile_Fe.ini" "Run shapepipe (find exposures)" $n_smp $exclusive
 
 fi
 
@@ -366,7 +367,7 @@ if [[ $do_job != 0 ]]; then
 
   ### Retrieve exposure images
   command_cfg_shapepipe \
-    "config_Gie_vos.ini" \
+    "config_exp_Gie_vos.ini" \
     "Run shapepipe (get exposure images)" \
     $n_smp \
     $exclusive
@@ -378,7 +379,7 @@ if [[ $do_job != 0 ]]; then
 
   ### Split images into single-HDU files, merge headers for WCS info
   command_cfg_shapepipe \
-    "config_exp_SpMh.ini" \
+    "config_exp_Sp.ini" \
     "Run shapepipe (split images, merge headers)" \
     $n_smp \
     $exclusive
@@ -433,7 +434,7 @@ if [[ $do_job != 0 ]]; then
 
     ### Download external catalogue from vos
     command_cfg_shapepipe \
-      "config_Git_cat_vos.ini" \
+      "config_tile_Git_cat_vos.ini" \
       "Run shapepipe (download external tile catalogue)" \
       -1 \
       $exclusive
@@ -504,7 +505,7 @@ if [[ $do_job != 0 ]]; then
  
   ### Merge separated shapes catalogues
   command_sp \
-    "shapepipe_run -c $SP_CONFIG_MOD/config_merge_sep_cats.ini" \
+    "shapepipe_run -c $SP_CONFIG_MOD/config_tile_merge_sep_cats.ini" \
     "Run shapepipe (tile: merge sep cats)" \
     "$VERBOSE" \
     "$ID"
@@ -517,7 +518,7 @@ if [[ $do_job != 0 ]]; then
 
   ### Merge all relevant information into final catalogue
   command_cfg_shapepipe \
-    "config_make_cat_$psf${suff_sm}.ini" \
+    "config_tile_make_cat_$psf${suff_sm}.ini" \
     "Run shapepipe (tile: create final cat $psf)" \
     $n_smp \
     $exclusive

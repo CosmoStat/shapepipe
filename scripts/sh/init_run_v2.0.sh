@@ -10,7 +10,8 @@
 version="2.0"
 
 # Default base run directory (permanent storage)
-base_dir="$HOME/cosmostat/v2/v${version}"
+#base_dir="$HOME/cosmostat/v2/v${version}"
+base_dir=`pwd`
 
 # ShapePipe repository root (for config symlink and tile list)
 sp_root="$HOME/shapepipe"
@@ -55,26 +56,17 @@ echo ""
 mkdir -p "$base_dir"
 cd "$base_dir"
 
-# --- Tile staging subdirectories ---
-# One subdir per unique 3-digit first coordinate, e.g. tiles/000/, tiles/001/, ...
-echo "Creating tile subdirectories..."
-tile_prefixes=$(sed 's/CFIS\.\([0-9]*\)\..*/\1/' "$tiles_src" | sort -u)
-n_tile_dirs=0
-for pfx in $tile_prefixes; do
-    mkdir -p "tiles/$pfx"
-    (( n_tile_dirs++ ))
-done
-echo "  Created $n_tile_dirs subdirectories under tiles/"
+echo "Creating tiles/ directory..."
+mkdir -p tiles
+echo "  exp/ created (subdirs e.g. tiles/301/301.279 added at download time)"
 
 # --- Exposure staging directory ---
-# Subdirectories will be created when exposures are downloaded (first 2 digits of 7-digit ID)
-echo "Creating exp/ staging directory..."
+echo "Creating exp/ directory..."
 mkdir -p exp
 echo "  exp/ created (subdirs e.g. exp/28/ added at download time)"
 
 # --- Output and working directories ---
-echo "Creating output and working directories..."
-mkdir -p output
+echo "Creating log and debug directories..."
 mkdir -p logs
 mkdir -p debug
 
@@ -105,7 +97,7 @@ echo ""
 echo "Done. Directory structure:"
 echo "  $base_dir/"
 echo "  ├── tiles/"
-echo "  ├── exp/
+echo "  ├── exp/"
 echo "  ├── logs/"
-echo "  ├── cfis  ->  $config_dir"
-echo "  └── tile_numbers.txt  ->  $tiles_src  ($n_tiles tiles)"
+echo "  ├── cfis  ->  ${config_dir}"
+echo "  └── tile_numbers.txt  ->  ${tiles_src}"
