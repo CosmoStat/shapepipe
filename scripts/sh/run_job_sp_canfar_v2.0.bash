@@ -185,6 +185,7 @@ function run_exp_job() {
   local n_total=0
   local n_complete=0
   local n_incomplete=0
+  local t_loop_start=$(date +%s)
 
   # Loop over exposure IDs
   while IFS= read -r exp_id || [ -n "$exp_id" ]; do
@@ -292,6 +293,8 @@ function run_exp_job() {
 
   done < "$exp_numbers_file"
 
+  local t_loop_end=$(date +%s)
+  message "Exposure loop: $((t_loop_end - t_loop_start))s for $n_total exposures (job $exp_job)" "$debug_out" -1
   message "Tile $ID job $exp_job: $n_complete/$n_total exposures complete" "$debug_out" -1
   if [ "$n_incomplete" -gt 0 ]; then
     message "WARNING: $n_incomplete/$n_total exposures incomplete or missing" "$debug_out" -1
