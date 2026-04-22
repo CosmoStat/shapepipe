@@ -166,9 +166,13 @@ export SP_RUN=`pwd`
 export SP_CONFIG=$SP_RUN/cfis
 export SP_CONFIG_MOD=$SP_RUN/cfis_mod
 
-# Root directory for per-exposure work directories: sibling of tiles/ at the
-# same v2.0 level (SP_RUN = .../v2.0/tiles/IDra/ID, so three levels up + exp)
-export SP_EXP=$(realpath "$SP_RUN/../../../exp")
+# Root directory for per-exposure work directories.
+# Set SP_EXP in the environment to override; otherwise falls back to the
+# conventional layout (SP_RUN = .../v2.0/tiles/IDra/ID, three levels up + exp).
+if [ -z "${SP_EXP}" ]; then
+  export SP_EXP=$(realpath "$SP_RUN/../../../exp")
+  echo "SP_EXP not set, using computed path: $SP_EXP"
+fi
 
 ## Other variables
 
@@ -204,28 +208,16 @@ function command () {
       echo "${pat}SP_CONFIG = $SP_CONFIG" >> $debug_out
     fi
 
-   if [ $# == 2 ]; then
-      if [ $VERBOSE == 1 ]; then
-           echo "$str: running '$cmd'"
-      fi
-      if [ -n "$debug_out" ]; then
-          echo "${pat}Running $cmd" >> $debug_out
-      fi
+   if [ $VERBOSE == 1 ]; then
+      echo "$str: running '$cmd'"
+   fi
+
+   if [ -n "$debug_out" ]; then
+      echo "${pat}Running $cmd" >> $debug_out
+   fi
 
       $cmd
       
-   else
-      if [ $VERBOSE == 1 ]; then
-         echo "$str: running '$cmd $4 \"$5 $6\"'"
-      fi
-      if [ -n "$debug_out" ]; then
-          echo "${pat}Running $cmd $4 \"$5 $6\"" >> $debug_out
-      fi
-
-      $cmd $4 "$5 $6"
-
-   fi	
-
    res=$?
 
    if [ -n "$debug_out" ]; then
@@ -506,9 +498,7 @@ if [[ $do_job != 0 ]]; then
   ### Merge separated shapes catalogues
   command_sp \
     "shapepipe_run -c $SP_CONFIG_MOD/config_tile_merge_sep_cats.ini" \
-    "Run shapepipe (tile: merge sep cats)" \
-    "$VERBOSE" \
-    "$ID"
+    "Run shapepipe (tile: merge sep cats)"
 fi
 
 (( do_job = $job & 512 ))
