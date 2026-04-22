@@ -27,7 +27,6 @@ from shapepipe.modules.python_example_package import python_example
         "sf_tools",
         "sip_tpv",
         "sqlitedict",
-        "treecorr",
     ],
     run_method="parallel",
 )

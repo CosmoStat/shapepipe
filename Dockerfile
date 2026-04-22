@@ -85,10 +85,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
     sqlitedict==2.0.0 \
     termcolor==1.1.0 \
     tqdm==4.63.0 \
-    treecorr==5.1.1 \
     vos==3.6.1.1 \
-    git+https://github.com/aguinot/ngmix@stable_version \
-    git+https://github.com/tobias-liaudat/Stile@v0.1
+    git+https://github.com/aguinot/ngmix@stable_version
 
 WORKDIR /app
 COPY . /app/.

@@ -239,7 +239,6 @@ site-packages() {
   check_site_pkg "sf_tools"
   check_site_pkg "sip_tpv"
   check_site_pkg "sqlitedict"
-  check_site_pkg "treecorr"
 }
 
 # Function to return exit code
