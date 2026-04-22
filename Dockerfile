@@ -5,11 +5,10 @@ LABEL maintainer="martin.kilbinger@cea.fr"
 LABEL description="ShapePipe base image with common dependencies"
 
 # Install system dependencies needed for ShapePipe and WeightWatcher
-#RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf && \
 RUN apt-get update -o Acquire::ForceIPv4=true -y --quiet && \
     apt-get install -y --no-install-recommends \
-        psfex source-extractor \
-        libproj-dev proj-bin && \
+    psfex source-extractor \
+    libproj-dev proj-bin && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Build and install WeightWatcher from source
@@ -29,54 +28,23 @@ RUN cd /tmp/weightwatcher-${WW_VERSION} && \
     make --quiet && \
     make install
 
-# Install Python dependencies (including Jupyter Lab if desired)
+# Ensure astroml:latest conda Python 3.12 is used (Docker RUN does not source conda init)
+ENV PATH /opt/conda/bin:$PATH
+
+# Upgrade pip and install tools not part of the ShapePipe package
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir \
-        astropy==6.1.0 \
-        cs_util==0.1.9 \
-        galsim==2.5.3 \
         ipython==8.18.1 \
-        joblib==1.4.2 \
         jupyterlab==4.3.1 \
-        matplotlib==3.8.4 \
-        mccd==1.2.4 \
-        modopt==1.6.1 \
-        mpi4py==4.0.3 \
-        numpy==1.26.4 \
-        numpydoc==1.2 \
-        pandas==2.2 \
-        pytest==8.3.3 \
-        pytest-cov==5.0.0 \
-        pytest-pycodestyle==2.4.1 \
-        pytest-pydocstyle==2.4.0 \
-        reproject==0.14.1 \
-        sf_tools==2.0.4 \
-        sip_tpv==1.1 \
-        skaha==1.7.0 \
-        sqlitedict==2.0.0 \
-        termcolor==1.1.0 \
-        tqdm==4.63.0 \
-        treecorr==5.1.1 \
-        vos==3.6.1.1 \
-        "setuptools<81" \
-        git+https://github.com/aguinot/ngmix@stable_version \
-        git+https://github.com/tobias-liaudat/Stile@v0.1 \
-        astroquery \
-        canfar \
-        h5py \
-        PyQt5 \
-        pyqtgraph \
-        python-pysap \
-        numba \
-        fitsio
+        snakemake==8.27.1
 
 # Set working directory and copy source code
 WORKDIR /app
 COPY . /app/.
 RUN chown -R root:root /app && chmod -R u+rwX /app
 
-# Install ShapePipe in editable mode and expose scripts
-RUN pip install --no-cache-dir -e . && \
+# Install ShapePipe and its dependencies (including fitsio optional extra)
+RUN pip install --no-cache-dir -e ".[fitsio]" && \
     for ext in .py .sh .bash; do \
         for script in /app/scripts/*/*$ext; do \
             link_name=$(basename $script $ext); \
