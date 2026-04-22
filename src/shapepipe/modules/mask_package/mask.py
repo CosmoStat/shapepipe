@@ -502,8 +502,7 @@ class Mask(object):
             result = []
             for attempt, timeout in enumerate(timeouts):
                 for server in servers:
-                    v = Vizier(row_limit=-1, timeout=timeout)
-                    v.SERVER = server
+                    v = Vizier(row_limit=-1, timeout=timeout, vizier_server=server)
                     result = v.query_region(coord, radius=radius*units.arcmin, catalog=self._CDS_cat_ID)
                     if len(result) > 0:
                         break

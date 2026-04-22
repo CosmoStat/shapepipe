@@ -150,8 +150,7 @@ def query_vizier(ra, dec, radius_arcmin):
     result = []
     for attempt, timeout in enumerate(VIZIER_TIMEOUTS):
         for server in VIZIER_SERVERS:
-            v = Vizier(row_limit=-1, timeout=timeout)
-            v.SERVER = server
+            v = Vizier(row_limit=-1, timeout=timeout, vizier_server=server)
             result = v.query_region(
                 coord, radius=radius_arcmin * u.arcmin, catalog=CDS_CAT_ID
             )
