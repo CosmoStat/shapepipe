@@ -8,7 +8,10 @@ VERSIONS=("v1.3" "v1.4" "v1.5" "v1.6")
 ## Output directory of plots
 OUTPUT_DIR="coverage_map_plots"
 
-# healsparse resolution
+# healsparse resolution. nside=131072 gives ~0.1" per pixel, chosen to
+# match the UNIONS bit-mask resolution so coverage and mask align pixel-
+# wise. CoverageMapBuilder defaults to nside=2048 for lighter-weight
+# offline use; override here for the production build.
 BUILD_NSIDE=131072
 BUILD_CHANNELS=128
 

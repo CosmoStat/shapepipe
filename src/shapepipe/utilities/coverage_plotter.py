@@ -54,6 +54,7 @@ class CoveragePlotter(object):
             "figsize_x": 12,
             "figsize_y": 8,
             "dpi": 200,
+            "verbose": False,
         }
 
         self._short_options = {
@@ -87,6 +88,7 @@ class CoveragePlotter(object):
             "figsize_x": "float",
             "figsize_y": "float",
             "dpi": "int",
+            "verbose": "bool",
         }
 
         self._help_strings = {
@@ -156,7 +158,9 @@ class CoveragePlotter(object):
                 "Install with: pip install -e /path/to/cs_util"
             )
 
-        # Check region validity
+        # Check region validity. Reaches into FootprintPlotter._regions
+        # because cs_util doesn't expose a public region registry yet;
+        # update when it does.
         region = self._params["region"]
         if region is not None:
             valid_regions = list(FootprintPlotter._regions.keys())

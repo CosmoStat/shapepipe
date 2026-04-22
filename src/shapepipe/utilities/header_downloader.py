@@ -33,9 +33,10 @@ class HeaderDownloader(object):
         self._params = {
             "input_file": None,
             "output_dir": "header",
-            "vospace_path": "vos:cfis/pitcairn", # Default UNIONS exposure path
+            "vospace_path": "vos:cfis/pitcairn",  # UNIONS/CFIS default; override for other surveys
             "overwrite": False,
             "dir_for_links": None,
+            "verbose": False,
         }
 
         self._short_options = {
@@ -48,6 +49,7 @@ class HeaderDownloader(object):
 
         self._types = {
             "overwrite": "bool",
+            "verbose": "bool",
         }
 
         self._help_strings = {
