@@ -27,11 +27,11 @@ class DependencyHandler(object):
 
     """
 
-    def __init__(self, dependencies=[], executables=[], exe_to_module={}):
+    def __init__(self, dependencies=None, executables=None, exe_to_module=None):
 
-        self.depend = dependencies
-        self.execute = executables
-        self._exe_to_module = exe_to_module
+        self.depend = dependencies if dependencies is not None else []
+        self.execute = executables if executables is not None else []
+        self._exe_to_module = exe_to_module if exe_to_module is not None else {}
         self._greq = ">="
         self._equal = "=="
         self._great = ">"
