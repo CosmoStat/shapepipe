@@ -29,8 +29,9 @@ def read_ext_cat_runner(
     """Define the Read External Catalogue Runner.
 
     Reads an external ASCII catalogue (SExtractor format), converts it to
-    a FITS-LDAC catalogue compatible with downstream ShapePipe modules, and
-    runs multi-epoch post-processing to add per-exposure HDUs.
+    a FITS-LDAC catalogue compatible with downstream ShapePipe modules.
+    If MAKE_POST_PROCESS = True, runs multi-epoch post-processing to add
+    per-exposure HDUs.
     """
     cat_path = input_file_list[0]
     image_path = input_file_list[1]
