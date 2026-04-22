@@ -30,7 +30,7 @@ dependencies = [
     "PyQt5",
     "pyqtgraph",
     "reproject",
-    "setuptools<81",
+    "setuptools<81", # workaround for sf_tools/python-pysap importing pkg_resources
     "sf_tools",
     "sip_tpv",
     "skaha",
