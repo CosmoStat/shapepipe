@@ -15,7 +15,7 @@ from shapepipe.modules.split_exp_package.split_exp import SplitExposures
     input_module="get_images_runner",
     file_pattern=["image", "weight", "flag"],
     file_ext=[".fz", ".fz", ".fz"],
-    depends=["numpy", "astropy", "sip_tpv"],
+    depends=["numpy", "astropy"],
     run_method="parallel",
 )
 def split_exp_runner(

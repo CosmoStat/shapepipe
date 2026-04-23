@@ -25,7 +25,6 @@ from shapepipe.modules.python_example_package import python_example
         "pysap",
         "scipy",
         "sf_tools",
-        "sip_tpv",
         "sqlitedict",
         "treecorr",
     ],

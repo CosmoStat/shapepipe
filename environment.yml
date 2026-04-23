@@ -36,7 +36,6 @@ dependencies:
     - reproject
     - shear_psf_leakage
     - skaha
-    - sip_tpv
     - sf_tools
     - sqlitedict
     - termcolor

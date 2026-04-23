@@ -11,7 +11,6 @@ single exposure into separate files.
 """
 
 import numpy as np
-import sip_tpv as stp
 from astropy.io import fits
 from astropy.wcs import WCS
 
@@ -62,16 +61,11 @@ class SplitExposures(object):
         ):
 
             transf_int = "flag" in output_suffix
-            transf_coord = "image" in output_suffix
             save_header = "image" in output_suffix
 
-            self.create_hdus(
-                exp_path, output_suffix, transf_coord, transf_int, save_header
-            )
+            self.create_hdus(exp_path, output_suffix, transf_int, save_header)
 
-    def create_hdus(
-        self, exp_path, output_suffix, transf_coord, transf_int, save_header
-    ):
+    def create_hdus(self, exp_path, output_suffix, transf_int, save_header):
         """Create HDUs.
 
         Split a single exposures CCDs into separate files.
@@ -82,8 +76,6 @@ class SplitExposures(object):
             Path to the single exposure
         output_suffix : str
             Suffix for the output file
-        transf_coord : bool
-            Transform the WCS (``pv`` to ``sip``) if ``True``
         transf_int : bool
             Set data types to int if ``True``
         save_header : bool
@@ -101,10 +93,7 @@ class SplitExposures(object):
 
         for idx in range(1, self._n_hdu + 1):
 
-            # h = fits.getheader(exp_path, idx)
             h = hdu_list[idx].header
-            if transf_coord:
-                stp.pv_to_sip(h)
 
             # d = fits.getdata(exp_path, idx)
             try:
