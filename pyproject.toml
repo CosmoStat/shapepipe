@@ -11,13 +11,33 @@ authors = [
 license = { "file" = "LICENSE" }
 requires-python = ">=3.12"
 dependencies = [
+    "astropy>=5.2",
+    "astroquery",
+    "canfar",
+    "cs_util>=0.1",
+    "galsim>=2.5.3",
+    "h5py",
     "joblib>=0.13",
+    "matplotlib>=3.8.4",
+    "mccd>=1.2.4",
     "modopt>=1.2",
+    "mpi4py",
+    "numba>=0.58.1",
     "numpy>=1.14",
     "pandas",
-    "canfar",
+    "python-dateutil",
+    "python-pysap>=0.2.1",
+    "PyQt5",
+    "pyqtgraph",
+    "reproject",
+    "setuptools<81", # workaround for sf_tools/python-pysap importing pkg_resources
     "sf_tools",
-    "h5py",
+    "skaha",
+    "sqlitedict",
+    "termcolor",
+    "tqdm",
+    "vos",
+    "ngmix @ git+https://github.com/aguinot/ngmix@stable_version",
 ]
 
 
