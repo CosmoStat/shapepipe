@@ -80,7 +80,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pytest-pydocstyle==2.4.0 \
     reproject==0.14.1 \
     sf_tools==2.0.4 \
-    sip_tpv==1.1 \
     skaha==1.7.0 \
     sqlitedict==2.0.0 \
     termcolor==1.1.0 \

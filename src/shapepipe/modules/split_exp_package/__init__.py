@@ -28,9 +28,7 @@ OUTPUT_SUFFIX : list
     ``image``:
 
     1. Header is saved to numpy binary file (``.npy``);
-    2. Header WCS is saved in output FITS file header;
-    3. Geader WCS coordinates are transformed from pv to sip using the
-       ``sip_tpv`` package
+    2. Header WCS is saved in output FITS file header
 
     ``flag``: data is save as ``int16``
 

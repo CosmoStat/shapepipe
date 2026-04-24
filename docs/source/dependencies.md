@@ -20,9 +20,7 @@ reproducibility of the results. Below we list the main packages used.
 | [Numpy](https://numpy.org/) | {cite:p}`harris:20` |
 | [Pandas](https://pandas.pydata.org/) | {cite:p}`pandas:10,pandas:20` |
 | [sf_tools](https://github.com/sfarrens/sf_tools) | |
-| [sip_tpv](https://github.com/stargaser/sip_tpv) | {cite:p}`shupe:12` |
 | [sqlitedict](https://github.com/RaRe-Technologies/sqlitedict) | |
-| [TreeCorr](https://rmjarvis.github.io/TreeCorr/_build/html/index.html) | {cite:p}`jarvis:04` |
 
 ## Executable Dependencies
 
