@@ -45,10 +45,6 @@ KNOWN_XFAIL = {
         "numba not in develop Docker image",
     "shapepipe.modules.ngmix_runner":
         "numba not in develop Docker image (transitive)",
-    "shapepipe.modules.split_exp_package.split_exp":
-        "uses deprecated pkg_resources (setuptools>=68)",
-    "shapepipe.modules.split_exp_runner":
-        "uses deprecated pkg_resources (transitive)",
     "shapepipe.modules.uncompress_fits_package.uncompress_fits":
         "fitsio not installed (declared as optional extra)",
     "shapepipe.modules.uncompress_fits_runner":

@@ -44,8 +44,6 @@ KNOWN_XFAIL = {
         "astroquery not in develop Docker image",
     "shapepipe.modules.ngmix_runner":
         "numba not in develop Docker image",
-    "shapepipe.modules.split_exp_runner":
-        "uses deprecated pkg_resources (setuptools>=68)",
     "shapepipe.modules.uncompress_fits_runner":
         "fitsio not installed (declared as optional extra)",
 }
