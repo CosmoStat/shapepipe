@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# run_job_sp_canfar_v2.0.bash
+# run_job_sp_canfar_v2.0
 # Description: Initialise tile/exposure run directory and launch ShapePipe job.
 
 # Shared job-list description
@@ -286,8 +286,8 @@ function run_exp_job() {
 
     echo "$(basename "$0") -j $exp_job -e $exp_id" > "$exp_log_file"
     echo "pwd=`pwd`"
-    command "job_sp_canfar_v2.0.bash -p $psf --tile_det $tile_det --tile_mask $tile_mask -j $exp_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$exp_log_file"
-    echo "Done with job_sp_canfar_v2.0.bash"
+    command "job_sp_canfar_v2.0 -p $psf --tile_det $tile_det --tile_mask $tile_mask -j $exp_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$exp_log_file"
+    echo "Done with job_sp_canfar_v2.0"
 
     #cd "$dir"
 
@@ -383,7 +383,7 @@ function run_tile_job() {
   fi
 
   # Run job script
-  command "job_sp_canfar_v2.0.bash -p $psf --tile_det $tile_det --tile_mask $tile_mask -j $tile_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$log_file"
+  command "job_sp_canfar_v2.0 -p $psf --tile_det $tile_det --tile_mask $tile_mask -j $tile_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$log_file"
 }
 
 
