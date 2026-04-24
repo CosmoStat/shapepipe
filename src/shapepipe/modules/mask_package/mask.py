@@ -13,13 +13,13 @@ import numpy as np
 from astropy import units, wcs
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
-
-from astroquery.vizier import Vizier
+from astropy.table import Table
 
 from shapepipe.pipeline import file_io
 from shapepipe.pipeline.config import CustomParser
 from shapepipe.pipeline.execute import execute
 from shapepipe.utilities.file_system import mkdir
+from shapepipe.utilities.vizier import query_vizier
 
 
 class Mask(object):
@@ -481,23 +481,15 @@ class Mask(object):
 
         """
         if "star_cat" in self._config["PATH"]:
-            f = open(self._config["PATH"]["star_cat"], "r")
-            self._CDS_stdout = f.read()
-            f.close()
+            self._CDS_stdout = Table.read(self._config["PATH"]["star_cat"])
         else:
             # For some exposures, Vizier returned empty star list if input position
-            # is not single precision 
-            p = np.array(position, dtype='single')
+            # is not single (? or double) precision 
+            p = np.array(position, dtype='double')
 
             coord = SkyCoord(ra=p[0] * units.deg, dec=p[1] * units.deg, frame="icrs")
 
-            Vizier.ROW_LIMIT = -1  # no row limit
-            result = Vizier.query_region(coord, radius=radius*units.arcmin, catalog=self._CDS_cat_ID)
-            if len(result) == 0:
-                raise IndexError(
-                    f"Vizier astroquery returned empty list at {coord}, {radius}"
-                )
-            self._CDS_stdout = result[0]
+            self._CDS_stdout = query_vizier(p[0], p[1], radius, self._CDS_cat_ID)
         
         self._CDS_stderr = ""
 

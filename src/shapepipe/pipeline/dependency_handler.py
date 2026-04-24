@@ -27,10 +27,11 @@ class DependencyHandler(object):
 
     """
 
-    def __init__(self, dependencies=[], executables=[]):
+    def __init__(self, dependencies=None, executables=None, exe_to_module=None):
 
-        self.depend = dependencies
-        self.execute = executables
+        self.depend = dependencies if dependencies is not None else []
+        self.execute = executables if executables is not None else []
+        self._exe_to_module = exe_to_module if exe_to_module is not None else {}
         self._greq = ">="
         self._equal = "=="
         self._great = ">"
@@ -188,7 +189,7 @@ class DependencyHandler(object):
         return cls._slice_2d(array, cls._get_indices(array[col], value))
 
     @staticmethod
-    def _check_executable(exe_name):
+    def _check_executable(exe_name, module_name=None):
         """Check if Input is Executable.
 
         This method checks if the input executable exists.
@@ -197,6 +198,8 @@ class DependencyHandler(object):
         ----------
         exe_name : str
             Executable name
+        module_name : str, optional
+            Name of the module runner requiring this executable
 
         Returns
         -------
@@ -228,10 +231,16 @@ class DependencyHandler(object):
             res = is_exe(exe_name)
 
         if not res:
-            raise IOError(
+            msg = (
                 f"{exe_name} does not appear to be a valid executable on "
                 + "this system."
             )
+            if module_name is not None:
+                msg += (
+                    f" Check the 'executes' option in the module runner "
+                    + f"{module_name}.py."
+                )
+            raise IOError(msg)
 
     def _split_string(self, string):
         """Split String.
@@ -361,7 +370,7 @@ class DependencyHandler(object):
 
         for executable in self.executable_list:
 
-            self._check_executable(executable)
+            self._check_executable(executable, self._exe_to_module.get(executable))
 
             exe_path, err = subprocess.Popen(
                 f"which {executable}",

@@ -40,7 +40,7 @@ def execute(command_line):
     process = sp.Popen(command, stdout=sp.PIPE, stderr=sp.PIPE)
     stdout, stderr = process.communicate()
 
-    return stdout.decode("utf-8"), stderr.decode("utf-8")
+    return stdout.decode("utf-8", errors="replace"), stderr.decode("utf-8", errors="replace")
 
 
 def check_executable(exe_name):

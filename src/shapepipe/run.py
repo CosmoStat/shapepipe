@@ -180,7 +180,13 @@ class ShapePipe:
 
         module_dep += ["mpi4py"] if import_mpi else module_dep
 
-        dh = DependencyHandler(module_dep, module_exe)
+        exe_to_module = {
+            exe: module
+            for module in self.filehd.module_runners.keys()
+            for exe in getattr(self.filehd.module_runners[module], "executes", [])
+        }
+
+        dh = DependencyHandler(module_dep, module_exe, exe_to_module)
 
         dep_text = "Checking Python Dependencies:"
         exe_text = "Checking System Executables:"
