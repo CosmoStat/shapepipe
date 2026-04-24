@@ -178,14 +178,6 @@ PLOT_HISTOGRAMS: bool
 REMOVE_OUTLIERS: bool
     Option to remove validated stars that are outliers in terms of shape
     before drawing the plots
-PLOT_RHO_STATS: bool
-    Option to produce the rho stats plots
-RHO_STATS_STYLE: str
-    Style of the rho stats plot, options are ``HSC`` or ``DES``
-RHO_STATS_YLIM_L: tuple
-    Y-axis limits for left-hand rho stats plot
-RHO_STATS_YLIM_R: tuple
-    Y-axis limits for right-hand rho stats plot
 
 """
 

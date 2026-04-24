@@ -37,6 +37,8 @@ RUN apt-get update -y --quiet --fix-missing && \
     make \
     openmpi-bin \
     libopenmpi-dev \
+    libproj-dev \
+    proj-bin \
     pkg-config \
     protobuf-compiler \
     psfex=3.21.1-1 \
@@ -78,15 +80,12 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pytest-pydocstyle==2.4.0 \
     reproject==0.14.1 \
     sf_tools==2.0.4 \
-    sip_tpv==1.1 \
     skaha==1.7.0 \
     sqlitedict==2.0.0 \
     termcolor==1.1.0 \
     tqdm==4.63.0 \
-    treecorr==5.1.1 \
     vos==3.6.1.1 \
-    git+https://github.com/aguinot/ngmix@stable_version \
-    git+https://github.com/tobias-liaudat/Stile@v0.1
+    git+https://github.com/aguinot/ngmix@stable_version
 
 WORKDIR /app
 COPY . /app/.

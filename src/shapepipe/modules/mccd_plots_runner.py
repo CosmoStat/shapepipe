@@ -1,10 +1,7 @@
 """MCCD PLOTS RUNNER.
 
 This module is used to generate a series of plots from the merged validation
-catalogs.
-It plots the Meanshape plots for the merged validation catalog.
-It can also plot the rho statistics provided that the required packages are
-installed.
+catalogs. It plots the Meanshape plots for the merged validation catalog.
 
 :Author: Tobias Liaudat
 
@@ -14,25 +11,6 @@ import warnings
 
 from shapepipe.modules.mccd_package import mccd_plot_utilities as mccd_plots
 from shapepipe.modules.module_decorator import module_runner
-
-try:
-    import stile
-    import stile.stile_utils
-    from stile.sys_tests import BaseCorrelationFunctionSysTest
-
-    has_stile = True
-
-except ImportError:
-    has_stile = False
-
-try:
-    import treecorr
-    from treecorr.corr2 import corr2_valid_params
-
-    has_treecorr = True
-
-except ImportError:
-    has_treecorr = False
 
 try:
     import matplotlib as mpl
@@ -52,7 +30,7 @@ except ImportError:
     file_pattern=["full_starcat"],
     file_ext=[".fits"],
     numbering_scheme="-0000000",
-    depends=["numpy", "mccd", "astropy", "matplotlib", "stile", "treecorr"],
+    depends=["numpy", "mccd", "astropy", "matplotlib"],
     run_method="serial",
 )
 def mccd_plots_runner(
@@ -104,21 +82,6 @@ def mccd_plots_runner(
     plot_meanshapes = config.getboolean(module_config_sec, "PLOT_MEANSHAPES")
     plot_histograms = config.getboolean(module_config_sec, "PLOT_HISTOGRAMS")
 
-    # Get parameters for rho stats plots
-    plot_rho_stats = config.getboolean(module_config_sec, "PLOT_RHO_STATS")
-    rho_stat_plot_style = config.get(module_config_sec, "RHO_STATS_STYLE")
-
-    if config.has_option(module_config_sec, "RHO_STATS_YLIM_L"):
-        str_list = config.getlist(module_config_sec, "RHO_STATS_YLIM_L")
-        ylim_l = [float(s) for s in str_list]
-    else:
-        ylim_l = None
-    if config.has_option(module_config_sec, "RHO_STATS_YLIM_R"):
-        str_list = config.getlist(module_config_sec, "RHO_STATS_YLIM_R")
-        ylim_r = [float(s) for s in str_list]
-    else:
-        ylim_r = None
-
     nb_pixel = x_nb_bins, y_nb_bins
     starcat_path = input_file_list[0][0]
     output_path = run_dirs["output"] + "/"
@@ -150,33 +113,6 @@ def mccd_plots_runner(
             )
             warnings.warn(msg)
             w_log.info(msg)
-
-    if plot_rho_stats:
-        if has_stile is False or has_treecorr is False:
-            msg = (
-                "[!] To calculate the rho stats the packages "
-                + "stile and treecorr are required. However, "
-                + f" treecorr: {has_treecorr}, stile: {has_stile}."
-            )
-            warnings.warn(msg)
-            w_log.info(msg)
-        elif rho_stat_plot_style not in ("HSC", "DES", "UNIONS"):
-            msg = (
-                f"Invalid flag RHO_STAT_STYLE={rho_stat_plot_style}, allowed"
-                + " are 'HSC', 'DES', 'UNIONS'."
-            )
-            warnings.warn(msg)
-            w_log.info(msg)
-        else:
-            mccd_plots.rho_stats(
-                starcat_path,
-                output_path,
-                rho_def=rho_stat_plot_style,
-                hdu_no=hdu_no,
-                ylim_l=ylim_l,
-                ylim_r=ylim_r,
-                print_fun=lambda x: w_log.info(x),
-            )
 
     # No return objects
     return None, None

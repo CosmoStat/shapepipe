@@ -14,7 +14,7 @@ from shapepipe.modules.module_decorator import module_runner
     version="1.1",
     file_pattern=["image"],
     file_ext=".fits",
-    depends=["numpy", "astropy", "sip_tpv"],
+    depends=["numpy", "astropy"],
     numbering_scheme="_0",
 )
 def find_exposures_runner(
