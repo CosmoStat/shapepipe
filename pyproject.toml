@@ -32,15 +32,12 @@ dependencies = [
     "reproject",
     "setuptools<81", # workaround for sf_tools/python-pysap importing pkg_resources
     "sf_tools",
-    "sip_tpv",
     "skaha",
     "sqlitedict",
     "termcolor",
     "tqdm",
-    "treecorr",
     "vos",
     "ngmix @ git+https://github.com/aguinot/ngmix@stable_version",
-    "Stile @ git+https://github.com/tobias-liaudat/Stile@v0.1",
 ]
 
 
