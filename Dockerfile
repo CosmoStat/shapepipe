@@ -47,7 +47,7 @@ RUN chown -R root:root /app && chmod -R u+rwX /app
 RUN pip install --no-cache-dir -e ".[fitsio]" && \
     for ext in .py .sh .bash; do \
         for script in /app/scripts/*/*$ext; do \
-            link_name=$(basename $script $ext); \
+            link_name=$(basename $script); \
             ln -s $script /usr/local/bin/$link_name; \
         done; \
     done
