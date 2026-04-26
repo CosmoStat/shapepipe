@@ -75,6 +75,9 @@ script-files = [
     "bin/canfar_monitor_log.py",
 ]
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [tool.pytest.ini_options]
 addopts = "--verbose --cov=shapepipe"
 testpaths = ["shapepipe"]
