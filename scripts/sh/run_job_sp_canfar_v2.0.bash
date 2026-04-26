@@ -14,7 +14,7 @@ version="2.0"
 job=-1
 ID=-1
 psf='psfex'
-tile_det='sx'
+tile_det='uc'
 tile_mask=0
 N_SMP=1
 dry_run=0
@@ -286,8 +286,8 @@ function run_exp_job() {
 
     echo "$(basename "$0") -j $exp_job -e $exp_id" > "$exp_log_file"
     echo "pwd=`pwd`"
-    command "job_sp_canfar_v2.0 -p $psf --tile_det $tile_det --tile_mask $tile_mask -j $exp_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$exp_log_file"
-    echo "Done with job_sp_canfar_v2.0"
+    command "job_sp_canfar_v2.0.bash -p $psf --tile_det $tile_det --tile_mask $tile_mask -j $exp_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$exp_log_file"
+    echo "Done with job_sp_canfar_v2.0.bash"
 
     #cd "$dir"
 
@@ -383,7 +383,7 @@ function run_tile_job() {
   fi
 
   # Run job script
-  command "job_sp_canfar_v2.0 -p $psf --tile_det $tile_det --tile_mask $tile_mask -j $tile_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$log_file"
+  command "job_sp_canfar_v2.0.bash -p $psf --tile_det $tile_det --tile_mask $tile_mask -j $tile_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$log_file"
 }
 
 

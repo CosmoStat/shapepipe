@@ -74,6 +74,10 @@ script-files = [
     "bin/canfar_submit_job.py",
     "bin/canfar_monitor.py",
     "bin/canfar_monitor_log.py",
+    "scripts/python/update_runs_log_file.py",
+    "scripts/sh/run_job_sp_canfar_v2.0.bash",
+    "scripts/sh/job_sp_canfar_v2.0.bash",
+    "scripts/sh/init_run_v2.0.sh",
 ]
 
 [tool.setuptools.packages.find]

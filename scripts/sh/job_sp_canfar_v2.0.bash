@@ -253,8 +253,7 @@ function command_cfg_shapepipe() {
     fi
 
     config_upd=$(set_config_n_smp $config_name $_n_smp)
-    #local cmd="/arc/home/kilbinger/.conda/envs/shapepipe/bin/shapepipe_run -c $config_upd $exclusive_flag"
-    local cmd="shapepipe_run -c $config_upd $exclusive_flag"
+    local cmd="shapepipe_run.py -c $config_upd $exclusive_flag"
     command "$cmd" "$str"
 }
 
@@ -489,7 +488,7 @@ if [[ $do_job != 0 ]]; then
  
   ### Merge separated shapes catalogues
   command \
-    "shapepipe_run -c $SP_CONFIG_MOD/config_tile_merge_sep_cats.ini" \
+    "shapepipe_run.py -c $SP_CONFIG_MOD/config_tile_merge_sep_cats.ini" \
     "Run shapepipe (tile: merge sep cats)"
 fi
 
