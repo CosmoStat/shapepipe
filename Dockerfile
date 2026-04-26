@@ -29,7 +29,7 @@ RUN cd /tmp/weightwatcher-${WW_VERSION} && \
     make install
 
 # Ensure astroml:latest conda Python 3.12 is used (Docker RUN does not source conda init)
-ENV PATH /opt/conda/bin:$PATH
+ENV PATH=/opt/conda/bin:$PATH
 
 # Upgrade pip and install tools not part of the ShapePipe package
 RUN pip install --no-cache-dir --upgrade pip && \
