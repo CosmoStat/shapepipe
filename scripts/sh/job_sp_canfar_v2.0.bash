@@ -403,7 +403,7 @@ if [[ $do_job != 0 ]]; then
   ### Merge single-exposure WCS headers into tile-level sqlite log.
   ### Must run before object detection/selection (make_post_process needs it).
   command_cfg_shapepipe \
-    "config_exp_Mh.ini" \
+    "config_tile_Mh_exp.ini" \
     "Run shapepipe (merge exp headers)" \
     $n_smp \
     $exclusive

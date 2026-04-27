@@ -520,7 +520,7 @@ fi
 (( do_job = job & 128 ))
 if [[ $do_job != 0 ]]; then
   # Job 128: merge exposure WCS headers into tile-level sqlite log
-  run_tile_job 128 "exp_Mh" "merge_headers_runner:1"
+  run_tile_job 128 "Mh_exp" "merge_headers_runner:1"
 fi
 
 (( do_job = job & 256 ))
