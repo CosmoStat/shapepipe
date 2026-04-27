@@ -39,8 +39,20 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Test
-        run: docker run --rm ${{ steps.meta.outputs.tags }} shapepipe_run -c /app/example/config.ini
+      # Smoke-test the binaries baked into the image. Catches the class of
+      # regression where the image builds but a runtime tool (sextractor,
+      # weightwatcher) is missing or unrunnable on the deployment target.
+      - name: Test — binaries
+        run: |
+          IMAGE=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          docker run --rm "$IMAGE" source-extractor --version
+          docker run --rm "$IMAGE" weightwatcher --version
+          docker run --rm "$IMAGE" psfex --version
+
+      - name: Test — shapepipe entry point
+        run: |
+          IMAGE=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          docker run --rm "$IMAGE" shapepipe_run -c /app/example/config.ini
 
       - name: Push
         uses: docker/build-push-action@v6

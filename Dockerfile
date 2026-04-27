@@ -1,53 +1,63 @@
-FROM images.canfar.net/skaha/astroml:latest
+FROM python:3.12-slim-bookworm
 
 # Metadata
 LABEL maintainer="martin.kilbinger@cea.fr"
-LABEL description="ShapePipe base image with common dependencies"
+LABEL description="ShapePipe base image — slim Python + uv-frozen deps"
 
-# Install system dependencies needed for ShapePipe and WeightWatcher
-RUN apt-get update -o Acquire::ForceIPv4=true -y --quiet && \
+ENV SHELL=/bin/bash \
+    QT_QPA_PLATFORM=offscreen \
+    PIP_NO_CACHE_DIR=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+# System dependencies. Three categories:
+#  - astromatic binaries (psfex, source-extractor, weightwatcher) ship as
+#    Debian packages on bookworm; preferred over building from source.
+#  - compilers and dev libs needed to build the heavier wheels (galsim,
+#    mpi4py, python-pysap, fitsio).
+#  - libgl1, proj, fftw at runtime for skyproj/PyQt5/galsim.
+RUN apt-get update -y --quiet && \
     apt-get install -y --no-install-recommends \
-    psfex source-extractor \
-    libproj-dev proj-bin && \
+        build-essential \
+        cmake \
+        gfortran \
+        git \
+        wget \
+        pkg-config \
+        libfftw3-dev libfftw3-bin \
+        libgsl-dev \
+        libcfitsio-dev \
+        libopenmpi-dev openmpi-bin \
+        libproj-dev proj-bin \
+        libgl1-mesa-glx \
+        psfex source-extractor weightwatcher && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Build and install WeightWatcher from source
-ARG WW_VERSION=1.12
-RUN cd /tmp && \
-    wget --no-check-certificate https://github.com/astromatic/weightwatcher/archive/refs/tags/${WW_VERSION}.tar.gz && \
-    tar -xzf ${WW_VERSION}.tar.gz && \
-    rm ${WW_VERSION}.tar.gz
-RUN cd /tmp/weightwatcher-${WW_VERSION} && \
-    sed -i 's/^  prefstruct\tprefs;/extern prefstruct\tprefs;/' src/prefs.h && \
-    sed -i 's/^char\t\tgstr\[MAXCHAR\];/extern char\t\tgstr[MAXCHAR];/' src/globals.h && \
-    sed -i 's/^int\t\tbswapflag;/extern int\t\tbswapflag;/' src/fits/fitscat.h && \
-    sed -i '/preflist\.h/a prefstruct\tprefs;' src/prefs.c && \
-    sed -i '/xml\.h/a char\t\tgstr[MAXCHAR];' src/main.c && \
-    sed -i '/fitscat\.h/a int\t\tbswapflag;' src/fits/fitscat.c && \
-    ./configure --quiet && \
-    make --quiet && \
-    make install
+# Install uv — fast, reproducible dependency resolver and installer.
+# Deps are declared in pyproject.toml; exact transitive versions are frozen
+# in uv.lock. `uv sync --frozen` installs exactly what uv.lock specifies,
+# so upstream changes only land when we deliberately regenerate the lockfile.
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Ensure astroml:latest conda Python 3.12 is used (Docker RUN does not source conda init)
-ENV PATH /opt/conda/bin:$PATH
-
-# Upgrade pip and install tools not part of the ShapePipe package
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir \
-        ipython==8.18.1 \
-        jupyterlab==4.3.1 \
-        snakemake==8.27.1
-
-# Set working directory and copy source code
 WORKDIR /app
+COPY pyproject.toml uv.lock /app/
+
+# Install runtime + jupyter + fitsio extras from the lockfile into /app/.venv.
+# `--no-install-project` skips installing shapepipe itself (the source isn't
+# copied yet); we install it `--no-deps` below once the source is available.
+RUN uv sync --frozen --no-install-project --extra jupyter --extra fitsio
+
+# Copy the source and install shapepipe into the same venv.
 COPY . /app/.
 RUN chown -R root:root /app && chmod -R u+rwX /app
-
-# Install ShapePipe and its dependencies (including fitsio optional extra)
-RUN pip install --no-cache-dir -e ".[fitsio]" && \
+RUN uv pip install --no-deps -e . && \
     for ext in .py .sh .bash; do \
         for script in /app/scripts/*/*$ext; do \
             link_name=$(basename $script $ext); \
             ln -s $script /usr/local/bin/$link_name; \
         done; \
     done
+
+# Activate the uv-managed venv on container start so shapepipe_run etc
+# resolve against it without explicit activation.
+ENV PATH="/app/.venv/bin:${PATH}"
+ENV VIRTUAL_ENV=/app/.venv
