@@ -12,34 +12,37 @@ license = { "file" = "LICENSE" }
 requires-python = ">=3.12"
 # Abstract runtime constraints. Exact versions live in `uv.lock` — pyproject
 # is the single source of truth for *what* shapepipe needs, the lockfile for
-# *which versions*. Minimums reflect the versions known to work in the
-# published Dockerfile; bump them only when a feature actually requires it.
+# *which versions*. Minimums signal the major-version target; uv.lock pins
+# the actual installed versions. Bump minimums only when crossing a major
+# version line or when a feature actually requires a specific release.
 dependencies = [
-    "astropy>=6.1",
+    "astropy>=7.0",          # major 6 → 7
     "astroquery",
     "canfar",
     "cs_util>=0.1.9",
-    "galsim>=2.5.3",
+    "galsim>=2.8",
     "h5py",
     "joblib>=1.4",
-    "matplotlib>=3.8.4",
+    "matplotlib>=3.10",
     "mccd>=1.2.4",
     "modopt>=1.6",
     "mpi4py>=4.0",
-    "numba>=0.58.1",
-    "numpy>=1.26",
-    "pandas>=2.2",
+    "numba>=0.59",           # numpy 2 support
+    "numpy>=2.0",            # major 1 → 2
+    "pandas>=3.0",           # major 2 → 3
     "python-dateutil",
-    "python-pysap>=0.2.1",
+    "python-pysap>=0.3",
     "PyQt5",
     "pyqtgraph",
-    "reproject>=0.14",
+    "reproject>=0.19",
     "sf_tools>=2.0.4",
     "skaha>=1.7",
     "sqlitedict>=2.0",
     "termcolor",
     "tqdm>=4.63",
     "vos>=3.6",
+    # ngmix is pinned to Axel's stable_version branch until upstream ngmix
+    # absorbs the fixes — tracked separately, do not modernize this line.
     "ngmix @ git+https://github.com/aguinot/ngmix@stable_version",
 ]
 

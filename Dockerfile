@@ -12,6 +12,12 @@ ENV SHELL=/bin/bash \
 # System dependencies. Three categories:
 #  - astromatic binaries (psfex, source-extractor, weightwatcher) ship as
 #    Debian packages on bookworm; preferred over building from source.
+#    WeightWatcher 1.12 (2014) source uses pre-GCC-10 "common symbol"
+#    globals that won't link with GCC's modern -fno-common default; the
+#    old Dockerfile patched them inline with sed. Debian's
+#    `weightwatcher 1.12+dfsg-3` carries an equivalent patch upstream of
+#    the build, so apt install gives us the same binary without the
+#    in-tree patches.
 #  - compilers and dev libs needed to build the heavier wheels (galsim,
 #    mpi4py, python-pysap, fitsio).
 #  - libgl1, proj, fftw at runtime for skyproj/PyQt5/galsim.
