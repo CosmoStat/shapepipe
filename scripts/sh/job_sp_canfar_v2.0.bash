@@ -463,7 +463,7 @@ if [[ $do_job != 0 ]]; then
 fi
 
 ## Process tiles up to shape measurement
-(( do_job = $job & 1024 ))
+(( do_job = $job & 512 ))
 if [[ $do_job != 0 ]]; then
 
   ### PSF model letter: 'P' (psfex) or 'M' (mccd)
