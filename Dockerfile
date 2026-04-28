@@ -1,15 +1,27 @@
-FROM python:3.12-slim-bookworm
+# syntax=docker/dockerfile:1.7
+#
+# Two-target image:
+#   --target runtime  →  minimal, for canfar batch jobs and downstream stacks
+#   --target dev      →  runtime + everyday CLI tools + all extras (test,
+#                        lint, doc, …); default if --target is omitted
+#
+# Both share the `base` stage (system deps + uv + lockfile copy), so the
+# heavy apt + wheel-resolution work is cached once.
 
-# Metadata
+# ----------------------------------------------------------------------
+# base — system deps shared by every target
+# ----------------------------------------------------------------------
+FROM python:3.12-slim-bookworm AS base
+
 LABEL maintainer="martin.kilbinger@cea.fr"
-LABEL description="ShapePipe base image — slim Python + uv-frozen deps"
 
 ENV SHELL=/bin/bash \
     QT_QPA_PLATFORM=offscreen \
     PIP_NO_CACHE_DIR=1 \
-    DEBIAN_FRONTEND=noninteractive
+    DEBIAN_FRONTEND=noninteractive \
+    LANG=C.UTF-8
 
-# System dependencies. Three categories:
+# System dependencies — three categories:
 #  - astromatic binaries (psfex, source-extractor, weightwatcher) ship as
 #    Debian packages on bookworm; preferred over building from source.
 #  - compilers and dev libs needed to build the heavier wheels (galsim,
@@ -32,24 +44,30 @@ RUN apt-get update -y --quiet && \
         psfex source-extractor weightwatcher && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install uv — fast, reproducible dependency resolver and installer.
-# Deps are declared in pyproject.toml; exact transitive versions are frozen
-# in uv.lock. `uv sync --frozen` installs exactly what uv.lock specifies,
+# uv — fast reproducible Python deps installer. pyproject.toml + uv.lock
+# are the SSOT; `uv sync --frozen` installs exactly what uv.lock specifies,
 # so upstream changes only land when we deliberately regenerate the lockfile.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
 COPY pyproject.toml uv.lock /app/
 
-# Install runtime + jupyter + fitsio extras from the lockfile into /app/.venv.
-# `--no-install-project` skips installing shapepipe itself (the source isn't
-# copied yet); we install it `--no-deps` below once the source is available.
+# ----------------------------------------------------------------------
+# runtime — minimal target for batch jobs and downstream FROM clauses
+# ----------------------------------------------------------------------
+FROM base AS runtime
+LABEL description="ShapePipe runtime — slim Python + uv-frozen deps"
+
+# Lockfile-frozen Python deps + jupyter + fitsio. Test/lint/doc extras
+# are intentionally left out here; they live in the dev target.
 RUN uv sync --frozen --no-install-project --extra jupyter --extra fitsio
 
 # Copy the source and install shapepipe into the same venv.
 COPY . /app/.
-RUN chown -R root:root /app && chmod -R u+rwX /app
-RUN uv pip install --no-deps -e . && \
+# go+rwX so non-root users on canfar/skaha can read/traverse /app and
+# write into the venv when they need to (e.g. uv add for ad-hoc deps).
+RUN chmod -R go+rwX /app && \
+    uv pip install --no-deps -e . && \
     for ext in .py .sh .bash; do \
         for script in /app/scripts/*/*$ext; do \
             link_name=$(basename $script $ext); \
@@ -59,5 +77,54 @@ RUN uv pip install --no-deps -e . && \
 
 # Activate the uv-managed venv on container start so shapepipe_run etc
 # resolve against it without explicit activation.
-ENV PATH="/app/.venv/bin:${PATH}"
-ENV VIRTUAL_ENV=/app/.venv
+ENV PATH="/app/.venv/bin:${PATH}" \
+    VIRTUAL_ENV=/app/.venv
+
+# ----------------------------------------------------------------------
+# dev — everyday working environment (default target)
+# ----------------------------------------------------------------------
+FROM base AS dev
+LABEL description="ShapePipe dev — runtime + interactive CLI tools + all extras"
+
+# Interactive tools for working inside the container. Curated subset of
+# cailmdaley/containers focused on the search/edit/process loop; heavier
+# tooling (neovim, polspice, quarto, zellij) is intentionally not here.
+RUN apt-get update -y --quiet && \
+    apt-get install -y --no-install-recommends \
+        vim \
+        less \
+        tmux \
+        htop \
+        procps \
+        ripgrep \
+        fd-find \
+        jq \
+        bat \
+        curl \
+        ca-certificates \
+        git-lfs \
+        rsync \
+        unzip zip \
+        openssh-client \
+        locales && \
+    if command -v batcat >/dev/null; then ln -sf "$(command -v batcat)" /usr/local/bin/bat; fi && \
+    if command -v fdfind >/dev/null; then ln -sf "$(command -v fdfind)" /usr/local/bin/fd; fi && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# All extras pre-installed (dev = doc + jupyter + lint + release + test +
+# fitsio). Pre-installing avoids the read-only-fs failure Martin hit when
+# trying to live `uv sync --extra test` inside the runtime image on canfar.
+RUN uv sync --frozen --no-install-project --extra dev
+
+COPY . /app/.
+RUN chmod -R go+rwX /app && \
+    uv pip install --no-deps -e . && \
+    for ext in .py .sh .bash; do \
+        for script in /app/scripts/*/*$ext; do \
+            link_name=$(basename $script $ext); \
+            ln -s $script /usr/local/bin/$link_name; \
+        done; \
+    done
+
+ENV PATH="/app/.venv/bin:${PATH}" \
+    VIRTUAL_ENV=/app/.venv
