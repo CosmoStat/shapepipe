@@ -15,6 +15,7 @@
 
   dependencies
   installation
+  container
 
 .. toctree::
   :hidden:

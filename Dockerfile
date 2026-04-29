@@ -19,7 +19,19 @@ ENV SHELL=/bin/bash \
     QT_QPA_PLATFORM=offscreen \
     PIP_NO_CACHE_DIR=1 \
     DEBIAN_FRONTEND=noninteractive \
-    LANG=C.UTF-8
+    LANG=C.UTF-8 \
+    # Make the image well-behaved on read-only filesystems (apptainer/SIF):
+    #   UV_NO_SYNC      — `uv run` skips the auto-sync that would otherwise
+    #                     mutate /app/.venv. Run with what's baked in.
+    #   UV_CACHE_DIR    — uv's package cache. /tmp is tmpfs, writable in
+    #                     read-only SIFs and writable sandboxes alike.
+    #   COVERAGE_FILE   — pytest-cov writes its data file here instead of
+    #                     /app/.coverage; needed because pyproject sets
+    #                     `addopts = --cov=shapepipe` and pytest-cov erases
+    #                     the file at startup.
+    UV_NO_SYNC=1 \
+    UV_CACHE_DIR=/tmp/uv-cache \
+    COVERAGE_FILE=/tmp/.coverage
 
 # System dependencies — three categories:
 #  - astromatic binaries (psfex, source-extractor, weightwatcher) ship as
