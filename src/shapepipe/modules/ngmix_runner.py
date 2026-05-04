@@ -16,6 +16,7 @@ from shapepipe.modules.ngmix_package.ngmix import Ngmix
         "sextractor_runner",
         "psfex_interp_runner",
         "vignetmaker_runner",
+        "merge_headers_runner",
     ],
     file_pattern=[
         "tile_sexcat",
@@ -24,8 +25,9 @@ from shapepipe.modules.ngmix_package.ngmix import Ngmix
         "galaxy_psf",
         "weight",
         "flag",
+        "log_exp_headers",
     ],
-    file_ext=[".fits", ".sqlite", ".sqlite", ".sqlite", ".sqlite", ".sqlite"],
+    file_ext=[".fits", ".sqlite", ".sqlite", ".sqlite", ".sqlite", ".sqlite", ".sqlite"],
     depends=["numpy", "ngmix", "galsim", "sqlitedict", "astropy"],
 )
 def ngmix_runner(
@@ -46,7 +48,7 @@ def ngmix_runner(
     pixel_scale = config.getfloat(module_config_sec, "PIXEL_SCALE")
 
     # Path to merged single-exposure single-HDU headers
-    f_wcs_path = config.getexpanded(module_config_sec, "LOG_WCS")
+    f_wcs_path = input_file_list[6]
 
     # Input directory to check for already retrieved files
     if config.has_option(module_config_sec, "CHECK_EXISTING_DIR"):

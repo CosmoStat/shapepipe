@@ -81,10 +81,9 @@ def psfex_interp_runner(
             module_config_sec,
             "ME_DOT_PSF_PATTERN",
         )
-        f_wcs_path = config.getexpanded(module_config_sec, "ME_LOG_WCS")
-
         # Set input paths
         galcat_path = input_file_list[0]
+        f_wcs_path = input_file_list[1]
 
         # Create instance of PSFExInterpolator
         psfex_interp_inst = psfex_interp.PSFExInterpolator(

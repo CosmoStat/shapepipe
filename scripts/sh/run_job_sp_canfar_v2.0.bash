@@ -164,13 +164,20 @@ function init_exp_work_dir() {
 
 
 # Run a per-exposure job (e.g. job 8, 16).
-# Args: $1 = job number, $2 = run_sp output dir prefix (e.g. "Gie")
-#       $3 = space-separated list of "runner_subdir:N" completeness checks
-#            all pairs must pass for an exposure to be considered complete
+# Args: $1 = job number
+#       $2 = space-separated list of run_sp_exp output dir prefixes (e.g. "Gie")
+#            first prefix is the main one; all are force-removed when --force is set
+#       $3 = space-separated list of completeness checks, each in one of two forms:
+#              "runner_subdir:N[:subpath[:warn]]"
+#                 check runner_subdir/output in the main (first) prefix run dir
+#              "run_prefix:runner_subdir:N[:subpath[:warn]]"
+#                 check runner_subdir/output in run_sp_exp_run_prefix* dir
+#            all non-warn checks must pass for an exposure to be considered complete
 function run_exp_job() {
   local exp_job=$1
-  local run_prefix=$2
+  local run_prefixes=$2
   local complete_checks=$3
+  local main_prefix="${run_prefixes%% *}"
 
   exp_numbers_file=$(ls -t "$work_dir/output/run_sp_tile_Fe"*/find_exposures_runner/output/"exp_numbers-${IDra}-${IDdec}.txt" 2>/dev/null | head -1)
 
@@ -203,25 +210,43 @@ function run_exp_job() {
     # Create exp_numbers-000-000.txt and cfis link if not existent
     init_exp_work_dir "$exp_id" "$exp_work_dir"
 
-    # --force: remove all existing run directories for this prefix before running
+    # force: remove all existing run directories for each prefix before running
     if [ "$force" == "1" ]; then
-      local dirs_to_remove
-      dirs_to_remove=$(ls -d "$exp_work_dir/output/run_sp_exp_${run_prefix}"* 2>/dev/null)
-      if [ -n "$dirs_to_remove" ]; then
-        for d in $dirs_to_remove; do
-          message "Force-removing $d" "$debug_out" -1
-          command "rm -rf $d" $dry_run
-        done
-      fi
+      local run_prefix
+      for run_prefix in $run_prefixes; do
+        local dirs_to_remove
+        dirs_to_remove=$(ls -d "$exp_work_dir/output/run_sp_exp_${run_prefix}"* 2>/dev/null)
+        if [ -n "$dirs_to_remove" ]; then
+          for d in $dirs_to_remove; do
+            message "Force-removing $d" "$debug_out" -1
+            command "rm -rf $d" $dry_run
+          done
+        fi
+      done
     fi
 
-    # Check completeness of existing run output
-    local run_dir=$(ls -dt "$exp_work_dir/output/run_sp_exp_${run_prefix}"* 2>/dev/null | head -1)
+    # Check completeness of existing run output (main prefix)
+    local run_dir=$(ls -dt "$exp_work_dir/output/run_sp_exp_${main_prefix}"* 2>/dev/null | head -1)
     local is_complete=1
     local check_desc=""
     for check_pair in $complete_checks; do
-      local subdir="${check_pair%%:*}"
-      local rest="${check_pair#*:}"
+      local field1="${check_pair%%:*}"
+      local rest1="${check_pair#*:}"
+      local field2="${rest1%%:*}"
+
+      local check_run_dir subdir rest
+      if [[ "$field2" =~ ^[0-9]+$ ]]; then
+        # "subdir:N[...]" — check in main run dir
+        check_run_dir="$run_dir"
+        subdir="$field1"
+        rest="$rest1"
+      else
+        # "run_prefix:subdir:N[...]" — check in that prefix's run dir
+        check_run_dir=$(ls -dt "$exp_work_dir/output/run_sp_exp_${field1}"* 2>/dev/null | head -1)
+        subdir="$field2"
+        rest="${rest1#*:}"
+      fi
+
       local n_threshold="${rest%%:*}"
       local rest2="${rest#*:}"
       local subpath=""
@@ -234,10 +259,11 @@ function run_exp_job() {
       fi
       local n_out=0
 
+      local out_dir
       if [ -n "$subpath" ]; then
-        out_dir="$run_dir/${subdir}/output/${subpath}"
+        out_dir="${check_run_dir}/${subdir}/output/${subpath}"
       else
-        out_dir="$run_dir/${subdir}/output"
+        out_dir="${check_run_dir}/${subdir}/output"
       fi
 
       # Remove broken symlinks in module output dir
@@ -248,7 +274,7 @@ function run_exp_job() {
         fi
       done
 
-      [ -n "$run_dir" ] && n_out=$(ls "$out_dir/" 2>/dev/null | wc -l)
+      [ -n "$check_run_dir" ] && n_out=$(ls "$out_dir/" 2>/dev/null | wc -l)
       check_desc+="${subdir}:${n_out}/${n_threshold} "
       if [ "$n_out" -lt "$n_threshold" ]; then
         if [ "$warn_only" == "1" ]; then
@@ -261,7 +287,7 @@ function run_exp_job() {
     done
 
     if [ "$is_complete" == "1" ]; then
-      message "Complete $exp_id_disp: run_sp_exp_${run_prefix} ( $check_desc)" "$debug_out" -1
+      message "Complete $exp_id_disp: run_sp_exp_${main_prefix} ( $check_desc)" "$debug_out" -1
       (( n_complete++ ))
       continue
     fi
@@ -304,37 +330,61 @@ function run_exp_job() {
 
 # Run a tile-level job (jobs 1, 2, 4, 128, 256, ...).
 # Args: $1 = job number
-#       $2 = run_sp output dir prefix (e.g. "Fe", "tile_Sx", "exp_Mh")
-#       $3 = space-separated completeness checks "runner_subdir:N[:subpath[:warn]]"
+#       $2 = space-separated list of run_sp_tile output dir prefixes (e.g. "Fe")
+#            first prefix is the main one; all are force-removed when --force is set
+#       $3 = space-separated completeness checks, each in one of two forms:
+#              "runner_subdir:N[:subpath[:warn]]"
+#                 check runner_subdir/output in the main (first) prefix run dir
+#              "run_prefix:runner_subdir:N[:subpath[:warn]]"
+#                 check runner_subdir/output in run_sp_tile_run_prefix* dir
 #            omit or pass "" to skip the completeness check and always run
 function run_tile_job() {
   local tile_job=$1
-  local run_prefix=$2
+  local run_prefixes=$2
   local complete_checks=$3
+  local main_prefix="${run_prefixes%% *}"
 
-  # --force: remove all existing run directories for this prefix before running
+  # force: remove all existing run directories for each prefix before running
   if [ "$force" == "1" ]; then
-    local dirs_to_remove
-    dirs_to_remove=$(ls -d "$work_dir/output/run_sp_tile_${run_prefix}"* 2>/dev/null)
-    if [ -n "$dirs_to_remove" ]; then
-      for d in $dirs_to_remove; do
-        message "Force-removing $d" "$debug_out" -1
-        command "rm -rf $d" $dry_run
-      done
-    fi
+    local run_prefix
+    for run_prefix in $run_prefixes; do
+      local dirs_to_remove
+      dirs_to_remove=$(ls -d "$work_dir/output/run_sp_tile_${run_prefix}"* 2>/dev/null)
+      if [ -n "$dirs_to_remove" ]; then
+        for d in $dirs_to_remove; do
+          message "Force-removing $d" "$debug_out" -1
+          command "rm -rf $d" $dry_run
+        done
+      fi
+    done
   fi
 
-  # Locate most recent existing run directory for this prefix
+  # Locate most recent existing run directory for the main prefix
   local run_dir
-  run_dir=$(ls -dt "$work_dir/output/run_sp_tile_${run_prefix}"* 2>/dev/null | head -1)
+  run_dir=$(ls -dt "$work_dir/output/run_sp_tile_${main_prefix}"* 2>/dev/null | head -1)
 
   local is_complete=1
   local check_desc=""
 
   if [ -n "$complete_checks" ]; then
     for check_pair in $complete_checks; do
-      local subdir="${check_pair%%:*}"
-      local rest="${check_pair#*:}"
+      local field1="${check_pair%%:*}"
+      local rest1="${check_pair#*:}"
+      local field2="${rest1%%:*}"
+
+      local check_run_dir subdir rest
+      if [[ "$field2" =~ ^[0-9]+$ ]]; then
+        # "subdir:N[...]" — check in main run dir
+        check_run_dir="$run_dir"
+        subdir="$field1"
+        rest="$rest1"
+      else
+        # "run_prefix:subdir:N[...]" — check in that prefix's run dir
+        check_run_dir=$(ls -dt "$work_dir/output/run_sp_tile_${field1}"* 2>/dev/null | head -1)
+        subdir="$field2"
+        rest="${rest1#*:}"
+      fi
+
       local n_threshold="${rest%%:*}"
       local rest2="${rest#*:}"
       local subpath=""
@@ -346,13 +396,13 @@ function run_tile_job() {
 
       local out_dir
       if [ -n "$subpath" ]; then
-        out_dir="$run_dir/${subdir}/output/${subpath}"
+        out_dir="${check_run_dir}/${subdir}/output/${subpath}"
       else
-        out_dir="$run_dir/${subdir}/output"
+        out_dir="${check_run_dir}/${subdir}/output"
       fi
 
       local n_out=0
-      [ -n "$run_dir" ] && n_out=$(ls "$out_dir/" 2>/dev/null | wc -l)
+      [ -n "$check_run_dir" ] && n_out=$(ls "$out_dir/" 2>/dev/null | wc -l)
       check_desc+="${subdir}:${n_out}/${n_threshold} "
       if [ "$n_out" -lt "$n_threshold" ]; then
         [ "$warn_only" != "1" ] && is_complete=0
@@ -361,15 +411,15 @@ function run_tile_job() {
   fi
 
   if [ "$is_complete" == "1" ] && [ -n "$complete_checks" ]; then
-    message "Complete: run_sp_tile_${run_prefix} ( $check_desc)" "$debug_out" -1
+    message "Complete: run_sp_tile_${main_prefix} ( $check_desc)" "$debug_out" -1
     return 0
   fi
 
   if [ "$check" == "1" ]; then
     if [ -n "$run_dir" ]; then
-      message "Incomplete: run_sp_tile_${run_prefix} ($check_desc)" "$debug_out" -1
+      message "Incomplete: run_sp_tile_${main_prefix} ($check_desc)" "$debug_out" -1
     else
-      message "Missing: run_sp_tile_${run_prefix}" "$debug_out" -1
+      message "Missing: run_sp_tile_${main_prefix}" "$debug_out" -1
     fi
     return 0
   fi
@@ -527,7 +577,7 @@ fi
 if [[ $do_job != 0 ]]; then
   # Job 256: object selection on tiles
   if [ "$tile_det" == "uc" ]; then
-    run_tile_job 256 "Uc" "read_ext_sexcat_runner:1"
+    run_tile_job 256 "Gic Uc" "Gic_cat_vos:get_images_runner:1 read_ext_sexcat_runner:1"
   else
     run_tile_job 256 "Sx" "sextractor_runner:1"
   fi
@@ -542,7 +592,7 @@ fi
 (( do_job = job & 1024 ))
 if [[ $do_job != 0 ]]; then
   # Job 1024: process tiles (PSF interp, vignet, shape measurement)
-  run_tile_job 1024 "tile_${Letter}sViSmVi" ""
+  run_tile_job 1024 "tile_${Letter}iVi_canfar"
 fi
 
 if [ -n "$scratch" ]; then

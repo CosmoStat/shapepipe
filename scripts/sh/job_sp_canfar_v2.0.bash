@@ -401,7 +401,6 @@ fi
 if [[ $do_job != 0 ]]; then
 
   ### Merge single-exposure WCS headers into tile-level sqlite log.
-  ### Must run before object detection/selection (make_post_process needs it).
   command_cfg_shapepipe \
     "config_tile_Mh_exp.ini" \
     "Run shapepipe (merge exp headers)" \
@@ -462,7 +461,7 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
-## Process tiles up to shape measurement
+## Process tiles up to shape measurement: postage stamp creation
 (( do_job = $job & 512 ))
 if [[ $do_job != 0 ]]; then
 

@@ -68,6 +68,12 @@ def sextractor_runner(
     else:
         prefix = None
 
+    # When post-processing is enabled the sqlite WCS file is the last input;
+    # remove it before passing the image files to SExtractorCaller.
+    if config.getboolean(module_config_sec, "MAKE_POST_PROCESS"):
+        f_wcs_path = input_file_list[-1]
+        input_file_list = list(input_file_list[:-1])
+
     # Create sextractor caller class instance
     ss_inst = ss.SExtractorCaller(
         input_file_list,
@@ -101,7 +107,6 @@ def sextractor_runner(
 
     # Run sextractor post processing
     if config.getboolean(module_config_sec, "MAKE_POST_PROCESS"):
-        f_wcs_path = config.getexpanded(module_config_sec, "LOG_WCS")
         pos_params = config.getlist(module_config_sec, "WORLD_POSITION")
         ccd_size = config.getlist(module_config_sec, "CCD_SIZE")
         ss.make_post_process(ss_inst.path_output_file, f_wcs_path, pos_params, ccd_size)

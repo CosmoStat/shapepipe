@@ -126,7 +126,7 @@ def vignetmaker_runner(
             )
 
             # Get WCS log file path
-            f_wcs_path = config.getexpanded(module_config_sec, "ME_LOG_WCS")
+            f_wcs_path = input_file_list[1]
 
             # Process inputs
             vm_inst.process_me(image_dirs, image_pattern, f_wcs_path, radius)
