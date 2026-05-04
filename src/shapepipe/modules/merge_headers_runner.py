@@ -48,11 +48,11 @@ def merge_headers_runner(
             ".npy",
             w_log=w_log,
         )
-        merge_headers(headers_file_list, output_dir)
+        merge_headers(headers_file_list, output_dir, tile_number=file_number_string)
         w_log.info(f"Merged {len(headers_file_list)} exposure header files")
     else:
         # Per-exposure mode: input_file_list already contains the header files.
-        merge_headers(input_file_list, output_dir)
+        merge_headers(input_file_list, output_dir, tile_number=file_number_string)
         w_log.info(f"Merged {len(input_file_list)} input file headers")
 
     # No return objects
