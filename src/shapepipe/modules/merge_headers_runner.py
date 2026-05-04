@@ -2,7 +2,7 @@
 
 Module runner for ``merge_headers``.
 
-:Author: Axel Guinot
+:Authors: Axel Guinot, Martin Kilbinger
 
 """
 

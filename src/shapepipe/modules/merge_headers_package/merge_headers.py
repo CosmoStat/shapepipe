@@ -47,6 +47,9 @@ def merge_headers(input_file_list, output_dir, file_number_string=""):
     # Set matching pattern
     pattern = "headers-"
 
+    if file_number_string is not None:
+        final_file["TILE_ID"] = file_number_string
+
     for file_path in input_file_list:
         # Extract file path
         file_path_scalar = file_path[0]
