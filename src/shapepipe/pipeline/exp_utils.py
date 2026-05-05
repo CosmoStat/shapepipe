@@ -124,3 +124,95 @@ def get_exp_output_files(
         w_log.info(f"Found {len(file_list)} exposure output files")
 
     return file_list
+
+
+def get_exp_output_dirs(
+    exp_base_dir,
+    exp_numbers_file,
+    runner_name,
+    w_log=None,
+):
+    """Return the most-recent output directory of runner_name for each exposure.
+
+    For each exposure ID listed in ``exp_numbers_file``, the most recent
+    runner output directory is located at::
+
+        <exp_base_dir>/<exp_prefix>/<exp_base>/output/run_sp_*/<runner_name>/output/
+
+    Parameters
+    ----------
+    exp_base_dir : str
+        Root directory containing all per-exposure work directories.
+    exp_numbers_file : str
+        Path to a text file listing one exposure ID per line.
+    runner_name : str
+        Module runner directory name whose output directory is needed,
+        e.g. ``psfex_runner``.
+    w_log : logging.Logger, optional
+        Pipeline logger.
+
+    Returns
+    -------
+    list of str
+        One output directory path per exposure, in the order they appear
+        in ``exp_numbers_file``.
+
+    Raises
+    ------
+    FileNotFoundError
+        If ``exp_numbers_file`` does not exist or a runner output directory
+        is absent for one or more exposures.
+
+    """
+    if not os.path.exists(exp_numbers_file):
+        raise FileNotFoundError(
+            f"Exposure numbers file not found: {exp_numbers_file}"
+        )
+
+    with open(exp_numbers_file) as fh:
+        exp_ids = [line.strip() for line in fh if line.strip()]
+
+    if w_log:
+        w_log.info(
+            f"Collecting {runner_name}/output dirs "
+            f"for {len(exp_ids)} exposures from {exp_base_dir}"
+        )
+
+    dir_list = []
+    missing = []
+
+    for exp_id in exp_ids:
+        exp_prefix = exp_id[:2]
+        exp_base = exp_id[:-1]
+
+        pattern = os.path.join(
+            exp_base_dir,
+            exp_prefix,
+            exp_base,
+            "output",
+            "run_sp_*",
+            runner_name,
+            "output",
+        )
+        matches = sorted(glob.glob(pattern))
+
+        if matches:
+            chosen = matches[-1]  # most recent run (lexicographic sort on datetime)
+            dir_list.append(chosen)
+            if w_log:
+                w_log.debug(f"  {exp_id}: {chosen}")
+        else:
+            missing.append(exp_id)
+            if w_log:
+                w_log.warning(f"  {exp_id}: no match for {pattern}")
+
+    if missing:
+        raise FileNotFoundError(
+            f"No {runner_name} output directory found for "
+            f"{len(missing)} exposure(s): {missing}"
+        )
+
+    if w_log:
+        w_log.info(f"Found {len(dir_list)} exposure output directories")
+
+    return dir_list

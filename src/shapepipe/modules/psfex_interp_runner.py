@@ -9,6 +9,7 @@ Module runner for ``psfex_interp``.
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.psfex_interp_package import psfex_interp
 
+from shapepipe.pipeline.exp_utils import get_exp_output_dirs
 from shapepipe.pipeline.run_log import get_last_dir, get_all_dirs
 
 
@@ -62,20 +63,30 @@ def psfex_interp_runner(
     elif mode == "MULTI-EPOCH":
 
         # Fetch multi-epoch parameters
-        module = config.getexpanded(
-            module_config_sec,
-            "ME_DOT_PSF_DIR",
-        )
-        module_name = module.split(":")[-1]
-        if "last" in module:
-            dot_psf_dirs = [get_last_dir(run_dirs["run_log"], module_name)]
-        elif "all" in module:
-            dot_psf_dirs = get_all_dirs(run_dirs["run_log"], module_name)
-        else:
-            raise ValueError(
-                "Expected qualifier 'last:' or 'all' before module"
-                + f" '{module}' in config entry 'ME_DOT_PSF_DIR'"
+        if config.has_option(module_config_sec, "ME_DOT_PSF_EXP_DIR"):
+            # v2.0: locate psfex_runner output dirs via the $SP_EXP tree
+            exp_base_dir = config.getexpanded(
+                module_config_sec, "ME_DOT_PSF_EXP_DIR"
             )
+            exp_numbers_file = input_file_list[2]
+            dot_psf_dirs = get_exp_output_dirs(
+                exp_base_dir, exp_numbers_file, "psfex_runner", w_log
+            )
+        else:
+            module = config.getexpanded(
+                module_config_sec,
+                "ME_DOT_PSF_DIR",
+            )
+            module_name = module.split(":")[-1]
+            if "last" in module:
+                dot_psf_dirs = [get_last_dir(run_dirs["run_log"], module_name)]
+            elif "all" in module:
+                dot_psf_dirs = get_all_dirs(run_dirs["run_log"], module_name)
+            else:
+                raise ValueError(
+                    "Expected qualifier 'last:' or 'all' before module"
+                    + f" '{module}' in config entry 'ME_DOT_PSF_DIR'"
+                )
 
         dot_psf_pattern = config.get(
             module_config_sec,
