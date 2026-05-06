@@ -469,8 +469,8 @@ if [[ $do_job != 0 ]]; then
   letter=${psf:0:1}
   Letter=${letter^}
   command_cfg_shapepipe \
-    "config_tile_${Letter}iViVi_canfar.ini" \
-    "Run shapepipe (tile PsfInterp=${Letter}: up to ngmix+galsim)" \
+    "config_tile_${Letter}iViVi_canfar_${tile_det}.ini" \
+    "Run shapepipe (tile PsfInterp=${Letter}: postage stamp creation)" \
     $n_smp \
     $exclusive
 
@@ -478,20 +478,6 @@ fi
 
 ## Create final catalogues (offline)
 (( do_job = $job & 1024 ))
-if [[ $do_job != 0 ]]; then
-
-  cat $SP_CONFIG/config_merge_sep_cats_template.ini | \
-    perl -ane \
-      's/(N_SPLIT_MAX =) X/$1 '$nsh_jobs'/; print' \
-      > $SP_CONFIG_MOD/config_merge_sep_cats.ini
- 
-  ### Merge separated shapes catalogues
-  command \
-    "shapepipe_run.py -c $SP_CONFIG_MOD/config_tile_merge_sep_cats.ini" \
-    "Run shapepipe (tile: merge sep cats)"
-fi
-
-(( do_job = $job & 512 ))
 if [[ $do_job != 0 ]]; then
 
   suff_sm="_nosm"
