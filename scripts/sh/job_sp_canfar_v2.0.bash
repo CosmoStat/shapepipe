@@ -171,10 +171,15 @@ export SP_CONFIG_MOD=$SP_RUN/cfis_mod
 # conventional layout (SP_RUN = .../v2.0/tiles/IDra/ID, three levels up + exp).
 if [ -z "${SP_EXP}" ]; then
   export SP_EXP=$(realpath "$SP_RUN/../../../exp")
-  echo "SP_EXP not set, using computed path: $SP_EXP"
+  echo "Setting SP_EXP to $SP_EXP"
 fi
 
 ## Other variables
+
+# Override OMP_NUM_THREADS if the CANFAR provisioning template was not expanded
+if [[ "${OMP_NUM_THREADS}" == *'${'* ]] || [[ "${OMP_NUM_THREADS}" == *'.'* ]]; then
+  export OMP_NUM_THREADS=1
+fi
 
 # Output
 OUTPUT=$SP_RUN/output
