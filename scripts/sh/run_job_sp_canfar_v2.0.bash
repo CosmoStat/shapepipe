@@ -315,8 +315,6 @@ function run_exp_job() {
     command "job_sp_canfar_v2.0.bash -p $psf --tile_det $tile_det --tile_mask $tile_mask -j $exp_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$exp_log_file"
     echo "Done with job_sp_canfar_v2.0.bash"
 
-    #cd "$dir"
-
   done < "$exp_numbers_file"
 
   local t_loop_end=$(date +%s)
@@ -338,6 +336,7 @@ function run_exp_job() {
 #              "run_prefix:runner_subdir:N[:subpath[:warn]]"
 #                 check runner_subdir/output in run_sp_tile_run_prefix* dir
 #            omit or pass "" to skip the completeness check and always run
+
 function run_tile_job() {
   local tile_job=$1
   local run_prefixes=$2
@@ -367,20 +366,32 @@ function run_tile_job() {
   local check_desc=""
 
   if [ -n "$complete_checks" ]; then
-    for check_pair in $complete_checks; do
+
+    # turn inputs into arrays
+    read -r -a run_prefix_array <<< "$run_prefixes"
+    read -r -a check_array <<< "$complete_checks"
+
+    # sanity check (optional but strongly recommended)
+    if [ "${#run_prefix_array[@]}" -ne "${#check_array[@]}" ]; then
+      echo "Error: run_prefixes and complete_checks must have same length"
+      return 1
+    fi
+
+    # zip loop
+    for i in "${!run_prefix_array[@]}"; do
+      run_prefix="${run_prefix_array[$i]}"
+      check_pair="${check_array[$i]}"
+
       local field1="${check_pair%%:*}"
       local rest1="${check_pair#*:}"
       local field2="${rest1%%:*}"
 
       local check_run_dir subdir rest
+      check_run_dir=$(ls -dt "$work_dir/output/run_sp_tile_${run_prefix}"* 2>/dev/null | head -1)
       if [[ "$field2" =~ ^[0-9]+$ ]]; then
-        # "subdir:N[...]" — check in main run dir
-        check_run_dir="$run_dir"
         subdir="$field1"
         rest="$rest1"
       else
-        # "run_prefix:subdir:N[...]" — check in that prefix's run dir
-        check_run_dir=$(ls -dt "$work_dir/output/run_sp_tile_${field1}"* 2>/dev/null | head -1)
         subdir="$field2"
         rest="${rest1#*:}"
       fi
@@ -403,7 +414,7 @@ function run_tile_job() {
 
       local n_out=0
       [ -n "$check_run_dir" ] && n_out=$(ls "$out_dir/" 2>/dev/null | wc -l)
-      check_desc+="${subdir}:${n_out}/${n_threshold} "
+      check_desc+="${run_prefix}/${subdir}:${n_out}/${n_threshold} "
       if [ "$n_out" -lt "$n_threshold" ]; then
         [ "$warn_only" != "1" ] && is_complete=0
       fi
@@ -411,15 +422,15 @@ function run_tile_job() {
   fi
 
   if [ "$is_complete" == "1" ] && [ -n "$complete_checks" ]; then
-    message "Complete: run_sp_tile_${main_prefix} ( $check_desc)" "$debug_out" -1
+    message "Complete: ( $check_desc)" "$debug_out" -1
     return 0
   fi
 
   if [ "$check" == "1" ]; then
     if [ -n "$run_dir" ]; then
-      message "Incomplete: run_sp_tile_${main_prefix} ($check_desc)" "$debug_out" -1
+      message "Incomplete: ($check_desc)" "$debug_out" -1
     else
-      message "Missing: run_sp_tile_${main_prefix}" "$debug_out" -1
+      message "Missing: ($check_desc)" "$debug_out" -1
     fi
     return 0
   fi
@@ -432,10 +443,11 @@ function run_tile_job() {
     ln -sf ~/shapepipe/example/cfis "cfis"
   fi
 
+  command "update_runs_log_file.py" $dry_run
+
   # Run job script
   command "job_sp_canfar_v2.0.bash -p $psf --tile_det $tile_det --tile_mask $tile_mask -j $tile_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$log_file"
 }
-
 
 # Init message
 if [ "$test_only" == "1" ]; then
@@ -503,6 +515,7 @@ if [ ! -d "output" ]; then
 fi
 
 echo -n "pwd: "; pwd
+
 
 # Avoid Qt error with setools
 export DISPLAY=:1.0
@@ -577,7 +590,7 @@ fi
 if [[ $do_job != 0 ]]; then
   # Job 256: object selection on tiles
   if [ "$tile_det" == "uc" ]; then
-    run_tile_job 256 "Gic Uc" "Gic_cat_vos:get_images_runner:1 read_ext_sexcat_runner:1"
+    run_tile_job 256 "Gic Uc" "get_images_runner:2 read_ext_sexcat_runner:1"
   else
     run_tile_job 256 "Sx" "sextractor_runner:1"
   fi

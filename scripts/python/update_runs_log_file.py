@@ -53,22 +53,11 @@ def update_log_file(module_runs, log_name):
 
     with open(log_name, "w") as f_out:
         for key in module_runs:
-            print(key, file=f_out, end=" ")
+            print(os.path.abspath(key), file=f_out, end=" ")
             print(",".join(module_runs[key]), file=f_out)
 
 
 def main(argv=None):
-
-    # Set default parameters
-    # p_def = params_default()
-
-    # Command line options
-    # options, args = parse_options(p_def)
-
-    # if check_options(options) is False:
-    # return 1
-
-    # param = update_param(p_def, options)
 
     base_dir = "./output"
     pattern = "run_sp_"
