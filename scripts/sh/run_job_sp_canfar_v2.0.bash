@@ -598,14 +598,8 @@ fi
 
 (( do_job = job & 512 ))
 if [[ $do_job != 0 ]]; then
-  # Job 512: create final catalogue
-  run_tile_job 512 "Mc" "make_cat_runner:1"
-fi
-
-(( do_job = job & 1024 ))
-if [[ $do_job != 0 ]]; then
   # Job 1024: process tiles (PSF interp, vignet, shape measurement)
-  run_tile_job 1024 "tile_${Letter}iVi_canfar"
+  run_tile_job 512 "${Letter}iVi ${Letter}iVi ${Letter}iVi" "psfex_runner:1 vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:1"
 fi
 
 if [ -n "$scratch" ]; then

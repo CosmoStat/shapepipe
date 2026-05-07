@@ -718,9 +718,15 @@ class PSFExInterpolator(object):
                 else:
                     array_exp_name = np.concatenate((array_exp_name, exp_name_tmp))
 
-            final_list.append(
-                [array_id, array_psf, array_shape, array_exp_name]
-            )
+            if array_id is not None:
+                final_list.append(
+                    [array_id, array_psf, array_shape, array_exp_name]
+                )
+            else:
+                self._w_log.info(
+                    f"All CCDs skipped for exposure {exp_name} "
+                    + "(no valid PSF model); epoch excluded from output"
+                )
 
         self._f_wcs_file.close()
         cat.close()
