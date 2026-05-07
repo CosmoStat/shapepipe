@@ -53,10 +53,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-<<<<<<< HEAD
-      - name: Test
-        run: docker run --rm ${{ steps.meta.outputs.tags }} shapepipe_run.py -c /app/example/config.ini
-=======
       # Smoke-test the binaries baked into the runtime image. Catches the
       # class of regression where the image builds but a runtime tool
       # (sextractor, weightwatcher) is missing or unrunnable.
@@ -66,7 +62,6 @@ jobs:
           docker run --rm "$IMAGE" source-extractor --version
           docker run --rm "$IMAGE" weightwatcher --version
           docker run --rm "$IMAGE" psfex --version
->>>>>>> mkdocker
 
       - name: Test runtime — shapepipe entry point
         run: |

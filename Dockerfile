@@ -61,20 +61,6 @@ RUN apt-get update -y --quiet && \
 # so upstream changes only land when we deliberately regenerate the lockfile.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-<<<<<<< HEAD
-# Ensure astroml:latest conda Python 3.12 is used (Docker RUN does not source conda init)
-ENV PATH=/opt/conda/bin:$PATH
-
-# Upgrade pip and install tools not part of the ShapePipe package
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir \
-        ipython==8.18.1 \
-        jupyterlab==4.3.1 \
-        snakemake==8.27.1
-
-# Set working directory and copy source code
-=======
->>>>>>> mkdocker
 WORKDIR /app
 COPY pyproject.toml uv.lock /app/
 
@@ -96,7 +82,7 @@ RUN chmod -R go+rwX /app && \
     uv pip install --no-deps -e . && \
     for ext in .py .sh .bash; do \
         for script in /app/scripts/*/*$ext; do \
-            link_name=$(basename $script); \
+            link_name=$(basename $script $ext); \
             ln -s $script /usr/local/bin/$link_name; \
         done; \
     done
