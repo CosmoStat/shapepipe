@@ -3,7 +3,6 @@ on: [push, workflow_dispatch]
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  BRANCH: ${{ github.ref }}
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
@@ -26,25 +25,91 @@ jobs:
         with:
           driver-opts: network=host
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
+      # Two parallel tag sets. `dev` is the default (no suffix, e.g. `:latest`,
+      # `:develop`); `runtime` carries a `-runtime` suffix.
+      - name: Tags — dev (default)
+        id: meta-dev
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      - name: Build and export to Docker
+      - name: Tags — runtime
+        id: meta-runtime
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            suffix=-runtime,onlatest=true
+
+      # Build runtime first (smaller, used to smoke-test pipeline binaries)
+      - name: Build runtime (load)
         uses: docker/build-push-action@v6
         with:
+          context: .
+          target: runtime
           load: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-runtime.outputs.tags }}
+          labels: ${{ steps.meta-runtime.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
+<<<<<<< HEAD
       - name: Test
         run: docker run --rm ${{ steps.meta.outputs.tags }} shapepipe_run.py -c /app/example/config.ini
+=======
+      # Smoke-test the binaries baked into the runtime image. Catches the
+      # class of regression where the image builds but a runtime tool
+      # (sextractor, weightwatcher) is missing or unrunnable.
+      - name: Test runtime — binaries
+        run: |
+          IMAGE=$(echo "${{ steps.meta-runtime.outputs.tags }}" | head -n1)
+          docker run --rm "$IMAGE" source-extractor --version
+          docker run --rm "$IMAGE" weightwatcher --version
+          docker run --rm "$IMAGE" psfex --version
+>>>>>>> mkdocker
 
-      - name: Push
+      - name: Test runtime — shapepipe entry point
+        run: |
+          IMAGE=$(echo "${{ steps.meta-runtime.outputs.tags }}" | head -n1)
+          docker run --rm "$IMAGE" shapepipe_run -c /app/example/config.ini
+
+      # Build dev (reuses cached `base` layer)
+      - name: Build dev (load)
         uses: docker/build-push-action@v6
         with:
+          context: .
+          target: dev
+          load: true
+          tags: ${{ steps.meta-dev.outputs.tags }}
+          labels: ${{ steps.meta-dev.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Verify the dev-only additions are present and runnable.
+      - name: Test dev — interactive tools and test extras
+        run: |
+          IMAGE=$(echo "${{ steps.meta-dev.outputs.tags }}" | head -n1)
+          docker run --rm "$IMAGE" vim --version | head -n1
+          docker run --rm "$IMAGE" rg --version | head -n1
+          docker run --rm "$IMAGE" pytest --version
+
+      # Push both targets
+      - name: Push runtime
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runtime
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-runtime.outputs.tags }}
+          labels: ${{ steps.meta-runtime.outputs.labels }}
+          cache-from: type=gha
+
+      - name: Push dev
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: dev
+          push: true
+          tags: ${{ steps.meta-dev.outputs.tags }}
+          labels: ${{ steps.meta-dev.outputs.labels }}
+          cache-from: type=gha

@@ -15,7 +15,7 @@ from shapepipe.modules.module_decorator import module_runner
     file_pattern=["image", "weight", "flag"],
     file_ext=[".fits", ".fits", ".fits"],
     depends=["numpy", "astropy"],
-    executes=["ww"],
+    executes=["weightwatcher"],
     numbering_scheme="_0",
 )
 def mask_runner(
