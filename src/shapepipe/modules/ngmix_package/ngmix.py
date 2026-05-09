@@ -2,26 +2,130 @@
 
 This module contains a class for ngmix shape measurement.
 
-:Author: Axel Guinot
+:Authors: Lucie Baumont, Axel Guinot
 
 """
 
 import re
-import os
-
-import galsim
 import ngmix
+import galsim
 import numpy as np
 from shutil import copyfile
 from astropy.io import fits
 from modopt.math.stats import sigma_mad
-from ngmix.fitting import LMSimple
-from ngmix.observation import MultiBandObsList, Observation, ObsList
-from numpy.random import uniform as urand
+from ngmix.observation import Observation, ObsList
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
 
+# I still don't know how to handle this
+class Tile_cat():
+ """Tile_cat.
+
+    catalog measured on a tile
+
+    Parameters
+    ----------
+    cat_path
+
+    """
+    def __init__(
+        self, 
+        cat_path
+    ):
+        self.cat_path = cat_path
+        
+        # sextractor detection catalog for the tile
+        self.tile_vignet
+        dtype = [('obj_id','i4'),('ra','>f8'),('dec','>f8'),('flux','>f4'),('VIGNET', '>f4', (51, 51))]
+        #self.tile_data = np.recarray(())
+    
+    @classmethod
+    def get_data(self, cat_path):
+        tile_cat = file_io.FITSCatalogue(
+            cat_path,
+            SEx_catalogue=True,
+        )
+        tile_cat.open()
+        # I would like to make this into an object cat
+        self.vign = np.copy(tile_cat.get_data()['VIGNET'])
+
+        self.obj_id = np.copy(tile_cat.get_data()['NUMBER'])
+        self.ra = np.copy(tile_cat.get_data()['XWIN_WORLD'])
+        self.dec = np.copy(tile_cat.get_data()['YWIN_WORLD'])
+        self.flux = np.copy(tile_cat.get_data()['FLUX_AUTO'])
+        self.size = np.copy(tile_cat.get_data()['FWHM_WORLD'])
+        self.e = np.copy(tile_cat.get_data()['ELLIPTICITY'])
+        self.theta = np.copy(tile_cat.get_data()['THETA_WIN_WORLD'])
+
+        tile_cat.close()
+
+class Postage_stamp():
+    """Galaxy Postage Stamp.
+
+    Class to hold catalog of postage stamps for a single galaxy
+
+    Parameters
+    ----------
+    bkg_sub: bool
+
+    megacam_flip: bool
+    We probably want to put weight and flag options here too
+
+    """
+    def __init__(
+        self,
+        bkg_sub=True,
+        megacam_flip=True
+
+    ):
+        self.gals = []
+        self.psfs = []
+        self.weights = []
+        self.flags = []
+        self.jacobs = []
+        self.bkg_sub = bkg_sub
+        self.megacam_flip = megacam_flip
+
+class Vignet():
+    """Vignet.
+
+    Class to hold catalog of postage stamps
+
+    Parameters
+    ----------
+    gal_vignet_path
+    bkg_vignet_path
+    psf_vignet_path
+    weight_vignet_path
+    flag_vignet_path
+    f_wcs_path
+    """
+    def __init__(
+        self,
+        gal_vignet_path,
+        bkg_vignet_path,
+        psf_vignet_path,
+        weight_vignet_path,
+        flag_vignet_path,
+        f_wcs_path
+
+    ):
+        self.f_wcs_file = SqliteDict(f_wcs_path)
+        self.gal_vign_cat = SqliteDict(gal_vignet_path)
+        self.bkg_vign_cat = SqliteDict(bkg_vignet_path)
+        self.psf_vign_cat = SqliteDict(psf_vignet_path)
+        self.weight_vign_cat = SqliteDict(weight_vignet_path)
+        self.flag_vign_cat = SqliteDict(flag_vignet_path)
+
+    @classmethod
+    def close(self):
+        self.f_wcs_file.close()
+        self.gal_vign_cat.close()
+        self.bkg_vign_cat.close()
+        self.flag_vign_cat.close()
+        self.weight_vign_cat.close()
+        self.psf_vign_cat.close()
 
 class Ngmix(object):
     """Ngmix.
@@ -85,11 +189,21 @@ class Ngmix(object):
             )
 
         self._tile_cat_path = input_file_list[0]
-        self._gal_vignet_path = input_file_list[1]
-        self._bkg_vignet_path = input_file_list[2]
-        self._psf_vignet_path = input_file_list[3]
-        self._weight_vignet_path = input_file_list[4]
-        self._flag_vignet_path = input_file_list[5]
+        self._vignet_cat = Vignet(
+            input_file_list[1],
+            input_file_list[2],
+            input_file_list[3],
+            input_file_list[4],
+            input_file_list[5],
+            f_wcs_path
+        )
+        #self._gal_vignet_path = input_file_list[1]
+        #self._bkg_vignet_path = input_file_list[2]
+        #self._psf_vignet_path = input_file_list[3]
+        #self._weight_vignet_path = input_file_list[4]
+        #self._flag_vignet_path = input_file_list[5]
+
+      
 
         self._output_dir = output_dir
         self._file_number_string = file_number_string
@@ -97,6 +211,7 @@ class Ngmix(object):
         self._zero_point = zero_point
         self._pixel_scale = pixel_scale
 
+        # MKDEBUG check whether still used 
         self._f_wcs_path = f_wcs_path
 
         self._check_existing_dir = check_existing_dir
@@ -107,16 +222,17 @@ class Ngmix(object):
         self._w_log = w_log
 
         # Initiatlise random generator
-        seed = int("".join(re.findall(r"\d+", self._file_number_string)))
-        np.random.seed(seed)
-        self._w_log.info(f"Random generator initialisation seed = {seed}")
+        seed = int(''.join(re.findall(r'\d+', self._file_number_string)))
+        self._rng = np.random.RandomState(seed)
+        self._w_log.info(f'Random generator initialisation seed = {seed}')
 
     @classmethod
     def MegaCamFlip(self, vign, ccd_nb):
         """Flip for MegaCam.
 
-        MegaCam has CCDs that are upside down. This function flips the
-        postage stamps in these CCDs.
+        MegaPipe has CCDs that are upside down. This function flips the
+        postage stamps in these CCDs. TO DO: This will give incorrect results
+        when used with THELI ccds.  Fix this.
 
         Parameters
         ----------
@@ -134,49 +250,70 @@ class Ngmix(object):
         if ccd_nb < 18 or ccd_nb in [36, 37]:
             # swap x axis so origin is on top-right
             return np.rot90(vign, k=2)
+            print('rotating megapipe image')
         else:
             # swap y axis so origin is on bottom-left
             return vign
 
-    def get_prior(self):
+    def get_prior(self, T_range=None, F_range=None):
         """Get Prior.
 
-        Return prior for the different parameters.
+        get a prior for use with the maximum likelihood fitter
+
+        Parameters
+        ----------
+        T_range: (float, float), optional
+            The range for the prior on T
+        F_range: (float, float), optional
+            Fhe range for the prior on flux 
 
         Returns
         -------
         ngmix.priors
-            Priors for the different parameters
-
+            Priors for the different parameters (ellipticity,center, size, flux)
         """
+        # 2-d Gaussian prior on the object center
+        # centered with respect to jacobian center
+        # Units same as jacobian, probably arcsec
+        cen_prior = ngmix.priors.CenPrior(
+            cen1=0.0, 
+            cen2=0.0, 
+            sigma1=self.scale, 
+            sigma2=self.scale, 
+            rng=self._rng
+        )
+        
         # Prior on ellipticity. Details do not matter, as long
         # as it regularizes the fit. From Bernstein & Armstrong 2014
         g_sigma = 0.4
-        g_prior = ngmix.priors.GPriorBA(g_sigma)
+        g_prior = ngmix.priors.GPriorBA(sigma=g_sigma,rng=self._rng)
 
-        # 2-d Gaussian prior on the center row and column center
-        # (relative to the center of the jacobian, which
-        # would be zero) and the sigma of the Gaussians.
-        # Units same as jacobian, probably arcsec
-        row, col = 0.0, 0.0
-        row_sigma, col_sigma = self._pixel_scale, self._pixel_scale
-        cen_prior = ngmix.priors.CenPrior(row, col, row_sigma, col_sigma)
+        if T_range is None:
+            T_range = [-1.0, 1.e3]
+        if F_range is None:
+            F_range = [-100.0, 1.e9]
 
-        # Size prior. Instead of flat, two-sided error function (TwoSidedErf)
-        # could be used
-        Tminval = -10.0  # arcsec squared
-        Tmaxval = 1.0e6
-        T_prior = ngmix.priors.FlatPrior(Tminval, Tmaxval)
+        # Flat Size prior in arcsec squared. Instead of flat, TwoSidedErf could be used
+        T_prior = ngmix.priors.FlatPrior(
+            minval=T_range[0], 
+            maxval=T_range[1], 
+            rng=self._rng
+        )
 
-        # Flux prior. Bounds need to make sense for
+        # Flat Flux prior. Bounds need to make sense for
         # images in question
-        Fminval = -1.0e4
-        Fmaxval = 1.0e9
-        F_prior = ngmix.priors.FlatPrior(Fminval, Fmaxval)
+        F_prior = ngmix.priors.FlatPrior(
+            minval=F_range[0], 
+            maxval=F_range[1],
+            rng=self._rng
+        )
 
         # Joint prior, combine all individual priors
         prior = ngmix.joint_prior.PriorSimpleSep(
-            cen_prior, g_prior, T_prior, F_prior
+            cen_prior=cen_prior,
+            g_prior=g_prior,
+            T_prior=T_prior,
+            F_prior=F_prior,
         )
 
         return prior
@@ -184,8 +321,8 @@ class Ngmix(object):
     def compile_results(self, results):
         """Compile Results.
 
-        Prepare the results of NGMIX before saving.
-
+        Prepare the results of NGMIX before saving. TO DO: add snr_r and T_r
+        This needs to be updated
         Parameters
         ----------
         results : dict
@@ -195,6 +332,7 @@ class Ngmix(object):
         -------
         dict
             Compiled results ready to be written to a file
+            note: psfo is the original image psf from psfex or mccd
 
         Raises
         ------
@@ -204,32 +342,32 @@ class Ngmix(object):
         """
         names = ["1m", "1p", "2m", "2p", "noshear"]
         names2 = [
-            "id",
-            "n_epoch_model",
-            "moments_fail",
-            "ntry_fit",
-            "g1_psfo_ngmix",
-            "g2_psfo_ngmix",
-            "T_psfo_ngmix",
-            "g1_err_psfo_ngmix",
-            "g2_err_psfo_ngmix",
-            "T_err_psfo_ngmix",
-            "g1",
-            "g1_err",
-            "g2",
-            "g2_err",
-            "T",
-            "T_err",
-            "Tpsf",
-            "g1_psf",
-            "g2_psf",
-            "flux",
-            "flux_err",
-            "s2n",
-            "mag",
-            "mag_err",
-            "flags",
-            "mcal_flags",
+            'id',
+            'n_epoch_model',
+            'moments_fail',
+            'ntry_fit',
+            'g1_psfo_ngmix',
+            'g2_psfo_ngmix',
+            'r50_psfo_ngmix',
+            'g1_err_psfo_ngmix',
+            'g2_err_psfo_ngmix',
+            'r50_err_psfo_ngmix',
+            'g1',
+            'g1_err',
+            'g2',
+            'g2_err',
+            'r50',
+            'r50_err',
+            'r50psf',
+            'g1_psf',
+            'g2_psf',
+            'flux',
+            'flux_err',
+            's2n',
+            'mag',
+            'mag_err',
+            'flags',
+            'mcal_flags'
         ]
         output_dict = {k: {kk: [] for kk in names2} for k in names}
         for idx in range(len(results)):
@@ -269,13 +407,11 @@ class Ngmix(object):
                 output_dict[name]["T_err_psfo_ngmix"].append(
                     results[idx]["T_err_PSFo"]
                 )
-                output_dict[name]["g1"].append(results[idx][name]["g"][0])
-                output_dict[name]["g1_err"].append(
-                    results[idx][name]["pars_err"][2]
+                output_dict[name]['r50_psfo_ngmix'].append(
+                    results[idx]['r50_PSFo']
                 )
-                output_dict[name]["g2"].append(results[idx][name]["g"][1])
-                output_dict[name]["g2_err"].append(
-                    results[idx][name]["pars_err"][3]
+                output_dict[name]['r50_err_psfo_ngmix'].append(
+                    results[idx]['r50_err_PSFo']
                 )
                 output_dict[name]["T"].append(results[idx][name]["T"])
                 output_dict[name]["T_err"].append(results[idx][name]["T_err"])
@@ -286,9 +422,11 @@ class Ngmix(object):
                 output_dict[name]["g2_psf"].append(
                     results[idx][name]["gpsf"][1]
                 )
-                output_dict[name]["flux"].append(results[idx][name]["flux"])
-                output_dict[name]["flux_err"].append(
-                    results[idx][name]["flux_err"]
+                output_dict[name]['r50'].append(results[idx][name]['pars'][4])
+                output_dict[name]['r50_err'].append(results[idx][name]['pars_err'][4])
+                output_dict[name]['r50psf'].append(results[idx][name]['r50psf'])
+                output_dict[name]['g1_psf'].append(
+                    results[idx][name]['gpsf'][0]
                 )
                 output_dict[name]["mag"].append(mag)
                 output_dict[name]["mag_err"].append(mag_err)
@@ -462,30 +600,22 @@ class Ngmix(object):
         """Process.
 
         Funcion to processs NGMIX.
-
+        organizes object cutouts from detection catalog in image, 
+        weight, and flag files
+        per object: 
+            gathers wcs and psf info from exposures
+            background subtracts (make this an option)
+            scales by relative zeropoints
+            runs metacal convolutions and ngmix fitting
         Returns
         -------
         dict
             Dictionary containing the NGMIX metacal results
 
         """
-        tile_cat = file_io.FITSCatalogue(
-            self._tile_cat_path,
-            SEx_catalogue=True,
-        )
-        tile_cat.open()
-        obj_id = np.copy(tile_cat.get_data()["NUMBER"])
-        tile_vign = np.copy(tile_cat.get_data()["VIGNET"])
-        tile_ra = np.copy(tile_cat.get_data()["XWIN_WORLD"])
-        tile_dec = np.copy(tile_cat.get_data()["YWIN_WORLD"])
-        tile_cat.close()
-
-        f_wcs_file = SqliteDict(self._f_wcs_path)
-        gal_vign_cat = SqliteDict(self._gal_vignet_path)
-        bkg_vign_cat = SqliteDict(self._bkg_vignet_path)
-        psf_vign_cat = SqliteDict(self._psf_vignet_path)
-        weight_vign_cat = SqliteDict(self._weight_vignet_path)
-        flag_vign_cat = SqliteDict(self._flag_vignet_path)
+        tile_cat = Tile_cat('')
+        # i would like to make this into an object vignet
+        vignet_cat = self._vignet_cat  
 
         final_res = []
         prior = self.get_prior()
@@ -494,170 +624,45 @@ class Ngmix(object):
         id_first = -1
         id_last = -1
 
-        saved_batch_cumul = 0
-        count_batch = 0
-
-        if self._save_batch > 0:
-            self._w_log.info(
-                f"Batch save mode, save every {self._save_batch} objectsa"
-            )
-        else:
-            self._w_log.info(f"No batch mode")
-
-        id_last = -1
-        if self._check_existing_dir:
-            output_path_prev = self.get_output_path(self._check_existing_dir)
-            output_name_new = self.get_output_path(self._output_dir)
-            if os.path.exists(output_path_prev):
-                self._w_log.info(
-                    f"Copy previous cat {output_path_prev} to {output_name_new}"
-                )
-                copyfile(output_path_prev, output_name_new)
-                id_last = self.get_last_id(output_name_new)
-            else:
-                self._w_log.info(
-                    f"No previous cat found in {self._check_existing_dir},"
-                    + " starting from scratch"
-                )
-
-        self._w_log.info(
-            f"Processing objects # {self._id_obj_min} ... {self._id_obj_max}"
-        )
-        for i_tile, id_tmp in enumerate(obj_id):
-
-            # Continue if ID outside range of predefined IDs (in config file)
-            if self._id_obj_min > 0 and id_tmp < self._id_obj_min:
+        for i_tile, obj_id in enumerate(tile_cat.obj_id):
+            # only run on objects in config file if they are specified (-1 means not set)
+            if self._id_obj_min > 0 and obj_id < self._id_obj_min:
                 continue
-            if self._id_obj_max > 0 and id_tmp > self._id_obj_max:
+            if self._id_obj_max > 0 and obj_id > self._id_obj_max:
                 continue
-
-            # Continue if ID before last ID from previous run
-            if id_last > 0 and id_tmp < id_last:
-                continue
-
             if id_first == -1:
-                id_first = id_tmp
-            id_last = id_tmp
-            str_id_tmp = str(id_tmp)
-
-            gal_vign = []
-            psf_vign = []
-            sigma_psf = []
-            weight_vign = []
-            flag_vign = []
-            jacob_list = []
-            if psf_vign_cat[str_id_tmp] == "empty":
-                self._w_log.info(f"Skipping object {id_tmp}: empty PSF vignet")
-                continue
-
-            self.check_key(str_id_tmp, gal_vign_cat, self._gal_vignet_path)
-            self.check_key(str_id_tmp, bkg_vign_cat, self._bkg_vignet_path)
-            self.check_key(str_id_tmp, flag_vign_cat, self._flag_vignet_path)
-            self.check_key(str_id_tmp, weight_vign_cat, self._weight_vignet_path)
-            if gal_vign_cat[str_id_tmp] == "empty":
-                self._w_log.info(
-                    f"Skipping object {id_tmp}: empty galaxy vignet"
-                )
-                continue
-
-            psf_expccd_name = list(psf_vign_cat[str(id_tmp)].keys())
-            for expccd_name_tmp in psf_expccd_name:
-
-                self.check_key(expccd_name_tmp, gal_vign_cat[str_id_tmp], self._gal_vignet_path)
-                self.check_key(expccd_name_tmp, bkg_vign_cat[str_id_tmp], self._bkg_vignet_path)
-                self.check_key(expccd_name_tmp, flag_vign_cat[str_id_tmp], self._flag_vignet_path)
-                self.check_key(expccd_name_tmp, weight_vign_cat[str_id_tmp], self._weight_vignet_path)
-
-                exp_name, ccd_n = re.split("-", expccd_name_tmp)
-
-                gal_vign_tmp = gal_vign_cat[str_id_tmp][expccd_name_tmp][
-                    "VIGNET"
-                ]
-                if len(np.where(gal_vign_tmp.ravel() == 0)[0]) != 0:
-                    self._w_log.info(
-                        f"Skipping exp {expccd_name_tmp} for object {id_tmp}: zero-length galaxy vignet"
-                    )
-                    continue
-
-                bkg_vign_tmp = bkg_vign_cat[str_id_tmp][expccd_name_tmp][
-                    "VIGNET"
-                ]
-                gal_vign_sub_bkg = gal_vign_tmp - bkg_vign_tmp
-
-                tile_vign_tmp = Ngmix.MegaCamFlip(
-                    np.copy(tile_vign[i_tile]), int(ccd_n)
-                )
-
-                flag_vign_tmp = flag_vign_cat[str_id_tmp][expccd_name_tmp][
-                    "VIGNET"
-                ]
-                flag_vign_tmp[np.where(tile_vign_tmp == -1e30)] = 2**10
-                v_flag_tmp = flag_vign_tmp.ravel()
-                if len(np.where(v_flag_tmp != 0)[0]) / (51 * 51) > 1 / 3.0:
-                    self._w_log.info(
-                        f"Skipping exp {expccd_name_tmp} for object {id_tmp}: mask > 1/3"
-                    )
-                    continue
-
-                weight_vign_tmp = weight_vign_cat[str_id_tmp][expccd_name_tmp][
-                    "VIGNET"
-                ]
-
-                jacob_tmp = get_jacob(
-                    f_wcs_file[exp_name][int(ccd_n)]["WCS"],
-                    tile_ra[i_tile],
-                    tile_dec[i_tile],
-                )
-
-                header_tmp = fits.Header.fromstring(
-                    f_wcs_file[exp_name][int(ccd_n)]["header"]
-                )
-                Fscale = header_tmp["FSCALE"]
-
-                gal_vign_scaled = gal_vign_sub_bkg * Fscale
-                weight_vign_scaled = weight_vign_tmp * 1 / Fscale**2
-
-                gal_vign.append(gal_vign_scaled)
-                psf_vign.append(
-                    psf_vign_cat[str_id_tmp][expccd_name_tmp]["VIGNET"]
-                )
-                sigma_psf.append(
-                    psf_vign_cat[str_id_tmp][expccd_name_tmp]["SHAPES"][
-                        "SIGMA_PSF_HSM"
-                    ]
-                )
-                weight_vign.append(weight_vign_scaled)
-                flag_vign.append(flag_vign_tmp)
-                jacob_list.append(jacob_tmp)
-
-            if len(gal_vign) == 0:
-                self._w_log.info(
-                    f"Skipping object {id_tmp}: no exposure vignets added"
-                )
-                continue
-            try:
-                res = do_ngmix_metacal(
-                    gal_vign,
-                    psf_vign,
-                    sigma_psf,
-                    weight_vign,
-                    flag_vign,
-                    jacob_list,
-                    prior,
-                    self._pixel_scale,
-                )
-            except Exception as ee:
-                self._w_log.info(
-                    f"ngmix failed for object ID={id_tmp}.\nMessage: {ee}"
-                )
-                continue
+                id_first = obj_id
+            id_last = obj_id
 
             count = count + 1
-            count_batch = count_batch + 1
+            
+            # make postage stamp, skip if not observed
+            try:
+                stamp = prepare_postage_stamps(vignet_cat)
+            except AttributeError:
+                continue
+            
+            #if object is observed, carry out metacal operations and run ngmix
+          
+            if len(stamp.gals) == 0:
+                continue
+            try:
+                res, psf_res = do_ngmix_metacal(
+                    stamp,
+                    prior,
+                    tile_cat.flux[i_tile],
+                    self._pixel_scale,
+                    self._rng
+                )
 
-
-            res["obj_id"] = id_tmp
-            res["n_epoch_model"] = len(gal_vign)
+            except Exception as ee:
+                self._w_log.info(
+                    f'ngmix failed for object ID={obj_id}.\nMessage: {ee}'
+                )
+                continue
+            # these things need to be considered
+            res['obj_id'] = obj_id
+            res['n_epoch_model'] = len(stamp.gal_vign_list)
             final_res.append(res)
 
             if count_batch == self._save_batch:
@@ -684,200 +689,145 @@ class Ngmix(object):
             + f"objects, id first/last={id_first}/{id_last}"
         )
 
-        f_wcs_file.close()
-        gal_vign_cat.close()
-        bkg_vign_cat.close()
-        flag_vign_cat.close()
-        weight_vign_cat.close()
-        psf_vign_cat.close()
-
+        vignet_cat.close
+    
         # Put all results together
-        res_dict = self.compile_results(final_res)
+        res_dict = self.compile_results(final_res,psf_res)
 
         # Save results
         self.save_results(res_dict)
 
-        self._w_log.info(
-            f"Saved {count} ({len(res_dict)}) objects to file"
+def prepare_postage_stamps(vignet, tile_cat):
+    i_tile = tile_cat.obj_id - 1
+    obj_id = tile_cat.obj_id
+    # define per-object lists of individual exposures to go into ngmix
+    stamp = Postage_stamp()
+    if (
+        (vignet.psf_vign_cat[str(obj_id)] == 'empty')
+        or (vignet.gal_vign_cat[str(obj_id)] == 'empty')
+    ):
+        raise AttributeError
+    #identify exposure and ccd number from psf catalog
+    psf_expccd_names = list(vignet.psf_vign_cat[str(obj_id)].keys())
+    for expccd_name in psf_expccd_names:
+        exp_name, ccd_n = re.split('-', expccd_name)
+
+        gal_vign = (
+            vignet.gal_vign_cat[str(obj_id)][expccd_name]['VIGNET']
         )
 
+        if len(np.where(gal_vign.ravel() == 0)[0]) != 0:
+            continue
+        
+        if stamp.bkg_sub:
+            bkg_vign = (
+                vignet.bkg_vign_cat[str(obj_id)][expccd_name]['VIGNET']
+            )
+            gal_vign_sub_bkg = background_subtract(
+                gal_vign,
+                bkg_vign
+            )
+        else:
+            gal_vign_sub_bkg = gal_vign
 
-def get_guess(
-    img,
-    pixel_scale,
-    guess_flux_unit="img",
-    guess_size_type="T",
-    guess_size_unit="sky",
-    guess_centroid=True,
-    guess_centroid_unit="sky",
-):
-    r"""Get Guess.
+        if stamp.megacam_flip:
+            tile_vign = (
+                Ngmix.MegaCamFlip(np.copy(tile_vign[i_tile]), int(ccd_n))
+            )
 
-    Get the guess vector for the NGMIX shape measurement
-    ``[center_x, center_y, g1, g2, size_T, flux]``.
-    No guesses are given for the ellipticity ``(0, 0)``.
+        flag_vign = (
+            vignet.flag_vign_cat[str(obj_id)][expccd_name]['VIGNET']
+        )
+        flag_vign[np.where(tile_vign == -1e30)] = 2**10
+        v_flag_tmp = flag_vign.ravel()
+        # remove objects that are more than 1/3 masked
+        if len(np.where(v_flag_tmp != 0)[0]) / (51 * 51) > 1 / 3.0:
+            continue
 
+        weight_vign = (
+            vignet.weight_vign_cat[str(obj_id)][expccd_name]['VIGNET']
+        )
+
+        jacob = get_galsim_jacobian(
+            vignet.f_wcs_file[exp_name][int(ccd_n)]['WCS'],
+            tile_cat.ra[i_tile],
+            tile_cat.dec[i_tile]
+        )
+
+        header = fits.Header.fromstring(
+            vignet.f_wcs_file[exp_name][int(ccd_n)]['header']
+        )
+
+        # rescale by relative zero-points
+        gal_vign_scaled, weight_vign_scaled = rescale_epoch_fluxes(
+            gal_vign_sub_bkg,
+            weight_vign,
+            header
+            )
+
+        # gather postage stamps in all of the epochs
+        stamp.gal_vign_list.append(gal_vign_scaled)
+        stamp.psf_vign_list.append(
+            vignet.psf_vign_cat[str(obj_id)][expccd_name]['VIGNET']
+        )
+
+        stamp.weight_vign_list.append(weight_vign_scaled)
+        stamp.flag_vign_list.append(flag_vign)
+        stamp.jacob_list.append(jacob)
+                
+    return stamp
+
+def background_subtract(gal,bkg):
+    """background subtraction.
+        
     Parameters
     ----------
-    img : numpy.ndarray
-        Array containing the image
-    pixel_scale : float
-        Approximation of the pixel scale
-    guess_flux_unit : str
-        If ``img`` returns the flux in pixel units, otherwise if ``sky``
-        returns the flux in :math:`{\rm arcsec}^{-2}`
-    guess_size_type : str
-        If ``T`` returns the size in quadrupole moments definition
-        :math:`2\sigma^2`, otherwise if ``sigma`` returns the moments
-        :math:`\sigma`
-    guess_size_unit : str
-        If ``img`` returns the size in pixel units, otherwise if ``sky``
-        returns the size in arcsec
-    guess_centroid : bool
-        If ``True``, will return a guess on the object centroid, otherwise if
-        ``False``, will return the image centre
-    guess_centroid_unit : str
-        If ``img`` returns the centroid in pixel unit, otherwise if ``sky``
-        returns the centroid in arcsec
-
+    gal : numpy.ndarray
+        galaxy image
+    bkg : numpy.ndarray
+        background
+        
     Returns
     -------
     numpy.ndarray
-        Return the guess array ``[center_x, center_y, g1, g2, size_T, flux]``
-
-    Raises
-    ------
-    GalSimHSMError
-        For an error in the computation of adaptive moments
-    ValueError
-        For invalid unit guess types
-
+        background subtracted galaxy
     """
-    galsim_img = galsim.Image(img, scale=pixel_scale)
 
-    hsm_shape = galsim.hsm.FindAdaptiveMom(galsim_img, strict=False)
+    # background subtraction
+    gal_vign_sub_bkg = gal - bkg
 
-    error_msg = hsm_shape.error_message
+    return gal_vign_sub_bkg
 
-    if error_msg != "":
-        raise galsim.hsm.GalSimHSMError(
-            f"Error in adaptive moments :\n{error_msg}"
-        )
-
-    if guess_flux_unit == "img":
-        guess_flux = hsm_shape.moments_amp
-    elif guess_flux_unit == "sky":
-        guess_flux = hsm_shape.moments_amp / pixel_scale**2
-    else:
-        raise ValueError(
-            f"invalid guess_flux_unit '{guess_flux_unit}',"
-            + " must be one of 'img', 'sky'"
-        )
-
-    if guess_size_unit == "img":
-        size_unit = 1.0
-    elif guess_size_unit == "sky":
-        size_unit = pixel_scale
-    else:
-        raise ValueError(
-            "invalid guess_size_unit '{guess_size_unit}',"
-            + "must be one of 'img', 'sky'"
-        )
-
-    if guess_size_type == "sigma":
-        guess_size = hsm_shape.moments_sigma * size_unit
-    elif guess_size_type == "T":
-        guess_size = 2 * (hsm_shape.moments_sigma * size_unit) ** 2
-
-    if guess_centroid_unit == "img":
-        centroid_unit = 1
-    elif guess_centroid_unit == "sky":
-        centroid_unit = pixel_scale
-    else:
-        raise ValueError(
-            f"invalid guess_centroid_unit '{guess_centroid_unit}',"
-            + "  must be one of 'img', 'sky'"
-        )
-
-    if guess_centroid:
-        guess_centroid = (
-            hsm_shape.moments_centroid - galsim_img.center
-        ) * centroid_unit
-    else:
-        guess_centroid = galsim_img.center * centroid_unit
-
-    guess = np.array(
-        [guess_centroid.x, guess_centroid.y, 0.0, 0.0, guess_size, guess_flux]
-    )
-
-    return guess
-
-
-def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
-    """Make GalSim Fit.
-
-    Fit image using simple GalSim model.
-
+def rescale_epoch_fluxes(gal,weight,header):
+    """rescale epochs by relative zeropoints to be on the same flux scale
+        
     Parameters
     ----------
-    obs : ngmix.observation.Observation
-        Image to fit
-    model : str
-        Model for fit
-    guess0 : numpy.ndarray
-        Parameters of first model guess
-    prior : ngmix.prior, optional
-        Prior for fit paraemeters
-    ntry : int, optional
-        Number of tries for fit, the default is ``5``
-
+    gal : numpy.ndarray
+        background subtracted galaxy image
+    weight : numpy.ndarray
+        weight image
+    header : 
+        image header
+        
     Returns
     -------
-    dict
-        Results
-
-    Raises
-    ------
-    ngmix.BootGalFailure
-        Failure to bootstrap galaxy
-
+    numpy.ndarray
+        rescaled galaxy image
+    numpy.ndarray
+        rescaled weight image
     """
-    limit = 0.1
+    Fscale = header['FSCALE']
 
-    guess = np.copy(guess0)
-    fres = {}
-    for it in range(ntry):
-        guess[0:5] += urand(low=-limit, high=limit)
-        guess[5:] *= 1 + urand(low=-limit, high=limit)
-        fres["flags"] = 1
-        try:
-            fitter = ngmix.galsimfit.GalsimSimple(
-                obs,
-                model,
-                prior=prior,
-            )
-            fitter.go(guess)
-            fres = fitter.get_result()
-        except Exception:
-            continue
+    gal_scaled = gal * Fscale
+    weight_scaled = weight * 1 / Fscale ** 2
 
-        if fres["flags"] == 0:
-            break
+    return gal_scaled, weight_scaled
 
-    if fres["flags"] != 0:
-        raise ngmix.gexceptions.BootGalFailure(
-            "Failed to fit galaxy image with galsimfit"
-        )
-
-    fres["ntry"] = it + 1
-
-    return fres
-
-
-def get_jacob(wcs, ra, dec):
-    """Get Jacobian.
-
-    Return the Jacobian of the WCS at the required position.
+def get_galsim_jacobian(wcs, ra, dec):
+    """Get local wcs.
+    This produces a galsim jacobian at a point.  We call it local_wcs because we convert to a ngmix object to create the jacobian later.
+    TO DO: can we do this within ngmix?
 
     Parameters
     ----------
@@ -905,8 +855,8 @@ def get_jacob(wcs, ra, dec):
 
 
 def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
-    r"""Get Noise.
-
+    """Get Noise.
+    TO DO: modify guess, pixel scale
     Compute the sigma of the noise from an object postage stamp.
     Use a guess on the object size, ellipticity and flux to create a window
     function.
@@ -919,7 +869,7 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
         Weight image
     guess : list
         Gaussian parameters fot the window function
-        ``[x0, y0, g1, g2, T, flux]``
+        ``[x0, y0, g1, g2, r50, flux]``
     pixel_scale : float
         Pixel scale of the galaxy image
     thresh : float, optional
@@ -933,7 +883,6 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
 
     """
     img_shape = gal.shape
-
     m_weight = weight != 0
 
     sig_tmp = sigma_mad(gal[m_weight])
@@ -950,33 +899,183 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
 
     return sig_noise
 
-
-def do_ngmix_metacal(
-    gals, psfs, psfs_sigma, weights, flags, jacob_list, prior, pixel_scale
-):
-    """Do Ngmix Metacal.
-
-    Perform the metacalibration on a multi-epoch object and return the joint
-    shape measurement with NGMIX.
+def prepare_ngmix_weights(gal,weight,flag,tile_cat):
+    """bookkeeping for ngmix weights. runs on a single galaxy and epoch
+        pixel scale and galaxy guess
+        TO DO: decide if we want galaxy guess stuff
 
     Parameters
     ----------
-    gals : list
-        List of the galaxy vignets
-    psfs : list
+    gal : numpy.ndarray
+        galaxy image.  List indices run over epochs
+    weight : numpy.ndarray
+        weight image  List indices run over epochs
+    flag : numpy.ndarray
+        flag image.  List indices run over epochs
+
+    Returns
+    -------
+    numpy.ndarray
+        galaxy image where noise replaces masked regions
+    numpy.ndarray
+        variance map for NGMIX
+    numpy.ndarray
+        noise image    
+
+    """ 
+    # integrate flag info into weights
+    weight_map = np.copy(weight)
+    weight_map[np.where(flag != 0)] = 0.
+    # This code combines integrates flag information into the weights.
+   
+    #if gal_guess_flag:
+    #    sig_noise = get_noise(
+    #        gal,
+    #        weight,
+    #        gal_guess_tmp,
+    #        pixel_scale,
+    #    )
+    #else:
+    sig_noise = sigma_mad(gal)
+
+    noise_img = np.random.randn(*gal.shape) * sig_noise
+    noise_img_gal = np.random.randn(*gal.shape) * sig_noise
+    
+    # fill in galaxy image masked regions with noise
+    gal_masked = np.copy(gal)
+    if (len(np.where(weight_map == 0)[0]) != 0):
+        gal_masked[weight_map == 0] = noise_img_gal[weight_map == 0]
+
+    # convert weight map to variance map
+    weight_map *= 1 / sig_noise ** 2
+    
+    return gal_masked, weight_map, noise_img
+
+def make_ngmix_observation(gal,weight,flag,psf,wcs):
+    """single galaxy and epoch to be passed to ngmix
+    TO DO: pixel scale
+    Parameters
+    ----------
+    gal : numpy.ndarray
+        List of the galaxy vignets.  List indices run over epochs
+    weight : numpy.ndarray
         List of the PSF vignets
-    psfs_sigma : list
-        List of the sigma PSFs
-    weights : list
-        List of the weight vignets
-    flags : list
-        List of the flag vignets
-    jacob_list : list
-        List of the Jacobians
+    flag : numpy.ndarray
+        flag image
+    psf : numpy.ndarray
+        psf vignett
+    wcs : numpy.ndarray
+        Jacobian
+    Returns
+    -------
+    ngmix.observation.Observation
+        observation to fit using ngmix
+
+    """
+    # prepare psf
+    # WHY RECENTER
+    psf_jacob = ngmix.Jacobian(
+        row=(psf.shape[0] - 1) / 2,
+        col=(psf.shape[1] - 1) / 2,
+        wcs=wcs
+    )
+
+    psf_obs = Observation(psf, jacobian=psf_jacob)
+
+    # prepare weight map
+    gal_masked, weight_map, noise_img = prepare_ngmix_weights(
+        gal,
+        weight,
+        flag
+    )
+    # WHY RECENTER???
+    # Recenter jacobian if necessary
+    gal_jacob = ngmix.Jacobian(
+        row=(gal.shape[0] - 1) / 2,
+        col=(gal.shape[1] - 1) / 2,
+        wcs=wcs
+    )
+    # define ngmix observation
+    gal_obs = Observation(
+        gal_masked,
+        weight=weight_map,
+        jacobian=gal_jacob,
+        psf=psf_obs,
+        noise=noise_img
+    )
+ 
+    return gal_obs
+
+def average_multiepoch_psf(obsdict,nepoch):
+    """ averages psf information over multiple epochs
+    we may need to do this for original psf as well
+    Parameters
+    ----------
+    obsdict : dict
+        dictionary of metacal observations after fit
+
+    Returns
+    -------
+    dict
+        Average psf size, shape over n_epochs
+
+    """
+    # create dictionary
+    names = ['T_psf', 'T_psf_err', 'g_psf', 'g_psf_err']
+    psf_dict = {k: [] for k in names}
+    # include relevant psf quantities- check how they are presented for multi-epoch observations
+    wsum = 0
+    g_psf_sum = np.array([0., 0.])
+    g_psf_err_sum = np.array([0., 0.])
+    T_psf_sum = 0
+    T_psf_err_sum = 0
+    for n_e in np.arange(nepoch):
+        T_psf=obsdict['noshear'][n_e].psf.meta['result']['T']
+        T_psf_err=obsdict['noshear'][n_e].psf.meta['result']['T_err']
+        g_psf=obsdict['noshear'][n_e].psf.meta['result']['g']
+        g_psf_err=obsdict['noshear'][n_e].psf.meta['result']['g_err']
+        ne_wsum = obsdict['noshear'][0].weight.sum()
+
+        # we probably want to handle cases when there is no psf
+        # how are we dealing with the error, what is npsf
+        wsum += ne_wsum
+        g_psf_sum += g_psf * ne_wsum
+        g_psf_err_sum += g_psf_err * ne_wsum
+        T_psf_sum += T_psf * ne_wsum
+        T_psf_err_sum += T_psf_err * ne_wsum
+
+    if wsum == 0:
+        raise ZeroDivisionError('Sum of weights = 0, division by zero')
+
+    psf_dict['g_psf'] = g_psf_sum / wsum
+    psf_dict['g_psf_err'] = g_psf_err_sum / wsum
+    psf_dict['T_psf'] = T_psf_sum / wsum
+    psf_dict['T_psf_err'] = T_psf_err_sum / wsum    
+
+    return psf_dict      
+
+def do_ngmix_metacal(
+    stamp,
+    prior,
+    flux_guess,
+    rng
+):
+    """Do Ngmix Metacal.
+
+    Performs  metacalibration on a sigle multi-epoch object and returns the joint shape measurement with NGMIX.
+    TO DO: get pixel scale from jacob_list
+    Parameters
+    ----------
+    stamp : Postage_stamp
+        List of the galaxy vignets.  List indices run over epochs
     prior : ngmix.priors
         Priors for the fitting parameters
+    flux_guess : np.ndarray
+        guess for flux
     pixel_scale : float
         pixel scale in arcsec
+    rng : numpy.random.RandomState
+        Random state for guesses and priors    
 
     Returns
     -------
@@ -984,207 +1083,108 @@ def do_ngmix_metacal(
         Dictionary containing the results of NGMIX metacal
 
     """
-    n_epoch = len(gals)
+    n_epoch = len(stamp.gals)
 
+    # are there galaxies to fit?
     if n_epoch == 0:
         raise ValueError("0 epoch to process")
 
-    # Make observation
+    # fitting options go here, make an option for the future
+    psf_model = 'gauss'
+    gal_model = 'gauss'
+
+    # Construct multi-epoch observation object to pass to ngmix 
     gal_obs_list = ObsList()
-    T_guess_psf = []
-    psf_res_gT = {
-        "g_PSFo": np.array([0.0, 0.0]),
-        "g_err_PSFo": np.array([0.0, 0.0]),
-        "T_PSFo": 0.0,
-        "T_err_PSFo": 0.0,
-    }
-    gal_guess = []
-    gal_guess_flag = True
-    wsum = 0
+
+    # create list of ngmix observations for each galaxy
     for n_e in range(n_epoch):
-
-        psf_jacob = ngmix.Jacobian(
-            row=(psfs[0].shape[0] - 1) / 2,
-            col=(psfs[0].shape[1] - 1) / 2,
-            wcs=jacob_list[n_e],
+        gal_obs = make_ngmix_observation(
+            stamp.gals[n_e],
+            stamp.weights[n_e],
+            stamp.flags[n_e],
+            stamp.psfs[n_e],
+            stamp.jacobs[n_e]
         )
-
-        psf_obs = Observation(psfs[n_e], jacobian=psf_jacob)
-
-        psf_T = psfs_sigma[n_e] * 1.17741 * pixel_scale
-
-        weight_map = np.copy(weights[n_e])
-        weight_map[np.where(flags[n_e] != 0)] = 0.0
-        weight_map[weight_map != 0] = 1
-
-        psf_guess = np.array([0.0, 0.0, 0.0, 0.0, psf_T, 1.0])
-        try:
-            psf_res = make_galsimfit(psf_obs, "gauss", psf_guess)
-        except Exception:
-            continue
-
-        # Gal guess
-        try:
-            gal_guess_tmp = get_guess(
-                gals[n_e], pixel_scale, guess_size_type="sigma"
-            )
-        except Exception:
-            gal_guess_flag = False
-            gal_guess_tmp = np.array([0.0, 0.0, 0.0, 0.0, 1, 100])
-
-        # Recenter jacobian if necessary
-        gal_jacob = ngmix.Jacobian(
-            row=(gals[0].shape[0] - 1) / 2 + gal_guess_tmp[0],
-            col=(gals[0].shape[1] - 1) / 2 + gal_guess_tmp[1],
-            wcs=jacob_list[n_e],
-        )
-
-        # Noise handling
-        if gal_guess_flag:
-            sig_noise = get_noise(
-                gals[n_e],
-                weight_map,
-                gal_guess_tmp,
-                pixel_scale,
-            )
-        else:
-            sig_noise = sigma_mad(gals[n_e])
-
-        noise_img = np.random.randn(*gals[n_e].shape) * sig_noise
-        noise_img_gal = np.random.randn(*gals[n_e].shape) * sig_noise
-
-        gal_masked = np.copy(gals[n_e])
-        if len(np.where(weight_map == 0)[0]) != 0:
-            gal_masked[weight_map == 0] = noise_img_gal[weight_map == 0]
-
-        weight_map *= 1 / sig_noise**2
-
-        # Original PSF fit
-        w_tmp = np.sum(weight_map)
-        psf_res_gT["g_PSFo"] += psf_res["g"] * w_tmp
-        psf_res_gT["g_err_PSFo"] += (
-            np.array([psf_res["pars_err"][2], psf_res["pars_err"][3]]) * w_tmp
-        )
-        psf_res_gT["T_PSFo"] += psf_res["T"] * w_tmp
-        psf_res_gT["T_err_PSFo"] += psf_res["T_err"] * w_tmp
-        wsum += w_tmp
-
-        gal_obs = Observation(
-            gal_masked,
-            weight=weight_map,
-            jacobian=gal_jacob,
-            psf=psf_obs,
-            noise=noise_img,
-        )
-
-        if gal_guess_flag:
-            gal_guess_tmp[:2] = 0
-            gal_guess.append(gal_guess_tmp)
-
         gal_obs_list.append(gal_obs)
-        T_guess_psf.append(psf_T)
-        gal_guess_flag = True
+   
+    #  decide on fitting options
+    fitter = ngmix.fitting.Fitter(model=gal_model, prior=prior)
+    # make parameter guesses based on a psf flux and a rough T
+    guesser = ngmix.guessers.TPSFFluxAndPriorGuesser(
+        rng=rng,
+        T=0.25,
+        prior=prior,
+    )
 
-    if wsum == 0:
-        raise ZeroDivisionError("Sum of weights = 0, division by zero")
+    # psf fitting a gaussian
+    psf_fitter  = ngmix.fitting.Fitter(model=psf_model, prior=prior)
+    # TO DO! what do we do about size?                              
+    psf_guesser = ngmix.guessers.TFluxGuesser(
+        rng=rng,
+        T=0.25,
+        prior=prior,
+        flux=flux_guess,
+    )
 
-    # Normalize PSF fit output
-    for key in psf_res_gT.keys():
-        psf_res_gT[key] /= wsum
-
-    # Gal guess handling
-    fail_get_guess = False
-    if len(gal_guess) == 0:
-        fail_get_guess = True
-        gal_pars = [0.0, 0.0, 0.0, 0.0, 1, 100]
-    else:
-        gal_pars = np.mean(gal_guess, 0)
-
-    psf_model = "gauss"
-    gal_model = "gauss"
-
+    # this runs the fitter. We set ntry=2 to retry the fit if it fails
+    psf_runner = ngmix.runners.PSFRunner(
+        fitter=psf_fitter, guesser=psf_guesser,
+        ntry=2,
+    )
+    runner = ngmix.runners.Runner(
+        fitter=fitter, guesser=guesser,
+        ntry=5,
+    )
     # metacal specific parameters
     metacal_pars = {
-        "types": ["noshear", "1p", "1m", "2p", "2m"],
-        "step": 0.01,
-        "psf": "gauss",
-        "fixnoise": True,
-        "cheatnoise": False,
-        "symmetrize_psf": False,
-        "use_noise_image": True,
+        'types': ['noshear', '1p', '1m', '2p', '2m'],
+        'step': 0.01,
+        'psf': 'fitgauss',
+        'fixnoise': True,
+        'use_noise_image': True
     }
 
-    Tguess = np.mean(T_guess_psf)
+    # this "bootstrapper" runs the metacal image shearing as well as both psf
+    # and object measurements
+    boot = ngmix.metacal.MetacalBootstrapper(
+        metacal_pars,
+        runner=runner, 
+        psf_runner=psf_runner,
+        ignore_failed_psf=True,
+        rng=rng
+    )
+    # this is the actual fit
+    resdict, obsdict = boot.go(gal_obs_list)
+    # compile results to include psf information
+    psf_res = average_multiepoch_psf(obsdict)
+    return resdict, psf_res
 
-    # retry the fit twice
-    ntry = 2
+# Define the SExtractor parameters for a galaxy
+def sextractor_e1e2(e,theta):
+    """sextractor_e1e2
 
-    obs_dict_mcal = ngmix.metacal.get_all_metacal(gal_obs_list, **metacal_pars)
-    res = {"mcal_flags": 0}
+    computes ellipticity from sextrator quantities
+    Parameters
+    ----------
+    stamp : Postage_stamp
+        List of the galaxy vignets.  List indices run over epochs
+    prior : ngmix.priors
+        Priors for the fitting parameters
+    flux_guess : np.ndarray
+        guess for flux
+    pixel_scale : float
+        pixel scale in arcsec
+    rng : numpy.random.RandomState
+        Random state for guesses and priors    
 
-    ntry = 5
+    Returns
+    -------
+    np.ndarray
+        ellipticity
 
-    for key in sorted(obs_dict_mcal):
-
-        fres = make_galsimfit(
-            obs_dict_mcal[key], gal_model, gal_pars, prior=prior
-        )
-
-        res["mcal_flags"] |= fres["flags"]
-        tres = {}
-
-        for name in fres.keys():
-            tres[name] = fres[name]
-        tres["flags"] = fres["flags"]
-
-        wsum = 0
-        Tpsf_sum = 0
-        gpsf_sum = np.zeros(2)
-        npsf = 0
-        for obs in obs_dict_mcal[key]:
-
-            if hasattr(obs, "psf_nopix"):
-                try:
-                    psf_res = make_galsimfit(
-                        obs.psf_nopix,
-                        psf_model,
-                        np.array([0.0, 0.0, 0.0, 0.0, Tguess, 1.0]),
-                        ntry=ntry,
-                    )
-                except Exception:
-                    continue
-                g1, g2 = psf_res["g"]
-                T = psf_res["T"]
-            else:
-                try:
-                    psf_res = make_galsimfit(
-                        obs.psf,
-                        psf_model,
-                        np.array([0.0, 0.0, 0.0, 0.0, Tguess, 1.0]),
-                    )
-                except Exception:
-                    continue
-                g1, g2 = psf_res["g"]
-                T = psf_res["T"]
-
-            # TODO we sometimes use other weights
-            twsum = obs.weight.sum()
-
-            wsum += twsum
-            gpsf_sum[0] += g1 * twsum
-            gpsf_sum[1] += g2 * twsum
-            Tpsf_sum += T * twsum
-            npsf += 1
-
-        tres["gpsf"] = gpsf_sum / wsum
-        tres["Tpsf"] = Tpsf_sum / wsum
-
-        res[key] = tres
-
-    # result dictionary, keyed by the types in metacal_pars above
-    metacal_res = res
-
-    metacal_res.update(psf_res_gT)
-    metacal_res["moments_fail"] = fail_get_guess
-
-    return metacal_res
+    """
+    # Convert the position angle from degrees to radians
+    phi = np.radians(theta) - np.pi/2
+    # Calculate the ellipticity vector
+    e_vec = e * np.array([np.cos(2*phi), np.sin(2*phi)])
+    return e_vec

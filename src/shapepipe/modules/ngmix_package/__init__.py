@@ -2,7 +2,7 @@
 
 This package contains the module for ``ngmix``.
 
-:Author: Axel Guinot
+:Author: Lucie Baumont, Axel Guinot
 
 :Parent modules:
 
