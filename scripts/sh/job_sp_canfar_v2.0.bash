@@ -164,7 +164,6 @@ export SP_RUN=`pwd`
 
 # Config file path
 export SP_CONFIG=$SP_RUN/cfis
-export SP_CONFIG_MOD=$SP_RUN/cfis_mod
 
 # Root directory for per-exposure work directories.
 # Set SP_EXP in the environment to override; otherwise falls back to the
@@ -244,11 +243,12 @@ function command () {
    fi
 }
 
-# Set up config file and call shapepipe_run
+# Set up config file and call shapepipe_run.
+# Batch size is passed via --batch_size flag; no config editing needed.
 function command_cfg_shapepipe() {
     local config_name=$1
     local str=$2
-    local _n_smp=$3 
+    local _n_smp=$3
     local _exclusive=$4
 
     if [ "$exclusive" != "" ]; then
@@ -257,39 +257,14 @@ function command_cfg_shapepipe() {
       exclusive_flag=""
     fi
 
-    config_upd=$(set_config_n_smp $config_name $_n_smp)
-    local cmd="shapepipe_run.py -c $config_upd $exclusive_flag"
+    local batch_flag=""
+    if [[ $_n_smp != -1 ]]; then
+      batch_flag="--batch_size $_n_smp"
+    fi
+
+    local config="$SP_CONFIG/$config_name"
+    local cmd="shapepipe_run.py -c $config $exclusive_flag $batch_flag"
     command "$cmd" "$str"
-}
-
-function set_config_n_smp() {
-  local config_name=$1
-  local _n_smp=$2
-
-  local config_orig="$SP_CONFIG/$config_name"
-
-  if [[ $_n_smp != -1 ]]; then
-    # Update SMP batch size
-    local config_upd="$SP_CONFIG_MOD/$config_name"
-    update_config $config_orig $config_upd "SMP_BATCH_SIZE" $_n_smp
-  else
-    # Keep original config file
-    local config_upd=$config_orig
-  fi
-
-  # Set "return" value (stdout)
-  echo "$config_upd"
-}
-
-# Update config file
-function update_config() {
-  local config_orig=$1
-  local config_upd=$2
-  local key=$3
-  local val_upd=$4
-
-  cat $config_orig \
-    | perl -ane 's/'$key'\s+=.+/'$key' = '$val_upd'/; print' > $config_upd
 }
 
 ### Start ###
@@ -300,7 +275,6 @@ echo "Start processing"
 mkdir -p $SP_RUN
 cd $SP_RUN
 mkdir -p $OUTPUT
-mkdir -p $SP_CONFIG_MOD
 
 # Processing
 
@@ -324,18 +298,14 @@ if [[ $do_job != 0 ]]; then
     command \
       "create_star_cat $SP_RUN/output/run_sp_tile_Git_*/get_images_runner_run/output $SP_RUN/star_cat_tiles" \
       "Save star cats for masking (tile)"
-
-    #### For single-exposures
-    # TODO
   fi
 
 fi
 
-## Prepare images (offline)
+## Uncompress tile weights
 (( do_job = $job & 2 ))
 if [[ $do_job != 0 ]]; then
 
-  ### Uncompress tile weights
   command_cfg_shapepipe "config_tile_Uz.ini" "Run shapepipe (uncompress tile weights)" $n_smp $exclusive
 
 fi
@@ -344,7 +314,6 @@ fi
 (( do_job = $job & 4 ))
 if [[ $do_job != 0 ]]; then
 
-  ### Uncompress tile weights
   command_cfg_shapepipe "config_tile_Fe.ini" "Run shapepipe (find exposures)" $n_smp $exclusive
 
 fi
@@ -353,7 +322,6 @@ fi
 (( do_job = $job & 8 ))
 if [[ $do_job != 0 ]]; then
 
-  ### Retrieve exposure images
   command_cfg_shapepipe \
     "config_exp_Gie_vos.ini" \
     "Run shapepipe (get exposure images)" \
@@ -362,10 +330,10 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
+## Split images into single-HDU files, merge headers for WCS info
 (( do_job = $job & 16 ))
 if [[ $do_job != 0 ]]; then
 
-  ### Split images into single-HDU files, merge headers for WCS info
   command_cfg_shapepipe \
     "config_exp_Sp.ini" \
     "Run shapepipe (split images, merge headers)" \
@@ -374,10 +342,10 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
+## Mask exposures
 (( do_job = $job & 32 ))
 if [[ $do_job != 0 ]]; then
 
-  ### Mask exposures
   command_cfg_shapepipe \
     "config_exp_Ma_${star_cat_for_mask}.ini" \
     "Run shapepipe (mask exposures)" \
@@ -402,10 +370,10 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
+## Merge single-exposure WCS headers into tile-level sqlite log.
 (( do_job = $job & 128 ))
 if [[ $do_job != 0 ]]; then
 
-  ### Merge single-exposure WCS headers into tile-level sqlite log.
   command_cfg_shapepipe \
     "config_tile_Mh_exp.ini" \
     "Run shapepipe (merge exp headers)" \
@@ -414,6 +382,7 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
+## Select objects on tiles
 (( do_job = $job & 256 ))
 if [[ $do_job != 0 ]]; then
 
@@ -481,8 +450,20 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
-## Create final catalogues (offline)
+## Process tiles up to shape measurement: postage stamp creation
 (( do_job = $job & 1024 ))
+if [[ $do_job != 0 ]]; then
+
+  command_cfg_shapepipe \
+    "config_tile_Ng_batch_${psf}_${tile_det}.ini" \
+    "Run shapepipe (tile): shape measurement" \
+    $n_smp \
+    $exclusive
+
+fi
+
+## Create final catalogues (offline)
+(( do_job = $job & 2048 ))
 if [[ $do_job != 0 ]]; then
 
   suff_sm="_nosm"

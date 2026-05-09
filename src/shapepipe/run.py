@@ -341,6 +341,7 @@ def run_smp(pipe):
             job_type=pipe.run_method[module],
             exclusive=pipe.exclusive,
             verbose=pipe.verbose,
+            batch_size=pipe._args.batch_size,
         )
 
         # Submit jobs
@@ -400,6 +401,7 @@ def run_mpi(pipe, comm):
                 parallel_mode="mpi",
                 exclusive=pipe.exclusive,
                 verbose=verbose,
+                batch_size=pipe._args.batch_size,
             )
 
             # Get job type
