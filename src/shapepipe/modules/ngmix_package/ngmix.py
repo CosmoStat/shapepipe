@@ -366,7 +366,7 @@ class Ngmix(object):
             if id_last != cat._cat_data[hdu_no].data["id"][-1]:
                 raise ValueError(
                     "Last ID {cat._cat_data[hdu_no].data['id'][-1]} in HDU"
-                    + f" #{hdu_no} inconsistent with {id_las}"
+                    + f" #{hdu_no} inconsistent with {id_last}"
                 )
 
         return id_last
@@ -1026,7 +1026,10 @@ def do_ngmix_metacal(
         # Gal guess
         try:
             gal_guess_tmp = get_guess(
-                gals[n_e], pixel_scale, guess_size_type="sigma"
+                gals[n_e],
+                pixel_scale,
+                guess_size_type="T",
+                guess_centroid_unit="img",
             )
         except Exception:
             gal_guess_flag = False
@@ -1034,8 +1037,8 @@ def do_ngmix_metacal(
 
         # Recenter jacobian if necessary
         gal_jacob = ngmix.Jacobian(
-            row=(gals[0].shape[0] - 1) / 2 + gal_guess_tmp[0],
-            col=(gals[0].shape[1] - 1) / 2 + gal_guess_tmp[1],
+            row=(gals[n_e].shape[0] - 1) / 2 + gal_guess_tmp[1],
+            col=(gals[n_e].shape[1] - 1) / 2 + gal_guess_tmp[0],
             wcs=jacob_list[n_e],
         )
 
