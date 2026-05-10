@@ -1028,7 +1028,6 @@ def do_ngmix_metacal(
             gal_guess_tmp = get_guess(
                 gals[n_e],
                 pixel_scale,
-                guess_size_type="T",
                 guess_centroid_unit="img",
             )
         except Exception:
