@@ -6,6 +6,7 @@ This module contains a class for ngmix shape measurement.
 
 """
 
+import os
 import re
 import ngmix
 import galsim
@@ -20,7 +21,7 @@ from shapepipe.pipeline import file_io
 
 # I still don't know how to handle this
 class Tile_cat():
- """Tile_cat.
+    """Tile_cat.
 
     catalog measured on a tile
 
@@ -30,33 +31,32 @@ class Tile_cat():
 
     """
     def __init__(
-        self, 
+        self,
         cat_path
     ):
         self.cat_path = cat_path
-        
-        # sextractor detection catalog for the tile
-        self.tile_vignet
-        dtype = [('obj_id','i4'),('ra','>f8'),('dec','>f8'),('flux','>f4'),('VIGNET', '>f4', (51, 51))]
-        #self.tile_data = np.recarray(())
-    
-    @classmethod
+        if cat_path:
+            self.get_data(cat_path)
+
     def get_data(self, cat_path):
         tile_cat = file_io.FITSCatalogue(
             cat_path,
             SEx_catalogue=True,
         )
         tile_cat.open()
-        # I would like to make this into an object cat
-        self.vign = np.copy(tile_cat.get_data()['VIGNET'])
+        data = tile_cat.get_data()
+        cols = data.dtype.names
 
-        self.obj_id = np.copy(tile_cat.get_data()['NUMBER'])
-        self.ra = np.copy(tile_cat.get_data()['XWIN_WORLD'])
-        self.dec = np.copy(tile_cat.get_data()['YWIN_WORLD'])
-        self.flux = np.copy(tile_cat.get_data()['FLUX_AUTO'])
-        self.size = np.copy(tile_cat.get_data()['FWHM_WORLD'])
-        self.e = np.copy(tile_cat.get_data()['ELLIPTICITY'])
-        self.theta = np.copy(tile_cat.get_data()['THETA_WIN_WORLD'])
+        self.obj_id = np.copy(data['NUMBER'])
+        self.ra = np.copy(data['XWIN_WORLD'])
+        self.dec = np.copy(data['YWIN_WORLD'])
+
+        # Optional columns — may be absent in external (non-SExtractor) catalogs
+        self.flux = np.copy(data['FLUX_AUTO']) if 'FLUX_AUTO' in cols else None
+        self.vign = np.copy(data['VIGNET']) if 'VIGNET' in cols else None
+        self.size = np.copy(data['FWHM_WORLD']) if 'FWHM_WORLD' in cols else None
+        self.e = np.copy(data['ELLIPTICITY']) if 'ELLIPTICITY' in cols else None
+        self.theta = np.copy(data['THETA_WIN_WORLD']) if 'THETA_WIN_WORLD' in cols else None
 
         tile_cat.close()
 
@@ -278,8 +278,8 @@ class Ngmix(object):
         cen_prior = ngmix.priors.CenPrior(
             cen1=0.0, 
             cen2=0.0, 
-            sigma1=self.scale, 
-            sigma2=self.scale, 
+            sigma1=self._pixel_scale,
+            sigma2=self._pixel_scale,
             rng=self._rng
         )
         
@@ -613,11 +613,12 @@ class Ngmix(object):
             Dictionary containing the NGMIX metacal results
 
         """
-        tile_cat = Tile_cat('')
+        tile_cat = Tile_cat(self._tile_cat_path)
         # i would like to make this into an object vignet
         vignet_cat = self._vignet_cat  
 
         final_res = []
+        psf_res = None
         prior = self.get_prior()
 
         count = 0
@@ -638,7 +639,7 @@ class Ngmix(object):
             
             # make postage stamp, skip if not observed
             try:
-                stamp = prepare_postage_stamps(vignet_cat)
+                stamp = prepare_postage_stamps(vignet_cat, obj_id, i_tile, tile_cat)
             except AttributeError:
                 continue
             
@@ -647,10 +648,15 @@ class Ngmix(object):
             if len(stamp.gals) == 0:
                 continue
             try:
+                flux_guess = (
+                    tile_cat.flux[i_tile]
+                    if tile_cat.flux is not None
+                    else 1.0
+                )
                 res, psf_res = do_ngmix_metacal(
                     stamp,
                     prior,
-                    tile_cat.flux[i_tile],
+                    flux_guess,
                     self._pixel_scale,
                     self._rng
                 )
@@ -692,14 +698,12 @@ class Ngmix(object):
         vignet_cat.close
     
         # Put all results together
-        res_dict = self.compile_results(final_res,psf_res)
+        res_dict = self.compile_results(final_res)
 
         # Save results
         self.save_results(res_dict)
 
-def prepare_postage_stamps(vignet, tile_cat):
-    i_tile = tile_cat.obj_id - 1
-    obj_id = tile_cat.obj_id
+def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat):
     # define per-object lists of individual exposures to go into ngmix
     stamp = Postage_stamp()
     if (
@@ -716,7 +720,7 @@ def prepare_postage_stamps(vignet, tile_cat):
             vignet.gal_vign_cat[str(obj_id)][expccd_name]['VIGNET']
         )
 
-        if len(np.where(gal_vign.ravel() == 0)[0]) != 0:
+        if np.all(gal_vign == 0):
             continue
         
         if stamp.bkg_sub:
@@ -730,15 +734,19 @@ def prepare_postage_stamps(vignet, tile_cat):
         else:
             gal_vign_sub_bkg = gal_vign
 
-        if stamp.megacam_flip:
-            tile_vign = (
-                Ngmix.MegaCamFlip(np.copy(tile_vign[i_tile]), int(ccd_n))
-            )
+        tile_vign = (
+            np.copy(tile_cat.vign[i_tile])
+            if tile_cat.vign is not None
+            else None
+        )
+        if stamp.megacam_flip and tile_vign is not None:
+            tile_vign = Ngmix.MegaCamFlip(tile_vign, int(ccd_n))
 
         flag_vign = (
             vignet.flag_vign_cat[str(obj_id)][expccd_name]['VIGNET']
         )
-        flag_vign[np.where(tile_vign == -1e30)] = 2**10
+        if tile_vign is not None:
+            flag_vign[np.where(tile_vign == -1e30)] = 2**10
         v_flag_tmp = flag_vign.ravel()
         # remove objects that are more than 1/3 masked
         if len(np.where(v_flag_tmp != 0)[0]) / (51 * 51) > 1 / 3.0:
@@ -874,7 +882,7 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
         Pixel scale of the galaxy image
     thresh : float, optional
         Threshold to cut the window function,
-        cut = ``thresh`` * :math:`\sigma_{\rm noise}`;  the default is ``1.2``
+        cut = ``thresh`` * sigma_noise;  the default is ``1.2``
 
     Returns
     -------
