@@ -614,19 +614,23 @@ class Ngmix(object):
 
         """
         tile_cat = Tile_cat(self._tile_cat_path)
-        # i would like to make this into an object vignet
-        vignet_cat = self._vignet_cat  
+        vignet_cat = self._vignet_cat
 
         final_res = []
         psf_res = None
         prior = self.get_prior()
 
         count = 0
+        n_empty_cat = 0
+        n_no_epoch = 0
+        n_ngmix_fail = 0
+        n_fitted = 0
         id_first = -1
         id_last = -1
+        count_batch = 0
+        saved_batch_cumul = 0
 
         for i_tile, obj_id in enumerate(tile_cat.obj_id):
-            # only run on objects in config file if they are specified (-1 means not set)
             if self._id_obj_min > 0 and obj_id < self._id_obj_min:
                 continue
             if self._id_obj_max > 0 and obj_id > self._id_obj_max:
@@ -634,19 +638,20 @@ class Ngmix(object):
             if id_first == -1:
                 id_first = obj_id
             id_last = obj_id
+            count += 1
 
-            count = count + 1
-            
-            # make postage stamp, skip if not observed
-            try:
-                stamp = prepare_postage_stamps(vignet_cat, obj_id, i_tile, tile_cat)
-            except AttributeError:
+            # Skip objects with no multi-epoch PSF or vignet data
+            if (vignet_cat.psf_vign_cat[str(obj_id)] == 'empty'
+                    or vignet_cat.gal_vign_cat[str(obj_id)] == 'empty'):
+                n_empty_cat += 1
                 continue
-            
-            #if object is observed, carry out metacal operations and run ngmix
-          
+
+            stamp = prepare_postage_stamps(vignet_cat, obj_id, i_tile, tile_cat)
+
             if len(stamp.gals) == 0:
+                n_no_epoch += 1
                 continue
+
             try:
                 flux_guess = (
                     tile_cat.flux[i_tile]
@@ -657,46 +662,50 @@ class Ngmix(object):
                     stamp,
                     prior,
                     flux_guess,
-                    self._pixel_scale,
                     self._rng
                 )
-
             except Exception as ee:
                 self._w_log.info(
                     f'ngmix failed for object ID={obj_id}.\nMessage: {ee}'
                 )
+                n_ngmix_fail += 1
                 continue
-            # these things need to be considered
+
             res['obj_id'] = obj_id
-            res['n_epoch_model'] = len(stamp.gal_vign_list)
+            res['n_epoch_model'] = len(stamp.gals)
             final_res.append(res)
+            n_fitted += 1
+            count_batch += 1
 
-            if count_batch == self._save_batch:
-
-                # Put batch results together
+            if self._save_batch > 0 and count_batch == self._save_batch:
                 res_dict = self.compile_results(final_res)
-                
-                # Save batch to disk
                 self.save_results(res_dict)
-
                 saved_batch_cumul += count_batch
-
                 self._w_log.info(
-                    f"Batch-saved {count_batch} ({len(res_dict)} valid) objects to"
-                    + f" file, cumul={saved_batch_cumul}"
+                    f"Batch-saved {count_batch} ({len(res_dict)} valid) objects,"
+                    + f" cumul={saved_batch_cumul}"
                 )
-
-                # Reset for next batch
                 final_res = []
                 count_batch = 0
 
+            if count % 1000 == 0:
+                self._w_log.info(
+                    f"Progress: {count} iterated, {n_empty_cat} empty catalog,"
+                    + f" {n_no_epoch} no valid epoch, {n_ngmix_fail} fit failed,"
+                    + f" {n_fitted} fitted"
+                )
+
         self._w_log.info(
-            f"ngmix loop over objects finished, measured {count} "
-            + f"objects, id first/last={id_first}/{id_last}"
+            f"ngmix loop finished: {count} iterated"
+            + f" (id {id_first}/{id_last}),"
+            + f" {n_empty_cat} empty catalog,"
+            + f" {n_no_epoch} no valid epoch,"
+            + f" {n_ngmix_fail} fit failed,"
+            + f" {n_fitted} fitted"
         )
 
-        vignet_cat.close
-    
+        vignet_cat.close()
+
         # Put all results together
         res_dict = self.compile_results(final_res)
 
@@ -706,11 +715,6 @@ class Ngmix(object):
 def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat):
     # define per-object lists of individual exposures to go into ngmix
     stamp = Postage_stamp()
-    if (
-        (vignet.psf_vign_cat[str(obj_id)] == 'empty')
-        or (vignet.gal_vign_cat[str(obj_id)] == 'empty')
-    ):
-        raise AttributeError
     #identify exposure and ccd number from psf catalog
     psf_expccd_names = list(vignet.psf_vign_cat[str(obj_id)].keys())
     for expccd_name in psf_expccd_names:
@@ -774,14 +778,13 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat):
             )
 
         # gather postage stamps in all of the epochs
-        stamp.gal_vign_list.append(gal_vign_scaled)
-        stamp.psf_vign_list.append(
+        stamp.gals.append(gal_vign_scaled)
+        stamp.psfs.append(
             vignet.psf_vign_cat[str(obj_id)][expccd_name]['VIGNET']
         )
-
-        stamp.weight_vign_list.append(weight_vign_scaled)
-        stamp.flag_vign_list.append(flag_vign)
-        stamp.jacob_list.append(jacob)
+        stamp.weights.append(weight_vign_scaled)
+        stamp.flags.append(flag_vign)
+        stamp.jacobs.append(jacob)
                 
     return stamp
 
