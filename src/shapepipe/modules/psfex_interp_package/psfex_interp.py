@@ -625,6 +625,8 @@ class PSFExInterpolator(object):
             array_id = None
             array_shape = None
             array_exp_name = None
+            n_ccd_valid = 0
+            n_ccd_total = sum(1 for c in ccd_list if c != -1)
             for ccd in ccd_list:
                 if ccd == -1:
                     continue
@@ -718,9 +720,22 @@ class PSFExInterpolator(object):
                 else:
                     array_exp_name = np.concatenate((array_exp_name, exp_name_tmp))
 
-            final_list.append(
-                [array_id, array_psf, array_shape, array_exp_name]
-            )
+                n_ccd_valid += 1
+
+            if array_id is not None:
+                n_psf = len(array_id)
+                self._w_log.info(
+                    f"Exposure {exp_name}: {n_psf} PSFs from"
+                    + f" {n_ccd_valid}/{n_ccd_total} CCDs"
+                )
+                final_list.append(
+                    [array_id, array_psf, array_shape, array_exp_name]
+                )
+            else:
+                self._w_log.info(
+                    f"All CCDs skipped for exposure {exp_name} "
+                    + "(no valid PSF model); epoch excluded from output"
+                )
 
         self._f_wcs_file.close()
         cat.close()

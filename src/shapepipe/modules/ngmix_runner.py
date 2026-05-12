@@ -74,8 +74,9 @@ def ngmix_runner(
     id_obj_max = config.getint(module_config_sec, "ID_OBJ_MAX")
 
     # Initialise class instance
+    # input_file_list[6] is log_exp_headers, already extracted as f_wcs_path
     ngmix_inst = Ngmix(
-        input_file_list,
+        input_file_list[:6],
         run_dirs["output"],
         file_number_string,
         zero_point,

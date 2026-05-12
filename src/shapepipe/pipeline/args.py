@@ -140,5 +140,14 @@ def create_arg_parser():
         "--exclusive",
         help="exclusive input file number string",
     )
+
+    optional.add_argument(
+        "-b",
+        "--batch_size",
+        type=int,
+        default=None,
+        help="SMP batch size; overrides SMP_BATCH_SIZE in the config file",
+    )
+
     # Return parser
     return parser.parse_args()

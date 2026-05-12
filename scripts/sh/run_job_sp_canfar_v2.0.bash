@@ -43,7 +43,7 @@ ${JOB_LIST_HELP}   -e, --exclusive ID\timage ID\n
    -N, --N_SMP N_SMP\tnumber of SMP jobs, default from original config files\n
    -d, --directory DIR\trun directory, default is pwd ($dir)\n
    -S, --scratch DIR\tprocessing scratch directory, default=none\n
-   -n, --dry_run\t\tdry run, no actual processing; default is $dry_run\n
+   -n, --dry_run\t\tDRY RUN, no actual processing; default is $dry_run\n
    --debug_out PATH\tdebug output file PATH, default=none\n
    --test\t\t\ttest mode, no processing\n
    --check\t\tcheck download completeness only (job 8), no processing\n
@@ -598,14 +598,14 @@ fi
 
 (( do_job = job & 512 ))
 if [[ $do_job != 0 ]]; then
-  # Job 512: create final catalogue
-  run_tile_job 512 "Mc" "make_cat_runner:1"
+  # Job 512: process tiles (PSF interp, vignet)
+  run_tile_job 512 "${Letter}iViVi ${Letter}iViVi ${Letter}iViVi" "psfex_interp_runner:1 vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:4"
 fi
 
 (( do_job = job & 1024 ))
 if [[ $do_job != 0 ]]; then
-  # Job 1024: process tiles (PSF interp, vignet, shape measurement)
-  run_tile_job 1024 "tile_${Letter}iVi_canfar"
+  # Job 1024: shape measurement
+  run_tile_job 1024 "Ng" "ngmix_interp_runner:1"
 fi
 
 if [ -n "$scratch" ]; then
