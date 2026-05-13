@@ -1,0 +1,6 @@
+conda_env: sp_centroid_fix
+description: test_centroid_bug branch + aguinot/ngmix@fix_jac_centroid — preliminary
+  centroid fix
+name: centroid_fix
+shapepipe_branch: test_centroid_bug
+test_script: scripts/validation/centroid/centroid_bias.py

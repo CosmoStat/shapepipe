@@ -1,0 +1,6 @@
+conda_env: sp_centroid_bug
+description: test_centroid_bug branch + aguinot/ngmix@stable_version (1.3.6) — shows
+  large m bias
+name: centroid_bug
+shapepipe_branch: test_centroid_bug
+test_script: scripts/validation/centroid/centroid_bias.py
