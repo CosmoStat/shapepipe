@@ -11,7 +11,6 @@ import ngmix
 
 from shapepipe.modules.ngmix_package.ngmix import (
     get_noise,
-    get_guess,
 )
 
 #print("Use shapepipe version of metacal")
@@ -111,7 +110,7 @@ def make_data(rng, shear, noise=1e-5, n_epochs=1, share_shift=False):
 # In[16]:
 
 
-def get_prior(pixel_scale):
+def get_prior(pixel_scale, rng=None):
     """Get Prior.
 
     Return prior for the different parameters.
@@ -122,10 +121,13 @@ def get_prior(pixel_scale):
         Priors for the different parameters
 
     """
+    if rng is None:
+        rng = np.random.default_rng()
+
     # Prior on ellipticity. Details do not matter, as long
     # as it regularizes the fit. From Bernstein & Armstrong 2014
     g_sigma = 0.4
-    g_prior = ngmix.priors.GPriorBA(g_sigma)
+    g_prior = ngmix.priors.GPriorBA(g_sigma, rng=rng)
 
     # 2-d Gaussian prior on the center row and column center
     # (relative to the center of the jacobian, which
@@ -133,19 +135,19 @@ def get_prior(pixel_scale):
     # Units same as jacobian, probably arcsec
     row, col = 0.0, 0.0
     row_sigma, col_sigma = pixel_scale, pixel_scale
-    cen_prior = ngmix.priors.CenPrior(row, col, row_sigma, col_sigma)
+    cen_prior = ngmix.priors.CenPrior(row, col, row_sigma, col_sigma, rng=rng)
 
     # Size prior. Instead of flat, two-sided error function (TwoSidedErf)
     # could be used
     Tminval = -10.0  # arcsec squared
     Tmaxval = 1.0e6
-    T_prior = ngmix.priors.FlatPrior(Tminval, Tmaxval)
+    T_prior = ngmix.priors.FlatPrior(Tminval, Tmaxval, rng=rng)
 
     # Flux prior. Bounds need to make sense for
     # images in question
     Fminval = -1.0e4
     Fmaxval = 1.0e9
-    F_prior = ngmix.priors.FlatPrior(Fminval, Fmaxval)
+    F_prior = ngmix.priors.FlatPrior(Fminval, Fmaxval, rng=rng)
 
     # Joint prior, combine all individual priors
     prior = ngmix.joint_prior.PriorSimpleSep(
@@ -196,13 +198,11 @@ def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
         guess[5:] *= 1 + urand(low=-limit, high=limit)
         fres["flags"] = 1
         try:
-            fitter = ngmix.galsimfit.GalsimSimple(
-                obs,
-                model,
-                prior=prior,
-            )
-            fitter.go(guess)
-            fres = fitter.get_result()
+            fitter = ngmix.fitting.GalsimFitter(model, prior=prior)
+            fres = fitter.go(obs, guess)
+            if fres["flags"] == 0 and "T" not in fres:
+                fres["T"] = fres["pars"][4]
+                fres["T_err"] = np.sqrt(fres["pars_cov"][4, 4])
         except:
             continue
 
@@ -294,11 +294,15 @@ def do_ngmix_metacal(
         except Exception:
             continue
 
-        # Gal guess
+        # Gal guess via adaptive moments
         try:
-            gal_guess_tmp = get_guess(
-                gals[n_e], pixel_scale, guess_size_type="T", guess_centroid_unit="img"
-            )
+            _gim = galsim.Image(gals[n_e], scale=pixel_scale)
+            _hsm = galsim.hsm.FindAdaptiveMom(_gim, strict=False)
+            if _hsm.error_message != "":
+                raise galsim.hsm.GalSimHSMError(_hsm.error_message)
+            _cen = _hsm.moments_centroid - _gim.center   # pixels (centroid_unit="img")
+            _size = 2 * (_hsm.moments_sigma * pixel_scale) ** 2  # T in arcsec^2
+            gal_guess_tmp = np.array([_cen.x, _cen.y, 0.0, 0.0, _size, _hsm.moments_amp])
         except Exception:
             gal_guess_flag = False
             gal_guess_tmp = np.array([0.0, 0.0, 0.0, 0.0, 1, 100])
@@ -383,8 +387,6 @@ def do_ngmix_metacal(
         "step": 0.01,
         "psf": "gauss",
         "fixnoise": True,
-        "cheatnoise": False,
-        "symmetrize_psf": False,
         "use_noise_image": True,
     }
 
@@ -577,7 +579,7 @@ gals, psfs, psfs_sigmas, weights, flags, jacob_lists = make_data(rng=np.random.R
 
 
 pixel_scale = 0.1857
-prior = get_prior(pixel_scale)
+prior = get_prior(pixel_scale, rng=np.random.default_rng(42))
 
 
 # In[24]:
