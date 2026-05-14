@@ -42,9 +42,7 @@ dependencies = [
     "termcolor",
     "tqdm>=4.63",
     "vos>=3.6",
-    # ngmix is pinned to Axel's stable_version branch until upstream ngmix
-    # absorbs the fixes — tracked separately, do not modernize this line.
-    "ngmix @ git+https://github.com/aguinot/ngmix@stable_version",
+    "ngmix>=2.4",
 ]
 
 

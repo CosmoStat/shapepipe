@@ -9,6 +9,7 @@ Module runner for ``vignetmaker``.
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.vignetmaker_package import vignetmaker as vm
 
+from shapepipe.pipeline.exp_utils import get_exp_output_dirs
 from shapepipe.pipeline.run_log import get_last_dir, get_all_dirs
 
 
@@ -104,21 +105,37 @@ def vignetmaker_runner(
         elif mode == "MULTI-EPOCH":
             # Multi-epoch exposures
 
-            # Get input image directory and file patterns
-            modules = config.getlist(module_config_sec, "ME_IMAGE_DIR")
-            image_dirs = []
-            for module in modules:
-                module_name = module.split(":")[-1]
-                if "last" in module:
-                    dirs = [get_last_dir(run_dirs["run_log"], module_name)]
-                elif "all" in module:
-                    dirs = get_all_dirs(run_dirs["run_log"], module_name)
-                else:
-                    raise ValueError(
-                        "Expected qualifier 'last:' or 'all' before module"
-                        + f" '{module}' in config entry 'ME_IMAGE_DIR'"
+            if config.has_option(module_config_sec, "ME_IMAGE_EXP_DIR"):
+                # v2.0: locate runner output dirs via the $SP_EXP tree
+                exp_base_dir = config.getexpanded(
+                    module_config_sec, "ME_IMAGE_EXP_DIR"
+                )
+                exp_numbers_file = input_file_list[2]
+                exp_runner_names = config.getlist(
+                    module_config_sec, "ME_IMAGE_EXP_RUNNERS"
+                )
+                image_dirs = []
+                for runner_name in exp_runner_names:
+                    dirs = get_exp_output_dirs(
+                        exp_base_dir, exp_numbers_file, runner_name, w_log
                     )
-                image_dirs.append(dirs)
+                    image_dirs.append(dirs)
+            else:
+                # v1: run-log based lookup via symlinked exposure run dirs
+                modules = config.getlist(module_config_sec, "ME_IMAGE_DIR")
+                image_dirs = []
+                for module in modules:
+                    module_name = module.split(":")[-1]
+                    if "last" in module:
+                        dirs = [get_last_dir(run_dirs["run_log"], module_name)]
+                    elif "all" in module:
+                        dirs = get_all_dirs(run_dirs["run_log"], module_name)
+                    else:
+                        raise ValueError(
+                            "Expected qualifier 'last:' or 'all' before module"
+                            + f" '{module}' in config entry 'ME_IMAGE_DIR'"
+                        )
+                    image_dirs.append(dirs)
 
             image_pattern = config.getlist(
                 module_config_sec,

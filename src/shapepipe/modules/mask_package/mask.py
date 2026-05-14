@@ -168,7 +168,7 @@ class Mask(object):
                 "PROGRAM_PATH", "WW_PATH"
             )
         else:
-            self._config["PATH"]["WW"] = "ww"
+            self._config["PATH"]["WW"] = "weightwatcher"
         self._config["PATH"]["WW_configfile"] = conf.getexpanded(
             "PROGRAM_PATH", "WW_CONFIG_FILE"
         )
