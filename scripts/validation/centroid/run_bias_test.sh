@@ -11,12 +11,12 @@
 # SP_RESULTS_DIR defaults to ~/astro/Runs/shapepipe/CFIS/centroid_bug/results
 # and can be overridden by setting the environment variable.
 #
-# Conda envs are looked for at ${SCRIPT_DIR}/envs/<conda_env>.
+# Conda envs are looked for at ${SCRIPT_DIR}/envs_config/<conda_env>.
 # They are not committed; create them with:
-#   mamba env create -f envs/<config_name>.yml --prefix envs/<conda_env>
+#   mamba env create -f envs_config/<config_name>.yml --prefix envs/<conda_env>
 # i.e.:
-#  mamba env create -f envs/centroid_bug.yml --prefix envs/sp_centroid_bug
-#  mamba env create -f envs/centroid_fix.yml --prefix envs/sp_centroid_fix
+#  mamba env create -f envs_config/centroid_bug.yml --prefix envs/sp_centroid_bug
+#  mamba env create -f envs_config/centroid_fix.yml --prefix envs/sp_centroid_fix
 #
 # Usage:
 #   ./run_bias_test.sh centroid_bug
@@ -75,22 +75,25 @@ LOG="${RESULTS_DIR}/run_$(date +%Y%m%d_%H%M%S).log"
 echo "Logging to ${LOG}"
 echo
 
-# Conda envs live next to this script under envs/<conda_env_name>
-ENV_PREFIX="${SCRIPT_DIR}/envs/${CONDA_ENV}"
+# Conda envs: SP_ENV_DIR overrides the default (next to this script)
+ENV_DIR="${SP_ENV_DIR:-${SCRIPT_DIR}/envs}"
+ENV_PREFIX="${ENV_DIR}/${CONDA_ENV}"
 if [[ ! -d "${ENV_PREFIX}" ]]; then
     echo "ERROR: conda env not found at ${ENV_PREFIX}. Create it with:"
-    echo "  mamba env create -f ${SCRIPT_DIR}/envs/${CONFIG_NAME}.yml --prefix ${ENV_PREFIX}"
+    echo "  CONDARC=~/.condarc mamba env create -f ${SCRIPT_DIR}/envs_config/${CONFIG_NAME}.yml --prefix ${ENV_PREFIX}"
+    echo "  (set SP_ENV_DIR to use a custom env location)"
     exit 1
 fi
 echo "    env prefix  : ${ENV_PREFIX}"
 echo
 
+# Call the env's Python directly to avoid mamba run lockfile issues.
 # PYTHONNOUSERSITE=1 prevents ~/.local site-packages from overriding the
 # conda env packages (e.g. a system-wide ngmix install).
-mamba run --prefix "${ENV_PREFIX}" \
-    env PYTHONNOUSERSITE=1 \
-        PYTHONPATH="${SHAPEPIPE_PATH}/src:${PYTHONPATH:-}" \
-    python "${SHAPEPIPE_PATH}/${TEST_SCRIPT}" \
+PYTHONNOUSERSITE=1 \
+CONDARC="${HOME}/.condarc" \
+PYTHONPATH="${SHAPEPIPE_PATH}/src:${PYTHONPATH:-}" \
+    "${ENV_PREFIX}/bin/python" "${SHAPEPIPE_PATH}/${TEST_SCRIPT}" \
     2>&1 | tee "${LOG}"
 
 echo

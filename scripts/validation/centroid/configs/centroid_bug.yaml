@@ -3,4 +3,5 @@ description: test_centroid_bug branch + aguinot/ngmix@stable_version (1.3.6) —
   large m bias
 name: centroid_bug
 shapepipe_branch: test_centroid_bug
+shapepipe_path: /automnt/n17data/mkilbing/astro/repositories/github/shapepipe_test_centroid_bug
 test_script: scripts/validation/centroid/centroid_bias.py

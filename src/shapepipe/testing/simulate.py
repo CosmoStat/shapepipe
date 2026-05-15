@@ -2,6 +2,8 @@
 
 Stable across shapepipe branches and ngmix versions — contains only galsim
 and numpy, no shapepipe processing or ngmix fitting code.
+
+Author: Axel Guinot
 """
 
 import numpy as np

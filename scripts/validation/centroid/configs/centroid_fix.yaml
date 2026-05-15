@@ -3,4 +3,5 @@ description: test_centroid_bug branch + aguinot/ngmix@fix_jac_centroid — preli
   centroid fix
 name: centroid_fix
 shapepipe_branch: test_centroid_bug
+shapepipe_path: /automnt/n17data/mkilbing/astro/repositories/github/shapepipe_test_centroid_bug
 test_script: scripts/validation/centroid/centroid_bias.py

@@ -1,63 +1,139 @@
 #!/usr/bin/env python
-"""centroid_bias.py
+"""centroid_bias_v2.py
 
-Metacal multiplicative-bias validation for ShapePipe/ngmix.
+Metacal multiplicative-bias validation for ShapePipe ngmix_v2.0 interface.
 
-Measures the multiplicative shear bias m by running metacalibration on
-simulated exponential galaxies with a Moffat PSF and comparing recovered
-shear to the true input shear.
+Uses the updated ngmix v2.4+ API:
+  - ngmix.fitting.GalsimFitter  (replaces GalsimSimple)
+  - priors require rng argument
+  - gal centroid via inline galsim HSM  (replaces get_guess)
+  - get_all_metacal without cheatnoise/symmetrize_psf
 
-Simulation data (make_data) is imported from shapepipe.testing.simulate so
-it stays stable across branches.  All processing code here is
-version-specific and changes with each shapepipe/ngmix branch.
+Simulation data is imported from shapepipe.testing.simulate (stable,
+shared with centroid_bias.py).
 
 Usage
 -----
-    python centroid_bias.py [--ntrial N] [--seed S] [--noise SIGMA]
-
-Expected output (centroid_bug branch, ngmix stable_version):
-    m ~ -28e-3  (large negative bias, the bug)
-
-Expected output (centroid_fix branch, ngmix fix_jac_centroid):
-    m ~   0     (bias consistent with zero)
-
-Autors
-------
-  Axel Guinot
-  Martin Kilbinger
+    python centroid_bias_v2.py [--ntrial N] [--seed S] [--noise SIGMA]
 """
 
 import argparse
 
+import galsim
 import numpy as np
 import ngmix
 from ngmix import Observation, ObsList
+from ngmix.fitting.galsim_results import GalsimFitModel
+from ngmix.gexceptions import GMixRangeError
 from numpy.random import uniform as urand
 
-from shapepipe.modules.ngmix_package.ngmix import get_guess, get_noise
+from shapepipe.modules.ngmix_package.ngmix import get_noise
 from shapepipe.testing.simulate import make_data
 from modopt.math.stats import sigma_mad
 
 
 # ---------------------------------------------------------------------------
-# Priors  (ngmix-version-specific)
+# Jacobian-shift fix for new ngmix GalsimFitModel
+#
+# GalsimFitModel.make_model applies shift = pars[0:2] only.  When the ngmix
+# Jacobian center is recentered to the galaxy centroid (row0, col0 ≠ canonical),
+# get_galsim_wcs() drops the center information, so the k-space
+# InterpolatedImage still places the galaxy at its pixel offset from the
+# canonical center.  The model shift must include this Jacobian center offset
+# (in sky units) so that pars[0:2] = 0 at the solution and the centroid prior
+# does not bias the shape.  This replicates Axel Guinot's _set_jacobian_shift
+# fix from the aguinot/ngmix fork.
 # ---------------------------------------------------------------------------
 
-def get_prior(pixel_scale):
+class FixedGalsimFitModel(GalsimFitModel):
+    """GalsimFitModel with Jacobian-shift fix applied in make_model.
+
+    The parent's _fill_models calls make_model(band_pars) without band/ep,
+    so we override _fill_models to pass them explicitly.
+    """
+
+    def _set_jacobian_shift(self, obs_in):
+        """Compute sky offset of Jacobian center from canonical image center."""
+
+        def get_shift(obs):
+            nrow, ncol = obs.image.shape
+            canonical = (np.array((ncol, nrow)) - 1.0) / 2.0
+            jrow, jcol = obs.jacobian.get_cen()
+            offset = np.array((jcol, jrow)) - canonical
+            offset *= obs.jacobian.get_scale()
+            return offset
+
+        if isinstance(obs_in, Observation):
+            self._jac_shift = [[get_shift(obs_in)]]
+        elif isinstance(obs_in, ObsList):
+            self._jac_shift = [[get_shift(o) for o in obs_in]]
+        else:  # MultiBandObsList
+            self._jac_shift = [
+                [get_shift(o) for o in obs_list] for obs_list in obs_in
+            ]
+
+    def __init__(self, obs, model, guess, prior=None):
+        # Must set _jac_shift before super().__init__() because the parent
+        # calls make_model() (via _check_guess) during initialisation.
+        self._set_jacobian_shift(obs)
+        super().__init__(obs, model, guess, prior=prior)
+
+    def make_model(self, pars, band=0, ep=0):
+        model = self.make_round_model(pars)
+        shift = pars[0:2] + self._jac_shift[band][ep]
+        try:
+            model = model.shear(g1=pars[2], g2=pars[3])
+        except ValueError as err:
+            raise GMixRangeError(str(err))
+        model = model.shift(shift)
+        return model
+
+    def _fill_models(self, pars):
+        """Override to pass band and ep to make_model."""
+        try:
+            for band, kobs_list in enumerate(self.mb_kobs):
+                band_pars = self.get_band_pars(pars, band)
+                for ep, kobs in enumerate(kobs_list):
+                    gal = self.make_model(band_pars, band=band, ep=ep)
+                    meta = kobs.meta
+                    kmodel = meta["kmodel"]
+                    gal._drawKImage(kmodel)
+                    if kobs.has_psf():
+                        kmodel *= kobs.psf.kimage
+        except RuntimeError as err:
+            raise GMixRangeError(str(err))
+
+
+class FixedGalsimFitter(ngmix.fitting.GalsimFitter):
+    """GalsimFitter that uses FixedGalsimFitModel (Jacobian-shift fix)."""
+
+    def _make_fit_model(self, obs, guess):
+        return FixedGalsimFitModel(
+            obs=obs, model=self.model, guess=guess, prior=self.prior,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Priors  (ngmix v2.4+ API: all priors require rng)
+# ---------------------------------------------------------------------------
+
+def get_prior(pixel_scale, rng=None):
     """Build ngmix joint prior for 6-parameter galaxy model."""
-    g_prior = ngmix.priors.GPriorBA(0.4)
-    cen_prior = ngmix.priors.CenPrior(0.0, 0.0, pixel_scale, pixel_scale)
-    T_prior = ngmix.priors.FlatPrior(-10.0, 1.0e6)
-    F_prior = ngmix.priors.FlatPrior(-1.0e4, 1.0e9)
+    if rng is None:
+        rng = np.random.default_rng()
+    g_prior = ngmix.priors.GPriorBA(0.4, rng=rng)
+    cen_prior = ngmix.priors.CenPrior(0.0, 0.0, pixel_scale, pixel_scale, rng=rng)
+    T_prior = ngmix.priors.FlatPrior(-10.0, 1.0e6, rng=rng)
+    F_prior = ngmix.priors.FlatPrior(-1.0e4, 1.0e9, rng=rng)
     return ngmix.joint_prior.PriorSimpleSep(cen_prior, g_prior, T_prior, F_prior)
 
 
 # ---------------------------------------------------------------------------
-# Fitting  (ngmix-version-specific)
+# Fitting  (ngmix v2.4+ API: GalsimFitter, obs passed to go())
 # ---------------------------------------------------------------------------
 
 def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
-    """Fit an observation with GalsimSimple, retrying with perturbed guesses.
+    """Fit an observation with GalsimFitter, retrying with perturbed guesses.
 
     Parameters
     ----------
@@ -69,7 +145,7 @@ def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
 
     Returns
     -------
-    dict
+    dict-like
         Fit result with flags, g, T, T_err, pars, pars_err, etc.
 
     Raises
@@ -84,9 +160,11 @@ def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
         guess[0:5] += urand(low=-limit, high=limit)
         guess[5:] *= 1 + urand(low=-limit, high=limit)
         try:
-            fitter = ngmix.galsimfit.GalsimSimple(obs, model, prior=prior)
-            fitter.go(guess)
-            fres = fitter.get_result()
+            fitter = FixedGalsimFitter(model, prior=prior)
+            fres = fitter.go(obs, guess)
+            if fres["flags"] == 0 and "T" not in fres:
+                fres["T"] = fres["pars"][4]
+                fres["T_err"] = np.sqrt(fres["pars_cov"][4, 4])
         except Exception:
             continue
         if fres["flags"] == 0:
@@ -94,14 +172,14 @@ def make_galsimfit(obs, model, guess0, prior=None, ntry=5):
 
     if fres["flags"] != 0:
         raise ngmix.gexceptions.BootGalFailure(
-            "Failed to fit galaxy image with galsimfit"
+            "Failed to fit galaxy image with GalsimFitter"
         )
     fres["ntry"] = it + 1
     return fres
 
 
 # ---------------------------------------------------------------------------
-# Metacal pipeline  (ngmix-version-specific)
+# Metacal pipeline  (ngmix v2.4+ API)
 # ---------------------------------------------------------------------------
 
 def do_ngmix_metacal(
@@ -118,7 +196,6 @@ def do_ngmix_metacal(
     prior : ngmix joint prior
     pixel_scale : float  [arcsec]
     sig_noise : float or None
-        If None, estimated from the first epoch.
 
     Returns
     -------
@@ -160,11 +237,15 @@ def do_ngmix_metacal(
         except Exception:
             continue
 
+        # Gal centroid + size guess via adaptive moments (inline HSM)
         try:
-            gal_guess_tmp = get_guess(
-                gals[n_e], pixel_scale,
-                guess_size_type="T", guess_centroid_unit="img",
-            )
+            _gim = galsim.Image(gals[n_e], scale=pixel_scale)
+            _hsm = galsim.hsm.FindAdaptiveMom(_gim, strict=False)
+            if _hsm.error_message != "":
+                raise galsim.hsm.GalSimHSMError(_hsm.error_message)
+            _cen = _hsm.moments_centroid - _gim.center
+            _size = 2 * (_hsm.moments_sigma * pixel_scale) ** 2
+            gal_guess_tmp = np.array([_cen.x, _cen.y, 0.0, 0.0, _size, _hsm.moments_amp])
         except Exception:
             gal_guess_flag = False
             gal_guess_tmp = np.array([0.0, 0.0, 0.0, 0.0, 1, 100])
@@ -226,8 +307,6 @@ def do_ngmix_metacal(
         "step": 0.01,
         "psf": "gauss",
         "fixnoise": True,
-        "cheatnoise": False,
-        "symmetrize_psf": False,
         "use_noise_image": True,
     }
     Tguess = np.mean(T_guess_psf)
@@ -267,7 +346,7 @@ def do_ngmix_metacal(
 
 
 # ---------------------------------------------------------------------------
-# Analysis utilities  (stable)
+# Analysis utilities  (identical to centroid_bias.py — ngmix-version agnostic)
 # ---------------------------------------------------------------------------
 
 def progress(total, miniters=1):
@@ -319,8 +398,7 @@ def select(data, shear_type):
 # ---------------------------------------------------------------------------
 
 def main(ntrial=50, seed=42, sig_noise=1e-10, n_epochs=3, pixel_scale=0.1857):
-    rng_prior = np.random.RandomState(seed)
-    prior = get_prior(pixel_scale)
+    prior = get_prior(pixel_scale, rng=np.random.default_rng(seed))
     shear_types = ["noshear", "1p", "1m"]
 
     rng = np.random.RandomState(seed)
@@ -358,25 +436,22 @@ def main(ntrial=50, seed=42, sig_noise=1e-10, n_epochs=3, pixel_scale=0.1857):
     data_p = np.hstack(dlist_p)
     data_m = np.hstack(dlist_m)
 
-    w = select(data_p, "noshear")
-    w_1p = select(data_p, "1p")
-    w_1m = select(data_p, "1m")
-    R11_p = np.atleast_2d((data_p["g"][w_1p, 0] - data_p["g"][w_1m, 0]) / 0.02).T
+    w_p = select(data_p, "noshear")
+    R11_p = np.atleast_2d(
+        (data_p["g"][select(data_p, "1p"), 0] - data_p["g"][select(data_p, "1m"), 0]) / 0.02
+    ).T
+    w_m = select(data_m, "noshear")
+    R11_m = np.atleast_2d(
+        (data_m["g"][select(data_m, "1p"), 0] - data_m["g"][select(data_m, "1m"), 0]) / 0.02
+    ).T
 
-    w = select(data_m, "noshear")
-    w_1p = select(data_m, "1p")
-    w_1m = select(data_m, "1m")
-    R11_m = np.atleast_2d((data_m["g"][w_1p, 0] - data_m["g"][w_1m, 0]) / 0.02).T
-
-    g_p = data_p["g"][select(data_p, "noshear")]
-    g_m = data_m["g"][select(data_m, "noshear")]
-    shear_ = (g_p - g_m) / (R11_p + R11_m)
+    shear_ = (data_p["g"][w_p] - data_m["g"][w_m]) / (R11_p + R11_m)
     shear = np.mean(shear_, axis=0)
     shear_err = np.std(shear_, axis=0) / np.sqrt(len(shear_))
 
     m = shear[0] / 0.02 - 1
     merr = shear_err[0] / 0.02
-    s2n = data_p["s2n"][select(data_p, "noshear")].mean()
+    s2n = data_p["s2n"][w_p].mean()
 
     print("S/N: %g" % s2n)
     print("R11: %g %g" % (np.mean(R11_p), np.mean(R11_m)))
@@ -385,12 +460,12 @@ def main(ntrial=50, seed=42, sig_noise=1e-10, n_epochs=3, pixel_scale=0.1857):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Metacal centroid bias validation")
-    parser.add_argument("--ntrial", type=int, default=50, help="number of trials")
-    parser.add_argument("--seed", type=int, default=42, help="random seed")
-    parser.add_argument("--noise", type=float, default=1e-10, help="per-pixel noise sigma")
-    parser.add_argument("--n-epochs", type=int, default=3, help="epochs per galaxy")
-    parser.add_argument("--pixel-scale", type=float, default=0.1857, help="pixel scale [arcsec]")
+    parser = argparse.ArgumentParser(description="Metacal centroid bias validation (v2 interface)")
+    parser.add_argument("--ntrial", type=int, default=50)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--noise", type=float, default=1e-10)
+    parser.add_argument("--n-epochs", type=int, default=3)
+    parser.add_argument("--pixel-scale", type=float, default=0.1857)
     args = parser.parse_args()
 
     main(
