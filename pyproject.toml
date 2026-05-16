@@ -83,6 +83,13 @@ canfar_submit_job   = "shapepipe.canfar_run:run_job"
 canfar_monitor      = "shapepipe.canfar_run:run_log"
 canfar_monitor_log  = "shapepipe.canfar_run:run_monitor_log"
 
+[tool.uv]
+# shapepipe targets Linux only; skip Windows/macOS wheel resolution
+environments = ["sys_platform == 'linux'"]
+
+[tool.uv.sources]
+ngmix = { git = "https://github.com/esheldon/ngmix", tag = "v2.4.0" }
+
 [tool.setuptools]
 script-files = [
     "scripts/python/update_runs_log_file.py",
