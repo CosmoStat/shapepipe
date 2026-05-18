@@ -1,0 +1,14 @@
+name: sp_centroid_v2
+# Minimal environment for centroid_bias_v2.py (ngmix_v2.0 branch).
+# Uses ngmix v2.4+ (GalsimFitter, new prior API).
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.12
+  - astropy
+  - galsim
+  - ngmix>=2.4
+  - numba
+  - numpy
+  - tqdm
