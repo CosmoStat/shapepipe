@@ -82,7 +82,7 @@ RUN chmod -R go+rwX /app && \
     uv pip install --no-deps -e . && \
     for ext in .py .sh .bash; do \
         for script in /app/scripts/*/*$ext; do \
-            link_name=$(basename $script); \
+            link_name=$(basename $script $ext); \
             ln -s $script /usr/local/bin/$link_name; \
         done; \
     done

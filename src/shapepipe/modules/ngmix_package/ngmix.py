@@ -19,6 +19,47 @@ from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
 
+
+def get_prior(pixel_scale, rng, T_range=None, F_range=None):
+    """Build ngmix joint prior for a 6-parameter galaxy model.
+
+    Parameters
+    ----------
+    pixel_scale : float
+        Pixel scale in arcsec (sets centroid prior width).
+    rng : numpy.random.RandomState
+        Random state for all priors.
+    T_range : tuple of float, optional
+        (min, max) for flat size prior; default (-1, 1e3).
+    F_range : tuple of float, optional
+        (min, max) for flat flux prior; default (-100, 1e9).
+
+    Returns
+    -------
+    ngmix.joint_prior.PriorSimpleSep
+    """
+    if T_range is None:
+        T_range = [-1.0, 1.0e3]
+    if F_range is None:
+        F_range = [-100.0, 1.0e9]
+
+    cen_prior = ngmix.priors.CenPrior(
+        cen1=0.0, cen2=0.0,
+        sigma1=pixel_scale, sigma2=pixel_scale,
+        rng=rng,
+    )
+    g_prior = ngmix.priors.GPriorBA(sigma=0.4, rng=rng)
+    T_prior = ngmix.priors.FlatPrior(minval=T_range[0], maxval=T_range[1], rng=rng)
+    F_prior = ngmix.priors.FlatPrior(minval=F_range[0], maxval=F_range[1], rng=rng)
+
+    return ngmix.joint_prior.PriorSimpleSep(
+        cen_prior=cen_prior,
+        g_prior=g_prior,
+        T_prior=T_prior,
+        F_prior=F_prior,
+    )
+
+
 # I still don't know how to handle this
 class Tile_cat():
     """Tile_cat.
@@ -257,65 +298,14 @@ class Ngmix(object):
     def get_prior(self, T_range=None, F_range=None):
         """Get Prior.
 
-        get a prior for use with the maximum likelihood fitter
-
-        Parameters
-        ----------
-        T_range: (float, float), optional
-            The range for the prior on T
-        F_range: (float, float), optional
-            Fhe range for the prior on flux 
-
         Returns
         -------
-        ngmix.priors
-            Priors for the different parameters (ellipticity,center, size, flux)
+        ngmix.joint_prior.PriorSimpleSep
         """
-        # 2-d Gaussian prior on the object center
-        # centered with respect to jacobian center
-        # Units same as jacobian, probably arcsec
-        cen_prior = ngmix.priors.CenPrior(
-            cen1=0.0, 
-            cen2=0.0, 
-            sigma1=self._pixel_scale,
-            sigma2=self._pixel_scale,
-            rng=self._rng
+        return get_prior(
+            self._pixel_scale, self._rng,
+            T_range=T_range, F_range=F_range,
         )
-        
-        # Prior on ellipticity. Details do not matter, as long
-        # as it regularizes the fit. From Bernstein & Armstrong 2014
-        g_sigma = 0.4
-        g_prior = ngmix.priors.GPriorBA(sigma=g_sigma,rng=self._rng)
-
-        if T_range is None:
-            T_range = [-1.0, 1.e3]
-        if F_range is None:
-            F_range = [-100.0, 1.e9]
-
-        # Flat Size prior in arcsec squared. Instead of flat, TwoSidedErf could be used
-        T_prior = ngmix.priors.FlatPrior(
-            minval=T_range[0], 
-            maxval=T_range[1], 
-            rng=self._rng
-        )
-
-        # Flat Flux prior. Bounds need to make sense for
-        # images in question
-        F_prior = ngmix.priors.FlatPrior(
-            minval=F_range[0], 
-            maxval=F_range[1],
-            rng=self._rng
-        )
-
-        # Joint prior, combine all individual priors
-        prior = ngmix.joint_prior.PriorSimpleSep(
-            cen_prior=cen_prior,
-            g_prior=g_prior,
-            T_prior=T_prior,
-            F_prior=F_prior,
-        )
-
-        return prior
 
     def compile_results(self, results):
         """Compile Results.
@@ -622,7 +612,6 @@ class Ngmix(object):
         vignet_cat = self._vignet_cat
 
         final_res = []
-        psf_res = None
         prior = self.get_prior()
 
         count = 0
@@ -667,7 +656,7 @@ class Ngmix(object):
                     stamp,
                     prior,
                     flux_guess,
-                    self._rng
+                    self._rng,
                 )
             except Exception as ee:
                 self._w_log.info(
@@ -937,104 +926,88 @@ def prepare_ngmix_weights(gal, weight, flag):
     Parameters
     ----------
     gal : numpy.ndarray
-        galaxy image.  List indices run over epochs
     weight : numpy.ndarray
-        weight image  List indices run over epochs
     flag : numpy.ndarray
-        flag image.  List indices run over epochs
 
     Returns
     -------
     numpy.ndarray
-        galaxy image where noise replaces masked regions
+        Galaxy image with masked pixels replaced by noise.
     numpy.ndarray
-        variance map for NGMIX
+        Variance map for NGMIX.
     numpy.ndarray
-        noise image    
-
-    """ 
-    # integrate flag info into weights
+        Noise image.
+    """
     weight_map = np.copy(weight)
-    weight_map[np.where(flag != 0)] = 0.
-    # This code combines integrates flag information into the weights.
-   
-    #if gal_guess_flag:
-    #    sig_noise = get_noise(
-    #        gal,
-    #        weight,
-    #        gal_guess_tmp,
-    #        pixel_scale,
-    #    )
-    #else:
+    weight_map[flag != 0] = 0.0
+
     sig_noise = sigma_mad(gal)
 
     noise_img = np.random.randn(*gal.shape) * sig_noise
     noise_img_gal = np.random.randn(*gal.shape) * sig_noise
-    
-    # fill in galaxy image masked regions with noise
+
     gal_masked = np.copy(gal)
-    if (len(np.where(weight_map == 0)[0]) != 0):
+    if (weight_map == 0).any():
         gal_masked[weight_map == 0] = noise_img_gal[weight_map == 0]
 
-    # convert weight map to variance map
     weight_map *= 1 / sig_noise ** 2
-    
+
     return gal_masked, weight_map, noise_img
 
-def make_ngmix_observation(gal,weight,flag,psf,wcs):
-    """single galaxy and epoch to be passed to ngmix
-    TO DO: pixel scale
+def make_ngmix_observation(gal, weight, flag, psf, wcs):
+    """Build an ngmix Observation for a single galaxy epoch.
+
+    The galaxy Jacobian is re-centered on the HSM centroid so that the
+    centroid prior (centered at the Jacobian origin) does not bias the fit.
+
     Parameters
     ----------
     gal : numpy.ndarray
-        List of the galaxy vignets.  List indices run over epochs
     weight : numpy.ndarray
-        List of the PSF vignets
     flag : numpy.ndarray
-        flag image
     psf : numpy.ndarray
-        psf vignett
-    wcs : numpy.ndarray
-        Jacobian
+    wcs : galsim.BaseWCS
+        Local WCS Jacobian at the object position.
+
     Returns
     -------
     ngmix.observation.Observation
-        observation to fit using ngmix
-
     """
-    # prepare psf
-    # WHY RECENTER
     psf_jacob = ngmix.Jacobian(
         row=(psf.shape[0] - 1) / 2,
         col=(psf.shape[1] - 1) / 2,
-        wcs=wcs
+        wcs=wcs,
     )
-
     psf_obs = Observation(psf, jacobian=psf_jacob)
 
-    # prepare weight map
-    gal_masked, weight_map, noise_img = prepare_ngmix_weights(
-        gal,
-        weight,
-        flag
-    )
-    # WHY RECENTER???
-    # Recenter jacobian if necessary
+    gal_masked, weight_map, noise_img = prepare_ngmix_weights(gal, weight, flag)
+
+    # Re-center Jacobian on HSM centroid (pixel offset from stamp center).
+    # Fixes: centroid prior biases fit when galaxy is offset from stamp center.
+    try:
+        _hsm = galsim.hsm.FindAdaptiveMom(
+            galsim.Image(gal, scale=1.0), strict=False
+        )
+        if _hsm.error_message != "":
+            raise galsim.hsm.GalSimHSMError(_hsm.error_message)
+        _cen = _hsm.moments_centroid - galsim.Image(gal, scale=1.0).center
+        cen_row, cen_col = _cen.y, _cen.x
+    except Exception:
+        cen_row, cen_col = 0.0, 0.0
+
     gal_jacob = ngmix.Jacobian(
-        row=(gal.shape[0] - 1) / 2,
-        col=(gal.shape[1] - 1) / 2,
-        wcs=wcs
+        row=(gal.shape[0] - 1) / 2 + cen_row,
+        col=(gal.shape[1] - 1) / 2 + cen_col,
+        wcs=wcs,
     )
-    # define ngmix observation
-    gal_obs = Observation(
+
+    return Observation(
         gal_masked,
         weight=weight_map,
         jacobian=gal_jacob,
         psf=psf_obs,
-        noise=noise_img
+        noise=noise_img,
     )
- 
-    return gal_obs
 
 def average_multiepoch_psf(obsdict):
     """ averages psf information over multiple epochs
@@ -1042,13 +1015,12 @@ def average_multiepoch_psf(obsdict):
     Parameters
     ----------
     obsdict : dict
-        dictionary of metacal observations after fit
+        Observation dict returned by MetacalBootstrapper.go().
 
     Returns
     -------
     dict
-        Average psf size, shape over n_epochs
-
+        Keys: 'g_psf', 'g_psf_err', 'T_psf', 'T_psf_err' (weighted averages).
     """
     # create dictionary
     names = ['T_psf', 'T_psf_err', 'g_psf', 'g_psf_err']
@@ -1065,127 +1037,13 @@ def average_multiepoch_psf(obsdict):
         g_psf=obsdict['noshear'][n_e].psf.meta['result']['g']
         g_psf_err=obsdict['noshear'][n_e].psf.meta['result']['g_err']
         ne_wsum = obsdict['noshear'][n_e].weight.sum()
-
-        # we probably want to handle cases when there is no psf
-        # how are we dealing with the error, what is npsf
-        wsum += ne_wsum
-        g_psf_sum += g_psf * ne_wsum
-        g_psf_err_sum += g_psf_err * ne_wsum
-        T_psf_sum += T_psf * ne_wsum
-        T_psf_err_sum += T_psf_err * ne_wsum
-
-    if wsum == 0:
-        raise ZeroDivisionError('Sum of weights = 0, division by zero')
-
-    psf_dict['g_psf'] = g_psf_sum / wsum
-    psf_dict['g_psf_err'] = g_psf_err_sum / wsum
-    psf_dict['T_psf'] = T_psf_sum / wsum
-    psf_dict['T_psf_err'] = T_psf_err_sum / wsum    
-
-    return psf_dict      
-
-def do_ngmix_metacal(
-    stamp,
-    prior,
-    flux_guess,
-    rng
-):
-    """Do Ngmix Metacal.
-
-    Performs  metacalibration on a sigle multi-epoch object and returns the joint shape measurement with NGMIX.
-    TO DO: get pixel scale from jacob_list
-    Parameters
-    ----------
-    stamp : Postage_stamp
-        List of the galaxy vignets.  List indices run over epochs
-    prior : ngmix.priors
-        Priors for the fitting parameters
-    flux_guess : np.ndarray
-        guess for flux
-    pixel_scale : float
-        pixel scale in arcsec
-    rng : numpy.random.RandomState
-        Random state for guesses and priors    
-
-    Returns
-    -------
-    dict
-        Dictionary containing the results of NGMIX metacal
-
-    """
-    n_epoch = len(stamp.gals)
-
-    # are there galaxies to fit?
-    if n_epoch == 0:
-        raise ValueError("0 epoch to process")
-
-    # fitting options go here, make an option for the future
-    psf_model = 'gauss'
-    gal_model = 'gauss'
-
-    # Construct multi-epoch observation object to pass to ngmix 
-    gal_obs_list = ObsList()
-
-    # create list of ngmix observations for each galaxy
-    for n_e in range(n_epoch):
-        gal_obs = make_ngmix_observation(
-            stamp.gals[n_e],
-            stamp.weights[n_e],
-            stamp.flags[n_e],
-            stamp.psfs[n_e],
-            stamp.jacobs[n_e]
-        )
-        gal_obs_list.append(gal_obs)
-   
-    #  decide on fitting options
-    fitter = ngmix.fitting.Fitter(model=gal_model, prior=prior)
-    # make parameter guesses based on a psf flux and a rough T
-    guesser = ngmix.guessers.TPSFFluxAndPriorGuesser(
-        rng=rng,
-        T=0.25,
-        prior=prior,
-    )
-
-    # psf fitting a gaussian
-    psf_fitter  = ngmix.fitting.Fitter(model=psf_model, prior=prior)
-    # TO DO! what do we do about size?                              
-    psf_guesser = ngmix.guessers.TFluxGuesser(
-        rng=rng,
-        T=0.25,
-        prior=prior,
-        flux=flux_guess,
-    )
-
-    # this runs the fitter. We set ntry=2 to retry the fit if it fails
-    psf_runner = ngmix.runners.PSFRunner(
-        fitter=psf_fitter, guesser=psf_guesser,
-        ntry=2,
-    )
-    runner = ngmix.runners.Runner(
-        fitter=fitter, guesser=guesser,
-        ntry=5,
-    )
-    # metacal specific parameters
-    metacal_pars = {
-        'types': ['noshear', '1p', '1m', '2p', '2m'],
-        'step': 0.01,
-        'psf': 'fitgauss',
-        'fixnoise': True,
-        'use_noise_image': True
-    }
-
-    # this "bootstrapper" runs the metacal image shearing as well as both psf
-    # and object measurements
-    boot = ngmix.metacal.MetacalBootstrapper(
         runner=runner,
         psf_runner=psf_runner,
         ignore_failed_psf=True,
         rng=rng,
         **metacal_pars,
     )
-    # this is the actual fit
     resdict, obsdict = boot.go(gal_obs_list)
-    # compile results to include psf information
     psf_res = average_multiepoch_psf(obsdict)
     return resdict, psf_res
 
