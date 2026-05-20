@@ -118,7 +118,6 @@ class Vignet():
         self.weight_vign_cat = SqliteDict(weight_vignet_path)
         self.flag_vign_cat = SqliteDict(flag_vignet_path)
 
-    @classmethod
     def close(self):
         self.f_wcs_file.close()
         self.gal_vign_cat.close()
@@ -348,6 +347,8 @@ class Ngmix(object):
             'ntry_fit',
             'g1_psfo_ngmix',
             'g2_psfo_ngmix',
+            'T_psfo_ngmix',
+            'T_err_psfo_ngmix',
             'r50_psfo_ngmix',
             'g1_err_psfo_ngmix',
             'g2_err_psfo_ngmix',
@@ -356,6 +357,9 @@ class Ngmix(object):
             'g1_err',
             'g2',
             'g2_err',
+            'T',
+            'T_err',
+            'Tpsf',
             'r50',
             'r50_err',
             'r50psf',
@@ -390,7 +394,7 @@ class Ngmix(object):
                 output_dict[name]["moments_fail"].append(
                     results[idx]["moments_fail"]
                 )
-                output_dict[name]["ntry_fit"].append(results[idx][name]["ntry"])
+                output_dict[name]["ntry_fit"].append(results[idx][name]["nfev"])
                 output_dict[name]["g1_psfo_ngmix"].append(
                     results[idx]["g_PSFo"][0]
                 )
@@ -415,18 +419,19 @@ class Ngmix(object):
                 )
                 output_dict[name]["T"].append(results[idx][name]["T"])
                 output_dict[name]["T_err"].append(results[idx][name]["T_err"])
-                output_dict[name]["Tpsf"].append(results[idx][name]["Tpsf"])
-                output_dict[name]["g1_psf"].append(
-                    results[idx][name]["gpsf"][0]
-                )
-                output_dict[name]["g2_psf"].append(
-                    results[idx][name]["gpsf"][1]
-                )
+                output_dict[name]["Tpsf"].append(results[idx]["T_PSFo"])
+                output_dict[name]["g1_psf"].append(results[idx]["g_PSFo"][0])
+                output_dict[name]["g2_psf"].append(results[idx]["g_PSFo"][1])
                 output_dict[name]['r50'].append(results[idx][name]['pars'][4])
                 output_dict[name]['r50_err'].append(results[idx][name]['pars_err'][4])
-                output_dict[name]['r50psf'].append(results[idx][name]['r50psf'])
-                output_dict[name]['g1_psf'].append(
-                    results[idx][name]['gpsf'][0]
+                output_dict[name]['r50psf'].append(results[idx]["r50_PSFo"])
+                output_dict[name]["g1"].append(results[idx][name]["g"][0])
+                output_dict[name]["g2"].append(results[idx][name]["g"][1])
+                output_dict[name]["g1_err"].append(
+                    np.sqrt(results[idx][name]["g_cov"][0, 0])
+                )
+                output_dict[name]["g2_err"].append(
+                    np.sqrt(results[idx][name]["g_cov"][1, 1])
                 )
                 output_dict[name]["mag"].append(mag)
                 output_dict[name]["mag_err"].append(mag_err)
@@ -440,7 +445,7 @@ class Ngmix(object):
 
                 output_dict[name]["flags"].append(results[idx][name]["flags"])
                 output_dict[name]["mcal_flags"].append(
-                    results[idx]["mcal_flags"]
+                    results[idx].get("mcal_flags", 0)
                 )
 
         return output_dict
@@ -503,8 +508,8 @@ class Ngmix(object):
         for hdu_no in range(2, 6):
             if id_last != cat._cat_data[hdu_no].data["id"][-1]:
                 raise ValueError(
-                    "Last ID {cat._cat_data[hdu_no].data['id'][-1]} in HDU"
-                    + f" #{hdu_no} inconsistent with {id_las}"
+                    f"Last ID {cat._cat_data[hdu_no].data['id'][-1]} in HDU"
+                    + f" #{hdu_no} inconsistent with {id_last}"
                 )
 
         return id_last
@@ -673,6 +678,20 @@ class Ngmix(object):
 
             res['obj_id'] = obj_id
             res['n_epoch_model'] = len(stamp.gals)
+            res['moments_fail'] = sum(
+                1 for k in ['noshear', '1p', '1m', '2p', '2m']
+                if res.get(k, {}).get('flags', 0) != 0
+            )
+            r50_psfo = np.sqrt(max(psf_res['T_psf'], 0) / 2)
+            res['g_PSFo'] = psf_res['g_psf']
+            res['g_err_PSFo'] = psf_res['g_psf_err']
+            res['T_PSFo'] = psf_res['T_psf']
+            res['T_err_PSFo'] = psf_res['T_psf_err']
+            res['r50_PSFo'] = r50_psfo
+            res['r50_err_PSFo'] = (
+                psf_res['T_psf_err'] / (2 * r50_psfo) if r50_psfo > 0 else np.nan
+            )
+            res['mcal_flags'] = 0
             final_res.append(res)
             n_fitted += 1
             count_batch += 1
@@ -910,7 +929,7 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
 
     return sig_noise
 
-def prepare_ngmix_weights(gal,weight,flag,tile_cat):
+def prepare_ngmix_weights(gal, weight, flag):
     """bookkeeping for ngmix weights. runs on a single galaxy and epoch
         pixel scale and galaxy guess
         TO DO: decide if we want galaxy guess stuff
@@ -1017,7 +1036,7 @@ def make_ngmix_observation(gal,weight,flag,psf,wcs):
  
     return gal_obs
 
-def average_multiepoch_psf(obsdict,nepoch):
+def average_multiepoch_psf(obsdict):
     """ averages psf information over multiple epochs
     we may need to do this for original psf as well
     Parameters
@@ -1034,7 +1053,7 @@ def average_multiepoch_psf(obsdict,nepoch):
     # create dictionary
     names = ['T_psf', 'T_psf_err', 'g_psf', 'g_psf_err']
     psf_dict = {k: [] for k in names}
-    # include relevant psf quantities- check how they are presented for multi-epoch observations
+    nepoch = len(obsdict['noshear'])
     wsum = 0
     g_psf_sum = np.array([0., 0.])
     g_psf_err_sum = np.array([0., 0.])
@@ -1045,7 +1064,7 @@ def average_multiepoch_psf(obsdict,nepoch):
         T_psf_err=obsdict['noshear'][n_e].psf.meta['result']['T_err']
         g_psf=obsdict['noshear'][n_e].psf.meta['result']['g']
         g_psf_err=obsdict['noshear'][n_e].psf.meta['result']['g_err']
-        ne_wsum = obsdict['noshear'][0].weight.sum()
+        ne_wsum = obsdict['noshear'][n_e].weight.sum()
 
         # we probably want to handle cases when there is no psf
         # how are we dealing with the error, what is npsf
@@ -1158,11 +1177,11 @@ def do_ngmix_metacal(
     # this "bootstrapper" runs the metacal image shearing as well as both psf
     # and object measurements
     boot = ngmix.metacal.MetacalBootstrapper(
-        metacal_pars,
-        runner=runner, 
+        runner=runner,
         psf_runner=psf_runner,
         ignore_failed_psf=True,
-        rng=rng
+        rng=rng,
+        **metacal_pars,
     )
     # this is the actual fit
     resdict, obsdict = boot.go(gal_obs_list)
