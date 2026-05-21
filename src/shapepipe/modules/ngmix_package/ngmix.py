@@ -1037,6 +1037,83 @@ def average_multiepoch_psf(obsdict):
         g_psf=obsdict['noshear'][n_e].psf.meta['result']['g']
         g_psf_err=obsdict['noshear'][n_e].psf.meta['result']['g_err']
         ne_wsum = obsdict['noshear'][n_e].weight.sum()
+
+        wsum += ne_wsum
+        g_psf_sum += g_psf * ne_wsum
+        g_psf_err_sum += g_psf_err * ne_wsum
+        T_psf_sum += T_psf * ne_wsum
+        T_psf_err_sum += T_psf_err * ne_wsum
+
+    if wsum == 0:
+        raise ZeroDivisionError('Sum of weights = 0, division by zero')
+
+    psf_dict['g_psf'] = g_psf_sum / wsum
+    psf_dict['g_psf_err'] = g_psf_err_sum / wsum
+    psf_dict['T_psf'] = T_psf_sum / wsum
+    psf_dict['T_psf_err'] = T_psf_err_sum / wsum
+
+    return psf_dict
+
+
+def do_ngmix_metacal(stamp, prior, flux_guess, rng):
+    """Do Ngmix Metacal.
+
+    Performs metacalibration on a single multi-epoch object and returns the
+    joint shape measurement with NGMIX.
+
+    Parameters
+    ----------
+    stamp : Postage_stamp
+        Postage stamps for all epochs of one galaxy.
+    prior : ngmix.joint_prior.PriorSimpleSep
+        Priors for the fitting parameters.
+    flux_guess : float
+        Initial flux guess.
+    rng : numpy.random.RandomState
+        Random state for guesses and priors.
+
+    Returns
+    -------
+    tuple
+        (resdict, psf_res) where resdict is the MetacalBootstrapper result
+        dict and psf_res is the averaged PSF dict from average_multiepoch_psf.
+    """
+    n_epoch = len(stamp.gals)
+    if n_epoch == 0:
+        raise ValueError("0 epoch to process")
+
+    psf_model = 'gauss'
+    gal_model = 'gauss'
+
+    gal_obs_list = ObsList()
+    for n_e in range(n_epoch):
+        gal_obs = make_ngmix_observation(
+            stamp.gals[n_e],
+            stamp.weights[n_e],
+            stamp.flags[n_e],
+            stamp.psfs[n_e],
+            stamp.jacobs[n_e],
+        )
+        gal_obs_list.append(gal_obs)
+
+    fitter = ngmix.fitting.Fitter(model=gal_model, prior=prior)
+    guesser = ngmix.guessers.TPSFFluxAndPriorGuesser(rng=rng, T=0.25, prior=prior)
+
+    psf_fitter = ngmix.fitting.Fitter(model=psf_model, prior=prior)
+    psf_guesser = ngmix.guessers.TFluxGuesser(rng=rng, T=0.25, prior=prior, flux=flux_guess)
+
+    psf_runner = ngmix.runners.PSFRunner(fitter=psf_fitter, guesser=psf_guesser, ntry=2)
+    runner = ngmix.runners.Runner(fitter=fitter, guesser=guesser, ntry=5)
+
+    metacal_pars = {
+        'types': ['noshear', '1p', '1m', '2p', '2m'],
+        'step': 0.01,
+        'psf': 'fitgauss',
+        'fixnoise': True,
+        'use_noise_image': True,
+    }
+
+    boot = ngmix.metacal.MetacalBootstrapper(
         runner=runner,
         psf_runner=psf_runner,
         ignore_failed_psf=True,
@@ -1046,6 +1123,7 @@ def average_multiepoch_psf(obsdict):
     resdict, obsdict = boot.go(gal_obs_list)
     psf_res = average_multiepoch_psf(obsdict)
     return resdict, psf_res
+
 
 # Define the SExtractor parameters for a galaxy
 def sextractor_e1e2(e,theta):
