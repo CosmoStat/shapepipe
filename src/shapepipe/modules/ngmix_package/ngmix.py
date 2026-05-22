@@ -423,6 +423,8 @@ class Ngmix(object):
                 output_dict[name]["g2_err"].append(
                     np.sqrt(results[idx][name]["g_cov"][1, 1])
                 )
+                output_dict[name]["flux"].append(results[idx][name]["flux"])
+                output_dict[name]["flux_err"].append(results[idx][name]["flux_err"])
                 output_dict[name]["mag"].append(mag)
                 output_dict[name]["mag_err"].append(mag_err)
 
