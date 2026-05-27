@@ -19,7 +19,7 @@ jobs:
         python-version: [3.11]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
@@ -35,7 +35,7 @@ jobs:
           brew reinstall gcc
 
       - name: Set up conda
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3.3.0
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
