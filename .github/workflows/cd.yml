@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
 
       - name: Set up conda
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@9f54435e0e72c53962ee863144e47a4b094bfd35 # v2.3.0
         with:
           auto-update-conda: true
           python-version: 3.9
@@ -38,7 +38,7 @@ jobs:
           sphinx-build -E docs/source docs/_build
 
       - name: Deploy API documentation
-        uses: peaceiris/actions-gh-pages@v3.5.9
+        uses: peaceiris/actions-gh-pages@cf301857435c1f95963b21d58f452a7617770d60 # v3.5.9
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: docs/_build
