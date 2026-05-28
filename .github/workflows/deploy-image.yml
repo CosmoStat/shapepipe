@@ -63,10 +63,13 @@ jobs:
           docker run --rm "$IMAGE" weightwatcher --version
           docker run --rm "$IMAGE" psfex --version
 
-      - name: Test runtime — shapepipe entry point
+      - name: Test runtime — shapepipe entry point (read-only fs)
         run: |
           IMAGE=$(echo "${{ steps.meta-runtime.outputs.tags }}" | head -n1)
-          docker run --rm "$IMAGE" shapepipe_run -c /app/example/config.ini
+          # --read-only + tmpfs /tmp emulates apptainer/SIF semantics: only
+          # /tmp is writable. shapepipe_run_example wraps shapepipe_run so
+          # the example tree gets copied into a mktemp workdir before running.
+          docker run --rm --read-only --tmpfs /tmp:rw "$IMAGE" shapepipe_run_example
 
       # Build dev (reuses cached `base` layer)
       - name: Build dev (load)
