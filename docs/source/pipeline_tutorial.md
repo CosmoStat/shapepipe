@@ -3,7 +3,7 @@
 ## Quick start
 
 Run the entire pipeline on a single example CFIS image with tile ID 246.290:
-1. [Install](https://github.com/cosmostat/shapepipe#installing-shapepipe) `ShapePipe` and activate the `shapepipe` conda environment.
+1. [Install](installation.md) `ShapePipe` — the recommended path is the container image, which bundles everything needed to run the pipeline.
 3. Run the job script
 ```bash
 job_sp 246.290 -j 127
