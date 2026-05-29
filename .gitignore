@@ -134,3 +134,9 @@ dmypy.json
 example/output/shapepipe_run_*
 example/output/shapepipe_runs*
 code
+
+# felt: track the fibers (the .md content), not the regenerable index.
+# felt rebuilds index.db from the markdown on first use.
+.felt/index.db
+.felt/index-sync.lock
+.felt/index-sync.request
