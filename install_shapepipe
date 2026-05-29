@@ -119,15 +119,21 @@ check_conda() {
     echo -ne "${RED}ERROR: Found Conda version $CONDA_VERSION but require 4.0.0 or greater.${NC}\n"
     exit 1
   fi
-  # Look for conda.sh file
-  if [ -f "/opt/conda/$CONDA_SH" ]
+  # Look for conda.sh file. `conda info --base` is authoritative wherever conda
+  # lives (GitHub runners, miniforge, custom installs); fall back to the
+  # conventional locations for environments where it can't be queried.
+  CONDA_BASE=$(conda info --base 2>/dev/null)
+  if [ -n "$CONDA_BASE" ] && [ -f "$CONDA_BASE$CONDA_SH" ]
   then
-    source "/opt/conda/$CONDA_SH"
+    source "$CONDA_BASE$CONDA_SH"
+  elif [ -f "/opt/conda$CONDA_SH" ]
+  then
+    source "/opt/conda$CONDA_SH"
   elif [ -f "$CONDA_PREFIX$CONDA_SH" ]
   then
     source "$CONDA_PREFIX$CONDA_SH"
   else
-    echo -ne "${RED}ERROR: Could not find $CONDA_SH in /opt/conda or \$CONDA_PREFIX.${NC}\n"
+    echo -ne "${RED}ERROR: Could not find $CONDA_SH in \$(conda info --base), /opt/conda, or \$CONDA_PREFIX.${NC}\n"
     echo -ne "${RED}Activate the base/root Conda environment and try again.${NC}\n"
     exit 1
   fi
