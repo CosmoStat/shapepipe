@@ -159,7 +159,7 @@ In some cases it may be necessary to modify the unit tests, but this should be c
 
 All contributions should adhere to the following style guides currently implemented in ShapePipe.
 
-1. All code should be compatible with the Python package versions listed in the [Conda environment](https://github.com/CosmoStat/shapepipe/blob/develop/environment.yml).
+1. All code should be compatible with the Python package versions declared in [`pyproject.toml`](https://github.com/CosmoStat/shapepipe/blob/develop/pyproject.toml) (pinned exactly in `uv.lock`).
 
 1. All code should adhere to [PEP8](https://www.python.org/dev/peps/pep-0008/) standards.
 
