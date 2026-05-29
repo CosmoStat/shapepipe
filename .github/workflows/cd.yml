@@ -1,41 +1,49 @@
 name: Deploy API Docs
 
+# Build the Sphinx API docs inside the dev image (same slim-Python + uv
+# environment everything else uses — no conda) and publish to gh-pages.
+# autodoc imports shapepipe, so it needs the full runtime; the dev image's
+# `doc` extra provides sphinx + myst-parser + the theme on top of that.
 on:
   push:
     branches:
-     - master
-     - main
+      - master
+      - main
+  workflow_dispatch:
 
 jobs:
-
   api:
     name: Deploy API Documentation
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Set up conda
-        uses: conda-incubator/setup-miniconda@9f54435e0e72c53962ee863144e47a4b094bfd35 # v2.3.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
         with:
-          auto-update-conda: true
-          python-version: 3.9
-          auto-activate-base: true
+          driver-opts: network=host
 
-      - name: Install dependencies
-        shell: bash -l {0}
-        run: |
-          ./install_shapepipe --develop --no-exe --no-mpi
-          conda activate shapepipe
-          python -m pip install --upgrade importlib-metadata
-          conda install -c conda-forge pandoc
+      - name: Build dev image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          target: dev
+          load: true
+          tags: shapepipe-dev:docs
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
+      # Generate API stubs and build the HTML inside the image. docs/ is
+      # bind-mounted so sphinx-apidoc's generated rst and the _build output
+      # land back on the runner for the deploy step.
       - name: Build API documentation
-        shell: bash -l {0}
         run: |
-          conda activate shapepipe
-          sphinx-apidoc -t docs/_templates -feTMo docs/source shapepipe shapepipe/modules/*_runner.py
-          sphinx-build -E docs/source docs/_build
+          docker run --rm -v "${GITHUB_WORKSPACE}/docs:/app/docs" shapepipe-dev:docs bash -c "
+            sphinx-apidoc -t docs/_templates -feTMo docs/source shapepipe shapepipe/modules/*_runner.py &&
+            sphinx-build -E docs/source docs/_build
+          "
 
       - name: Deploy API documentation
         uses: peaceiris/actions-gh-pages@cf301857435c1f95963b21d58f452a7617770d60 # v3.5.9
