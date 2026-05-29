@@ -1,10 +1,31 @@
-name: Create and publish a Docker image
-on: [push, workflow_dispatch]
+name: Docker image — build, test, publish
+
+# Single source of truth for ShapePipe's environment is the Dockerfile
+# (slim Python + apt system deps + uv-frozen wheels). This workflow builds
+# that image, runs the test suite *inside it* — so CI tests exactly what
+# ships — and publishes to ghcr only on pushes to the integration branches.
+#
+#   pull_request → build + test, no publish (also works for fork PRs)
+#   push         → build + test + publish (:develop, :latest, …)
+on:
+  push:
+    branches:
+      - develop
+      - main
+      - master
+  pull_request:
+    branches:
+      - develop
+      - main
+      - master
+  workflow_dispatch:
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+
 jobs:
-  build-and-push-image:
+  build-test-publish:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -12,13 +33,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
@@ -40,6 +54,10 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: |
             suffix=-runtime,onlatest=true
+
+      # ----------------------------------------------------------------
+      # Build + test (every event)
+      # ----------------------------------------------------------------
 
       # Build runtime first (smaller, used to smoke-test pipeline binaries)
       - name: Build runtime (load)
@@ -84,15 +102,35 @@ jobs:
           cache-to: type=gha,mode=max
 
       # Verify the dev-only additions are present and runnable.
-      - name: Test dev — interactive tools and test extras
+      - name: Test dev — interactive tools
         run: |
           IMAGE=$(echo "${{ steps.meta-dev.outputs.tags }}" | head -n1)
           docker run --rm "$IMAGE" vim --version | head -n1
           docker run --rm "$IMAGE" rg --version | head -n1
-          docker run --rm "$IMAGE" pytest --version
 
-      # Push both targets
+      # The actual test suite, run inside the shipped image. This replaces the
+      # old conda-based ci-release.yml: pytest exercises the same wheels,
+      # binaries, and Python (3.12) that production runs on, not a parallel
+      # conda env. pyproject's addopts add `--cov=shapepipe`; COVERAGE_FILE is
+      # set to /tmp in the image so it works on read-only filesystems too.
+      - name: Test dev — pytest suite
+        run: |
+          IMAGE=$(echo "${{ steps.meta-dev.outputs.tags }}" | head -n1)
+          docker run --rm "$IMAGE" pytest
+
+      # ----------------------------------------------------------------
+      # Publish (push events only — never on pull_request, incl. forks)
+      # ----------------------------------------------------------------
+      - name: Log in to the Container registry
+        if: github.event_name == 'push'
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Push runtime
+        if: github.event_name == 'push'
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
@@ -103,6 +141,7 @@ jobs:
           cache-from: type=gha
 
       - name: Push dev
+        if: github.event_name == 'push'
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
