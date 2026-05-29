@@ -118,6 +118,22 @@ def test_custom_parser_getlist_expands_env_and_strips_entries(monkeypatch):
     ]
 
 
+def test_custom_parser_getexpanded_expands_fallback(monkeypatch):
+
+    monkeypatch.setenv("SP_TEST_ROOT", "/tmp/shapepipe")
+    parser = config.CustomParser()
+    parser.add_section("PATHS")
+
+    assert (
+        parser.getexpanded(
+            "PATHS",
+            "MISSING",
+            fallback="$SP_TEST_ROOT/default.fits",
+        )
+        == "/tmp/shapepipe/default.fits"
+    )
+
+
 def test_custom_parser_getlist_honours_custom_delimiter():
 
     parser = config.CustomParser()
@@ -128,6 +144,17 @@ def test_custom_parser_getlist_honours_custom_delimiter():
         "alpha",
         "beta",
         "gamma",
+    ]
+
+
+def test_custom_parser_getlist_splits_fallback():
+
+    parser = config.CustomParser()
+    parser.add_section("VALUES")
+
+    assert parser.getlist("VALUES", "MISSING", fallback="alpha, beta") == [
+        "alpha",
+        "beta",
     ]
 
 

@@ -7,7 +7,7 @@ tags:
     - testing
     - constitution
 created-at: 2026-05-29T15:24:03.630476192+02:00
-outcome: 'Tier 0 structural coverage is restored and reconciled: shell scripts parse, example configs parse, project entry points answer -h, every shapepipe submodule imports, and each module runner exposes exactly one decorated runner function. The structural suite exposed and fixed a random_cat.py syntax error; local source-tree pytest now passes (247 passed, 5 skipped), touched files pass pycodestyle, and in-image verification remains blocked because docker is unavailable in this worker environment.'
+outcome: 'Tier 0-2 coverage is now reconciled and locally green: structural checks, property tests, synthetic FITS tests, and CustomParser fallback/default behavior pass under PYTHONPATH=src uv run --extra test pytest (249 passed, 5 skipped); in-image Docker verification remains blocked because docker is unavailable in this worker environment.'
 shuttle:
     enabled: true
     kind: oneshot
