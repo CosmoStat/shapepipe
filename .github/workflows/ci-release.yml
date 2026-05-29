@@ -52,12 +52,12 @@ jobs:
           CC: gcc-9
           CXX: g++-9
         if: runner.os == 'Linux'
-        run: ./install_shapepipe --develop
+        run: ./install_shapepipe --env-dev
 
       - name: Install package (macOS)
         shell: bash -l {0}
         if: runner.os == 'macOS'
-        run: ./install_shapepipe --develop
+        run: ./install_shapepipe --env-dev
 
       - name: Run tests
         shell: bash -l {0}
