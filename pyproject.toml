@@ -29,7 +29,7 @@ dependencies = [
     "mpi4py>=4.0",
     "numba>=0.59",           # numpy 2 support
     "numpy>=2.0",            # major 1 → 2
-    "pandas>=3.0",           # major 2 → 3
+    "pandas>=3.0.3",           # major 2 → 3
     "python-dateutil",
     "python-pysap>=0.3",
     "PyQt5",
@@ -58,7 +58,7 @@ doc = [
 jupyter = [
     "ipython>=8.18",
     "jupyterlab>=4.5.7",
-    "snakemake>=8.27",
+    "snakemake>=9.20.0",
 ]
 lint = [
     "black",
