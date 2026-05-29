@@ -1,13 +1,14 @@
 ---
 name: 'ShapePipe test suite: tiered, in-image, property-based'
-status: open
+status: closed
 tags:
     - shapepipe
     - ci
     - testing
     - constitution
 created-at: 2026-05-29T15:24:03.630476192+02:00
-outcome: 'CI pytest now explicitly runs the deterministic Hypothesis profile and reports XPASS summaries inside the dev image: deploy-image.yml uses docker run -e HYPOTHESIS_PROFILE=ci pytest -rX. Local analogue is green: PYTHONPATH=src HYPOTHESIS_PROFILE=ci uv run --extra test pytest -rX => 249 passed, 5 skipped, no XPASS. Docker/in-image validation remains blocked in this worker because docker is not installed.'
+closed-at: 2026-05-29T16:52:54.94888417+02:00
+outcome: 'ShapePipe test-suite constitution is landed on develop: Tier 0 structural tests, Tier 1 property tests, Tier 2 synthetic FITS coverage, deterministic Hypothesis CI profile, coverage reporting, and the single deploy-image in-image pytest gate are in place. Evidence: local PYTHONPATH=src HYPOTHESIS_PROFILE=ci uv run --extra test pytest -rX passed with 249 passed, 5 skipped, no XPASS; GitHub deploy-image run 26643693614 passed on fe057b83, including runtime read-only smoke, dev-image pytest -rX, and image publish.'
 shuttle:
     enabled: true
     kind: oneshot
