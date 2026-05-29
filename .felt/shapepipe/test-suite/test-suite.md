@@ -7,7 +7,7 @@ tags:
     - testing
     - constitution
 created-at: 2026-05-29T15:24:03.630476192+02:00
-outcome: 'Tier 0-2 coverage is locally green under the deterministic Hypothesis CI profile: PYTHONPATH=src uv run --extra test pytest -rX reports 249 passed, 5 skipped, no XPASS, and Hypothesis loads derandomize=True/max_examples=50 from conftest.py. Docker/in-image verification remains blocked in this worker because docker is not installed.'
+outcome: 'CI pytest now explicitly runs the deterministic Hypothesis profile and reports XPASS summaries inside the dev image: deploy-image.yml uses docker run -e HYPOTHESIS_PROFILE=ci pytest -rX. Local analogue is green: PYTHONPATH=src HYPOTHESIS_PROFILE=ci uv run --extra test pytest -rX => 249 passed, 5 skipped, no XPASS. Docker/in-image validation remains blocked in this worker because docker is not installed.'
 shuttle:
     enabled: true
     kind: oneshot
