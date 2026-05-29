@@ -1,11 +1,10 @@
-"""Shared pytest configuration."""
+"""Shared pytest configuration for the ShapePipe test suite."""
 
-from hypothesis import HealthCheck, settings
+import os
 
-settings.register_profile(
-    "ci",
-    derandomize=True,
-    max_examples=50,
-    suppress_health_check=[HealthCheck.function_scoped_fixture],
-)
-settings.load_profile("ci")
+from hypothesis import settings
+
+
+settings.register_profile("ci", derandomize=True, max_examples=50)
+settings.register_profile("dev", max_examples=200)
+settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "ci"))

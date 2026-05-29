@@ -7,7 +7,7 @@ tags:
     - testing
     - constitution
 created-at: 2026-05-29T15:24:03.630476192+02:00
-outcome: 'Tier 0-2 coverage is now reconciled and locally green: structural checks, property tests, synthetic FITS tests, and CustomParser fallback/default behavior pass under PYTHONPATH=src uv run --extra test pytest (249 passed, 5 skipped); in-image Docker verification remains blocked because docker is unavailable in this worker environment.'
+outcome: 'Tier 0-2 coverage is locally green under the deterministic Hypothesis CI profile: PYTHONPATH=src uv run --extra test pytest -rX reports 249 passed, 5 skipped, no XPASS, and Hypothesis loads derandomize=True/max_examples=50 from conftest.py. Docker/in-image verification remains blocked in this worker because docker is not installed.'
 shuttle:
     enabled: true
     kind: oneshot
