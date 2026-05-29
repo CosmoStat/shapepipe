@@ -7,7 +7,7 @@ tags:
     - testing
     - constitution
 created-at: 2026-05-29T15:24:03.630476192+02:00
-outcome: 'Tier-1 property-test foundation landed locally: deterministic Hypothesis profile, test extra + lockfile, corrected pytest discovery/term-missing coverage, and property/unit coverage for sigma_to_fwhm, in2out_pattern, MegaCamFlip, FITS header units, and CustomParser list/env parsing. Local pytest passes (18 passed, 2 skipped); in-image verification is still pending because docker is unavailable in this worker environment.'
+outcome: 'Tier-2 synthetic FITS coverage now extends the local suite: VignetMaker WCS conversion, stamp shape, mask sentinel replacement; PSFEx galaxy-position extraction and missing-column behavior; FITSCatalogue table/image round-trips; and module_runner attribute/validation contracts. Local source-tree pytest passes (28 passed, 2 skipped), touched tests pass pycodestyle, and in-image verification remains blocked because docker is unavailable in this worker environment.'
 shuttle:
     enabled: true
     kind: oneshot
