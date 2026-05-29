@@ -112,11 +112,13 @@ jobs:
       # retired conda-based suite. pytest exercises the same wheels, binaries,
       # and Python (3.12) that production runs on, not a parallel environment.
       # pyproject's addopts add `--cov=shapepipe`; COVERAGE_FILE is set to /tmp
-      # in the image so it works on read-only filesystems too.
+      # in the image so it works on read-only filesystems too. The Hypothesis
+      # profile is explicit here so CI always uses the deterministic, capped
+      # property-test profile even if the default changes for local exploration.
       - name: Test dev — pytest suite
         run: |
           IMAGE=$(echo "${{ steps.meta-dev.outputs.tags }}" | head -n1)
-          docker run --rm "$IMAGE" pytest
+          docker run --rm -e HYPOTHESIS_PROFILE=ci "$IMAGE" pytest -rX
 
       # ----------------------------------------------------------------
       # Publish (push events only — never on pull_request, incl. forks)
