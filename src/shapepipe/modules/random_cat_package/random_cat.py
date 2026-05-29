@@ -163,7 +163,9 @@ class RandomCat:
                 n_obj = self._n_rand
             else:
                 # Compute number of objects from density
-                n_obj = int(self._n_rand / area_deg2 * area_deg2_eff / area_deg2)
+                n_obj = int(
+                    self._n_rand / area_deg2 * area_deg2_eff / area_deg2
+                )
 
             # Check that a reasonably large number of pixels is not masked
             if n_unmasked < n_obj:
@@ -209,6 +211,7 @@ class RandomCat:
         output_path = (
             f"{self._output_dir}/{self._output_file_pattern}-"
             + f"{self._file_number_string}.fits"
+        )
         file_base = os.path.splitext(file_name)[0]
         tile_ID_str = re.split("-", file_base)[1:]
         tile_id = float(".".join(tile_ID_str))
