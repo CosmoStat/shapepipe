@@ -13,7 +13,11 @@ shuttle:
   kind: oneshot
   host: c03
   project_dir: /automnt/n17data/cdaley/unions/shapepipe
-  agent: codex
+  agent: claude-opus
+  session:
+    id: 30ae76cc-6d3d-4773-827f-b6505ca7f3e9
+    agent: claude-opus
+    dispatched_at: 2026-05-30T19:52:16.666358713Z
 ---
 
 ## Desired State
