@@ -16,16 +16,22 @@
 # Request number of cores
 #PBS -l nodes=4
 
-# Full path to environment
-export SPENV="$HOME/.conda/envs/shapepipe"
-export SPDIR="$HOME/shapepipe"
+# Path to the local ShapePipe clone (holds the example configs and data)
+export SPDIR="${SPDIR:-$HOME/shapepipe}"
 
-# Activate conda environment
-module load intelpython/3
-source activate $SPENV
+# Path to the ShapePipe runtime image. Pull it once with:
+#   apptainer pull "$SP_IMAGE" docker://ghcr.io/cosmostat/shapepipe:develop-runtime
+export SP_IMAGE="${SP_IMAGE:-$HOME/shapepipe_develop-runtime.sif}"
 
-# Run ShapePipe using full paths to executables
-$SPENV/bin/shapepipe_run -c $SPDIR/example/pbs/config_smp.ini
+# Run ShapePipe through the container -- no Python environment to activate. The
+# clone is bind-mounted at the same path so that $SPDIR resolves identically
+# inside the container, where the config references it for the input and output
+# directories.
+apptainer exec \
+    --bind "$SPDIR:$SPDIR" \
+    --env SPDIR="$SPDIR" \
+    "$SP_IMAGE" \
+    shapepipe_run -c "$SPDIR/example/pbs/config_smp.ini"
 
-# Return exit code
-exit 0
+# Propagate the pipeline's exit code to the batch system
+exit $?
