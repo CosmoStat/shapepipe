@@ -9,12 +9,12 @@ tags:
 created-at: 2026-05-27T11:57:31.076323766+02:00
 closed-at: 2026-05-28T15:27:23.026Z
 outcome: All 6 PRs merged in-conversation (727 idna, 722 mistune, 724 gitpython, 720 jupyterlab + pyproject floor, 721 jupyter-server, 726 urllib3). 19 of 20 Dependabot alerts cleared. Last one (sqlitedict) dismissed as tolerable_risk; see [[shapepipe/sqlitedict-pickle-smell]]. Shuttle daemon didn't pick up the dispatch — root cause unknown, worth a separate look.
+tempered: true
 shuttle:
     enabled: true
     kind: oneshot
     project_dir: .
     agent: pi-gpt-5.4
-tempered: true
 ---
 
 ## Why this exists

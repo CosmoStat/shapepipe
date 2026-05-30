@@ -6,8 +6,7 @@ tags:
     - ci
     - constitution
 created-at: 2026-05-29T12:34:31.800189806+02:00
-outcome: |-
-  Conda removed from ShapePipe (#733 merged); develop is green including image publish. The container (slim Python 3.12 + apt + uv lockfile) is the single source of truth and CI runs pytest inside the dev image. ci-release.yml + doc-tests.yml + install_shapepipe + environment*.yml deleted; cd.yml builds docs in the image; install docs rewritten. The conda path had rotted into a multi-layer install failure — deleted rather than repaired, so the production astropy bug is moot. Remaining for a clean/tight/shared dev environment: (1) commit a shared .felt in the repo + curate which fibers go public; (2) make repo CLAUDE.md a real onboarding doc; (3) port cluster job scripts off conda; (4) #729 dependabot actions (recreating); (5) verify docs deploy on master; (6) strengthen the thin test suite (#708).
+outcome: 'Conda removed from ShapePipe (#733 merged); develop is green including image publish. The container (slim Python 3.12 + apt + uv lockfile) is the single source of truth and CI runs pytest inside the dev image. ci-release.yml + doc-tests.yml + install_shapepipe + environment*.yml deleted; cd.yml builds docs in the image; install docs rewritten. The conda path had rotted into a multi-layer install failure — deleted rather than repaired, so the production astropy bug is moot. Remaining for a clean/tight/shared dev environment: (1) commit a shared .felt in the repo + curate which fibers go public; (2) make repo CLAUDE.md a real onboarding doc; (3) port cluster job scripts off conda; (4) #729 dependabot actions (recreating); (5) verify docs deploy on master; (6) strengthen the thin test suite (#708).'
 ---
 
 ## Desired State

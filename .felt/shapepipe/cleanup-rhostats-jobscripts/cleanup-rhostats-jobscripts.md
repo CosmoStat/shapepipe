@@ -1,35 +1,36 @@
 ---
 name: 'ShapePipe cleanup: remove obsolete rho-stats/stile; modernize candide job scripts'
-status: open
+status: closed
 tags:
-  - shapepipe
-  - cleanup
-  - constitution
+    - shapepipe
+    - cleanup
+    - constitution
 created-at: 2026-05-30T21:45:50.977369486+02:00
+closed-at: 2026-05-30T22:30:55.745891097+02:00
 outcome: |-
-  Done — two PRs open against develop, neither merged (Martin reviews). (1) PR
-  #736: removed the in-ShapePipe PSF-systematics plotting path (mccd_plots_runner
-  + mccd_plot_utilities — the "rho statistics" were only a docstring promise, the
-  code computed mean shapes + histograms, no treecorr/stile). Two sole-purpose
-  configs deleted whole; six configs edited; docs updated to point PSF diagnostics
-  at sp_validation/cosmo_val. In-image pytest 250 passed; CI green. (2) PR #737:
-  candide_smp.sh / candide_mpi.sh now run via apptainer + the runtime image, no
-  conda; SMP verified end-to-end on c03 (0 errors), MPI hybrid pattern written but
-  needs a real allocation to verify (hangs on login node). Two scope findings:
-  `stile` was already vestigial (zero refs anywhere — nothing to remove);
-  `random_cat` was KEPT — it is a general LSS random-catalogue generator, not part
-  of the rho-stats path, so deleting it would overreach what Martin flagged.
-  canfar + ccin2p3 (cc_*.sh) scripts left untouched and noted in PR #737.
+    Done — two PRs open against develop, neither merged (Martin reviews). (1) PR
+    #736: removed the in-ShapePipe PSF-systematics plotting path (mccd_plots_runner
+    + mccd_plot_utilities — the "rho statistics" were only a docstring promise, the
+    code computed mean shapes + histograms, no treecorr/stile). Two sole-purpose
+    configs deleted whole; six configs edited; docs updated to point PSF diagnostics
+    at sp_validation/cosmo_val. In-image pytest 250 passed; CI green. (2) PR #737:
+    candide_smp.sh / candide_mpi.sh now run via apptainer + the runtime image, no
+    conda; SMP verified end-to-end on c03 (0 errors), MPI hybrid pattern written but
+    needs a real allocation to verify (hangs on login node). Two scope findings:
+    `stile` was already vestigial (zero refs anywhere — nothing to remove);
+    `random_cat` was KEPT — it is a general LSS random-catalogue generator, not part
+    of the rho-stats path, so deleting it would overreach what Martin flagged.
+    canfar + ccin2p3 (cc_*.sh) scripts left untouched and noted in PR #737.
 shuttle:
-  enabled: true
-  kind: oneshot
-  host: c03
-  project_dir: /automnt/n17data/cdaley/unions/shapepipe
-  agent: claude-opus
-  session:
-    id: 56169c16-34d7-48e3-be19-f2248484c510
+    enabled: true
+    kind: oneshot
+    host: c03
+    project_dir: /automnt/n17data/cdaley/unions/shapepipe
     agent: claude-opus
-    dispatched_at: 2026-05-30T20:28:23.663370727Z
+    session:
+        id: 7c02b521-17bd-44dc-ad10-709520d6d2bf
+        agent: claude-opus
+        dispatched_at: 2026-05-30T20:29:24.913621662Z
 ---
 
 ## Desired State
