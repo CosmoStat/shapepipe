@@ -2,12 +2,18 @@
 name: 'ShapePipe cleanup: remove obsolete rho-stats/stile; modernize candide job scripts'
 status: open
 tags:
-    - shapepipe
-    - cleanup
-    - constitution
+  - shapepipe
+  - cleanup
+  - constitution
 created-at: 2026-05-30T21:45:50.977369486+02:00
 outcome: |-
   Two independent cleanups, each delivered as its own PR (NOT merged to develop): (1) remove the obsolete in-shapepipe rho-stats/stile path — Martin confirmed it's superseded by sp_validation/cosmo_val — opened for Martin's review; (2) modernize the candide PBS job scripts to run via the container instead of a personal conda env, tested on candide (this host is c03=candide). The canfar job scripts are explicitly left untouched (can't verify them) and that's noted in the PR. Shuttled to Codex.
+shuttle:
+  enabled: true
+  kind: oneshot
+  host: c03
+  project_dir: /automnt/n17data/cdaley/unions/shapepipe
+  agent: codex
 ---
 
 ## Desired State
