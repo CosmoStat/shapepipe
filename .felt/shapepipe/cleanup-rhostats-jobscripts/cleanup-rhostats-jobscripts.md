@@ -27,9 +27,9 @@ shuttle:
   project_dir: /automnt/n17data/cdaley/unions/shapepipe
   agent: claude-opus
   session:
-    id: f18e2404-d0d6-43ae-97b2-2a9bf0797763
+    id: 56169c16-34d7-48e3-be19-f2248484c510
     agent: claude-opus
-    dispatched_at: 2026-05-30T20:22:40.523804619Z
+    dispatched_at: 2026-05-30T20:28:23.663370727Z
 ---
 
 ## Desired State
