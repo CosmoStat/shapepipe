@@ -2,22 +2,34 @@
 name: 'ShapePipe cleanup: remove obsolete rho-stats/stile; modernize candide job scripts'
 status: open
 tags:
-  - shapepipe
-  - cleanup
-  - constitution
+    - shapepipe
+    - cleanup
+    - constitution
 created-at: 2026-05-30T21:45:50.977369486+02:00
 outcome: |-
-  Two independent cleanups, each delivered as its own PR (NOT merged to develop): (1) remove the obsolete in-shapepipe rho-stats/stile path — Martin confirmed it's superseded by sp_validation/cosmo_val — opened for Martin's review; (2) modernize the candide PBS job scripts to run via the container instead of a personal conda env, tested on candide (this host is c03=candide). The canfar job scripts are explicitly left untouched (can't verify them) and that's noted in the PR. Shuttled to Codex.
+    Done — two PRs open against develop, neither merged (Martin reviews). (1) PR
+    #736: removed the in-ShapePipe PSF-systematics plotting path (mccd_plots_runner
+    + mccd_plot_utilities — the "rho statistics" were only a docstring promise, the
+    code computed mean shapes + histograms, no treecorr/stile). Two sole-purpose
+    configs deleted whole; six configs edited; docs updated to point PSF diagnostics
+    at sp_validation/cosmo_val. In-image pytest 250 passed; CI green. (2) PR #737:
+    candide_smp.sh / candide_mpi.sh now run via apptainer + the runtime image, no
+    conda; SMP verified end-to-end on c03 (0 errors), MPI hybrid pattern written but
+    needs a real allocation to verify (hangs on login node). Two scope findings:
+    `stile` was already vestigial (zero refs anywhere — nothing to remove);
+    `random_cat` was KEPT — it is a general LSS random-catalogue generator, not part
+    of the rho-stats path, so deleting it would overreach what Martin flagged.
+    canfar + ccin2p3 (cc_*.sh) scripts left untouched and noted in PR #737.
 shuttle:
-  enabled: true
-  kind: oneshot
-  host: c03
-  project_dir: /automnt/n17data/cdaley/unions/shapepipe
-  agent: claude-opus
-  session:
-    id: 30ae76cc-6d3d-4773-827f-b6505ca7f3e9
+    enabled: true
+    kind: oneshot
+    host: c03
+    project_dir: /automnt/n17data/cdaley/unions/shapepipe
     agent: claude-opus
-    dispatched_at: 2026-05-30T19:52:16.666358713Z
+    session:
+        id: 30ae76cc-6d3d-4773-827f-b6505ca7f3e9
+        agent: claude-opus
+        dispatched_at: 2026-05-30T19:52:16.666358713Z
 ---
 
 ## Desired State
@@ -118,7 +130,30 @@ green on each, neither merged, canfar untouched-and-noted.
   don't touch); the broader test-suite work (separate, done); any
   scientific-algorithm change.
 
-## Open Questions
+## Resolution
 
-- Is `random_cat` truly rho-stats-only, or does any non-rho config/use depend on
-  it? Confirm before deleting it (vs. just `mccd_plots_runner`).
+**`random_cat` is NOT rho-stats-only — kept.** Empirically: `random_cat_package`
+generates a random catalogue of points within the survey mask (healpix output,
+`config_Rc.ini`, authored by Martin). That is a general clustering / LSS tool
+(Landy-Szalay-style randoms), independent of PSF systematics. Rho statistics are
+auto/cross-correlations of PSF-ellipticity residuals at *star* positions and need
+no random catalogue. So the conditional in Deliverable 1 ("remove after confirming
+random_cat is rho-only") failed its precondition → random_cat stays. Removing it
+would overreach what Martin called obsolete; flagged in PR #736 for a follow-up if
+he does want it gone.
+
+**`stile` was already vestigial.** Zero references in `src/`, `example/`, `docs/`,
+`pyproject.toml`, `uv.lock` — never a declared dep, never imported. Nothing to
+remove; the absence is noted in PR #736 so it isn't read as an oversight.
+
+**The "rho-stats path" was really PSF-diagnostic plotting.** `mccd_plot_utilities`
+imports only matplotlib/mccd/numpy/astropy — it computes mean shapes and ellipticity
+histograms, no `treecorr`/`stile` correlation functions. The docstring's "rho
+statistics plot" was aspirational. Maps cleanly to Martin's "rho stats within
+shapepipe" = the PSF-leakage diagnostics now owned by `shear_psf_leakage`.
+
+**MPI verification gap.** `candide_smp.sh` is verified end-to-end through the
+container on c03. `candide_mpi.sh` uses the documented hybrid Apptainer pattern
+(host `mpiexec` launches container ranks) but can't be verified on a login node —
+`mpiexec` inside the container hangs without a PMIx allocation. ABI note for the
+reviewer: image ships OpenMPI 4.1.4, candide modules are now OpenMPI 5.0.x.
