@@ -48,13 +48,13 @@ The following steps are required for pre-v1.4 runs performed on the canfar VM sy
       This script creates a new combined psf run in the ShapePipe `output` directory, by identifying all psf validation files
       and creating symbolic links. The run log file is updated.
 
-   3. Merge individual psf validation files into one catalogue. Create plots of the PSF and their residuals in the focal plane,
-      as a diagnostic of the overall PSF model.
-      As a scale-dependend test, which propagates directly to the shear correlation function, the rho statistics are computed,
-      see {cite:p}`rowe:10` and {cite:p}`jarvis:16`,
+   3. Merge individual psf validation files into one catalogue,
       ```bash
       shapepipe_run -c /path/to/shapepipe/example/cfis/config_MsPl_PSF.ini
-      ``` 
+      ```
+      PSF diagnostics — focal-plane mean-shape plots and the rho statistics, the scale-dependent test that
+      propagates directly to the shear correlation function (see {cite:p}`rowe:10` and {cite:p}`jarvis:16`) — are
+      no longer produced inside ShapePipe. They now live in `sp_validation`/`cosmo_val` (via `shear_psf_leakage`).
 
    4. Prepare output directory
    

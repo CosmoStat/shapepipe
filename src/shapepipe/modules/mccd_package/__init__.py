@@ -133,56 +133,9 @@ ME_LOG_WCS: str
     Path to world coordinate system log file (``*sqlite``); only use in
     ``MULTI-EPOCH`` mode
 
-MCCD_PLOTS_RUNNER
-=================
-
-:Author: Tobias Liaudat
-
-:Parent module: ``merge_starcat_runner``
-
-:Input: Merged star catalogue
-
-:Output: Several plots
-
-This module generates different series of plots of the input merged star
-catalogue.
-
-One series of plots are the _mean shapes_, which is the PSF ellipticity and
-size and their residuals as a function of the focal plane positions. Values and
-residuals are combined from all merged catalogues, and binned in the focal
-plane according to ``X_GRID`` and ``Y_GRID``.
-
-Another series of plots are a histogram of the ellipticity errors.
-
-A third series are the rho statistics plot, which are correlation functions of
-various combinations of PSF ellipticity, size, and their residuals,
-see :cite:`rowe:10` and :cite:`jarvis:16`.
-
-Module-specific config file entries
------------------------------------
-
-PSF: str
-    PSF model type, options are ``mccd`` or ``psfex``
-PLOT_MEANSHAPES: bool
-    Option to produce _mean shapes_ plots
-X_GRID: int
-    Number of bins in the X axis of one CCD for the _mean shapes_ plot grid
-Y_GRID: int
-    Number of bins in the Y axis of one CCD for the _mean shapes_ plot grid
-MAX_E: float
-    Max value for ellipticity in the _mean shapes_ plot
-MAX_DE: float
-    Max value for the residual ellipticity in the _mean shapes_ plot
-PLOT_HISTOGRAMS: bool
-    Option to produce histogram plots for shape errors
-REMOVE_OUTLIERS: bool
-    Option to remove validated stars that are outliers in terms of shape
-    before drawing the plots
-
 """
 
 __all__ = [
     "shapepipe_auxiliary_mccd",
     "mccd_interpolation_script",
-    "mccd_plot_utilities",
 ]

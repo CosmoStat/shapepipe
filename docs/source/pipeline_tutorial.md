@@ -229,7 +229,7 @@ Next, the following tasks are run on the single-exposure single-CCD images:
 - The PSF model is created, either with `psfex` for PSFex, or
   with `mccd_preprocessing` and `mccd_fit_val` for MCCD.
 - The PSF model is interpolated to star positions for validation. For the PSFEx model, this is done
-  via a call to `psfex_interp`. For MCCD, the modules `merge_starcat`, `mccd_plots`, and
+  via a call to `psfex_interp`. For MCCD, the modules `merge_starcat` and
   `mccd_interp` are called.
 
 The output directory for both the `mccd` and `psfex` options is `run_sp_tile_Sx_exp_SxSePsf`.
