@@ -7,7 +7,7 @@ This page provides details on how new modules can be implemented in ShapePipe.
 Every ShapePipe module requires a *module package*, which is simply a directory
 with the module name followed by `_package`, e.g. for a module called
 `my_new_module` you would create a new directory called `my_new_module_package`
-and put it in `shapepipe/modules`. Inside this directory you will need to
+and put it in `src/shapepipe/modules`. Inside this directory you will need to
 include a Python file (ideally named after your module, e.g.
 `my_new_module.py`) and a `__init__.py` file with the following content.
 

@@ -1,6 +1,6 @@
 # Configuration
 
-The pipeline requires a configuration file (by default called `conifg.ini`)
+The pipeline requires a configuration file (by default called `config.ini`)
 in order to be run. Example configuration files are provided in the
 [example](https://github.com/CosmoStat/shapepipe/tree/develop/example)
 directory.
@@ -114,7 +114,7 @@ INPUT_DIR = last:psfex_runner
 OUTPUT_DIR = /home/username/my_output_dir
 FILE_PATTERN = psf
 FILE_EXT = fits
-NUMBERING_LIST = -001, -002
+NUMBER_LIST = -001, -002
 ```
 
 ShapePipe will look for the specific files `psf-001.fits` and `psf-002.fits`

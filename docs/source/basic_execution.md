@@ -7,7 +7,7 @@ option:
 
 ```{seealso}
 :class: margin
-The `shapepipe` environment will need to be built and activated in order to run this script (see [Installation](installation.md)).
+ShapePipe runs inside its container — there is no environment to activate. See [Installation](installation.md).
 ```
 ```bash
 shapepipe_run --help
