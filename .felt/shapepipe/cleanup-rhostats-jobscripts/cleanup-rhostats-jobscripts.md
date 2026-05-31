@@ -8,19 +8,23 @@ tags:
 created-at: 2026-05-30T21:45:50.977369486+02:00
 closed-at: 2026-05-30T22:30:55.745891097+02:00
 outcome: |-
-    Done — two PRs open against develop, neither merged (Martin reviews). (1) PR
-    #736: removed the in-ShapePipe PSF-systematics plotting path (mccd_plots_runner
-    + mccd_plot_utilities — the "rho statistics" were only a docstring promise, the
-    code computed mean shapes + histograms, no treecorr/stile). Two sole-purpose
-    configs deleted whole; six configs edited; docs updated to point PSF diagnostics
-    at sp_validation/cosmo_val. In-image pytest 250 passed; CI green. (2) PR #737:
-    candide_smp.sh / candide_mpi.sh now run via apptainer + the runtime image, no
-    conda; SMP verified end-to-end on c03 (0 errors), MPI hybrid pattern written but
-    needs a real allocation to verify (hangs on login node). Two scope findings:
-    `stile` was already vestigial (zero refs anywhere — nothing to remove);
-    `random_cat` was KEPT — it is a general LSS random-catalogue generator, not part
-    of the rho-stats path, so deleting it would overreach what Martin flagged.
-    canfar + ccin2p3 (cc_*.sh) scripts left untouched and noted in PR #737.
+    Mixed. PR #737 (candide scripts) good and open; PR #736 (rho-stats) CLOSED as
+    an over-cut. The constitution's premise was stale: it treated mccd_plots_runner
+    as "the rho-stats path," but the authorized rho-stats removal (Martin #657
+    "option 1, delete") had ALREADY shipped in #715 (merged 2026-04-23). By develop,
+    mccd_plots_runner/mccd_plot_utilities held NO rho/stile/treecorr — pure
+    meanshapes (plot_meanshapes: focal-plane ellipticities/sizes/residuals + 1D
+    histograms). On #715 Martin EXPLICITLY said keep meanshapes ("very useful...
+    maybe Fabian's 2D plots in the catalogue paper"). #736 deleted exactly that path
+    → net-zero rho cleanup, entirely over-reach against Martin's instruction. Closed
+    with explanation (2026-05-31), not trimmed — nothing left to salvage.
+    (2) PR #737 stands: candide_smp.sh / candide_mpi.sh run via apptainer + runtime
+    image, no conda; SMP verified end-to-end on c03 (0 errors), MPI hybrid pattern
+    written but needs a real allocation to verify. canfar + ccin2p3 left untouched.
+    Scope findings that held up: `stile` already vestigial; `random_cat` correctly
+    KEPT (general LSS random generator, not rho-stats). LESSON: check what prior
+    merged PRs already did before acting on a cleanup constitution — verify the
+    premise against current `develop`, not the constitution's snapshot.
 shuttle:
     enabled: true
     kind: oneshot
