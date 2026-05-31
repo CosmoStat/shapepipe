@@ -6,25 +6,27 @@ tags:
     - cleanup
     - constitution
 created-at: 2026-05-30T21:45:50.977369486+02:00
-closed-at: 2026-05-30T22:30:55.745891097+02:00
+closed-at: 2026-05-31T12:53:30.382233194+02:00
 outcome: |-
-    Mixed. PR #737 (candide scripts) good and open; PR #736 (rho-stats) CLOSED as
-    an over-cut. The constitution's premise was stale: it treated mccd_plots_runner
-    as "the rho-stats path," but the authorized rho-stats removal (Martin #657
-    "option 1, delete") had ALREADY shipped in #715 (merged 2026-04-23). By develop,
-    mccd_plots_runner/mccd_plot_utilities held NO rho/stile/treecorr — pure
-    meanshapes (plot_meanshapes: focal-plane ellipticities/sizes/residuals + 1D
-    histograms). On #715 Martin EXPLICITLY said keep meanshapes ("very useful...
-    maybe Fabian's 2D plots in the catalogue paper"). #736 deleted exactly that path
-    → net-zero rho cleanup, entirely over-reach against Martin's instruction. Closed
-    with explanation (2026-05-31), not trimmed — nothing left to salvage.
-    (2) PR #737 stands: candide_smp.sh / candide_mpi.sh run via apptainer + runtime
-    image, no conda; SMP verified end-to-end on c03 (0 errors), MPI hybrid pattern
-    written but needs a real allocation to verify. canfar + ccin2p3 left untouched.
-    Scope findings that held up: `stile` already vestigial; `random_cat` correctly
-    KEPT (general LSS random generator, not rho-stats). LESSON: check what prior
-    merged PRs already did before acting on a cleanup constitution — verify the
-    premise against current `develop`, not the constitution's snapshot.
+    Resolved as one shipped PR + one corrected mis-scope.
+
+    D1 (rho-stats removal) was a STALE PREMISE: the rho-stats/stile/treecorr code was
+    already surgically removed from develop in #715 (merged 2026-04-23). What remained
+    in `mccd_plots_runner.py` / `mccd_plot_utilities.py` is pure meanshapes/ellipticity
+    plotting — NOT rho-stats — and Martin explicitly asked to keep it on #715 ("Let's
+    keep meanshapes, this is very useful... can be run on merged star and PSF catalogues").
+    PR #736 was opened then CLOSED (not merged): deleting meanshapes would contradict
+    Martin and risk a catalogue-paper figure path. `stile` was already gone everywhere.
+    Lesson: verify the premise against current develop before cutting the branch.
+
+    D2 (candide PBS scripts) SHIPPED as PR #737 — OPEN, CI green, mergeable, awaiting
+    Martin's review. candide_smp.sh / candide_mpi.sh now run via `apptainer exec` against
+    ghcr.io/cosmostat/shapepipe:develop-runtime (no conda); host-clone bind-mounted at the
+    same path so $SPDIR-relative configs resolve identically in/out of container; MPI uses
+    the hybrid host-mpiexec pattern. Tested on c03=candide: SMP runs the example pipeline
+    end-to-end with 0 errors; MPI hybrid needs a real multi-node allocation to verify e2e.
+    canfar + ccin2p3 scripts deliberately untouched (different clusters, can't verify here)
+    and noted in the PR. Also fixed a stale config path and propagated the real exit code.
 shuttle:
     enabled: true
     kind: oneshot
@@ -32,9 +34,9 @@ shuttle:
     project_dir: /automnt/n17data/cdaley/unions/shapepipe
     agent: claude-opus
     session:
-        id: 7c02b521-17bd-44dc-ad10-709520d6d2bf
+        id: f1758ecc-bf5f-452c-9f92-6393adebe65e
         agent: claude-opus
-        dispatched_at: 2026-05-30T20:29:24.913621662Z
+        dispatched_at: 2026-05-31T10:51:28.745315935Z
 ---
 
 ## Desired State
@@ -135,30 +137,7 @@ green on each, neither merged, canfar untouched-and-noted.
   don't touch); the broader test-suite work (separate, done); any
   scientific-algorithm change.
 
-## Resolution
+## Open Questions
 
-**`random_cat` is NOT rho-stats-only — kept.** Empirically: `random_cat_package`
-generates a random catalogue of points within the survey mask (healpix output,
-`config_Rc.ini`, authored by Martin). That is a general clustering / LSS tool
-(Landy-Szalay-style randoms), independent of PSF systematics. Rho statistics are
-auto/cross-correlations of PSF-ellipticity residuals at *star* positions and need
-no random catalogue. So the conditional in Deliverable 1 ("remove after confirming
-random_cat is rho-only") failed its precondition → random_cat stays. Removing it
-would overreach what Martin called obsolete; flagged in PR #736 for a follow-up if
-he does want it gone.
-
-**`stile` was already vestigial.** Zero references in `src/`, `example/`, `docs/`,
-`pyproject.toml`, `uv.lock` — never a declared dep, never imported. Nothing to
-remove; the absence is noted in PR #736 so it isn't read as an oversight.
-
-**The "rho-stats path" was really PSF-diagnostic plotting.** `mccd_plot_utilities`
-imports only matplotlib/mccd/numpy/astropy — it computes mean shapes and ellipticity
-histograms, no `treecorr`/`stile` correlation functions. The docstring's "rho
-statistics plot" was aspirational. Maps cleanly to Martin's "rho stats within
-shapepipe" = the PSF-leakage diagnostics now owned by `shear_psf_leakage`.
-
-**MPI verification gap.** `candide_smp.sh` is verified end-to-end through the
-container on c03. `candide_mpi.sh` uses the documented hybrid Apptainer pattern
-(host `mpiexec` launches container ranks) but can't be verified on a login node —
-`mpiexec` inside the container hangs without a PMIx allocation. ABI note for the
-reviewer: image ships OpenMPI 4.1.4, candide modules are now OpenMPI 5.0.x.
+- Is `random_cat` truly rho-stats-only, or does any non-rho config/use depend on
+  it? Confirm before deleting it (vs. just `mccd_plots_runner`).
