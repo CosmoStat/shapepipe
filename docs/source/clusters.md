@@ -25,9 +25,8 @@ Three things hold on any cluster:
   (and the SIF itself) at a roomy data partition.
 
 MPI jobs add one constraint: the container's MPI must speak the same PMIx wire
-protocol as the host launcher (see [candide](#candide-slurm)).
+protocol as the host launcher (see the candide section below).
 
-(candide-slurm)=
 ## candide (SLURM)
 
 candide uses **SLURM** (`sbatch`; the old `qsub`/PBS commands are gone). The repo
