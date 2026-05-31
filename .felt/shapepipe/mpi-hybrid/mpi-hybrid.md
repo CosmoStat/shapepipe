@@ -20,12 +20,13 @@ outcome: |-
     names without the _runner suffix → "No module named python_example" + a 5-min deadlock.
     Fixed in 7e7b7448. All three drifted undetected because the repo's exercised path is SMP,
     not MPI ([[shapepipe/exec-modes-schedulers]]); actual MPI run history (esp. canfar) is
-    unknown from here. HARDENING PASS added a preflight guard (check_mpi_world, 2289e6a7: aborts
-    when OMPI_COMM_WORLD_SIZE != COMM_WORLD size — the singleton signature; SLURM_NTASKS is NOT
-    reliable for this) and, found while testing it, fixed a swallowed exit code (33494d74: main()
-    now returns run()'s value — every caught error had been exiting 0). Both tested + verified on
-    a real allocation. STILL OPEN: deadlock when rank 0 fails mid-setup for non-singleton reasons.
-    REMAINING: Martin review + merge of #737; open question whether MPI should be retired.
+    unknown from here. HARDENING PASS: KEPT a swallowed-exit-code fix (33494d74: main() now returns
+    run()'s value — every caught error had been exiting 0, broad + unrelated to MPI). PROTOTYPED
+    then PULLED a singleton preflight guard (check_mpi_world: abort when OMPI_COMM_WORLD_SIZE !=
+    COMM_WORLD size — SLURM_NTASKS unreliable) — verified working but removed as scope creep on a
+    maybe-retired mode; recipe parked in Layer 4. STILL OPEN: rank-0 mid-setup deadlock. REMAINING:
+    Martin review + merge of #737; sharpened question — is MPI a used dependency at all? (hard
+    mpi4py dep, 2 example scripts, 1 config, 0 production paths).
 ---
 
 ## The problem
@@ -140,10 +141,12 @@ scripts work #737 started.
    launcher worked. Shipped in the published image (CI rebuild).
 6. **Stale example config fix** (`7e7b7448`) — `config_mpi.ini` module names
    `*_runner`-suffixed to match the loader; surfaced running the real script.
-7. **MPI singleton preflight guard** (`2289e6a7`) — `check_mpi_world()` aborts on
-   `OMPI_COMM_WORLD_SIZE` ≠ `COMM_WORLD` size; unit + real-allocation tested.
-8. **Exit-code propagation fix** (`33494d74`) — `main()` returns `run()`'s value;
+7. **Exit-code propagation fix** (`33494d74`) — `main()` returns `run()`'s value;
    every caught error had been exiting 0. + regression test.
+
+Pulled from this PR (parked follow-up, gated on MPI being kept): the
+`check_mpi_world()` singleton preflight guard — prototyped + verified, recipe in
+Layer 4 above.
 
 ## Empirical close (2026-05-31) — two layers
 
@@ -201,26 +204,31 @@ because the repo's exercised path is SMP, not MPI.
 ## Layer 4 — silent-failure hardening (the "warning sign")
 
 A deeper pass on the singleton failure (option 5 in the spectrum above) turned
-up two more silent-failure paths and fixed both:
+up two more silent-failure paths. One was kept; one was prototyped, verified,
+then deliberately pulled back out (see below).
 
-**(a) No preflight guard against the singleton signature.** In the singleton
-case every process is master, `split_mpi_jobs(list, 1)` hands each the *full*
-job list, and they all run the whole pipeline into the same output dir — N
-uncoordinated copies, exit 0, plausible-but-wrong. Added `check_mpi_world()`
-(`mpi_run.py`, called at the top of `run_mpi`): compares the size that wired up
-(`COMM_WORLD`) against the size the launcher intended (`OMPI_COMM_WORLD_SIZE`)
-and aborts on a mismatch. Empirically: **`SLURM_NTASKS` is NOT usable** for this
-— it reads `1` on remote-node ranks even in a healthy run — `OMPI_COMM_WORLD_SIZE`
-is the reliable signal (it's `4` in both healthy and singleton; only `COMM_WORLD`
-differs). Commit `2289e6a7`, unit-tested + verified on a real allocation (healthy
-passes; OMPI-4-image-under-OMPI-5-host fires the abort).
+**(a) Swallowed exit code — KEPT (`33494d74`).** `main()` in `shapepipe_run.py`
+called `run(args)` without returning it, so `exit(main())` was always
+`exit(None)` → 0. **Every caught error in ShapePipe — not just MPI — has been
+exiting 0**, invisible to `exit $?` and CI. Fixed to `return run(args)` +
+regression test. Broad, simple, unrelated to MPI's fate, so it stays.
 
-**(b) Swallowed exit code (the bigger one).** Testing (a) end-to-end exposed that
-the guard fired and logged loudly but the job *still exited 0*: `main()` in
-`shapepipe_run.py` called `run(args)` without returning it, so `exit(main())` was
-always `exit(None)` → 0. **Every caught error in ShapePipe — not just MPI — has
-been exiting 0**, invisible to `exit $?` and CI. Fixed to `return run(args)`
-(`33494d74`) + regression test. With both, the broken case now exits 1.
+**(b) Singleton preflight guard — PROTOTYPED, then PULLED (`2289e6a7` reverted).**
+In the singleton case every process is master, `split_mpi_jobs(list, 1)` hands
+each the *full* job list, and they all run the whole pipeline into the same
+output dir — N uncoordinated copies, exit 0, plausible-but-wrong. The exit-code
+fix does **not** catch this: singletons don't raise, they "succeed" wrongly. A
+`check_mpi_world()` preflight was written and verified on a real allocation
+(healthy passes; OMPI-4-under-OMPI-5-host fires + exits non-zero). It was then
+removed from #737 as scope creep: the failure is already designed out on candide
+by the OpenMPI-5 match, it adds a runtime check to core `run.py`, and MPI's
+future is an open question (a hard `mpi4py` dependency used by only 2 example
+scripts — candide + ccin2p3 `cc_mpi.sh` — 1 config, and 0 production paths).
+**Recipe, if MPI is kept:** at the top of `run_mpi`, abort when
+`int(os.environ["OMPI_COMM_WORLD_SIZE"]) != comm.Get_size()`. The hard-won part
+is that signal choice — **`SLURM_NTASKS` is NOT usable** (reads `1` on
+remote-node ranks even when healthy); `OMPI_COMM_WORLD_SIZE` is `4` in both
+healthy and singleton, only `COMM_WORLD` differs.
 
 **Still open (distinct gap):** when rank 0 fails *mid-setup* for a non-singleton
 reason (e.g. the stale-config module error in Layer 3), ranks 1..N block in the
