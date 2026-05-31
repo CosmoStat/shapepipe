@@ -33,6 +33,7 @@ def split_mpi_jobs(jobs, batch_size):
 def submit_mpi_jobs(
     jobs,
     config,
+    module_config_sec,
     timeout,
     run_dirs,
     module_runner,
@@ -58,6 +59,7 @@ def submit_mpi_jobs(
                 w_log_name,
                 run_dirs,
                 config,
+                module_config_sec,
                 timeout,
                 module_runner,
             )
