@@ -36,6 +36,17 @@ way to get all of that is the container.
   sandbox with a host clone of the repo bind-mounted in and `pip install -e`
   pointed at it, so edits on the host are live inside the container.
 
+**Testing container changes: build remotely, pull locally.** Don't
+`apptainer build` images on a cluster — quotas are tight and the build is slow.
+The loop for any change to `Dockerfile` / `pyproject.toml` / `uv.lock` is: edit
+→ push → let GitHub Actions build and publish to GHCR → `apptainer pull
+docker://ghcr.io/cosmostat/shapepipe:<branch>[-runtime]` on the cluster → test.
+Watch the remote build with `gh run watch` (or `gh run list --branch <branch>`).
+The only things that run locally are the pull and the test. On a quota-limited
+cluster, keep SIFs and Apptainer's scratch off `$HOME`: point
+`APPTAINER_TMPDIR` / `APPTAINER_CACHEDIR` at a roomy data partition and pull
+SIFs there.
+
 Full detail: `docs/source/installation.md` and `docs/source/container.md`.
 
 ## Layout
