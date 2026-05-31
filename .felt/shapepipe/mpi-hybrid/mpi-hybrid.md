@@ -20,9 +20,12 @@ outcome: |-
     names without the _runner suffix → "No module named python_example" + a 5-min deadlock.
     Fixed in 7e7b7448. All three drifted undetected because the repo's exercised path is SMP,
     not MPI ([[shapepipe/exec-modes-schedulers]]); actual MPI run history (esp. canfar) is
-    unknown from here. Noted: MPI deadlocks on rank-0 failure instead of
-    failing fast (follow-up). REMAINING: Martin review + merge of #737; open question whether
-    MPI should be retired rather than maintained.
+    unknown from here. HARDENING PASS added a preflight guard (check_mpi_world, 2289e6a7: aborts
+    when OMPI_COMM_WORLD_SIZE != COMM_WORLD size — the singleton signature; SLURM_NTASKS is NOT
+    reliable for this) and, found while testing it, fixed a swallowed exit code (33494d74: main()
+    now returns run()'s value — every caught error had been exiting 0). Both tested + verified on
+    a real allocation. STILL OPEN: deadlock when rank 0 fails mid-setup for non-singleton reasons.
+    REMAINING: Martin review + merge of #737; open question whether MPI should be retired.
 ---
 
 ## The problem
@@ -137,6 +140,10 @@ scripts work #737 started.
    launcher worked. Shipped in the published image (CI rebuild).
 6. **Stale example config fix** (`7e7b7448`) — `config_mpi.ini` module names
    `*_runner`-suffixed to match the loader; surfaced running the real script.
+7. **MPI singleton preflight guard** (`2289e6a7`) — `check_mpi_world()` aborts on
+   `OMPI_COMM_WORLD_SIZE` ≠ `COMM_WORLD` size; unit + real-allocation tested.
+8. **Exit-code propagation fix** (`33494d74`) — `main()` returns `run()`'s value;
+   every caught error had been exiting 0. + regression test.
 
 ## Empirical close (2026-05-31) — two layers
 
@@ -191,12 +198,35 @@ the loader needs the full runner names (`python_example_runner`,
 example config drifted out of sync with the rest of the repo, undetected,
 because the repo's exercised path is SMP, not MPI.
 
-**Note — MPI deadlocks on rank-0 setup failure** instead of failing fast: when
-rank 0 errored on the bad module name, the other ranks blocked in a collective
-until SLURM killed the job at the wall clock. This is exactly the failure mode
-the "preflight self-check / fail loudly" item (option 5 in the spectrum above)
-guards against — worth a follow-up so a stale config or desync surfaces as an
-immediate error, not a silent 5-minute hang. Out of scope for #737.
+## Layer 4 — silent-failure hardening (the "warning sign")
+
+A deeper pass on the singleton failure (option 5 in the spectrum above) turned
+up two more silent-failure paths and fixed both:
+
+**(a) No preflight guard against the singleton signature.** In the singleton
+case every process is master, `split_mpi_jobs(list, 1)` hands each the *full*
+job list, and they all run the whole pipeline into the same output dir — N
+uncoordinated copies, exit 0, plausible-but-wrong. Added `check_mpi_world()`
+(`mpi_run.py`, called at the top of `run_mpi`): compares the size that wired up
+(`COMM_WORLD`) against the size the launcher intended (`OMPI_COMM_WORLD_SIZE`)
+and aborts on a mismatch. Empirically: **`SLURM_NTASKS` is NOT usable** for this
+— it reads `1` on remote-node ranks even in a healthy run — `OMPI_COMM_WORLD_SIZE`
+is the reliable signal (it's `4` in both healthy and singleton; only `COMM_WORLD`
+differs). Commit `2289e6a7`, unit-tested + verified on a real allocation (healthy
+passes; OMPI-4-image-under-OMPI-5-host fires the abort).
+
+**(b) Swallowed exit code (the bigger one).** Testing (a) end-to-end exposed that
+the guard fired and logged loudly but the job *still exited 0*: `main()` in
+`shapepipe_run.py` called `run(args)` without returning it, so `exit(main())` was
+always `exit(None)` → 0. **Every caught error in ShapePipe — not just MPI — has
+been exiting 0**, invisible to `exit $?` and CI. Fixed to `return run(args)`
+(`33494d74`) + regression test. With both, the broken case now exits 1.
+
+**Still open (distinct gap):** when rank 0 fails *mid-setup* for a non-singleton
+reason (e.g. the stale-config module error in Layer 3), ranks 1..N block in the
+following `bcast`/`scatter` until the wall clock — the guard runs *before* module
+loading, so it doesn't cover this. Fixing it needs collective error propagation
+(rank 0 signalling failure before the barrier). Left as a follow-up.
 
 **Genuinely verified end to end** (job 780660): the unmodified `candide_mpi.sh`
 against the freshly-published `:cleanup-candide-scripts-container-runtime` image
