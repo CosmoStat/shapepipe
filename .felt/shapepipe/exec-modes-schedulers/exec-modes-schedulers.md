@@ -31,6 +31,18 @@ importable, mode is forced to `smp`.
   code bug couldn't surface here. Whether MPI was run elsewhere (canfar especially,
   which we can't see) is unknown — what's clear is the repo's tooling is all SMP.
 
+**SMP and MPI are the same computation behind two dispatchers.** Both call the
+identical `WorkerHandler.worker()` with the identical 8 args (`job_handler._distribute_smp_jobs`
+vs `mpi_run.submit_mpi_jobs`). The MPI path's only inter-rank traffic is `bcast`
+of setup objects, one `scatter` of the independent job-list, and one `gather` of
+result dicts — `worker_handler.py` (the actual work) has zero MPI in it. No
+`Send`/`Recv`/`Allreduce`/`Barrier` during compute. That's the signature of an
+**embarrassingly parallel** workload: MPI provides no computational capability
+that SMP-on-a-node-plus-a-scheduler lacks — it's a job-distribution convenience
+(one `mpirun` spanning nodes vs. the submission layer fanning out per-node jobs).
+This is what grounds the "is MPI worth keeping?" question to Martin — observed
+from the comm pattern, not inferred from usage.
+
 Note `MODE` is overloaded across config sections — `CLASSIC`, `MULTI-EPOCH`,
 `FIT_VALIDATION`, `VALIDATION` are *module* modes (PSF / ngmix), not `[EXECUTION]`
 modes. Only `smp`/`mpi` live under `[EXECUTION]`.
@@ -62,6 +74,11 @@ actually used is a question for the people who ran it, not something the repo ca
   unblocking some known-active workload.
 - Production scripts (SMP + SLURM + conda) are untouched by #737 and out of scope; they're
   also **not yet containerized** — a future gap to name.
-- **Open question for Martin / the team:** is multi-node MPI still needed, or has
-  SMP-under-SLURM become how things are run? He'd know the real history; the repo only
-  shows the tooling. If MPI isn't used, retiring it may beat maintaining it.
+- **Decision deferred to Martin (asked in #737):** is MPI worth getting working /
+  maintaining on candide at all, or should candide just use SMP (which works through
+  the container — `candide_smp.sh`)? Given SMP and MPI are the same computation, MPI
+  earns its keep only as an ergonomic convenience. We do *not* retire it unilaterally —
+  it's a documented public mode; #737 leaves it in working order and Martin makes the
+  call. If kept, add a CI smoke so it can't silently rot again; if dropped, removal is
+  clean and contained (`mpi_run.py`, `run_mpi`, the `import_mpi` branches, `mpi4py`,
+  `candide_mpi.sh`).
