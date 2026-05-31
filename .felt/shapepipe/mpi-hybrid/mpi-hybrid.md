@@ -7,7 +7,19 @@ tags:
     - container
     - candide
 created-at: 2026-05-31T12:22:50.017370879+02:00
-outcome: 'Container shipped OpenMPI 4.1.4/PMIx2 vs candide host OpenMPI 5.0.x/PMIx5 → hybrid MPI gave N rank-0 singletons. Fix on #737 branch: build OpenMPI 5.0.8 from source (--disable-dlopen, bundled PMIx5/PRRTE), drop libopenmpi-dev, keep mpi4py wheel (uv.lock untouched); SLURM-ify candide scripts (#SBATCH, module load openmpi, mpirun -n $SLURM_NTASKS apptainer exec); CI publishes on every branch push for cluster-testable PR images. Committed+pushed; e2e candide test pending CI image publish.'
+outcome: |-
+    Two independent bugs, both fixed, verified e2e on candide. (1) LAUNCHER: container
+    shipped OpenMPI 4.1.4/PMIx2 vs candide host 5.0.x/PMIx5 → hybrid MPI gave N rank-0
+    singletons. Fixed by building OpenMPI 5.0.8 from source in the image (--disable-dlopen,
+    bundled PMIx5/PRRTE), dropping libopenmpi-dev, keeping the mpi4py wheel (uv.lock
+    untouched); SLURM-ified candide scripts; CI now publishes on every branch push.
+    (2) SHAPEPIPE CODE: with ranks finally wired up, shapepipe_run under MPI hit
+    "worker() missing module_runner" — a latent bug since #415 (mpi_run.py never updated
+    when worker() gained module_config_sec), invisible for 16mo because MPI is the legacy
+    path (SMP is production). Fixed in e5999733. Re-verified (job 780655, host-src bind
+    over PR image): 4 ranks n23+n25, all 3 modules ran, real RUN_EXIT=0, 0 errors.
+    REMAINING: rebuild published image with the code fix (push→CI), then Martin review +
+    merge of #737.
 ---
 
 ## The problem
@@ -117,8 +129,62 @@ scripts work #737 started.
    (`example/pbs/config_mpi.ini` already existed and is correct.)
 3. **docs / CLAUDE.md** — hybrid-MPI run pattern; build-remotely/pull-locally loop.
 4. **CI** — publish on every branch push so PR images are cluster-testable.
+5. **ShapePipe MPI code fix** (`e5999733`) — thread `module_config_sec` through
+   `run_mpi`/`submit_mpi_jobs`/`worker()`; the latent #415 bug surfaced once the
+   launcher worked. Needs an image rebuild to ship.
 
-**Still open:** end-to-end hybrid test on candide once CI publishes the
-`:cleanup-candide-scripts-container-runtime` image — pull it, run the example
-pipeline under `mpirun -n 4 apptainer exec`, confirm distinct ranks (not the
-singleton signature) and 0 errors. That's the empirical close on the whole fix.
+## Empirical close (2026-05-31) — two layers
+
+The fix turned out to have **two independent layers**. The launcher fix
+(above) was necessary but not sufficient: making the ranks actually wire up
+exposed a second, latent bug in ShapePipe's own MPI code.
+
+**Layer 1 — launcher (PMIx), verified.** Pulled the PR image on candide and
+ran the rank wire-up check (2 nodes, 4 tasks, `module load openmpi` → `mpirun
+-n 4 apptainer exec … python -m mpi4py.bench helloworld`):
+
+```
+Hello, World! I am process 0 of 4 on n23.
+Hello, World! I am process 1 of 4 on n23.
+Hello, World! I am process 2 of 4 on n25.
+Hello, World! I am process 3 of 4 on n25.
+```
+
+One 4-rank job spanning two nodes — the exact inverse of the pre-fix 4×
+"rank 0 of 1". Image reports `Open MPI: 5.0.8`. ✓
+
+**Layer 2 — ShapePipe MPI code, was broken, now fixed.** With the ranks wired
+up, the actual `shapepipe_run` under MPI immediately hit:
+
+```
+ERROR: WorkerHandler.worker() missing 1 required positional argument: 'module_runner'
+```
+
+A latent bug since PR #415: `worker()` gained a `module_config_sec` parameter
+and `pipeline/mpi_run.py:submit_mpi_jobs` was never updated, so it passed 7
+args where 8 are required. Invisible for 16 months because **nobody runs MPI**
+— SMP is the production path (see [[shapepipe/exec-modes-schedulers]]) and the
+PMIx mismatch meant MPI never even started on candide. Fixed by threading
+`module_config_sec` through `run_mpi` → `submit_mpi_jobs` → `worker()` (commit
+`e5999733`), matching the SMP/serial call sites.
+
+**Re-verified end to end** (job 780655, PR image with the working-tree `src`
+bind-mounted over `/app/src` so the fix is exercised without an image rebuild):
+fixed `submit_mpi_jobs` signature live in-container, 4 ranks across n23+n25,
+all three modules (`python`/`serial`/`execute_example_runner`) produced output
+trees, real `RUN_EXIT=0`, and `shapepipe.log` records *"A total of 0 errors
+were recorded."* **Now genuinely verified.**
+
+> Correction: an earlier close claimed the full pipeline ran clean at this
+> point. It did not — that run hit the Layer-2 error and the sbatch script's
+> `RUN_EXIT=0` was a hardcoded `echo`, not the real exit code. The launcher
+> half was real; the pipeline half was not, until the code fix above.
+
+**Remaining:** bake the code fix into the published image (push → CI rebuild
+of `:cleanup-candide-scripts-container-runtime`), then Martin's review + merge
+of #737.
+
+(Note: the in-image `mpi4py` import looks absent under `bash -lc` because the
+login shell resets PATH off the venv — a probe artifact, not real; the actual
+`mpirun apptainer exec python -m mpi4py.bench` run resolves it via the image's
+default PATH and wires up fine, as the helloworld output shows.)
