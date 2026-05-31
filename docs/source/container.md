@@ -91,44 +91,6 @@ in, all because something tries to write under `/app` or `$HOME`:
 If you bypass `/tmp` (e.g. with a custom apptainer profile) you may need
 to override these manually.
 
-## Running on a cluster (SLURM)
-
-On a batch cluster you pull the slim `runtime` image once to a SIF, then
-submit a job that runs `shapepipe_run` through it. The repo ships ready
-SLURM scripts for the **candide** cluster in `example/pbs/` —
-`candide_smp.sh` (single node) and `candide_mpi.sh` (multi-node hybrid
-MPI) — that you can copy and adapt. The example below runs the bundled
-single-tile pipeline end to end:
-
-```bash
-# 1. Keep the SIF and Apptainer's scratch off the quota-limited $HOME.
-#    On candide a pull under $HOME fails with "disk quota exceeded";
-#    point both at a roomy data partition instead.
-export DATA=/n17data/$USER                 # adjust to your data partition
-export APPTAINER_CACHEDIR=$DATA/.apptainer
-
-# 2. Pull the runtime image (~850 MB).
-apptainer pull "$DATA/shapepipe-runtime.sif" \
-    docker://ghcr.io/cosmostat/shapepipe:develop-runtime
-
-# 3. Submit the example pipeline. SPDIR is your local clone; it is
-#    bind-mounted at the same path inside the container so the config's
-#    $SPDIR-relative input/output directories resolve identically in and
-#    out of the container.
-SP_IMAGE="$DATA/shapepipe-runtime.sif" SPDIR="/path/to/shapepipe" \
-    sbatch example/pbs/candide_smp.sh
-```
-
-Both job scripts read `SP_IMAGE` (the SIF) and `SPDIR` (the clone) from
-the environment, so the same script serves the example and a real run —
-point the config inside the script at your own pipeline. The MPI script
-additionally needs the host's OpenMPI to match the container's PMIx wire
-protocol; it `module load`s a compatible OpenMPI (the image ships the
-5.0.x series), and the script's header comments explain the contract.
-
-Adapting to another SLURM cluster is mostly the `#SBATCH` directives and
-the `module load` line — the `apptainer exec` invocation carries over.
-
 ## Three configuration layers
 
 Three files determine what the image contains. Each has a clear role; the
