@@ -16,44 +16,40 @@ ShapePipe
   :target: https://github.com/CosmoStat/shapepipe/releases/latest
 
 ShapePipe is a galaxy shape measurement pipeline developed within the
-CosmoStat lab at CEA Paris-Saclay.
+CosmoStat lab at CEA Paris-Saclay. It runs the full chain from raw survey
+images to calibrated shear catalogues — object detection, PSF modelling, and
+shape measurement — and produced the first UNIONS cosmic-shear release.
 
-See the `documentation <https://cosmostat.github.io/shapepipe>`_ for details
-on how to install and run ShapePipe.
+Quickstart
+----------
 
-Quickstart on a cluster (candide)
----------------------------------
-
-ShapePipe ships as a container image — the supported way to run it (see
-``docs/source/container.md``). On a SLURM cluster such as candide, pull the slim
-``runtime`` image once and submit the bundled example, which runs the pipeline
-on a single CFIS tile:
+ShapePipe ships as a container image, so you can run the bundled example
+pipeline — a single CFIS tile through the full chain — without installing
+anything:
 
 .. code-block:: bash
 
-    # 0. Get a clone (holds the example configs, data, and job scripts).
-    git clone https://github.com/CosmoStat/shapepipe.git
-    cd shapepipe
+    # Apptainer (HPC, no root needed):
+    apptainer exec docker://ghcr.io/cosmostat/shapepipe:develop-runtime shapepipe_run_example
 
-    # 1. Keep the SIF and Apptainer's scratch off the quota-limited $HOME.
-    #    candide's home quota is tight; a pull there fails with "disk quota
-    #    exceeded". Point both at a roomy data partition instead.
-    export DATA=/n17data/$USER                 # adjust to your data partition
-    export APPTAINER_CACHEDIR=$DATA/.apptainer
+    # ...or Docker:
+    docker run --rm ghcr.io/cosmostat/shapepipe:develop-runtime shapepipe_run_example
 
-    # 2. Pull the runtime image (≈850 MB).
-    apptainer pull "$DATA/shapepipe-runtime.sif" \
-        docker://ghcr.io/cosmostat/shapepipe:develop-runtime
+The image is published on every push to the `GitHub Container Registry
+<https://github.com/CosmoStat/shapepipe/pkgs/container/shapepipe>`_:
+``:develop`` tracks the integration branch, release tags (e.g. ``:v1.1.0``) a
+stable cut, and the ``-runtime`` suffix selects the slim batch image over the
+full interactive one.
 
-    # 3. Submit the example pipeline (SMP, single node).
-    SP_IMAGE="$DATA/shapepipe-runtime.sif" SPDIR="$PWD" \
-        sbatch example/pbs/candide_smp.sh
+Documentation
+-------------
 
-A clean run logs ``A total of 0 errors were recorded`` and exits ``0``. To span
-multiple nodes with hybrid MPI, swap in ``example/pbs/candide_mpi.sh`` (same two
-variables) — see the comments in each script for the SLURM directives.
+Full documentation lives at https://cosmostat.github.io/shapepipe. Good places
+to start:
 
-The ``:develop-runtime`` tag tracks the integration branch; for a stable cut use
-a release tag (e.g. ``:v1.1.0-runtime``). The interactive ``dev`` image (no
-``-runtime`` suffix) carries ``vim``, ``pytest``, and the full toolchain for
-working *inside* the container; ``docs/source/container.md`` covers both.
+- `Installation <https://cosmostat.github.io/shapepipe/installation.html>`_ — getting ShapePipe onto your machine or cluster.
+- `Basic execution <https://cosmostat.github.io/shapepipe/basic_execution.html>`_ and `configuration <https://cosmostat.github.io/shapepipe/configuration.html>`_ — running ``shapepipe_run`` and writing pipeline configs.
+- `Container workflow <https://cosmostat.github.io/shapepipe/container.html>`_ — the two image targets, the ``pyproject.toml`` / ``uv.lock`` / ``Dockerfile`` layers, and how to run on a SLURM cluster (with a worked candide example).
+
+If you use ShapePipe in academic work, please cite Guinot et al. (2022) and
+Farrens et al. (2022).
