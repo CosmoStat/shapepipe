@@ -8,18 +8,20 @@ tags:
     - candide
 created-at: 2026-05-31T12:22:50.017370879+02:00
 outcome: |-
-    Two independent bugs, both fixed, verified e2e on candide. (1) LAUNCHER: container
-    shipped OpenMPI 4.1.4/PMIx2 vs candide host 5.0.x/PMIx5 → hybrid MPI gave N rank-0
-    singletons. Fixed by building OpenMPI 5.0.8 from source in the image (--disable-dlopen,
-    bundled PMIx5/PRRTE), dropping libopenmpi-dev, keeping the mpi4py wheel (uv.lock
-    untouched); SLURM-ified candide scripts; CI now publishes on every branch push.
-    (2) SHAPEPIPE CODE: with ranks finally wired up, shapepipe_run under MPI hit
-    "worker() missing module_runner" — a latent bug since #415 (mpi_run.py never updated
-    when worker() gained module_config_sec), invisible for 16mo because MPI is the legacy
-    path (SMP is production). Fixed in e5999733. Re-verified (job 780655, host-src bind
-    over PR image): 4 ranks n23+n25, all 3 modules ran, real RUN_EXIT=0, 0 errors.
-    REMAINING: rebuild published image with the code fix (push→CI), then Martin review +
-    merge of #737.
+    THREE layers of MPI bit-rot, all fixed, verified e2e on candide via the unmodified
+    candide_mpi.sh against the published image (job 780660: 4 ranks/2 nodes, all 3 modules,
+    0 errors, real exit 0). (1) LAUNCHER: container shipped OpenMPI 4.1.4/PMIx2 vs candide
+    host 5.0.x/PMIx5 → hybrid MPI gave N rank-0 singletons. Fixed by building OpenMPI 5.0.8
+    from source in the image (--disable-dlopen, bundled PMIx5/PRRTE), dropping libopenmpi-dev,
+    keeping the mpi4py wheel (uv.lock untouched); SLURM-ified candide scripts; CI publishes on
+    every branch push. (2) SHAPEPIPE CODE: with ranks wired up, shapepipe_run hit "worker()
+    missing module_runner" — latent since #415 (mpi_run.py never updated when worker() gained
+    module_config_sec). Fixed in e5999733. (3) STALE CONFIG: config_mpi.ini used pre-2020 module
+    names without the _runner suffix → "No module named python_example" + a 5-min deadlock.
+    Fixed in 7e7b7448. All three hid for years because nobody runs MPI (SMP is production,
+    [[shapepipe/exec-modes-schedulers]]). Noted: MPI deadlocks on rank-0 failure instead of
+    failing fast (follow-up). REMAINING: Martin review + merge of #737; open question whether
+    MPI should be retired rather than maintained.
 ---
 
 ## The problem
@@ -131,7 +133,9 @@ scripts work #737 started.
 4. **CI** — publish on every branch push so PR images are cluster-testable.
 5. **ShapePipe MPI code fix** (`e5999733`) — thread `module_config_sec` through
    `run_mpi`/`submit_mpi_jobs`/`worker()`; the latent #415 bug surfaced once the
-   launcher worked. Needs an image rebuild to ship.
+   launcher worked. Shipped in the published image (CI rebuild).
+6. **Stale example config fix** (`7e7b7448`) — `config_mpi.ini` module names
+   `*_runner`-suffixed to match the loader; surfaced running the real script.
 
 ## Empirical close (2026-05-31) — two layers
 
@@ -168,21 +172,40 @@ PMIx mismatch meant MPI never even started on candide. Fixed by threading
 `module_config_sec` through `run_mpi` → `submit_mpi_jobs` → `worker()` (commit
 `e5999733`), matching the SMP/serial call sites.
 
-**Re-verified end to end** (job 780655, PR image with the working-tree `src`
-bind-mounted over `/app/src` so the fix is exercised without an image rebuild):
-fixed `submit_mpi_jobs` signature live in-container, 4 ranks across n23+n25,
-all three modules (`python`/`serial`/`execute_example_runner`) produced output
-trees, real `RUN_EXIT=0`, and `shapepipe.log` records *"A total of 0 errors
-were recorded."* **Now genuinely verified.**
+Verified with a host-src override (job 780655): fixed `submit_mpi_jobs`
+signature live in-container, 4 ranks across n23+n25, all three modules
+produced output, real `RUN_EXIT=0`, 0 errors.
 
-> Correction: an earlier close claimed the full pipeline ran clean at this
-> point. It did not — that run hit the Layer-2 error and the sbatch script's
-> `RUN_EXIT=0` was a hardcoded `echo`, not the real exit code. The launcher
-> half was real; the pipeline half was not, until the code fix above.
+**Layer 3 — stale example config, now fixed.** With the code fix baked into
+the published image, the *actual* unmodified `candide_mpi.sh` against
+`config_mpi.ini` first hit `No module named 'shapepipe.modules.python_example'`
+then deadlocked to the 5-min wall clock. `config_mpi.ini` (last touched 2020)
+still used the pre-suffix module names (`python_example`, `[PYTHON_EXAMPLE]`);
+the loader needs the full runner names (`python_example_runner`,
+`[PYTHON_EXAMPLE_RUNNER]`), as `example/config.ini` uses. Updated to match
+(commit `7e7b7448`). Same root cause as Layers 1–2: nobody runs MPI, so its
+example config rotted too.
 
-**Remaining:** bake the code fix into the published image (push → CI rebuild
-of `:cleanup-candide-scripts-container-runtime`), then Martin's review + merge
-of #737.
+**Note — MPI deadlocks on rank-0 setup failure** instead of failing fast: when
+rank 0 errored on the bad module name, the other ranks blocked in a collective
+until SLURM killed the job at the wall clock. This is exactly the failure mode
+the "preflight self-check / fail loudly" item (option 5 in the spectrum above)
+guards against — worth a follow-up so a stale config or desync surfaces as an
+immediate error, not a silent 5-minute hang. Out of scope for #737.
+
+**Genuinely verified end to end** (job 780660): the unmodified `candide_mpi.sh`
+against the freshly-published `:cleanup-candide-scripts-container-runtime` image
+(fix baked in, no override) ran the example pipeline — 4 ranks / 2 nodes, all
+three `*_example_runner` modules produced output trees, *"A total of 0 errors
+were recorded"*, real exit 0 (the script's `exit $?`). The deliverable script
+itself works.
+
+> Correction: an earlier close claimed the full pipeline ran clean before any
+> code fix. It did not — that run hit the Layer-2 error and the sbatch script's
+> `RUN_EXIT=0` was a hardcoded `echo`, not the real exit code. The launcher half
+> was real; the pipeline half was not, until the fixes above.
+
+**Remaining:** Martin's review + merge of #737.
 
 (Note: the in-image `mpi4py` import looks absent under `bash -lc` because the
 login shell resets PATH off the venv — a probe artifact, not real; the actual
