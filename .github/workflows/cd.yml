@@ -4,11 +4,31 @@ name: Deploy API Docs
 # environment everything else uses — no conda) and publish to gh-pages.
 # autodoc imports shapepipe, so it needs the full runtime; the dev image's
 # `doc` extra provides sphinx + myst-parser + the theme on top of that.
+#
+# The published site is versioned. Each ref builds at its own time, in its own
+# image, into its own slice of the gh-pages branch:
+#   master / main  -> site root           (stable; keeps existing URLs working)
+#   develop        -> /latest/
+#   tags  v*       -> /<tag>/             (e.g. /v1.1.0/)
+# A `switcher.json` at the site root drives the version dropdown. Pull requests
+# build the docs and upload them as an artifact, but do not deploy — so a broken
+# docs build is caught before merge, and reviewers can preview the rendered HTML.
 on:
   push:
     branches:
       - master
       - main
+      - develop
+    tags:
+      - "v*"
+  # On PRs, build + upload the docs (no deploy) only when something that affects
+  # them changes, so a broken docs build is caught before merge.
+  pull_request:
+    paths:
+      - "docs/**"
+      - "src/**"
+      - "pyproject.toml"
+      - ".github/workflows/cd.yml"
   workflow_dispatch:
 
 jobs:
@@ -19,6 +39,20 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Resolve version slug
+        id: slug
+        # Map the pushed ref to a version label (DOCS_VERSION, used by conf.py to
+        # highlight the switcher) and a gh-pages destination directory ("." = root).
+        run: |
+          case "${GITHUB_REF}" in
+            refs/tags/*)        slug="${GITHUB_REF#refs/tags/}"; dir="${slug}" ;;
+            refs/heads/develop) slug="latest";                  dir="latest"  ;;
+            refs/heads/master|refs/heads/main) slug="stable";   dir="."       ;;
+            *)                  slug="latest";                  dir="latest"  ;;
+          esac
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+          echo "dir=$dir"   >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
@@ -37,16 +71,40 @@ jobs:
 
       # Generate API stubs and build the HTML inside the image. docs/ is
       # bind-mounted so sphinx-apidoc's generated rst and the _build output
-      # land back on the runner for the deploy step.
+      # land back on the runner for the deploy step. DOCS_VERSION tells conf.py
+      # which version this build represents (for the switcher highlight).
       - name: Build API documentation
         run: |
-          docker run --rm -v "${GITHUB_WORKSPACE}/docs:/app/docs" shapepipe-dev:docs bash -c "
-            sphinx-apidoc -t docs/_templates -feTMo docs/source shapepipe shapepipe/modules/*_runner.py &&
-            sphinx-build -E docs/source docs/_build
-          "
+          docker run --rm -e DOCS_VERSION="${{ steps.slug.outputs.slug }}" \
+            -v "${GITHUB_WORKSPACE}/docs:/app/docs" shapepipe-dev:docs bash -c "
+              sphinx-apidoc -t docs/_templates -feTMo docs/source shapepipe shapepipe/modules/*_runner.py &&
+              sphinx-build -E docs/source docs/_build
+            "
 
+      - name: Upload built HTML as artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: docs-html-${{ steps.slug.outputs.slug }}
+          path: docs/_build
+
+      # Stage the gh-pages payload: the build under its version directory, plus a
+      # fresh switcher.json at the root so the dropdown stays current whenever any
+      # version is published.
+      - name: Stage versioned site
+        if: github.event_name != 'pull_request'
+        run: |
+          target="site"
+          [ "${{ steps.slug.outputs.dir }}" != "." ] && target="site/${{ steps.slug.outputs.dir }}"
+          mkdir -p "$target"
+          cp -r docs/_build/. "$target"/
+          cp docs/switcher.json site/switcher.json
+
+      # keep_files: true so each deploy only writes its own version directory (and
+      # the root switcher.json) and never wipes the other versions on the branch.
       - name: Deploy API documentation
+        if: github.event_name != 'pull_request'
         uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/_build
+          publish_dir: site
+          keep_files: true

@@ -14,6 +14,8 @@
 #
 import os
 import sys
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _get_version
 
 sys.path.insert(0, os.path.abspath("../.."))
 
@@ -23,10 +25,15 @@ project = "ShapePipe"
 copyright = "2022, CosmoStat"
 author = "CosmoStat"
 
-# The short X.Y version
-version = "1.0"
-# The full version, including alpha/beta/rc tags
-release = "1.0.1"
+# The version is read from the installed package metadata, so the docs never
+# carry a hand-maintained (and inevitably stale) version string.
+try:
+    # The full version, including any alpha/beta/rc tags.
+    release = _get_version("shapepipe")
+except PackageNotFoundError:
+    release = "0.0.0"
+# The short X.Y version.
+version = ".".join(release.split(".")[:2])
 
 
 # -- General configuration ---------------------------------------------------
@@ -117,6 +124,19 @@ html_theme_options = {
     "use_edit_page_button": True,
     "path_to_docs": "docs/source",
     "extra_navbar": "<p></p>",
+    # -- Version switcher ----------------------------------------------------
+    # The published docs are versioned: stable (master) lives at the site root,
+    # `latest` (develop) and tagged releases live in sub-directories, and this
+    # dropdown moves between them. `switcher.json` (deployed to the site root)
+    # lists the versions; DOCS_VERSION tells the build which one it is, so the
+    # dropdown highlights the right entry. The CI deploy sets it to the slug it
+    # publishes ("stable", "latest", or a tag like "v1.1.0"); local builds
+    # default to "latest".
+    "switcher": {
+        "json_url": "https://cosmostat.github.io/shapepipe/switcher.json",
+        "version_match": os.environ.get("DOCS_VERSION", "latest"),
+    },
+    "navbar_end": ["version-switcher", "navbar-icon-links"],
 }
 html_collapsible_definitions = True
 html_awesome_headerlinks = True
