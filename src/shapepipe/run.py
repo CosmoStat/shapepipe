@@ -20,11 +20,7 @@ from shapepipe.pipeline.config import create_config_parser
 from shapepipe.pipeline.dependency_handler import DependencyHandler
 from shapepipe.pipeline.file_handler import FileHandler
 from shapepipe.pipeline.job_handler import JobHandler
-from shapepipe.pipeline.mpi_run import (
-    check_mpi_world,
-    split_mpi_jobs,
-    submit_mpi_jobs,
-)
+from shapepipe.pipeline.mpi_run import split_mpi_jobs, submit_mpi_jobs
 
 try:
     from mpi4py import MPI
@@ -375,11 +371,6 @@ def run_mpi(pipe, comm):
     """
     # Assign master node
     master = comm.rank == 0
-
-    # Fail loudly if the MPI world did not form at the size the launcher
-    # requested (the "rank 0 of N singletons" launcher/container mismatch),
-    # rather than silently running redundant copies of the pipeline.
-    check_mpi_world(comm)
 
     # Get the module to be run
     modules = pipe.modules if master else None
