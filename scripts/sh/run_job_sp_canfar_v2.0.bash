@@ -20,6 +20,10 @@ N_SMP=1
 dry_run=0
 dir=`pwd`
 debug_out=""
+
+# Input type: data or image_sims
+type="data"
+
 #scratch="/scratch/$USER/shapepipe/v${version}"
 scratch=""
 test_only=0
@@ -40,6 +44,7 @@ ${JOB_LIST_HELP}   -e, --exclusive ID\timage ID\n
    \t\t\tPSF model, one in ['psfex'|'mccd'], default='$psf'\n
    --tile_det DET\t\ttile detection mode, one in ['sx'|'uc'], default='$tile_det'\n
    --tile_mask MASK\ttile masking, default='$tile_mask'\n
+   -t, --type TYPE input type, allowed are 'data', 'image_sims', default='$type'\n
    -N, --N_SMP N_SMP\tnumber of SMP jobs, default from original config files\n
    -d, --directory DIR\trun directory, default is pwd ($dir)\n
    -S, --scratch DIR\tprocessing scratch directory, default=none\n
@@ -73,6 +78,10 @@ while [ $# -gt 0 ]; do
       ;;
     -p|--psf)
       psf="$2"
+      shift
+      ;;
+    -t|--type)
+      type="$2"
       shift
       ;;
     --tile_det)
@@ -128,12 +137,18 @@ function message() {
   if [ -n "$my_debug_out" ]; then
     echo ${pat}$msg >> $my_debug_out
   fi
+  if [ -n "$log_file" ]; then
+    echo ${pat}$msg >> $log_file
+  fi
 
   if [ "$my_exit" != "-1" ]; then
     if [ -n "$my_debug_out" ]; then
       echo "${pat}exiting with code $my_exit" >> $my_debug_out
     else
       echo "${pat}exiting with code $my_exit"
+    fi
+    if [ -n "$log_file" ]; then
+      echo "${pat}exiting with code $my_exit" >> $log_file
     fi
     exit $my_exit
   fi
@@ -158,7 +173,7 @@ function init_exp_work_dir() {
   fi
 
   if [ ! -e "$exp_work_dir/cfis" ]; then
-    ln -sf ~/shapepipe/example/cfis "$exp_work_dir/cfis"
+    ln -sf $config_dir "$exp_work_dir/cfis"
   fi
 }
 
@@ -312,7 +327,7 @@ function run_exp_job() {
 
     echo "$(basename "$0") -j $exp_job -e $exp_id" > "$exp_log_file"
     echo "pwd=`pwd`"
-    command "job_sp_canfar_v2.0.bash -p $psf --tile_det $tile_det --tile_mask $tile_mask -j $exp_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$exp_log_file"
+    command "job_sp_canfar_v2.0.bash -p $psf -r $retrieve --tile_det $tile_det --tile_mask $tile_mask -j $exp_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$exp_log_file"
     echo "Done with job_sp_canfar_v2.0.bash"
 
   done < "$exp_numbers_file"
@@ -440,14 +455,40 @@ function run_tile_job() {
   [ -n "$debug_out" ] && debug_flag="--debug_out $debug_out"
 
   if [ ! -e "cfis" ]; then
-    ln -sf ~/shapepipe/example/cfis "cfis"
+    ln -sf $config_dir cfis
   fi
 
   command "update_runs_log_file.py" $dry_run
 
   # Run job script
-  command "job_sp_canfar_v2.0.bash -p $psf --tile_det $tile_det --tile_mask $tile_mask -j $tile_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$log_file"
+  command "job_sp_canfar_v2.0.bash -p $psf -r $retrieve --tile_det $tile_det --tile_mask $tile_mask -j $tile_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$log_file"
 }
+
+
+if [ "$type" == "data" ]; then
+
+    echo "Running on data"
+    retrieve="vos"
+    config_dir=$HOME/shapepipe/example/cfis
+
+elif [ "$type" == "image_sims" ]; then
+
+    echo "Running on image simulations"
+    retrieve="symlink"
+    config_dir=$HOME/shapepipe/example/cfis_image_sims
+    # SP_DIR points to the run directory (grid level) where input_tiles and
+    # input_exp live; configs use $SP_DIR/input_* so those dirs stay outside
+    # SP_RUN and are not found twice by ShapePipe's recursive glob scan.
+    export SP_DIR=$dir
+
+else
+
+    echo "Invalid input type $type" 
+
+fi
+
+echo "config_dir=$config_dir"
+
 
 # Init message
 if [ "$test_only" == "1" ]; then
@@ -503,16 +544,25 @@ log_file="$work_dir/job_sp_canfar_v2.0.log"
 # Create tile work directory
 [ ! -d "$work_dir" ] && command "mkdir -p $work_dir" $dry_run
 cd $work_dir
+echo "$0 $@" > "$log_file"
 
 # Write ID to first input
+# Image sims use dash format (e.g. 233-293); real data uses dot format (233.293)
+# which ShapePipe's in2out_pattern converts to dashes for output naming only,
+# not for input file lookup — so write the format that matches the actual files.
 if [ ! -e tile_numbers.txt ]; then
-  echo $ID > tile_numbers.txt
+  if [ "$type" == "image_sims" ]; then
+    echo ${ID//./-} > tile_numbers.txt
+  else
+    echo $ID > tile_numbers.txt
+  fi
 fi
 
 # Output directory
 if [ ! -d "output" ]; then
   command "mkdir output" $dry_run
 fi
+
 
 echo -n "pwd: "; pwd
 
@@ -542,8 +592,19 @@ fi
 
 (( do_job = job & 2 ))
 if [[ $do_job != 0 ]]; then
-  # Job 2: uncompress tile weights
-  run_tile_job 2 "Uz" "uncompress_fits_runner:1"
+  if [ "$type" == "image_sims" ]; then
+    # Image sims weights are already uncompressed; fake the Uz output directory
+    # so downstream jobs can find the weight via last:uncompress_fits_runner.
+    uz_out="$work_dir/output/run_sp_tile_Uz/uncompress_fits_runner/output"
+    command "mkdir -p $uz_out" $dry_run
+    weight_src="$dir/input_tiles/CFIS_simu_weight-${ID//./-}.fits"
+    if [ -e "$weight_src" ] && [ ! -e "$uz_out/$(basename $weight_src)" ]; then
+      command "ln -sf $weight_src $uz_out/$(basename $weight_src)" $dry_run
+    fi
+  else
+    # Job 2: uncompress tile weights
+    run_tile_job 2 "Uz" "uncompress_fits_runner:1"
+  fi
 fi
 
 (( do_job = job & 4 ))

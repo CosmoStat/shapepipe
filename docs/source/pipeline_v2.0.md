@@ -5,7 +5,7 @@ Documentation to create ShapePipe output products for catalogues v2.x.
 ## Initialise directory structure
 
 ```bash
-init_run_v2.0.sh
+init_run_v2.0.sh [-t data|image_sims]
 ```
 sets up the directory structure. This will be
 
@@ -19,8 +19,8 @@ v2.0/
 │   ├── 21/
 │   │   ├── 21163916
 │   │   └── ...
-├── cfis -> /arc/home/kilbinger/shapepipe/example/cfis
-├── tile_numbers -> /arc/home/kilbinger/shapepipe/auxdir/CFIS/tiles_202604/tiles_r.txt
+├── cfis -> <config file directory>
+├── tile_numbers -> <input file list>
 └── debug/
 
 

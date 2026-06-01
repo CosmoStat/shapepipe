@@ -134,9 +134,8 @@ if [ "$star_cat_for_mask" != "onthefly" ] && [ "$star_cat_for_mask" != "save" ];
   exit 4
 fi
 
-#if [ "$retrieve" != "vos" ] && [ "$retrieve" != "symlink" ]; then
-if [ "$retrieve" != "vos" ]; then
-  echo "method to retrieve images (option -r) needs to be 'vos' for v2.0"
+if [ "$retrieve" != "vos" ] && [ "$retrieve" != "symlink" ]; then
+  echo "Invalid method to retrieve images $retrieve (option -r), needs to be 'vos' or 'symlink'"
   exit 5
 fi
 
@@ -166,10 +165,11 @@ export SP_RUN=`pwd`
 export SP_CONFIG=$SP_RUN/cfis
 
 # Root directory for per-exposure work directories.
-# Set SP_EXP in the environment to override; otherwise falls back to the
-# conventional layout (SP_RUN = .../v2.0/tiles/IDra/ID, three levels up + exp).
+# Set SP_EXP in the environment to override; otherwise derive it by stripping
+# the /tiles/... suffix from SP_RUN — robust to any directory depth and to
+# both data (.../v2.0/tiles/IDra/ID) and image_sims (.../grid_N/tiles/IDra/ID).
 if [ -z "${SP_EXP}" ]; then
-  export SP_EXP=$(realpath "$SP_RUN/../../../exp")
+  export SP_EXP="${SP_RUN%/tiles/*}/exp"
   echo "Setting SP_EXP to $SP_EXP"
 fi
 
@@ -318,12 +318,12 @@ if [[ $do_job != 0 ]]; then
 
 fi
 
-## Retrieve exposure images (online, vos)
+## Retrieve exposure images (online if retrieve=vos)
 (( do_job = $job & 8 ))
 if [[ $do_job != 0 ]]; then
 
   command_cfg_shapepipe \
-    "config_exp_Gie_vos.ini" \
+    "config_exp_Gie_$retrieve.ini" \
     "Run shapepipe (get exposure images)" \
     $n_smp \
     $exclusive
@@ -390,7 +390,7 @@ if [[ $do_job != 0 ]]; then
 
     ### Download external catalogue from vos
     command_cfg_shapepipe \
-      "config_tile_Git_cat_vos.ini" \
+      "config_tile_Git_cat_$retrieve.ini" \
       "Run shapepipe (download external tile catalogue)" \
       -1 \
       $exclusive

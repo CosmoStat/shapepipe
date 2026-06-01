@@ -9,6 +9,12 @@
 # Version
 version="2.0"
 
+# Input type: data or image_sims
+type="data"
+
+# Subdir for image_sims
+subdir="1z2z_grid_1"
+
 # Default base run directory (permanent storage)
 #base_dir="$HOME/cosmostat/v2/v${version}"
 base_dir=`pwd`
@@ -16,16 +22,13 @@ base_dir=`pwd`
 # ShapePipe repository root (for config symlink and tile list)
 sp_root="$HOME/shapepipe"
 
-# Tile list source (full filenames, will be stripped to NNN.MMM)
-tiles_src="$sp_root/auxdir/CFIS/tiles_202604/tiles_r.txt"
-
-# Config directory (will be symlinked as $base_dir/cfis)
-config_dir="$sp_root/example/cfis"
 
 ## Help string
 usage="Usage: $(basename "$0") [OPTIONS]
 \nOptions:\n
    -h\t\tthis message\n
+   -t, --type TYPE input type, allowed are 'data', 'image_sims', default='$type'\n
+   -s, --subdir SUBDIR subdir for image simulations, default='$subdir'\n
    -d, --dir DIR\tbase run directory, default='$base_dir'\n
 "
 
@@ -35,6 +38,14 @@ while [ $# -gt 0 ]; do
     -h)
       echo -ne $usage
       exit 0
+      ;;
+    -t|--type)
+      type="$2"
+      shift
+      ;;
+    -s|--subdir)
+      subdir="$2"
+      shift
       ;;
     -d|--dir)
       base_dir="$2"
@@ -48,6 +59,34 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
+
+# Check options
+if [ "$type" == "data" ]; then
+
+    # Config file directory
+    config_dir="$sp_root/example/cfis"
+
+    # Input tile list
+    tiles_src="$sp_root/auxdir/CFIS/tiles_202604/tiles_r.txt"
+
+elif [ "$type" == "image_sims" ]; then
+
+    config_dir="$sp_root/example/cfis_im_sims"
+    tiles_src="$sp_root/auxdir/CFIS/im_sims_202606/numbers.txt"
+
+    input_dir_base="/n09data/hervas/skills_out"
+    input_dir_tiles="$input_dir_base/$subdir/images/SP_tiles"
+    input_dir_exp="$input_dir_base/$subdir/images/SP_exp"
+    ln -s $input_dir_tiles input_tiles
+    ln -s $input_dir_exp input_exp
+
+else
+
+    echo "Invalid input type $type"
+    exit 3
+
+fi
+
 
 echo "Initialising ShapePipe v${version} run directory: $base_dir"
 echo ""
@@ -71,6 +110,9 @@ mkdir -p logs
 mkdir -p debug
 
 # --- Config symlink ---
+
+# Config directory (will be symlinked as $base_dir/cfis)
+
 if [ -L cfis ]; then
     echo "cfis symlink already exists, skipping"
 elif [ -d cfis ]; then
@@ -101,3 +143,7 @@ echo "  ├── exp/"
 echo "  ├── logs/"
 echo "  ├── cfis  ->  ${config_dir}"
 echo "  └── tile_numbers.txt  ->  ${tiles_src}"
+if [ "$type" == "image_sims" ]; then
+    echo "  ___ input_dir_tiles -> $input_dir_tiles"
+    echo "  ___ input_dir_exp -> $input_dir_exp"
+fi
