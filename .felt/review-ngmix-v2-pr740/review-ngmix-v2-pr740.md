@@ -7,7 +7,7 @@ tags:
     - ngmix
     - review
 created-at: 2026-06-01T11:50:17.967872934+02:00
-outcome: 'Autonomous prep done — HELD for Cail (interactive). Read the diff, built the new fitter against real ngmix 2.4.0 on candide, ran do_ngmix_metacal: shear recovery unbiased (m=+2e-4±3e-4, c2≈0, 200/200 fits). API correct. Blockers for the checklist: (1) NO CI ran — fork PR needs Approve-and-run/push to origin; (2) centroid fix is harmless but its necessity isn''t reproduced in idealized sim — need the regime/before-after. Plus cleanups (r50/T column naming, debug prints, stale CLAUDE.md ngmix note, ship-or-tidy fitting.py/test_centroid_shift.py). Draft comments staged in draft-review.md; report.html has the full read. Nothing posted/pushed yet — that''s the call.'
+outcome: 'Autonomous prep done — HELD for Cail (interactive). Exercised the new fitter against real ngmix 2.4.0 on candide: API correct, shear recovery unbiased at few-e-4 in m (my harness +2e-4±3e-4; author''s noiseless centroid_bias_v2 +3.7e-4±0.5e-4). Centroid fix harmless but its bias not reproduced (fix-off same) -> metacal higher-order, not centroid. CI: triggered via same-repo mirror PR #741 (pushed ngmix_v2.0 to origin, all commits stay Martin''s); building now BUT only the branch''s old workflow (build+binaries+publish, NO pytest suite/example pipeline) — full suite needs develop merged into the branch. Fork PR #740 got no CI (approval gate). Cleanups staged: r50/T column mislabel, debug prints, hardcoded 51*51, stale CLAUDE.md ngmix note, ship-or-tidy fitting.py/test_centroid_shift.py. report.html + draft-review.md have the full read. Nothing reviewed-posted to GitHub yet (only the #741 mirror, which credits Martin).'
 horizon: now
 shuttle:
     enabled: true

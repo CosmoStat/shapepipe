@@ -123,7 +123,7 @@
     <h3>Checklist blockers</h3>
     <table>
       <tr><th>Item</th><th>State</th></tr>
-      <tr><td>CI passing</td><td><span class="v-no">No CI ran</span> — empty status rollup; fork PR needs "Approve and run" or a push to origin</td></tr>
+      <tr><td>CI passing</td><td><span class="v-warn">Now running</span> via same-repo mirror <strong>PR #741</strong> (pushed <code>ngmix_v2.0</code> to origin). But only the branch's <em>old</em> workflow fires — builds + binary smokes + publishes to ghcr, <strong>no pytest suite / example pipeline</strong>. Full suite needs <code>develop</code> merged into the branch (modern CI + drift resolved). Fork PR #740 got no CI at all (Actions approval gate).</td></tr>
       <tr><td>"closes #" links</td><td><span class="v-no">None</span> — overlaps Axel's #725 (centroid shift); cross-ref/supersede?</td></tr>
       <tr><td>Docs updated</td><td><span class="v-no">None</span> — and <code>CLAUDE.md</code>'s "don't modernize ngmix" note is now stale</td></tr>
       <tr><td>Targets develop</td><td><span class="v-ok">Yes</span></td></tr>
@@ -147,7 +147,7 @@
     <h2>For Cail, on the call.</h2>
     <ul>
       <li><strong>Centroid fix regime.</strong> Where does the bias appear? Is the author's before/after captured anywhere we can cite?</li>
-      <li><strong>CI.</strong> Approve-and-run the fork PR, or ask Martin to push to origin? Can't sign off the checklist without green CI.</li>
+      <li><strong>CI.</strong> Mirror PR #741 now runs the build (publishing images), but the full test suite + example pipeline need <code>develop</code> merged into <code>ngmix_v2.0</code>. Ask Martin to merge develop up (also resolves drift), or do it ourselves? And: tell Martin to open future PRs directly on CosmoStat, not from a fork.</li>
       <li><strong>r50 columns.</strong> Confirm Martin/Lucy's intent for the size-column naming before sp_validation consumes them.</li>
       <li><strong>Voice + scope.</strong> What gets posted (full review vs a lighter "looks good, two questions"), in your voice or signed "Claude on behalf of Cail"? Push cleanups as suggestions, or just request them?</li>
       <li><strong>#725.</strong> Does this PR supersede Axel's centroid-shift PR?</li>

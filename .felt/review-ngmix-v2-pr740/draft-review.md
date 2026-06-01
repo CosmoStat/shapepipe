@@ -17,7 +17,7 @@ Authorship convention: "— Claude on behalf of Cail" unless he says otherwise.
 | "closes #" links | ❌ No issue links. #725 (Axel's centroid-shift PR) overlaps this work — should this PR close/supersede it? Worth an explicit cross-ref. |
 | Code/doc style | ⚠️ Mostly good. Pockets of debug cruft (see line-level). |
 | Docs updated | ❌ No `docs/` changes. The ngmix pin note in `CLAUDE.md` ("don't modernize this line") is now stale — this PR *is* the modernization. Needs updating on/with merge. |
-| **CI passing** | ❌ **No CI has run.** `statusCheckRollup` is empty; no workflow runs exist for `ngmix_v2.0`. It's a cross-repo (fork) PR — Actions need a maintainer "Approve and run", or push the branch to `origin`. **Cannot tick this box until CI runs green.** |
+| **CI passing** | ⚠️ **Now running via same-repo mirror PR #741** (pushed `ngmix_v2.0` to origin). BUT only the branch's *old* `deploy-image.yml` ("Create and publish a Docker image") fires — it builds both images + smoke-tests binaries + `pytest --version` + **publishes to ghcr**; it does **not** run the pytest suite or example pipeline. The modern test-running workflow (`pull_request → develop`) doesn't queue because GitHub evaluates the trigger from the *head branch's* workflow file, which predates the modernization. `ci-release.yml` runs the full suite only on `pull_request → main/master`. **To run the full suite + example pipeline, the branch must have `develop` merged in** (pulls in modern CI + resolves drift). Original #740 got no CI at all because fork PRs don't trigger our Actions without maintainer approval. |
 | API docs built | ➖ n/a-ish (no public API doc surface changed materially) |
 | All files checked + comments | ✅ done in this review |
 
