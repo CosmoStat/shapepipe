@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report — review-ngmix-v2-pr740</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --parchment: #EDE2CE; --rag: #FBF6E9; --ink: #1B1611; --ink-muted: #7A6F5C;
+    --cinnabar: #BC4538; --cinnabar-faint: rgba(188, 69, 56, 0.10);
+    --teal: #3F8278; --cobalt: #3D5BA0; --ochre: #C49333;
+    --rule: #C5B89E; --tooth: rgba(197, 184, 158, 0.45);
+    --serif: 'EB Garamond', Georgia, serif; --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--parchment); color: var(--ink); font-family: var(--serif); font-size: 19px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  .page { max-width: 880px; margin: 0 auto; padding: 56px 32px 72px; }
+  .stamp { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 20px; display: flex; gap: 14px; align-items: center; }
+  .stamp .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cinnabar); }
+  .stamp .sep { color: var(--rule); }
+  h1 { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 44px; line-height: 1.1; margin: 0 0 16px; }
+  section { margin-top: 48px; }
+  .section-mark { font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--cinnabar); margin-bottom: 8px; }
+  h2 { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 30px; line-height: 1.2; margin: 0 0 20px; }
+  h3 { font-family: var(--serif); font-weight: 600; font-size: 21px; margin: 28px 0 8px; }
+  p { margin: 0 0 16px; }
+  ul, ol { margin: 0 0 16px; padding-left: 22px; }
+  li { margin-bottom: 8px; }
+  code { font-family: var(--mono); font-size: 0.88em; background: rgba(196, 147, 51, 0.12); padding: 1px 5px; border-radius: 2px; }
+  hr { border: none; border-top: 1px solid var(--rule); margin: 40px 0; }
+  hr.short { width: 80px; margin: 32px 0; border-top-width: 2px; border-top-color: var(--cinnabar); }
+  blockquote { margin: 16px 0; padding-left: 20px; border-left: 2px solid var(--ochre); font-style: italic; }
+  table { border-collapse: collapse; width: 100%; font-size: 16px; margin: 0 0 18px; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+  .v-ok { color: var(--teal); font-weight: 600; }
+  .v-warn { color: var(--ochre); font-weight: 600; }
+  .v-no { color: var(--cinnabar); font-weight: 600; }
+  .metric { font-family: var(--mono); background: var(--cinnabar-faint); border-left: 3px solid var(--cinnabar); padding: 14px 18px; margin: 0 0 18px; font-size: 15px; }
+  .lede { font-size: 22px; font-style: italic; color: var(--ink); }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <div class="stamp">
+    <span class="dot"></span>
+    <span>2026 · 06 · 01</span>
+    <span class="sep">·</span>
+    <span>review-ngmix-v2-pr740</span>
+    <span class="sep">·</span>
+    <span>autonomous prep — awaiting Cail</span>
+  </div>
+
+  <h1>PR #740 — Ngmix v2.0: review prep.</h1>
+
+  <p class="lede">The diff is read, the new fitter was built against real ngmix 2.4.0 and run
+  on candide, and it recovers shear unbiased. Two things block the checklist (CI never ran;
+  the centroid fix's necessity isn't demonstrated) and a handful of cleanups stand. Ready to
+  talk it through.</p>
+
+  <hr>
+
+  <section>
+    <div class="section-mark">§ Current state</div>
+    <h2>Autonomous prep done; held for the call.</h2>
+
+    <p><strong>What this PR is:</strong> +3894/−3410 across 67 files. It retires Axel's
+    <code>aguinot/ngmix@stable_version</code> fork for <strong>upstream ngmix 2.4.0</strong> and
+    adopts Lucy Baumont's reworked ngmix classes/interface; near-total rewrite of
+    <code>ngmix_package/ngmix.py</code> (1252 lines); a centroid-bias fix + validation scripts;
+    a new dependency-light <code>testing/simulate.py</code>; and supporting pipeline plumbing for
+    the v2.0 production run (a <code>$SP_EXP</code>-tree directory resolver).</p>
+
+    <p><strong>How I exercised it:</strong> the container ships ngmix 1.3.6, so I installed
+    ngmix <strong>2.4.0</strong> from the PR's own source (<code>esheldon/ngmix@v2.4.0</code>) over
+    the container's scientific stack and ran the <em>actual module code</em> — not a re-implementation.</p>
+
+    <div class="metric">
+      200 galsim galaxies, sub-pixel shifted (the centroid regime), metacal recovery:<br>
+      &nbsp;&nbsp;<strong>m = +2×10⁻⁴ ± 3×10⁻⁴</strong> &nbsp;(mult. bias ≈ 0)<br>
+      &nbsp;&nbsp;<strong>c₂ = −1×10⁻⁵</strong> &nbsp;(additive ≈ 0) &nbsp;·&nbsp; R₁₁≈R₂₂≈0.924 &nbsp;·&nbsp; 200/200 fits OK
+    </div>
+
+    <p><strong>The action for the call:</strong> walk the two blockers and the cleanups, decide
+    what gets posted to GitHub and in whose voice, decide whether to push fixes or request them
+    from Martin/Lucy. Merge/approve is yours. Draft comments are staged in
+    <code>draft-review.md</code> in this fiber dir.</p>
+  </section>
+
+  <hr class="short">
+
+  <section>
+    <div class="section-mark">§ Findings</div>
+    <h2>What the review turned up.</h2>
+
+    <h3>ngmix 2.4.0 API — correct ✓</h3>
+    <p>All 13 ngmix symbols the module uses resolve in 2.4.0 (<code>Fitter</code>, the
+    <code>guessers</code>, <code>runners.PSFRunner</code>/<code>Runner</code>,
+    <code>MetacalBootstrapper</code>, <code>PriorSimpleSep</code>, priors, observations, Jacobian).
+    The metacal/bootstrap path runs end-to-end and produces sane output.</p>
+
+    <h3>Centroid fix — present and harmless, necessity not shown</h3>
+    <p>The fix re-centers the galaxy Jacobian on the HSM adaptive-moment centroid
+    (<code>make_ngmix_observation</code>) so the centroid prior doesn't bias the fit. Running the
+    same ensemble with the recenter <em>disabled</em> gives the <em>same</em> unbiased m in this
+    idealized small-shift, high-S/N sim. So the form is right, but I could not reproduce the bias
+    it removes — <strong>which regime does it bite in?</strong> The author's own
+    <code>centroid_bias.py</code> / bug-fix-v2 configs presumably demonstrate it; that before/after
+    is the key thing to surface. (Author's noiseless <code>centroid_bias_v2.py</code> run was in
+    flight at handoff — number to be folded in.)</p>
+
+    <h3>Checklist blockers</h3>
+    <table>
+      <tr><th>Item</th><th>State</th></tr>
+      <tr><td>CI passing</td><td><span class="v-no">No CI ran</span> — empty status rollup; fork PR needs "Approve and run" or a push to origin</td></tr>
+      <tr><td>"closes #" links</td><td><span class="v-no">None</span> — overlaps Axel's #725 (centroid shift); cross-ref/supersede?</td></tr>
+      <tr><td>Docs updated</td><td><span class="v-no">None</span> — and <code>CLAUDE.md</code>'s "don't modernize ngmix" note is now stale</td></tr>
+      <tr><td>Targets develop</td><td><span class="v-ok">Yes</span></td></tr>
+    </table>
+
+    <h3>Code-level cleanups</h3>
+    <ul>
+      <li><code>r50</code>/<code>T</code> column naming in <code>compile_results</code>: <code>pars[4]</code> is T (not a half-light radius) and <code>r50_psfo = sqrt(T/2)</code> is the Gaussian σ — columns named <code>r50*</code> carry T/σ. Intentional shorthand or a mislabel sp_validation will trip on?</li>
+      <li>Debug cruft in <code>ngmix.py</code>: <code># MKDEBUG</code>, an unreachable <code>print</code> after a <code>return</code>, stray error-branch prints.</li>
+      <li>Masked-fraction cut hardcodes <code>51 * 51</code> — use <code>flag.size</code>.</li>
+      <li><code>scripts/python/fitting.py</code> is a stale copy of esheldon's <code>fitting_bd_empsf.py</code> (docstring still mentions <code>fracdev</code>); <code>test_centroid_shift.py</code> is a jupyter export with cruft. Ship or tidy?</li>
+      <li><code>pyproject.toml</code>: ngmix sourced via git tag rather than PyPI <code>ngmix==2.4.0</code> — pin to PyPI if published.</li>
+      <li><code>testing/simulate.py</code> and the <code>$SP_EXP</code> runner plumbing are clean — 👍.</li>
+    </ul>
+  </section>
+
+  <hr class="short">
+
+  <section>
+    <div class="section-mark">§ Open questions</div>
+    <h2>For Cail, on the call.</h2>
+    <ul>
+      <li><strong>Centroid fix regime.</strong> Where does the bias appear? Is the author's before/after captured anywhere we can cite?</li>
+      <li><strong>CI.</strong> Approve-and-run the fork PR, or ask Martin to push to origin? Can't sign off the checklist without green CI.</li>
+      <li><strong>r50 columns.</strong> Confirm Martin/Lucy's intent for the size-column naming before sp_validation consumes them.</li>
+      <li><strong>Voice + scope.</strong> What gets posted (full review vs a lighter "looks good, two questions"), in your voice or signed "Claude on behalf of Cail"? Push cleanups as suggestions, or just request them?</li>
+      <li><strong>#725.</strong> Does this PR supersede Axel's centroid-shift PR?</li>
+    </ul>
+  </section>
+
+</main>
+</body>
+</html>
