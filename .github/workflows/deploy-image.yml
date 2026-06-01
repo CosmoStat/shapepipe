@@ -1,27 +1,41 @@
-name: Create and publish a Docker image
-on: [push, workflow_dispatch]
+name: Docker image — build, test, publish
+
+# Single source of truth for ShapePipe's environment is the Dockerfile
+# (slim Python + apt system deps + uv-frozen wheels). This workflow builds
+# that image, runs the test suite *inside it* — so CI tests exactly what
+# ships — and publishes to ghcr only on pushes to the integration branches.
+#
+#   pull_request → build + test, no publish (also works for fork PRs)
+#   push         → build + test + publish (:develop, :latest, …)
+on:
+  push:
+    branches:
+      - develop
+      - main
+      - master
+  pull_request:
+    branches:
+      - develop
+      - main
+      - master
+  workflow_dispatch:
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+
 jobs:
-  build-and-push-image:
+  build-test-publish:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
         with:
           driver-opts: network=host
 
@@ -29,21 +43,25 @@ jobs:
       # `:develop`); `runtime` carries a `-runtime` suffix.
       - name: Tags — dev (default)
         id: meta-dev
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Tags — runtime
         id: meta-runtime
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: |
             suffix=-runtime,onlatest=true
 
+      # ----------------------------------------------------------------
+      # Build + test (every event)
+      # ----------------------------------------------------------------
+
       # Build runtime first (smaller, used to smoke-test pipeline binaries)
       - name: Build runtime (load)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: .
           target: runtime
@@ -63,14 +81,17 @@ jobs:
           docker run --rm "$IMAGE" weightwatcher --version
           docker run --rm "$IMAGE" psfex --version
 
-      - name: Test runtime — shapepipe entry point
+      - name: Test runtime — shapepipe entry point (read-only fs)
         run: |
           IMAGE=$(echo "${{ steps.meta-runtime.outputs.tags }}" | head -n1)
-          docker run --rm "$IMAGE" shapepipe_run -c /app/example/config.ini
+          # --read-only + tmpfs /tmp emulates apptainer/SIF semantics: only
+          # /tmp is writable. shapepipe_run_example wraps shapepipe_run so
+          # the example tree gets copied into a mktemp workdir before running.
+          docker run --rm --read-only --tmpfs /tmp:rw "$IMAGE" shapepipe_run_example
 
       # Build dev (reuses cached `base` layer)
       - name: Build dev (load)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: .
           target: dev
@@ -81,16 +102,38 @@ jobs:
           cache-to: type=gha,mode=max
 
       # Verify the dev-only additions are present and runnable.
-      - name: Test dev — interactive tools and test extras
+      - name: Test dev — interactive tools
         run: |
           IMAGE=$(echo "${{ steps.meta-dev.outputs.tags }}" | head -n1)
           docker run --rm "$IMAGE" vim --version | head -n1
           docker run --rm "$IMAGE" rg --version | head -n1
-          docker run --rm "$IMAGE" pytest --version
 
-      # Push both targets
+      # The actual test suite, run inside the shipped image — replacing the
+      # retired conda-based suite. pytest exercises the same wheels, binaries,
+      # and Python (3.12) that production runs on, not a parallel environment.
+      # pyproject's addopts add `--cov=shapepipe`; COVERAGE_FILE is set to /tmp
+      # in the image so it works on read-only filesystems too. The Hypothesis
+      # profile is explicit here so CI always uses the deterministic, capped
+      # property-test profile even if the default changes for local exploration.
+      - name: Test dev — pytest suite
+        run: |
+          IMAGE=$(echo "${{ steps.meta-dev.outputs.tags }}" | head -n1)
+          docker run --rm -e HYPOTHESIS_PROFILE=ci "$IMAGE" pytest -rX
+
+      # ----------------------------------------------------------------
+      # Publish (push events only — never on pull_request, incl. forks)
+      # ----------------------------------------------------------------
+      - name: Log in to the Container registry
+        if: github.event_name == 'push'
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Push runtime
-        uses: docker/build-push-action@v6
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: .
           target: runtime
@@ -100,7 +143,8 @@ jobs:
           cache-from: type=gha
 
       - name: Push dev
-        uses: docker/build-push-action@v6
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: .
           target: dev

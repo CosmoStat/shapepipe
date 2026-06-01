@@ -38,111 +38,36 @@ docker pull ghcr.io/cosmostat/shapepipe:develop-runtime
 We do not currently build images for Apple Silicon/amr64; however the amd64 images should work on these systems, albeit with reduced performance.
 ```
 
-## Conda Installation (Deprecated)
-
-```{tip}
-:class: margin
-Check out [Miniconda](https://docs.conda.io/en/latest/miniconda.html) for a
-light weight and easy installation of Conda.
-```
-
-The standard installation of ShapePipe manages [dependencies](dependencies.md)
-and scripts using a [Conda](https://docs.conda.io/en/latest/) environment.
-Therefore, to follow the standard installation Conda must be available on the
-system.
-
-The ShapePipe package should first be cloned (or downloaded) from the
-[GitHub repository](https://github.com/CosmoStat/shapepipe).
-
-```{note}
-:class: margin
-Developers should simply clone the repository as usual.
-```
-```bash
-git clone -b <VERSION> --depth 1 git@github.com:CosmoStat/shapepipe.git
-cd shapepipe
-```
-
-where `<VERSION>` is a
-[tagged release](https://github.com/CosmoStat/shapepipe/releases) of ShapePipe
-(e.g. `v1.0.1`). It is recommend to use the
-[latest release](https://github.com/CosmoStat/shapepipe/releases/latest)
-unless you want to reproduce an older set of results.
-
-Then, the entire ShapePipe environment, including dependencies, can be built
-using the `install_shapepipe` script as follows.
-
-```bash
-./install_shapepipe
-```
-
-The `install_shapepipe` script will create the recommended Conda environment
-along with all of the required core and module dependencies. The script also
-provides a checklist for the success or failure of installing each of the
-dependencies.
-
-Once the installation is complete the `shapepipe` environment needs to be
-activated.
-
-```bash
-conda activate shapepipe
-```
-
-A list installation options can be seen using the `--help` option.
-
-```bash
-./install_shapepipe --help
-```
-
-In particular, the `--develop` flag can be used to install additional tools
-for developers.
-
-## MPI Installation
-
-The standard installation of ShapePipe will install and enable MPI on a given
-node (i.e. a given machine). However, `mpi4py` needs to be built from source
-in order to take advantage of a preinstalled MPI distribution on the compute
-nodes of a cluster.
-
-This can be done as follows
-
-```bash
-./install_shapepipe --mpi-root=<PATH TO MPI>
-```
-
-where `<PATH TO MPI>` is the full path to MPI root directory (i.e. where the
-`bib`, `include` and `lib` directories can be found). If the installation is
-successful, ShapePipe will be able to submit jobs to all of the nodes in the
-cluster.
-
-## Uninstalling ShapePipe
-
-The `--uninstall` flag can be passed to `install_shapepipe` to remove the
-entire ShapePipe environment.
-
-```bash
-./install_shapepipe --uninstall
-```
+The image bundles the astromatic binaries (`source-extractor`, `psfex`,
+`weightwatcher`), MPI (`mpi4py` + OpenMPI), and every Python dependency, so
+there is nothing else to install or build. To process data on a cluster with
+MPI, run the pipeline through Apptainer the same way you would any MPI job.
 
 ## Installing the ShapePipe Library Only
 
-The ShapePipe library, i.e. the core package not including module
-dependencies, can be installed in the following ways.
+The ShapePipe library, i.e. the core Python package *without* the system
+executables (`source-extractor`, `psfex`, …) or the bundled examples, can be
+installed with `pip`. This is enough to import `shapepipe` or to develop
+against the package, but not to run the full pipeline.
 
-After cloning the repository.
+After cloning the repository:
 
-```{warning}
-:class: margin
-Note, this method will not include any system executables or examples.
-```
 ```bash
 pip install .
 ```
 
-Without cloning the repository.
+Without cloning the repository:
 
 ```bash
 pip install git+https://github.com/CosmoStat/shapepipe.git
+```
+
+For a development checkout with the test, lint, and doc tools, install the
+`dev` extra (ideally into a fresh virtual environment, e.g. one managed by
+[uv](https://docs.astral.sh/uv/)):
+
+```bash
+pip install -e ".[dev]"
 ```
 
 ## Troubleshooting

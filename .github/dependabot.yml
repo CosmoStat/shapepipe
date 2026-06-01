@@ -1,0 +1,62 @@
+# Dependabot config — supply-chain conservative posture.
+#
+# Why this exists:
+#   - We now ship a `uv.lock`, so Dependabot's security-updates channel fires
+#     automatically on GHSAs touching transitive deps. This file adds
+#     *version-updates* policy on top: routine bumps that don't fall out
+#     of a security advisory.
+#   - 2025-2026 has seen a wave of maintainer-compromise attacks across npm
+#     and PyPI (Shai-Hulud / Mini Shai-Hulud, axios, PyTorch Lightning,
+#     tj-actions/changed-files, …). The published-to-Dependabot-PR-lag is
+#     often minutes. Cooldown buys a detection window for free.
+#
+# Policy:
+#   - 14-day cooldown on minor/patch (30 days on majors). Anything malicious
+#     is usually caught and yanked within a few days; the cooldown lets that
+#     happen before it reaches us.
+#   - Monthly schedule + grouped patch/minor PRs — one batched PR per month,
+#     atomic to revert, large enough to actually be reviewed.
+#   - Major bumps stay as individual PRs (potentially breaking; each
+#     deserves its own review).
+#   - No auto-merge anywhere. Lockfile diffs are uninspectable; we eyeball
+#     the version metadata and source links before merging.
+#
+# Note: cooldown does NOT apply to security-updates (the GHSA-driven PRs).
+# Those still fire on the CVE-publication timeline, which is the right
+# tradeoff for shapepipe — fix CVEs fast, but don't auto-merge them either.
+
+version: 2
+
+updates:
+  # Python dependencies tracked via uv.lock
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+    cooldown:
+      default-days: 14
+      semver-major-days: 30
+    groups:
+      lockfile-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+
+  # GitHub Actions versions (SHA-pinned in workflows; Dependabot proposes
+  # SHA bumps with the new tag annotated in the PR body).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    cooldown:
+      default-days: 14
+    groups:
+      actions:
+        patterns: ["*"]
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "github-actions"
