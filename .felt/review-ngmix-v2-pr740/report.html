@@ -57,10 +57,11 @@
 
   <h1>PR #740 — Ngmix v2.0: review prep.</h1>
 
-  <p class="lede">The diff is read, the new fitter was built against real ngmix 2.4.0 and run
-  on candide, and it recovers shear unbiased. Two things block the checklist (CI never ran;
-  the centroid fix's necessity isn't demonstrated) and a handful of cleanups stand. Ready to
-  talk it through.</p>
+  <p class="lede">The diff is read, the new fitter was built against real ngmix 2.4.0 and runs
+  unbiased, and — via a same-repo mirror (PR #741) with develop merged in — the <strong>full CI
+  suite is now green</strong>. A 6-angle code-review pass then caught several real issues the
+  green suite doesn't (a dead-on-arrival script, an unseeded-RNG reproducibility break, PSF
+  column semantics, a dropped resume feature). Ready to talk it through.</p>
 
   <hr>
 
@@ -123,21 +124,25 @@
     <h3>Checklist blockers</h3>
     <table>
       <tr><th>Item</th><th>State</th></tr>
-      <tr><td>CI passing</td><td><span class="v-warn">Build GREEN, suite not run</span> via mirror <strong>PR #741</strong>. Old workflow passed every step — images build (new <code>uv.lock</code> + ngmix 2.4.0 resolve ✅), binary smokes ✅, entry point ✅, published to ghcr ✅. But <strong>no pytest suite / example pipeline</strong> — those need <code>develop</code> merged into the branch (modern CI). Fork PR #740 got no CI at all (Actions approval gate).</td></tr>
+      <tr><td>CI passing</td><td><span class="v-ok">GREEN — full suite</span> on mirror <strong>PR #741</strong> (pushed <code>ngmix_v2.0</code> to origin, merged <code>develop</code> in to get the modern CI). Images build (new <code>uv.lock</code> + ngmix 2.4.0 resolve), binary smokes, entry point, <strong>pytest suite (incl. develop's <code>test_ngmix.py</code>)</strong>, example pipeline — all pass; publish skipped on PR. Fork PR #740 had no CI (approval gate).</td></tr>
       <tr><td>"closes #" links</td><td><span class="v-no">None</span> — overlaps Axel's #725 (centroid shift); cross-ref/supersede?</td></tr>
       <tr><td>Docs updated</td><td><span class="v-no">None</span> — and <code>CLAUDE.md</code>'s "don't modernize ngmix" note is now stale</td></tr>
       <tr><td>Targets develop</td><td><span class="v-ok">Yes</span></td></tr>
     </table>
 
-    <h3>Code-level cleanups</h3>
+    <h3>Code-review pass (multi-agent, 6 angles) — what it caught</h3>
+    <p>CI is green, so none of these break the suite — but the suite is shallow on these paths. Full list + line refs in <code>draft-review.md</code>.</p>
+    <p><strong>Confirmed:</strong></p>
     <ul>
-      <li><code>r50</code>/<code>T</code> column naming in <code>compile_results</code>: <code>pars[4]</code> is T (not a half-light radius) and <code>r50_psfo = sqrt(T/2)</code> is the Gaussian σ — columns named <code>r50*</code> carry T/σ. Intentional shorthand or a mislabel sp_validation will trip on?</li>
-      <li>Debug cruft in <code>ngmix.py</code>: <code># MKDEBUG</code>, an unreachable <code>print</code> after a <code>return</code>, stray error-branch prints.</li>
-      <li>Masked-fraction cut hardcodes <code>51 * 51</code> — use <code>flag.size</code>.</li>
-      <li><code>scripts/python/fitting.py</code> is a stale copy of esheldon's <code>fitting_bd_empsf.py</code> (docstring still mentions <code>fracdev</code>); <code>test_centroid_shift.py</code> is a jupyter export with cruft. Ship or tidy?</li>
-      <li><code>pyproject.toml</code>: ngmix sourced via git tag rather than PyPI <code>ngmix==2.4.0</code> — pin to PyPI if published.</li>
-      <li><code>testing/simulate.py</code> and the <code>$SP_EXP</code> runner plumbing are clean — 👍.</li>
+      <li><strong>Dead-on-arrival script:</strong> <code>centroid_bias.py:37</code> imports <code>get_guess</code>, which this PR <em>deletes</em> → ImportError. A validation script shipped in the same PR can't run.</li>
+      <li><strong>Reproducibility break:</strong> <code>prepare_ngmix_weights</code> uses global <code>np.random.randn</code> for the noise image while the module deliberately switched to a seeded <code>self._rng</code> → same tile+seed gives different shears.</li>
+      <li><strong>PSF column semantics:</strong> <code>*_psfo</code> (<code>g_PSFo</code>/<code>T_PSFo</code>/<code>r50_PSFo</code>) now carry the metacal-<em>reconvolved</em> PSF (read from <code>obsdict['noshear'].psf.meta</code>), not the original PSFEx/MCCD PSF the column doc claims and PSF-systematics tests expect.</li>
+      <li><strong>Dropped feature:</strong> <code>CHECK_EXISTING_DIR</code> resume is gone from <code>process()</code> — a configured resume silently reprocesses from scratch.</li>
+      <li><strong>Runner contract (altitude):</strong> 4 runners moved WCS/exp-numbers to positional <code>input_file_list[i]</code> but didn't update their <code>@module_runner</code> decorators (only <code>ngmix_runner</code> did) — contract now lives in per-config <code>FILE_PATTERN</code> ordering; shipped configs OK, hand-written ones silently mis-map.</li>
+      <li><strong>Units:</strong> <code>r50</code>/<code>r50_err</code> store <code>pars[4]</code> = T (arcsec²), and <code>r50_PSFo = sqrt(T/2)</code> = Gaussian σ — not half-light radii. sp_validation consumes these.</li>
     </ul>
+    <p><strong>Plausible — need Martin/Lucy's intent (raise as questions):</strong> weight-map normalization changed (looks like double inverse-variance + flux-contaminated noise estimate); per-type PSF columns collapsed to one value; galaxy zero-pixel skip narrowed <code>any</code>→<code>all</code> (edge stamps now enter the fit); PSF fit uses the galaxy prior + galaxy flux guess.</p>
+    <p><strong>Cleanups:</strong> non-<code>f</code> error string + debug <code>print</code>s in <code>save_results</code>; dead <code>sextractor_e1e2</code>, unreachable <code>print</code>, <code>MKDEBUG</code> markers; hardcoded <code>51*51</code>; <code>fitting.py</code> is a stray upstream ngmix example; <code>make_data</code>/<code>get_prior</code> duplicated across the validation scripts vs <code>simulate.py</code>. <code>testing/simulate.py</code> + the <code>$SP_EXP</code> plumbing themselves are clean 👍.</p>
   </section>
 
   <hr class="short">
@@ -147,7 +152,8 @@
     <h2>For Cail, on the call.</h2>
     <ul>
       <li><strong>Centroid fix regime.</strong> Where does the bias appear? Is the author's before/after captured anywhere we can cite?</li>
-      <li><strong>CI.</strong> Mirror PR #741 now runs the build (publishing images), but the full test suite + example pipeline need <code>develop</code> merged into <code>ngmix_v2.0</code>. Ask Martin to merge develop up (also resolves drift), or do it ourselves? And: tell Martin to open future PRs directly on CosmoStat, not from a fork.</li>
+      <li><strong>CI / PR plumbing.</strong> Done: mirror PR #741 (origin <code>ngmix_v2.0</code>) with <code>develop</code> merged in is green on the full suite. Decide: keep #741 as the PR of record and close #740, or hand the merged branch back to Martin? And tell Martin future PRs go directly on CosmoStat, not from a fork (fork PRs don't trigger CI).</li>
+      <li><strong>Which findings to post,</strong> and as line comments vs a PR-level summary — the 4 confirmed correctness items are clear; the 4 plausible ones are better as questions to Martin/Lucy.</li>
       <li><strong>r50 columns.</strong> Confirm Martin/Lucy's intent for the size-column naming before sp_validation consumes them.</li>
       <li><strong>Voice + scope.</strong> What gets posted (full review vs a lighter "looks good, two questions"), in your voice or signed "Claude on behalf of Cail"? Push cleanups as suggestions, or just request them?</li>
       <li><strong>#725.</strong> Does this PR supersede Axel's centroid-shift PR?</li>

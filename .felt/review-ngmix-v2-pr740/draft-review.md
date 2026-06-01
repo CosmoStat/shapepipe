@@ -17,7 +17,7 @@ Authorship convention: "— Claude on behalf of Cail" unless he says otherwise.
 | "closes #" links | ❌ No issue links. #725 (Axel's centroid-shift PR) overlaps this work — should this PR close/supersede it? Worth an explicit cross-ref. |
 | Code/doc style | ⚠️ Mostly good. Pockets of debug cruft (see line-level). |
 | Docs updated | ❌ No `docs/` changes. The ngmix pin note in `CLAUDE.md` ("don't modernize this line") is now stale — this PR *is* the modernization. Needs updating on/with merge. |
-| **CI passing** | ⚠️ **Build GREEN, suite NOT run.** Via same-repo mirror PR #741 (pushed `ngmix_v2.0` to origin). The branch's *old* `deploy-image.yml` ran and **passed every step**: builds both images (so the new `uv.lock` + ngmix 2.4.0 resolve and the image builds with all system tools ✅), binary smokes ✅, entry point ✅, `pytest --version` ✅, published to ghcr ✅. But it does **not** run the pytest suite or example pipeline — those need the modern workflow. **→ RESOLVED:** merged `develop` into `ngmix_v2.0` (clean except `uv.lock`, regenerated via `uv lock`) — this pulls in the modern CI; the **full test suite + example pipeline now run** on #741 (`build-test-publish`). The merge also makes #741's diff show the true ngmix delta vs develop. Result pending. Note develop already ships a `test_ngmix.py` the v2.0 code must now pass. The modern test-running workflow (`pull_request → develop`) doesn't queue because GitHub evaluates the trigger from the *head branch's* workflow file, which predates the modernization. `ci-release.yml` runs the full suite only on `pull_request → main/master`. **To run the full suite + example pipeline, the branch must have `develop` merged in** (pulls in modern CI + resolves drift). Original #740 got no CI at all because fork PRs don't trigger our Actions without maintainer approval. |
+| **CI passing** | ✅ **GREEN** (full suite). Got here by pushing a same-repo mirror (PR #741, branch `ngmix_v2.0` on origin) and merging `develop` into it (clean except `uv.lock`, regenerated via `uv lock`) to pull in the modernized CI. `build-test-publish` ran every step green: images build (new `uv.lock` + ngmix 2.4.0 resolve), binary smokes, entry point, **pytest suite** (incl. develop's `test_ngmix.py`), example pipeline; publish correctly skipped on the PR. Original fork PR #740 got no CI (Actions approval gate). | The modern test-running workflow (`pull_request → develop`) doesn't queue because GitHub evaluates the trigger from the *head branch's* workflow file, which predates the modernization. `ci-release.yml` runs the full suite only on `pull_request → main/master`. **To run the full suite + example pipeline, the branch must have `develop` merged in** (pulls in modern CI + resolves drift). Original #740 got no CI at all because fork PRs don't trigger our Actions without maintainer approval. |
 | API docs built | ➖ n/a-ish (no public API doc surface changed materially) |
 | All files checked + comments | ✅ done in this review |
 
@@ -62,7 +62,37 @@ naming, not the guess. Worth confirming Martin's intent.)
 
 ---
 
-## Line-level (staged as draft comments)
+## Code-review pass (multi-agent, high-effort) — findings
+
+Ran a 6-angle code-review over the ngmix delta. CI is green, so none of these break the
+test suite — but the suite is shallow on these paths. Ranked.
+
+### Correctness — confirmed
+1. **`get_guess` ImportError — shipped script dead on arrival.** `scripts/validation/centroid/centroid_bias.py:37` does `from ...ngmix import get_guess, get_noise`, but this PR removed `get_guess` from the module. The script ImportErrors on load. (Only `centroid_bias.py`; `test_centroid_shift.py` imports just `get_noise`.) Fix the import, restore `get_guess`, or drop the v1 script.
+2. **Reproducibility break — unseeded RNG.** `ngmix.py:948-949` `prepare_ngmix_weights` uses global `np.random.randn` for the noise image + masked-pixel fill, while the module deliberately switched to a seeded `self._rng` (`:266`). Same tile + same seed → different masked-pixel values and metacal noise → non-reproducible shears. Thread `rng` into `prepare_ngmix_weights`/`make_ngmix_observation`.
+3. **`*_psfo` columns now carry the metacal-RECONVOLVED PSF, not the original PSFEx/MCCD PSF.** `average_multiepoch_psf` reads `obsdict['noshear'][n_e].psf.meta['result']` — the reconvolved metacal PSF — and feeds `g_PSFo`/`T_PSFo`/`r50_PSFo`. But `compile_results` documents these as "the original image psf from psfex or mccd," and PSF-leakage / ρ-stat / null tests consume them as the input PSF. The old code fit the raw pre-metacal PSF separately. Confirm intent; the comment is now wrong either way.
+4. **`CHECK_EXISTING_DIR` resume silently dropped.** New `process()` never reads `self._check_existing_dir` or calls `get_last_id` (both now dead). A configured resume reprocesses from scratch and overwrites — a documented feature silently no-ops.
+
+### Correctness — plausible, needs Martin/Lucy intent (raise as questions)
+5. **Weight-map normalization changed.** Old `prepare_ngmix_weights` binarized the mask (`weight[weight!=0]=1`) then applied a flat `1/sig_noise²`. New keeps the per-pixel (already FSCALE-rescaled) weight AND multiplies by `1/sigma_mad(gal)²`, with `sigma_mad` taken over the *object-containing* stamp (flux-contaminated, vs the old windowed object-free `get_noise`). Looks like double inverse-variance + a biased noise estimate → shifts the fit's χ² weighting, errors, s2n, and PSF-averaging weights vs the validated v1. Intentional?
+6. **Per-type PSF columns collapsed.** `Tpsf`/`g1_psf`/`g2_psf` are now identical across all 5 metacal HDUs (all from `T_PSFo`/`g_PSFo`); old code stored per-type values. May be fine if the metacal target PSF is type-independent — but if any response/selection step differences them it now gets exactly zero.
+7. **Galaxy zero-pixel guard narrowed (`any`→`all`).** `prepare_postage_stamps:737` now skips an epoch only if `np.all(gal_vign==0)`; the old code skipped if *any* pixel was 0. Partial CCD-edge stamps (a band of exact-zero pixels) now enter the fit, relying on flags/weights to catch them. Intentional loosening or a regression?
+8. **PSF fit uses the galaxy joint prior + galaxy `FLUX_AUTO` as the PSF flux guess** (`do_ngmix_metacal`). Matches the upstream ngmix example's prior reuse, but the galaxy-flux guess for the PSF is odd; possible PSF-fit convergence/quality impact. Lower confidence.
+
+### Altitude / structure
+9. **Runner input-contract mismatch (4 runners).** `sextractor_runner`, `read_ext_sexcat_runner`, `psfex_interp_runner`, `vignetmaker_runner` moved the WCS/exp-numbers paths from named config options (`LOG_WCS`/`ME_LOG_WCS`/`ME_DOT_PSF_DIR`) to positional `input_file_list[i]` — but, unlike `ngmix_runner`, their `@module_runner` decorators were **not** updated. The real input contract now lives entirely in each config's `FILE_PATTERN`/`FILE_EXT` ordering; the shipped v2.0 example configs are correct, but a hand-written/v1-style config silently mis-maps inputs or IndexErrors with no schema to catch it. `ngmix_runner` is the model — extend the other four decorators to match.
+10. **`r50`/`T` mislabel (units).** `compile_results:415-417` stores `pars[4]` (= `T`, arcsec²) under `r50`/`r50_err`, and `r50_PSFo = sqrt(T_psf/2)` is the Gaussian σ, not the half-light radius (`r50 = 1.1774σ`). sp_validation consumes these size columns. Intentional shorthand or a mislabel?
+
+### Cleanups (bundle into one comment)
+- `save_results`: `ngmix.py:547` non-`f` string → error prints literal `{ext_name}`; leftover `print(...)` debug at `:564-565`; the `np.append`-per-batch FITS append is O(n²) over a tile.
+- Dead code: unreachable `print` after `return` in `MegaCamFlip` (`:293`); unused `sextractor_e1e2` (`:1131`, with a copy-pasted wrong docstring); `# I still don't know how to handle this` (`:63`); commented `#self._gal_vignet_path` block (`:240-244`); `# MKDEBUG` markers; redundant `self._f_wcs_path`.
+- `51 * 51` hardcoded masked-fraction denominator (`:766`) → use `v_flag_tmp.size`; near-term goal is configurable stamp sizes, so this will silently go wrong.
+- Duplication: `scripts/python/fitting.py` and `scripts/jupyter/test_centroid_shift.py` each redefine their own `make_data`/`get_prior`, duplicating `testing/simulate.py` + the module `get_prior` added in this same PR (defeats simulate.py's "stable across branches" purpose). `fitting.py` is a stray upstream-ngmix example (`fitting_bd_empsf.py` header, `espy`/`images` refs) — likely an unintended add; delete or make it import the canonical helpers.
+- Minor efficiency: doubled `galsim.Image(gal, scale=1.0)` in `make_ngmix_observation`; repeated uncached `SqliteDict[str(obj_id)]` deserialization per object/epoch; `get_exp_output_dirs` re-globs identical dirs when a runner repeats in `ME_IMAGE_EXP_RUNNERS`.
+
+---
+
+## Line-level (earlier staged notes — superseded by the code-review pass above for ngmix.py)
 
 - **`pyproject.toml`** — ngmix now `>=2.4` with `[tool.uv.sources] ngmix = git esheldon/ngmix tag v2.4.0`. Why pin to a git tag rather than the PyPI release `ngmix==2.4.0`? PyPI would be more reproducible and drop the git dependency. (PyPI was unreachable from here to confirm 2.4.0 is published — Cail can check.)
 - **`ngmix.py:63`** — stray `# I still don't know how to handle this` above `Tile_cat`.
