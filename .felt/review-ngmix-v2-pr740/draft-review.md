@@ -37,7 +37,8 @@ Ran `do_ngmix_metacal` on 200 galsim galaxies (sub-pixel shifted, the centroid r
 recovered shear via the metacal response:
 - **m = +2×10⁻⁴ ± 3×10⁻⁴** (multiplicative bias consistent with zero)
 - **c₂ = −1×10⁻⁵** (additive consistent with zero), R₁₁≈R₂₂≈0.924, 200/200 fits OK.
-- [author's own `centroid_bias_v2.py` noiseless ±-cancellation number to be folded in]
+- Author's own `centroid_bias_v2.py` (noiseless, 60 trials, ±-cancellation): **m = +3.7×10⁻⁴ ± 0.5×10⁻⁴ (1σ)**, c₂ = (−0.3 ± 0.15)×10⁻⁵, R₁₁≈0.9234.
+- **Read:** few×10⁻⁴ residual m — small, likely within UNIONS requirements, but the noiseless limit resolves a marginal *positive* residual (≈7σ given tiny noiseless bars). Not the centroid fix (fix-off gives the same) → metacal/fitter higher-order. Worth stating the m-requirement we're holding this to.
 
 ### 3. The centroid fix — present, correct in form, but **necessity not demonstrated in idealized sim**
 The fix (`make_ngmix_observation`, `ngmix.py:987-1004`) re-centers the galaxy Jacobian on

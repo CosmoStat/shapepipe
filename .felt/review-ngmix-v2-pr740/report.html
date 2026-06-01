@@ -80,9 +80,16 @@
     the container's scientific stack and ran the <em>actual module code</em> — not a re-implementation.</p>
 
     <div class="metric">
-      200 galsim galaxies, sub-pixel shifted (the centroid regime), metacal recovery:<br>
-      &nbsp;&nbsp;<strong>m = +2×10⁻⁴ ± 3×10⁻⁴</strong> &nbsp;(mult. bias ≈ 0)<br>
-      &nbsp;&nbsp;<strong>c₂ = −1×10⁻⁵</strong> &nbsp;(additive ≈ 0) &nbsp;·&nbsp; R₁₁≈R₂₂≈0.924 &nbsp;·&nbsp; 200/200 fits OK
+      My harness — 200 galsim galaxies, sub-pixel shifted, with noise:<br>
+      &nbsp;&nbsp;<strong>m = +2×10⁻⁴ ± 3×10⁻⁴</strong> &nbsp;(consistent with zero) &nbsp;·&nbsp; c₂ ≈ −1×10⁻⁵ &nbsp;·&nbsp; R≈0.924 &nbsp;·&nbsp; 200/200 OK<br>
+      <br>
+      Author's own <code>centroid_bias_v2.py</code> — noiseless, 60 trials, ±-shear cancellation:<br>
+      &nbsp;&nbsp;<strong>m = +3.7×10⁻⁴ ± 0.5×10⁻⁴ (1σ)</strong> &nbsp;·&nbsp; c₂ = (−0.3 ± 0.15)×10⁻⁵ &nbsp;·&nbsp; R₁₁≈0.9234 &nbsp;·&nbsp; S/N≈5×10¹⁷<br>
+      <br>
+      <strong>Read:</strong> the v2.0 fitter sits at the <strong>few×10⁻⁴ level in m</strong> — small and
+      almost certainly within UNIONS requirements, but the noiseless limit resolves a marginally-significant
+      positive residual (not formally zero). It is <em>not</em> the centroid fix (fix-off gives the same),
+      so it's metacal/fitter higher-order, not centroid bias.
     </div>
 
     <p><strong>The action for the call:</strong> walk the two blockers and the cleanups, decide
