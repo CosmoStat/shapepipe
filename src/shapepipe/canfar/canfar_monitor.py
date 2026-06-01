@@ -52,7 +52,7 @@ class Log(object):
         logging.log_command(args)
 
     def params_default(self):
-       """Params Default.
+        """Params Default.
 
         Set default parameters.
 

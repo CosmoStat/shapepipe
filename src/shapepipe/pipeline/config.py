@@ -17,7 +17,7 @@ class CustomParser(ConfigParser):
 
     """
 
-    def getexpanded(self, section, option):
+    def getexpanded(self, section, option, **kwargs):
         """Get Expanded.
 
         This method expands enviroment varibles obtaiened using the get method.
@@ -35,9 +35,9 @@ class CustomParser(ConfigParser):
             Expanded enviroment variables
 
         """
-        return self._get(section, os.path.expandvars, option)
+        return self._get(section, os.path.expandvars, option, **kwargs)
 
-    def getlist(self, section, option, delimiter=","):
+    def getlist(self, section, option, delimiter=",", **kwargs):
         """Get List.
 
         This method retrieves a list of strings separated by a given
@@ -59,7 +59,12 @@ class CustomParser(ConfigParser):
 
         """
         return [
-            opt.strip() for opt in self.getexpanded(section, option).split(delimiter)
+            opt.strip()
+            for opt in self.getexpanded(
+                section,
+                option,
+                **kwargs,
+            ).split(delimiter)
         ]
 
 
