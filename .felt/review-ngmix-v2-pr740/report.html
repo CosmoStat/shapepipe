@@ -93,17 +93,14 @@
       so it's metacal/fitter higher-order, not centroid bias.
     </div>
 
-    <p><strong>Pushed to #741 (with Cail, 2026-06-02):</strong> two tests + one fix, after
-    observing red→green locally — (1) <code>fix(ngmix): thread seeded rng…</code> + a
-    reproducibility test (same seed → identical shear; failed before, passes after); (2)
-    <code>test: smoke-import…</code> extending import coverage to <code>scripts/</code> —
-    deliberately red on <code>centroid_bias.py</code>'s removed-<code>get_guess</code> import
-    (resolution is Martin's call). These went on our mirror PR (coupled to the feature's
-    correctness; see [[separate-infra-prs]] for why bundling here is fine).</p>
-    <p><strong>Next:</strong> a short review posting the cut-and-dry items (PSF doc/code
-    contradiction as a question; the reproducibility fix; the <code>get_guess</code> breakage;
-    a mention of the runner-decorator inconsistency). The four methodology findings get a
-    deeper joint walkthrough with Cail tomorrow. Draft staged in <code>draft-review.md</code>.</p>
+    <p><strong>Landed on #741 (with Cail, 2026-06-02), CI now fully green — 260 passed:</strong></p>
+    <ul>
+      <li><code>fix(ngmix): thread seeded rng…</code> + <code>test_metacal_is_reproducible_with_fixed_seed</code> — observed red→green (same seed: max|dg1|≈3e-5 → 0.0). The one outright bug we fixed.</li>
+      <li><code>test_scripts_import.py</code> — extends import-smoke into <code>scripts/</code> (develop's <code>test_imports.py</code> only walks the package, so scripts were uncovered — that's how <code>get_guess</code> slipped through). Covers <code>centroid_bias_v2.py</code> + <code>fitting.py</code>.</li>
+      <li>Deleted the stranded v1 <code>centroid_bias.py</code> — it imports the removed <code>get_guess</code> and is only ever run against the <code>test_centroid_bug</code> worktree (via <code>run_bias_test.sh</code>'s <code>SHAPEPIPE_PATH</code>); the copy on this branch was never executed. Superseded by <code>centroid_bias_v2.py</code>.</li>
+    </ul>
+    <p><strong>The centroid bug, characterized:</strong> the v1 harness documents it as <strong>m ≈ −2.8×10⁻²</strong> on old ngmix 1.3.6 (<code>test_centroid_bug</code> branch), → ≈0 with <code>fix_jac_centroid</code>. That's why we couldn't reproduce a bias on v2.0: the bug lived in the old jacobian/centroid path, which the rewrite replaces entirely. v2.0's residual is the +4×10⁻⁴ we measured — not the bug.</p>
+    <p><strong>Open for the review (draft in <code>draft-review.md</code>):</strong> PSF doc/code contradiction (question to Martin); the four methodology findings (joint walkthrough with Cail, next); the runner-decorator mention; r50/T units; and a new scope question — the bug/fix cross-version rig (<code>run_all.sh</code>, bug/fix configs/envs) hardcodes mkilbing home paths, so: ship only the reusable v2 parts, or mark the rig local-only? Plus a dangling thread: <code>centroid_bug/fix.yaml</code> still name the now-deleted <code>centroid_bias.py</code> (resolves to the old worktree at runtime).</p>
   </section>
 
   <hr class="short">
