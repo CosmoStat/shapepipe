@@ -31,9 +31,9 @@ def get_exp_output_files(
 
         <exp_base_dir>/<exp_prefix>/<exp_base>/output/run_sp_*/<runner_name>/output/
 
-    where ``exp_prefix = exp_id[:2]`` and ``exp_base = exp_id[:-1]`` (the
-    trailing letter, typically ``p``, is stripped because directory names
-    do not carry it).
+    where ``exp_prefix = exp_id[:2]`` and ``exp_base`` is ``exp_id`` with the
+    trailing letter stripped if present (e.g. ``2113864p`` → ``2113864``), or
+    the full ``exp_id`` for numeric-only IDs (image simulations).
 
     Parameters
     ----------
@@ -88,9 +88,10 @@ def get_exp_output_files(
     for exp_id in exp_ids:
         # Directory structure mirrors run_job_canfar_v2.0.sh:
         #   exp_prefix = first 2 chars of exp_id  (e.g. "21")
-        #   exp_base   = exp_id without trailing letter  (e.g. "2113864")
+        #   exp_base   = exp_id without trailing letter if present (e.g. "2113864"),
+        #                or full exp_id for numeric-only ids (image sims)
         exp_prefix = exp_id[:2]
-        exp_base = exp_id[:-1]
+        exp_base = exp_id[:-1] if exp_id[-1].isalpha() else exp_id
 
         pattern = os.path.join(
             exp_base_dir,
@@ -183,7 +184,7 @@ def get_exp_output_dirs(
 
     for exp_id in exp_ids:
         exp_prefix = exp_id[:2]
-        exp_base = exp_id[:-1]
+        exp_base = exp_id[:-1] if exp_id[-1].isalpha() else exp_id
 
         pattern = os.path.join(
             exp_base_dir,

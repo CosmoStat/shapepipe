@@ -16,7 +16,7 @@ source $HOME/shapepipe/scripts/sh/job_list_help.bash
 ## Default values
 job=255
 config_dir=$HOME/shapepipe/example/cfis
-psf='mccd'
+psf='psfex'
 retrieve='vos'
 star_cat_for_mask='onthefly'
 tile_det='sx'
@@ -124,8 +124,8 @@ while [ $# -gt 0 ]; do
 done
 
 ## Check options
-if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
-  echo "PSF (option -p) needs to be 'psfex' or 'mccd'"
+if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ] && [ "$psf" != "psf" ]; then
+  echo "PSF (option -p) needs to be 'psfex', 'mccd', or 'psf' (image sims)"
   exit 2
 fi
 
@@ -161,15 +161,16 @@ fi
 # Run path and location of input image directories
 export SP_RUN=`pwd`
 
-# Config file path
-export SP_CONFIG=$SP_RUN/cfis
+# Config file path — use value exported by run_job_sp_canfar_v2.0.bash if set,
+# otherwise fall back to the cfis symlink in the run directory.
+export SP_CONFIG=${SP_CONFIG:-$SP_RUN/cfis}
 
 # Root directory for per-exposure work directories.
-# Set SP_EXP in the environment to override; otherwise derive it by stripping
-# the /tiles/... suffix from SP_RUN — robust to any directory depth and to
-# both data (.../v2.0/tiles/IDra/ID) and image_sims (.../grid_N/tiles/IDra/ID).
+# Set SP_EXP in the environment to override; otherwise use SP_DIR (the run
+# root, always exported by run_job_sp_canfar_v2.0.bash for both data and
+# image_sims) so exp/ is always a sibling of tiles/ under the same root.
 if [ -z "${SP_EXP}" ]; then
-  export SP_EXP="${SP_RUN%/tiles/*}/exp"
+  export SP_EXP="$SP_DIR/exp"
   echo "Setting SP_EXP to $SP_EXP"
 fi
 

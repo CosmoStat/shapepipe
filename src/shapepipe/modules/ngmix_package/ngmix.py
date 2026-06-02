@@ -149,12 +149,11 @@ class Vignet():
         psf_vignet_path,
         weight_vignet_path,
         flag_vignet_path,
-        f_wcs_path
-
+        f_wcs_path,
     ):
         self.f_wcs_file = SqliteDict(f_wcs_path)
         self.gal_vign_cat = SqliteDict(gal_vignet_path)
-        self.bkg_vign_cat = SqliteDict(bkg_vignet_path)
+        self.bkg_vign_cat = SqliteDict(bkg_vignet_path) if bkg_vignet_path is not None else None
         self.psf_vign_cat = SqliteDict(psf_vignet_path)
         self.weight_vign_cat = SqliteDict(weight_vignet_path)
         self.flag_vign_cat = SqliteDict(flag_vignet_path)
@@ -162,7 +161,8 @@ class Vignet():
     def close(self):
         self.f_wcs_file.close()
         self.gal_vign_cat.close()
-        self.bkg_vign_cat.close()
+        if self.bkg_vign_cat is not None:
+            self.bkg_vign_cat.close()
         self.flag_vign_cat.close()
         self.weight_vign_cat.close()
         self.psf_vign_cat.close()
@@ -220,28 +220,35 @@ class Ngmix(object):
         save_batch=-1,
         id_obj_min=-1,
         id_obj_max=-1,
+        bkg_sub=True,
     ):
 
-        if len(input_file_list) != 6:
+        n_expected = 6 if bkg_sub else 5
+        if len(input_file_list) != n_expected:
             raise IndexError(
                 f"Input file list has length {len(input_file_list)},"
-                + " required is 6"
+                + f" required is {n_expected}"
             )
 
         self._tile_cat_path = input_file_list[0]
+        if bkg_sub:
+            bkg_path, psf_path, weight_path, flag_path = (
+                input_file_list[2], input_file_list[3],
+                input_file_list[4], input_file_list[5],
+            )
+        else:
+            bkg_path, psf_path, weight_path, flag_path = (
+                None, input_file_list[2],
+                input_file_list[3], input_file_list[4],
+            )
         self._vignet_cat = Vignet(
             input_file_list[1],
-            input_file_list[2],
-            input_file_list[3],
-            input_file_list[4],
-            input_file_list[5],
-            f_wcs_path
+            bkg_path,
+            psf_path,
+            weight_path,
+            flag_path,
+            f_wcs_path,
         )
-        #self._gal_vignet_path = input_file_list[1]
-        #self._bkg_vignet_path = input_file_list[2]
-        #self._psf_vignet_path = input_file_list[3]
-        #self._weight_vignet_path = input_file_list[4]
-        #self._flag_vignet_path = input_file_list[5]
 
       
 
@@ -258,6 +265,7 @@ class Ngmix(object):
         self._save_batch = save_batch
         self._id_obj_min = id_obj_min
         self._id_obj_max = id_obj_max
+        self._bkg_sub = bkg_sub
 
         self._w_log = w_log
 
@@ -423,6 +431,8 @@ class Ngmix(object):
                 output_dict[name]["g2_err"].append(
                     np.sqrt(results[idx][name]["g_cov"][1, 1])
                 )
+                output_dict[name]["flux"].append(results[idx][name]["flux"])
+                output_dict[name]["flux_err"].append(results[idx][name]["flux_err"])
                 output_dict[name]["mag"].append(mag)
                 output_dict[name]["mag_err"].append(mag_err)
 
@@ -640,7 +650,7 @@ class Ngmix(object):
                 n_empty_cat += 1
                 continue
 
-            stamp = prepare_postage_stamps(vignet_cat, obj_id, i_tile, tile_cat)
+            stamp = prepare_postage_stamps(vignet_cat, obj_id, i_tile, tile_cat, self._bkg_sub)
 
             if len(stamp.gals) == 0:
                 n_no_epoch += 1
@@ -720,9 +730,9 @@ class Ngmix(object):
         # Save results
         self.save_results(res_dict)
 
-def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat):
+def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
     # define per-object lists of individual exposures to go into ngmix
-    stamp = Postage_stamp()
+    stamp = Postage_stamp(bkg_sub=bkg_sub)
     #identify exposure and ccd number from psf catalog
     psf_expccd_names = list(vignet.psf_vign_cat[str(obj_id)].keys())
     for expccd_name in psf_expccd_names:

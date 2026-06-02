@@ -155,7 +155,6 @@ function message() {
 }
 
 
-
 # Initialise exposure work directory: create dirs, exp_numbers file, config symlink.
 # The exp_numbers-000-000.txt file is created only once (skipped if already exists).
 # Args: $1 = exp_id, $2 = exp_work_dir
@@ -215,11 +214,17 @@ function run_exp_job() {
 
     (( n_total++ ))
 
-    # exp_id e.g. "2182795p": ab = first 2 chars, abcdefg = all but last char
+    # exp_id e.g. "2182795p" (data) or "208659" (image_sims)
+    # Strip trailing letter if present (data format); keep full id if numeric only.
     local exp_prefix="${exp_id:0:2}"
-    local exp_base="${exp_id%?}"
+    local exp_base
+    if [[ "${exp_id: -1}" =~ [a-zA-Z] ]]; then
+      exp_base="${exp_id%?}"
+    else
+      exp_base="$exp_id"
+    fi
     local exp_id_disp="${exp_prefix}/${exp_base}"
-    local exp_work_dir="$HOME/v${version}/exp/$exp_prefix/$exp_base"
+    local exp_work_dir="$dir/exp/$exp_prefix/$exp_base"
     local exp_log_file="$exp_work_dir/job_sp_canfar_v2.0.log"
 
     # Create exp_numbers-000-000.txt and cfis link if not existent
@@ -327,7 +332,7 @@ function run_exp_job() {
 
     echo "$(basename "$0") -j $exp_job -e $exp_id" > "$exp_log_file"
     echo "pwd=`pwd`"
-    command "job_sp_canfar_v2.0.bash -p $psf -r $retrieve --tile_det $tile_det --tile_mask $tile_mask -j $exp_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$exp_log_file"
+    command "job_sp_canfar_v2.0.bash -c $config_dir -p $psf -r $retrieve --tile_det $tile_det --tile_mask $tile_mask -j $exp_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$exp_log_file"
     echo "Done with job_sp_canfar_v2.0.bash"
 
   done < "$exp_numbers_file"
@@ -461,7 +466,7 @@ function run_tile_job() {
   command "update_runs_log_file.py" $dry_run
 
   # Run job script
-  command "job_sp_canfar_v2.0.bash -p $psf -r $retrieve --tile_det $tile_det --tile_mask $tile_mask -j $tile_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$log_file"
+  command "job_sp_canfar_v2.0.bash -c $config_dir -p $psf -r $retrieve --tile_det $tile_det --tile_mask $tile_mask -j $tile_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$log_file"
 }
 
 
@@ -470,16 +475,20 @@ if [ "$type" == "data" ]; then
     echo "Running on data"
     retrieve="vos"
     config_dir=$HOME/shapepipe/example/cfis
+    export SP_DIR=$dir
+    export SP_CONFIG=$config_dir
 
 elif [ "$type" == "image_sims" ]; then
 
     echo "Running on image simulations"
     retrieve="symlink"
     config_dir=$HOME/shapepipe/example/cfis_image_sims
-    # SP_DIR points to the run directory (grid level) where input_tiles and
-    # input_exp live; configs use $SP_DIR/input_* so those dirs stay outside
-    # SP_RUN and are not found twice by ShapePipe's recursive glob scan.
+    # SP_DIR points to the run directory where input_tiles and input_exp live;
+    # configs use $SP_DIR/input_* so those dirs stay outside SP_RUN and are
+    # not found twice by ShapePipe's recursive glob scan.
     export SP_DIR=$dir
+    export SP_CONFIG=$config_dir
+    tile_det='sx'
 
 else
 
@@ -510,7 +519,7 @@ if [ "$ID" == "-1" ]; then
 fi
 
 if [ "$psf" != "psfex" ] && [ "$psf" != "mccd" ]; then
-  message "PSF (option -p) needs to be 'psfex' or 'mccd'" "$debug_out" 4
+  message "PSF (option -p) needs to be 'psfex' or 'mccd', not '$psf'" "$debug_out" 4
 fi
 
 if [ "$dry_run" != "0" ] && [ "$dry_run" != "1" ]; then
@@ -633,8 +642,12 @@ fi
 
 (( do_job = job & 64 ))
 if [[ $do_job != 0 ]]; then
-  # Job 64: process stars on exposures, PSF model
-  if [ "$psf" == "psfex" ]; then
+  # Job 64: PSF model
+  # For image_sims: build fake PSF stamps at tile level from pre-computed dict
+  # For data: run full exposure-level PSF modelling pipeline
+  if [ "$type" == "image_sims" ]; then
+    run_tile_job 64 "fpsf" "fake_psf_runner:1"
+  elif [ "$psf" == "psfex" ]; then
     run_exp_job 64 "SxSePsf${Letter}i" "sextractor_runner:80 psfex_runner:80 psfex_interp_runner:40::warn setools_runner:80:rand_split"
   else
     message "MCCD not implemented yet for v2.0" "$debug_out" 10
@@ -659,8 +672,12 @@ fi
 
 (( do_job = job & 512 ))
 if [[ $do_job != 0 ]]; then
-  # Job 512: process tiles (PSF interp, vignet)
-  run_tile_job 512 "${Letter}iViVi ${Letter}iViVi ${Letter}iViVi" "psfex_interp_runner:1 vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:4"
+  # Job 512: process tiles ([PSF interp,] vignets)
+  if [ "$type" == "data" ]; then
+      run_tile_job 512 "${Letter}iViVi ${Letter}iViVi ${Letter}iViVi" "psfex_interp_runner:1 vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:4"
+  else
+      run_tile_job 512 "ViVi VViVi" "vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:4"
+  fi
 fi
 
 (( do_job = job & 1024 ))

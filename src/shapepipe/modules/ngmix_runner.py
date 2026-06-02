@@ -47,9 +47,6 @@ def ngmix_runner(
     # Pixel scale
     pixel_scale = config.getfloat(module_config_sec, "PIXEL_SCALE")
 
-    # Path to merged single-exposure single-HDU headers
-    f_wcs_path = input_file_list[6]
-
     # Input directory to check for already retrieved files
     if config.has_option(module_config_sec, "CHECK_EXISTING_DIR"):
         check_existing_dir = config.getexpanded(
@@ -73,10 +70,16 @@ def ngmix_runner(
     id_obj_min = config.getint(module_config_sec, "ID_OBJ_MIN")
     id_obj_max = config.getint(module_config_sec, "ID_OBJ_MAX")
 
+    # Background subtraction (disable for image sims where background is absent)
+    bkg_sub = config.getboolean(module_config_sec, "BKG_SUB", fallback=True)
+
+    # wcs path and vignet slice depend on whether background vignet is present
+    wcs_idx = 6 if bkg_sub else 5
+    f_wcs_path = input_file_list[wcs_idx]
+
     # Initialise class instance
-    # input_file_list[6] is log_exp_headers, already extracted as f_wcs_path
     ngmix_inst = Ngmix(
-        input_file_list[:6],
+        input_file_list[:wcs_idx],
         run_dirs["output"],
         file_number_string,
         zero_point,
@@ -87,6 +90,7 @@ def ngmix_runner(
         save_batch=save_batch,
         id_obj_min=id_obj_min,
         id_obj_max=id_obj_max,
+        bkg_sub=bkg_sub,
     )
 
     # Process ngmix shape measurement and metacalibration
