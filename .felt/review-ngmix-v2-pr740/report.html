@@ -93,10 +93,17 @@
       so it's metacal/fitter higher-order, not centroid bias.
     </div>
 
-    <p><strong>The action for the call:</strong> walk the two blockers and the cleanups, decide
-    what gets posted to GitHub and in whose voice, decide whether to push fixes or request them
-    from Martin/Lucy. Merge/approve is yours. Draft comments are staged in
-    <code>draft-review.md</code> in this fiber dir.</p>
+    <p><strong>Pushed to #741 (with Cail, 2026-06-02):</strong> two tests + one fix, after
+    observing red→green locally — (1) <code>fix(ngmix): thread seeded rng…</code> + a
+    reproducibility test (same seed → identical shear; failed before, passes after); (2)
+    <code>test: smoke-import…</code> extending import coverage to <code>scripts/</code> —
+    deliberately red on <code>centroid_bias.py</code>'s removed-<code>get_guess</code> import
+    (resolution is Martin's call). These went on our mirror PR (coupled to the feature's
+    correctness; see [[separate-infra-prs]] for why bundling here is fine).</p>
+    <p><strong>Next:</strong> a short review posting the cut-and-dry items (PSF doc/code
+    contradiction as a question; the reproducibility fix; the <code>get_guess</code> breakage;
+    a mention of the runner-decorator inconsistency). The four methodology findings get a
+    deeper joint walkthrough with Cail tomorrow. Draft staged in <code>draft-review.md</code>.</p>
   </section>
 
   <hr class="short">
