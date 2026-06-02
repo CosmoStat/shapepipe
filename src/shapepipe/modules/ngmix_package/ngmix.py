@@ -920,7 +920,7 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
 
     return sig_noise
 
-def prepare_ngmix_weights(gal, weight, flag):
+def prepare_ngmix_weights(gal, weight, flag, rng):
     """bookkeeping for ngmix weights. runs on a single galaxy and epoch
         pixel scale and galaxy guess
         TO DO: decide if we want galaxy guess stuff
@@ -930,6 +930,9 @@ def prepare_ngmix_weights(gal, weight, flag):
     gal : numpy.ndarray
     weight : numpy.ndarray
     flag : numpy.ndarray
+    rng : numpy.random.RandomState
+        Random state for the noise realisations (seeded per tile for
+        reproducibility).
 
     Returns
     -------
@@ -945,8 +948,8 @@ def prepare_ngmix_weights(gal, weight, flag):
 
     sig_noise = sigma_mad(gal)
 
-    noise_img = np.random.randn(*gal.shape) * sig_noise
-    noise_img_gal = np.random.randn(*gal.shape) * sig_noise
+    noise_img = rng.standard_normal(gal.shape) * sig_noise
+    noise_img_gal = rng.standard_normal(gal.shape) * sig_noise
 
     gal_masked = np.copy(gal)
     if (weight_map == 0).any():
@@ -956,7 +959,7 @@ def prepare_ngmix_weights(gal, weight, flag):
 
     return gal_masked, weight_map, noise_img
 
-def make_ngmix_observation(gal, weight, flag, psf, wcs):
+def make_ngmix_observation(gal, weight, flag, psf, wcs, rng):
     """Build an ngmix Observation for a single galaxy epoch.
 
     The galaxy Jacobian is re-centered on the HSM centroid so that the
@@ -970,6 +973,9 @@ def make_ngmix_observation(gal, weight, flag, psf, wcs):
     psf : numpy.ndarray
     wcs : galsim.BaseWCS
         Local WCS Jacobian at the object position.
+    rng : numpy.random.RandomState
+        Random state for the noise realisations (seeded per tile for
+        reproducibility).
 
     Returns
     -------
@@ -982,7 +988,9 @@ def make_ngmix_observation(gal, weight, flag, psf, wcs):
     )
     psf_obs = Observation(psf, jacobian=psf_jacob)
 
-    gal_masked, weight_map, noise_img = prepare_ngmix_weights(gal, weight, flag)
+    gal_masked, weight_map, noise_img = prepare_ngmix_weights(
+        gal, weight, flag, rng
+    )
 
     # Re-center Jacobian on HSM centroid (pixel offset from stamp center).
     # Fixes: centroid prior biases fit when galaxy is offset from stamp center.
@@ -1095,6 +1103,7 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng):
             stamp.flags[n_e],
             stamp.psfs[n_e],
             stamp.jacobs[n_e],
+            rng,
         )
         gal_obs_list.append(gal_obs)
 

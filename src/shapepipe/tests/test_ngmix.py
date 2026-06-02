@@ -47,3 +47,50 @@ def test_megacam_flip_leaves_unrotated_ccds_unchanged(rows, ccd_nb):
     vign = np.array(rows, dtype=float)
 
     npt.assert_allclose(Ngmix.MegaCamFlip(vign, ccd_nb), vign)
+
+
+def _metacal_noshear_g(seed):
+    """Run do_ngmix_metacal on a fixed simulated stamp with RandomState(seed).
+
+    The simulated data is drawn from a separate, fixed seed so the only
+    seed-dependent randomness in play is the noise/metacal RNG inside the
+    fitter — exactly the channel that must be reproducible.
+    """
+    from shapepipe.modules.ngmix_package.ngmix import (
+        Postage_stamp,
+        do_ngmix_metacal,
+        get_prior,
+    )
+    from shapepipe.testing.simulate import make_data
+
+    rng = np.random.RandomState(seed)
+    prior = get_prior(0.1857, rng)
+    gals, psfs, _, weights, flags, jacobs = make_data(
+        rng=np.random.RandomState(123),
+        shear=(0.02, 0.0),
+        noise=1e-4,
+        n_epochs=2,
+        img_size=51,
+    )
+    stamp = Postage_stamp(bkg_sub=False, megacam_flip=False)
+    stamp.gals, stamp.psfs, stamp.weights, stamp.flags, stamp.jacobs = (
+        gals,
+        psfs,
+        weights,
+        flags,
+        jacobs,
+    )
+    res, _ = do_ngmix_metacal(stamp, prior, 1.0, rng)
+    return np.asarray(res["noshear"]["g"])
+
+
+def test_metacal_is_reproducible_with_fixed_seed():
+    """Same seed -> identical metacal shear.
+
+    The module seeds ``self._rng = RandomState(seed)`` per tile precisely so a
+    rerun reproduces. This guards the noise-image and masked-pixel draws in
+    ``prepare_ngmix_weights`` against silently falling back to the unseeded
+    global ``numpy.random`` state, which would make shear estimates
+    irreproducible from one run to the next.
+    """
+    npt.assert_array_equal(_metacal_noshear_g(42), _metacal_noshear_g(42))
