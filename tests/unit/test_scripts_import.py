@@ -21,9 +21,10 @@ REPO_ROOT = Path(shapepipe.__file__).resolve().parents[2]
 # Scripts added by the ngmix v2.0 work that are meant to run against the current
 # shapepipe module and carry a __main__ guard (so importing them is side-effect
 # free). The jupyter export scripts/jupyter/test_centroid_shift.py is excluded:
-# it has no __main__ guard and executes on import.
+# it has no __main__ guard and executes on import. The v1 centroid_bias.py is
+# excluded by deletion: it targets the old test_centroid_bug branch/env (run via
+# run_bias_test.sh's SHAPEPIPE_PATH), not this module.
 VALIDATION_SCRIPTS = [
-    "scripts/validation/centroid/centroid_bias.py",
     "scripts/validation/centroid/centroid_bias_v2.py",
     "scripts/python/fitting.py",
 ]
