@@ -1,25 +1,21 @@
 ---
 name: 'Review + work: ngmix v2.0 (PR #740)'
-status: active
+status: closed
 tags:
     - constitution
     - shapepipe
     - ngmix
     - review
 created-at: 2026-06-01T11:50:17.967872934+02:00
-outcome: 'Interactive review of ngmix v2.0 (#740), worked on mirror PR #741 (CI green, 260 passed). POSTED to #741: review part 1/2 (COMMENTED) with 3 inline comments — the reproducibility rng fix (+ its test), and the scripts-import smoke test that exposed the get_guess breakage (v1 centroid_bias.py removed as a stranded old-API copy). These are the items we fixed AND tested. NOT yet posted — review part 2/2 (the science/methodology judgement calls): *_psfo columns now report the metacal-reconvolved PSF not the original PSFEx/MCCD PSF (doc-vs-code contradiction); weight-map normalization change; r50/T units; per-type PSF collapse; zero-pixel any->all; PSF fit prior/flux guess; runner-decorator mention. Those need a joint walkthrough with Cail (he wants education not assertion) — DEFERRED TO NEXT SESSION per his call. Harness note: scripts/validation/centroid/ rig is all under scripts/ (not library) with hardcoded mkilbing paths — fine to live in scripts/, maybe flag as local scaffolding; only testing/simulate.py went into the package and it''s clean. Merge/approve is Cail+Martin''s. Loop Martin in on #741 (tell him fork PRs don''t trigger CI; open on CosmoStat directly).'
+closed-at: 2026-06-03T16:28:05.521094506+02:00
+outcome: 'Review of PR #740 (ngmix v2.0) delivered as a coherent two-part review on CI-mirror #741 (part 1: fixed+tested items; part 2: empirical verification + 11 line-anchored findings + methodology questions for Martin/Lucy). Verified empirically on candide against real ngmix 2.4.0: API correct, metacal recovers m=+2e-4 (consistent w/ zero), centroid fix benign (its bias lives in old ngmix-1.x path, can''t repro on current code — expected). Key findings: weight-norm change, *_psfo now reconvolved-PSF + per-type collapse, zero-pixel guard any->all, CHECK_EXISTING_DIR resume dropped, r50/T mislabel, runner decorator contracts unupdated for 4 runners. Martin to go through and merge; offer to push cut-and-dry fixes stands. Merge is Cail''s/Martin''s gesture.'
 horizon: now
 shuttle:
     enabled: true
     kind: oneshot
-    interactive: true
     host: candide
     project_dir: /automnt/n17data/cdaley/unions/shapepipe
     agent: claude-opus
-    session:
-        id: be6fbfa6-8418-490b-bb05-d1936d5059ef
-        agent: claude-opus
-        dispatched_at: 2026-06-01T09:51:08.677418931Z
 ---
 
 # Review + work: ngmix v2.0 (PR #740)
