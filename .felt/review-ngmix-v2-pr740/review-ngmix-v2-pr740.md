@@ -1,22 +1,23 @@
 ---
+id: 01KTCHWZX873VG28AA663A3ZQE
 created-at: 2026-06-01T11:50:17.967872934+02:00
 horizon: now
 name: "Review + work: ngmix v2.0 (PR #740)"
 outcome: |-
-  INTERACTIVE — awaiting Cail. Martin engaged this morning (06-05 07:14–07:33Z), replying to 6 of the 11 findings: greenlit removing the dead CHECK_EXISTING_DIR resume (254) and making 51*51 configurable via STAMP_SIZE (766); explained the any→all zero-pixel loosening as intentional (737, "any==0 passed ~no stamps"); pointed weight-norm (949) at issue #604 (the 2023 0/1-mask → inverse-variance design discussion — context, not a direct answer to the sigma_mad-vs-v1 sub-finding); and opened the r50/T size-naming question, poking @lbaumo. I RAN Martin's explicit check: confirmed pars[4]=T=2σ² (l.911 uses Gaussian(σ=sqrt(pars[4]/2))); galaxy r50 (l.415) stores T (an area), PSF r50_PSFo (l.676) = sqrt(T/2) = σ — different scales, neither is the half-light radius 1.1774σ. Bug verified. Still unanswered (5): 293, 1140, runners, fitting.py, 1068 — and *_psfo reconvolved-PSF (1045), now the LONE clear merge-gate. report.html refreshed (Martin-disposition column + verified r50/T metric + re-sequenced steps). REPORT/ANALYSIS ONLY — no commits pushed. Held for Cail to direct: push Bucket A? r50/T transform-vs-rename? how to reply to Martin's six? Merge stays Cail's/Martin's gesture.
+    INTERACTIVE — live with Cail. Cleanups + fitting.py committed (bd60dc8e in worktree /tmp/pr740-wt, branch pr740-tmp, UNPUSHED): 293 print, 1140 sextractor_e1e2, 254 dead resume, 766 →v_flag_tmp.size, fitting.py deleted. Dev image built (/n17data/cdaley/containers/shapepipe-dev) + ngmix 2.4.0 installed → full suite + example pipeline now runnable. Ran a 6+2-agent WORKFLOW on the two hard problems → two decision-ready reports in fiber: weights-report.md, size-report.md, deep-dive-report.html (sent to Cail). WEIGHTS (#604+949): found TWO coupled regressions in prepare_ngmix_weights (ngmix.py:871) — R1 noise estimator regressed from object-free windowed get_noise (now DEAD at :826) to flux-contaminated whole-stamp sigma_mad; R2 lost the v1 binarization → double-counts a real inverse-variance map. EMPIRICALLY CONFIRMED (truth ivar 1e6 → recovered 8.8e11, ratio≈1/noise²). Clean red→green test target via make_data. Rec: SPLIT — minimal v1-restore (reinstate binarization + get_noise) + test in #741; SExtractor BACKGROUND_RMS baseline as a SEPARATE PR (Codex shuttle, ~4-8h, closes #604). SIZE (r50/T): galaxy r50=pars[4]=T (area), PSF r50psf=σ; neither is 1.1774σ; all 5 r50* cols new in v2.0. UNIONS-3500 WL I (arXiv:2605.13549) reports half-light radius r_h as PRIMARY. Rec: TRANSFORM at source (honest r50 in ngmix) + cs_util converter web; bonus find — sp_validation galaxy.py:T_to_fwhm is dimensionally wrong (feeds the scale-dependent PSF-leakage fit). HELD: runner decorators (test via example pipeline now that the dev image is up). DECISIONS FOR CAIL: push Bucket A? approve the weights 2-PR split + let me draft the Codex constitution? size transform-vs-rename + cs_util home? No Martin/Lucy reply drafted yet (Cail's instruction). Merge stays Cail's/Martin's gesture.
 shuttle:
-  agent: claude-opus
-  enabled: true
-  host: candide
-  interactive: true
-  kind: oneshot
-  project_dir: /automnt/n17data/cdaley/unions/shapepipe
+    agent: claude-opus
+    enabled: true
+    host: candide
+    interactive: true
+    kind: oneshot
+    project_dir: /automnt/n17data/cdaley/unions/shapepipe
 status: active
 tags:
-  - constitution
-  - shapepipe
-  - ngmix
-  - review
+    - constitution
+    - shapepipe
+    - ngmix
+    - review
 ---
 
 
