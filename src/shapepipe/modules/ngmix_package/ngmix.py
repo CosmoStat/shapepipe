@@ -188,8 +188,6 @@ class Ngmix(object):
         Path to merged single-exposure single-HDU headers
     w_log : logging.Logger
         Logging instance
-    check_existing_dir : str, optional
-        Directory or previous run, default is ``None``
     save_batch : int, optional
         Save output catalogue in batches of this size; detaul is ``-1`` (no
         batch save)
@@ -216,7 +214,6 @@ class Ngmix(object):
         pixel_scale,
         f_wcs_path,
         w_log,
-        check_existing_dir=None,
         save_batch=-1,
         id_obj_min=-1,
         id_obj_max=-1,
@@ -251,10 +248,8 @@ class Ngmix(object):
         self._zero_point = zero_point
         self._pixel_scale = pixel_scale
 
-        # MKDEBUG check whether still used 
         self._f_wcs_path = f_wcs_path
 
-        self._check_existing_dir = check_existing_dir
         self._save_batch = save_batch
         self._id_obj_min = id_obj_min
         self._id_obj_max = id_obj_max
@@ -290,7 +285,6 @@ class Ngmix(object):
         if ccd_nb < 18 or ccd_nb in [36, 37]:
             # swap x axis so origin is on top-right
             return np.rot90(vign, k=2)
-            print('rotating megapipe image')
         else:
             # swap y axis so origin is on bottom-left
             return vign
@@ -459,52 +453,6 @@ class Ngmix(object):
 
         """
         return f"{directory}/ngmix{self._file_number_string}.fits"
-
-
-    def get_last_id(self, cat_path):
-        """Get Last ID.
-
-        Return ID of last projessed objects found in input catalogue file.
-
-        Parameters
-        ----------
-        cat_path: str
-            input catalogue file path
-
-        Returns
-        --------
-        int
-            object ID
-
-        """
-        cat = file_io.FITSCatalogue(
-            cat_path,
-            SEx_catalogue=True,
-            open_mode=file_io.BaseCatalogue.OpenMode.ReadOnly,
-        )
-        cat.open()
-
-        if len(cat._cat_data) != 6:
-            raise IndexError(
-                f"Found {len(cat._cat_data)} HDUs instead of 6 in catalogue"
-                + f" {cat_path}"
-            )
-
-        ids = cat._cat_data[1].data["id"]
-
-        # No object foun
-        if len(ids) == 0:
-            return -1
-
-        id_last = ids[-1]
-        for hdu_no in range(2, 6):
-            if id_last != cat._cat_data[hdu_no].data["id"][-1]:
-                raise ValueError(
-                    f"Last ID {cat._cat_data[hdu_no].data['id'][-1]} in HDU"
-                    + f" #{hdu_no} inconsistent with {id_last}"
-                )
-
-        return id_last
 
 
     def save_results(self, output_dict):
@@ -763,7 +711,7 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat):
             flag_vign[np.where(tile_vign == -1e30)] = 2**10
         v_flag_tmp = flag_vign.ravel()
         # remove objects that are more than 1/3 masked
-        if len(np.where(v_flag_tmp != 0)[0]) / (51 * 51) > 1 / 3.0:
+        if len(np.where(v_flag_tmp != 0)[0]) / v_flag_tmp.size > 1 / 3.0:
             continue
 
         weight_vign = (
@@ -1134,34 +1082,3 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng):
     resdict, obsdict = boot.go(gal_obs_list)
     psf_res = average_multiepoch_psf(obsdict)
     return resdict, psf_res
-
-
-# Define the SExtractor parameters for a galaxy
-def sextractor_e1e2(e,theta):
-    """sextractor_e1e2
-
-    computes ellipticity from sextrator quantities
-    Parameters
-    ----------
-    stamp : Postage_stamp
-        List of the galaxy vignets.  List indices run over epochs
-    prior : ngmix.priors
-        Priors for the fitting parameters
-    flux_guess : np.ndarray
-        guess for flux
-    pixel_scale : float
-        pixel scale in arcsec
-    rng : numpy.random.RandomState
-        Random state for guesses and priors    
-
-    Returns
-    -------
-    np.ndarray
-        ellipticity
-
-    """
-    # Convert the position angle from degrees to radians
-    phi = np.radians(theta) - np.pi/2
-    # Calculate the ellipticity vector
-    e_vec = e * np.array([np.cos(2*phi), np.sin(2*phi)])
-    return e_vec

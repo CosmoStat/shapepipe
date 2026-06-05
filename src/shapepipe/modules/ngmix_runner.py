@@ -50,15 +50,6 @@ def ngmix_runner(
     # Path to merged single-exposure single-HDU headers
     f_wcs_path = input_file_list[6]
 
-    # Input directory to check for already retrieved files
-    if config.has_option(module_config_sec, "CHECK_EXISTING_DIR"):
-        check_existing_dir = config.getexpanded(
-            module_config_sec,
-            "CHECK_EXISTING_DIR",
-        )
-    else:
-        check_existing_dir = None
-
     # Batch save option
     if config.has_option(module_config_sec, "SAVE_BATCH"):
         save_batch = config.getint(
@@ -83,7 +74,6 @@ def ngmix_runner(
         pixel_scale,
         f_wcs_path,
         w_log,
-        check_existing_dir=check_existing_dir,
         save_batch=save_batch,
         id_obj_min=id_obj_min,
         id_obj_max=id_obj_max,
