@@ -8,10 +8,11 @@ tags:
 created-at: 2026-06-05T22:30:50.004535516+02:00
 outcome: Draft — not yet dispatched.
 shuttle:
-  enabled: false
+  enabled: true
   kind: oneshot
   host: candide
   agent: claude-opus
+status: active
 ---
 
 # ngmix size columns: honest r50 + cs_util converter web

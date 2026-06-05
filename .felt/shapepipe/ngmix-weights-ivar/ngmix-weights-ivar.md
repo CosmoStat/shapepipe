@@ -8,10 +8,11 @@ tags:
 created-at: 2026-06-05T22:30:49.970813955+02:00
 outcome: Draft — not yet dispatched.
 shuttle:
-  enabled: false
+  enabled: true
   kind: oneshot
   host: candide
   agent: codex
+status: active
 ---
 
 # ngmix weight map: fix v2.0 regressions + inverse-variance (#604)
