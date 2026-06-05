@@ -7,15 +7,15 @@ tags:
     - ngmix
     - review
 created-at: 2026-06-01T11:50:17.967872934+02:00
-closed-at: 2026-06-03T16:28:05.521094506+02:00
-outcome: 'Review of PR #740 (ngmix v2.0) delivered as a coherent two-part review on CI-mirror #741 (part 1: fixed+tested items; part 2: empirical verification + 11 line-anchored findings + methodology questions for Martin/Lucy). Verified empirically on candide against real ngmix 2.4.0: API correct, metacal recovers m=+2e-4 (consistent w/ zero), centroid fix benign (its bias lives in old ngmix-1.x path, can''t repro on current code — expected). Key findings: weight-norm change, *_psfo now reconvolved-PSF + per-type collapse, zero-pixel guard any->all, CHECK_EXISTING_DIR resume dropped, r50/T mislabel, runner decorator contracts unupdated for 4 runners. Martin to go through and merge; offer to push cut-and-dry fixes stands. Merge is Cail''s/Martin''s gesture.'
+closed-at: 2026-06-05T01:59:46.865336741+02:00
+outcome: 'Round 2 (next-steps) delivered. Re-reviewed against the current #741 head: no code has changed since the part-2 review, so all 11 findings stand exactly as anchored. Martin consolidated onto #741 (closed the fork PR #740), CI green + mergeable, but engaged only to ack the RNG fix — none of the 11 answered yet. Triaged into 5 cut-and-dry / 5 decisions / 1 resume; flagged weight-norm (ngmix.py:949) + *_psfo reconvolved-PSF (1045) as the only two genuine merge-gates (they silently change columns sp_validation/null-tests consume). report.html (triage table + recommended merge sequence) in fiber dir; summary comment posted to #741 (issuecomment-4626968551). REPORT ONLY — no commits pushed this round. Open for Cail: push the Bucket-A cleanups now (offer stands)? confirm the 2 merge-gates? r50/T rename-vs-document? Merge stays Cail''s/Martin''s gesture.'
 horizon: now
 shuttle:
-    enabled: true
-    kind: oneshot
-    host: candide
-    project_dir: /automnt/n17data/cdaley/unions/shapepipe
     agent: claude-opus
+    enabled: true
+    host: candide
+    kind: oneshot
+    project_dir: /automnt/n17data/cdaley/unions/shapepipe
 ---
 
 # Review + work: ngmix v2.0 (PR #740)
@@ -59,3 +59,15 @@ The diff is dominated by `src/shapepipe/modules/ngmix_package/ngmix.py` (~1252 l
 - **@lbaumo = Lucy Baumont** — her ngmix classes/interface are central; her wrapper cleanup came out of her visit (see [[ngmix-update]]).
 - **Prior art / related:** [[ngmix-update]] (the future-intent this realizes), [[prs-in-flight]] (the PR tracker — add #740 and its disposition), [[shapepipe]] (the Martin collaboration root). The repo `CLAUDE.md` carries build/test/run conventions — read it.
 - **Authorship:** GitHub comments in Cail's voice, signed "— Claude on behalf of Cail" unless Cail asks otherwise on the call.
+
+## Round 2 (2026-06-05): next-steps report from Martin's responses — SUPERSEDES the merge-comment scope for THIS round
+
+**Cail's ask (night of 2026-06-05):** read Martin's comments/responses to the standing two-part review (now on #741), do a *further code-review pass*, and produce a **report of recommended next steps** given where Martin has landed.
+
+**Desired State (round 2):**
+- Read every Martin (`martinkilbinger`) response across **#740** and **#741** — inline replies, review threads, and any new commits/force-pushes since the part-2 review (2026-06-03). Note the `# MKDEBUG` markers still in the code. (As of dispatch, Martin's engagement is light: one COMMENTED review + one inline reply at `ngmix.py:951` "Good. This probably was previous code before we changed to a random seed per tile." Verify whether more has landed.)
+- **Further code-review pass** over the ngmix module + the 4 runners whose decorator contracts part-2 flagged (`sextractor_runner` et al.): for each of the 11 line-anchored findings, determine whether Martin's v2.0 now addresses it or it still stands.
+- Produce a **next-steps report**: `report.html` in the fiber dir **and** a posted PR summary comment on #741 (Cail's voice / "— Claude on behalf of Cail"). For each open item: `{resolved by Martin | still open | needs a decision}`, owner (`Cail / Martin / Lucy`), and the **recommended sequence to get #740/#741 mergeable**.
+- **REPORT ONLY — do NOT push new commits to the ngmix branch this round.** Pure analysis + PR comment. Keeps it collision-free while other shapepipe/pure_eb work is in flight.
+
+**Exit:** autonomous — produce the report + PR comment, then close for Cail's review.

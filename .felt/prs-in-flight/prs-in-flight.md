@@ -51,7 +51,8 @@ for the one open security-fiber.)
 
 | # | Author | What |
 |---|---|---|
-| #725 | aguinot | Fix centroid shift |
+| #741 | martinkilbinger / lbaumo | **Ngmix v2.0** — upstream ngmix 2.4.0 + Lucy's new classes. Canonical PR (CI mirror; fork PR #740 closed by Martin). OPEN, mergeable, CI green. Two-part review + next-steps triage delivered; 11 findings open (5 cut-and-dry, 5 decisions, 1 resume), 2 are merge-gates (weight-norm, `*_psfo`). See [[review-ngmix-v2-pr740]]. |
+| #725 | aguinot | Fix centroid shift (overlaps #741 centroid work — cross-ref/supersede?) |
 | #704 | martinkilbinger | Contributors |
 | #703 | martinkilbinger | V1.3.x |
 | #699 | martinkilbinger | Coverage mask |

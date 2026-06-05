@@ -18,7 +18,7 @@
   html, body { margin: 0; padding: 0; }
   body { background: var(--parchment); color: var(--ink); font-family: var(--serif); font-size: 19px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
   .page { max-width: 880px; margin: 0 auto; padding: 56px 32px 72px; }
-  .stamp { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 20px; display: flex; gap: 14px; align-items: center; }
+  .stamp { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 20px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
   .stamp .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cinnabar); }
   .stamp .sep { color: var(--rule); }
   h1 { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 44px; line-height: 1.1; margin: 0 0 16px; }
@@ -29,18 +29,26 @@
   p { margin: 0 0 16px; }
   ul, ol { margin: 0 0 16px; padding-left: 22px; }
   li { margin-bottom: 8px; }
-  code { font-family: var(--mono); font-size: 0.88em; background: rgba(196, 147, 51, 0.12); padding: 1px 5px; border-radius: 2px; }
+  code { font-family: var(--mono); font-size: 0.86em; background: rgba(196, 147, 51, 0.12); padding: 1px 5px; border-radius: 2px; }
   hr { border: none; border-top: 1px solid var(--rule); margin: 40px 0; }
   hr.short { width: 80px; margin: 32px 0; border-top-width: 2px; border-top-color: var(--cinnabar); }
   blockquote { margin: 16px 0; padding-left: 20px; border-left: 2px solid var(--ochre); font-style: italic; }
-  table { border-collapse: collapse; width: 100%; font-size: 16px; margin: 0 0 18px; }
-  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  table { border-collapse: collapse; width: 100%; font-size: 15.5px; margin: 0 0 18px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
   th { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+  td.ln { font-family: var(--mono); font-size: 13px; white-space: nowrap; }
   .v-ok { color: var(--teal); font-weight: 600; }
   .v-warn { color: var(--ochre); font-weight: 600; }
   .v-no { color: var(--cinnabar); font-weight: 600; }
+  .pill { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 7px; border-radius: 10px; white-space: nowrap; }
+  .pill-a { background: rgba(63, 130, 120, 0.16); color: var(--teal); }
+  .pill-b { background: rgba(188, 69, 56, 0.12); color: var(--cinnabar); }
+  .pill-c { background: rgba(196, 147, 51, 0.18); color: #9a6f1c; }
   .metric { font-family: var(--mono); background: var(--cinnabar-faint); border-left: 3px solid var(--cinnabar); padding: 14px 18px; margin: 0 0 18px; font-size: 15px; }
   .lede { font-size: 22px; font-style: italic; color: var(--ink); }
+  ol.seq { counter-reset: step; list-style: none; padding-left: 0; }
+  ol.seq > li { position: relative; padding-left: 44px; margin-bottom: 16px; }
+  ol.seq > li::before { counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0; width: 28px; height: 28px; line-height: 28px; text-align: center; font-family: var(--mono); font-size: 14px; color: var(--rag); background: var(--cinnabar); border-radius: 50%; }
 </style>
 </head>
 <body>
@@ -48,119 +56,154 @@
 
   <div class="stamp">
     <span class="dot"></span>
-    <span>2026 · 06 · 01</span>
+    <span>2026 · 06 · 05</span>
     <span class="sep">·</span>
     <span>review-ngmix-v2-pr740</span>
     <span class="sep">·</span>
-    <span>autonomous prep — awaiting Cail</span>
+    <span>round 2 — next steps</span>
   </div>
 
-  <h1>PR #740 — Ngmix v2.0: review prep.</h1>
+  <h1>Ngmix v2.0: where it stands &amp; how to land it.</h1>
 
-  <p class="lede">The diff is read, the new fitter was built against real ngmix 2.4.0 and runs
-  unbiased, and — via a same-repo mirror (PR #741) with develop merged in — the <strong>full CI
-  suite is now green</strong>. A 6-angle code-review pass then caught several real issues the
-  green suite doesn't (a dead-on-arrival script, an unseeded-RNG reproducibility break, PSF
-  column semantics, a dropped resume feature). Ready to talk it through.</p>
+  <p class="lede">The two-part review is delivered, CI is green, and Martin has consolidated the
+  work onto <strong>PR #741</strong> — closing the fork PR #740. But the eleven line-level findings
+  are still unanswered, and <strong>no code has changed since the review</strong>, so all eleven
+  stand exactly as written. #741 is mechanically mergeable today; the real decision is which
+  findings to land before merge and which can merge-then-iterate. This report triages them and
+  proposes a sequence.</p>
 
   <hr>
 
   <section>
     <div class="section-mark">§ Current state</div>
-    <h2>Autonomous prep done; held for the call.</h2>
+    <h2>#741 is now the PR of record — green, mergeable, waiting on intent.</h2>
 
-    <p><strong>What this PR is:</strong> +3894/−3410 across 67 files. It retires Axel's
-    <code>aguinot/ngmix@stable_version</code> fork for <strong>upstream ngmix 2.4.0</strong> and
-    adopts Lucy Baumont's reworked ngmix classes/interface; near-total rewrite of
-    <code>ngmix_package/ngmix.py</code> (1252 lines); a centroid-bias fix + validation scripts;
-    a new dependency-light <code>testing/simulate.py</code>; and supporting pipeline plumbing for
-    the v2.0 production run (a <code>$SP_EXP</code>-tree directory resolver).</p>
+    <p><strong>Topology shifted.</strong> Martin <strong>closed #740</strong> (his fork branch
+    <code>martinkilbinger:ngmix_v2.0</code>) on 06-03, ~15&nbsp;min after the part-2 review landed,
+    and consolidated onto <strong>#741</strong> — the CI mirror on
+    <code>CosmoStat:ngmix_v2.0</code>. So #741 is the canonical PR going forward:
+    <span class="v-ok">OPEN</span>, <span class="v-ok">MERGEABLE</span>,
+    <span class="v-ok">CI green</span> (<code>build-test-publish</code> pass, full suite). The branch
+    head carries the three part-1 fixes (seeded-RNG thread, scripts-import smoke, v1
+    <code>centroid_bias.py</code> deletion) and the merge of <code>develop</code>. There have been
+    <strong>no commits since the part-2 review</strong>.</p>
 
-    <p><strong>How I exercised it:</strong> the container ships ngmix 1.3.6, so I installed
-    ngmix <strong>2.4.0</strong> from the PR's own source (<code>esheldon/ngmix@v2.4.0</code>) over
-    the container's scientific stack and ran the <em>actual module code</em> — not a re-implementation.</p>
+    <p><strong>Martin's engagement is light.</strong> He closed #740, posted a (body-less)
+    <code>COMMENTED</code> review on #741, and left a single inline reply — on the
+    <em>reproducibility fix</em>, not one of the open findings:</p>
+    <blockquote>"Good. This probably was previous code before we changed to a random seed per
+    tile." <span style="font-style:normal; color:var(--ink-muted)">— on the seeded-RNG threading
+    (<code>ngmix.py:951</code>)</span></blockquote>
+    <p>That acknowledges the one outright bug we'd already fixed. <strong>None of the eleven part-2
+    findings have a response yet</strong> — consistent with his "just post the review and I'll go
+    through it" signal. So the ball is split two ways: the <em>cut-and-dry</em> items wait on
+    someone to push them (Cail's offer stands), and the <em>science questions</em> wait on
+    Martin/Lucy's intent.</p>
 
-    <div class="metric">
-      My harness — 200 galsim galaxies, sub-pixel shifted, with noise:<br>
-      &nbsp;&nbsp;<strong>m = +2×10⁻⁴ ± 3×10⁻⁴</strong> &nbsp;(consistent with zero) &nbsp;·&nbsp; c₂ ≈ −1×10⁻⁵ &nbsp;·&nbsp; R≈0.924 &nbsp;·&nbsp; 200/200 OK<br>
-      <br>
-      Author's own <code>centroid_bias_v2.py</code> — noiseless, 60 trials, ±-shear cancellation:<br>
-      &nbsp;&nbsp;<strong>m = +3.7×10⁻⁴ ± 0.5×10⁻⁴ (1σ)</strong> &nbsp;·&nbsp; c₂ = (−0.3 ± 0.15)×10⁻⁵ &nbsp;·&nbsp; R₁₁≈0.9234 &nbsp;·&nbsp; S/N≈5×10¹⁷<br>
-      <br>
-      <strong>Read:</strong> the v2.0 fitter sits at the <strong>few×10⁻⁴ level in m</strong> — small and
-      almost certainly within UNIONS requirements, but the noiseless limit resolves a marginally-significant
-      positive residual (not formally zero). It is <em>not</em> the centroid fix (fix-off gives the same),
-      so it's metacal/fitter higher-order, not centroid bias.
-    </div>
-
-    <p><strong>Landed on #741 (with Cail, 2026-06-02), CI now fully green — 260 passed:</strong></p>
-    <ul>
-      <li><code>fix(ngmix): thread seeded rng…</code> + <code>test_metacal_is_reproducible_with_fixed_seed</code> — observed red→green (same seed: max|dg1|≈3e-5 → 0.0). The one outright bug we fixed.</li>
-      <li><code>test_scripts_import.py</code> — extends import-smoke into <code>scripts/</code> (develop's <code>test_imports.py</code> only walks the package, so scripts were uncovered — that's how <code>get_guess</code> slipped through). Covers <code>centroid_bias_v2.py</code> + <code>fitting.py</code>.</li>
-      <li>Deleted the stranded v1 <code>centroid_bias.py</code> — it imports the removed <code>get_guess</code> and is only ever run against the <code>test_centroid_bug</code> worktree (via <code>run_bias_test.sh</code>'s <code>SHAPEPIPE_PATH</code>); the copy on this branch was never executed. Superseded by <code>centroid_bias_v2.py</code>.</li>
-    </ul>
-    <p><strong>The centroid bug, characterized:</strong> the v1 harness documents it as <strong>m ≈ −2.8×10⁻²</strong> on old ngmix 1.3.6 (<code>test_centroid_bug</code> branch), → ≈0 with <code>fix_jac_centroid</code>. That's why we couldn't reproduce a bias on v2.0: the bug lived in the old jacobian/centroid path, which the rewrite replaces entirely. v2.0's residual is the +4×10⁻⁴ we measured — not the bug.</p>
-    <p><strong>Open for the review (draft in <code>draft-review.md</code>):</strong> PSF doc/code contradiction (question to Martin); the four methodology findings (joint walkthrough with Cail, next); the runner-decorator mention; r50/T units; and a new scope question — the bug/fix cross-version rig (<code>run_all.sh</code>, bug/fix configs/envs) hardcodes mkilbing home paths, so: ship only the reusable v2 parts, or mark the rig local-only? Plus a dangling thread: <code>centroid_bug/fix.yaml</code> still name the now-deleted <code>centroid_bias.py</code> (resolves to the old worktree at runtime).</p>
+    <p><strong>Re-review verdict.</strong> I re-read the ngmix module and the four runners against
+    the current branch head. Every finding is still live at the line it was anchored to — nothing
+    was silently addressed, nothing drifted. The triage below is therefore a clean carry-forward of
+    the eleven, sorted by <em>what unblocks them</em>.</p>
   </section>
 
   <hr class="short">
 
   <section>
-    <div class="section-mark">§ Findings</div>
-    <h2>What the review turned up.</h2>
+    <div class="section-mark">§ Triage</div>
+    <h2>The eleven findings, by what unblocks them.</h2>
 
-    <h3>ngmix 2.4.0 API — correct ✓</h3>
-    <p>All 13 ngmix symbols the module uses resolve in 2.4.0 (<code>Fitter</code>, the
-    <code>guessers</code>, <code>runners.PSFRunner</code>/<code>Runner</code>,
-    <code>MetacalBootstrapper</code>, <code>PriorSimpleSep</code>, priors, observations, Jacobian).
-    The metacal/bootstrap path runs end-to-end and produces sane output.</p>
+    <p>All eleven are <span class="v-no">open</span> (none resolved by Martin). The useful cut isn't
+    open-vs-resolved — it's the <em>kind</em> of action each needs:</p>
 
-    <h3>Centroid fix — present and harmless, necessity not shown</h3>
-    <p>The fix re-centers the galaxy Jacobian on the HSM adaptive-moment centroid
-    (<code>make_ngmix_observation</code>) so the centroid prior doesn't bias the fit. Running the
-    same ensemble with the recenter <em>disabled</em> gives the <em>same</em> unbiased m in this
-    idealized small-shift, high-S/N sim. So the form is right, but I could not reproduce the bias
-    it removes — <strong>which regime does it bite in?</strong> The author's own
-    <code>centroid_bias.py</code> / bug-fix-v2 configs presumably demonstrate it; that before/after
-    is the key thing to surface. (Author's noiseless <code>centroid_bias_v2.py</code> run was in
-    flight at handoff — number to be folded in.)</p>
+    <p><span class="pill pill-a">A · cut-and-dry</span> mechanical, no science — push as one cleanup
+    commit. &nbsp; <span class="pill pill-b">B · decision</span> needs Martin/Lucy intent; some move
+    downstream science. &nbsp; <span class="pill pill-c">C · resume</span> dead feature — decide
+    rewire vs remove.</p>
 
-    <h3>Checklist blockers</h3>
     <table>
-      <tr><th>Item</th><th>State</th></tr>
-      <tr><td>CI passing</td><td><span class="v-ok">GREEN — full suite</span> on mirror <strong>PR #741</strong> (pushed <code>ngmix_v2.0</code> to origin, merged <code>develop</code> in to get the modern CI). Images build (new <code>uv.lock</code> + ngmix 2.4.0 resolve), binary smokes, entry point, <strong>pytest suite (incl. develop's <code>test_ngmix.py</code>)</strong>, example pipeline — all pass; publish skipped on PR. Fork PR #740 had no CI (approval gate).</td></tr>
-      <tr><td>"closes #" links</td><td><span class="v-no">None</span> — overlaps Axel's #725 (centroid shift); cross-ref/supersede?</td></tr>
-      <tr><td>Docs updated</td><td><span class="v-no">None</span> — and <code>CLAUDE.md</code>'s "don't modernize ngmix" note is now stale</td></tr>
-      <tr><td>Targets develop</td><td><span class="v-ok">Yes</span></td></tr>
+      <tr><th>Loc</th><th>Finding</th><th>Kind</th><th>Owner</th><th>Action</th></tr>
+
+      <tr><td class="ln">293</td><td>Unreachable <code>print</code> after <code>return</code> in the megapipe-rotate branch.</td><td><span class="pill pill-a">A</span></td><td>any</td><td>Delete the line.</td></tr>
+      <tr><td class="ln">1140</td><td><code>sextractor_e1e2</code> is unused and its docstring is copy-pasted from another function.</td><td><span class="pill pill-a">A</span></td><td>any</td><td>Drop it, or fix the docstring if kept.</td></tr>
+      <tr><td class="ln">766</td><td>Masked-fraction cut divides by a literal <code>51 * 51</code>; breaks when stamp size becomes configurable (on the roadmap).</td><td><span class="pill pill-a">A</span></td><td>any</td><td><code>v_flag_tmp.size</code> instead of the literal.</td></tr>
+      <tr><td class="ln">sextractor_<br>runner:74<br>+3</td><td>WCS moved to a positional <code>input_file_list[-1]</code> in 4 runners (<code>sextractor</code>, <code>read_ext_sexcat</code>, <code>psfex_interp</code>, <code>vignetmaker</code>) but their <code>@module_runner</code> decorators weren't updated (only <code>ngmix_runner</code> was). Shipped configs are correct, so not a live bug — but the decorator is the input contract.</td><td><span class="pill pill-a">A</span></td><td>any</td><td>Declare the WCS input in each decorator's <code>file_pattern</code>/<code>file_ext</code>.</td></tr>
+      <tr><td class="ln">fitting.py</td><td>Near-verbatim copy of esheldon's ngmix example; not wired to the pipeline, and duplicates the new <code>testing/simulate.py</code> helpers it ships alongside.</td><td><span class="pill pill-a">A</span></td><td>Martin/<br>Lucy</td><td>Confirm it's not meant to ship → drop, or trim to import the canonical helpers.</td></tr>
+
+      <tr><td class="ln">949</td><td><strong>Weight-map normalization changed vs v1.</strong> <code>sigma_mad(gal)</code> is taken over the whole (flux-contaminated) stamp where v1 used the windowed, object-free <code>get_noise</code> (still defined, now unused); and the per-pixel weight map is then multiplied by <code>1/sig_noise²</code> — reads as double inverse-variance. Shifts χ²-weighting, reported errors/s2n, and PSF-averaging weights.</td><td><span class="pill pill-b">B</span></td><td>Martin/<br>Lucy</td><td><strong>Highest-impact.</strong> Confirm intended, or restore the windowed estimate / single weighting.</td></tr>
+      <tr><td class="ln">1045</td><td><strong><code>*_psfo</code> now carries the metacal-<em>reconvolved</em> PSF.</strong> <code>g/T/r50_PSFo</code> read from <code>obsdict['noshear'].psf.meta</code> (reconvolved), and the per-type PSF columns collapse to one value. PSF-leakage / ρ-stat / null tests consume these as the <em>input</em> PSF; the column doc still says "original image psf."</td><td><span class="pill pill-b">B</span></td><td>Martin/<br>Lucy</td><td>Confirm null-test consumers tolerate reconvolved-PSF columns, or restore the raw pre-metacal PSF fit. Fix the doc either way.</td></tr>
+      <tr><td class="ln">737</td><td><strong>Zero-pixel guard loosened <code>any</code>→<code>all</code>.</strong> v1 skipped an epoch if any pixel was exactly 0; now only if the whole stamp is 0. Partial CCD-edge stamps now enter the fit.</td><td><span class="pill pill-b">B</span></td><td>Martin/<br>Lucy</td><td>One-liner: intended loosening, or should partial-zero still be excluded?</td></tr>
+      <tr><td class="ln">1068</td><td><strong>PSF fit reuses the galaxy joint prior + galaxy <code>FLUX_AUTO</code> as the PSF flux guess.</strong> Mirrors the upstream example, but a galaxy-flux guess for the PSF is unusual. Lower confidence.</td><td><span class="pill pill-b">B</span></td><td>Lucy/<br>Martin</td><td>Sanity-check PSF-fit convergence; confirm or adjust the guess.</td></tr>
+      <tr><td class="ln">415 / 676</td><td><strong><code>r50</code> columns aren't half-light radii.</strong> <code>r50</code> stores <code>pars[4]</code> = T (≈2σ², arcsec²) — the same value already under <code>['T']</code>; <code>r50_PSFo = sqrt(T/2)</code> = the Gaussian σ. True <code>r50 = 1.1774·σ</code>. sp_validation consumes these size columns.</td><td><span class="pill pill-b">B</span></td><td>Cail +<br>Martin/<br>Lucy</td><td>Decide with the sp_validation lens: rename to honest <code>T</code>/<code>sigma</code>, or document <code>r50</code> as a size proxy. Mechanical once decided.</td></tr>
+
+      <tr><td class="ln">254 / 257<br>/ 464</td><td><strong><code>CHECK_EXISTING_DIR</code> resume is dead.</strong> <code>_check_existing_dir</code> is set but never read in <code>process()</code>; <code>get_last_id</code> is defined but never called. A configured resume silently reprocesses from scratch and overwrites. (The adjacent <code>#&nbsp;MKDEBUG check whether still used</code> sits on <code>_f_wcs_path</code>, which <em>is</em> used — that marker can just go.)</td><td><span class="pill pill-c">C</span></td><td>Martin</td><td>Decide rewire vs remove. If remove (option + <code>get_last_id</code>), it folds into the Bucket-A commit.</td></tr>
     </table>
 
-    <h3>Code-review pass (multi-agent, 6 angles) — what it caught</h3>
-    <p>CI is green, so none of these break the suite — but the suite is shallow on these paths. Full list + line refs in <code>draft-review.md</code>.</p>
-    <p><strong>Confirmed:</strong></p>
-    <ul>
-      <li><strong>Dead-on-arrival script:</strong> <code>centroid_bias.py:37</code> imports <code>get_guess</code>, which this PR <em>deletes</em> → ImportError. A validation script shipped in the same PR can't run.</li>
-      <li><strong>Reproducibility break:</strong> <code>prepare_ngmix_weights</code> uses global <code>np.random.randn</code> for the noise image while the module deliberately switched to a seeded <code>self._rng</code> → same tile+seed gives different shears.</li>
-      <li><strong>PSF column semantics:</strong> <code>*_psfo</code> (<code>g_PSFo</code>/<code>T_PSFo</code>/<code>r50_PSFo</code>) now carry the metacal-<em>reconvolved</em> PSF (read from <code>obsdict['noshear'].psf.meta</code>), not the original PSFEx/MCCD PSF the column doc claims and PSF-systematics tests expect.</li>
-      <li><strong>Dropped feature:</strong> <code>CHECK_EXISTING_DIR</code> resume is gone from <code>process()</code> — a configured resume silently reprocesses from scratch.</li>
-      <li><strong>Runner contract (altitude):</strong> 4 runners moved WCS/exp-numbers to positional <code>input_file_list[i]</code> but didn't update their <code>@module_runner</code> decorators (only <code>ngmix_runner</code> did) — contract now lives in per-config <code>FILE_PATTERN</code> ordering; shipped configs OK, hand-written ones silently mis-map.</li>
-      <li><strong>Units:</strong> <code>r50</code>/<code>r50_err</code> store <code>pars[4]</code> = T (arcsec²), and <code>r50_PSFo = sqrt(T/2)</code> = Gaussian σ — not half-light radii. sp_validation consumes these.</li>
-    </ul>
-    <p><strong>Plausible — need Martin/Lucy's intent (raise as questions):</strong> weight-map normalization changed (looks like double inverse-variance + flux-contaminated noise estimate); per-type PSF columns collapsed to one value; galaxy zero-pixel skip narrowed <code>any</code>→<code>all</code> (edge stamps now enter the fit); PSF fit uses the galaxy prior + galaxy flux guess.</p>
-    <p><strong>Cleanups:</strong> non-<code>f</code> error string + debug <code>print</code>s in <code>save_results</code>; dead <code>sextractor_e1e2</code>, unreachable <code>print</code>, <code>MKDEBUG</code> markers; hardcoded <code>51*51</code>; <code>fitting.py</code> is a stray upstream ngmix example; <code>make_data</code>/<code>get_prior</code> duplicated across the validation scripts vs <code>simulate.py</code>. <code>testing/simulate.py</code> + the <code>$SP_EXP</code> plumbing themselves are clean 👍.</p>
+    <p style="color:var(--ink-muted); font-size:16px"><em>Tally: 5 cut-and-dry · 5 decisions (2 of them genuinely move downstream science) · 1 resume.</em></p>
+  </section>
+
+  <hr class="short">
+
+  <section>
+    <div class="section-mark">§ Recommended sequence</div>
+    <h2>How to get #741 mergeable.</h2>
+
+    <ol class="seq">
+      <li><strong>Land the cleanups (Bucket A).</strong> One small commit on #741: drop the
+      unreachable <code>print</code> and dead <code>sextractor_e1e2</code>, swap <code>51*51</code>
+      for <code>.size</code>, fix the four runner decorators, drop/trim <code>fitting.py</code>, and
+      strip the in-scope <code>MKDEBUG</code>. Pure mechanical, keeps CI green, and narrows the
+      review surface to the science. <em>(Cail's offer to push these stands — held this round, which
+      is report-only.)</em></li>
+
+      <li><strong>Resume call (Bucket C).</strong> Martin: rewire <code>CHECK_EXISTING_DIR</code> /
+      <code>get_last_id</code>, or remove them. If remove, it folds into the step-1 commit.</li>
+
+      <li><strong>Science confirmations (Bucket B).</strong> Martin/Lucy weigh in. Three are light —
+      a one-line "intended" or a small fix each (zero-pixel guard, PSF prior/flux guess, r50
+      naming). Two genuinely change the meaning of output columns and deserve a real answer:
+        <ul>
+          <li><strong>weight-norm (949)</strong> — moves errors / s2n / PSF-averaging weights.</li>
+          <li><strong><code>*_psfo</code> reconvolved (1045)</strong> — the ρ-stat / null tests read these as the input PSF.</li>
+        </ul>
+      </li>
+
+      <li><strong>Reconcile r50/T with sp_validation</strong> (Cail) — rename or document, so the
+      downstream consumer and the column name agree.</li>
+
+      <li><strong>Merge #741</strong> — Cail/Martin's gesture, never the worker's. Afterward, delete
+      the stale fork branch behind the closed #740 so #741 is unambiguously the source of truth.</li>
+    </ol>
+
+    <p><strong>The honest read on "mergeable today":</strong> CI is green and nothing here breaks the
+    suite, so #741 <em>can</em> merge now. But two findings — weight-norm and <code>*_psfo</code> —
+    silently change the semantics of columns that sp_validation and the null tests consume. Those are
+    the only two I'd treat as genuine merge-gates: merge-then-iterate is fine for the rest, but those
+    two should be a <em>conscious</em> accept, not a default one. Everything else can land before or
+    after merge without risk.</p>
+
+    <p style="color:var(--ink-muted); font-size:16px"><strong>Housekeeping still open</strong> (from
+    the part-2 summary, none blocking): no <code>closes #</code> link (overlaps Axel's #725 centroid
+    work — cross-ref or supersede?); no docs update; the <code>CLAUDE.md</code> "don't modernize
+    ngmix" note is now stale; the <code>pyproject</code> ngmix pin should land on a tagged
+    <code>esheldon/ngmix</code> release rather than a fork branch.</p>
   </section>
 
   <hr class="short">
 
   <section>
     <div class="section-mark">§ Open questions</div>
-    <h2>For Cail, on the call.</h2>
+    <h2>For Cail.</h2>
     <ul>
-      <li><strong>Centroid fix regime.</strong> Where does the bias appear? Is the author's before/after captured anywhere we can cite?</li>
-      <li><strong>CI / PR plumbing.</strong> Done: mirror PR #741 (origin <code>ngmix_v2.0</code>) with <code>develop</code> merged in is green on the full suite. Decide: keep #741 as the PR of record and close #740, or hand the merged branch back to Martin? And tell Martin future PRs go directly on CosmoStat, not from a fork (fork PRs don't trigger CI).</li>
-      <li><strong>Which findings to post,</strong> and as line comments vs a PR-level summary — the 4 confirmed correctness items are clear; the 4 plausible ones are better as questions to Martin/Lucy.</li>
-      <li><strong>r50 columns.</strong> Confirm Martin/Lucy's intent for the size-column naming before sp_validation consumes them.</li>
-      <li><strong>Voice + scope.</strong> What gets posted (full review vs a lighter "looks good, two questions"), in your voice or signed "Claude on behalf of Cail"? Push cleanups as suggestions, or just request them?</li>
-      <li><strong>#725.</strong> Does this PR supersede Axel's centroid-shift PR?</li>
+      <li><strong>Push the Bucket-A cleanups now?</strong> The offer stands; this round is
+      report-only, so they're held. Push as one commit on #741, or wait for Martin to greenlight the
+      batch?</li>
+      <li><strong>Merge-gates.</strong> I read weight-norm (949) and <code>*_psfo</code> (1045) as
+      the only two genuine gates; the other nine can merge-then-iterate. Agree, or hold more back?</li>
+      <li><strong>r50/T.</strong> Rename to honest columns (churns sp_validation) or document the
+      proxy (least churn, but the name keeps misdescribing)? Your call as the downstream consumer.</li>
+      <li><strong>Fork cleanup.</strong> Delete <code>martinkilbinger:ngmix_v2.0</code> after merge,
+      and confirm with Martin that future PRs go on a CosmoStat branch (fork PRs don't trigger CI —
+      that's why #741 exists)?</li>
     </ul>
   </section>
 
