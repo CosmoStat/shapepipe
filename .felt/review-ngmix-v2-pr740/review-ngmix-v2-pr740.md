@@ -1,22 +1,24 @@
 ---
-name: 'Review + work: ngmix v2.0 (PR #740)'
-status: closed
-tags:
-    - constitution
-    - shapepipe
-    - ngmix
-    - review
 created-at: 2026-06-01T11:50:17.967872934+02:00
-closed-at: 2026-06-05T01:59:46.865336741+02:00
-outcome: 'Round 2 (next-steps) delivered. Re-reviewed against the current #741 head: no code has changed since the part-2 review, so all 11 findings stand exactly as anchored. Martin consolidated onto #741 (closed the fork PR #740), CI green + mergeable, but engaged only to ack the RNG fix — none of the 11 answered yet. Triaged into 5 cut-and-dry / 5 decisions / 1 resume; flagged weight-norm (ngmix.py:949) + *_psfo reconvolved-PSF (1045) as the only two genuine merge-gates (they silently change columns sp_validation/null-tests consume). report.html (triage table + recommended merge sequence) in fiber dir; summary comment posted to #741 (issuecomment-4626968551). REPORT ONLY — no commits pushed this round. Open for Cail: push the Bucket-A cleanups now (offer stands)? confirm the 2 merge-gates? r50/T rename-vs-document? Merge stays Cail''s/Martin''s gesture.'
 horizon: now
+name: "Review + work: ngmix v2.0 (PR #740)"
+outcome: |-
+  INTERACTIVE — awaiting Cail. Martin engaged this morning (06-05 07:14–07:33Z), replying to 6 of the 11 findings: greenlit removing the dead CHECK_EXISTING_DIR resume (254) and making 51*51 configurable via STAMP_SIZE (766); explained the any→all zero-pixel loosening as intentional (737, "any==0 passed ~no stamps"); pointed weight-norm (949) at issue #604 (the 2023 0/1-mask → inverse-variance design discussion — context, not a direct answer to the sigma_mad-vs-v1 sub-finding); and opened the r50/T size-naming question, poking @lbaumo. I RAN Martin's explicit check: confirmed pars[4]=T=2σ² (l.911 uses Gaussian(σ=sqrt(pars[4]/2))); galaxy r50 (l.415) stores T (an area), PSF r50_PSFo (l.676) = sqrt(T/2) = σ — different scales, neither is the half-light radius 1.1774σ. Bug verified. Still unanswered (5): 293, 1140, runners, fitting.py, 1068 — and *_psfo reconvolved-PSF (1045), now the LONE clear merge-gate. report.html refreshed (Martin-disposition column + verified r50/T metric + re-sequenced steps). REPORT/ANALYSIS ONLY — no commits pushed. Held for Cail to direct: push Bucket A? r50/T transform-vs-rename? how to reply to Martin's six? Merge stays Cail's/Martin's gesture.
 shuttle:
-    agent: claude-opus
-    enabled: true
-    host: candide
-    kind: oneshot
-    project_dir: /automnt/n17data/cdaley/unions/shapepipe
+  agent: claude-opus
+  enabled: true
+  host: candide
+  interactive: true
+  kind: oneshot
+  project_dir: /automnt/n17data/cdaley/unions/shapepipe
+status: active
+tags:
+  - constitution
+  - shapepipe
+  - ngmix
+  - review
 ---
+
 
 # Review + work: ngmix v2.0 (PR #740)
 
