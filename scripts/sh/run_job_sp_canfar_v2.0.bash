@@ -683,8 +683,15 @@ fi
 (( do_job = job & 1024 ))
 if [[ $do_job != 0 ]]; then
   # Job 1024: shape measurement
-  run_tile_job 1024 "Ng" "ngmix_interp_runner:1"
+  run_tile_job 1024 "Ng" "ngmix_runner:1"
 fi
+
+(( do_job = job & 2048 ))
+if [[ $do_job != 0 ]]; then
+  # Job 2048: merge catalogues
+  run_tile_job 2048 "Mc_${psf}" "make_cat_runner:1"
+fi
+
 
 if [ -n "$scratch" ]; then
   message "Syncing output from scratch back to permanent dir" "$debug_out" -1

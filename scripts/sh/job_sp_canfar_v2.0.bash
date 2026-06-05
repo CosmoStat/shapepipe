@@ -467,11 +467,9 @@ fi
 (( do_job = $job & 2048 ))
 if [[ $do_job != 0 ]]; then
 
-  suff_sm="_nosm"
-
   ### Merge all relevant information into final catalogue
   command_cfg_shapepipe \
-    "config_tile_make_cat_$psf${suff_sm}.ini" \
+    "config_tile_Mc_$psf.ini" \
     "Run shapepipe (tile: create final cat $psf)" \
     $n_smp \
     $exclusive
