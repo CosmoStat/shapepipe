@@ -4,6 +4,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 import numpy as np
 import numpy.testing as npt
+from sqlitedict import SqliteDict
 
 from shapepipe.modules.ngmix_package.ngmix import Ngmix
 
@@ -11,6 +12,44 @@ rotated_ccds = st.integers(max_value=17) | st.sampled_from([36, 37])
 unrotated_ccds = st.integers(min_value=18, max_value=40).filter(
     lambda ccd_nb: ccd_nb not in [36, 37]
 )
+
+
+class _NullLogger:
+    def info(self, *_args, **_kwargs):
+        pass
+
+
+def _empty_sqlite(path):
+    db = SqliteDict(path)
+    db.close()
+
+
+def test_ngmix_accepts_optional_background_rms_vignet(tmp_path):
+    """The optional seventh ngmix input is the BACKGROUND_RMS vignet sqlite."""
+    names = ("gal", "bkg", "psf", "weight", "flag", "headers", "bkg_rms")
+    sqlite_paths = [
+        tmp_path / f"{name}.sqlite" for name in names
+    ]
+    for sqlite_path in sqlite_paths:
+        _empty_sqlite(str(sqlite_path))
+    input_paths = (
+        ["tile_cat.fits"]
+        + [str(path) for path in sqlite_paths[:5]]
+        + [str(sqlite_paths[6])]
+    )
+
+    ngmix = Ngmix(
+        input_paths,
+        str(tmp_path),
+        "-001-001",
+        30.0,
+        0.186,
+        str(sqlite_paths[5]),
+        _NullLogger(),
+    )
+
+    assert ngmix._vignet_cat.bkg_rms_vign_cat is not None
+    ngmix._vignet_cat.close()
 
 
 @given(
