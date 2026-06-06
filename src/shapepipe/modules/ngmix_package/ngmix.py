@@ -124,6 +124,7 @@ class Postage_stamp():
         self.psfs = []
         self.weights = []
         self.flags = []
+        self.bkg_rms = []
         self.jacobs = []
         self.bkg_sub = bkg_sub
         self.megacam_flip = megacam_flip
@@ -141,6 +142,7 @@ class Vignet():
     weight_vignet_path
     flag_vignet_path
     f_wcs_path
+    bkg_rms_vignet_path
     """
     def __init__(
         self,
@@ -149,7 +151,8 @@ class Vignet():
         psf_vignet_path,
         weight_vignet_path,
         flag_vignet_path,
-        f_wcs_path
+        f_wcs_path,
+        bkg_rms_vignet_path=None,
 
     ):
         self.f_wcs_file = SqliteDict(f_wcs_path)
@@ -158,6 +161,11 @@ class Vignet():
         self.psf_vign_cat = SqliteDict(psf_vignet_path)
         self.weight_vign_cat = SqliteDict(weight_vignet_path)
         self.flag_vign_cat = SqliteDict(flag_vignet_path)
+        self.bkg_rms_vign_cat = (
+            SqliteDict(bkg_rms_vignet_path)
+            if bkg_rms_vignet_path is not None
+            else None
+        )
 
     def close(self):
         self.f_wcs_file.close()
@@ -166,6 +174,8 @@ class Vignet():
         self.flag_vign_cat.close()
         self.weight_vign_cat.close()
         self.psf_vign_cat.close()
+        if self.bkg_rms_vign_cat is not None:
+            self.bkg_rms_vign_cat.close()
 
 class Ngmix(object):
     """Ngmix.
@@ -219,10 +229,10 @@ class Ngmix(object):
         id_obj_max=-1,
     ):
 
-        if len(input_file_list) != 6:
+        if len(input_file_list) not in {6, 7}:
             raise IndexError(
                 f"Input file list has length {len(input_file_list)},"
-                + " required is 6"
+                + " required is 6 or 7"
             )
 
         self._tile_cat_path = input_file_list[0]
@@ -232,7 +242,8 @@ class Ngmix(object):
             input_file_list[3],
             input_file_list[4],
             input_file_list[5],
-            f_wcs_path
+            f_wcs_path,
+            input_file_list[6] if len(input_file_list) == 7 else None,
         )
         #self._gal_vignet_path = input_file_list[1]
         #self._bkg_vignet_path = input_file_list[2]
@@ -714,8 +725,11 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat):
         if len(np.where(v_flag_tmp != 0)[0]) / v_flag_tmp.size > 1 / 3.0:
             continue
 
-        weight_vign = (
-            vignet.weight_vign_cat[str(obj_id)][expccd_name]['VIGNET']
+        weight_vign = vignet.weight_vign_cat[str(obj_id)][expccd_name]['VIGNET']
+        bkg_rms_vign = (
+            vignet.bkg_rms_vign_cat[str(obj_id)][expccd_name]['VIGNET']
+            if vignet.bkg_rms_vign_cat is not None
+            else None
         )
 
         jacob = get_galsim_jacobian(
@@ -729,11 +743,16 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat):
         )
 
         # rescale by relative zero-points
-        gal_vign_scaled, weight_vign_scaled = rescale_epoch_fluxes(
+        (
+            gal_vign_scaled,
+            weight_vign_scaled,
+            bkg_rms_vign_scaled,
+        ) = rescale_epoch_fluxes(
             gal_vign_sub_bkg,
             weight_vign,
-            header
-            )
+            header,
+            bkg_rms_vign,
+        )
 
         # gather postage stamps in all of the epochs
         stamp.gals.append(gal_vign_scaled)
@@ -742,6 +761,7 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat):
         )
         stamp.weights.append(weight_vign_scaled)
         stamp.flags.append(flag_vign)
+        stamp.bkg_rms.append(bkg_rms_vign_scaled)
         stamp.jacobs.append(jacob)
                 
     return stamp
@@ -767,7 +787,7 @@ def background_subtract(gal,bkg):
 
     return gal_vign_sub_bkg
 
-def rescale_epoch_fluxes(gal,weight,header):
+def rescale_epoch_fluxes(gal, weight, header, bkg_rms=None):
     """rescale epochs by relative zeropoints to be on the same flux scale
         
     Parameters
@@ -778,6 +798,8 @@ def rescale_epoch_fluxes(gal,weight,header):
         weight image
     header : 
         image header
+    bkg_rms : numpy.ndarray, optional
+        Background RMS image
         
     Returns
     -------
@@ -785,13 +807,16 @@ def rescale_epoch_fluxes(gal,weight,header):
         rescaled galaxy image
     numpy.ndarray
         rescaled weight image
+    numpy.ndarray or None
+        rescaled background RMS image
     """
     Fscale = header['FSCALE']
 
     gal_scaled = gal * Fscale
     weight_scaled = weight * 1 / Fscale ** 2
+    bkg_rms_scaled = bkg_rms * Fscale if bkg_rms is not None else None
 
-    return gal_scaled, weight_scaled
+    return gal_scaled, weight_scaled, bkg_rms_scaled
 
 def get_galsim_jacobian(wcs, ra, dec):
     """Get local wcs.
@@ -868,7 +893,7 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
 
     return sig_noise
 
-def prepare_ngmix_weights(gal, weight, flag, rng):
+def prepare_ngmix_weights(gal, weight, flag, rng, bkg_rms=None):
     """bookkeeping for ngmix weights. runs on a single galaxy and epoch
         pixel scale and galaxy guess
         TO DO: decide if we want galaxy guess stuff
@@ -881,6 +906,9 @@ def prepare_ngmix_weights(gal, weight, flag, rng):
     rng : numpy.random.RandomState
         Random state for the noise realisations (seeded per tile for
         reproducibility).
+    bkg_rms : numpy.ndarray, optional
+        Per-pixel background RMS map. If supplied, unmasked pixels use
+        ``1 / bkg_rms**2`` as the ngmix inverse variance.
 
     Returns
     -------
@@ -891,24 +919,33 @@ def prepare_ngmix_weights(gal, weight, flag, rng):
     numpy.ndarray
         Noise image.
     """
-    weight_map = np.copy(weight)
-    weight_map[flag != 0] = 0.0
-    weight_map[weight_map != 0] = 1
+    mask = np.copy(weight) != 0
+    mask[flag != 0] = False
 
-    sig_noise = sigma_mad(gal)
+    if bkg_rms is None:
+        sig_noise = sigma_mad(gal)
+        weight_map = mask.astype(float) * 1 / sig_noise ** 2
+    else:
+        valid_rms = np.isfinite(bkg_rms) & (bkg_rms > 0)
+        mask &= valid_rms
+        weight_map = np.zeros_like(gal, dtype=float)
+        weight_map[mask] = 1.0 / bkg_rms[mask] ** 2
+        sig_noise = (
+            np.median(bkg_rms[mask])
+            if mask.any()
+            else sigma_mad(gal)
+        )
 
     noise_img = rng.standard_normal(gal.shape) * sig_noise
     noise_img_gal = rng.standard_normal(gal.shape) * sig_noise
 
     gal_masked = np.copy(gal)
-    if (weight_map == 0).any():
-        gal_masked[weight_map == 0] = noise_img_gal[weight_map == 0]
-
-    weight_map *= 1 / sig_noise ** 2
+    if (~mask).any():
+        gal_masked[~mask] = noise_img_gal[~mask]
 
     return gal_masked, weight_map, noise_img
 
-def make_ngmix_observation(gal, weight, flag, psf, wcs, rng):
+def make_ngmix_observation(gal, weight, flag, psf, wcs, rng, bkg_rms=None):
     """Build an ngmix Observation for a single galaxy epoch.
 
     The galaxy Jacobian is re-centered on the HSM centroid so that the
@@ -925,6 +962,8 @@ def make_ngmix_observation(gal, weight, flag, psf, wcs, rng):
     rng : numpy.random.RandomState
         Random state for the noise realisations (seeded per tile for
         reproducibility).
+    bkg_rms : numpy.ndarray, optional
+        Per-pixel background RMS map.
 
     Returns
     -------
@@ -938,7 +977,7 @@ def make_ngmix_observation(gal, weight, flag, psf, wcs, rng):
     psf_obs = Observation(psf, jacobian=psf_jacob)
 
     gal_masked, weight_map, noise_img = prepare_ngmix_weights(
-        gal, weight, flag, rng
+        gal, weight, flag, rng, bkg_rms=bkg_rms
     )
 
     # Re-center Jacobian on HSM centroid (pixel offset from stamp center).
@@ -1046,6 +1085,7 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng):
 
     gal_obs_list = ObsList()
     for n_e in range(n_epoch):
+        bkg_rms = stamp.bkg_rms[n_e] if len(stamp.bkg_rms) > n_e else None
         gal_obs = make_ngmix_observation(
             stamp.gals[n_e],
             stamp.weights[n_e],
@@ -1053,6 +1093,7 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng):
             stamp.psfs[n_e],
             stamp.jacobs[n_e],
             rng,
+            bkg_rms=bkg_rms,
         )
         gal_obs_list.append(gal_obs)
 

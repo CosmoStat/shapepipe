@@ -6,6 +6,8 @@ Module runner for ``ngmix``.
 
 """
 
+import os
+
 from shapepipe.modules.module_decorator import module_runner
 from shapepipe.modules.ngmix_package.ngmix import Ngmix
 
@@ -50,6 +52,19 @@ def ngmix_runner(
     # Path to merged single-exposure single-HDU headers
     f_wcs_path = input_file_list[6]
 
+    if config.has_option(module_config_sec, "BKG_RMS_VIGNET_PATH"):
+        bkg_rms_vignet_path = config.getexpanded(
+            module_config_sec,
+            "BKG_RMS_VIGNET_PATH",
+        ).format(file_number_string=file_number_string)
+        if not os.path.exists(bkg_rms_vignet_path):
+            raise FileNotFoundError(
+                f"Background RMS vignet file not found: {bkg_rms_vignet_path}"
+            )
+        input_file_list = input_file_list[:6] + [bkg_rms_vignet_path]
+    else:
+        input_file_list = input_file_list[:6]
+
     # Batch save option
     if config.has_option(module_config_sec, "SAVE_BATCH"):
         save_batch = config.getint(
@@ -65,9 +80,8 @@ def ngmix_runner(
     id_obj_max = config.getint(module_config_sec, "ID_OBJ_MAX")
 
     # Initialise class instance
-    # input_file_list[6] is log_exp_headers, already extracted as f_wcs_path
     ngmix_inst = Ngmix(
-        input_file_list[:6],
+        input_file_list,
         run_dirs["output"],
         file_number_string,
         zero_point,

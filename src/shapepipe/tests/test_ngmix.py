@@ -115,3 +115,54 @@ def test_weight_map_recovers_injected_inverse_variance():
 
     recovered = np.median(weight_map[weight_map > 0])
     npt.assert_allclose(recovered, 1.0 / noise**2, rtol=0.15)
+
+
+def test_background_rms_builds_per_pixel_inverse_variance():
+    """BACKGROUND_RMS supplies the variance, while weight and flag supply masks."""
+    from shapepipe.modules.ngmix_package.ngmix import prepare_ngmix_weights
+
+    gal = np.ones((3, 3))
+    weight = np.ones((3, 3))
+    flag = np.zeros((3, 3))
+    bkg_rms = np.array(
+        [
+            [1.0, 2.0, 4.0],
+            [0.5, 0.0, np.nan],
+            [3.0, 2.0, 1.0],
+        ]
+    )
+    weight[2, 0] = 0
+    flag[2, 1] = 1
+
+    _, weight_map, noise_img = prepare_ngmix_weights(
+        gal, weight, flag, np.random.RandomState(0), bkg_rms=bkg_rms
+    )
+
+    expected = np.array(
+        [
+            [1.0, 0.25, 0.0625],
+            [4.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0],
+        ]
+    )
+    npt.assert_allclose(weight_map, expected)
+    assert noise_img.shape == gal.shape
+
+
+def test_rescale_epoch_fluxes_scales_background_rms_like_image_counts():
+    from astropy.io import fits
+    from shapepipe.modules.ngmix_package.ngmix import rescale_epoch_fluxes
+
+    header = fits.Header()
+    header["FSCALE"] = 2.0
+
+    gal_scaled, weight_scaled, bkg_rms_scaled = rescale_epoch_fluxes(
+        np.ones((2, 2)),
+        np.ones((2, 2)) * 8.0,
+        header,
+        np.ones((2, 2)) * 3.0,
+    )
+
+    npt.assert_allclose(gal_scaled, 2.0)
+    npt.assert_allclose(weight_scaled, 2.0)
+    npt.assert_allclose(bkg_rms_scaled, 6.0)
