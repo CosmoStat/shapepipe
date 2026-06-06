@@ -6,7 +6,8 @@ tags:
   - shapepipe
   - ngmix
 created-at: 2026-06-05T22:30:49.970813955+02:00
-outcome: Draft — not yet dispatched.
+outcome: |-
+  R2 minimal fix landed in `/tmp/pr740-wt` commit `953a52a3`: `prepare_ngmix_weights` again binarizes the mask before scalar noise normalization, and a unit test now goes red on double-normalization (`8.809e11` vs `1e6`) and green after the fix (`8.809e5`, within 15%; residual is R1 whole-stamp MAD contamination).
 shuttle:
   enabled: true
   kind: oneshot
@@ -69,6 +70,18 @@ science decisions in this fiber's `report.html`/outcome rather than pushing to M
 
 - **Detailed spec:** `.felt/review-ngmix-v2-pr740/weights-report.md` (change plan, file list, risks,
   the 6 science questions for Martin). This constitution is the pointer; the report is the substance.
+- **R2 checkpoint:** `/tmp/pr740-wt` commit `953a52a3` restores
+  `weight_map[weight_map != 0] = 1` in `prepare_ngmix_weights` and adds
+  `test_weight_map_recovers_injected_inverse_variance`. Observed red before the fix:
+  recovered `8.80916e11` vs truth `1e6`; observed green after the fix: recovered
+  `8.80916e5` vs truth `1e6` with `rtol=0.15`. The tolerance is intentionally loose
+  enough to leave R1 visible: whole-stamp `sigma_mad(gal)` still overestimates the
+  compact simulated stamp's noise by about 6%, producing a ~12% inverse-variance
+  shortfall. This commit fixes R2 only; it does not claim R1 is solved.
+- **Current test caveat:** the targeted unit test passes in the dev image. The full
+  `src/shapepipe/tests/test_ngmix.py` file currently still fails in the existing
+  metacal smoke test because the container's `ngmix.fitting` has no `Fitter`
+  attribute; that failure is independent of the new R2 unit path.
 - **Repo:** `/automnt/n17data/cdaley/unions/shapepipe`, branch `ngmix_v2.0` (= #741 head). Base the
   work on `ngmix_v2.0` **after** the review-cleanup commit lands (it removes dead code and is currently
   staged at `/tmp/pr740-wt` commit `bd60dc8e`, pending Cail's push). Coordinate with
