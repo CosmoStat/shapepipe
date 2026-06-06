@@ -893,6 +893,7 @@ def prepare_ngmix_weights(gal, weight, flag, rng):
     """
     weight_map = np.copy(weight)
     weight_map[flag != 0] = 0.0
+    weight_map[weight_map != 0] = 1
 
     sig_noise = sigma_mad(gal)
 

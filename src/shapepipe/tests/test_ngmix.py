@@ -94,3 +94,24 @@ def test_metacal_is_reproducible_with_fixed_seed():
     irreproducible from one run to the next.
     """
     npt.assert_array_equal(_metacal_noshear_g(42), _metacal_noshear_g(42))
+
+
+def test_weight_map_recovers_injected_inverse_variance():
+    """A supplied inverse-variance map must not be renormalized twice."""
+    from shapepipe.modules.ngmix_package.ngmix import prepare_ngmix_weights
+    from shapepipe.testing.simulate import make_data
+
+    noise = 1e-3
+    gals, _, _, weights, flags, _ = make_data(
+        rng=np.random.RandomState(123),
+        shear=(0.0, 0.0),
+        noise=noise,
+        n_epochs=1,
+        img_size=201,
+    )
+    _, weight_map, _ = prepare_ngmix_weights(
+        gals[0], weights[0], flags[0], np.random.RandomState(0)
+    )
+
+    recovered = np.median(weight_map[weight_map > 0])
+    npt.assert_allclose(recovered, 1.0 / noise**2, rtol=0.15)
