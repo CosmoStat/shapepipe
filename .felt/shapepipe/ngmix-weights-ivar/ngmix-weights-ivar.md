@@ -1,19 +1,18 @@
 ---
 id: 01KTCQPE3JGEYN7NQS8HW1AT6B
 name: 'ngmix weight map: fix v2.0 regressions + inverse-variance (#604)'
-tags:
-  - constitution
-  - shapepipe
-  - ngmix
-created-at: 2026-06-05T22:30:49.970813955+02:00
-outcome: |-
-  #604 implementation is now wired through code and active example configs in `/tmp/pr740-wt` through commit `ee87b5bd`: SExtractor emits `BACKGROUND_RMS`, vignetmaker stores `background_rms_vignet*.sqlite`, ngmix templates point `BKG_RMS_VIGNET_PATH` at that sqlite, and ngmix builds per-pixel `1/RMS²` inverse-variance gated by weight/flag/valid-RMS masks with scalar fallback when no RMS file is supplied. Targeted RMS/weight tests and config parsing passed; full `test_ngmix.py` still has the pre-existing `ngmix.fitting.Fitter` API failure.
-shuttle:
-  enabled: true
-  kind: oneshot
-  host: candide
-  agent: codex
 status: active
+tags:
+    - constitution
+    - shapepipe
+    - ngmix
+created-at: 2026-06-05T22:30:49.970813955+02:00
+outcome: '#604 implementation is wired through code and active example configs in /tmp/pr740-wt through commit 22e31e51: SExtractor emits BACKGROUND_RMS, vignetmaker stores background_rms_vignet*.sqlite, ngmix templates point BKG_RMS_VIGNET_PATH at that sqlite, ngmix builds per-pixel 1/RMS² inverse-variance gated by weight/flag/valid-RMS masks with scalar fallback when no RMS file is supplied, and test_ngmix now also guards the optional seventh RMS sqlite input contract. Focused RMS/weight tests and py_compile passed in the dev image; full test_ngmix.py still has the pre-existing ngmix.fitting.Fitter API failure.'
+shuttle:
+    enabled: true
+    kind: oneshot
+    host: candide
+    agent: codex
 ---
 
 # ngmix weight map: fix v2.0 regressions + inverse-variance (#604)
@@ -100,6 +99,12 @@ science decisions in this fiber's `report.html`/outcome rather than pushing to M
   the three targeted RMS/weight tests pass in the dev image; all touched
   example configs parse with `ConfigParser(interpolation=None)`; `git diff
   --check` is clean.
+- **Optional RMS input-contract guard:** `/tmp/pr740-wt` commit `22e31e51`
+  adds `test_ngmix_accepts_optional_background_rms_vignet`, which
+  instantiates `Ngmix` with the seventh `BACKGROUND_RMS` sqlite input and
+  verifies `Vignet` opens it. Verification observed in the dev image: the
+  focused RMS/weight pytest selection passed, `py_compile` passed for touched
+  ngmix files, and `git diff --check` was clean.
 - **Current test caveat:** the targeted unit test passes in the dev image. The full
   `src/shapepipe/tests/test_ngmix.py` file currently still fails in the existing
   metacal smoke test because the container's `ngmix.fitting` has no `Fitter`
