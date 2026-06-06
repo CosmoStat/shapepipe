@@ -7,7 +7,7 @@ tags:
   - ngmix
 created-at: 2026-06-05T22:30:49.970813955+02:00
 outcome: |-
-  First #604 implementation checkpoint landed in `/tmp/pr740-wt` commit `03bf12b6`: ngmix now accepts an optional `BKG_RMS_VIGNET_PATH`, threads BACKGROUND_RMS stamps into `Postage_stamp`, builds per-pixel `1/RMS²` inverse-variance gated by weight/flag/valid-RMS masks, and keeps the scalar `sigma_mad` fallback when no RMS file is supplied. Targeted RMS/weight tests passed; full `test_ngmix.py` still has the pre-existing `ngmix.fitting.Fitter` API failure.
+  #604 implementation is now wired through code and active example configs in `/tmp/pr740-wt` through commit `ee87b5bd`: SExtractor emits `BACKGROUND_RMS`, vignetmaker stores `background_rms_vignet*.sqlite`, ngmix templates point `BKG_RMS_VIGNET_PATH` at that sqlite, and ngmix builds per-pixel `1/RMS²` inverse-variance gated by weight/flag/valid-RMS masks with scalar fallback when no RMS file is supplied. Targeted RMS/weight tests and config parsing passed; full `test_ngmix.py` still has the pre-existing `ngmix.fitting.Fitter` API failure.
 shuttle:
   enabled: true
   kind: oneshot
@@ -90,6 +90,16 @@ science decisions in this fiber's `report.html`/outcome rather than pushing to M
   `test_background_rms_builds_per_pixel_inverse_variance`, and
   `test_rescale_epoch_fluxes_scales_background_rms_like_image_counts` all
   passed. `py_compile` and `git diff --check` were also clean.
+- **BACKGROUND_RMS config checkpoint:** `/tmp/pr740-wt` commit `ee87b5bd`
+  wires the active CFIS and CFIS simulation example configs into that code
+  path. The exposure SExtractor configs request `CHECKIMAGE = BACKGROUND,
+  BACKGROUND_RMS`; the multi-epoch vignetmaker configs add
+  `background_rms` beside `background`; and the ngmix templates set
+  `BKG_RMS_VIGNET_PATH` to the expected
+  `background_rms_vignet{file_number_string}.sqlite` output. Verification:
+  the three targeted RMS/weight tests pass in the dev image; all touched
+  example configs parse with `ConfigParser(interpolation=None)`; `git diff
+  --check` is clean.
 - **Current test caveat:** the targeted unit test passes in the dev image. The full
   `src/shapepipe/tests/test_ngmix.py` file currently still fails in the existing
   metacal smoke test because the container's `ngmix.fitting` has no `Fitter`
