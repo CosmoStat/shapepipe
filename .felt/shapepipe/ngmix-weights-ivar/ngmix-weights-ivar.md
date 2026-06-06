@@ -7,7 +7,7 @@ tags:
   - ngmix
 created-at: 2026-06-05T22:30:49.970813955+02:00
 outcome: |-
-  R2 minimal fix landed in `/tmp/pr740-wt` commit `953a52a3`: `prepare_ngmix_weights` again binarizes the mask before scalar noise normalization, and a unit test now goes red on double-normalization (`8.809e11` vs `1e6`) and green after the fix (`8.809e5`, within 15%; residual is R1 whole-stamp MAD contamination).
+  First #604 implementation checkpoint landed in `/tmp/pr740-wt` commit `03bf12b6`: ngmix now accepts an optional `BKG_RMS_VIGNET_PATH`, threads BACKGROUND_RMS stamps into `Postage_stamp`, builds per-pixel `1/RMS²` inverse-variance gated by weight/flag/valid-RMS masks, and keeps the scalar `sigma_mad` fallback when no RMS file is supplied. Targeted RMS/weight tests passed; full `test_ngmix.py` still has the pre-existing `ngmix.fitting.Fitter` API failure.
 shuttle:
   enabled: true
   kind: oneshot
@@ -78,6 +78,18 @@ science decisions in this fiber's `report.html`/outcome rather than pushing to M
   enough to leave R1 visible: whole-stamp `sigma_mad(gal)` still overestimates the
   compact simulated stamp's noise by about 6%, producing a ~12% inverse-variance
   shortfall. This commit fixes R2 only; it does not claim R1 is solved.
+- **BACKGROUND_RMS checkpoint:** `/tmp/pr740-wt` commit `03bf12b6` adds the
+  first #604 implementation slice. `ngmix_runner` now takes optional
+  `BKG_RMS_VIGNET_PATH` (with `{file_number_string}` substitution) without
+  changing the existing six-input pipeline contract. `Vignet` opens the
+  optional RMS sqlite, `prepare_postage_stamps` rescales RMS by `FSCALE`, and
+  `prepare_ngmix_weights(..., bkg_rms=...)` uses per-pixel `1/RMS²` on pixels
+  where the Megapipe weight mask, flag mask, and RMS validity mask are all good.
+  Verification observed in the dev image:
+  `test_weight_map_recovers_injected_inverse_variance`,
+  `test_background_rms_builds_per_pixel_inverse_variance`, and
+  `test_rescale_epoch_fluxes_scales_background_rms_like_image_counts` all
+  passed. `py_compile` and `git diff --check` were also clean.
 - **Current test caveat:** the targeted unit test passes in the dev image. The full
   `src/shapepipe/tests/test_ngmix.py` file currently still fails in the existing
   metacal smoke test because the container's `ngmix.fitting` has no `Fitter`
