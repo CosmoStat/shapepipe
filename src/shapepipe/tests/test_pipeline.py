@@ -164,6 +164,7 @@ def test_fits_catalogue_table_roundtrips(tmp_path):
     data = {
         "X": np.array([1.0, 2.0]),
         "FLAG": np.array([0, 1], dtype=np.int16),
+        "NAME": np.array(["a", "bb"]),
     }
     cat = file_io.FITSCatalogue(
         str(path),
@@ -175,9 +176,10 @@ def test_fits_catalogue_table_roundtrips(tmp_path):
     cat.open()
 
     assert cat.get_nb_rows() == 2
-    assert cat.get_col_names() == ["X", "FLAG"]
+    assert cat.get_col_names() == ["X", "FLAG", "NAME"]
     npt.assert_allclose(cat.get_data()["X"], data["X"])
     npt.assert_array_equal(cat.get_data()["FLAG"], data["FLAG"])
+    npt.assert_array_equal(cat.get_data()["NAME"], data["NAME"])
 
     cat.close()
 
