@@ -662,10 +662,10 @@ fi
 (( do_job = job & 64 ))
 if [[ $do_job != 0 ]]; then
   # Job 64: PSF model
-  # For image_sims: build fake PSF stamps at tile level from pre-computed dict
+  # For image_sims: fake PSF runs as part of job 512 (requires sexcat from job 256)
   # For data: run full exposure-level PSF modelling pipeline
   if [ "$type" == "image_sims" ]; then
-    run_tile_job 64 "fpsf" "fake_psf_runner:1"
+    message "Job 64 (fake PSF) is handled as part of job 512 for image_sims — skipping." "$debug_out" -1
   elif [ "$psf" == "psfex" ]; then
     run_exp_job 64 "SxSePsf${Letter}i" "sextractor_runner:80 psfex_runner:80 psfex_interp_runner:40::warn setools_runner:80:rand_split"
   else

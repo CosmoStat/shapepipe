@@ -106,9 +106,8 @@ class Mask(object):
         # Search path for existing mask files
         self._check_existing_dir = check_existing_dir
 
-        # Set external star catalogue path if given
-        if star_cat_path is not None:
-            self._star_cat_path = star_cat_path
+        # External star catalogue path, if given (None otherwise)
+        self._star_cat_path = star_cat_path
 
         self._hdu = hdu
 
