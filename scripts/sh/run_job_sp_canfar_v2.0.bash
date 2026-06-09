@@ -16,7 +16,7 @@ ID=-1
 psf='psfex'
 tile_det='uc'
 tile_mask=0
-N_SMP=1
+N_SMP=-1
 dry_run=0
 dir=`pwd`
 debug_out=""
@@ -685,16 +685,19 @@ if [[ $do_job != 0 ]]; then
   if [ "$tile_det" == "uc" ]; then
     run_tile_job 256 "Gic Uc" "get_images_runner:2 read_ext_sexcat_runner:1"
   else
-    run_tile_job 256 "Sx" "sextractor_runner:1"
+    n_exp=2
+    run_tile_job 256 "Sx" "sextractor_runner:$n_exp"
   fi
 fi
 
 (( do_job = job & 512 ))
 if [[ $do_job != 0 ]]; then
   # Job 512: process tiles ([PSF interp,] vignets)
+  # For image_sims: fake PSF runs first (requires sexcat from job 256), then vignets
   if [ "$type" == "data" ]; then
       run_tile_job 512 "${Letter}iViVi ${Letter}iViVi ${Letter}iViVi" "psfex_interp_runner:1 vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:4"
   else
+      run_tile_job 64 "fpsf" "fake_psf_runner:1"
       run_tile_job 512 "ViVi VViVi" "vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:4"
   fi
 fi

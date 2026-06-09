@@ -601,6 +601,61 @@ class Ngmix(object):
                 + f" file '{vignet_path}'"
             )
 
+    def log_mean_ellipticity(self):
+        """Log mean ellipticity from NOSHEAR HDU to the run log.
+
+        Reports <e1>, <e2> with standard errors for all objects and for
+        objects passing the default metacal cuts (flags==0, mcal_flags==0,
+        10 < SNR < 500, T/Tpsf > 0.5).
+        """
+        output_path = self.get_output_path(self._output_dir)
+        try:
+            with fits.open(output_path) as hdul:
+                d = hdul['NOSHEAR'].data
+                g1 = d['g1'].astype(float)
+                g2 = d['g2'].astype(float)
+                flags = d['flags']
+                mcal_flags = d['mcal_flags']
+                s2n = d['s2n'].astype(float)
+                T = d['T'].astype(float)
+                Tpsf = d['Tpsf'].astype(float)
+        except Exception as e:
+            self._w_log.warning(f"Could not compute mean ellipticity: {e}")
+            return
+
+        n_total = len(g1)
+        if n_total == 0:
+            self._w_log.info("Mean ellipticity: no objects in output catalogue")
+            return
+
+        def _log_stats(g1_sel, g2_sel, label):
+            n = len(g1_sel)
+            if n == 0:
+                self._w_log.info(f"  {label}: 0 objects")
+                return
+            mean_g1 = g1_sel.mean()
+            mean_g2 = g2_sel.mean()
+            err_g1 = g1_sel.std() / np.sqrt(n)
+            err_g2 = g2_sel.std() / np.sqrt(n)
+            self._w_log.info(
+                f"  {label} (N={n}):"
+                f"  <e1> = {mean_g1:+.4e} +/- {err_g1:.4e},"
+                f"  <e2> = {mean_g2:+.4e} +/- {err_g2:.4e}"
+            )
+
+        self._w_log.info(f"Mean ellipticity (NOSHEAR, N_total={n_total}):")
+        _log_stats(g1, g2, "no cuts")
+
+        with np.errstate(invalid='ignore'):
+            mask = (
+                (flags == 0)
+                & (mcal_flags == 0)
+                & (s2n >= 10.0)
+                & (s2n <= 500.0)
+                & (T / Tpsf >= 0.5)
+            )
+        _log_stats(g1[mask], g2[mask], "SNR in [10, 500], T/Tpsf > 0.5")
+
     def process(self):
         """Process.
 
@@ -729,6 +784,9 @@ class Ngmix(object):
 
         # Save results
         self.save_results(res_dict)
+
+        # Log mean ellipticity statistics
+        self.log_mean_ellipticity()
 
 def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat, bkg_sub=True):
     # define per-object lists of individual exposures to go into ngmix

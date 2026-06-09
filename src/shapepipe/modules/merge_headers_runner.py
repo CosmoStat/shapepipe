@@ -43,6 +43,9 @@ def merge_headers_runner(
             f"Tile-level merge: collecting headers from {exp_base_dir} "
             f"using {exp_numbers_file}"
         )
+        warn_missing = config.getboolean(
+            module_config_sec, "WARN_MISSING_EXP", fallback=False
+        )
         headers_file_list = get_exp_output_files(
             exp_base_dir,
             exp_numbers_file,
@@ -50,6 +53,7 @@ def merge_headers_runner(
             "headers",
             ".npy",
             w_log=w_log,
+            warn_only=warn_missing,
         )
         # Extract tile number from the exp_numbers filename, e.g.
         # "exp_numbers-284.272-1.000.txt" -> "-284.272-1.000"

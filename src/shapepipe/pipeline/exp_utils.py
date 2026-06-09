@@ -22,6 +22,7 @@ def get_exp_output_files(
     file_pattern,
     file_ext,
     w_log=None,
+    warn_only=False,
 ):
     """Collect output files from a per-exposure runner for all tile exposures.
 
@@ -52,6 +53,10 @@ def get_exp_output_files(
         File extension including the leading dot, e.g. ``.npy``
     w_log : logging.Logger, optional
         Pipeline logger; ``None`` silences all logging
+    warn_only : bool, optional
+        If ``True``, log a warning for missing exposures and continue with
+        the files that were found instead of raising ``FileNotFoundError``.
+        Default is ``False``.
 
     Returns
     -------
@@ -116,10 +121,12 @@ def get_exp_output_files(
                 w_log.warning(f"  {exp_id}: no match for {pattern}")
 
     if missing:
-        raise FileNotFoundError(
-            f"No {runner_name} output found for "
-            f"{len(missing)} exposure(s): {missing}"
-        )
+        msg = f"No {runner_name} output found for {len(missing)} exposure(s): {missing}"
+        if warn_only:
+            if w_log:
+                w_log.warning(msg)
+        else:
+            raise FileNotFoundError(msg)
 
     if w_log:
         w_log.info(f"Found {len(file_list)} exposure output files")
