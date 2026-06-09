@@ -77,8 +77,6 @@ elif [ "$type" == "image_sims" ]; then
     input_dir_base="/n09data/hervas/skills_out"
     input_dir_tiles="$input_dir_base/$subdir/images/SP_tiles"
     input_dir_exp="$input_dir_base/$subdir/images/SP_exp"
-    ln -s $input_dir_tiles input_tiles
-    ln -s $input_dir_exp input_exp
 
 else
 
@@ -92,8 +90,13 @@ echo "Initialising ShapePipe v${version} run directory: $base_dir"
 echo ""
 
 # --- Base directory ---
-mkdir -p "$base_dir"
-cd "$base_dir"
+mkdir -p "$base_dir/$subdir"
+cd "$base_dir/$subdir"
+
+if [ "$type" == "image_sims" ]; then
+    ln -s "$input_dir_tiles" input_tiles
+    ln -s "$input_dir_exp" input_exp
+fi
 
 echo "Creating tiles/ directory..."
 mkdir -p tiles
@@ -111,7 +114,7 @@ mkdir -p debug
 
 # --- Config symlink ---
 
-# Config directory (will be symlinked as $base_dir/cfis)
+# Config directory (will be symlinked)
 
 if [ -L cfis ]; then
     echo "cfis symlink already exists, skipping"
@@ -137,7 +140,7 @@ echo "  $n_tiles tiles"
 
 echo ""
 echo "Done. Directory structure:"
-echo "  $base_dir/"
+echo "  $base_dir/$subdir"
 echo "  ├── tiles/"
 echo "  ├── exp/"
 echo "  ├── logs/"
