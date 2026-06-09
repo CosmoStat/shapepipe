@@ -596,7 +596,12 @@ IDdec=${ID##*.}
 (( do_job = job & 1 ))
 if [[ $do_job != 0 ]]; then
   # Job 1: download tile images and weights
-  run_tile_job 1 "Git" "get_images_runner:4"
+  if [ "$type" == "image_sims" ]; then
+    n_exp=2
+  else
+    n_exp=4
+  fi
+  run_tile_job 1 "Git" "get_images_runner:${n_exp}"
 fi
 
 (( do_job = job & 2 ))
@@ -604,11 +609,20 @@ if [[ $do_job != 0 ]]; then
   if [ "$type" == "image_sims" ]; then
     # Image sims weights are already uncompressed; fake the Uz output directory
     # so downstream jobs can find the weight via last:uncompress_fits_runner.
-    uz_out="$work_dir/output/run_sp_tile_Uz/uncompress_fits_runner/output"
-    command "mkdir -p $uz_out" $dry_run
     weight_src="$dir/input_tiles/CFIS_simu_weight-${ID//./-}.fits"
-    if [ -e "$weight_src" ] && [ ! -e "$uz_out/$(basename $weight_src)" ]; then
-      command "ln -sf $weight_src $uz_out/$(basename $weight_src)" $dry_run
+    if [ "$check" == "1" ]; then
+      uz_run_dir=$(ls -dt "$work_dir/output/run_sp_tile_Uz"* 2>/dev/null | head -1)
+      if [ -n "$uz_run_dir" ] && [ -e "$uz_run_dir/uncompress_fits_runner/output/$(basename $weight_src)" ]; then
+        message "Complete: Uz $(basename $weight_src)" "$debug_out" -1
+      else
+        message "Missing: Uz $(basename $weight_src)" "$debug_out" -1
+      fi
+    else
+      uz_out="$work_dir/output/run_sp_tile_Uz$(date +_%Y-%m-%d_%H-%M-%S)/uncompress_fits_runner/output"
+      command "mkdir -p $uz_out" $dry_run
+      if [ -e "$weight_src" ] && [ ! -e "$uz_out/$(basename $weight_src)" ]; then
+        command "ln -sf $weight_src $uz_out/$(basename $weight_src)" $dry_run
+      fi
     fi
   else
     # Job 2: uncompress tile weights
@@ -625,7 +639,12 @@ fi
 (( do_job = job & 8 ))
 if [[ $do_job != 0 ]]; then
   # Job 8: retrieve exposure images
-  run_exp_job 8 "Gie" "get_images_runner:6"
+  if [ "$type" == "image_sims" ]; then
+    n_exp=3
+  else
+    n_exp=6
+  fi
+  run_exp_job 8 "Gie" "get_images_runner:${n_exp}"
 fi
 
 (( do_job = job & 16 ))
