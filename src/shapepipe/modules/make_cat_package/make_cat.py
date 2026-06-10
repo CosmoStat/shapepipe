@@ -449,7 +449,7 @@ class SaveCatalogue:
                     )
                     self._add2dict(f"NGMIX{m}_ELL_PSFo_{key}", g_psf, idx)
 
-                    t_psfo = ncf_data["T_psfo_ngmix"][ind[0]]
+                    t_psfo = ncf_data["Tpsf"][ind[0]]
                     self._add2dict(f"NGMIX{m}_T_PSFo_{key}", t_psfo, idx)
 
                 self._add2dict(
