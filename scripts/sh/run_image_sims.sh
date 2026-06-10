@@ -4,10 +4,11 @@ type="grid"
 
 tile_ID="233.293"
 
-if [ "$type" == "grid" ];
+if [ "$type" == "grid" ]; then
   str_type="_grid"
 else
   str_type=""
+fi
 
 job=4091
 
@@ -18,9 +19,9 @@ dgs=("m" "z" "p")
 mkdir -p $base/$type
 cd $base/$type
 
-for dg in dgs; do
+for dg in "${dgs[@]}"; do
 
-  name="1${dg}2${dx}${str_type}_$num"
+  name="1${dg}2${dg}${str_type}_$num"
 
   init_run_v2.0.sh -t image_sims -s $name
 
@@ -28,6 +29,8 @@ for dg in dgs; do
 
   apptainer exec --bind /n09data,/home \
     run_job_sp_canfar_v2.0.bash -e ${tile_ID} -t image_sims -j $job
+
+  cd ..
 
 done
 

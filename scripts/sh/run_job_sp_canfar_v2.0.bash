@@ -29,6 +29,7 @@ scratch=""
 test_only=0
 check=0
 force=0
+retry=0
 VERBOSE=1
 
 pat="-- "
@@ -53,6 +54,8 @@ ${JOB_LIST_HELP}   -e, --exclusive ID\timage ID\n
    --test\t\t\ttest mode, no processing\n
    --check\t\tcheck download completeness only (job 8), no processing\n
    --force\t\tremove existing module output dir(s) before running\n
+   --retry\t\tskip jobs whose existing run is complete; remove and rerun\n
+   \t\t\tonly those whose existing run is incomplete/failed\n
 "
 
 ## Help if no arguments
@@ -121,6 +124,9 @@ while [ $# -gt 0 ]; do
     --force)
       force=1
       ;;
+    --retry)
+      retry=1
+      ;;
   esac
   shift
 done
@@ -177,6 +183,30 @@ function init_exp_work_dir() {
 }
 
 
+# Remove existing run_sp_<kind>_<prefix>* output directories.
+# Args: $1 = base dir containing the "output" subdir (work_dir or exp_work_dir)
+#       $2 = "tile" or "exp"
+#       $3 = space-separated run_prefixes
+#       $4 = label for the removal message (e.g. "Force-removing")
+function remove_run_dirs() {
+  local base_dir=$1
+  local kind=$2
+  local run_prefixes=$3
+  local label=$4
+  local run_prefix
+  for run_prefix in $run_prefixes; do
+    local dirs_to_remove
+    dirs_to_remove=$(ls -d "$base_dir/output/run_sp_${kind}_${run_prefix}"* 2>/dev/null)
+    if [ -n "$dirs_to_remove" ]; then
+      for d in $dirs_to_remove; do
+        message "${label} $d" "$debug_out" -1
+        command "rm -rf $d" $dry_run
+      done
+    fi
+  done
+}
+
+
 # Run a per-exposure job (e.g. job 8, 16).
 # Args: $1 = job number
 #       $2 = space-separated list of run_sp_exp output dir prefixes (e.g. "Gie")
@@ -229,21 +259,6 @@ function run_exp_job() {
 
     # Create exp_numbers-000-000.txt and cfis link if not existent
     init_exp_work_dir "$exp_id" "$exp_work_dir"
-
-    # force: remove all existing run directories for each prefix before running
-    if [ "$force" == "1" ]; then
-      local run_prefix
-      for run_prefix in $run_prefixes; do
-        local dirs_to_remove
-        dirs_to_remove=$(ls -d "$exp_work_dir/output/run_sp_exp_${run_prefix}"* 2>/dev/null)
-        if [ -n "$dirs_to_remove" ]; then
-          for d in $dirs_to_remove; do
-            message "Force-removing $d" "$debug_out" -1
-            command "rm -rf $d" $dry_run
-          done
-        fi
-      done
-    fi
 
     # Check completeness of existing run output (main prefix)
     local run_dir=$(ls -dt "$exp_work_dir/output/run_sp_exp_${main_prefix}"* 2>/dev/null | head -1)
@@ -306,7 +321,15 @@ function run_exp_job() {
       fi
     done
 
-    if [ "$is_complete" == "1" ]; then
+    # force: always remove and rerun.
+    # retry: remove and rerun only if the existing run is incomplete/failed.
+    if [ "$force" == "1" ]; then
+      remove_run_dirs "$exp_work_dir" "exp" "$run_prefixes" "Force-removing"
+    elif [ "$retry" == "1" ] && [ "$is_complete" == "0" ]; then
+      remove_run_dirs "$exp_work_dir" "exp" "$run_prefixes" "Retry: removing incomplete run"
+    fi
+
+    if [ "$force" != "1" ] && [ "$is_complete" == "1" ]; then
       message "Complete $exp_id_disp: run_sp_exp_${main_prefix} ( $check_desc)" "$debug_out" -1
       (( n_complete++ ))
       continue
@@ -362,21 +385,6 @@ function run_tile_job() {
   local run_prefixes=$2
   local complete_checks=$3
   local main_prefix="${run_prefixes%% *}"
-
-  # force: remove all existing run directories for each prefix before running
-  if [ "$force" == "1" ]; then
-    local run_prefix
-    for run_prefix in $run_prefixes; do
-      local dirs_to_remove
-      dirs_to_remove=$(ls -d "$work_dir/output/run_sp_tile_${run_prefix}"* 2>/dev/null)
-      if [ -n "$dirs_to_remove" ]; then
-        for d in $dirs_to_remove; do
-          message "Force-removing $d" "$debug_out" -1
-          command "rm -rf $d" $dry_run
-        done
-      fi
-    done
-  fi
 
   # Locate most recent existing run directory for the main prefix
   local run_dir
@@ -441,7 +449,15 @@ function run_tile_job() {
     done
   fi
 
-  if [ "$is_complete" == "1" ] && [ -n "$complete_checks" ]; then
+  # force: always remove and rerun.
+  # retry: remove and rerun only if the existing run is incomplete/failed.
+  if [ "$force" == "1" ]; then
+    remove_run_dirs "$work_dir" "tile" "$run_prefixes" "Force-removing"
+  elif [ "$retry" == "1" ] && [ "$is_complete" == "0" ]; then
+    remove_run_dirs "$work_dir" "tile" "$run_prefixes" "Retry: removing incomplete run"
+  fi
+
+  if [ "$force" != "1" ] && [ "$is_complete" == "1" ] && [ -n "$complete_checks" ]; then
     message "Complete: ( $check_desc)" "$debug_out" -1
     return 0
   fi
@@ -698,7 +714,7 @@ if [[ $do_job != 0 ]]; then
       run_tile_job 512 "${Letter}iViVi ${Letter}iViVi ${Letter}iViVi" "psfex_interp_runner:1 vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:4"
   else
       run_tile_job 64 "fpsf" "fake_psf_runner:1"
-      run_tile_job 512 "ViVi VViVi" "vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:4"
+      run_tile_job 512 "ViVi ViVi" "vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:3"
   fi
 fi
 
