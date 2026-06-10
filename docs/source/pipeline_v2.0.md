@@ -15,13 +15,21 @@ v2.0/
 │   │   ├── 301.278/
 │   │   ├── 301.279/
 │   │   └── ...
+│   │   ...
 ├── exp/
 │   ├── 21/
 │   │   ├── 21163916
 │   │   └── ...
+│   │   ...
 ├── cfis -> <config file directory>
 ├── tile_numbers -> <input file list>
+└── logs/
 └── debug/
+
+Additionally, for image_sims:
+├── input_tiles -> <simulated tile images directory>
+├── input_exp -> <simulated single exposure images directory>
+
 
 
 ### Interactive job from the terminal for a single tile
@@ -30,22 +38,35 @@ Run bit-coded jobs
 ```bash
 run_job_canfar_v2.0.sh -e ID -j <job>
 ```
-with job processing tiles:
-- 1: download tiles
-- 2: uncompress tile weights
-- 4: find exposures
-then exposures:
-- 8: download exposures
-- 16: split exposures into single-CCD HDUs
-- 32: mask exposures
-- 64: process stars (selection, PSF movel)
-then back to tiles:
-- 128: select objects (using external catalogue)
-- 256: create object postage stamps
+# with job processing tiles:
+ 1: retrieve tile images and weights (download/symlink)
+ 2: uncompress weights (no processing for image_sims)
+ 4: find exposures
+# then exposures
+ 8: retrieve exposures (download/symlink)
+16: split exposures, get WCS header
+32: mask exposures
+64: process stars on exposures, PSF model (no processing for image sims)
+# back to tiles
+128: merge exposure WCS headers into tile-level sqlite log
+256: object selection on tiles (external cat/SExtractor)
+512: postage stamp creation
+1024: multi-epoch shape measurement
+2048: create final catalogue
 
-## CANFAR Setup
+## Candide setup
 
-### CANFAR Login
+## CANFAR setup
+
+### For image simulations
+
+#### Download docker image
+
+```bash
+apptainer pull shapepipe_im_sims.sif docker://ghcr.io/cosmostat/shapepipe:im_sims
+```
+
+### CANFAR login
 
 Login to the canfar system with
 
