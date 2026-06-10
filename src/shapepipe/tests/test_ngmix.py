@@ -205,3 +205,71 @@ def test_rescale_epoch_fluxes_scales_background_rms_like_image_counts():
     npt.assert_allclose(gal_scaled, 2.0)
     npt.assert_allclose(weight_scaled, 2.0)
     npt.assert_allclose(bkg_rms_scaled, 6.0)
+
+
+def test_spatially_varying_rms_survives_rescale_to_observation():
+    """A spatially-varying RMS map reaches the Observation as exact per-pixel
+    inverse variance through the full rescale -> prepare -> Observation chain.
+
+    This is the #604 integration guard: the injected heteroscedastic truth
+    ``1 / (Fscale * rms)**2`` must come back exactly (the RMS branch is
+    deterministic and never looks at galaxy flux), with Megapipe-masked and
+    flagged pixels zeroed.
+    """
+    from astropy.io import fits
+    from shapepipe.modules.ngmix_package.ngmix import (
+        make_ngmix_observation,
+        rescale_epoch_fluxes,
+    )
+    from shapepipe.testing.simulate import make_data
+
+    img_size = 51
+    yy, xx = np.mgrid[:img_size, :img_size]
+    rms = 1e-3 * (1.0 + 1.5 * xx / (img_size - 1) + 0.5 * yy / (img_size - 1))
+
+    gals, psfs, _, weights, flags, jacobs = make_data(
+        rng=np.random.RandomState(123),
+        shear=(0.0, 0.0),
+        noise=rms,
+        n_epochs=1,
+        img_size=img_size,
+    )
+    weights[0][:3, :3] = 0.0  # Megapipe-masked corner
+    flags[0][-3:, -3:] = 8  # flagged corner
+
+    header = fits.Header()
+    header["FSCALE"] = 2.0
+    gal_scaled, weight_scaled, rms_scaled = rescale_epoch_fluxes(
+        gals[0], weights[0], header, bkg_rms=rms
+    )
+
+    obs = make_ngmix_observation(
+        gal_scaled,
+        weight_scaled,
+        flags[0],
+        psfs[0],
+        jacobs[0],
+        np.random.RandomState(0),
+        bkg_rms=rms_scaled,
+    )
+
+    good = (weights[0] != 0) & (flags[0] == 0)
+    expected = np.zeros_like(rms)
+    expected[good] = 1.0 / (header["FSCALE"] * rms[good]) ** 2
+    npt.assert_allclose(obs.weight, expected)
+
+
+def test_constant_stamp_fallback_yields_finite_zero_weights():
+    """A degenerate constant stamp (sigma_mad == 0) must not emit NaN weights."""
+    from shapepipe.modules.ngmix_package.ngmix import prepare_ngmix_weights
+
+    gal = np.ones((4, 4))
+    weight = np.zeros((4, 4))  # fully masked
+    flag = np.zeros((4, 4))
+
+    with np.errstate(divide="raise", invalid="raise"):
+        _, weight_map, _ = prepare_ngmix_weights(
+            gal, weight, flag, np.random.RandomState(0)
+        )
+
+    npt.assert_array_equal(weight_map, 0.0)
