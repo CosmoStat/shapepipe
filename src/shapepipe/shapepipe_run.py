@@ -15,7 +15,7 @@ from shapepipe.run import run
 
 def main(args=None):
 
-    run(args)
+    return run(args)
 
 
 if __name__ == "__main__":

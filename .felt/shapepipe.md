@@ -1,50 +1,40 @@
 ---
-name: ShapePipe maintenance & PRs
+name: ShapePipe — project knowledge & active threads
 tags:
     - shapepipe
-    - portolan
 created-at: 2026-04-27T11:26:38.71538657+02:00
-outcome: 'Root: collaboration with Martin on ShapePipe — PRs, infra, future ngmix and Fabian work'
+outcome: 'Root of ShapePipe''s felt store: the stack division, repo conventions, and the why behind in-flight infra/cleanup threads.'
 ---
 
-ShapePipe is the UNIONS shape-measurement pipeline. I'm not the primary
-maintainer (that's Martin Kilbinger); my role is collaborator helping
-clean up infra, surface bugs, and keep the merge queue moving while
-Martin focuses on science threads.
+This is the root of ShapePipe's felt store — shared notes on architecture
+decisions, conventions, and in-flight work, for the team and AI agents alike.
+ShapePipe is the UNIONS galaxy shape-measurement pipeline; `CLAUDE.md` covers the
+build / container / CI overview, and the fibers here carry the *why*. Start here,
+then follow the links.
 
-## Working agreement with Martin
+## Stack division
 
-Surfaced over a 2026-04-27 walking conversation. Captured in
-[[shapepipe/prs-in-flight]] and the per-thread fibers below.
-
-- I review and patch his PRs; he reviews mine. Bugs found during review
-  go to a dedicated PR rather than getting bundled into his feature
-  branch (per `feedback_separate_infra_prs`).
-- v2.0 was merged fast (it was ready). The skaha base it brought in is
-  the active source of pain → see [[shapepipe/docker-uv-revert]].
-- I file the issues; Claude usually drafts the PRs in my voice.
-  Disclosure on Claude-only review per
-  `feedback_claude_only_review_disclosure`.
-
-## Active threads
-
-- **[[shapepipe/docker-uv-revert]]** — slim Python + uv lockfile, drop conda. PR #719 (draft).
-- **[[shapepipe/prs-in-flight]]** — tracking #708 (testing scaffold), #714 (develop bugs), #719 (this one).
-
-## Future work
-
-- **[[shapepipe/ngmix-update]]** — replace Axel's stable_version fork
-  with upstream ngmix; reconcile with Lucy's wrapper.
-- **[[shapepipe/fabian-coord-bug]]** — port Fabian's 1-line coord
-  propagation fix; first need his image-sim code on github.
+ShapePipe **produces** shear catalogues; `sp_validation` / `cosmo_val`
+**consume** and validate them; `cs_util` holds code shared across both. A concern
+about *validating* catalogues belongs downstream, not in ShapePipe.
 
 ## Conventions specific to this repo
 
-- Container runs through `app` (apptainer wrapper); use `python3.12`
-  inside the shapepipe container (see `reference_containers`).
-- ShapePipe produces; `sp_validation` consumes; `cs_util` is shared (see
-  `project_stack_division`).
-- Rho stats are obsolete here — sp_validation/cosmo_val took over (see
-  `project_rho_stats_obsolete`).
-- Royal "we" in PR/issue voice; specific findings attributed to Claude
-  by name (see `feedback_writing_voice_on_cails_behalf`).
+- **Rho-statistics are obsolete inside ShapePipe.** PSF-systematics validation
+  moved downstream to `sp_validation` / `cosmo_val` (via `shear_psf_leakage`);
+  the stile/treecorr rho code was removed in #715. But the **meanshapes /
+  ellipticity focal-plane plots** (`mccd_plots_runner`) are *deliberately kept* —
+  they are a general PSF/star-catalogue diagnostic, not rho-stats, and feed
+  catalogue-paper figures. Don't delete that path along with rho-stats; see
+  [[shapepipe/cleanup-rhostats-jobscripts]] for where the boundary actually sits.
+- Run the pipeline through the container; use `python3.12` explicitly inside it.
+- **ngmix** is pinned to a fork branch until fixes land upstream — don't bump
+  that dependency line. [[ngmix-update]] tracks the path back to upstream.
+
+## Active threads
+
+- **[[shapepipe/ci-green-on-develop]]** / **[[shapepipe/test-suite]]** — a
+  tiered, in-image test suite and trustworthy CI on `develop`.
+- **[[docker-uv-revert]]** — slim Python base + uv lockfile, dropping conda.
+- **[[shapepipe/mpi-hybrid]]** — running hybrid MPI through the container on candide.
+- **[[ngmix-update]]** — replacing the pinned ngmix fork with upstream.
