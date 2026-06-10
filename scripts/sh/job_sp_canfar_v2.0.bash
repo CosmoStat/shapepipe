@@ -264,7 +264,7 @@ function command_cfg_shapepipe() {
     fi
 
     local config="$SP_CONFIG/$config_name"
-    local cmd="shapepipe_run.py -c $config $exclusive_flag $batch_flag"
+    local cmd="shapepipe_run -c $config $exclusive_flag $batch_flag"
     command "$cmd" "$str"
 }
 
