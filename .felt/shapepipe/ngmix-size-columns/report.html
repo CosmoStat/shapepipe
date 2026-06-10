@@ -70,10 +70,17 @@
 
   <section>
     <div class="section-mark">§ Current state</div>
-    <h2>All three branches landed; PR creation is yours.</h2>
+    <h2>All three branches landed and fresh-eyes reviewed; PR creation is yours.</h2>
 
     <p>Every piece of the constitution's desired state is implemented, tested, and pushed.
-    Three branches across three repos, in dependency order:</p>
+    A second session independently reviewed all three diffs: re-derived both error propagations
+    (galaxy <code>r50·T_err/2T</code> and PSF <code>√(2ln2)·T_err/(4σ)</code> are the same formula —
+    consistent), confirmed zero remaining consumers of the retired <code>_psfo_ngmix</code> size
+    columns (only <code>make_cat</code>, repointed), confirmed the dropped <code>pixel_size</code>
+    kwarg on <code>sigma_to_fwhm</code> has no callers, re-ran the tests (shapepipe size tests pass
+    in the dev container; cs_util 24/24; <code>T_to_fwhm(2.0) → 2.35482</code> reproduced in the
+    sp_validation container against the branch), and verified all three push SHAs. No code defects
+    found. Three branches across three repos, in dependency order:</p>
 
     <table>
       <tr><th>Repo</th><th>Branch</th><th>What it does</th></tr>
@@ -115,8 +122,18 @@
 
     <p><strong>Merge order:</strong> cs_util first (sp_validation's import fails loudly without it —
     intentional fail-fast), then sp_validation; the shapepipe branch is independent and can merge any
-    time. No PRs opened — that's your gesture. cs_util will also need a release (or a git-ref pin) before
-    sp_validation's CI can pass.</p>
+    time. No PRs opened — that's your gesture. cs_util needs a release (or a git-ref pin in
+    sp_validation) before the sp_validation branch is safe to merge.</p>
+
+    <div class="flag">
+      <strong>CI will not police the merge order.</strong> sp_validation's CI is already green on the
+      pushed branch (run 27248208943) — but vacuously: the image installs <em>released</em>
+      <code>cs-util 0.1.9</code> (no <code>size</code> module), and the test suite never imports
+      <code>galaxy.py</code> (tests cover <code>cosmo_val</code>/<code>cosmology</code>/<code>survey</code>/<code>plots</code>
+      only). Merging sp_validation before the cs_util release would pass CI and then raise
+      <code>ImportError</code> at runtime, in <code>extract_info.py</code> / the notebooks. The
+      ordering is enforced by discipline, not automation.
+    </div>
   </section>
 
   <hr class="short">
@@ -150,9 +167,14 @@
 
     <h3>Pre-existing test failure, not mine</h3>
     <p><code>test_metacal_is_reproducible_with_fixed_seed</code> fails in the local
-    <code>shapepipe-dev</code> container on clean <code>ngmix_v2.0</code> too (container/ngmix version
-    skew, most likely) — CI on the pushed branch is the arbiter. The five other tests, including my two
-    new ones, pass against the branch code.</p>
+    <code>shapepipe-dev</code> container — reproduced by the review session on clean
+    <code>ngmix_v2.0</code> with the identical error (<code>ngmix.fitting</code> has no
+    <code>Fitter</code>: the local container carries an older ngmix than the branch expects). The
+    other tests, including the two new size tests, pass against the branch code. Note shapepipe's
+    <code>deploy-image.yml</code> triggers only on PRs/pushes targeting
+    <code>develop</code>/<code>main</code>/<code>master</code> — so a PR of this branch into
+    <code>ngmix_v2.0</code> won't run CI by itself; the suite gets arbitrated when the change rides
+    PR #740's chain toward <code>develop</code>.</p>
   </section>
 
   <hr class="short">
