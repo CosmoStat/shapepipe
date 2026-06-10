@@ -13,6 +13,7 @@ on:
       - develop
       - main
       - master
+      - im_sims
   pull_request:
     branches:
       - develop
