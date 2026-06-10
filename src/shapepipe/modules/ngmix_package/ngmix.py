@@ -924,7 +924,13 @@ def prepare_ngmix_weights(gal, weight, flag, rng, bkg_rms=None):
 
     if bkg_rms is None:
         sig_noise = sigma_mad(gal)
-        weight_map = mask.astype(float) * 1 / sig_noise ** 2
+        # Guard the degenerate constant stamp (sigma_mad == 0): 0 * inf
+        # would otherwise put NaN in a fully-masked weight map.
+        weight_map = (
+            mask.astype(float) / sig_noise ** 2
+            if sig_noise > 0
+            else np.zeros_like(gal, dtype=float)
+        )
     else:
         valid_rms = np.isfinite(bkg_rms) & (bkg_rms > 0)
         mask &= valid_rms
