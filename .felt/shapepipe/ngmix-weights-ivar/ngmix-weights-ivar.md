@@ -1,7 +1,7 @@
 ---
 id: 01KTCQPE3JGEYN7NQS8HW1AT6B
 name: 'ngmix weight map: fix v2.0 regressions + inverse-variance (#604)'
-status: active
+status: open
 tags:
     - constitution
     - shapepipe

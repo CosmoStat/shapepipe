@@ -1,22 +1,23 @@
 ---
 id: 01KTCHWZX873VG28AA663A3ZQE
 name: 'Review + work: ngmix v2.0 (PR #740)'
-status: active
+status: closed
 tags:
     - constitution
     - shapepipe
     - ngmix
     - review
 created-at: 2026-06-01T11:50:17.967872934+02:00
+closed-at: 2026-06-05T23:59:38.502Z
 outcome: 'INTERACTIVE — live with Cail. Bucket-A cleanups PUSHED to ngmix_v2.0/#741 (dd4f656a..bd60dc8e: 293/1140/254-resume/766 + fitting.py deleted); CI running. Dev image built (/n17data/cdaley/containers/shapepipe-dev) + ngmix 2.4.0 installed → full suite + example pipeline now runnable. Ran a 6+2-agent WORKFLOW on the two hard problems → two decision-ready reports in fiber: weights-report.md, size-report.md, deep-dive-report.html (sent to Cail). WEIGHTS (#604+949): found TWO coupled regressions in prepare_ngmix_weights (ngmix.py:871) — R1 noise estimator regressed from object-free windowed get_noise (now DEAD at :826) to flux-contaminated whole-stamp sigma_mad; R2 lost the v1 binarization → double-counts a real inverse-variance map. EMPIRICALLY CONFIRMED (truth ivar 1e6 → recovered 8.8e11, ratio≈1/noise²). Clean red→green test target via make_data. Rec: SPLIT — minimal v1-restore (reinstate binarization + get_noise) + test in #741; SExtractor BACKGROUND_RMS baseline as a SEPARATE PR (Codex shuttle, ~4-8h, closes #604). SIZE (r50/T): galaxy r50=pars[4]=T (area), PSF r50psf=σ; neither is 1.1774σ; all 5 r50* cols new in v2.0. UNIONS-3500 WL I (arXiv:2605.13549) reports half-light radius r_h as PRIMARY. Rec: TRANSFORM at source (honest r50 in ngmix) + cs_util converter web; bonus find — sp_validation galaxy.py:T_to_fwhm is dimensionally wrong (feeds the scale-dependent PSF-leakage fit). Both work-streams now DISPATCHED as shuttles (Cail''s go): [[ngmix-weights-ivar]] (Codex — minimal #741 regression fix w/ red→green test + the SExtractor BACKGROUND_RMS baseline as a separate PR closing #604) and [[ngmix-size-columns]] (claude-opus — honest r50 at the ngmix source + cs_util converter web + the sp_validation T_to_fwhm leakage fix). Workers prepare branches/commits/PR-descriptions + reports; merge/PR-creation stays Cail''s. STILL OPEN for the eventual #741 reply (not in these streams): *_psfo reconvolved-PSF merge-gate (1045) + the runner-decorator contract (testable via the example pipeline). PLAN: let the two shuttles finish → reassess → write the Martin reply. No reply drafted yet.'
 horizon: now
 shuttle:
-    agent: claude-opus
     enabled: true
-    host: candide
-    interactive: true
     kind: oneshot
+    interactive: true
+    host: candide
     project_dir: /automnt/n17data/cdaley/unions/shapepipe
+    agent: claude-opus
 ---
 
 # Review + work: ngmix v2.0 (PR #740)
