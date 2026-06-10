@@ -1,0 +1,786 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd &#8212; ShapePipe v1.1</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=3c74b3bc" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=051bfb12"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://cosmostat.github.io/shapepipe/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'latest';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="shapepipe.modules.merge_headers_package" href="shapepipe.modules.merge_headers_package.html" />
+    <link rel="prev" title="shapepipe.modules.mccd_package.mccd_plot_utilities" href="shapepipe.modules.mccd_package.mccd_plot_utilities.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="1.1" />
+    <meta name="docbuild:last-update" content="10 Jun, 2026"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">ShapePipe v1.1</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">About ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributors.html">Contributors</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Installing ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="container.html">Container Workflow</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Running ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="basic_execution.html">Basic Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="random_cat.html">Create random catalogues and masks</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="understanding_api.html">Understanding the API Documentation</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="shapepipe.html">shapepipe</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="shapepipe.modules.html">shapepipe.modules</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.find_exposures_package.html">shapepipe.modules.find_exposures_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.find_exposures_package.find_exposures.html">shapepipe.modules.find_exposures_package.find_exposures</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.get_images_package.html">shapepipe.modules.get_images_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.get_images_package.get_images.html">shapepipe.modules.get_images_package.get_images</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.make_cat_package.html">shapepipe.modules.make_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.make_cat_package.make_cat.html">shapepipe.modules.make_cat_package.make_cat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mask_package.html">shapepipe.modules.mask_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mask_package.mask.html">shapepipe.modules.mask_package.mask</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.match_external_package.html">shapepipe.modules.match_external_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.match_external_package.match_external.html">shapepipe.modules.match_external_package.match_external</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 current active has-children"><a class="reference internal" href="shapepipe.modules.mccd_package.html">shapepipe.modules.mccd_package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html">shapepipe.modules.mccd_package.mccd_interpolation_script</a></li>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_plot_utilities.html">shapepipe.modules.mccd_package.mccd_plot_utilities</a></li>
+<li class="toctree-l4 current active"><a class="current reference internal" href="#">shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.merge_headers_package.html">shapepipe.modules.merge_headers_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.merge_headers_package.merge_headers.html">shapepipe.modules.merge_headers_package.merge_headers</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.merge_sep_cats_package.html">shapepipe.modules.merge_sep_cats_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.merge_sep_cats_package.merge_sep_cats.html">shapepipe.modules.merge_sep_cats_package.merge_sep_cats</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.merge_starcat_package.html">shapepipe.modules.merge_starcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.merge_starcat_package.merge_starcat.html">shapepipe.modules.merge_starcat_package.merge_starcat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.ngmix_package.html">shapepipe.modules.ngmix_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html">shapepipe.modules.ngmix_package.ngmix</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.pastecat_package.html">shapepipe.modules.pastecat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.pastecat_package.pastecat.html">shapepipe.modules.pastecat_package.pastecat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.psfex_interp_package.html">shapepipe.modules.psfex_interp_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.psfex_interp_package.psfex_interp.html">shapepipe.modules.psfex_interp_package.psfex_interp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.psfex_package.html">shapepipe.modules.psfex_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.psfex_package.psfex_script.html">shapepipe.modules.psfex_package.psfex_script</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.python_example_package.html">shapepipe.modules.python_example_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.random_cat_package.html">shapepipe.modules.random_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.random_cat_package.random_cat.html">shapepipe.modules.random_cat_package.random_cat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html">shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.setools_package.html">shapepipe.modules.setools_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.setools_package.setools.html">shapepipe.modules.setools_package.setools</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.sextractor_package.html">shapepipe.modules.sextractor_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.sextractor_package.sextractor_script.html">shapepipe.modules.sextractor_package.sextractor_script</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.split_exp_package.html">shapepipe.modules.split_exp_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.split_exp_package.split_exp.html">shapepipe.modules.split_exp_package.split_exp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.spread_model_package.html">shapepipe.modules.spread_model_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.spread_model_package.spread_model.html">shapepipe.modules.spread_model_package.spread_model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.uncompress_fits_package.html">shapepipe.modules.uncompress_fits_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.uncompress_fits_package.uncompress_fits.html">shapepipe.modules.uncompress_fits_package.uncompress_fits</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.vignetmaker_package.html">shapepipe.modules.vignetmaker_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.vignetmaker_package.vignetmaker.html">shapepipe.modules.vignetmaker_package.vignetmaker</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.module_decorator.html">shapepipe.modules.module_decorator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.module_runners.html">shapepipe.modules.module_runners</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.pipeline.html">shapepipe.pipeline</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.args.html">shapepipe.pipeline.args</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.config.html">shapepipe.pipeline.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.dependency_handler.html">shapepipe.pipeline.dependency_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.execute.html">shapepipe.pipeline.execute</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.exp_utils.html">shapepipe.pipeline.exp_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.file_handler.html">shapepipe.pipeline.file_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.file_io.html">shapepipe.pipeline.file_io</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.job_handler.html">shapepipe.pipeline.job_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.mpi_run.html">shapepipe.pipeline.mpi_run</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.run_log.html">shapepipe.pipeline.run_log</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.shared.html">shapepipe.pipeline.shared</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.str_handler.html">shapepipe.pipeline.str_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.timeout.html">shapepipe.pipeline.timeout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.worker_handler.html">shapepipe.pipeline.worker_handler</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.info.html">shapepipe.info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.run.html">shapepipe.run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.shapepipe_run.html">shapepipe.shapepipe_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.summary_run.html">shapepipe.summary_run</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing to ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contribution Guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_develop.html">Module Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_example.html">Module Examples</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="z_ref.html">References</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe/edit/main/docs/source/shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2Fshapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
+
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+<button class="sidebar-toggle secondary-toggle btn btn-sm pst-navbar-icon" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_preprocessing_pipeline"><code class="docutils literal notranslate"><span class="pre">mccd_preprocessing_pipeline()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_fit_pipeline"><code class="docutils literal notranslate"><span class="pre">mccd_fit_pipeline()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_validation_pipeline"><code class="docutils literal notranslate"><span class="pre">mccd_validation_pipeline()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_interpolation_pipeline"><code class="docutils literal notranslate"><span class="pre">mccd_interpolation_pipeline()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.shapepipe_write_output"><code class="docutils literal notranslate"><span class="pre">shapepipe_write_output()</span></code></a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd">
+<span id="shapepipe-modules-mccd-package-shapepipe-auxiliary-mccd"></span><h1>shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd<a class="headerlink" href="#module-shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd" title="Link to this heading">#</a></h1>
+<p>MCCD AUXILIARY FUNCTIONS.</p>
+<p>This module contains auxiliary functions for the MCCD package that are needed
+by the MCCD runners.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Author<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tobias Liaudat</p>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_preprocessing_pipeline">
+<span class="sig-name descname"><span class="pre">mccd_preprocessing_pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_file_position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_n_stars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'-'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">CCD_id_filter_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlier_std_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_masks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'train_star_selection'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_extension</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.fits'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_fun</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mccd_package/shapepipe_auxiliary_mccd.html#mccd_preprocessing_pipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_preprocessing_pipeline" title="Link to this definition">#</a></dt>
+<dd><p>Preprocess Input Catalogue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_file_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – Input file list as taken from shapepipe’s input</p></li>
+<li><p><strong>output_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to the folder where to save the preprocessed files</p></li>
+<li><p><strong>input_file_position</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Element position from the <code class="docutils literal notranslate"><span class="pre">input_file_list</span></code> to preprocess; default is
+<code class="docutils literal notranslate"><span class="pre">0</span></code></p></li>
+<li><p><strong>min_n_stars</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Minimum number of stars in order to preprocess the CCD; default is
+<code class="docutils literal notranslate"><span class="pre">20</span></code></p></li>
+<li><p><strong>separator</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Separator string that separates the catalogue id and the CCD id;
+default is <code class="docutils literal notranslate"><span class="pre">'-'</span></code></p></li>
+<li><p><strong>CCD_id_filter_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – A list that corresponds to the CCDs that should be preprocessed,
+if it is <code class="docutils literal notranslate"><span class="pre">None</span></code>, all the CCDs are preprocessed
+(the current version is hardcoded for MegaCam)</p></li>
+<li><p><strong>outlier_std_max</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Parameter regulating the shape outlier removal, the default is very
+high so as it is not done at all, a decent number would be <code class="docutils literal notranslate"><span class="pre">10</span></code>;
+default is <code class="docutils literal notranslate"><span class="pre">100.</span></code></p></li>
+<li><p><strong>save_masks</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If masks should be saved in the new file; default is <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
+<li><p><strong>save_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name to save the preprocessed file; default is
+<code class="docutils literal notranslate"><span class="pre">train_star_selection</span></code></p></li>
+<li><p><strong>save_extension</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Extension of the saved file, default is <code class="docutils literal notranslate"><span class="pre">.fits</span></code></p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Verbose mode; default is <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
+<li><p><strong>print_fun</strong> (<em>callable</em><em>, </em><em>optional</em>) – Output message function</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An instance of <code class="docutils literal notranslate"><span class="pre">MccdInputs</span></code> class used for the input preprocessing</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>mccd.mccd_utils.MccdInputs</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_fit_pipeline">
+<span class="sig-name descname"><span class="pre">mccd_fit_pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainstar_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_number_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mccd_parser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">saving_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fitted_model'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mccd_package/shapepipe_auxiliary_mccd.html#mccd_fit_pipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_fit_pipeline" title="Link to this definition">#</a></dt>
+<dd><p>Fit MCCD Model.</p>
+<p>Fit the MCCD model to the Observations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trainstar_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to training stars</p></li>
+<li><p><strong>file_number_string</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – File number string</p></li>
+<li><p><strong>mccd_parser</strong> (<em>mccd.auxiliary_fun.MCCDParamsParser</em>) – MCCD parser</p></li>
+<li><p><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Output directory</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – MCCD verbose option</p></li>
+<li><p><strong>saving_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name for output file</p></li>
+<li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><em>logging.Logger</em></a>) – Logging instance</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_validation_pipeline">
+<span class="sig-name descname"><span class="pre">mccd_validation_pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">teststar_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mccd_model_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mccd_parser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_number_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_saving_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mccd_package/shapepipe_auxiliary_mccd.html#mccd_validation_pipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_validation_pipeline" title="Link to this definition">#</a></dt>
+<dd><p>Validate MCCD Pipeline.</p>
+<p>Validate the MCCD trained model against a set of observations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>teststar_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to test stars</p></li>
+<li><p><strong>mccd_model_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to MCCD model</p></li>
+<li><p><strong>mccd_parser</strong> (<em>mccd.auxiliary_fun.MCCDParamsParser</em>) – MCCD parser</p></li>
+<li><p><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Output directory</p></li>
+<li><p><strong>file_number_string</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – File number string</p></li>
+<li><p><strong>w_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.14)"><em>logging.Logger</em></a>) – Logging instance</p></li>
+<li><p><strong>val_saving_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name for validation file</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_interpolation_pipeline">
+<span class="sig-name descname"><span class="pre">mccd_interpolation_pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mccd_model_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">galcat_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ccd_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">saving_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">get_shapes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mccd_package/shapepipe_auxiliary_mccd.html#mccd_interpolation_pipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_interpolation_pipeline" title="Link to this definition">#</a></dt>
+<dd><p>Interpolate the MCCD Model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mccd_model_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to MCCD model</p></li>
+<li><p><strong>galcat_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to galaxy catalogue</p></li>
+<li><p><strong>pos_params</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – Position parameters</p></li>
+<li><p><strong>ccd_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – CCD identifier</p></li>
+<li><p><strong>saving_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to save output</p></li>
+<li><p><strong>get_shapes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Option to save PSF shapes</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>String returned if not enough stars found</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str or <code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.shapepipe_write_output">
+<span class="sig-name descname"><span class="pre">shapepipe_write_output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">saving_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_fits_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">get_shapes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interp_PSFs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">PSF_shapes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/modules/mccd_package/shapepipe_auxiliary_mccd.html#shapepipe_write_output"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.shapepipe_write_output" title="Link to this definition">#</a></dt>
+<dd><p>Write ShapePipe Output.</p>
+<p>Save interpolated PSFs dictionary to FITS file. The saved files are
+compatible with the previous ShapePipe’s standard.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>saving_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to save output</p></li>
+<li><p><strong>example_fits_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to example FITS file</p></li>
+<li><p><strong>get_shapes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Option to save PSF shapes</p></li>
+<li><p><strong>interp_PSFs</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – PSF interpolation</p></li>
+<li><p><strong>PSF_shapes</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – PSF shapes</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="shapepipe.modules.mccd_package.mccd_plot_utilities.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">shapepipe.modules.mccd_package.mccd_plot_utilities</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="shapepipe.modules.merge_headers_package.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">shapepipe.modules.merge_headers_package</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item"><div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_preprocessing_pipeline"><code class="docutils literal notranslate"><span class="pre">mccd_preprocessing_pipeline()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_fit_pipeline"><code class="docutils literal notranslate"><span class="pre">mccd_fit_pipeline()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_validation_pipeline"><code class="docutils literal notranslate"><span class="pre">mccd_validation_pipeline()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_interpolation_pipeline"><code class="docutils literal notranslate"><span class="pre">mccd_interpolation_pipeline()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.shapepipe_write_output"><code class="docutils literal notranslate"><span class="pre">shapepipe_write_output()</span></code></a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CosmoStat
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2022, CosmoStat.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="last-updated">
+  Last updated on 10 Jun, 2026.
+  <br/>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

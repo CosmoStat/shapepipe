@@ -1,0 +1,729 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Dependencies &#8212; ShapePipe v1.1</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=3c74b3bc" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=051bfb12"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'dependencies';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://cosmostat.github.io/shapepipe/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'latest';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation.html" />
+    <link rel="prev" title="Contributors" href="contributors.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="1.1" />
+    <meta name="docbuild:last-update" content="10 Jun, 2026"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">ShapePipe v1.1</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">About ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributors.html">Contributors</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Installing ShapePipe</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="container.html">Container Workflow</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Running ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="basic_execution.html">Basic Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="random_cat.html">Create random catalogues and masks</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="understanding_api.html">Understanding the API Documentation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="shapepipe.html">shapepipe</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.modules.html">shapepipe.modules</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.find_exposures_package.html">shapepipe.modules.find_exposures_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.find_exposures_package.find_exposures.html">shapepipe.modules.find_exposures_package.find_exposures</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.get_images_package.html">shapepipe.modules.get_images_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.get_images_package.get_images.html">shapepipe.modules.get_images_package.get_images</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.make_cat_package.html">shapepipe.modules.make_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.make_cat_package.make_cat.html">shapepipe.modules.make_cat_package.make_cat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mask_package.html">shapepipe.modules.mask_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mask_package.mask.html">shapepipe.modules.mask_package.mask</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.match_external_package.html">shapepipe.modules.match_external_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.match_external_package.match_external.html">shapepipe.modules.match_external_package.match_external</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mccd_package.html">shapepipe.modules.mccd_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html">shapepipe.modules.mccd_package.mccd_interpolation_script</a></li>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_plot_utilities.html">shapepipe.modules.mccd_package.mccd_plot_utilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html">shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.merge_headers_package.html">shapepipe.modules.merge_headers_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.merge_headers_package.merge_headers.html">shapepipe.modules.merge_headers_package.merge_headers</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.merge_sep_cats_package.html">shapepipe.modules.merge_sep_cats_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.merge_sep_cats_package.merge_sep_cats.html">shapepipe.modules.merge_sep_cats_package.merge_sep_cats</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.merge_starcat_package.html">shapepipe.modules.merge_starcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.merge_starcat_package.merge_starcat.html">shapepipe.modules.merge_starcat_package.merge_starcat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.ngmix_package.html">shapepipe.modules.ngmix_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html">shapepipe.modules.ngmix_package.ngmix</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.pastecat_package.html">shapepipe.modules.pastecat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.pastecat_package.pastecat.html">shapepipe.modules.pastecat_package.pastecat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.psfex_interp_package.html">shapepipe.modules.psfex_interp_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.psfex_interp_package.psfex_interp.html">shapepipe.modules.psfex_interp_package.psfex_interp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.psfex_package.html">shapepipe.modules.psfex_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.psfex_package.psfex_script.html">shapepipe.modules.psfex_package.psfex_script</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.python_example_package.html">shapepipe.modules.python_example_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.random_cat_package.html">shapepipe.modules.random_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.random_cat_package.random_cat.html">shapepipe.modules.random_cat_package.random_cat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html">shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.setools_package.html">shapepipe.modules.setools_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.setools_package.setools.html">shapepipe.modules.setools_package.setools</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.sextractor_package.html">shapepipe.modules.sextractor_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.sextractor_package.sextractor_script.html">shapepipe.modules.sextractor_package.sextractor_script</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.split_exp_package.html">shapepipe.modules.split_exp_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.split_exp_package.split_exp.html">shapepipe.modules.split_exp_package.split_exp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.spread_model_package.html">shapepipe.modules.spread_model_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.spread_model_package.spread_model.html">shapepipe.modules.spread_model_package.spread_model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.uncompress_fits_package.html">shapepipe.modules.uncompress_fits_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.uncompress_fits_package.uncompress_fits.html">shapepipe.modules.uncompress_fits_package.uncompress_fits</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.vignetmaker_package.html">shapepipe.modules.vignetmaker_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.vignetmaker_package.vignetmaker.html">shapepipe.modules.vignetmaker_package.vignetmaker</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.module_decorator.html">shapepipe.modules.module_decorator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.module_runners.html">shapepipe.modules.module_runners</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.pipeline.html">shapepipe.pipeline</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.args.html">shapepipe.pipeline.args</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.config.html">shapepipe.pipeline.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.dependency_handler.html">shapepipe.pipeline.dependency_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.execute.html">shapepipe.pipeline.execute</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.exp_utils.html">shapepipe.pipeline.exp_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.file_handler.html">shapepipe.pipeline.file_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.file_io.html">shapepipe.pipeline.file_io</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.job_handler.html">shapepipe.pipeline.job_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.mpi_run.html">shapepipe.pipeline.mpi_run</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.run_log.html">shapepipe.pipeline.run_log</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.shared.html">shapepipe.pipeline.shared</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.str_handler.html">shapepipe.pipeline.str_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.timeout.html">shapepipe.pipeline.timeout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.worker_handler.html">shapepipe.pipeline.worker_handler</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.info.html">shapepipe.info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.run.html">shapepipe.run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.shapepipe_run.html">shapepipe.shapepipe_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.summary_run.html">shapepipe.summary_run</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing to ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contribution Guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_develop.html">Module Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_example.html">Module Examples</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="z_ref.html">References</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe/edit/main/docs/source/dependencies.md" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2Fdependencies.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
+
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+<button class="sidebar-toggle secondary-toggle btn btn-sm pst-navbar-icon" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Dependencies</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#python-dependencies">Python Dependencies</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#executable-dependencies">Executable Dependencies</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="dependencies">
+<h1>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading">#</a></h1>
+<p>All third-party software packages required by ShapePipe are installed
+automatically (see <a class="reference internal" href="installation.html"><span class="std std-doc">Installation</span></a>). Note that all packages
+are pinned to a given version for each release of ShapePipe to maximise the
+reproducibility of the results. Below we list the main packages used.</p>
+<section id="python-dependencies">
+<h2>Python Dependencies<a class="headerlink" href="#python-dependencies" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Package Name</p></th>
+<th class="head"><p>References</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://www.astropy.org/">Astropy</a></p></td>
+<td><p><span class="bibtex-citation" id="id1">[<a class="reference internal" href="z_ref.html#id2" title="Astropy Collaboration, T. P. Robitaille, E. J. Tollerud, P. Greenfield, M. Droettboom, E. Bray, T. Aldcroft, M. Davis, A. Ginsburg, A. M. Price-Whelan, W. E. Kerzendorf, A. Conley, N. Crighton, K. Barbary, D. Muna, H. Ferguson, F. Grollier, M. M. Parikh, P. H. Nair, H. M. Unther, C. Deil, J. Woillez, S. Conseil, R. Kramer, J. E. H. Turner, L. Singer, R. Fox, B. A. Weaver, V. Zabalza, Z. I. Edwards, K. Azalee Bostroem, D. J. Burke, A. R. Casey, S. M. Crawford, N. Dencheva, J. Ely, T. Jenness, K. Labrie, P. L. Lim, F. Pierfederici, A. Pontzen, A. Ptak, B. Refsdal, M. Servillat, and O. Streicher. Astropy: A community Python package for astronomy. \aap , 558:A33, October 2013. arXiv:1307.6212, doi:10.1051/0004-6361/201322068.">Astropy Collaboration <em>et al.</em>, 2013</a>, <a class="reference internal" href="z_ref.html#id3" title="Astropy Collaboration, A. M. Price-Whelan, B. M. SipHocz, H. M. G&quot;unther, P. L. Lim, S. M. Crawford, S. Conseil, D. L. Shupe, M. W. Craig, N. Dencheva, A. Ginsburg, J. T. Vand erPlas, L. D. Bradley, D. P'erez-Su'arez, M. de Val-Borro, T. L. Aldcroft, K. L. Cruz, T. P. Robitaille, E. J. Tollerud, C. Ardelean, T. Babej, Y. P. Bach, M. Bachetti, A. V. Bakanov, S. P. Bamford, G. Barentsen, P. Barmby, A. Baumbach, K. L. Berry, F. Biscani, M. Boquien, K. A. Bostroem, L. G. Bouma, G. B. Brammer, E. M. Bray, H. Breytenbach, H. Buddelmeijer, D. J. Burke, G. Calderone, J. L. Cano Rodr'iguez, M. Cara, J. V. M. Cardoso, S. Cheedella, Y. Copin, L. Corrales, D. Crichton, D. D'Avella, C. Deil, 'E. Depagne, J. P. Dietrich, A. Donath, M. Droettboom, N. Earl, T. Erben, S. Fabbro, L. A. Ferreira, T. Finethy, R. T. Fox, L. H. Garrison, S. L. J. Gibbons, D. A. Goldstein, R. Gommers, J. P. Greco, P. Greenfield, A. M. Groener, F. Grollier, A. Hagen, P. Hirst, D. Homeier, A. J. Horton, G. Hosseinzadeh, L. Hu, J. S. Hunkeler,  Z. Ivezi'c, A. Jain, T. Jenness, G. Kanarek, S. Kendrew, N. S. Kern, W. E. Kerzendorf, A. Khvalko, J. King, D. Kirkby, A. M. Kulkarni, A. Kumar, A. Lee, D. Lenz, S. P. Littlefair, Z. Ma, D. M. Macleod, M. Mastropietro, C. McCully, S. Montagnac, B. M. Morris, M. Mueller, S. J. Mumford, D. Muna, N. A. Murphy, S. Nelson, G. H. Nguyen, J. P. Ninan, M. N&quot;othe, S. Ogaz, S. Oh, J. K. Parejko, N. Parley, S. Pascual, R. Patil, A. A. Patil, A. L. Plunkett, J. X. Prochaska, T. Rastogi, V. Reddy Janga, J. Sabater, P. Sakurikar, M. Seifert, L. E. Sherbert, H. Sherwood-Taylor, A. Y. Shih, J. Sick, M. T. Silbiger, S. Singanamalla, L. P. Singer, P. H. Sladen, K. A. Sooley, S. Sornarajah, O. Streicher, P. Teuben, S. W. Thomas, G. R. Tremblay, J. E. H. Turner, V. Terr'on, M. H. van Kerkwijk, A. de la Vega, L. L. Watkins, B. A. Weaver, J. B. Whitmore, J. Woillez, V. Zabalza, and Astropy Contributors. The Astropy Project: Building an Open-science Project and Status of the v2.0 Core Package. aj, 156(3):123, September 2018. arXiv:1801.02634, doi:10.3847/1538-3881/aabc4f.">Astropy Collaboration <em>et al.</em>, 2018</a>]</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://github.com/GalSim-developers/GalSim">GalSim</a></p></td>
+<td><p><span class="bibtex-citation" id="id2">[<a class="reference internal" href="z_ref.html#id39" title="B. T. P. Rowe, M. Jarvis, R. Mandelbaum, G. M. Bernstein, J. Bosch, M. Simet, J. E. Meyers, T. Kacprzak, R. Nakajima, J. Zuntz, H. Miyatake, J. P. Dietrich, R. Armstrong, P. Melchior, and M. S. S. Gill. GALSIM: The modular galaxy image simulation toolkit. Astronomy and Computing, 10:121-150, April 2015. arXiv:1407.7676, doi:10.1016/j.ascom.2015.02.002.">Rowe <em>et al.</em>, 2015</a>]</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://joblib.readthedocs.io/en/latest/">Joblib</a></p></td>
+<td><p><span class="bibtex-citation" id="id3">[<a class="reference internal" href="z_ref.html#id28" title="Joblib Development Team. Joblib: running python functions as pipeline jobs. 2020. URL: https://joblib.readthedocs.io/.">Joblib Development Team, 2020</a>]</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://matplotlib.org/">Matplotlib</a></p></td>
+<td><p><span class="bibtex-citation" id="id4">[<a class="reference internal" href="z_ref.html#id23" title="J. D. Hunter. Matplotlib: a 2d graphics environment. Computing in Science &amp; Engineering, 9(3):90–95, 2007. doi:10.1109/MCSE.2007.55.">Hunter, 2007</a>]</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://github.com/CosmoStat/mccd">MCCD</a></p></td>
+<td><p><span class="bibtex-citation" id="id5">[<a class="reference internal" href="z_ref.html#id31" title="T. Liaudat, J. Bonnin, J. -L. Starck, M. A. Schmitz, A. Guinot, M. Kilbinger, and S. D. J. Gwyn. Multi-CCD modelling of the point spread function. \aap , 646:A27, February 2021. doi:10.1051/0004-6361/202039584.">Liaudat <em>et al.</em>, 2021</a>]</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://cea-cosmic.github.io/ModOpt/">ModOpt</a></p></td>
+<td><p><span class="bibtex-citation" id="id6">[<a class="reference internal" href="z_ref.html#id17" title="S. Farrens, A. Grigis, L. El Gueddari, Z. Ramzi, G. R. Chaithya, S. Starck, B. Sarthou, H. Cherkaoui, P. Ciuciu, and J. -L. Starck. PySAP: Python Sparse Data Analysis Package for multidisciplinary image processing. Astronomy and Computing, 32:100402, July 2020. arXiv:1910.08465, doi:10.1016/j.ascom.2020.100402.">Farrens <em>et al.</em>, 2020</a>]</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/">mpi4py</a></p></td>
+<td><p><span class="bibtex-citation" id="id7">[<a class="reference internal" href="z_ref.html#id9" title="Lisandro Dalcin, Rodrigo Paz, and Mario Storti. Mpi for python. Journal of Parallel and Distributed Computing, 65(9):1108 - 1115, 2005. URL: http://www.sciencedirect.com/science/article/pii/S0743731505000560, doi:https://doi.org/10.1016/j.jpdc.2005.03.010.">Dalcin <em>et al.</em>, 2005</a>, <a class="reference internal" href="z_ref.html#id10" title="Lisandro Dalcin, Rodrigo Paz, Mario Storti, and Jorge D'Elía. Mpi for python: performance improvements and mpi-2 extensions. Journal of Parallel and Distributed Computing, 68(5):655 - 662, 2008. URL: http://www.sciencedirect.com/science/article/pii/S0743731507001712, doi:https://doi.org/10.1016/j.jpdc.2007.09.005.">Dalcin <em>et al.</em>, 2008</a>, <a class="reference internal" href="z_ref.html#id11" title="Lisandro D. Dalcin, Rodrigo R. Paz, Pablo A. Kler, and Alejandro Cosimo. Parallel distributed computing using python. Advances in Water Resources, 34(9):1124 - 1139, 2011. New Computational Methods and Software Tools. URL: http://www.sciencedirect.com/science/article/pii/S0309170811000777, doi:https://doi.org/10.1016/j.advwatres.2011.04.013.">Dalcin <em>et al.</em>, 2011</a>]</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://github.com/esheldon/ngmix">NGMIX</a></p></td>
+<td><p><span class="bibtex-citation" id="id8">[<a class="reference internal" href="z_ref.html#id42" title="E. Sheldon. NGMIX: Gaussian mixture models for 2D images. Astrophysics Source Code Library, August 2015. arXiv:1508.008.">Sheldon, 2015</a>]</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://numpy.org/">Numpy</a></p></td>
+<td><p><span class="bibtex-citation" id="id9">[<a class="reference internal" href="z_ref.html#id22" title="Charles R. Harris, K. Jarrod Millman, St'efan J. van der Walt, Ralf Gommers, Pauli Virtanen, David Cournapeau, Eric Wieser, Julian Taylor, Sebastian Berg, Nathaniel J. Smith, Robert Kern, Matti Picus, Stephan Hoyer, Marten H. van Kerkwijk, Matthew Brett, Allan Haldane, Jaime Fern'andez del R'ıo, Mark Wiebe, Pearu Peterson, Pierre G'erard-Marchant, Kevin Sheppard, Tyler Reddy, Warren Weckesser, Hameer Abbasi, Christoph Gohlke, and Travis E. Oliphant. Array programming with NumPy. Nature, 585(7825):357–362, September 2020. URL: https://doi.org/10.1038/s41586-020-2649-2, doi:10.1038/s41586-020-2649-2.">Harris <em>et al.</em>, 2020</a>]</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://pandas.pydata.org/">Pandas</a></p></td>
+<td><p><span class="bibtex-citation" id="id10">[<a class="reference internal" href="z_ref.html#id34" title="Wes McKinney. Data Structures for Statistical Computing in Python. In Stéfan van der Walt and Jarrod Millman, editors, Proceedings of the 9th Python in Science Conference, 56 - 61. 2010. doi:10.25080/Majora-92bf1922-00a.">Wes McKinney, 2010</a>, <a class="reference internal" href="z_ref.html#id35" title="The pandas development team. Pandas-dev/pandas: pandas. February 2020. URL: https://doi.org/10.5281/zenodo.3509134, doi:10.5281/zenodo.3509134.">pandas development team, 2020</a>]</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://github.com/sfarrens/sf_tools">sf_tools</a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://github.com/RaRe-Technologies/sqlitedict">sqlitedict</a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="executable-dependencies">
+<h2>Executable Dependencies<a class="headerlink" href="#executable-dependencies" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Package Name</p></th>
+<th class="head"><p>References</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="http://cdsarc.u-strasbg.fr/doc/cdsclient.html">CDSclient</a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://www.astromatic.net/software/psfex/">PSFEx</a></p></td>
+<td><p><span class="bibtex-citation" id="id11">[<a class="reference internal" href="z_ref.html#id5" title="E. Bertin. Automated Morphometry with SExtractor and PSFEx. In I. N. Evans, A. Accomazzi, D. J. Mink, and A. H. Rots, editors, Astronomical Data Analysis Software and Systems XX, volume 442 of Astronomical Society of the Pacific Conference Series, 435. July 2011.">Bertin, 2011</a>]</span></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://www.astromatic.net/software/sextractor/">SExtractor</a></p></td>
+<td><p><span class="bibtex-citation" id="id12">[<a class="reference internal" href="z_ref.html#id4" title="E. Bertin and S. Arnouts. SExtractor: Software for source extraction. \aaps , 117:393-404, June 1996. doi:10.1051/aas:1996164.">Bertin and Arnouts, 1996</a>]</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://www.astromatic.net/software/weightwatcher/">WeightWatcher</a></p></td>
+<td><p><span class="bibtex-citation" id="id13">[<a class="reference internal" href="z_ref.html#id32" title="C. Marmo and E. Bertin. MissFITS and WeightWatcher: Two Optimised Tools for Managing FITS Data. In R. W. Argyle, P. S. Bunclark, and J. R. Lewis, editors, Astronomical Data Analysis Software and Systems XVII, volume 394 of Astronomical Society of the Pacific Conference Series, 619. August 2008.">Marmo and Bertin, 2008</a>]</span></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="contributors.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Contributors</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="installation.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Installation</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item"><div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#python-dependencies">Python Dependencies</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#executable-dependencies">Executable Dependencies</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CosmoStat
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2022, CosmoStat.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="last-updated">
+  Last updated on 10 Jun, 2026.
+  <br/>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,1987 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>shapepipe.pipeline.file_handler &#8212; ShapePipe v1.1</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=3c74b3bc" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=051bfb12"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/shapepipe/pipeline/file_handler';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://cosmostat.github.io/shapepipe/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'latest';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="1.1" />
+    <meta name="docbuild:last-update" content="10 Jun, 2026"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">ShapePipe v1.1</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">About ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Installing ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../container.html">Container Workflow</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Running ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../basic_execution.html">Basic Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../pipeline_tutorial.html">ShapePipe Tutorial</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../post_processing.html">Post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../random_cat.html">Create random catalogues and masks</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../understanding_api.html">Understanding the API Documentation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../shapepipe.html">shapepipe</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../shapepipe.modules.html">shapepipe.modules</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.find_exposures_package.html">shapepipe.modules.find_exposures_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.find_exposures_package.find_exposures.html">shapepipe.modules.find_exposures_package.find_exposures</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.get_images_package.html">shapepipe.modules.get_images_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.get_images_package.get_images.html">shapepipe.modules.get_images_package.get_images</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.make_cat_package.html">shapepipe.modules.make_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.make_cat_package.make_cat.html">shapepipe.modules.make_cat_package.make_cat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.mask_package.html">shapepipe.modules.mask_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.mask_package.mask.html">shapepipe.modules.mask_package.mask</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.match_external_package.html">shapepipe.modules.match_external_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.match_external_package.match_external.html">shapepipe.modules.match_external_package.match_external</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.mccd_package.html">shapepipe.modules.mccd_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.mccd_package.mccd_interpolation_script.html">shapepipe.modules.mccd_package.mccd_interpolation_script</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.mccd_package.mccd_plot_utilities.html">shapepipe.modules.mccd_package.mccd_plot_utilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html">shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.merge_headers_package.html">shapepipe.modules.merge_headers_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.merge_headers_package.merge_headers.html">shapepipe.modules.merge_headers_package.merge_headers</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.merge_sep_cats_package.html">shapepipe.modules.merge_sep_cats_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.merge_sep_cats_package.merge_sep_cats.html">shapepipe.modules.merge_sep_cats_package.merge_sep_cats</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.merge_starcat_package.html">shapepipe.modules.merge_starcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.merge_starcat_package.merge_starcat.html">shapepipe.modules.merge_starcat_package.merge_starcat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.ngmix_package.html">shapepipe.modules.ngmix_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.ngmix_package.ngmix.html">shapepipe.modules.ngmix_package.ngmix</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.pastecat_package.html">shapepipe.modules.pastecat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.pastecat_package.pastecat.html">shapepipe.modules.pastecat_package.pastecat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.psfex_interp_package.html">shapepipe.modules.psfex_interp_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.psfex_interp_package.psfex_interp.html">shapepipe.modules.psfex_interp_package.psfex_interp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.psfex_package.html">shapepipe.modules.psfex_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.psfex_package.psfex_script.html">shapepipe.modules.psfex_package.psfex_script</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.python_example_package.html">shapepipe.modules.python_example_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.random_cat_package.html">shapepipe.modules.random_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.random_cat_package.random_cat.html">shapepipe.modules.random_cat_package.random_cat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html">shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.setools_package.html">shapepipe.modules.setools_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.setools_package.setools.html">shapepipe.modules.setools_package.setools</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.sextractor_package.html">shapepipe.modules.sextractor_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.sextractor_package.sextractor_script.html">shapepipe.modules.sextractor_package.sextractor_script</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.split_exp_package.html">shapepipe.modules.split_exp_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.split_exp_package.split_exp.html">shapepipe.modules.split_exp_package.split_exp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.spread_model_package.html">shapepipe.modules.spread_model_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.spread_model_package.spread_model.html">shapepipe.modules.spread_model_package.spread_model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.uncompress_fits_package.html">shapepipe.modules.uncompress_fits_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.uncompress_fits_package.uncompress_fits.html">shapepipe.modules.uncompress_fits_package.uncompress_fits</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.vignetmaker_package.html">shapepipe.modules.vignetmaker_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.vignetmaker_package.vignetmaker.html">shapepipe.modules.vignetmaker_package.vignetmaker</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.modules.module_decorator.html">shapepipe.modules.module_decorator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.modules.module_runners.html">shapepipe.modules.module_runners</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../shapepipe.pipeline.html">shapepipe.pipeline</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.args.html">shapepipe.pipeline.args</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.config.html">shapepipe.pipeline.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.dependency_handler.html">shapepipe.pipeline.dependency_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.execute.html">shapepipe.pipeline.execute</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.exp_utils.html">shapepipe.pipeline.exp_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.file_handler.html">shapepipe.pipeline.file_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.file_io.html">shapepipe.pipeline.file_io</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.job_handler.html">shapepipe.pipeline.job_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.mpi_run.html">shapepipe.pipeline.mpi_run</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.run_log.html">shapepipe.pipeline.run_log</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.shared.html">shapepipe.pipeline.shared</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.str_handler.html">shapepipe.pipeline.str_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.timeout.html">shapepipe.pipeline.timeout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.worker_handler.html">shapepipe.pipeline.worker_handler</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.info.html">shapepipe.info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.run.html">shapepipe.run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.shapepipe_run.html">shapepipe.shapepipe_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.summary_run.html">shapepipe.summary_run</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing to ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contribution Guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_develop.html">Module Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_example.html">Module Examples</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../z_ref.html">References</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2F_modules/shapepipe/pipeline/file_handler.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
+
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for shapepipe.pipeline.file_handler</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;FILE HANDLER.</span>
+
+<span class="sd">This module defines a class for handling pipeline files.</span>
+
+<span class="sd">:Author: Samuel Farrens &lt;samuel.farrens@cea.fr&gt;</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span><span class="p">,</span> <span class="n">reduce</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shutil</span><span class="w"> </span><span class="kn">import</span> <span class="n">copyfile</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.modules.module_runners</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_module_runners</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline.run_log</span><span class="w"> </span><span class="kn">import</span> <span class="n">RunLog</span><span class="p">,</span> <span class="n">get_list</span><span class="p">,</span> <span class="n">get_all</span><span class="p">,</span> <span class="n">get_last</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">shared</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.utilities.file_system</span><span class="w"> </span><span class="kn">import</span> <span class="n">mkdir</span>
+
+
+<div class="viewcode-block" id="FileHandler">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FileHandler</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;File Handler.</span>
+
+<span class="sd">    This class manages the files used and produced during a pipeline run.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    run_name : str</span>
+<span class="sd">        Run name</span>
+<span class="sd">    module_list : list</span>
+<span class="sd">        List of modules to be run</span>
+<span class="sd">    config : CustomParser</span>
+<span class="sd">        Configuaration parser instance</span>
+<span class="sd">    exclusive : str, optional</span>
+<span class="sd">        Run this file number string exclusively if given, the default is None</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        Verbose setting, default is True</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_name</span><span class="p">,</span> <span class="n">modules</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">exclusive</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_run_name</span> <span class="o">=</span> <span class="n">run_name</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_list</span> <span class="o">=</span> <span class="n">modules</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid module list, check for a trailing comma&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exclusive</span> <span class="o">=</span> <span class="n">exclusive</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">module_runners</span> <span class="o">=</span> <span class="n">get_module_runners</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_input_list</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">getlist</span><span class="p">(</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span> <span class="s2">&quot;INPUT_DIR&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">getexpanded</span><span class="p">(</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span> <span class="s2">&quot;OUTPUT_DIR&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_log_name</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span> <span class="s2">&quot;LOG_NAME&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_correct_pattern</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">getboolean</span><span class="p">(</span>
+            <span class="s2">&quot;FILE&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;CORRECT_FILE_PATTERN&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_run_log_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setpath</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="p">,</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span> <span class="s2">&quot;RUN_LOG_NAME&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;.txt&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span> <span class="s2">&quot;FILE_PATTERN&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_file_pattern</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">getlist</span><span class="p">(</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span> <span class="s2">&quot;FILE_PATTERN&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span> <span class="s2">&quot;FILE_EXT&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_file_ext</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">getlist</span><span class="p">(</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span> <span class="s2">&quot;FILE_EXT&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span> <span class="s2">&quot;NUMBERING_SCHEME&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_numbering_scheme</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span> <span class="s2">&quot;NUMBERING_SCHEME&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_numbering_scheme</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;RE:\_\d+&quot;</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span> <span class="s2">&quot;NUMBER_LIST&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span> <span class="s2">&quot;NUMBER_LIST&quot;</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_number_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_number_list</span><span class="p">(</span>
+                    <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span> <span class="s2">&quot;NUMBER_LIST&quot;</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_number_list</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">getlist</span><span class="p">(</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span> <span class="s2">&quot;NUMBER_LIST&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_number_list</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run Directory.</span>
+
+<span class="sd">        This method defines the run directory.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_dir</span>
+
+    <span class="nd">@run_dir</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_run_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_dir</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">check_exists</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_input_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Input Directory.</span>
+
+<span class="sd">        This method defines the input directories.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__input_dir</span>
+
+    <span class="nd">@_input_dir</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_input_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__input_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_dirs</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_output_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Output Directory.</span>
+
+<span class="sd">        This method defines the output directory.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__output_dir</span>
+
+    <span class="nd">@_output_dir</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_output_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_dir</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FileHandler.read_number_list">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.read_number_list">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_number_list</span><span class="p">(</span><span class="n">file_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read Number List.</span>
+
+<span class="sd">        Extract number strings to be processed from a file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file_name : str</span>
+<span class="sd">            Number list file name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span> <span class="k">as</span> <span class="n">data_file</span><span class="p">:</span>
+            <span class="n">number_list</span> <span class="o">=</span> <span class="n">data_file</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">value</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">number_list</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="FileHandler.check_dir">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.check_dir">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_dir</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dir_name</span><span class="p">,</span> <span class="n">check_exists</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check Directory.</span>
+
+<span class="sd">        Raise error if directory exists.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dir_name : str</span>
+<span class="sd">            Directory name</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        OSError</span>
+<span class="sd">            If directory already exists</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">check_exists</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dir_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">OSError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Directory </span><span class="si">{</span><span class="n">dir_name</span><span class="si">}</span><span class="s2"> already exists.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">strip_slash</span><span class="p">(</span><span class="n">dir_name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FileHandler.check_dirs">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.check_dirs">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_dirs</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dir_list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check Directories.</span>
+
+<span class="sd">        Check directories in list</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dir_list : list</span>
+<span class="sd">            Directory list</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">cls</span><span class="o">.</span><span class="n">check_dir</span><span class="p">(</span><span class="nb">dir</span><span class="p">)</span> <span class="k">for</span> <span class="nb">dir</span> <span class="ow">in</span> <span class="n">dir_list</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="FileHandler.mkdir">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.mkdir">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mkdir</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dir_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Make Directory.</span>
+
+<span class="sd">        This method creates a directory at the specified path.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dir_name : str`</span>
+<span class="sd">            Directory name with full path</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">check_dir</span><span class="p">(</span><span class="n">dir_name</span><span class="p">,</span> <span class="n">check_exists</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">mkdir</span><span class="p">(</span><span class="n">dir_name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FileHandler.setpath">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.setpath">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setpath</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set Path Name.</span>
+
+<span class="sd">        This method appends the file/directory name to the input path.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path : str</span>
+<span class="sd">            Full path</span>
+<span class="sd">        name : str</span>
+<span class="sd">            File or directory name</span>
+<span class="sd">        ext : str, optional</span>
+<span class="sd">            File extension, default is &#39;&#39;</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            Formated path</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">name</span><span class="si">}{</span><span class="n">ext</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="FileHandler.strip_slash">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.strip_slash">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">strip_slash</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Strip Slash.</span>
+
+<span class="sd">        This method removes the trailing slash from a path.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path : str</span>
+<span class="sd">            Full path</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            Updated path</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">path</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FileHandler.strip_slash_list">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.strip_slash_list">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">strip_slash_list</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path_list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Strip Slash List.</span>
+
+<span class="sd">        This method removes the trailing slash from a list of paths.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path_list : list</span>
+<span class="sd">            List of paths</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            Updated paths</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">cls</span><span class="o">.</span><span class="n">strip_slash</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">path_list</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="FileHandler.flatten_list">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.flatten_list">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flatten_list</span><span class="p">(</span><span class="n">input_list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Flatten List.</span>
+
+<span class="sd">        Flatten a list of lists.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        input_list : list</span>
+<span class="sd">            A list of lists</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            Flattened list</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">sublist</span> <span class="ow">in</span> <span class="n">input_list</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">sublist</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="FileHandler._get_module_run_name">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._get_module_run_name">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_module_run_name</span><span class="p">(</span><span class="nb">dir</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Module Run Name.</span>
+
+<span class="sd">        Retrieve module run name, module name and search string from input</span>
+<span class="sd">        string.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dir : str</span>
+<span class="sd">            Input directory string</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            Module run name, module name, search string</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">string</span><span class="p">,</span> <span class="n">module_run</span> <span class="o">=</span> <span class="nb">dir</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+        <span class="n">module</span> <span class="o">=</span> <span class="n">module_run</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">module_run</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">module</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">string</span></div>
+
+
+<div class="viewcode-block" id="FileHandler._check_input_dir_list">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._check_input_dir_list">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_input_dir_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dir_list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check Input Directory List.</span>
+
+<span class="sd">        Check an input list to see if the directories exist or if the the run</span>
+<span class="sd">        log should be serarched for an appropriate output directory.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dir_list : list</span>
+<span class="sd">            List of directories</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            For invalid input directory value</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">input_dir</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="nb">dir</span> <span class="ow">in</span> <span class="n">dir_list</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="nb">dir</span><span class="p">):</span>
+                <span class="n">input_dir</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">dir</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="s2">&quot;last&quot;</span> <span class="ow">in</span> <span class="nb">dir</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="n">module_run</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_module_run_name</span><span class="p">(</span><span class="nb">dir</span><span class="p">)</span>
+                <span class="n">runs</span> <span class="o">=</span> <span class="n">get_list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_run_log_file</span><span class="p">)</span>
+                <span class="n">last_module</span> <span class="o">=</span> <span class="n">get_last</span><span class="p">(</span><span class="n">runs</span><span class="p">,</span> <span class="n">module</span><span class="p">)</span>
+                <span class="n">input_dir</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">setpath</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">setpath</span><span class="p">(</span><span class="n">last_module</span><span class="p">,</span> <span class="n">module_run</span><span class="p">),</span>
+                        <span class="s2">&quot;output&quot;</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+
+            <span class="k">elif</span> <span class="s2">&quot;all&quot;</span> <span class="ow">in</span> <span class="nb">dir</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="n">module_run</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_module_run_name</span><span class="p">(</span><span class="nb">dir</span><span class="p">)</span>
+                <span class="n">runs</span> <span class="o">=</span> <span class="n">get_list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_run_log_file</span><span class="p">)</span>
+                <span class="n">all_runs</span> <span class="o">=</span> <span class="n">get_all</span><span class="p">(</span><span class="n">runs</span><span class="p">,</span> <span class="n">module</span><span class="p">)</span>
+                <span class="n">input_dir</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">setpath</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">setpath</span><span class="p">(</span><span class="n">run</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">module_run</span><span class="p">),</span>
+                            <span class="s2">&quot;output&quot;</span><span class="p">,</span>
+                        <span class="p">)</span>
+                        <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">all_runs</span>
+                    <span class="p">]</span>
+                <span class="p">)</span>
+
+            <span class="k">elif</span> <span class="s2">&quot;:&quot;</span> <span class="ow">in</span> <span class="nb">dir</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="n">module_run</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_module_run_name</span><span class="p">(</span><span class="nb">dir</span><span class="p">)</span>
+                <span class="n">input_dir</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">setpath</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">setpath</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_run_log</span><span class="o">.</span><span class="n">get_run</span><span class="p">(</span><span class="n">string</span><span class="p">),</span>
+                            <span class="n">module_run</span><span class="p">,</span>
+                        <span class="p">),</span>
+                        <span class="s2">&quot;output&quot;</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Invalid INPUT_DIR (</span><span class="si">{</span><span class="nb">dir</span><span class="si">}</span><span class="s2">). Make sure the paths &quot;</span>
+                    <span class="o">+</span> <span class="s2">&quot;provided are valid directories or use the &quot;</span>
+                    <span class="o">+</span> <span class="s2">&quot;allowed special keys.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">input_dir</span></div>
+
+
+<div class="viewcode-block" id="FileHandler._get_input_dir">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._get_input_dir">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_input_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Input Directory.</span>
+
+<span class="sd">        This method sets the module input directory</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_input_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_input_dir_list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_list</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FileHandler.create_global_run_dirs">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.create_global_run_dirs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_global_run_dirs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create Global Run Directories.</span>
+
+<span class="sd">        This method creates the pipeline output directories for a given run.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setpath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_log_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setpath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_dir</span><span class="p">,</span> <span class="s2">&quot;logs&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tmp_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setpath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_dir</span><span class="p">,</span> <span class="s2">&quot;tmp&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setpath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_log_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_run_log</span> <span class="o">=</span> <span class="n">RunLog</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_run_log_file</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module_list</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">run_dir</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_dir</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_log_dir</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tmp_dir</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_input_dir</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_copy_config_to_log</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="FileHandler._copy_config_to_log">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._copy_config_to_log">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_copy_config_to_log</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy Config to Log.</span>
+
+<span class="sd">        Copy configuration file to run log directory.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">config_file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">file_name</span><span class="p">)</span>
+
+        <span class="n">copyfile</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_log_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">config_file_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FileHandler.get_module_current_run">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.get_module_current_run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_module_current_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Module Current Run.</span>
+
+<span class="sd">        Get the run current run count for the module.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        module : str</span>
+<span class="sd">            Module name</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            Module run count</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s2">&quot;run_count&quot;</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="FileHandler.get_module_run_prop">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.get_module_run_prop">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_module_run_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="nb">property</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Module Run Property.</span>
+
+<span class="sd">        Return the requested property for a given module run.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        module : str</span>
+<span class="sd">            Module name</span>
+<span class="sd">        property : str</span>
+<span class="sd">            Module run property name</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        any</span>
+<span class="sd">            Module run property value</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            For invalid module dictionary key</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">run_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s2">&quot;latest&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">property</span> <span class="o">==</span> <span class="s2">&quot;run_name&quot;</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">run_name</span>
+        <span class="k">elif</span> <span class="nb">property</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="nb">property</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">property</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="nb">property</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Property </span><span class="si">{</span><span class="nb">property</span><span class="si">}</span><span class="s2"> not found for module </span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="FileHandler.get_module_config_sec">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.get_module_config_sec">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_module_config_sec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Module Configuration Section.</span>
+
+<span class="sd">        Get the name of section name in the configuration file for the module.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        module : str</span>
+<span class="sd">            Module name</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            Configuration file section name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s2">&quot;latest&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="FileHandler.get_add_module_property">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.get_add_module_property">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_add_module_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_name</span><span class="p">,</span> <span class="nb">property</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Additional Module Properties.</span>
+
+<span class="sd">        Get a list of additional module property values.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        run_name : str</span>
+<span class="sd">            Module run name</span>
+<span class="sd">        property : str</span>
+<span class="sd">            Property name</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            Additional module property values</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span>
+            <span class="n">run_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+            <span class="sa">f</span><span class="s2">&quot;ADD_</span><span class="si">{</span><span class="nb">property</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">):</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">getlist</span><span class="p">(</span>
+                <span class="n">run_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+                <span class="sa">f</span><span class="s2">&quot;ADD_</span><span class="si">{</span><span class="nb">property</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FileHandler._set_module_property">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._set_module_property">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_module_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">run_name</span><span class="p">,</span> <span class="nb">property</span><span class="p">,</span> <span class="n">get_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set Module Property.</span>
+
+<span class="sd">        Set a module property from either the configuration file or the module</span>
+<span class="sd">        runner.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        module : str</span>
+<span class="sd">            Module name</span>
+<span class="sd">        property : str</span>
+<span class="sd">            Property name</span>
+<span class="sd">        get_type : str</span>
+<span class="sd">            Type of object to get from config file</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Module properties are set with the following hierarchy:</span>
+
+<span class="sd">        1. Look for properties in module section of the config file,</span>
+<span class="sd">        2. look for default properties in the file handler, which sources the</span>
+<span class="sd">           ``[FILE]`` section of the config file,</span>
+<span class="sd">        3. look for default properties in the module runner definition.</span>
+
+<span class="sd">        In other words, module runner definitions will only be used if the</span>
+<span class="sd">        properties are not set in the confg file. File handler properties will</span>
+<span class="sd">        be used for all modules, overriding all module runner definitions.</span>
+<span class="sd">        Module specific properties from the config file will override all other</span>
+<span class="sd">        definitions, but only for the module in question.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 1) Check for parameter value in module section of config file</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">run_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="nb">property</span><span class="o">.</span><span class="n">upper</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="n">get_type</span> <span class="o">==</span> <span class="s2">&quot;str&quot;</span><span class="p">:</span>
+                <span class="n">prop_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="n">run_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+                    <span class="nb">property</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">get_type</span> <span class="o">==</span> <span class="s2">&quot;list&quot;</span><span class="p">:</span>
+                <span class="n">prop_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">getlist</span><span class="p">(</span>
+                    <span class="n">run_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+                    <span class="nb">property</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">get_type</span><span class="si">}</span><span class="s2"> is not a valid get type&quot;</span><span class="p">)</span>
+
+        <span class="c1"># 2) Check for default parameter values in file handler</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="nb">property</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">):</span>
+            <span class="n">prop_val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="nb">property</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># 3) Check for default parameter values in module runner</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module_runners</span><span class="p">[</span><span class="n">module</span><span class="p">],</span> <span class="nb">property</span><span class="p">):</span>
+            <span class="n">prop_val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module_runners</span><span class="p">[</span><span class="n">module</span><span class="p">],</span> <span class="nb">property</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;No value for </span><span class="si">{</span><span class="nb">property</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2"> could be found.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Look for additional module properties for list objects</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prop_val</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_add_module_property</span><span class="p">(</span>
+            <span class="n">run_name</span><span class="p">,</span> <span class="nb">property</span>
+        <span class="p">):</span>
+            <span class="n">prop_val</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_add_module_property</span><span class="p">(</span><span class="n">run_name</span><span class="p">,</span> <span class="nb">property</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="nb">property</span><span class="p">]</span> <span class="o">=</span> <span class="n">prop_val</span></div>
+
+
+<div class="viewcode-block" id="FileHandler._set_module_properties">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._set_module_properties">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_module_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">run_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Module Properties.</span>
+
+<span class="sd">        Get module properties defined in module runner wrapper.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        module : str</span>
+<span class="sd">            Module name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">module_props</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;numbering_scheme&quot;</span><span class="p">:</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;run_method&quot;</span><span class="p">:</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;input_module&quot;</span><span class="p">:</span> <span class="s2">&quot;list&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;file_pattern&quot;</span><span class="p">:</span> <span class="s2">&quot;list&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;file_ext&quot;</span><span class="p">:</span> <span class="s2">&quot;list&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;depends&quot;</span><span class="p">:</span> <span class="s2">&quot;list&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;executes&quot;</span><span class="p">:</span> <span class="s2">&quot;list&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="k">for</span> <span class="nb">property</span><span class="p">,</span> <span class="n">get_type</span> <span class="ow">in</span> <span class="n">module_props</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_module_property</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">run_name</span><span class="p">,</span> <span class="nb">property</span><span class="p">,</span> <span class="n">get_type</span><span class="p">)</span>
+
+        <span class="c1"># Make sure the number of patterns and extensions match</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;file_ext&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;file_pattern&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;file_ext&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;file_ext&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;file_pattern&quot;</span><span class="p">]</span>
+            <span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;file_ext&quot;</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;file_pattern&quot;</span><span class="p">]</span>
+        <span class="p">):</span>
+            <span class="n">n_fext</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;file_ext&quot;</span><span class="p">])</span>
+            <span class="n">n_fpat</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;file_pattern&quot;</span><span class="p">])</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;The number of file_ext values (</span><span class="si">{</span><span class="n">n_fext</span><span class="si">}</span><span class="s2">) does not match the &quot;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;number of file_pattern values (</span><span class="si">{</span><span class="n">n_fpat</span><span class="si">}</span><span class="s2">).&quot;</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FileHandler._create_module_run_dirs">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._create_module_run_dirs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_module_run_dirs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">run_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create Module Run Directories.</span>
+
+<span class="sd">        This method creates the module output directories for a given run.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        module : str</span>
+<span class="sd">            Module name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;run_dir&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setpath</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_run_dir</span><span class="p">,</span> <span class="n">run_name</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;log_dir&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setpath</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;run_dir&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;logs&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;output_dir&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setpath</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;run_dir&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;output&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;run_dir&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;log_dir&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;output_dir&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Set current output directory to module output directory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;output_dir&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">module_run_dirs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;run&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_dir</span><span class="p">,</span>
+            <span class="s2">&quot;log&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log_dir</span><span class="p">,</span>
+            <span class="s2">&quot;tmp&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tmp_dir</span><span class="p">,</span>
+            <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span>
+            <span class="s2">&quot;run_log&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_log_file</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="FileHandler._set_module_input_dir">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._set_module_input_dir">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_module_input_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">run_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set Module Input Directory.</span>
+
+<span class="sd">        Set the module input directory. If the module specified is the</span>
+<span class="sd">        first module in the pipeline or does not have any input modules then</span>
+<span class="sd">        only the ``INPUT_DIR`` from ``[FILE]`` is used, otherwise the output</span>
+<span class="sd">        directory from the preceding module is used.</span>
+
+<span class="sd">        Additional input directories can be specified with ``INPUT_DIR`` from</span>
+<span class="sd">        ``[MODULE]``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        module : str</span>
+<span class="sd">            Module name</span>
+<span class="sd">        run_name : str</span>
+<span class="sd">            Module run name, if the module has only been called once this will</span>
+<span class="sd">            be identical to ``module``</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Create a default empty list of input directories</span>
+        <span class="n">input_dir</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">dir_set_by</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Check if the module has no input modules or is the first module to</span>
+        <span class="c1"># run in the pipeline</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;input_module&quot;</span><span class="p">],</span>
+                <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="p">):</span>
+            <span class="c1"># If so, use the input directory/ies set in the [FILE] section</span>
+            <span class="n">input_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_dir</span>
+            <span class="n">dir_set_by</span> <span class="o">=</span> <span class="s2">&quot;[FILE]&quot;</span>
+
+        <span class="c1"># Check if input directory/ies has/have been set in the module config</span>
+        <span class="c1"># section</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">run_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="s2">&quot;INPUT_DIR&quot;</span><span class="p">):</span>
+            <span class="c1"># If so set this/these as the input directory/ies, note that this</span>
+            <span class="c1"># overrides the value set in the [FILE] section</span>
+            <span class="n">input_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_input_dir_list</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">getlist</span><span class="p">(</span><span class="n">run_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="s2">&quot;INPUT_DIR&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">dir_set_by</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">run_name</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">]&quot;</span>
+
+        <span class="c1"># Check if input directory/ies has/have has not been set and if input</span>
+        <span class="c1"># modules have been defined for the current module</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">input_dir</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;input_module&quot;</span><span class="p">],</span> <span class="nb">list</span>
+        <span class="p">):</span>
+            <span class="n">dir_set_by</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2">.py&quot;</span>
+            <span class="c1"># If so, loop through all the input modules defined for the current</span>
+            <span class="c1"># module</span>
+            <span class="k">for</span> <span class="n">input_module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span>
+                <span class="s2">&quot;input_module&quot;</span>
+            <span class="p">]:</span>
+                <span class="c1"># Get the input module name and run</span>
+                <span class="n">input_module</span><span class="p">,</span> <span class="n">in_mod_run</span> <span class="o">=</span> <span class="n">shared</span><span class="o">.</span><span class="n">split_module_run</span><span class="p">(</span><span class="n">input_module</span><span class="p">)</span>
+                <span class="c1"># Check if the input module was part of the current pipeline</span>
+                <span class="k">if</span> <span class="n">input_module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">:</span>
+                    <span class="c1"># If so, check if the input module was a single run</span>
+                    <span class="k">if</span> <span class="n">in_mod_run</span> <span class="o">==</span> <span class="n">input_module</span><span class="p">:</span>
+                        <span class="c1"># If so, Set the input module run to the latest run</span>
+                        <span class="n">in_mod_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">input_module</span><span class="p">][</span><span class="s2">&quot;latest&quot;</span><span class="p">]</span>
+                    <span class="c1"># Add the output directory of the input module to</span>
+                    <span class="c1"># the list of input directories for the current module</span>
+                    <span class="n">input_dir</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">input_module</span><span class="p">][</span><span class="n">in_mod_run</span><span class="p">][</span>
+                            <span class="s2">&quot;output_dir&quot;</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># If not, add the last run of the input module to the</span>
+                    <span class="c1"># list of input directories</span>
+                    <span class="n">input_dir</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">input_module</span><span class="si">}</span><span class="s2">:last&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check if input directory/ies has/have been added in the module config</span>
+        <span class="c1"># section</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_add_module_property</span><span class="p">(</span><span class="n">run_name</span><span class="p">,</span> <span class="s2">&quot;input_dir&quot;</span><span class="p">):</span>
+            <span class="c1"># If so add this/these to the input directory/ies</span>
+            <span class="n">input_dir</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_add_module_property</span><span class="p">(</span><span class="n">run_name</span><span class="p">,</span> <span class="s2">&quot;input_dir&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">dir_set_by</span> <span class="o">==</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">:</span>
+                <span class="n">dir_set_by</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dir_set_by</span><span class="si">}</span><span class="s2"> and [</span><span class="si">{</span><span class="n">run_name</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">]&quot;</span>
+
+        <span class="c1"># Check if no input directory has been set</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">input_dir</span><span class="p">:</span>
+            <span class="c1"># If so, raise an error</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;Could not find appropriate input directory &quot;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;for module </span><span class="si">{</span><span class="n">run_name</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Add the input directories for the current module to the module</span>
+        <span class="c1"># dictionary</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;input_dir&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_dirs</span><span class="p">(</span>
+            <span class="n">input_dir</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;dir_set_by&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dir_set_by</span>
+
+        <span class="c1"># Log the input directories and how they were set</span>
+        <span class="n">module_input_dir</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot; -- Input directories: </span><span class="si">{</span><span class="n">input_dir</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">module_dir_set_by</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot; -- Inputs set by: </span><span class="si">{</span><span class="n">dir_set_by</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">module_input_dir</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">module_dir_set_by</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">module_input_dir</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">module_dir_set_by</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FileHandler._generate_re_pattern">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._generate_re_pattern">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_generate_re_pattern</span><span class="p">(</span><span class="n">match_pattern</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate Regular Expression Pattern.</span>
+
+<span class="sd">        Generate a regular expression pattern from an input string.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        match_pattern : str</span>
+<span class="sd">            Pattern string</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        _sre.SRE_Pattern</span>
+<span class="sd">            Regular expression pattern</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            For invalid input type</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">match_pattern</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Match pattern must be a string.&quot;</span><span class="p">)</span>
+
+        <span class="n">chars</span> <span class="o">=</span> <span class="p">[</span><span class="n">char</span> <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">match_pattern</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">char</span><span class="o">.</span><span class="n">isalnum</span><span class="p">()]</span>
+        <span class="n">split_pattern</span> <span class="o">=</span> <span class="s2">&quot;|&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">chars</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\.&quot;</span><span class="p">)</span>
+        <span class="n">chars</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="si">{</span><span class="n">char</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">chars</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">]</span>
+        <span class="n">num_length</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">d</span><span class="se">{{</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">digits</span><span class="p">)</span><span class="si">}</span><span class="se">}}</span><span class="s2">&quot;</span>
+            <span class="k">for</span> <span class="n">digits</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">split_pattern</span><span class="p">,</span> <span class="n">match_pattern</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">re_pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">num_length</span><span class="p">,</span> <span class="n">chars</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">b</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;+&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">re_pattern</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FileHandler._strip_dir_from_file">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._strip_dir_from_file">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_strip_dir_from_file</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="n">dir_list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Strip Directory from File Name.</span>
+
+<span class="sd">        Remove the directory string from the file name.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file_name : str</span>
+<span class="sd">            File name</span>
+<span class="sd">        dir_list : list</span>
+<span class="sd">            Input directory list</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            File name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">file_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">_dir</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">_dir</span> <span class="ow">in</span> <span class="n">dir_list</span>
+            <span class="k">if</span> <span class="n">_dir</span> <span class="ow">in</span> <span class="n">file_name</span>
+        <span class="p">][</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="FileHandler._get_re">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._get_re">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_re</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">num_scheme</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Regular Expression.</span>
+
+<span class="sd">        Return the regular expression corresponding to the numbering scheme.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        num_scheme : str</span>
+<span class="sd">            Numbering scheme</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            if num_scheme is None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            Regular Expression</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Raise an error if num_scheme is None,</span>
+        <span class="c1"># but not if num_scheme==&#39;&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">num_scheme</span> <span class="ow">and</span> <span class="n">num_scheme</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No numbering scheme adapted&quot;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">num_scheme</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;RE:&quot;</span><span class="p">):</span>
+
+            <span class="n">re_pattern</span> <span class="o">=</span> <span class="n">num_scheme</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;RE:&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="n">re_pattern</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_generate_re_pattern</span><span class="p">(</span><span class="n">num_scheme</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">re_pattern</span></div>
+
+
+<div class="viewcode-block" id="FileHandler._save_num_patterns">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._save_num_patterns">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_save_num_patterns</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">dir_list</span><span class="p">,</span> <span class="n">re_pattern</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">ext</span><span class="p">,</span> <span class="n">output_file</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save Number Patterns.</span>
+
+<span class="sd">        Save file number patterns to numpy binary, update file patterns and</span>
+<span class="sd">        get correct file paths.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dir_list : list</span>
+<span class="sd">            List of input directories</span>
+<span class="sd">        re_pattern : str</span>
+<span class="sd">            Regular expression pattern</span>
+<span class="sd">        pattern : str</span>
+<span class="sd">            File pattern</span>
+<span class="sd">        ext : str</span>
+<span class="sd">            File extension</span>
+<span class="sd">        output_file : str</span>
+<span class="sd">            Output file name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Find all files matching the input pattern and extension from the</span>
+        <span class="c1"># available input directories and identify the correct path</span>
+        <span class="n">true_file_list</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">true_path</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">dir_list</span><span class="p">:</span>
+
+            <span class="n">file_list</span> <span class="o">=</span> <span class="n">shared</span><span class="o">.</span><span class="n">find_files</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">file_list</span><span class="p">:</span>
+                <span class="n">true_file_list</span> <span class="o">=</span> <span class="n">file_list</span>
+                <span class="n">true_path</span> <span class="o">=</span> <span class="n">path</span>
+                <span class="k">del</span> <span class="n">file_list</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">true_file_list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;No files found matching &quot;</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s1">&quot; and &quot;</span><span class="si">{</span><span class="n">ext</span><span class="si">}</span><span class="s1">&quot; in the &#39;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;directories </span><span class="si">{</span><span class="n">dir_list</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Correct the extension if necessary</span>
+        <span class="n">new_ext</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">ext</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">ext</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">ext</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span> <span class="ow">and</span> <span class="n">new_ext</span> <span class="o">!=</span> <span class="n">ext</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Updating file extension from &quot;</span><span class="si">{</span><span class="n">ext</span><span class="si">}</span><span class="s1">&quot; to &quot;</span><span class="si">{</span><span class="n">new_ext</span><span class="si">}</span><span class="s1">&quot;.&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">()</span>
+
+        <span class="c1"># Select files matching the numbering scheme</span>
+        <span class="n">final_file_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">found_match</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">correct_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_correct_pattern</span>
+        <span class="n">new_pattern</span> <span class="o">=</span> <span class="n">pattern</span>
+
+        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">true_file_list</span><span class="p">:</span>
+
+            <span class="n">striped</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strip_dir_from_file</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">dir_list</span><span class="p">)</span>
+            <span class="n">search_res</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">re_pattern</span><span class="p">,</span> <span class="n">striped</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">search_res</span><span class="p">:</span>
+                <span class="n">file_name</span> <span class="o">=</span> <span class="n">search_res</span><span class="o">.</span><span class="n">group</span><span class="p">()</span>
+                <span class="n">final_file_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+                <span class="n">found_match</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="c1"># Correct the pattern if necessary</span>
+            <span class="k">if</span> <span class="n">found_match</span> <span class="ow">and</span> <span class="n">correct_pattern</span><span class="p">:</span>
+
+                <span class="n">new_pattern</span> <span class="o">=</span> <span class="n">striped</span>
+
+                <span class="k">for</span> <span class="n">substring</span> <span class="ow">in</span> <span class="p">(</span><span class="n">new_ext</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
+                    <span class="n">new_pattern</span> <span class="o">=</span> <span class="n">new_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">substring</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">new_pattern</span> <span class="o">!=</span> <span class="n">pattern</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;Updating pattern from &quot;</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s1">&quot; to &#39;</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">new_pattern</span><span class="si">}</span><span class="s1">&quot;.&#39;</span>
+                    <span class="p">)</span>
+                    <span class="nb">print</span><span class="p">()</span>
+
+                <span class="n">correct_pattern</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">found_match</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Could not match numbering scheme &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_numbering_scheme</span><span class="si">}</span><span class="s1">&quot; &#39;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;to any of the input files matching &quot;</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s1">&quot; and &#39;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">ext</span><span class="si">}</span><span class="s1">&quot; in the directories </span><span class="si">{</span><span class="n">dir_list</span><span class="si">}</span><span class="s1">.&#39;</span>
+            <span class="p">)</span>
+
+        <span class="n">elem</span> <span class="o">=</span> <span class="n">shared</span><span class="o">.</span><span class="n">check_duplicate</span><span class="p">(</span><span class="n">final_file_list</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">elem</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;Input file list contains at least one duplicate element, &quot;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">elem</span><span class="si">}</span><span class="s2">&#39; that matches &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;file pattern and numbering scheme, leading to identical &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;input files.  Make sure that the correct input &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;directory is used.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Save file list</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">final_file_list</span><span class="p">))</span>
+
+        <span class="k">del</span> <span class="n">true_file_list</span><span class="p">,</span> <span class="n">final_file_list</span>
+
+        <span class="k">return</span> <span class="n">new_pattern</span><span class="p">,</span> <span class="n">new_ext</span><span class="p">,</span> <span class="n">true_path</span></div>
+
+
+<div class="viewcode-block" id="FileHandler._save_match_patterns">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._save_match_patterns">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_save_match_patterns</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="n">mmap_list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save Match Patterns.</span>
+
+<span class="sd">        Save matching number patterns to numpy binary.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        output_file : str</span>
+<span class="sd">            Output file name</span>
+<span class="sd">        mmap_list : list</span>
+<span class="sd">            List of memory maps</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">num_pattern_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">mmap</span><span class="p">,</span> <span class="n">mmap_mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">mmap</span> <span class="ow">in</span> <span class="n">mmap_list</span><span class="p">]</span>
+
+        <span class="n">num_pattern_intersect</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span>
+            <span class="n">partial</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">,</span> <span class="n">assume_unique</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">num_pattern_list</span>
+         <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">num_pattern_intersect</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;Found numbers corresponding to the different input patterns&quot;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; do not intersect: </span><span class="si">{</span><span class="p">[</span><span class="n">n</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">num_pattern_list</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="n">num_pattern_intersect</span><span class="p">)</span>
+
+        <span class="k">del</span> <span class="n">num_pattern_list</span></div>
+
+
+<div class="viewcode-block" id="FileHandler._get_file_name">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._get_file_name">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_file_name</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">ext</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get File Name.</span>
+
+<span class="sd">        Get file name corresponding to the path, file pattern, number pattern</span>
+<span class="sd">        and file extension.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path : str</span>
+<span class="sd">            Path to file</span>
+<span class="sd">        pattern : str</span>
+<span class="sd">            File pattern</span>
+<span class="sd">        number : str</span>
+<span class="sd">            Number pattern</span>
+<span class="sd">        ext : str</span>
+<span class="sd">            File extension</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            File name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">pattern</span><span class="si">}{</span><span class="n">number</span><span class="si">}{</span><span class="n">ext</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="FileHandler._remove_mmaps">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._remove_mmaps">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_remove_mmaps</span><span class="p">(</span><span class="n">mmap_list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove Memory Maps.</span>
+
+<span class="sd">        Remove memory map files in input list.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mmap_list : list or str</span>
+<span class="sd">            List of memory map files</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mmap_list</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">mmap_list</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">mmap</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">mmap_list</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">mmap</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FileHandler._format_process_list">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._format_process_list">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_format_process_list</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">patterns</span><span class="p">,</span>
+        <span class="n">memory_map</span><span class="p">,</span>
+        <span class="n">re_pattern</span><span class="p">,</span>
+        <span class="n">num_scheme</span><span class="p">,</span>
+        <span class="n">run_method</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Format Process List.</span>
+
+<span class="sd">        Format the list of files to be processed.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        patterns : list</span>
+<span class="sd">            List of file patterns</span>
+<span class="sd">        memory_map : str</span>
+<span class="sd">            Name of memory map file</span>
+<span class="sd">        re_pattern : str</span>
+<span class="sd">            Regular expression for numbering scheme</span>
+<span class="sd">        num_scheme : str</span>
+<span class="sd">            Numbering scheme</span>
+<span class="sd">        run_method : str</span>
+<span class="sd">            Run method</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">            List of processes</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pattern_list</span><span class="p">,</span> <span class="n">ext_list</span><span class="p">,</span> <span class="n">path_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">patterns</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_number_list</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)):</span>
+            <span class="n">number_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">memory_map</span><span class="p">,</span> <span class="n">mmap_mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">number_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number_list</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">number_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Empty number list&quot;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">. Class variable self._number_list is None&quot;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">. And memory map </span><span class="si">{</span><span class="n">memory_map</span><span class="si">}</span><span class="s2"> is empty.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="n">process_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">number</span> <span class="ow">in</span> <span class="n">number_list</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">re_pattern</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s1">&#39;The string &quot;</span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s1">&quot; does not match the &#39;</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;numbering scheme &quot;</span><span class="si">{</span><span class="n">num_scheme</span><span class="si">}</span><span class="s1">&quot;.&#39;</span>
+                <span class="p">)</span>
+
+            <span class="c1"># If &quot;exclusive&quot; options is set: discard all non-matching IDs</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exclusive</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">id_to_test</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_exclusive</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;-&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">if</span> <span class="n">number</span> <span class="o">==</span> <span class="n">id_to_test</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;-- Using exclusive number </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_exclusive</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">id_to_test</span><span class="si">}</span><span class="s2">)&quot;</span>
+                        <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span><span class="p">:</span>
+                        <span class="c1"># print(f&quot;Skipping {number}, not equal to {self._exclusive} ({id_to_test})&quot;)</span>
+                        <span class="k">pass</span>
+                    <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">run_method</span> <span class="o">==</span> <span class="s2">&quot;serial&quot;</span><span class="p">:</span>
+                <span class="n">process_items</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">process_items</span> <span class="o">=</span> <span class="p">[</span><span class="n">number</span><span class="p">]</span>
+            <span class="n">process_items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_get_file_name</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">ext</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">path_list</span><span class="p">,</span> <span class="n">pattern_list</span><span class="p">,</span> <span class="n">ext_list</span><span class="p">)</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">process_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">process_items</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">process_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Empty process list&quot;</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exclusive</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">number_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">. No input file found matching exclusive ID&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">process_list</span></div>
+
+
+<div class="viewcode-block" id="FileHandler._save_process_list">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._save_process_list">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_save_process_list</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dir_list</span><span class="p">,</span>
+        <span class="n">pattern_list</span><span class="p">,</span>
+        <span class="n">ext_list</span><span class="p">,</span>
+        <span class="n">num_scheme</span><span class="p">,</span>
+        <span class="n">run_method</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save Process List.</span>
+
+<span class="sd">        Save list of processes to a numpy binary.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dir_list : list</span>
+<span class="sd">            List of input directories</span>
+<span class="sd">        pattern_list : list</span>
+<span class="sd">            List of file patterns</span>
+<span class="sd">        ext_list : list</span>
+<span class="sd">            List of file extensions</span>
+<span class="sd">        num_scheme : str</span>
+<span class="sd">            Numbering scheme</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">np_mmap_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setpath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tmp_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;nums_</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">ext</span><span class="si">}</span><span class="s2">.npy&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">ext</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">pattern_list</span><span class="p">,</span> <span class="n">ext_list</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">match_mmap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setpath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tmp_dir</span><span class="p">,</span> <span class="s2">&quot;matching_num_patterns.npy&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process_mmap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setpath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tmp_dir</span><span class="p">,</span> <span class="s2">&quot;process_list.npy&quot;</span><span class="p">)</span>
+
+        <span class="n">re_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_re</span><span class="p">(</span><span class="n">num_scheme</span><span class="p">)</span>
+
+        <span class="n">temp</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_save_num_patterns</span><span class="p">(</span><span class="n">dir_list</span><span class="p">,</span> <span class="n">re_pattern</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">ext</span><span class="p">,</span> <span class="n">np_mmap</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">ext</span><span class="p">,</span> <span class="n">np_mmap</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="n">pattern_list</span><span class="p">,</span> <span class="n">ext_list</span><span class="p">,</span> <span class="n">np_mmap_list</span>
+            <span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save_match_patterns</span><span class="p">(</span><span class="n">match_mmap</span><span class="p">,</span> <span class="n">np_mmap_list</span><span class="p">)</span>
+
+        <span class="n">process_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_format_process_list</span><span class="p">(</span>
+            <span class="n">temp</span><span class="p">,</span>
+            <span class="n">match_mmap</span><span class="p">,</span>
+            <span class="n">re_pattern</span><span class="p">,</span>
+            <span class="n">num_scheme</span><span class="p">,</span>
+            <span class="n">run_method</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">process_mmap</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">process_list</span><span class="p">))</span>
+        <span class="k">del</span> <span class="n">process_list</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">process_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">process_mmap</span><span class="p">,</span> <span class="n">mmap_mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">missed</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_remove_mmaps</span><span class="p">(</span><span class="n">np_mmap_list</span> <span class="o">+</span> <span class="p">[</span><span class="n">match_mmap</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="FileHandler.remove_process_mmap">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.remove_process_mmap">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove_process_mmap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove Process MMAP.</span>
+
+<span class="sd">        Remove process list memory map.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_remove_mmaps</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">process_mmap</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="FileHandler._get_module_input_files">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler._get_module_input_files">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_module_input_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">run_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Module Input Files.</span>
+
+<span class="sd">        Retrieve the module input files names from the input directory.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        module : str</span>
+<span class="sd">            Module name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dir_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;input_dir&quot;</span><span class="p">]</span>
+        <span class="n">pattern_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;file_pattern&quot;</span><span class="p">]</span>
+        <span class="n">ext_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;file_ext&quot;</span><span class="p">]</span>
+        <span class="n">num_scheme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;numbering_scheme&quot;</span><span class="p">]</span>
+        <span class="n">run_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;run_method&quot;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save_process_list</span><span class="p">(</span>
+            <span class="n">dir_list</span><span class="p">,</span>
+            <span class="n">pattern_list</span><span class="p">,</span>
+            <span class="n">ext_list</span><span class="p">,</span>
+            <span class="n">num_scheme</span><span class="p">,</span>
+            <span class="n">run_method</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FileHandler.set_up_module">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.set_up_module">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_up_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set Up Module.</span>
+
+<span class="sd">        Set up module parameters for file handler.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        module : str</span>
+<span class="sd">            Module name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">multi_call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_list</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">module</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s2">&quot;run_count&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s2">&quot;run_count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">multi_call</span><span class="p">:</span>
+            <span class="n">call_num</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s2">&quot;run_count&quot;</span><span class="p">]</span>
+            <span class="n">run_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2">_run_</span><span class="si">{</span><span class="n">call_num</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">run_name</span> <span class="o">=</span> <span class="n">module</span>
+
+        <span class="c1"># Log run count</span>
+        <span class="n">module_prop_text</span> <span class="o">=</span> <span class="s2">&quot; - Module properties&quot;</span>
+        <span class="n">module_run_num</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39; -- Run: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s2">&quot;run_count&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">module_prop_text</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">module_run_num</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">module_prop_text</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">module_run_num</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s2">&quot;latest&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">run_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_module_properties</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">run_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_create_module_run_dirs</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">run_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_module_input_dir</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">run_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_module_input_files</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">run_name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FileHandler.get_worker_log_name">
+<a class="viewcode-back" href="../../../shapepipe.pipeline.file_handler.html#shapepipe.pipeline.file_handler.FileHandler.get_worker_log_name">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_worker_log_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">file_number_string</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Worker Log Name.</span>
+
+<span class="sd">        This method generates a worker log name.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        module : str</span>
+<span class="sd">            Module name</span>
+<span class="sd">        file_number_string : str</span>
+<span class="sd">            File numbering in output</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            Worker log file name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">run_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="s2">&quot;latest&quot;</span><span class="p">]</span>
+        <span class="n">log_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_dict</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">run_name</span><span class="p">][</span><span class="s2">&quot;log_dir&quot;</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">log_dir</span><span class="si">}</span><span class="s2">/process</span><span class="si">{</span><span class="n">file_number_string</span><span class="si">}</span><span class="s2">&quot;</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CosmoStat
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2022, CosmoStat.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="last-updated">
+  Last updated on 10 Jun, 2026.
+  <br/>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

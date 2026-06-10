@@ -1,0 +1,1883 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>shapepipe.pipeline.file_io &#8212; ShapePipe v1.1</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=3c74b3bc" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=051bfb12"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'shapepipe.pipeline.file_io';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://cosmostat.github.io/shapepipe/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'latest';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="shapepipe.pipeline.job_handler" href="shapepipe.pipeline.job_handler.html" />
+    <link rel="prev" title="shapepipe.pipeline.file_handler" href="shapepipe.pipeline.file_handler.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="1.1" />
+    <meta name="docbuild:last-update" content="10 Jun, 2026"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">ShapePipe v1.1</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">About ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributors.html">Contributors</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Installing ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="container.html">Container Workflow</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Running ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="basic_execution.html">Basic Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="random_cat.html">Create random catalogues and masks</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="understanding_api.html">Understanding the API Documentation</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="shapepipe.html">shapepipe</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.modules.html">shapepipe.modules</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.find_exposures_package.html">shapepipe.modules.find_exposures_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.find_exposures_package.find_exposures.html">shapepipe.modules.find_exposures_package.find_exposures</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.get_images_package.html">shapepipe.modules.get_images_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.get_images_package.get_images.html">shapepipe.modules.get_images_package.get_images</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.make_cat_package.html">shapepipe.modules.make_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.make_cat_package.make_cat.html">shapepipe.modules.make_cat_package.make_cat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mask_package.html">shapepipe.modules.mask_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mask_package.mask.html">shapepipe.modules.mask_package.mask</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.match_external_package.html">shapepipe.modules.match_external_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.match_external_package.match_external.html">shapepipe.modules.match_external_package.match_external</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mccd_package.html">shapepipe.modules.mccd_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html">shapepipe.modules.mccd_package.mccd_interpolation_script</a></li>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_plot_utilities.html">shapepipe.modules.mccd_package.mccd_plot_utilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html">shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.merge_headers_package.html">shapepipe.modules.merge_headers_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.merge_headers_package.merge_headers.html">shapepipe.modules.merge_headers_package.merge_headers</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.merge_sep_cats_package.html">shapepipe.modules.merge_sep_cats_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.merge_sep_cats_package.merge_sep_cats.html">shapepipe.modules.merge_sep_cats_package.merge_sep_cats</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.merge_starcat_package.html">shapepipe.modules.merge_starcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.merge_starcat_package.merge_starcat.html">shapepipe.modules.merge_starcat_package.merge_starcat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.ngmix_package.html">shapepipe.modules.ngmix_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html">shapepipe.modules.ngmix_package.ngmix</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.pastecat_package.html">shapepipe.modules.pastecat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.pastecat_package.pastecat.html">shapepipe.modules.pastecat_package.pastecat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.psfex_interp_package.html">shapepipe.modules.psfex_interp_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.psfex_interp_package.psfex_interp.html">shapepipe.modules.psfex_interp_package.psfex_interp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.psfex_package.html">shapepipe.modules.psfex_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.psfex_package.psfex_script.html">shapepipe.modules.psfex_package.psfex_script</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.python_example_package.html">shapepipe.modules.python_example_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.random_cat_package.html">shapepipe.modules.random_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.random_cat_package.random_cat.html">shapepipe.modules.random_cat_package.random_cat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html">shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.setools_package.html">shapepipe.modules.setools_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.setools_package.setools.html">shapepipe.modules.setools_package.setools</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.sextractor_package.html">shapepipe.modules.sextractor_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.sextractor_package.sextractor_script.html">shapepipe.modules.sextractor_package.sextractor_script</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.split_exp_package.html">shapepipe.modules.split_exp_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.split_exp_package.split_exp.html">shapepipe.modules.split_exp_package.split_exp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.spread_model_package.html">shapepipe.modules.spread_model_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.spread_model_package.spread_model.html">shapepipe.modules.spread_model_package.spread_model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.uncompress_fits_package.html">shapepipe.modules.uncompress_fits_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.uncompress_fits_package.uncompress_fits.html">shapepipe.modules.uncompress_fits_package.uncompress_fits</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.vignetmaker_package.html">shapepipe.modules.vignetmaker_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.vignetmaker_package.vignetmaker.html">shapepipe.modules.vignetmaker_package.vignetmaker</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.module_decorator.html">shapepipe.modules.module_decorator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.module_runners.html">shapepipe.modules.module_runners</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="shapepipe.pipeline.html">shapepipe.pipeline</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.args.html">shapepipe.pipeline.args</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.config.html">shapepipe.pipeline.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.dependency_handler.html">shapepipe.pipeline.dependency_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.execute.html">shapepipe.pipeline.execute</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.exp_utils.html">shapepipe.pipeline.exp_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.file_handler.html">shapepipe.pipeline.file_handler</a></li>
+<li class="toctree-l3 current active"><a class="current reference internal" href="#">shapepipe.pipeline.file_io</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.job_handler.html">shapepipe.pipeline.job_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.mpi_run.html">shapepipe.pipeline.mpi_run</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.run_log.html">shapepipe.pipeline.run_log</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.shared.html">shapepipe.pipeline.shared</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.str_handler.html">shapepipe.pipeline.str_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.timeout.html">shapepipe.pipeline.timeout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.worker_handler.html">shapepipe.pipeline.worker_handler</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.info.html">shapepipe.info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.run.html">shapepipe.run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.shapepipe_run.html">shapepipe.shapepipe_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.summary_run.html">shapepipe.summary_run</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing to ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contribution Guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_develop.html">Module Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_example.html">Module Examples</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="z_ref.html">References</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe/edit/main/docs/source/shapepipe.pipeline.file_io.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2Fshapepipe.pipeline.file_io.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
+
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+<button class="sidebar-toggle secondary-toggle btn btn-sm pst-navbar-icon" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>shapepipe.pipeline.file_io</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.fullpath"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.fullpath</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.directory"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.directory</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.filename"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.filename</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.format"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.format</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.get_nb_rows"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.get_nb_rows()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.get_nb_cols"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.get_nb_cols()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.get_col_names"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.get_col_names()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.get_col_formats"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.get_col_formats()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.add_col"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.add_col()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue._file_exists"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue._file_exists()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.InputFormat</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.Undefined"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.InputFormat.Undefined</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.TabulatedText"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.InputFormat.TabulatedText</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.SExtractor"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.InputFormat.SExtractor</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.FITS"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.InputFormat.FITS</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.FITS_LDAC"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.InputFormat.FITS_LDAC</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenMode"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.OpenMode</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenMode.ReadOnly"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.OpenMode.ReadOnly</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenMode.ReadWrite"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.OpenMode.ReadWrite</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenMode.Append"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.OpenMode.Append</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.Column</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column.name"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.Column.name</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column.format"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.Column.format</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column.data"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.Column.data</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column.get_nb_rows"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.Column.get_nb_rows()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column.get_info"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.Column.get_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column.get_type"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.Column.get_type()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.FeatureNotImplemented"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.FeatureNotImplemented</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.catalogueNotOpen"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.catalogueNotOpen</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.DataNotFound"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.DataNotFound</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.catalogueFileNotFound"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.catalogueFileNotFound</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.ColumnNotFound"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.ColumnNotFound</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.catalogueNotCreated"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.catalogueNotCreated</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenModeNotSupported"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.OpenModeNotSupported</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenModeConflict"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.OpenModeConflict</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.hdu_no"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.hdu_no</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.open_mode"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.open_mode</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.use_memmap"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.use_memmap</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.open"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.open()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.create"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.create()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.copy_hdu"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.copy_hdu()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.apply_mask"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.apply_mask()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.save_as_fits"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.save_as_fits()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.create_from_numpy"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.create_from_numpy()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.close"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.close()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.save"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.save()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_nb_rows"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_nb_rows()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_nb_cols"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_nb_cols()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_col_names"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_col_names()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_info"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_info()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_ext_name"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_ext_name()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.col_exists"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.col_exists()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_col_index"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_col_index()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_col_data"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_col_data()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_named_col_data"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_named_col_data()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_data"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_data()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_header"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_header()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_header_value"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_header_value()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.add_header_card"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.add_header_card()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_headers"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_headers()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_comments"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_comments()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_col_comments"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_col_comments()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_col_formats"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_col_formats()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.add_col"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.add_col()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.remove_col"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.remove_col()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.remove_named_col"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.remove_named_col()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue._append_col"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue._append_col()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue._get_fits_col_type"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue._get_fits_col_type()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue._get_python_col_type"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue._get_python_col_type()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue._save_to_fits"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue._save_to_fits()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue._save_from_recarray"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue._save_from_recarray()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue._save_image"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue._save_image()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.Column"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.Column</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.Column.name"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.Column.name</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.Column.format"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.Column.format</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.Column.comment"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.Column.comment</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.Column.data"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.Column.data</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.get_unit_from_fits_header"><code class="docutils literal notranslate"><span class="pre">get_unit_from_fits_header()</span></code></a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-shapepipe.pipeline.file_io">
+<span id="shapepipe-pipeline-file-io"></span><h1>shapepipe.pipeline.file_io<a class="headerlink" href="#module-shapepipe.pipeline.file_io" title="Link to this heading">#</a></h1>
+<p>FILE IO.</p>
+<p>This file contains methods for file I/O handling.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Author<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Marc Gentile and Axel Guinot</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">BaseCatalogue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fullpath</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Base catalogue.</p>
+<p>Base catalogue management class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>fullpath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Full path to catalogue</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This class is not meant to be used directly</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.fullpath">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fullpath</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.fullpath" title="Link to this definition">#</a></dt>
+<dd><p>Set Full Path.</p>
+<p>Get the full path of the catalogue file</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.directory">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">directory</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.directory" title="Link to this definition">#</a></dt>
+<dd><p>Set Directory.</p>
+<p>Get the directory of the catalogue file</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.filename">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">filename</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.filename" title="Link to this definition">#</a></dt>
+<dd><p>Set File Name.</p>
+<p>Get the name of the catalogue file</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.format">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">format</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.format" title="Link to this definition">#</a></dt>
+<dd><p>Format.</p>
+<p>Get the default input/output format of the catalogue
+(e.g. Text, SExtractor, FITS)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.get_nb_rows">
+<span class="sig-name descname"><span class="pre">get_nb_rows</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.get_nb_rows"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.get_nb_rows" title="Link to this definition">#</a></dt>
+<dd><p>Get Number of Rows.</p>
+<p>Get the number of rows in the catalogue</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of rows</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.get_nb_cols">
+<span class="sig-name descname"><span class="pre">get_nb_cols</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.get_nb_cols"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.get_nb_cols" title="Link to this definition">#</a></dt>
+<dd><p>Get Number of Columns.</p>
+<p>Get the number of columns in the catalogue</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of columns</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.get_col_names">
+<span class="sig-name descname"><span class="pre">get_col_names</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.get_col_names"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.get_col_names" title="Link to this definition">#</a></dt>
+<dd><p>Get Column Names.</p>
+<p>Get the list of column names in the catalogue</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of column names</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.get_col_formats">
+<span class="sig-name descname"><span class="pre">get_col_formats</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.get_col_formats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.get_col_formats" title="Link to this definition">#</a></dt>
+<dd><p>Get Column Formats.</p>
+<p>Get the list of column formats in the order of columns</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.add_col">
+<span class="sig-name descname"><span class="pre">add_col</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_comment</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.add_col"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.add_col" title="Link to this definition">#</a></dt>
+<dd><p>Add Column.</p>
+<p>Add a Column to the catalogue</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>col_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Column name</p></li>
+<li><p><strong>col_format</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Column python format</p></li>
+<li><p><strong>col_comment</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Column comment (ignored in for class)</p></li>
+<li><p><strong>col_data</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – Column data as a numpy array</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue._file_exists">
+<span class="sig-name descname"><span class="pre">_file_exists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue._file_exists"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue._file_exists" title="Link to this definition">#</a></dt>
+<dd><p>File Exists.</p>
+<p>Check if input file path is a valid file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filepath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to file</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.InputFormat">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">InputFormat</span></span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.InputFormat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Supported input catalogue formats.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.Undefined">
+<span class="sig-name descname"><span class="pre">Undefined</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.Undefined" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.TabulatedText">
+<span class="sig-name descname"><span class="pre">TabulatedText</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.TabulatedText" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.SExtractor">
+<span class="sig-name descname"><span class="pre">SExtractor</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.SExtractor" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.FITS">
+<span class="sig-name descname"><span class="pre">FITS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.FITS" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.FITS_LDAC">
+<span class="sig-name descname"><span class="pre">FITS_LDAC</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.FITS_LDAC" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.OpenMode">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">OpenMode</span></span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.OpenMode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenMode" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Supported input catalogue open modes.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.OpenMode.ReadOnly">
+<span class="sig-name descname"><span class="pre">ReadOnly</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'readonly'</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenMode.ReadOnly" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.OpenMode.ReadWrite">
+<span class="sig-name descname"><span class="pre">ReadWrite</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'update'</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenMode.ReadWrite" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.OpenMode.Append">
+<span class="sig-name descname"><span class="pre">Append</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'append'</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenMode.Append" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.Column">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Column</span></span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.Column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Column.</p>
+<p>Represents a column in the catalogue.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.Column.name">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column.name" title="Link to this definition">#</a></dt>
+<dd><p>Set Name.</p>
+<p>Get the name of the column</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.Column.format">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">format</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column.format" title="Link to this definition">#</a></dt>
+<dd><p>Format.</p>
+<p>Get the format of the column</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.Column.data">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column.data" title="Link to this definition">#</a></dt>
+<dd><p>Set Data.</p>
+<p>Get the data associated with the column</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.Column.get_nb_rows">
+<span class="sig-name descname"><span class="pre">get_nb_rows</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.Column.get_nb_rows"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column.get_nb_rows" title="Link to this definition">#</a></dt>
+<dd><p>Get Number of Rows.</p>
+<p>Retrieve the number of rows of the column.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.Column.get_info">
+<span class="sig-name descname"><span class="pre">get_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.Column.get_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column.get_info" title="Link to this definition">#</a></dt>
+<dd><p>Get Information.</p>
+<p>Retrieve information about the column.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.Column.get_type">
+<span class="sig-name descname"><span class="pre">get_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.Column.get_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column.get_type" title="Link to this definition">#</a></dt>
+<dd><p>Get Type.</p>
+<p>Get the data type of the column</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.FeatureNotImplemented">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">FeatureNotImplemented</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.FeatureNotImplemented"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.FeatureNotImplemented" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#NotImplementedError" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">NotImplementedError</span></code></a></p>
+<p>Feature Not Implemented.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>msg</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Message</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.catalogueNotOpen">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">catalogueNotOpen</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.catalogueNotOpen"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.catalogueNotOpen" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<p>Catalogue Not Open.</p>
+<p>Catalogue has not been open yet.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filepath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to file</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.DataNotFound">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">DataNotFound</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdu</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.DataNotFound"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.DataNotFound" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<p>Data Not Found.</p>
+<p>No data found (at given hdu).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filepath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to file</p></li>
+<li><p><strong>hdu</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU number</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.catalogueFileNotFound">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">catalogueFileNotFound</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.catalogueFileNotFound"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.catalogueFileNotFound" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<p>Catalogue File Not Found.</p>
+<p>Exception thrown when a catalogue file is not found on disk.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filepath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to file</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.ColumnNotFound">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">ColumnNotFound</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.ColumnNotFound"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.ColumnNotFound" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<p>Column Not Found.</p>
+<p>Exception thrown when a named catalogue column could not be found</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>col_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Column name</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.catalogueNotCreated">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">catalogueNotCreated</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.catalogueNotCreated"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.catalogueNotCreated" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<p>Catalogue Not Created.</p>
+<p>Catalogue could not be created.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filepath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to file</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.OpenModeNotSupported">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">OpenModeNotSupported</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">open_mode</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.OpenModeNotSupported"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenModeNotSupported" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<p>Open Mode Not Supported.</p>
+<p>Opening mode not supported by this version.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filepath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to file</p></li>
+<li><p><strong>open_mode</strong> (<a class="reference internal" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenMode" title="shapepipe.pipeline.file_io.BaseCatalogue.OpenMode"><em>OpenMode</em></a>) – File opening mode</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.BaseCatalogue.OpenModeConflict">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">OpenModeConflict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">open_mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">open_mode_needed</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#BaseCatalogue.OpenModeConflict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenModeConflict" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<p>Open Mode Conflict.</p>
+<p>Opening mode is in conflict with an action.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>open_mode</strong> (<a class="reference internal" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenMode" title="shapepipe.pipeline.file_io.BaseCatalogue.OpenMode"><em>OpenMode</em></a>) – File opening mode</p></li>
+<li><p><strong>open_mode_needed</strong> (<a class="reference internal" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenMode" title="shapepipe.pipeline.file_io.BaseCatalogue.OpenMode"><em>OpenMode</em></a>) – File opening mode needed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">FITSCatalogue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fullpath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">open_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'readonly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">SEx_catalogue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#shapepipe.pipeline.file_io.BaseCatalogue" title="shapepipe.pipeline.file_io.BaseCatalogue"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCatalogue</span></code></a></p>
+<p>FITS Catalogue.</p>
+<p>Catalogues management in .FITS format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fullpath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Full path to file</p></li>
+<li><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – HDU number; default is <code class="docutils literal notranslate"><span class="pre">None</span></code>, in which case
+it will be set to 1 (2) if SEx_catalogue is <code class="docutils literal notranslate"><span class="pre">False</span></code>
+(<code class="docutils literal notranslate"><span class="pre">True</span></code>)</p></li>
+<li><p><strong>open_mode</strong> (<a class="reference internal" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenMode" title="shapepipe.pipeline.file_io.BaseCatalogue.OpenMode"><em>OpenMode</em></a><em>, </em><em>optional</em>) – File opening mode, default is <code class="docutils literal notranslate"><span class="pre">BaseCatalogue.OpenMode.ReadOnly</span></code></p></li>
+<li><p><strong>memmap</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Option to use memory mapping, default is <code class="docutils literal notranslate"><span class="pre">False</span></code></p></li>
+<li><p><strong>SEx_catalogue</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Option to specify if the input is a SExtractor catalogue;
+default is <code class="docutils literal notranslate"><span class="pre">False</span></code></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.hdu_no">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">hdu_no</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.hdu_no" title="Link to this definition">#</a></dt>
+<dd><p>Set HDU Number.</p>
+<p>Get the HDU index of the table.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.open_mode">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">open_mode</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.open_mode" title="Link to this definition">#</a></dt>
+<dd><p>Set Open Mode.</p>
+<p>Return the catalogue opening mode.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><code class="xref py py-obj docutils literal notranslate"><span class="pre">FITSCatalogue.OpenMode</span></code></p>
+</div>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.use_memmap">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">use_memmap</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.use_memmap" title="Link to this definition">#</a></dt>
+<dd><p>Use Memory Map.</p>
+<p>If True, use memory mapping.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.open">
+<span class="sig-name descname"><span class="pre">open</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.open"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.open" title="Link to this definition">#</a></dt>
+<dd><p>Open.</p>
+<p>Open an existing catalogue.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.create">
+<span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ext_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_hdu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sex_cat_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.create"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.create" title="Link to this definition">#</a></dt>
+<dd><p>Create.</p>
+<p>Create an empty catalogue in FITS format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ext_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Extension name or number</p></li>
+<li><p><strong>s_hdu</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If true add a secondary HDU</p></li>
+<li><p><strong>sex_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to SEXtractor catalogue</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.copy_hdu">
+<span class="sig-name descname"><span class="pre">copy_hdu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fits_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdu_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.copy_hdu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.copy_hdu" title="Link to this definition">#</a></dt>
+<dd><p>Copy HDU.</p>
+<p>Copy an HDU from a FITS file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fits_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Catalogue containing the HDU</p></li>
+<li><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU number</p></li>
+<li><p><strong>hdu_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – HDU name</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.apply_mask">
+<span class="sig-name descname"><span class="pre">apply_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fits_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdu_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.apply_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.apply_mask" title="Link to this definition">#</a></dt>
+<dd><p>Apply Mask.</p>
+<p>Apply a mask to data for a specified HDU.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fits_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – FITS file containing the data to be masked</p></li>
+<li><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU number</p></li>
+<li><p><strong>mask</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – Array of booleans or an array of indices</p></li>
+<li><p><strong>hdu_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – HDU name</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This will create a new HDU containing data[mask]</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.save_as_fits">
+<span class="sig-name descname"><span class="pre">save_as_fits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sex_cat_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_header</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.save_as_fits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.save_as_fits" title="Link to this definition">#</a></dt>
+<dd><p>Save as FITS.</p>
+<p>Save data into an existing FITS file or into a new one.</p>
+<p>Save data from dict, list, numpy.ndarray, numpy.recarray or
+astropy.io.fits.fitsrec.FITS_rec (data format in an astropy fits file)
+When writing a new FITS file to store BinTable data a PrimaryHDU is
+created.
+When wwriting a new FITS to store Image data, no PrimaryHDU is added.
+You can create a SExtractor format FITS by specifying a SExtractor
+catalogue from where data come from.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – Data to be stored</p></li>
+<li><p><strong>names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – List of column names</p></li>
+<li><p><strong>ext_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of the HDU where data are stored</p></li>
+<li><p><strong>sex_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path of the existing SExtractor catalogue to mimic</p></li>
+<li><p><strong>image</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If true create a fits image</p></li>
+<li><p><strong>image_header</strong> (<em>astropy.io.fits.header</em>) – Header to use when saving an image</p></li>
+<li><p><strong>overwrite</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Option to overwrite an existing image, only used when creating a
+FITS image</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>To create a SExtractor-like FITS file you need to specify
+<code class="docutils literal notranslate"><span class="pre">SEx_catalogue=True</span></code> when declaring the FITSCatalogue object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.create_from_numpy">
+<span class="sig-name descname"><span class="pre">create_from_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext_ver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">header</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.create_from_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.create_from_numpy" title="Link to this definition">#</a></dt>
+<dd><p>Create from Numpy.</p>
+<p>Create a new catalogue from a two-dimensional numpy array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>matrix</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – Two-dimensional numpy array</p></li>
+<li><p><strong>col_names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – List of column names to use as the header</p></li>
+<li><p><strong>ext_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Extension name or number</p></li>
+<li><p><strong>ext_ver</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Extension version</p></li>
+<li><p><strong>header</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – List of dictionaries with keys: ‘card’, name’, ‘value’,
+‘value_orig’, ‘comment’</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.close" title="Link to this definition">#</a></dt>
+<dd><p>Close.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.save" title="Link to this definition">#</a></dt>
+<dd><p>Save.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.get_nb_rows">
+<span class="sig-name descname"><span class="pre">get_nb_rows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.get_nb_rows"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_nb_rows" title="Link to this definition">#</a></dt>
+<dd><p>Get Number of Rows.</p>
+<p>Get the number of rows in the catalogue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU index</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Number of rows or 0 if None</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.get_nb_cols">
+<span class="sig-name descname"><span class="pre">get_nb_cols</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.get_nb_cols"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_nb_cols" title="Link to this definition">#</a></dt>
+<dd><p>Get Number of Columns.</p>
+<p>Get the number of columns in the catalogue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU index</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Number of columns or 0 if None</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.get_col_names">
+<span class="sig-name descname"><span class="pre">get_col_names</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.get_col_names"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_col_names" title="Link to this definition">#</a></dt>
+<dd><p>Get Column Names.</p>
+<p>Get the list of column names in the catalogue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU index</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of column names</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.get_info">
+<span class="sig-name descname"><span class="pre">get_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.get_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_info" title="Link to this definition">#</a></dt>
+<dd><p>Get Information.</p>
+<p>Retrieve some information about the catalogue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dictionary with detailed information</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>See the fitsio documentation of the info() function for the details</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.get_ext_name">
+<span class="sig-name descname"><span class="pre">get_ext_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.get_ext_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_ext_name" title="Link to this definition">#</a></dt>
+<dd><p>Get Extension Name.</p>
+<p>Return the name of an extansion or all of them.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – index of the hdu to return, if None return all of them</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The hdu name or a list of strings</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.col_exists">
+<span class="sig-name descname"><span class="pre">col_exists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.col_exists"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.col_exists" title="Link to this definition">#</a></dt>
+<dd><p>Column Exists.</p>
+<p>Check whether a named column exists.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>col_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Column name</p></li>
+<li><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU index</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if column exists, False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.get_col_index">
+<span class="sig-name descname"><span class="pre">get_col_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.get_col_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_col_index" title="Link to this definition">#</a></dt>
+<dd><p>Get Column Index.</p>
+<p>Get the column index from a column name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>col_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Column name</p></li>
+<li><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU index</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Column index (zero-based)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.get_col_data">
+<span class="sig-name descname"><span class="pre">get_col_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.get_col_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_col_data" title="Link to this definition">#</a></dt>
+<dd><p>Get Column Data.</p>
+<p>Return the data of a column from its index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>col_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Column name</p></li>
+<li><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU index</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Data associated with the column</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.get_named_col_data">
+<span class="sig-name descname"><span class="pre">get_named_col_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.get_named_col_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_named_col_data" title="Link to this definition">#</a></dt>
+<dd><p>Get Named Column Data.</p>
+<p>Return the data of a column from its index (zero-based).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>col_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Column name</p></li>
+<li><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU index</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Data associated with the column</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.get_data">
+<span class="sig-name descname"><span class="pre">get_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.get_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_data" title="Link to this definition">#</a></dt>
+<dd><p>Get Data.</p>
+<p>Return data of the specified hdu.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU index</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Data associated with the HDU</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.get_header">
+<span class="sig-name descname"><span class="pre">get_header</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.get_header"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_header" title="Link to this definition">#</a></dt>
+<dd><p>Get Header.</p>
+<p>Return the catalogue header as a list of dictionaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU index</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>FITS header</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>astropy.io.fits.header</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>See astropy documentation</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.get_header_value">
+<span class="sig-name descname"><span class="pre">get_header_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.get_header_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_header_value" title="Link to this definition">#</a></dt>
+<dd><p>Get Header Value.</p>
+<p>Return the value of a parameters or a linear combination of parameters
+and/or numbers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>request</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Request parameter or a linear combination of parameters</p></li>
+<li><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU index</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result of the request</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.add_header_card">
+<span class="sig-name descname"><span class="pre">add_header_card</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comment</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.add_header_card"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.add_header_card" title="Link to this definition">#</a></dt>
+<dd><p>Add Header Card.</p>
+<p>Add a card in the header of the specified HDU.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The key to add</p></li>
+<li><p><strong>value</strong> (<em>any</em>) – The value of the key</p></li>
+<li><p><strong>comment</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Comment for the key</p></li>
+<li><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU index</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.get_headers">
+<span class="sig-name descname"><span class="pre">get_headers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.get_headers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_headers" title="Link to this definition">#</a></dt>
+<dd><p>Get Headers.</p>
+<p>Return the catalogue header as a list of dictionaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of headers</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.get_comments">
+<span class="sig-name descname"><span class="pre">get_comments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.get_comments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_comments" title="Link to this definition">#</a></dt>
+<dd><p>Get Comments.</p>
+<p>Return the list catalogue comments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU index</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of catalogue comments</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.get_col_comments">
+<span class="sig-name descname"><span class="pre">get_col_comments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.get_col_comments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_col_comments" title="Link to this definition">#</a></dt>
+<dd><p>Get Column Comments.</p>
+<p>Return the list of column comments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU index</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of column comments</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.get_col_formats">
+<span class="sig-name descname"><span class="pre">get_col_formats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.get_col_formats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_col_formats" title="Link to this definition">#</a></dt>
+<dd><p>Get Column Formats.</p>
+<p>Get the list of python column formats in the order of columns.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU index</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of column formats</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.add_col">
+<span class="sig-name descname"><span class="pre">add_col</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_cat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_cat_inst</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.add_col"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.add_col" title="Link to this definition">#</a></dt>
+<dd><p>Add Column.</p>
+<p>Add a Column to the catalogue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>col_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Column name</p></li>
+<li><p><strong>col_data</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – Column data</p></li>
+<li><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU index</p></li>
+<li><p><strong>ext_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Change the name of the extansion</p></li>
+<li><p><strong>new_cat</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If true will save the changes into a new catalogue</p></li>
+<li><p><strong>new_cat_inst</strong> (<em>io.FITSCatalogue</em>) – New catalogue object</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.remove_col">
+<span class="sig-name descname"><span class="pre">remove_col</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.remove_col"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.remove_col" title="Link to this definition">#</a></dt>
+<dd><p>Remove Column.</p>
+<p>Delete a column from its index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>col_index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Index of the column to delete</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.remove_named_col">
+<span class="sig-name descname"><span class="pre">remove_named_col</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.remove_named_col"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.remove_named_col" title="Link to this definition">#</a></dt>
+<dd><p>Remove Named Column.</p>
+<p>Delete a column from its index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>col_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of the column to delete</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue._append_col">
+<span class="sig-name descname"><span class="pre">_append_col</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdu_no</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue._append_col"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue._append_col" title="Link to this definition">#</a></dt>
+<dd><p>Append Column.</p>
+<p>Append a Column object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>column</strong> – An object derived from BaseCatalogue.Column</p></li>
+<li><p><strong>hdu_no</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – HDU index</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue._get_fits_col_type">
+<span class="sig-name descname"><span class="pre">_get_fits_col_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue._get_fits_col_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue._get_fits_col_type" title="Link to this definition">#</a></dt>
+<dd><p>Get FITS Column Type.</p>
+<p>Get the FITS data type of a given column.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>col_data</strong> (<em>any</em>) – Column data</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Column FITS data type</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue._get_python_col_type">
+<span class="sig-name descname"><span class="pre">_get_python_col_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue._get_python_col_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue._get_python_col_type" title="Link to this definition">#</a></dt>
+<dd><p>Get Python Column Type.</p>
+<p>Get the Python data type of a given column.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>col_data</strong> (<em>any</em>) – Column data</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Column Python data type</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue._save_to_fits">
+<span class="sig-name descname"><span class="pre">_save_to_fits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">it</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sex_cat_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue._save_to_fits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue._save_to_fits" title="Link to this definition">#</a></dt>
+<dd><p>Save to FITS.</p>
+<p>Save array of data as fits with their associated column names.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – Array with the data</p></li>
+<li><p><strong>names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – List of the column names</p></li>
+<li><p><strong>it</strong> (<em>iterator</em>) – <p>?</p>
+</p></li>
+<li><p><strong>ext_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of the HDU where data are stored</p></li>
+<li><p><strong>sex_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path of the existing SExtractor catalogue to mimic</p></li>
+<li><p><strong>overwrite</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Option to overwrite an existing catalogue</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue._save_from_recarray">
+<span class="sig-name descname"><span class="pre">_save_from_recarray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sex_cat_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue._save_from_recarray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue._save_from_recarray" title="Link to this definition">#</a></dt>
+<dd><p>Save From Record Array.</p>
+<p>Save a numpy.recarray or astropy.io.fits.fitsrec.FITS_rec into a FITS
+file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – Array with the data</p></li>
+<li><p><strong>ext_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of the HDU where data are stored</p></li>
+<li><p><strong>sex_cat_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path of the existing SExtractor catalogue to mimic</p></li>
+<li><p><strong>overwrite</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Option to overwrite an existing catalogue</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue._save_image">
+<span class="sig-name descname"><span class="pre">_save_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">header</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue._save_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue._save_image" title="Link to this definition">#</a></dt>
+<dd><p>Save Image.</p>
+<p>Save an image into a FITS file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – Array with the data</p></li>
+<li><p><strong>header</strong> (<em>astropy.io.fits.header</em>) – FITS header</p></li>
+<li><p><strong>overwrite</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Option to overwrite an existing catalogue</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.Column">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comment</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#FITSCatalogue.Column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.Column" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column" title="shapepipe.pipeline.file_io.BaseCatalogue.Column"><code class="xref py py-class docutils literal notranslate"><span class="pre">Column</span></code></a></p>
+<p>Column.</p>
+<p>Represents a column in the catalogue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name name of the column</p></li>
+<li><p><strong>format</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Python format of the column</p></li>
+<li><p><strong>comment</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Comment strin</p></li>
+<li><p><strong>data</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) – Associated column data</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.Column.name">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.Column.name" title="Link to this definition">#</a></dt>
+<dd><p>Set Name.</p>
+<p>Get the name of the column.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.Column.format">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">format</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.Column.format" title="Link to this definition">#</a></dt>
+<dd><p>Format.</p>
+<p>Get the format of the column.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.Column.comment">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">comment</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.Column.comment" title="Link to this definition">#</a></dt>
+<dd><p>Comment.</p>
+<p>Get the comment string associated with the column.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.FITSCatalogue.Column.data">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#shapepipe.pipeline.file_io.FITSCatalogue.Column.data" title="Link to this definition">#</a></dt>
+<dd><p>Set Data.</p>
+<p>Get the data associated with the column.</p>
+</dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shapepipe.pipeline.file_io.get_unit_from_fits_header">
+<span class="sig-name descname"><span class="pre">get_unit_from_fits_header</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">header</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/shapepipe/pipeline/file_io.html#get_unit_from_fits_header"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shapepipe.pipeline.file_io.get_unit_from_fits_header" title="Link to this definition">#</a></dt>
+<dd><p>Get Unit From FITS Header.</p>
+<p>Return coordinate unit corresponding to column with name <code class="docutils literal notranslate"><span class="pre">key</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>header</strong> (<em>FITS header</em>) – Header information</p></li>
+<li><p><strong>key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Column name</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#IndexError" title="(in Python v3.14)"><strong>IndexError</strong></a> – If key not in header</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Unit object</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.astropy.org/en/latest/api/astropy.units.Unit.html#astropy.units.Unit" title="(in Astropy v8.1)">astropy.units.Unit</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="shapepipe.pipeline.file_handler.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">shapepipe.pipeline.file_handler</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="shapepipe.pipeline.job_handler.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">shapepipe.pipeline.job_handler</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item"><div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.fullpath"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.fullpath</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.directory"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.directory</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.filename"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.filename</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.format"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.format</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.get_nb_rows"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.get_nb_rows()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.get_nb_cols"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.get_nb_cols()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.get_col_names"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.get_col_names()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.get_col_formats"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.get_col_formats()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.add_col"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.add_col()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue._file_exists"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue._file_exists()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.InputFormat</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.Undefined"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.InputFormat.Undefined</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.TabulatedText"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.InputFormat.TabulatedText</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.SExtractor"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.InputFormat.SExtractor</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.FITS"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.InputFormat.FITS</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.InputFormat.FITS_LDAC"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.InputFormat.FITS_LDAC</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenMode"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.OpenMode</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenMode.ReadOnly"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.OpenMode.ReadOnly</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenMode.ReadWrite"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.OpenMode.ReadWrite</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenMode.Append"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.OpenMode.Append</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.Column</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column.name"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.Column.name</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column.format"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.Column.format</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column.data"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.Column.data</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column.get_nb_rows"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.Column.get_nb_rows()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column.get_info"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.Column.get_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.Column.get_type"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.Column.get_type()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.FeatureNotImplemented"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.FeatureNotImplemented</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.catalogueNotOpen"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.catalogueNotOpen</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.DataNotFound"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.DataNotFound</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.catalogueFileNotFound"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.catalogueFileNotFound</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.ColumnNotFound"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.ColumnNotFound</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.catalogueNotCreated"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.catalogueNotCreated</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenModeNotSupported"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.OpenModeNotSupported</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.BaseCatalogue.OpenModeConflict"><code class="docutils literal notranslate"><span class="pre">BaseCatalogue.OpenModeConflict</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.hdu_no"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.hdu_no</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.open_mode"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.open_mode</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.use_memmap"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.use_memmap</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.open"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.open()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.create"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.create()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.copy_hdu"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.copy_hdu()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.apply_mask"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.apply_mask()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.save_as_fits"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.save_as_fits()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.create_from_numpy"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.create_from_numpy()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.close"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.close()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.save"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.save()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_nb_rows"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_nb_rows()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_nb_cols"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_nb_cols()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_col_names"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_col_names()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_info"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_info()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_ext_name"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_ext_name()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.col_exists"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.col_exists()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_col_index"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_col_index()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_col_data"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_col_data()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_named_col_data"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_named_col_data()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_data"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_data()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_header"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_header()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_header_value"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_header_value()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.add_header_card"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.add_header_card()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_headers"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_headers()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_comments"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_comments()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_col_comments"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_col_comments()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.get_col_formats"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.get_col_formats()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.add_col"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.add_col()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.remove_col"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.remove_col()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.remove_named_col"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.remove_named_col()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue._append_col"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue._append_col()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue._get_fits_col_type"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue._get_fits_col_type()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue._get_python_col_type"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue._get_python_col_type()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue._save_to_fits"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue._save_to_fits()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue._save_from_recarray"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue._save_from_recarray()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue._save_image"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue._save_image()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.Column"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.Column</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.Column.name"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.Column.name</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.Column.format"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.Column.format</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.Column.comment"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.Column.comment</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.FITSCatalogue.Column.data"><code class="docutils literal notranslate"><span class="pre">FITSCatalogue.Column.data</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapepipe.pipeline.file_io.get_unit_from_fits_header"><code class="docutils literal notranslate"><span class="pre">get_unit_from_fits_header()</span></code></a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CosmoStat
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2022, CosmoStat.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="last-updated">
+  Last updated on 10 Jun, 2026.
+  <br/>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

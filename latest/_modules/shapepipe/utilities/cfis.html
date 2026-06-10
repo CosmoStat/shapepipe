@@ -1,0 +1,2102 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>shapepipe.utilities.cfis &#8212; ShapePipe v1.1</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=3c74b3bc" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=051bfb12"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/shapepipe/utilities/cfis';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://cosmostat.github.io/shapepipe/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'latest';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="1.1" />
+    <meta name="docbuild:last-update" content="10 Jun, 2026"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">ShapePipe v1.1</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">About ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Installing ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../container.html">Container Workflow</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Running ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../basic_execution.html">Basic Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../pipeline_tutorial.html">ShapePipe Tutorial</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../post_processing.html">Post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../random_cat.html">Create random catalogues and masks</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../understanding_api.html">Understanding the API Documentation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../shapepipe.html">shapepipe</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../shapepipe.modules.html">shapepipe.modules</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.find_exposures_package.html">shapepipe.modules.find_exposures_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.find_exposures_package.find_exposures.html">shapepipe.modules.find_exposures_package.find_exposures</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.get_images_package.html">shapepipe.modules.get_images_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.get_images_package.get_images.html">shapepipe.modules.get_images_package.get_images</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.make_cat_package.html">shapepipe.modules.make_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.make_cat_package.make_cat.html">shapepipe.modules.make_cat_package.make_cat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.mask_package.html">shapepipe.modules.mask_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.mask_package.mask.html">shapepipe.modules.mask_package.mask</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.match_external_package.html">shapepipe.modules.match_external_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.match_external_package.match_external.html">shapepipe.modules.match_external_package.match_external</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.mccd_package.html">shapepipe.modules.mccd_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.mccd_package.mccd_interpolation_script.html">shapepipe.modules.mccd_package.mccd_interpolation_script</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.mccd_package.mccd_plot_utilities.html">shapepipe.modules.mccd_package.mccd_plot_utilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html">shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.merge_headers_package.html">shapepipe.modules.merge_headers_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.merge_headers_package.merge_headers.html">shapepipe.modules.merge_headers_package.merge_headers</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.merge_sep_cats_package.html">shapepipe.modules.merge_sep_cats_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.merge_sep_cats_package.merge_sep_cats.html">shapepipe.modules.merge_sep_cats_package.merge_sep_cats</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.merge_starcat_package.html">shapepipe.modules.merge_starcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.merge_starcat_package.merge_starcat.html">shapepipe.modules.merge_starcat_package.merge_starcat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.ngmix_package.html">shapepipe.modules.ngmix_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.ngmix_package.ngmix.html">shapepipe.modules.ngmix_package.ngmix</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.pastecat_package.html">shapepipe.modules.pastecat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.pastecat_package.pastecat.html">shapepipe.modules.pastecat_package.pastecat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.psfex_interp_package.html">shapepipe.modules.psfex_interp_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.psfex_interp_package.psfex_interp.html">shapepipe.modules.psfex_interp_package.psfex_interp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.psfex_package.html">shapepipe.modules.psfex_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.psfex_package.psfex_script.html">shapepipe.modules.psfex_package.psfex_script</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.python_example_package.html">shapepipe.modules.python_example_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.random_cat_package.html">shapepipe.modules.random_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.random_cat_package.random_cat.html">shapepipe.modules.random_cat_package.random_cat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html">shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.setools_package.html">shapepipe.modules.setools_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.setools_package.setools.html">shapepipe.modules.setools_package.setools</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.sextractor_package.html">shapepipe.modules.sextractor_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.sextractor_package.sextractor_script.html">shapepipe.modules.sextractor_package.sextractor_script</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.split_exp_package.html">shapepipe.modules.split_exp_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.split_exp_package.split_exp.html">shapepipe.modules.split_exp_package.split_exp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.spread_model_package.html">shapepipe.modules.spread_model_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.spread_model_package.spread_model.html">shapepipe.modules.spread_model_package.spread_model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.uncompress_fits_package.html">shapepipe.modules.uncompress_fits_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.uncompress_fits_package.uncompress_fits.html">shapepipe.modules.uncompress_fits_package.uncompress_fits</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../shapepipe.modules.vignetmaker_package.html">shapepipe.modules.vignetmaker_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../shapepipe.modules.vignetmaker_package.vignetmaker.html">shapepipe.modules.vignetmaker_package.vignetmaker</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.modules.module_decorator.html">shapepipe.modules.module_decorator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.modules.module_runners.html">shapepipe.modules.module_runners</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../shapepipe.pipeline.html">shapepipe.pipeline</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.args.html">shapepipe.pipeline.args</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.config.html">shapepipe.pipeline.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.dependency_handler.html">shapepipe.pipeline.dependency_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.execute.html">shapepipe.pipeline.execute</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.exp_utils.html">shapepipe.pipeline.exp_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.file_handler.html">shapepipe.pipeline.file_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.file_io.html">shapepipe.pipeline.file_io</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.job_handler.html">shapepipe.pipeline.job_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.mpi_run.html">shapepipe.pipeline.mpi_run</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.run_log.html">shapepipe.pipeline.run_log</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.shared.html">shapepipe.pipeline.shared</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.str_handler.html">shapepipe.pipeline.str_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.timeout.html">shapepipe.pipeline.timeout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.pipeline.worker_handler.html">shapepipe.pipeline.worker_handler</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.info.html">shapepipe.info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.run.html">shapepipe.run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.shapepipe_run.html">shapepipe.shapepipe_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../shapepipe.summary_run.html">shapepipe.summary_run</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing to ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contribution Guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_develop.html">Module Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_example.html">Module Examples</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../z_ref.html">References</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2F_modules/shapepipe/utilities/cfis.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
+
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for shapepipe.utilities.cfis</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;CFIS TOOLS.</span>
+
+<span class="sd">CFIS module.</span>
+
+<span class="sd">:Authors: Martin Kilbinger</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">astropy.coordinates</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">coords</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pylab</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">ascii</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.utilities.file_system</span><span class="w"> </span><span class="kn">import</span> <span class="n">mkdir</span>
+
+<span class="n">unitdef</span> <span class="o">=</span> <span class="s2">&quot;degree&quot;</span>
+
+<span class="c1"># Maybe define class for these constants?</span>
+<span class="n">size</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">size</span><span class="p">[</span><span class="s2">&quot;tile&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="n">size</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="n">size</span><span class="p">[</span><span class="s2">&quot;exposure&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+<span class="c1"># Cut criteria for exposures</span>
+<span class="n">exp_time_min</span> <span class="o">=</span> <span class="mi">95</span>
+<span class="n">flag_valid</span> <span class="o">=</span> <span class="s2">&quot;V&quot;</span>
+
+
+<div class="viewcode-block" id="param">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.param">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">param</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Param Class.</span>
+
+<span class="sd">    General class to store (default) variables.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwds</span><span class="p">)</span>
+
+<div class="viewcode-block" id="param.print">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.param.print">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Print.&quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="param.var_list">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.param.var_list">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">var_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Variable List.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CfisError">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.CfisError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CfisError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cfis Error.</span>
+
+<span class="sd">    Generic error that is raised by this script.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="image">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.image">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">image</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Image Class.</span>
+
+<span class="sd">    Class to store and create image information.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        file name</span>
+<span class="sd">    ra : Angle</span>
+<span class="sd">        right ascension</span>
+<span class="sd">    dec : Angle</span>
+<span class="sd">        declination</span>
+<span class="sd">    exp_time : int, optional, default=-1</span>
+<span class="sd">        exposure time</span>
+<span class="sd">    valid : str, optional, default=&#39;Unknown&#39;</span>
+<span class="sd">        validation flag</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">exp_time</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">valid</span><span class="o">=</span><span class="s2">&quot;Unknown&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ra</span> <span class="o">=</span> <span class="n">ra</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dec</span> <span class="o">=</span> <span class="n">dec</span>
+        <span class="k">if</span> <span class="n">exp_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exp_time</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exp_time</span> <span class="o">=</span> <span class="n">exp_time</span>
+        <span class="k">if</span> <span class="n">valid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="s2">&quot;Unknown&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="n">valid</span>
+
+<div class="viewcode-block" id="image.cut">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.image.cut">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cut</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">no_cuts</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Cut.</span>
+
+<span class="sd">        Return True (False) if image does (not) need to be cut from selection.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        no_cuts : bool, optiona, default=False</span>
+<span class="sd">            do not cut if True</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True (False) if image is (not) cut</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Do not cut if no_cuts flag is set</span>
+        <span class="k">if</span> <span class="n">no_cuts</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># Cut if exposure time smaller than minimum (and not flagged as</span>
+        <span class="c1"># unknown or n/a)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_time</span> <span class="o">&lt;</span> <span class="n">exp_time_min</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_time</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="c1"># Cut if validation flag is not valid (and not unknown)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">!=</span> <span class="n">flag_valid</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">!=</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="image.get_ID">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.image.get_ID">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_ID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get ID.</span>
+
+<span class="sd">        Return image ID.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            image iD</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            if name does not match to ID pattern</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(\d</span><span class="si">{3}</span><span class="s2">).</span><span class="si">{1}</span><span class="s2">(\d</span><span class="si">{3}</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No ID match in file name </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">m</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">m</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="image.print">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.image.print">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">print</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">base_name</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">name_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ID_only</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Print.</span>
+
+<span class="sd">        Print image information as ascii Table column.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file : file, optional, default=sys.stdout</span>
+<span class="sd">            output file handle</span>
+<span class="sd">        base_name : bool, optional, default=False</span>
+<span class="sd">            if True (False), print image base name (full path)</span>
+<span class="sd">        name_only : bool, optional, default=False</span>
+<span class="sd">            if True, do not print metainfo</span>
+<span class="sd">        ID_only : bool, optional, default=False</span>
+<span class="sd">            if True, only print file ID instead of entire name</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            if name does not match to ID pattern</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">base_name</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="k">if</span> <span class="n">ID_only</span><span class="p">:</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\d</span><span class="si">{3}</span><span class="s2">.\d</span><span class="si">{3}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No ID match in file name </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name_only</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ra</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">ra_unit</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ra</span><span class="p">,</span> <span class="n">unitdef</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">ra_unit</span><span class="si">:</span><span class="s2">10.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">dec_unit</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dec</span><span class="p">,</span> <span class="n">unitdef</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">dec_unit</span><span class="si">:</span><span class="s2">10.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_time</span><span class="si">:</span><span class="s2">5d</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">valid</span><span class="si">:</span><span class="s2">8s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="image.print_header">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.image.print_header">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">print_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Print Header.</span>
+
+<span class="sd">        Print header for ascii Table output</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file : file, optional, default=sys.stdout</span>
+<span class="sd">            output file handle</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;#Name ra[</span><span class="si">{</span><span class="n">unitdef</span><span class="si">}</span><span class="s2">] dec[</span><span class="si">{</span><span class="n">unitdef</span><span class="si">}</span><span class="s2">] exp_time[s] validation&quot;</span><span class="p">,</span>
+            <span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="log_command">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.log_command">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">log_command</span><span class="p">(</span><span class="n">argv</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">close_no_return</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Log Command.</span>
+
+<span class="sd">    Write command with arguments to a file or stdout.</span>
+<span class="sd">    Choose name = &#39;sys.stdout&#39; or &#39;sys.stderr&#39; for output on sceen.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    argv : numpy.ndarray of str</span>
+<span class="sd">        Command line arguments</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Output file name (default: &#39;log_&lt;command&gt;&#39;)</span>
+<span class="sd">    close_no_return : bool</span>
+<span class="sd">        If True (default), close log file. If False, keep log file open</span>
+<span class="sd">        and return file handler</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    filehandler</span>
+<span class="sd">        log file handler (if close_no_return is False)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;log_&quot;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;sys.stdout&quot;</span><span class="p">:</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span>
+    <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;sys.stderr&quot;</span><span class="p">:</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">:</span>
+
+        <span class="c1"># Quote argument if special characters</span>
+        <span class="k">if</span> <span class="s2">&quot;]&quot;</span> <span class="ow">in</span> <span class="n">a</span> <span class="ow">or</span> <span class="s2">&quot;]&quot;</span> <span class="ow">in</span> <span class="n">a</span><span class="p">:</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1">&quot;&#39;</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">close_no_return</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">f</span>
+
+    <span class="k">if</span> <span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;sys.stdout&quot;</span> <span class="ow">and</span> <span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;sys.stderr&quot;</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="my_string_split">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.my_string_split">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">my_string_split</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">num</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;My String Split.</span>
+
+<span class="sd">    Split a *string* into a list of strings. Choose as separator</span>
+<span class="sd">    the first in the list [space, underscore] that occurs in the string.</span>
+<span class="sd">    (Thus, if both occur, use space.)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    string : str</span>
+<span class="sd">        Input string</span>
+<span class="sd">    num : int</span>
+<span class="sd">        Required length of output list of strings, -1 if no requirement.</span>
+<span class="sd">    verbose : bool</span>
+<span class="sd">        Verbose output</span>
+<span class="sd">    stop : bool</span>
+<span class="sd">        Stop programs with error if True, return None and continues otherwise</span>
+<span class="sd">    sep : bool</span>
+<span class="sd">        Separator, try &#39; &#39;, &#39;_&#39;, and &#39;.&#39; if None (default)</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    CfisError</span>
+<span class="sd">        If number of elements in string and num are different, for stop=True</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If no separator found in string</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list</span>
+<span class="sd">        List of string on success, and None if failed</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">string</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">sep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">has_space</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+        <span class="n">has_underscore</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
+        <span class="n">has_dot</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">has_space</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">my_sep</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span>
+        <span class="k">elif</span> <span class="n">has_underscore</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">my_sep</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span>
+        <span class="k">elif</span> <span class="n">has_dot</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">my_sep</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># no separator found, does string consist of only one element?</span>
+            <span class="k">if</span> <span class="n">num</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">num</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">my_sep</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">Valueerror</span><span class="p">(</span>
+                    <span class="s2">&quot;No separator (&#39; &#39;, &#39;_&#39;, or &#39;.&#39;) found in string&quot;</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; &#39;</span><span class="si">{</span><span class="n">string</span><span class="si">}</span><span class="s2">&#39;, cannot split&quot;</span>
+                <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">string</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">sep</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;No separator &#39;</span><span class="si">{</span><span class="n">sep</span><span class="si">}</span><span class="s2">&#39; found in string &#39;</span><span class="si">{</span><span class="n">string</span><span class="si">}</span><span class="s2">&#39;, &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;cannot split&quot;</span>
+            <span class="p">)</span>
+        <span class="n">my_sep</span> <span class="o">=</span> <span class="n">sep</span>
+
+    <span class="n">res</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">my_sep</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">num</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">num</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="ow">and</span> <span class="n">stop</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;String &#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39; has length </span><span class="si">{</span><span class="n">num</span><span class="si">}</span><span class="s2">, required is </span><span class="si">{</span><span class="n">num</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">res</span></div>
+
+
+
+<div class="viewcode-block" id="get_file_pattern">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_file_pattern">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_file_pattern</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">band</span><span class="p">,</span> <span class="n">image_type</span><span class="p">,</span> <span class="n">want_re</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get File Pattern.</span>
+
+<span class="sd">    Return file pattern of CFIS image file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pattern : str</span>
+<span class="sd">        input pattern, can be &#39;&#39;</span>
+<span class="sd">    band : str</span>
+<span class="sd">        band, one of &#39;r&#39;, &#39;u&#39;</span>
+<span class="sd">    image_type : str</span>
+<span class="sd">        image type, one of &#39;exposure&#39;, &#39;exposure_flag&#39;, &#39;exposure_flag.fz&#39;,</span>
+<span class="sd">        &#39;exposure_weight&#39;, &#39;exposure_weight.fz&#39;, &#39;tile&#39;, &#39;cat&#39;,</span>
+<span class="sd">        &#39;weight&#39;, &#39;weight.fz&#39;</span>
+<span class="sd">    want_re : bool, optional, default=True</span>
+<span class="sd">        return regular expression if True</span>
+<span class="sd">    ext : bool, optional, default=True</span>
+<span class="sd">        if True add file extention to pattern</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        output pattern</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">pattern</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">image_type</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="s2">&quot;exposure&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;exposure_flag&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;exposure_flag.fz&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;exposure_weight&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;exposure_weight.fz&quot;</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="n">pattern_base</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;\d</span><span class="si">{7}</span><span class="s2">p&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pattern_base</span> <span class="o">=</span> <span class="sa">rf</span><span class="s2">&quot;CFIS.*\.</span><span class="si">{</span><span class="n">band</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pattern_base</span> <span class="o">=</span> <span class="n">pattern</span>
+
+    <span class="k">if</span> <span class="n">ext</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">image_type</span> <span class="o">==</span> <span class="s2">&quot;exposure&quot;</span><span class="p">:</span>
+            <span class="n">pattern_out</span> <span class="o">=</span> <span class="sa">rf</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pattern_base</span><span class="si">}</span><span class="s2">\.fits\.fz&quot;</span>
+        <span class="k">elif</span> <span class="n">image_type</span> <span class="o">==</span> <span class="s2">&quot;exposure_flag&quot;</span><span class="p">:</span>
+            <span class="n">pattern_out</span> <span class="o">=</span> <span class="sa">rf</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pattern_base</span><span class="si">}</span><span class="s2">\.flag\.fits&quot;</span>
+        <span class="k">elif</span> <span class="n">image_type</span> <span class="o">==</span> <span class="s2">&quot;exposure_flag.fz&quot;</span><span class="p">:</span>
+            <span class="n">pattern_out</span> <span class="o">=</span> <span class="sa">rf</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pattern_base</span><span class="si">}</span><span class="s2">\.flag\.fits\.fz&quot;</span>
+        <span class="k">elif</span> <span class="n">image_type</span> <span class="o">==</span> <span class="s2">&quot;exposure_weight&quot;</span><span class="p">:</span>
+            <span class="n">pattern_out</span> <span class="o">=</span> <span class="sa">rf</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pattern_base</span><span class="si">}</span><span class="s2">\.weight\.fits&quot;</span>
+        <span class="k">elif</span> <span class="n">image_type</span> <span class="o">==</span> <span class="s2">&quot;exposure_weight.fz&quot;</span><span class="p">:</span>
+            <span class="n">pattern_out</span> <span class="o">=</span> <span class="sa">rf</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pattern_base</span><span class="si">}</span><span class="s2">\.weight\.fits\.fz&quot;</span>
+        <span class="k">elif</span> <span class="n">image_type</span> <span class="o">==</span> <span class="s2">&quot;tile&quot;</span><span class="p">:</span>
+            <span class="n">pattern_out</span> <span class="o">=</span> <span class="sa">rf</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pattern_base</span><span class="si">}</span><span class="s2">\.fits&quot;</span>
+        <span class="k">elif</span> <span class="n">image_type</span> <span class="o">==</span> <span class="s2">&quot;cat&quot;</span><span class="p">:</span>
+            <span class="n">pattern_out</span> <span class="o">=</span> <span class="sa">rf</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pattern_base</span><span class="si">}</span><span class="s2">\.cat&quot;</span>
+        <span class="k">elif</span> <span class="n">image_type</span> <span class="o">==</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span>
+            <span class="n">pattern_out</span> <span class="o">=</span> <span class="sa">rf</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pattern_base</span><span class="si">}</span><span class="s2">\.weight\.fits&quot;</span>
+        <span class="k">elif</span> <span class="n">image_type</span> <span class="o">==</span> <span class="s2">&quot;weight.fz&quot;</span><span class="p">:</span>
+            <span class="n">pattern_out</span> <span class="o">=</span> <span class="sa">rf</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pattern_base</span><span class="si">}</span><span class="s2">\.weight\.fits\.fz&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid type &#39;</span><span class="si">{</span><span class="n">image_type</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pattern_out</span> <span class="o">=</span> <span class="n">pattern_base</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">want_re</span><span class="p">:</span>
+        <span class="n">pattern_out</span> <span class="o">=</span> <span class="n">pattern_out</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pattern_out</span></div>
+
+
+
+<div class="viewcode-block" id="get_tile_number_from_coord">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_tile_number_from_coord">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_tile_number_from_coord</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Tile Number From Coord.</span>
+
+<span class="sd">    Return CFIS stacked image tile number covering input coordinates.</span>
+<span class="sd">    This is the inverse to get_tile_coord_from_nixy.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ra : Angle</span>
+<span class="sd">        right ascension</span>
+<span class="sd">    dec : Angle</span>
+<span class="sd">        declination</span>
+<span class="sd">    return type : &lt;type &#39;type&#39;&gt;</span>
+<span class="sd">        return type, int or str</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    CfisError</span>
+<span class="sd">        for invalid return type</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple</span>
+<span class="sd">        tile number for x and tile number for y</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="n">dec</span><span class="o">.</span><span class="n">degree</span> <span class="o">+</span> <span class="mi">90</span><span class="p">)</span> <span class="o">*</span> <span class="mf">2.0</span>
+    <span class="n">yi</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">rint</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">degree</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">dec</span><span class="o">.</span><span class="n">radian</span><span class="p">)</span> <span class="o">*</span> <span class="mf">2.0</span>
+    <span class="n">xi</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">rint</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">xi</span> <span class="o">==</span> <span class="mi">720</span><span class="p">:</span>
+        <span class="n">xi</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="n">return_type</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">nix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">xi</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">niy</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">yi</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">elif</span> <span class="n">return_type</span> <span class="o">==</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="n">nix</span> <span class="o">=</span> <span class="n">xi</span>
+        <span class="n">niy</span> <span class="o">=</span> <span class="n">yi</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid return type </span><span class="si">{</span><span class="n">return_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">nix</span><span class="p">,</span> <span class="n">niy</span></div>
+
+
+
+<div class="viewcode-block" id="get_tile_coord_from_nixy">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_tile_coord_from_nixy">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_tile_coord_from_nixy</span><span class="p">(</span><span class="n">nix</span><span class="p">,</span> <span class="n">niy</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Tile Coord From Nixy.</span>
+
+<span class="sd">    Return coordinates corresponding to tile with number (nix,niy).</span>
+<span class="sd">    This is the inverse to get_tile_number_from_coord.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nix : str or int</span>
+<span class="sd">        tile number for x, can be list</span>
+<span class="sd">    niy : str or int</span>
+<span class="sd">        tile number for y, can be list</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple</span>
+<span class="sd">        right ascension and declination</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">nix</span><span class="p">):</span>
+        <span class="c1"># Transform to int, necessary if input is string</span>
+        <span class="n">xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">nix</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">yi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">niy</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">xi</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nix</span><span class="p">)</span>
+        <span class="n">yi</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">niy</span><span class="p">)</span>
+
+    <span class="n">d</span> <span class="o">=</span> <span class="n">yi</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">90</span>
+    <span class="n">dec</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">Angle</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;deg&quot;</span><span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">xi</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">dec</span><span class="o">.</span><span class="n">radian</span><span class="p">)</span>
+    <span class="n">ra</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">Angle</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;deg&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span></div>
+
+
+
+<div class="viewcode-block" id="get_tile_name">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_tile_name">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_tile_name</span><span class="p">(</span><span class="n">nix</span><span class="p">,</span> <span class="n">niy</span><span class="p">,</span> <span class="n">band</span><span class="p">,</span> <span class="n">image_type</span><span class="o">=</span><span class="s2">&quot;tile&quot;</span><span class="p">,</span> <span class="n">input_format</span><span class="o">=</span><span class="s2">&quot;full&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Tile Name.</span>
+
+<span class="sd">    Return tile name for given tile numbers.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nix : str</span>
+<span class="sd">        tile number for x</span>
+<span class="sd">    niy : str</span>
+<span class="sd">        tile number for y</span>
+<span class="sd">    band : str</span>
+<span class="sd">        band, one in &#39;r&#39; or &#39;u&#39;</span>
+<span class="sd">    image_type : str optional, default=&#39;tile&#39;</span>
+<span class="sd">        image type</span>
+<span class="sd">    input_format : str optional, default=&#39;full&#39;</span>
+<span class="sd">        &#39;full&#39; (name) or &#39;ID_only&#39; input format for image names</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    CfisError</span>
+<span class="sd">        for invalid type</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        tile name</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">nix</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">niy</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">input_format</span> <span class="o">==</span> <span class="s2">&quot;ID_only&quot;</span><span class="p">:</span>
+            <span class="n">tile_base</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">nix</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">niy</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tile_base</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;CFIS.</span><span class="si">{</span><span class="n">nix</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">niy</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">band</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">nix</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">niy</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">input_format</span> <span class="o">==</span> <span class="s2">&quot;ID_only&quot;</span><span class="p">:</span>
+            <span class="n">tile_base</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">nix</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">niy</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tile_base</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;CFIS.</span><span class="si">{</span><span class="n">nix</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">niy</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">band</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid type for input tile numbers </span><span class="si">{</span><span class="n">nix</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">niy</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">input_format</span> <span class="o">==</span> <span class="s2">&quot;ID_only&quot;</span><span class="p">:</span>
+        <span class="n">tile_name</span> <span class="o">=</span> <span class="n">tile_base</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">image_type</span> <span class="o">==</span> <span class="s2">&quot;tile&quot;</span><span class="p">:</span>
+            <span class="n">tile_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tile_base</span><span class="si">}</span><span class="s2">.fits&quot;</span>
+        <span class="k">elif</span> <span class="n">image_type</span> <span class="o">==</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span>
+            <span class="n">tile_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tile_base</span><span class="si">}</span><span class="s2">.weight.fits&quot;</span>
+        <span class="k">elif</span> <span class="n">image_type</span> <span class="o">==</span> <span class="s2">&quot;weight.fz&quot;</span><span class="p">:</span>
+            <span class="n">tile_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tile_base</span><span class="si">}</span><span class="s2">.weight.fits.fz&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid image type </span><span class="si">{</span><span class="n">image_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">tile_name</span></div>
+
+
+
+<div class="viewcode-block" id="get_tile_number">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_tile_number">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_tile_number</span><span class="p">(</span><span class="n">tile_name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Tile Number.</span>
+
+<span class="sd">    Return tile number of given image tile name.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tile_name : str</span>
+<span class="sd">        tile name</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    CfisError</span>
+<span class="sd">        if tile name does not match expected pipeline numbering scheme</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple</span>
+<span class="sd">        tile number for x and tile number for y</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(\d</span><span class="si">{3}</span><span class="s2">)[\.-](\d</span><span class="si">{3}</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="n">tile_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">())</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Image name &#39;</span><span class="si">{</span><span class="n">tile_name</span><span class="si">}</span><span class="s2">&#39; does not match tile name syntax&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">nix</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">niy</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">nix</span><span class="p">,</span> <span class="n">niy</span></div>
+
+
+
+<div class="viewcode-block" id="get_tile_number_list">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_tile_number_list">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_tile_number_list</span><span class="p">(</span><span class="n">tile_name_list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Tile Number List.</span>
+
+<span class="sd">    Return tile numbers of given image tiles.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tile_name_list : list of str</span>
+<span class="sd">        tile names</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple</span>
+<span class="sd">        tile numbers for x and tile numbers for y</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nix_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">niy_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">tile_name</span> <span class="ow">in</span> <span class="n">tile_name_list</span><span class="p">:</span>
+        <span class="n">nix</span><span class="p">,</span> <span class="n">niy</span> <span class="o">=</span> <span class="n">get_tile_number</span><span class="p">(</span><span class="n">tile_name</span><span class="p">)</span>
+        <span class="n">nix_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nix</span><span class="p">)</span>
+        <span class="n">niy_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">niy</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">nix_list</span><span class="p">,</span> <span class="n">niy_list</span></div>
+
+
+
+<div class="viewcode-block" id="get_log_file">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_log_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_log_file</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Log File.</span>
+
+<span class="sd">    Return log file content.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str</span>
+<span class="sd">        log file path</span>
+<span class="sd">    verbose : bool, optional, default=False</span>
+<span class="sd">        verbose output if True</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    CfisError</span>
+<span class="sd">        if input path does not exist</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of str</span>
+<span class="sd">        log file lines</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Log file &#39;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&#39; not found&quot;</span><span class="p">)</span>
+
+    <span class="n">f_log</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+    <span class="n">log</span> <span class="o">=</span> <span class="n">f_log</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reading log file, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="p">)</span><span class="si">}</span><span class="s2"> lines found&quot;</span><span class="p">)</span>
+    <span class="n">f_log</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">log</span></div>
+
+
+
+<div class="viewcode-block" id="check_ra">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.check_ra">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_ra</span><span class="p">(</span><span class="n">ra</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check RA.</span>
+
+<span class="sd">    Range check of right ascension.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ra : Angle</span>
+<span class="sd">        right ascension</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    CfisError</span>
+<span class="sd">        for invalid ra range on input</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bool</span>
+<span class="sd">        result of check (True if pass, False if fail)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">ra</span><span class="o">.</span><span class="n">deg</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ra</span><span class="o">.</span><span class="n">deg</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">ra</span><span class="o">.</span><span class="n">deg</span> <span class="o">&gt;</span> <span class="mi">360</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span><span class="s2">&quot;Invalid ra, valid range is 0 &lt; ra &lt; 360 deg&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="mi">0</span></div>
+
+
+
+<div class="viewcode-block" id="check_dec">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.check_dec">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_dec</span><span class="p">(</span><span class="n">dec</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check Dec.</span>
+
+<span class="sd">    Range check of declination.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dec : Angle</span>
+<span class="sd">        declination</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    CfisError</span>
+<span class="sd">        for invalid dec range on input</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bool</span>
+<span class="sd">        result of check (True if pass, False if fail)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">dec</span><span class="o">.</span><span class="n">deg</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">90</span> <span class="ow">or</span> <span class="n">dec</span><span class="o">.</span><span class="n">deg</span> <span class="o">&gt;</span> <span class="mi">90</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span><span class="s2">&quot;Invalid dec, valid range is -90 &lt; dec &lt; 90 deg&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="mi">0</span></div>
+
+
+
+<div class="viewcode-block" id="get_Angle">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_Angle">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_Angle</span><span class="p">(</span><span class="n">str_coord</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Angle.</span>
+
+<span class="sd">    Return Angles ra, dec from coordinate string</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    str_coord : string</span>
+<span class="sd">        string of input coordinates</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple</span>
+<span class="sd">        right ascension and declination</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span> <span class="o">=</span> <span class="n">my_string_split</span><span class="p">(</span><span class="n">str_coord</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">a_ra</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">Angle</span><span class="p">(</span><span class="n">ra</span><span class="p">)</span>
+    <span class="n">a_dec</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">Angle</span><span class="p">(</span><span class="n">dec</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">a_ra</span><span class="p">,</span> <span class="n">a_dec</span></div>
+
+
+
+<div class="viewcode-block" id="get_Angle_arr">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_Angle_arr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_Angle_arr</span><span class="p">(</span><span class="n">str_coord</span><span class="p">,</span> <span class="n">num</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">wrap</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Angle Arr.</span>
+
+<span class="sd">    Return array of Angles from coordinate string</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    str_coord : str</span>
+<span class="sd">        string of input coordinates</span>
+<span class="sd">    num : int, optional, default=-1</span>
+<span class="sd">        expected number of coordinates (even number)</span>
+<span class="sd">    wrap : bool, optional, default=True</span>
+<span class="sd">        if True, wrap ra to [0; 360)</span>
+<span class="sd">    verbose : bool, optional, default=False</span>
+<span class="sd">        verbose output</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray of SkyCoord</span>
+<span class="sd">        array of sky coordinates (pairs ra, dec)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">angles_mixed</span> <span class="o">=</span> <span class="n">my_string_split</span><span class="p">(</span>
+        <span class="n">str_coord</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">num</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">angles_mixed</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">angles</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">ra</span> <span class="o">=</span> <span class="n">angles_mixed</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">idx</span><span class="p">]</span>
+        <span class="n">dec</span> <span class="o">=</span> <span class="n">angles_mixed</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">wrap</span><span class="p">:</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">param</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">coords</span><span class="o">.</span><span class="n">Angle</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="n">dec</span><span class="o">=</span><span class="n">coords</span><span class="o">.</span><span class="n">Angle</span><span class="p">(</span><span class="n">dec</span><span class="p">))</span>
+        <span class="n">angles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">angles</span></div>
+
+
+
+<div class="viewcode-block" id="read_list">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.read_list">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_list</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read List.</span>
+
+<span class="sd">    Read list from ascii file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fname : str</span>
+<span class="sd">        ascii file name</span>
+<span class="sd">    col : str, optional, default=None</span>
+<span class="sd">        column name</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of str</span>
+<span class="sd">        list of file names</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">col</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;rU&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin1&quot;</span><span class="p">)</span>
+        <span class="n">file_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()]</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+        <span class="n">dat</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;\s+&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dat</span><span class="p">:</span>
+            <span class="n">col</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+        <span class="n">file_list</span> <span class="o">=</span> <span class="n">dat</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+
+    <span class="n">file_list</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">file_list</span></div>
+
+
+
+<div class="viewcode-block" id="create_image_list">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.create_image_list">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_image_list</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">exp_time</span><span class="o">=</span><span class="p">[],</span> <span class="n">valid</span><span class="o">=</span><span class="p">[]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create Image List.</span>
+
+<span class="sd">    Return list of image information.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fname : list of str</span>
+<span class="sd">        file names</span>
+<span class="sd">    ra : list of str</span>
+<span class="sd">        right ascension</span>
+<span class="sd">    dec : list of str</span>
+<span class="sd">        declination</span>
+<span class="sd">    exp_time : list of int, optional, default=[]</span>
+<span class="sd">        exposure time</span>
+<span class="sd">    valid : list of str, optional, default=[]</span>
+<span class="sd">        QSO exposure validation flag</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of images</span>
+<span class="sd">        list of image information</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nf</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+    <span class="n">nr</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ra</span><span class="p">)</span>
+    <span class="n">nd</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dec</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">nf</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span><span class="s2">&quot;No entries in file name list&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">nf</span> <span class="o">!=</span> <span class="n">nr</span> <span class="ow">or</span> <span class="n">nf</span> <span class="o">!=</span> <span class="n">nd</span><span class="p">)</span> <span class="ow">and</span> <span class="n">nr</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">nd</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Lists fname, ra, dec have not same length (</span><span class="si">{</span><span class="n">nf</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">nr</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">nd</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">images</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nf</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">nr</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">nd</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">Angle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ra</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">unitdef</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="n">Angle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">unitdef</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp_time</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">exp_time</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">valid</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">valid</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">im</span> <span class="o">=</span> <span class="n">image</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">fname</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">r</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">exp_time</span><span class="o">=</span><span class="n">e</span><span class="p">,</span> <span class="n">valid</span><span class="o">=</span><span class="n">v</span><span class="p">)</span>
+        <span class="n">images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">im</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">images</span></div>
+
+
+
+<div class="viewcode-block" id="get_image_list">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.get_image_list">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_image_list</span><span class="p">(</span>
+    <span class="n">inp</span><span class="p">,</span> <span class="n">band</span><span class="p">,</span> <span class="n">image_type</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_format</span><span class="o">=</span><span class="s2">&quot;full&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Image List.</span>
+
+<span class="sd">    Return list of images.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    inp : str</span>
+<span class="sd">        file name or direcory path</span>
+<span class="sd">    band : str</span>
+<span class="sd">        optical band</span>
+<span class="sd">    image_type : str</span>
+<span class="sd">        image type (&#39;tile&#39;, &#39;exposure&#39;, &#39;cat&#39;, &#39;weight&#39;, &#39;weight.fz&#39;)</span>
+<span class="sd">    col : str, optionalm default=None</span>
+<span class="sd">        column name for file list input file</span>
+<span class="sd">    input_format : str, optional, default=&#39;full&#39;</span>
+<span class="sd">        &#39;full&#39; (name) or &#39;ID_only&#39; input format for image names</span>
+<span class="sd">    verbose : bool, optional, default=False</span>
+<span class="sd">        verbose output if True</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of class images</span>
+<span class="sd">        image list</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">file_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ra_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">dec_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">exp_time_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">valid_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">inp</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span>
+                <span class="s2">&quot;Column name (-c option) only valid if input is file&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Read file names from directory listing</span>
+        <span class="n">inp_type</span> <span class="o">=</span> <span class="s2">&quot;dir&quot;</span>
+        <span class="n">file_list</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">inp</span><span class="p">)</span><span class="si">}</span><span class="s2">/*&quot;</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">inp</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">image_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;tile&quot;</span><span class="p">,</span> <span class="s2">&quot;weight&quot;</span><span class="p">,</span> <span class="s2">&quot;weight.fz&quot;</span><span class="p">):</span>
+            <span class="c1"># File names in single-column ascii file</span>
+            <span class="n">inp_type</span> <span class="o">=</span> <span class="s2">&quot;file&quot;</span>
+            <span class="n">file_list</span> <span class="o">=</span> <span class="n">read_list</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="n">col</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">image_type</span> <span class="o">==</span> <span class="s2">&quot;exposure&quot;</span><span class="p">:</span>
+            <span class="c1"># File names and coordinates in ascii file</span>
+            <span class="n">inp_type</span> <span class="o">=</span> <span class="s2">&quot;file&quot;</span>
+            <span class="n">dat</span> <span class="o">=</span> <span class="n">ascii</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">inp</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dat</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="c1"># File is exposure + coord list</span>
+                <span class="c1"># (obtained from get_coord_CFIS_pointings.py)</span>
+                <span class="n">file_list</span> <span class="o">=</span> <span class="n">dat</span><span class="p">[</span><span class="s2">&quot;Pointing&quot;</span><span class="p">]</span>
+                <span class="n">ra_list</span> <span class="o">=</span> <span class="n">dat</span><span class="p">[</span><span class="s2">&quot;R.A.[degree]&quot;</span><span class="p">]</span>
+                <span class="n">dec_list</span> <span class="o">=</span> <span class="n">dat</span><span class="p">[</span><span class="s2">&quot;Declination[degree]&quot;</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">dat</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="mi">12</span><span class="p">:</span>
+                <span class="c1"># File is log file, e.g. from</span>
+                <span class="c1"># http://www.cfht.hawaii.edu/Science/CFIS-DATA</span>
+                <span class="c1">#  /logs/MCLOG-CFIS.r.qso-elx.log</span>
+                <span class="c1"># Default file separator is &#39;|&#39;</span>
+                <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dat</span><span class="p">:</span>
+                    <span class="n">file_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;d</span><span class="si">{</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;col1&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">p.fits.fz&#39;</span><span class="p">)</span>
+                    <span class="n">ra</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\s*&quot;</span><span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="s2">&quot;col4&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">dec</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\s*&quot;</span><span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="s2">&quot;col4&quot;</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">ang</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">Angle</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{ra}</span><span class="s2"> hours&quot;</span><span class="p">)</span>
+                    <span class="n">ra_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ang</span><span class="o">.</span><span class="n">degree</span><span class="p">)</span>
+                    <span class="n">dec_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dec</span><span class="p">)</span>
+                    <span class="n">exp_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;col5&quot;</span><span class="p">])</span>
+                    <span class="n">exp_time_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">exp_time</span><span class="p">)</span>
+                    <span class="n">valid</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\s*&quot;</span><span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="s2">&quot;col11&quot;</span><span class="p">])[</span><span class="mi">2</span><span class="p">]</span>
+                    <span class="n">valid_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">valid</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Wrong file format, #columns=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">dat</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">,&quot;</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; has to be 3 or 12&quot;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Image type &#39;</span><span class="si">{</span><span class="n">image_type</span><span class="si">}</span><span class="s2">&#39; not supported&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Create list of objects, coordinate lists can be empty</span>
+    <span class="n">image_list</span> <span class="o">=</span> <span class="n">create_image_list</span><span class="p">(</span>
+        <span class="n">file_list</span><span class="p">,</span> <span class="n">ra_list</span><span class="p">,</span> <span class="n">dec_list</span><span class="p">,</span> <span class="n">exp_time</span><span class="o">=</span><span class="n">exp_time_list</span><span class="p">,</span> <span class="n">valid</span><span class="o">=</span><span class="n">valid_list</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Filter file list to match CFIS image pattern</span>
+    <span class="n">img_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">input_format</span> <span class="o">==</span> <span class="s2">&quot;ID_only&quot;</span><span class="p">:</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="n">get_file_pattern</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\d</span><span class="si">{3}</span><span class="s2">.\d</span><span class="si">{3}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">band</span><span class="p">,</span> <span class="n">image_type</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="n">get_file_pattern</span><span class="p">(</span>
+            <span class="sa">rf</span><span class="s2">&quot;CFIS.\d</span><span class="se">{{</span><span class="s2">3</span><span class="se">}}</span><span class="s2">.\d</span><span class="se">{{</span><span class="s2">3</span><span class="se">}}</span><span class="s2">\.</span><span class="si">{</span><span class="n">band</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">band</span><span class="p">,</span> <span class="n">image_type</span>
+        <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">image_list</span><span class="p">:</span>
+
+        <span class="c1"># Get link source name if symbolic link</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">link_src</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">readlink</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">link_src</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="c1"># No link, continue</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">img_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">img_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">img_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> image files found in input </span><span class="si">{</span><span class="n">inp_type</span><span class="si">}</span><span class="s2"> &#39;</span><span class="si">{</span><span class="n">inp</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">img_list</span></div>
+
+
+
+<div class="viewcode-block" id="exclude">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.exclude">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">exclude</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">exclude_list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Exclude.</span>
+
+<span class="sd">    Return True if f is on ``exclude_list``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    f : str</span>
+<span class="sd">        file name</span>
+<span class="sd">    exclude_list : list of str</span>
+<span class="sd">        list of files</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bool</span>
+<span class="sd">        True (False) if f is in list</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">exclude_list</span></div>
+
+
+
+<div class="viewcode-block" id="find_image_at_coord">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.find_image_at_coord">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_image_at_coord</span><span class="p">(</span>
+    <span class="n">images</span><span class="p">,</span>
+    <span class="n">coord</span><span class="p">,</span>
+    <span class="n">band</span><span class="p">,</span>
+    <span class="n">image_type</span><span class="p">,</span>
+    <span class="n">no_cuts</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">input_format</span><span class="o">=</span><span class="s2">&quot;full&quot;</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find Image At Coordinates.</span>
+
+<span class="sd">    Return image covering given coordinate.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    images : list of class image</span>
+<span class="sd">        list of images</span>
+<span class="sd">    coord : str</span>
+<span class="sd">        coordinate ra and dec with units</span>
+<span class="sd">    band : str</span>
+<span class="sd">        optical band</span>
+<span class="sd">    image_type : str</span>
+<span class="sd">        image type (&#39;tile&#39;, &#39;weight&#39;, &#39;weight.fz&#39;, &#39;exposure&#39;,</span>
+<span class="sd">        &#39;exposure_weight&#39;, &#39;exposure_weight.fz&#39;, &#39;exposure_flag&#39;,</span>
+<span class="sd">        &#39;exposure_flag.fz&#39;, &#39;cat&#39;)</span>
+<span class="sd">    no_cuts : bool, optional, default=False</span>
+<span class="sd">        no cuts (of short exposure, validation flag) if True</span>
+<span class="sd">    input_format : str, optional, default=&#39;full&#39;</span>
+<span class="sd">        one of &#39;full&#39;, &#39;ID_only&#39;</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        verbose output if True, default=False</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    CfisError</span>
+<span class="sd">        if image type is not &#39;tile&#39;;</span>
+<span class="sd">        if more than one tile matches</span>
+<span class="sd">        if input image coordinates are already set</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of images</span>
+<span class="sd">        Found image(s), None if none found.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span> <span class="o">=</span> <span class="n">get_Angle</span><span class="p">(</span><span class="n">coord</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Looking for image at coordinates </span><span class="si">{</span><span class="n">ra</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">dec</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">image_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;tile&quot;</span><span class="p">,</span> <span class="s2">&quot;weight&quot;</span><span class="p">,</span> <span class="s2">&quot;weight.fz&quot;</span><span class="p">):</span>
+        <span class="n">nix</span><span class="p">,</span> <span class="n">niy</span> <span class="o">=</span> <span class="n">get_tile_number_from_coord</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">tile_name</span> <span class="o">=</span> <span class="n">get_tile_name</span><span class="p">(</span>
+            <span class="n">nix</span><span class="p">,</span> <span class="n">niy</span><span class="p">,</span> <span class="n">band</span><span class="p">,</span> <span class="n">image_type</span><span class="p">,</span> <span class="n">input_format</span><span class="o">=</span><span class="n">input_format</span>
+        <span class="p">)</span>
+
+        <span class="n">img_found</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">images</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="o">==</span> <span class="n">tile_name</span><span class="p">:</span>
+                <span class="c1"># Update coordinate in image for tiles with central coordinates</span>
+                <span class="n">ra_c</span><span class="p">,</span> <span class="n">dec_c</span> <span class="o">=</span> <span class="n">get_tile_coord_from_nixy</span><span class="p">(</span><span class="n">nix</span><span class="p">,</span> <span class="n">niy</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">ra</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">img</span><span class="o">.</span><span class="n">dec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span>
+                        <span class="s2">&quot;Coordinates in image are already &quot;</span>
+                        <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;set to </span><span class="si">{</span><span class="n">img</span><span class="o">.</span><span class="n">ra</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">img</span><span class="o">.</span><span class="n">rec</span><span class="si">}</span><span class="s2">, &quot;</span>
+                        <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;cannot update to </span><span class="si">{</span><span class="n">ra_c</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">ra_dec</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="n">img</span><span class="o">.</span><span class="n">ra</span> <span class="o">=</span> <span class="n">ra_c</span>
+                <span class="n">img</span><span class="o">.</span><span class="n">dec</span> <span class="o">=</span> <span class="n">dec_c</span>
+                <span class="n">img_found</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">img_found</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tile with numbers (</span><span class="si">{</span><span class="n">nix</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">niy</span><span class="si">}</span><span class="s2">) not found&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">img_found</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;More than one tile (</span><span class="si">{</span><span class="n">img_found</span><span class="si">}</span><span class="s2">) found&quot;</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">image_type</span> <span class="o">==</span> <span class="s2">&quot;exposure&quot;</span><span class="p">:</span>
+        <span class="n">sc_input</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">)</span>
+
+        <span class="n">img_found</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">images</span><span class="p">:</span>
+            <span class="c1"># Check distance along ra and dec from image center</span>
+            <span class="n">sc_img_same_ra</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">img</span><span class="o">.</span><span class="n">dec</span><span class="p">)</span>
+            <span class="n">sc_img_same_dec</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">SkyCoord</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">)</span>
+            <span class="n">distance_ra</span> <span class="o">=</span> <span class="n">sc_input</span><span class="o">.</span><span class="n">separation</span><span class="p">(</span><span class="n">sc_img_same_dec</span><span class="p">)</span>
+            <span class="n">distance_dec</span> <span class="o">=</span> <span class="n">sc_input</span><span class="o">.</span><span class="n">separation</span><span class="p">(</span><span class="n">sc_img_same_ra</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">distance_ra</span><span class="o">.</span><span class="n">degree</span> <span class="o">&lt;</span> <span class="n">size</span><span class="p">[</span><span class="n">image_type</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+                <span class="ow">and</span> <span class="n">distance_dec</span><span class="o">.</span><span class="n">degree</span> <span class="o">&lt;</span> <span class="n">size</span><span class="p">[</span><span class="n">image_type</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">img</span><span class="o">.</span><span class="n">cut</span><span class="p">(</span><span class="n">no_cuts</span><span class="o">=</span><span class="n">no_cuts</span><span class="p">):</span>
+                    <span class="n">img_found</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">img_found</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No exposure image found&quot;</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span><span class="s2">&quot;Only implemented for image_type=tile&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">img_found</span></div>
+
+
+
+<div class="viewcode-block" id="find_images_in_area">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.find_images_in_area">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_images_in_area</span><span class="p">(</span>
+    <span class="n">images</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="n">band</span><span class="p">,</span> <span class="n">image_type</span><span class="p">,</span> <span class="n">no_cuts</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fine Images In Area.</span>
+
+<span class="sd">    Return image list within coordinate area (rectangle)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    images : list of class image</span>
+<span class="sd">        list of images</span>
+<span class="sd">    angles : array(2) of SkyCoord</span>
+<span class="sd">        coordinates [(ra0, dec0), (ra1, dec1)]</span>
+<span class="sd">    band : string</span>
+<span class="sd">        optical band</span>
+<span class="sd">    image_type : str</span>
+<span class="sd">        image type (&#39;tile&#39;, &#39;exposure&#39;, &#39;cat&#39;, &#39;weight&#39;, &#39;weight.fz&#39;)</span>
+<span class="sd">    no_cuts : bool, optional, default=False</span>
+<span class="sd">        no cuts (of short exposure, validation flag) if True</span>
+<span class="sd">    verbose : bool, optional, default=False</span>
+<span class="sd">        verbose output if True</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of images</span>
+<span class="sd">        found images</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">found</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># if coordinates extend over 360:</span>
+    <span class="c1">#  check ranges [ra_min, 360] and [0, ra_max-360]</span>
+    <span class="c1"># if not:</span>
+    <span class="c1">#  check range [ra_min, ra_max]</span>
+    <span class="n">ra_bounds</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">threesixty</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">Angle</span><span class="p">(</span><span class="mi">360</span><span class="p">,</span> <span class="n">unitdef</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">ra</span> <span class="o">&gt;</span> <span class="n">threesixty</span><span class="p">:</span>
+        <span class="n">ra_bounds</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">[</span><span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ra</span><span class="p">,</span> <span class="n">threesixty</span><span class="p">],</span>
+            <span class="p">[</span><span class="n">coords</span><span class="o">.</span><span class="n">Angle</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">unitdef</span><span class="p">),</span> <span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">ra</span> <span class="o">-</span> <span class="n">threesixty</span><span class="p">],</span>
+        <span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ra_bounds</span> <span class="o">=</span> <span class="p">[[</span><span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ra</span><span class="p">,</span> <span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">ra</span><span class="p">]]</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="s2">&quot;Looking for all images within rectangle, &quot;</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;dec=(</span><span class="si">{</span><span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dec</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">dec</span><span class="si">}</span><span class="s2">), &quot;</span><span class="p">,</span>
+            <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">ra_min_max</span> <span class="ow">in</span> <span class="n">ra_bounds</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ra=[(</span><span class="si">{</span><span class="n">ra_min_max</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">ra_min_max</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">) &quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">image_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;tile&quot;</span><span class="p">,</span> <span class="s2">&quot;weight&quot;</span><span class="p">,</span> <span class="s2">&quot;weight.fz&quot;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">images</span><span class="p">:</span>
+            <span class="n">nix</span><span class="p">,</span> <span class="n">niy</span> <span class="o">=</span> <span class="n">get_tile_number</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span> <span class="o">=</span> <span class="n">get_tile_coord_from_nixy</span><span class="p">(</span><span class="n">nix</span><span class="p">,</span> <span class="n">niy</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">dec</span><span class="o">.</span><span class="n">is_within_bounds</span><span class="p">(</span><span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dec</span><span class="p">,</span> <span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">dec</span><span class="p">):</span>
+                <span class="n">within</span> <span class="o">=</span> <span class="kc">False</span>
+
+                <span class="c1"># Check whether image is in any of the ra bound pairs</span>
+                <span class="k">for</span> <span class="n">ra_min</span><span class="p">,</span> <span class="n">ra_max</span> <span class="ow">in</span> <span class="n">ra_bounds</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">ra</span><span class="o">.</span><span class="n">is_within_bounds</span><span class="p">(</span><span class="n">ra_min</span><span class="p">,</span> <span class="n">ra_max</span><span class="p">):</span>
+                        <span class="n">within</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="k">break</span>
+                <span class="k">if</span> <span class="n">within</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">ra</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">img</span><span class="o">.</span><span class="n">dec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">img</span><span class="o">.</span><span class="n">ra</span> <span class="o">=</span> <span class="n">ra</span>
+                        <span class="n">img</span><span class="o">.</span><span class="n">dec</span> <span class="o">=</span> <span class="n">dec</span>
+
+                    <span class="n">found</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">image_type</span> <span class="o">==</span> <span class="s2">&quot;exposure&quot;</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">images</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">is_within_bounds</span><span class="p">(</span><span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dec</span><span class="p">,</span> <span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">dec</span><span class="p">):</span>
+                <span class="n">within</span> <span class="o">=</span> <span class="kc">False</span>
+
+                <span class="c1"># Check whether image is in any of the ra bound pairs</span>
+                <span class="k">for</span> <span class="n">ra_min</span><span class="p">,</span> <span class="n">ra_max</span> <span class="ow">in</span> <span class="n">ra_bounds</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">ra</span><span class="o">.</span><span class="n">is_within_bounds</span><span class="p">(</span><span class="n">ra_min</span><span class="p">,</span> <span class="n">ra_max</span><span class="p">):</span>
+                        <span class="n">within</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="k">break</span>
+                <span class="k">if</span> <span class="n">within</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">img</span><span class="o">.</span><span class="n">cut</span><span class="p">(</span><span class="n">no_cuts</span><span class="o">=</span><span class="n">no_cuts</span><span class="p">):</span>
+                        <span class="n">found</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CfisError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Image type &#39;</span><span class="si">{</span><span class="n">image_type</span><span class="si">}</span><span class="s2">&#39; not implemented yet&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">)</span><span class="si">}</span><span class="s2"> images found in area&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">found</span></div>
+
+
+
+<div class="viewcode-block" id="plot_init">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.plot_init">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_init</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot Init.</span>
+
+<span class="sd">    Initialize a plot</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fs</span> <span class="o">=</span> <span class="mi">12</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">set_size</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">set_size</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s2">&quot;major&quot;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="n">fs</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;figure.autolayout&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">ax</span></div>
+
+
+
+<div class="viewcode-block" id="plot_area">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.plot_area">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_area</span><span class="p">(</span>
+    <span class="n">images</span><span class="p">,</span>
+    <span class="n">angles</span><span class="p">,</span>
+    <span class="n">image_type</span><span class="p">,</span>
+    <span class="n">outbase</span><span class="p">,</span>
+    <span class="n">interactive</span><span class="p">,</span>
+    <span class="n">col</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">show_numbers</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">show_circle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">show_area_border</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">lw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">dxy</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot Area.</span>
+
+<span class="sd">    Plot images within area.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    images : numpy.ndarray of image</span>
+<span class="sd">        images</span>
+<span class="sd">    angles : numpy.ndarray (SkyCoord, 2)</span>
+<span class="sd">        Corner coordinates of area rectangle</span>
+<span class="sd">    image_type : str</span>
+<span class="sd">        image type (&#39;tile&#39;, &#39;exposure&#39;, &#39;cat&#39;, weight&#39;)</span>
+<span class="sd">    outbase : str</span>
+<span class="sd">        output file name base</span>
+<span class="sd">    interactive : bool</span>
+<span class="sd">        show plot if True</span>
+<span class="sd">    col : str, optional, default=None</span>
+<span class="sd">        color</span>
+<span class="sd">    show_numbers : bool, optional, default=False</span>
+<span class="sd">        show tile numbers if True</span>
+<span class="sd">    show_circle : bool, optional, default=True</span>
+<span class="sd">        plot circle center and circumference around area if True</span>
+<span class="sd">    show_area_border : bool, optional, default=False</span>
+<span class="sd">        plot rectangle around area</span>
+<span class="sd">    ax : axes, optional, default None</span>
+<span class="sd">        Init axes if None</span>
+<span class="sd">    lw : float, optional, default None</span>
+<span class="sd">        line width</span>
+<span class="sd">    save : bool, optional, default=True</span>
+<span class="sd">        save plot to pdf file if True</span>
+<span class="sd">    dxy : float, optional, default=0</span>
+<span class="sd">        shift</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">outbase</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">outname</span> <span class="o">=</span> <span class="s2">&quot;plot.pdf&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">outname</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">outbase</span><span class="si">}</span><span class="s2">.pdf&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">lw</span><span class="p">:</span>
+        <span class="n">my_lw</span> <span class="o">=</span> <span class="mf">0.1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">my_lw</span> <span class="o">=</span> <span class="n">lw</span>
+    <span class="n">color</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;tile&quot;</span><span class="p">:</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;exposure&quot;</span><span class="p">:</span> <span class="s2">&quot;g&quot;</span><span class="p">,</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="s2">&quot;r&quot;</span><span class="p">}</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ax</span><span class="p">:</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_init</span><span class="p">()</span>
+
+    <span class="c1"># Field center</span>
+    <span class="n">n_ima</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n_ima</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">ra_c</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">img</span><span class="o">.</span><span class="n">ra</span> <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">images</span><span class="p">])</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_ima</span><span class="p">)</span>
+        <span class="n">dec_c</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">img</span><span class="o">.</span><span class="n">dec</span> <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">images</span><span class="p">])</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_ima</span><span class="p">)</span>
+        <span class="n">cos_dec_c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">dec_c</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ra_c</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">dec_c</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">cos_dec_c</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">show_circle</span><span class="p">:</span>
+        <span class="c1"># Circle around field</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ra</span> <span class="o">-</span> <span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">ra</span><span class="p">)</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dec</span> <span class="o">-</span> <span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">dec</span><span class="p">)</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">unitdef</span><span class="p">)</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="n">unitdef</span><span class="p">)</span>
+        <span class="n">radius</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="s2">&quot;exposure&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">size</span><span class="p">[</span><span class="s2">&quot;tile&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+            <span class="mi">2</span>
+        <span class="p">)</span>
+        <span class="n">circle</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">Circle</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">ra_c</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> <span class="n">dec_c</span><span class="o">.</span><span class="n">deg</span><span class="p">),</span>
+            <span class="n">radius</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">,</span>
+            <span class="n">fill</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ra_c</span><span class="p">,</span> <span class="n">dec_c</span><span class="p">,</span> <span class="s2">&quot;or&quot;</span><span class="p">,</span> <span class="n">mfc</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">add_artist</span><span class="p">(</span><span class="n">circle</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">radius</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="n">col</span><span class="p">:</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">col</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">color</span><span class="p">[</span><span class="n">image_type</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">images</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">degree</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">degree</span>
+        <span class="n">nix</span><span class="p">,</span> <span class="n">niy</span> <span class="o">=</span> <span class="n">get_tile_number</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">show_numbers</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">,</span>
+                <span class="n">y</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">nix</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">niy</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">fontsize</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                <span class="n">horizontalalignment</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span>
+                <span class="n">verticalalignment</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Image boundary</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">size</span><span class="p">[</span><span class="n">image_type</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">cos_dec_c</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">size</span><span class="p">[</span><span class="n">image_type</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span> <span class="o">=</span> <span class="n">square_from_centre</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dxy</span><span class="o">=</span><span class="n">dxy</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="n">my_lw</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">show_area_border</span><span class="p">:</span>
+        <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span> <span class="o">=</span> <span class="n">square_from_corners</span><span class="p">(</span><span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="s2">&quot;r-.&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="n">my_lw</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;R.A. [degree]&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Declination [degree]&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">outbase</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">outbase</span><span class="p">)</span>
+
+    <span class="c1"># Limits</span>
+    <span class="n">border</span> <span class="o">=</span> <span class="mf">0.25</span>
+    <span class="k">if</span> <span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">degree</span> <span class="o">&gt;</span> <span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">degree</span><span class="p">:</span>
+        <span class="n">xm</span> <span class="o">=</span> <span class="p">(</span><span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">degree</span> <span class="o">+</span> <span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">degree</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">degree</span> <span class="o">-</span> <span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">degree</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">360</span> <span class="o">-</span> <span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> <span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">deg</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+        <span class="n">xm</span> <span class="o">=</span> <span class="p">((</span><span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">deg</span> <span class="o">-</span> <span class="mi">360</span><span class="p">)</span> <span class="o">+</span> <span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">deg</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">ym</span> <span class="o">=</span> <span class="p">(</span><span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">degree</span> <span class="o">+</span> <span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">degree</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">dy</span> <span class="o">=</span> <span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">degree</span> <span class="o">-</span> <span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">degree</span>
+    <span class="n">lim</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="n">xm</span> <span class="o">-</span> <span class="n">lim</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">border</span><span class="p">,</span> <span class="n">xm</span> <span class="o">+</span> <span class="n">lim</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">border</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="n">ym</span> <span class="o">-</span> <span class="n">lim</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">border</span><span class="p">,</span> <span class="n">ym</span> <span class="o">+</span> <span class="n">lim</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">border</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saving plot to </span><span class="si">{</span><span class="n">outname</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">outname</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">interactive</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">ra_c</span><span class="p">,</span> <span class="n">dec_c</span><span class="p">,</span> <span class="n">radius</span></div>
+
+
+
+<div class="viewcode-block" id="square_from_centre">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.square_from_centre">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">square_from_centre</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dxy</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Square From Centre.</span>
+
+<span class="sd">    Return coordinate vectors of corners that define a closed</span>
+<span class="sd">    square for plotting.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : float</span>
+<span class="sd">        x-coordinate centre</span>
+<span class="sd">    y : float</span>
+<span class="sd">        y-coordinate centre</span>
+<span class="sd">    dx : float</span>
+<span class="sd">        size in x</span>
+<span class="sd">    dy : float</span>
+<span class="sd">        size in y</span>
+<span class="sd">    dxy : float, optional, default=0</span>
+<span class="sd">        constant offset</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple</span>
+<span class="sd">        square coordinates in x and y</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">dxy</span>
+    <span class="n">cx</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="o">-</span> <span class="n">dx</span> <span class="o">+</span> <span class="n">a</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="n">dx</span> <span class="o">+</span> <span class="n">a</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="n">dx</span> <span class="o">+</span> <span class="n">a</span><span class="p">,</span> <span class="n">x</span> <span class="o">-</span> <span class="n">dx</span> <span class="o">+</span> <span class="n">a</span><span class="p">,</span> <span class="n">x</span> <span class="o">-</span> <span class="n">dx</span> <span class="o">+</span> <span class="n">a</span><span class="p">]</span>
+    <span class="n">cy</span> <span class="o">=</span> <span class="p">[</span><span class="n">y</span> <span class="o">-</span> <span class="n">dy</span> <span class="o">+</span> <span class="n">a</span><span class="p">,</span> <span class="n">y</span> <span class="o">-</span> <span class="n">dy</span> <span class="o">+</span> <span class="n">a</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">dy</span> <span class="o">+</span> <span class="n">a</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">dy</span> <span class="o">+</span> <span class="n">a</span><span class="p">,</span> <span class="n">y</span> <span class="o">-</span> <span class="n">dy</span> <span class="o">+</span> <span class="n">a</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span></div>
+
+
+
+<div class="viewcode-block" id="square_from_corners">
+<a class="viewcode-back" href="../../../shapepipe.utilities.cfis.html#shapepipe.utilities.cfis.square_from_corners">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">square_from_corners</span><span class="p">(</span><span class="n">ang0</span><span class="p">,</span> <span class="n">ang1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Square From Corners.</span>
+
+<span class="sd">    Return coordinate vectors of corners that define a closed</span>
+<span class="sd">    square for plotting.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ang0 : Angle</span>
+<span class="sd">        lower-left square coordinates</span>
+<span class="sd">    ang1 : Angle</span>
+<span class="sd">        upper-right square coordinates</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple</span>
+<span class="sd">        square coordinates in x and y, in unit &#39;unitdef&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cx</span> <span class="o">=</span> <span class="p">[</span><span class="n">ang0</span><span class="o">.</span><span class="n">ra</span><span class="p">,</span> <span class="n">ang1</span><span class="o">.</span><span class="n">ra</span><span class="p">,</span> <span class="n">ang1</span><span class="o">.</span><span class="n">ra</span><span class="p">,</span> <span class="n">ang0</span><span class="o">.</span><span class="n">ra</span><span class="p">,</span> <span class="n">ang0</span><span class="o">.</span><span class="n">ra</span><span class="p">]</span>
+    <span class="n">cy</span> <span class="o">=</span> <span class="p">[</span><span class="n">ang0</span><span class="o">.</span><span class="n">dec</span><span class="p">,</span> <span class="n">ang0</span><span class="o">.</span><span class="n">dec</span><span class="p">,</span> <span class="n">ang1</span><span class="o">.</span><span class="n">dec</span><span class="p">,</span> <span class="n">ang1</span><span class="o">.</span><span class="n">dec</span><span class="p">,</span> <span class="n">ang0</span><span class="o">.</span><span class="n">dec</span><span class="p">]</span>
+
+    <span class="n">cxd</span> <span class="o">=</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">unitdef</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">cx</span><span class="p">]</span>
+    <span class="n">cyd</span> <span class="o">=</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">unitdef</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">cy</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">cxd</span><span class="p">,</span> <span class="n">cyd</span></div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CosmoStat
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2022, CosmoStat.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="last-updated">
+  Last updated on 10 Jun, 2026.
+  <br/>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

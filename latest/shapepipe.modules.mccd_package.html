@@ -1,0 +1,922 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>shapepipe.modules.mccd_package &#8212; ShapePipe v1.1</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=3c74b3bc" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=051bfb12"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'shapepipe.modules.mccd_package';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://cosmostat.github.io/shapepipe/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'latest';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="shapepipe.modules.mccd_package.mccd_interpolation_script" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html" />
+    <link rel="prev" title="shapepipe.modules.match_external_package.match_external" href="shapepipe.modules.match_external_package.match_external.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="1.1" />
+    <meta name="docbuild:last-update" content="10 Jun, 2026"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">ShapePipe v1.1</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">About ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributors.html">Contributors</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Installing ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="container.html">Container Workflow</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Running ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="basic_execution.html">Basic Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="random_cat.html">Create random catalogues and masks</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="understanding_api.html">Understanding the API Documentation</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="shapepipe.html">shapepipe</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="shapepipe.modules.html">shapepipe.modules</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.find_exposures_package.html">shapepipe.modules.find_exposures_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.find_exposures_package.find_exposures.html">shapepipe.modules.find_exposures_package.find_exposures</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.get_images_package.html">shapepipe.modules.get_images_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.get_images_package.get_images.html">shapepipe.modules.get_images_package.get_images</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.make_cat_package.html">shapepipe.modules.make_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.make_cat_package.make_cat.html">shapepipe.modules.make_cat_package.make_cat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mask_package.html">shapepipe.modules.mask_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mask_package.mask.html">shapepipe.modules.mask_package.mask</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.match_external_package.html">shapepipe.modules.match_external_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.match_external_package.match_external.html">shapepipe.modules.match_external_package.match_external</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 current active has-children"><a class="current reference internal" href="#">shapepipe.modules.mccd_package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html">shapepipe.modules.mccd_package.mccd_interpolation_script</a></li>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_plot_utilities.html">shapepipe.modules.mccd_package.mccd_plot_utilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html">shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.merge_headers_package.html">shapepipe.modules.merge_headers_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.merge_headers_package.merge_headers.html">shapepipe.modules.merge_headers_package.merge_headers</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.merge_sep_cats_package.html">shapepipe.modules.merge_sep_cats_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.merge_sep_cats_package.merge_sep_cats.html">shapepipe.modules.merge_sep_cats_package.merge_sep_cats</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.merge_starcat_package.html">shapepipe.modules.merge_starcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.merge_starcat_package.merge_starcat.html">shapepipe.modules.merge_starcat_package.merge_starcat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.ngmix_package.html">shapepipe.modules.ngmix_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html">shapepipe.modules.ngmix_package.ngmix</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.pastecat_package.html">shapepipe.modules.pastecat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.pastecat_package.pastecat.html">shapepipe.modules.pastecat_package.pastecat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.psfex_interp_package.html">shapepipe.modules.psfex_interp_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.psfex_interp_package.psfex_interp.html">shapepipe.modules.psfex_interp_package.psfex_interp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.psfex_package.html">shapepipe.modules.psfex_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.psfex_package.psfex_script.html">shapepipe.modules.psfex_package.psfex_script</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.python_example_package.html">shapepipe.modules.python_example_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.random_cat_package.html">shapepipe.modules.random_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.random_cat_package.random_cat.html">shapepipe.modules.random_cat_package.random_cat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html">shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.setools_package.html">shapepipe.modules.setools_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.setools_package.setools.html">shapepipe.modules.setools_package.setools</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.sextractor_package.html">shapepipe.modules.sextractor_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.sextractor_package.sextractor_script.html">shapepipe.modules.sextractor_package.sextractor_script</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.split_exp_package.html">shapepipe.modules.split_exp_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.split_exp_package.split_exp.html">shapepipe.modules.split_exp_package.split_exp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.spread_model_package.html">shapepipe.modules.spread_model_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.spread_model_package.spread_model.html">shapepipe.modules.spread_model_package.spread_model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.uncompress_fits_package.html">shapepipe.modules.uncompress_fits_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.uncompress_fits_package.uncompress_fits.html">shapepipe.modules.uncompress_fits_package.uncompress_fits</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.vignetmaker_package.html">shapepipe.modules.vignetmaker_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.vignetmaker_package.vignetmaker.html">shapepipe.modules.vignetmaker_package.vignetmaker</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.module_decorator.html">shapepipe.modules.module_decorator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.module_runners.html">shapepipe.modules.module_runners</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.pipeline.html">shapepipe.pipeline</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.args.html">shapepipe.pipeline.args</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.config.html">shapepipe.pipeline.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.dependency_handler.html">shapepipe.pipeline.dependency_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.execute.html">shapepipe.pipeline.execute</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.exp_utils.html">shapepipe.pipeline.exp_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.file_handler.html">shapepipe.pipeline.file_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.file_io.html">shapepipe.pipeline.file_io</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.job_handler.html">shapepipe.pipeline.job_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.mpi_run.html">shapepipe.pipeline.mpi_run</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.run_log.html">shapepipe.pipeline.run_log</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.shared.html">shapepipe.pipeline.shared</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.str_handler.html">shapepipe.pipeline.str_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.timeout.html">shapepipe.pipeline.timeout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.worker_handler.html">shapepipe.pipeline.worker_handler</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.info.html">shapepipe.info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.run.html">shapepipe.run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.shapepipe_run.html">shapepipe.shapepipe_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.summary_run.html">shapepipe.summary_run</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing to ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contribution Guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_develop.html">Module Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_example.html">Module Examples</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="z_ref.html">References</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe/edit/main/docs/source/shapepipe.modules.mccd_package.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2Fshapepipe.modules.mccd_package.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
+
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+<button class="sidebar-toggle secondary-toggle btn btn-sm pst-navbar-icon" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>shapepipe.modules.mccd_package</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#description">Description</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mccd-preprocessing-runner">MCCD_PREPROCESSING_RUNNER</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#module-specific-config-file-entries">Module-specific config file entries</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mccd-runners">MCCD_RUNNERS</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Module-specific config file entries</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mccd-interp-runner">MCCD_INTERP_RUNNER</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">Module-specific config file entries</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mccd-plots-runner">MCCD_PLOTS_RUNNER</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Module-specific config file entries</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-shapepipe.modules.mccd_package">
+<span id="shapepipe-modules-mccd-package"></span><h1>shapepipe.modules.mccd_package<a class="headerlink" href="#module-shapepipe.modules.mccd_package" title="Link to this heading">#</a></h1>
+<p>MCCD AUXILIARY FUNCTIONS PACKAGE.</p>
+<p>This package contains the modules for <code class="docutils literal notranslate"><span class="pre">mccd</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Author<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tobias Liaudat</p>
+</dd>
+</dl>
+<section id="description">
+<h2>Description<a class="headerlink" href="#description" title="Link to this heading">#</a></h2>
+<p>This package contains several modules related to the MCCD PSF model
+<span class="bibtex-citation" id="id1">[]</span>.</p>
+</section>
+<section id="mccd-preprocessing-runner">
+<h2>MCCD_PREPROCESSING_RUNNER<a class="headerlink" href="#mccd-preprocessing-runner" title="Link to this heading">#</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Author<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tobias Liaudat</p>
+</dd>
+<dt class="field-even">Parent module<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">setools_runner</span></code></p>
+</dd>
+<dt class="field-odd">Input<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Star catalogue</p>
+</dd>
+<dt class="field-even">Output<span class="colon">:</span></dt>
+<dd class="field-even"><p>Preprocessed star catalogue</p>
+</dd>
+</dl>
+<p>This module preprocesses an input star catalogue as required by the MCCD PSF
+model. As the MCCD PSF model builds one PSF model for the entire focal plane it
+requires that the different single-CCD files be merged into a single focal
+plane file. The coordinates are transformed in order to have a global
+coordinate system. The minimum number of stars required to keep the CCD can be
+specified inside the MCCD config file with the <code class="docutils literal notranslate"><span class="pre">min_n_stars</span></code> parameter.</p>
+<p>The input of this runner depends on the value of <code class="docutils literal notranslate"><span class="pre">MODE</span></code>.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FIT</span></code>: The input star catalogue path which will be used to fit the PSF
+models.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">VALIDATION</span></code>: The input star catalogue path which will be used to
+validate the PSF models.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FIT_VALIDATION</span></code>: Two input star catalogue paths which will be used to
+fit and validate the PSF models, respectively.</p></li>
+</ul>
+<section id="module-specific-config-file-entries">
+<h3>Module-specific config file entries<a class="headerlink" href="#module-specific-config-file-entries" title="Link to this heading">#</a></h3>
+<dl class="simple">
+<dt>CONFIG_PATH: str</dt><dd><p>Path to the MCCD config file</p>
+</dd>
+<dt>MODE: str</dt><dd><p>Mode in which the MCCD PSF model will run.
+It can be <code class="docutils literal notranslate"><span class="pre">FIT</span></code>, <code class="docutils literal notranslate"><span class="pre">VALIDATION</span></code> or <code class="docutils literal notranslate"><span class="pre">FIT_VALIDATION</span></code>;
+with <code class="docutils literal notranslate"><span class="pre">FIT</span></code>, the training dataset is preprocessed, with
+<code class="docutils literal notranslate"><span class="pre">VALIDATION</span></code> the validation dataset is preprocessed, and with
+<code class="docutils literal notranslate"><span class="pre">FIT_VALIDATION</span></code> both are preprocessed</p>
+</dd>
+<dt>VERBOSE: bool</dt><dd><p>Verbose mode</p>
+</dd>
+</dl>
+</section>
+</section>
+<section id="mccd-runners">
+<h2>MCCD_RUNNERS<a class="headerlink" href="#mccd-runners" title="Link to this heading">#</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Author<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tobias Liaudat</p>
+</dd>
+<dt class="field-even">Parent module<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">mccd_preprocessing_runner</span></code></p>
+</dd>
+<dt class="field-odd">Input<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Preprocessed star catalogue</p>
+</dd>
+<dt class="field-even">Output<span class="colon">:</span></dt>
+<dd class="field-even"><p>Fitted PSF models and or PSF validation star catalogue</p>
+</dd>
+</dl>
+<p>The three modules <code class="docutils literal notranslate"><span class="pre">mccd_fit_runner</span></code>, <code class="docutils literal notranslate"><span class="pre">mccd_val_runner</span></code> and
+<code class="docutils literal notranslate"><span class="pre">mccd_fit_val_runner</span></code> handle the fitting and the validation of the MCCD PSF
+models.</p>
+<p>They all share the same configuration file entries, although the inputs differ
+as follows.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">[MCCD_FIT_RUNNER]</span></code>: Has as input the path to the star catalogue that
+will be used to train the PSF models. The star catalogue should be already
+preprocessed by <code class="docutils literal notranslate"><span class="pre">[MCCD_PREPROCESSING_RUNNER]</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">[MCCD_VAL_RUNNER]</span></code>: Has two inputs. First, the path to the fitted PSF
+models, and second, the path to the preprocessed validation star catalogue.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">[MCCD_FIT_VAL_RUNNER]</span></code>: Has two inputs. First, the path to the
+preprocessed training star catalogue that will be used to train the PSF
+models. Second, the path to the preprocessed validation star catalogue.</p></li>
+</ul>
+<section id="id2">
+<h3>Module-specific config file entries<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
+<dl class="simple">
+<dt>CONFIG_PATH: str</dt><dd><p>Path to the MCCD config file</p>
+</dd>
+<dt>MODE: str</dt><dd><p>Mode in which the MCCD PSF model will run; it can be <code class="docutils literal notranslate"><span class="pre">FIT</span></code>,
+<code class="docutils literal notranslate"><span class="pre">VALIDATION</span></code> or <code class="docutils literal notranslate"><span class="pre">FIT_VALIDATION</span></code>, and should match the used runner</p>
+</dd>
+<dt>VERBOSE: bool</dt><dd><p>Verbose mode</p>
+</dd>
+</dl>
+</section>
+</section>
+<section id="mccd-interp-runner">
+<h2>MCCD_INTERP_RUNNER<a class="headerlink" href="#mccd-interp-runner" title="Link to this heading">#</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Author<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tobias Liaudat</p>
+</dd>
+<dt class="field-even">Parent module<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">setools_runner</span></code> and
+(<code class="docutils literal notranslate"><span class="pre">mccd_fit_runner</span></code> or <code class="docutils literal notranslate"><span class="pre">mccd_fit_val_runner</span></code>)</p>
+</dd>
+<dt class="field-odd">Input<span class="colon">:</span></dt>
+<dd class="field-odd"><p>MCCD PSF model and a catalogue with positions to interpolate the PSF</p>
+</dd>
+<dt class="field-even">Output<span class="colon">:</span></dt>
+<dd class="field-even"><p>MCCD PSF estimates at interpolated positions</p>
+</dd>
+</dl>
+<p>This module interpolates the MCCD PSF model to target postions.</p>
+<section id="id3">
+<h3>Module-specific config file entries<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
+<dl class="simple">
+<dt>MODE: str</dt><dd><p>Run mode for module, options are <code class="docutils literal notranslate"><span class="pre">CLASSIC</span></code> and <code class="docutils literal notranslate"><span class="pre">MULTI-EPOCH</span></code></p>
+</dd>
+<dt>POSITION_PARAMS: (list) str</dt><dd><p>List of position parameter value names in the SExtractor output catalogue,
+when running in multi-epoch these positions have to be WCS; e.g.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">MULTI-EPOCH</span></code> case:
+<code class="docutils literal notranslate"><span class="pre">POSITION_PARAMS</span> <span class="pre">=</span> <span class="pre">XWIN_WORLD,YWIN_WORLD</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CLASSIC</span></code> case:
+<code class="docutils literal notranslate"><span class="pre">POSITION_PARAMS</span> <span class="pre">=</span> <span class="pre">XWIN_IMAGE,YWIN_IMAGE</span></code></p></li>
+</ul>
+</dd>
+<dt>GET_SHAPES: bool</dt><dd><p>Calculate PSF model shapes and save to output if <code class="docutils literal notranslate"><span class="pre">True</span></code></p>
+</dd>
+<dt>PSF_MODEL_DIR: str</dt><dd><p>Module name of last run producing the fitted MCCD PSF model files.
+The specifier “last:” is not required</p>
+</dd>
+<dt>PSF_MODEL_PATTERN: str</dt><dd><p>Pattern of the fitted PSF models</p>
+</dd>
+<dt>PSF_MODEL_SEPARATOR: str</dt><dd><p>Separator between the PSF model pattern and the model’s ID number</p>
+</dd>
+<dt>ME_LOG_WCS: str</dt><dd><p>Path to world coordinate system log file (<code class="docutils literal notranslate"><span class="pre">*sqlite</span></code>); only use in
+<code class="docutils literal notranslate"><span class="pre">MULTI-EPOCH</span></code> mode</p>
+</dd>
+</dl>
+</section>
+</section>
+<section id="mccd-plots-runner">
+<h2>MCCD_PLOTS_RUNNER<a class="headerlink" href="#mccd-plots-runner" title="Link to this heading">#</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Author<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tobias Liaudat</p>
+</dd>
+<dt class="field-even">Parent module<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">merge_starcat_runner</span></code></p>
+</dd>
+<dt class="field-odd">Input<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Merged star catalogue</p>
+</dd>
+<dt class="field-even">Output<span class="colon">:</span></dt>
+<dd class="field-even"><p>Several plots</p>
+</dd>
+</dl>
+<p>This module generates different series of plots of the input merged star
+catalogue.</p>
+<p>One series of plots are the _mean <a href="#id7"><span class="problematic" id="id8">shapes_</span></a>, which is the PSF ellipticity and
+size and their residuals as a function of the focal plane positions. Values and
+residuals are combined from all merged catalogues, and binned in the focal
+plane according to <code class="docutils literal notranslate"><span class="pre">X_GRID</span></code> and <code class="docutils literal notranslate"><span class="pre">Y_GRID</span></code>.</p>
+<p>Another series of plots are a histogram of the ellipticity errors.</p>
+<p>A third series are the rho statistics plot, which are correlation functions of
+various combinations of PSF ellipticity, size, and their residuals,
+see <span class="bibtex-citation" id="id4">[<a class="reference internal" href="z_ref.html#id38" title="B. Rowe. Improving PSF modelling for weak gravitational lensing using new methods in model selection. \mnras , 404:350-366, 2010. arXiv:0904.3056, doi:10.1111/j.1365-2966.2010.16277.x.">Rowe, 2010</a>]</span> and <span class="bibtex-citation" id="id5">[<a class="reference internal" href="z_ref.html#id26" title="M. Jarvis, E. Sheldon, J. Zuntz, T. Kacprzak, S. L. Bridle, A. Amara, R. Armstrong, M. R. Becker, G. M. Bernstein, C. Bonnett, C. Chang, R. Das, J. P. Dietrich, A. Drlica-Wagner, T. F. Eifler, C. Gangkofner, D. Gruen, M. Hirsch, E. M. Huff, B. Jain, S. Kent, D. Kirk, N. MacCrann, P. Melchior, A. A. Plazas, A. Refregier, B. Rowe, E. S. Rykoff, S. Samuroff, C. Sánchez, E. Suchyta, M. A. Troxel, V. Vikram, T. Abbott, F. B. Abdalla, S. Allam, J. Annis, A. Benoit-Lévy, E. Bertin, D. Brooks, E. Buckley-Geer, D. L. Burke, D. Capozzi, A. Carnero Rosell, M. Carrasco Kind, J. Carretero, F. J. Castander, J. Clampitt, M. Crocce, C. E. Cunha, C. B. D'Andrea, L. N. da Costa, D. L. DePoy, S. Desai, H. T. Diehl, P. Doel, A. Fausti Neto, B. Flaugher, P. Fosalba, J. Frieman, E. Gaztanaga, D. W. Gerdes, R. A. Gruendl, G. Gutierrez, K. Honscheid, D. J. James, K. Kuehn, N. Kuropatkin, O. Lahav, T. S. Li, M. Lima, M. March, P. Martini, R. Miquel, J. J. Mohr, E. Neilsen, B. Nord, R. Ogando, K. Reil, A. K. Romer, A. Roodman, M. Sako, E. Sanchez, V. Scarpine, M. Schubnell, I. Sevilla-Noarbe, R. C. Smith, M. Soares-Santos, F. Sobreira, M. E. C. Swanson, G. Tarle, J. Thaler, D. Thomas, A. R. Walker, and R. H. Wechsler. The DES Science Verification weak lensing shear catalogues. \mnras , 460:2245-2281, August 2016. arXiv:1507.05603, doi:10.1093/mnras/stw990.">Jarvis <em>et al.</em>, 2016</a>]</span>.</p>
+<section id="id6">
+<h3>Module-specific config file entries<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
+<dl class="simple">
+<dt>PSF: str</dt><dd><p>PSF model type, options are <code class="docutils literal notranslate"><span class="pre">mccd</span></code> or <code class="docutils literal notranslate"><span class="pre">psfex</span></code></p>
+</dd>
+<dt>PLOT_MEANSHAPES: bool</dt><dd><p>Option to produce _mean <a href="#id9"><span class="problematic" id="id10">shapes_</span></a> plots</p>
+</dd>
+<dt>X_GRID: int</dt><dd><p>Number of bins in the X axis of one CCD for the _mean <a href="#id11"><span class="problematic" id="id12">shapes_</span></a> plot grid</p>
+</dd>
+<dt>Y_GRID: int</dt><dd><p>Number of bins in the Y axis of one CCD for the _mean <a href="#id13"><span class="problematic" id="id14">shapes_</span></a> plot grid</p>
+</dd>
+<dt>MAX_E: float</dt><dd><p>Max value for ellipticity in the _mean <a href="#id15"><span class="problematic" id="id16">shapes_</span></a> plot</p>
+</dd>
+<dt>MAX_DE: float</dt><dd><p>Max value for the residual ellipticity in the _mean <a href="#id17"><span class="problematic" id="id18">shapes_</span></a> plot</p>
+</dd>
+<dt>PLOT_HISTOGRAMS: bool</dt><dd><p>Option to produce histogram plots for shape errors</p>
+</dd>
+<dt>REMOVE_OUTLIERS: bool</dt><dd><p>Option to remove validated stars that are outliers in terms of shape
+before drawing the plots</p>
+</dd>
+</dl>
+</section>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">#</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html">shapepipe.modules.mccd_package.mccd_interpolation_script</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html#shapepipe.modules.mccd_package.mccd_interpolation_script.interp_MCCD"><code class="docutils literal notranslate"><span class="pre">interp_MCCD()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator"><code class="docutils literal notranslate"><span class="pre">MCCDinterpolator</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_position_parameters"><code class="docutils literal notranslate"><span class="pre">MCCDinterpolator._get_position_parameters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_galaxy_positions"><code class="docutils literal notranslate"><span class="pre">MCCDinterpolator._get_galaxy_positions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_psfshapes"><code class="docutils literal notranslate"><span class="pre">MCCDinterpolator._get_psfshapes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._write_output"><code class="docutils literal notranslate"><span class="pre">MCCDinterpolator._write_output()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_starshapes"><code class="docutils literal notranslate"><span class="pre">MCCDinterpolator._get_starshapes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._get_psfexcatdict"><code class="docutils literal notranslate"><span class="pre">MCCDinterpolator._get_psfexcatdict()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._write_output_validation"><code class="docutils literal notranslate"><span class="pre">MCCDinterpolator._write_output_validation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator.process_me"><code class="docutils literal notranslate"><span class="pre">MCCDinterpolator.process_me()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._interpolate_me"><code class="docutils literal notranslate"><span class="pre">MCCDinterpolator._interpolate_me()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html#shapepipe.modules.mccd_package.mccd_interpolation_script.MCCDinterpolator._write_output_me"><code class="docutils literal notranslate"><span class="pre">MCCDinterpolator._write_output_me()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_plot_utilities.html">shapepipe.modules.mccd_package.mccd_plot_utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_plot_utilities.html#shapepipe.modules.mccd_package.mccd_plot_utilities.megacam_pos"><code class="docutils literal notranslate"><span class="pre">megacam_pos()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_plot_utilities.html#shapepipe.modules.mccd_package.mccd_plot_utilities.megacam_flip"><code class="docutils literal notranslate"><span class="pre">megacam_flip()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_plot_utilities.html#shapepipe.modules.mccd_package.mccd_plot_utilities.megacam_flip_2"><code class="docutils literal notranslate"><span class="pre">megacam_flip_2()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_plot_utilities.html#shapepipe.modules.mccd_package.mccd_plot_utilities.mean_shapes_plot"><code class="docutils literal notranslate"><span class="pre">mean_shapes_plot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_plot_utilities.html#shapepipe.modules.mccd_package.mccd_plot_utilities.plot_meanshapes"><code class="docutils literal notranslate"><span class="pre">plot_meanshapes()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html">shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_preprocessing_pipeline"><code class="docutils literal notranslate"><span class="pre">mccd_preprocessing_pipeline()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_fit_pipeline"><code class="docutils literal notranslate"><span class="pre">mccd_fit_pipeline()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_validation_pipeline"><code class="docutils literal notranslate"><span class="pre">mccd_validation_pipeline()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.mccd_interpolation_pipeline"><code class="docutils literal notranslate"><span class="pre">mccd_interpolation_pipeline()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html#shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.shapepipe_write_output"><code class="docutils literal notranslate"><span class="pre">shapepipe_write_output()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="shapepipe.modules.match_external_package.match_external.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">shapepipe.modules.match_external_package.match_external</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="shapepipe.modules.mccd_package.mccd_interpolation_script.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">shapepipe.modules.mccd_package.mccd_interpolation_script</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item"><div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#description">Description</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mccd-preprocessing-runner">MCCD_PREPROCESSING_RUNNER</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#module-specific-config-file-entries">Module-specific config file entries</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mccd-runners">MCCD_RUNNERS</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Module-specific config file entries</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mccd-interp-runner">MCCD_INTERP_RUNNER</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">Module-specific config file entries</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mccd-plots-runner">MCCD_PLOTS_RUNNER</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Module-specific config file entries</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CosmoStat
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2022, CosmoStat.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="last-updated">
+  Last updated on 10 Jun, 2026.
+  <br/>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

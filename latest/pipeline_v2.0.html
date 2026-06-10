@@ -1,0 +1,943 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Running ShapePipe processing and post-processing pipelines on CANFAR &#8212; ShapePipe v1.1</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=3c74b3bc" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=051bfb12"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'pipeline_v2.0';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://cosmostat.github.io/shapepipe/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'latest';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="1.1" />
+    <meta name="docbuild:last-update" content="10 Jun, 2026"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">ShapePipe v1.1</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">About ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributors.html">Contributors</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Installing ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="container.html">Container Workflow</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Running ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="basic_execution.html">Basic Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="random_cat.html">Create random catalogues and masks</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="understanding_api.html">Understanding the API Documentation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="shapepipe.html">shapepipe</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.modules.html">shapepipe.modules</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.find_exposures_package.html">shapepipe.modules.find_exposures_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.find_exposures_package.find_exposures.html">shapepipe.modules.find_exposures_package.find_exposures</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.get_images_package.html">shapepipe.modules.get_images_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.get_images_package.get_images.html">shapepipe.modules.get_images_package.get_images</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.make_cat_package.html">shapepipe.modules.make_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.make_cat_package.make_cat.html">shapepipe.modules.make_cat_package.make_cat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mask_package.html">shapepipe.modules.mask_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mask_package.mask.html">shapepipe.modules.mask_package.mask</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.match_external_package.html">shapepipe.modules.match_external_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.match_external_package.match_external.html">shapepipe.modules.match_external_package.match_external</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.mccd_package.html">shapepipe.modules.mccd_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_interpolation_script.html">shapepipe.modules.mccd_package.mccd_interpolation_script</a></li>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mccd_package.mccd_plot_utilities.html">shapepipe.modules.mccd_package.mccd_plot_utilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html">shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.merge_headers_package.html">shapepipe.modules.merge_headers_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.merge_headers_package.merge_headers.html">shapepipe.modules.merge_headers_package.merge_headers</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.merge_sep_cats_package.html">shapepipe.modules.merge_sep_cats_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.merge_sep_cats_package.merge_sep_cats.html">shapepipe.modules.merge_sep_cats_package.merge_sep_cats</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.merge_starcat_package.html">shapepipe.modules.merge_starcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.merge_starcat_package.merge_starcat.html">shapepipe.modules.merge_starcat_package.merge_starcat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.ngmix_package.html">shapepipe.modules.ngmix_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.ngmix_package.ngmix.html">shapepipe.modules.ngmix_package.ngmix</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.pastecat_package.html">shapepipe.modules.pastecat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.pastecat_package.pastecat.html">shapepipe.modules.pastecat_package.pastecat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.psfex_interp_package.html">shapepipe.modules.psfex_interp_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.psfex_interp_package.psfex_interp.html">shapepipe.modules.psfex_interp_package.psfex_interp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.psfex_package.html">shapepipe.modules.psfex_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.psfex_package.psfex_script.html">shapepipe.modules.psfex_package.psfex_script</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.python_example_package.html">shapepipe.modules.python_example_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.random_cat_package.html">shapepipe.modules.random_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.random_cat_package.random_cat.html">shapepipe.modules.random_cat_package.random_cat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html">shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.setools_package.html">shapepipe.modules.setools_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.setools_package.setools.html">shapepipe.modules.setools_package.setools</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.sextractor_package.html">shapepipe.modules.sextractor_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.sextractor_package.sextractor_script.html">shapepipe.modules.sextractor_package.sextractor_script</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.split_exp_package.html">shapepipe.modules.split_exp_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.split_exp_package.split_exp.html">shapepipe.modules.split_exp_package.split_exp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.spread_model_package.html">shapepipe.modules.spread_model_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.spread_model_package.spread_model.html">shapepipe.modules.spread_model_package.spread_model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.uncompress_fits_package.html">shapepipe.modules.uncompress_fits_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.uncompress_fits_package.uncompress_fits.html">shapepipe.modules.uncompress_fits_package.uncompress_fits</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="shapepipe.modules.vignetmaker_package.html">shapepipe.modules.vignetmaker_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="shapepipe.modules.vignetmaker_package.vignetmaker.html">shapepipe.modules.vignetmaker_package.vignetmaker</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.module_decorator.html">shapepipe.modules.module_decorator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.modules.module_runners.html">shapepipe.modules.module_runners</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.pipeline.html">shapepipe.pipeline</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.args.html">shapepipe.pipeline.args</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.config.html">shapepipe.pipeline.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.dependency_handler.html">shapepipe.pipeline.dependency_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.execute.html">shapepipe.pipeline.execute</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.exp_utils.html">shapepipe.pipeline.exp_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.file_handler.html">shapepipe.pipeline.file_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.file_io.html">shapepipe.pipeline.file_io</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.job_handler.html">shapepipe.pipeline.job_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.mpi_run.html">shapepipe.pipeline.mpi_run</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.run_log.html">shapepipe.pipeline.run_log</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.shared.html">shapepipe.pipeline.shared</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.str_handler.html">shapepipe.pipeline.str_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.timeout.html">shapepipe.pipeline.timeout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.pipeline.worker_handler.html">shapepipe.pipeline.worker_handler</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.info.html">shapepipe.info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.run.html">shapepipe.run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.shapepipe_run.html">shapepipe.shapepipe_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shapepipe.summary_run.html">shapepipe.summary_run</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing to ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contribution Guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_develop.html">Module Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_example.html">Module Examples</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="z_ref.html">References</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe/edit/main/docs/source/pipeline_v2.0.md" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2Fpipeline_v2.0.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
+
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+<button class="sidebar-toggle secondary-toggle btn btn-sm pst-navbar-icon" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Running ShapePipe processing and post-processing pipelines on CANFAR</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#initialise-directory-structure">Initialise directory structure</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#interactive-job-from-the-terminal-for-a-single-tile">Interactive job from the terminal for a single tile</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#canfar-setup">CANFAR Setup</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#canfar-login">CANFAR Login</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#from-previous-setup">From previous setup</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#merge-all-final-catalogues">Merge all final catalogues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#additional-shapepipe-processing">Additional <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#create-star-catalogue">Create star Catalogue</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#combine-all-psf-runs">Combine all PSF runs</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#convert-star-catalogue-to-wcs">Convert star catalogue to wCS</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#post-processing">Post-processing</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#extract-information">Extract Information</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#create-global-comprehensive-catalogues">Create global comprehensive catalogues</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#apply-structural-masks">Apply structural masks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#define-sample-calibrate-catalogue">Define sample, calibrate catalogue</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#create-matched-star-catalogue">Create matched star catalogue</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#create-coverage-mask">Create coverage mask</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#get-exposure-numbers">Get exposure numbers</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#extra-utilities">Extra Utilities</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#run-in-terminal-in-parallel">Run in Terminal in Parallel</a></li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="running-shapepipe-processing-and-post-processing-pipelines-on-canfar">
+<h1>Running <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing and post-processing pipelines on CANFAR<a class="headerlink" href="#running-shapepipe-processing-and-post-processing-pipelines-on-canfar" title="Link to this heading">#</a></h1>
+<p>Documentation to create ShapePipe output products for catalogues v2.x.</p>
+<section id="initialise-directory-structure">
+<h2>Initialise directory structure<a class="headerlink" href="#initialise-directory-structure" title="Link to this heading">#</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>init_run_v2.0.sh
+</pre></div>
+</div>
+<p>sets up the directory structure. This will be</p>
+<p>v2.0/
+├── tiles/
+│   ├── 301/
+│   │   ├── 301.278/
+│   │   ├── 301.279/
+│   │   └── …
+├── exp/
+│   ├── 21/
+│   │   ├── 21163916
+│   │   └── …
+├── cfis -&gt; /arc/home/kilbinger/shapepipe/example/cfis
+├── tile_numbers -&gt; /arc/home/kilbinger/shapepipe/auxdir/CFIS/tiles_202604/tiles_r.txt
+└── debug/</p>
+<section id="interactive-job-from-the-terminal-for-a-single-tile">
+<h3>Interactive job from the terminal for a single tile<a class="headerlink" href="#interactive-job-from-the-terminal-for-a-single-tile" title="Link to this heading">#</a></h3>
+<p>Run bit-coded jobs</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>run_job_canfar_v2.0.sh<span class="w"> </span>-e<span class="w"> </span>ID<span class="w"> </span>-j<span class="w"> </span>&lt;job&gt;
+</pre></div>
+</div>
+<p>with job processing tiles:</p>
+<ul class="simple">
+<li><p>1: download tiles</p></li>
+<li><p>2: uncompress tile weights</p></li>
+<li><p>4: find exposures
+then exposures:</p></li>
+<li><p>8: download exposures</p></li>
+<li><p>16: split exposures into single-CCD HDUs</p></li>
+<li><p>32: mask exposures</p></li>
+<li><p>64: process stars (selection, PSF movel)
+then back to tiles:</p></li>
+<li><p>128: select objects (using external catalogue)</p></li>
+<li><p>256: create object postage stamps</p></li>
+</ul>
+</section>
+</section>
+<section id="canfar-setup">
+<h2>CANFAR Setup<a class="headerlink" href="#canfar-setup" title="Link to this heading">#</a></h2>
+<section id="canfar-login">
+<h3>CANFAR Login<a class="headerlink" href="#canfar-login" title="Link to this heading">#</a></h3>
+<p>Login to the canfar system with</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>canfar<span class="w"> </span>auth<span class="w"> </span>login
+</pre></div>
+</div>
+<p>This can be done from at notebook or terminal within the canfar science portal,
+or any remote terminal that has the canfar library installed.</p>
+<p>Check authentication status with</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>canfar<span class="w"> </span>auth<span class="w"> </span>list
+</pre></div>
+</div>
+<p>If not on “default”, run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>canfar<span class="w"> </span>auth<span class="w"> </span>switch<span class="w"> </span>default
+</pre></div>
+</div>
+</section>
+</section>
+<section id="from-previous-setup">
+<h2>From previous setup<a class="headerlink" href="#from-previous-setup" title="Link to this heading">#</a></h2>
+<section id="merge-all-final-catalogues">
+<h3>Merge all final catalogues<a class="headerlink" href="#merge-all-final-catalogues" title="Link to this heading">#</a></h3>
+<p>The last step of <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing is, per patch, to merget all final catalogues. This is done via a python script, as follows.
+First, change to parent directory <code class="docutils literal notranslate"><span class="pre">/path/to/version</span></code> and run the following command for all patches</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">patchnum</span><span class="o">=</span><span class="sb">`</span>tr<span class="w"> </span><span class="nv">$patch</span><span class="w"> </span>P<span class="w"> </span><span class="s1">&#39;&#39;</span><span class="sb">`</span>
+create_final_cat.py<span class="w"> </span>-m<span class="w"> </span>final_cat_<span class="nv">$patch</span>.hdf5<span class="w"> </span>-i<span class="w"> </span>.<span class="w"> </span>-p<span class="w"> </span><span class="nv">$patch</span>/cfis/final_cat.param<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-P<span class="w"> </span><span class="nv">$patchnum</span><span class="w"> </span>-o<span class="w"> </span><span class="nv">$patch</span>/n_tiles_final.txt<span class="w"> </span>-v
+</pre></div>
+</div>
+</section>
+</section>
+<section id="additional-shapepipe-processing">
+<h2>Additional <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing<a class="headerlink" href="#additional-shapepipe-processing" title="Link to this heading">#</a></h2>
+<section id="create-star-catalogue">
+<h3>Create star Catalogue<a class="headerlink" href="#create-star-catalogue" title="Link to this heading">#</a></h3>
+<p>We can additionaly create a combined star catalogue, with star shapes projecte from detector to world coordinates.
+This is useful for validation and galaxy-PSF/star correlation diagnostics.</p>
+<section id="combine-all-psf-runs">
+<h4>Combine all PSF runs<a class="headerlink" href="#combine-all-psf-runs" title="Link to this heading">#</a></h4>
+<p>In each patch directory /path/to/version/$patch, run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>combine_runs.bash<span class="w"> </span>-p<span class="w"> </span><span class="nv">$psf</span><span class="w"> </span>-c<span class="w"> </span>psf
+</pre></div>
+</div>
+<p>to create a single output directory of PSF files (symbolic links).</p>
+<p>Optionally, to create and plot results for this patch only:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>shapepipe_run<span class="w"> </span>-c<span class="w"> </span><span class="nv">$SP_CONFIG</span>/config_Ms_<span class="nv">$psf</span>.ini
+shapepipe_run<span class="w"> </span>-c<span class="w"> </span><span class="nv">$SP_CONFIG</span>/config_Pl_<span class="nv">$psf</span>.ini
+</pre></div>
+</div>
+</section>
+<section id="convert-star-catalogue-to-wcs">
+<h4>Convert star catalogue to wCS<a class="headerlink" href="#convert-star-catalogue-to-wcs" title="Link to this heading">#</a></h4>
+<p>Convert all input validation PSF files and create directories per patch <code class="docutils literal notranslate"><span class="pre">P?</span></code>.
+Create files <code class="docutils literal notranslate"><span class="pre">validation_psf_conv-&lt;patchnum&gt;-&lt;idx&gt;.fits</span></code> (for the v1.4 setup only one file):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/path/to/version
+mkdir<span class="w"> </span>stat_car
+<span class="nb">cd</span><span class="w"> </span>star_cat
+</pre></div>
+</div>
+<p>For each patch run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>convert_psf_pix2world.py<span class="w"> </span>-i<span class="w"> </span>..<span class="w"> </span>-P<span class="w"> </span><span class="nv">$patchnum</span><span class="w"> </span>-v
+</pre></div>
+</div>
+<p>Combine previously created files as links within one ShapePipe run directory (for the v1.4 setup only one link).
+First (and optiohnal), create a subdir for a run and link to the input patches:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/path/to/version/star_cat
+mkdir<span class="w"> </span>v1.6
+ln<span class="w"> </span>-s<span class="w"> </span>../P1
+ln<span class="w"> </span>-s<span class="w"> </span>../P2
+...
+</pre></div>
+</div>
+<p>Next, create links to all <code class="docutils literal notranslate"><span class="pre">validation_conv</span></code> runs:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>combine_runs.bash<span class="w"> </span>-p<span class="w"> </span>psfex<span class="w"> </span>-c<span class="w"> </span>psf_conv
+</pre></div>
+</div>
+<p>Merge all converted star catalogues and create <code class="docutils literal notranslate"><span class="pre">final-starcat.fits</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">SP_RUN</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
+shapepipe_run<span class="w"> </span>-c<span class="w"> </span>~/shapepipe/example/cfis/config_Ms_psfex_conv.ini
+</pre></div>
+</div>
+<p>Rename to general PSF and star catalogue used for all (“a”) sub-versions:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp<span class="w"> </span>output/run_sp_Ms/merge_starcat_runner/output/full_starcat-0000000.fits<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>unions_shapepipe_psf_2024_v1.6.a.fits<span class="w"> </span>
+</pre></div>
+</div>
+<p>The FITS file <code class="docutils literal notranslate"><span class="pre">CATTYPE</span></code> (newer version) should be <code class="docutils literal notranslate"><span class="pre">validation_psf_conf</span></code>.</p>
+</section>
+</section>
+</section>
+<section id="post-processing">
+<h2>Post-processing<a class="headerlink" href="#post-processing" title="Link to this heading">#</a></h2>
+<p>The following post-processing steps are performed with the library <code class="docutils literal notranslate"><span class="pre">sp_validation</span></code>.</p>
+<section id="extract-information">
+<h3>Extract Information<a class="headerlink" href="#extract-information" title="Link to this heading">#</a></h3>
+<p>First, we extract all information from the final catalogue, per patch. We copy
+the parameter file and set links to the catalogues and <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> config directory.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/path/to/version/<span class="nv">$patch</span>
+cp<span class="w"> </span>~/astro/repositories/github/sp_validation/notebooks/params.py<span class="w"> </span>.
+ln<span class="w"> </span>-s<span class="w"> </span>/path/to/final_cat_<span class="nv">$patchnum</span>.hdf5<span class="w">  </span><span class="c1"># not relative path ../final_cat_P$patchnum.hdf5 !</span>
+ln<span class="w"> </span>-s<span class="w"> </span>output/run_sp_MsPl/mccd_merge_starcat_runner/output/full_starcat-0000000.fits
+ln<span class="w"> </span>-s<span class="w"> </span>~/astro/repositories/github/shapepipe/example/cfis
+</pre></div>
+</div>
+<p>Then edit <code class="docutils literal notranslate"><span class="pre">params.py</span></code>: Set patch name; set <code class="docutils literal notranslate"><span class="pre">wrap_ra</span></code> for P2.</p>
+<p>Now we can run the script, recommended via job submission on candide. For large patches,
+this requies a job with a large memory, e.g. with <code class="docutils literal notranslate"><span class="pre">mem=380000</span></code></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">[</span>squeue<span class="o">]</span><span class="w"> </span>python<span class="w"> </span>~/astro/repositories/github/sp_validation/notebooks/extract_info.py
+</pre></div>
+</div>
+<p>This creates a patch-wise comprehensive catalogue.</p>
+</section>
+<section id="create-global-comprehensive-catalogues">
+<h3>Create global comprehensive catalogues<a class="headerlink" href="#create-global-comprehensive-catalogues" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/patch/to/version
+<span class="o">[</span>squeue<span class="o">]</span><span class="w"> </span>python<span class="w"> </span>~/astro/repositories/github/sp_validation/scripts/create_joint_comprehensive_cat.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-v<span class="w"> </span>v1.6.c<span class="w"> </span>-v<span class="w"> </span>-p<span class="w"> </span>P1+P2+P3+P4+P5+P6+P7+P8+P9
+</pre></div>
+</div>
+<p>This creates the file <code class="docutils literal notranslate"><span class="pre">unions_shapepipe_comprehensive_2024_v1.6.c.hdf5</span></code>.</p>
+</section>
+<section id="apply-structural-masks">
+<h3>Apply structural masks<a class="headerlink" href="#apply-structural-masks" title="Link to this heading">#</a></h3>
+<p>First, edit the Python script <code class="docutils literal notranslate"><span class="pre">~/astro/repositories/github/sp_validation/notebooks/demo_apply_hsp_masks.py</span></code>
+to match catalogue name. Check the coverage mask input file (see below).
+Run the script to apply the healsparse structural masks:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">[</span>squeue<span class="o">]</span><span class="w"> </span>python<span class="w"> </span>~/astro/repositories/github/sp_validation/notebooks/demo_apply_hsp_masks.py
+</pre></div>
+</div>
+<p>This creates the file <code class="docutils literal notranslate"><span class="pre">unions_shapepipe_comprehensive_struct_2024_v1.6.c.hdf5</span></code>.</p>
+</section>
+<section id="define-sample-calibrate-catalogue">
+<h3>Define sample, calibrate catalogue<a class="headerlink" href="#define-sample-calibrate-catalogue" title="Link to this heading">#</a></h3>
+<p>We are close to finally perform the last post-processing step, which is the calibration. First, the final galaxy sample
+in question needs to be defined, with masks and cuts to apply from a <code class="docutils literal notranslate"><span class="pre">yaml</span></code> config file. A number of pre-defined files
+can be found in <code class="docutils literal notranslate"><span class="pre">~/astro/repositories/github/sp_validation/calibration</span></code>.</p>
+<p>For example, to create <code class="docutils literal notranslate"><span class="pre">v1.6.6</span></code>, the steps are:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/path/to/version
+mkdir<span class="w"> </span>-p<span class="w"> </span>v1.6.6
+<span class="nb">cd</span><span class="w"> </span>v1.6.6
+ln<span class="w"> </span>-s<span class="w"> </span>~/astro/repositories/github/sp_validation/calibration/mask_v1.X.6.yaml<span class="w"> </span>config_mask.yaml
+ln<span class="w"> </span>-s<span class="w"> </span>..//unions_shapepipe_comprehensive_struct_2024_v1.6.c.hdf5<span class="w"> </span>unions_shapepipe_comprehensive_struct_2024_v1.X.c.hdf5
+<span class="o">[</span>squeue<span class="o">]</span><span class="w"> </span>python<span class="w"> </span>~/astro/repositories/github/sp_validation/calibrate_comprehensive_cat.py
+</pre></div>
+</div>
+<p>calibrate_comprehensive</p>
+</section>
+<section id="create-matched-star-catalogue">
+<h3>Create matched star catalogue<a class="headerlink" href="#create-matched-star-catalogue" title="Link to this heading">#</a></h3>
+<p>For diagnostics, a catalogue with multi-epoch shapes measured by ngmix matched with the validation star catalogue is used.
+This is created as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/path/to/version
+merge_psf_cat.py<span class="w"> </span><span class="o">[</span>-V<span class="w"> </span>v1.6<span class="p">|</span>-P<span class="w"> </span>P1+P2+...<span class="o">]</span><span class="w"> </span>-v
+</pre></div>
+</div>
+<p>This creates the joint catalogue unions_shapepipe_star_2024_v1.6.a.fits .</p>
+</section>
+<section id="create-coverage-mask">
+<h3>Create coverage mask<a class="headerlink" href="#create-coverage-mask" title="Link to this heading">#</a></h3>
+<p>First, on canfar, move to the directory that has the patch subdirectories.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/path/to/version
+</pre></div>
+</div>
+<section id="get-exposure-numbers">
+<h4>Get exposure numbers<a class="headerlink" href="#get-exposure-numbers" title="Link to this heading">#</a></h4>
+<p>If the file <code class="docutils literal notranslate"><span class="pre">$patch/exp_numbers.txt</span></code> does not exist for a given patch, create it with the summary program</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>summary_run<span class="w"> </span><span class="nv">$patch</span><span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+<p>Now, create the list of CCDs that have PSF information with</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>get_ccds_with_psf<span class="w"> </span>-v<span class="w"> </span>-V<span class="w"> </span>v1.6
+</pre></div>
+</div>
+<p>Next, download exposures headers</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>download_headers<span class="w"> </span>-i<span class="w"> </span>ccds_with_psfs_v1.6.txt<span class="w"> </span>-o<span class="w"> </span>headers_v1.6<span class="w"> </span>-v
+</pre></div>
+</div>
+<p>From the headers, the CCD corner coordinates are extracted with</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>extract_field_corners<span class="w"> </span>-i<span class="w"> </span>headers_v1.6<span class="w"> </span>-v
+</pre></div>
+</div>
+<p>Then, build the healsparse coverage mask file as</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>build_coverage_map
+</pre></div>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">plot_coverage_map</span></code> to create plots of the coverage mask.</p>
+</section>
+</section>
+</section>
+<section id="extra-utilities">
+<h2>Extra Utilities<a class="headerlink" href="#extra-utilities" title="Link to this heading">#</a></h2>
+<section id="run-in-terminal-in-parallel">
+<h3>Run in Terminal in Parallel<a class="headerlink" href="#run-in-terminal-in-parallel" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cat<span class="w"> </span>IDs.txt<span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>-I<span class="w"> </span><span class="o">{}</span><span class="w"> </span>-P<span class="w"> </span><span class="m">16</span><span class="w"> </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;init_run_exclusive_canfar.sh -j 512 -e {}&#39;</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item"><div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#initialise-directory-structure">Initialise directory structure</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#interactive-job-from-the-terminal-for-a-single-tile">Interactive job from the terminal for a single tile</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#canfar-setup">CANFAR Setup</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#canfar-login">CANFAR Login</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#from-previous-setup">From previous setup</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#merge-all-final-catalogues">Merge all final catalogues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#additional-shapepipe-processing">Additional <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#create-star-catalogue">Create star Catalogue</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#combine-all-psf-runs">Combine all PSF runs</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#convert-star-catalogue-to-wcs">Convert star catalogue to wCS</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#post-processing">Post-processing</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#extract-information">Extract Information</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#create-global-comprehensive-catalogues">Create global comprehensive catalogues</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#apply-structural-masks">Apply structural masks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#define-sample-calibrate-catalogue">Define sample, calibrate catalogue</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#create-matched-star-catalogue">Create matched star catalogue</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#create-coverage-mask">Create coverage mask</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#get-exposure-numbers">Get exposure numbers</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#extra-utilities">Extra Utilities</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#run-in-terminal-in-parallel">Run in Terminal in Parallel</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CosmoStat
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2022, CosmoStat.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="last-updated">
+  Last updated on 10 Jun, 2026.
+  <br/>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

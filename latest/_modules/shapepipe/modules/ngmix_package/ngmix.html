@@ -1,0 +1,1812 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>shapepipe.modules.ngmix_package.ngmix &#8212; ShapePipe v1.1</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/sphinx-book-theme.css?v=3c74b3bc" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../../_static/documentation_options.js?v=051bfb12"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/shapepipe/modules/ngmix_package/ngmix';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://cosmostat.github.io/shapepipe/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'latest';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="author" title="About these documents" href="../../../../about.html" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="1.1" />
+    <meta name="docbuild:last-update" content="10 Jun, 2026"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">ShapePipe v1.1</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">About ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contributors.html">Contributors</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Installing ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../container.html">Container Workflow</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Running ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../basic_execution.html">Basic Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../pipeline_tutorial.html">ShapePipe Tutorial</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../post_processing.html">Post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../random_cat.html">Create random catalogues and masks</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../understanding_api.html">Understanding the API Documentation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../../shapepipe.html">shapepipe</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../../shapepipe.modules.html">shapepipe.modules</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.find_exposures_package.html">shapepipe.modules.find_exposures_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.find_exposures_package.find_exposures.html">shapepipe.modules.find_exposures_package.find_exposures</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.get_images_package.html">shapepipe.modules.get_images_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.get_images_package.get_images.html">shapepipe.modules.get_images_package.get_images</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.make_cat_package.html">shapepipe.modules.make_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.make_cat_package.make_cat.html">shapepipe.modules.make_cat_package.make_cat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.mask_package.html">shapepipe.modules.mask_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.mask_package.mask.html">shapepipe.modules.mask_package.mask</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.match_external_package.html">shapepipe.modules.match_external_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.match_external_package.match_external.html">shapepipe.modules.match_external_package.match_external</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.mccd_package.html">shapepipe.modules.mccd_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.mccd_package.mccd_interpolation_script.html">shapepipe.modules.mccd_package.mccd_interpolation_script</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.mccd_package.mccd_plot_utilities.html">shapepipe.modules.mccd_package.mccd_plot_utilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd.html">shapepipe.modules.mccd_package.shapepipe_auxiliary_mccd</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.merge_headers_package.html">shapepipe.modules.merge_headers_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.merge_headers_package.merge_headers.html">shapepipe.modules.merge_headers_package.merge_headers</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.merge_sep_cats_package.html">shapepipe.modules.merge_sep_cats_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.merge_sep_cats_package.merge_sep_cats.html">shapepipe.modules.merge_sep_cats_package.merge_sep_cats</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.merge_starcat_package.html">shapepipe.modules.merge_starcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.merge_starcat_package.merge_starcat.html">shapepipe.modules.merge_starcat_package.merge_starcat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.ngmix_package.html">shapepipe.modules.ngmix_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.ngmix_package.ngmix.html">shapepipe.modules.ngmix_package.ngmix</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.pastecat_package.html">shapepipe.modules.pastecat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.pastecat_package.pastecat.html">shapepipe.modules.pastecat_package.pastecat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.psfex_interp_package.html">shapepipe.modules.psfex_interp_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.psfex_interp_package.psfex_interp.html">shapepipe.modules.psfex_interp_package.psfex_interp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.psfex_package.html">shapepipe.modules.psfex_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.psfex_package.psfex_script.html">shapepipe.modules.psfex_package.psfex_script</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.python_example_package.html">shapepipe.modules.python_example_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.python_example_package.python_example.html">shapepipe.modules.python_example_package.python_example</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.random_cat_package.html">shapepipe.modules.random_cat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.random_cat_package.random_cat.html">shapepipe.modules.random_cat_package.random_cat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.read_ext_sexcat_package.html">shapepipe.modules.read_ext_sexcat_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat.html">shapepipe.modules.read_ext_sexcat_package.read_ext_sexcat</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.setools_package.html">shapepipe.modules.setools_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.setools_package.setools.html">shapepipe.modules.setools_package.setools</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.sextractor_package.html">shapepipe.modules.sextractor_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.sextractor_package.sextractor_script.html">shapepipe.modules.sextractor_package.sextractor_script</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.split_exp_package.html">shapepipe.modules.split_exp_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.split_exp_package.split_exp.html">shapepipe.modules.split_exp_package.split_exp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.spread_model_package.html">shapepipe.modules.spread_model_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.spread_model_package.spread_model.html">shapepipe.modules.spread_model_package.spread_model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.uncompress_fits_package.html">shapepipe.modules.uncompress_fits_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.uncompress_fits_package.uncompress_fits.html">shapepipe.modules.uncompress_fits_package.uncompress_fits</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../shapepipe.modules.vignetmaker_package.html">shapepipe.modules.vignetmaker_package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../shapepipe.modules.vignetmaker_package.vignetmaker.html">shapepipe.modules.vignetmaker_package.vignetmaker</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.modules.module_decorator.html">shapepipe.modules.module_decorator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.modules.module_runners.html">shapepipe.modules.module_runners</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../../shapepipe.pipeline.html">shapepipe.pipeline</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.args.html">shapepipe.pipeline.args</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.config.html">shapepipe.pipeline.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.dependency_handler.html">shapepipe.pipeline.dependency_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.execute.html">shapepipe.pipeline.execute</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.exp_utils.html">shapepipe.pipeline.exp_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.file_handler.html">shapepipe.pipeline.file_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.file_io.html">shapepipe.pipeline.file_io</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.job_handler.html">shapepipe.pipeline.job_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.mpi_run.html">shapepipe.pipeline.mpi_run</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.run_log.html">shapepipe.pipeline.run_log</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.shared.html">shapepipe.pipeline.shared</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.str_handler.html">shapepipe.pipeline.str_handler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.timeout.html">shapepipe.pipeline.timeout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.pipeline.worker_handler.html">shapepipe.pipeline.worker_handler</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../../shapepipe.utilities.html">shapepipe.utilities</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.cfis.html">shapepipe.utilities.cfis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.file_system.html">shapepipe.utilities.file_system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.galaxy.html">shapepipe.utilities.galaxy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.summary.html">shapepipe.utilities.summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.summary_params_pre_v2.html">shapepipe.utilities.summary_params_pre_v2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../shapepipe.utilities.vizier.html">shapepipe.utilities.vizier</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../shapepipe.canfar_run.html">shapepipe.canfar_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../shapepipe.info.html">shapepipe.info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../shapepipe.run.html">shapepipe.run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../shapepipe.shapepipe_run.html">shapepipe.shapepipe_run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../shapepipe.summary_run.html">shapepipe.summary_run</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contributing to ShapePipe</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../contributing.html">Contribution Guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../module_develop.html">Module Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../module_example.html">Module Examples</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../z_ref.html">References</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/CosmoStat/shapepipe/issues/new?title=Issue%20on%20page%20%2F_modules/shapepipe/modules/ngmix_package/ngmix.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
+
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for shapepipe.modules.ngmix_package.ngmix</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;NGMIX.</span>
+
+<span class="sd">This module contains a class for ngmix shape measurement.</span>
+
+<span class="sd">:Author: Axel Guinot</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">galsim</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ngmix</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shutil</span><span class="w"> </span><span class="kn">import</span> <span class="n">copyfile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">fits</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">modopt.math.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">sigma_mad</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ngmix.fitting</span><span class="w"> </span><span class="kn">import</span> <span class="n">LMSimple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ngmix.observation</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiBandObsList</span><span class="p">,</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">ObsList</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.random</span><span class="w"> </span><span class="kn">import</span> <span class="n">uniform</span> <span class="k">as</span> <span class="n">urand</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlitedict</span><span class="w"> </span><span class="kn">import</span> <span class="n">SqliteDict</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_io</span>
+
+
+<div class="viewcode-block" id="Ngmix">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Ngmix</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Ngmix.</span>
+
+<span class="sd">    Class to handle NGMIX shapepe measurement.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_file_list : list</span>
+<span class="sd">        Input files</span>
+<span class="sd">    output_dir : str</span>
+<span class="sd">        Output directory</span>
+<span class="sd">    file_number_string : str</span>
+<span class="sd">        File numbering scheme</span>
+<span class="sd">    zero_point : float</span>
+<span class="sd">        Photometric zero point</span>
+<span class="sd">    pixel_scale : float</span>
+<span class="sd">        Pixel scale in arcsec</span>
+<span class="sd">    f_wcs_path : str</span>
+<span class="sd">        Path to merged single-exposure single-HDU headers</span>
+<span class="sd">    w_log : logging.Logger</span>
+<span class="sd">        Logging instance</span>
+<span class="sd">    check_existing_dir : str, optional</span>
+<span class="sd">        Directory or previous run, default is ``None``</span>
+<span class="sd">    save_batch : int, optional</span>
+<span class="sd">        Save output catalogue in batches of this size; detaul is ``-1`` (no</span>
+<span class="sd">        batch save)</span>
+<span class="sd">    id_obj_min : int, optional</span>
+<span class="sd">        First galaxy ID to process, not used if the value is set to ``-1``;</span>
+<span class="sd">        the default is ``-1``</span>
+<span class="sd">    id_obj_max : int, optional</span>
+<span class="sd">        Last galaxy ID to process, not used if the value is set to ``-1``;</span>
+<span class="sd">        the default is ``-1``</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    IndexError</span>
+<span class="sd">        If the length of the input file list is incorrect</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">input_file_list</span><span class="p">,</span>
+        <span class="n">output_dir</span><span class="p">,</span>
+        <span class="n">file_number_string</span><span class="p">,</span>
+        <span class="n">zero_point</span><span class="p">,</span>
+        <span class="n">pixel_scale</span><span class="p">,</span>
+        <span class="n">f_wcs_path</span><span class="p">,</span>
+        <span class="n">w_log</span><span class="p">,</span>
+        <span class="n">check_existing_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">save_batch</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">id_obj_min</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">id_obj_max</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="p">):</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_file_list</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Input file list has length </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">input_file_list</span><span class="p">)</span><span class="si">}</span><span class="s2">,&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; required is 6&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tile_cat_path</span> <span class="o">=</span> <span class="n">input_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gal_vignet_path</span> <span class="o">=</span> <span class="n">input_file_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bkg_vignet_path</span> <span class="o">=</span> <span class="n">input_file_list</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_psf_vignet_path</span> <span class="o">=</span> <span class="n">input_file_list</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_weight_vignet_path</span> <span class="o">=</span> <span class="n">input_file_list</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flag_vignet_path</span> <span class="o">=</span> <span class="n">input_file_list</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_file_number_string</span> <span class="o">=</span> <span class="n">file_number_string</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zero_point</span> <span class="o">=</span> <span class="n">zero_point</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pixel_scale</span> <span class="o">=</span> <span class="n">pixel_scale</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_f_wcs_path</span> <span class="o">=</span> <span class="n">f_wcs_path</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_existing_dir</span> <span class="o">=</span> <span class="n">check_existing_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save_batch</span> <span class="o">=</span> <span class="n">save_batch</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_min</span> <span class="o">=</span> <span class="n">id_obj_min</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_max</span> <span class="o">=</span> <span class="n">id_obj_max</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span> <span class="o">=</span> <span class="n">w_log</span>
+
+        <span class="c1"># Initiatlise random generator</span>
+        <span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\d+&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_number_string</span><span class="p">)))</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Random generator initialisation seed = </span><span class="si">{</span><span class="n">seed</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Ngmix.MegaCamFlip">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.MegaCamFlip">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">MegaCamFlip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vign</span><span class="p">,</span> <span class="n">ccd_nb</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Flip for MegaCam.</span>
+
+<span class="sd">        MegaCam has CCDs that are upside down. This function flips the</span>
+<span class="sd">        postage stamps in these CCDs.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vign : numpy.ndarray</span>
+<span class="sd">            Array containing the postage stamp to flip</span>
+<span class="sd">        ccd_nb : int</span>
+<span class="sd">            ID of the CCD containing the postage stamp</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            The flipped postage stamp</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ccd_nb</span> <span class="o">&lt;</span> <span class="mi">18</span> <span class="ow">or</span> <span class="n">ccd_nb</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">36</span><span class="p">,</span> <span class="mi">37</span><span class="p">]:</span>
+            <span class="c1"># swap x axis so origin is on top-right</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">rot90</span><span class="p">(</span><span class="n">vign</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># swap y axis so origin is on bottom-left</span>
+            <span class="k">return</span> <span class="n">vign</span></div>
+
+
+<div class="viewcode-block" id="Ngmix.get_prior">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_prior">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_prior</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Prior.</span>
+
+<span class="sd">        Return prior for the different parameters.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ngmix.priors</span>
+<span class="sd">            Priors for the different parameters</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Prior on ellipticity. Details do not matter, as long</span>
+        <span class="c1"># as it regularizes the fit. From Bernstein &amp; Armstrong 2014</span>
+        <span class="n">g_sigma</span> <span class="o">=</span> <span class="mf">0.4</span>
+        <span class="n">g_prior</span> <span class="o">=</span> <span class="n">ngmix</span><span class="o">.</span><span class="n">priors</span><span class="o">.</span><span class="n">GPriorBA</span><span class="p">(</span><span class="n">g_sigma</span><span class="p">)</span>
+
+        <span class="c1"># 2-d Gaussian prior on the center row and column center</span>
+        <span class="c1"># (relative to the center of the jacobian, which</span>
+        <span class="c1"># would be zero) and the sigma of the Gaussians.</span>
+        <span class="c1"># Units same as jacobian, probably arcsec</span>
+        <span class="n">row</span><span class="p">,</span> <span class="n">col</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span>
+        <span class="n">row_sigma</span><span class="p">,</span> <span class="n">col_sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pixel_scale</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pixel_scale</span>
+        <span class="n">cen_prior</span> <span class="o">=</span> <span class="n">ngmix</span><span class="o">.</span><span class="n">priors</span><span class="o">.</span><span class="n">CenPrior</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">row_sigma</span><span class="p">,</span> <span class="n">col_sigma</span><span class="p">)</span>
+
+        <span class="c1"># Size prior. Instead of flat, two-sided error function (TwoSidedErf)</span>
+        <span class="c1"># could be used</span>
+        <span class="n">Tminval</span> <span class="o">=</span> <span class="o">-</span><span class="mf">10.0</span>  <span class="c1"># arcsec squared</span>
+        <span class="n">Tmaxval</span> <span class="o">=</span> <span class="mf">1.0e6</span>
+        <span class="n">T_prior</span> <span class="o">=</span> <span class="n">ngmix</span><span class="o">.</span><span class="n">priors</span><span class="o">.</span><span class="n">FlatPrior</span><span class="p">(</span><span class="n">Tminval</span><span class="p">,</span> <span class="n">Tmaxval</span><span class="p">)</span>
+
+        <span class="c1"># Flux prior. Bounds need to make sense for</span>
+        <span class="c1"># images in question</span>
+        <span class="n">Fminval</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0e4</span>
+        <span class="n">Fmaxval</span> <span class="o">=</span> <span class="mf">1.0e9</span>
+        <span class="n">F_prior</span> <span class="o">=</span> <span class="n">ngmix</span><span class="o">.</span><span class="n">priors</span><span class="o">.</span><span class="n">FlatPrior</span><span class="p">(</span><span class="n">Fminval</span><span class="p">,</span> <span class="n">Fmaxval</span><span class="p">)</span>
+
+        <span class="c1"># Joint prior, combine all individual priors</span>
+        <span class="n">prior</span> <span class="o">=</span> <span class="n">ngmix</span><span class="o">.</span><span class="n">joint_prior</span><span class="o">.</span><span class="n">PriorSimpleSep</span><span class="p">(</span>
+            <span class="n">cen_prior</span><span class="p">,</span> <span class="n">g_prior</span><span class="p">,</span> <span class="n">T_prior</span><span class="p">,</span> <span class="n">F_prior</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">prior</span></div>
+
+
+<div class="viewcode-block" id="Ngmix.compile_results">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.compile_results">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compile_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">results</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compile Results.</span>
+
+<span class="sd">        Prepare the results of NGMIX before saving.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        results : dict</span>
+<span class="sd">            Results of NGMIX metacal</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            Compiled results ready to be written to a file</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        KeyError</span>
+<span class="sd">            If SNR key not found</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;1m&quot;</span><span class="p">,</span> <span class="s2">&quot;1p&quot;</span><span class="p">,</span> <span class="s2">&quot;2m&quot;</span><span class="p">,</span> <span class="s2">&quot;2p&quot;</span><span class="p">,</span> <span class="s2">&quot;noshear&quot;</span><span class="p">]</span>
+        <span class="n">names2</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;n_epoch_model&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;moments_fail&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;ntry_fit&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;g1_psfo_ngmix&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;g2_psfo_ngmix&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;T_psfo_ngmix&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;g1_err_psfo_ngmix&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;g2_err_psfo_ngmix&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;T_err_psfo_ngmix&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;g1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;g1_err&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;g2&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;g2_err&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;T&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;T_err&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Tpsf&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;g1_psf&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;g2_psf&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;flux&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;flux_err&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;s2n&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;mag&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;mag_err&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;flags&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;mcal_flags&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="n">output_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">{</span><span class="n">kk</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">kk</span> <span class="ow">in</span> <span class="n">names2</span><span class="p">}</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">names</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+
+                <span class="n">mag</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="o">-</span><span class="mf">2.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;flux&quot;</span><span class="p">])</span>
+                    <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_zero_point</span>
+                <span class="p">)</span>
+                <span class="n">mag_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span>
+                    <span class="o">-</span><span class="mf">2.5</span>
+                    <span class="o">*</span> <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;flux_err&quot;</span><span class="p">]</span>
+                    <span class="o">/</span> <span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;flux&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+                <span class="p">)</span>
+
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;obj_id&quot;</span><span class="p">])</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;n_epoch_model&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;n_epoch_model&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;moments_fail&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;moments_fail&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;ntry_fit&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;ntry&quot;</span><span class="p">])</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;g1_psfo_ngmix&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;g_PSFo&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;g2_psfo_ngmix&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;g_PSFo&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;g1_err_psfo_ngmix&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;g_err_PSFo&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;g2_err_psfo_ngmix&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;g_err_PSFo&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;T_psfo_ngmix&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;T_PSFo&quot;</span><span class="p">])</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;T_err_psfo_ngmix&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;T_err_PSFo&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;g1&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;g&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;g1_err&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;pars_err&quot;</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;g2&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;g&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;g2_err&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;pars_err&quot;</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;T&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;T&quot;</span><span class="p">])</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;T_err&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;T_err&quot;</span><span class="p">])</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;Tpsf&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;Tpsf&quot;</span><span class="p">])</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;g1_psf&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;gpsf&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;g2_psf&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;gpsf&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;flux&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;flux&quot;</span><span class="p">])</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;flux_err&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;flux_err&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;mag&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mag</span><span class="p">)</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;mag_err&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mag_err</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="s2">&quot;s2n&quot;</span> <span class="ow">in</span> <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">]:</span>
+                    <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;s2n&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;s2n&quot;</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="s2">&quot;s2n_r&quot;</span> <span class="ow">in</span> <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">]:</span>
+                    <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;s2n&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;s2n_r&quot;</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;No SNR key (s2n, s2n_r) found in results&quot;</span><span class="p">)</span>
+
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;flags&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;flags&quot;</span><span class="p">])</span>
+                <span class="n">output_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;mcal_flags&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;mcal_flags&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">output_dict</span></div>
+
+
+<div class="viewcode-block" id="Ngmix.get_output_path">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_output_path">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_output_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Output Path.</span>
+
+<span class="sd">        Return path of output ngmix catalogue file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        directoy: str</span>
+<span class="sd">            directory name</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            output path</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">directory</span><span class="si">}</span><span class="s2">/ngmix</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_number_string</span><span class="si">}</span><span class="s2">.fits&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="Ngmix.get_last_id">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.get_last_id">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_last_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cat_path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Last ID.</span>
+
+<span class="sd">        Return ID of last projessed objects found in input catalogue file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cat_path: str</span>
+<span class="sd">            input catalogue file path</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        int</span>
+<span class="sd">            object ID</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
+            <span class="n">cat_path</span><span class="p">,</span>
+            <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">open_mode</span><span class="o">=</span><span class="n">file_io</span><span class="o">.</span><span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadOnly</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">_cat_data</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">_cat_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> HDUs instead of 6 in catalogue&quot;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">cat_path</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">ids</span> <span class="o">=</span> <span class="n">cat</span><span class="o">.</span><span class="n">_cat_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+
+        <span class="c1"># No object foun</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ids</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="n">id_last</span> <span class="o">=</span> <span class="n">ids</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">hdu_no</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">id_last</span> <span class="o">!=</span> <span class="n">cat</span><span class="o">.</span><span class="n">_cat_data</span><span class="p">[</span><span class="n">hdu_no</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Last ID </span><span class="si">{cat._cat_data[hdu_no].data[&#39;id&#39;][-1]}</span><span class="s2"> in HDU&quot;</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; #</span><span class="si">{</span><span class="n">hdu_no</span><span class="si">}</span><span class="s2"> inconsistent with </span><span class="si">{</span><span class="n">id_las</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">id_last</span></div>
+
+
+
+<div class="viewcode-block" id="Ngmix.save_results">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.save_results">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save Results.</span>
+
+<span class="sd">        Save the results into a FITS file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        output_dict: dict</span>
+<span class="sd">            Dictionary containing the results</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_hdu</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">n_hdu</span> <span class="o">!=</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;FITS output file data has </span><span class="si">{</span><span class="n">n_hdu</span><span class="si">}</span><span class="s2"> HDUs,&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; expected are 5&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">output_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_output_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_name</span><span class="p">):</span>
+            <span class="n">f_out</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
+                <span class="n">output_name</span><span class="p">,</span> <span class="n">open_mode</span><span class="o">=</span><span class="n">file_io</span><span class="o">.</span><span class="n">BaseCatalogue</span><span class="o">.</span><span class="n">OpenMode</span><span class="o">.</span><span class="n">ReadWrite</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">output_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">f_out</span><span class="o">.</span><span class="n">save_as_fits</span><span class="p">(</span><span class="n">output_dict</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">ext_name</span><span class="o">=</span><span class="n">key</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+            <span class="k">return</span>
+
+        <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">output_name</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;update&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdul</span><span class="p">:</span>
+
+            <span class="c1"># Iterate through HDUs (assuming they are Binary Table HDUs with data)</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">hdu</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hdul</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hdu</span><span class="p">,</span> <span class="n">fits</span><span class="o">.</span><span class="n">BinTableHDU</span><span class="p">):</span>  <span class="c1"># Check for table data</span>
+
+                    <span class="c1"># HDU extension name</span>
+                    <span class="n">ext_name</span> <span class="o">=</span> <span class="n">hdu</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">ext_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">output_dict</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                            <span class="s2">&quot;HDU extension </span><span class="si">{ext_name}</span><span class="s2"> from existing FITS file&quot;</span>
+                            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; not found in data&quot;</span>
+                        <span class="p">)</span>
+
+                    <span class="c1"># Existing data</span>
+                    <span class="n">existing_data</span> <span class="o">=</span> <span class="n">hdu</span><span class="o">.</span><span class="n">data</span>
+                    <span class="n">existing_dtype</span> <span class="o">=</span> <span class="n">hdu</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dtype</span>
+
+                    <span class="c1"># New data</span>
+                    <span class="n">new_data</span> <span class="o">=</span> <span class="n">output_dict</span><span class="p">[</span><span class="n">ext_name</span><span class="p">]</span>
+
+                    <span class="c1"># Verify that all column names in existing_data exist</span>
+                    <span class="c1"># in new_data_dict</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span>
+                        <span class="n">colname</span> <span class="ow">in</span> <span class="n">new_data</span>
+                        <span class="k">for</span> <span class="n">colname</span> <span class="ow">in</span> <span class="n">existing_dtype</span><span class="o">.</span><span class="n">names</span>
+                    <span class="p">):</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;output_dict&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">new_data</span><span class="p">])</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;existing_da&quot;</span><span class="p">,</span> <span class="n">existing_data</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                            <span class="s2">&quot;Mismatch between existing columns and new data columns.&quot;</span>
+                        <span class="p">)</span>
+
+                    <span class="c1"># New data to be appended</span>
+                    <span class="n">structured_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">new_data</span><span class="o">.</span><span class="n">values</span><span class="p">()))),</span>
+                        <span class="n">dtype</span><span class="o">=</span><span class="n">existing_data</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">colname</span> <span class="ow">in</span> <span class="n">existing_data</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                        <span class="n">structured_data</span><span class="p">[</span><span class="n">colname</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_data</span><span class="p">[</span><span class="n">colname</span><span class="p">]</span>
+
+                    <span class="c1"># Combine existing and new data</span>
+                    <span class="n">updated_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">existing_data</span><span class="p">,</span> <span class="n">structured_data</span><span class="p">)</span>
+
+                    <span class="c1"># Update the data in the HDU</span>
+                    <span class="n">hdu</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">updated_data</span>
+
+            <span class="c1"># Save changes to the FITS file</span>
+            <span class="n">hdul</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Ngmix.check_key">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.check_key">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expccd_name_tmp</span><span class="p">,</span> <span class="n">vign_cat</span><span class="p">,</span> <span class="n">vignet_path</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">expccd_name_tmp</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vign_cat</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Key &#39;</span><span class="si">{</span><span class="n">expccd_name_tmp</span><span class="si">}</span><span class="s2">&#39; (exposure CCD ID from PSF postage stamp list)&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; not found in postage stamp database&quot;</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; file &#39;</span><span class="si">{</span><span class="n">vignet_path</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ngmix.process">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.Ngmix.process">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process.</span>
+
+<span class="sd">        Funcion to processs NGMIX.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            Dictionary containing the NGMIX metacal results</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tile_cat</span> <span class="o">=</span> <span class="n">file_io</span><span class="o">.</span><span class="n">FITSCatalogue</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_tile_cat_path</span><span class="p">,</span>
+            <span class="n">SEx_catalogue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">tile_cat</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+        <span class="n">obj_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;NUMBER&quot;</span><span class="p">])</span>
+        <span class="n">tile_vign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;VIGNET&quot;</span><span class="p">])</span>
+        <span class="n">tile_ra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;XWIN_WORLD&quot;</span><span class="p">])</span>
+        <span class="n">tile_dec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tile_cat</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;YWIN_WORLD&quot;</span><span class="p">])</span>
+        <span class="n">tile_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="n">f_wcs_file</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_f_wcs_path</span><span class="p">)</span>
+        <span class="n">gal_vign_cat</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gal_vignet_path</span><span class="p">)</span>
+        <span class="n">bkg_vign_cat</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bkg_vignet_path</span><span class="p">)</span>
+        <span class="n">psf_vign_cat</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_psf_vignet_path</span><span class="p">)</span>
+        <span class="n">weight_vign_cat</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weight_vignet_path</span><span class="p">)</span>
+        <span class="n">flag_vign_cat</span> <span class="o">=</span> <span class="n">SqliteDict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_flag_vignet_path</span><span class="p">)</span>
+
+        <span class="n">final_res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">prior</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_prior</span><span class="p">()</span>
+
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">id_first</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">id_last</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="n">saved_batch_cumul</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">count_batch</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_save_batch</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Batch save mode, save every </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_batch</span><span class="si">}</span><span class="s2"> objectsa&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No batch mode&quot;</span><span class="p">)</span>
+
+        <span class="n">id_last</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_existing_dir</span><span class="p">:</span>
+            <span class="n">output_path_prev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_output_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_existing_dir</span><span class="p">)</span>
+            <span class="n">output_name_new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_output_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_dir</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_path_prev</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Copy previous cat </span><span class="si">{</span><span class="n">output_path_prev</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">output_name_new</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="n">copyfile</span><span class="p">(</span><span class="n">output_path_prev</span><span class="p">,</span> <span class="n">output_name_new</span><span class="p">)</span>
+                <span class="n">id_last</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_last_id</span><span class="p">(</span><span class="n">output_name_new</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;No previous cat found in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_existing_dir</span><span class="si">}</span><span class="s2">,&quot;</span>
+                    <span class="o">+</span> <span class="s2">&quot; starting from scratch&quot;</span>
+                <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Processing objects # </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_min</span><span class="si">}</span><span class="s2"> ... </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_max</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">i_tile</span><span class="p">,</span> <span class="n">id_tmp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">obj_id</span><span class="p">):</span>
+
+            <span class="c1"># Continue if ID outside range of predefined IDs (in config file)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_min</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">id_tmp</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_min</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_max</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">id_tmp</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_obj_max</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Continue if ID before last ID from previous run</span>
+            <span class="k">if</span> <span class="n">id_last</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">id_tmp</span> <span class="o">&lt;</span> <span class="n">id_last</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">id_first</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">id_first</span> <span class="o">=</span> <span class="n">id_tmp</span>
+            <span class="n">id_last</span> <span class="o">=</span> <span class="n">id_tmp</span>
+            <span class="n">str_id_tmp</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">id_tmp</span><span class="p">)</span>
+
+            <span class="n">gal_vign</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">psf_vign</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">sigma_psf</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">weight_vign</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">flag_vign</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">jacob_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="n">psf_vign_cat</span><span class="p">[</span><span class="n">str_id_tmp</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;empty&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping object </span><span class="si">{</span><span class="n">id_tmp</span><span class="si">}</span><span class="s2">: empty PSF vignet&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">check_key</span><span class="p">(</span><span class="n">str_id_tmp</span><span class="p">,</span> <span class="n">gal_vign_cat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gal_vignet_path</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">check_key</span><span class="p">(</span><span class="n">str_id_tmp</span><span class="p">,</span> <span class="n">bkg_vign_cat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bkg_vignet_path</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">check_key</span><span class="p">(</span><span class="n">str_id_tmp</span><span class="p">,</span> <span class="n">flag_vign_cat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flag_vignet_path</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">check_key</span><span class="p">(</span><span class="n">str_id_tmp</span><span class="p">,</span> <span class="n">weight_vign_cat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight_vignet_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">gal_vign_cat</span><span class="p">[</span><span class="n">str_id_tmp</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;empty&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Skipping object </span><span class="si">{</span><span class="n">id_tmp</span><span class="si">}</span><span class="s2">: empty galaxy vignet&quot;</span>
+                <span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="n">psf_expccd_name</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">psf_vign_cat</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">id_tmp</span><span class="p">)]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">expccd_name_tmp</span> <span class="ow">in</span> <span class="n">psf_expccd_name</span><span class="p">:</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">check_key</span><span class="p">(</span><span class="n">expccd_name_tmp</span><span class="p">,</span> <span class="n">gal_vign_cat</span><span class="p">[</span><span class="n">str_id_tmp</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gal_vignet_path</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">check_key</span><span class="p">(</span><span class="n">expccd_name_tmp</span><span class="p">,</span> <span class="n">bkg_vign_cat</span><span class="p">[</span><span class="n">str_id_tmp</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bkg_vignet_path</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">check_key</span><span class="p">(</span><span class="n">expccd_name_tmp</span><span class="p">,</span> <span class="n">flag_vign_cat</span><span class="p">[</span><span class="n">str_id_tmp</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flag_vignet_path</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">check_key</span><span class="p">(</span><span class="n">expccd_name_tmp</span><span class="p">,</span> <span class="n">weight_vign_cat</span><span class="p">[</span><span class="n">str_id_tmp</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight_vignet_path</span><span class="p">)</span>
+
+                <span class="n">exp_name</span><span class="p">,</span> <span class="n">ccd_n</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">expccd_name_tmp</span><span class="p">)</span>
+
+                <span class="n">gal_vign_tmp</span> <span class="o">=</span> <span class="n">gal_vign_cat</span><span class="p">[</span><span class="n">str_id_tmp</span><span class="p">][</span><span class="n">expccd_name_tmp</span><span class="p">][</span>
+                    <span class="s2">&quot;VIGNET&quot;</span>
+                <span class="p">]</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">gal_vign_tmp</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Skipping exp </span><span class="si">{</span><span class="n">expccd_name_tmp</span><span class="si">}</span><span class="s2"> for object </span><span class="si">{</span><span class="n">id_tmp</span><span class="si">}</span><span class="s2">: zero-length galaxy vignet&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="n">bkg_vign_tmp</span> <span class="o">=</span> <span class="n">bkg_vign_cat</span><span class="p">[</span><span class="n">str_id_tmp</span><span class="p">][</span><span class="n">expccd_name_tmp</span><span class="p">][</span>
+                    <span class="s2">&quot;VIGNET&quot;</span>
+                <span class="p">]</span>
+                <span class="n">gal_vign_sub_bkg</span> <span class="o">=</span> <span class="n">gal_vign_tmp</span> <span class="o">-</span> <span class="n">bkg_vign_tmp</span>
+
+                <span class="n">tile_vign_tmp</span> <span class="o">=</span> <span class="n">Ngmix</span><span class="o">.</span><span class="n">MegaCamFlip</span><span class="p">(</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tile_vign</span><span class="p">[</span><span class="n">i_tile</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">ccd_n</span><span class="p">)</span>
+                <span class="p">)</span>
+
+                <span class="n">flag_vign_tmp</span> <span class="o">=</span> <span class="n">flag_vign_cat</span><span class="p">[</span><span class="n">str_id_tmp</span><span class="p">][</span><span class="n">expccd_name_tmp</span><span class="p">][</span>
+                    <span class="s2">&quot;VIGNET&quot;</span>
+                <span class="p">]</span>
+                <span class="n">flag_vign_tmp</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">tile_vign_tmp</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1e30</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">10</span>
+                <span class="n">v_flag_tmp</span> <span class="o">=</span> <span class="n">flag_vign_tmp</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">v_flag_tmp</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="mi">51</span> <span class="o">*</span> <span class="mi">51</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Skipping exp </span><span class="si">{</span><span class="n">expccd_name_tmp</span><span class="si">}</span><span class="s2"> for object </span><span class="si">{</span><span class="n">id_tmp</span><span class="si">}</span><span class="s2">: mask &gt; 1/3&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="n">weight_vign_tmp</span> <span class="o">=</span> <span class="n">weight_vign_cat</span><span class="p">[</span><span class="n">str_id_tmp</span><span class="p">][</span><span class="n">expccd_name_tmp</span><span class="p">][</span>
+                    <span class="s2">&quot;VIGNET&quot;</span>
+                <span class="p">]</span>
+
+                <span class="n">jacob_tmp</span> <span class="o">=</span> <span class="n">get_jacob</span><span class="p">(</span>
+                    <span class="n">f_wcs_file</span><span class="p">[</span><span class="n">exp_name</span><span class="p">][</span><span class="nb">int</span><span class="p">(</span><span class="n">ccd_n</span><span class="p">)][</span><span class="s2">&quot;WCS&quot;</span><span class="p">],</span>
+                    <span class="n">tile_ra</span><span class="p">[</span><span class="n">i_tile</span><span class="p">],</span>
+                    <span class="n">tile_dec</span><span class="p">[</span><span class="n">i_tile</span><span class="p">],</span>
+                <span class="p">)</span>
+
+                <span class="n">header_tmp</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">Header</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span>
+                    <span class="n">f_wcs_file</span><span class="p">[</span><span class="n">exp_name</span><span class="p">][</span><span class="nb">int</span><span class="p">(</span><span class="n">ccd_n</span><span class="p">)][</span><span class="s2">&quot;header&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">Fscale</span> <span class="o">=</span> <span class="n">header_tmp</span><span class="p">[</span><span class="s2">&quot;FSCALE&quot;</span><span class="p">]</span>
+
+                <span class="n">gal_vign_scaled</span> <span class="o">=</span> <span class="n">gal_vign_sub_bkg</span> <span class="o">*</span> <span class="n">Fscale</span>
+                <span class="n">weight_vign_scaled</span> <span class="o">=</span> <span class="n">weight_vign_tmp</span> <span class="o">*</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">Fscale</span><span class="o">**</span><span class="mi">2</span>
+
+                <span class="n">gal_vign</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gal_vign_scaled</span><span class="p">)</span>
+                <span class="n">psf_vign</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">psf_vign_cat</span><span class="p">[</span><span class="n">str_id_tmp</span><span class="p">][</span><span class="n">expccd_name_tmp</span><span class="p">][</span><span class="s2">&quot;VIGNET&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">sigma_psf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">psf_vign_cat</span><span class="p">[</span><span class="n">str_id_tmp</span><span class="p">][</span><span class="n">expccd_name_tmp</span><span class="p">][</span><span class="s2">&quot;SHAPES&quot;</span><span class="p">][</span>
+                        <span class="s2">&quot;SIGMA_PSF_HSM&quot;</span>
+                    <span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">weight_vign</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weight_vign_scaled</span><span class="p">)</span>
+                <span class="n">flag_vign</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">flag_vign_tmp</span><span class="p">)</span>
+                <span class="n">jacob_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">jacob_tmp</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">gal_vign</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Skipping object </span><span class="si">{</span><span class="n">id_tmp</span><span class="si">}</span><span class="s2">: no exposure vignets added&quot;</span>
+                <span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">do_ngmix_metacal</span><span class="p">(</span>
+                    <span class="n">gal_vign</span><span class="p">,</span>
+                    <span class="n">psf_vign</span><span class="p">,</span>
+                    <span class="n">sigma_psf</span><span class="p">,</span>
+                    <span class="n">weight_vign</span><span class="p">,</span>
+                    <span class="n">flag_vign</span><span class="p">,</span>
+                    <span class="n">jacob_list</span><span class="p">,</span>
+                    <span class="n">prior</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_pixel_scale</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ee</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;ngmix failed for object ID=</span><span class="si">{</span><span class="n">id_tmp</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">Message: </span><span class="si">{</span><span class="n">ee</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="n">count</span> <span class="o">=</span> <span class="n">count</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">count_batch</span> <span class="o">=</span> <span class="n">count_batch</span> <span class="o">+</span> <span class="mi">1</span>
+
+
+            <span class="n">res</span><span class="p">[</span><span class="s2">&quot;obj_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">id_tmp</span>
+            <span class="n">res</span><span class="p">[</span><span class="s2">&quot;n_epoch_model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gal_vign</span><span class="p">)</span>
+            <span class="n">final_res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">count_batch</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_save_batch</span><span class="p">:</span>
+
+                <span class="c1"># Put batch results together</span>
+                <span class="n">res_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compile_results</span><span class="p">(</span><span class="n">final_res</span><span class="p">)</span>
+                
+                <span class="c1"># Save batch to disk</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">save_results</span><span class="p">(</span><span class="n">res_dict</span><span class="p">)</span>
+
+                <span class="n">saved_batch_cumul</span> <span class="o">+=</span> <span class="n">count_batch</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Batch-saved </span><span class="si">{</span><span class="n">count_batch</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">res_dict</span><span class="p">)</span><span class="si">}</span><span class="s2"> valid) objects to&quot;</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; file, cumul=</span><span class="si">{</span><span class="n">saved_batch_cumul</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+                <span class="c1"># Reset for next batch</span>
+                <span class="n">final_res</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">count_batch</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;ngmix loop over objects finished, measured </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;objects, id first/last=</span><span class="si">{</span><span class="n">id_first</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">id_last</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">f_wcs_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">gal_vign_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">bkg_vign_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">flag_vign_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">weight_vign_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">psf_vign_cat</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="c1"># Put all results together</span>
+        <span class="n">res_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compile_results</span><span class="p">(</span><span class="n">final_res</span><span class="p">)</span>
+
+        <span class="c1"># Save results</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_results</span><span class="p">(</span><span class="n">res_dict</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Saved </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">res_dict</span><span class="p">)</span><span class="si">}</span><span class="s2">) objects to file&quot;</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="get_guess">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.get_guess">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_guess</span><span class="p">(</span>
+    <span class="n">img</span><span class="p">,</span>
+    <span class="n">pixel_scale</span><span class="p">,</span>
+    <span class="n">guess_flux_unit</span><span class="o">=</span><span class="s2">&quot;img&quot;</span><span class="p">,</span>
+    <span class="n">guess_size_type</span><span class="o">=</span><span class="s2">&quot;T&quot;</span><span class="p">,</span>
+    <span class="n">guess_size_unit</span><span class="o">=</span><span class="s2">&quot;sky&quot;</span><span class="p">,</span>
+    <span class="n">guess_centroid</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">guess_centroid_unit</span><span class="o">=</span><span class="s2">&quot;sky&quot;</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Get Guess.</span>
+
+<span class="sd">    Get the guess vector for the NGMIX shape measurement</span>
+<span class="sd">    ``[center_x, center_y, g1, g2, size_T, flux]``.</span>
+<span class="sd">    No guesses are given for the ellipticity ``(0, 0)``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    img : numpy.ndarray</span>
+<span class="sd">        Array containing the image</span>
+<span class="sd">    pixel_scale : float</span>
+<span class="sd">        Approximation of the pixel scale</span>
+<span class="sd">    guess_flux_unit : str</span>
+<span class="sd">        If ``img`` returns the flux in pixel units, otherwise if ``sky``</span>
+<span class="sd">        returns the flux in :math:`{\rm arcsec}^{-2}`</span>
+<span class="sd">    guess_size_type : str</span>
+<span class="sd">        If ``T`` returns the size in quadrupole moments definition</span>
+<span class="sd">        :math:`2\sigma^2`, otherwise if ``sigma`` returns the moments</span>
+<span class="sd">        :math:`\sigma`</span>
+<span class="sd">    guess_size_unit : str</span>
+<span class="sd">        If ``img`` returns the size in pixel units, otherwise if ``sky``</span>
+<span class="sd">        returns the size in arcsec</span>
+<span class="sd">    guess_centroid : bool</span>
+<span class="sd">        If ``True``, will return a guess on the object centroid, otherwise if</span>
+<span class="sd">        ``False``, will return the image centre</span>
+<span class="sd">    guess_centroid_unit : str</span>
+<span class="sd">        If ``img`` returns the centroid in pixel unit, otherwise if ``sky``</span>
+<span class="sd">        returns the centroid in arcsec</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        Return the guess array ``[center_x, center_y, g1, g2, size_T, flux]``</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    GalSimHSMError</span>
+<span class="sd">        For an error in the computation of adaptive moments</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        For invalid unit guess types</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">galsim_img</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">pixel_scale</span><span class="p">)</span>
+
+    <span class="n">hsm_shape</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">hsm</span><span class="o">.</span><span class="n">FindAdaptiveMom</span><span class="p">(</span><span class="n">galsim_img</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">error_msg</span> <span class="o">=</span> <span class="n">hsm_shape</span><span class="o">.</span><span class="n">error_message</span>
+
+    <span class="k">if</span> <span class="n">error_msg</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">galsim</span><span class="o">.</span><span class="n">hsm</span><span class="o">.</span><span class="n">GalSimHSMError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Error in adaptive moments :</span><span class="se">\n</span><span class="si">{</span><span class="n">error_msg</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">guess_flux_unit</span> <span class="o">==</span> <span class="s2">&quot;img&quot;</span><span class="p">:</span>
+        <span class="n">guess_flux</span> <span class="o">=</span> <span class="n">hsm_shape</span><span class="o">.</span><span class="n">moments_amp</span>
+    <span class="k">elif</span> <span class="n">guess_flux_unit</span> <span class="o">==</span> <span class="s2">&quot;sky&quot;</span><span class="p">:</span>
+        <span class="n">guess_flux</span> <span class="o">=</span> <span class="n">hsm_shape</span><span class="o">.</span><span class="n">moments_amp</span> <span class="o">/</span> <span class="n">pixel_scale</span><span class="o">**</span><span class="mi">2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;invalid guess_flux_unit &#39;</span><span class="si">{</span><span class="n">guess_flux_unit</span><span class="si">}</span><span class="s2">&#39;,&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; must be one of &#39;img&#39;, &#39;sky&#39;&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">guess_size_unit</span> <span class="o">==</span> <span class="s2">&quot;img&quot;</span><span class="p">:</span>
+        <span class="n">size_unit</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="k">elif</span> <span class="n">guess_size_unit</span> <span class="o">==</span> <span class="s2">&quot;sky&quot;</span><span class="p">:</span>
+        <span class="n">size_unit</span> <span class="o">=</span> <span class="n">pixel_scale</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;invalid guess_size_unit &#39;</span><span class="si">{guess_size_unit}</span><span class="s2">&#39;,&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;must be one of &#39;img&#39;, &#39;sky&#39;&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">guess_size_type</span> <span class="o">==</span> <span class="s2">&quot;sigma&quot;</span><span class="p">:</span>
+        <span class="n">guess_size</span> <span class="o">=</span> <span class="n">hsm_shape</span><span class="o">.</span><span class="n">moments_sigma</span> <span class="o">*</span> <span class="n">size_unit</span>
+    <span class="k">elif</span> <span class="n">guess_size_type</span> <span class="o">==</span> <span class="s2">&quot;T&quot;</span><span class="p">:</span>
+        <span class="n">guess_size</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">hsm_shape</span><span class="o">.</span><span class="n">moments_sigma</span> <span class="o">*</span> <span class="n">size_unit</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+
+    <span class="k">if</span> <span class="n">guess_centroid_unit</span> <span class="o">==</span> <span class="s2">&quot;img&quot;</span><span class="p">:</span>
+        <span class="n">centroid_unit</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">guess_centroid_unit</span> <span class="o">==</span> <span class="s2">&quot;sky&quot;</span><span class="p">:</span>
+        <span class="n">centroid_unit</span> <span class="o">=</span> <span class="n">pixel_scale</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;invalid guess_centroid_unit &#39;</span><span class="si">{</span><span class="n">guess_centroid_unit</span><span class="si">}</span><span class="s2">&#39;,&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;  must be one of &#39;img&#39;, &#39;sky&#39;&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">guess_centroid</span><span class="p">:</span>
+        <span class="n">guess_centroid</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">hsm_shape</span><span class="o">.</span><span class="n">moments_centroid</span> <span class="o">-</span> <span class="n">galsim_img</span><span class="o">.</span><span class="n">center</span>
+        <span class="p">)</span> <span class="o">*</span> <span class="n">centroid_unit</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">guess_centroid</span> <span class="o">=</span> <span class="n">galsim_img</span><span class="o">.</span><span class="n">center</span> <span class="o">*</span> <span class="n">centroid_unit</span>
+
+    <span class="n">guess</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">guess_centroid</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">guess_centroid</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">guess_size</span><span class="p">,</span> <span class="n">guess_flux</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">guess</span></div>
+
+
+
+<div class="viewcode-block" id="make_galsimfit">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.make_galsimfit">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_galsimfit</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">guess0</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ntry</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Make GalSim Fit.</span>
+
+<span class="sd">    Fit image using simple GalSim model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    obs : ngmix.observation.Observation</span>
+<span class="sd">        Image to fit</span>
+<span class="sd">    model : str</span>
+<span class="sd">        Model for fit</span>
+<span class="sd">    guess0 : numpy.ndarray</span>
+<span class="sd">        Parameters of first model guess</span>
+<span class="sd">    prior : ngmix.prior, optional</span>
+<span class="sd">        Prior for fit paraemeters</span>
+<span class="sd">    ntry : int, optional</span>
+<span class="sd">        Number of tries for fit, the default is ``5``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Results</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ngmix.BootGalFailure</span>
+<span class="sd">        Failure to bootstrap galaxy</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">limit</span> <span class="o">=</span> <span class="mf">0.1</span>
+
+    <span class="n">guess</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">guess0</span><span class="p">)</span>
+    <span class="n">fres</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">it</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntry</span><span class="p">):</span>
+        <span class="n">guess</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">5</span><span class="p">]</span> <span class="o">+=</span> <span class="n">urand</span><span class="p">(</span><span class="n">low</span><span class="o">=-</span><span class="n">limit</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">limit</span><span class="p">)</span>
+        <span class="n">guess</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span> <span class="o">*=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">urand</span><span class="p">(</span><span class="n">low</span><span class="o">=-</span><span class="n">limit</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">limit</span><span class="p">)</span>
+        <span class="n">fres</span><span class="p">[</span><span class="s2">&quot;flags&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fitter</span> <span class="o">=</span> <span class="n">ngmix</span><span class="o">.</span><span class="n">galsimfit</span><span class="o">.</span><span class="n">GalsimSimple</span><span class="p">(</span>
+                <span class="n">obs</span><span class="p">,</span>
+                <span class="n">model</span><span class="p">,</span>
+                <span class="n">prior</span><span class="o">=</span><span class="n">prior</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">fitter</span><span class="o">.</span><span class="n">go</span><span class="p">(</span><span class="n">guess</span><span class="p">)</span>
+            <span class="n">fres</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">get_result</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="k">if</span> <span class="n">fres</span><span class="p">[</span><span class="s2">&quot;flags&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">break</span>
+
+    <span class="k">if</span> <span class="n">fres</span><span class="p">[</span><span class="s2">&quot;flags&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ngmix</span><span class="o">.</span><span class="n">gexceptions</span><span class="o">.</span><span class="n">BootGalFailure</span><span class="p">(</span>
+            <span class="s2">&quot;Failed to fit galaxy image with galsimfit&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">fres</span><span class="p">[</span><span class="s2">&quot;ntry&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">it</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">fres</span></div>
+
+
+
+<div class="viewcode-block" id="get_jacob">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.get_jacob">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_jacob</span><span class="p">(</span><span class="n">wcs</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get Jacobian.</span>
+
+<span class="sd">    Return the Jacobian of the WCS at the required position.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    wcs : astropy.wcs.WCS</span>
+<span class="sd">        WCS object for which we want the Jacobian</span>
+<span class="sd">    ra : float</span>
+<span class="sd">        RA position of the center of the vignet (in degrees)</span>
+<span class="sd">    dec : float</span>
+<span class="sd">        Dec position of the center of the vignet (in degress)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    galsim.wcs.BaseWCS.jacobian</span>
+<span class="sd">        Jacobian of the WCS at the required position</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">g_wcs</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">fitswcs</span><span class="o">.</span><span class="n">AstropyWCS</span><span class="p">(</span><span class="n">wcs</span><span class="o">=</span><span class="n">wcs</span><span class="p">)</span>
+    <span class="n">world_pos</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">CelestialCoord</span><span class="p">(</span>
+        <span class="n">ra</span><span class="o">=</span><span class="n">ra</span> <span class="o">*</span> <span class="n">galsim</span><span class="o">.</span><span class="n">angle</span><span class="o">.</span><span class="n">degrees</span><span class="p">,</span>
+        <span class="n">dec</span><span class="o">=</span><span class="n">dec</span> <span class="o">*</span> <span class="n">galsim</span><span class="o">.</span><span class="n">angle</span><span class="o">.</span><span class="n">degrees</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">galsim_jacob</span> <span class="o">=</span> <span class="n">g_wcs</span><span class="o">.</span><span class="n">jacobian</span><span class="p">(</span><span class="n">world_pos</span><span class="o">=</span><span class="n">world_pos</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">galsim_jacob</span></div>
+
+
+
+<div class="viewcode-block" id="get_noise">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.get_noise">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_noise</span><span class="p">(</span><span class="n">gal</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">guess</span><span class="p">,</span> <span class="n">pixel_scale</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="mf">1.2</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Get Noise.</span>
+
+<span class="sd">    Compute the sigma of the noise from an object postage stamp.</span>
+<span class="sd">    Use a guess on the object size, ellipticity and flux to create a window</span>
+<span class="sd">    function.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    gal : numpy.ndarray</span>
+<span class="sd">        Galaxy image</span>
+<span class="sd">    weight : numpy.ndarray</span>
+<span class="sd">        Weight image</span>
+<span class="sd">    guess : list</span>
+<span class="sd">        Gaussian parameters fot the window function</span>
+<span class="sd">        ``[x0, y0, g1, g2, T, flux]``</span>
+<span class="sd">    pixel_scale : float</span>
+<span class="sd">        Pixel scale of the galaxy image</span>
+<span class="sd">    thresh : float, optional</span>
+<span class="sd">        Threshold to cut the window function,</span>
+<span class="sd">        cut = ``thresh`` * :math:`\sigma_{\rm noise}`;  the default is ``1.2``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Sigma of the noise on the galaxy image</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">img_shape</span> <span class="o">=</span> <span class="n">gal</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="n">m_weight</span> <span class="o">=</span> <span class="n">weight</span> <span class="o">!=</span> <span class="mi">0</span>
+
+    <span class="n">sig_tmp</span> <span class="o">=</span> <span class="n">sigma_mad</span><span class="p">(</span><span class="n">gal</span><span class="p">[</span><span class="n">m_weight</span><span class="p">])</span>
+
+    <span class="n">gauss_win</span> <span class="o">=</span> <span class="n">galsim</span><span class="o">.</span><span class="n">Gaussian</span><span class="p">(</span><span class="n">sigma</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">guess</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="n">flux</span><span class="o">=</span><span class="n">guess</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+    <span class="n">gauss_win</span> <span class="o">=</span> <span class="n">gauss_win</span><span class="o">.</span><span class="n">shear</span><span class="p">(</span><span class="n">g1</span><span class="o">=</span><span class="n">guess</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">g2</span><span class="o">=</span><span class="n">guess</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">gauss_win</span> <span class="o">=</span> <span class="n">gauss_win</span><span class="o">.</span><span class="n">drawImage</span><span class="p">(</span>
+        <span class="n">nx</span><span class="o">=</span><span class="n">img_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ny</span><span class="o">=</span><span class="n">img_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">scale</span><span class="o">=</span><span class="n">pixel_scale</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">array</span>
+
+    <span class="n">m_weight</span> <span class="o">=</span> <span class="n">weight</span><span class="p">[</span><span class="n">gauss_win</span> <span class="o">&lt;</span> <span class="n">thresh</span> <span class="o">*</span> <span class="n">sig_tmp</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span>
+
+    <span class="n">sig_noise</span> <span class="o">=</span> <span class="n">sigma_mad</span><span class="p">(</span><span class="n">gal</span><span class="p">[</span><span class="n">gauss_win</span> <span class="o">&lt;</span> <span class="n">thresh</span> <span class="o">*</span> <span class="n">sig_tmp</span><span class="p">][</span><span class="n">m_weight</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">sig_noise</span></div>
+
+
+
+<div class="viewcode-block" id="do_ngmix_metacal">
+<a class="viewcode-back" href="../../../../shapepipe.modules.ngmix_package.ngmix.html#shapepipe.modules.ngmix_package.ngmix.do_ngmix_metacal">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">do_ngmix_metacal</span><span class="p">(</span>
+    <span class="n">gals</span><span class="p">,</span> <span class="n">psfs</span><span class="p">,</span> <span class="n">psfs_sigma</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">jacob_list</span><span class="p">,</span> <span class="n">prior</span><span class="p">,</span> <span class="n">pixel_scale</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Do Ngmix Metacal.</span>
+
+<span class="sd">    Perform the metacalibration on a multi-epoch object and return the joint</span>
+<span class="sd">    shape measurement with NGMIX.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    gals : list</span>
+<span class="sd">        List of the galaxy vignets</span>
+<span class="sd">    psfs : list</span>
+<span class="sd">        List of the PSF vignets</span>
+<span class="sd">    psfs_sigma : list</span>
+<span class="sd">        List of the sigma PSFs</span>
+<span class="sd">    weights : list</span>
+<span class="sd">        List of the weight vignets</span>
+<span class="sd">    flags : list</span>
+<span class="sd">        List of the flag vignets</span>
+<span class="sd">    jacob_list : list</span>
+<span class="sd">        List of the Jacobians</span>
+<span class="sd">    prior : ngmix.priors</span>
+<span class="sd">        Priors for the fitting parameters</span>
+<span class="sd">    pixel_scale : float</span>
+<span class="sd">        pixel scale in arcsec</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Dictionary containing the results of NGMIX metacal</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_epoch</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gals</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">n_epoch</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;0 epoch to process&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Make observation</span>
+    <span class="n">gal_obs_list</span> <span class="o">=</span> <span class="n">ObsList</span><span class="p">()</span>
+    <span class="n">T_guess_psf</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">psf_res_gT</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;g_PSFo&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]),</span>
+        <span class="s2">&quot;g_err_PSFo&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]),</span>
+        <span class="s2">&quot;T_PSFo&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="s2">&quot;T_err_PSFo&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">gal_guess</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">gal_guess_flag</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">wsum</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">n_e</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_epoch</span><span class="p">):</span>
+
+        <span class="n">psf_jacob</span> <span class="o">=</span> <span class="n">ngmix</span><span class="o">.</span><span class="n">Jacobian</span><span class="p">(</span>
+            <span class="n">row</span><span class="o">=</span><span class="p">(</span><span class="n">psfs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="n">col</span><span class="o">=</span><span class="p">(</span><span class="n">psfs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="n">wcs</span><span class="o">=</span><span class="n">jacob_list</span><span class="p">[</span><span class="n">n_e</span><span class="p">],</span>
+        <span class="p">)</span>
+
+        <span class="n">psf_obs</span> <span class="o">=</span> <span class="n">Observation</span><span class="p">(</span><span class="n">psfs</span><span class="p">[</span><span class="n">n_e</span><span class="p">],</span> <span class="n">jacobian</span><span class="o">=</span><span class="n">psf_jacob</span><span class="p">)</span>
+
+        <span class="n">psf_T</span> <span class="o">=</span> <span class="n">psfs_sigma</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1.17741</span> <span class="o">*</span> <span class="n">pixel_scale</span>
+
+        <span class="n">weight_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">n_e</span><span class="p">])</span>
+        <span class="n">weight_map</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">flags</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">weight_map</span><span class="p">[</span><span class="n">weight_map</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">psf_guess</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">psf_T</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">psf_res</span> <span class="o">=</span> <span class="n">make_galsimfit</span><span class="p">(</span><span class="n">psf_obs</span><span class="p">,</span> <span class="s2">&quot;gauss&quot;</span><span class="p">,</span> <span class="n">psf_guess</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Gal guess</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">gal_guess_tmp</span> <span class="o">=</span> <span class="n">get_guess</span><span class="p">(</span>
+                <span class="n">gals</span><span class="p">[</span><span class="n">n_e</span><span class="p">],</span> <span class="n">pixel_scale</span><span class="p">,</span> <span class="n">guess_size_type</span><span class="o">=</span><span class="s2">&quot;sigma&quot;</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">gal_guess_flag</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">gal_guess_tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">])</span>
+
+        <span class="c1"># Recenter jacobian if necessary</span>
+        <span class="n">gal_jacob</span> <span class="o">=</span> <span class="n">ngmix</span><span class="o">.</span><span class="n">Jacobian</span><span class="p">(</span>
+            <span class="n">row</span><span class="o">=</span><span class="p">(</span><span class="n">gals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">gal_guess_tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">col</span><span class="o">=</span><span class="p">(</span><span class="n">gals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">gal_guess_tmp</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">wcs</span><span class="o">=</span><span class="n">jacob_list</span><span class="p">[</span><span class="n">n_e</span><span class="p">],</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Noise handling</span>
+        <span class="k">if</span> <span class="n">gal_guess_flag</span><span class="p">:</span>
+            <span class="n">sig_noise</span> <span class="o">=</span> <span class="n">get_noise</span><span class="p">(</span>
+                <span class="n">gals</span><span class="p">[</span><span class="n">n_e</span><span class="p">],</span>
+                <span class="n">weight_map</span><span class="p">,</span>
+                <span class="n">gal_guess_tmp</span><span class="p">,</span>
+                <span class="n">pixel_scale</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sig_noise</span> <span class="o">=</span> <span class="n">sigma_mad</span><span class="p">(</span><span class="n">gals</span><span class="p">[</span><span class="n">n_e</span><span class="p">])</span>
+
+        <span class="n">noise_img</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="o">*</span><span class="n">gals</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">*</span> <span class="n">sig_noise</span>
+        <span class="n">noise_img_gal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="o">*</span><span class="n">gals</span><span class="p">[</span><span class="n">n_e</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">*</span> <span class="n">sig_noise</span>
+
+        <span class="n">gal_masked</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">gals</span><span class="p">[</span><span class="n">n_e</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">weight_map</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">gal_masked</span><span class="p">[</span><span class="n">weight_map</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">noise_img_gal</span><span class="p">[</span><span class="n">weight_map</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">weight_map</span> <span class="o">*=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">sig_noise</span><span class="o">**</span><span class="mi">2</span>
+
+        <span class="c1"># Original PSF fit</span>
+        <span class="n">w_tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weight_map</span><span class="p">)</span>
+        <span class="n">psf_res_gT</span><span class="p">[</span><span class="s2">&quot;g_PSFo&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">psf_res</span><span class="p">[</span><span class="s2">&quot;g&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">w_tmp</span>
+        <span class="n">psf_res_gT</span><span class="p">[</span><span class="s2">&quot;g_err_PSFo&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">psf_res</span><span class="p">[</span><span class="s2">&quot;pars_err&quot;</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="n">psf_res</span><span class="p">[</span><span class="s2">&quot;pars_err&quot;</span><span class="p">][</span><span class="mi">3</span><span class="p">]])</span> <span class="o">*</span> <span class="n">w_tmp</span>
+        <span class="p">)</span>
+        <span class="n">psf_res_gT</span><span class="p">[</span><span class="s2">&quot;T_PSFo&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">psf_res</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">w_tmp</span>
+        <span class="n">psf_res_gT</span><span class="p">[</span><span class="s2">&quot;T_err_PSFo&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">psf_res</span><span class="p">[</span><span class="s2">&quot;T_err&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">w_tmp</span>
+        <span class="n">wsum</span> <span class="o">+=</span> <span class="n">w_tmp</span>
+
+        <span class="n">gal_obs</span> <span class="o">=</span> <span class="n">Observation</span><span class="p">(</span>
+            <span class="n">gal_masked</span><span class="p">,</span>
+            <span class="n">weight</span><span class="o">=</span><span class="n">weight_map</span><span class="p">,</span>
+            <span class="n">jacobian</span><span class="o">=</span><span class="n">gal_jacob</span><span class="p">,</span>
+            <span class="n">psf</span><span class="o">=</span><span class="n">psf_obs</span><span class="p">,</span>
+            <span class="n">noise</span><span class="o">=</span><span class="n">noise_img</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">gal_guess_flag</span><span class="p">:</span>
+            <span class="n">gal_guess_tmp</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">gal_guess</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gal_guess_tmp</span><span class="p">)</span>
+
+        <span class="n">gal_obs_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gal_obs</span><span class="p">)</span>
+        <span class="n">T_guess_psf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">psf_T</span><span class="p">)</span>
+        <span class="n">gal_guess_flag</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">if</span> <span class="n">wsum</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ZeroDivisionError</span><span class="p">(</span><span class="s2">&quot;Sum of weights = 0, division by zero&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Normalize PSF fit output</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">psf_res_gT</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">psf_res_gT</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">/=</span> <span class="n">wsum</span>
+
+    <span class="c1"># Gal guess handling</span>
+    <span class="n">fail_get_guess</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">gal_guess</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">fail_get_guess</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">gal_pars</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">gal_pars</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gal_guess</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">psf_model</span> <span class="o">=</span> <span class="s2">&quot;gauss&quot;</span>
+    <span class="n">gal_model</span> <span class="o">=</span> <span class="s2">&quot;gauss&quot;</span>
+
+    <span class="c1"># metacal specific parameters</span>
+    <span class="n">metacal_pars</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;types&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;noshear&quot;</span><span class="p">,</span> <span class="s2">&quot;1p&quot;</span><span class="p">,</span> <span class="s2">&quot;1m&quot;</span><span class="p">,</span> <span class="s2">&quot;2p&quot;</span><span class="p">,</span> <span class="s2">&quot;2m&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;step&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+        <span class="s2">&quot;psf&quot;</span><span class="p">:</span> <span class="s2">&quot;gauss&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;fixnoise&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;cheatnoise&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;symmetrize_psf&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;use_noise_image&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">Tguess</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">T_guess_psf</span><span class="p">)</span>
+
+    <span class="c1"># retry the fit twice</span>
+    <span class="n">ntry</span> <span class="o">=</span> <span class="mi">2</span>
+
+    <span class="n">obs_dict_mcal</span> <span class="o">=</span> <span class="n">ngmix</span><span class="o">.</span><span class="n">metacal</span><span class="o">.</span><span class="n">get_all_metacal</span><span class="p">(</span><span class="n">gal_obs_list</span><span class="p">,</span> <span class="o">**</span><span class="n">metacal_pars</span><span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;mcal_flags&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+
+    <span class="n">ntry</span> <span class="o">=</span> <span class="mi">5</span>
+
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">obs_dict_mcal</span><span class="p">):</span>
+
+        <span class="n">fres</span> <span class="o">=</span> <span class="n">make_galsimfit</span><span class="p">(</span>
+            <span class="n">obs_dict_mcal</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">gal_model</span><span class="p">,</span> <span class="n">gal_pars</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="n">prior</span>
+        <span class="p">)</span>
+
+        <span class="n">res</span><span class="p">[</span><span class="s2">&quot;mcal_flags&quot;</span><span class="p">]</span> <span class="o">|=</span> <span class="n">fres</span><span class="p">[</span><span class="s2">&quot;flags&quot;</span><span class="p">]</span>
+        <span class="n">tres</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">fres</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">tres</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">fres</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="n">tres</span><span class="p">[</span><span class="s2">&quot;flags&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fres</span><span class="p">[</span><span class="s2">&quot;flags&quot;</span><span class="p">]</span>
+
+        <span class="n">wsum</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">Tpsf_sum</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">gpsf_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">npsf</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">obs_dict_mcal</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="s2">&quot;psf_nopix&quot;</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">psf_res</span> <span class="o">=</span> <span class="n">make_galsimfit</span><span class="p">(</span>
+                        <span class="n">obs</span><span class="o">.</span><span class="n">psf_nopix</span><span class="p">,</span>
+                        <span class="n">psf_model</span><span class="p">,</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">Tguess</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]),</span>
+                        <span class="n">ntry</span><span class="o">=</span><span class="n">ntry</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">g1</span><span class="p">,</span> <span class="n">g2</span> <span class="o">=</span> <span class="n">psf_res</span><span class="p">[</span><span class="s2">&quot;g&quot;</span><span class="p">]</span>
+                <span class="n">T</span> <span class="o">=</span> <span class="n">psf_res</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">psf_res</span> <span class="o">=</span> <span class="n">make_galsimfit</span><span class="p">(</span>
+                        <span class="n">obs</span><span class="o">.</span><span class="n">psf</span><span class="p">,</span>
+                        <span class="n">psf_model</span><span class="p">,</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">Tguess</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]),</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">g1</span><span class="p">,</span> <span class="n">g2</span> <span class="o">=</span> <span class="n">psf_res</span><span class="p">[</span><span class="s2">&quot;g&quot;</span><span class="p">]</span>
+                <span class="n">T</span> <span class="o">=</span> <span class="n">psf_res</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">]</span>
+
+            <span class="c1"># TODO we sometimes use other weights</span>
+            <span class="n">twsum</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+            <span class="n">wsum</span> <span class="o">+=</span> <span class="n">twsum</span>
+            <span class="n">gpsf_sum</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">g1</span> <span class="o">*</span> <span class="n">twsum</span>
+            <span class="n">gpsf_sum</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">g2</span> <span class="o">*</span> <span class="n">twsum</span>
+            <span class="n">Tpsf_sum</span> <span class="o">+=</span> <span class="n">T</span> <span class="o">*</span> <span class="n">twsum</span>
+            <span class="n">npsf</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">tres</span><span class="p">[</span><span class="s2">&quot;gpsf&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpsf_sum</span> <span class="o">/</span> <span class="n">wsum</span>
+        <span class="n">tres</span><span class="p">[</span><span class="s2">&quot;Tpsf&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Tpsf_sum</span> <span class="o">/</span> <span class="n">wsum</span>
+
+        <span class="n">res</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">tres</span>
+
+    <span class="c1"># result dictionary, keyed by the types in metacal_pars above</span>
+    <span class="n">metacal_res</span> <span class="o">=</span> <span class="n">res</span>
+
+    <span class="n">metacal_res</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">psf_res_gT</span><span class="p">)</span>
+    <span class="n">metacal_res</span><span class="p">[</span><span class="s2">&quot;moments_fail&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fail_get_guess</span>
+
+    <span class="k">return</span> <span class="n">metacal_res</span></div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CosmoStat
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2022, CosmoStat.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="last-updated">
+  Last updated on 10 Jun, 2026.
+  <br/>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
