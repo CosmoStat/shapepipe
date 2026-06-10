@@ -1,18 +1,17 @@
 ---
 id: 01KTCQPE4M6S1E4V9WMPCAFCKT
 name: 'ngmix size columns: honest r50 + cs_util converter web'
-tags:
-  - constitution
-  - shapepipe
-  - ngmix
-created-at: 2026-06-05T22:30:50.004535516+02:00
-outcome: Draft — not yet dispatched.
-shuttle:
-  enabled: true
-  kind: oneshot
-  host: candide
-  agent: claude-opus
 status: active
+tags:
+    - constitution
+    - shapepipe
+    - ngmix
+created-at: 2026-06-05T22:30:50.004535516+02:00
+outcome: 'Realized, pending fresh-eyes review: shapepipe fix/ngmix-size-columns (honest r50 + dedupe, pushed), cs_util feat/size-conversions (size web + tests, on cailmdaley fork — no push rights upstream), sp_validation fix/psf-leakage-fwhm (T_to_fwhm bug fixed — moves α(size); pushed). PRs + merge order (cs_util → sp_validation) are Cail''s gesture; see report.html.'
+shuttle:
+    kind: oneshot
+    host: candide
+    agent: claude-fable
 ---
 
 # ngmix size columns: honest r50 + cs_util converter web

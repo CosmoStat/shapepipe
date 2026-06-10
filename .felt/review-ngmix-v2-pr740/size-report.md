@@ -20,7 +20,7 @@ In ngmix `gauss`, `pars = [cen1, cen2, g1, g2, T, flux]` and **`pars[4] = T = 2�
 | `T_psfo_ngmix`, `T_err_psfo_ngmix` | `T_PSFo`, `T_err_PSFo` | `2σ_psf²` | — | Correct; `T_psfo_ngmix` **duplicates** `Tpsf` |
 | `r50psf` | `r50_PSFo` = `√(T_psf/2)` | **`σ_psf` (length)** | **No — it's σ, off by 1.1774×** | Genuine length, missing the factor |
 | `r50_psfo_ngmix` | `r50_PSFo` | `σ_psf` | No — it's σ | **Duplicates `r50psf`** |
-| `r50_err_psfo_ngmix` | `T_psf_err/(2·r50_psfo)` | `σ_psf_err` | No — error on σ | Correct error-prop of σ; NaN when σ=0 |
+| `r50_err_psfo_ngmix` | `T_psf_err/(2·r50_psfo)` | `σ_psf_err` | No — error on σ | ~~Correct error-prop of σ~~ **also a factor-2 over-estimate: dσ/dT = 1/(4σ), not 1/(2σ)** (caught in [[shapepipe/ngmix-size-columns]] implementation); NaN when σ=0 |
 
 **Headline hazard:** the same name root `r50` means an **area** on the galaxy side and a **length** on the PSF side. A user ratioing galaxy `r50` against `r50psf` divides an area by a length. **Zero columns in the file are a true half-light radius** — every "r50" is either `T` (galaxy) or `σ` (PSF).
 
