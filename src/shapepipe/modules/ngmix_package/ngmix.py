@@ -11,7 +11,6 @@ import re
 import ngmix
 import galsim
 import numpy as np
-from shutil import copyfile
 from astropy.io import fits
 from modopt.math.stats import sigma_mad
 from ngmix.observation import Observation, ObsList
@@ -124,9 +123,6 @@ class Tile_cat():
         # Optional columns — may be absent in external (non-SExtractor) catalogs
         self.flux = np.copy(data['FLUX_AUTO']) if 'FLUX_AUTO' in cols else None
         self.vign = np.copy(data['VIGNET']) if 'VIGNET' in cols else None
-        self.size = np.copy(data['FWHM_WORLD']) if 'FWHM_WORLD' in cols else None
-        self.e = np.copy(data['ELLIPTICITY']) if 'ELLIPTICITY' in cols else None
-        self.theta = np.copy(data['THETA_WIN_WORLD']) if 'THETA_WIN_WORLD' in cols else None
 
         tile_cat.close()
 
