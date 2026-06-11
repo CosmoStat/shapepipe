@@ -1110,6 +1110,40 @@ def average_multiepoch_psf(obsdict):
     return psf_dict
 
 
+def make_runners(prior, flux_guess, rng):
+    """Build the module's galaxy and PSF runners.
+
+    Single source of truth for the fitter configuration (Gaussian galaxy
+    and PSF models, guessers, retry counts), shared by the metacal
+    bootstrap below and by validation tests that fit module-built
+    observations directly.
+
+    Parameters
+    ----------
+    prior : ngmix.joint_prior.PriorSimpleSep
+        Priors for the fitting parameters.
+    flux_guess : float
+        Initial flux guess.
+    rng : numpy.random.RandomState
+        Random state for the guessers.
+
+    Returns
+    -------
+    tuple
+        (runner, psf_runner) : ngmix.runners.Runner, ngmix.runners.PSFRunner
+    """
+    fitter = ngmix.fitting.Fitter(model='gauss', prior=prior)
+    guesser = ngmix.guessers.TPSFFluxAndPriorGuesser(rng=rng, T=0.25, prior=prior)
+
+    psf_fitter = ngmix.fitting.Fitter(model='gauss', prior=prior)
+    psf_guesser = ngmix.guessers.TFluxGuesser(rng=rng, T=0.25, prior=prior, flux=flux_guess)
+
+    return (
+        ngmix.runners.Runner(fitter=fitter, guesser=guesser, ntry=5),
+        ngmix.runners.PSFRunner(fitter=psf_fitter, guesser=psf_guesser, ntry=2),
+    )
+
+
 def do_ngmix_metacal(stamp, prior, flux_guess, rng):
     """Do Ngmix Metacal.
 
@@ -1137,9 +1171,6 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng):
     if n_epoch == 0:
         raise ValueError("0 epoch to process")
 
-    psf_model = 'gauss'
-    gal_model = 'gauss'
-
     gal_obs_list = ObsList()
     for n_e in range(n_epoch):
         bkg_rms = stamp.bkg_rms[n_e] if len(stamp.bkg_rms) > n_e else None
@@ -1154,14 +1185,7 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng):
         )
         gal_obs_list.append(gal_obs)
 
-    fitter = ngmix.fitting.Fitter(model=gal_model, prior=prior)
-    guesser = ngmix.guessers.TPSFFluxAndPriorGuesser(rng=rng, T=0.25, prior=prior)
-
-    psf_fitter = ngmix.fitting.Fitter(model=psf_model, prior=prior)
-    psf_guesser = ngmix.guessers.TFluxGuesser(rng=rng, T=0.25, prior=prior, flux=flux_guess)
-
-    psf_runner = ngmix.runners.PSFRunner(fitter=psf_fitter, guesser=psf_guesser, ntry=2)
-    runner = ngmix.runners.Runner(fitter=fitter, guesser=guesser, ntry=5)
+    runner, psf_runner = make_runners(prior, flux_guess, rng)
 
     metacal_pars = {
         'types': ['noshear', '1p', '1m', '2p', '2m'],
