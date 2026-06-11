@@ -9,6 +9,7 @@ This package contains the module for ``ngmix``.
 - ``sextractor_runner``
 - ``psfex_interp_runner`` or ``mccd_interp_runner``
 - ``vignetmaker_runner``
+- ``merge_headers_runner``
 
 :Input: Galaxy image vignets
 
@@ -23,6 +24,10 @@ fitting method of NGXMIX is called to obtain galaxy shape measurements.
 The metacalibration routines of NGMIX are also called to provide all of the
 measurements required to calibrate the shear values.
 
+The merged single-exposure WCS header log (``log_exp_headers.sqlite`` from
+``merge_headers_runner``) is passed as the last entry of
+``FILE_PATTERN``/``FILE_EXT``, not via a config option.
+
 Module-specific config file entries
 ===================================
 
@@ -30,8 +35,9 @@ MAG_ZP : float
     Photometric zero point
 PIXEL_SCALE : float
     Pixel scale in arcseconds
-LOG_WCS : str
-    Path to world coordinate system log file (``*sqlite``)
+SAVE_BATCH : int, optional
+    Save the output catalogue in batches of this size; default is ``-1``
+    (no batch saving)
 ID_OBJ_MIN : int
     ID of first galaxy object to be processed; not used if set to ``-1``
     (default)
