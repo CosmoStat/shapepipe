@@ -59,7 +59,12 @@ SIGMA0 = 3.0  # base noise rms; deliberately != 1 so that any
 # shifts chi2per away from 1 instead of hiding at sigma = 1
 N_REAL = 50
 ACC_NSIGMA = 4.0  # accuracy tolerance in units of the standard error
-PULL_STD_TOL = 4.0 / np.sqrt(2 * N_REAL)  # ~3 sigma on std of 2N pulls
+# Deliberately loose: with 2N = 100 pulls the naive SE of the sample std
+# is ~1/sqrt(200) ~ 0.071, but g1/g2 pulls within a realisation are
+# correlated (empirical jackknife SE ~ 0.097), so 0.4 is ~4 sigma.
+# Absolute error calibration is carried by the chi2per assertion, which a
+# uniform 2x weight error fails (chi2per 0.50) while pulls pass (1.07).
+PULL_STD_TOL = 4.0 / np.sqrt(2 * N_REAL)
 CHI2_TOL = 0.05  # mean chi2per; smallest broken-wiring signature is 3.0
 
 WCS = galsim.PixelScale(PIX_SCALE)
@@ -219,7 +224,13 @@ def assert_unbiased(ens):
 
 
 def paired_scatter_ratio(ens_a, ens_b):
-    """Std of shape residuals of a relative to b, on common successes."""
+    """Std of shape residuals of a relative to b, on common successes.
+
+    The std pools g1/g2 residuals about a pooled mean, so a small
+    differential per-component bias inflates "scatter"; negligible at
+    current magnitudes (~0.01 offsets vs ~0.07 scatter) and symmetric
+    between numerator and denominator.
+    """
     both = ens_a["ok"] & ens_b["ok"]
     return (
         ens_a["resid"][both].std(ddof=1) / ens_b["resid"][both].std(ddof=1)
@@ -241,7 +252,7 @@ def test_direct_ramp_binary_unbiased(direct_ramp_binary):
 
 @pytest.mark.parametrize("case", ["direct_flat_ivar", "direct_ramp_ivar"])
 def test_direct_ivar_pulls_calibrated(case, request):
-    """Pull std == 1 within ~3 sigma: reported errors are real errors."""
+    """Pull std == 1 within ~4 sigma: reported errors are real errors."""
     pull_std = request.getfixturevalue(case)["pulls"].std(ddof=1)
     assert abs(pull_std - 1.0) < PULL_STD_TOL, (
         f"{case}: pull std {pull_std:.3f} outside 1 +/- {PULL_STD_TOL:.2f}"
@@ -270,8 +281,10 @@ def test_direct_ivar_beats_binary_under_noise_gradient(
 
     Same noise realisations, only the weights differ. Measured ~0.59;
     binary parity gives 1.0, inverted/transposed weights give > 1.6, so
-    a threshold of 0.8 fails for any wiring that does not actually
-    downweight the high-variance pixels.
+    the 0.8 threshold catches gross wiring failures (inversion, no
+    downweighting). Functional-form errors that still downweight in the
+    right direction — e.g. 1/rms instead of 1/rms^2 — pass the ratio
+    (0.727 < 0.8) and are caught by the direct-layer chi2per assertion.
     """
     ratio = paired_scatter_ratio(direct_ramp_ivar, direct_ramp_binary)
     assert ratio < 0.8, (
