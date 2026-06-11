@@ -977,8 +977,13 @@ def prepare_ngmix_weights(gal, weight, flag, rng, bkg_rms=None):
         mask &= valid_rms
         weight_map = np.zeros_like(gal, dtype=float)
         weight_map[mask] = 1.0 / bkg_rms[mask] ** 2
+        # Per-pixel noise sigma for the realisations below: metacal's
+        # fixnoise bookkeeping (1/w + 1/w_noise) assumes the noise image
+        # is a faithful realisation of the per-pixel variance the weights
+        # claim; a scalar sigma there mis-reports errors and erodes the
+        # inverse-variance advantage whenever the RMS map actually varies.
         sig_noise = (
-            np.median(bkg_rms[mask])
+            np.where(valid_rms, bkg_rms, np.median(bkg_rms[mask]))
             if mask.any()
             else sigma_mad(gal)
         )
