@@ -160,6 +160,10 @@ function set_config_number_list() {
   else
     perl -pe 's/^\[FILE\][ \t]*$/[FILE]\nNUMBER_LIST = '$number'/' "$config_orig" > "$config_tmp"
   fi
+  if ! grep -q "^NUMBER_LIST = $number$" "$config_tmp"; then
+    echo "set_config_number_list: failed to set NUMBER_LIST in $config_orig" >&2
+    exit 1
+  fi
   mv "$config_tmp" "$config_upd"
 }
 
@@ -184,7 +188,7 @@ if [ "$job" == "-1" ]; then
   message "No job indicated, use option -j" $debug_out 2
 fi
 
-if [ "$exclusive" == "-1" ]; then
+if [ "$ID" == "-1" ]; then
   message "No image ID indicated, use option -e" $debug_out 3
 fi
 

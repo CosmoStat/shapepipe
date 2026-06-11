@@ -1086,10 +1086,10 @@ class FileHandler(object):
         if isinstance(self._number_list, type(None)):
             number_list = np.load(memory_map, mmap_mode="r")
         else:
-            # NUMBER_LIST comes from the config on faith; intersect it
-            # with the numbers actually found on disk so that a wrong ID
-            # fails here, at start-up, rather than when a module first
-            # tries to open the (non-existent) files (#746).
+            # NUMBER_LIST comes from the config on faith; check every
+            # entry against the numbers actually found on disk so that a
+            # wrong ID fails here, at start-up, rather than when a module
+            # first tries to open the (non-existent) files (#746).
             number_list = self._number_list
             scanned = set(np.load(memory_map, mmap_mode="r"))
             missing = [num for num in number_list if num not in scanned]
