@@ -640,7 +640,9 @@ class Ngmix(object):
                 continue
 
             res['obj_id'] = obj_id
-            res['n_epoch_model'] = len(stamp.gals)
+            # epochs that survived the PSF fit and entered the model,
+            # not the number of epochs submitted (v1 contract)
+            res['n_epoch_model'] = psf_res['n_epoch']
             res['moments_fail'] = sum(
                 1 for k in ['noshear', '1p', '1m', '2p', '2m']
                 if res.get(k, {}).get('flags', 0) != 0
@@ -1040,29 +1042,33 @@ def average_multiepoch_psf(obsdict):
     Returns
     -------
     dict
-        Keys: 'g_psf', 'g_psf_err', 'T_psf', 'T_psf_err' (weighted averages).
+        Keys: 'g_psf', 'g_psf_err', 'T_psf', 'T_psf_err' (weighted
+        averages over the epochs whose PSF fit succeeded) and 'n_epoch'
+        (the number of those surviving epochs).
     """
-    # create dictionary
-    names = ['T_psf', 'T_psf_err', 'g_psf', 'g_psf_err']
-    psf_dict = {k: [] for k in names}
+    psf_dict = {}
     nepoch = len(obsdict['noshear'])
+    n_epoch_used = 0
     wsum = 0
     g_psf_sum = np.array([0., 0.])
     g_psf_err_sum = np.array([0., 0.])
     T_psf_sum = 0
     T_psf_err_sum = 0
     for n_e in np.arange(nepoch):
-        T_psf=obsdict['noshear'][n_e].psf.meta['result']['T']
-        T_psf_err=obsdict['noshear'][n_e].psf.meta['result']['T_err']
-        g_psf=obsdict['noshear'][n_e].psf.meta['result']['g']
-        g_psf_err=obsdict['noshear'][n_e].psf.meta['result']['g_err']
+        result = obsdict['noshear'][n_e].psf.meta['result']
+        # ignore_failed_psf=True drops failed-PSF epochs from the galaxy
+        # fit but keeps them in obsdict; their result carries only
+        # flags/pars (no T/g), so skip them here too.
+        if result['flags'] != 0:
+            continue
         ne_wsum = obsdict['noshear'][n_e].weight.sum()
 
+        n_epoch_used += 1
         wsum += ne_wsum
-        g_psf_sum += g_psf * ne_wsum
-        g_psf_err_sum += g_psf_err * ne_wsum
-        T_psf_sum += T_psf * ne_wsum
-        T_psf_err_sum += T_psf_err * ne_wsum
+        g_psf_sum += result['g'] * ne_wsum
+        g_psf_err_sum += result['g_err'] * ne_wsum
+        T_psf_sum += result['T'] * ne_wsum
+        T_psf_err_sum += result['T_err'] * ne_wsum
 
     if wsum == 0:
         raise ZeroDivisionError('Sum of weights = 0, division by zero')
@@ -1071,6 +1077,7 @@ def average_multiepoch_psf(obsdict):
     psf_dict['g_psf_err'] = g_psf_err_sum / wsum
     psf_dict['T_psf'] = T_psf_sum / wsum
     psf_dict['T_psf_err'] = T_psf_err_sum / wsum
+    psf_dict['n_epoch'] = n_epoch_used
 
     return psf_dict
 

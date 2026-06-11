@@ -271,6 +271,44 @@ def test_compile_results_nonpositive_T_gives_nan_r50():
     assert np.isnan(out["noshear"]["r50_err"]).all()
 
 
+def test_average_multiepoch_psf_skips_failed_psf_epochs():
+    """A failed-PSF epoch must be skipped, not KeyError the whole object.
+
+    With ``ignore_failed_psf=True`` the bootstrapper drops failed-PSF
+    epochs from the galaxy fit but leaves them in the returned obsdict,
+    where their ``psf.meta['result']`` carries only flags/pars (no T/g).
+    Averages must come from the surviving epochs only, and ``n_epoch``
+    must count those survivors (v1 counted PSF-fit-successful epochs).
+    """
+    from types import SimpleNamespace
+    from shapepipe.modules.ngmix_package.ngmix import average_multiepoch_psf
+
+    def epoch(result, weight_value):
+        return SimpleNamespace(
+            psf=SimpleNamespace(meta={"result": result}),
+            weight=np.full((2, 2), weight_value),
+        )
+
+    good = {
+        "flags": 0,
+        "T": 0.2,
+        "T_err": 0.01,
+        "g": np.array([0.01, 0.02]),
+        "g_err": np.array([1e-3, 2e-3]),
+    }
+    failed = {"flags": 3, "nfev": 5, "pars": np.zeros(6)}  # no T/g keys
+
+    psf_res = average_multiepoch_psf(
+        {"noshear": [epoch(good, 1.0), epoch(failed, 4.0)]}
+    )
+
+    npt.assert_allclose(psf_res["T_psf"], 0.2)
+    npt.assert_allclose(psf_res["T_psf_err"], 0.01)
+    npt.assert_allclose(psf_res["g_psf"], [0.01, 0.02])
+    npt.assert_allclose(psf_res["g_psf_err"], [1e-3, 2e-3])
+    assert psf_res["n_epoch"] == 1
+
+
 def test_weight_map_recovers_injected_inverse_variance():
     """A supplied inverse-variance map must not be renormalized twice."""
     from shapepipe.modules.ngmix_package.ngmix import prepare_ngmix_weights
