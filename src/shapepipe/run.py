@@ -68,13 +68,11 @@ class ShapePipe:
         self._set_run_name()
         self.modules = self.config.getlist("EXECUTION", "MODULE")
         self.mode = self.config.get("EXECUTION", "MODE").lower()
-        self.exclusive = self._args.exclusive
         self.verbose = self.config.getboolean("DEFAULT", "VERBOSE")
         self.filehd = FileHandler(
             self._run_name,
             self.modules,
             self.config,
-            exclusive=self._args.exclusive,
             verbose=self.verbose,
         )
         self.error_count = 0
@@ -355,7 +353,6 @@ def run_smp(pipe):
             config=pipe.config,
             log=pipe.log,
             job_type=pipe.run_method[module],
-            exclusive=pipe.exclusive,
             verbose=pipe.verbose,
             batch_size=pipe._args.batch_size,
         )
@@ -415,7 +412,6 @@ def run_mpi(pipe, comm):
                 log=pipe.log,
                 job_type=pipe.run_method[module],
                 parallel_mode="mpi",
-                exclusive=pipe.exclusive,
                 verbose=verbose,
                 batch_size=pipe._args.batch_size,
             )

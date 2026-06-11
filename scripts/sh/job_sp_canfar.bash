@@ -261,18 +261,19 @@ function command_sp() {
 function command_cfg_shapepipe() {
     local config_name=$1
     local str=$2
-    local _n_smp=$3 
+    local _n_smp=$3
     local _exclusive=$4
 
-    if [ "$exclusive" != "" ]; then
-      exclusive_flag="-e $_exclusive"
-    else
-      exclusive_flag=""
+    config_upd=$(set_config_n_smp $config_name $_n_smp)
+
+    # Run a single image ID via NUMBER_LIST in an updated config copy;
+    # replaces the retired shapepipe_run -e/--exclusive flag (#746)
+    if [ "$_exclusive" != "" ]; then
+      set_config_number_list "$config_upd" "$SP_CONFIG_MOD/$config_name" "$_exclusive"
+      config_upd="$SP_CONFIG_MOD/$config_name"
     fi
 
-    config_upd=$(set_config_n_smp $config_name $_n_smp)
-    #local cmd="/arc/home/kilbinger/.conda/envs/shapepipe/bin/shapepipe_run -c $config_upd $exclusive_flag"
-    local cmd="shapepipe_run -c $config_upd $exclusive_flag"
+    local cmd="shapepipe_run -c $config_upd"
     command_sp "$cmd" "$str"
 }
 
@@ -335,6 +336,29 @@ function update_config() {
 
   cat $config_orig \
     | perl -ane 's/'$key'\s+=.+/'$key' = '$val_upd'/; print' > $config_upd
+}
+
+# Write an updated copy of a shapepipe config with NUMBER_LIST set to the
+# given image ID, expressed in the numbering scheme (leading dash, dots ->
+# dashes). Replaces the retired shapepipe_run -e/--exclusive flag (#746).
+function set_config_number_list() {
+  local config_orig=$1
+  local config_upd=$2
+  local _id=$3
+
+  local number="-$(echo $_id | tr '.' '-')"
+  local config_tmp="${config_upd}.tmp"
+
+  if grep -q "^NUMBER_LIST" "$config_orig"; then
+    perl -pe 's/^NUMBER_LIST\s*=.*/NUMBER_LIST = '$number'/' "$config_orig" > "$config_tmp"
+  else
+    perl -pe 's/^\[FILE\][ \t]*$/[FILE]\nNUMBER_LIST = '$number'/' "$config_orig" > "$config_tmp"
+  fi
+  if ! grep -q "^NUMBER_LIST = $number$" "$config_tmp"; then
+    echo "set_config_number_list: failed to set NUMBER_LIST in $config_orig" >&2
+    exit 1
+  fi
+  mv "$config_tmp" "$config_upd"
 }
 
 ### Start ###
