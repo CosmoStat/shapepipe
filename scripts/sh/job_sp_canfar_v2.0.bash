@@ -165,6 +165,9 @@ export SP_RUN=`pwd`
 # Config file path
 export SP_CONFIG=$SP_RUN/cfis
 
+# Path for updated (per-job) config file copies
+export SP_CONFIG_MOD=$SP_RUN/cfis_mod
+
 # Root directory for per-exposure work directories.
 # Set SP_EXP in the environment to override; otherwise falls back to the
 # conventional layout (SP_RUN = .../v2.0/tiles/IDra/ID, three levels up + exp).
@@ -243,18 +246,40 @@ function command () {
    fi
 }
 
+# Write an updated copy of a shapepipe config with NUMBER_LIST set to the
+# given image ID, expressed in the numbering scheme (leading dash, dots ->
+# dashes). Replaces the retired shapepipe_run -e/--exclusive flag (#746).
+function set_config_number_list() {
+  local config_orig=$1
+  local config_upd=$2
+  local _id=$3
+
+  local number="-$(echo $_id | tr '.' '-')"
+  local config_tmp="${config_upd}.tmp"
+
+  if grep -q "^NUMBER_LIST" "$config_orig"; then
+    perl -pe 's/^NUMBER_LIST\s*=.*/NUMBER_LIST = '$number'/' "$config_orig" > "$config_tmp"
+  else
+    perl -pe 's/^\[FILE\][ \t]*$/[FILE]\nNUMBER_LIST = '$number'/' "$config_orig" > "$config_tmp"
+  fi
+  mv "$config_tmp" "$config_upd"
+}
+
 # Set up config file and call shapepipe_run.
-# Batch size is passed via --batch_size flag; no config editing needed.
+# Batch size is passed via --batch_size flag.
 function command_cfg_shapepipe() {
     local config_name=$1
     local str=$2
     local _n_smp=$3
     local _exclusive=$4
 
-    if [ "$exclusive" != "" ]; then
-      exclusive_flag="-e $_exclusive"
-    else
-      exclusive_flag=""
+    local config="$SP_CONFIG/$config_name"
+
+    # Run a single image ID via NUMBER_LIST in an updated config copy;
+    # replaces the retired shapepipe_run -e/--exclusive flag (#746)
+    if [ "$_exclusive" != "" ]; then
+      set_config_number_list "$config" "$SP_CONFIG_MOD/$config_name" "$_exclusive"
+      config="$SP_CONFIG_MOD/$config_name"
     fi
 
     local batch_flag=""
@@ -262,8 +287,7 @@ function command_cfg_shapepipe() {
       batch_flag="--batch_size $_n_smp"
     fi
 
-    local config="$SP_CONFIG/$config_name"
-    local cmd="shapepipe_run.py -c $config $exclusive_flag $batch_flag"
+    local cmd="shapepipe_run.py -c $config $batch_flag"
     command "$cmd" "$str"
 }
 
@@ -275,6 +299,7 @@ echo "Start processing"
 mkdir -p $SP_RUN
 cd $SP_RUN
 mkdir -p $OUTPUT
+mkdir -p $SP_CONFIG_MOD
 
 # Processing
 

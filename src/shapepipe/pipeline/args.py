@@ -136,12 +136,6 @@ def create_arg_parser():
     )
 
     optional.add_argument(
-        "-e",
-        "--exclusive",
-        help="exclusive input file number string",
-    )
-
-    optional.add_argument(
         "-b",
         "--batch_size",
         type=int,
