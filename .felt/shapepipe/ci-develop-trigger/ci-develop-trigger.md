@@ -65,7 +65,7 @@ just CI. Deserves its own issue; #732 doesn't touch it.
 
 ## Knock-on
 
-[[shapepipe/prs-in-flight]]: **#729** (actions group, bumps `setup-miniconda`
+**#729** (actions group, bumps `setup-miniconda`
 v3→v4) hit the layer-1 failure too — confirming the action bump alone
 doesn't fix the path. #729 must rebase on top of #732 once it merges before
 it can go green. The smoke-test work in [[shapepipe/smoke-test-read-only]]

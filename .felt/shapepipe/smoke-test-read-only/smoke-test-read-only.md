@@ -58,5 +58,4 @@ both the runtime and dev target blocks.
 
 Sits in the same family as [[shapepipe/docker-multistage]] (which
 introduced the runtime/dev split) and [[shapepipe/docker-uv-revert]]
-(which moved uv writable targets to `/tmp` via env vars). [[shapepipe/prs-in-flight]]
-gets a new "in-flight" entry once the PR is up.
+(which moved uv writable targets to `/tmp` via env vars).
