@@ -24,6 +24,30 @@ from shapepipe.pipeline import file_io
 # gives r50 = SIGMA_TO_R50 * sqrt(T / 2) = sqrt(ln 2 * T).
 SIGMA_TO_R50 = np.sqrt(2.0 * np.log(2.0))
 
+METACAL_TYPES = ('noshear', '1p', '1m', '2p', '2m')
+
+
+def get_mcal_flags(res):
+    """Get Metacal Flags.
+
+    Bitwise OR of the per-type metacal fit flags, the v1 contract for the
+    downstream NGMIX_MCAL_FLAGS column: nonzero whenever any metacal
+    type's galaxy fit failed.
+
+    Parameters
+    ----------
+    res : dict
+        MetacalBootstrapper result dict with one entry per metacal type.
+
+    Returns
+    -------
+    int
+        OR of all per-type ``flags``.
+    """
+    return int(np.bitwise_or.reduce(
+        [res.get(name, {}).get('flags', 0) for name in METACAL_TYPES]
+    ))
+
 
 def get_prior(pixel_scale, rng, T_range=None, F_range=None):
     """Build ngmix joint prior for a 6-parameter galaxy model.
@@ -644,9 +668,10 @@ class Ngmix(object):
             # not the number of epochs submitted (v1 contract)
             res['n_epoch_model'] = psf_res['n_epoch']
             res['moments_fail'] = sum(
-                1 for k in ['noshear', '1p', '1m', '2p', '2m']
+                1 for k in METACAL_TYPES
                 if res.get(k, {}).get('flags', 0) != 0
             )
+            res['mcal_flags'] = get_mcal_flags(res)
             # PSF half-light radius r50 = sqrt(2 ln 2) * sigma with
             # sigma = sqrt(T / 2); error from d sigma / d T = 1 / (4 sigma)
             sigma_psfo = np.sqrt(max(psf_res['T_psf'], 0) / 2)
@@ -659,7 +684,6 @@ class Ngmix(object):
                 SIGMA_TO_R50 * psf_res['T_psf_err'] / (4 * sigma_psfo)
                 if sigma_psfo > 0 else np.nan
             )
-            res['mcal_flags'] = 0
             final_res.append(res)
             n_fitted += 1
             count_batch += 1

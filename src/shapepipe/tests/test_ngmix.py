@@ -235,12 +235,17 @@ def test_compile_results_nan_fills_failed_fit_types():
     measurement keys (g, g_cov, T, T_err, flux, flux_err, s2n).
     ``compile_results`` previously indexed those keys directly, so a single
     failed object KeyError-crashed the whole tile at save time, hours in.
+
+    The failed object must also carry nonzero ``mcal_flags`` (the OR of
+    the per-type fit flags, computed as the process loop does) so the
+    downstream NGMIX_MCAL_FLAGS quality cut can see it.
     """
-    from shapepipe.modules.ngmix_package.ngmix import Ngmix
+    from shapepipe.modules.ngmix_package.ngmix import Ngmix, get_mcal_flags
 
     res = _fake_metacal_result(0.18, 0.02, 0.09, 0.001)
     res["1p"] = {"flags": 0x8, "nfev": 5}  # failed fit: only flags/nfev
     res["moments_fail"] = 1
+    res["mcal_flags"] = get_mcal_flags(res)
 
     inst = object.__new__(Ngmix)
     inst._zero_point = 30.0
@@ -253,10 +258,29 @@ def test_compile_results_nan_fills_failed_fit_types():
     ):
         assert np.isnan(failed[col]).all(), col
     assert failed["flags"] == [0x8]
+    assert failed["mcal_flags"] == [0x8] and failed["mcal_flags"][0] != 0
 
-    # successful types are untouched
+    # successful types are untouched, but share the object's mcal_flags
     npt.assert_allclose(out["noshear"]["flux"], [100.0])
     assert out["noshear"]["flags"] == [0]
+    assert out["noshear"]["mcal_flags"] == [0x8]
+
+
+def test_get_mcal_flags_ors_per_type_fit_flags():
+    """mcal_flags is the bitwise OR of all per-type fit flags (v1 contract).
+
+    The rewrite hard-coded ``res['mcal_flags'] = 0``, making the
+    NGMIX_MCAL_FLAGS column constant-zero so any mcal_flags == 0 quality
+    cut passed everything.
+    """
+    from shapepipe.modules.ngmix_package.ngmix import get_mcal_flags
+
+    res = {name: {"flags": 0} for name in ("noshear", "1p", "1m", "2p", "2m")}
+    assert get_mcal_flags(res) == 0
+
+    res["1p"]["flags"] = 0x8
+    res["2m"]["flags"] = 0x2
+    assert get_mcal_flags(res) == 0xA
 
 
 def test_compile_results_nonpositive_T_gives_nan_r50():
