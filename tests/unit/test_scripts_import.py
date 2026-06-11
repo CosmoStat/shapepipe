@@ -26,7 +26,6 @@ REPO_ROOT = Path(shapepipe.__file__).resolve().parents[2]
 # run_bias_test.sh's SHAPEPIPE_PATH), not this module.
 VALIDATION_SCRIPTS = [
     "scripts/validation/centroid/centroid_bias_v2.py",
-    "scripts/python/fitting.py",
 ]
 
 
@@ -34,8 +33,9 @@ VALIDATION_SCRIPTS = [
 def test_validation_script_imports_cleanly(relpath):
 
     path = REPO_ROOT / relpath
-    if not path.exists():
-        pytest.skip(f"{relpath} not found at {path}")
+    # A listed script that no longer exists is a stale entry: fail loudly so
+    # the list keeps reflecting reality instead of silently skipping.
+    assert path.exists(), f"{relpath} not found at {path}; prune the list"
 
     spec = importlib.util.spec_from_file_location(
         f"_smoke_{path.stem}", path

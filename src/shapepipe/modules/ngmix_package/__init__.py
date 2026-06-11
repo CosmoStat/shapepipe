@@ -38,6 +38,10 @@ ID_OBJ_MIN : int
 ID_OBJ_MAX : int
     ID of last galaxy object to be processed; not used if set to ``-1``
     (default)
+BKG_RMS_VIGNET_PATH : str, optional
+    Path to a ``background_rms_vignet*.sqlite`` file produced by
+    ``vignetmaker_runner``. The string may contain
+    ``{file_number_string}``, which is replaced by the current tile ID.
 
 """
 

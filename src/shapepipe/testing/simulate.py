@@ -30,8 +30,9 @@ def make_data(
         Random number generator.
     shear : tuple of float
         True shear (g1, g2).
-    noise : float, optional
-        Per-pixel noise sigma. Default 1e-5.
+    noise : float or numpy.ndarray, optional
+        Noise sigma — a scalar, or a per-pixel map of shape
+        ``(img_size, img_size)`` for spatially-varying noise. Default 1e-5.
     n_epochs : int, optional
         Number of epochs. Default 1.
     share_shift : bool, optional
