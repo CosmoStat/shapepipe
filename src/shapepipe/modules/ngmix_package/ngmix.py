@@ -19,6 +19,11 @@ from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
 
+# Gaussian half-light radius per unit sigma: r50 = sqrt(2 ln 2) * sigma
+# = 1.17741 * sigma.  With the ngmix area parameter T = 2 sigma^2 this
+# gives r50 = SIGMA_TO_R50 * sqrt(T / 2) = sqrt(ln 2 * T).
+SIGMA_TO_R50 = np.sqrt(2.0 * np.log(2.0))
+
 
 def get_prior(pixel_scale, rng, T_range=None, F_range=None):
     """Build ngmix joint prior for a 6-parameter galaxy model.
@@ -342,12 +347,8 @@ class Ngmix(object):
             'ntry_fit',
             'g1_psfo_ngmix',
             'g2_psfo_ngmix',
-            'T_psfo_ngmix',
-            'T_err_psfo_ngmix',
-            'r50_psfo_ngmix',
             'g1_err_psfo_ngmix',
             'g2_err_psfo_ngmix',
-            'r50_err_psfo_ngmix',
             'g1',
             'g1_err',
             'g2',
@@ -355,9 +356,11 @@ class Ngmix(object):
             'T',
             'T_err',
             'Tpsf',
+            'Tpsf_err',
             'r50',
             'r50_err',
             'r50psf',
+            'r50psf_err',
             'g1_psf',
             'g2_psf',
             'flux',
@@ -402,24 +405,28 @@ class Ngmix(object):
                 output_dict[name]["g2_err_psfo_ngmix"].append(
                     results[idx]["g_err_PSFo"][1]
                 )
-                output_dict[name]["T_psfo_ngmix"].append(results[idx]["T_PSFo"])
-                output_dict[name]["T_err_psfo_ngmix"].append(
-                    results[idx]["T_err_PSFo"]
-                )
-                output_dict[name]['r50_psfo_ngmix'].append(
-                    results[idx]['r50_PSFo']
-                )
-                output_dict[name]['r50_err_psfo_ngmix'].append(
-                    results[idx]['r50_err_PSFo']
-                )
                 output_dict[name]["T"].append(results[idx][name]["T"])
                 output_dict[name]["T_err"].append(results[idx][name]["T_err"])
                 output_dict[name]["Tpsf"].append(results[idx]["T_PSFo"])
+                output_dict[name]["Tpsf_err"].append(results[idx]["T_err_PSFo"])
                 output_dict[name]["g1_psf"].append(results[idx]["g_PSFo"][0])
                 output_dict[name]["g2_psf"].append(results[idx]["g_PSFo"][1])
-                output_dict[name]['r50'].append(results[idx][name]['pars'][4])
-                output_dict[name]['r50_err'].append(results[idx][name]['pars_err'][4])
+
+                # Galaxy half-light radius from the fitted area T = 2 sigma^2:
+                # r50 = sqrt(ln 2 * T), with d r50 / d T = r50 / (2 T)
+                T_gal = results[idx][name]["T"]
+                T_gal_err = results[idx][name]["T_err"]
+                if T_gal > 0:
+                    r50_gal = SIGMA_TO_R50 * np.sqrt(T_gal / 2)
+                    r50_gal_err = r50_gal * T_gal_err / (2 * T_gal)
+                else:
+                    r50_gal = r50_gal_err = np.nan
+                output_dict[name]['r50'].append(r50_gal)
+                output_dict[name]['r50_err'].append(r50_gal_err)
                 output_dict[name]['r50psf'].append(results[idx]["r50_PSFo"])
+                output_dict[name]['r50psf_err'].append(
+                    results[idx]["r50_err_PSFo"]
+                )
                 output_dict[name]["g1"].append(results[idx][name]["g"][0])
                 output_dict[name]["g2"].append(results[idx][name]["g"][1])
                 output_dict[name]["g1_err"].append(
@@ -632,14 +639,17 @@ class Ngmix(object):
                 1 for k in ['noshear', '1p', '1m', '2p', '2m']
                 if res.get(k, {}).get('flags', 0) != 0
             )
-            r50_psfo = np.sqrt(max(psf_res['T_psf'], 0) / 2)
+            # PSF half-light radius r50 = sqrt(2 ln 2) * sigma with
+            # sigma = sqrt(T / 2); error from d sigma / d T = 1 / (4 sigma)
+            sigma_psfo = np.sqrt(max(psf_res['T_psf'], 0) / 2)
             res['g_PSFo'] = psf_res['g_psf']
             res['g_err_PSFo'] = psf_res['g_psf_err']
             res['T_PSFo'] = psf_res['T_psf']
             res['T_err_PSFo'] = psf_res['T_psf_err']
-            res['r50_PSFo'] = r50_psfo
+            res['r50_PSFo'] = SIGMA_TO_R50 * sigma_psfo
             res['r50_err_PSFo'] = (
-                psf_res['T_psf_err'] / (2 * r50_psfo) if r50_psfo > 0 else np.nan
+                SIGMA_TO_R50 * psf_res['T_psf_err'] / (4 * sigma_psfo)
+                if sigma_psfo > 0 else np.nan
             )
             res['mcal_flags'] = 0
             final_res.append(res)
@@ -863,7 +873,7 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
         Weight image
     guess : list
         Gaussian parameters fot the window function
-        ``[x0, y0, g1, g2, r50, flux]``
+        ``[x0, y0, g1, g2, T, flux]``
     pixel_scale : float
         Pixel scale of the galaxy image
     thresh : float, optional
