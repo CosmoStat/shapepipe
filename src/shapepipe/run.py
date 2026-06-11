@@ -6,6 +6,7 @@ This module sets up a given run of the shape measurement pipeline.
 
 """
 
+import os
 import sys
 from datetime import datetime
 from importlib.metadata import requires
@@ -22,12 +23,27 @@ from shapepipe.pipeline.file_handler import FileHandler
 from shapepipe.pipeline.job_handler import JobHandler
 from shapepipe.pipeline.mpi_run import split_mpi_jobs, submit_mpi_jobs
 
-try:
-    from mpi4py import MPI
-except ImportError:  # pragma: no cover
-    import_mpi = False
+# Importing mpi4py initializes MPI immediately, which aborts the whole
+# process when no MPI launcher is available — e.g. inside an
+# ``srun``-launched shell on a SLURM cluster, where Open MPI detects the
+# SLURM step environment, expects a PMI server that srun never started,
+# and calls MPI_Abort before even ``shapepipe_run -h`` can print (#744).
+# Only import (and hence initialize) MPI when a launcher environment is
+# actually present: ``mpirun``/``orterun`` set OMPI_COMM_WORLD_SIZE,
+# ``srun --mpi=pmi2`` sets PMI_RANK and ``srun --mpi=pmix`` sets
+# PMIX_RANK. A bare ``shapepipe_run`` (login node, compute-node shell,
+# container) runs in SMP mode without ever touching MPI.
+_MPI_LAUNCHER_VARS = ("OMPI_COMM_WORLD_SIZE", "PMI_RANK", "PMIX_RANK")
+
+if any(var in os.environ for var in _MPI_LAUNCHER_VARS):
+    try:
+        from mpi4py import MPI
+    except ImportError:  # pragma: no cover
+        import_mpi = False
+    else:
+        import_mpi = True
 else:
-    import_mpi = True
+    import_mpi = False
 
 
 class ShapePipe:
@@ -178,7 +194,7 @@ class ShapePipe:
         module_dep = self._get_module_depends("depends") + __installs__
         module_exe = self._get_module_depends("executes")
 
-        module_dep += ["mpi4py"] if import_mpi else module_dep
+        module_dep += ["mpi4py"] if import_mpi else []
 
         exe_to_module = {
             exe: module
