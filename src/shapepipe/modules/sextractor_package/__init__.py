@@ -4,7 +4,8 @@ This package contains the module for ``sextractor``.
 
 :Author: Axel Guinot
 
-:Parent module: ``mask_runner``
+:Parent modules: ``mask_runner``, ``merge_headers_runner`` (the latter only
+    when ``MAKE_POST_PROCESS`` is ``True``)
 
 :Input: Single-exposure single-CCD image, weight and flag files
 
@@ -57,9 +58,9 @@ CHECKIMAGE : list, optional
 PREFIX : str, optional
     Output file name prefix
 MAKE_POST_PROCESS : bool
-    Option to run post-processing steps
-LOG_WCS : str, optional
-    Path to world coordinate system log file (``*sqlite``)
+    Option to run post-processing steps; if ``True`` the merged WCS header
+    log file (``log_exp_headers.sqlite`` from ``merge_headers_runner``) must
+    be the *last* entry of ``FILE_PATTERN``/``FILE_EXT``
 WORLD_POSITION : list, optional
     List of world coordinates to use to match objects
 CCD_SIZE : list, optional
