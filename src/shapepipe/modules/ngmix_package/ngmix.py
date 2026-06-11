@@ -368,7 +368,7 @@ class Ngmix(object):
             'id',
             'n_epoch_model',
             'moments_fail',
-            'ntry_fit',
+            'nfev_fit',
             'g1_psfo_ngmix',
             'g2_psfo_ngmix',
             'g1_err_psfo_ngmix',
@@ -424,7 +424,10 @@ class Ngmix(object):
                 output_dict[name]["moments_fail"].append(
                     results[idx]["moments_fail"]
                 )
-                output_dict[name]["ntry_fit"].append(
+                # ngmix 2.x reports the solver's function-evaluation count
+                # (nfev, ~tens-hundreds; -1 on some failures), not the v1
+                # 1-5 retry count, so the column is named accordingly.
+                output_dict[name]["nfev_fit"].append(
                     fit.get("nfev", np.nan)
                 )
                 output_dict[name]["g1_psfo_ngmix"].append(
