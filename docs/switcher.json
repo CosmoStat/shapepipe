@@ -1,0 +1,13 @@
+[
+  {
+    "name": "stable",
+    "version": "stable",
+    "url": "https://cosmostat.github.io/shapepipe/",
+    "preferred": true
+  },
+  {
+    "name": "latest (develop)",
+    "version": "latest",
+    "url": "https://cosmostat.github.io/shapepipe/latest/"
+  }
+]

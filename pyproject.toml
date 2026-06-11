@@ -27,9 +27,9 @@ dependencies = [
     "matplotlib>=3.10",
     "mccd>=1.2.4",
     "modopt>=1.6",
-    "mpi4py>=4.0",
+    "mpi4py>=4.1.2",
     "numba>=0.59",           # numpy 2 support
-    "numpy>=2.0",            # major 1 → 2
+    "numpy>=2.4.6",            # major 1 → 2
     "pandas>=3.0.3",           # major 2 → 3
     "python-dateutil",
     "python-pysap>=0.3",
@@ -57,7 +57,7 @@ doc = [
 jupyter = [
     "ipython>=8.18",
     "jupyterlab>=4.5.7",
-    "snakemake>=9.20.0",
+    "snakemake>=9.21.0",
 ]
 lint = [
     "black",

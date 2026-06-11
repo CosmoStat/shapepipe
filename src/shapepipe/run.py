@@ -418,6 +418,7 @@ def run_mpi(pipe, comm):
                 # Get file handler objects
                 run_dirs = jh.filehd.module_run_dirs
                 module_runner = jh.filehd.module_runners[module]
+                module_config_sec = jh.filehd.get_module_config_sec(module)
                 worker_log = jh.filehd.get_worker_log_name
                 # Define process list
                 process_list = jh.filehd.process_list
@@ -425,8 +426,8 @@ def run_mpi(pipe, comm):
                 jobs = split_mpi_jobs(process_list, comm.size)
                 del process_list
         else:
-            job_type = module_runner = worker_log = timeout = jobs = (
-                run_dirs
+            job_type = module_runner = worker_log = timeout = jobs = run_dirs = (
+                module_config_sec
             ) = None
 
         # Broadcast job type to all nodes
@@ -438,6 +439,7 @@ def run_mpi(pipe, comm):
             run_dirs = comm.bcast(run_dirs, root=0)
 
             module_runner = comm.bcast(module_runner, root=0)
+            module_config_sec = comm.bcast(module_config_sec, root=0)
             worker_log = comm.bcast(worker_log, root=0)
             timeout = comm.bcast(timeout, root=0)
             jobs = comm.scatter(jobs, root=0)
@@ -447,6 +449,7 @@ def run_mpi(pipe, comm):
                 submit_mpi_jobs(
                     jobs,
                     config,
+                    module_config_sec,
                     timeout,
                     run_dirs,
                     module_runner,
@@ -457,7 +460,7 @@ def run_mpi(pipe, comm):
             )
 
             # Delete broadcast objects
-            del module_runner, worker_log, timeout, jobs
+            del module_runner, module_config_sec, worker_log, timeout, jobs
 
             # Finish up parallel jobs
             if master:

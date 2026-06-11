@@ -6,11 +6,11 @@ tags:
     - docker
     - infra
 created-at: 2026-04-27T11:26:45.677512058+02:00
-outcome: 'PR #719 (chore: switch Dockerfile to slim Python + uv lockfile) opened and CI-green on first try (3m31s); ready for Martin''s review. Drops conda double-install, makes pyproject SSOT + uv.lock the pinned manifest, switches WeightWatcher from sed-patched source build to Debian''s pre-patched 1.12+dfsg-3 package, adds binary smoke tests to deploy-image.yml.'
+outcome: 'PR #719 (chore: switch Dockerfile to slim Python + uv lockfile) opened and CI-green on first try (3m31s); ready for review. Drops conda double-install, makes pyproject SSOT + uv.lock the pinned manifest, switches WeightWatcher from sed-patched source build to Debian''s pre-patched 1.12+dfsg-3 package, adds binary smoke tests to deploy-image.yml.'
 decisions:
     base:
         label: Base image
-        rationale: Conda double-install was the actual problem; cleanest resolution is to drop conda entirely. Martin's canfar concern is satisfied as long as the slim image works on canfar.
+        rationale: Conda double-install was the actual problem; cleanest resolution is to drop conda entirely. The canfar deployment concern is satisfied as long as the slim image works on canfar.
         default: python-slim
         options:
             python-slim:
@@ -50,7 +50,7 @@ decisions:
                 label: uv + pyproject + uv.lock; uv sync --frozen in Dockerfile
     modernize:
         label: Modernize package versions
-        rationale: 'We determined which versions MUST stay pinned: only ngmix (Axel''s stable_version branch — replacement is tracked separately). Everything else can move to current latest because uv resolved cleanly and CI smoke test still passes (3m42s). If a real pipeline run on canfar surfaces a numpy-2 / pandas-3 break, the fix is a targeted constraint + uv lock, not a wholesale revert.'
+        rationale: 'We determined which versions MUST stay pinned: only ngmix (pinned to a stable_version fork branch — replacement is tracked separately). Everything else can move to current latest because uv resolved cleanly and CI smoke test still passes (3m42s). If a real pipeline run on canfar surfaces a numpy-2 / pandas-3 break, the fix is a targeted constraint + uv lock, not a wholesale revert.'
         default: stay-current
         options:
             stay-conservative:
@@ -58,7 +58,7 @@ decisions:
                 excluded: true
                 excluded_reason: Drift between pyproject signal and lockfile reality; loses the chance to surface numpy-2/pandas-3 incompatibilities at PR time when CI is fast
             stay-current:
-                label: Bump pyproject minimums to current major versions (numpy 2, astropy 7, pandas 3, galsim 2.8, mpi4py 4.1, etc.); pin ngmix to Axel's stable_version branch
+                label: Bump pyproject minimums to current major versions (numpy 2, astropy 7, pandas 3, galsim 2.8, mpi4py 4.1, etc.); pin ngmix to its stable_version fork branch
 insights:
     ci-fast:
         claim: 'First CI run on PR #719 went green in 3m31s. uv installed 238 packages in 322ms — everything resolved to prebuilt wheels, no source compilation of galsim/mpi4py/python-pysap/etc. Massive speedup vs. previous build.'
@@ -97,11 +97,10 @@ The `--frozen` flag is the discipline mechanism: a stale lockfile cannot ship.
 ## Followups
 
 - Watch CI on #719. The slim-base apt list is conjectural — galsim/mpi4py/python-pysap pull a lot of system deps and we may need to add more (`libatlas-base-dev`, `libblas-dev`, etc).
-- If CI needs anything beyond what's in the apt block, that's the surface that benefits from a [[shapepipe/prs-in-flight]] note for next time.
-- After this lands, [[shapepipe/prs-in-flight]] PRs #708 and #714 may need a small rebase.
-- Optional: separate `Dockerfile.canfar` building on skaha if there's a concrete deployment reason. Currently conjectural — Martin floated it but we agreed slim should work on canfar.
+- If CI needs anything beyond what's in the apt block, that's worth noting for next time.
+- After this lands, PRs #708 and #714 may need a small rebase.
+- Optional: separate `Dockerfile.canfar` building on skaha if there's a concrete deployment reason. Currently conjectural — floated as a possibility, but slim should work on canfar.
 
 ## Connections
 
 - [[shapepipe]] — root
-- [[shapepipe/prs-in-flight]] — touches the testing-scaffold xfail set and the develop-bugs PR
