@@ -84,10 +84,13 @@ def make_post_process(cat_path, f_wcs_path, pos_params, ccd_size):
     cat.open()
 
     f_wcs = SqliteDict(f_wcs_path)
-    key_list = list(f_wcs.keys())
-    if len(key_list) == 0:
+    # Tile-level logs from merge_headers carry a "TILE_ID" metadata entry
+    # (inserted first); n_hdu must be derived from a real exposure entry,
+    # otherwise it measures the tile ID string and truncates the CCD scan.
+    exp_keys = [key for key in f_wcs.keys() if key != "TILE_ID"]
+    if len(exp_keys) == 0:
         raise IOError(f"Could not read sql file '{f_wcs_path}'")
-    n_hdu = len(f_wcs[key_list[0]])
+    n_hdu = len(f_wcs[exp_keys[0]])
 
     history = []
     for idx in cat.get_data(1)[0][0]:
