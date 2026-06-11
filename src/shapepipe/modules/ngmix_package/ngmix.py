@@ -374,16 +374,24 @@ class Ngmix(object):
         output_dict = {k: {kk: [] for kk in names2} for k in names}
         for idx in range(len(results)):
             for name in names:
+                fit = results[idx][name]
 
-                mag = (
-                    -2.5 * np.log10(results[idx][name]["flux"])
-                    + self._zero_point
+                # ngmix 2.x does not raise on fit failure: after ntry the
+                # result keeps flags != 0 and carries none of the
+                # measurement keys (g, g_cov, T, T_err, flux, flux_err,
+                # s2n).  NaN-fill those so failed types are recorded with
+                # their flags instead of crashing the tile on a KeyError.
+                flux = fit.get("flux", np.nan)
+                flux_err = fit.get("flux_err", np.nan)
+                g = np.asarray(fit.get("g", (np.nan, np.nan)))
+                g_cov = np.asarray(
+                    fit.get("g_cov", np.full((2, 2), np.nan))
                 )
-                mag_err = np.abs(
-                    -2.5
-                    * results[idx][name]["flux_err"]
-                    / (results[idx][name]["flux"] * np.log(10))
-                )
+                T_gal = fit.get("T", np.nan)
+                T_gal_err = fit.get("T_err", np.nan)
+
+                mag = -2.5 * np.log10(flux) + self._zero_point
+                mag_err = np.abs(-2.5 * flux_err / (flux * np.log(10)))
 
                 output_dict[name]["id"].append(results[idx]["obj_id"])
                 output_dict[name]["n_epoch_model"].append(
@@ -392,7 +400,9 @@ class Ngmix(object):
                 output_dict[name]["moments_fail"].append(
                     results[idx]["moments_fail"]
                 )
-                output_dict[name]["ntry_fit"].append(results[idx][name]["nfev"])
+                output_dict[name]["ntry_fit"].append(
+                    fit.get("nfev", np.nan)
+                )
                 output_dict[name]["g1_psfo_ngmix"].append(
                     results[idx]["g_PSFo"][0]
                 )
@@ -405,8 +415,8 @@ class Ngmix(object):
                 output_dict[name]["g2_err_psfo_ngmix"].append(
                     results[idx]["g_err_PSFo"][1]
                 )
-                output_dict[name]["T"].append(results[idx][name]["T"])
-                output_dict[name]["T_err"].append(results[idx][name]["T_err"])
+                output_dict[name]["T"].append(T_gal)
+                output_dict[name]["T_err"].append(T_gal_err)
                 output_dict[name]["Tpsf"].append(results[idx]["T_PSFo"])
                 output_dict[name]["Tpsf_err"].append(results[idx]["T_err_PSFo"])
                 output_dict[name]["g1_psf"].append(results[idx]["g_PSFo"][0])
@@ -414,8 +424,6 @@ class Ngmix(object):
 
                 # Galaxy half-light radius from the fitted area T = 2 sigma^2:
                 # r50 = sqrt(ln 2 * T), with d r50 / d T = r50 / (2 T)
-                T_gal = results[idx][name]["T"]
-                T_gal_err = results[idx][name]["T_err"]
                 if T_gal > 0:
                     r50_gal = SIGMA_TO_R50 * np.sqrt(T_gal / 2)
                     r50_gal_err = r50_gal * T_gal_err / (2 * T_gal)
@@ -427,27 +435,25 @@ class Ngmix(object):
                 output_dict[name]['r50psf_err'].append(
                     results[idx]["r50_err_PSFo"]
                 )
-                output_dict[name]["g1"].append(results[idx][name]["g"][0])
-                output_dict[name]["g2"].append(results[idx][name]["g"][1])
-                output_dict[name]["g1_err"].append(
-                    np.sqrt(results[idx][name]["g_cov"][0, 0])
-                )
-                output_dict[name]["g2_err"].append(
-                    np.sqrt(results[idx][name]["g_cov"][1, 1])
-                )
-                output_dict[name]["flux"].append(results[idx][name]["flux"])
-                output_dict[name]["flux_err"].append(results[idx][name]["flux_err"])
+                output_dict[name]["g1"].append(g[0])
+                output_dict[name]["g2"].append(g[1])
+                output_dict[name]["g1_err"].append(np.sqrt(g_cov[0, 0]))
+                output_dict[name]["g2_err"].append(np.sqrt(g_cov[1, 1]))
+                output_dict[name]["flux"].append(flux)
+                output_dict[name]["flux_err"].append(flux_err)
                 output_dict[name]["mag"].append(mag)
                 output_dict[name]["mag_err"].append(mag_err)
 
-                if "s2n" in results[idx][name]:
-                    output_dict[name]["s2n"].append(results[idx][name]["s2n"])
-                elif "s2n_r" in results[idx][name]:
-                    output_dict[name]["s2n"].append(results[idx][name]["s2n_r"])
+                if "s2n" in fit:
+                    output_dict[name]["s2n"].append(fit["s2n"])
+                elif "s2n_r" in fit:
+                    output_dict[name]["s2n"].append(fit["s2n_r"])
+                elif fit["flags"] != 0:
+                    output_dict[name]["s2n"].append(np.nan)
                 else:
                     raise KeyError("No SNR key (s2n, s2n_r) found in results")
 
-                output_dict[name]["flags"].append(results[idx][name]["flags"])
+                output_dict[name]["flags"].append(fit["flags"])
                 output_dict[name]["mcal_flags"].append(
                     results[idx].get("mcal_flags", 0)
                 )

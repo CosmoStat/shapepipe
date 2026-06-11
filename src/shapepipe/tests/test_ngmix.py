@@ -227,6 +227,38 @@ def test_compile_results_size_columns_are_half_light_radii():
         assert retired not in noshear
 
 
+def test_compile_results_nan_fills_failed_fit_types():
+    """A failed fit type must be recorded with NaNs, not crash the tile.
+
+    ngmix 2.x ``run_fitter`` does not raise on failure: after ``ntry`` it
+    returns a result with ``flags != 0`` that carries none of the
+    measurement keys (g, g_cov, T, T_err, flux, flux_err, s2n).
+    ``compile_results`` previously indexed those keys directly, so a single
+    failed object KeyError-crashed the whole tile at save time, hours in.
+    """
+    from shapepipe.modules.ngmix_package.ngmix import Ngmix
+
+    res = _fake_metacal_result(0.18, 0.02, 0.09, 0.001)
+    res["1p"] = {"flags": 0x8, "nfev": 5}  # failed fit: only flags/nfev
+    res["moments_fail"] = 1
+
+    inst = object.__new__(Ngmix)
+    inst._zero_point = 30.0
+    out = inst.compile_results([res])
+
+    failed = out["1p"]
+    for col in (
+        "g1", "g2", "g1_err", "g2_err", "T", "T_err", "flux", "flux_err",
+        "s2n", "mag", "mag_err", "r50", "r50_err",
+    ):
+        assert np.isnan(failed[col]).all(), col
+    assert failed["flags"] == [0x8]
+
+    # successful types are untouched
+    npt.assert_allclose(out["noshear"]["flux"], [100.0])
+    assert out["noshear"]["flags"] == [0]
+
+
 def test_compile_results_nonpositive_T_gives_nan_r50():
     """A non-positive fitted area cannot yield a real half-light radius."""
     from shapepipe.modules.ngmix_package.ngmix import Ngmix
