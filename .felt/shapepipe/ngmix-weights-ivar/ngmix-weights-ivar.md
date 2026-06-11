@@ -1,13 +1,14 @@
 ---
 id: 01KTCQPE3JGEYN7NQS8HW1AT6B
 name: 'ngmix weight map: fix v2.0 regressions + inverse-variance (#604)'
-status: open
+status: closed
 tags:
     - constitution
     - shapepipe
     - ngmix
 created-at: 2026-06-05T22:30:49.970813955+02:00
-outcome: '#604 implementation is wired through code and active example configs in /tmp/pr740-wt through commit 22e31e51: SExtractor emits BACKGROUND_RMS, vignetmaker stores background_rms_vignet*.sqlite, ngmix templates point BKG_RMS_VIGNET_PATH at that sqlite, ngmix builds per-pixel 1/RMS² inverse-variance gated by weight/flag/valid-RMS masks with scalar fallback when no RMS file is supplied, and test_ngmix now also guards the optional seventh RMS sqlite input contract. Focused RMS/weight tests and py_compile passed in the dev image; full test_ngmix.py still has the pre-existing ngmix.fitting.Fitter API failure.'
+closed-at: 2026-06-11T02:37:33.556855912+02:00
+outcome: 'Realized, fresh-eyes reviewed (no blockers), and delivered to PR #741 (CosmoStat/shapepipe, ngmix_v2.0): per-pixel 1/RMS² inverse-variance weights gated by weight/flag/valid-RMS masks with scalar sigma_mad fallback — feat f466c987, mask binarization 6ddea5b2, NaN-edge guard 4aa3b2a1, integration test pinning spatially-varying RMS through the full observation chain 158986a4, config wiring 7a44abda + all-or-nothing semantics documented 0bc6016e. Martin''s #604 weight-map thread answered with the commits. BKG_RMS_VIGNET_PATH is all-or-nothing per tile (missing file → FileNotFoundError; fallback only when option absent). Container gotcha: test from a scratch-wf worktree needs --bind /automnt/n17data and /automnt-prefixed paths (plain /n17data symlink invisible inside the sandbox); dev sandbox ships ngmix 1.3.6 so test_metacal_is_reproducible_with_fixed_seed only passes in CI''s v2 image.'
 shuttle:
     enabled: true
     kind: oneshot

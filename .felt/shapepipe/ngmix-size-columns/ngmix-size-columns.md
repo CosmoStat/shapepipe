@@ -7,7 +7,7 @@ tags:
     - shapepipe
     - ngmix
 created-at: 2026-06-05T22:30:50.004535516+02:00
-outcome: 'Realized + fresh-eyes reviewed, no code defects: shapepipe fix/ngmix-size-columns (honest r50 + dedupe, pushed), cs_util feat/size-conversions (size web, 24/24, on cailmdaley fork — no upstream push rights), sp_validation fix/psf-leakage-fwhm (T_to_fwhm bug fixed — moves α(size); pushed). PRs + merge order (cs_util release → sp_validation) are Cail''s gesture; caution: sp_validation CI is green-but-vacuous on the cs_util.size import, ordering is discipline-enforced. See report.html.'
+outcome: 'Delivered end-to-end 2026-06-11: cs_util#65 merged + released as v0.2.1 on PyPI (size web, 26/26 — first release carrying cs_util.size); shapepipe#743 (honest r50 + dedupe, targeting ngmix_v2.0 per merge-base) merged, #741 CI green after; sp_validation#198 (T_to_fwhm fix + galaxy smoke test killing the green-but-vacuous CI hole, pin cs_util>=0.2.1) OPEN — blocked by shear_psf_leakage''s poetry cap cs-util ^0.1.0; relaxation branch fix/relax-cs-util-cap pushed to CosmoStat/shear_psf_leakage, PR creation is Cail''s click. Deferred (stated in #743 body): wiring honest r50/r50psf into make_cat so paper-convention r_h reaches the science catalogue.'
 shuttle:
     kind: oneshot
     host: candide
