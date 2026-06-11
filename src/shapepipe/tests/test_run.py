@@ -36,7 +36,9 @@ def _import_mpi_flag(extra_env):
         env=env,
         capture_output=True,
         text=True,
-        check=True,
+    )
+    assert result.returncode == 0, (
+        f"subprocess failed (exit {result.returncode}): {result.stderr}"
     )
     return result.stdout.strip()
 
