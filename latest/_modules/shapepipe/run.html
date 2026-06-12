@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="11 Jun, 2026"/>
+    <meta name="docbuild:last-update" content="12 Jun, 2026"/>
   </head>
   
   
@@ -514,6 +514,7 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">importlib.metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">requires</span>
@@ -530,12 +531,27 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline.job_handler</span><span class="w"> </span><span class="kn">import</span> <span class="n">JobHandler</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapepipe.pipeline.mpi_run</span><span class="w"> </span><span class="kn">import</span> <span class="n">split_mpi_jobs</span><span class="p">,</span> <span class="n">submit_mpi_jobs</span>
 
-<span class="k">try</span><span class="p">:</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">mpi4py</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPI</span>
-<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
-    <span class="n">import_mpi</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="c1"># Importing mpi4py initializes MPI immediately, which aborts the whole</span>
+<span class="c1"># process when no MPI launcher is available — e.g. inside an</span>
+<span class="c1"># ``srun``-launched shell on a SLURM cluster, where Open MPI detects the</span>
+<span class="c1"># SLURM step environment, expects a PMI server that srun never started,</span>
+<span class="c1"># and calls MPI_Abort before even ``shapepipe_run -h`` can print (#744).</span>
+<span class="c1"># Only import (and hence initialize) MPI when a launcher environment is</span>
+<span class="c1"># actually present: ``mpirun``/``orterun`` set OMPI_COMM_WORLD_SIZE,</span>
+<span class="c1"># ``srun --mpi=pmi2`` sets PMI_RANK and ``srun --mpi=pmix`` sets</span>
+<span class="c1"># PMIX_RANK. A bare ``shapepipe_run`` (login node, compute-node shell,</span>
+<span class="c1"># container) runs in SMP mode without ever touching MPI.</span>
+<span class="n">_MPI_LAUNCHER_VARS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;OMPI_COMM_WORLD_SIZE&quot;</span><span class="p">,</span> <span class="s2">&quot;PMI_RANK&quot;</span><span class="p">,</span> <span class="s2">&quot;PMIX_RANK&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">var</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">_MPI_LAUNCHER_VARS</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">mpi4py</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPI</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+        <span class="n">import_mpi</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">import_mpi</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="k">else</span><span class="p">:</span>
-    <span class="n">import_mpi</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">import_mpi</span> <span class="o">=</span> <span class="kc">False</span>
 
 
 <div class="viewcode-block" id="ShapePipe">
@@ -705,7 +721,7 @@
         <span class="n">module_dep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_module_depends</span><span class="p">(</span><span class="s2">&quot;depends&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">__installs__</span>
         <span class="n">module_exe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_module_depends</span><span class="p">(</span><span class="s2">&quot;executes&quot;</span><span class="p">)</span>
 
-        <span class="n">module_dep</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;mpi4py&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">import_mpi</span> <span class="k">else</span> <span class="n">module_dep</span>
+        <span class="n">module_dep</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;mpi4py&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">import_mpi</span> <span class="k">else</span> <span class="p">[]</span>
 
         <span class="n">exe_to_module</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">exe</span><span class="p">:</span> <span class="n">module</span>
@@ -1116,7 +1132,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 11 Jun, 2026.
+  Last updated on 12 Jun, 2026.
   <br/>
 </p>
   </div>
