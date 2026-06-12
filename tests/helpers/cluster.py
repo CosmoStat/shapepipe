@@ -19,6 +19,7 @@ A full regeneration is a multi-hour, multi-job affair; this helper is the
 seam to drive it on demand, NOT something the test suite runs by default.
 """
 
+import os
 import shutil
 import subprocess
 import time
@@ -86,12 +87,18 @@ def sbatch(job_script, *job_args, dependency=None):
     return out.strip().split(";")[0]
 
 
-def submit_star_grid_chain(tiles, *, launcher=None):
+def submit_star_grid_chain(tiles, *, launcher=None, centroid_source="wcs"):
     """Submit the star-grid job chain for a list of tile ids.
 
     Mirrors ``tile_launcher.job``: one ``job_per_tile_newversion.job`` per
     tile id. Returns the list of submitted job ids. Does NOT wait — pair
     with :func:`wait_for_jobs`.
+
+    ``centroid_source`` ("wcs" for the star grid) is exported as
+    ``SP_CENTROID_SOURCE`` so the job chain runs ngmix with the
+    star-appropriate centroid (the ngmix_runner ``CENTROID_SOURCE`` config
+    key). Stars have noisy HSM moments, so the grid trusts the WCS-projected
+    catalog position rather than re-measuring the centroid.
 
     This is the heavy path (each tile is a multi-hour job). It is wired so a
     cluster test can regenerate outputs on demand; the suite never calls it
@@ -100,6 +107,7 @@ def submit_star_grid_chain(tiles, *, launcher=None):
     launcher = Path(launcher) if launcher else SP_SIMU_ROOT / "job_per_tile_newversion.job"
     if not launcher.exists():
         raise FileNotFoundError(f"launcher job script not found: {launcher}")
+    os.environ["SP_CENTROID_SOURCE"] = centroid_source
     return [sbatch(launcher, tile) for tile in tiles]
 
 

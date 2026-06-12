@@ -34,6 +34,13 @@ from tests.helpers.star_response import DEFAULT_BASE_DIR, compute_star_response
 
 pytestmark = [pytest.mark.slow, pytest.mark.candide]
 
+# The star grid uses the WCS centroid source: a star's HSM adaptive moments
+# are too noisy to re-center on, so the galaxy Jacobian origin is placed at the
+# catalog sky position projected through the WCS (ngmix_runner CENTROID_SOURCE
+# = wcs). When regenerating, this is threaded into the job chain so the outputs
+# this metric reads are produced with the star-appropriate centroid.
+CENTROID_SOURCE = "wcs"
+
 
 def _base_dir():
     """Outputs dir to evaluate — overridable for alternate runs / regen."""
@@ -61,7 +68,9 @@ def star_response(artifacts_dir):
         tiles = os.environ.get("SHAPEPIPE_STAR_GRID_TILES", "").split()
         if not tiles:
             pytest.skip("set SHAPEPIPE_STAR_GRID_TILES to regenerate")
-        wait_for_jobs(submit_star_grid_chain(tiles))
+        wait_for_jobs(
+            submit_star_grid_chain(tiles, centroid_source=CENTROID_SOURCE)
+        )
 
     summary = compute_star_response(base_dir)
     status = (

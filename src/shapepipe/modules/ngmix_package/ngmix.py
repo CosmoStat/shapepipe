@@ -151,6 +151,11 @@ class Postage_stamp():
         self.flags = []
         self.bkg_rms = []
         self.jacobs = []
+        # Per-epoch full WCS and the object's sky position, used only by the
+        # "wcs" centroid source (skipped for the default "hsm" path).
+        self.wcs = []
+        self.ra = []
+        self.dec = []
         self.bkg_sub = bkg_sub
         self.megacam_flip = megacam_flip
 
@@ -232,6 +237,12 @@ class Ngmix(object):
     id_obj_max : int, optional
         Last galaxy ID to process, not used if the value is set to ``-1``;
         the default is ``-1``
+    centroid_source : {"hsm", "wcs"}, optional
+        How to place the galaxy Jacobian origin for the centroid prior. The
+        default ``"hsm"`` re-centers on the HSM adaptive-moment centroid
+        (robust for galaxies); ``"wcs"`` uses the catalog sky position
+        projected through the WCS (better for stars, whose HSM moments are
+        noisy). See :func:`make_ngmix_observation`.
 
     Raises
     ------
@@ -252,6 +263,7 @@ class Ngmix(object):
         save_batch=-1,
         id_obj_min=-1,
         id_obj_max=-1,
+        centroid_source="hsm",
     ):
 
         if len(input_file_list) not in {6, 7}:
@@ -289,6 +301,7 @@ class Ngmix(object):
         self._save_batch = save_batch
         self._id_obj_min = id_obj_min
         self._id_obj_max = id_obj_max
+        self._centroid_source = centroid_source
 
         self._w_log = w_log
 
@@ -654,6 +667,7 @@ class Ngmix(object):
                     prior,
                     flux_guess,
                     self._rng,
+                    centroid_source=self._centroid_source,
                 )
             except Exception as ee:
                 self._w_log.info(
@@ -773,8 +787,9 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat):
             else None
         )
 
+        epoch_wcs = vignet.f_wcs_file[exp_name][int(ccd_n)]['WCS']
         jacob = get_galsim_jacobian(
-            vignet.f_wcs_file[exp_name][int(ccd_n)]['WCS'],
+            epoch_wcs,
             tile_cat.ra[i_tile],
             tile_cat.dec[i_tile]
         )
@@ -804,7 +819,11 @@ def prepare_postage_stamps(vignet, obj_id, i_tile, tile_cat):
         stamp.flags.append(flag_vign)
         stamp.bkg_rms.append(bkg_rms_vign_scaled)
         stamp.jacobs.append(jacob)
-                
+        # For the "wcs" centroid source (see make_ngmix_observation).
+        stamp.wcs.append(epoch_wcs)
+        stamp.ra.append(tile_cat.ra[i_tile])
+        stamp.dec.append(tile_cat.dec[i_tile])
+
     return stamp
 
 def background_subtract(gal,bkg):
@@ -997,11 +1016,25 @@ def prepare_ngmix_weights(gal, weight, flag, rng, bkg_rms=None):
 
     return gal_masked, weight_map, noise_img
 
-def make_ngmix_observation(gal, weight, flag, psf, wcs, rng, bkg_rms=None):
+def make_ngmix_observation(
+    gal, weight, flag, psf, wcs, rng,
+    bkg_rms=None, centroid_source="hsm", wcs_full=None, ra=None, dec=None,
+):
     """Build an ngmix Observation for a single galaxy epoch.
 
-    The galaxy Jacobian is re-centered on the HSM centroid so that the
-    centroid prior (centered at the Jacobian origin) does not bias the fit.
+    The galaxy Jacobian origin sets where the centroid prior is centered, so
+    it must sit on the object. Two ways to place it, selected by
+    ``centroid_source``:
+
+    * ``"hsm"`` (default) — re-center on the HSM adaptive-moment centroid
+      measured from the stamp. Robust for **galaxies**: it follows the actual
+      light and so the centroid prior (centered at the Jacobian origin) does
+      not bias an object that is offset from the stamp center.
+    * ``"wcs"`` — place the origin at the object's catalog sky position,
+      projected through the WCS to a sub-pixel pixel offset from the stamp
+      center, with no shape measurement. Better for **stars**: their HSM
+      moments are noisy, so trusting the astrometry is more stable than
+      re-measuring the centroid.
 
     Parameters
     ----------
@@ -1016,6 +1049,14 @@ def make_ngmix_observation(gal, weight, flag, psf, wcs, rng, bkg_rms=None):
         reproducibility).
     bkg_rms : numpy.ndarray, optional
         Per-pixel background RMS map.
+    centroid_source : {"hsm", "wcs"}, optional
+        How to place the galaxy Jacobian origin; the default is ``"hsm"``.
+    wcs_full : astropy.wcs.WCS, optional
+        Full exposure WCS for the object's CCD. Required for
+        ``centroid_source="wcs"`` (ignored for ``"hsm"``).
+    ra, dec : float, optional
+        Object sky position in degrees. Required for
+        ``centroid_source="wcs"`` (ignored for ``"hsm"``).
 
     Returns
     -------
@@ -1032,18 +1073,36 @@ def make_ngmix_observation(gal, weight, flag, psf, wcs, rng, bkg_rms=None):
         gal, weight, flag, rng, bkg_rms=bkg_rms
     )
 
-    # Re-center Jacobian on HSM centroid (pixel offset from stamp center).
-    # Fixes: centroid prior biases fit when galaxy is offset from stamp center.
-    try:
-        _hsm = galsim.hsm.FindAdaptiveMom(
-            galsim.Image(gal, scale=1.0), strict=False
+    if centroid_source == "hsm":
+        # Re-center Jacobian on HSM centroid (pixel offset from stamp center).
+        # Fixes: centroid prior biases fit when galaxy is offset from stamp
+        # center. Robust for galaxies; noisy for stars (use "wcs" there).
+        try:
+            _hsm = galsim.hsm.FindAdaptiveMom(
+                galsim.Image(gal, scale=1.0), strict=False
+            )
+            if _hsm.error_message != "":
+                raise galsim.hsm.GalSimHSMError(_hsm.error_message)
+            _cen = _hsm.moments_centroid - galsim.Image(gal, scale=1.0).center
+            cen_row, cen_col = _cen.y, _cen.x
+        except Exception:
+            cen_row, cen_col = 0.0, 0.0
+    elif centroid_source == "wcs":
+        # Place the origin at the catalog sky position projected through the
+        # WCS — no shape measurement. Stars have noisy HSM moments, so trust
+        # the astrometry instead of re-measuring the centroid.
+        g_wcs = galsim.fitswcs.AstropyWCS(wcs=wcs_full)
+        world_pos = galsim.CelestialCoord(
+            ra * galsim.degrees, dec * galsim.degrees
         )
-        if _hsm.error_message != "":
-            raise galsim.hsm.GalSimHSMError(_hsm.error_message)
-        _cen = _hsm.moments_centroid - galsim.Image(gal, scale=1.0).center
-        cen_row, cen_col = _cen.y, _cen.x
-    except Exception:
-        cen_row, cen_col = 0.0, 0.0
+        pos = g_wcs.toImage(world_pos)
+        cen_col = pos.x - np.round(pos.x).astype(int)
+        cen_row = pos.y - np.round(pos.y).astype(int)
+    else:
+        raise ValueError(
+            f"Unknown centroid_source '{centroid_source}'; expected"
+            + " 'hsm' or 'wcs'"
+        )
 
     gal_jacob = ngmix.Jacobian(
         row=(gal.shape[0] - 1) / 2 + cen_row,
@@ -1144,7 +1203,7 @@ def make_runners(prior, flux_guess, rng):
     )
 
 
-def do_ngmix_metacal(stamp, prior, flux_guess, rng):
+def do_ngmix_metacal(stamp, prior, flux_guess, rng, centroid_source="hsm"):
     """Do Ngmix Metacal.
 
     Performs metacalibration on a single multi-epoch object and returns the
@@ -1160,6 +1219,12 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng):
         Initial flux guess.
     rng : numpy.random.RandomState
         Random state for guesses and priors.
+    centroid_source : {"hsm", "wcs"}, optional
+        How to place the galaxy Jacobian origin; passed through to
+        :func:`make_ngmix_observation`. The default is ``"hsm"`` (HSM
+        adaptive-moment centroid); ``"wcs"`` uses the catalog sky position
+        projected through the WCS — see that function for the star-vs-galaxy
+        rationale.
 
     Returns
     -------
@@ -1182,6 +1247,10 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng):
             stamp.jacobs[n_e],
             rng,
             bkg_rms=bkg_rms,
+            centroid_source=centroid_source,
+            wcs_full=stamp.wcs[n_e] if n_e < len(stamp.wcs) else None,
+            ra=stamp.ra[n_e] if n_e < len(stamp.ra) else None,
+            dec=stamp.dec[n_e] if n_e < len(stamp.dec) else None,
         )
         gal_obs_list.append(gal_obs)
 

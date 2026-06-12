@@ -79,6 +79,14 @@ def ngmix_runner(
     id_obj_min = config.getint(module_config_sec, "ID_OBJ_MIN")
     id_obj_max = config.getint(module_config_sec, "ID_OBJ_MAX")
 
+    # Centroid source for the galaxy Jacobian origin: "hsm" (default,
+    # HSM adaptive-moment centroid; robust for galaxies) or "wcs" (catalog
+    # sky position through the WCS; better for stars).
+    if config.has_option(module_config_sec, "CENTROID_SOURCE"):
+        centroid_source = config.get(module_config_sec, "CENTROID_SOURCE")
+    else:
+        centroid_source = "hsm"
+
     # Initialise class instance
     ngmix_inst = Ngmix(
         input_file_list,
@@ -91,6 +99,7 @@ def ngmix_runner(
         save_batch=save_batch,
         id_obj_min=id_obj_min,
         id_obj_max=id_obj_max,
+        centroid_source=centroid_source,
     )
 
     # Process ngmix shape measurement and metacalibration
