@@ -1,23 +1,26 @@
 # ShapePipe test suite
 
-Two homes, one discovery root, three tiers of guardrail. Everything is driven
-by `pytest` from the repo root (in the dev container — see the project
-`CLAUDE.md`); `pyproject.toml` `[tool.pytest.ini_options]` carries the config.
+One discovery root, tiered by subdirectory. Everything lives under `tests/` and
+is driven by `pytest` from the repo root (in the dev container — see the project
+`CLAUDE.md`); `pyproject.toml` `[tool.pytest.ini_options]` carries the config
+(`testpaths = ["tests"]`).
 
 ## Where tests live
 
 | Location | Holds | Why here |
 |----------|-------|----------|
-| `src/shapepipe/tests/` | **module-unit tests** — the fitter, file handler, split-exp, vignetmaker, ngmix internals, the GalSim weight-validation suite | next to the code they cover (src-layout idiom); these import package internals directly |
+| `tests/module/` | **module-unit tests** — the fitter, file handler, split-exp, vignetmaker, ngmix internals, the GalSim weight-validation suite | per-module unit/property/integration tests; import package internals directly. (Relocated from `src/shapepipe/tests/` so the suite has one home.) |
 | `tests/unit/` | **structural tests** — every submodule imports, configs parse, shell scripts lint, runner metadata is well-formed, console entry points respond to `-h` | suite-level checks on the *tree*, not any one module |
 | `tests/science/` | **fast scientific guardrails** — controlled simulations with a known answer, runnable in the inner loop with nothing from the cluster | scientific correctness that must stay green on every commit |
 | `tests/cluster/` | **candide guardrails** — read real on-disk catalogs / submit cluster jobs | need the cluster + real data; marked and auto-skipped off it |
-| `tests/helpers/` | shared, non-test library code (cluster submission, artifact emission, the star-response R-function) | imported by tests; not collected as tests |
+| `tests/helpers/` | shared, non-test library code (cluster submission, artifact emission, the star-response R-function) | imported by tests as `tests.helpers.*`; not collected as tests |
 | `tests/_artifacts/` | plots + status JSON/markdown emitted by guardrail tests | the seam a later GitHub Pages step publishes from |
 
-Both `testpaths` are discovered together, so a bare `pytest` runs the whole
-suite. `conftest.py` at the repo root is the single source of markers,
-environment detection, and the candide skip policy — it applies everywhere.
+`tests/` is a Python package (each tier has an `__init__.py`), so the shared
+helpers import as `tests.helpers.*` from any tier. A bare `pytest` discovers the
+whole tree from the single `testpaths` root. `conftest.py` at the repo root is
+the single source of markers, environment detection, and the candide skip
+policy — it applies everywhere.
 
 ## Markers
 

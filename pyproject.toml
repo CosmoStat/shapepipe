@@ -103,12 +103,13 @@ script-files = [
 where = ["src"]
 
 [tool.pytest.ini_options]
-# Two homes, one discovery root. `src/shapepipe/tests/` holds module-unit
-# tests next to the code they cover (src-layout idiom); `tests/` holds the
-# suite-level tiers — `unit/` (structural), `science/` (fast guardrails),
-# `cluster/` (candide, marked `candide`+`slow`). See tests/README.md.
+# One discovery root: everything lives under `tests/`. Tiers are
+# `module/` (per-module unit tests, import package internals directly),
+# `unit/` (structural), `science/` (fast guardrails), `cluster/` (candide,
+# marked `candide`+`slow`), with shared library code in `helpers/`. See
+# tests/README.md.
 addopts = "--verbose --strict-markers --cov=shapepipe --cov-report=term-missing"
-testpaths = ["tests", "src/shapepipe/tests"]
+testpaths = ["tests"]
 markers = [
     "slow: heavy compute (minutes); excluded from the fast inner loop.",
     "candide: needs the candide cluster and/or its real data; auto-skipped elsewhere.",

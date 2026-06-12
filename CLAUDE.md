@@ -56,7 +56,10 @@ Full detail: `docs/source/installation.md` and `docs/source/container.md`.
   I/O; `utilities/`; `canfar/` is CANFAR/cluster job orchestration. Console entry
   points (`shapepipe_run`, `summary_run`, `canfar_*`) are defined under
   `[project.scripts]`.
-- `src/shapepipe/tests/` — unit tests; `tests/unit/` holds newer test scaffolding.
+- `tests/` — the whole test suite, one discovery root: `module/` (per-module
+  unit/property/integration tests), `unit/` (structural), `science/` (fast
+  guardrails), `cluster/` (candide-only), `helpers/` (shared library code).
+  See `tests/README.md`.
 - `example/` — a runnable example pipeline (`example/config.ini`) on a single
   CFIS tile; doubles as the CI smoke test.
 - `scripts/` — shell / Python / notebook helpers (`sh/`, `python/`, `jupyter/`),
