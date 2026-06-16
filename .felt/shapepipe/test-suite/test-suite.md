@@ -1,4 +1,5 @@
 ---
+id: 01KTCHWZZJ1H3D0HYETGFVMVZH
 name: 'ShapePipe test suite: tiered, in-image, property-based'
 status: closed
 tags:
@@ -15,6 +16,7 @@ shuttle:
     host: c03
     project_dir: /automnt/n17data/cdaley/unions/shapepipe
     agent: codex
+tempered: true
 ---
 
 ## Desired State

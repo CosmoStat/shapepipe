@@ -1,11 +1,14 @@
 ---
+id: 01KTCHWZYMXBPT7S0NXJ7AT2CD
 name: Versioned docs site with a version switcher
+status: closed
 tags:
     - shapepipe
     - docs
     - ci
 created-at: 2026-05-31T20:39:06.459699229+02:00
-outcome: 'PR #738 (off develop): docs site now versioned — stable@root (non-destructive to existing URLs), develop@/latest/, tags@/vX.Y.Z/, switcher.json drives the dropdown. Fixes that the site published only from master (~78 commits behind) so container.md/canfar.md were never published. CI green incl. real dev-image build + PR-preview artifact.'
+closed-at: 2026-06-10T17:44:55.028992495+02:00
+outcome: 'Shipped: PR #738 merged 2026-06-10 (independent review pass, sfarrens offered post-hoc comments). master→root, develop→/latest/, tags→/<tag>/, per-ref builds, switcher.json at root. Stable root refreshes on next master push.'
 ---
 
 ## Why

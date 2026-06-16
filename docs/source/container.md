@@ -2,7 +2,8 @@
 
 ShapePipe ships as a container image. This page covers the two image
 targets and the three configuration files (`pyproject.toml`, `uv.lock`,
-`Dockerfile`) that determine what's inside.
+`Dockerfile`) that determine what's inside. For running the image on a batch
+cluster (candide, CANFAR), see [Running on a cluster](clusters.md).
 
 ## Two image targets
 
