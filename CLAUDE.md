@@ -78,8 +78,6 @@ Full detail: `docs/source/installation.md` and `docs/source/container.md`.
   from `master` (`cd.yml`).
 - **Style**: PEP 8; numpydoc docstrings on public modules, classes, and methods.
   Match the surrounding code.
-- **ngmix** is pinned to a fork branch (`aguinot/ngmix@stable_version`) until the
-  fixes land upstream — don't bump that dependency line.
 
 ## Project knowledge — felt
 
