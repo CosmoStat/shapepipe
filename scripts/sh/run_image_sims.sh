@@ -32,6 +32,8 @@ for dg in "${dgs[@]}"; do
 
   cd ..
 
+  create_final_cat.py -I -m final_cat_$name.hdf5 -i . -p ~/shapepipe/example/cfis/final_cat.param -P $name -o $name/n_tiles_final.txt -v
+
 done
 
 #--env PATH=/home/mkilbing/.local/bin:/home/mkilbing/astro/repositories/github/shapepipe/bin:$PATH --env PYTHONPATH=/home/mkilbing/astro/repositories/github/shapepipe/src:$PYTHONPATH /n17data/mkilbing/shapepipe_ngmix_v2.0.sif
