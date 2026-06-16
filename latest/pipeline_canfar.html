@@ -54,6 +54,8 @@
     <link rel="author" title="About these documents" href="about.html" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Post-processing" href="post_processing.html" />
+    <link rel="prev" title="Running on a Cluster" href="clusters.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
@@ -151,8 +153,6 @@
       
       
       
-        
-      
       <dialog id="pst-primary-sidebar-modal"></dialog>
       <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
         
@@ -232,6 +232,11 @@
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="clusters.html">Running on a Cluster</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Running <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing and post-processing pipelines on CANFAR</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
 <ul class="nav bd-sidenav">
@@ -969,6 +974,16 @@ ln<span class="w"> </span>-s<span class="w"> </span>..//unions_shapepipe_compreh
 </pre></div>
 </div>
 <p>calibrate_comprehensive</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The matched-star-catalogue and coverage-mask diagnostics in the next two
+sections have largely moved out of ShapePipe into
+<a class="reference external" href="https://github.com/CosmoStat/sp_validation"><code class="docutils literal notranslate"><span class="pre">sp_validation</span></code></a> / <code class="docutils literal notranslate"><span class="pre">cosmo_val</span></code>.
+Several helpers referenced below — <code class="docutils literal notranslate"><span class="pre">merge_psf_cat.py</span></code>, <code class="docutils literal notranslate"><span class="pre">download_headers</span></code>,
+<code class="docutils literal notranslate"><span class="pre">extract_field_corners</span></code>, <code class="docutils literal notranslate"><span class="pre">build_coverage_map</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_coverage_map</span></code> — are no
+longer shipped in this repository; see <code class="docutils literal notranslate"><span class="pre">sp_validation</span></code> for their current
+equivalents. (<code class="docutils literal notranslate"><span class="pre">get_ccds_with_psf</span></code> and <code class="docutils literal notranslate"><span class="pre">summary_run</span></code> are still part of ShapePipe.)</p>
+</div>
 </section>
 <section id="create-matched-star-catalogue">
 <h3>Create matched star catalogue<a class="headerlink" href="#create-matched-star-catalogue" title="Link to this heading">#</a></h3>
@@ -1034,6 +1049,24 @@ merge_psf_cat.py<span class="w"> </span><span class="o">[</span>-V<span class="w
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
+    <a class="left-prev"
+       href="clusters.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Running on a Cluster</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="post_processing.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Post-processing</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
 </div>
                 </footer>
               

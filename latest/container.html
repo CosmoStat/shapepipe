@@ -233,6 +233,11 @@
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
 </ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="clusters.html">Running on a Cluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline_canfar.html">Running <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing and post-processing pipelines on CANFAR</a></li>
+</ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
@@ -555,7 +560,8 @@
 <h1>Container Workflow<a class="headerlink" href="#container-workflow" title="Link to this heading">#</a></h1>
 <p>ShapePipe ships as a container image. This page covers the two image
 targets and the three configuration files (<code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>, <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code>,
-<code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code>) that determine what’s inside.</p>
+<code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code>) that determine what’s inside. For running the image on a batch
+cluster (candide, CANFAR), see <a class="reference internal" href="clusters.html"><span class="std std-doc">Running on a cluster</span></a>.</p>
 <section id="two-image-targets">
 <h2>Two image targets<a class="headerlink" href="#two-image-targets" title="Link to this heading">#</a></h2>
 <p>The Dockerfile builds two flavours of the image from a shared base:</p>

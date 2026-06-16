@@ -16,7 +16,16 @@ If main ShapePipe processing happened at the old canfar VM system (e.g. CFIS v0 
 
 ---
 
-The following steps are required for pre-v1.4 runs performed on the canfar VM system.
+```{note}
+This page documents the **legacy** post-processing used for pre-v1.4 runs on the
+canfar VM system. PSF validation and the scale-dependent diagnostics
+(ρ-statistics) now live in
+[`sp_validation`](https://github.com/CosmoStat/sp_validation) rather than in
+ShapePipe; the steps below are retained for reference and for reproducing older
+runs.
+```
+
+The following steps were used for pre-v1.4 runs performed on the canfar VM system.
 
 1. Optional: Split output into sub-samples
 
@@ -48,30 +57,25 @@ The following steps are required for pre-v1.4 runs performed on the canfar VM sy
       This script creates a new combined psf run in the ShapePipe `output` directory, by identifying all psf validation files
       and creating symbolic links. The run log file is updated.
 
-   3. Merge individual psf validation files into one catalogue. Create plots of the PSF and their residuals in the focal plane,
-      as a diagnostic of the overall PSF model.
-      As a scale-dependend test, which propagates directly to the shear correlation function, the rho statistics are computed,
-      see {cite:p}`rowe:10` and {cite:p}`jarvis:16`,
+   3. Merge the individual PSF validation files into one catalogue, and create
+      plots of the PSF and its residuals in the focal plane as a diagnostic of
+      the overall PSF model:
       ```bash
       shapepipe_run -c /path/to/shapepipe/example/cfis/config_MsPl_PSF.ini
-      ``` 
-
-   4. Prepare output directory
-   
-      Create links to all 'final_cat' result files with 
-      ```bash
-      prepare_tiles_for_final
       ```
-      The corresponding output directory that is created is `output/run_sp_combined/make_catalog_runner/output`.
-      On success, it contains links to all `final_cat` output catalogues
+      The scale-dependent PSF diagnostics that propagate to the shear correlation
+      function (the ρ-statistics, {cite:p}`rowe:10`, {cite:p}`jarvis:16`) are no
+      longer computed here — they have moved to
+      [`sp_validation`](https://github.com/CosmoStat/sp_validation).
 
-   5. Merge final output files
-   
-      Create a single main shape catalog:
+   4. Merge final output files
+
+      Create a single main shape catalogue:
       ```bash
       merge_final_cat -i <input_dir> -p <param_file> -v
       ```
-      Choose as input directory `input_dir` the output of step C. A default
-      parameter file `<param_file>` is `/path/to/shapepipe/example/cfis/final_cat.param`. 
+      Choose as input directory `input_dir` the `make_cat` output of the runs
+      being combined. A default parameter file `<param_file>` is
+      `/path/to/shapepipe/example/cfis/final_cat.param`. 
       On success, the file `./final_cat.npy` is created. Depending on the number of
       input tiles, this file can be several tens of Gb large. 

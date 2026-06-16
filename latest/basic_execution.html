@@ -233,6 +233,11 @@
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
 </ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="clusters.html">Running on a Cluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline_canfar.html">Running <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing and post-processing pipelines on CANFAR</a></li>
+</ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
@@ -526,7 +531,10 @@
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-shapepipe-with-joblib">Running ShapePipe with Joblib</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-the-pipeline-with-mpi">Running the Pipeline with MPI</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-the-pipeline-with-mpi">Running the Pipeline with MPI</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#through-the-container-the-supported-way-on-a-cluster">Through the container (the supported way on a cluster)</a></li>
+</ul>
+</li>
 </ul>
             </nav>
         </div>
@@ -545,7 +553,7 @@
 option:</p>
 <div class="margin admonition seealso">
 <p class="admonition-title">See also</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">shapepipe</span></code> environment will need to be built and activated in order to run this script (see <a class="reference internal" href="installation.html"><span class="std std-doc">Installation</span></a>).</p>
+<p>ShapePipe runs inside its container — there is no environment to activate. See <a class="reference internal" href="installation.html"><span class="std std-doc">Installation</span></a>.</p>
 </div>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>shapepipe_run<span class="w"> </span>--help
 </pre></div>
@@ -570,12 +578,32 @@ you would run</p>
 <section id="running-the-pipeline-with-mpi">
 <h2>Running the Pipeline with MPI<a class="headerlink" href="#running-the-pipeline-with-mpi" title="Link to this heading">#</a></h2>
 <p>ShapePipe can also use <a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/">mpi4py</a>
-for managing parallel processes on clusters with multiple nodes.
-The <code class="docutils literal notranslate"><span class="pre">shapepipe_run</span></code> script can be run with MPI as follows</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpiexec<span class="w"> </span>-n<span class="w"> </span>&lt;NUMBER<span class="w"> </span>OF<span class="w"> </span>CORES&gt;<span class="w"> </span>shapepipe_run
+to spread work across multiple nodes of a cluster. Set <code class="docutils literal notranslate"><span class="pre">MODE</span> <span class="pre">=</span> <span class="pre">mpi</span></code> in the
+<code class="docutils literal notranslate"><span class="pre">[EXECUTION]</span></code> section of the config and launch with an MPI runner:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpiexec<span class="w"> </span>-n<span class="w"> </span>&lt;NUMBER<span class="w"> </span>OF<span class="w"> </span>RANKS&gt;<span class="w"> </span>shapepipe_run<span class="w"> </span>-c<span class="w"> </span>&lt;PATH<span class="w"> </span>TO<span class="w"> </span>CONFIG<span class="w"> </span>FILE&gt;
 </pre></div>
 </div>
-<p>where <code class="docutils literal notranslate"><span class="pre">&lt;NUMBER</span> <span class="pre">OF</span> <span class="pre">CORES&gt;</span></code> is the number of cores to allocate to the run.</p>
+<p>where <code class="docutils literal notranslate"><span class="pre">&lt;NUMBER</span> <span class="pre">OF</span> <span class="pre">RANKS&gt;</span></code> is the number of MPI processes to start.</p>
+<section id="through-the-container-the-supported-way-on-a-cluster">
+<h3>Through the container (the supported way on a cluster)<a class="headerlink" href="#through-the-container-the-supported-way-on-a-cluster" title="Link to this heading">#</a></h3>
+<p>On a cluster you run ShapePipe from the published image as a standard Apptainer
+<em>hybrid</em> MPI job: the <strong>host</strong> <code class="docutils literal notranslate"><span class="pre">mpirun</span></code>/<code class="docutils literal notranslate"><span class="pre">mpiexec</span></code> launches one container rank per
+slot, and the OpenMPI bundled in the image wires the ranks together.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># one-time: pull the runtime image</span>
+apptainer<span class="w"> </span>pull<span class="w"> </span>shapepipe.sif<span class="w"> </span>docker://ghcr.io/cosmostat/shapepipe:develop-runtime
+
+<span class="c1"># load a host MPI in the same family as the image&#39;s OpenMPI (5.0.x), then launch</span>
+module<span class="w"> </span>load<span class="w"> </span>openmpi
+mpirun<span class="w"> </span>-n<span class="w"> </span>&lt;NUMBER<span class="w"> </span>OF<span class="w"> </span>RANKS&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>apptainer<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>--bind<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$PWD</span><span class="s2">:</span><span class="nv">$PWD</span><span class="s2">&quot;</span><span class="w"> </span>shapepipe.sif<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>shapepipe_run<span class="w"> </span>-c<span class="w"> </span>&lt;PATH<span class="w"> </span>TO<span class="w"> </span>CONFIG<span class="w"> </span>FILE&gt;
+</pre></div>
+</div>
+<p>The image ships <strong>OpenMPI 5.0.x</strong> so that its PMIx matches modern cluster
+launchers. The host and container MPI must be compatible: if you see <em>N</em> copies
+of <code class="docutils literal notranslate"><span class="pre">rank</span> <span class="pre">0</span> <span class="pre">of</span> <span class="pre">1</span></code> instead of one <em>N</em>-rank job, load a host OpenMPI in the 5.0.x
+family. See <code class="docutils literal notranslate"><span class="pre">example/pbs/candide_mpi.sh</span></code> for a complete SLURM batch script.</p>
+</section>
 </section>
 </section>
 
@@ -627,7 +655,10 @@ The <code class="docutils literal notranslate"><span class="pre">shapepipe_run</
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-shapepipe-with-joblib">Running ShapePipe with Joblib</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-the-pipeline-with-mpi">Running the Pipeline with MPI</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-the-pipeline-with-mpi">Running the Pipeline with MPI</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#through-the-container-the-supported-way-on-a-cluster">Through the container (the supported way on a cluster)</a></li>
+</ul>
+</li>
 </ul>
   </nav></div>
 

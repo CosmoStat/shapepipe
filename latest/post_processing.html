@@ -55,7 +55,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Create random catalogues and masks" href="random_cat.html" />
-    <link rel="prev" title="ShapePipe Tutorial" href="pipeline_tutorial.html" />
+    <link rel="prev" title="Running ShapePipe processing and post-processing pipelines on CANFAR" href="pipeline_canfar.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
@@ -228,6 +228,11 @@
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="clusters.html">Running on a Cluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline_canfar.html">Running <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing and post-processing pipelines on CANFAR</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
 <ul class="current nav bd-sidenav">
@@ -535,7 +540,16 @@ catalogue via <em>metacalibration</em>), a joint star catalogue, and PSF diagnos
 <p>If main ShapePipe processing happened at the old canfar VM system (e.g. CFIS v0 and v1), go
 <a class="reference internal" href="vos_retrieve.html"><span class="std std-doc">here</span></a> for details how to retrieve the ShapePipe output files.</p>
 <hr class="docutils" />
-<p>The following steps are required for pre-v1.4 runs performed on the canfar VM system.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This page documents the <strong>legacy</strong> post-processing used for pre-v1.4 runs on the
+canfar VM system. PSF validation and the scale-dependent diagnostics
+(ρ-statistics) now live in
+<a class="reference external" href="https://github.com/CosmoStat/sp_validation"><code class="docutils literal notranslate"><span class="pre">sp_validation</span></code></a> rather than in
+ShapePipe; the steps below are retained for reference and for reproducing older
+runs.</p>
+</div>
+<p>The following steps were used for pre-v1.4 runs performed on the canfar VM system.</p>
 <ol class="arabic">
 <li><p>Optional: Split output into sub-samples</p>
 <p>An optional intermediate step is to create directories for sub-samples, for example one directory
@@ -564,29 +578,25 @@ by hand):</p>
 This script creates a new combined psf run in the ShapePipe <code class="docutils literal notranslate"><span class="pre">output</span></code> directory, by identifying all psf validation files
 and creating symbolic links. The run log file is updated.</p>
 </li>
-<li><p>Merge individual psf validation files into one catalogue. Create plots of the PSF and their residuals in the focal plane,
-as a diagnostic of the overall PSF model.
-As a scale-dependend test, which propagates directly to the shear correlation function, the rho statistics are computed,
-see <span class="bibtex-citation" id="id1">[<a class="reference internal" href="z_ref.html#id38" title="B. Rowe. Improving PSF modelling for weak gravitational lensing using new methods in model selection. \mnras , 404:350-366, 2010. arXiv:0904.3056, doi:10.1111/j.1365-2966.2010.16277.x.">Rowe, 2010</a>]</span> and <span class="bibtex-citation" id="id2">[<a class="reference internal" href="z_ref.html#id26" title="M. Jarvis, E. Sheldon, J. Zuntz, T. Kacprzak, S. L. Bridle, A. Amara, R. Armstrong, M. R. Becker, G. M. Bernstein, C. Bonnett, C. Chang, R. Das, J. P. Dietrich, A. Drlica-Wagner, T. F. Eifler, C. Gangkofner, D. Gruen, M. Hirsch, E. M. Huff, B. Jain, S. Kent, D. Kirk, N. MacCrann, P. Melchior, A. A. Plazas, A. Refregier, B. Rowe, E. S. Rykoff, S. Samuroff, C. Sánchez, E. Suchyta, M. A. Troxel, V. Vikram, T. Abbott, F. B. Abdalla, S. Allam, J. Annis, A. Benoit-Lévy, E. Bertin, D. Brooks, E. Buckley-Geer, D. L. Burke, D. Capozzi, A. Carnero Rosell, M. Carrasco Kind, J. Carretero, F. J. Castander, J. Clampitt, M. Crocce, C. E. Cunha, C. B. D'Andrea, L. N. da Costa, D. L. DePoy, S. Desai, H. T. Diehl, P. Doel, A. Fausti Neto, B. Flaugher, P. Fosalba, J. Frieman, E. Gaztanaga, D. W. Gerdes, R. A. Gruendl, G. Gutierrez, K. Honscheid, D. J. James, K. Kuehn, N. Kuropatkin, O. Lahav, T. S. Li, M. Lima, M. March, P. Martini, R. Miquel, J. J. Mohr, E. Neilsen, B. Nord, R. Ogando, K. Reil, A. K. Romer, A. Roodman, M. Sako, E. Sanchez, V. Scarpine, M. Schubnell, I. Sevilla-Noarbe, R. C. Smith, M. Soares-Santos, F. Sobreira, M. E. C. Swanson, G. Tarle, J. Thaler, D. Thomas, A. R. Walker, and R. H. Wechsler. The DES Science Verification weak lensing shear catalogues. \mnras , 460:2245-2281, August 2016. arXiv:1507.05603, doi:10.1093/mnras/stw990.">Jarvis <em>et al.</em>, 2016</a>]</span>,</p>
+<li><p>Merge the individual PSF validation files into one catalogue, and create
+plots of the PSF and its residuals in the focal plane as a diagnostic of
+the overall PSF model:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>shapepipe_run<span class="w"> </span>-c<span class="w"> </span>/path/to/shapepipe/example/cfis/config_MsPl_PSF.ini
 </pre></div>
 </div>
-</li>
-<li><p>Prepare output directory</p>
-<p>Create links to all ‘final_cat’ result files with</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>prepare_tiles_for_final
-</pre></div>
-</div>
-<p>The corresponding output directory that is created is <code class="docutils literal notranslate"><span class="pre">output/run_sp_combined/make_catalog_runner/output</span></code>.
-On success, it contains links to all <code class="docutils literal notranslate"><span class="pre">final_cat</span></code> output catalogues</p>
+<p>The scale-dependent PSF diagnostics that propagate to the shear correlation
+function (the ρ-statistics, <span class="bibtex-citation" id="id1">[<a class="reference internal" href="z_ref.html#id38" title="B. Rowe. Improving PSF modelling for weak gravitational lensing using new methods in model selection. \mnras , 404:350-366, 2010. arXiv:0904.3056, doi:10.1111/j.1365-2966.2010.16277.x.">Rowe, 2010</a>]</span>, <span class="bibtex-citation" id="id2">[<a class="reference internal" href="z_ref.html#id26" title="M. Jarvis, E. Sheldon, J. Zuntz, T. Kacprzak, S. L. Bridle, A. Amara, R. Armstrong, M. R. Becker, G. M. Bernstein, C. Bonnett, C. Chang, R. Das, J. P. Dietrich, A. Drlica-Wagner, T. F. Eifler, C. Gangkofner, D. Gruen, M. Hirsch, E. M. Huff, B. Jain, S. Kent, D. Kirk, N. MacCrann, P. Melchior, A. A. Plazas, A. Refregier, B. Rowe, E. S. Rykoff, S. Samuroff, C. Sánchez, E. Suchyta, M. A. Troxel, V. Vikram, T. Abbott, F. B. Abdalla, S. Allam, J. Annis, A. Benoit-Lévy, E. Bertin, D. Brooks, E. Buckley-Geer, D. L. Burke, D. Capozzi, A. Carnero Rosell, M. Carrasco Kind, J. Carretero, F. J. Castander, J. Clampitt, M. Crocce, C. E. Cunha, C. B. D'Andrea, L. N. da Costa, D. L. DePoy, S. Desai, H. T. Diehl, P. Doel, A. Fausti Neto, B. Flaugher, P. Fosalba, J. Frieman, E. Gaztanaga, D. W. Gerdes, R. A. Gruendl, G. Gutierrez, K. Honscheid, D. J. James, K. Kuehn, N. Kuropatkin, O. Lahav, T. S. Li, M. Lima, M. March, P. Martini, R. Miquel, J. J. Mohr, E. Neilsen, B. Nord, R. Ogando, K. Reil, A. K. Romer, A. Roodman, M. Sako, E. Sanchez, V. Scarpine, M. Schubnell, I. Sevilla-Noarbe, R. C. Smith, M. Soares-Santos, F. Sobreira, M. E. C. Swanson, G. Tarle, J. Thaler, D. Thomas, A. R. Walker, and R. H. Wechsler. The DES Science Verification weak lensing shear catalogues. \mnras , 460:2245-2281, August 2016. arXiv:1507.05603, doi:10.1093/mnras/stw990.">Jarvis <em>et al.</em>, 2016</a>]</span>) are no
+longer computed here — they have moved to
+<a class="reference external" href="https://github.com/CosmoStat/sp_validation"><code class="docutils literal notranslate"><span class="pre">sp_validation</span></code></a>.</p>
 </li>
 <li><p>Merge final output files</p>
-<p>Create a single main shape catalog:</p>
+<p>Create a single main shape catalogue:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>merge_final_cat<span class="w"> </span>-i<span class="w"> </span>&lt;input_dir&gt;<span class="w"> </span>-p<span class="w"> </span>&lt;param_file&gt;<span class="w"> </span>-v
 </pre></div>
 </div>
-<p>Choose as input directory <code class="docutils literal notranslate"><span class="pre">input_dir</span></code> the output of step C. A default
-parameter file <code class="docutils literal notranslate"><span class="pre">&lt;param_file&gt;</span></code> is <code class="docutils literal notranslate"><span class="pre">/path/to/shapepipe/example/cfis/final_cat.param</span></code>.
+<p>Choose as input directory <code class="docutils literal notranslate"><span class="pre">input_dir</span></code> the <code class="docutils literal notranslate"><span class="pre">make_cat</span></code> output of the runs
+being combined. A default parameter file <code class="docutils literal notranslate"><span class="pre">&lt;param_file&gt;</span></code> is
+<code class="docutils literal notranslate"><span class="pre">/path/to/shapepipe/example/cfis/final_cat.param</span></code>.
 On success, the file <code class="docutils literal notranslate"><span class="pre">./final_cat.npy</span></code> is created. Depending on the number of
 input tiles, this file can be several tens of Gb large.</p>
 </li>
@@ -607,12 +617,12 @@ input tiles, this file can be several tens of Gb large.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="pipeline_tutorial.html"
+       href="pipeline_canfar.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">ShapePipe Tutorial</p>
+        <p class="prev-next-title">Running <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing and post-processing pipelines on CANFAR</p>
       </div>
     </a>
     <a class="right-next"

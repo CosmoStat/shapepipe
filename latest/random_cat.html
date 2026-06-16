@@ -233,6 +233,11 @@
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
 </ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="clusters.html">Running on a Cluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline_canfar.html">Running <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing and post-processing pipelines on CANFAR</a></li>
+</ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
@@ -555,6 +560,15 @@
 masks, and combined randoms and masks for a selection of tiles.</p>
 <p>The masked regions are obtained on input from ShapePipe pixel mask (“pipeline flag”)
 files.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Parts of this procedure use the legacy canfar-VM / <code class="docutils literal notranslate"><span class="pre">vos</span></code> retrieval workflow (see
+<a class="reference internal" href="vos_retrieve.html"><span class="std std-doc">VOSpace retrieval</span></a>) and the obsolete <code class="docutils literal notranslate"><span class="pre">prepare_tiles_for_final</span></code>
+helper, which is no longer shipped. The <code class="docutils literal notranslate"><span class="pre">random_cat</span></code> module itself is current;
+the input-staging and joint-mask steps now overlap with
+<a class="reference external" href="https://github.com/CosmoStat/sp_validation"><code class="docutils literal notranslate"><span class="pre">sp_validation</span></code></a>. The steps are
+retained for reference.</p>
+</div>
 <section id="set-up">
 <h2>Set up<a class="headerlink" href="#set-up" title="Link to this heading">#</a></h2>
 <section id="id-file-and-shell-variables">
@@ -611,7 +625,7 @@ to <code class="docutils literal notranslate"><span class="pre">vos</span></code
 <section id="prepare-combined-mask-input-directory">
 <h3>Prepare combined mask input directory<a class="headerlink" href="#prepare-combined-mask-input-directory" title="Link to this heading">#</a></h3>
 <p>To combine all mask files into one input directory, easy to find by the subsequent <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> module
-<code class="docutils literal notranslate"><span class="pre">random_runner</span></code>, type</p>
+<code class="docutils literal notranslate"><span class="pre">random_cat_runner</span></code>, type</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>prepare_tiles_for_final<span class="w"> </span>-c<span class="w"> </span>flag
 </pre></div>
 </div>

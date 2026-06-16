@@ -233,6 +233,11 @@
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_tutorial.html">ShapePipe Tutorial</a></li>
 </ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Running on a cluster</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="clusters.html">Running on a Cluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline_canfar.html">Running <code class="docutils literal notranslate"><span class="pre">ShapePipe</span></code> processing and post-processing pipelines on CANFAR</a></li>
+</ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Miscellaneous</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="post_processing.html">Post-processing</a></li>
@@ -546,7 +551,7 @@
 <p>Every ShapePipe module requires a <em>module package</em>, which is simply a directory
 with the module name followed by <code class="docutils literal notranslate"><span class="pre">_package</span></code>, e.g. for a module called
 <code class="docutils literal notranslate"><span class="pre">my_new_module</span></code> you would create a new directory called <code class="docutils literal notranslate"><span class="pre">my_new_module_package</span></code>
-and put it in <code class="docutils literal notranslate"><span class="pre">shapepipe/modules</span></code>. Inside this directory you will need to
+and put it in <code class="docutils literal notranslate"><span class="pre">src/shapepipe/modules</span></code>. Inside this directory you will need to
 include a Python file (ideally named after your module, e.g.
 <code class="docutils literal notranslate"><span class="pre">my_new_module.py</span></code>) and a <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> file with the following content.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;MY NEW MODULE PACKAGE.</span>
