@@ -376,7 +376,7 @@ class Ngmix(object):
         names2 = [
             'id',
             'n_epoch_model',
-            'moments_fail',
+            'mcal_types_fail',
             'nfev_fit',
             'g1_psfo_ngmix',
             'g2_psfo_ngmix',
@@ -430,8 +430,8 @@ class Ngmix(object):
                 output_dict[name]["n_epoch_model"].append(
                     results[idx]["n_epoch_model"]
                 )
-                output_dict[name]["moments_fail"].append(
-                    results[idx]["moments_fail"]
+                output_dict[name]["mcal_types_fail"].append(
+                    results[idx]["mcal_types_fail"]
                 )
                 # ngmix 2.x reports the solver's function-evaluation count
                 # (nfev, ~tens-hundreds; -1 on some failures), not the v1
@@ -680,7 +680,11 @@ class Ngmix(object):
             # epochs that survived the PSF fit and entered the model,
             # not the number of epochs submitted (v1 contract)
             res['n_epoch_model'] = psf_res['n_epoch']
-            res['moments_fail'] = sum(
+            # Count of metacal fit types (0-5) with nonzero fit flags.
+            # (In ngmix v1 the same-named column counted moments-initial-guess
+            # failures from get_guess, which no longer exists — hence the
+            # rename to mcal_types_fail / NGMIX_MCAL_TYPES_FAIL.)
+            res['mcal_types_fail'] = sum(
                 1 for k in METACAL_TYPES
                 if res.get(k, {}).get('flags', 0) != 0
             )

@@ -158,7 +158,7 @@ def _fake_metacal_result(T, T_err, T_psf, T_psf_err):
     res = {
         "obj_id": 1,
         "n_epoch_model": 1,
-        "moments_fail": 0,
+        "mcal_types_fail": 0,
         "g_PSFo": [0.001, 0.002],
         "g_err_PSFo": [1e-5, 1e-5],
         "T_PSFo": T_psf,
@@ -244,7 +244,7 @@ def test_compile_results_nan_fills_failed_fit_types():
 
     res = _fake_metacal_result(0.18, 0.02, 0.09, 0.001)
     res["1p"] = {"flags": 0x8, "nfev": 5}  # failed fit: only flags/nfev
-    res["moments_fail"] = 1
+    res["mcal_types_fail"] = 1
     res["mcal_flags"] = get_mcal_flags(res)
 
     inst = object.__new__(Ngmix)

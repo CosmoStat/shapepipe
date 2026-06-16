@@ -355,7 +355,7 @@ class SaveCatalogue:
             #ngmix_cat_file.close()
             #return err_msg
 
-        ngmix_mom_fail = ngmix_cat_file.get_data()["moments_fail"]
+        ngmix_mcal_types_fail = ngmix_cat_file.get_data()["mcal_types_fail"]
 
         n_obj = len(self._obj_id)
         self._w_log.info(f"writing ngmix info for {n_obj} objects")
@@ -369,7 +369,7 @@ class SaveCatalogue:
             ngmix_id = ngmix_cat_file.get_data()["id"]
 
             self._add2dict("NGMIX_N_EPOCH", np.zeros(n_obj))
-            self._add2dict("NGMIX_MOM_FAIL", np.zeros(n_obj))
+            self._add2dict("NGMIX_MCAL_TYPES_FAIL", np.zeros(n_obj))
 
         prefix = f"NGMIX{m}"
 
@@ -465,8 +465,8 @@ class SaveCatalogue:
                         idx,
                     )
                     self._add2dict(
-                        f"NGMIX{m}_MOM_FAIL",
-                        ngmix_mom_fail[ind[0]],
+                        f"NGMIX{m}_MCAL_TYPES_FAIL",
+                        ngmix_mcal_types_fail[ind[0]],
                         idx,
                     )
 
