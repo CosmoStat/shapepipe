@@ -57,7 +57,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="1.1" />
-    <meta name="docbuild:last-update" content="12 Jun, 2026"/>
+    <meta name="docbuild:last-update" content="16 Jun, 2026"/>
   </head>
   
   
@@ -614,13 +614,14 @@ This step has to be run in the patch base directory.</p>
 <h2>Monitoring<a class="headerlink" href="#monitoring" title="Link to this heading">#</a></h2>
 <section id="status-and-output-of-submitted-job">
 <h3>Status and output of submitted job<a class="headerlink" href="#status-and-output-of-submitted-job" title="Link to this heading">#</a></h3>
-<p>Monitoring of the currently active remote session can be performed using the session IDs <code class="docutils literal notranslate"><span class="pre">session_IDs.txt</span></code> written by the
-remote session script <code class="docutils literal notranslate"><span class="pre">curl_canfar_local.sh</span></code>. In the patch main directory, run</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl_canfar_monitor.sh<span class="w"> </span>events
+<p>Monitoring of the currently active remote session uses the session IDs in <code class="docutils literal notranslate"><span class="pre">session_IDs.txt</span></code> written by the
+remote session script <code class="docutils literal notranslate"><span class="pre">curl_canfar_local.sh</span></code>. In the patch main directory, run the <code class="docutils literal notranslate"><span class="pre">canfar_monitor</span></code> entry point
+(installed with the package; see <code class="docutils literal notranslate"><span class="pre">[project.scripts]</span></code> in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>)</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>canfar_monitor<span class="w"> </span>events
 </pre></div>
 </div>
 <p>to display the remotely started docker image status, and</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl_canfar_monitor.sh<span class="w"> </span>logs
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>canfar_monitor<span class="w"> </span>logs
 </pre></div>
 </div>
 <p>to print <code class="docutils literal notranslate"><span class="pre">stdout</span></code> of the remotely run pipeline script.</p>
@@ -721,7 +722,7 @@ By CosmoStat
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 12 Jun, 2026.
+  Last updated on 16 Jun, 2026.
   <br/>
 </p>
   </div>

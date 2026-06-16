@@ -59,14 +59,15 @@ it is recommended to perform some or all of the testing steps (1. - 4.).
 
 ### Status and output of submitted job 
 
-Monitoring of the currently active remote session can be performed using the session IDs `session_IDs.txt` written by the
-remote session script `curl_canfar_local.sh`. In the patch main directory, run
+Monitoring of the currently active remote session uses the session IDs in `session_IDs.txt` written by the
+remote session script `curl_canfar_local.sh`. In the patch main directory, run the `canfar_monitor` entry point
+(installed with the package; see `[project.scripts]` in `pyproject.toml`)
 ```bash
-curl_canfar_monitor.sh events
+canfar_monitor events
 ```
 to display the remotely started docker image status, and
 ```bash
-curl_canfar_monitor.sh logs
+canfar_monitor logs
 ```
 to print `stdout` of the remotely run pipeline script.
 
