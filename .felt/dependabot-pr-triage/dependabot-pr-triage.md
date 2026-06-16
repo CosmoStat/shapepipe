@@ -1,4 +1,5 @@
 ---
+id: 01KTCHWZSHQXRQHTHH9Q7Q4MT7
 name: Triage open dependabot uv.lock PRs
 status: closed
 tags:
@@ -84,3 +85,7 @@ Update this fiber's `outcome:` to reflect what landed (e.g. "5 merged, 1 deferre
 ## Skills
 
 Activate `felt` (you'll touch the fiber). The `shuttle` skill is already loaded by virtue of being the dispatched worker.
+
+## Follow-on: PR #742 (2026-06-11)
+
+PR #742 ("chore(deps): bump the lockfile-minor-patch group, 4 updates": mpi4py 4.1.1→4.1.2, numpy 2.4.4→2.4.6, snakemake 9.20.0→9.21.0, black) arrived after the original batch. CI green (`build-test-publish` passes). Not merged — pyproject.toml modified alongside uv.lock: lower bounds tightened (`mpi4py>=4.0→4.1.2`, `numpy>=2.0→2.4.6`, `snakemake>=9.20.0→9.21.0`). Tightening `>=` floors is a policy call, not a mechanical bump. Comment posted at https://github.com/CosmoStat/shapepipe/pull/742#issuecomment-4675762821 asking maintainers to confirm intent before merging.

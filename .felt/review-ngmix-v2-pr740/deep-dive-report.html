@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deep dive — ngmix v2.0 weights & size</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --parchment: #EDE2CE; --rag: #FBF6E9; --ink: #1B1611; --ink-muted: #7A6F5C;
+    --cinnabar: #BC4538; --cinnabar-faint: rgba(188, 69, 56, 0.10);
+    --teal: #3F8278; --cobalt: #3D5BA0; --ochre: #C49333;
+    --rule: #C5B89E; --tooth: rgba(197, 184, 158, 0.45);
+    --serif: 'EB Garamond', Georgia, serif; --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--parchment); color: var(--ink); font-family: var(--serif); font-size: 19px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  .page { max-width: 880px; margin: 0 auto; padding: 56px 32px 72px; }
+  .stamp { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 20px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .stamp .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cinnabar); }
+  .stamp .sep { color: var(--rule); }
+  h1 { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 42px; line-height: 1.1; margin: 0 0 16px; }
+  section { margin-top: 46px; }
+  .section-mark { font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--cinnabar); margin-bottom: 8px; }
+  h2 { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 30px; line-height: 1.2; margin: 0 0 6px; }
+  h3 { font-family: var(--serif); font-weight: 600; font-size: 20px; margin: 26px 0 6px; }
+  p { margin: 0 0 14px; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; }
+  li { margin-bottom: 7px; }
+  code { font-family: var(--mono); font-size: 0.84em; background: rgba(196, 147, 51, 0.12); padding: 1px 5px; border-radius: 2px; }
+  hr { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+  hr.short { width: 80px; margin: 30px 0; border-top-width: 2px; border-top-color: var(--cinnabar); }
+  blockquote { margin: 14px 0; padding-left: 18px; border-left: 2px solid var(--ochre); font-style: italic; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; margin: 0 0 16px; }
+  th, td { text-align: left; padding: 6px 9px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-muted); }
+  td.ln { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; }
+  .v-ok { color: var(--teal); font-weight: 600; }
+  .v-warn { color: #9a6f1c; font-weight: 600; }
+  .v-no { color: var(--cinnabar); font-weight: 600; }
+  .lede { font-size: 21px; font-style: italic; }
+  .metric { font-family: var(--mono); background: var(--cinnabar-faint); border-left: 3px solid var(--cinnabar); padding: 13px 16px; margin: 0 0 16px; font-size: 14px; line-height: 1.5; }
+  .rec { background: rgba(63, 130, 120, 0.10); border-left: 3px solid var(--teal); padding: 14px 18px; margin: 14px 0; }
+  .rec .section-mark { color: var(--teal); }
+  details { margin: 10px 0 16px; border: 1px solid var(--rule); border-radius: 4px; padding: 8px 14px; background: var(--rag); }
+  summary { font-family: var(--mono); font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-muted); cursor: pointer; }
+  .tag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 7px; border-radius: 10px; background: var(--cinnabar-faint); color: var(--cinnabar); }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <div class="stamp">
+    <span class="dot"></span><span>2026 · 06 · 05</span>
+    <span class="sep">·</span><span>review-ngmix-v2-pr740</span>
+    <span class="sep">·</span><span>deep dive — weights &amp; size</span>
+  </div>
+
+  <h1>Two hard problems, solved.</h1>
+
+  <p class="lede">A fan-out of six investigators + two synthesizers chased the two science-shaped
+  findings from the #741 review to ground. Both came back high-confidence, with verified arithmetic
+  and — for the weight regression — an <strong>observed</strong> empirical confirmation. Each problem
+  now has a concrete recommendation and a clean scoping plan. Full reports:
+  <code>weights-report.md</code> and <code>size-report.md</code> in this fiber.</p>
+
+  <hr>
+
+  <!-- ============ PROBLEM A ============ -->
+  <section>
+    <div class="section-mark">§ Problem A · weights / inverse-variance</div>
+    <h2>v2.0 has two real, coupled weight-map regressions.</h2>
+
+    <p>The live weight path is <code>prepare_ngmix_weights</code> (<code>ngmix.py:871</code>). Against
+    the v1 baseline (<code>develop</code>), v2.0 dropped <em>two</em> things:</p>
+
+    <table>
+      <tr><th>Regr.</th><th>What changed</th><th>Effect</th></tr>
+      <tr><td class="ln">R1</td><td>Noise estimate regressed from the object-free windowed <code>get_noise</code> (still in the file at :826, now <strong>dead — zero callers</strong>) to whole-stamp <code>sigma_mad(gal)</code>, contaminated by galaxy flux.</td><td>Size/flux-dependent mis-weighting of the χ² → biased <code>g_err</code>/<code>T_err</code>/<code>s2n</code>; the signature of a multiplicative shear bias <code>m</code> (cf. old-path <code>m~-2.8e-2</code>). <em>Dominant today.</em></td></tr>
+      <tr><td class="ln">R2</td><td>Lost the binarization <code>weight_map[weight_map != 0] = 1</code>, so line 906 multiplies the <em>raw</em> weight by <code>1/sig_noise²</code>.</td><td>For 0/1 masks: per-epoch <code>1/Fscale²</code> scale error. <strong>Latent hazard:</strong> feed a real inverse-variance map (THELI / BACKGROUND_RMS) and v2.0 double-counts the variance.</td></tr>
+    </table>
+
+    <h3>Observed, not inferred</h3>
+    <p>Fed <code>make_data</code>'s truth inverse-variance map (<code>1/noise²</code>) through the actual
+    function in the dev container:</p>
+    <div class="metric">
+    noise=1e-3 &nbsp;→&nbsp; truth ivar 1e6 &nbsp;|&nbsp; recovered <b>8.81e11</b> &nbsp;|&nbsp; ratio <b>8.81e5</b> (correct = 1.0)<br>
+    noise=1e-4 &nbsp;→&nbsp; truth ivar 1e8 &nbsp;|&nbsp; recovered <b>7.35e15</b> &nbsp;|&nbsp; ratio <b>7.35e7</b> (correct = 1.0)
+    </div>
+    <p>The weight is off by ≈<code>1/noise²</code> — exactly the R2 double-count. The regression is a
+    <strong>clean red→green test target</strong> (<code>make_data</code> injects the oracle; no ngmix
+    fit needed). Today's only weight-path test asserts <code>run(42)==run(42)</code> — determinism,
+    never truth. Coverage gap.</p>
+
+    <div class="rec">
+      <div class="section-mark">recommendation — split into two PRs</div>
+      <p style="margin-bottom:8px"><strong>In #741 (now):</strong> minimal v1-restore — reinstate the
+      binarization + call <code>get_noise</code> instead of <code>sigma_mad(gal)</code> — plus the
+      red→green unit test. Two lines; fixes a regression this PR introduced; restores robustness to
+      real ivar maps.</p>
+      <p style="margin-bottom:0"><strong>Separate PR (next):</strong> the in-house <strong>SExtractor
+      <code>BACKGROUND_RMS</code></strong> baseline you steered toward (THELI is external). Mostly
+      config — the check-image &amp; vignetmaker ME loops are already list-driven, so delivering the
+      RMS stamps is near-free; the earned work is rewriting <code>prepare_ngmix_weights</code> to use
+      per-pixel <code>1/RMS²</code> with <code>sigma_mad</code> as fallback, + before/after validation.
+      <strong>Effort S–M, ~4–8 h.</strong> Closes #604.</p>
+    </div>
+
+    <details>
+      <summary>Open questions for Martin (6)</summary>
+      <ol>
+        <li>Confirm SExtractor-BACKGROUND_RMS is the baseline, THELI a later add-on (non-blocking)?</li>
+        <li>RMS input optional (with <code>sigma_mad</code>/<code>get_noise</code> fallback) or required? (rec: optional)</li>
+        <li>#741 minimal fix: restore windowed <code>get_noise</code> (reintroduces the gal-guess machinery the PR may have deliberately stripped), or accept bare <code>sigma_mad</code> until #604? R1 is dominant, so it matters even short-term.</li>
+        <li>Does the RMS map feed anything beyond weight + noise-fill (e.g. background subtraction)? (rec: weight + noise-fill only)</li>
+        <li>Config-edit scope for #604: cfis only, or cfis + cfis_simu + canfar batch?</li>
+        <li>Merge bar for #604: smoke before/after on the example tile, or a full sim m/c calibration?</li>
+      </ol>
+    </details>
+  </section>
+
+  <hr class="short">
+
+  <!-- ============ PROBLEM B ============ -->
+  <section>
+    <div class="section-mark">§ Problem B · r50 / T / σ size naming</div>
+    <h2>The v2.0 “r50” columns aren’t half-light radii.</h2>
+
+    <p>All five <code>r50*</code> columns are <strong>new in v2.0</strong> (v1 wrote sizes only as
+    <code>T</code>). None is a true half-light radius:</p>
+
+    <div class="metric">
+    galaxy <code>r50</code> (l.409) = <code>pars[4]</code> = <b>T = 2σ²</b> &nbsp;— an <i>area</i>, bit-for-bit a copy of <code>T</code><br>
+    PSF <code>r50psf</code> (l.411) = <code>√(T/2)</code> = <b>σ</b> &nbsp;— a length, but off by ×1.1774<br>
+    true half-light radius = <b>1.1774·σ = 1.1774·√(T/2)</b> &nbsp;— no column equals this
+    </div>
+
+    <p>So the same name root means an <strong>area</strong> on the galaxy side and a <strong>length</strong>
+    on the PSF side. Meanwhile the official catalogue paper (<strong>UNIONS-3500 WL I</strong>,
+    arXiv:2605.13549) reports the <strong>half-light radius <code>r_h</code> (= r50) as the primary
+    size</strong> for both galaxy and PSF, with the size cut written as the dimensionless ratio
+    <code>0.707 ≤ r_h/r_h,psf ≤ 3</code>; <code>T</code> is given only as the derived DES area (Eq. 1).
+    The paper wants exactly the quantity these columns claim but fail to provide.</p>
+
+    <p>sp_validation reads <strong>none</strong> of the <code>r50*</code> columns (only the
+    dimensionless ratio <code>T/Tpsf</code>, which is robust) — so the mislabel harms nothing today,
+    but it's a live foot-gun for any future consumer and contradicts the paper.</p>
+
+    <div class="rec">
+      <div class="section-mark">recommendation — transform at the source</div>
+      <p style="margin-bottom:8px">Make the <strong>ngmix writer</strong> emit honest columns: galaxy
+      <code>r50 = 1.1774·√(T/2)</code> with propagated error; PSF <code>r50psf</code> = existing σ ×
+      1.1774. Keep all <code>T*</code> columns. Then every "r50" is a length meaning the same thing on
+      both sides, matching the paper. De-duplicate (<code>T_psfo_ngmix</code>≡<code>Tpsf</code>,
+      <code>r50_psfo_ngmix</code>≡<code>r50psf</code>).</p>
+      <p style="margin-bottom:0">Put the conversion web in <strong>cs_util</strong> once
+      (<code>T_to_r50</code>, <code>r50_to_T</code>, <code>sigma_to_fwhm</code>, corrected
+      <code>T_to_fwhm</code>) — the shared producer/consumer layer. Beats a pure rename (throws away
+      the paper's headline quantity) and a read-side-only fix (leaves the foot-gun on disk).</p>
+    </div>
+
+    <h3>Bonus find: a real downstream bug in sp_validation</h3>
+    <p><code>galaxy.py:T_to_fwhm</code> is <code>T/1.17741*2.355</code> — dimensionally wrong
+    (<code>2.355/1.17741 = 2.000</code>; it treats the area <code>T</code> as if it were σ). Its own
+    <code>MKDEBUG</code> comment already doubts it. It builds the <code>fwhm_PSF</code> regressor for the
+    <strong>scale-dependent PSF-leakage fit</strong> (<code>run_object.py:510</code>), so it distorts
+    the PSF-size axis and biases <code>α(size)</code>. The correct form is
+    <code>2.355·√(T/2)</code>. A clean cs_util surface lets this be fixed and the trap retired.</p>
+
+    <details>
+      <summary>Open questions for Lucy / Martin (6)</summary>
+      <ol>
+        <li>Standardize on r50-as-primary (per UNIONS-3500 I) while keeping T, or keep T as working column with r50 derived?</li>
+        <li>Drop or alias the duplicate columns — is anything outside sp_validation <code>src/</code> (notebooks, older catalogues) bound to the <code>_psfo_ngmix</code> names?</li>
+        <li>cs_util as the home for the converter web — agreed? Naming?</li>
+        <li>Were in-flight scale-dependent leakage results produced with the buggy <code>T_to_fwhm</code>, and how much does <code>α(size)</code> move once fixed?</li>
+        <li>Galaxy <code>r50_err</code>: simple propagation, or from the full pars covariance?</li>
+        <li>Catalogue-format version bump / changelog for the <code>r50*</code> semantics change?</li>
+      </ol>
+    </details>
+  </section>
+
+  <hr class="short">
+
+  <section>
+    <div class="section-mark">§ Where this leaves us</div>
+    <h2>Two work-streams, both scoped.</h2>
+    <ul>
+      <li><strong>Weights → a Codex shuttle + separate PR</strong> (the #604 BACKGROUND_RMS baseline), with the minimal v1-restore landing in #741 first. The science calls above are for Martin.</li>
+      <li><strong>Size → transform-at-source</strong> in ngmix + a cs_util converter web; the sp_validation <code>T_to_fwhm</code> fix rides along. Touches the producer/shared/consumer stack — Lucy + Martin on the convention.</li>
+      <li><strong>Still no Martin/Lucy reply drafted</strong> — that waits for Cail. These reports are the raw material for it.</li>
+    </ul>
+  </section>
+
+</main>
+</body>
+</html>

@@ -1,4 +1,5 @@
 ---
+id: 01KTCHWZX9Q1MG2FB20N5Y52TD
 name: 'ShapePipe CI: green & trustworthy test suite on develop'
 status: open
 tags:
@@ -6,7 +7,7 @@ tags:
     - ci
     - constitution
 created-at: 2026-05-29T12:34:31.800189806+02:00
-outcome: 'Conda removed from ShapePipe (#733 merged); develop is green including image publish. The container (slim Python 3.12 + apt + uv lockfile) is the single source of truth and CI runs pytest inside the dev image. ci-release.yml + doc-tests.yml + install_shapepipe + environment*.yml deleted; cd.yml builds docs in the image; install docs rewritten. The conda path had rotted into a multi-layer install failure — deleted rather than repaired, so the production astropy bug is moot. Remaining for a clean/tight/shared dev environment: (1) commit a shared .felt in the repo + curate which fibers go public; (2) make repo CLAUDE.md a real onboarding doc; (3) port cluster job scripts off conda; (4) #729 dependabot actions (recreating); (5) verify docs deploy on master; (6) strengthen the thin test suite (#708).'
+outcome: 'Near-realized. Ground truth 2026-06-11: develop green incl. image publish; #708 closed (test scaffolding landed on develop: 5 structural test files + property/synthetic-FITS tiers); candide PBS scripts modernized to SLURM+apptainer (#737); CLAUDE.md already a solid onboarding doc (minor gaps: CONTRIBUTING pointer, first-PR walkthrough); docs deploy infra correct post-#738 — /latest/ live, switcher published, ROOT still serves 2022 v1.0.1 until the next master push (the one remaining trigger). Conda survives only in out-of-scope CANFAR/CC-IN2P3 scripts (job_sp_canfar.bash + init_run_exclusive_canfar.sh have ACTIVE conda paths; cc_{mpi,smp}.sh use ccenv anaconda) — needs its own cluster-aware pass to fully realize ''no conda anywhere''.'
 ---
 
 ## Desired State

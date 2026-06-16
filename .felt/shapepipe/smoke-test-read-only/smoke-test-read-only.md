@@ -1,23 +1,14 @@
 ---
+id: 01KTCHWZZ923H1H5DR6AS3Q5H6
 name: Smoke test must work in read-only mode
+status: closed
 tags:
     - shapepipe
     - docker
     - infra
 created-at: 2026-05-28T10:32:25.53742271+02:00
-outcome: |-
-    `shapepipe_run -c /app/example/config.ini` fails on read-only SIF
-    because the example config uses relative `OUTPUT_DIR = ./example/output`,
-    which resolves under `WORKDIR=/app` — read-only in apptainer/SIF. Fix:
-    add `scripts/sh/shapepipe_run_example.sh` wrapper that mktemp's a
-    workdir, copies `/app/example/` into it, cd's, and execs `shapepipe_run`.
-    Dockerfile's existing auto-symlink rule (`scripts/*/*.sh` →
-    `/usr/local/bin/<name>`) makes it usable as `shapepipe_run_example`
-    on PATH. CI smoke step updated to call it under
-    `docker run --read-only --tmpfs /tmp:rw` (emulates SIF). Drive-by:
-    tightened `.gitignore` from `*shapepipe_run_*` (catches the wrapper)
-    to `example/output/shapepipe_run_*`. Submitted as #731 from branch
-    `chore/smoke-test-read-only`; awaiting CI.
+closed-at: 2026-06-10T17:13:38.485047103+02:00
+outcome: 'shapepipe_run_example wrapper (copy example to /tmp) landed via PR #731, merged to develop; CI smoke steps use it. Read-only SIF runs work.'
 ---
 
 ## The gap
