@@ -93,8 +93,8 @@ ngmix = { git = "https://github.com/esheldon/ngmix", tag = "v2.4.0" }
 
 [build-system]
 # Declaring a build backend makes shapepipe an installed package (not a uv
-# "virtual" project), so `uv sync` puts it on the path — required for the
-# fast-tests CI job to import shapepipe.
+# "virtual" project), so `uv sync` / `pip install -e .` put it on the path
+# rather than only its dependencies.
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
