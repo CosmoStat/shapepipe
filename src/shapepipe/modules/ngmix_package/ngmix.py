@@ -88,7 +88,6 @@ def get_prior(pixel_scale, rng, T_range=None, F_range=None):
     )
 
 
-# I still don't know how to handle this
 class Tile_cat():
     """Tile_cat.
 
@@ -282,13 +281,6 @@ class Ngmix(object):
             f_wcs_path,
             input_file_list[6] if len(input_file_list) == 7 else None,
         )
-        #self._gal_vignet_path = input_file_list[1]
-        #self._bkg_vignet_path = input_file_list[2]
-        #self._psf_vignet_path = input_file_list[3]
-        #self._weight_vignet_path = input_file_list[4]
-        #self._flag_vignet_path = input_file_list[5]
-
-      
 
         self._output_dir = output_dir
         self._file_number_string = file_number_string
@@ -372,7 +364,15 @@ class Ngmix(object):
             If SNR key not found
 
         """
+        # Output HDU order. Same set as METACAL_TYPES, but kept in this
+        # fixed order so output catalogues stay byte-reproducible; the check
+        # below guards against the two lists silently diverging.
         names = ["1m", "1p", "2m", "2p", "noshear"]
+        if set(names) != set(METACAL_TYPES):
+            raise ValueError(
+                "compile_results metacal type list is out of sync with"
+                + " METACAL_TYPES"
+            )
         names2 = [
             'id',
             'n_epoch_model',
@@ -552,8 +552,8 @@ class Ngmix(object):
                     ext_name = hdu.name.lower()
                     if ext_name not in output_dict:
                         raise ValueError(
-                            "HDU extension {ext_name} from existing FITS file"
-                            + f" not found in data"
+                            f"HDU extension {ext_name} from existing FITS"
+                            + " file not found in data"
                         )
 
                     # Existing data
@@ -569,10 +569,10 @@ class Ngmix(object):
                         colname in new_data
                         for colname in existing_dtype.names
                     ):
-                        print("output_dict", [col for col in new_data])
-                        print("existing_da", existing_data.dtype.names)
                         raise ValueError(
-                            "Mismatch between existing columns and new data columns."
+                            "Mismatch between existing columns"
+                            + f" ({existing_dtype.names}) and new data"
+                            + f" columns ({list(new_data)})."
                         )
 
                     # New data to be appended

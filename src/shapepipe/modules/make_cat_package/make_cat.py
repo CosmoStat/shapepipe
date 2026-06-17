@@ -356,6 +356,10 @@ class SaveCatalogue:
             #return err_msg
 
         ngmix_mcal_types_fail = ngmix_cat_file.get_data()["mcal_types_fail"]
+        # Needed in both moments and non-moments modes (used unconditionally
+        # below), so read them outside the branch.
+        ngmix_mcal_flags = ngmix_cat_file.get_data()["mcal_flags"]
+        ngmix_id = ngmix_cat_file.get_data()["id"]
 
         n_obj = len(self._obj_id)
         self._w_log.info(f"writing ngmix info for {n_obj} objects")
@@ -364,9 +368,6 @@ class SaveCatalogue:
             m = "m"
         else:
             m = ""
-
-            ngmix_mcal_flags = ngmix_cat_file.get_data()["mcal_flags"]
-            ngmix_id = ngmix_cat_file.get_data()["id"]
 
             self._add2dict("NGMIX_N_EPOCH", np.zeros(n_obj))
             self._add2dict("NGMIX_MCAL_TYPES_FAIL", np.zeros(n_obj))
@@ -396,12 +397,6 @@ class SaveCatalogue:
             np.ones(len(self._obj_id)) * 1e30,
         )
         self._add2dict(f"NGMIX{m}_MCAL_FLAGS", np.zeros(len(self._obj_id)))
-
-        for idx, _ in enumerate(self._obj_id):
-            for key in self._key_ends:
-                x = self._output_dict[f"NGMIX{m}_ELL_{key}"][idx]
-                if np.all(x != np.array([-10.0, -10.0])):
-                    print(x)
 
         for idx, id_tmp in enumerate(self._obj_id):
             ind = np.where(id_tmp == ngmix_id)[0]

@@ -110,6 +110,13 @@ def vignetmaker_runner(
                 exp_base_dir = config.getexpanded(
                     module_config_sec, "ME_IMAGE_EXP_DIR"
                 )
+                if len(input_file_list) < 3:
+                    raise ValueError(
+                        "ME_IMAGE_EXP_DIR requires the exposure-numbers"
+                        + " file as a third input; add 'exp_numbers' to"
+                        + " FILE_PATTERN and FILE_EXT in the"
+                        + f" [{module_config_sec}] config section."
+                    )
                 exp_numbers_file = input_file_list[2]
                 exp_runner_names = config.getlist(
                     module_config_sec, "ME_IMAGE_EXP_RUNNERS"
@@ -142,7 +149,15 @@ def vignetmaker_runner(
                 "ME_IMAGE_PATTERN",
             )
 
-            # Get WCS log file path
+            # Get WCS log file path. The WCS log is a positional input (via
+            # FILE_PATTERN) in MULTI-EPOCH mode, not a decorator default.
+            if len(input_file_list) < 2:
+                raise ValueError(
+                    "MULTI-EPOCH mode requires the WCS log file as a second"
+                    + " input; add 'log_exp_headers' to FILE_PATTERN and"
+                    + f" FILE_EXT in the [{module_config_sec}] config"
+                    + " section."
+                )
             f_wcs_path = input_file_list[1]
 
             # Process inputs
