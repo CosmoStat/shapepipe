@@ -3434,7 +3434,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/c2/41/6281d12b863867fc7
 [[package]]
 name = "shapepipe"
 version = "1.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "astropy", marker = "sys_platform == 'linux'" },
     { name = "astroquery", marker = "sys_platform == 'linux'" },

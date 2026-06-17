@@ -91,6 +91,13 @@ environments = ["sys_platform == 'linux'"]
 [tool.uv.sources]
 ngmix = { git = "https://github.com/esheldon/ngmix", tag = "v2.4.0" }
 
+[build-system]
+# Declaring a build backend makes shapepipe an installed package (not a uv
+# "virtual" project), so `uv sync` puts it on the path — required for the
+# fast-tests CI job to import shapepipe.
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
 [tool.setuptools]
 script-files = [
     "scripts/python/update_runs_log_file.py",
