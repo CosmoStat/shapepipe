@@ -654,7 +654,7 @@ wheels = [
 
 [[package]]
 name = "cs-util"
-version = "0.2"
+version = "0.2.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "astropy", marker = "sys_platform == 'linux'" },
@@ -670,9 +670,9 @@ dependencies = [
     { name = "swig", marker = "sys_platform == 'linux'" },
     { name = "vos", marker = "sys_platform == 'linux'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5a/1d/068d7522652fed361d80502c958f37080a9f0cfee5ad201b9dea0197b562/cs_util-0.2.tar.gz", hash = "sha256:4cbe01556fb47e832b5d517af812a6cf4a94856ad134be8c21e74874b4d56de6", size = 24932, upload-time = "2026-04-07T07:59:21.174Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e0/08/d759e6af88c8a53b9c1c863a3bc3b9b5b26cf434f7232875a4bb75bec514/cs_util-0.2.1.tar.gz", hash = "sha256:5dd9be50249c412743ed116c0cb3364d5bcf1ad907be692dc52db0059a00412d", size = 26713, upload-time = "2026-06-10T23:58:23.017Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5f/63/9dcd114438db8b7be74dee98dc3841e43335b1c0cc6aba64ec4bd1de3c01/cs_util-0.2-py3-none-any.whl", hash = "sha256:e329ea5f2a4f3ea9b8f0649f5c9321bc18ddf4ad76bffc8152fb22e3f4168ef4", size = 29723, upload-time = "2026-04-07T07:59:19.764Z" },
+    { url = "https://files.pythonhosted.org/packages/9a/2f/c8d89e8013567c3cf5535b3b941b81033e3c4a81101f3953d611af817dca/cs_util-0.2.1-py3-none-any.whl", hash = "sha256:577abc9ba04da8c78bdba9f6d235deecac99c266a0937e2c44ea1df5b50224de", size = 32209, upload-time = "2026-06-10T23:58:21.766Z" },
 ]
 
 [[package]]
