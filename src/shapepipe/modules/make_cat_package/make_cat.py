@@ -329,10 +329,22 @@ class SaveCatalogue:
 
         Save the NGMIX catalogue into the final one.
 
+        Column grammar: ``NGMIX[m]_<COMPONENT>[_ERR]_<OBJECT>_<SHEAR>``, with
+        ``OBJECT`` one of ``GAL`` (galaxy), ``PSF_ORIG`` (the original
+        psfex/mccd image PSF, fit by ``ngmix.average_original_psf`` — its true
+        ellipticity and size, feeding object-wise PSF leakage), or
+        ``PSF_RECONV`` (the metacal reconvolution kernel, round and enlarged
+        by construction, fit by ``ngmix.average_multiepoch_psf`` — the Tgal /
+        Tpsf size cut and a g~0 sanity check). ``PSF_ORIG`` and ``PSF_RECONV``
+        are independent fits of different PSFs, no longer the single aliased
+        value of the pre-fix code (shapepipe#749).
+
         Parameters
         ----------
         ngmix_cat_path : str
             Path to NGMIX catalogue
+        moments : bool, optional
+            If True, write the parallel ``NGMIXm_*`` (moments-branch) columns.
 
         """
         self._key_ends = ["1M", "1P", "2M", "2P", "NOSHEAR"]
@@ -374,29 +386,47 @@ class SaveCatalogue:
 
         prefix = f"NGMIX{m}"
 
+        # Galaxy (GAL), original image PSF (PSF_ORIG) and metacal
+        # reconvolution kernel (PSF_RECONV). G1/G2 are scalar reduced-shear
+        # components, not a 2-vector. Sentinels: sizes/fluxes/mags/flags 0,
+        # *_ERR fluxes/mags -1, ellipticities -10, *_ERR sizes 1e30.
         for key_str in (
-            f"{prefix}_T_",
-            f"{prefix}_Tpsf_",
-            f"{prefix}_SNR_",
-            f"{prefix}_FLUX_",
-            f"{prefix}_MAG_",
-            f"{prefix}_FLAGS_",
-            f"{prefix}_T_PSFo_",
+            f"{prefix}_T_GAL_",
+            f"{prefix}_SNR_GAL_",
+            f"{prefix}_FLUX_GAL_",
+            f"{prefix}_MAG_GAL_",
+            f"{prefix}_FLAGS_GAL_",
+            f"{prefix}_T_PSF_ORIG_",
+            f"{prefix}_T_PSF_RECONV_",
         ):
             self._update_dict(key_str, np.zeros(n_obj))
-        for key_str in (f"NGMIX{m}_FLUX_ERR_", f"NGMIX{m}_MAG_ERR_"):
-            self._update_dict(key_str, np.ones(len(self._obj_id)) * -1)
         for key_str in (
-            f"NGMIX{m}_ELL_",
-            f"NGMIX{m}_ELL_ERR_",
-            f"NGMIX{m}_ELL_PSFo_",
+            f"{prefix}_FLUX_ERR_GAL_",
+            f"{prefix}_MAG_ERR_GAL_",
         ):
-            self._update_dict(key_str, np.ones((len(self._obj_id), 2)) * -10.0)
-        self._update_dict(
-            f"NGMIX{m}_T_ERR_",
-            np.ones(len(self._obj_id)) * 1e30,
-        )
-        self._add2dict(f"NGMIX{m}_MCAL_FLAGS", np.zeros(len(self._obj_id)))
+            self._update_dict(key_str, np.ones(n_obj) * -1)
+        for key_str in (
+            f"{prefix}_G1_GAL_",
+            f"{prefix}_G2_GAL_",
+            f"{prefix}_G1_ERR_GAL_",
+            f"{prefix}_G2_ERR_GAL_",
+            f"{prefix}_G1_PSF_ORIG_",
+            f"{prefix}_G2_PSF_ORIG_",
+            f"{prefix}_G1_ERR_PSF_ORIG_",
+            f"{prefix}_G2_ERR_PSF_ORIG_",
+            f"{prefix}_G1_PSF_RECONV_",
+            f"{prefix}_G2_PSF_RECONV_",
+            f"{prefix}_G1_ERR_PSF_RECONV_",
+            f"{prefix}_G2_ERR_PSF_RECONV_",
+        ):
+            self._update_dict(key_str, np.ones(n_obj) * -10.0)
+        for key_str in (
+            f"{prefix}_T_ERR_GAL_",
+            f"{prefix}_T_ERR_PSF_ORIG_",
+            f"{prefix}_T_ERR_PSF_RECONV_",
+        ):
+            self._update_dict(key_str, np.ones(n_obj) * 1e30)
+        self._add2dict(f"{prefix}_MCAL_FLAGS", np.zeros(n_obj))
 
         for idx, id_tmp in enumerate(self._obj_id):
             ind = np.where(id_tmp == ngmix_id)[0]
@@ -406,46 +436,104 @@ class SaveCatalogue:
 
                     ncf_data = ngmix_cat_file.get_data(key)
 
-                    g = (ncf_data["g1"][ind[0]], ncf_data["g2"][ind[0]])
-                    g_err = (
-                        ncf_data["g1_err"][ind[0]],
-                        ncf_data["g2_err"][ind[0]],
+                    # Galaxy shape, size and photometry.
+                    self._add2dict(
+                        f"{prefix}_G1_GAL_{key}", ncf_data["g1"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_G2_GAL_{key}", ncf_data["g2"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_G1_ERR_GAL_{key}",
+                        ncf_data["g1_err"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_G2_ERR_GAL_{key}",
+                        ncf_data["g2_err"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_T_GAL_{key}", ncf_data["T"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_T_ERR_GAL_{key}",
+                        ncf_data["T_err"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_SNR_GAL_{key}", ncf_data["s2n"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_FLUX_GAL_{key}",
+                        ncf_data["flux"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_FLUX_ERR_GAL_{key}",
+                        ncf_data["flux_err"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_MAG_GAL_{key}", ncf_data["mag"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_MAG_ERR_GAL_{key}",
+                        ncf_data["mag_err"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_FLAGS_GAL_{key}",
+                        ncf_data["flags"][ind[0]], idx
                     )
 
-                    self._add2dict(f"NGMIX{m}_ELL_{key}", g, idx)
-                    self._add2dict(f"NGMIX{m}_ELL_ERR_{key}", g_err, idx)
-
-                    t = ncf_data["T"][ind[0]]
-                    t_err = ncf_data["T_err"][ind[0]]
-                    tpsf = ncf_data["Tpsf"][ind[0]]
-                    self._add2dict(f"NGMIX{m}_T_{key}", t, idx)
-                    self._add2dict(f"NGMIX{m}_T_ERR_{key}", t_err, idx)
-                    self._add2dict(f"NGMIX{m}_Tpsf_{key}", tpsf, idx)
-
-                    s2n = ncf_data["s2n"][ind[0]]
-                    self._add2dict(f"NGMIX{m}_SNR_{key}", s2n, idx)
-
-                    flux = ncf_data["flux"][ind[0]]
-                    flux_err = ncf_data["flux_err"][ind[0]]
-                    self._add2dict(f"NGMIX{m}_FLUX_{key}", flux, idx)
-                    self._add2dict(f"NGMIX{m}_FLUX_ERR_{key}", flux_err, idx)
-
-                    mag = ncf_data["mag"][ind[0]]
-                    mag_err = ncf_data["mag_err"][ind[0]]
-                    self._add2dict(f"NGMIX{m}_MAG_{key}", mag, idx)
-                    self._add2dict(f"NGMIX{m}_MAG_ERR_{key}", mag_err, idx)
-
-                    flags = ncf_data["flags"][ind[0]]
-                    self._add2dict(f"NGMIX{m}_FLAGS_{key}", flags, idx)
-
-                    g_psf = (
-                        ncf_data["g1_psfo_ngmix"][ind[0]],
-                        ncf_data["g2_psfo_ngmix"][ind[0]],
+                    # Original image PSF (psfex/mccd) — its genuine,
+                    # un-reconvolved ellipticity and size.
+                    self._add2dict(
+                        f"{prefix}_G1_PSF_ORIG_{key}",
+                        ncf_data["g1_psf_orig"][ind[0]], idx
                     )
-                    self._add2dict(f"NGMIX{m}_ELL_PSFo_{key}", g_psf, idx)
+                    self._add2dict(
+                        f"{prefix}_G2_PSF_ORIG_{key}",
+                        ncf_data["g2_psf_orig"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_G1_ERR_PSF_ORIG_{key}",
+                        ncf_data["g1_err_psf_orig"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_G2_ERR_PSF_ORIG_{key}",
+                        ncf_data["g2_err_psf_orig"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_T_PSF_ORIG_{key}",
+                        ncf_data["T_psf_orig"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_T_ERR_PSF_ORIG_{key}",
+                        ncf_data["T_err_psf_orig"][ind[0]], idx
+                    )
 
-                    t_psfo = ncf_data["Tpsf"][ind[0]]
-                    self._add2dict(f"NGMIX{m}_T_PSFo_{key}", t_psfo, idx)
+                    # Metacal reconvolution kernel — round, enlarged by
+                    # construction; the Tgal/Tpsf cut and g~0 sanity check.
+                    self._add2dict(
+                        f"{prefix}_G1_PSF_RECONV_{key}",
+                        ncf_data["g1_psf_reconv"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_G2_PSF_RECONV_{key}",
+                        ncf_data["g2_psf_reconv"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_G1_ERR_PSF_RECONV_{key}",
+                        ncf_data["g1_err_psf_reconv"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_G2_ERR_PSF_RECONV_{key}",
+                        ncf_data["g2_err_psf_reconv"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_T_PSF_RECONV_{key}",
+                        ncf_data["T_psf_reconv"][ind[0]], idx
+                    )
+                    self._add2dict(
+                        f"{prefix}_T_ERR_PSF_RECONV_{key}",
+                        ncf_data["T_err_psf_reconv"][ind[0]], idx
+                    )
 
                 self._add2dict(
                     f"NGMIX{m}_MCAL_FLAGS",
