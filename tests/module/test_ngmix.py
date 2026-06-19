@@ -119,7 +119,7 @@ def _metacal_noshear_g(seed):
         flags,
         jacobs,
     )
-    res, _ = do_ngmix_metacal(stamp, prior, 1.0, rng)
+    res, _, _ = do_ngmix_metacal(stamp, prior, 1.0, rng)
     return np.asarray(res["noshear"]["g"])
 
 
@@ -135,15 +135,46 @@ def test_metacal_is_reproducible_with_fixed_seed():
     npt.assert_array_equal(_metacal_noshear_g(42), _metacal_noshear_g(42))
 
 
+# The two PSF families carry distinct ellipticity AND size (shapepipe#749):
+# the original image PSF (-> *_psf_orig) and the metacal reconvolution kernel
+# (-> *_psf_reconv) are independent fits, so a regression to the old aliasing
+# (both from one source) would surface here. The original PSF is elliptical
+# and smaller than the round, enlarged reconvolution kernel.
+RECONV_PSF_G = [0.001, 0.002]
+RECONV_PSF_G_ERR = [1e-5, 1e-5]
+ORIG_PSF_G = [0.004, -0.003]
+ORIG_PSF_G_ERR = [2e-5, 3e-5]
+# original-PSF size, deliberately != the reconvolution T_psf the builder is
+# handed, so the size un-aliasing is exercised end to end.
+ORIG_PSF_T = 0.07
+ORIG_PSF_T_ERR = 0.0008
+
+
+def _psf_r50_pair(T_psf, T_psf_err, sigma_to_r50):
+    """``(r50, r50_err)`` for a PSF size, mirroring the source conversion."""
+    sigma = np.sqrt(max(T_psf, 0) / 2)
+    return (
+        sigma_to_r50 * sigma,
+        sigma_to_r50 * T_psf_err / (4 * sigma) if sigma > 0 else np.nan,
+    )
+
+
 def _fake_metacal_result(T, T_err, T_psf, T_psf_err):
     """Build one minimal metacal result as produced by the process loop.
 
-    The PSF size entries mirror the conversion done at the source:
-    ``r50_PSFo = sqrt(2 ln 2) * sigma`` with ``sigma = sqrt(T_psf / 2)``.
+    Both PSF families are filled with self-named scalar keys, as the process
+    loop back-fills them: ``*_psf_orig`` (original image PSF) and
+    ``*_psf_reconv`` (metacal reconvolution kernel). The reconvolution-kernel
+    size is the builder's ``T_psf`` argument; the original-PSF size is the
+    fixed ``ORIG_PSF_T``, deliberately different so the un-aliasing is tested.
+    PSF r50 = ``sqrt(2 ln 2) * sigma`` with ``sigma = sqrt(T / 2)``.
     """
     from shapepipe.modules.ngmix_package.ngmix import SIGMA_TO_R50
 
-    sigma_psf = np.sqrt(max(T_psf, 0) / 2)
+    r50_reconv, r50_err_reconv = _psf_r50_pair(T_psf, T_psf_err, SIGMA_TO_R50)
+    r50_orig, r50_err_orig = _psf_r50_pair(
+        ORIG_PSF_T, ORIG_PSF_T_ERR, SIGMA_TO_R50
+    )
     per_type = {
         "nfev": 1,
         "g": [0.01, -0.02],
@@ -159,16 +190,24 @@ def _fake_metacal_result(T, T_err, T_psf, T_psf_err):
         "obj_id": 1,
         "n_epoch_model": 1,
         "mcal_types_fail": 0,
-        "g_PSFo": [0.001, 0.002],
-        "g_err_PSFo": [1e-5, 1e-5],
-        "T_PSFo": T_psf,
-        "T_err_PSFo": T_psf_err,
-        "r50_PSFo": SIGMA_TO_R50 * sigma_psf,
-        "r50_err_PSFo": (
-            SIGMA_TO_R50 * T_psf_err / (4 * sigma_psf)
-            if sigma_psf > 0
-            else np.nan
-        ),
+        # original image PSF (psfex/mccd) family
+        "g1_psf_orig": ORIG_PSF_G[0],
+        "g2_psf_orig": ORIG_PSF_G[1],
+        "g1_err_psf_orig": ORIG_PSF_G_ERR[0],
+        "g2_err_psf_orig": ORIG_PSF_G_ERR[1],
+        "T_psf_orig": ORIG_PSF_T,
+        "T_err_psf_orig": ORIG_PSF_T_ERR,
+        "r50_psf_orig": r50_orig,
+        "r50_err_psf_orig": r50_err_orig,
+        # metacal reconvolution-kernel family
+        "g1_psf_reconv": RECONV_PSF_G[0],
+        "g2_psf_reconv": RECONV_PSF_G[1],
+        "g1_err_psf_reconv": RECONV_PSF_G_ERR[0],
+        "g2_err_psf_reconv": RECONV_PSF_G_ERR[1],
+        "T_psf_reconv": T_psf,
+        "T_err_psf_reconv": T_psf_err,
+        "r50_psf_reconv": r50_reconv,
+        "r50_err_psf_reconv": r50_err_reconv,
         "mcal_flags": 0,
     }
     res.update(
@@ -178,11 +217,13 @@ def _fake_metacal_result(T, T_err, T_psf, T_psf_err):
 
 
 def test_compile_results_size_columns_are_half_light_radii():
-    """Every r50 column is a true half-light radius, on both sides.
+    """Every r50 column is a true half-light radius, on every side.
 
-    Galaxy ``r50 = sqrt(ln 2 * T)`` (not the raw area ``pars[4]``), PSF
-    ``r50psf = sqrt(2 ln 2) * sigma_psf`` (not bare sigma), and the
-    redundant ``*_psfo_ngmix`` size duplicates are gone.
+    Galaxy ``r50 = sqrt(ln 2 * T)`` (not the raw area ``pars[4]``) and both
+    PSF families ``r50 = sqrt(2 ln 2) * sigma`` (not bare sigma), in the same
+    convention so galaxy / PSF radii are commensurable. The reconvolution
+    kernel (``*_psf_reconv``) and the original image PSF (``*_psf_orig``) are
+    independent fits with their own, different sizes (shapepipe#749).
     """
     from shapepipe.modules.ngmix_package.ngmix import Ngmix, SIGMA_TO_R50
 
@@ -200,31 +241,66 @@ def test_compile_results_size_columns_are_half_light_radii():
     npt.assert_allclose(noshear["r50"], [r50_expected])
     npt.assert_allclose(noshear["r50_err"], [r50_expected * T_err / (2 * T)])
 
-    # PSF: r50psf = sqrt(2 ln2) * sigma, sigma = sqrt(T_psf / 2)
-    sigma_psf = np.sqrt(T_psf / 2)
-    npt.assert_allclose(noshear["r50psf"], [SIGMA_TO_R50 * sigma_psf])
+    # reconvolution kernel: r50 = sqrt(2 ln2) * sigma, sigma = sqrt(T_psf / 2)
+    sigma_reconv = np.sqrt(T_psf / 2)
+    npt.assert_allclose(noshear["r50_psf_reconv"], [SIGMA_TO_R50 * sigma_reconv])
     npt.assert_allclose(
-        noshear["r50psf_err"], [SIGMA_TO_R50 * T_psf_err / (4 * sigma_psf)]
+        noshear["r50_err_psf_reconv"],
+        [SIGMA_TO_R50 * T_psf_err / (4 * sigma_reconv)],
     )
+    npt.assert_allclose(noshear["T_psf_reconv"], [T_psf])
+    npt.assert_allclose(noshear["T_err_psf_reconv"], [T_psf_err])
 
-    # galaxy/PSF r50 are now commensurable: same convention on both sides
+    # galaxy/reconv-PSF r50 are commensurable: same convention on both sides
     npt.assert_allclose(
-        np.array(noshear["r50"]) / np.array(noshear["r50psf"]),
+        np.array(noshear["r50"]) / np.array(noshear["r50_psf_reconv"]),
         [np.sqrt(T / T_psf)],
     )
 
-    # areas pass through untouched, with the err asymmetry fixed
-    npt.assert_allclose(noshear["Tpsf"], [T_psf])
-    npt.assert_allclose(noshear["Tpsf_err"], [T_psf_err])
+    # original image PSF carries its OWN size, un-aliased from the kernel
+    sigma_orig = np.sqrt(ORIG_PSF_T / 2)
+    npt.assert_allclose(noshear["T_psf_orig"], [ORIG_PSF_T])
+    npt.assert_allclose(noshear["T_err_psf_orig"], [ORIG_PSF_T_ERR])
+    npt.assert_allclose(noshear["r50_psf_orig"], [SIGMA_TO_R50 * sigma_orig])
+    npt.assert_allclose(
+        noshear["r50_err_psf_orig"],
+        [SIGMA_TO_R50 * ORIG_PSF_T_ERR / (4 * sigma_orig)],
+    )
+    assert noshear["T_psf_orig"] != noshear["T_psf_reconv"]
+    assert noshear["r50_psf_orig"] != noshear["r50_psf_reconv"]
 
-    # the *_psfo_ngmix size duplicates are retired
-    for retired in (
-        "T_psfo_ngmix",
-        "T_err_psfo_ngmix",
-        "r50_psfo_ngmix",
-        "r50_err_psfo_ngmix",
-    ):
-        assert retired not in noshear
+
+def test_compile_results_psf_families_are_unaliased():
+    """The two PSF-ellipticity families document *different* PSFs (#749).
+
+    ``*_psf_reconv`` carries the metacal RECONVOLUTION kernel; ``*_psf_orig``
+    carries the ORIGINAL image PSF, fit independently. Before the fix both
+    came from one ``average_multiepoch_psf`` result and so were byte-
+    identical; here they must differ, each tracing its own source. The
+    companion size un-aliasing is checked in
+    ``test_compile_results_size_columns_are_half_light_radii``.
+    """
+    from shapepipe.modules.ngmix_package.ngmix import Ngmix
+
+    inst = object.__new__(Ngmix)
+    inst._zero_point = 30.0
+    noshear = inst.compile_results(
+        [_fake_metacal_result(0.18, 0.02, 0.09, 0.001)]
+    )["noshear"]
+
+    # reconvolution kernel
+    npt.assert_allclose(noshear["g1_psf_reconv"], [RECONV_PSF_G[0]])
+    npt.assert_allclose(noshear["g2_psf_reconv"], [RECONV_PSF_G[1]])
+    npt.assert_allclose(noshear["g1_err_psf_reconv"], [RECONV_PSF_G_ERR[0]])
+    npt.assert_allclose(noshear["g2_err_psf_reconv"], [RECONV_PSF_G_ERR[1]])
+    # original image PSF
+    npt.assert_allclose(noshear["g1_psf_orig"], [ORIG_PSF_G[0]])
+    npt.assert_allclose(noshear["g2_psf_orig"], [ORIG_PSF_G[1]])
+    npt.assert_allclose(noshear["g1_err_psf_orig"], [ORIG_PSF_G_ERR[0]])
+    npt.assert_allclose(noshear["g2_err_psf_orig"], [ORIG_PSF_G_ERR[1]])
+    # the un-aliasing: the two families are no longer the same value
+    assert noshear["g1_psf_orig"] != noshear["g1_psf_reconv"]
+    assert noshear["g2_psf_orig"] != noshear["g2_psf_reconv"]
 
 
 def test_compile_results_nan_fills_failed_fit_types():
@@ -331,6 +407,66 @@ def test_average_multiepoch_psf_skips_failed_psf_epochs():
     npt.assert_allclose(psf_res["g_psf"], [0.01, 0.02])
     npt.assert_allclose(psf_res["g_psf_err"], [1e-3, 2e-3])
     assert psf_res["n_epoch"] == 1
+
+
+def test_average_original_psf_fits_each_gal_psf_with_galaxy_weight():
+    """The original-PSF average fits ``gal_obs.psf`` and weights by gal S/N.
+
+    Restores the independent original-image-PSF fit (shapepipe#749): each
+    epoch's psfex/mccd PSF stamp (``gal_obs.psf``) is fit by the shared
+    ``psf_runner``, then weight-averaged by the *galaxy* inverse-variance
+    weight (matching :func:`average_multiepoch_psf`). A pre-set
+    ``psf.meta['result']`` per epoch stands in for the runner's fit so the
+    averaging math is checked in isolation.
+    """
+    from types import SimpleNamespace
+    from shapepipe.modules.ngmix_package.ngmix import average_original_psf
+
+    def gal_epoch(psf_result, weight_value):
+        # gal_obs carries a .psf whose meta['result'] is what the runner
+        # would set; .weight is the galaxy inverse-variance map.
+        return SimpleNamespace(
+            psf=SimpleNamespace(meta={"result": psf_result}),
+            weight=np.full((2, 2), weight_value),
+        )
+
+    # runner stub: a no-op .go, since meta['result'] is pre-populated. It
+    # must be *called* (the fit happens), so record that it was.
+    calls = []
+    runner = SimpleNamespace(go=lambda obs: calls.append(obs))
+
+    good_a = {
+        "flags": 0, "T": 0.30, "T_err": 0.02,
+        "g": np.array([0.04, -0.03]), "g_err": np.array([1e-3, 1e-3]),
+    }
+    good_b = {
+        "flags": 0, "T": 0.20, "T_err": 0.01,
+        "g": np.array([0.06, -0.01]), "g_err": np.array([2e-3, 2e-3]),
+    }
+    failed = {"flags": 3, "nfev": 5, "pars": np.zeros(6)}  # no T/g keys
+
+    gal_obs_list = [
+        gal_epoch(good_a, 1.0),       # galaxy weight-sum = 4
+        gal_epoch(good_b, 2.0),       # galaxy weight-sum = 8
+        gal_epoch(failed, 4.0),       # dropped on flags != 0
+    ]
+    psfo_res = average_original_psf(gal_obs_list, runner)
+
+    # the runner fit every epoch's PSF
+    assert len(calls) == 3
+    # weighted over the two surviving epochs (weights 4 and 8)
+    w = np.array([4.0, 8.0])
+    npt.assert_allclose(
+        psfo_res["g_psf"],
+        (good_a["g"] * w[0] + good_b["g"] * w[1]) / w.sum(),
+    )
+    npt.assert_allclose(
+        psfo_res["T_psf"],
+        (good_a["T"] * w[0] + good_b["T"] * w[1]) / w.sum(),
+    )
+    assert psfo_res["n_epoch"] == 2
+    # original PSF is elliptical — not the round reconvolution kernel
+    assert abs(psfo_res["g_psf"][0]) > 1e-3
 
 
 def test_weight_map_recovers_injected_inverse_variance():

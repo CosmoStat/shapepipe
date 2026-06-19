@@ -145,7 +145,9 @@ def fit_metacal(gal, psf_im, bkg_rms, seed):
     stamp.jacobs = [WCS.jacobian()]
     if bkg_rms is not None:
         stamp.bkg_rms = [bkg_rms]
-    res, _ = do_ngmix_metacal(stamp, get_prior(PIX_SCALE, rng), GAL_FLUX, rng)
+    res, _, _ = do_ngmix_metacal(
+        stamp, get_prior(PIX_SCALE, rng), GAL_FLUX, rng
+    )
     return res["noshear"]
 
 
