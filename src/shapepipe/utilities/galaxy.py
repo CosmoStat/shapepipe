@@ -7,6 +7,7 @@ This module defines methods to deal with galaxy images.
 """
 
 import numpy as np
+from cs_util import size as cs_size
 
 
 def sigma_to_fwhm(sigma, pixel_scale=1.0):
@@ -14,6 +15,11 @@ def sigma_to_fwhm(sigma, pixel_scale=1.0):
 
     Transform standard deviation of a 1D Gaussian, sigma, to FWHM
     (Full Width Half Maximum).
+
+    Thin wrapper over :func:`cs_util.size.sigma_to_fwhm`, the single
+    source of truth for the bare ``FWHM = 2 sqrt(2 ln 2) sigma``
+    conversion; this layer adds the optional ``pixel_scale`` rescaling
+    and ShapePipe's input validation.
 
     Parameters
     ----------
@@ -89,6 +95,4 @@ def sigma_to_fwhm(sigma, pixel_scale=1.0):
             f"Invalid pixel scale {pixel_scale}, needs to be greater than 0.0."
         )
 
-    cst = 2.35482004503
-
-    return sigma * cst * pixel_scale
+    return cs_size.sigma_to_fwhm(sigma) * pixel_scale

@@ -14,6 +14,7 @@ import ngmix
 import galsim
 import numpy as np
 from astropy.io import fits
+from cs_util import size as cs_size
 from modopt.math.stats import sigma_mad
 from ngmix.observation import Observation, ObsList
 from sqlitedict import SqliteDict
@@ -970,7 +971,7 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
 
     sig_tmp = sigma_mad(gal[m_weight])
 
-    gauss_win = galsim.Gaussian(sigma=np.sqrt(guess[4] / 2), flux=guess[5])
+    gauss_win = galsim.Gaussian(sigma=cs_size.T_to_sigma(guess[4]), flux=guess[5])
     gauss_win = gauss_win.shear(g1=guess[2], g2=guess[3])
     gauss_win = gauss_win.drawImage(
         nx=img_shape[0], ny=img_shape[1], scale=pixel_scale

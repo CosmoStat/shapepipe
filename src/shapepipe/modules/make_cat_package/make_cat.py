@@ -13,10 +13,10 @@ import numpy as np
 from astropy import coordinates as coords
 from astropy import units as u
 from astropy.wcs import WCS
+from cs_util import size as cs_size
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
-from shapepipe.utilities import galaxy
 
 
 def get_output_name(output_dir, file_number_string):
@@ -725,7 +725,7 @@ class SaveCatalogue:
                 )
                 self._add2dict(f"PSF_ELL_{epoch + 1}", e_psf, idx)
 
-                psf_fwhm = galaxy.sigma_to_fwhm(
+                psf_fwhm = cs_size.sigma_to_fwhm(
                     gpc_data["SHAPES"]["SIGMA_PSF_HSM"]
                 )
                 self._add2dict(f"PSF_FWHM_{epoch + 1}", psf_fwhm, idx)
