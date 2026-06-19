@@ -329,15 +329,18 @@ class SaveCatalogue:
 
         Save the NGMIX catalogue into the final one.
 
-        Column grammar: ``NGMIX[m]_<COMPONENT>[_ERR]_<OBJECT>_<SHEAR>``, with
-        ``OBJECT`` one of ``GAL`` (galaxy), ``PSF_ORIG`` (the original
-        psfex/mccd image PSF, fit by ``ngmix.average_original_psf`` — its true
-        ellipticity and size, feeding object-wise PSF leakage), or
-        ``PSF_RECONV`` (the metacal reconvolution kernel, round and enlarged
-        by construction, fit by ``ngmix.average_multiepoch_psf`` — the Tgal /
-        Tpsf size cut and a g~0 sanity check). ``PSF_ORIG`` and ``PSF_RECONV``
-        are independent fits of different PSFs, no longer the single aliased
-        value of the pre-fix code (shapepipe#749).
+        Column grammar: ``NGMIX[m]_<COMPONENT>[_ERR][_<OBJECT>][_<SHEAR>]``.
+        ``OBJECT`` and ``SHEAR`` are both optional: the per-object metadata
+        columns (``NGMIX_MCAL_FLAGS``, ``NGMIX_N_EPOCH``,
+        ``NGMIX_MCAL_TYPES_FAIL``) carry neither. When present, ``OBJECT`` is
+        one of ``GAL`` (galaxy), ``PSF_ORIG`` (the original psfex/mccd image
+        PSF, fit by ``ngmix.average_original_psf`` — its true ellipticity and
+        size, feeding object-wise PSF leakage), or ``PSF_RECONV`` (the metacal
+        reconvolution kernel, round and enlarged by construction, fit by
+        ``ngmix.average_multiepoch_psf`` — the Tgal / Tpsf size cut and a g~0
+        sanity check). ``PSF_ORIG`` and ``PSF_RECONV`` are independent fits of
+        different PSFs, no longer the single aliased value of the pre-fix code
+        (shapepipe#749).
 
         Parameters
         ----------
