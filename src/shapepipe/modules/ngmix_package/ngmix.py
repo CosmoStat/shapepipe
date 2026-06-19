@@ -355,8 +355,19 @@ class Ngmix(object):
         Returns
         -------
         dict
-            Compiled results ready to be written to a file
-            note: psfo is the original image psf from psfex or mccd
+            Compiled results ready to be written to a file.
+
+            Two PSF column families — each carrying ellipticity *and* size,
+            for *different* PSFs (shapepipe#749):
+
+            * ``*_psf_orig`` (``g1``/``g2`` + ``*_err``, ``T``, ``r50``) — the
+              ORIGINAL image PSF (the psfex/mccd model stamp), fit before
+              metacal reconvolution by :func:`average_original_psf`. This is
+              the PSF whose true ellipticity and size enter object-wise
+              PSF-leakage diagnostics.
+            * ``*_psf_reconv`` — the metacal RECONVOLUTION kernel (round and
+              enlarged by construction, used for the Tgal/Tpsf size cut and a
+              g~0 sanity check), fit by :func:`average_multiepoch_psf`.
 
         Raises
         ------
@@ -378,31 +389,40 @@ class Ngmix(object):
             'n_epoch_model',
             'mcal_types_fail',
             'nfev_fit',
-            'g1_psfo_ngmix',
-            'g2_psfo_ngmix',
-            'g1_err_psfo_ngmix',
-            'g2_err_psfo_ngmix',
+            # galaxy
             'g1',
             'g1_err',
             'g2',
             'g2_err',
             'T',
             'T_err',
-            'Tpsf',
-            'Tpsf_err',
             'r50',
             'r50_err',
-            'r50psf',
-            'r50psf_err',
-            'g1_psf',
-            'g2_psf',
             'flux',
             'flux_err',
             's2n',
             'mag',
             'mag_err',
             'flags',
-            'mcal_flags'
+            'mcal_flags',
+            # original image PSF (psfex/mccd), fit by average_original_psf
+            'g1_psf_orig',
+            'g2_psf_orig',
+            'g1_err_psf_orig',
+            'g2_err_psf_orig',
+            'T_psf_orig',
+            'T_err_psf_orig',
+            'r50_psf_orig',
+            'r50_err_psf_orig',
+            # metacal reconvolution kernel, fit by average_multiepoch_psf
+            'g1_psf_reconv',
+            'g2_psf_reconv',
+            'g1_err_psf_reconv',
+            'g2_err_psf_reconv',
+            'T_psf_reconv',
+            'T_err_psf_reconv',
+            'r50_psf_reconv',
+            'r50_err_psf_reconv',
         ]
         output_dict = {k: {kk: [] for kk in names2} for k in names}
         for idx in range(len(results)):
@@ -439,24 +459,23 @@ class Ngmix(object):
                 output_dict[name]["nfev_fit"].append(
                     fit.get("nfev", np.nan)
                 )
-                output_dict[name]["g1_psfo_ngmix"].append(
-                    results[idx]["g_PSFo"][0]
-                )
-                output_dict[name]["g2_psfo_ngmix"].append(
-                    results[idx]["g_PSFo"][1]
-                )
-                output_dict[name]["g1_err_psfo_ngmix"].append(
-                    results[idx]["g_err_PSFo"][0]
-                )
-                output_dict[name]["g2_err_psfo_ngmix"].append(
-                    results[idx]["g_err_PSFo"][1]
-                )
-                output_dict[name]["T"].append(T_gal)
-                output_dict[name]["T_err"].append(T_gal_err)
-                output_dict[name]["Tpsf"].append(results[idx]["T_PSFo"])
-                output_dict[name]["Tpsf_err"].append(results[idx]["T_err_PSFo"])
-                output_dict[name]["g1_psf"].append(results[idx]["g_PSFo"][0])
-                output_dict[name]["g2_psf"].append(results[idx]["g_PSFo"][1])
+                # The two PSF families are object-level (one value per
+                # object, not per shear type) and self-named: every key
+                # below is copied straight through from compile-loop input to
+                # output, so the column name *is* the value's provenance.
+                #   *_psf_orig   = original image PSF (average_original_psf)
+                #   *_psf_reconv = reconvolution kernel (average_multiepoch_psf)
+                for psf_key in (
+                    'g1_psf_orig', 'g2_psf_orig',
+                    'g1_err_psf_orig', 'g2_err_psf_orig',
+                    'T_psf_orig', 'T_err_psf_orig',
+                    'r50_psf_orig', 'r50_err_psf_orig',
+                    'g1_psf_reconv', 'g2_psf_reconv',
+                    'g1_err_psf_reconv', 'g2_err_psf_reconv',
+                    'T_psf_reconv', 'T_err_psf_reconv',
+                    'r50_psf_reconv', 'r50_err_psf_reconv',
+                ):
+                    output_dict[name][psf_key].append(results[idx][psf_key])
 
                 # Galaxy half-light radius from the fitted area T = 2 sigma^2:
                 # r50 = sqrt(ln 2 * T), with d r50 / d T = r50 / (2 T)
@@ -465,16 +484,14 @@ class Ngmix(object):
                     r50_gal_err = r50_gal * T_gal_err / (2 * T_gal)
                 else:
                     r50_gal = r50_gal_err = np.nan
-                output_dict[name]['r50'].append(r50_gal)
-                output_dict[name]['r50_err'].append(r50_gal_err)
-                output_dict[name]['r50psf'].append(results[idx]["r50_PSFo"])
-                output_dict[name]['r50psf_err'].append(
-                    results[idx]["r50_err_PSFo"]
-                )
                 output_dict[name]["g1"].append(g[0])
                 output_dict[name]["g2"].append(g[1])
                 output_dict[name]["g1_err"].append(np.sqrt(g_cov[0, 0]))
                 output_dict[name]["g2_err"].append(np.sqrt(g_cov[1, 1]))
+                output_dict[name]["T"].append(T_gal)
+                output_dict[name]["T_err"].append(T_gal_err)
+                output_dict[name]['r50'].append(r50_gal)
+                output_dict[name]['r50_err'].append(r50_gal_err)
                 output_dict[name]["flux"].append(flux)
                 output_dict[name]["flux_err"].append(flux_err)
                 output_dict[name]["mag"].append(mag)
@@ -662,7 +679,7 @@ class Ngmix(object):
                     if tile_cat.flux is not None
                     else 1.0
                 )
-                res, psf_res = do_ngmix_metacal(
+                res, psf_res, psfo_res = do_ngmix_metacal(
                     stamp,
                     prior,
                     flux_guess,
@@ -689,17 +706,38 @@ class Ngmix(object):
                 if res.get(k, {}).get('flags', 0) != 0
             )
             res['mcal_flags'] = get_mcal_flags(res)
+            # Two distinct PSF families (shapepipe#749), each with its own
+            # ellipticity AND size, written under self-naming res-keys:
+            #   reconvolution kernel (psf_res)   -> *_psf_reconv
+            #   original image PSF  (psfo_res)   -> *_psf_orig
             # PSF half-light radius r50 = sqrt(2 ln 2) * sigma with
-            # sigma = sqrt(T / 2); error from d sigma / d T = 1 / (4 sigma)
-            sigma_psfo = np.sqrt(max(psf_res['T_psf'], 0) / 2)
-            res['g_PSFo'] = psf_res['g_psf']
-            res['g_err_PSFo'] = psf_res['g_psf_err']
-            res['T_PSFo'] = psf_res['T_psf']
-            res['T_err_PSFo'] = psf_res['T_psf_err']
-            res['r50_PSFo'] = SIGMA_TO_R50 * sigma_psfo
-            res['r50_err_PSFo'] = (
-                SIGMA_TO_R50 * psf_res['T_psf_err'] / (4 * sigma_psfo)
-                if sigma_psfo > 0 else np.nan
+            # sigma = sqrt(T / 2); error from d sigma / d T = 1 / (4 sigma).
+            def _psf_r50(T_psf, T_psf_err):
+                sigma = np.sqrt(max(T_psf, 0) / 2)
+                r50 = SIGMA_TO_R50 * sigma
+                r50_err = (
+                    SIGMA_TO_R50 * T_psf_err / (4 * sigma)
+                    if sigma > 0 else np.nan
+                )
+                return r50, r50_err
+
+            res['g1_psf_reconv'] = psf_res['g_psf'][0]
+            res['g2_psf_reconv'] = psf_res['g_psf'][1]
+            res['g1_err_psf_reconv'] = psf_res['g_psf_err'][0]
+            res['g2_err_psf_reconv'] = psf_res['g_psf_err'][1]
+            res['T_psf_reconv'] = psf_res['T_psf']
+            res['T_err_psf_reconv'] = psf_res['T_psf_err']
+            res['r50_psf_reconv'], res['r50_err_psf_reconv'] = _psf_r50(
+                psf_res['T_psf'], psf_res['T_psf_err']
+            )
+            res['g1_psf_orig'] = psfo_res['g_psf'][0]
+            res['g2_psf_orig'] = psfo_res['g_psf'][1]
+            res['g1_err_psf_orig'] = psfo_res['g_psf_err'][0]
+            res['g2_err_psf_orig'] = psfo_res['g_psf_err'][1]
+            res['T_psf_orig'] = psfo_res['T_psf']
+            res['T_err_psf_orig'] = psfo_res['T_psf_err']
+            res['r50_psf_orig'], res['r50_err_psf_orig'] = _psf_r50(
+                psfo_res['T_psf'], psfo_res['T_psf_err']
             )
             final_res.append(res)
             n_fitted += 1
@@ -1122,9 +1160,66 @@ def make_ngmix_observation(
         noise=noise_img,
     )
 
+def _average_psf_fits(results_and_weights):
+    """Weight-average a set of per-epoch ngmix PSF-fit results.
+
+    Shared core for both PSF families this module exports: the metacal
+    reconvolution kernel (:func:`average_multiepoch_psf`) and the original
+    image PSF (:func:`average_original_psf`). Epochs whose PSF fit failed
+    (``flags != 0``, carrying only flags/pars and no T/g) are dropped.
+
+    Parameters
+    ----------
+    results_and_weights : iterable of (dict, float)
+        Per-epoch ``(result, weight)`` pairs, where ``result`` is an ngmix
+        Fitter result with keys ``flags``, ``g``, ``g_err``, ``T``,
+        ``T_err`` and ``weight`` is the epoch's averaging weight.
+
+    Returns
+    -------
+    dict
+        Keys ``g_psf``, ``g_psf_err``, ``T_psf``, ``T_psf_err`` (weighted
+        averages over the surviving epochs) and ``n_epoch`` (their count).
+    """
+    n_epoch_used = 0
+    wsum = 0
+    g_psf_sum = np.array([0., 0.])
+    g_psf_err_sum = np.array([0., 0.])
+    T_psf_sum = 0
+    T_psf_err_sum = 0
+    for result, weight in results_and_weights:
+        if result['flags'] != 0:
+            continue
+        n_epoch_used += 1
+        wsum += weight
+        g_psf_sum += result['g'] * weight
+        g_psf_err_sum += result['g_err'] * weight
+        T_psf_sum += result['T'] * weight
+        T_psf_err_sum += result['T_err'] * weight
+
+    if wsum == 0:
+        raise ZeroDivisionError('Sum of weights = 0, division by zero')
+
+    return {
+        'g_psf': g_psf_sum / wsum,
+        'g_psf_err': g_psf_err_sum / wsum,
+        'T_psf': T_psf_sum / wsum,
+        'T_psf_err': T_psf_err_sum / wsum,
+        'n_epoch': n_epoch_used,
+    }
+
+
 def average_multiepoch_psf(obsdict):
-    """ averages psf information over multiple epochs
-    we may need to do this for original psf as well
+    """Average the metacal *reconvolution* PSF over epochs.
+
+    The PSF carried by each metacal observation (``obs.psf``) is the
+    Gaussian reconvolution kernel that metacal fit and convolved back in —
+    round by construction and slightly enlarged relative to the original
+    PSF. This is the kernel defining the sheared galaxy images, exported to
+    the reconvolution-kernel columns
+    (``NGMIX_G1/G2_PSF_RECONV``, ``NGMIX_T_PSF_RECONV``). The independent fit
+    of the *original* image PSF is :func:`average_original_psf`.
+
     Parameters
     ----------
     obsdict : dict
@@ -1137,40 +1232,54 @@ def average_multiepoch_psf(obsdict):
         averages over the epochs whose PSF fit succeeded) and 'n_epoch'
         (the number of those surviving epochs).
     """
-    psf_dict = {}
-    nepoch = len(obsdict['noshear'])
-    n_epoch_used = 0
-    wsum = 0
-    g_psf_sum = np.array([0., 0.])
-    g_psf_err_sum = np.array([0., 0.])
-    T_psf_sum = 0
-    T_psf_err_sum = 0
-    for n_e in np.arange(nepoch):
-        result = obsdict['noshear'][n_e].psf.meta['result']
-        # ignore_failed_psf=True drops failed-PSF epochs from the galaxy
-        # fit but keeps them in obsdict; their result carries only
-        # flags/pars (no T/g), so skip them here too.
-        if result['flags'] != 0:
-            continue
-        ne_wsum = obsdict['noshear'][n_e].weight.sum()
+    # ignore_failed_psf=True drops failed-PSF epochs from the galaxy fit but
+    # keeps them in obsdict; _average_psf_fits skips them on flags != 0.
+    return _average_psf_fits(
+        (obs.psf.meta['result'], obs.weight.sum())
+        for obs in obsdict['noshear']
+    )
 
-        n_epoch_used += 1
-        wsum += ne_wsum
-        g_psf_sum += result['g'] * ne_wsum
-        g_psf_err_sum += result['g_err'] * ne_wsum
-        T_psf_sum += result['T'] * ne_wsum
-        T_psf_err_sum += result['T_err'] * ne_wsum
 
-    if wsum == 0:
-        raise ZeroDivisionError('Sum of weights = 0, division by zero')
+def average_original_psf(gal_obs_list, psf_runner):
+    """Fit and average the *original* image PSF over epochs.
 
-    psf_dict['g_psf'] = g_psf_sum / wsum
-    psf_dict['g_psf_err'] = g_psf_err_sum / wsum
-    psf_dict['T_psf'] = T_psf_sum / wsum
-    psf_dict['T_psf_err'] = T_psf_err_sum / wsum
-    psf_dict['n_epoch'] = n_epoch_used
+    The original PSF is the psfex/mccd model stamp handed to ngmix
+    (``gal_obs.psf``), fit here with the same ``psf_runner`` machinery — and
+    so the same ``psf_fit_prior`` — used inside metacal, but on the PSF
+    *before* metacal's reconvolution. Exported to the original-PSF columns
+    (``NGMIX_G1/G2_PSF_ORIG``, ``NGMIX_T_PSF_ORIG``). Distinct from the
+    reconvolution-kernel fit (:func:`average_multiepoch_psf`): the original
+    PSF retains its true ellipticity and size, whereas the reconvolution
+    kernel is round and enlarged by construction. This is the PSF whose true
+    shape and size enter object-wise PSF-leakage diagnostics.
 
-    return psf_dict
+    Epochs are weighted by the *galaxy* inverse-variance weight
+    (``gal_obs.weight.sum()``), matching :func:`average_multiepoch_psf`, so
+    the two PSF families share an averaging scheme and differ only in which
+    PSF is fit.
+
+    Parameters
+    ----------
+    gal_obs_list : ngmix.observation.ObsList
+        Per-epoch galaxy observations; each ``gal_obs.psf`` is the original
+        (pre-metacal) PSF observation to fit, with no further ``.psf`` of
+        its own so the runner fits the stamp itself.
+    psf_runner : ngmix.runners.PSFRunner
+        The module's PSF runner, carrying the resolved ``psf_fit_prior``.
+
+    Returns
+    -------
+    dict
+        Same keys as :func:`average_multiepoch_psf`.
+    """
+    def fit(gal_obs):
+        # PSFRunner.go fits gal_obs.psf (the original PSF stamp) and sets
+        # gal_obs.psf.meta['result']; failed fits keep flags != 0 and are
+        # dropped by _average_psf_fits.
+        psf_runner.go(gal_obs)
+        return gal_obs.psf.meta['result'], gal_obs.weight.sum()
+
+    return _average_psf_fits(fit(gal_obs) for gal_obs in gal_obs_list)
 
 
 def make_runners(prior, flux_guess, rng):
@@ -1233,8 +1342,12 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng, centroid_source="hsm"):
     Returns
     -------
     tuple
-        (resdict, psf_res) where resdict is the MetacalBootstrapper result
-        dict and psf_res is the averaged PSF dict from average_multiepoch_psf.
+        ``(resdict, psf_res, psfo_res)`` where ``resdict`` is the
+        MetacalBootstrapper result dict, ``psf_res`` is the averaged metacal
+        *reconvolution*-kernel PSF dict (:func:`average_multiepoch_psf`), and
+        ``psfo_res`` is the averaged *original* image-PSF dict
+        (:func:`average_original_psf`). The two PSF dicts share keys but
+        describe different PSFs.
     """
     n_epoch = len(stamp.gals)
     if n_epoch == 0:
@@ -1260,6 +1373,13 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng, centroid_source="hsm"):
 
     runner, psf_runner = make_runners(prior, flux_guess, rng)
 
+    # Fit the ORIGINAL (psfex/mccd) PSF before metacal reconvolves it, using
+    # the same psf_runner (so the same psf_fit_prior and centroid). This is
+    # the PSF_ORIG family; metacal below produces the PSF_RECONV family. Run
+    # first so the original PSF is fit on its own stamp, distinct from the
+    # round, enlarged kernel metacal convolves back in.
+    psfo_res = average_original_psf(gal_obs_list, psf_runner)
+
     metacal_pars = {
         'types': ['noshear', '1p', '1m', '2p', '2m'],
         'step': 0.01,
@@ -1277,4 +1397,4 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng, centroid_source="hsm"):
     )
     resdict, obsdict = boot.go(gal_obs_list)
     psf_res = average_multiepoch_psf(obsdict)
-    return resdict, psf_res
+    return resdict, psf_res, psfo_res
