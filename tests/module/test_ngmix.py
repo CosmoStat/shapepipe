@@ -424,9 +424,16 @@ def test_average_original_psf_fits_each_gal_psf_with_galaxy_weight():
 
     def gal_epoch(psf_result, weight_value):
         # gal_obs carries a .psf whose meta['result'] is what the runner
-        # would set; .weight is the galaxy inverse-variance map.
+        # would set; .weight is the galaxy inverse-variance map. The PSF
+        # observation must expose .copy() (average_original_psf fits a copy
+        # so gal_obs.psf is never mutated); the copy carries the same
+        # pre-populated meta so the averaging math is unchanged.
+        psf_obs = SimpleNamespace(meta={"result": psf_result})
+        psf_obs.copy = lambda _self=psf_obs: SimpleNamespace(
+            meta=dict(_self.meta)
+        )
         return SimpleNamespace(
-            psf=SimpleNamespace(meta={"result": psf_result}),
+            psf=psf_obs,
             weight=np.full((2, 2), weight_value),
         )
 
@@ -450,23 +457,131 @@ def test_average_original_psf_fits_each_gal_psf_with_galaxy_weight():
         gal_epoch(good_b, 2.0),       # galaxy weight-sum = 8
         gal_epoch(failed, 4.0),       # dropped on flags != 0
     ]
-    psfo_res = average_original_psf(gal_obs_list, runner)
+    psf_orig_res = average_original_psf(gal_obs_list, runner)
 
     # the runner fit every epoch's PSF
     assert len(calls) == 3
     # weighted over the two surviving epochs (weights 4 and 8)
     w = np.array([4.0, 8.0])
     npt.assert_allclose(
-        psfo_res["g_psf"],
+        psf_orig_res["g_psf"],
         (good_a["g"] * w[0] + good_b["g"] * w[1]) / w.sum(),
     )
     npt.assert_allclose(
-        psfo_res["T_psf"],
+        psf_orig_res["T_psf"],
         (good_a["T"] * w[0] + good_b["T"] * w[1]) / w.sum(),
     )
-    assert psfo_res["n_epoch"] == 2
+    assert psf_orig_res["n_epoch"] == 2
     # original PSF is elliptical — not the round reconvolution kernel
-    assert abs(psfo_res["g_psf"][0]) > 1e-3
+    assert abs(psf_orig_res["g_psf"][0]) > 1e-3
+
+
+def _do_ngmix_metacal_on_psf(psf_shear, seed=7, n_epochs=2):
+    """Run do_ngmix_metacal on a simulated stamp with a given PSF shape.
+
+    Returns ``(resdict, psf_reconv, psf_orig, gal_obs_list)``, where the last
+    is the list metacal consumed — so a caller can assert that the original-PSF
+    pre-fit left it pristine.
+    """
+    from shapepipe.modules.ngmix_package.ngmix import (
+        Postage_stamp,
+        do_ngmix_metacal,
+        get_prior,
+    )
+    from shapepipe.testing.simulate import make_data
+
+    rng = np.random.RandomState(seed)
+    prior = get_prior(0.1857, rng)
+    gals, psfs, _, weights, flags, jacobs = make_data(
+        rng=np.random.RandomState(123),
+        shear=(0.0, 0.0),
+        noise=1e-5,
+        n_epochs=n_epochs,
+        img_size=51,
+        psf_shear=psf_shear,
+    )
+    stamp = Postage_stamp(bkg_sub=False, megacam_flip=False)
+    stamp.gals, stamp.psfs, stamp.weights, stamp.flags, stamp.jacobs = (
+        gals,
+        psfs,
+        weights,
+        flags,
+        jacobs,
+    )
+    resdict, psf_reconv, psf_orig = do_ngmix_metacal(stamp, prior, 1.0, rng)
+    return resdict, psf_reconv, psf_orig
+
+
+def test_original_psf_prefit_leaves_gal_obs_psf_pristine():
+    """The original-PSF pre-fit must not mutate the PSF metacal consumes (#749).
+
+    ``average_original_psf`` fits each epoch's psfex/mccd PSF with the shared
+    ``psf_runner``. ``PSFRunner.go`` sets ``.gmix`` (and ``.meta['result']``)
+    on the observation it fits; if that were ``gal_obs.psf`` itself, the gmix
+    would survive metacal's deep copy and be reused as the
+    ``MetacalFitGaussPSF`` fallback when admom+ML both fail — silently
+    rescuing objects the base branch dropped (``BootPSFFailure``). The fix
+    fits a *copy*, so ``gal_obs.psf`` carries NO gmix afterward, matching the
+    base-branch state that makes this add-column refactor bit-identical on the
+    galaxy results.
+    """
+    from ngmix.observation import ObsList
+    from shapepipe.modules.ngmix_package.ngmix import (
+        average_original_psf,
+        get_prior,
+        make_ngmix_observation,
+        make_runners,
+    )
+    from shapepipe.testing.simulate import make_data
+
+    rng = np.random.RandomState(7)
+    prior = get_prior(0.1857, rng)
+    gals, psfs, _, weights, flags, jacobs = make_data(
+        rng=np.random.RandomState(123),
+        shear=(0.0, 0.0),
+        noise=1e-5,
+        n_epochs=2,
+        img_size=51,
+        psf_shear=(0.05, -0.04),
+    )
+    gal_obs_list = ObsList()
+    for n_e in range(2):
+        gal_obs_list.append(
+            make_ngmix_observation(
+                gals[n_e], weights[n_e], flags[n_e], psfs[n_e], jacobs[n_e],
+                rng,
+            )
+        )
+
+    # Pre-state: a freshly built PSF observation carries no gmix.
+    assert not any(obs.psf.has_gmix() for obs in gal_obs_list)
+
+    runner, psf_runner = make_runners(prior, 1.0, rng)
+    average_original_psf(gal_obs_list, psf_runner)
+
+    # The pre-fit fit a copy, so the originals are untouched: no gmix and no
+    # leaked fit result in meta.
+    assert not any(obs.psf.has_gmix() for obs in gal_obs_list), (
+        "original-PSF pre-fit leaked a gmix into gal_obs.psf"
+    )
+    assert not any("result" in obs.psf.meta for obs in gal_obs_list), (
+        "original-PSF pre-fit leaked a fit result into gal_obs.psf.meta"
+    )
+
+
+def test_reconv_psf_is_rounder_and_larger_than_orig_on_elliptical_psf():
+    """Reconvolution kernel is round + dilated relative to the original PSF.
+
+    On an ELLIPTICAL PSF stamp the metacal reconvolution kernel is round and
+    enlarged by construction, so ``T_psf_reconv > T_psf_orig`` and
+    ``|g_psf_reconv| < |g_psf_orig|``. This end-to-end guard catches a
+    ``psf_res`` / ``psf_orig_res`` transposition in :func:`do_ngmix_metacal`
+    (the two families share keys, so a swap is otherwise silent).
+    """
+    _, psf_reconv, psf_orig = _do_ngmix_metacal_on_psf((0.05, -0.04))
+
+    assert psf_reconv["T_psf"] > psf_orig["T_psf"]
+    assert np.hypot(*psf_reconv["g_psf"]) < np.hypot(*psf_orig["g_psf"])
 
 
 def test_weight_map_recovers_injected_inverse_variance():
