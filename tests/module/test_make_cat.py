@@ -31,15 +31,15 @@ NGMIX_KEYS = [
     "mcal_types_fail",
     "nfev_fit",
     "g1", "g1_err", "g2", "g2_err",
-    "T", "T_err", "r50", "r50_err",
+    "T", "T_err",
     "flux", "flux_err", "s2n", "mag", "mag_err",
     "flags", "mcal_flags",
     "g1_psf_orig", "g2_psf_orig",
     "g1_err_psf_orig", "g2_err_psf_orig",
-    "T_psf_orig", "T_err_psf_orig", "r50_psf_orig", "r50_err_psf_orig",
+    "T_psf_orig", "T_err_psf_orig",
     "g1_psf_reconv", "g2_psf_reconv",
     "g1_err_psf_reconv", "g2_err_psf_reconv",
-    "T_psf_reconv", "T_err_psf_reconv", "r50_psf_reconv", "r50_err_psf_reconv",
+    "T_psf_reconv", "T_err_psf_reconv",
 ]
 
 SHEAR_EXTS = ["1M", "1P", "2M", "2P", "NOSHEAR"]
@@ -59,7 +59,7 @@ def _ngmix_row(obj_id):
         "mcal_types_fail": 0,
         "nfev_fit": 7,
         "g1": 0.10, "g1_err": 0.011, "g2": -0.20, "g2_err": 0.022,
-        "T": 0.30, "T_err": 0.033, "r50": 0.40, "r50_err": 0.044,
+        "T": 0.30, "T_err": 0.033,
         "flux": 100.0, "flux_err": 1.0, "s2n": 55.0,
         "mag": 21.0, "mag_err": 0.05,
         "flags": 0, "mcal_flags": 0,
@@ -67,12 +67,10 @@ def _ngmix_row(obj_id):
         "g1_psf_orig": 0.0041, "g2_psf_orig": -0.0031,
         "g1_err_psf_orig": 2e-5, "g2_err_psf_orig": 3e-5,
         "T_psf_orig": 0.071, "T_err_psf_orig": 8e-4,
-        "r50_psf_orig": 0.221, "r50_err_psf_orig": 1.2e-3,
         # metacal reconvolution kernel — round and enlarged, distinct values
         "g1_psf_reconv": 0.0012, "g2_psf_reconv": 0.0022,
         "g1_err_psf_reconv": 1e-5, "g2_err_psf_reconv": 1e-5,
         "T_psf_reconv": 0.092, "T_err_psf_reconv": 1e-3,
-        "r50_psf_reconv": 0.252, "r50_err_psf_reconv": 1.0e-3,
     }
 
 

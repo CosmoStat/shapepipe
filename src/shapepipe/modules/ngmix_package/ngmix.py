@@ -20,11 +20,6 @@ from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
 
-# Gaussian half-light radius per unit sigma: r50 = sqrt(2 ln 2) * sigma
-# = 1.17741 * sigma.  With the ngmix area parameter T = 2 sigma^2 this
-# gives r50 = SIGMA_TO_R50 * sqrt(T / 2) = sqrt(ln 2 * T).
-SIGMA_TO_R50 = np.sqrt(2.0 * np.log(2.0))
-
 METACAL_TYPES = ('noshear', '1p', '1m', '2p', '2m')
 
 
@@ -386,7 +381,7 @@ class Ngmix(object):
             Two PSF column families — each carrying ellipticity *and* size,
             for *different* PSFs (shapepipe#749):
 
-            * ``*_psf_orig`` (``g1``/``g2`` + ``*_err``, ``T``, ``r50``) — the
+            * ``*_psf_orig`` (``g1``/``g2`` + ``*_err``, ``T``) — the
               ORIGINAL image PSF (the psfex/mccd model stamp), fit before
               metacal reconvolution by :func:`average_original_psf`. This is
               the PSF whose true ellipticity and size enter object-wise
@@ -422,8 +417,6 @@ class Ngmix(object):
             'g2_err',
             'T',
             'T_err',
-            'r50',
-            'r50_err',
             'flux',
             'flux_err',
             's2n',
@@ -431,18 +424,13 @@ class Ngmix(object):
             'mag_err',
             'flags',
             'mcal_flags',
-            # original image PSF (psfex/mccd), fit by average_original_psf.
-            # The r50_psf_* columns here are intermediate-only: make_cat reads
-            # the T_psf_* (and g) columns, not r50, so these do not reach the
-            # final catalogue.
+            # original image PSF (psfex/mccd), fit by average_original_psf
             'g1_psf_orig',
             'g2_psf_orig',
             'g1_err_psf_orig',
             'g2_err_psf_orig',
             'T_psf_orig',
             'T_err_psf_orig',
-            'r50_psf_orig',
-            'r50_err_psf_orig',
             # metacal reconvolution kernel, fit by average_multiepoch_psf
             'g1_psf_reconv',
             'g2_psf_reconv',
@@ -450,8 +438,6 @@ class Ngmix(object):
             'g2_err_psf_reconv',
             'T_psf_reconv',
             'T_err_psf_reconv',
-            'r50_psf_reconv',
-            'r50_err_psf_reconv',
         ]
         output_dict = {k: {kk: [] for kk in names2} for k in names}
         for idx in range(len(results)):
@@ -498,29 +484,18 @@ class Ngmix(object):
                     'g1_psf_orig', 'g2_psf_orig',
                     'g1_err_psf_orig', 'g2_err_psf_orig',
                     'T_psf_orig', 'T_err_psf_orig',
-                    'r50_psf_orig', 'r50_err_psf_orig',
                     'g1_psf_reconv', 'g2_psf_reconv',
                     'g1_err_psf_reconv', 'g2_err_psf_reconv',
                     'T_psf_reconv', 'T_err_psf_reconv',
-                    'r50_psf_reconv', 'r50_err_psf_reconv',
                 ):
                     output_dict[name][psf_key].append(results[idx][psf_key])
 
-                # Galaxy half-light radius from the fitted area T = 2 sigma^2:
-                # r50 = sqrt(ln 2 * T), with d r50 / d T = r50 / (2 T)
-                if T_gal > 0:
-                    r50_gal = SIGMA_TO_R50 * np.sqrt(T_gal / 2)
-                    r50_gal_err = r50_gal * T_gal_err / (2 * T_gal)
-                else:
-                    r50_gal = r50_gal_err = np.nan
                 output_dict[name]["g1"].append(g[0])
                 output_dict[name]["g2"].append(g[1])
                 output_dict[name]["g1_err"].append(np.sqrt(g_cov[0, 0]))
                 output_dict[name]["g2_err"].append(np.sqrt(g_cov[1, 1]))
                 output_dict[name]["T"].append(T_gal)
                 output_dict[name]["T_err"].append(T_gal_err)
-                output_dict[name]['r50'].append(r50_gal)
-                output_dict[name]['r50_err'].append(r50_gal_err)
                 output_dict[name]["flux"].append(flux)
                 output_dict[name]["flux_err"].append(flux_err)
                 output_dict[name]["mag"].append(mag)
@@ -739,35 +714,18 @@ class Ngmix(object):
             # ellipticity AND size, written under self-naming res-keys:
             #   reconvolution kernel (psf_res)        -> *_psf_reconv
             #   original image PSF  (psf_orig_res)    -> *_psf_orig
-            # PSF half-light radius r50 = sqrt(2 ln 2) * sigma with
-            # sigma = sqrt(T / 2); error from d sigma / d T = 1 / (4 sigma).
-            def _psf_r50(T_psf, T_psf_err):
-                sigma = np.sqrt(max(T_psf, 0) / 2)
-                r50 = SIGMA_TO_R50 * sigma
-                r50_err = (
-                    SIGMA_TO_R50 * T_psf_err / (4 * sigma)
-                    if sigma > 0 else np.nan
-                )
-                return r50, r50_err
-
             res['g1_psf_reconv'] = psf_res['g_psf'][0]
             res['g2_psf_reconv'] = psf_res['g_psf'][1]
             res['g1_err_psf_reconv'] = psf_res['g_psf_err'][0]
             res['g2_err_psf_reconv'] = psf_res['g_psf_err'][1]
             res['T_psf_reconv'] = psf_res['T_psf']
             res['T_err_psf_reconv'] = psf_res['T_psf_err']
-            res['r50_psf_reconv'], res['r50_err_psf_reconv'] = _psf_r50(
-                psf_res['T_psf'], psf_res['T_psf_err']
-            )
             res['g1_psf_orig'] = psf_orig_res['g_psf'][0]
             res['g2_psf_orig'] = psf_orig_res['g_psf'][1]
             res['g1_err_psf_orig'] = psf_orig_res['g_psf_err'][0]
             res['g2_err_psf_orig'] = psf_orig_res['g_psf_err'][1]
             res['T_psf_orig'] = psf_orig_res['T_psf']
             res['T_err_psf_orig'] = psf_orig_res['T_psf_err']
-            res['r50_psf_orig'], res['r50_err_psf_orig'] = _psf_r50(
-                psf_orig_res['T_psf'], psf_orig_res['T_psf_err']
-            )
             final_res.append(res)
             n_fitted += 1
             count_batch += 1

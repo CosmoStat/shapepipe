@@ -150,15 +150,6 @@ ORIG_PSF_T = 0.07
 ORIG_PSF_T_ERR = 0.0008
 
 
-def _psf_r50_pair(T_psf, T_psf_err, sigma_to_r50):
-    """``(r50, r50_err)`` for a PSF size, mirroring the source conversion."""
-    sigma = np.sqrt(max(T_psf, 0) / 2)
-    return (
-        sigma_to_r50 * sigma,
-        sigma_to_r50 * T_psf_err / (4 * sigma) if sigma > 0 else np.nan,
-    )
-
-
 def _fake_metacal_result(T, T_err, T_psf, T_psf_err):
     """Build one minimal metacal result as produced by the process loop.
 
@@ -167,14 +158,7 @@ def _fake_metacal_result(T, T_err, T_psf, T_psf_err):
     ``*_psf_reconv`` (metacal reconvolution kernel). The reconvolution-kernel
     size is the builder's ``T_psf`` argument; the original-PSF size is the
     fixed ``ORIG_PSF_T``, deliberately different so the un-aliasing is tested.
-    PSF r50 = ``sqrt(2 ln 2) * sigma`` with ``sigma = sqrt(T / 2)``.
     """
-    from shapepipe.modules.ngmix_package.ngmix import SIGMA_TO_R50
-
-    r50_reconv, r50_err_reconv = _psf_r50_pair(T_psf, T_psf_err, SIGMA_TO_R50)
-    r50_orig, r50_err_orig = _psf_r50_pair(
-        ORIG_PSF_T, ORIG_PSF_T_ERR, SIGMA_TO_R50
-    )
     per_type = {
         "nfev": 1,
         "g": [0.01, -0.02],
@@ -197,8 +181,6 @@ def _fake_metacal_result(T, T_err, T_psf, T_psf_err):
         "g2_err_psf_orig": ORIG_PSF_G_ERR[1],
         "T_psf_orig": ORIG_PSF_T,
         "T_err_psf_orig": ORIG_PSF_T_ERR,
-        "r50_psf_orig": r50_orig,
-        "r50_err_psf_orig": r50_err_orig,
         # metacal reconvolution-kernel family
         "g1_psf_reconv": RECONV_PSF_G[0],
         "g2_psf_reconv": RECONV_PSF_G[1],
@@ -206,8 +188,6 @@ def _fake_metacal_result(T, T_err, T_psf, T_psf_err):
         "g2_err_psf_reconv": RECONV_PSF_G_ERR[1],
         "T_psf_reconv": T_psf,
         "T_err_psf_reconv": T_psf_err,
-        "r50_psf_reconv": r50_reconv,
-        "r50_err_psf_reconv": r50_err_reconv,
         "mcal_flags": 0,
     }
     res.update(
@@ -216,16 +196,16 @@ def _fake_metacal_result(T, T_err, T_psf, T_psf_err):
     return res
 
 
-def test_compile_results_size_columns_are_half_light_radii():
-    """Every r50 column is a true half-light radius, on every side.
+def test_compile_results_size_columns_are_unaliased():
+    """Each PSF family carries its OWN fitted area ``T``, un-aliased (#749).
 
-    Galaxy ``r50 = sqrt(ln 2 * T)`` (not the raw area ``pars[4]``) and both
-    PSF families ``r50 = sqrt(2 ln 2) * sigma`` (not bare sigma), in the same
-    convention so galaxy / PSF radii are commensurable. The reconvolution
-    kernel (``*_psf_reconv``) and the original image PSF (``*_psf_orig``) are
-    independent fits with their own, different sizes (shapepipe#749).
+    The galaxy area ``T`` is the fitted ``pars[4]``; the reconvolution kernel
+    (``*_psf_reconv``) and the original image PSF (``*_psf_orig``) are
+    independent fits with their own, different sizes. Half-light radius is no
+    longer carried in the catalogue — it is derivable from ``T`` downstream
+    via :func:`cs_util.size.T_to_r50` — so only the ``T`` columns are checked.
     """
-    from shapepipe.modules.ngmix_package.ngmix import Ngmix, SIGMA_TO_R50
+    from shapepipe.modules.ngmix_package.ngmix import Ngmix
 
     T, T_err = 0.18, 0.02
     T_psf, T_psf_err = 0.09, 0.001
@@ -236,38 +216,18 @@ def test_compile_results_size_columns_are_half_light_radii():
 
     noshear = out["noshear"]
 
-    # galaxy: r50 = sqrt(ln2 * T) = 1.17741 * sqrt(T / 2), error dT * r50/(2T)
-    r50_expected = np.sqrt(np.log(2) * T)
-    npt.assert_allclose(noshear["r50"], [r50_expected])
-    npt.assert_allclose(noshear["r50_err"], [r50_expected * T_err / (2 * T)])
+    # galaxy area is the fitted T
+    npt.assert_allclose(noshear["T"], [T])
+    npt.assert_allclose(noshear["T_err"], [T_err])
 
-    # reconvolution kernel: r50 = sqrt(2 ln2) * sigma, sigma = sqrt(T_psf / 2)
-    sigma_reconv = np.sqrt(T_psf / 2)
-    npt.assert_allclose(noshear["r50_psf_reconv"], [SIGMA_TO_R50 * sigma_reconv])
-    npt.assert_allclose(
-        noshear["r50_err_psf_reconv"],
-        [SIGMA_TO_R50 * T_psf_err / (4 * sigma_reconv)],
-    )
+    # reconvolution kernel
     npt.assert_allclose(noshear["T_psf_reconv"], [T_psf])
     npt.assert_allclose(noshear["T_err_psf_reconv"], [T_psf_err])
 
-    # galaxy/reconv-PSF r50 are commensurable: same convention on both sides
-    npt.assert_allclose(
-        np.array(noshear["r50"]) / np.array(noshear["r50_psf_reconv"]),
-        [np.sqrt(T / T_psf)],
-    )
-
     # original image PSF carries its OWN size, un-aliased from the kernel
-    sigma_orig = np.sqrt(ORIG_PSF_T / 2)
     npt.assert_allclose(noshear["T_psf_orig"], [ORIG_PSF_T])
     npt.assert_allclose(noshear["T_err_psf_orig"], [ORIG_PSF_T_ERR])
-    npt.assert_allclose(noshear["r50_psf_orig"], [SIGMA_TO_R50 * sigma_orig])
-    npt.assert_allclose(
-        noshear["r50_err_psf_orig"],
-        [SIGMA_TO_R50 * ORIG_PSF_T_ERR / (4 * sigma_orig)],
-    )
     assert noshear["T_psf_orig"] != noshear["T_psf_reconv"]
-    assert noshear["r50_psf_orig"] != noshear["r50_psf_reconv"]
 
 
 def test_compile_results_psf_families_are_unaliased():
@@ -330,7 +290,7 @@ def test_compile_results_nan_fills_failed_fit_types():
     failed = out["1p"]
     for col in (
         "g1", "g2", "g1_err", "g2_err", "T", "T_err", "flux", "flux_err",
-        "s2n", "mag", "mag_err", "r50", "r50_err",
+        "s2n", "mag", "mag_err",
     ):
         assert np.isnan(failed[col]).all(), col
     assert failed["flags"] == [0x8]
@@ -357,18 +317,6 @@ def test_get_mcal_flags_ors_per_type_fit_flags():
     res["1p"]["flags"] = 0x8
     res["2m"]["flags"] = 0x2
     assert get_mcal_flags(res) == 0xA
-
-
-def test_compile_results_nonpositive_T_gives_nan_r50():
-    """A non-positive fitted area cannot yield a real half-light radius."""
-    from shapepipe.modules.ngmix_package.ngmix import Ngmix
-
-    inst = object.__new__(Ngmix)
-    inst._zero_point = 30.0
-    out = inst.compile_results([_fake_metacal_result(-0.05, 0.02, 0.09, 0.001)])
-
-    assert np.isnan(out["noshear"]["r50"]).all()
-    assert np.isnan(out["noshear"]["r50_err"]).all()
 
 
 def test_average_multiepoch_psf_skips_failed_psf_epochs():
