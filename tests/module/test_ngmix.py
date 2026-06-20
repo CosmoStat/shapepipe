@@ -136,6 +136,77 @@ def test_metacal_is_reproducible_with_fixed_seed():
     npt.assert_array_equal(_metacal_noshear_g(42), _metacal_noshear_g(42))
 
 
+def _metacal_noshear_g_with_psf(seed, **kwargs):
+    """``_metacal_noshear_g`` forwarding extra kwargs to ``do_ngmix_metacal``.
+
+    Used to exercise the ``metacal_psf`` reconvolution-kernel knob while holding
+    the simulated data and seed fixed.
+    """
+    from shapepipe.modules.ngmix_package.ngmix import (
+        Postage_stamp,
+        do_ngmix_metacal,
+        get_prior,
+    )
+    from shapepipe.testing.simulate import make_data
+
+    rng = np.random.RandomState(seed)
+    prior = get_prior(0.1857, rng)
+    gals, psfs, _, weights, flags, jacobs = make_data(
+        rng=np.random.RandomState(123),
+        shear=(0.02, 0.0),
+        noise=1e-4,
+        n_epochs=2,
+        img_size=51,
+    )
+    stamp = Postage_stamp(bkg_sub=False, megacam_flip=False)
+    stamp.gals, stamp.psfs, stamp.weights, stamp.flags, stamp.jacobs = (
+        gals,
+        psfs,
+        weights,
+        flags,
+        jacobs,
+    )
+    res, _, _ = do_ngmix_metacal(stamp, prior, 1.0, rng, **kwargs)
+    return np.asarray(res["noshear"]["g"])
+
+
+def test_metacal_psf_default_is_fitgauss_byte_for_byte():
+    """The ``metacal_psf`` knob defaults to the historical hardcode.
+
+    ``do_ngmix_metacal`` set ``metacal_pars['psf'] = 'fitgauss'`` unconditionally
+    before the knob existed; passing it explicitly must reproduce the no-kwarg
+    result bit-for-bit, so the parameterization is purely additive.
+    """
+    npt.assert_array_equal(
+        _metacal_noshear_g_with_psf(42),
+        _metacal_noshear_g_with_psf(42, metacal_psf="fitgauss"),
+    )
+
+
+def test_metacal_psf_gauss_is_a_live_alternative():
+    """``gauss`` (fixed round Gaussian) is a valid alternative kernel.
+
+    It must run to a finite shear and differ from ``fitgauss`` — the knob is
+    genuinely wired through to ngmix's metacal, not a no-op.
+    """
+    g_fit = _metacal_noshear_g_with_psf(42, metacal_psf="fitgauss")
+    g_gauss = _metacal_noshear_g_with_psf(42, metacal_psf="gauss")
+    assert np.all(np.isfinite(g_gauss))
+    assert not np.array_equal(g_fit, g_gauss)
+
+
+def test_metacal_psf_azgauss_is_a_live_alternative():
+    """``azgauss`` (ngmix >= 2.4.1) is the noise-robust ``gauss`` variant.
+
+    It must run to a finite shear and differ from ``fitgauss`` — this both wires
+    the knob through and asserts the bumped ngmix actually provides the kernel.
+    """
+    g_fit = _metacal_noshear_g_with_psf(42, metacal_psf="fitgauss")
+    g_az = _metacal_noshear_g_with_psf(42, metacal_psf="azgauss")
+    assert np.all(np.isfinite(g_az))
+    assert not np.array_equal(g_fit, g_az)
+
+
 # The two PSF families carry distinct ellipticity AND size (shapepipe#749):
 # the original image PSF (-> *_psf_orig) and the metacal reconvolution kernel
 # (-> *_psf_reconv) are independent fits, so a regression to the old aliasing
