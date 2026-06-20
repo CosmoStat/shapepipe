@@ -57,7 +57,7 @@ doc = [
 ]
 jupyter = [
     "ipython>=9.14.1",
-    "jupyterlab>=4.5.8",
+    "jupyterlab>=4.5.9",
     "snakemake>=9.22.0",
 ]
 lint = [
