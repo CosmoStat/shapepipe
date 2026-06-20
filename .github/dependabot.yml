@@ -18,12 +18,17 @@
 #     atomic to revert, large enough to actually be reviewed.
 #   - Major bumps stay as individual PRs (potentially breaking; each
 #     deserves its own review).
+#   - Security updates are grouped too (one batched PR per ecosystem) so a
+#     same-day burst of advisories arrives as a single PR, not one per package.
 #   - No auto-merge anywhere. Lockfile diffs are uninspectable; we eyeball
 #     the version metadata and source links before merging.
 #
-# Note: cooldown does NOT apply to security-updates (the GHSA-driven PRs).
-# Those still fire on the CVE-publication timeline, which is the right
-# tradeoff for shapepipe — fix CVEs fast, but don't auto-merge them either.
+# Note: cooldown and the monthly schedule do NOT apply to security-updates
+# (the GHSA-driven PRs) — only to version-updates. Security PRs still fire on
+# the CVE-publication timeline, which is the right tradeoff for shapepipe (fix
+# CVEs fast). The `applies-to: security-updates` groups below don't change that
+# timing; they only collapse a burst into one PR. Each `groups` block needs an
+# explicit `applies-to`, hence the paired version/security groups per ecosystem.
 
 version: 2
 
@@ -39,8 +44,12 @@ updates:
       semver-major-days: 30
     groups:
       lockfile-minor-patch:
+        applies-to: version-updates
         patterns: ["*"]
         update-types: ["minor", "patch"]
+      lockfile-security:
+        applies-to: security-updates
+        patterns: ["*"]
     open-pull-requests-limit: 3
     labels:
       - "dependencies"
@@ -55,6 +64,10 @@ updates:
       default-days: 14
     groups:
       actions:
+        applies-to: version-updates
+        patterns: ["*"]
+      actions-security:
+        applies-to: security-updates
         patterns: ["*"]
     open-pull-requests-limit: 2
     labels:
