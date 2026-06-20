@@ -708,22 +708,19 @@ class Ngmix(object):
                 if res.get(k, {}).get('flags', 0) != 0
             )
             res['mcal_flags'] = get_mcal_flags(res)
-            # Two distinct PSF families (shapepipe#749), each with its own
-            # ellipticity AND size, written under self-naming res-keys:
-            #   reconvolution kernel (psf_res)        -> *_psf_reconv
-            #   original image PSF  (psf_orig_res)    -> *_psf_orig
-            res['g1_psf_reconv'] = psf_res['g_psf'][0]
-            res['g2_psf_reconv'] = psf_res['g_psf'][1]
-            res['g1_err_psf_reconv'] = psf_res['g_psf_err'][0]
-            res['g2_err_psf_reconv'] = psf_res['g_psf_err'][1]
-            res['T_psf_reconv'] = psf_res['T_psf']
-            res['T_err_psf_reconv'] = psf_res['T_psf_err']
-            res['g1_psf_orig'] = psf_orig_res['g_psf'][0]
-            res['g2_psf_orig'] = psf_orig_res['g_psf'][1]
-            res['g1_err_psf_orig'] = psf_orig_res['g_psf_err'][0]
-            res['g2_err_psf_orig'] = psf_orig_res['g_psf_err'][1]
-            res['T_psf_orig'] = psf_orig_res['T_psf']
-            res['T_err_psf_orig'] = psf_orig_res['T_psf_err']
+            # Two distinct PSF families (shapepipe#749), each carrying its own
+            # ellipticity AND size: the metacal reconvolution kernel (psf_res)
+            # and the original image PSF (psf_orig_res). Tag both into res from
+            # ONE template so the families stay symmetric — same quantities,
+            # parallel ``*_psf_{family}`` names — and cannot drift apart by a
+            # hand-edit to one and not the other.
+            for family, psf in (("reconv", psf_res), ("orig", psf_orig_res)):
+                res[f"g1_psf_{family}"] = psf["g_psf"][0]
+                res[f"g2_psf_{family}"] = psf["g_psf"][1]
+                res[f"g1_err_psf_{family}"] = psf["g_psf_err"][0]
+                res[f"g2_err_psf_{family}"] = psf["g_psf_err"][1]
+                res[f"T_psf_{family}"] = psf["T_psf"]
+                res[f"T_err_psf_{family}"] = psf["T_psf_err"]
             final_res.append(res)
             n_fitted += 1
             count_batch += 1
