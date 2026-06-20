@@ -20,6 +20,7 @@ from itertools import zip_longest
 
 import numpy as np
 import numpy.testing as npt
+import pytest
 from astropy.io import fits
 from hypothesis import given, settings
 from hypothesis import strategies as st
@@ -197,6 +198,31 @@ def test_single_survivor_returns_its_own_value(survivor, flagged_specs):
     npt.assert_allclose(out["T_psf"], result["T"])
     npt.assert_allclose(out["T_psf_err"], result["T_err"])
     assert out["n_epoch"] == 1
+
+
+@given(
+    st.lists(
+        st.tuples(_weight, st.integers(min_value=1, max_value=255)),
+        min_size=1, max_size=5,
+    )
+)
+@settings(deadline=None, max_examples=25)
+def test_all_epochs_failed_raises_zero_division(flagged_specs):
+    """All-epochs-failed is the contract that wsum == 0 raises, not returns 0/NaN.
+
+    An object whose PSF fit failed on every epoch reaches both PSF-family
+    wrappers (reconv and orig) with zero survivors, so ``wsum`` stays 0. The
+    core must raise ``ZeroDivisionError`` rather than silently divide — a
+    regression returning NaN/0 would be caught here. Every input epoch is
+    flagged (``flags != 0``) with an arbitrary positive weight, so no survivor
+    can rescue the sum.
+    """
+    flagged = [
+        (_result(np.nan, np.nan, 1e6, np.nan, np.nan, np.nan, flags=f), w)
+        for w, f in flagged_specs
+    ]
+    with pytest.raises(ZeroDivisionError):
+        _average_psf_fits(flagged)
 
 
 # --------------------------------------------------------------------------- #

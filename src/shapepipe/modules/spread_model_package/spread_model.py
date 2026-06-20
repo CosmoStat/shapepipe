@@ -8,10 +8,10 @@ Class to compute the spread model, criterion to select galaxies
 
 import galsim
 import numpy as np
+from cs_util import size as cs_size
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
-from shapepipe.utilities import galaxy
 
 
 def get_sm(obj_vign, psf_vign, model_vign, weight_vign):
@@ -102,7 +102,7 @@ def get_model(sigma, flux, img_shape, pixel_scale=0.186):
 
     """
     # Get scale radius
-    scale_radius = 1 / 16 * galaxy.sigma_to_fwhm(sigma, pixel_scale=pixel_scale)
+    scale_radius = 1 / 16 * cs_size.sigma_to_fwhm(sigma) * pixel_scale
 
     # Get galaxy model
     gal_obj = galsim.Exponential(scale_radius=scale_radius, flux=flux)

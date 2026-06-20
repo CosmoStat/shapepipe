@@ -2,10 +2,11 @@
 
 Drives ``SaveCatalogue._save_ngmix_data`` against a synthetic ngmix catalogue
 to lock in the renamed PSF-column grammar
-``NGMIX_<COMPONENT>[_ERR]_<OBJECT>[_<SHEAR>]`` (shapepipe#749): the original
-image PSF (``PSF_ORIG``) and the metacal reconvolution kernel (``PSF_RECONV``)
-are independent fits of *different* PSFs, no longer the single aliased value of
-the pre-fix code.
+``NGMIX[m]_<COMPONENT>[_ERR]_<OBJECT>_<SHEAR>`` (shapepipe#749), plus the three
+OBJECT/SHEAR-less metadata columns (``NGMIX[m]_MCAL_FLAGS``, ``NGMIX_N_EPOCH``,
+``NGMIX_MCAL_TYPES_FAIL``): the original image PSF (``PSF_ORIG``) and the metacal
+reconvolution kernel (``PSF_RECONV``) are independent fits of *different* PSFs,
+no longer the single aliased value of the pre-fix code.
 """
 
 import numpy as np

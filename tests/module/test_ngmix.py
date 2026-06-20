@@ -238,7 +238,7 @@ def test_compile_results_psf_families_are_unaliased():
     came from one ``average_multiepoch_psf`` result and so were byte-
     identical; here they must differ, each tracing its own source. The
     companion size un-aliasing is checked in
-    ``test_compile_results_size_columns_are_half_light_radii``.
+    ``test_compile_results_size_columns_are_unaliased``.
     """
     from shapepipe.modules.ngmix_package.ngmix import Ngmix
 
@@ -295,6 +295,14 @@ def test_compile_results_nan_fills_failed_fit_types():
         assert np.isnan(failed[col]).all(), col
     assert failed["flags"] == [0x8]
     assert failed["mcal_flags"] == [0x8] and failed["mcal_flags"][0] != 0
+
+    # The object-level PSF columns survive on a failed fit type: they are copied
+    # outside the flags==0 guard, so the failed type keeps a full-length PSF row
+    # (gating that copy on the galaxy flags would shorten it -> save crash).
+    npt.assert_allclose(failed["T_psf_orig"], [ORIG_PSF_T])
+    npt.assert_allclose(failed["T_psf_reconv"], [0.09])
+    npt.assert_allclose(failed["g1_psf_orig"], [ORIG_PSF_G[0]])
+    npt.assert_allclose(failed["g1_psf_reconv"], [RECONV_PSF_G[0]])
 
     # successful types are untouched, but share the object's mcal_flags
     npt.assert_allclose(out["noshear"]["flux"], [100.0])

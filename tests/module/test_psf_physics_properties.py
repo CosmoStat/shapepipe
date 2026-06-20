@@ -63,10 +63,11 @@ def _do_ngmix_metacal_on_psf(psf_shear, psf_fwhm=0.55, img_size=51, seed=7,
 # Physically-sensible PSF strategies: ellipticity well inside |g| < 1 (real
 # PSFs are mildly elliptical; a magnitude up to ~0.18 keeps the Moffat shear
 # valid and the fit well-behaved), and a Moffat FWHM in arcsec spanning the
-# realistic ground-based range. NB: the original-PSF fit uses the default galaxy
-# prior (psf_fit_prior="galaxy"), which shrinks the *recovered* |g_orig| to
-# O(1e-4) even for input |g|~0.1 (the shapepipe#749 prior-domination) -- so the
-# dilation (T) inequality, not the rounding (|g|) one, is the primary guard.
+# realistic ground-based range. NB: the original-PSF fit uses the same
+# (galaxy-shaped) prior as the galaxy fit, which shrinks the *recovered*
+# |g_orig| to O(1e-4) even for input |g|~0.1 (the shapepipe#749
+# prior-domination) -- so the dilation (T) inequality, not the rounding (|g|)
+# one, is the primary guard.
 _g_complex = st.complex_numbers(
     min_magnitude=0.02, max_magnitude=0.18, allow_nan=False, allow_infinity=False
 )
@@ -90,8 +91,9 @@ def test_reconv_psf_rounder_and_larger_than_orig_over_random_psfs(g, psf_fwhm):
     dilated, so ``T_reconv`` exceeds ``T_orig`` by a clear margin (~0.01-0.03)
     and a strict ``>`` is asserted below -- a transposition makes ``T_reconv``
     the smaller value and fails it hard. The ``|g|`` inequality corroborates but
-    with a thin margin: under the default galaxy prior the recovered ``|g_orig|``
-    is only O(1e-4) (shapepipe#749 prior-domination), so it is a secondary check.
+    with a thin margin: under the same (galaxy-shaped) prior as the galaxy fit
+    the recovered ``|g_orig|`` is only O(1e-4) (shapepipe#749 prior-domination),
+    so it is a secondary check.
     """
     _, reconv, orig = _do_ngmix_metacal_on_psf(
         (g.real, g.imag), psf_fwhm=psf_fwhm

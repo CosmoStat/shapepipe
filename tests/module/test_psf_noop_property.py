@@ -6,14 +6,17 @@ original-PSF columns (``NGMIX_*_PSF_ORIG``; shapepipe#749). It fits a *copy* of
 each PSF observation, so the observation metacal later deep-copies and consumes
 (``boot.go(gal_obs_list)``) is left untouched.
 
-This is the invariant that makes the add-column refactor bit-identical to a
-no-original-fit branch on the galaxy/shear results: if the pre-fit cannot alter
-``gal_obs.psf``, it cannot alter what metacal consumes, so the galaxy results
-are unchanged. ``PSFRunner.go`` sets ``.gmix`` (and ``.meta['result']``) on the
-observation it fits; were that ``gal_obs.psf`` itself, a stray gmix would
-survive metacal's deep copy and be reused as the ``MetacalFitGaussPSF`` fallback
-when admom+ML both fail, silently rescuing objects the base branch dropped
-(``BootPSFFailure``).
+Pristine ``gal_obs.psf`` is *one* of the two conditions for the add-column
+refactor to be bit-identical to a no-original-fit branch on the galaxy/shear
+results: it closes the PSF-aliasing channel, which this test pins.
+``PSFRunner.go`` sets ``.gmix`` (and ``.meta['result']``) on the observation it
+fits; were that ``gal_obs.psf`` itself, a stray gmix would survive metacal's
+deep copy and be reused as the ``MetacalFitGaussPSF`` fallback when admom+ML
+both fail, silently rescuing objects the base branch dropped
+(``BootPSFFailure``). The *second* condition — the pre-fit not advancing the
+RNG that metacal consumes — is ensured in ``do_ngmix_metacal`` by seeding the
+pre-fit from a snapshot of the RNG state; together they leave the galaxy
+results unchanged.
 
 The unit guard ``test_original_psf_prefit_leaves_gal_obs_psf_pristine`` in
 ``tests/module/test_ngmix.py`` pins this on one fixed input; here it is

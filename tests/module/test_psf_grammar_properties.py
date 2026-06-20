@@ -2,9 +2,11 @@
 
 Drives ``SaveCatalogue._save_ngmix_data`` (the make_cat writer) under
 hypothesis to pin three invariants of the renamed grammar
-``NGMIX[m]_<COMPONENT>[_ERR]_<OBJECT>[_<SHEAR>]`` (shapepipe#749), where the
-ORIGINAL image PSF (``PSF_ORIG``) and the metacal RECONVOLUTION kernel
-(``PSF_RECONV``) are independent fits of *different* PSFs:
+``NGMIX[m]_<COMPONENT>[_ERR]_<OBJECT>_<SHEAR>`` (shapepipe#749), plus the three
+OBJECT/SHEAR-less metadata columns (``NGMIX[m]_MCAL_FLAGS``, ``NGMIX_N_EPOCH``,
+``NGMIX_MCAL_TYPES_FAIL``), where the ORIGINAL image PSF (``PSF_ORIG``) and the
+metacal RECONVOLUTION kernel (``PSF_RECONV``) are independent fits of
+*different* PSFs:
 
 (a) un-aliasing holds for ALL inputs: for arbitrary distinct values fed as the
     orig vs reconv ngmix source columns, every emitted ``*_PSF_ORIG_*`` column
@@ -25,6 +27,7 @@ from pathlib import Path
 
 import numpy as np
 import numpy.testing as npt
+import pytest
 from astropy.io import fits
 from hypothesis import given, settings
 from hypothesis import strategies as st
@@ -156,10 +159,13 @@ GRAMMAR_RE = re.compile(
     rf"|^NGMIXm?_(?:MCAL_FLAGS|MCAL_TYPES_FAIL|N_EPOCH)$"
 )
 
-# example/cfis/final_cat.param lives two levels up from tests/module/.
-PARAM_PATH = (
-    Path(__file__).resolve().parents[2] / "example" / "cfis" / "final_cat.param"
-)
+# The shipped final-catalogue param files, two levels up from tests/module/.
+# Both are consumer contracts updated to the new grammar, so both are checked.
+_EXAMPLE = Path(__file__).resolve().parents[2] / "example"
+PARAM_PATHS = [
+    _EXAMPLE / "cfis" / "final_cat.param",
+    _EXAMPLE / "unions_800" / "cat_matched.param",
+]
 
 # The one param-file NGMIX token outside the _save_ngmix_data grammar: the
 # moments-failure flag, set by a different code path (not the metacal writer).
@@ -169,9 +175,9 @@ PARAM_PATH = (
 NON_WRITER_PARAM_TOKENS = {"NGMIX_MOM_FAIL"}
 
 
-def _param_ngmix_tokens():
-    """Every distinct NGMIX_* token named in the shipped param file."""
-    text = PARAM_PATH.read_text()
+def _param_ngmix_tokens(param_path):
+    """Every distinct NGMIX_* token named in a shipped param file."""
+    text = param_path.read_text()
     return set(re.findall(r"\bNGMIX[A-Za-z0-9_]*", text))
 
 
@@ -317,15 +323,21 @@ def test_emitted_column_names_match_grammar(obj_ids, tmp_path_factory):
 # (c) Param-file tokens are all producible by the writer
 # ---------------------------------------------------------------------------
 
+@pytest.mark.parametrize(
+    "param_path", PARAM_PATHS, ids=lambda p: f"{p.parent.name}/{p.name}"
+)
 @settings(deadline=None, max_examples=15)
 @given(obj_ids=obj_ids_strategy)
-def test_param_file_ngmix_tokens_are_producible(obj_ids):
+def test_param_file_ngmix_tokens_are_producible(param_path, obj_ids):
     """Every NGMIX_* token the param file names is a column the writer produces.
 
-    ``example/cfis/final_cat.param`` is the consumer contract for the final
-    catalogue; ``create_final_cat`` keeps only the listed columns, so a token it
-    names that the writer cannot emit is a silent, empty column downstream. The
-    one known exception — ``NGMIX_MOM_FAIL``, the moments-failure flag set by a
+    Each shipped final-catalogue param file (``example/cfis/final_cat.param``
+    and ``example/unions_800/cat_matched.param``) is a consumer contract for the
+    final catalogue; ``create_final_cat`` keeps only the listed columns, so a
+    token it names that the writer cannot emit is a silent, empty column
+    downstream. Both files are checked so a future divergence in either (a
+    typo'd or stale NGMIX token) cannot escape the consistency check. The one
+    known exception — ``NGMIX_MOM_FAIL``, the moments-failure flag set by a
     different path — is excluded BY NAME, and we assert it is genuinely outside
     the producible set so the carve-out cannot hide a real grammar regression.
 
@@ -333,7 +345,7 @@ def test_param_file_ngmix_tokens_are_producible(obj_ids):
     across inputs (the contract is structural, not data-dependent).
     """
     produced = _produced_columns(obj_ids)
-    param_tokens = _param_ngmix_tokens()
+    param_tokens = _param_ngmix_tokens(param_path)
 
     # The carve-out is real: the excluded token is NOT producible. (If a future
     # change made the writer emit it, this fails and we drop the exclusion.)

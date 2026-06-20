@@ -329,18 +329,16 @@ class SaveCatalogue:
 
         Save the NGMIX catalogue into the final one.
 
-        Column grammar: ``NGMIX[m]_<COMPONENT>[_ERR][_<OBJECT>][_<SHEAR>]``.
-        ``OBJECT`` and ``SHEAR`` are both optional: the per-object metadata
-        columns (``NGMIX_MCAL_FLAGS``, ``NGMIX_N_EPOCH``,
-        ``NGMIX_MCAL_TYPES_FAIL``) carry neither. When present, ``OBJECT`` is
-        one of ``GAL`` (galaxy), ``PSF_ORIG`` (the original psfex/mccd image
-        PSF, fit by ``ngmix.average_original_psf`` — its true ellipticity and
-        size, feeding object-wise PSF leakage), or ``PSF_RECONV`` (the metacal
-        reconvolution kernel, round and enlarged by construction, fit by
-        ``ngmix.average_multiepoch_psf`` — the Tgal / Tpsf size cut and a g~0
-        sanity check). ``PSF_ORIG`` and ``PSF_RECONV`` are independent fits of
-        different PSFs, no longer the single aliased value of the pre-fix code
-        (shapepipe#749).
+        Column grammar: ``NGMIX[m]_<COMPONENT>[_ERR]_<OBJECT>_<SHEAR>``, plus
+        three OBJECT/SHEAR-less per-object metadata columns
+        (``NGMIX[m]_MCAL_FLAGS``, ``NGMIX_N_EPOCH``,
+        ``NGMIX_MCAL_TYPES_FAIL``). ``OBJECT`` is one of ``GAL`` (galaxy),
+        ``PSF_ORIG`` (the original image PSF, fit by
+        :func:`ngmix.average_original_psf`), or ``PSF_RECONV`` (the metacal
+        reconvolution kernel, fit by :func:`ngmix.average_multiepoch_psf`);
+        see those functions for what each PSF family IS. ``PSF_ORIG`` and
+        ``PSF_RECONV`` are independent fits of different PSFs, no longer the
+        single aliased value of the pre-fix code (shapepipe#749).
 
         Parameters
         ----------
@@ -390,9 +388,11 @@ class SaveCatalogue:
         prefix = f"NGMIX{m}"
 
         # Galaxy (GAL), original image PSF (PSF_ORIG) and metacal
-        # reconvolution kernel (PSF_RECONV). G1/G2 are scalar reduced-shear
-        # components, not a 2-vector. Sentinels: sizes/fluxes/mags/flags 0,
-        # *_ERR fluxes/mags -1, ellipticities -10, *_ERR sizes 1e30.
+        # reconvolution kernel (PSF_RECONV); see ngmix.average_original_psf /
+        # average_multiepoch_psf for what each PSF family is. G1/G2 are scalar
+        # reduced-shear components, not a 2-vector. Sentinels:
+        # sizes/fluxes/mags/flags 0, *_ERR fluxes/mags -1, ellipticities -10,
+        # *_ERR sizes 1e30.
         for key_str in (
             f"{prefix}_T_GAL_",
             f"{prefix}_SNR_GAL_",
@@ -484,8 +484,7 @@ class SaveCatalogue:
                         ncf_data["flags"][ind[0]], idx
                     )
 
-                    # Original image PSF (psfex/mccd) — its genuine,
-                    # un-reconvolved ellipticity and size.
+                    # Original image PSF (see ngmix.average_original_psf).
                     self._add2dict(
                         f"{prefix}_G1_PSF_ORIG_{key}",
                         ncf_data["g1_psf_orig"][ind[0]], idx
@@ -511,8 +510,8 @@ class SaveCatalogue:
                         ncf_data["T_err_psf_orig"][ind[0]], idx
                     )
 
-                    # Metacal reconvolution kernel — round, enlarged by
-                    # construction; the Tgal/Tpsf cut and g~0 sanity check.
+                    # Metacal reconvolution kernel (see
+                    # ngmix.average_multiepoch_psf).
                     self._add2dict(
                         f"{prefix}_G1_PSF_RECONV_{key}",
                         ncf_data["g1_psf_reconv"][ind[0]], idx

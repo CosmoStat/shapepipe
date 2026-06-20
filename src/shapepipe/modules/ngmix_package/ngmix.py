@@ -380,16 +380,13 @@ class Ngmix(object):
             Compiled results ready to be written to a file.
 
             Two PSF column families — each carrying ellipticity *and* size,
-            for *different* PSFs (shapepipe#749):
+            for *different* PSFs (shapepipe#749). See the function docstrings
+            for what each family IS:
 
-            * ``*_psf_orig`` (``g1``/``g2`` + ``*_err``, ``T``) — the
-              ORIGINAL image PSF (the psfex/mccd model stamp), fit before
-              metacal reconvolution by :func:`average_original_psf`. This is
-              the PSF whose true ellipticity and size enter object-wise
-              PSF-leakage diagnostics.
-            * ``*_psf_reconv`` — the metacal RECONVOLUTION kernel (round and
-              enlarged by construction, used for the Tgal/Tpsf size cut and a
-              g~0 sanity check), fit by :func:`average_multiepoch_psf`.
+            * ``*_psf_orig`` (``g1``/``g2`` + ``*_err``, ``T``) — the original
+              image PSF, fit by :func:`average_original_psf`.
+            * ``*_psf_reconv`` — the metacal reconvolution kernel, fit by
+              :func:`average_multiepoch_psf`.
 
         Raises
         ------
@@ -1232,23 +1229,18 @@ def average_original_psf(gal_obs_list, psf_runner):
     """Fit and average the *original* image PSF over epochs.
 
     The original PSF is the psfex/mccd model stamp handed to ngmix
-    (``gal_obs.psf``), fit here with the same ``psf_runner`` machinery — and
-    so the same ``psf_fit_prior`` — used inside metacal, but on the PSF
-    *before* metacal's reconvolution. Exported to the original-PSF columns
+    (``gal_obs.psf``), fit here with the same ``psf_runner`` (hence the same
+    fit prior and guesser) used inside metacal, but on the PSF *before*
+    metacal's reconvolution. Exported to the original-PSF columns
     (``NGMIX_G1/G2_PSF_ORIG``, ``NGMIX_T_PSF_ORIG``). Distinct from the
     reconvolution-kernel fit (:func:`average_multiepoch_psf`): the original
     PSF retains its true ellipticity and size, whereas the reconvolution
     kernel is round and enlarged by construction. This is the PSF whose true
     shape and size enter object-wise PSF-leakage diagnostics.
 
-    Epochs are weighted by the *galaxy* inverse-variance weight
-    (``gal_obs.weight.sum()``). This is the same *form* as
-    :func:`average_multiepoch_psf` (``weight.sum()`` per epoch, skipping
-    ``flags != 0`` fits) but not the identical weight: the reconvolution path
-    weights by the fixnoise-combined inverse variance of the noshear metacal
-    image, whereas this path uses the raw galaxy inverse variance. So the two
-    PSF families share an averaging *scheme* and differ in which PSF is fit
-    and in the precise per-epoch weighting factor.
+    Weighted by the raw galaxy inverse variance (``gal_obs.weight.sum()`` per
+    epoch); :func:`average_multiepoch_psf` uses the same scheme but the
+    fixnoise-combined metacal-image weight instead.
 
     The fit runs on a *copy* of each PSF observation so ``gal_obs.psf`` —
     the object metacal later deep-copies and consumes via
@@ -1258,8 +1250,11 @@ def average_original_psf(gal_obs_list, psf_runner):
     would survive metacal's deep copy and be reused as the
     ``MetacalFitGaussPSF`` fallback when its own admom+ML PSF fits both fail,
     silently rescuing objects the base branch dropped (``BootPSFFailure``) and
-    changing the galaxy/shear result set. Fitting a copy keeps this add-column
-    refactor bit-identical on the galaxy results.
+    changing the galaxy/shear result set. Fitting a copy closes this
+    PSF-aliasing channel; combined with :func:`do_ngmix_metacal` seeding this
+    pre-fit from a *snapshot* of the metacal RNG (so the pre-fit does not
+    advance it), the add-column refactor stays bit-identical on the galaxy
+    results.
 
     Parameters
     ----------
@@ -1268,7 +1263,8 @@ def average_original_psf(gal_obs_list, psf_runner):
         (pre-metacal) PSF observation to fit, with no further ``.psf`` of
         its own so the runner fits the stamp itself. Left pristine.
     psf_runner : ngmix.runners.PSFRunner
-        The module's PSF runner, carrying the resolved ``psf_fit_prior``.
+        The module's PSF runner (built by :func:`make_runners` from the
+        shared ``prior``).
 
     Returns
     -------
@@ -1276,11 +1272,8 @@ def average_original_psf(gal_obs_list, psf_runner):
         Same keys as :func:`average_multiepoch_psf`.
     """
     def fit(gal_obs):
-        # Fit a COPY of the PSF observation: PSFRunner.go fits the PSF stamp
-        # and sets its .meta['result'] (and .gmix on success). Reading from
-        # the copy leaves gal_obs.psf pristine — no gmix to leak through
-        # metacal's deep copy into the MetacalFitGaussPSF fallback. Failed
-        # fits keep flags != 0 and are dropped by _average_psf_fits.
+        # Fit a COPY so gal_obs.psf stays pristine for metacal — see docstring.
+        # Failed fits keep flags != 0 and are dropped by _average_psf_fits.
         psf_obs = gal_obs.psf.copy()
         psf_runner.go(psf_obs)
         return psf_obs.meta['result'], gal_obs.weight.sum()
@@ -1379,14 +1372,15 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng, centroid_source="hsm"):
 
     runner, psf_runner = make_runners(prior, flux_guess, rng)
 
-    # Fit the ORIGINAL (psfex/mccd) PSF before metacal reconvolves it, using
-    # the same psf_runner (so the same psf_fit_prior and centroid). This is
-    # the PSF_ORIG family; metacal below produces the PSF_RECONV family. Run
-    # first so the original PSF is fit on its own stamp, distinct from the
-    # round, enlarged kernel metacal convolves back in. average_original_psf
-    # fits a COPY of each gal_obs.psf, so gal_obs_list reaches boot.go below
-    # pristine — no stray gmix to leak into MetacalFitGaussPSF's fallback.
-    psf_orig_res = average_original_psf(gal_obs_list, psf_runner)
+    # Fit the ORIGINAL (psfex/mccd) PSF before metacal reconvolves it. Use a
+    # psf_runner seeded from a snapshot of rng's state so this prefit does NOT
+    # advance the rng that boot.go consumes below — keeping the galaxy/shear
+    # results bit-identical to the no-prefit branch. average_original_psf fits a
+    # COPY of each gal_obs.psf, so gal_obs_list also reaches boot.go pristine.
+    prefit_rng = np.random.RandomState()
+    prefit_rng.set_state(rng.get_state())
+    _, prefit_psf_runner = make_runners(prior, flux_guess, prefit_rng)
+    psf_orig_res = average_original_psf(gal_obs_list, prefit_psf_runner)
 
     metacal_pars = {
         'types': ['noshear', '1p', '1m', '2p', '2m'],
