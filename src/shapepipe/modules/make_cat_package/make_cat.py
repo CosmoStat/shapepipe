@@ -484,58 +484,39 @@ class SaveCatalogue:
                         ncf_data["flags"][ind[0]], idx
                     )
 
-                    # Original image PSF (see ngmix.average_original_psf).
-                    self._add2dict(
-                        f"{prefix}_G1_PSF_ORIG_{key}",
-                        ncf_data["g1_psf_orig"][ind[0]], idx
-                    )
-                    self._add2dict(
-                        f"{prefix}_G2_PSF_ORIG_{key}",
-                        ncf_data["g2_psf_orig"][ind[0]], idx
-                    )
-                    self._add2dict(
-                        f"{prefix}_G1_ERR_PSF_ORIG_{key}",
-                        ncf_data["g1_err_psf_orig"][ind[0]], idx
-                    )
-                    self._add2dict(
-                        f"{prefix}_G2_ERR_PSF_ORIG_{key}",
-                        ncf_data["g2_err_psf_orig"][ind[0]], idx
-                    )
-                    self._add2dict(
-                        f"{prefix}_T_PSF_ORIG_{key}",
-                        ncf_data["T_psf_orig"][ind[0]], idx
-                    )
-                    self._add2dict(
-                        f"{prefix}_T_ERR_PSF_ORIG_{key}",
-                        ncf_data["T_err_psf_orig"][ind[0]], idx
-                    )
-
-                    # Metacal reconvolution kernel (see
-                    # ngmix.average_multiepoch_psf).
-                    self._add2dict(
-                        f"{prefix}_G1_PSF_RECONV_{key}",
-                        ncf_data["g1_psf_reconv"][ind[0]], idx
-                    )
-                    self._add2dict(
-                        f"{prefix}_G2_PSF_RECONV_{key}",
-                        ncf_data["g2_psf_reconv"][ind[0]], idx
-                    )
-                    self._add2dict(
-                        f"{prefix}_G1_ERR_PSF_RECONV_{key}",
-                        ncf_data["g1_err_psf_reconv"][ind[0]], idx
-                    )
-                    self._add2dict(
-                        f"{prefix}_G2_ERR_PSF_RECONV_{key}",
-                        ncf_data["g2_err_psf_reconv"][ind[0]], idx
-                    )
-                    self._add2dict(
-                        f"{prefix}_T_PSF_RECONV_{key}",
-                        ncf_data["T_psf_reconv"][ind[0]], idx
-                    )
-                    self._add2dict(
-                        f"{prefix}_T_ERR_PSF_RECONV_{key}",
-                        ncf_data["T_err_psf_reconv"][ind[0]], idx
-                    )
+                    # Original image PSF (average_original_psf) and metacal
+                    # reconvolution kernel (average_multiepoch_psf). Both PSF
+                    # families share ONE write template, so the FITS column
+                    # name (``{obj}``) and the res-key it reads (``{family}``)
+                    # are generated from the same pair and cannot drift apart.
+                    for family, obj in (
+                        ("orig", "PSF_ORIG"),
+                        ("reconv", "PSF_RECONV"),
+                    ):
+                        self._add2dict(
+                            f"{prefix}_G1_{obj}_{key}",
+                            ncf_data[f"g1_psf_{family}"][ind[0]], idx
+                        )
+                        self._add2dict(
+                            f"{prefix}_G2_{obj}_{key}",
+                            ncf_data[f"g2_psf_{family}"][ind[0]], idx
+                        )
+                        self._add2dict(
+                            f"{prefix}_G1_ERR_{obj}_{key}",
+                            ncf_data[f"g1_err_psf_{family}"][ind[0]], idx
+                        )
+                        self._add2dict(
+                            f"{prefix}_G2_ERR_{obj}_{key}",
+                            ncf_data[f"g2_err_psf_{family}"][ind[0]], idx
+                        )
+                        self._add2dict(
+                            f"{prefix}_T_{obj}_{key}",
+                            ncf_data[f"T_psf_{family}"][ind[0]], idx
+                        )
+                        self._add2dict(
+                            f"{prefix}_T_ERR_{obj}_{key}",
+                            ncf_data[f"T_err_psf_{family}"][ind[0]], idx
+                        )
 
                 self._add2dict(
                     f"NGMIX{m}_MCAL_FLAGS",
