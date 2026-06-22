@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Star shear-response — why R climbs at the bright end</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--parchment:#EDE2CE;--rag:#FBF6E9;--ink:#1B1611;--ink-muted:#7A6F5C;
+--cinnabar:#BC4538;--teal:#3F8278;--ochre:#C49333;--rule:#C5B89E;
+--serif:'EB Garamond',Georgia,serif;--mono:'IBM Plex Mono',monospace;}
+html,body{margin:0;padding:0}
+body{background:var(--parchment);color:var(--ink);font-family:var(--serif);font-size:18px;line-height:1.55}
+.page{max-width:1040px;margin:0 auto;padding:40px clamp(20px,4vw,56px) 80px}
+.stamp{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+color:var(--ink-muted);margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.stamp .dot{width:7px;height:7px;border-radius:50%;background:var(--cinnabar);
+box-shadow:0 0 0 0 rgba(188,69,56,.5);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(188,69,56,.5)}70%{box-shadow:0 0 0 8px rgba(188,69,56,0)}100%{box-shadow:0 0 0 0 rgba(188,69,56,0)}}
+.stamp .sep{color:var(--rule)} .stamp a{color:var(--teal);text-decoration:none}
+h1{font-family:var(--serif);font-style:italic;font-weight:500;font-size:38px;line-height:1.12;margin:0 0 12px}
+.lede{font-size:20px;margin:0 0 8px}
+p{margin:0 0 14px} a{color:var(--teal)}
+.prelim{display:inline-block;background:var(--ochre);color:#2a2110;font-family:var(--mono);
+font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:10px}
+section{margin-top:38px}
+h2{font-family:var(--serif);font-style:italic;font-weight:500;font-size:26px;margin:0 0 14px;
+border-bottom:1px solid var(--rule);padding-bottom:6px}
+h3{font-size:20px;margin:18px 0 8px}
+table{border-collapse:collapse;width:100%;margin:12px 0;font-size:16px}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted)}
+td.hid{font-family:var(--mono);color:var(--ink-muted);white-space:nowrap}
+.chip{display:inline-block;color:#fff;font-family:var(--mono);font-size:10px;letter-spacing:.06em;
+text-transform:uppercase;padding:2px 9px;border-radius:11px;white-space:nowrap}
+.muted{color:var(--ink-muted)} code{font-family:var(--mono);font-size:.86em}
+code.wl{background:rgba(63,130,120,.12);color:var(--teal);padding:1px 5px;border-radius:4px}
+details.consti{background:var(--rag);border:1px solid var(--rule);border-radius:8px;margin:18px 0 6px}
+details.consti>summary{cursor:pointer;padding:14px 18px;font-family:var(--mono);font-size:13px;
+letter-spacing:.04em;color:var(--cinnabar);list-style:none;user-select:none}
+details.consti>summary::-webkit-details-marker{display:none}
+details.consti>summary::before{content:"\25B8  ";color:var(--ink-muted)}
+details.consti[open]>summary::before{content:"\25BE  "}
+details.consti .body{padding:4px 26px 22px;border-top:1px solid var(--rule);font-size:16px}
+details.consti .body h2{font-size:21px} details.consti .body h1{font-size:24px}
+img.fig{width:100%;height:auto;border:1px solid var(--rule);border-radius:6px;background:#fff;margin:14px 0}
+.card{background:var(--rag);border:1px solid var(--rule);border-left:3px solid var(--ochre);
+border-radius:6px;padding:14px 18px;margin:14px 0}
+ul.oq{margin:6px 0;padding-left:22px} ul.oq li{margin:6px 0}
+footer{margin-top:54px;padding-top:16px;border-top:1px solid var(--rule);
+font-family:var(--mono);font-size:11px;color:var(--ink-muted)}
+</style></head>
+<body><div class="page">
+
+<div class="stamp">
+  <span class="dot"></span> Live investigation
+  <span class="sep">|</span> ShapePipe · ngmix metacal
+  <span class="sep">|</span> updated 2026-06-23 00:16 CEST
+  <span class="sep">|</span> <a href="https://cosmostat.github.io/shapepipe/status.html">status board</a>
+  <span class="sep">|</span> <a href="https://cosmostat.github.io/shapepipe/star-response.html">R(mag) dashboard</a>
+</div>
+
+<h1>Why does the metacal star shear-response climb at the bright end?</h1>
+<p class="lede"><p>On 45,835 SKiLLS stars the metacal response <strong>R climbs from ~0 at the faint end to ~2 for the brightest</strong>, with a large <strong>R1≠R2 asymmetry</strong> while <strong>size stays ≈0</strong>. Stars carry no shear, so the ideal null is <strong>R=0 and size=0 at every magnitude</strong>. This page tracks, live, what the climb is consistent with — each step naming the hypothesis it tests.</p></p>
+<p><span class="prelim">preliminary · updated each handoff</span></p>
+
+<details class="consti">
+  <summary>Click to see the full constitution — the contract this investigation drives toward</summary>
+  <div class="body"><p><strong>Why does the metacal star shear-response <code>R</code> climb at the bright end?</strong> On 45,835 SKiLLS stars, ⟨R1⟩ rises from ~0 at the faint end toward ~2 for the brightest, with a large R1/R2 asymmetry (<code class="wl">fabian-star-mag-range</code>). Stars carry no shear, so in the ideal — deconvolve by the true PSF, shear the resulting point, reconvolve — the response is zero and the size unchanged, at any brightness (Fabian, 2026-06-22: <em>"applying shear to a point should yield nothing but noise … no matter how bright the point"</em>). The observed climb departs from that ideal, and the job is to understand what drives it: a code error, a PSF/noise systematic we can model and correct, or a genuine limitation of the metacal estimator near the point-source limit — a justified choice that simply has a failure mode here. This is a standard metacal validation step that other analyses largely control (DES reached ~0.05 and better; one that struggled traced it to bad PSFs), so it tends to finger PSF / coordinate / noise effects — but cosmic shear is hard and this diagnostic is unforgiving, so the task is to <em>find</em> the cause, not presume one, and to reduce R and size toward zero where the cause is fixable. Because it could live anywhere in the chain, the diagnosis runs through the <strong>full pipeline</strong>: observed on Fabian's SKiLLS sims, dissected on the controlled <code class="wl">shapepipe-digital-twin</code> twin (substrate and Fabian's inputs located — see <strong>Inputs</strong> / <strong>Substrate</strong>).</p>
+<p>The same report is published live at <a href="https://cosmostat.github.io/shapepipe/reports/star_response/">cosmostat.github.io/shapepipe/reports/star_response</a> — regenerated by <code>build_report.py</code> (from this constitution + <code>findings.json</code>) and pushed at every handoff.</p>
+<h2>Desired State</h2>
+<ul>
+<li><strong>Staged.</strong> Near-term: a <strong>hypothesis-test report for the Fabian meeting (2026-06-23)</strong> — for each hypothesis, the question it tests and what the result ruled in or out, with run timing. Longer arc: understand the mechanism well enough to <strong>drive R and size toward zero</strong> (the ≲0.05 level peer analyses reach), or — if the cause is a genuine estimator limitation rather than a fixable error — characterize it cleanly and name it as such.</li>
+<li><strong>Open form: what is the bright-end climb consistent with?</strong> Each step <em>names the hypothesis it tests</em> (Fabian's ask). The failure mode to avoid is <strong>rationalizing an initial result instead of staying curious and digging until the explanation is airtight</strong> — so every candidate finding earns an independent, adversarial check before we lean on it.</li>
+<li><strong>Two surfaces, used together.</strong> The climb is <em>observed</em> on Fabian's full-pipeline SKiLLS sims (realistic, slow ~2 hr/run); each <em>mechanism</em> is isolated on the <code>lc</code> twin (fast, controlled — the five ngmix knobs + injectable PSF-model error). Oscillate: observe → hypothesize → reproduce on the twin → confirm back on the sims. Twin results graduate into its <code>astra.yaml</code>; <code>sr_exec.sh</code> is dev/test only.</li>
+<li><strong>Live, published report.</strong> The human-facing surface is published to ShapePipe GitHub Pages at <code>/reports/star_response</code>, opening with the full constitution behind a <em>"click to see full constitution"</em> dropdown, then current state → per-hypothesis findings → open questions. <strong>Committed and pushed at every handoff</strong> so Fabian can watch results land asynchronously (Cail). The fiber's <code>report.html</code> is the source; the GH-Pages page is its publication.</li>
+</ul>
+<h2>The physics, and what the data already says</h2>
+<ul>
+<li><strong>Likely more than one cause — don't collapse to a single bug</strong> (Cail). The <em>climb</em> and the <em>asymmetry</em> need not share an origin; treat them as possibly-distinct, compounding systematics. A discriminator that demotes a candidate for <em>one</em> observable does <strong>not</strong> clear it for the <em>other</em> — the goal is to attribute each observable, not to crown one culprit.</li>
+<li><strong>The ideal null.</strong> With the <em>true</em> PSF: deconvolve a star → a point; shear a point → still a point; reconvolve → the round PSF. So R = d·e/d·g = 0 and the size is unchanged. The bright-end climb is a departure from this ideal — but the departure could be a code error, a modelable PSF/noise systematic, or an estimator limitation in the point-source regime; the discriminators below narrow which.</li>
+<li><strong>Bright-end localization ⇒ deterministic, not <em>photon</em> noise.</strong> The climb is worst where SNR is <em>highest</em> and photon noise least — which kills the <em>correlated-noise</em> hypothesis. But it rules out only <em>stochastic</em> noise: a wrong <em>noise model</em> (χ² below) is a deterministic systematic that survives the bright-end argument. → hunt a systematic.</li>
+<li><strong>R1 ≠ R2 ⇒ directional, not isotropic.</strong> A pure size / point-source effect gives R1 ≈ R2; the asymmetry points instead at a directional cause — a PSF <em>shape</em>/orientation error or a handedness/flip. <strong>Fabian's old offset bug gave R1 ≈ R2</strong> (slack), so the offset does <em>not</em> supply the asymmetry: it is a <em>new</em> feature relative to that plot, fingering a PSF-shape/orientation error.</li>
+<li><strong>Size is co-equal with R.</strong> "Deconvolved point ⇒ ~zero size." We see size ≈ 0 <em>while</em> R is large; Fabian's old offset bug instead <em>always</em> gave a clearly larger, non-zero size (transcript). So the <strong>size≈0 + R1≠R2</strong> pairing is doubly distinct from the offset signature and instead matches a PSF-<em>shape</em> error: a wrong PSF <em>ellipticity</em> (not size) deconvolves a star to ~a point carrying a directional residual.</li>
+<li><strong>χ²_red ≈ 0.1 ⇒ the noise model is overestimated</strong> (Fabian): residuals ~10× smaller than the assumed variance, so σ is inflated (~3×) or the weights too low. A <em>measured anomaly</em>, not a guess — it ties to the #749 PSF-prior / weight-map issue (no / under-scaled weight map → prior-dominated fits; <code class="wl">reconcile-749-prior</code>). Naively a noise overestimate biases the <em>faint</em> end more — opposite to what we see — so it is either a second effect or a subtler coupling; the deciding diagnostic is <strong>χ²_red vs magnitude</strong>.</li>
+<li><strong>nepoch=1 still breaks ⇒ inter-exposure offset isn't <em>driving the climb</em></strong> (Fabian): with one epoch there is no offset to mis-propagate and the global (x0,y0) fit centers the model by design, yet R still climbs. This clears inter-exposure offset as the climb's <em>driver</em> — but not single-exposure coordinate handling, and not offset as a <em>compounding</em> contributor (hyp 3).</li>
+</ul>
+<h2>Hypotheses, ranked — each names what would confirm or refute it</h2>
+<ol>
+<li><strong>PSF-model mismatch — the PSF ShapePipe deconvolves by ≠ the PSF that rendered the sim image (Fabian's #1, and the leading explainer of the asymmetry+size≈0 combination).</strong> A star deconvolved by the wrong PSF isn't a point → residual ellipticity → non-zero R; brighter ⇒ worse (higher S/N reveals the deterministic residual — Fabian confirmed this magnitude dependence). Crucially a <em>shape/orientation</em> error supplies the directional <strong>R1≠R2 while leaving size ≈0</strong> — exactly our signature — whereas a <em>size</em> error would inflate size (the offset/size signature we don't see). Fabian suspects the <strong>PSF <em>passing/funneling</em></strong> specifically: <em>"maybe Martin introduced a mistake when he refactored the code"</em> — a flip/transpose in the hand-off is a pure orientation error. This <em>is</em> <code class="wl">psf-model-error-not-absorbed</code> pointed at stars — the twin already shows model-PSF size error → linear <code>m</code>, <em>shape</em> error → additive <code>c</code>, neither absorbed by R. <strong>Checks:</strong> (a) Fabian's concrete ask — residual plots between the PSF in his sim-render pickle dict (<code>fake_psf_autom</code>, built by <code>psf_dict_script.py</code>) and the PSF ShapePipe extracts via Martin's mapping module, <em>"check these two agree"</em>; (b) inject the measured shape/orientation mismatch on the twin via <code>psf_model_shear</code> and predict it reproduces R1≠R2 at ~zero size in isolation.</li>
+<li><strong>Noise / weight-model mis-normalization — χ²_red ≈ 0.1 says the noise is overestimated.</strong> A direct <em>measured</em> anomaly, which is why it ranks high. Prime suspect: the weight map fed to ngmix — no / under-scaled weight → prior-dominated fits, the same #749 PSF-prior failure mode Axel's weight-map fix targets (<code class="wl">reconcile-749-prior</code>). A wrong noise <em>model</em> is deterministic, so it survives the bright-end argument that rules out <em>photon</em> noise. <strong>Check:</strong> χ²_red vs magnitude (does the overestimate deepen for bright stars — the test that decides whether this co-drives the climb?) and audit the weight map actually passed at the metacal / PSF-fit step. <strong>Honest tension:</strong> a naïve noise overestimate biases the faint end more, so this is either a second effect or a subtler coupling.</li>
+<li><strong>Coordinate / WCS offset — live as a <em>compounding</em> cause of the climb, not of the asymmetry.</strong> The climb <em>shape</em> matches Fabian's old offset-bug plot closely (he wants his offset propagation double-checked), but that plot had <strong>R1 ≈ R2 and a clearly larger size</strong> — so offset explains neither our asymmetry nor our size≈0, and <code>nepoch=1</code> shows inter-exposure offset isn't even driving the climb. It stays on the board because the climb could be compounded (Cail) and because Fabian's <em>first</em> ask is to verify coordinates propagate sanely. <strong>Checks:</strong> confirm coordinate propagation is reasonable; the <code>*_bad_offset</code> vs <code>*_good_offset</code> star tiles in <code>/n09data/hervas/SP_simu_fab/</code> are the A/B — if R matches across them, inter-exposure offset is cleared as a contributor.</li>
+<li><strong>Gauss vs FitGauss reconvolution kernel — a hint, not a cause.</strong> <code>metacal_psf=gauss</code> halves the ⟨R1⟩ break (<code class="wl">metacal-psf-parameterized</code>); Fabian saw the same. Read as evidence the internal ngmix PSF approximation is implicated (one kernel slightly broader than the other), not as the root cause.</li>
+</ol>
+<h2>Fabian's asks → the meeting-report skeleton</h2>
+<p>Fabian gave an ordered set of concrete diagnostics; the report and the workflow are structured around them, each stated as the hypothesis it tests and tagged to the ranked hypothesis it serves. Hypotheses come from Fabian/Cail — the worker's job is rigorous, adversarial <em>verification</em>, not open-ended hypothesis invention (Cail).</p>
+<ol>
+<li><strong>Coordinates propagate sanely</strong> (his first ask; hyp 3). Verify WCS propagation is reasonable; the <code>bad_offset</code>/<code>good_offset</code> A/B is the rule-out.</li>
+<li><strong>Intermediate metacal stamps</strong> (hyp 1/4). <em>Not</em> the deconvolved stamps (<em>"can't really look at them"</em>) — the <strong>reconvolved</strong> stamps and the <strong>difference across shear branches</strong>: does shearing a point source produce shear? A few example plots; Fabian concedes it's hard at scale.</li>
+<li><strong>PSF residual: render-PSF vs ShapePipe-PSF</strong> (his most concrete ask; hyp 1). Residual plots between the PSF in his pickle dict (used to <em>render</em> the images) and the PSF ShapePipe extracts via the mapping module — <em>"check these two agree."</em></li>
+<li><strong>PSF-measurement consistency</strong> (hyp 1/4). Do the ngmix gauss/fitgauss reconvolution PSF and the moments <code>PSF_ORIG</code> fit agree in size &amp; ellipticity? Inconsistency points at PSF passing/fitting (the gauss-vs-fitgauss hint lives here).</li>
+</ol>
+<p>Standing asks: <strong>state the hypothesis at every step</strong>, <strong>report run timing</strong>, <code>megacam.flip=False</code>.</p>
+<h2>Operational constraints (load-bearing)</h2>
+<ul>
+<li><strong><code>megacam.flip=False</code> for all sims</strong> (Fabian, slack). A flip issue is a directional systematic — consistent with R1≠R2; keep it live as a sub-hypothesis under #1/#2.</li>
+<li><strong>Full pipeline, no shortcuts</strong> — the cause could live anywhere (PSF passing, coordinates, noise, deconvolution), so the diagnostic must run end-to-end. A GalSim point-source baseline is optional/secondary (Fabian lukewarm).</li>
+<li><strong>No new SKiLLS image-sim generation</strong> — the rendered sim grid is frozen substrate (Cail). Work from the existing ShapePipe-on-sims outputs + the twin first; a fresh ShapePipe-on-sims rerun (~2 hr, the real cost) is fair game when a hypothesis genuinely needs it — <strong>long runtime is not itself a reason to avoid the right test</strong> (Cail).</li>
+<li><strong>State the hypothesis at every step</strong>, and <strong>measure run timing</strong> (~2 hr/run now with sparse stars, not the old 10 hr).</li>
+<li><strong><code>nepoch=1</code> is a clean controlled setting</strong> — one epoch removes offset propagation as a variable and isolates single-exposure behaviour; the climb persists there (Fabian), so prefer it for isolating mechanism.</li>
+<li><strong>Run wiring:</strong> the live ngmix tile config is Fabian's <code>config_tile_Ng1u.ini</code> (touched 2026-06-22); ShapePipe-on-sims orchestration is <code>tile_launcher.job → job_per_tile_newversion.job → SP_1z2z_star_grid/job_sp_14.job</code>, in-container. Slurm only (<code>salloc</code>/<code>sbatch</code> on <code>comp</code>, never the login node — <code class="wl">lc-slurm-execution</code>).</li>
+</ul>
+<h2>Inputs — Fabian's sim substrate (located 2026-06-22)</h2>
+<ul>
+<li><strong>Sim code:</strong> <code>/n17data/fhervas/workdir_skills/MultiBand_ImSim/</code> (UNIONS-WL fork, branch <code>galaxy_pos</code>, ~396/150 lines uncommitted; KiDS original alongside at <code>MultiBand_ImSim_kids_old/</code>). PSF-dict builder: <code>/n17data/fhervas/workdir_skills/input/generate_input/psf_dict_script.py</code> → writes the <code>fake_psf_autom</code> dict that maps position → PSF for both the sim render <em>and</em> the hand-off to ShapePipe. Martin adapted this into a ShapePipe module — <strong>location not yet found</strong> (grep of <code>code/shapepipe/</code> came up empty).</li>
+<li><strong>SKiLLS sim outputs:</strong> <code>/n09data/hervas/skills_out/</code> by shear grid (<code>1m2z</code>, <code>1p2z</code>, <code>1z2m</code>, <code>1z2p</code>, <code>1z2z</code> = g1/g2 ± combinations).</li>
+<li><strong>ShapePipe-on-sims (downstream half):</strong> <code>/n09data/hervas/SP_simu_fab/</code> (= <code>/home/hervas/n25/SP_simu_fab/</code>) — holds the <code>*_bad_offset</code>/<code>*_good_offset</code> Ms star tiles (the hypothesis-#3 A/B). Star-grid run dir <code>SP_1z2z_star_grid/</code> with <code>input_tiles</code> and <code>input_exp</code>.</li>
+</ul>
+<h2>Substrate — the twin (ready)</h2>
+<p>Branch <code>investigate/star-response</code> in worktree <code>scratch-wf/shapepipe-star-response</code> (off <code>refactor/psf-column-grammar</code>, PR #761) carries the five additive ngmix knobs (<code>METACAL_PSF</code>, <code>METACAL_STEP</code>, <code>GALAXY_MODEL</code>, <code>PSF_FIT_PRIOR</code>) + the <code>make_data</code> PSF-model-error injection, cherry-picked clean — 30/30 tests green, byte-for-byte defaults, nothing pushed (<code class="wl">psf-prior-noop-on-761</code>). Run in-container via <code>scratch-wf/sr_exec.sh &lt;cmd&gt;</code> (binds the worktree src + host cs_util 0.2.1 over <code>shapepipe_ngmix_v2.0-dev.sif</code>). <strong>Gotcha:</strong> the twin's run wrappers (<code>run_star_response_grid.py</code>, <code>run_mbias.py</code>, <code>run_psf_model_error.py</code>) hardcode <code>SP = code/shapepipe</code>; point them at the worktree or route via <code>sr_exec.sh</code> so the knobs and the #761 base are actually exercised. Reconciliation context: <code class="wl">reconcile-749-prior</code>.</p>
+<h2>Method — workflow-driven, because context hygiene is the point</h2>
+<p>The investigation runs through workflows, whose value <em>is</em> context management: every agent a workflow spawns gets a clean, walled context, so the survey of one hypothesis can't bleed into or rot another's. Inside a single workflow we compose the patterns the moment calls for — <strong>fan out</strong> the independent hypotheses in parallel; <strong>adversarially verify</strong> every candidate finding with a fresh-context skeptic (a result we want to believe must survive an independent challenge — the structural antidote to rationalizing the first answer); <strong>classify-and-act</strong> where the path branches on what's found; <strong>loop until the explanation is airtight</strong>, the deterministic loop (not a tiring context) holding the stop condition. We don't meta-organize a separate workflow per hypothesis — the workflow already supplies the walls; we compose fan-out / verify / loop <em>within</em> it.</p>
+<p><strong>Start by establishing a verified statistic set</strong> through the full pipeline — size &amp; R vs mag (no cut), R1/R2 split, χ²_red vs mag, intermediate metacal stamps, PSF residuals — each statistic independently checked before it is trusted (the data comes back; don't lean on the first number). Findings graduate into the twin's <code>astra.yaml</code> and the meeting report.</p>
+<h2>Status</h2>
+<p>This session reworked the constitution from Fabian's Slack + call transcript (2026-06-22). Key sharpenings: <strong>(1) multiple compounding causes</strong> is now the default — the climb and the asymmetry needn't share an origin (Cail), so no discriminator "exonerates" a cause for <em>all</em> observables. <strong>(2) PSF-shape/orientation error is the clean lead</strong> for the asymmetry+size≈0 combination: Fabian's old offset bug had R1≈R2 + larger size, so offset supplies neither, and a wrong PSF <em>ellipticity</em> (vs size) is what leaves size≈0 while breaking R1≠R2; Fabian suspects the PSF passing/funneling (possibly Martin's refactor), and it's directly injectable on the twin via <code>psf_model_shear</code>. <strong>(3) Fabian's 4 concrete asks</strong> are the report skeleton (coords propagate · reconvolved stamps + shear-branch diff · render-PSF-vs-ShapePipe-PSF residual · PSF-measurement consistency). <strong>(4) No new SKiLLS sims</strong> — existing ShapePipe outputs + twin first; a 2 hr rerun is OK when genuinely needed. The stale point-source/Jacobian "explanation" in <code>fabian-star-mag-range</code> is corrected (Fabian: hallucination). A live GH-Pages report at <code>/reports/star_response</code> (constitution behind a dropdown) is the human-facing surface, committed + pushed each handoff for Fabian to watch.</p>
+<p><strong>Next:</strong> launch the ultracode workflow investigation — establish the verified statistic set from the existing ShapePipe-on-sims outputs, then fan the hypotheses with adversarial verification, leading with the PSF-residual (ask #3) and twin shape-injection (<code>psf_model_shear</code>) tests. Open thread, needed for ask #3: locate Martin's ShapePipe adaptation of <code>psf_dict_script.py</code>.</p></div>
+</details>
+
+<section><h2>Where it stands</h2>
+<div class="card"><p><strong>Investigation launching.</strong> The constitution was just reworked from Fabian's call (2026-06-22) and the hypothesis stack re-ranked. Two framing points steer everything below: (1) there is <strong>likely more than one compounding cause</strong> — the climb and the asymmetry need not share an origin; (2) the <strong>size≈0 + R1≠R2</strong> combination most cleanly fingers a <strong>PSF shape/orientation error</strong> in the PSF passed to ShapePipe (a wrong PSF <em>ellipticity</em>, not size, deconvolves a star to ~a point that still carries a directional residual). No results are in yet — the next step is to establish a <em>verified statistic set</em> (R &amp; size vs mag, R1/R2 split, χ²_red vs mag) from the <strong>existing</strong> ShapePipe-on-sims outputs, then fan the hypotheses out with adversarial verification. <strong>No new SKiLLS sims</strong> will be generated.</p></div>
+
+</section>
+
+<section><h2>Hypotheses</h2>
+<table>
+<tr><th>#</th><th>Hypothesis</th><th>Status</th><th>What the data says</th><th>Timing</th></tr>
+<tr><td class="hid">H1</td><td><b>PSF-model mismatch (shape/orientation)</b><br><span class=muted>PSF ShapePipe deconvolves by ≠ PSF that rendered the image; a shape/orientation error gives R1≠R2 at size≈0. Fabian's #1; suspects the PSF passing/funneling (possibly Martin's refactor).</span></td><td><span class="chip" style="background:#BC4538">leading</span></td><td><p>Not yet tested. Predicts: render-PSF vs ShapePipe-PSF residual is non-zero &amp; directional; injecting <code>psf_model_shear</code> on the twin reproduces R1≠R2 at ~zero size.</p></td><td class="muted"></td></tr>
+<tr><td class="hid">H2</td><td><b>Noise / weight-model mis-normalization</b><br><span class=muted>χ²_red≈0.1 ⇒ noise overestimated; #749 weight-map the suspect. A deterministic noise-model error survives the bright-end argument.</span></td><td><span class="chip" style="background:#7A6F5C">queued</span></td><td><p>Not yet tested. Deciding diagnostic: does χ²_red deepen for bright stars? Honest tension: a naïve noise overestimate biases the faint end more.</p></td><td class="muted"></td></tr>
+<tr><td class="hid">H3</td><td><b>Coordinate / WCS offset</b><br><span class=muted>Live as a compounding cause of the climb, not the asymmetry: Fabian's old offset bug had R1≈R2 + larger size, and nepoch=1 still breaks.</span></td><td><span class="chip" style="background:#7A6F5C">queued</span></td><td><p>Not yet tested. Rule-out: bad_offset vs good_offset star-tile A/B — if R matches, inter-exposure offset is cleared.</p></td><td class="muted"></td></tr>
+<tr><td class="hid">H4</td><td><b>Gauss vs FitGauss reconvolution kernel</b><br><span class=muted>A hint, not a cause: metacal_psf=gauss halves the ⟨R1⟩ break; one kernel slightly broader than the other.</span></td><td><span class="chip" style="background:#7A6F5C">queued</span></td><td><p>Prior twin sweep: gauss halves the break. Read as the internal ngmix PSF approximation being implicated, not the root cause.</p></td><td class="muted"></td></tr>
+</table></section>
+
+<section><h2>Fabian's diagnostic asks &rarr; the report skeleton</h2>
+<table>
+<tr><th>#</th><th>Diagnostic</th><th>Status</th><th>Note</th></tr>
+<tr><td class="hid">1</td><td><b>Coordinates propagate sanely</b></td><td><span class="chip" style="background:#7A6F5C">to do</span></td><td><p>Verify WCS propagation is reasonable; <code>bad_offset</code>/<code>good_offset</code> A/B as the rule-out. (Fabian's first ask; serves H3.)</p></td></tr>
+<tr><td class="hid">2</td><td><b>Intermediate metacal stamps</b></td><td><span class="chip" style="background:#7A6F5C">to do</span></td><td><p>Not the deconvolved stamps — the <strong>reconvolved</strong> ones, and the <strong>difference across shear branches</strong>: does shearing a point produce shear? (serves H1/H4.)</p></td></tr>
+<tr><td class="hid">3</td><td><b>PSF residual: render-PSF vs ShapePipe-PSF</b></td><td><span class="chip" style="background:#7A6F5C">to do</span></td><td><p>Fabian's most concrete ask: residual plots between the PSF in his render pickle dict and the PSF ShapePipe extracts via the mapping module — "check these two agree." (serves H1.)</p></td></tr>
+<tr><td class="hid">4</td><td><b>PSF-measurement consistency</b></td><td><span class="chip" style="background:#7A6F5C">to do</span></td><td><p>Do the ngmix gauss/fitgauss reconvolution PSF and the moments <code>PSF_ORIG</code> fit agree in size &amp; ellipticity? (serves H1/H4.)</p></td></tr>
+</table></section>
+
+<section><h2>Open questions</h2>
+<ul class="oq"><li><p>Locate Martin's ShapePipe adaptation of <code>psf_dict_script.py</code> (the mapping module) — needed for ask #3.</p></li><li><p>What is the actual R1 vs R2 split and the size-vs-mag curve from the existing outputs (the verified statistic set, before any new run)?</p></li><li><p>Does χ²_red vs magnitude deepen at the bright end (would promote H2) or flatten (would isolate it to the faint end)?</p></li></ul></section>
+
+
+
+<footer>
+Generated by Claude (Shuttle worker) on behalf of Cail · fiber
+<code>shear_tomographic/shapepipe-digital-twin/star-response</code> ·
+regenerate with <code>uv run build_report.py</code>
+</footer>
+
+</div></body></html>
