@@ -27,9 +27,11 @@ type="data"
 #scratch="/scratch/$USER/shapepipe/v${version}"
 scratch=""
 test_only=0
-check=0
+check_only=0
+run_and_check=1
 force=0
 retry=0
+quiet=0
 VERBOSE=1
 
 pat="-- "
@@ -52,10 +54,11 @@ ${JOB_LIST_HELP}   -e, --exclusive ID\timage ID\n
    -n, --dry_run\t\tDRY RUN, no actual processing; default is $dry_run\n
    --debug_out PATH\tdebug output file PATH, default=none\n
    --test\t\t\ttest mode, no processing\n
-   --check\t\tcheck download completeness only (job 8), no processing\n
+   --check_only\t\tcheck completeness only, no processing\n
    --force\t\tremove existing module output dir(s) before running\n
    --retry\t\tskip jobs whose existing run is complete; remove and rerun\n
    \t\t\tonly those whose existing run is incomplete/failed\n
+   -q, --quiet\t\tsuppress all output except Complete/Missing/Incomplete/WARNING lines\n
 "
 
 ## Help if no arguments
@@ -118,14 +121,17 @@ while [ $# -gt 0 ]; do
     --test)
       test_only=1
       ;;
-    --check)
-      check=1
+    --check_only)
+      check_only=1
       ;;
     --force)
       force=1
       ;;
     --retry)
       retry=1
+      ;;
+    -q|--quiet)
+      quiet=1
       ;;
   esac
   shift
@@ -139,7 +145,9 @@ function message() {
   my_debug_out=$2
   my_exit=$3
 
-  echo $msg
+  if [ "$quiet" == "0" ] || [[ "$msg" =~ (Complete|[Mm]issing|Incomplete|WARNING) ]]; then
+    echo $msg
+  fi
   if [ -n "$my_debug_out" ]; then
     echo ${pat}$msg >> $my_debug_out
   fi
@@ -229,7 +237,7 @@ function run_exp_job() {
     message "Exposure numbers file exp_numbers-${IDra}-${IDdec}.txt not found in $work_dir/output" "$debug_out" 10
   fi
 
-  if [ "$check" == "1" ]; then
+  if [ "$check_only" == "1" ]; then
     message "Check mode: skipping job $exp_job" "$debug_out" -1
   fi
 
@@ -336,7 +344,7 @@ function run_exp_job() {
     fi
 
     # Report incomplete/missing in check mode; in run mode handle and proceed
-    if [ "$check" == "1" ]; then
+    if [ "$check_only" == "1" ]; then
       if [ -n "$run_dir" ]; then
         message "  Benign incomplete: $exp_id_disp ($check_desc)" "$debug_out" -1
       else
@@ -354,9 +362,9 @@ function run_exp_job() {
     [ -n "$debug_out" ] && debug_flag="--debug_out $debug_out"
 
     echo "$(basename "$0") -j $exp_job -e $exp_id" > "$exp_log_file"
-    echo "pwd=`pwd`"
+    [ "$quiet" == "0" ] && echo "pwd=`pwd`"
     command "job_sp_canfar_v2.0.bash -c $config_dir -p $psf -r $retrieve --tile_det $tile_det --tile_mask $tile_mask -j $exp_job --n_smp $N_SMP --nsh_jobs $N_SMP $debug_flag" $dry_run 2>&1 | tee -a "$exp_log_file"
-    echo "Done with job_sp_canfar_v2.0.bash"
+    [ "$quiet" == "0" ] && echo "Done with job_sp_canfar_v2.0.bash"
 
   done < "$exp_numbers_file"
 
@@ -462,11 +470,11 @@ function run_tile_job() {
     return 0
   fi
 
-  if [ "$check" == "1" ]; then
+  if [ "$check_only" == "1" ]; then
     if [ -n "$run_dir" ]; then
-      message "Incomplete: ($check_desc)" "$debug_out" -1
+      message "Incomplete: ( $check_desc)" "$debug_out" -1
     else
-      message "Missing: ($check_desc)" "$debug_out" -1
+      message "Missing: ( $check_desc)" "$debug_out" -1
     fi
     return 0
   fi
@@ -486,9 +494,49 @@ function run_tile_job() {
 }
 
 
+# Wrap a run_tile_job or run_exp_job call with check-log and force-cleanup.
+# Usage: run_job_logged BIT FUNC [FUNC_ARGS...]
+# - With --force:  removes log_job_BIT.txt before running FUNC
+# - With --check:  captures output of FUNC; writes log_job_BIT.txt only if no
+#                  Missing/Incomplete lines appear
+# - Otherwise:     calls FUNC directly
+function run_job_logged() {
+  local bit=$1
+  shift
+  local log="$dir/logs/log_job_${ID}_${bit}.txt"
+
+  [ "$force" == "1" ] && rm -f "$log"
+
+  if [ "$check_only" == "1" ]; then
+    local out
+    out=$( "$@" 2>&1 )
+    echo "$out"
+    echo "$out" | grep -qiE "(Missing|Incomplete)" || echo "$out" > "$log"
+  else
+    "$@"
+    local rc=$?
+    if [ $rc -eq 0 ]; then
+      if [ "$run_and_check" == "1" ]; then
+        check_only=1
+        local saved_force=$force
+        force=0
+        local out
+        out=$( "$@" 2>&1 )
+        check_only=0
+        force=$saved_force
+        echo "$out"
+        echo "$out" | grep -qiE "(Missing|Incomplete)" || echo "$out" > "$log"
+      else
+        echo "Completed job $bit $(date)" > "$log"
+      fi
+    fi
+  fi
+}
+
+
 if [ "$type" == "data" ]; then
 
-    echo "Running on data"
+    [ "$quiet" == "0" ] && echo "Running on data"
     retrieve="vos"
     config_dir=$HOME/shapepipe/example/cfis
     export SP_DIR=$dir
@@ -496,7 +544,7 @@ if [ "$type" == "data" ]; then
 
 elif [ "$type" == "image_sims" ]; then
 
-    echo "Running on image simulations"
+    [ "$quiet" == "0" ] && echo "Running on image simulations"
     retrieve="symlink"
     config_dir=$HOME/shapepipe/example/cfis_image_sims
     # SP_DIR points to the run directory where input_tiles and input_exp live;
@@ -512,7 +560,7 @@ else
 
 fi
 
-echo "config_dir=$config_dir"
+[ "$quiet" == "0" ] && echo "config_dir=$config_dir"
 
 
 # Init message
@@ -542,6 +590,17 @@ if [ "$dry_run" != "0" ] && [ "$dry_run" != "1" ]; then
   message "dry_run must be 0 or 1, not $dry_run" "$debug_out" 8
 fi
 
+## Check input links
+for link in "$dir/input_tiles" "$dir/input_exp" "$dir/cfis"; do
+  if [ -L "$link" ]; then
+    if [ ! -e "$link" ]; then
+      message "Broken symlink: $link" "$debug_out" 6
+    fi
+  elif [ ! -e "$link" ]; then
+    message "Missing path: $link" "$debug_out" 6
+  fi
+done
+
 
 # Start script
 
@@ -561,8 +620,10 @@ Letter=${letter^}
 
 cd $dir
 
-# Derive tile path components from ID (e.g. "000.227" -> IDra="000")
+# Derive tile path components from ID (e.g. "000.227" -> IDra="000", IDdec="227")
 IDra=${ID%%.*}
+IDdec=${ID##*.}
+ID_DASHED="${IDra}-${IDdec}"
 work_dir="$dir/tiles/$IDra/$ID"
 log_file="$work_dir/job_sp_canfar_v2.0.log"
 
@@ -589,7 +650,7 @@ if [ ! -d "output" ]; then
 fi
 
 
-echo -n "pwd: "; pwd
+[ "$quiet" == "0" ] && { echo -n "pwd: "; pwd; }
 
 
 # Avoid Qt error with setools
@@ -617,19 +678,23 @@ if [[ $do_job != 0 ]]; then
   else
     n_exp=4
   fi
-  run_tile_job 1 "Git" "get_images_runner:${n_exp}"
+  run_job_logged 1 run_tile_job 1 "Git" "get_images_runner:${n_exp}"
 fi
 
 (( do_job = job & 2 ))
 if [[ $do_job != 0 ]]; then
+  log_2="$dir/logs/log_job_${ID}_2.txt"
+  [ "$force" == "1" ] && rm -f "$log_2"
   if [ "$type" == "image_sims" ]; then
     # Image sims weights are already uncompressed; fake the Uz output directory
     # so downstream jobs can find the weight via last:uncompress_fits_runner.
     weight_src="$dir/input_tiles/CFIS_simu_weight-${ID//./-}.fits"
-    if [ "$check" == "1" ]; then
+    if [ "$check_only" == "1" ]; then
       uz_run_dir=$(ls -dt "$work_dir/output/run_sp_tile_Uz"* 2>/dev/null | head -1)
       if [ -n "$uz_run_dir" ] && [ -e "$uz_run_dir/uncompress_fits_runner/output/$(basename $weight_src)" ]; then
-        message "Complete: Uz $(basename $weight_src)" "$debug_out" -1
+        msg="Complete: ( Uz/uncompress_fits_runner[fake] 1/1 )"
+        message "$msg" "$debug_out" -1
+        echo "$msg" > "$log_2"
       else
         message "Missing: Uz $(basename $weight_src)" "$debug_out" -1
       fi
@@ -639,17 +704,29 @@ if [[ $do_job != 0 ]]; then
       if [ -e "$weight_src" ] && [ ! -e "$uz_out/$(basename $weight_src)" ]; then
         command "ln -sf $weight_src $uz_out/$(basename $weight_src)" $dry_run
       fi
+      if [ "$run_and_check" == "1" ]; then
+        uz_run_dir=$(ls -dt "$work_dir/output/run_sp_tile_Uz"* 2>/dev/null | head -1)
+        if [ -n "$uz_run_dir" ] && [ -e "$uz_run_dir/uncompress_fits_runner/output/$(basename $weight_src)" ]; then
+          msg="Complete: Uz $(basename $weight_src)"
+          message "$msg" "$debug_out" -1
+          echo "$msg" > "$log_2"
+        else
+          message "Missing: Uz $(basename $weight_src)" "$debug_out" -1
+        fi
+      else
+        echo "Completed job 2 $(date)" > "$log_2"
+      fi
     fi
   else
     # Job 2: uncompress tile weights
-    run_tile_job 2 "Uz" "uncompress_fits_runner:1"
+    run_job_logged 2 run_tile_job 2 "Uz" "uncompress_fits_runner:1"
   fi
 fi
 
 (( do_job = job & 4 ))
 if [[ $do_job != 0 ]]; then
   # Job 4: find exposures
-  run_tile_job 4 "Fe" "find_exposures_runner:1"
+  run_job_logged 4 run_tile_job 4 "Fe" "find_exposures_runner:1"
 fi
 
 (( do_job = job & 8 ))
@@ -660,19 +737,19 @@ if [[ $do_job != 0 ]]; then
   else
     n_exp=6
   fi
-  run_exp_job 8 "Gie" "get_images_runner:${n_exp}"
+  run_job_logged 8 run_exp_job 8 "Gie" "get_images_runner:${n_exp}"
 fi
 
 (( do_job = job & 16 ))
 if [[ $do_job != 0 ]]; then
   # Job 16: split exposures, get WCS headers
-  run_exp_job 16 "Sp" "split_exp_runner:121"
+  run_job_logged 16 run_exp_job 16 "Sp" "split_exp_runner:121"
 fi
 
 (( do_job = job & 32 ))
 if [[ $do_job != 0 ]]; then
   # Job 32: mask exposures
-  run_exp_job 32 "Ma" "mask_runner:40"
+  run_job_logged 32 run_exp_job 32 "Ma" "mask_runner:40"
 fi
 
 (( do_job = job & 64 ))
@@ -683,7 +760,7 @@ if [[ $do_job != 0 ]]; then
   if [ "$type" == "image_sims" ]; then
     message "Job 64 (fake PSF) is handled as part of job 512 for image_sims — skipping." "$debug_out" -1
   elif [ "$psf" == "psfex" ]; then
-    run_exp_job 64 "SxSePsf${Letter}i" "sextractor_runner:80 psfex_runner:80 psfex_interp_runner:40::warn setools_runner:80:rand_split"
+    run_job_logged 64 run_exp_job 64 "SxSePsf${Letter}i" "sextractor_runner:80 psfex_runner:80 psfex_interp_runner:40::warn setools_runner:80:rand_split"
   else
     message "MCCD not implemented yet for v2.0" "$debug_out" 10
   fi
@@ -692,17 +769,17 @@ fi
 (( do_job = job & 128 ))
 if [[ $do_job != 0 ]]; then
   # Job 128: merge exposure WCS headers into tile-level sqlite log
-  run_tile_job 128 "Mh_exp" "merge_headers_runner:1"
+  run_job_logged 128 run_tile_job 128 "Mh_exp" "merge_headers_runner:1"
 fi
 
 (( do_job = job & 256 ))
 if [[ $do_job != 0 ]]; then
   # Job 256: object selection on tiles
   if [ "$tile_det" == "uc" ]; then
-    run_tile_job 256 "Gic Uc" "get_images_runner:2 read_ext_sexcat_runner:1"
+    run_job_logged 256 run_tile_job 256 "Gic Uc" "get_images_runner:2 read_ext_sexcat_runner:1"
   else
     n_exp=2
-    run_tile_job 256 "Sx" "sextractor_runner:$n_exp"
+    run_job_logged 256 run_tile_job 256 "Sx" "sextractor_runner:$n_exp"
   fi
 fi
 
@@ -710,24 +787,60 @@ fi
 if [[ $do_job != 0 ]]; then
   # Job 512: process tiles ([PSF interp,] vignets)
   # For image_sims: fake PSF runs first (requires sexcat from job 256), then vignets
+  log_512="$dir/logs/log_job_${ID}_512.txt"
+  [ "$force" == "1" ] && rm -f "$log_512"
   if [ "$type" == "data" ]; then
+    if [ "$check_only" == "1" ]; then
+      out=$(run_tile_job 512 "${Letter}iViVi ${Letter}iViVi ${Letter}iViVi" "psfex_interp_runner:1 vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:4" 2>&1)
+      echo "$out"
+      echo "$out" | grep -qiE "(Missing|Incomplete)" || echo "$out" > "$log_512"
+    else
       run_tile_job 512 "${Letter}iViVi ${Letter}iViVi ${Letter}iViVi" "psfex_interp_runner:1 vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:4"
+      if [ "$run_and_check" == "1" ]; then
+        check_only=1; local saved_force_512=$force; force=0
+        out=$(run_tile_job 512 "${Letter}iViVi ${Letter}iViVi ${Letter}iViVi" "psfex_interp_runner:1 vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:4" 2>&1)
+        check_only=0; force=$saved_force_512
+        echo "$out"
+        echo "$out" | grep -qiE "(Missing|Incomplete)" || echo "$out" > "$log_512"
+      else
+        echo "Completed job 512 $(date)" > "$log_512"
+      fi
+    fi
   else
+    if [ "$check_only" == "1" ]; then
+      out1=$(run_tile_job 64 "fpsf" "fake_psf_runner:1" 2>&1)
+      out2=$(run_tile_job 512 "ViVi ViVi" "vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:3" 2>&1)
+      echo "$out1"; echo "$out2"
+      { echo "$out1"; echo "$out2"; } | grep -qiE "(Missing|Incomplete)" || \
+        { echo "$out1"; echo "$out2"; } > "$log_512"
+    else
       run_tile_job 64 "fpsf" "fake_psf_runner:1"
       run_tile_job 512 "ViVi ViVi" "vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:3"
+      if [ "$run_and_check" == "1" ]; then
+        check_only=1; local saved_force_512im=$force; force=0
+        out1=$(run_tile_job 64 "fpsf" "fake_psf_runner:1" 2>&1)
+        out2=$(run_tile_job 512 "ViVi ViVi" "vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:3" 2>&1)
+        check_only=0; force=$saved_force_512im
+        echo "$out1"; echo "$out2"
+        { echo "$out1"; echo "$out2"; } | grep -qiE "(Missing|Incomplete)" || \
+          { echo "$out1"; echo "$out2"; } > "$log_512"
+      else
+        echo "Completed job 512 $(date)" > "$log_512"
+      fi
+    fi
   fi
 fi
 
 (( do_job = job & 1024 ))
 if [[ $do_job != 0 ]]; then
   # Job 1024: shape measurement
-  run_tile_job 1024 "Ng" "ngmix_runner:1"
+  run_job_logged 1024 run_tile_job 1024 "Ng" "ngmix_runner:1"
 fi
 
 (( do_job = job & 2048 ))
 if [[ $do_job != 0 ]]; then
   # Job 2048: merge catalogues
-  run_tile_job 2048 "Mc_${psf}" "make_cat_runner:1"
+  run_job_logged 2048 run_tile_job 2048 "Mc_${psf}" "make_cat_runner:1"
 fi
 
 

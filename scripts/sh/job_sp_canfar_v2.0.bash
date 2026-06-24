@@ -235,10 +235,10 @@ function command () {
       else
          echo -e "${RED}error, return value = $res${NC}"
          if [ $STOP == 1 ]; then
-            echo "${RED}exiting 'canfar_sp.bash', error in command '$cmd'${NC}"
+            echo "${RED}exiting '$(basename "$0")', error in command '$cmd'${NC}"
             exit $res
          else
-            echo "${RED}continuing 'canfar_sp.bash', error in command '$cmd'${NC}"
+            echo "${RED}continuing '$(basename "$0")', error in command '$cmd'${NC}"
          fi
       fi
    fi

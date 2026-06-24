@@ -63,7 +63,7 @@ run_job_canfar_v2.0.sh -e ID -j <job>
 Download docker image
 
 ```bash
-apptainer pull shapepipe_im_sims.sif docker://ghcr.io/cosmostat/shapepipe:im_sims
+apptainer pull shapepipe_im_sims.sif docker://ghcr.io/cosmostat/shapepipe:im_sims-runtime
 ```
 
 Activate container
@@ -72,6 +72,15 @@ Activate container
 apptainer shell --bind /n17data,/n09data,/home /path/to/shapepipe_im_sims.sif
 ```
 
+Run jobs
+```bash
+run_job_sp_canfar_v2.0.bash -e 233.293 -t image_sims -j <job>
+```
+
+Help
+```bash
+run_job_sp_canfar_v2.0.bash -h
+```
 
 
 ### CANFAR login

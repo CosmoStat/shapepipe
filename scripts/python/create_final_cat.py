@@ -235,7 +235,13 @@ def check_ID(merged_cat_path, ID, verbose=False):
 
 def print_list(params):
 
+    verbose = params.get("verbose", False)
     n_tiles = 0
+
+    if not os.path.exists(params["merged_cat_path"]):
+        print(f"File {params['merged_cat_path']} not found")
+        return
+
     with h5py.File(params["merged_cat_path"], "r") as hdf5_file:
 
         if "patches" not in hdf5_file:
@@ -244,6 +250,11 @@ def print_list(params):
             for patch in hdf5_file["patches"]:
                 for id in hdf5_file[f"patches/{patch}"]:
                     n_tiles += 1
+                    if verbose:
+                        print(f"  {patch}/{id}")
+
+    if verbose:
+        print(f"Total: {n_tiles} tiles")
 
     with open(params["output_summary"], "w") as f_out:
         print(n_tiles, file=f_out)

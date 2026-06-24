@@ -6,6 +6,10 @@ YWIN_WORLD
 # Can maybe be removed.
 TILE_ID
 
+# SExtractor number. TODO: Create unique UNIONS number
+# from TILD_ID + NUMBER
+NUMBER
+
 # flags
 FLAGS
 IMAFLAGS_ISO
