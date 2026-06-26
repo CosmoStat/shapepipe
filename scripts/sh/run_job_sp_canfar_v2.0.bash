@@ -758,7 +758,12 @@ if [[ $do_job != 0 ]]; then
   # For image_sims: fake PSF runs as part of job 512 (requires sexcat from job 256)
   # For data: run full exposure-level PSF modelling pipeline
   if [ "$type" == "image_sims" ]; then
-    message "Job 64 (fake PSF) is handled as part of job 512 for image_sims — skipping." "$debug_out" -1
+    # Fake PSF is handled inside job 512; write placeholder log so the sequence is complete
+    log_64="$dir/logs/log_job_${ID}_64.txt"
+    [ "$force" == "1" ] && rm -f "$log_64"
+    msg="Complete: job 64 placeholder (fake PSF runs as part of job 512)"
+    message "$msg" "$debug_out" -1
+    echo "$msg" > "$log_64"
   elif [ "$psf" == "psfex" ]; then
     run_job_logged 64 run_exp_job 64 "SxSePsf${Letter}i" "sextractor_runner:80 psfex_runner:80 psfex_interp_runner:40::warn setools_runner:80:rand_split"
   else
