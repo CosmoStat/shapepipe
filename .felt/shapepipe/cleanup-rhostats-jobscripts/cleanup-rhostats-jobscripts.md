@@ -1,4 +1,5 @@
 ---
+id: 01KTCHWZXE6Z6MG1P21F804RZ2
 name: 'ShapePipe cleanup: remove obsolete rho-stats/stile; modernize candide job scripts'
 status: closed
 tags:
@@ -35,6 +36,7 @@ shuttle:
         id: 7c02b521-17bd-44dc-ad10-709520d6d2bf
         agent: claude-opus
         dispatched_at: 2026-05-30T20:29:24.913621662Z
+tempered: true
 ---
 
 ## Desired State

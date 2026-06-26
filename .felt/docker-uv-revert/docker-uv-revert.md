@@ -1,12 +1,14 @@
 ---
+id: 01KTCHWZW8DT8VRYQJ4CEPDRGB
 name: 'Docker: revert skaha→python base, switch to uv lockfile'
-status: active
+status: closed
 tags:
     - shapepipe
     - docker
     - infra
 created-at: 2026-04-27T11:26:45.677512058+02:00
-outcome: 'PR #719 (chore: switch Dockerfile to slim Python + uv lockfile) opened and CI-green on first try (3m31s); ready for Martin''s review. Drops conda double-install, makes pyproject SSOT + uv.lock the pinned manifest, switches WeightWatcher from sed-patched source build to Debian''s pre-patched 1.12+dfsg-3 package, adds binary smoke tests to deploy-image.yml.'
+closed-at: 2026-06-10T17:14:45.965931602+02:00
+outcome: 'Superseded: conda removal landed via #733 (merged); the #719-era docker-uv work is absorbed into ci-green-on-develop, which tracks remaining follow-ups.'
 decisions:
     base:
         label: Base image

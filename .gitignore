@@ -140,3 +140,5 @@ code
 .felt/index.db
 .felt/index-sync.lock
 .felt/index-sync.request
+.felt/index.db-shm
+.felt/index.db-wal

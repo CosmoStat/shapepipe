@@ -1,4 +1,5 @@
 ---
+id: 01KTCHX00NMQ1VDPGXRYJ6RGZR
 name: ShapePipe maintenance & PRs
 tags:
     - shapepipe
@@ -26,17 +27,20 @@ Surfaced over a 2026-04-27 walking conversation. Captured in
   Disclosure on Claude-only review per
   `feedback_claude_only_review_disclosure`.
 
-## Active threads
+## Active threads (refreshed 2026-06-10)
 
-- **[[shapepipe/docker-uv-revert]]** — slim Python + uv lockfile, drop conda. PR #719 (draft).
-- **[[shapepipe/prs-in-flight]]** — tracking #708 (testing scaffold), #714 (develop bugs), #719 (this one).
+- **PR #737** (MPI on candide + containerized SLURM scripts) — **MERGED 2026-06-10** (rebased onto develop, both CI runs green).
+- **PR #738** (versioned docs + switcher) — **MERGED 2026-06-10** after independent review; sfarrens offered post-hoc comments. Stable root refreshes on next master push. See [[docs-versioning]].
+- **PR #739** (machine-specific cluster docs tree) — awaiting Martin's review; check rebase state after the #737/#738 merges. See [[docs-cluster-tree]].
+- **PR #741** (ngmix v2.0, CI mirror of #740) — Martin left 10 inline comments Jun 5, no verdict yet; shear recovery verified unbiased to ~1e-4 in m. See [[ngmix-weights-ivar]] (PR-ready regression fix + #604 ivar plan) and [[ngmix-size-columns]] (honest r50 spec).
+- **Martin's PRs #704 (contributors) & #699 (coverage mask)** — Cail's review requested; both conflicting, need Martin's rebase first.
+- **[[ci-green-on-develop]]** — conda fully removed (#733 merged); remaining follow-ups tracked there.
 
-## Future work
+## Earlier threads (superseded)
 
-- **[[shapepipe/ngmix-update]]** — replace Axel's stable_version fork
-  with upstream ngmix; reconcile with Lucy's wrapper.
-- **[[shapepipe/fabian-coord-bug]]** — port Fabian's 1-line coord
-  propagation fix; first need his image-sim code on github.
+- [[shapepipe/docker-uv-revert]] / [[shapepipe/prs-in-flight]] — the #719-era conda removal; landed via #733, current state in [[ci-green-on-develop]].
+- **[[shapepipe/ngmix-update]]** — became the #740/#741 ngmix v2.0 review thread.
+- **[[shapepipe/fabian-coord-bug]]** — port Fabian's 1-line coord propagation fix; still pending his image-sim code reaching github.
 
 ## Conventions specific to this repo
 

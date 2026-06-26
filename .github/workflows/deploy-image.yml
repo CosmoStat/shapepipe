@@ -3,17 +3,21 @@ name: Docker image — build, test, publish
 # Single source of truth for ShapePipe's environment is the Dockerfile
 # (slim Python + apt system deps + uv-frozen wheels). This workflow builds
 # that image, runs the test suite *inside it* — so CI tests exactly what
-# ships — and publishes to ghcr only on pushes to the integration branches.
+# ships — and publishes to ghcr.
 #
-#   pull_request → build + test, no publish (also works for fork PRs)
-#   push         → build + test + publish (:develop, :latest, …)
+#   pull_request → build + test, no publish (covers fork PRs, which have no
+#                  registry token)
+#   push (any branch) → build + test + publish, tagged with the branch name
+#                  (e.g. :develop, :my-feature, and the -runtime variants)
+#
+# Publishing on every branch push — not just the integration branches — means
+# any open PR has a pullable image (`apptainer pull …:<branch>-runtime`) that
+# can be tested on a real cluster *before* merge. Same-repo branch pushes always
+# carry a registry-write token, so this is safe; fork PRs still only build+test.
 on:
   push:
     branches:
-      - develop
-      - main
-      - master
-      - im_sims
+      - '**'
   pull_request:
     branches:
       - develop
@@ -33,10 +37,10 @@ jobs:
       packages: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
         with:
           driver-opts: network=host
 
@@ -44,13 +48,13 @@ jobs:
       # `:develop`); `runtime` carries a `-runtime` suffix.
       - name: Tags — dev (default)
         id: meta-dev
-        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
+        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Tags — runtime
         id: meta-runtime
-        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
+        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: |
@@ -62,7 +66,7 @@ jobs:
 
       # Build runtime first (smaller, used to smoke-test pipeline binaries)
       - name: Build runtime (load)
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: .
           target: runtime
@@ -92,7 +96,7 @@ jobs:
 
       # Build dev (reuses cached `base` layer)
       - name: Build dev (load)
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: .
           target: dev
@@ -122,11 +126,12 @@ jobs:
           docker run --rm -e HYPOTHESIS_PROFILE=ci "$IMAGE" pytest -rX
 
       # ----------------------------------------------------------------
-      # Publish (push events only — never on pull_request, incl. forks)
+      # Publish (push events only — never on pull_request, incl. forks).
+      # Fires on any branch; the image is tagged with the branch name.
       # ----------------------------------------------------------------
       - name: Log in to the Container registry
         if: github.event_name == 'push'
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -134,7 +139,7 @@ jobs:
 
       - name: Push runtime
         if: github.event_name == 'push'
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: .
           target: runtime
@@ -145,7 +150,7 @@ jobs:
 
       - name: Push dev
         if: github.event_name == 'push'
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: .
           target: dev
