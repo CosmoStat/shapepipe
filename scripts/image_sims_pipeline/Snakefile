@@ -1,0 +1,193 @@
+"""Snakemake workflow for image-simulation pipeline.
+
+Run from the run directory:
+    snakemake -s ~/astro/repositories/github/shapepipe/scripts/image_sims_pipeline/Snakefile --configfile config.yaml -j 5
+    snakemake -s ~/astro/repositories/github/shapepipe/scripts/image_sims_pipeline/Snakefile --configfile config.yaml -j 1 --dry-run
+"""
+
+import os
+
+# ---------- configuration ----------
+configfile: "config.yaml"
+
+BASE         = config["base"]
+TILE_IDs     = config.get("tile_IDs", [config.get("tile_ID", "254.286")])
+SAMPLE       = str(config["sample"])
+NUM          = config["num"]
+TYPE         = config["type"]
+FORCE        = "--force" if config.get("force", 0) else ""
+N_SMP        = config.get("n_smp", -1)
+
+JOB_SEQUENCE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+JOB          = sum(JOB_SEQUENCE)
+
+PSF          = "psfex"
+
+STR_TYPE = f"_{TYPE}" if TYPE == "grid" else ""
+SIMS = [
+    f"1{dg1}2{dg2}{STR_TYPE}_{NUM}"
+    for dg1, dg2 in zip(["m", "p", "z", "z", "z"],
+                         ["z", "z", "m", "p", "z"])
+]
+GRIDS = f"{BASE}/{TYPE}s"
+
+HOME     = os.path.expanduser("~")
+PATH_SH  = f"{HOME}/astro/repositories/github/shapepipe/scripts/sh"
+PATH_PY  = f"{HOME}/astro/repositories/github/shapepipe/scripts/python"
+PATH_NB  = f"{HOME}/astro/repositories/github/sp_validation/notebooks"
+PATH_SPV = f"{HOME}/astro/repositories/github/sp_validation"
+
+SP_SIF      = "/n17data/mkilbing/shapepipe_im_sims.sif"
+SPV_SIF     = "/n17data/mkilbing/sp_validation_im_sims.sif"
+SPV_SRC     = f"{HOME}/astro/repositories/github/sp_validation/src"
+
+# ShapePipe pipeline stages (uses shapepipe_im_sims.sif — correct MPI build)
+_APPTAINER  = f"{PATH_SH}/apptainer_noslurm.sh"
+APP_CMD     = f"{_APPTAINER} --bind /n17data,/n09data,/home {SP_SIF}"
+
+# sp_validation stages (uses sp_validation_im_sims.sif with local src override)
+SPV_CMD     = (
+    f"{_APPTAINER} --bind /n17data,/n09data,/home"
+    f" --env PYTHONPATH={SPV_SRC}"
+    f" {SPV_SIF}"
+)
+MBIAS_OUT   = f"{GRIDS}/results/m_bias_results.yaml"
+DIAG_OUT    = f"{GRIDS}/results/footprint.png"
+
+# ---------- targets ----------
+rule all:
+    input:
+        expand(f"{GRIDS}/{{sim}}/shape_catalog_cut_ngmix.fits", sim=SIMS)
+
+# ---------- convenience targets (run in order) ----------
+# 1. init_all
+# 2. pipeline_all
+# 3. merge_all
+# 4. extract_all
+# 5. calibrate_all
+# 6. mbias
+# 7. diagnostics
+
+rule init_all:
+    input:
+        expand(f"{GRIDS}/{{sim}}/params.py", sim=SIMS)
+
+rule pipeline_all:
+    input:
+        expand(
+            f"{GRIDS}/{{sim}}/logs/log_job_{{tile}}_{JOB_SEQUENCE[-1]}.txt",
+            sim=SIMS, tile=TILE_IDs
+        )
+
+rule merge_all:
+    input:
+        expand(f"{GRIDS}/{{sim}}/final_cat_{{sim}}.hdf5", sim=SIMS)
+
+rule extract_all:
+    input:
+        expand(f"{GRIDS}/{{sim}}/shape_catalog_comprehensive_ngmix.hdf5", sim=SIMS)
+
+rule calibrate_all:
+    input:
+        expand(f"{GRIDS}/{{sim}}/shape_catalog_cut_ngmix.fits", sim=SIMS)
+
+# ---------- rules ----------
+rule init:
+    output:
+        params = f"{GRIDS}/{{sim}}/params.py",
+        mask   = f"{GRIDS}/{{sim}}/config_mask.yaml",
+    shell:
+        f"{APP_CMD} {PATH_SH}/init_run_v2.0.sh"
+        f" -t image_sims -d {GRIDS} -s {{wildcards.sim}} -S {SAMPLE}"
+
+def _shapepipe_job_input(wildcards):
+    bit      = int(wildcards.bit)
+    tile     = wildcards.tile
+    bit_idx  = JOB_SEQUENCE.index(bit)
+    tile_idx = TILE_IDs.index(tile)
+
+    if bit_idx == 0:
+        if tile_idx == 0:
+            # First tile, first bit: wait for init
+            return [
+                f"{GRIDS}/{wildcards.sim}/params.py",
+                f"{GRIDS}/{wildcards.sim}/config_mask.yaml",
+            ]
+        else:
+            # Later tile, first bit: wait for last bit of previous tile
+            prev_tile = TILE_IDs[tile_idx - 1]
+            return f"{GRIDS}/{wildcards.sim}/logs/log_job_{prev_tile}_{JOB_SEQUENCE[-1]}.txt"
+    else:
+        # Same tile, previous bit
+        return f"{GRIDS}/{wildcards.sim}/logs/log_job_{tile}_{JOB_SEQUENCE[bit_idx - 1]}.txt"
+
+rule shapepipe_job:
+    input:  _shapepipe_job_input
+    output: f"{GRIDS}/{{sim}}/logs/log_job_{{tile}}_{{bit}}.txt"
+    wildcard_constraints:
+        bit  = "|".join(str(b) for b in JOB_SEQUENCE),
+        tile = "|".join(t.replace(".", r"\.") for t in TILE_IDs),
+    shell:
+        f"cd {GRIDS}/{{wildcards.sim}} &&"
+        f" {APP_CMD} {PATH_SH}/run_job_sp_canfar_v2.0.bash"
+        f" {FORCE} -N {N_SMP} -e {{wildcards.tile}} -t image_sims -j {{wildcards.bit}}"
+
+rule merge:
+    input:
+        expand(
+            f"{GRIDS}/{{{{sim}}}}/logs/log_job_{{tile}}_{JOB_SEQUENCE[-1]}.txt",
+            tile=TILE_IDs
+        )
+    output:
+        f"{GRIDS}/{{sim}}/final_cat_{{sim}}.hdf5"
+    shell:
+        f"cd {GRIDS}/{{wildcards.sim}} &&"
+        f" {SPV_CMD} python {PATH_PY}/create_final_cat.py"
+        f" -I -m final_cat_{{wildcards.sim}}.hdf5"
+        f" -i .. -p cfis/final_cat.param -P {{wildcards.sim}}"
+        f" -o n_tiles_final.txt -v"
+
+rule extract:
+    input:
+        cat    = f"{GRIDS}/{{sim}}/final_cat_{{sim}}.hdf5",
+        params = f"{GRIDS}/{{sim}}/params.py",
+    output:
+        f"{GRIDS}/{{sim}}/shape_catalog_comprehensive_ngmix.hdf5"
+    shell:
+        f"cd {GRIDS}/{{wildcards.sim}} &&"
+        f" {SPV_CMD} python {PATH_NB}/extract_info.py"
+
+rule calibrate:
+    input:
+        cat  = f"{GRIDS}/{{sim}}/shape_catalog_comprehensive_ngmix.hdf5",
+        mask = f"{GRIDS}/{{sim}}/config_mask.yaml",
+    output:
+        f"{GRIDS}/{{sim}}/shape_catalog_cut_ngmix.fits"
+    shell:
+        f"cd {GRIDS}/{{wildcards.sim}} &&"
+        f" {SPV_CMD} python {PATH_SPV}/notebooks/calibrate_comprehensive_cat.py -s calibrate"
+
+rule diagnostics:
+    input:
+        expand(f"{GRIDS}/{{sim}}/shape_catalog_cut_ngmix.fits", sim=SIMS)
+    output:
+        DIAG_OUT
+    shell:
+        f"{SPV_CMD} python {PATH_SPV}/scripts/diagnostics_image_sims.py"
+        f" -c {MBIAS_CFG} -v"
+
+rule mbias:
+    input:
+        expand(f"{GRIDS}/{{sim}}/shape_catalog_cut_ngmix.fits", sim=SIMS)
+    output:
+        MBIAS_OUT,
+        f"{GRIDS}/results/mbias_cumulative.yaml",
+    shell:
+        f"mkdir -p {GRIDS}/results && "
+        f"python -c \"import yaml; "
+        f"cfg = {{'grids_dir': '{GRIDS}', 'num': {NUM}, 'catalog_name': 'shape_catalog_cut_ngmix.fits', "
+        f"'shear_amplitude': 0.02, 'match_radius_deg': 0.0002, 'w_col': 'w_des', 'n_bootstrap': 500, "
+        f"'output_path': '{GRIDS}/results/m_bias_results.yaml', 'results_dir': '{GRIDS}/results'}}; "
+        f"yaml.dump(cfg, open('/tmp/mbias_cfg.yaml', 'w'))\" && "
+        f"{SPV_CMD} python {PATH_SPV}/scripts/compute_m_bias_image_sims.py"
+        f" -c /tmp/mbias_cfg.yaml -v --cumulative"
