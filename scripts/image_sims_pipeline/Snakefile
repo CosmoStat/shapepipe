@@ -52,7 +52,6 @@ SPV_CMD     = (
     f" {SPV_SIF}"
 )
 MBIAS_OUT   = f"{GRIDS}/results/m_bias_results.yaml"
-DIAG_OUT    = f"{GRIDS}/results/footprint.png"
 
 # ---------- targets ----------
 rule all:
@@ -167,15 +166,6 @@ rule calibrate:
         f"cd {GRIDS}/{{wildcards.sim}} &&"
         f" {SPV_CMD} python {PATH_SPV}/notebooks/calibrate_comprehensive_cat.py -s calibrate"
 
-rule diagnostics:
-    input:
-        expand(f"{GRIDS}/{{sim}}/shape_catalog_cut_ngmix.fits", sim=SIMS)
-    output:
-        DIAG_OUT
-    shell:
-        f"{SPV_CMD} python {PATH_SPV}/scripts/diagnostics_image_sims.py"
-        f" -c {MBIAS_CFG} -v"
-
 rule mbias:
     input:
         expand(f"{GRIDS}/{{sim}}/shape_catalog_cut_ngmix.fits", sim=SIMS)
@@ -191,3 +181,19 @@ rule mbias:
         f"yaml.dump(cfg, open('/tmp/mbias_cfg.yaml', 'w'))\" && "
         f"{SPV_CMD} python {PATH_SPV}/scripts/compute_m_bias_image_sims.py"
         f" -c /tmp/mbias_cfg.yaml -v --cumulative"
+
+rule diagnostics:
+    input:
+        expand(f"{GRIDS}/{{sim}}/shape_catalog_cut_ngmix.fits", sim=SIMS)
+    output:
+        f"{GRIDS}/results/footprint.png",
+    shell:
+        f"mkdir -p {GRIDS}/results && "
+        f"python -c \"import yaml; "
+        f"cfg = {{'grids_dir': '{GRIDS}', 'num': {NUM}, 'catalog_name': 'shape_catalog_cut_ngmix.fits', "
+        f"'shear_amplitude': 0.02, 'match_radius_deg': 0.0002, 'w_col': 'w_des', 'n_bootstrap': 500, "
+        f"'output_path': '{GRIDS}/results/m_bias_results.yaml', 'results_dir': '{GRIDS}/results', "
+        f"'diagnostics_dir': '{GRIDS}/results'}}; "
+        f"yaml.dump(cfg, open('/tmp/diag_cfg.yaml', 'w'))\" && "
+        f"{SPV_CMD} python {PATH_SPV}/scripts/diagnostics_image_sims.py"
+        f" -c /tmp/diag_cfg.yaml -v"
