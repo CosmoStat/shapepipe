@@ -3,8 +3,13 @@
 ## Run directory
 base:    /n17data/mkilbing/astro/Runs/shapepipe/CFIS/v2.0/image_sims
 
-## Tile IDs 
-tile_IDs: ["254.286", "254.287", "254.288", "254.290"]
+## Tile IDs: path to file containing tile IDs (one per line)
+tile_IDs: /home/mkilbing/shapepipe/auxdir/CFIS/im_sims_202606/tile_numbers_test.txt
+
+## Optional: exclusive list of tiles to process (for testing)
+## If provided, only these tiles will be used instead of all tiles from tile_IDs
+## Leave empty/commented out to use all tiles from tile_IDs
+# tile_IDs_exclusive: ["251.288", "251.289", "252.287"]
 
 ## catalogue subversion
 sample:  9

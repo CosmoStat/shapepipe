@@ -18,6 +18,20 @@ def load_config():
         return yaml.safe_load(f)
 
 
+def load_tile_ids(cfg):
+    """Load tile IDs from config, handling both lists and file paths."""
+    tile_ids = cfg.get("tile_IDs", [cfg.get("tile_ID", ["?"])])
+
+    if isinstance(tile_ids, str):
+        if os.path.isfile(tile_ids):
+            with open(tile_ids) as f:
+                tile_ids = [line.strip() for line in f if line.strip()]
+        else:
+            tile_ids = [tile_ids]
+
+    return tile_ids if isinstance(tile_ids, list) else [tile_ids]
+
+
 def get_hdf5_tile_count(hdf5_path):
     """Query tile count from HDF5 file using create_final_cat.py -l.
 
@@ -77,7 +91,7 @@ def monitor(cfg, verbose=0):
     base      = cfg["base"]
     num       = cfg["num"]
     sim_type  = cfg["type"]
-    tile_ids  = cfg.get("tile_IDs", [cfg.get("tile_ID", "?")])
+    tile_ids  = load_tile_ids(cfg)
     n_tiles   = len(tile_ids)
     job_seq   = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
     job_hex   = [format(int(math.log2(j)), 'X') for j in job_seq]
@@ -91,15 +105,17 @@ def monitor(cfg, verbose=0):
 
     col_w = max(len(s) for s in sims) + 2
     downstream = [
-        ("merge",    "final_cat_{sim}.hdf5"),
-        ("extract",  "shape_catalog_comprehensive_ngmix.hdf5"),
-        ("calibrate","shape_catalog_cut_ngmix.fits"),
+        ("merge",  "final_cat_{sim}.hdf5"),
+        ("extr",   "shape_catalog_comprehensive_ngmix.hdf5"),
+        ("calib",  "shape_catalog_cut_ngmix.fits"),
+        ("diag",   "results/diagnostics.log"),
+        ("bias",   "results/m_bias_results.yaml"),
     ]
     ds_w = max(len(s) for s, _ in downstream)
 
     tile_label = f"({n_tiles} tile{'s' if n_tiles > 1 else ''})"
     if verbose >= 1:
-        mid_head = " ".join(job_hex)
+        mid_head = " ".join(f"{h:>2}" for h in job_hex)
     else:
         mid_head = "".join(job_hex)
     bits_w    = len(mid_head)
@@ -131,18 +147,18 @@ def monitor(cfg, verbose=0):
             sim_path = os.path.join(grids, sim)
             if name == "merge":
                 ds_status.append(get_hdf5_tile_count(path))
-            elif name == "extract":
+            elif name == "extr":
                 ds_status.append(get_extract_tile_count(sim_path))
             else:
                 ds_status.append("o" if os.path.isfile(path) else "")
 
         if verbose >= 1:
-            counts_str = " ".join(f"{tile_counts[j]}" for j in job_seq)  # aligns with header 0 1 2 ...
+            counts_str = " ".join(f"{tile_counts[j]:>2}" for j in job_seq)
             row = f"  {sim:<{col_w}}  {jobs_sum:>12}  {counts_str}  " + \
-                  "  ".join(f"{s:<{ds_w}}" for s in ds_status)
+                  "  ".join(f"{s:>{ds_w}}" for s in ds_status)
         else:
             row = f"  {sim:<{col_w}}  {jobs_sum:>12}  {bits_str}  " + \
-                  "  ".join(f"{s:<{ds_w}}" for s in ds_status)
+                  "  ".join(f"{s:>{ds_w}}" for s in ds_status)
         print(row)
 
 
@@ -158,7 +174,7 @@ def main():
         return
 
     base      = cfg["base"]
-    tile_ids  = cfg.get("tile_IDs", [cfg.get("tile_ID", "?")])
+    tile_ids  = load_tile_ids(cfg)
     sample    = cfg["sample"]
     num       = cfg["num"]
     sim_type  = cfg["type"]
@@ -206,11 +222,12 @@ def main():
 
     print("# Useful options")
     print()
-    print(f"  -p                              print shell commands")
-    print(f"  --config 'force=1'          pass --force to run_job_sp_canfar_v2.0.bash")
-    print(f"  --forcerun pipeline_all     force Snakemake to rerun all pipeline jobs")
-    print(f"  --config 'job=J'            target a specific job bit J")
-    print(f"  --rerun-incomplete          if errors occur due to previous interrupted run")
+    print(f"  -p                            print shell commands")
+    print(f"  --config 'force=1'            pass --force to run_job_sp_canfar_v2.0.bash")
+    print(f"  --forcerun pipeline_all       force Snakemake to rerun all pipeline jobs")
+    print(f"  --config 'job=J'              target a specific job bit J")
+    print(f"  --rerun-incomplete            if errors occur due to previous interrupted run")
+    print(f"  pipeline --config 'job=J' --rerun-incomplete check and fix runs")
     print()
 
     print("# Monitor progress")

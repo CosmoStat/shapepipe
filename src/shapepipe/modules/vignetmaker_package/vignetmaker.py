@@ -119,14 +119,36 @@ class VignetMaker(object):
             Array of the positions
 
         """
-        file = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
-        file.open()
+        try:
+            file = file_io.FITSCatalogue(self._galcat_path, SEx_catalogue=True)
+        except Exception as e:
+            self._w_log.error(f"Error creating FITSCatalogue for {self._galcat_path}: {e}")
+            raise
 
-        pos = np.array(
-            [file.get_data()[pos_params[1]], file.get_data()[pos_params[0]]]
-        ).T
+        try:
+            file.open()
+        except Exception as e:
+            self._w_log.error(f"Error opening catalogue file {self._galcat_path}: {e}")
+            raise
 
-        file.close()
+        try:
+            data = file.get_data()
+            if data is None or len(data) == 0:
+                raise ValueError(f"Catalogue file is empty or corrupt: {self._galcat_path}")
+
+            self._w_log.info(f"Successfully read catalogue {self._galcat_path} with {len(data)} entries")
+
+            pos = np.array(
+                [data[pos_params[1]], data[pos_params[0]]]
+            ).T
+        except KeyError as e:
+            self._w_log.error(f"Column not found in {self._galcat_path}: {e}")
+            raise
+        except Exception as e:
+            self._w_log.error(f"Error reading data from catalogue {self._galcat_path}: {e}")
+            raise
+        finally:
+            file.close()
 
         return pos
 
@@ -147,25 +169,44 @@ class VignetMaker(object):
             New positions in pixel coordinates
 
         """
-        # Get image header
-        file = file_io.FITSCatalogue(image_path)
-        file.open()
-        head = file.get_header(0)
-        file.close()
+        try:
+            file = file_io.FITSCatalogue(image_path)
+        except Exception as e:
+            self._w_log.error(f"Error creating FITSCatalogue for image {image_path}: {e}")
+            raise
 
-        # Get WCS transformation matrix
-        wcs = WCS(head)
+        try:
+            file.open()
+        except Exception as e:
+            self._w_log.error(f"Error opening image file {image_path}: {e}")
+            raise
 
-        # Create copy of input positions
+        try:
+            head = file.get_header(0)
+            if head is None:
+                raise ValueError(f"Image file header is empty or corrupt: {image_path}")
+            self._w_log.info(f"Successfully read header from image {image_path}")
+        except Exception as e:
+            self._w_log.error(f"Error reading header from image {image_path}: {e}")
+            raise
+        finally:
+            file.close()
+
+        try:
+            wcs = WCS(head)
+        except Exception as e:
+            self._w_log.error(f"Error creating WCS from header of {image_path}: {e}")
+            raise
+
         pos_tmp = np.copy(self._pos)
-
-        # Exchange x and y
         pos_tmp[:, [0, 1]] = pos_tmp[:, [1, 0]]
 
-        # Transform from world to pixel coordinates
-        new_pos = wcs.all_world2pix(pos_tmp, 1)
+        try:
+            new_pos = wcs.all_world2pix(pos_tmp, 1)
+        except Exception as e:
+            self._w_log.error(f"Error converting world to pixel coordinates for {image_path}: {e}")
+            raise
 
-        # Exchange x and y back to original
         new_pos[:, [0, 1]] = new_pos[:, [1, 0]]
 
         return new_pos

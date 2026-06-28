@@ -36,11 +36,15 @@ usage="Usage: $(basename "$0") [OPTIONS]
    -s, --subdir SUBDIR subdir for image simulations, default='$subdir'\n
    -d, --dir DIR\tbase run directory, default='$base_dir'\n
    -P, --params PATH\tsource params.py to copy, default='$params_src'\n
+   -T, --tiles PATH\ttile numbers file (image_sims only), overrides default\n
+   -c, --config CONFIG config file for input directories (image_sims only)\n
    --force\t\trecreate existing symlinks and parameter files\n
    -S, --sample SAMPLE\tsample version for mask config (e.g. 6)\n
 "
 
 ## Parse command line
+tiles_src_override=""
+config_file=""
 while [ $# -gt 0 ]; do
   case "$1" in
     -h)
@@ -61,6 +65,14 @@ while [ $# -gt 0 ]; do
       ;;
     -P|--params)
       params_src="$2"
+      shift
+      ;;
+    -T|--tiles)
+      tiles_src_override="$2"
+      shift
+      ;;
+    -c|--config)
+      config_file="$2"
       shift
       ;;
     --force)
@@ -91,11 +103,23 @@ if [ "$type" == "data" ]; then
 elif [ "$type" == "image_sims" ]; then
 
     config_dir="$sp_root/example/cfis_image_sims"
-    tiles_src="$sp_root/auxdir/CFIS/im_sims_202606/numbers.txt"
+    # Use override if provided, otherwise use default
+    if [ -n "$tiles_src_override" ]; then
+        tiles_src="$tiles_src_override"
+    else
+        tiles_src="$sp_root/auxdir/CFIS/im_sims_202606/numbers.txt"
+    fi
 
-    input_dir_base="/n09data/hervas/skills_out"
-    input_dir_tiles="$input_dir_base/$subdir/images/SP_tiles"
-    input_dir_exp="$input_dir_base/$subdir/images/SP_exp"
+    # Read input directories from config file if provided
+    input_dir_tiles=""
+    input_dir_exp=""
+    if [ -n "$config_file" ]; then
+        if [ ! -f "$config_file" ]; then
+            echo "ERROR: Config file not found: $config_file"
+            exit 2
+        fi
+        source "$config_file"
+    fi
 
 else
 
@@ -113,11 +137,13 @@ mkdir -p "$base_dir/$subdir"
 cd "$base_dir/$subdir"
 
 if [ "$type" == "image_sims" ]; then
-    for link in input_tiles input_exp; do
-        src=$([ "$link" == "input_tiles" ] && echo "$input_dir_tiles" || echo "$input_dir_exp")
-        [ $force -eq 1 ] && rm -f "$link"
-        [ ! -e "$link" ] && ln -s "$src" "$link"
-    done
+    if [ -n "$input_dir_tiles" ] && [ -n "$input_dir_exp" ]; then
+        for link in input_tiles input_exp; do
+            src=$([ "$link" == "input_tiles" ] && echo "$input_dir_tiles" || echo "$input_dir_exp")
+            [ $force -eq 1 ] && rm -f "$link"
+            [ ! -e "$link" ] && ln -s "$src" "$link"
+        done
+    fi
 
     if [ -n "$sample" ]; then
         mask_src="$HOME/astro/repositories/github/sp_validation/config/calibration/mask_v1.X.${sample}_im_sim.yaml"
@@ -207,6 +233,10 @@ echo "  ├── cfis  ->  ${config_dir}"
 echo "  ├── tile_numbers.txt  ->  ${tiles_src}"
 echo "  └── params.py  <-  ${params_src}"
 if [ "$type" == "image_sims" ]; then
-    echo "  ___ input_dir_tiles -> $input_dir_tiles"
-    echo "  ___ input_dir_exp -> $input_dir_exp"
+    if [ -n "$input_dir_tiles" ] && [ -n "$input_dir_exp" ]; then
+        echo "  ├── input_tiles -> $input_dir_tiles"
+        echo "  └── input_exp -> $input_dir_exp"
+    else
+        echo "  (no input symlinks: config file not provided)"
+    fi
 fi

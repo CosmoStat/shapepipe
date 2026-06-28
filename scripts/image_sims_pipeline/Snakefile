@@ -11,7 +11,17 @@ import os
 configfile: "config.yaml"
 
 BASE         = config["base"]
-TILE_IDs     = config.get("tile_IDs", [config.get("tile_ID", "254.286")])
+
+# Load tile IDs from file (always a file path)
+_tile_ids_file = config.get("tile_IDs", "tile_numbers.txt")
+with open(_tile_ids_file) as f:
+    TILE_IDs = [line.strip() for line in f if line.strip()]
+
+# Apply exclusive tile list if provided (for testing/limiting tiles)
+_exclusive = config.get("tile_IDs_exclusive")
+if _exclusive and isinstance(_exclusive, list) and _exclusive:  # Non-empty list
+    TILE_IDs = _exclusive
+
 SAMPLE       = str(config["sample"])
 NUM          = config["num"]
 TYPE         = config["type"]
@@ -19,6 +29,10 @@ FORCE        = "--force" if config.get("force", 0) else ""
 N_SMP        = config.get("n_smp", -1)
 
 JOB_SEQUENCE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+# Filter to single job if specified via --config "job=N"
+if config.get("job"):
+    target_job = int(config["job"])
+    JOB_SEQUENCE = [j for j in JOB_SEQUENCE if j == target_job]
 JOB          = sum(JOB_SEQUENCE)
 
 PSF          = "psfex"
@@ -53,6 +67,23 @@ SPV_CMD     = (
 )
 MBIAS_OUT   = f"{GRIDS}/results/m_bias_results.yaml"
 
+# ---------- helper functions ----------
+def validate_output_files(output_files):
+    """Validate that output files exist and are non-empty.
+
+    Raises an error if any output file is missing or zero-sized,
+    preventing empty/corrupt files from being treated as valid outputs.
+    """
+    if isinstance(output_files, str):
+        output_files = [output_files]
+
+    for f in output_files:
+        if not os.path.isfile(f):
+            raise FileNotFoundError(f"Output file missing: {f}")
+        size = os.path.getsize(f)
+        if size == 0:
+            raise ValueError(f"Output file is empty (0 bytes): {f}")
+
 # ---------- targets ----------
 rule all:
     input:
@@ -66,6 +97,17 @@ rule all:
 # 5. calibrate_all
 # 6. mbias
 # 7. diagnostics
+
+rule generate_tile_list:
+    """Generate tile_numbers.txt from config's tile_IDs."""
+    output:
+        f"{GRIDS}/tile_numbers.txt"
+    run:
+        os.makedirs(f"{GRIDS}", exist_ok=True)
+        with open(output[0], "w") as f:
+            for tile in TILE_IDs:
+                f.write(f"{tile}\n")
+        print(f"Generated {output[0]} with {len(TILE_IDs)} tiles")
 
 rule init_all:
     input:
@@ -92,12 +134,15 @@ rule calibrate_all:
 
 # ---------- rules ----------
 rule init:
+    input:
+        tiles = f"{GRIDS}/tile_numbers.txt"
     output:
         params = f"{GRIDS}/{{sim}}/params.py",
         mask   = f"{GRIDS}/{{sim}}/config_mask.yaml",
     shell:
         f"{APP_CMD} {PATH_SH}/init_run_v2.0.sh"
         f" -t image_sims -d {GRIDS} -s {{wildcards.sim}} -S {SAMPLE}"
+        f" -T {input.tiles}"
 
 def _shapepipe_job_input(wildcards):
     bit      = int(wildcards.bit)
@@ -129,7 +174,9 @@ rule shapepipe_job:
     shell:
         f"cd {GRIDS}/{{wildcards.sim}} &&"
         f" {APP_CMD} {PATH_SH}/run_job_sp_canfar_v2.0.bash"
-        f" {FORCE} -N {N_SMP} -e {{wildcards.tile}} -t image_sims -j {{wildcards.bit}}"
+        f" {FORCE} -N {N_SMP} -e {{wildcards.tile}} -t image_sims -j {{wildcards.bit}} &&"
+        f" python3 -c \"import os; f='{output}'; "
+        f"os.path.getsize(f) > 0 or exit(1)\""
 
 rule merge:
     input:
@@ -173,12 +220,17 @@ rule mbias:
         MBIAS_OUT,
         f"{GRIDS}/results/mbias_cumulative.yaml",
     shell:
-        f"mkdir -p {GRIDS}/results && "
-        f"python -c \"import yaml; "
-        f"cfg = {{'grids_dir': '{GRIDS}', 'num': {NUM}, 'catalog_name': 'shape_catalog_cut_ngmix.fits', "
-        f"'shear_amplitude': 0.02, 'match_radius_deg': 0.0002, 'w_col': 'w_des', 'n_bootstrap': 500, "
-        f"'output_path': '{GRIDS}/results/m_bias_results.yaml', 'results_dir': '{GRIDS}/results'}}; "
-        f"yaml.dump(cfg, open('/tmp/mbias_cfg.yaml', 'w'))\" && "
+        f"mkdir -p {GRIDS}/results && cat > /tmp/mbias_cfg.yaml << 'EOF'\n"
+        f"grids_dir: {GRIDS}\n"
+        f"num: {NUM}\n"
+        f"catalog_name: shape_catalog_cut_ngmix.fits\n"
+        f"shear_amplitude: 0.02\n"
+        f"match_radius_deg: 0.0002\n"
+        f"w_col: w_des\n"
+        f"n_bootstrap: 500\n"
+        f"output_path: {GRIDS}/results/m_bias_results.yaml\n"
+        f"results_dir: {GRIDS}/results\n"
+        f"EOF\n"
         f"{SPV_CMD} python {PATH_SPV}/scripts/compute_m_bias_image_sims.py"
         f" -c /tmp/mbias_cfg.yaml -v --cumulative"
 
@@ -188,12 +240,17 @@ rule diagnostics:
     output:
         f"{GRIDS}/results/footprint.png",
     shell:
-        f"mkdir -p {GRIDS}/results && "
-        f"python -c \"import yaml; "
-        f"cfg = {{'grids_dir': '{GRIDS}', 'num': {NUM}, 'catalog_name': 'shape_catalog_cut_ngmix.fits', "
-        f"'shear_amplitude': 0.02, 'match_radius_deg': 0.0002, 'w_col': 'w_des', 'n_bootstrap': 500, "
-        f"'output_path': '{GRIDS}/results/m_bias_results.yaml', 'results_dir': '{GRIDS}/results', "
-        f"'diagnostics_dir': '{GRIDS}/results'}}; "
-        f"yaml.dump(cfg, open('/tmp/diag_cfg.yaml', 'w'))\" && "
+        f"mkdir -p {GRIDS}/results && cat > /tmp/diag_cfg.yaml << 'EOF'\n"
+        f"grids_dir: {GRIDS}\n"
+        f"num: {NUM}\n"
+        f"catalog_name: shape_catalog_cut_ngmix.fits\n"
+        f"shear_amplitude: 0.02\n"
+        f"match_radius_deg: 0.0002\n"
+        f"w_col: w_des\n"
+        f"n_bootstrap: 500\n"
+        f"output_path: {GRIDS}/results/m_bias_results.yaml\n"
+        f"results_dir: {GRIDS}/results\n"
+        f"diagnostics_dir: {GRIDS}/results\n"
+        f"EOF\n"
         f"{SPV_CMD} python {PATH_SPV}/scripts/diagnostics_image_sims.py"
         f" -c /tmp/diag_cfg.yaml -v"

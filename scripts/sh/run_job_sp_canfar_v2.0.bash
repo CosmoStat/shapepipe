@@ -822,7 +822,7 @@ if [[ $do_job != 0 ]]; then
       run_tile_job 64 "fpsf" "fake_psf_runner:1"
       run_tile_job 512 "ViVi ViVi" "vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:3"
       if [ "$run_and_check" == "1" ]; then
-        check_only=1; local saved_force_512im=$force; force=0
+        check_only=1; saved_force_512im=$force; force=0
         out1=$(run_tile_job 64 "fpsf" "fake_psf_runner:1" 2>&1)
         out2=$(run_tile_job 512 "ViVi ViVi" "vignetmaker_runner_run_1:1 vignetmaker_runner_run_2:3" 2>&1)
         check_only=0; force=$saved_force_512im

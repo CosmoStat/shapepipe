@@ -259,6 +259,10 @@ def print_list(params):
     with open(params["output_summary"], "w") as f_out:
         print(n_tiles, file=f_out)
 
+    # Write n_tiles to HDF5 file header
+    with h5py.File(params["merged_cat_path"], "a") as hdf5_file:
+        hdf5_file.attrs["n_tiles"] = n_tiles
+
 
 def get_patch_group(hdf5_file, patch, verbose=False):
     """Get Patch group.
