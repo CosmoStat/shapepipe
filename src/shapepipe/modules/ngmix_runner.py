@@ -79,13 +79,14 @@ def ngmix_runner(
     id_obj_min = config.getint(module_config_sec, "ID_OBJ_MIN")
     id_obj_max = config.getint(module_config_sec, "ID_OBJ_MAX")
 
-    # Centroid source for the galaxy Jacobian origin: "hsm" (default,
-    # HSM adaptive-moment centroid; robust for galaxies) or "wcs" (catalog
-    # sky position through the WCS; better for stars).
+    # Centroid source for the galaxy Jacobian origin: "wcs" (default — the
+    # catalog sky position projected through the WCS, trusting the astrometry)
+    # or "hsm" (legacy HSM adaptive-moment centroid, being phased out: noisy
+    # for stars and flagged as incorrect by Fabian — see #767).
     if config.has_option(module_config_sec, "CENTROID_SOURCE"):
         centroid_source = config.get(module_config_sec, "CENTROID_SOURCE")
     else:
-        centroid_source = "hsm"
+        centroid_source = "wcs"
 
     # Initialise class instance
     ngmix_inst = Ngmix(
