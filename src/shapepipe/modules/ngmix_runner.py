@@ -88,6 +88,15 @@ def ngmix_runner(
     else:
         centroid_source = "wcs"
 
+    # Neighbour treatment: "noisefill" (default, historical) replaces a
+    # neighbour's pixels with a noise realisation; "uberseg" hard-masks
+    # (weight -> 0) every pixel closer to a neighbour than to the central
+    # object, from the segmentation map. See the ngmix module docstrings.
+    if config.has_option(module_config_sec, "BLEND_HANDLING"):
+        blend_handling = config.get(module_config_sec, "BLEND_HANDLING")
+    else:
+        blend_handling = "noisefill"
+
     # Initialise class instance
     ngmix_inst = Ngmix(
         input_file_list,
@@ -101,6 +110,7 @@ def ngmix_runner(
         id_obj_min=id_obj_min,
         id_obj_max=id_obj_max,
         centroid_source=centroid_source,
+        blend_handling=blend_handling,
     )
 
     # Process ngmix shape measurement and metacalibration

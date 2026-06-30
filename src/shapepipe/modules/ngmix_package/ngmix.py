@@ -14,9 +14,13 @@ import numpy as np
 from astropy.io import fits
 from modopt.math.stats import sigma_mad
 from ngmix.observation import Observation, ObsList
+from scipy.spatial import cKDTree
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
+
+# Neighbour treatments selectable with the BLEND_HANDLING option.
+BLEND_HANDLINGS = ("noisefill", "uberseg")
 
 # Gaussian half-light radius per unit sigma: r50 = sqrt(2 ln 2) * sigma
 # = 1.17741 * sigma.  With the ngmix area parameter T = 2 sigma^2 this
@@ -149,6 +153,9 @@ class Postage_stamp():
         self.weights = []
         self.flags = []
         self.bkg_rms = []
+        # Per-epoch segmentation stamps (object NUMBERs), used only by the
+        # "uberseg" blend handling; empty for the default noise-fill path.
+        self.segs = []
         self.jacobs = []
         # Per-epoch full WCS and the object's sky position, used only by the
         # "wcs" centroid source (skipped for the default "hsm" path).
@@ -263,12 +270,19 @@ class Ngmix(object):
         id_obj_min=-1,
         id_obj_max=-1,
         centroid_source="hsm",
+        blend_handling="noisefill",
     ):
 
         if len(input_file_list) not in {6, 7}:
             raise IndexError(
                 f"Input file list has length {len(input_file_list)},"
                 + " required is 6 or 7"
+            )
+
+        if blend_handling not in BLEND_HANDLINGS:
+            raise ValueError(
+                f"Unknown BLEND_HANDLING '{blend_handling}'; expected one of"
+                + f" {BLEND_HANDLINGS}"
             )
 
         self._tile_cat_path = input_file_list[0]
@@ -294,6 +308,7 @@ class Ngmix(object):
         self._id_obj_min = id_obj_min
         self._id_obj_max = id_obj_max
         self._centroid_source = centroid_source
+        self._blend_handling = blend_handling
 
         self._w_log = w_log
 
@@ -668,6 +683,8 @@ class Ngmix(object):
                     flux_guess,
                     self._rng,
                     centroid_source=self._centroid_source,
+                    blend_handling=self._blend_handling,
+                    object_number=obj_id,
                 )
             except Exception as ee:
                 self._w_log.info(
@@ -957,7 +974,65 @@ def get_noise(gal, weight, guess, pixel_scale, thresh=1.2):
 
     return sig_noise
 
-def prepare_ngmix_weights(gal, weight, flag, rng, bkg_rms=None):
+def uberseg_weight(weight, seg, object_number):
+    """Zero a stamp's weight on neighbour-side pixels (Sheldon/MEDS UberSeg).
+
+    Each pixel is assigned to the object whose segmentation footprint it is
+    nearest to — a nearest-segment Voronoi partition — and only pixels
+    assigned to the central object keep their weight. This is the algorithm
+    behind ``meds.MEDS.get_uberseg`` / ``meds._uberseg.uberseg_tree``,
+    reimplemented here (the C extension lives in ``meds``, whose import drags
+    the full ``fitsio``/``esutil`` stack) with a ``cKDTree`` nearest-neighbour
+    query in place of the C k-d tree.
+
+    Because the partition is by distance to the nearest footprint, the pixels
+    surviving around a compact central object form a single connected,
+    roughly circular core; the "circularisation" is emergent geometry, not a
+    separate aperture. Unlike the noise-fill treatment, masked pixels are
+    handed to ngmix as a hard mask (weight = 0), never replaced by a noise
+    realisation.
+
+    Parameters
+    ----------
+    weight : numpy.ndarray
+        Per-pixel weight (inverse variance) map for the stamp.
+    seg : numpy.ndarray
+        Segmentation map on the same grid as ``weight``: 0 for sky, the
+        SExtractor object number for each detected object's footprint.
+    object_number : int
+        Segmentation label of the central object (its SExtractor ``NUMBER``).
+
+    Returns
+    -------
+    numpy.ndarray
+        Copy of ``weight`` with neighbour-side pixels zeroed.
+    """
+    weight = np.copy(weight)
+
+    obj_pix = np.argwhere(seg != 0)
+    # No detected footprint, or only sky plus the central object: there is
+    # no neighbour to mask, so the weight is unchanged (cf. MEDS' early
+    # ``len(np.unique(seg)) == 2`` return).
+    if obj_pix.shape[0] == 0:
+        return weight
+    labels = seg[seg != 0]
+    if np.all(labels == object_number):
+        return weight
+
+    # Nearest segmentation pixel for every stamp pixel; zero the weight
+    # wherever that nearest footprint belongs to a neighbour rather than to
+    # the central object.
+    grid = np.indices(seg.shape).reshape(2, -1).T
+    _, nearest = cKDTree(obj_pix).query(grid)
+    nearest_label = labels[nearest].reshape(seg.shape)
+    weight[nearest_label != object_number] = 0.0
+
+    return weight
+
+def prepare_ngmix_weights(
+    gal, weight, flag, rng, bkg_rms=None,
+    blend_handling="noisefill", seg=None, object_number=None,
+):
     """bookkeeping for ngmix weights. runs on a single galaxy and epoch
         pixel scale and galaxy guess
         TO DO: decide if we want galaxy guess stuff
@@ -973,16 +1048,36 @@ def prepare_ngmix_weights(gal, weight, flag, rng, bkg_rms=None):
     bkg_rms : numpy.ndarray, optional
         Per-pixel background RMS map. If supplied, unmasked pixels use
         ``1 / bkg_rms**2`` as the ngmix inverse variance.
+    blend_handling : {"noisefill", "uberseg"}, optional
+        How to treat pixels shared with a neighbour. ``"noisefill"`` (default)
+        replaces flagged pixels with a noise realisation and keeps their
+        inverse-variance weight — the historical behaviour. ``"uberseg"``
+        instead hard-masks (weight = 0) every pixel closer to a neighbour's
+        segmentation footprint than to the central object's, leaving the
+        image untouched (see :func:`uberseg_weight`).
+    seg : numpy.ndarray, optional
+        Segmentation map on the stamp grid (object NUMBERs). Required for
+        ``blend_handling="uberseg"``; ignored otherwise.
+    object_number : int, optional
+        Central object's segmentation label. Required for
+        ``blend_handling="uberseg"``; ignored otherwise.
 
     Returns
     -------
     numpy.ndarray
-        Galaxy image with masked pixels replaced by noise.
+        Galaxy image. For ``"noisefill"`` masked pixels are replaced by noise;
+        for ``"uberseg"`` the image is returned untouched.
     numpy.ndarray
         Variance map for NGMIX.
     numpy.ndarray
         Noise image.
     """
+    if blend_handling not in BLEND_HANDLINGS:
+        raise ValueError(
+            f"Unknown blend_handling '{blend_handling}'; expected one of"
+            + f" {BLEND_HANDLINGS}"
+        )
+
     mask = np.copy(weight) != 0
     mask[flag != 0] = False
 
@@ -1015,7 +1110,21 @@ def prepare_ngmix_weights(gal, weight, flag, rng, bkg_rms=None):
     noise_img_gal = rng.standard_normal(gal.shape) * sig_noise
 
     gal_masked = np.copy(gal)
-    if (~mask).any():
+    if blend_handling == "uberseg":
+        # Hard-mask neighbour-side pixels (weight -> 0) from the segmentation
+        # geometry; the image is left untouched (the masked pixels carry no
+        # weight, so ngmix ignores them in the likelihood). Bad/flagged
+        # pixels already sit at weight 0 from the mask above.
+        if seg is None or object_number is None:
+            raise ValueError(
+                "blend_handling='uberseg' requires a segmentation map and the"
+                + " central object_number; none reached prepare_ngmix_weights."
+                + " The seg-map source is gated (see CosmoStat/shapepipe issue"
+                + " on UberSeg segmentation plumbing)."
+            )
+        weight_map = uberseg_weight(weight_map, seg, object_number)
+    elif (~mask).any():
+        # noisefill (default): replace masked pixels with a noise realisation.
         gal_masked[~mask] = noise_img_gal[~mask]
 
     return gal_masked, weight_map, noise_img
@@ -1023,6 +1132,7 @@ def prepare_ngmix_weights(gal, weight, flag, rng, bkg_rms=None):
 def make_ngmix_observation(
     gal, weight, flag, psf, wcs, rng,
     bkg_rms=None, centroid_source="hsm", wcs_full=None, ra=None, dec=None,
+    blend_handling="noisefill", seg=None, object_number=None,
 ):
     """Build an ngmix Observation for a single galaxy epoch.
 
@@ -1061,6 +1171,15 @@ def make_ngmix_observation(
     ra, dec : float, optional
         Object sky position in degrees. Required for
         ``centroid_source="wcs"`` (ignored for ``"hsm"``).
+    blend_handling : {"noisefill", "uberseg"}, optional
+        Neighbour treatment passed through to :func:`prepare_ngmix_weights`;
+        the default ``"noisefill"`` is the historical behaviour.
+    seg : numpy.ndarray, optional
+        Segmentation map on the stamp grid. Required for
+        ``blend_handling="uberseg"`` (ignored otherwise).
+    object_number : int, optional
+        Central object's segmentation label. Required for
+        ``blend_handling="uberseg"`` (ignored otherwise).
 
     Returns
     -------
@@ -1074,7 +1193,8 @@ def make_ngmix_observation(
     psf_obs = Observation(psf, jacobian=psf_jacob)
 
     gal_masked, weight_map, noise_img = prepare_ngmix_weights(
-        gal, weight, flag, rng, bkg_rms=bkg_rms
+        gal, weight, flag, rng, bkg_rms=bkg_rms,
+        blend_handling=blend_handling, seg=seg, object_number=object_number,
     )
 
     if centroid_source == "hsm":
@@ -1207,7 +1327,10 @@ def make_runners(prior, flux_guess, rng):
     )
 
 
-def do_ngmix_metacal(stamp, prior, flux_guess, rng, centroid_source="hsm"):
+def do_ngmix_metacal(
+    stamp, prior, flux_guess, rng, centroid_source="hsm",
+    blend_handling="noisefill", object_number=None,
+):
     """Do Ngmix Metacal.
 
     Performs metacalibration on a single multi-epoch object and returns the
@@ -1229,6 +1352,14 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng, centroid_source="hsm"):
         adaptive-moment centroid); ``"wcs"`` uses the catalog sky position
         projected through the WCS — see that function for the star-vs-galaxy
         rationale.
+    blend_handling : {"noisefill", "uberseg"}, optional
+        Neighbour treatment passed through to
+        :func:`make_ngmix_observation`; the default ``"noisefill"`` is the
+        historical behaviour. ``"uberseg"`` consumes ``stamp.segs`` and
+        ``object_number``.
+    object_number : int, optional
+        Central object's segmentation label (its SExtractor ``NUMBER``).
+        Required for ``blend_handling="uberseg"`` (ignored otherwise).
 
     Returns
     -------
@@ -1255,6 +1386,9 @@ def do_ngmix_metacal(stamp, prior, flux_guess, rng, centroid_source="hsm"):
             wcs_full=stamp.wcs[n_e] if n_e < len(stamp.wcs) else None,
             ra=stamp.ra[n_e] if n_e < len(stamp.ra) else None,
             dec=stamp.dec[n_e] if n_e < len(stamp.dec) else None,
+            blend_handling=blend_handling,
+            seg=stamp.segs[n_e] if n_e < len(stamp.segs) else None,
+            object_number=object_number,
         )
         gal_obs_list.append(gal_obs)
 
