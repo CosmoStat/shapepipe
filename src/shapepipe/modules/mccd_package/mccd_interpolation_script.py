@@ -219,8 +219,8 @@ class MCCDinterpolator(object):
         self.psf_shapes = np.array(
             [
                 [
-                    moms.observed_shape.g1,
-                    moms.observed_shape.g2,
+                    moms.observed_shape.e1,
+                    moms.observed_shape.e2,
                     moms.moments_sigma,
                     int(bool(moms.error_message)),
                 ]
@@ -277,8 +277,8 @@ class MCCDinterpolator(object):
         self.star_shapes = np.array(
             [
                 [
-                    moms.observed_shape.g1,
-                    moms.observed_shape.g2,
+                    moms.observed_shape.e1,
+                    moms.observed_shape.e2,
                     moms.moments_sigma,
                     int(bool(moms.error_message)),
                 ]
