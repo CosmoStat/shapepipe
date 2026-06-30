@@ -14,6 +14,7 @@ import galsim
 import mccd
 import numpy as np
 from astropy.io import fits
+from cs_util import size as cs_size
 
 from shapepipe.pipeline import file_io
 
@@ -471,10 +472,10 @@ def shapepipe_write_output(
     if get_shapes:
         data = {
             "VIGNET": interp_PSFs,
-            "E1_PSF_HSM": PSF_shapes[:, 0],
-            "E2_PSF_HSM": PSF_shapes[:, 1],
-            "SIGMA_PSF_HSM": PSF_shapes[:, 2],
-            "FLAG_PSF_HSM": PSF_shapes[:, 3].astype(int),
+            "HSM_E1_PSF": PSF_shapes[:, 0],
+            "HSM_E2_PSF": PSF_shapes[:, 1],
+            "HSM_T_PSF": cs_size.sigma_to_T(PSF_shapes[:, 2]),
+            "HSM_FLAG_PSF": PSF_shapes[:, 3].astype(int),
         }
     else:
         data = {"VIGNET": interp_PSFs}

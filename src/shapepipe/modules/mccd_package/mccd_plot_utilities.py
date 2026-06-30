@@ -254,23 +254,23 @@ def plot_meanshapes(
     )
 
     # Flag mask
-    star_flags = starcat[hdu_no].data["FLAG_STAR_HSM"]
-    psf_flags = starcat[hdu_no].data["FLAG_PSF_HSM"]
+    star_flags = starcat[hdu_no].data["HSM_FLAG_STAR"]
+    psf_flags = starcat[hdu_no].data["HSM_FLAG_PSF"]
     flagmask = np.abs(star_flags - 1) * np.abs(psf_flags - 1)
 
-    # convert sigma to R^2's
+    # size column already holds T = 2 sigma^2
     all_star_shapes = np.array(
         [
-            starcat[hdu_no].data["E1_STAR_HSM"],
-            starcat[hdu_no].data["E2_STAR_HSM"],
-            2.0 * starcat[hdu_no].data["SIGMA_STAR_HSM"] ** 2,
+            starcat[hdu_no].data["HSM_E1_STAR"],
+            starcat[hdu_no].data["HSM_E2_STAR"],
+            starcat[hdu_no].data["HSM_T_STAR"],
         ]
     )
     all_psf_shapes = np.array(
         [
-            starcat[hdu_no].data["E1_PSF_HSM"],
-            starcat[hdu_no].data["E2_PSF_HSM"],
-            2.0 * starcat[hdu_no].data["SIGMA_PSF_HSM"] ** 2,
+            starcat[hdu_no].data["HSM_E1_PSF"],
+            starcat[hdu_no].data["HSM_E2_PSF"],
+            starcat[hdu_no].data["HSM_T_PSF"],
         ]
     )
     all_CCDs = starcat[hdu_no].data["CCD_NB"]

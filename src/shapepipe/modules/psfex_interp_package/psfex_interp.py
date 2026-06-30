@@ -11,6 +11,7 @@ import re
 
 import numpy as np
 from astropy.io import fits
+from cs_util import size as cs_size
 from sqlitedict import SqliteDict
 
 from shapepipe.pipeline import file_io
@@ -346,10 +347,10 @@ class PSFExInterpolator(object):
         if self._compute_shape:
             data = {
                 "VIGNET": self.interp_PSFs,
-                "E1_PSF_HSM": self.psf_shapes[:, 0],
-                "E2_PSF_HSM": self.psf_shapes[:, 1],
-                "SIGMA_PSF_HSM": self.psf_shapes[:, 2],
-                "FLAG_PSF_HSM": self.psf_shapes[:, 3].astype(int),
+                "HSM_E1_PSF": self.psf_shapes[:, 0],
+                "HSM_E2_PSF": self.psf_shapes[:, 1],
+                "HSM_T_PSF": cs_size.sigma_to_T(self.psf_shapes[:, 2]),
+                "HSM_FLAG_PSF": self.psf_shapes[:, 3].astype(int),
             }
         else:
             data = {"VIGNET": self.interp_PSFs}
@@ -499,14 +500,14 @@ class PSFExInterpolator(object):
         )
 
         data = {
-            "E1_PSF_HSM": self.psf_shapes[:, 0],
-            "E2_PSF_HSM": self.psf_shapes[:, 1],
-            "SIGMA_PSF_HSM": self.psf_shapes[:, 2],
-            "FLAG_PSF_HSM": self.psf_shapes[:, 3].astype(int),
-            "E1_STAR_HSM": self.star_shapes[:, 0],
-            "E2_STAR_HSM": self.star_shapes[:, 1],
-            "SIGMA_STAR_HSM": self.star_shapes[:, 2],
-            "FLAG_STAR_HSM": self.star_shapes[:, 3].astype(int),
+            "HSM_E1_PSF": self.psf_shapes[:, 0],
+            "HSM_E2_PSF": self.psf_shapes[:, 1],
+            "HSM_T_PSF": cs_size.sigma_to_T(self.psf_shapes[:, 2]),
+            "HSM_FLAG_PSF": self.psf_shapes[:, 3].astype(int),
+            "HSM_E1_STAR": self.star_shapes[:, 0],
+            "HSM_E2_STAR": self.star_shapes[:, 1],
+            "HSM_T_STAR": cs_size.sigma_to_T(self.star_shapes[:, 2]),
+            "HSM_FLAG_STAR": self.star_shapes[:, 3].astype(int),
         }
         data = {**data, **star_dict}
 
@@ -754,16 +755,16 @@ class PSFExInterpolator(object):
                     ] = final_list[j][1][where_res[0]]
                     if self._compute_shape:
                         shape_dict = {}
-                        shape_dict["E1_PSF_HSM"] = final_list[j][2][
+                        shape_dict["HSM_E1_PSF"] = final_list[j][2][
                             where_res[0]
                         ][0]
-                        shape_dict["E2_PSF_HSM"] = final_list[j][2][
+                        shape_dict["HSM_E2_PSF"] = final_list[j][2][
                             where_res[0]
                         ][1]
-                        shape_dict["SIGMA_PSF_HSM"] = final_list[j][2][
-                            where_res[0]
-                        ][2]
-                        shape_dict["FLAG_PSF_HSM"] = final_list[j][2][
+                        shape_dict["HSM_T_PSF"] = cs_size.sigma_to_T(
+                            final_list[j][2][where_res[0]][2]
+                        )
+                        shape_dict["HSM_FLAG_PSF"] = final_list[j][2][
                             where_res[0]
                         ][3]
                         output_dict[id_tmp][final_list[j][3][where_res[0]]][

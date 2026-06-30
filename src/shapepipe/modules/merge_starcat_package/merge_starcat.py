@@ -12,6 +12,7 @@ import re
 
 import numpy as np
 from astropy.io import fits
+from cs_util import size as cs_size
 
 from shapepipe.pipeline import file_io
 
@@ -344,7 +345,7 @@ class MergeStarCatMCCD(object):
                     )
                 )
 
-            # shapes (convert sigmas to R^2)
+            # shapes (convert sigmas to T = 2 sigma^2)
             g1_psf += list(
                 starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 0]
             )
@@ -352,12 +353,16 @@ class MergeStarCatMCCD(object):
                 starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 1]
             )
             size_psf += list(
-                starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 2] ** 2
+                cs_size.sigma_to_T(
+                    starcat_j[self._hdu_table].data["PSF_MOM_LIST"][:, 2]
+                )
             )
             g1 += list(starcat_j[self._hdu_table].data["STAR_MOM_LIST"][:, 0])
             g2 += list(starcat_j[self._hdu_table].data["STAR_MOM_LIST"][:, 1])
             size += list(
-                starcat_j[self._hdu_table].data["STAR_MOM_LIST"][:, 2] ** 2
+                cs_size.sigma_to_T(
+                    starcat_j[self._hdu_table].data["STAR_MOM_LIST"][:, 2]
+                )
             )
 
             # flags
@@ -479,21 +484,20 @@ class MergeStarCatMCCD(object):
             SEx_catalogue=True,
         )
 
-        # Collect columns
-        # convert back to sigma for consistency
+        # Collect columns (size stored as T = 2 sigma^2)
         data = {
             "X": x,
             "Y": y,
             "RA": ra,
             "DEC": dec,
-            "E1_PSF_HSM": g1_psf,
-            "E2_PSF_HSM": g2_psf,
-            "SIGMA_PSF_HSM": np.sqrt(size_psf),
-            "E1_STAR_HSM": g1,
-            "E2_STAR_HSM": g2,
-            "SIGMA_STAR_HSM": np.sqrt(size),
-            "FLAG_PSF_HSM": flag_psf,
-            "FLAG_STAR_HSM": flag_star,
+            "HSM_E1_PSF": g1_psf,
+            "HSM_E2_PSF": g2_psf,
+            "HSM_T_PSF": size_psf,
+            "HSM_E1_STAR": g1,
+            "HSM_E2_STAR": g2,
+            "HSM_T_STAR": size,
+            "HSM_FLAG_PSF": flag_psf,
+            "HSM_FLAG_STAR": flag_star,
             "CCD_NB": ccd_nb,
         }
 
@@ -580,17 +584,17 @@ class MergeStarCatPSFEX(object):
             ra += list(data_j["RA"])
             dec += list(data_j["DEC"])
 
-            # shapes (convert sigmas to R^2)
-            g1_psf += list(data_j["E1_PSF_HSM"])
-            g2_psf += list(data_j["E2_PSF_HSM"])
-            size_psf += list(data_j["SIGMA_PSF_HSM"] ** 2)
-            g1 += list(data_j["E1_STAR_HSM"])
-            g2 += list(data_j["E2_STAR_HSM"])
-            size += list(data_j["SIGMA_STAR_HSM"] ** 2)
+            # shapes (size column already holds T = 2 sigma^2)
+            g1_psf += list(data_j["HSM_E1_PSF"])
+            g2_psf += list(data_j["HSM_E2_PSF"])
+            size_psf += list(data_j["HSM_T_PSF"])
+            g1 += list(data_j["HSM_E1_STAR"])
+            g2 += list(data_j["HSM_E2_STAR"])
+            size += list(data_j["HSM_T_STAR"])
 
             # flags
-            flag_psf += list(data_j["FLAG_PSF_HSM"])
-            flag_star += list(data_j["FLAG_STAR_HSM"])
+            flag_psf += list(data_j["HSM_FLAG_PSF"])
+            flag_star += list(data_j["HSM_FLAG_STAR"])
 
             # misc
 
@@ -623,21 +627,20 @@ class MergeStarCatPSFEX(object):
             SEx_catalogue=False,
         )
 
-        # Collect columns
-        # convert back to sigma for consistency
+        # Collect columns (size stored as T = 2 sigma^2)
         data = {
             "X": x,
             "Y": y,
             "RA": ra,
             "DEC": dec,
-            "E1_PSF_HSM": g1_psf,
-            "E2_PSF_HSM": g2_psf,
-            "SIGMA_PSF_HSM": np.sqrt(size_psf),
-            "E1_STAR_HSM": g1,
-            "E2_STAR_HSM": g2,
-            "SIGMA_STAR_HSM": np.sqrt(size),
-            "FLAG_PSF_HSM": flag_psf,
-            "FLAG_STAR_HSM": flag_star,
+            "HSM_E1_PSF": g1_psf,
+            "HSM_E2_PSF": g2_psf,
+            "HSM_T_PSF": size_psf,
+            "HSM_E1_STAR": g1,
+            "HSM_E2_STAR": g2,
+            "HSM_T_STAR": size,
+            "HSM_FLAG_PSF": flag_psf,
+            "HSM_FLAG_STAR": flag_star,
             "MAG": mag,
             "SNR": snr,
             "ACCEPTED": psfex_acc,
